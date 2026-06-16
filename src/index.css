@@ -374,7 +374,12 @@
   .foot-in .right { @apply flex items-center gap-4; margin-left: auto; min-width: max-content; }
 
   /* feedback tool (dev iteration aid; feedback.md is gitignored; disable with ?fb=off) */
-  .fbk-launch { @apply fixed z-[60] inline-flex items-center gap-2 bg-surface text-ink-2 font-mono text-label lowercase cursor-pointer; right: var(--sp-5); bottom: calc(44px + var(--sp-3)); height: var(--control-h); padding: 0 var(--sp-4); border: var(--bd-strong); box-shadow: var(--glow-soft); }
+  .fbk-dock { @apply fixed z-[60] flex items-center gap-2; right: var(--sp-5); bottom: calc(44px + var(--sp-3)); }
+  .fbk-list-btn { @apply inline-flex items-center gap-2 bg-surface text-ink-3 font-mono text-label lowercase cursor-pointer; height: var(--control-h); padding: 0 var(--sp-3); border: var(--bd-strong); }
+  .fbk-list-btn:hover { @apply text-ink; border-color: var(--amber-dim); }
+  .fbk-list-btn .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+  .fbk-list-btn .cnt { @apply text-amber; font-variant-numeric: tabular-nums; }
+  .fbk-launch { @apply inline-flex items-center gap-2 bg-surface text-ink-2 font-mono text-label lowercase cursor-pointer; height: var(--control-h); padding: 0 var(--sp-4); border: var(--bd-strong); box-shadow: var(--glow-soft); }
   .fbk-launch:hover { @apply text-amber-bright; border-color: var(--amber-dim); }
   .fbk-launch .lucide { width: var(--ic-sm); height: var(--ic-sm); }
   .fbk-launch .cnt { @apply text-amber; font-variant-numeric: tabular-nums; }
@@ -429,6 +434,15 @@
   .band > .sub::before, .group .gs::before { content: "// "; color: var(--ink-4); }
   .band > .label::before { content: "> "; color: var(--amber-dim); }
   .group h2::before { content: "> "; color: var(--amber-dim); }
+
+  /* cards with imagery on top (ref 01) */
+  .card-img { padding: 0; overflow: hidden; }
+  .card-thumb { position: relative; aspect-ratio: 16 / 9; background: var(--canvas); border-bottom: var(--bd); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .thumb-ascii { font-size: 4px; line-height: 1; color: var(--ink-strong); }
+  .card-body { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4); }
+  .bullets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
+  .bullets li { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); }
+  .bullets li::before { content: "> "; color: var(--amber-dim); }
 }
 
 /* faint dotted-grid surface (technical terminal backdrop, theme-aware via --grid) */

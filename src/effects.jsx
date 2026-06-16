@@ -32,6 +32,17 @@ export function drawMoon(ctx, w, h) {
   ctx.restore()
 }
 
+/* alternate source: a wave-interference field (fills the frame; good for wide thumbs) */
+export function drawWaves(ctx, w, h) {
+  const img = ctx.createImageData(w, h), d = img.data
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const v = 0.5 + 0.5 * Math.sin(x * 0.05 + Math.sin(y * 0.045) * 3) * Math.cos(y * 0.038 - x * 0.012)
+    const c = Math.max(0, Math.min(255, v * 255)) | 0
+    const i = (y * w + x) * 4; d[i] = d[i + 1] = d[i + 2] = c; d[i + 3] = 255
+  }
+  ctx.putImageData(img, 0, 0)
+}
+
 /* sample a square source into a cols x rows luminance grid */
 function sampleGrid(draw, cols, rows) {
   const sq = document.createElement('canvas'); sq.width = sq.height = 300

@@ -8,11 +8,20 @@ import {
   Download,
   Trash2,
   Check,
+  Eye,
+  Clock,
+  GitBranch,
+  BadgeCheck,
+  Users,
+  User,
+  FileText,
+  Link2,
 } from 'lucide-react'
 import galleryHtml from './gallery.html?raw'
-import { AsciiArt, Halftone, GlyphField } from './effects.jsx'
+import { AsciiArt, Halftone, GlyphField, drawMoon, drawWaves } from './effects.jsx'
 
-const [GAL_TOP, GAL_BOTTOM] = galleryHtml.split('<!--HERO-->')
+const [GAL_TOP, GAL_REST] = galleryHtml.split('<!--HERO-->')
+const [GAL_MID, GAL_BOTTOM] = GAL_REST.split('<!--CARDS-->')
 const KEY = 'pds_feedback_v1'
 const isHttp = /^https?:$/.test(location.protocol)
 const fbOff = /[?&]fb=off/.test(location.search)
@@ -104,6 +113,52 @@ function Hero({ theme }) {
   )
 }
 
+/* provider brand marks (svg symbols live in the gallery blob, document-global) */
+const Claude = () => (<span className="g-claude"><svg className="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-claude" /></svg></span>)
+const Gemini = () => (<span className="g-gemini"><svg className="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-gemini" /></svg></span>)
+
+/* cards & rows, ref-01 style: ascii/halftone thumbnail on top + '>' bullet metadata */
+function Cards({ theme }) {
+  return (
+    <section className="band">
+      <span className="label">cards &amp; rows</span>
+      <div className="sub">list and grid surfaces, imagery on top</div>
+      <div className="grid-cards">
+        <a className="card card-img">
+          <div className="card-thumb"><AsciiArt draw={drawMoon} cols={112} aspect={0.46} className="thumb-ascii" /></div>
+          <div className="card-body">
+            <div className="card-head"><span className="metaitem"><Claude /> claude-code</span><Eye size={14} style={{ color: 'var(--ink-3)' }} /></div>
+            <h3>refactor ingest pipeline to stream</h3>
+            <p className="desc">converted the eager loader into a channel-backed stream so sessions process at constant memory.</p>
+            <ul className="bullets">
+              <li>streaming reader, constant memory</li>
+              <li>race detector green</li>
+            </ul>
+            <div className="card-foot"><span className="avatar">v</span><span className="metaitem"><Clock /> <b className="tnum">2h 14m</b></span><span className="metaitem"><GitBranch /> <b className="tnum">18</b></span><span className="metaitem"><BadgeCheck /> <b className="tnum">3</b></span></div>
+          </div>
+        </a>
+        <a className="card card-img">
+          <div className="card-thumb"><Halftone draw={drawWaves} cols={58} accent theme={theme} /></div>
+          <div className="card-body">
+            <div className="card-head"><span className="metaitem"><Users /> desert-archivists</span></div>
+            <h3>desert archivists</h3>
+            <p className="desc">a shared shelf for redacted transcripts about data pipelines and ingestion.</p>
+            <ul className="bullets">
+              <li>verified-only acceptance</li>
+              <li>redaction review required</li>
+            </ul>
+            <div className="card-foot"><span className="metaitem"><User /> <b className="tnum">24</b> members</span><span className="metaitem"><FileText /> <b className="tnum">118</b> transcripts</span><span className="metaitem"><Link2 /> linked</span></div>
+          </div>
+        </a>
+      </div>
+      <div>
+        <div className="row"><span className="metaitem"><Claude /> claude-code</span><span className="grow mono">add fts5 search index</span><span className="metaitem mono">2026-06-12</span><span className="metaitem"><Clock /> 41m</span><span className="avatar">v</span></div>
+        <div className="row"><span className="metaitem"><Gemini /> gemini-cli</span><span className="grow mono">tune redaction rules</span><span className="metaitem mono">2026-06-11</span><span className="metaitem"><Clock /> 1h 03m</span><span className="avatar">a</span></div>
+      </div>
+    </section>
+  )
+}
+
 export default function App() {
   /* theme (toggled by the gallery's .theme-btn via click delegation) */
   const [theme, setTheme] = useState(() =>
@@ -165,9 +220,18 @@ export default function App() {
   useEffect(() => {
     if (!armed) return
     document.body.classList.add('fbk-arming')
+    // skip structural wrappers / anything covering (nearly) the whole viewport
+    const badTarget = (el) => {
+      if (!el || el.nodeType !== 1) return true
+      const t = el.tagName
+      if (t === 'HTML' || t === 'BODY' || el.id === 'root') return true
+      if (el.classList && el.classList.contains('pds-root')) return true
+      const r = el.getBoundingClientRect()
+      return r.width >= innerWidth * 0.97 && r.height >= innerHeight * 0.92
+    }
     const onMove = (e) => {
       const el = e.target
-      if (!el || (el.closest && el.closest('[data-fb]'))) {
+      if (!el || (el.closest && el.closest('[data-fb]')) || badTarget(el)) {
         if (hiRef.current) hiRef.current.classList.remove('on')
         if (tagRef.current) tagRef.current.style.display = 'none'
         return
@@ -191,7 +255,7 @@ export default function App() {
       }
     }
     const onClick = (e) => {
-      if (e.target.closest && e.target.closest('[data-fb]')) return
+      if ((e.target.closest && e.target.closest('[data-fb]')) || badTarget(e.target)) return
       e.preventDefault()
       e.stopPropagation()
       targetRef.current = e.target
@@ -258,6 +322,7 @@ export default function App() {
     }
     setComposeOpen(false)
     targetRef.current = null
+    setArmed(true) // keep selecting for the next element
   }
   function cancelCompose() {
     setComposeOpen(false)
@@ -313,20 +378,31 @@ export default function App() {
       <div className="pds-root" onClick={galleryClick}>
         <div dangerouslySetInnerHTML={{ __html: GAL_TOP }} />
         <Hero theme={theme} />
+        <div dangerouslySetInnerHTML={{ __html: GAL_MID }} />
+        <Cards theme={theme} />
         <div dangerouslySetInnerHTML={{ __html: GAL_BOTTOM }} />
         <footer className="foot"><div className="foot-in"><svg className="logo" width="15" height="15" viewBox="0 0 32 32"><use href="#logo" /></svg> <b>peasant design system</b> <span className="right"><span>one identity, three apps</span> <a href="https://github.com/peasant-labs/peasant-design-system">github</a></span></div></footer>
       </div>
 
       {!fbOff && (
         <>
-          <button
-            className={'fbk-launch' + (armed ? ' armed' : '')}
-            data-fb
-            aria-label="give feedback"
-            onClick={() => setPanelOpen((o) => !o)}
-          >
-            <MessageSquarePlus /> feedback <span className="cnt">{entries.length}</span>
-          </button>
+          <div className="fbk-dock" data-fb>
+            <button className="fbk-list-btn" data-fb aria-label="feedback list" onClick={() => setPanelOpen((o) => !o)}>
+              <MessagesSquare /> <span className="cnt">{entries.length}</span>
+            </button>
+            <button
+              className={'fbk-launch' + (armed ? ' armed' : '')}
+              data-fb
+              aria-label={armed ? 'stop selecting' : 'select an element to comment on'}
+              onClick={toggleAnnotate}
+            >
+              {armed ? (
+                <><Crosshair /> selecting <span className="cnt">esc</span></>
+              ) : (
+                <><MessageSquarePlus /> feedback</>
+              )}
+            </button>
+          </div>
 
           <div ref={hiRef} className="fbk-hi" data-fb />
           <div ref={tagRef} className="fbk-tag" data-fb />
@@ -355,17 +431,6 @@ export default function App() {
                 : 'file:// mode - use copy md or .md, then paste into feedback.md'}
             </div>
             <div className="fbk-actions" data-fb>
-              <button className="btn btn-primary btn-sm" data-fb onClick={toggleAnnotate}>
-                {armed ? (
-                  <>
-                    <X /> stop
-                  </>
-                ) : (
-                  <>
-                    <Crosshair /> annotate
-                  </>
-                )}
-              </button>
               <button className="btn btn-secondary btn-sm" data-fb onClick={copyMd}>
                 <Clipboard /> copy md
               </button>
@@ -378,7 +443,7 @@ export default function App() {
             </div>
             <div className="fbk-list" data-fb>
               {entries.length === 0 ? (
-                <div className="fbk-empty">no feedback yet. press annotate, then click any element.</div>
+                <div className="fbk-empty">no feedback yet. click "feedback" (bottom-right), then click any element.</div>
               ) : (
                 entries.map((e, i) => (
                   <div className="fbk-item" data-fb key={i}>
