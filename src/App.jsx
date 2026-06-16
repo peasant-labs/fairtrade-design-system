@@ -10,8 +10,9 @@ import {
   Check,
 } from 'lucide-react'
 import galleryHtml from './gallery.html?raw'
-import { ImageryShowcase, FxDefs } from './effects.jsx'
+import { AsciiArt, Halftone, GlyphField } from './effects.jsx'
 
+const [GAL_TOP, GAL_BOTTOM] = galleryHtml.split('<!--HERO-->')
 const KEY = 'pds_feedback_v1'
 const isHttp = /^https?:$/.test(location.protocol)
 const fbOff = /[?&]fb=off/.test(location.search)
@@ -75,6 +76,31 @@ function stamp() {
     p = (n) => (n < 10 ? '0' : '') + n
   return (
     d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes())
+  )
+}
+
+/* hero with the imagery baked into the identity: ascii focal art, halftone
+   amber inset, glyph-grid texture behind. (kept effects from the references) */
+function Hero({ theme }) {
+  return (
+    <section className="hero hero-fx">
+      <div className="hero-bg" aria-hidden="true"><GlyphField rows={11} repeat={46} /></div>
+      <div className="hero-main">
+        <div className="hero-copy">
+          <span className="label">// a commons for redacted agent transcripts</span>
+          <h1>receipts for <span className="hl">agentic work</span>, kept low to the ground.</h1>
+          <p>ingest your sessions locally, redact them, and share what's worth sharing. browse the commons, gather into collectives, attest to what mattered.</p>
+          <div className="btn-row">
+            <button className="btn btn-primary">explore the commons</button>
+            <button className="btn btn-secondary">publish a transcript</button>
+          </div>
+        </div>
+        <div className="hero-art framed">
+          <AsciiArt cols={96} aspect={0.62} className="hero-ascii" />
+          <div className="hero-inset framed"><Halftone cols={26} accent theme={theme} /></div>
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -284,10 +310,12 @@ export default function App() {
 
   return (
     <>
-      <div className="pds-gallery" onClick={galleryClick} dangerouslySetInnerHTML={{ __html: galleryHtml }} />
-      <ImageryShowcase theme={theme} />
-      <footer className="foot"><div className="foot-in"><svg className="logo" width="15" height="15" viewBox="0 0 32 32"><use href="#logo" /></svg> <b>peasant design system</b> <span className="right"><span>one identity, three apps</span> <a href="https://github.com/peasant-labs/peasant-design-system">github</a></span></div></footer>
-      <FxDefs />
+      <div className="pds-root" onClick={galleryClick}>
+        <div dangerouslySetInnerHTML={{ __html: GAL_TOP }} />
+        <Hero theme={theme} />
+        <div dangerouslySetInnerHTML={{ __html: GAL_BOTTOM }} />
+        <footer className="foot"><div className="foot-in"><svg className="logo" width="15" height="15" viewBox="0 0 32 32"><use href="#logo" /></svg> <b>peasant design system</b> <span className="right"><span>one identity, three apps</span> <a href="https://github.com/peasant-labs/peasant-design-system">github</a></span></div></footer>
+      </div>
 
       {!fbOff && (
         <>
