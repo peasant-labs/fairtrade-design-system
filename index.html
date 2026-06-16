@@ -51,11 +51,17 @@
 
 *{box-sizing:border-box;}
 html{scroll-behavior:smooth;}
-body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--font-body);font-size:var(--fs-body);line-height:var(--lh-body);-webkit-font-smoothing:antialiased;}
+body{margin:0;padding-bottom:44px;background:var(--canvas);color:var(--ink);font-family:var(--font-body);font-size:var(--fs-body);line-height:var(--lh-body);-webkit-font-smoothing:antialiased;}
 h1,h2,h3{font-family:var(--font-display);font-weight:700;text-transform:lowercase;margin:0;line-height:var(--lh-tight);color:var(--ink-strong);}
 p{margin:0;}
 a{color:var(--amber);text-decoration:none;}
 .hl{color:var(--amber-bright);text-shadow:var(--glow);}
+/* qud HUD frames + terminal-prompt accents */
+.framed{position:relative;}
+.framed::before,.framed::after{content:"";position:absolute;width:11px;height:11px;pointer-events:none;z-index:2;}
+.framed::before{top:0;left:0;border-top:2px solid var(--amber);border-left:2px solid var(--amber);}
+.framed::after{bottom:0;right:0;border-bottom:2px solid var(--amber);border-right:2px solid var(--amber);}
+.band > .label::before,.group h2::before{content:"";display:inline-block;width:3px;height:.78em;background:var(--amber);margin-right:var(--sp-2);vertical-align:-1px;box-shadow:var(--glow-soft);}
 .tnum{font-variant-numeric:tabular-nums;}
 .mono{font-family:var(--font-mono);}
 
@@ -184,12 +190,12 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
 .ts-code{font-size:13px;color:var(--ink-3);margin-top:var(--sp-3);padding-top:var(--sp-3);border-top:var(--bd);white-space:pre;overflow:hidden;}
 
 /* CARDS / ROWS */
-.grid-cards{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4);align-items:start;}
+.grid-cards{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4);align-items:stretch;}
 .card{border:var(--bd);background:var(--surface);padding:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-3);}
 .card-head{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-2);}
 .card h3{font-size:var(--fs-md);}
 .card .desc{color:var(--ink-2);font-size:var(--fs-sm);}
-.card-foot{display:flex;align-items:center;gap:var(--sp-4);border-top:var(--bd);padding-top:var(--sp-3);margin-top:var(--sp-1);flex-wrap:wrap;}
+.card-foot{display:flex;align-items:center;gap:var(--sp-4);border-top:var(--bd);padding-top:var(--sp-3);margin-top:auto;flex-wrap:wrap;}
 .metaitem{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-3);display:inline-flex;align-items:center;gap:var(--sp-2);}
 .metaitem b{color:var(--ink-2);font-weight:600;}
 .metaitem .lucide,.metaitem .brand{width:var(--ic-sm);height:var(--ic-sm);}
@@ -219,7 +225,7 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
 
 /* CONVERSATION WINDOW */
 .window{border:var(--bd);background:var(--surface);}
-.win-head{padding:var(--sp-4);border-bottom:var(--bd);}
+.win-head{padding:var(--sp-4);border-bottom:var(--bd);position:sticky;top:56px;z-index:10;background:var(--surface);}
 .win-title{font-family:var(--font-display);font-size:var(--fs-lg);color:var(--ink-strong);margin-top:var(--sp-3);font-weight:700;}
 .win-meta{display:flex;gap:var(--sp-4);margin-top:var(--sp-3);flex-wrap:wrap;}
 .turn{padding:var(--sp-4);border-bottom:var(--bd);display:grid;grid-template-columns:74px 1fr;gap:var(--sp-4);}
@@ -289,7 +295,7 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
 .minimap{position:absolute;right:var(--sp-3);bottom:var(--sp-3);width:108px;height:68px;border:var(--bd-strong);background:color-mix(in srgb,var(--canvas) 60%,transparent);}
 .minimap i{position:absolute;background:var(--ink-4);}
 .timestrip{display:flex;align-items:flex-end;gap:3px;height:46px;margin-top:var(--sp-4);padding:var(--sp-3);border:var(--bd);background:var(--surface);}
-.timestrip .bar{width:6px;background:var(--amber-dim);}
+.timestrip .bar{flex:1;min-width:4px;background:var(--amber-dim);}
 
 /* EMPTY / SIDEBAR */
 .empty{border:var(--bd);background:var(--surface);padding:var(--sp-8) var(--sp-5);display:flex;flex-direction:column;align-items:center;gap:var(--sp-3);text-align:center;}
@@ -308,8 +314,10 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
 .sb-opt.on > .lucide{color:var(--amber);width:var(--ic-sm);height:var(--ic-sm);}
 
 .note{font-family:var(--font-mono);font-size:var(--fs-label);text-transform:lowercase;color:var(--ink-3);margin-top:var(--sp-5);border-left:2px solid var(--rule-strong);padding-left:var(--sp-3);line-height:1.6;}
-.foot{max-width:var(--maxw);margin:0 auto;padding:var(--sp-7) var(--gutter) var(--sp-8);display:flex;align-items:center;gap:var(--sp-4);font-family:var(--font-mono);font-size:var(--fs-label);text-transform:lowercase;color:var(--ink-3);}
-.foot .logo{color:var(--amber);width:16px;height:16px;}.foot b{color:var(--ink-2);font-weight:400;}
+.foot{position:fixed;left:0;right:0;bottom:0;z-index:40;border-top:var(--bd);background:var(--nav-bg);backdrop-filter:blur(8px);}
+.foot-in{max-width:var(--maxw);margin:0 auto;padding:0 var(--gutter);height:44px;display:flex;align-items:center;gap:var(--sp-3);font-family:var(--font-mono);font-size:var(--fs-label);text-transform:lowercase;color:var(--ink-3);}
+.foot-in .logo{color:var(--amber);width:15px;height:15px;}.foot-in b{color:var(--ink-2);font-weight:400;}
+.foot-in .right{margin-left:auto;display:flex;align-items:center;gap:var(--sp-4);min-width:max-content;}
 
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}}
 @media (max-width:880px){.hero,.cols-2,.grid-cards,.type-grid{grid-template-columns:1fr;}}
@@ -374,11 +382,11 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
 
 <!-- TYPOGRAPHY COMPARISON -->
 <section class="band">
-  <span class="label">typography — compare &amp; choose</span>
+  <span class="label">typography: compare &amp; choose</span>
   <div class="sub">same content in six candidates. tell me which carries the identity (display + body); mono is reserved for code.</div>
   <div class="type-grid">
     <div class="type-spec" style="font-family:var(--font-display)">
-      <div class="ts-name">iosevka etoile <span class="kind">slab serif · current</span></div>
+      <div class="ts-name">iosevka etoile <span class="kind">slab serif, current</span></div>
       <div class="ts-display">create the collective</div>
       <div class="ts-body">reading a transcript. ingest your sessions locally, redact them, and share what's worth sharing.</div>
       <div class="ts-code mono">func openStream(ctx) (*Stream, error)</div>
@@ -442,17 +450,19 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
   <div class="sub">buttons and inputs share one height</div>
   <div class="cols cols-2">
     <div>
-      <span class="label" style="margin-bottom:var(--sp-3)">buttons</span>
-      <div class="btn-row" style="margin-bottom:var(--sp-3)">
+      <span class="label" style="margin-bottom:var(--sp-3)">default (36px)</span>
+      <div class="btn-row" style="margin-bottom:var(--sp-5)">
         <button class="btn btn-primary">primary</button>
         <button class="btn btn-secondary">secondary</button>
         <button class="btn btn-ghost">ghost</button>
         <button class="btn btn-danger"><i data-lucide="trash-2"></i> delete</button>
-      </div>
-      <div class="btn-row">
-        <button class="btn btn-primary btn-sm">small</button>
-        <button class="btn btn-secondary btn-sm">small</button>
         <button class="btn btn-secondary btn-icon"><i data-lucide="plus"></i></button>
+      </div>
+      <span class="label" style="margin-bottom:var(--sp-3)">small (28px)</span>
+      <div class="btn-row">
+        <button class="btn btn-primary btn-sm">primary</button>
+        <button class="btn btn-secondary btn-sm">secondary</button>
+        <button class="btn btn-ghost btn-sm">ghost</button>
         <button class="btn btn-secondary btn-sm btn-icon"><i data-lucide="settings"></i></button>
       </div>
     </div>
@@ -465,7 +475,7 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
   </div>
 </section>
 
-<div class="group"><h2>components</h2><div class="gs">everything we build with — ported from peasant, village &amp; the transcript viewer</div></div>
+<div class="group"><h2>components</h2><div class="gs">everything we build with, ported from peasant, village &amp; the transcript viewer</div></div>
 
 <!-- BADGES -->
 <section class="band">
@@ -527,7 +537,7 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
       <div class="card-head"><span class="metaitem"><i data-lucide="users"></i> desert-archivists</span></div>
       <h3>desert archivists</h3>
       <p class="desc">a shared shelf for redacted transcripts about data pipelines and ingestion.</p>
-      <div class="card-foot"><span class="metaitem"><i data-lucide="user"></i> <b class="tnum">24</b> members</span><span class="metaitem"><i data-lucide="file-text"></i> <b class="tnum">118</b></span><span class="metaitem"><i data-lucide="github"></i> linked</span></div>
+      <div class="card-foot"><span class="metaitem"><i data-lucide="user"></i> <b class="tnum">24</b> members</span><span class="metaitem"><i data-lucide="file-text"></i> <b class="tnum">118</b> transcripts</span><span class="metaitem"><i data-lucide="github"></i> linked</span></div>
     </a>
   </div>
   <div>
@@ -539,8 +549,8 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
 <!-- CONVERSATION WINDOW -->
 <section class="band">
   <span class="label">conversation window</span>
-  <div class="sub">the transcript reading view — phases, role-tinted turns, tool calls, subagents, checkpoints</div>
-  <div class="window">
+  <div class="sub">the transcript reading view: phases, role-tinted turns, tool calls, subagents, checkpoints</div>
+  <div class="window framed">
     <div class="win-head">
       <div class="crumb">village <i data-lucide="chevron-right"></i> vitor-hw <i data-lucide="chevron-right"></i> <span class="cur">refactor ingest pipeline</span></div>
       <div class="win-title">refactor ingest pipeline to stream</div>
@@ -552,7 +562,7 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
         <span class="chip chip-ok"><i data-lucide="shield-check"></i> redacted</span>
       </div>
     </div>
-    <div class="phase"><span class="lbl"><i data-lucide="flag"></i> phase · streaming refactor</span><span class="rng">turns 1–8</span></div>
+    <div class="phase"><span class="lbl"><i data-lucide="flag"></i> phase: streaming refactor</span><span class="rng">turns 1–8</span></div>
     <div class="turn user">
       <div class="who"><i data-lucide="user"></i></div>
       <div class="body">Can you refactor the ingest pipeline so it streams sessions instead of loading everything into memory? Keep the tests green.</div>
@@ -564,11 +574,11 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
         <div class="toolcall"><div class="tc-head"><span class="kind"><i data-lucide="file-text"></i> read</span><span class="path">internal/ingest/pipeline.go</span><span class="right">240 lines <i data-lucide="chevron-down"></i></span></div></div>
       </div>
     </div>
-    <div class="task-bound"><i data-lucide="git-fork"></i> task · explore loadAll call sites <span style="color:var(--ink-4)">(subagent)</span></div>
+    <div class="task-bound"><i data-lucide="git-fork"></i> task: explore loadAll call sites <span style="color:var(--ink-4)">(subagent)</span></div>
     <div class="turn sub">
       <div class="who"><i data-lucide="git-fork"></i> subagent</div>
       <div class="body">Searched the pipeline for <b>loadAll</b>. Found 3 call sites, all reachable from <span class="mono">Run</span>. Safe to replace with a streaming reader.
-        <div class="toolcall"><div class="tc-head"><span class="kind"><i data-lucide="search"></i> grep</span><span class="path">loadAll · internal/ingest</span><span class="right">3 matches <i data-lucide="chevron-down"></i></span></div></div>
+        <div class="toolcall"><div class="tc-head"><span class="kind"><i data-lucide="search"></i> grep</span><span class="path">loadAll in internal/ingest</span><span class="right">3 matches <i data-lucide="chevron-down"></i></span></div></div>
       </div>
     </div>
     <div class="turn asst">
@@ -597,7 +607,7 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
   <div class="sub">the map/graph surface and a modal window</div>
   <div class="cols cols-2">
     <div>
-      <div class="canvas">
+      <div class="canvas framed">
         <svg class="edges" viewBox="0 0 560 340" preserveAspectRatio="none">
           <path d="M120 70 V150 H80 V196" fill="none" stroke="var(--rule-strong)" stroke-width="1"/>
           <path d="M120 70 V150 H250 V196" fill="none" stroke="var(--rule-strong)" stroke-width="1"/>
@@ -620,13 +630,13 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
     </div>
     <div class="dlg-demo">
       <div class="scrim"></div>
-      <div class="dialog">
+      <div class="dialog framed">
         <div class="dlg-head"><h3>join collective</h3><button class="btn btn-ghost btn-sm btn-icon"><i data-lucide="x"></i></button></div>
         <div class="dlg-body">
           <div class="callout"><i data-lucide="eye"></i><div>joining <b style="color:var(--ink-strong)">desert-archivists</b> reveals your profile to its members. your shared transcripts stay redacted.</div></div>
           <label class="check"><span class="box"><i data-lucide="check"></i></span> i understand and consent</label>
         </div>
-        <div class="dlg-foot"><button class="btn btn-ghost btn-sm">cancel</button><button class="btn btn-primary btn-sm"><i data-lucide="users"></i> reveal &amp; join</button></div>
+        <div class="dlg-foot"><button class="btn btn-secondary btn-sm">cancel</button><button class="btn btn-primary btn-sm"><i data-lucide="users"></i> reveal &amp; join</button></div>
       </div>
     </div>
   </div>
@@ -635,21 +645,19 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
 <!-- FORMS / FILTERS / EMPTY -->
 <section class="band">
   <span class="label">forms, filters &amp; empty states</span>
-  <div class="sub">low-traffic surfaces — left-aligned, the logo carries the imagery</div>
+  <div class="sub">low-traffic surfaces, left-aligned, the logo carries the imagery</div>
   <div class="cols cols-2">
-    <div class="window">
-      <div style="padding:var(--sp-4);border-bottom:var(--bd);display:flex;align-items:center;gap:var(--sp-3)">
-        <svg class="logo" width="34" height="34" viewBox="0 0 32 32" style="color:var(--amber);flex:none;filter:drop-shadow(var(--glow-soft))"><use href="#logo"/></svg>
-        <div>
-          <div class="win-title" style="margin-top:0">create the <span class="hl">collective</span></div>
-          <div class="label">a shared shelf for redacted transcripts</div>
-        </div>
+    <div class="window framed">
+      <div style="padding:var(--sp-4);border-bottom:var(--bd)">
+        <svg class="logo" width="30" height="30" viewBox="0 0 32 32" style="color:var(--amber);filter:drop-shadow(var(--glow-soft));margin-bottom:var(--sp-2)"><use href="#logo"/></svg>
+        <div class="win-title" style="margin-top:0">create the <span class="hl">collective</span></div>
+        <div class="label" style="margin-top:var(--sp-1)">a shared shelf for redacted transcripts</div>
       </div>
       <div style="padding:var(--sp-4)">
         <div class="field"><span class="label">name</span><input class="input" value="desert-archivists" /></div>
         <div class="field"><span class="label">acceptance mode</span><div class="select-wrap"><select class="select"><option>verified only</option><option>open</option></select><i data-lucide="chevron-down"></i></div></div>
         <label class="check" style="margin-bottom:var(--sp-4)"><span class="box"><i data-lucide="check"></i></span> require redaction review</label>
-        <div class="btn-row"><button class="btn btn-primary" style="flex:1"><i data-lucide="users"></i> create the collective</button><button class="btn btn-ghost">cancel</button></div>
+        <div class="btn-row"><button class="btn btn-primary" style="flex:1"><i data-lucide="users"></i> create the collective</button><button class="btn btn-secondary">cancel</button></div>
       </div>
     </div>
     <div>
@@ -670,7 +678,7 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
   </div>
 </section>
 
-<footer class="foot"><svg class="logo" width="16" height="16" viewBox="0 0 32 32"><use href="#logo"/></svg> <b>peasant</b> <b>village</b> <b>transcript-browser</b> &nbsp; shared design system</footer>
+<footer class="foot"><div class="foot-in"><svg class="logo" width="15" height="15" viewBox="0 0 32 32"><use href="#logo"/></svg> <b>peasant design system</b> <span class="right"><span>one identity, three apps</span> <a href="https://github.com/peasant-labs/peasant-design-system">github</a></span></div></footer>
 
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
