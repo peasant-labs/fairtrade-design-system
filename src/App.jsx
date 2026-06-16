@@ -18,7 +18,12 @@ import {
   Link2,
 } from 'lucide-react'
 import galleryHtml from './gallery.html?raw'
-import { AsciiArt, Halftone, GlyphField, drawMoon, drawWaves } from './effects.jsx'
+import { AsciiArt, Halftone, GlyphField } from './effects.jsx'
+/* imagery library: public-domain peasant / crop paintings, rendered through
+   the image->ascii / halftone filters (the only imagery in the system) */
+import wheatImg from './img/wheat.png'
+import gleanersImg from './img/gleaners.jpg'
+import reaperImg from './img/reaper.jpg'
 
 const [GAL_TOP, GAL_REST] = galleryHtml.split('<!--HERO-->')
 const [GAL_MID, GAL_BOTTOM] = GAL_REST.split('<!--CARDS-->')
@@ -96,7 +101,6 @@ function Hero({ theme }) {
       <div className="hero-bg" aria-hidden="true"><GlyphField rows={11} repeat={46} /></div>
       <div className="hero-main">
         <div className="hero-copy">
-          <span className="label">// a commons for redacted agent transcripts</span>
           <h1>receipts for <span className="hl">agentic work</span>, kept low to the ground.</h1>
           <p>ingest your sessions locally, redact them, and share what's worth sharing. browse the commons, gather into collectives, attest to what mattered.</p>
           <div className="btn-row">
@@ -104,9 +108,10 @@ function Hero({ theme }) {
             <button className="btn btn-secondary">publish a transcript</button>
           </div>
         </div>
-        <div className="hero-art framed">
-          <AsciiArt cols={96} aspect={0.62} className="hero-ascii" />
-          <div className="hero-inset framed"><Halftone cols={26} accent theme={theme} /></div>
+        <div className="hero-art-wrap">
+          <div className="hero-art framed">
+            <AsciiArt src={wheatImg} cols={172} aspect={0.4} isolated contrast={1.32} gamma={0.82} theme={theme} className="hero-ascii" />
+          </div>
         </div>
       </div>
     </section>
@@ -117,7 +122,7 @@ function Hero({ theme }) {
 const Claude = () => (<span className="g-claude"><svg className="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-claude" /></svg></span>)
 const Gemini = () => (<span className="g-gemini"><svg className="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-gemini" /></svg></span>)
 
-/* cards & rows, ref-01 style: ascii/halftone thumbnail on top + '>' bullet metadata */
+/* cards & rows, ref-01 style: ascii/halftone thumbnail on top + bullet metadata */
 function Cards({ theme }) {
   return (
     <section className="band">
@@ -125,7 +130,7 @@ function Cards({ theme }) {
       <div className="sub">list and grid surfaces, imagery on top</div>
       <div className="grid-cards">
         <a className="card card-img">
-          <div className="card-thumb"><AsciiArt draw={drawMoon} cols={112} aspect={0.46} className="thumb-ascii" /></div>
+          <div className="card-thumb"><AsciiArt src={gleanersImg} cols={132} aspect={0.34} contrast={1.3} vignette={0.26} theme={theme} className="thumb-ascii" /></div>
           <div className="card-body">
             <div className="card-head"><span className="metaitem"><Claude /> claude-code</span><Eye size={14} style={{ color: 'var(--ink-3)' }} /></div>
             <h3>refactor ingest pipeline to stream</h3>
@@ -138,7 +143,7 @@ function Cards({ theme }) {
           </div>
         </a>
         <a className="card card-img">
-          <div className="card-thumb"><Halftone draw={drawWaves} cols={58} accent theme={theme} /></div>
+          <div className="card-thumb"><Halftone src={reaperImg} cols={64} accent contrast={1.3} vignette={0.3} theme={theme} /></div>
           <div className="card-body">
             <div className="card-head"><span className="metaitem"><Users /> desert-archivists</span></div>
             <h3>desert archivists</h3>
@@ -376,11 +381,11 @@ export default function App() {
   return (
     <>
       <div className="pds-root" onClick={galleryClick}>
-        <div dangerouslySetInnerHTML={{ __html: GAL_TOP }} />
+        <div className="contents" dangerouslySetInnerHTML={{ __html: GAL_TOP }} />
         <Hero theme={theme} />
-        <div dangerouslySetInnerHTML={{ __html: GAL_MID }} />
+        <div className="contents" dangerouslySetInnerHTML={{ __html: GAL_MID }} />
         <Cards theme={theme} />
-        <div dangerouslySetInnerHTML={{ __html: GAL_BOTTOM }} />
+        <div className="contents" dangerouslySetInnerHTML={{ __html: GAL_BOTTOM }} />
         <footer className="foot"><div className="foot-in"><svg className="logo" width="15" height="15" viewBox="0 0 32 32"><use href="#logo" /></svg> <b>peasant design system</b> <span className="right"><span>one identity, three apps</span> <a href="https://github.com/peasant-labs/peasant-design-system">github</a></span></div></footer>
       </div>
 

@@ -2,6 +2,13 @@
 
 One design system for **peasant** (local web), **village** (the commons), and **transcript-browser** (the shared viewer). The live reference is the gallery app: `pnpm install && pnpm dev` (Vite + React + Tailwind v4), then use the dark/light toggle.
 
+> **Read [`NEUROINCLUSIVE.md`](./NEUROINCLUSIVE.md) alongside this.** Because this is a data-heavy
+> product, the system is **neuroinclusive by default** (dyslexia / ADHD / autism / low-vision) — not
+> via an accessibility toggle. Those rules (16px text floor, 1.5 line-height, capped prose measure,
+> prose tracking with mono kept tight, ≥3:1 functional borders, a global focus ring, static-first
+> motion, warm-paper light canvas, ≤5 actions, progressive disclosure, persistent orientation,
+> tabular data) are baked into the tokens and base layer here and **govern every component**.
+
 ---
 
 ## philosophy
@@ -90,6 +97,18 @@ Copy is plain. Strip the AI tells:
 - no buzzwords: delve, leverage, robust, seamless, crucial, elevate, foster, tapestry / landscape / journey, ultimately
 - no "it's not just X, it's Y" / "not X, but Y" patterns
 - short, declarative, lowercase for chrome
+
+### chrome anti-slop (no fake-terminal decoration)
+
+The mono face already carries the terminal identity. Do not bolt on terminal-vocabulary ornaments; they read as AI slop, not craft.
+
+- **no `//` comment markers** in the UI. Subtitles, captions, and labels are plain text. `//` is never prepended to anything on screen.
+- **no `>` prompt prefixes** on titles, headings, section labels, or list bullets. The only allowed `>` is the active-nav affordance (`.nav-links a.active::before`) — that single marker stays; nothing else gets one. Bullets use a plain `-` or a tiny box marker in `--ink-4`.
+- **no eyebrow / kicker labels** above a heading. Nothing sits above the title.
+- **no decorative captions** under imagery (no museum-plate credits, no source lines).
+- a section is **title + subtitle at most**: one heading, one optional sub. Nothing above, nothing below the art.
+
+Functional labels are not eyebrows: form-field labels (`name`, `acceptance mode`), control sub-labels (`default (36px)`), and section titles stay.
 
 ---
 

@@ -1,7 +1,10 @@
 shots/
+inspiration/
 .DS_Store
 node_modules
 dist
 feedback.md
 package-lock.json
 *.mp4
+*.log
+.vite/
