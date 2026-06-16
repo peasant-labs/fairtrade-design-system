@@ -61,7 +61,6 @@ a{color:var(--amber);text-decoration:none;}
 .framed::before,.framed::after{content:"";position:absolute;width:11px;height:11px;pointer-events:none;z-index:2;}
 .framed::before{top:0;left:0;border-top:2px solid var(--amber);border-left:2px solid var(--amber);}
 .framed::after{bottom:0;right:0;border-bottom:2px solid var(--amber);border-right:2px solid var(--amber);}
-.band > .label::before,.group h2::before{content:"";display:inline-block;width:3px;height:.78em;background:var(--amber);margin-right:var(--sp-2);vertical-align:-1px;box-shadow:var(--glow-soft);}
 .tnum{font-variant-numeric:tabular-nums;}
 .mono{font-family:var(--font-mono);}
 
@@ -79,7 +78,7 @@ section{max-width:var(--maxw);margin:0 auto;padding:0 var(--gutter);}
 
 /* NAV */
 .nav{position:sticky;top:0;z-index:40;border-bottom:var(--bd);background:var(--nav-bg);backdrop-filter:blur(8px);}
-.nav-in{max-width:var(--maxw);margin:0 auto;padding:0 var(--gutter);height:56px;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-5);}
+.nav-in{padding:0 var(--sp-7);height:56px;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-5);}
 .nav-left{display:flex;align-items:center;gap:var(--sp-7);min-width:max-content;}
 .brand{display:flex;align-items:center;gap:var(--sp-2);font-family:var(--font-display);font-weight:700;font-size:var(--fs-md);color:var(--ink-strong);text-transform:lowercase;min-width:max-content;}
 .brand .logo{color:var(--amber);width:20px;height:20px;filter:drop-shadow(var(--glow-soft));}
@@ -91,8 +90,8 @@ section{max-width:var(--maxw);margin:0 auto;padding:0 var(--gutter);}
 .nav-right{display:flex;align-items:center;gap:var(--sp-3);min-width:max-content;}
 /* unified nav controls: one height, one type */
 .navctl{height:var(--control-h-sm);display:inline-flex;align-items:center;gap:var(--sp-2);font-family:var(--font-mono);font-size:var(--fs-label);text-transform:lowercase;color:var(--ink-3);min-width:max-content;flex:none;}
-.navctl.box{border:var(--bd-strong);padding:0 var(--sp-2) 0 var(--sp-3);cursor:pointer;}
-.navctl.box:hover{color:var(--ink);border-color:var(--amber-dim);}
+.navctl.bx{border:var(--bd-strong);padding:0 var(--sp-2) 0 var(--sp-3);cursor:pointer;}
+.navctl.bx:hover{color:var(--ink);border-color:var(--amber-dim);}
 .navctl.sq{border:var(--bd-strong);width:var(--control-h-sm);justify-content:center;padding:0;cursor:pointer;}
 .navctl.sq:hover{color:var(--ink);border-color:var(--amber-dim);}
 .navctl .lucide{width:var(--ic-sm);height:var(--ic-sm);}
@@ -315,7 +314,7 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
 
 .note{font-family:var(--font-mono);font-size:var(--fs-label);text-transform:lowercase;color:var(--ink-3);margin-top:var(--sp-5);border-left:2px solid var(--rule-strong);padding-left:var(--sp-3);line-height:1.6;}
 .foot{position:fixed;left:0;right:0;bottom:0;z-index:40;border-top:var(--bd);background:var(--nav-bg);backdrop-filter:blur(8px);}
-.foot-in{max-width:var(--maxw);margin:0 auto;padding:0 var(--gutter);height:44px;display:flex;align-items:center;gap:var(--sp-3);font-family:var(--font-mono);font-size:var(--fs-label);text-transform:lowercase;color:var(--ink-3);}
+.foot-in{padding:0 var(--sp-7);height:44px;display:flex;align-items:center;gap:var(--sp-3);font-family:var(--font-mono);font-size:var(--fs-label);text-transform:lowercase;color:var(--ink-3);}
 .foot-in .logo{color:var(--amber);width:15px;height:15px;}.foot-in b{color:var(--ink-2);font-weight:400;}
 .foot-in .right{margin-left:auto;display:flex;align-items:center;gap:var(--sp-4);min-width:max-content;}
 
@@ -346,7 +345,7 @@ textarea.input{height:auto;min-height:var(--control-h);padding:var(--sp-3);line-
       </div>
     </div>
     <div class="nav-right">
-      <span class="navctl box"><i data-lucide="search"></i> search <span class="kbd">⌘k</span></span>
+      <span class="navctl bx"><i data-lucide="search"></i> search <span class="kbd">⌘k</span></span>
       <span class="navctl"><span class="dot"></span> connected</span>
       <button class="navctl sq theme-btn" onclick="toggleTheme()" aria-label="toggle theme"><i data-lucide="moon" class="i-moon"></i><i data-lucide="sun" class="i-sun"></i></button>
     </div>
