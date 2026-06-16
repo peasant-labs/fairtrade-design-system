@@ -1,2 +1,6 @@
 shots/
 .DS_Store
+node_modules
+dist
+feedback.md
+package-lock.json

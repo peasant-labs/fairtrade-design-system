@@ -1,6 +1,6 @@
 # unified visual identity
 
-One design system for **peasant** (local web), **village** (the commons), and **transcript-browser** (the shared viewer). The live reference is [`index.html`](./index.html) — open it and use the dark/light toggle.
+One design system for **peasant** (local web), **village** (the commons), and **transcript-browser** (the shared viewer). The live reference is the gallery app: `pnpm install && pnpm dev` (Vite + React + Tailwind v4), then use the dark/light toggle.
 
 ---
 
@@ -48,8 +48,8 @@ Accents are **desaturated and earthy** — vivid reads as cheap. Semantic meanin
 
 ## typography
 
-- **display + body:** Iosevka Etoile — a quasi-proportional slab serif (a serif that resembles monospace).
-- **code only:** Iosevka (mono). Never use mono for body text.
+- **display + chrome + code:** Atkinson Hyperlegible Mono. The fixed-width face carries the ascii/terminal identity (headings, nav, labels, chips, buttons, code).
+- **reading prose:** Atkinson Hyperlegible (proportional), for long-form body text only (paragraphs, descriptions, transcript bodies).
 - **scale:** label 13 · sm 13.5 · body 15 · md 18 · lg 22 · xl 28 · hero 38. Body line-height ~1.5.
 - **case:** UI chrome is all-lowercase (nav, labels, buttons, headings). **Never lowercase user content** — usernames, transcript text, collective names, and code keep their case.
 - **bold** earns a small amber "terminal glow" (dark theme only).

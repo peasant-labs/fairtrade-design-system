@@ -1,6 +1,22 @@
 # handoff — peasant design system
 
-For the next agent picking this up. Read this first, then `DESIGN.md` (the system spec) and `index.html` (the living gallery).
+## current stack (migrated 2026-06-16) — supersedes stale references below
+
+This is now a **Vite + React + Tailwind v4** app run with **pnpm** (not a single static html file):
+- `pnpm install && pnpm dev` → http://localhost:5173. `?theme=light` deep-links light; `?fb=off` hides the feedback tool. `pnpm build` → `dist/`.
+- **styling = Tailwind v4** (`src/index.css`): design tokens in `@theme` (aliased to the `--token` vars so dark/light re-theme), base + reused primitives as `@apply` component classes (hybrid). the 4/8 spacing values map onto Tailwind's default numeric scale.
+- **gallery markup** lives in `src/gallery.html` (raw HTML blob, injected via `dangerouslySetInnerHTML` — "not componentized yet"). **`src/App.jsx`** injects it and runs the **feedback tool** as React: annotate any element → comment → auto-saved to gitignored `feedback.md` via the `/feedback` middleware in `vite.config.js`. `serve.py` was removed (the middleware replaces it).
+- **type: Atkinson Hyperlegible Mono** (display + chrome + code, the "looks ascii" face) + **Atkinson Hyperlegible** (reading prose), via Google Fonts in `index.html`. (Iosevka Etoile was replaced.)
+- docs now live in **`llm/`**. icons: lucide CDN `createIcons()` for the gallery blob, **lucide-react** for the feedback tool.
+- DONE since last handoff: conversation-window reorg (inline role tag per turn, subagent bracketed as a nested thread with box-drawing elbows, `>` prompt mark, grid-aligned tool-call headers), footer `position:sticky`, `.box`→`.check-tick`, en-dash/buzzword cleanup, type-comparison section removed.
+- To render for review: `pnpm dev`, then headless Chrome against `http://localhost:5173/?theme=dark&fb=off` (swap the file:// url in the command below for that).
+- STILL OPEN (Pass 2): the missing transcript-viewer components (scrubber, right rail, per-tool renderers, session hero, turn-context bar, search bar, share dialog, graph nodes, kbd/error-pill/etc — see open issues #2) and more Caves-of-Qud flavor (#6).
+
+---
+
+_(historical notes below; some paths/claims predate the migration above. design rules + the Pass-2 component scout remain valid.)_
+
+For the next agent picking this up: read this, then `DESIGN.md` (the system spec) and run the app.
 
 ## what this is
 

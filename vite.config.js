@@ -1,0 +1,42 @@
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const ROOT = path.dirname(fileURLToPath(import.meta.url))
+
+// dev middleware: POST /feedback appends to feedback.md (replaces the old serve.py).
+// the in-page feedback tool posts here so comments auto-save while you iterate.
+function feedbackWriter() {
+  return {
+    name: 'feedback-writer',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = (req.url || '').split('?')[0].replace(/\/$/, '')
+        if (req.method !== 'POST' || url !== '/feedback') return next()
+        let body = ''
+        req.on('data', (c) => (body += c))
+        req.on('end', () => {
+          try {
+            const { markdown } = JSON.parse(body || '{}')
+            if (markdown && markdown.trim()) {
+              fs.appendFileSync(path.join(ROOT, 'feedback.md'), markdown.trim() + '\n\n')
+            }
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'application/json')
+            res.end('{"ok":true}')
+          } catch (e) {
+            res.statusCode = 400
+            res.end('{"ok":false}')
+          }
+        })
+      })
+    },
+  }
+}
+
+export default defineConfig({
+  plugins: [tailwindcss(), react(), feedbackWriter()],
+})
