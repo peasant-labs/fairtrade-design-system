@@ -96,6 +96,8 @@
   }
   p { margin: 0; }
   a { @apply text-amber; text-decoration: none; }
+  /* centered, width-capped content column (this element rule was lost in the tailwind port -> caused full-bleed stretching) */
+  section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 }
 
@@ -119,7 +121,7 @@
 
   .label { @apply block font-mono text-label lowercase text-ink-3; }
 
-  .band { @apply py-10; border-top: var(--bd); }
+  .band { padding: var(--sp-7) 0; border-top: var(--bd); }
   .band > .label { @apply mb-2 font-display text-md text-ink-strong; font-weight: 700; }
   .band > .sub { @apply mb-6 font-mono text-label text-ink-3; }
 
