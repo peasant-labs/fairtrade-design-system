@@ -4,3 +4,4 @@ node_modules
 dist
 feedback.md
 package-lock.json
+*.mp4

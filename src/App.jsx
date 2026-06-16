@@ -10,6 +10,7 @@ import {
   Check,
 } from 'lucide-react'
 import galleryHtml from './gallery.html?raw'
+import { ImageryShowcase, FxDefs } from './effects.jsx'
 
 const KEY = 'pds_feedback_v1'
 const isHttp = /^https?:$/.test(location.protocol)
@@ -284,6 +285,9 @@ export default function App() {
   return (
     <>
       <div className="pds-gallery" onClick={galleryClick} dangerouslySetInnerHTML={{ __html: galleryHtml }} />
+      <ImageryShowcase theme={theme} />
+      <footer className="foot"><div className="foot-in"><svg className="logo" width="15" height="15" viewBox="0 0 32 32"><use href="#logo" /></svg> <b>peasant design system</b> <span className="right"><span>one identity, three apps</span> <a href="https://github.com/peasant-labs/peasant-design-system">github</a></span></div></footer>
+      <FxDefs />
 
       {!fbOff && (
         <>

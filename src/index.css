@@ -412,7 +412,28 @@
   .fbk-flash { animation: fbkflash 1.3s ease-out; }
 }
 
+@layer components {
+  /* image -> ascii / dot-matrix filters + textures (rendered by src/effects.jsx) */
+  .ascii { margin: 0; font-family: var(--font-mono); font-size: 5px; line-height: 1; letter-spacing: 0; white-space: pre; color: var(--ink-strong); }
+  .glyph-field { margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; white-space: pre; color: var(--ink-3); overflow: hidden; }
+  .fx-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); }
+  .fx-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-top: var(--sp-3); }
+  .fx-tile { position: relative; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--canvas); }
+  .fx-asciibox, .fx-glyphbox { padding: var(--sp-3); }
+  .fx-cap { position: absolute; left: var(--sp-2); bottom: var(--sp-2); z-index: 3; font-family: var(--font-mono); font-size: 11px; text-transform: lowercase; color: var(--ink-2); background: color-mix(in srgb, var(--canvas) 72%, transparent); padding: 1px 6px; }
+  .fx-duotone-amber { filter: url(#fx-duotone-amber); }
+  .fx-duotone-teal { filter: url(#fx-duotone-teal); }
+  .fx-scan { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: repeating-linear-gradient(to bottom, transparent 0, transparent 2px, rgba(0,0,0,.22) 3px); }
+  [data-theme="light"] .fx-scan { display: none; }
+  .fx-banner { position: relative; margin-top: var(--sp-3); overflow: hidden; background: var(--canvas); }
+  .fx-banner-cap { position: absolute; left: var(--sp-4); bottom: var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); }
+  .fx-banner-cap .prompt { color: var(--amber-dim); }
+  .fx-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+}
+
 @media (max-width: 880px) {
   .hero, .cols-2, .grid-cards { grid-template-columns: 1fr; }
+  .fx-grid { grid-template-columns: 1fr 1fr; }
 }
+@media (prefers-reduced-motion: reduce) { .fx-scan { background: none; } }
 @keyframes fbkflash { 0% { box-shadow: 0 0 0 2px var(--amber), var(--glow); } 100% { box-shadow: 0 0 0 2px transparent; } }
