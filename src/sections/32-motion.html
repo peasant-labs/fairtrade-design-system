@@ -1,6 +1,6 @@
 <!-- MOTION -->
 <section class="band" id="motion">
-  <span class="label">motion</span>
+  <h2 class="label">motion</h2>
   <div class="sub">static first; motion is added, never assumed</div>
   <p class="prose">reduced motion is the base state, not an opt-out. transitions exist only under a no-preference query and stay short. nothing loops, flashes or autoplays; the live indicator is a static filled dot, never a pulse.</p>
 
@@ -9,11 +9,12 @@
       <thead><tr><th>token</th><th>value</th><th>role</th></tr></thead>
       <tbody>
         <tr><td class="dt-name">--motion-base</td><td class="dt-val tnum">0ms</td><td class="dt-role">default, no transition unless opted in</td></tr>
-        <tr><td class="dt-name">transition</td><td class="dt-val tnum">150-200ms</td><td class="dt-role">only under prefers-reduced-motion: no-preference</td></tr>
+        <tr><td class="dt-name">--dur-1 / 2 / 3</td><td class="dt-val tnum">120 / 160 / 200ms</td><td class="dt-role">interaction transitions, only under no-preference</td></tr>
+        <tr><td class="dt-name">--dur-entrance</td><td class="dt-val tnum">900ms</td><td class="dt-role">one-time hero + section reveal, off under reduced-motion</td></tr>
         <tr><td class="dt-name">live dot</td><td class="dt-val">static</td><td class="dt-role">filled, never a pulse or blink</td></tr>
       </tbody>
     </table>
   </div>
 
-  <div class="callout"><i data-lucide="shield-check"></i><div>author static, then add motion inside <span class="mono">prefers-reduced-motion: no-preference</span> and cap it at ~200ms. no parallax, no looping shimmer, no autoplay.</div></div>
+  <div class="callout"><i data-lucide="shield-check"></i><div>author static, then add motion inside <span class="mono">prefers-reduced-motion: no-preference</span>. interaction transitions stay at or under 200ms (--dur-1..3). one-time entrance motion (the hero resolve and section reveals) may run longer at --dur-entrance, but it fires once, never loops, and is fully disabled under reduced-motion. no parallax, no looping shimmer, no autoplay.</div></div>
 </section>

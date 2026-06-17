@@ -1,6 +1,6 @@
 <!-- CANVAS + DIALOG -->
 <section class="band" id="canvas">
-  <span class="label">canvas &amp; dialog</span>
+  <h2 class="label">canvas &amp; dialog</h2>
   <div class="sub">the map/graph surface and a modal window</div>
   <p class="prose">the canvas is the map of a repository or a collective: square nodes on a dot grid, wired by edges, with zoom controls, a minimap, and an activity strip kept on screen. the dialog is the one modal we use for a consequential, reversible choice.</p>
   <div class="specimen">
@@ -8,6 +8,7 @@
     <div class="specimen-body">
       <div class="cols cols-2">
         <div>
+          <span class="label" style="margin-bottom:var(--sp-3)">graph canvas</span>
           <div class="canvas framed">
             <svg class="edges" width="100%" height="100%" viewBox="0 0 560 340" preserveAspectRatio="none">
               <path d="M120 70 V150 H80 V196" fill="none" stroke="var(--rule-strong)" stroke-width="1"/>
@@ -22,7 +23,7 @@
             <div class="node" style="top:248px;left:146px"><div class="nm"><i data-lucide="file"></i> pipeline.go</div></div>
             <div class="node" style="top:248px;left:296px"><div class="nm"><i data-lucide="file"></i> stream.go</div></div>
             <div class="node" style="top:172px;left:372px"><div class="nm"><i data-lucide="folder"></i> api</div><div class="ct">14 files</div><div class="eff" style="height:2px"></div></div>
-            <div class="canvas-ctrls"><button><i data-lucide="plus"></i></button><button><i data-lucide="minus"></i></button><button><i data-lucide="maximize"></i></button></div>
+            <div class="canvas-ctrls"><button aria-label="zoom in"><i data-lucide="plus"></i></button><button aria-label="zoom out"><i data-lucide="minus"></i></button><button aria-label="fit to view"><i data-lucide="maximize"></i></button></div>
             <div class="minimap"><i style="left:8px;top:8px;width:18px;height:10px"></i><i style="left:14px;top:34px;width:30px;height:8px"></i><i style="left:60px;top:24px;width:22px;height:8px"></i></div>
           </div>
           <div class="timestrip">
@@ -30,15 +31,20 @@
           </div>
           <div class="note">structure edges are solid; activity edges are dashed. the selected node carries an amber border and a marker.</div>
         </div>
-        <div class="dlg-demo">
-          <div class="scrim"></div>
-          <div class="dialog framed">
-            <div class="dlg-head"><h3>join collective</h3><button class="btn btn-ghost btn-sm btn-icon"><i data-lucide="x"></i></button></div>
-            <div class="dlg-body">
-              <div class="callout"><i data-lucide="eye"></i><div>joining <b style="color:var(--ink-strong)">desert-archivists</b> reveals your profile to its members. your shared transcripts stay redacted.</div></div>
-              <label class="check"><span class="check-tick"><i data-lucide="check"></i></span> i understand and consent</label>
+        <div>
+          <span class="label" style="margin-bottom:var(--sp-3)">modal dialog (live)</span>
+          <div class="btn-row" style="margin-bottom:var(--sp-3)"><button class="btn btn-primary" data-open-dialog aria-haspopup="dialog"><i data-lucide="users"></i> join collective</button></div>
+          <div class="note" style="margin-top:0;margin-bottom:var(--sp-4)">opens a real modal: focus stays trapped inside, esc and the scrim close it, and focus returns to this button.</div>
+          <div class="dlg-demo">
+            <div class="scrim"></div>
+            <div class="dialog framed" role="dialog" aria-label="join collective, static preview">
+              <div class="dlg-head"><h3>join collective</h3><span class="btn btn-ghost btn-sm btn-icon" aria-hidden="true"><i data-lucide="x"></i></span></div>
+              <div class="dlg-body">
+                <div class="callout"><i data-lucide="eye"></i><div>joining <b style="color:var(--ink-strong)">desert-archivists</b> reveals your profile to its members. your shared transcripts stay redacted.</div></div>
+                <label class="check"><input type="checkbox" class="check-box" /> i understand and consent</label>
+              </div>
+              <div class="dlg-foot"><span class="btn btn-secondary btn-sm">cancel</span><span class="btn btn-primary btn-sm"><i data-lucide="users"></i> reveal &amp; join</span></div>
             </div>
-            <div class="dlg-foot"><button class="btn btn-secondary btn-sm">cancel</button><button class="btn btn-primary btn-sm"><i data-lucide="users"></i> reveal &amp; join</button></div>
           </div>
         </div>
       </div>

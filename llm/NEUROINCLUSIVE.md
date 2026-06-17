@@ -91,13 +91,18 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
   `--ink-strong #f8f5ed` (18.5:1) only for short emphasis; the amber text-shadow glow never touches
   multi-line text. (Already satisfied — do not "fix" to pure black/white.) *(NN/g Dark Mode; COGA)*
 - **Contrast floor 4.5:1, target 7:1 (AAA) for primary body.** Tune earthy hues by lightness; the
-  muted `--ink-3` (≈5:1 dark / 4.6:1 light) is for **secondary** text only, never primary body.
+  muted `--ink-3` (≈6.5:1 dark `#9a9488` / 7:1 light) is for **secondary** text only, never primary
+  body. (Raised from ≈5:1 dark on 2026-06-16: thin mono glyphs anti-alias darker, so the rendered
+  contrast of captions/labels was landing near the AA floor and read weak versus the light theme.)
   Validate every text-on-surface pair in CI. *(WCAG 1.4.3 / 1.4.6)*
-- **Non-text contrast ≥3:1 (WCAG 1.4.11) on every functional border, gridline, input outline, focus
+- **Non-text contrast ≥3:1 (WCAG 1.4.11) on every functional border, input outline, focus
   ring, meaningful icon, toggle, chart series.** In dense tables the structure *is* the information.
-  **Defect found & fixed:** locked `--rule` (1.28:1 light) and `--rule-strong` (1.51:1 dark) both
-  failed — raised in lightness, kept 1px thin. Sub-3:1 hairlines only for purely decorative,
-  redundant separators. *(WCAG 1.4.11)*
+  **Done (verified by the contrast gate, `scripts/contrast.mjs`, run in CI via `pnpm build`):**
+  functional control/input borders use `--rule-strong`, raised to clear 3:1 against every surface in
+  both themes (dark `#6f6a5f` ~3.2 to 3.8:1, light `#8b836d` ~3.1 to 3.4:1), kept 1px thin. Structural
+  hairline dividers (`--rule`) are deliberately sub-3:1 (~1.6 to 1.8:1): under 1.4.11 they are
+  decorative separators between same-tone surfaces, not borders that identify a component or its state
+  (owner decision 2026-06-16). The gate enforces 3:1 on the functional set and reports the dividers. *(WCAG 1.4.11)*
 - **Never color alone (WCAG 1.4.1).** Every status/diff/log-level/required-field carries a redundant
   icon + label + shape. Negative numbers get a leading minus/parentheses. Pairs perfectly with the
   locked "real icons, not glyph-dots" rule. *(WCAG 1.4.1; COGA)*
@@ -155,7 +160,8 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
   right + `tnum` + fixed-precision fallback). *(A List Apart)*
 - **Hairline rows + full-row hover, not heavy gridlines or default zebra.** Reserve ultra-low-contrast
   zebra for >5 columns or >15 rows. Selection = distinct higher-alpha amber tint **plus** a non-color
-  marker (2–3px amber left-border / bold first cell), separable from hover. Row rules must clear 3:1.
+  marker (2 to 3px amber left-border / bold first cell), separable from hover. The selection marker
+  (not the hairline row rule) is the affordance that must clear 3:1; row dividers stay subtle.
   *(NN/g; A List Apart; WCAG 1.4.11)*
 - **Freeze the header row** (and the first identifier column on horizontal scroll) with
   `position:sticky`; the frozen first column is a human-readable label, never an opaque ID; order

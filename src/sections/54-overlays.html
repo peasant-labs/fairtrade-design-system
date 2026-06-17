@@ -1,0 +1,273 @@
+<!-- OVERLAYS -->
+<section class="band" id="overlays">
+  <h2 class="label">overlays</h2>
+  <div class="sub">floating surfaces: tooltip, menu, command palette</div>
+  <p class="prose">overlays sit above the page on an elevated surface with a hairline edge and square corners. they are shown here in their open state. each one is dismissible, keeps focus in view, and is reachable from the keyboard.</p>
+  <h3 class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">tooltip and popover</h3>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">example</span></div>
+    <div class="specimen-body">
+      <div class="tip-demo">
+        <div>
+          <span class="label" style="margin-bottom:var(--sp-3)">tooltip (role=tooltip)</span>
+          <div class="tip-anchor">
+            <button class="btn btn-secondary btn-icon" aria-label="redaction status" aria-describedby="tip-redact"><i data-lucide="shield-check"></i></button>
+            <span class="tip-bubble" role="tooltip" id="tip-redact">scrubbed of secrets before publish</span>
+          </div>
+        </div>
+        <div>
+          <span class="label" style="margin-bottom:var(--sp-3)">popover card</span>
+          <div class="tip-anchor">
+            <button class="btn btn-secondary btn-sm" aria-expanded="true" aria-controls="pop-share"><i data-lucide="share-2"></i> share</button>
+            <div class="pop-card" role="dialog" aria-label="share transcript" id="pop-share">
+              <div class="pop-head"><i data-lucide="link"></i><span class="pop-title">share transcript</span></div>
+              <div class="pop-body">
+                <p>Anyone with the link can read this transcript. Token counts and turns stay visible.</p>
+                <div class="field input-ico" style="margin-bottom:0"><i data-lucide="link"></i><input class="input" value="https://commons.example/t/9f3c" readonly aria-label="share link" /></div>
+              </div>
+              <div class="pop-foot">
+                <button class="btn btn-ghost btn-sm">cancel</button>
+                <button class="btn btn-primary btn-sm"><i data-lucide="copy"></i> copy link</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead><tr><th>part</th><th>role</th><th>note</th></tr></thead>
+      <tbody>
+        <tr><td class="dt-name">tooltip</td><td class="dt-val">role=tooltip</td><td class="dt-role">trigger points to it via aria-describedby</td></tr>
+        <tr><td class="dt-name">popover</td><td class="dt-val">role=dialog</td><td class="dt-role">trigger sets aria-expanded + aria-controls</td></tr>
+        <tr><td class="dt-name">surface</td><td class="dt-val">--surface-elev</td><td class="dt-role">floats above the page on a hairline</td></tr>
+        <tr><td class="dt-name">radius</td><td class="dt-val tnum">0</td><td class="dt-role">square, css-positioned pointer nub</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout" style="margin-top:var(--sp-5)">
+    <i data-lucide="shield-check"></i>
+    <div>a tooltip only supplements a control that already has a name: the icon button carries aria-label, and the bubble it describes is reached with aria-describedby, never as the sole label. the popover is a real role=dialog the trigger toggles with aria-expanded, so the open state is announced, not just drawn.</div>
+  </div>
+
+  <h3 class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">dropdown menu</h3>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">example</span></div>
+    <div class="specimen-body">
+      <div class="menu-demo">
+        <div>
+          <span class="label" style="margin-bottom:var(--sp-3)">menu button (live)</span>
+          <div class="menu-anchor">
+            <button class="btn btn-secondary menu-trigger" data-menu-trigger aria-haspopup="menu" aria-expanded="false" aria-controls="menu-live">
+              <i data-lucide="file-pen"></i> transcript actions <i data-lucide="chevron-down" class="menu-caret"></i>
+            </button>
+            <div class="menu-pop menu-float" id="menu-live" hidden>
+              <p class="menu-cap">desert-archivists / run 18</p>
+              <ul class="menu-list" role="menu" aria-label="transcript actions">
+                <li role="menuitem" tabindex="-1" class="menu-item">
+                  <i data-lucide="file-pen"></i><span class="menu-text">rename transcript</span><kbd class="kbd menu-kbd">F2</kbd>
+                </li>
+                <li role="menuitem" tabindex="-1" class="menu-item">
+                  <i data-lucide="copy"></i><span class="menu-text">duplicate</span><kbd class="kbd menu-kbd">⌘D</kbd>
+                </li>
+                <li role="menuitem" tabindex="-1" class="menu-item">
+                  <i data-lucide="share-2"></i><span class="menu-text">copy share link</span><kbd class="kbd menu-kbd">⌘L</kbd>
+                </li>
+                <li role="menuitem" tabindex="-1" aria-disabled="true" class="menu-item">
+                  <i data-lucide="archive"></i><span class="menu-text">archive</span><kbd class="kbd menu-kbd">⌘E</kbd>
+                </li>
+                <li role="separator" class="menu-sep"></li>
+                <li role="menuitem" tabindex="-1" class="menu-item menu-danger">
+                  <i data-lucide="trash-2"></i><span class="menu-text">delete transcript</span><kbd class="kbd menu-kbd">⌫</kbd>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="note" style="max-width:32ch">click the button (or press down) to open. arrow keys move between items, esc closes and returns focus to the button, and a click outside dismisses. the archive item is disabled and skipped; delete stays clay.</div>
+      </div>
+    </div>
+  </div>
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead><tr><th>state</th><th>signal</th><th>note</th></tr></thead>
+      <tbody>
+        <tr><td class="dt-name">closed</td><td class="dt-val">aria-expanded="false"</td><td class="dt-role">trigger only, caret points down</td></tr>
+        <tr><td class="dt-name">open</td><td class="dt-val">aria-expanded="true"</td><td class="dt-role">popout role="menu", caret flips</td></tr>
+        <tr><td class="dt-name">item</td><td class="dt-val">role="menuitem"</td><td class="dt-role">icon, label, right-aligned shortcut</td></tr>
+        <tr><td class="dt-name">disabled item</td><td class="dt-val">aria-disabled="true"</td><td class="dt-role">archive, not focusable as active</td></tr>
+        <tr><td class="dt-name">destructive</td><td class="dt-val">.menu-danger</td><td class="dt-role">clay, keeps trash icon and label</td></tr>
+        <tr><td class="dt-name">separator</td><td class="dt-val">role="separator"</td><td class="dt-role">hairline before delete</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout" style="margin-top:var(--sp-5)">
+    <i data-lucide="shield-check"></i>
+    <div>the trigger declares aria-haspopup="menu" and aria-expanded so a screen reader announces the popout; the open list is role="menu" with role="menuitem" rows that each clear a 24px hit box. the destructive row stays clay and keeps both a trash icon and a label, never color alone. shortcut hints sit right-aligned in muted ink so they never compete with the action verb.</div>
+  </div>
+
+  <h3 class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">command palette</h3>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">example</span></div>
+    <div class="specimen-body">
+      <div class="cp-demo">
+        <div class="cp-scrim" aria-hidden="true"></div>
+        <div class="cp-panel" role="dialog" aria-modal="true" aria-label="command palette">
+          <div class="cp-search">
+            <i data-lucide="search" aria-hidden="true"></i>
+            <input class="cp-input" type="text" role="combobox" aria-expanded="true" aria-controls="cp-list" aria-activedescendant="cp-opt-redact" aria-label="search commands" placeholder="search commands or jump to..." value="red" />
+            <span class="kbd">esc</span>
+          </div>
+          <ul class="cp-results" id="cp-list" role="listbox" aria-label="commands">
+            <li class="cp-group" id="cp-grp-actions" role="presentation">actions</li>
+            <li class="cp-row" id="cp-opt-redact" role="option" aria-selected="true">
+              <span class="cp-mark" aria-hidden="true">&gt;</span>
+              <i data-lucide="shield-check" aria-hidden="true"></i>
+              <span class="cp-label">Redact &amp; publish transcript</span>
+              <span class="cp-meta tnum">&#8984; &#8629;</span>
+            </li>
+            <li class="cp-row" role="option" aria-selected="false">
+              <span class="cp-mark" aria-hidden="true">&gt;</span>
+              <i data-lucide="upload" aria-hidden="true"></i>
+              <span class="cp-label">Contribute to the commons</span>
+              <span class="cp-meta tnum">&#8984;U</span>
+            </li>
+            <li class="cp-row" role="option" aria-selected="false" aria-disabled="true">
+              <span class="cp-mark" aria-hidden="true">&gt;</span>
+              <i data-lucide="lock" aria-hidden="true"></i>
+              <span class="cp-label">Delete transcript</span>
+              <span class="cp-meta">verify first</span>
+            </li>
+            <li class="cp-group" role="presentation">navigate</li>
+            <li class="cp-row" role="option" aria-selected="false">
+              <span class="cp-mark" aria-hidden="true">&gt;</span>
+              <i data-lucide="folder-open" aria-hidden="true"></i>
+              <span class="cp-label">Go to redacted drafts</span>
+              <span class="cp-meta">page</span>
+            </li>
+            <li class="cp-row" role="option" aria-selected="false">
+              <span class="cp-mark" aria-hidden="true">&gt;</span>
+              <i data-lucide="settings" aria-hidden="true"></i>
+              <span class="cp-label">Open redaction settings</span>
+              <span class="cp-meta">page</span>
+            </li>
+          </ul>
+          <div class="cp-foot">
+            <span class="cp-count tnum" role="status" aria-live="polite">4 results</span>
+            <span class="cp-keys">
+              <span><span class="kbd">&#8593;</span><span class="kbd">&#8595;</span> move</span>
+              <span><span class="kbd">&#8629;</span> run</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">empty</span></div>
+    <div class="specimen-body">
+      <div class="cp-demo" style="min-height:240px">
+        <div class="cp-scrim" aria-hidden="true"></div>
+        <div class="cp-panel" role="dialog" aria-modal="true" aria-label="command palette">
+          <div class="cp-search">
+            <i data-lucide="search" aria-hidden="true"></i>
+            <input class="cp-input" type="text" role="combobox" aria-expanded="true" aria-controls="cp-list-2" aria-label="search commands" placeholder="search commands or jump to..." value="ledger" />
+            <span class="kbd">esc</span>
+          </div>
+          <ul class="cp-results" id="cp-list-2" role="listbox" aria-label="commands">
+            <li class="cp-empty" role="presentation">
+              <i data-lucide="search-x" aria-hidden="true"></i>
+              <span class="cp-empty-t">no commands match "ledger"</span>
+              <span class="cp-empty-d">try a verb, a page name, or a transcript id</span>
+            </li>
+          </ul>
+          <div class="cp-foot">
+            <span class="cp-count tnum" role="status" aria-live="polite">0 results</span>
+            <span class="cp-keys"><span><span class="kbd">esc</span> close</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead><tr><th>state</th><th>signal</th><th>cue</th></tr></thead>
+      <tbody>
+        <tr><td class="dt-name">active row</td><td class="dt-val">aria-selected="true"</td><td class="dt-role">amber marker, inset rail, aria-activedescendant on input</td></tr>
+        <tr><td class="dt-name">unavailable</td><td class="dt-val">aria-disabled="true"</td><td class="dt-role">dimmed, lock icon, "verify first" reason, not color alone</td></tr>
+        <tr><td class="dt-name">result count</td><td class="dt-val">aria-live="polite"</td><td class="dt-role">announced on filter, tabular</td></tr>
+        <tr><td class="dt-name">no matches</td><td class="dt-val">empty list</td><td class="dt-role">labelled reason plus a recovery hint</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout" style="margin-top:var(--sp-5)">
+    <i data-lucide="shield-check"></i>
+    <div>the input is a combobox; aria-activedescendant points at the highlighted option so arrow keys move selection without moving dom focus. the active row is named by aria-selected and an amber marker (the one allowed "&gt;" use), never color alone. an unavailable command stays in the list with aria-disabled, a lock icon, and a plain-text reason. result counts live in a polite status region and read tabular. chrome stays lowercase; the real command labels keep their sentence case.</div>
+  </div>
+
+  <h3 class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">avatar, kbd key, and tag</h3>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">example</span></div>
+    <div class="specimen-body">
+      <div class="cols cols-2">
+        <div>
+          <span class="label" style="margin-bottom:var(--sp-3)">avatar sizes</span>
+          <div class="akt-row" style="margin-bottom:var(--sp-5)">
+            <span class="avatar av-sm" aria-label="Veil Tinker">VT</span>
+            <span class="avatar av-md" aria-label="Mara Solenne">MS</span>
+            <span class="avatar av-lg av-img" role="img" aria-label="Otho Quill"><img src="/avatars/otho.jpg" alt="" /><span aria-hidden="true">OQ</span></span>
+          </div>
+          <span class="label" style="margin-bottom:var(--sp-3)">group + overflow</span>
+          <div class="av-group" role="group" aria-label="9 contributors">
+            <span class="avatar av-md" aria-label="Veil Tinker">VT</span>
+            <span class="avatar av-md" aria-label="Mara Solenne">MS</span>
+            <span class="avatar av-md" aria-label="Otho Quill">OQ</span>
+            <span class="avatar av-md" aria-label="Liss Marrow">LM</span>
+            <span class="avatar av-md av-more" aria-label="5 more contributors">+5</span>
+          </div>
+        </div>
+        <div>
+          <span class="label" style="margin-bottom:var(--sp-3)">kbd keys</span>
+          <div class="akt-row" style="margin-bottom:var(--sp-3)">
+            <kbd class="kbd-key">A</kbd>
+            <kbd class="kbd-key">esc</kbd>
+            <kbd class="kbd-key"><i data-lucide="arrow-up"></i></kbd>
+            <kbd class="kbd-key">enter</kbd>
+          </div>
+          <span class="label" style="margin-bottom:var(--sp-3)">chord</span>
+          <div class="akt-row" style="margin-bottom:var(--sp-5)">
+            <span class="kbd-chord" aria-label="command k">
+              <kbd class="kbd-key">cmd</kbd><span class="kbd-plus" aria-hidden="true">+</span><kbd class="kbd-key">K</kbd>
+            </span>
+            <span class="kbd-chord" aria-label="control shift p">
+              <kbd class="kbd-key">ctrl</kbd><span class="kbd-plus" aria-hidden="true">+</span><kbd class="kbd-key">shift</kbd><span class="kbd-plus" aria-hidden="true">+</span><kbd class="kbd-key">P</kbd>
+            </span>
+          </div>
+          <span class="label" style="margin-bottom:var(--sp-3)">tag</span>
+          <div class="akt-row">
+            <span class="tag"><span class="tag-dot" style="--tag-c:var(--teal)"></span> archive</span>
+            <span class="tag"><i data-lucide="git-branch"></i> v2-draft</span>
+            <span class="tag tag-on"><i data-lucide="check"></i> verified</span>
+            <span class="tag">redaction<button type="button" class="tag-x" aria-label="remove redaction tag"><i data-lucide="x"></i></button></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead><tr><th>primitive</th><th>value</th><th>note</th></tr></thead>
+      <tbody>
+        <tr><td class="dt-name">avatar sm / md / lg</td><td class="dt-val tnum">24 / 32 / 44px</td><td class="dt-role">base .avatar stays 18px for inline meta</td></tr>
+        <tr><td class="dt-name">group overlap</td><td class="dt-val tnum">-6px</td><td class="dt-role">2px surface ring separates tiles</td></tr>
+        <tr><td class="dt-name">overflow</td><td class="dt-val">+n</td><td class="dt-role">amber tile, aria-label names the count</td></tr>
+        <tr><td class="dt-name">kbd key</td><td class="dt-val tnum">12px</td><td class="dt-role">real kbd element, 2px bottom edge</td></tr>
+        <tr><td class="dt-name">chord joiner</td><td class="dt-val">+</td><td class="dt-role">aria-hidden, not a key; aria-label spells it</td></tr>
+        <tr><td class="dt-name">tag remove</td><td class="dt-val tnum">24px min</td><td class="dt-role">real button, labelled, focus ring</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout"><i data-lucide="shield-check"></i><div>menus use role menu and menuitem, tooltips use role tooltip with aria-describedby on the trigger, and every overlay is reachable and dismissible from the keyboard with focus kept visible.</div></div>
+</section>

@@ -6,6 +6,11 @@ One visual identity across **peasant** (local web), **village** (the commons), a
 documented sections in three groups, with a sticky on-this-page rail and scroll-spy. Built with
 **Vite + React + Tailwind v4**.
 
+> **▶ Working on this? Start at [`NEXT_PHASE.md`](./NEXT_PHASE.md)** (current priorities) and
+> [`HANDOFF.md`](./HANDOFF.md) (state + gates). The page is now interactive end-to-end (command
+> palette ⌘k, modal dialog, tablist, dropdown menu) and gated by `pnpm build` (contrast) +
+> `node scripts/validate.mjs` (19-check interactive). Use **agent teams + workflows**.
+
 ## run
 
 ```bash
@@ -23,10 +28,14 @@ pnpm preview        # serve dist/
 
 ## structure
 
-- [`../index.html`](../index.html) — Vite shell (fonts + theme/cap preload + lucide UMD + `#root`).
-- `../src/sections/*.html` — one HTML partial per section (numbered for order), injected as raw markup.
+- [`../index.html`](../index.html) — Vite shell (fonts + theme/cap preload + favicon + `#root`).
+- `../src/sections/*.html` — one HTML partial per section (numbered), injected via a **memoized** `<Raw>`.
 - `../src/App.jsx` — composition root: injects the partials, renders the React sections (hero, intro,
-  cards), the sticky on-this-page rail + scroll-spy, the copy-token handler, and the feedback tool.
+  cards) + interactive `CommandPalette.jsx` / `Dialog.jsx`, the sticky rail + scroll-spy, nav-reveal,
+  and the delegated handlers (theme, copy-token, ⌘k palette, dialog, tablists, dropdown menus).
+- `../src/icons.js` — bundled lucide painter (`paintIcons()`); `lucide-react` for React components.
+- `../scripts/` — `contrast.mjs` (gate, run by `pnpm build`), `validate.mjs` (19-check interactive gate),
+  `diag.mjs` (interactive diagnostics).
 - `../src/index.css` — Tailwind v4: design tokens in `:root` / `[data-theme="light"]`, the base layer,
   the ported component classes, and the doc-primitives (specimen / do-don't / token tables / rail /
   copy-token / ruler / anatomy). single source of truth for styling.
@@ -38,11 +47,11 @@ pnpm preview        # serve dist/
 ## the page (information architecture)
 
 - **intro** — hero (wheat ascii + wordmark), value-prop, start-here on-ramp.
-- **foundations** — principles · voice · color · typography · spacing & layout · iconography ·
-  motion · controls.
-- **components** — badges & states · trails & tabs · cards & rows · conversation window ·
-  canvas & dialog · forms & empty states.
-- **using the system** — accessibility & neuroinclusive · tokens reference · resources.
+- **foundations** — principles, voice, color, typography, spacing & layout, iconography, motion,
+  controls, **states** (disabled/loading/error/etc.).
+- **components** — badges & states, trails & tabs, cards & rows, conversation window, canvas &
+  dialog, forms & empty states, **overlays** (tooltip, dropdown menu, command palette, avatar/kbd/tag).
+- **using the system** — accessibility & neuroinclusive, tokens reference, resources.
 
 Each section reads: overview → live specimen → (anatomy / do-don't / specs + token tables) →
 a quiet accessibility note.

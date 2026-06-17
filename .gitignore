@@ -9,3 +9,4 @@ package-lock.json
 !src/assets/wheat.mp4
 *.log
 .vite/
+.verify_dist/

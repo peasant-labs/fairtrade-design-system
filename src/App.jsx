@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import {
   MessageSquarePlus,
   MessagesSquare,
@@ -17,7 +17,13 @@ import {
   FileText,
   Link2,
 } from 'lucide-react'
-import { AsciiImage, AsciiVideo } from './effects.jsx'
+import { AsciiImage, AsciiVideo, AsciiWordmark } from './effects.jsx'
+import { paintIcons } from './icons.js'
+import CommandPalette from './CommandPalette.jsx'
+import Dialog from './Dialog.jsx'
+import TranscriptViewer from './mockups/TranscriptViewer.jsx'
+import Commons from './mockups/Commons.jsx'
+import Chart from './mockups/Chart.jsx'
 /* imagery: a runtime-sampled ascii video of the wheat in the hero (src/assets/wheat.mp4);
    classic chiaroscuro peasant portraits (lit subject on a dark ground) rendered through
    the image->ascii filter on the cards, like the inspiration reference */
@@ -40,16 +46,19 @@ import spacingHtml from './sections/28-spacing.html?raw'
 import iconsHtml from './sections/30-icons.html?raw'
 import motionHtml from './sections/32-motion.html?raw'
 import controlsHtml from './sections/34-controls.html?raw'
+import statesHtml from './sections/36-states.html?raw'
 import groupComponentsHtml from './sections/40-group-components.html?raw'
 import badgesHtml from './sections/42-badges.html?raw'
 import trailsHtml from './sections/44-trails.html?raw'
 import conversationHtml from './sections/48-conversation.html?raw'
 import canvasHtml from './sections/50-canvas.html?raw'
 import formsHtml from './sections/52-forms.html?raw'
+import overlaysHtml from './sections/54-overlays.html?raw'
 import groupUsingHtml from './sections/60-group-using.html?raw'
 import a11yHtml from './sections/62-a11y.html?raw'
 import tokensHtml from './sections/64-tokens.html?raw'
 import resourcesHtml from './sections/66-resources.html?raw'
+import groupInuseHtml from './sections/70-group-inuse.html?raw'
 
 const KEY = 'pds_feedback_v1'
 const isHttp = /^https?:$/.test(location.protocol)
@@ -69,6 +78,7 @@ const RAIL = [
   { kind: 'link', id: 'icons', label: 'iconography' },
   { kind: 'link', id: 'motion', label: 'motion' },
   { kind: 'link', id: 'controls', label: 'controls' },
+  { kind: 'link', id: 'states', label: 'states' },
   { kind: 'group', id: 'components', label: 'components' },
   { kind: 'link', id: 'badges', label: 'badges & states' },
   { kind: 'link', id: 'trails', label: 'trails & tabs' },
@@ -76,10 +86,15 @@ const RAIL = [
   { kind: 'link', id: 'conversation', label: 'conversation' },
   { kind: 'link', id: 'canvas', label: 'canvas & dialog' },
   { kind: 'link', id: 'forms', label: 'forms & empty' },
+  { kind: 'link', id: 'overlays', label: 'overlays' },
   { kind: 'group', id: 'using', label: 'using the system' },
   { kind: 'link', id: 'a11y', label: 'accessibility' },
   { kind: 'link', id: 'tokens', label: 'tokens' },
   { kind: 'link', id: 'resources', label: 'resources' },
+  { kind: 'group', id: 'inuse', label: 'in use' },
+  { kind: 'link', id: 'mock-viewer', label: 'transcript viewer' },
+  { kind: 'link', id: 'mock-commons', label: 'commons' },
+  { kind: 'link', id: 'mock-chart', label: 'chart' },
 ]
 /* id -> owning group id (null before the first group, i.e. the intro on-ramp) */
 const GROUP_OF = (() => {
@@ -154,31 +169,63 @@ function stamp() {
   )
 }
 
-/* a raw-html partial dropped transparently into the flow (display:contents wrapper) */
-const Raw = ({ html }) => <div className="contents" dangerouslySetInnerHTML={{ __html: html }} />
+/* a raw-html partial dropped transparently into the flow (display:contents wrapper). memoized so it
+   renders exactly once: the html prop is a stable module import, and re-rendering would make React
+   reset innerHTML and clobber the lucide svgs that createIcons painted into it (which also detaches
+   any captured DOM refs - that broke the dialog's focus-return). */
+const Raw = memo(({ html }) => <div className="contents" dangerouslySetInnerHTML={{ __html: html }} />)
 
-/* section 1 — full-screen brand splash: the wheat video sampled to ascii + the wordmark */
+/* icon a11y: name icon-only copy buttons from the token they copy, and hide every
+   decorative glyph from assistive tech (meaning is carried by adjacent text or a
+   labelled parent button). runs after lucide paints the partials' <i data-lucide>. */
+function labelIconA11y() {
+  const root = document.querySelector('.pds-root')
+  if (!root) return
+  root.querySelectorAll('.copy-token:not([aria-label])').forEach((b) => {
+    const v = b.getAttribute('data-copy')
+    if (v) b.setAttribute('aria-label', 'copy ' + v)
+  })
+  root.querySelectorAll('svg.lucide, svg.brand, svg.logo').forEach((s) => {
+    s.setAttribute('aria-hidden', 'true')
+    s.setAttribute('focusable', 'false')
+  })
+}
+
+/* section 1 - full-screen brand splash: the wheat video sampled to ascii, the wordmark drawn in
+   wheat-ramp glyphs anchored bottom-right (no container, no alpha), a descending-grain scroll cue */
 function Hero() {
   return (
-    <section className="hero framed" id="top">
+    <section className="hero" id="top">
       <AsciiVideo src={wheatVid} cols={300} boost={2.05} contrast={1.5} fps={24} smooth={6} waveAmp={0} className="hero-video" />
-      <div className="hero-brand"><span className="hero-brand-word">fairtrade</span></div>
-      <a className="hero-scroll" href="#intro" aria-label="scroll">scroll</a>
+      <div className="hero-mark">
+        <AsciiWordmark text="fairtrade" gap={1} className="hero-wordmark" />
+      </div>
+      <a className="hero-scroll" href="#intro" aria-label="scroll to the value proposition">
+        <span className="hsc-grain" aria-hidden="true"><b>:</b><b>*</b><b>x</b><b>#</b><b>@</b></span>
+        <span className="hsc-chevron" aria-hidden="true">&#9661;</span>
+        <span className="hsc-label">scroll</span>
+        <span className="hsc-key" aria-hidden="true">&#8595; / space</span>
+      </a>
     </section>
   )
 }
 
-/* section 2 — the value proposition */
-function Intro() {
+/* section 2 - the value proposition, composed with a framed ascii portrait (P3) */
+function Intro({ theme }) {
   return (
     <section className="intro" id="intro">
       <div className="intro-in">
-        <h1>receipts for <span className="hl">agentic work</span>,<br />kept low to the ground.</h1>
-        <p>ingest your sessions locally, redact them, and share what's worth sharing.</p>
-        <div className="btn-row">
-          <button className="btn btn-primary">explore the commons</button>
-          <button className="btn btn-secondary">publish a transcript</button>
+        <div className="intro-copy">
+          <h1>receipts for <span className="hl">agentic work</span>,<br />kept low to the ground.</h1>
+          <p>ingest your sessions locally, redact them, and share what's worth sharing.</p>
+          <div className="btn-row">
+            <button className="btn btn-primary">explore the commons</button>
+            <button className="btn btn-secondary">publish a transcript</button>
+          </div>
         </div>
+        <figure className="intro-art framed" aria-hidden="true">
+          <AsciiImage src={peasantWoman} cols={150} aspect={1.18} isolated contrast={1.18} gamma={0.78} black={0.22} white={0.86} vignette={0.18} ink="#ece7dd" theme={theme} className="intro-art-ascii" />
+        </figure>
       </div>
     </section>
   )
@@ -220,7 +267,7 @@ const Gemini = () => (<span className="g-gemini"><svg className="brand" width="1
 function Cards({ theme }) {
   return (
     <section className="band" id="cards">
-      <span className="label">cards &amp; rows</span>
+      <h2 className="label">cards &amp; rows</h2>
       <div className="sub">list and grid surfaces, imagery on top</div>
       <p className="prose">cards carry a transcript or a collective at a glance: a peasant portrait rendered through the ascii filter, a title, a short summary, and tabular metadata. rows are the compact form for dense lists.</p>
       <div className="specimen">
@@ -279,35 +326,74 @@ export default function App() {
     else document.documentElement.removeAttribute('data-theme')
   }, [theme])
 
-  /* paint the partials' lucide icons (UMD loaded in index.html) once mounted */
+  /* paint the partials' lucide icons (bundled, no CDN), then apply icon a11y. a MutationObserver
+     re-paints if any <i data-lucide> placeholder ever re-appears, so icons never silently vanish. */
   useEffect(() => {
-    let n = 0
-    const t = setInterval(() => {
-      if (window.lucide) {
-        window.lucide.createIcons()
-        clearInterval(t)
-      } else if (++n > 60) clearInterval(t)
-    }, 40)
-    return () => clearInterval(t)
+    const repaint = () => { paintIcons(); labelIconA11y() }
+    repaint()
+    const root = document.querySelector('.pds-root')
+    if (!root) return
+    let queued = false
+    const obs = new MutationObserver(() => {
+      if (queued) return
+      if (!root.querySelector('i[data-lucide]')) return
+      queued = true
+      requestAnimationFrame(() => { queued = false; repaint() })
+    })
+    obs.observe(root, { childList: true, subtree: true })
+    return () => obs.disconnect()
   }, [])
 
-  /* scroll-spy: track the active section for the rail + the active group for the nav */
+  /* scroll-spy: the active rail item is the LAST section whose top has crossed a fold line below
+     the nav - deterministic, unlike the prior IntersectionObserver band that got stuck early.
+     rAF-throttled because it reads layout rects + calls setState. */
   const [active, setActive] = useState('start')
   useEffect(() => {
     const ids = RAIL.map((r) => r.id)
-    const els = ids.map((id) => document.getElementById(id)).filter(Boolean)
-    if (!els.length) return
-    const vis = new Map()
-    const io = new IntersectionObserver(
-      (ents) => {
-        ents.forEach((e) => vis.set(e.target.id, e.isIntersecting))
-        const firstId = ids.find((id) => vis.get(id))
-        if (firstId) setActive(firstId)
-      },
-      { rootMargin: '-45% 0px -50% 0px', threshold: 0 }
-    )
-    els.forEach((el) => io.observe(el))
-    return () => io.disconnect()
+    let raf = 0
+    const spy = () => {
+      raf = 0
+      const y = window.scrollY
+      const navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 56
+      const line = navH + 120
+      let current = ids[0]
+      for (const id of ids) {
+        const el = document.getElementById(id)
+        if (!el) continue
+        if (el.getBoundingClientRect().top - line <= 0) current = id
+        else break
+      }
+      if (window.innerHeight + y >= document.documentElement.scrollHeight - 4) current = ids[ids.length - 1]
+      setActive(current)
+    }
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(spy) }
+    spy()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [])
+
+  /* nav reveal - its OWN direct scroll listener (no rAF, no setState), so it is immune to the
+     re-render churn of the scroll-spy and processes every scroll event in order. an 8px deadzone
+     kills jitter; once hidden it stays hidden until a clear up-scroll, so it never thrashes. */
+  useEffect(() => {
+    const nav = document.querySelector('.nav')
+    if (!nav) return
+    const navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 56
+    let lastY = window.scrollY
+    const onNav = () => {
+      const y = window.scrollY
+      if (y < navH * 2) { nav.classList.remove('nav--hidden'); lastY = y; return }
+      if (Math.abs(y - lastY) < 8) return
+      nav.classList.toggle('nav--hidden', y > lastY) // down -> hide, up -> show
+      lastY = y
+    }
+    window.addEventListener('scroll', onNav, { passive: true })
+    return () => window.removeEventListener('scroll', onNav)
   }, [])
   useEffect(() => {
     const grp = GROUP_OF[active]
@@ -315,6 +401,114 @@ export default function App() {
       a.classList.toggle('active', a.getAttribute('data-spy') === grp)
     })
   }, [active])
+
+  /* command palette (the nav "search ⌘k" control + the ⌘k / ctrl-k shortcut) */
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  /* the interactive modal dialog (the canvas section's live specimen) */
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const dialogTriggerRef = useRef(null)
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault()
+        setPaletteOpen((o) => !o)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  /* wire the static ARIA tablists (trails section) for click + arrow-key selection with a roving
+     tabindex, toggling the matching tabpanel. partials are memoized, so this runs once. */
+  useEffect(() => {
+    const lists = [...document.querySelectorAll('.tabs[role="tablist"]')]
+    const cleanups = []
+    lists.forEach((list) => {
+      const tabs = [...list.querySelectorAll('[role="tab"]')]
+      const select = (tab) => {
+        tabs.forEach((t) => {
+          const on = t === tab
+          t.setAttribute('aria-selected', on ? 'true' : 'false')
+          t.tabIndex = on ? 0 : -1
+          t.classList.toggle('active', on)
+          const panel = document.getElementById(t.getAttribute('aria-controls'))
+          if (panel) panel.hidden = !on
+        })
+      }
+      const onClick = (e) => {
+        const tab = e.target.closest('[role="tab"]')
+        if (tab && list.contains(tab)) { select(tab); tab.focus() }
+      }
+      const onKey = (e) => {
+        const i = tabs.indexOf(document.activeElement)
+        if (i < 0) return
+        let j = i
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') j = (i + 1) % tabs.length
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') j = (i - 1 + tabs.length) % tabs.length
+        else if (e.key === 'Home') j = 0
+        else if (e.key === 'End') j = tabs.length - 1
+        else return
+        e.preventDefault(); select(tabs[j]); tabs[j].focus()
+      }
+      list.addEventListener('click', onClick)
+      list.addEventListener('keydown', onKey)
+      cleanups.push(() => { list.removeEventListener('click', onClick); list.removeEventListener('keydown', onKey) })
+    })
+    return () => cleanups.forEach((c) => c())
+  }, [])
+
+  /* wire the static dropdown menus ([data-menu-trigger]): click/Down opens, arrows move between
+     enabled items, Esc/Tab/outside-click close, focus returns to the trigger. */
+  useEffect(() => {
+    const triggers = [...document.querySelectorAll('[data-menu-trigger]')]
+    const cleanups = []
+    triggers.forEach((trigger) => {
+      const menu = document.getElementById(trigger.getAttribute('aria-controls'))
+      if (!menu) return
+      const items = () => [...menu.querySelectorAll('[role="menuitem"]:not([aria-disabled="true"])')]
+      let isOpen = false
+      const setOpen = (v, which) => {
+        isOpen = v
+        trigger.setAttribute('aria-expanded', v ? 'true' : 'false')
+        menu.hidden = !v
+        if (v) {
+          const its = items()
+          ;(which === 'last' ? its[its.length - 1] : its[0])?.focus()
+        }
+      }
+      const close = (returnFocus) => { setOpen(false); if (returnFocus) trigger.focus() }
+      const onTriggerClick = (e) => { e.preventDefault(); isOpen ? close(true) : setOpen(true, 'first') }
+      const onTriggerKey = (e) => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true, 'first') }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); setOpen(true, 'last') }
+      }
+      const onMenuKey = (e) => {
+        const its = items()
+        const i = its.indexOf(document.activeElement)
+        if (e.key === 'Escape') { e.preventDefault(); close(true) }
+        else if (e.key === 'ArrowDown') { e.preventDefault(); its[(i + 1) % its.length]?.focus() }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); its[(i - 1 + its.length) % its.length]?.focus() }
+        else if (e.key === 'Home') { e.preventDefault(); its[0]?.focus() }
+        else if (e.key === 'End') { e.preventDefault(); its[its.length - 1]?.focus() }
+        else if (e.key === 'Tab') close(false)
+      }
+      const onMenuClick = (e) => { if (e.target.closest('[role="menuitem"]:not([aria-disabled="true"])')) close(true) }
+      const onDocDown = (e) => { if (isOpen && !menu.contains(e.target) && !trigger.contains(e.target)) close(false) }
+      trigger.addEventListener('click', onTriggerClick)
+      trigger.addEventListener('keydown', onTriggerKey)
+      menu.addEventListener('keydown', onMenuKey)
+      menu.addEventListener('click', onMenuClick)
+      document.addEventListener('mousedown', onDocDown)
+      cleanups.push(() => {
+        trigger.removeEventListener('click', onTriggerClick)
+        trigger.removeEventListener('keydown', onTriggerKey)
+        menu.removeEventListener('keydown', onMenuKey)
+        menu.removeEventListener('click', onMenuClick)
+        document.removeEventListener('mousedown', onDocDown)
+      })
+    })
+    return () => cleanups.forEach((c) => c())
+  }, [])
 
   /* feedback state */
   const [entries, setEntries] = useState(() => {
@@ -352,6 +546,16 @@ export default function App() {
     const t = e.target
     if (t.closest && t.closest('.theme-btn')) {
       setTheme((x) => (x === 'light' ? 'dark' : 'light'))
+      return
+    }
+    if (t.closest && t.closest('.navctl.bx')) {
+      setPaletteOpen(true)
+      return
+    }
+    const dlgTrigger = t.closest && t.closest('[data-open-dialog]')
+    if (dlgTrigger) {
+      dialogTriggerRef.current = dlgTrigger // dialog returns focus here on close
+      setDialogOpen(true)
       return
     }
     const copy = t.closest && t.closest('[data-copy]')
@@ -539,7 +743,7 @@ export default function App() {
         <Raw html={defsHtml} />
         <Raw html={navHtml} />
         <Hero />
-        <Intro />
+        <Intro theme={theme} />
         <div className="docs">
           <Rail active={active} />
           <main className="docs-main">
@@ -553,6 +757,7 @@ export default function App() {
             <Raw html={iconsHtml} />
             <Raw html={motionHtml} />
             <Raw html={controlsHtml} />
+            <Raw html={statesHtml} />
             <Raw html={groupComponentsHtml} />
             <Raw html={badgesHtml} />
             <Raw html={trailsHtml} />
@@ -560,14 +765,51 @@ export default function App() {
             <Raw html={conversationHtml} />
             <Raw html={canvasHtml} />
             <Raw html={formsHtml} />
+            <Raw html={overlaysHtml} />
             <Raw html={groupUsingHtml} />
             <Raw html={a11yHtml} />
             <Raw html={tokensHtml} />
             <Raw html={resourcesHtml} />
+            <Raw html={groupInuseHtml} />
+            <TranscriptViewer theme={theme} />
+            <Commons theme={theme} />
+            <Chart />
           </main>
         </div>
         <footer className="foot"><div className="foot-in"><svg className="logo" width="15" height="15" viewBox="0 0 32 32"><use href="#logo" /></svg> <b>fairtrade design system</b> <span className="right"><span>one identity, three apps</span> <a href="https://github.com/peasant-labs/peasant-design-system">github</a></span></div></footer>
       </div>
+
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        onTheme={() => setTheme((x) => (x === 'light' ? 'dark' : 'light'))}
+        sections={RAIL.filter((r) => r.kind === 'link')}
+      />
+
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        returnFocusRef={dialogTriggerRef}
+        title="join collective"
+        labelId="join-dlg-title"
+        footer={
+          <>
+            <button className="btn btn-secondary btn-sm" onClick={() => setDialogOpen(false)}>cancel</button>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => { setDialogOpen(false); toast('joined desert-archivists') }}
+            >
+              <Users size={14} aria-hidden="true" /> reveal &amp; join
+            </button>
+          </>
+        }
+      >
+        <div className="callout">
+          <Eye size={16} aria-hidden="true" />
+          <div>joining <b style={{ color: 'var(--ink-strong)' }}>desert-archivists</b> reveals your profile to its members. your shared transcripts stay redacted.</div>
+        </div>
+        <label className="check"><input type="checkbox" className="check-box" /> i understand and consent</label>
+      </Dialog>
 
       {!fbOff && (
         <>

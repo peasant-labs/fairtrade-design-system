@@ -1,6 +1,6 @@
 <!-- CONTROLS -->
 <section class="band" id="controls">
-  <span class="label">controls</span>
+  <h2 class="label">controls</h2>
   <div class="sub">buttons and inputs share one height; one primary action per view</div>
 
   <p class="prose">buttons and inputs are the same component family: they sit on one shared height (36px, 28px when small) with identical padding, so a row of mixed controls keeps a single baseline. reach for a primary button for the one action a view is built around, secondary or ghost for everything else, and danger only when the action removes or destroys data.</p>
@@ -11,15 +11,15 @@
     <div class="specimen-body">
       <div class="cols cols-2">
         <div>
-          <span class="label" style="margin-bottom:var(--sp-3)">default (36px)</span>
-          <div class="btn-row" style="margin-bottom:var(--sp-5)">
+          <span class="label" style="margin-bottom:var(--sp-2)">default (36px)</span>
+          <div class="btn-row" style="margin-bottom:var(--sp-6)">
             <button class="btn btn-primary">publish transcript</button>
             <button class="btn btn-secondary">save draft</button>
             <button class="btn btn-ghost">cancel</button>
             <button class="btn btn-danger"><i data-lucide="trash-2"></i> delete</button>
             <button class="btn btn-secondary btn-icon" aria-label="add collective"><i data-lucide="plus"></i></button>
           </div>
-          <span class="label" style="margin-bottom:var(--sp-3)">small (28px)</span>
+          <span class="label" style="margin-bottom:var(--sp-2)">small (28px)</span>
           <div class="btn-row">
             <button class="btn btn-primary btn-sm"><i data-lucide="upload"></i> contribute</button>
             <button class="btn btn-secondary btn-sm">share</button>
@@ -28,24 +28,24 @@
           </div>
         </div>
         <div>
-          <span class="label" style="margin-bottom:var(--sp-3)">inputs (36px)</span>
+          <span class="label" style="margin-bottom:var(--sp-2)">inputs (36px)</span>
           <div class="field input-ico"><i data-lucide="search"></i><input class="input" placeholder="search the commons" /></div>
           <div class="field"><div class="select-wrap"><select class="select"><option>acceptance: open</option><option>verified only</option></select><i data-lucide="chevron-down"></i></div></div>
-          <label class="check"><span class="check-tick"><i data-lucide="check"></i></span> require redaction review</label>
+          <label class="check"><input type="checkbox" class="check-box" checked /> require redaction review</label>
         </div>
       </div>
     </div>
   </div>
 
   <!-- 3. anatomy -->
-  <span class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">anatomy</span>
+  <h3 class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">anatomy</h3>
   <div class="anatomy">
     <div class="specimen">
       <div class="specimen-bar"><span class="specimen-cap">parts</span></div>
       <div class="specimen-body">
         <div class="btn-row">
           <button class="btn btn-primary"><i data-lucide="upload"></i> contribute</button>
-          <div class="field input-ico" style="margin-bottom:0;width:240px"><i data-lucide="search"></i><input class="input" placeholder="search the commons" /></div>
+          <div class="field input-ico" style="margin-bottom:0;flex:1;min-inline-size:0;max-inline-size:240px"><i data-lucide="search"></i><input class="input" placeholder="search the commons" /></div>
         </div>
       </div>
     </div>
@@ -60,7 +60,7 @@
   </div>
 
   <!-- 4. variants / states -->
-  <span class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">variants and states</span>
+  <h3 class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">variants and states</h3>
   <div class="specimen">
     <div class="specimen-bar"><span class="specimen-cap">states</span></div>
     <div class="specimen-body">
@@ -83,16 +83,6 @@
         </div>
       </div>
     </div>
-  </div>
-  <div class="anatomy-legend" style="margin-top:var(--sp-3)">
-    <span class="anatomy-item">primary</span>
-    <span class="anatomy-item">secondary</span>
-    <span class="anatomy-item">ghost</span>
-    <span class="anatomy-item">danger</span>
-    <span class="anatomy-item">disabled</span>
-    <span class="anatomy-item">focus</span>
-    <span class="anatomy-item">input default</span>
-    <span class="anatomy-item">input focus</span>
   </div>
 
   <!-- 5. do / don't -->
@@ -125,7 +115,7 @@
   </div>
 
   <!-- 6. specs & tokens -->
-  <span class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">specs</span>
+  <h3 class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">specs</h3>
   <div class="dtable-wrap">
     <table class="dtable">
       <thead><tr><th>property</th><th>value</th><th>note</th></tr></thead>
@@ -141,7 +131,7 @@
     </table>
   </div>
 
-  <span class="label" style="margin-top:var(--sp-5);margin-bottom:var(--sp-2)">tokens</span>
+  <h3 class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">tokens</h3>
   <div class="dtable-wrap">
     <table class="dtable">
       <thead><tr><th>token</th><th>value</th><th>role</th><th></th></tr></thead>
@@ -150,7 +140,7 @@
         <tr><td class="dt-name">--control-h-sm</td><td class="dt-val tnum">28px</td><td class="dt-role">small variant height</td><td><button class="copy-token" data-copy="--control-h-sm" aria-label="copy --control-h-sm"><i data-lucide="clipboard"></i></button></td></tr>
         <tr><td><span class="dt-sw" style="--c:#cba35c"></span><span class="dt-name">--amber</span></td><td class="dt-val tnum">#cba35c</td><td class="dt-role">primary fill, focus ring</td><td><button class="copy-token" data-copy="--amber" aria-label="copy --amber"><i data-lucide="clipboard"></i></button></td></tr>
         <tr><td><span class="dt-sw" style="--c:#141003"></span><span class="dt-name">--on-amber</span></td><td class="dt-val tnum">#141003</td><td class="dt-role">label on primary fill</td><td><button class="copy-token" data-copy="--on-amber" aria-label="copy --on-amber"><i data-lucide="clipboard"></i></button></td></tr>
-        <tr><td><span class="dt-sw" style="--c:#4d483e"></span><span class="dt-name">--rule-strong</span></td><td class="dt-val">var(--bd-strong)</td><td class="dt-role">emphatic control border</td><td><button class="copy-token" data-copy="--rule-strong" aria-label="copy --rule-strong"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td><span class="dt-sw" style="--c:#6f6a5f"></span><span class="dt-name">--rule-strong</span></td><td class="dt-val">var(--bd-strong)</td><td class="dt-role">control border, clears 3:1</td><td><button class="copy-token" data-copy="--rule-strong" aria-label="copy --rule-strong"><i data-lucide="clipboard"></i></button></td></tr>
       </tbody>
     </table>
   </div>

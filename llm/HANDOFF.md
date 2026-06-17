@@ -1,17 +1,52 @@
 # handoff — fairtrade design system
 
-> **▶ START HERE (priority set 2026-06-16):** focus on **improving the design system itself**
-> (quality fixes + component coverage) — see [`IMPROVE.md`](./IMPROVE.md) for the prioritized,
-> verified backlog. The unification + app rollout ([`UNIFICATION_PLAN.md`](./UNIFICATION_PLAN.md)) is
-> **deferred**. Stay inside `unified-identity`; do not start the `@peasant-labs/ui` package or touch
-> the apps until the owner re-prioritizes.
+> **▶ START HERE (updated 2026-06-17, overnight pass): P1–P6 + the 147-finding LAYOUT_AUDIT are DONE,
+> verified, and gated green.** What is left is the carried-over backlog at the bottom of
+> [`NEXT_PHASE.md`](./NEXT_PHASE.md) (the `src/ui/*` JSX component port → Storybook, more tier-2 coverage)
+> plus a short list of intentionally-deferred minor QA nits (also in NEXT_PHASE). Stay inside
+> `unified-identity`; the unification/app rollout ([`UNIFICATION_PLAN.md`](./UNIFICATION_PLAN.md)) stays
+> **deferred**. Older quality backlog: [`IMPROVE.md`](./IMPROVE.md) (tiers 1 + 2 largely DONE).
+>
+> **Progress (2026-06-16/17, five passes — all build-green + 19/19 validated):**
+> - **Tier-1 quality pass DONE** (items 1-13; lucide CDN dropped, github icon fixed).
+> - **Tier-2 batch 1 DONE** (states + overlays + chip depth) + a deep interactive bug-fix pass: bundled
+>   icons (no CDN), scroll-spy, nav-reveal, command palette (`CommandPalette.jsx`), responsive overflow,
+>   ascii hero v1, animation, dark `--ink-3` raised to `#9a9488`, canvas edge fixed.
+> - **Interactive components DONE:** modal **dialog** (`Dialog.jsx`, focus-trap/Esc/scrim/return-focus),
+>   **tabs** (role=tablist + panels, keyboard), **dropdown menu** (role=menu, keyboard, skips disabled).
+>   `<Raw>` is now `memo`-ized (renders once; do not change — it keeps painted icons + refs stable).
+> - **NEXT_PHASE P1–P6 DONE (overnight, big-agent-team + workflows):** P1 hero wordmark drawn in
+>   wheat-ramp glyphs bottom-right, no container/no alpha (`AsciiWordmark` in `effects.jsx`); P2 proximity
+>   snap on the splash sections + a descending-grain scroll cue (reduced-motion static fallback); P3
+>   value-prop composed with a framed ascii portrait on a dark media-well (reads in both themes); P4 every
+>   multi-column specimen collapsed to ≤2 (most to 1) via shared grid classes; P5 locked 3-tier heading
+>   ladder (`--fs-group`/`--fs-section`/`--fs-sub`) + standardized vertical rhythm + one `--band-y` section
+>   pad (centered dividers) + rebuilt type-scale; P6 three fully-interactive mockups in a new **"in use"**
+>   group at the end — `src/mockups/TranscriptViewer.jsx` (two-pane, expandable tool calls, tab-switching
+>   rail), `Commons.jsx` (live filter/sort/search + empty state + ascii cards), `Chart.jsx` (hand-rolled
+>   SVG tokens-per-turn / tool-calls toggle, hover+keyboard tooltips). Wired in `App.jsx`; CSS appended to
+>   `index.css` under a `mock-` namespace.
+> - **LAYOUT_AUDIT + a 25-section dual-theme screenshot QA sweep applied.** Notable real fixes: a
+>   **namespace collision** (`.sw` was both the switch control and the color swatch band → swatch renamed
+>   `.swc`); light-theme legibility (hero wordmark white-knockout outline, intro portrait dark well,
+>   `.card` border raised to the functional `--bd-strong` tier); switch status markers aligned to one
+>   column; tooltip no longer overflows its panel; type-scale + spacing-ruler + resources realigned;
+>   banned "not X but Y" copy rephrased; `.tc-head .path` truncates so the conversation window never
+>   forces page overflow.
+> - **Gates:** `pnpm build` runs the contrast gate (green, both themes); `node scripts/validate.mjs` is a
+>   **19/19** puppeteer-core interactive gate (now passes with 0 overflow at 360/390/768/1024/1440);
+>   `node scripts/shoot.mjs <theme> <outdir> [ids…]` captures per-section crops for QA (emulates
+>   reduced-motion so reveal-hidden sections render); `node scripts/findover.mjs <w>` finds overflow
+>   offenders; `node scripts/diag.mjs` diagnoses. Storybook deferred ([`STORYBOOK_PLAN.md`](./STORYBOOK_PLAN.md)).
+> Run: `pnpm dev` (or `pnpm preview` after build); QA with `node scripts/validate.mjs`.
 
 ## what this is (updated 2026-06-16)
 
 The repo is no longer a flat component gallery. It is a **single-page design-system
 presentation** (modeled on wise.design, bound to the locked Caves-of-Qud identity): a hero,
-a value-prop, and 20 documented sections in three groups, with a sticky on-this-page rail and
-scroll-spy. Build spec: [`PRESENTATION.md`](./PRESENTATION.md). System spec: [`DESIGN.md`](./DESIGN.md).
+a value-prop, and 22 documented sections in three groups (foundations now includes **states**;
+components now includes **overlays**), with a sticky on-this-page rail and scroll-spy. Build spec:
+[`PRESENTATION.md`](./PRESENTATION.md). System spec: [`DESIGN.md`](./DESIGN.md).
 Accessibility defaults: [`NEUROINCLUSIVE.md`](./NEUROINCLUSIVE.md).
 
 ## stack
@@ -23,9 +58,11 @@ Accessibility defaults: [`NEUROINCLUSIVE.md`](./NEUROINCLUSIVE.md).
   review-only capture mode (see "rendering" below).
 - Fonts: **Atkinson Hyperlegible Mono** (chrome/display/code) + **Atkinson Hyperlegible**
   (reading prose), via Google Fonts in `index.html`.
-- Icons: **Lucide** painted by `window.lucide.createIcons()` (UMD, loaded in `index.html`) for the
-  `data-lucide` icons in the partials; **lucide-react** for the React pieces (hero/cards/feedback).
-  Brand marks are inline `<svg><use href="#b-*">` symbols defined once in `src/sections/00-defs.html`.
+- Icons: **bundled Lucide** (no CDN) — `src/icons.js` `paintIcons()` converts the partials'
+  `<i data-lucide>` to `<svg>` (re-run by a MutationObserver); **lucide-react** for the React pieces
+  (hero/cards/palette/dialog). Brand marks are inline `<svg><use href="#b-*">` symbols in `00-defs.html`.
+- Interactive: a 19-check gate `node scripts/validate.mjs "<url>"`; the page has a ⌘k command palette,
+  a modal dialog (focus-trap), keyboard tablists, and dropdown menus (all via delegated handlers in App.jsx).
 
 ## architecture (how the page is composed)
 

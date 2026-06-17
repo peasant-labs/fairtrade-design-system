@@ -1,0 +1,318 @@
+<!-- STATES -->
+<section class="band" id="states">
+  <h2 class="label">states</h2>
+  <div class="sub">every control ships its full set: disabled, loading, error, selected</div>
+  <p class="prose">state is shown, never implied. each control family carries a real disabled, busy and error state, and the loading, error and empty surfaces exist by default instead of being bolted on later. state never rides on color alone; it pairs an icon, a label or a shape.</p>
+  <h3 class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">button states</h3>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">example</span></div>
+    <div class="specimen-body">
+      <span class="label" style="margin-bottom:var(--sp-3)">interactive states</span>
+      <div class="bs-grid" style="margin-bottom:var(--sp-6)">
+        <div class="bs-cell">
+          <button class="btn btn-primary">publish transcript</button>
+          <span class="bs-cap">default</span>
+        </div>
+        <div class="bs-cell">
+          <button class="btn btn-primary" disabled>publish transcript</button>
+          <span class="bs-cap">disabled (native attr)</span>
+        </div>
+        <div class="bs-cell">
+          <button class="btn btn-primary" aria-busy="true" aria-label="publishing transcript" disabled><span class="bs-spin" aria-hidden="true"></span> publishing</button>
+          <span class="bs-cap">loading (aria-busy)</span>
+        </div>
+      </div>
+
+      <span class="label" style="margin-bottom:var(--sp-3)">toggle button (aria-pressed)</span>
+      <div class="bs-grid" style="margin-bottom:var(--sp-6)">
+        <div class="bs-cell">
+          <button class="btn btn-secondary bs-toggle" aria-pressed="true"><i data-lucide="bell"></i> notify on reply</button>
+          <span class="bs-cap">on</span>
+        </div>
+        <div class="bs-cell">
+          <button class="btn btn-secondary bs-toggle" aria-pressed="false"><i data-lucide="bell-off"></i> notify on reply</button>
+          <span class="bs-cap">off</span>
+        </div>
+      </div>
+
+      <span class="label" style="margin-bottom:var(--sp-3)">link-button + icon-button sizes</span>
+      <div class="bs-grid">
+        <div class="bs-cell">
+          <a class="btn btn-secondary" href="https://github.com/fairtrade-ds" target="_blank" rel="noopener"><i data-lucide="external-link"></i> open repository</a>
+          <span class="bs-cap">link-button (real anchor)</span>
+        </div>
+        <div class="bs-cell">
+          <button class="btn btn-secondary btn-icon" aria-label="edit transcript"><i data-lucide="pencil"></i></button>
+          <span class="bs-cap">icon, 36px</span>
+        </div>
+        <div class="bs-cell">
+          <button class="btn btn-secondary btn-sm btn-icon" aria-label="edit transcript"><i data-lucide="pencil"></i></button>
+          <span class="bs-cap">icon, 28px</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">groups</span></div>
+    <div class="specimen-body">
+      <span class="label" style="margin-bottom:var(--sp-3)">button-group (one action set, shared seams)</span>
+      <div class="bs-group" role="group" aria-label="transcript actions" style="margin-bottom:var(--sp-6)">
+        <button class="btn btn-secondary"><i data-lucide="download"></i> export</button>
+        <button class="btn btn-secondary"><i data-lucide="link"></i> copy link</button>
+        <button class="btn btn-secondary"><i data-lucide="archive"></i> archive</button>
+      </div>
+
+      <span class="label" style="margin-bottom:var(--sp-3)">segmented control (aria-pressed marks the choice)</span>
+      <div class="bs-seg" role="group" aria-label="visibility">
+        <button class="bs-seg-opt" aria-pressed="true"><i data-lucide="eye"></i> public</button>
+        <button class="bs-seg-opt" aria-pressed="false"><i data-lucide="users"></i> collective</button>
+        <button class="bs-seg-opt" aria-pressed="false"><i data-lucide="lock"></i> private</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead><tr><th>state</th><th>signal</th><th>cue beyond color</th></tr></thead>
+      <tbody>
+        <tr><td class="dt-name">disabled</td><td class="dt-val">:disabled (native attr)</td><td class="dt-role">no pointer events, dimmed, not focusable</td></tr>
+        <tr><td class="dt-name">loading</td><td class="dt-val">aria-busy="true"</td><td class="dt-role">spinner glyph plus label, animates only under no-preference</td></tr>
+        <tr><td class="dt-name">toggle</td><td class="dt-val">aria-pressed</td><td class="dt-role">bell / bell-off icon swap plus fill</td></tr>
+        <tr><td class="dt-name">link-button</td><td class="dt-val"><a href></td><td class="dt-role">real navigation, external-link icon</td></tr>
+        <tr><td class="dt-name">segmented</td><td class="dt-val">aria-pressed per option</td><td class="dt-role">icon per option plus amber fill on the selected one</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout" style="margin-top:var(--sp-5)">
+    <i data-lucide="shield-check"></i>
+    <div>every state is real, not faked: disabled is the native attribute (focus skips it, pointer events stop), loading sets aria-busy and the spinner stays still under prefers-reduced-motion, and both the toggle and segmented control announce aria-pressed so the choice is never color alone. icon-buttons carry an aria-label and keep a 24px hit box at every size.</div>
+  </div>
+
+  <h3 class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">input states</h3>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">example</span></div>
+    <div class="specimen-body">
+      <div class="cols cols-2">
+        <div>
+          <div class="is-field">
+            <span class="label">collective name</span>
+            <input class="input is-input" value="desert-archivists" aria-describedby="is-hint-name" />
+            <span class="is-hint" id="is-hint-name">lowercase, hyphens between words</span>
+          </div>
+
+          <div class="is-field">
+            <span class="label">slug</span>
+            <input class="input is-input" aria-invalid="true" value="Desert Archivists" aria-describedby="is-err-slug" />
+            <span class="is-error" id="is-err-slug"><i data-lucide="triangle-alert"></i> spaces and capitals are not allowed in a slug</span>
+          </div>
+
+          <div class="is-field">
+            <span class="label">acceptance policy</span>
+            <div class="select-wrap"><select class="select"><option>open: anyone may contribute</option><option>verified members only</option><option>invite only</option></select><i data-lucide="chevron-down"></i></div>
+            <span class="is-hint">controls who can publish a transcript here</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="is-field">
+            <span class="label"><span class="is-lk"><i data-lucide="lock"></i> commons id</span></span>
+            <input class="input is-input" value="cmns-4f19-archivists" readonly aria-describedby="is-hint-id" />
+            <span class="is-hint" id="is-hint-id">assigned on creation, cannot be edited</span>
+          </div>
+
+          <div class="is-field">
+            <span class="label">stewards</span>
+            <input class="input is-input" value="vitor.hw@outlook.com" disabled aria-describedby="is-hint-disabled" />
+            <span class="is-hint" id="is-hint-disabled">locked until your membership is verified</span>
+          </div>
+
+          <div class="is-field">
+            <span class="label">charter</span>
+            <textarea class="input is-input" rows="3" aria-describedby="is-hint-charter" placeholder="describe what this collective preserves"></textarea>
+            <span class="is-hint" id="is-hint-charter">shown on the public collective page</span>
+          </div>
+        </div>
+      </div>
+
+      <fieldset class="is-field" style="border:0;padding:0;margin:var(--sp-5) 0 0">
+        <legend class="label" style="margin-bottom:var(--sp-3);padding:0">redaction review</legend>
+        <div class="is-radios" role="radiogroup" aria-label="redaction review">
+          <label class="is-radio"><input type="radio" name="is-redaction" class="is-radio-dot" checked /> review every transcript before it publishes</label>
+          <label class="is-radio"><input type="radio" name="is-redaction" class="is-radio-dot" /> review only transcripts flagged by a member</label>
+          <label class="is-radio"><input type="radio" name="is-redaction" class="is-radio-dot" /> publish without review</label>
+          <label class="is-radio"><input type="radio" name="is-redaction" class="is-radio-dot" disabled /> auto-redact with model (needs verification)</label>
+        </div>
+      </fieldset>
+    </div>
+  </div>
+
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead><tr><th>state</th><th>markup</th><th>cue</th></tr></thead>
+      <tbody>
+        <tr><td class="dt-name">default</td><td class="dt-val">value, no extra attrs</td><td class="dt-role">var(--rule-strong) border</td></tr>
+        <tr><td class="dt-name">focus</td><td class="dt-val">:focus</td><td class="dt-role">border lifts to amber-dim</td></tr>
+        <tr><td class="dt-name">error</td><td class="dt-val">aria-invalid="true"</td><td class="dt-role">clay border, icon + message, aria-describedby</td></tr>
+        <tr><td class="dt-name">read-only</td><td class="dt-val">readonly</td><td class="dt-role">surface-2 fill, lock label, ink-2 text</td></tr>
+        <tr><td class="dt-name">disabled</td><td class="dt-val">disabled</td><td class="dt-role">native dim, not editable, hint explains why</td></tr>
+        <tr><td class="dt-name">radio group</td><td class="dt-val">type=radio name= + role=radiogroup</td><td class="dt-role">one choice, disabled option stays labelled</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout" style="margin-top:var(--sp-5)">
+    <i data-lucide="info"></i>
+    <div>every field carries its label above the control and a hint or error below, wired with aria-describedby. error is never the red border alone: it pairs a triangle-alert icon with a plain-language message. read-only and disabled use the real readonly and disabled attributes, not an opacity hack, so keyboard and screen-reader behaviour is correct. radios are real inputs sharing one name, so only one is selectable.</div>
+  </div>
+
+  <h3 class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">switch</h3>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">example</span></div>
+    <div class="specimen-body">
+      <div style="max-width:340px">
+        <div class="sw-field">
+          <button type="button" class="sw" role="switch" aria-checked="false" id="sw-redact"></button>
+          <label class="sw-label" for="sw-redact">redaction review</label>
+          <span class="sw-state"><i data-lucide="circle"></i> off</span>
+        </div>
+        <div class="sw-field">
+          <button type="button" class="sw" role="switch" aria-checked="true" id="sw-public"></button>
+          <label class="sw-label" for="sw-public">public transcript</label>
+          <span class="sw-state"><i data-lucide="circle-check"></i> on</span>
+        </div>
+        <div class="sw-field">
+          <button type="button" class="sw" role="switch" aria-checked="false" disabled id="sw-lock-off"></button>
+          <label class="sw-label" for="sw-lock-off">verified only</label>
+          <span class="sw-state"><i data-lucide="lock"></i> off, locked</span>
+        </div>
+        <div class="sw-field">
+          <button type="button" class="sw" role="switch" aria-checked="true" disabled id="sw-lock-on"></button>
+          <label class="sw-label" for="sw-lock-on">audit logging</label>
+          <span class="sw-state"><i data-lucide="lock"></i> on, locked</span>
+        </div>
+        <div class="sw-field">
+          <button type="button" class="sw" role="switch" aria-checked="false" aria-busy="true" id="sw-sync"></button>
+          <label class="sw-label" for="sw-sync">sync to commons</label>
+          <span class="sw-state" aria-live="polite"><i data-lucide="loader" class="sw-busy-spin"></i> saving</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead><tr><th>state</th><th>attribute</th><th>note</th></tr></thead>
+      <tbody>
+        <tr><td class="dt-name">off</td><td class="dt-val">aria-checked="false"</td><td class="dt-role">neutral track, thumb left</td></tr>
+        <tr><td class="dt-name">on</td><td class="dt-val">aria-checked="true"</td><td class="dt-role">amber fill, thumb right</td></tr>
+        <tr><td class="dt-name">disabled</td><td class="dt-val">disabled</td><td class="dt-role">real attribute, not opacity alone</td></tr>
+        <tr><td class="dt-name">busy</td><td class="dt-val">aria-busy="true"</td><td class="dt-role">saving, paired with aria-live</td></tr>
+        <tr><td class="dt-name">focus</td><td class="dt-val">:focus-visible</td><td class="dt-role">3px amber ring, never removed</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout" style="margin-top:var(--sp-5)">
+    <i data-lucide="shield-check"></i>
+    <div>each switch is a real role="switch" button with aria-checked, so screen readers announce on and off; the thumb slides at most 160ms and only under prefers-reduced-motion no-preference. state never rides on the amber fill alone, an icon plus a lowercase on or off marker sits beside every label, and the hit box stays at least 24px tall.</div>
+  </div>
+
+  <h3 class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">feedback surfaces</h3>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">example</span></div>
+    <div class="specimen-body">
+      <div class="fb-grid" style="margin-bottom:var(--sp-5)">
+        <div class="fb-cell">
+          <span class="fb-cap">skeleton placeholder</span>
+          <div class="fb-skel" role="status" aria-busy="true" aria-label="Loading transcript">
+            <div class="fb-skel-row">
+              <span class="fb-skel-block fb-skel-av" aria-hidden="true"></span>
+              <span class="fb-skel-lines">
+                <span class="fb-skel-line w-40"></span>
+                <span class="fb-skel-line w-70"></span>
+              </span>
+            </div>
+            <span class="fb-skel-line w-90"></span>
+            <span class="fb-skel-line w-70"></span>
+          </div>
+        </div>
+        <div class="fb-cell">
+          <span class="fb-cap">determinate progress</span>
+          <div class="fb-prog">
+            <div class="fb-prog-head"><span>uploading transcript</span><span class="fb-prog-pct tnum">62%</span></div>
+            <div class="fb-prog-track" role="progressbar" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100" aria-label="upload progress">
+              <div class="fb-prog-fill" style="width:62%"></div>
+            </div>
+          </div>
+          <div style="margin-top:var(--sp-5)">
+            <span class="fb-cap">inline spinner</span>
+            <span class="fb-spin" role="status" aria-busy="true" aria-live="polite"><i data-lucide="loader-circle"></i> verifying redactions</span>
+          </div>
+        </div>
+      </div>
+      <span class="fb-cap">toast notification</span>
+      <div aria-live="polite" aria-atomic="true" style="display:flex;flex-direction:column;gap:var(--sp-3);margin-bottom:var(--sp-2)">
+        <div class="fb-toast is-ok" role="status">
+          <span class="fb-toast-ico"><i data-lucide="circle-check"></i></span>
+          <div class="fb-toast-body">
+            <div class="fb-toast-title">transcript published</div>
+            <div class="fb-toast-msg">desert-archivists is now public. 18 turns, 42,318 tokens.</div>
+          </div>
+          <button class="fb-toast-x" type="button" aria-label="dismiss notification"><i data-lucide="x"></i></button>
+        </div>
+        <div class="fb-toast is-err" role="alert">
+          <span class="fb-toast-ico"><i data-lucide="circle-x"></i></span>
+          <div class="fb-toast-body">
+            <div class="fb-toast-title">upload failed</div>
+            <div class="fb-toast-msg">The connection dropped at 62%. Retry to resume from the last checkpoint.</div>
+          </div>
+          <button class="fb-toast-x" type="button" aria-label="dismiss notification"><i data-lucide="x"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">inline panels</span></div>
+    <div class="specimen-body">
+      <div class="fb-panels">
+        <div class="fb-panel" role="status" aria-busy="true" aria-live="polite">
+          <span class="fb-panel-ico"><i data-lucide="loader-circle"></i></span>
+          <div class="fb-panel-title">loading</div>
+          <p class="fb-panel-msg">Fetching transcripts from the commons.</p>
+        </div>
+        <div class="fb-panel is-err" role="alert">
+          <span class="fb-panel-ico"><i data-lucide="circle-alert"></i></span>
+          <div class="fb-panel-title">error</div>
+          <p class="fb-panel-msg">We could not reach the archive. Check your connection and try again.</p>
+        </div>
+        <div class="fb-panel">
+          <span class="fb-panel-ico"><i data-lucide="search-x"></i></span>
+          <div class="fb-panel-title">no results</div>
+          <p class="fb-panel-msg">No transcripts match desert-archivists. Try a broader search.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead><tr><th>surface</th><th>state hook</th><th>icon and note</th></tr></thead>
+      <tbody>
+        <tr><td class="dt-name">skeleton</td><td class="dt-val">aria-busy="true"</td><td class="dt-role">no icon; static blocks, shimmer only under no-preference</td></tr>
+        <tr><td class="dt-name">progress</td><td class="dt-val">aria-valuenow</td><td class="dt-role">no icon; determinate, tabular percent</td></tr>
+        <tr><td class="dt-name">spinner</td><td class="dt-val">aria-busy + aria-live</td><td class="dt-role">loader-circle; spins only under no-preference</td></tr>
+        <tr><td class="dt-name">toast (ok)</td><td class="dt-val">role="status"</td><td class="dt-role">circle-check; inside an aria-live="polite" region</td></tr>
+        <tr><td class="dt-name">toast (error)</td><td class="dt-val">role="alert"</td><td class="dt-role">circle-x; assertive, icon plus label, not color</td></tr>
+        <tr><td class="dt-name">panel loading</td><td class="dt-val">aria-busy="true"</td><td class="dt-role">loader-circle; role="status"</td></tr>
+        <tr><td class="dt-name">panel error</td><td class="dt-val">role="alert"</td><td class="dt-role">circle-alert; clay icon plus label</td></tr>
+        <tr><td class="dt-name">panel empty</td><td class="dt-val">resolved</td><td class="dt-role">search-x; no-results, neutral</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout" style="margin-top:var(--sp-5)">
+    <i data-lucide="shield-check"></i>
+    <div>every state pairs an icon with a label, never color alone: error carries circle-alert, success circle-check, empty search-x. busy surfaces announce through a live region (status for polite, alert for errors). motion is opt-in: the skeleton shimmer and both spinners stay static unless the visitor allows motion. counts and the progress percent are tabular.</div>
+  </div>
+</section>

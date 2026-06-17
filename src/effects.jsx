@@ -253,6 +253,33 @@ export function AsciiText({ text, gap = 1, className = '', style }) {
   return <pre className={'ascii ' + className} style={style} role="img" aria-label={text}>{lines.join('\n')}</pre>
 }
 
+/* ---- the wordmark drawn in WHEAT-RAMP glyphs (not solid blocks). reuses the hand-authored
+   block bitmap font above, but every "on" pixel is rendered as a pair of dense grain glyphs
+   pulled from the wheat-video ramp (so the name reads as if drawn in the wheat field behind it),
+   and "off" pixels stay blank. the per-cell glyph is chosen by a stable hash of (glyph,x,row) so
+   it never reshuffles between renders. no container, no alpha - colour + glow carry it. ---- */
+const WHEAT = '@#%&8B0OQ#@%8&#@' // dense end of VID_RAMP, weighted to the solid grains for legibility
+export function AsciiWordmark({ text, gap = 1, className = '', style }) {
+  const blank = GLYPHS[' ']
+  const chars = text.toLowerCase().split('').map((c) => GLYPHS[c] || blank)
+  const lines = []
+  for (let r = 0; r < GLYPH_H; r++) {
+    let line = ''
+    for (let g = 0; g < chars.length; g++) {
+      const row = chars[g][r]
+      for (let x = 0; x < row.length; x++) {
+        if (row[x] === '█') {
+          const h = (g * 131 + x * 17 + r * 7) >>> 0
+          line += WHEAT[h % WHEAT.length] + WHEAT[(h * 3 + 1) % WHEAT.length]
+        } else line += '  '
+      }
+      if (g < chars.length - 1) line += '  '.repeat(gap)
+    }
+    lines.push(line)
+  }
+  return <pre className={'ascii ' + className} style={style} role="img" aria-label={text}>{lines.join('\n')}</pre>
+}
+
 /* ---- ascii video, sampled from a (seamless, watermark-free) source video at
    RUNTIME. detail is just `cols` (decoupled from any baked file size); a rolling
    temporal average over the last `smooth` frames kills glyph boiling so it stays

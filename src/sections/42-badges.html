@@ -1,24 +1,27 @@
 <!-- BADGES -->
 <section class="band" id="badges">
-  <span class="label">badges, providers &amp; states</span>
+  <h2 class="label">badges, providers &amp; states</h2>
   <div class="sub">icons carry meaning at a glance</div>
   <p class="prose">a badge reads in one pass: an icon names the thing, a short label confirms it, and color reinforces. provider marks tag where a transcript came from; state and metric chips report its outcome and size. state is never carried by color alone.</p>
   <div class="specimen">
     <div class="specimen-bar"><span class="specimen-cap">example</span></div>
     <div class="specimen-body">
-      <span class="label" style="margin-bottom:var(--sp-3)">providers</span>
-      <div class="chips" style="margin-bottom:var(--sp-5)">
+      <span class="label" style="margin-bottom:var(--sp-2)">providers</span>
+      <div class="chips" style="margin-bottom:var(--sp-6)">
         <span class="chip"><span class="g-claude"><svg class="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-claude"/></svg></span> claude-code</span>
         <span class="chip"><span class="g-gemini"><svg class="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-gemini"/></svg></span> gemini-cli</span>
         <span class="chip"><span class="g-opencode"><svg class="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-opencode"/></svg></span> opencode</span>
         <span class="chip"><span class="g-cursor"><svg class="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-cursor"/></svg></span> cursor</span>
         <span class="chip"><span class="g-codex"><i data-lucide="square-terminal"></i></span> codex</span>
       </div>
-      <span class="label" style="margin-bottom:var(--sp-3)">states + metrics</span>
-      <div class="chips">
+      <span class="label" style="margin-bottom:var(--sp-2)">states</span>
+      <div class="chips" style="margin-bottom:var(--sp-6)">
         <span class="chip chip-ok"><i data-lucide="shield-check"></i> redacted</span>
         <span class="chip chip-warn"><i data-lucide="triangle-alert"></i> partial</span>
         <span class="chip chip-err"><i data-lucide="circle-x"></i> failed</span>
+      </div>
+      <span class="label" style="margin-bottom:var(--sp-2)">metrics</span>
+      <div class="chips">
         <span class="chip"><i data-lucide="hash"></i> <b class="tnum" style="color:var(--ink)">42,318</b> tokens</span>
         <span class="chip"><i data-lucide="clock"></i> <span class="tnum">2h 14m</span></span>
         <span class="chip"><i data-lucide="git-branch"></i> <span class="tnum">18</span> turns</span>
@@ -26,5 +29,54 @@
       </div>
     </div>
   </div>
-  <div class="callout"><i data-lucide="shield-check"></i><div>state never rides on color alone: redacted carries shield-check, partial a triangle, failed a circle-x. counts and durations are tabular.</div></div>
+  <h3 class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">chip depth: removable, filter, status, counts</h3>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">example</span></div>
+    <div class="specimen-body">
+      <span class="label" style="margin-bottom:var(--sp-2)">removable (real x button)</span>
+      <div class="chips" style="margin-bottom:var(--sp-6)">
+        <span class="chip chip-removable">desert-archivists <button class="chipx-x" type="button" aria-label="remove desert-archivists"><i data-lucide="x"></i></button></span>
+        <span class="chip chip-removable">redacted-only <button class="chipx-x" type="button" aria-label="remove redacted-only"><i data-lucide="x"></i></button></span>
+        <span class="chip chip-removable chip-sm">claude-code <button class="chipx-x" type="button" aria-label="remove claude-code"><i data-lucide="x"></i></button></span>
+      </div>
+
+      <span class="label" style="margin-bottom:var(--sp-2)">filter / toggle (aria-pressed)</span>
+      <div class="chips" style="margin-bottom:var(--sp-6)">
+        <button class="chip chip-toggle" type="button" aria-pressed="true"><i class="chipx-tick" data-lucide="check"></i> verified</button>
+        <button class="chip chip-toggle" type="button" aria-pressed="true"><i class="chipx-tick" data-lucide="check"></i> public</button>
+        <button class="chip chip-toggle" type="button" aria-pressed="false"><i data-lucide="filter"></i> has-subagents</button>
+        <button class="chip chip-toggle" type="button" aria-pressed="false"><i data-lucide="filter"></i> long-running</button>
+      </div>
+
+      <span class="label" style="margin-bottom:var(--sp-2)">status dot + label</span>
+      <div class="chips" style="margin-bottom:var(--sp-6)">
+        <span class="chip"><span class="chipx-dot" style="--c:var(--olive)"></span> live</span>
+        <span class="chip"><span class="chipx-dot" style="--c:var(--amber)"></span> indexing</span>
+        <span class="chip"><span class="chipx-dot" style="--c:var(--clay)"></span> stalled</span>
+        <span class="chip"><span class="chipx-dot" style="--c:var(--ink-3)"></span> archived</span>
+      </div>
+
+      <span class="label" style="margin-bottom:var(--sp-2)">notification count + size variants</span>
+      <div class="chips">
+        <span class="chip"><i data-lucide="bell"></i> review queue <span class="chipx-count unread tnum">12</span></span>
+        <span class="chip"><i data-lucide="git-branch"></i> branches <span class="chipx-count tnum">7</span></span>
+        <span class="chip chip-sm"><i data-lucide="bell"></i> mentions <span class="chipx-count unread tnum">3</span></span>
+        <span class="chip chip-sm"><i data-lucide="inbox"></i> drafts <span class="chipx-count tnum">0</span></span>
+      </div>
+    </div>
+  </div>
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead><tr><th>variant</th><th>state</th><th>cue beyond color</th></tr></thead>
+      <tbody>
+        <tr><td class="dt-name">removable</td><td class="dt-val">button aria-label="remove ..."</td><td class="dt-role">x icon, own >=24px hit box</td></tr>
+        <tr><td class="dt-name">toggle selected</td><td class="dt-val">aria-pressed="true"</td><td class="dt-role">check icon + amber fill</td></tr>
+        <tr><td class="dt-name">toggle unselected</td><td class="dt-val">aria-pressed="false"</td><td class="dt-role">filter icon + outline</td></tr>
+        <tr><td class="dt-name">status dot</td><td class="dt-val">label always present</td><td class="dt-role">word names the state</td></tr>
+        <tr><td class="dt-name">count</td><td class="dt-val">.unread vs neutral</td><td class="dt-role">tabular digits, leading icon</td></tr>
+        <tr><td class="dt-name">size</td><td class="dt-val">.chip-sm</td><td class="dt-role">24px box, 13px glyphs</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout" style="margin-top:var(--sp-6)"><i data-lucide="shield-check"></i><div>state never rides on color alone: redacted carries shield-check, partial a triangle, failed a circle-x. counts and durations are tabular.</div></div>
 </section>
