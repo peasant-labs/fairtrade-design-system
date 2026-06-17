@@ -1,5 +1,11 @@
 # handoff — fairtrade design system
 
+> **▶ START HERE (priority set 2026-06-16):** focus on **improving the design system itself**
+> (quality fixes + component coverage) — see [`IMPROVE.md`](./IMPROVE.md) for the prioritized,
+> verified backlog. The unification + app rollout ([`UNIFICATION_PLAN.md`](./UNIFICATION_PLAN.md)) is
+> **deferred**. Stay inside `unified-identity`; do not start the `@peasant-labs/ui` package or touch
+> the apps until the owner re-prioritizes.
+
 ## what this is (updated 2026-06-16)
 
 The repo is no longer a flat component gallery. It is a **single-page design-system
