@@ -1,0 +1,100 @@
+<!-- CONVERSATION WINDOW -->
+<section class="band" id="conversation">
+  <span class="label">conversation window</span>
+  <div class="sub">the transcript reading view: phases, role-tinted turns, tool calls, subagents, checkpoints</div>
+  <p class="prose">the reading surface for a recorded session. each turn leads with a role icon and label, runs at reading size in the proportional face, and never lowercases what was said. tool calls, thinking blocks and subagent threads collapse to a summary line and open on demand, so a long run scans quickly. a sticky header keeps the breadcrumb, title and run meta on screen while you read, and checkpoint markers tie the prose back to the commits it produced. reach for it whenever a transcript is read rather than skimmed.</p>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">example</span></div>
+    <div class="specimen-body">
+      <div class="window framed">
+        <div class="win-head">
+          <div class="crumb">village <i data-lucide="chevron-right"></i> vitor-hw <i data-lucide="chevron-right"></i> <span class="cur">refactor ingest pipeline</span></div>
+          <div class="win-title">refactor ingest pipeline to stream</div>
+          <div class="win-meta">
+            <span class="metaitem"><span class="g-claude"><svg class="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-claude"/></svg></span> claude-code</span>
+            <span class="metaitem"><i data-lucide="clock"></i> <b class="tnum">2h 14m</b></span>
+            <span class="metaitem"><i data-lucide="git-branch"></i> <b class="tnum">18</b> turns</span>
+            <span class="metaitem"><i data-lucide="hash"></i> <b class="tnum">42,318</b> tokens</span>
+            <span class="chip chip-ok"><i data-lucide="shield-check"></i> redacted</span>
+          </div>
+        </div>
+        <div class="phase"><span class="lbl"><i data-lucide="flag"></i> phase: streaming refactor</span><span class="rng">turns 1-8</span></div>
+        <div class="turn user">
+          <div class="turn-head"><i data-lucide="user"></i> user <span class="meta">turn 1</span></div>
+          <div class="body">Can you refactor the ingest pipeline so it streams sessions instead of loading everything into memory? Keep the tests green.</div>
+        </div>
+        <div class="turn asst">
+          <div class="turn-head"><svg class="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-claude"/></svg> claude <span class="meta">turn 2</span></div>
+          <div class="body">I'll convert <b>loadAll</b> into a streaming reader so sessions are processed one at a time. Let me map where it's used, then swap the eager load for a channel-backed stream.
+            <div class="thinking"><i data-lucide="brain"></i> thought for 6s, planning the stream boundary</div>
+            <div class="toolcall"><div class="tc-head"><span class="kind"><i data-lucide="file-text"></i> read</span><span class="path">internal/ingest/pipeline.go</span><span class="right">240 lines <i data-lucide="chevron-down"></i></span></div></div>
+          </div>
+        </div>
+        <div class="subtask">
+          <div class="subtask-head"><i data-lucide="git-fork"></i> <span class="who">task</span> explore loadAll call sites <span class="elbow">&#9500; spawned subagent</span></div>
+          <div class="turn sub">
+            <div class="turn-head"><i data-lucide="git-fork"></i> subagent <span class="meta">turn 3</span></div>
+            <div class="body">Searched the pipeline for <b>loadAll</b>. Found 3 call sites, all reachable from <span class="mono">Run</span>. Safe to replace with a streaming reader.
+              <div class="toolcall"><div class="tc-head"><span class="kind"><i data-lucide="search"></i> grep</span><span class="path">loadAll in internal/ingest</span><span class="right">3 matches <i data-lucide="chevron-down"></i></span></div></div>
+            </div>
+          </div>
+          <div class="subtask-foot"><span class="elbow">&#9492; returned to claude</span></div>
+        </div>
+        <div class="turn asst">
+          <div class="turn-head"><svg class="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-claude"/></svg> claude <span class="meta">turn 4</span></div>
+          <div class="body">Confirmed. Swapping the eager load for <b>openStream</b> and running the race detector.
+            <div class="toolcall">
+              <div class="tc-head"><span class="kind"><i data-lucide="square-pen"></i> edit</span><span class="path">internal/ingest/pipeline.go</span><span class="right">+1 -1 <i data-lucide="chevron-down"></i></span></div>
+              <div class="diff">
+                <div class="dl ctx"><span class="rail"></span><span class="gut">211</span><span class="sign"></span><span class="t">func (p *Pipeline) Run(ctx context.Context) error {</span></div>
+                <div class="dl del"><span class="rail"></span><span class="gut">212</span><span class="sign">−</span><span class="t">  sessions, err := loadAll(ctx, p.src)</span></div>
+                <div class="dl add"><span class="rail"></span><span class="gut">212</span><span class="sign">+</span><span class="t">  stream, err := openStream(ctx, p.src)</span></div>
+                <div class="dl ctx"><span class="rail"></span><span class="gut">213</span><span class="sign"></span><span class="t">  if err != nil { return err }</span></div>
+              </div>
+            </div>
+            <div class="toolcall"><div class="tc-head"><span class="kind"><i data-lucide="terminal"></i> bash</span><span class="path">go test -race ./internal/ingest/</span><span class="right" style="color:var(--olive)"><i data-lucide="check"></i> ok</span></div></div>
+          </div>
+        </div>
+        <div class="marker"><span class="r"></span><span class="mc"><i data-lucide="git-commit-horizontal"></i> commit <span class="hash">a3f9c1</span> stream ingest, constant memory</span><span class="r"></span></div>
+        <div class="win-foot"><span class="chip chip-ok"><i data-lucide="check"></i> tests green</span><span class="chip"><i data-lucide="file-diff"></i> +1 -1 in 1 file</span><span style="margin-left:auto;display:flex;gap:var(--sp-3)"><button class="btn btn-secondary btn-sm"><i data-lucide="share-2"></i> share</button><button class="btn btn-primary btn-sm"><i data-lucide="upload"></i> contribute</button></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="anatomy">
+    <div class="anatomy-legend">
+      <span class="anatomy-item"><span class="anatomy-num">1</span> sticky header: breadcrumb, title and run meta</span>
+      <span class="anatomy-item"><span class="anatomy-num">2</span> phase divider with turn range</span>
+      <span class="anatomy-item"><span class="anatomy-num">3</span> user turn, tinted teal</span>
+      <span class="anatomy-item"><span class="anatomy-num">4</span> assistant turn, tinted amber</span>
+      <span class="anatomy-item"><span class="anatomy-num">5</span> turn head: role icon, label and tabular turn number</span>
+      <span class="anatomy-item"><span class="anatomy-num">6</span> thinking block</span>
+      <span class="anatomy-item"><span class="anatomy-num">7</span> tool-call header: tool icon, target, result</span>
+      <span class="anatomy-item"><span class="anatomy-num">8</span> subagent nested thread</span>
+      <span class="anatomy-item"><span class="anatomy-num">9</span> unified diff: rail, gutter, sign</span>
+      <span class="anatomy-item"><span class="anatomy-num">10</span> checkpoint marker</span>
+      <span class="anatomy-item"><span class="anatomy-num">11</span> footer action bar</span>
+    </div>
+  </div>
+  <div class="cmp">
+    <div class="cmp-card cmp-do">
+      <div class="cmp-tag"><i data-lucide="check"></i> do</div>
+      <div class="cmp-body">
+        <div class="turn user">
+          <div class="turn-head"><i data-lucide="user"></i> user <span class="meta">turn 7</span></div>
+          <div class="body">Run the race detector before you commit.</div>
+        </div>
+      </div>
+      <div class="cmp-note">lead every turn with a role icon and label, plus a tabular turn number.</div>
+    </div>
+    <div class="cmp-card cmp-dont">
+      <div class="cmp-tag"><i data-lucide="x"></i> don't</div>
+      <div class="cmp-body">
+        <div class="turn user">
+          <div class="body" style="text-transform:lowercase">run the race detector before you commit.</div>
+        </div>
+      </div>
+      <div class="cmp-note">don't lean on tint alone for role, or lowercase the transcript body or code.</div>
+    </div>
+  </div>
+  <div class="callout"><i data-lucide="shield-check"></i><div>role is carried by an icon and label, never tint alone. transcript bodies read in the proportional face, never below 16px, and keep their original case; code and hashes stay verbatim. turn numbers, durations and token counts are tabular. the sticky header is offset by --nav-h so an anchored turn clears the nav.</div></div>
+</section>

@@ -1,0 +1,48 @@
+<!-- CANVAS + DIALOG -->
+<section class="band" id="canvas">
+  <span class="label">canvas &amp; dialog</span>
+  <div class="sub">the map/graph surface and a modal window</div>
+  <p class="prose">the canvas is the map of a repository or a collective: square nodes on a dot grid, wired by edges, with zoom controls, a minimap, and an activity strip kept on screen. the dialog is the one modal we use for a consequential, reversible choice.</p>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">example</span></div>
+    <div class="specimen-body">
+      <div class="cols cols-2">
+        <div>
+          <div class="canvas framed">
+            <svg class="edges" width="100%" height="100%" viewBox="0 0 560 340" preserveAspectRatio="none">
+              <path d="M120 70 V150 H80 V196" fill="none" stroke="var(--rule-strong)" stroke-width="1"/>
+              <path d="M120 70 V150 H250 V196" fill="none" stroke="var(--rule-strong)" stroke-width="1"/>
+              <path d="M250 226 V270 H190" fill="none" stroke="var(--rule-strong)" stroke-width="1"/>
+              <path d="M250 226 V270 H330" fill="none" stroke="var(--amber-dim)" stroke-width="1.2" stroke-dasharray="4 3"/>
+              <path d="M380 90 V150 H420 V196" fill="none" stroke="var(--rule-strong)" stroke-width="1"/>
+            </svg>
+            <div class="node sel" style="top:44px;left:78px"><div class="nm"><i data-lucide="box"></i> peasant</div><div class="ct">42 files</div><div class="eff" style="background:var(--amber)"></div></div>
+            <div class="node hot" style="top:172px;left:36px"><div class="nm"><i data-lucide="folder"></i> ingest</div><div class="ct">11 files</div><div class="eff"></div></div>
+            <div class="node" style="top:172px;left:206px"><div class="nm"><i data-lucide="folder"></i> store</div><div class="ct">8 files</div><div class="eff" style="height:2px"></div></div>
+            <div class="node" style="top:248px;left:146px"><div class="nm"><i data-lucide="file"></i> pipeline.go</div></div>
+            <div class="node" style="top:248px;left:296px"><div class="nm"><i data-lucide="file"></i> stream.go</div></div>
+            <div class="node" style="top:172px;left:372px"><div class="nm"><i data-lucide="folder"></i> api</div><div class="ct">14 files</div><div class="eff" style="height:2px"></div></div>
+            <div class="canvas-ctrls"><button><i data-lucide="plus"></i></button><button><i data-lucide="minus"></i></button><button><i data-lucide="maximize"></i></button></div>
+            <div class="minimap"><i style="left:8px;top:8px;width:18px;height:10px"></i><i style="left:14px;top:34px;width:30px;height:8px"></i><i style="left:60px;top:24px;width:22px;height:8px"></i></div>
+          </div>
+          <div class="timestrip">
+            <div class="bar" style="height:30%"></div><div class="bar" style="height:55%"></div><div class="bar" style="height:20%"></div><div class="bar" style="height:80%"></div><div class="bar" style="height:65%"></div><div class="bar" style="height:100%"></div><div class="bar" style="height:45%"></div><div class="bar" style="height:70%"></div><div class="bar" style="height:35%"></div><div class="bar" style="height:90%"></div><div class="bar" style="height:25%"></div><div class="bar" style="height:60%"></div>
+          </div>
+          <div class="note">structure edges are solid; activity edges are dashed. the selected node carries an amber border and a marker.</div>
+        </div>
+        <div class="dlg-demo">
+          <div class="scrim"></div>
+          <div class="dialog framed">
+            <div class="dlg-head"><h3>join collective</h3><button class="btn btn-ghost btn-sm btn-icon"><i data-lucide="x"></i></button></div>
+            <div class="dlg-body">
+              <div class="callout"><i data-lucide="eye"></i><div>joining <b style="color:var(--ink-strong)">desert-archivists</b> reveals your profile to its members. your shared transcripts stay redacted.</div></div>
+              <label class="check"><span class="check-tick"><i data-lucide="check"></i></span> i understand and consent</label>
+            </div>
+            <div class="dlg-foot"><button class="btn btn-secondary btn-sm">cancel</button><button class="btn btn-primary btn-sm"><i data-lucide="users"></i> reveal &amp; join</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="callout"><i data-lucide="box-select"></i><div>selection is an amber border plus a marker, not color alone. canvas controls stay on screen and keep a target of at least 24px.</div></div>
+</section>

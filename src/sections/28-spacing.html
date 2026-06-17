@@ -1,0 +1,41 @@
+<section class="band" id="spacing">
+  <span class="label">spacing &amp; layout</span>
+  <div class="sub">one 4 / 8 scale; every padding, margin and gap sits on the grid</div>
+  <p class="prose">eight steps, doubling early then widening, cover every gap on the page. a builder never picks a raw pixel value; they reach for the nearest <span class="mono">--sp-*</span> token, so two screens built months apart still share one rhythm.</p>
+  <div class="ruler">
+    <div class="ruler-row"><span class="ruler-bar" style="width:4px"></span><span class="ruler-k">--sp-1</span><span class="ruler-v tnum">4</span></div>
+    <div class="ruler-row"><span class="ruler-bar" style="width:8px"></span><span class="ruler-k">--sp-2</span><span class="ruler-v tnum">8</span></div>
+    <div class="ruler-row"><span class="ruler-bar" style="width:12px"></span><span class="ruler-k">--sp-3</span><span class="ruler-v tnum">12</span></div>
+    <div class="ruler-row"><span class="ruler-bar" style="width:16px"></span><span class="ruler-k">--sp-4</span><span class="ruler-v tnum">16</span></div>
+    <div class="ruler-row"><span class="ruler-bar" style="width:24px"></span><span class="ruler-k">--sp-5</span><span class="ruler-v tnum">24</span></div>
+    <div class="ruler-row"><span class="ruler-bar" style="width:32px"></span><span class="ruler-k">--sp-6</span><span class="ruler-v tnum">32</span></div>
+    <div class="ruler-row"><span class="ruler-bar" style="width:40px"></span><span class="ruler-k">--sp-7</span><span class="ruler-v tnum">40</span></div>
+    <div class="ruler-row"><span class="ruler-bar" style="width:56px"></span><span class="ruler-k">--sp-8</span><span class="ruler-v tnum">56</span></div>
+  </div>
+
+  <span class="label" style="display:block;margin-top:var(--sp-7)">layout tokens</span>
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead><tr><th>token</th><th>value</th><th>role</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="dt-name">--sp-1</td><td class="dt-val tnum">4px</td><td class="dt-role">hairline gap, icon-to-label</td><td><button class="copy-token" data-copy="--sp-1"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">--sp-2</td><td class="dt-val tnum">8px</td><td class="dt-role">tight stack, chip padding</td><td><button class="copy-token" data-copy="--sp-2"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">--sp-3</td><td class="dt-val tnum">12px</td><td class="dt-role">control padding, row gap</td><td><button class="copy-token" data-copy="--sp-3"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">--sp-4</td><td class="dt-val tnum">16px</td><td class="dt-role">card padding, default gap</td><td><button class="copy-token" data-copy="--sp-4"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">--sp-5</td><td class="dt-val tnum">24px</td><td class="dt-role">block padding, group gap</td><td><button class="copy-token" data-copy="--sp-5"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">--sp-6</td><td class="dt-val tnum">32px</td><td class="dt-role">section gutter, column gap</td><td><button class="copy-token" data-copy="--sp-6"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">--sp-7</td><td class="dt-val tnum">40px</td><td class="dt-role">subheading lead, wide gap</td><td><button class="copy-token" data-copy="--sp-7"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">--sp-8</td><td class="dt-val tnum">56px</td><td class="dt-role">band rhythm, page breaks</td><td><button class="copy-token" data-copy="--sp-8"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">--maxw</td><td class="dt-val tnum">1040px</td><td class="dt-role">centered content measure</td><td><button class="copy-token" data-copy="--maxw"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">--gutter</td><td class="dt-val tnum">32px</td><td class="dt-role">left / right page inset (= --sp-6)</td><td><button class="copy-token" data-copy="--gutter"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">--control-h</td><td class="dt-val tnum">36px</td><td class="dt-role">button and input height</td><td><button class="copy-token" data-copy="--control-h"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">--control-h-sm</td><td class="dt-val tnum">28px</td><td class="dt-role">compact button and nav control</td><td><button class="copy-token" data-copy="--control-h-sm"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">--nav-h</td><td class="dt-val tnum">56px</td><td class="dt-role">sticky nav height, scroll offset</td><td><button class="copy-token" data-copy="--nav-h"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">--row-h-standard</td><td class="dt-val tnum">40px</td><td class="dt-role">default table row (compact 32 / comfortable 48)</td><td><button class="copy-token" data-copy="--row-h-standard"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">radius</td><td class="dt-val tnum">0</td><td class="dt-role">square, every corner, no exceptions</td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout" style="margin-top:var(--sp-5)"><i data-lucide="shield-check"></i><div>every padding, margin and gap sits on the scale. radius is 0 everywhere; corners stay square and editorial.</div></div>
+</section>

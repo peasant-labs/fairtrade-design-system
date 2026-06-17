@@ -17,21 +17,82 @@ import {
   FileText,
   Link2,
 } from 'lucide-react'
-import galleryHtml from './gallery.html?raw'
-import { AsciiArt, Halftone, GlyphField } from './effects.jsx'
-/* imagery library: public-domain peasant / crop paintings, rendered through
-   the image->ascii / halftone filters (the only imagery in the system) */
-import wheatImg from './img/wheat.png'
-import gleanersImg from './img/gleaners.jpg'
-import reaperImg from './img/reaper.jpg'
+import { AsciiImage, AsciiVideo } from './effects.jsx'
+/* imagery: a runtime-sampled ascii video of the wheat in the hero (src/assets/wheat.mp4);
+   classic chiaroscuro peasant portraits (lit subject on a dark ground) rendered through
+   the image->ascii filter on the cards, like the inspiration reference */
+import wheatVid from './assets/wheat.mp4'
+import peasantWoman from './img/peasant-woman.jpg'
+import peasantMan from './img/peasant-man.jpg'
 
-const [GAL_TOP, GAL_REST] = galleryHtml.split('<!--HERO-->')
-const [GAL_MID, GAL_BOTTOM] = GAL_REST.split('<!--CARDS-->')
+/* the page is composed from per-section html partials (src/sections, injected as raw
+   markup) interleaved with the few react sections that need the imagery effects. each
+   partial owns one section so it can be edited in isolation. */
+import defsHtml from './sections/00-defs.html?raw'
+import navHtml from './sections/01-nav.html?raw'
+import startHtml from './sections/10-start.html?raw'
+import groupFoundationsHtml from './sections/15-group-foundations.html?raw'
+import principlesHtml from './sections/20-principles.html?raw'
+import voiceHtml from './sections/22-voice.html?raw'
+import colorHtml from './sections/24-color.html?raw'
+import typeHtml from './sections/26-type.html?raw'
+import spacingHtml from './sections/28-spacing.html?raw'
+import iconsHtml from './sections/30-icons.html?raw'
+import motionHtml from './sections/32-motion.html?raw'
+import controlsHtml from './sections/34-controls.html?raw'
+import groupComponentsHtml from './sections/40-group-components.html?raw'
+import badgesHtml from './sections/42-badges.html?raw'
+import trailsHtml from './sections/44-trails.html?raw'
+import conversationHtml from './sections/48-conversation.html?raw'
+import canvasHtml from './sections/50-canvas.html?raw'
+import formsHtml from './sections/52-forms.html?raw'
+import groupUsingHtml from './sections/60-group-using.html?raw'
+import a11yHtml from './sections/62-a11y.html?raw'
+import tokensHtml from './sections/64-tokens.html?raw'
+import resourcesHtml from './sections/66-resources.html?raw'
+
 const KEY = 'pds_feedback_v1'
 const isHttp = /^https?:$/.test(location.protocol)
 const fbOff = /[?&]fb=off/.test(location.search)
 
-/* ---- target description helpers (same logic the static tool used) ---- */
+/* on-this-page rail / scroll-spy model. ids match the section[id] in the partials and
+   the react sections; group rows anchor to the group openers and drive the nav active
+   state. */
+const RAIL = [
+  { kind: 'link', id: 'start', label: 'start here' },
+  { kind: 'group', id: 'foundations', label: 'foundations' },
+  { kind: 'link', id: 'principles', label: 'principles' },
+  { kind: 'link', id: 'voice', label: 'voice' },
+  { kind: 'link', id: 'color', label: 'color' },
+  { kind: 'link', id: 'typography', label: 'typography' },
+  { kind: 'link', id: 'spacing', label: 'spacing & layout' },
+  { kind: 'link', id: 'icons', label: 'iconography' },
+  { kind: 'link', id: 'motion', label: 'motion' },
+  { kind: 'link', id: 'controls', label: 'controls' },
+  { kind: 'group', id: 'components', label: 'components' },
+  { kind: 'link', id: 'badges', label: 'badges & states' },
+  { kind: 'link', id: 'trails', label: 'trails & tabs' },
+  { kind: 'link', id: 'cards', label: 'cards & rows' },
+  { kind: 'link', id: 'conversation', label: 'conversation' },
+  { kind: 'link', id: 'canvas', label: 'canvas & dialog' },
+  { kind: 'link', id: 'forms', label: 'forms & empty' },
+  { kind: 'group', id: 'using', label: 'using the system' },
+  { kind: 'link', id: 'a11y', label: 'accessibility' },
+  { kind: 'link', id: 'tokens', label: 'tokens' },
+  { kind: 'link', id: 'resources', label: 'resources' },
+]
+/* id -> owning group id (null before the first group, i.e. the intro on-ramp) */
+const GROUP_OF = (() => {
+  const m = {}
+  let g = null
+  for (const r of RAIL) {
+    if (r.kind === 'group') g = r.id
+    m[r.id] = g
+  }
+  return m
+})()
+
+/* ---- target description helpers (same logic the static feedback tool used) ---- */
 function selectorFor(el) {
   if (el.id) return '#' + el.id
   const parts = []
@@ -93,44 +154,81 @@ function stamp() {
   )
 }
 
-/* hero with the imagery baked into the identity: ascii focal art, halftone
-   amber inset, glyph-grid texture behind. (kept effects from the references) */
-function Hero({ theme }) {
+/* a raw-html partial dropped transparently into the flow (display:contents wrapper) */
+const Raw = ({ html }) => <div className="contents" dangerouslySetInnerHTML={{ __html: html }} />
+
+/* section 1 — full-screen brand splash: the wheat video sampled to ascii + the wordmark */
+function Hero() {
   return (
-    <section className="hero hero-fx">
-      <div className="hero-bg" aria-hidden="true"><GlyphField rows={11} repeat={46} /></div>
-      <div className="hero-main">
-        <div className="hero-copy">
-          <h1>receipts for <span className="hl">agentic work</span>, kept low to the ground.</h1>
-          <p>ingest your sessions locally, redact them, and share what's worth sharing. browse the commons, gather into collectives, attest to what mattered.</p>
-          <div className="btn-row">
-            <button className="btn btn-primary">explore the commons</button>
-            <button className="btn btn-secondary">publish a transcript</button>
-          </div>
-        </div>
-        <div className="hero-art-wrap">
-          <div className="hero-art framed">
-            <AsciiArt src={wheatImg} cols={172} aspect={0.4} isolated contrast={1.32} gamma={0.82} theme={theme} className="hero-ascii" />
-          </div>
+    <section className="hero framed" id="top">
+      <AsciiVideo src={wheatVid} cols={300} boost={2.05} contrast={1.5} fps={24} smooth={6} waveAmp={0} className="hero-video" />
+      <div className="hero-brand"><span className="hero-brand-word">fairtrade</span></div>
+      <a className="hero-scroll" href="#intro" aria-label="scroll">scroll</a>
+    </section>
+  )
+}
+
+/* section 2 — the value proposition */
+function Intro() {
+  return (
+    <section className="intro" id="intro">
+      <div className="intro-in">
+        <h1>receipts for <span className="hl">agentic work</span>,<br />kept low to the ground.</h1>
+        <p>ingest your sessions locally, redact them, and share what's worth sharing.</p>
+        <div className="btn-row">
+          <button className="btn btn-primary">explore the commons</button>
+          <button className="btn btn-secondary">publish a transcript</button>
         </div>
       </div>
     </section>
   )
 }
 
-/* provider brand marks (svg symbols live in the gallery blob, document-global) */
+/* the sticky on-this-page rail (left of the content column on wide viewports) */
+function Rail({ active }) {
+  return (
+    <nav className="page-rail" aria-label="on this page">
+      <div className="rail-head">on this page</div>
+      <ul className="rail-list">
+        {RAIL.map((r) =>
+          r.kind === 'group' ? (
+            <li key={r.id} className="rail-group">
+              <a href={'#' + r.id}>{r.label}</a>
+            </li>
+          ) : (
+            <li key={r.id}>
+              <a
+                className={'rail-link' + (active === r.id ? ' active' : '')}
+                href={'#' + r.id}
+                aria-current={active === r.id ? 'true' : undefined}
+              >
+                {r.label}
+              </a>
+            </li>
+          )
+        )}
+      </ul>
+    </nav>
+  )
+}
+
+/* provider brand marks (svg symbols live in the defs partial, document-global) */
 const Claude = () => (<span className="g-claude"><svg className="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-claude" /></svg></span>)
 const Gemini = () => (<span className="g-gemini"><svg className="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-gemini" /></svg></span>)
 
 /* cards & rows, ref-01 style: ascii/halftone thumbnail on top + bullet metadata */
 function Cards({ theme }) {
   return (
-    <section className="band">
+    <section className="band" id="cards">
       <span className="label">cards &amp; rows</span>
       <div className="sub">list and grid surfaces, imagery on top</div>
+      <p className="prose">cards carry a transcript or a collective at a glance: a peasant portrait rendered through the ascii filter, a title, a short summary, and tabular metadata. rows are the compact form for dense lists.</p>
+      <div className="specimen">
+        <div className="specimen-bar"><span className="specimen-cap">example</span></div>
+        <div className="specimen-body">
       <div className="grid-cards">
         <a className="card card-img">
-          <div className="card-thumb"><AsciiArt src={gleanersImg} cols={132} aspect={0.34} contrast={1.3} vignette={0.26} theme={theme} className="thumb-ascii" /></div>
+          <div className="card-thumb"><AsciiImage src={peasantWoman} cols={224} aspect={0.6} isolated contrast={1.18} gamma={0.78} black={0.22} white={0.86} vignette={0.16} ink="#ece7dd" theme={theme} className="thumb-ascii" /></div>
           <div className="card-body">
             <div className="card-head"><span className="metaitem"><Claude /> claude-code</span><Eye size={14} style={{ color: 'var(--ink-3)' }} /></div>
             <h3>refactor ingest pipeline to stream</h3>
@@ -143,7 +241,7 @@ function Cards({ theme }) {
           </div>
         </a>
         <a className="card card-img">
-          <div className="card-thumb"><Halftone src={reaperImg} cols={64} accent contrast={1.3} vignette={0.3} theme={theme} /></div>
+          <div className="card-thumb"><AsciiImage src={peasantMan} cols={224} aspect={0.6} isolated contrast={1.12} gamma={0.74} black={0.12} white={0.6} vignette={0.16} ink="#ece7dd" theme={theme} className="thumb-ascii" /></div>
           <div className="card-body">
             <div className="card-head"><span className="metaitem"><Users /> desert-archivists</span></div>
             <h3>desert archivists</h3>
@@ -160,12 +258,19 @@ function Cards({ theme }) {
         <div className="row"><span className="metaitem"><Claude /> claude-code</span><span className="grow mono">add fts5 search index</span><span className="metaitem mono">2026-06-12</span><span className="metaitem"><Clock /> 41m</span><span className="avatar">v</span></div>
         <div className="row"><span className="metaitem"><Gemini /> gemini-cli</span><span className="grow mono">tune redaction rules</span><span className="metaitem mono">2026-06-11</span><span className="metaitem"><Clock /> 1h 03m</span><span className="avatar">a</span></div>
       </div>
+        </div>
+      </div>
+      <div className="cmp">
+        <div className="cmp-card cmp-do"><div className="cmp-tag"><Check size={14} /> do</div><div className="cmp-body"><p>lead a card with one provider mark, a clear title, and tabular metrics.</p></div><div className="cmp-note">imagery sits on top, metadata stays scannable and aligned.</div></div>
+        <div className="cmp-card cmp-dont"><div className="cmp-tag"><X size={14} /> don't</div><div className="cmp-body"><p>crowd the foot with more than five metrics or color-only status.</p></div><div className="cmp-note">keep to a handful of metrics; status carries an icon and a label.</div></div>
+      </div>
+      <div className="callout"><BadgeCheck size={16} /><div>the whole card is one target; the ascii thumbnail is decorative and the title carries the meaning; counts and durations are tabular.</div></div>
     </section>
   )
 }
 
 export default function App() {
-  /* theme (toggled by the gallery's .theme-btn via click delegation) */
+  /* theme (toggled by the nav .theme-btn via click delegation) */
   const [theme, setTheme] = useState(() =>
     document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'
   )
@@ -174,7 +279,7 @@ export default function App() {
     else document.documentElement.removeAttribute('data-theme')
   }, [theme])
 
-  /* paint the gallery's lucide icons (UMD loaded in index.html) once mounted */
+  /* paint the partials' lucide icons (UMD loaded in index.html) once mounted */
   useEffect(() => {
     let n = 0
     const t = setInterval(() => {
@@ -185,6 +290,31 @@ export default function App() {
     }, 40)
     return () => clearInterval(t)
   }, [])
+
+  /* scroll-spy: track the active section for the rail + the active group for the nav */
+  const [active, setActive] = useState('start')
+  useEffect(() => {
+    const ids = RAIL.map((r) => r.id)
+    const els = ids.map((id) => document.getElementById(id)).filter(Boolean)
+    if (!els.length) return
+    const vis = new Map()
+    const io = new IntersectionObserver(
+      (ents) => {
+        ents.forEach((e) => vis.set(e.target.id, e.isIntersecting))
+        const firstId = ids.find((id) => vis.get(id))
+        if (firstId) setActive(firstId)
+      },
+      { rootMargin: '-45% 0px -50% 0px', threshold: 0 }
+    )
+    els.forEach((el) => io.observe(el))
+    return () => io.disconnect()
+  }, [])
+  useEffect(() => {
+    const grp = GROUP_OF[active]
+    document.querySelectorAll('.nav-links a[data-spy]').forEach((a) => {
+      a.classList.toggle('active', a.getAttribute('data-spy') === grp)
+    })
+  }, [active])
 
   /* feedback state */
   const [entries, setEntries] = useState(() => {
@@ -217,15 +347,27 @@ export default function App() {
     toastTimer.current = setTimeout(() => setToastMsg(''), 2800)
   }
 
-  function galleryClick(e) {
-    if (e.target.closest && e.target.closest('.theme-btn')) setTheme((t) => (t === 'light' ? 'dark' : 'light'))
+  /* delegated clicks inside the page: theme toggle + copy-token affordances */
+  function rootClick(e) {
+    const t = e.target
+    if (t.closest && t.closest('.theme-btn')) {
+      setTheme((x) => (x === 'light' ? 'dark' : 'light'))
+      return
+    }
+    const copy = t.closest && t.closest('[data-copy]')
+    if (copy) {
+      const v = copy.getAttribute('data-copy')
+      if (navigator.clipboard) navigator.clipboard.writeText(v).catch(() => {})
+      copy.classList.add('copied')
+      setTimeout(() => copy.classList.remove('copied'), 1200)
+      toast('copied ' + v)
+    }
   }
 
   /* annotate mode: document listeners live only while armed */
   useEffect(() => {
     if (!armed) return
     document.body.classList.add('fbk-arming')
-    // skip structural wrappers / anything covering (nearly) the whole viewport
     const badTarget = (el) => {
       if (!el || el.nodeType !== 1) return true
       const t = el.tagName
@@ -327,7 +469,7 @@ export default function App() {
     }
     setComposeOpen(false)
     targetRef.current = null
-    setArmed(true) // keep selecting for the next element
+    setArmed(true)
   }
   function cancelCompose() {
     setComposeOpen(false)
@@ -378,15 +520,53 @@ export default function App() {
     } else toast('could not find that element now')
   }
 
+  /* scroll-reveal: fade/lift each section in as it enters the viewport */
+  useEffect(() => {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const targets = Array.from(document.querySelectorAll('.intro, .band, .group, .card-img'))
+    targets.forEach((t) => t.classList.add('reveal'))
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target) } }),
+      { threshold: 0.06, rootMargin: '0px 0px -6% 0px' }
+    )
+    targets.forEach((t) => io.observe(t))
+    return () => io.disconnect()
+  }, [])
+
   return (
     <>
-      <div className="pds-root" onClick={galleryClick}>
-        <div className="contents" dangerouslySetInnerHTML={{ __html: GAL_TOP }} />
-        <Hero theme={theme} />
-        <div className="contents" dangerouslySetInnerHTML={{ __html: GAL_MID }} />
-        <Cards theme={theme} />
-        <div className="contents" dangerouslySetInnerHTML={{ __html: GAL_BOTTOM }} />
-        <footer className="foot"><div className="foot-in"><svg className="logo" width="15" height="15" viewBox="0 0 32 32"><use href="#logo" /></svg> <b>peasant design system</b> <span className="right"><span>one identity, three apps</span> <a href="https://github.com/peasant-labs/peasant-design-system">github</a></span></div></footer>
+      <div className="pds-root" onClick={rootClick}>
+        <Raw html={defsHtml} />
+        <Raw html={navHtml} />
+        <Hero />
+        <Intro />
+        <div className="docs">
+          <Rail active={active} />
+          <main className="docs-main">
+            <Raw html={startHtml} />
+            <Raw html={groupFoundationsHtml} />
+            <Raw html={principlesHtml} />
+            <Raw html={voiceHtml} />
+            <Raw html={colorHtml} />
+            <Raw html={typeHtml} />
+            <Raw html={spacingHtml} />
+            <Raw html={iconsHtml} />
+            <Raw html={motionHtml} />
+            <Raw html={controlsHtml} />
+            <Raw html={groupComponentsHtml} />
+            <Raw html={badgesHtml} />
+            <Raw html={trailsHtml} />
+            <Cards theme={theme} />
+            <Raw html={conversationHtml} />
+            <Raw html={canvasHtml} />
+            <Raw html={formsHtml} />
+            <Raw html={groupUsingHtml} />
+            <Raw html={a11yHtml} />
+            <Raw html={tokensHtml} />
+            <Raw html={resourcesHtml} />
+          </main>
+        </div>
+        <footer className="foot"><div className="foot-in"><svg className="logo" width="15" height="15" viewBox="0 0 32 32"><use href="#logo" /></svg> <b>fairtrade design system</b> <span className="right"><span>one identity, three apps</span> <a href="https://github.com/peasant-labs/peasant-design-system">github</a></span></div></footer>
       </div>
 
       {!fbOff && (

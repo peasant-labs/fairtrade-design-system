@@ -1,0 +1,42 @@
+<!-- FORMS / FILTERS / EMPTY -->
+<section class="band" id="forms">
+  <span class="label">forms, filters &amp; empty states</span>
+  <div class="sub">low-traffic surfaces, left-aligned, the logo carries the imagery</div>
+  <p class="prose">forms, filter rails, and empty states are low-traffic surfaces, so the wheat logo carries the imagery here and nowhere dense. labels sit above their fields, every choice is reversible, and a view keeps to five actions at most.</p>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">example</span></div>
+    <div class="specimen-body">
+      <div class="cols cols-2">
+        <div class="window framed">
+          <div style="padding:var(--sp-4);border-bottom:var(--bd)">
+            <svg class="logo" width="30" height="30" viewBox="0 0 32 32" style="color:var(--amber);filter:drop-shadow(var(--glow-soft));margin-bottom:var(--sp-2)"><use href="#logo"/></svg>
+            <div class="win-title" style="margin-top:0">create the <span class="hl">collective</span></div>
+            <div class="label" style="margin-top:var(--sp-1)">a shared shelf for redacted transcripts</div>
+          </div>
+          <div style="padding:var(--sp-4)">
+            <div class="field"><span class="label">name</span><input class="input" value="desert-archivists" /></div>
+            <div class="field"><span class="label">acceptance mode</span><div class="select-wrap"><select class="select"><option>verified only</option><option>open</option></select><i data-lucide="chevron-down"></i></div></div>
+            <label class="check" style="margin-bottom:var(--sp-4)"><span class="check-tick"><i data-lucide="check"></i></span> require redaction review</label>
+            <div class="btn-row"><button class="btn btn-primary" style="flex:1"><i data-lucide="users"></i> create the collective</button><button class="btn btn-secondary">cancel</button></div>
+          </div>
+        </div>
+        <div>
+          <div class="sidebar" style="margin-bottom:var(--sp-4)">
+            <div class="sb-sec"><div class="sb-head">order</div>
+              <div class="sb-opt on"><span>most recent</span> <i data-lucide="check" class="lucide" style="width:14px;height:14px;color:var(--amber)"></i></div><div class="sb-opt"><span>most turns</span></div><div class="sb-opt"><span>most tokens</span></div></div>
+            <div class="sb-sec"><div class="sb-head">provider</div>
+              <div class="sb-opt"><span><span class="g-claude"><svg class="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-claude"/></svg></span> claude-code</span></div>
+              <div class="sb-opt on"><span><span class="g-gemini"><svg class="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-gemini"/></svg></span> gemini-cli</span> <i data-lucide="check" class="lucide" style="width:14px;height:14px;color:var(--amber)"></i></div></div>
+          </div>
+          <div class="empty">
+            <div class="ring"><i data-lucide="compass"></i></div>
+            <h3>the commons is quiet</h3>
+            <p>no transcripts match these filters yet. broaden the search or be the first to contribute.</p>
+            <button class="btn btn-secondary btn-sm"><i data-lucide="upload"></i> publish a transcript</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="callout"><i data-lucide="shield-check"></i><div>labels sit above their fields with a visible focus ring. required state reads from the label and its icon, never color alone, and every action stays reversible.</div></div>
+</section>

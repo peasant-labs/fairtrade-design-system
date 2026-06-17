@@ -1,0 +1,19 @@
+<!-- MOTION -->
+<section class="band" id="motion">
+  <span class="label">motion</span>
+  <div class="sub">static first; motion is added, never assumed</div>
+  <p class="prose">reduced motion is the base state, not an opt-out. transitions exist only under a no-preference query and stay short. nothing loops, flashes or autoplays; the live indicator is a static filled dot, never a pulse.</p>
+
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead><tr><th>token</th><th>value</th><th>role</th></tr></thead>
+      <tbody>
+        <tr><td class="dt-name">--motion-base</td><td class="dt-val tnum">0ms</td><td class="dt-role">default, no transition unless opted in</td></tr>
+        <tr><td class="dt-name">transition</td><td class="dt-val tnum">150-200ms</td><td class="dt-role">only under prefers-reduced-motion: no-preference</td></tr>
+        <tr><td class="dt-name">live dot</td><td class="dt-val">static</td><td class="dt-role">filled, never a pulse or blink</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout"><i data-lucide="shield-check"></i><div>author static, then add motion inside <span class="mono">prefers-reduced-motion: no-preference</span> and cap it at ~200ms. no parallax, no looping shimmer, no autoplay.</div></div>
+</section>

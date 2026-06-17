@@ -1,6 +1,6 @@
 # neuroinclusive by default
 
-This is not an "accessibility settings" page. These are the **default** rules of the peasant
+This is not an "accessibility settings" page. These are the **default** rules of the fairtrade
 design system, because the product is a **data-heavy** application (long transcripts, tables,
 code, dashboards) and our users include people who are dyslexic, have ADHD, or are autistic.
 Designing for them by default makes the product calmer, faster to scan, and less fatiguing for

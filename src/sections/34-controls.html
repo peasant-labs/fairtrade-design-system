@@ -1,0 +1,163 @@
+<!-- CONTROLS -->
+<section class="band" id="controls">
+  <span class="label">controls</span>
+  <div class="sub">buttons and inputs share one height; one primary action per view</div>
+
+  <p class="prose">buttons and inputs are the same component family: they sit on one shared height (36px, 28px when small) with identical padding, so a row of mixed controls keeps a single baseline. reach for a primary button for the one action a view is built around, secondary or ghost for everything else, and danger only when the action removes or destroys data.</p>
+
+  <!-- 2. live specimen -->
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">example</span></div>
+    <div class="specimen-body">
+      <div class="cols cols-2">
+        <div>
+          <span class="label" style="margin-bottom:var(--sp-3)">default (36px)</span>
+          <div class="btn-row" style="margin-bottom:var(--sp-5)">
+            <button class="btn btn-primary">publish transcript</button>
+            <button class="btn btn-secondary">save draft</button>
+            <button class="btn btn-ghost">cancel</button>
+            <button class="btn btn-danger"><i data-lucide="trash-2"></i> delete</button>
+            <button class="btn btn-secondary btn-icon" aria-label="add collective"><i data-lucide="plus"></i></button>
+          </div>
+          <span class="label" style="margin-bottom:var(--sp-3)">small (28px)</span>
+          <div class="btn-row">
+            <button class="btn btn-primary btn-sm"><i data-lucide="upload"></i> contribute</button>
+            <button class="btn btn-secondary btn-sm">share</button>
+            <button class="btn btn-ghost btn-sm">dismiss</button>
+            <button class="btn btn-secondary btn-sm btn-icon" aria-label="settings"><i data-lucide="settings"></i></button>
+          </div>
+        </div>
+        <div>
+          <span class="label" style="margin-bottom:var(--sp-3)">inputs (36px)</span>
+          <div class="field input-ico"><i data-lucide="search"></i><input class="input" placeholder="search the commons" /></div>
+          <div class="field"><div class="select-wrap"><select class="select"><option>acceptance: open</option><option>verified only</option></select><i data-lucide="chevron-down"></i></div></div>
+          <label class="check"><span class="check-tick"><i data-lucide="check"></i></span> require redaction review</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. anatomy -->
+  <span class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">anatomy</span>
+  <div class="anatomy">
+    <div class="specimen">
+      <div class="specimen-bar"><span class="specimen-cap">parts</span></div>
+      <div class="specimen-body">
+        <div class="btn-row">
+          <button class="btn btn-primary"><i data-lucide="upload"></i> contribute</button>
+          <div class="field input-ico" style="margin-bottom:0;width:240px"><i data-lucide="search"></i><input class="input" placeholder="search the commons" /></div>
+        </div>
+      </div>
+    </div>
+    <div class="anatomy-legend">
+      <span class="anatomy-item"><span class="anatomy-num tnum">1</span> lucide icon, 14-16px, leads the label</span>
+      <span class="anatomy-item"><span class="anatomy-num tnum">2</span> label, lowercase mono, verb plus object</span>
+      <span class="anatomy-item"><span class="anatomy-num tnum">3</span> box, 36px high, padding 0 16px</span>
+      <span class="anatomy-item"><span class="anatomy-num tnum">4</span> hairline border, var(--bd-strong)</span>
+      <span class="anatomy-item"><span class="anatomy-num tnum">5</span> focus ring, 3px amber on :focus-visible</span>
+      <span class="anatomy-item"><span class="anatomy-num tnum">6</span> input shares the same 36px box</span>
+    </div>
+  </div>
+
+  <!-- 4. variants / states -->
+  <span class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">variants and states</span>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">states</span></div>
+    <div class="specimen-body">
+      <div class="cols cols-2">
+        <div>
+          <div class="btn-row" style="margin-bottom:var(--sp-3)">
+            <button class="btn btn-primary">primary</button>
+            <button class="btn btn-secondary">secondary</button>
+            <button class="btn btn-ghost">ghost</button>
+            <button class="btn btn-danger"><i data-lucide="trash-2"></i> danger</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" style="opacity:.5;pointer-events:none" aria-disabled="true">disabled</button>
+            <button class="btn btn-secondary" style="border-color:var(--amber-dim);color:var(--amber-bright)">focus</button>
+          </div>
+        </div>
+        <div>
+          <div class="field input-ico" style="margin-bottom:var(--sp-3)"><i data-lucide="search"></i><input class="input" placeholder="default input" /></div>
+          <div class="field input-ico" style="margin-bottom:0"><i data-lucide="search"></i><input class="input" style="border-color:var(--amber-dim)" value="desert-archivists" /></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="anatomy-legend" style="margin-top:var(--sp-3)">
+    <span class="anatomy-item">primary</span>
+    <span class="anatomy-item">secondary</span>
+    <span class="anatomy-item">ghost</span>
+    <span class="anatomy-item">danger</span>
+    <span class="anatomy-item">disabled</span>
+    <span class="anatomy-item">focus</span>
+    <span class="anatomy-item">input default</span>
+    <span class="anatomy-item">input focus</span>
+  </div>
+
+  <!-- 5. do / don't -->
+  <div class="cmp">
+    <div class="cmp-card cmp-do">
+      <div class="cmp-tag"><i data-lucide="check"></i> do</div>
+      <div class="cmp-body">
+        <div class="btn-row">
+          <button class="btn btn-primary btn-sm"><i data-lucide="upload"></i> contribute</button>
+          <button class="btn btn-secondary btn-sm">share</button>
+          <button class="btn btn-danger btn-sm"><i data-lucide="trash-2"></i> delete</button>
+        </div>
+      </div>
+      <div class="cmp-note">pair a destructive action with an icon and a label; keep a row to 5 actions or fewer.</div>
+    </div>
+    <div class="cmp-card cmp-dont">
+      <div class="cmp-tag"><i data-lucide="x"></i> don't</div>
+      <div class="cmp-body">
+        <div class="btn-row">
+          <button class="btn btn-secondary btn-sm">share</button>
+          <button class="btn btn-secondary btn-sm">export</button>
+          <button class="btn btn-secondary btn-sm">pin</button>
+          <button class="btn btn-secondary btn-sm">archive</button>
+          <button class="btn btn-secondary btn-sm">flag</button>
+          <button class="btn btn-secondary btn-sm" style="color:var(--clay)">delete</button>
+        </div>
+      </div>
+      <div class="cmp-note">a row past 5 buttons, or a danger button carried by color alone with no icon or label.</div>
+    </div>
+  </div>
+
+  <!-- 6. specs & tokens -->
+  <span class="label" style="margin-top:var(--sp-7);margin-bottom:var(--sp-2)">specs</span>
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead><tr><th>property</th><th>value</th><th>note</th></tr></thead>
+      <tbody>
+        <tr><td class="dt-name">height</td><td class="dt-val tnum">36px</td><td class="dt-role">shared with inputs and select</td></tr>
+        <tr><td class="dt-name">height (small)</td><td class="dt-val tnum">28px</td><td class="dt-role">dense rows, toolbars</td></tr>
+        <tr><td class="dt-name">padding</td><td class="dt-val tnum">0 16px</td><td class="dt-role">0 12px on small</td></tr>
+        <tr><td class="dt-name">radius</td><td class="dt-val tnum">0</td><td class="dt-role">square everywhere</td></tr>
+        <tr><td class="dt-name">border</td><td class="dt-val">var(--bd-strong)</td><td class="dt-role">secondary, danger, inputs</td></tr>
+        <tr><td class="dt-name">min target</td><td class="dt-val tnum">44px</td><td class="dt-role">primary action</td></tr>
+        <tr><td class="dt-name">icon</td><td class="dt-val tnum">14-16px</td><td class="dt-role">box stays full height</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <span class="label" style="margin-top:var(--sp-5);margin-bottom:var(--sp-2)">tokens</span>
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead><tr><th>token</th><th>value</th><th>role</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="dt-name">--control-h</td><td class="dt-val tnum">36px</td><td class="dt-role">button and input height</td><td><button class="copy-token" data-copy="--control-h" aria-label="copy --control-h"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td class="dt-name">--control-h-sm</td><td class="dt-val tnum">28px</td><td class="dt-role">small variant height</td><td><button class="copy-token" data-copy="--control-h-sm" aria-label="copy --control-h-sm"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td><span class="dt-sw" style="--c:#cba35c"></span><span class="dt-name">--amber</span></td><td class="dt-val tnum">#cba35c</td><td class="dt-role">primary fill, focus ring</td><td><button class="copy-token" data-copy="--amber" aria-label="copy --amber"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td><span class="dt-sw" style="--c:#141003"></span><span class="dt-name">--on-amber</span></td><td class="dt-val tnum">#141003</td><td class="dt-role">label on primary fill</td><td><button class="copy-token" data-copy="--on-amber" aria-label="copy --on-amber"><i data-lucide="clipboard"></i></button></td></tr>
+        <tr><td><span class="dt-sw" style="--c:#4d483e"></span><span class="dt-name">--rule-strong</span></td><td class="dt-val">var(--bd-strong)</td><td class="dt-role">emphatic control border</td><td><button class="copy-token" data-copy="--rule-strong" aria-label="copy --rule-strong"><i data-lucide="clipboard"></i></button></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 7. accessibility -->
+  <div class="callout" style="margin-top:var(--sp-5)">
+    <i data-lucide="shield-check"></i>
+    <div>every control keeps a hit box of at least 24px even when the glyph is 14-16px; focus is a visible 3px amber ring, never removed. danger always carries an icon and a label, never color alone. lowercase labels are chrome; the real button text stays a descriptive verb plus object (publish transcript, not ok).</div>
+  </div>
+</section>

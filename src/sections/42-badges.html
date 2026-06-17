@@ -1,0 +1,30 @@
+<!-- BADGES -->
+<section class="band" id="badges">
+  <span class="label">badges, providers &amp; states</span>
+  <div class="sub">icons carry meaning at a glance</div>
+  <p class="prose">a badge reads in one pass: an icon names the thing, a short label confirms it, and color reinforces. provider marks tag where a transcript came from; state and metric chips report its outcome and size. state is never carried by color alone.</p>
+  <div class="specimen">
+    <div class="specimen-bar"><span class="specimen-cap">example</span></div>
+    <div class="specimen-body">
+      <span class="label" style="margin-bottom:var(--sp-3)">providers</span>
+      <div class="chips" style="margin-bottom:var(--sp-5)">
+        <span class="chip"><span class="g-claude"><svg class="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-claude"/></svg></span> claude-code</span>
+        <span class="chip"><span class="g-gemini"><svg class="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-gemini"/></svg></span> gemini-cli</span>
+        <span class="chip"><span class="g-opencode"><svg class="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-opencode"/></svg></span> opencode</span>
+        <span class="chip"><span class="g-cursor"><svg class="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-cursor"/></svg></span> cursor</span>
+        <span class="chip"><span class="g-codex"><i data-lucide="square-terminal"></i></span> codex</span>
+      </div>
+      <span class="label" style="margin-bottom:var(--sp-3)">states + metrics</span>
+      <div class="chips">
+        <span class="chip chip-ok"><i data-lucide="shield-check"></i> redacted</span>
+        <span class="chip chip-warn"><i data-lucide="triangle-alert"></i> partial</span>
+        <span class="chip chip-err"><i data-lucide="circle-x"></i> failed</span>
+        <span class="chip"><i data-lucide="hash"></i> <b class="tnum" style="color:var(--ink)">42,318</b> tokens</span>
+        <span class="chip"><i data-lucide="clock"></i> <span class="tnum">2h 14m</span></span>
+        <span class="chip"><i data-lucide="git-branch"></i> <span class="tnum">18</span> turns</span>
+        <span class="chip"><i data-lucide="eye"></i> public</span>
+      </div>
+    </div>
+  </div>
+  <div class="callout"><i data-lucide="shield-check"></i><div>state never rides on color alone: redacted carries shield-check, partial a triangle, failed a circle-x. counts and durations are tabular.</div></div>
+</section>

@@ -6,5 +6,6 @@ dist
 feedback.md
 package-lock.json
 *.mp4
+!src/assets/wheat.mp4
 *.log
 .vite/

@@ -1,44 +1,64 @@
-# peasant design system
+# fairtrade design system
 
-One visual identity across **peasant** (local web), **village** (the commons), and **transcript-browser** (the shared viewer). Now a small **Vite + React + Tailwind v4** app: a living component gallery with an in-page feedback tool.
+One visual identity across **peasant** (local web), **village** (the commons), and
+**transcript-browser** (the shared viewer), presented as a **single-page design-system site**
+(modeled on wise.design, in the locked Caves-of-Qud identity): a hero, a value-prop, and 20
+documented sections in three groups, with a sticky on-this-page rail and scroll-spy. Built with
+**Vite + React + Tailwind v4**.
 
 ## run
 
 ```bash
 pnpm install
-pnpm dev          # http://localhost:5173
+pnpm dev            # http://localhost:5173 (or next free port)
+pnpm build          # static dist/
+pnpm preview        # serve dist/
 ```
 
 - toggle dark/light with the button top-right; deep-link a theme with `?theme=light`.
-- the **feedback** button (bottom-right) lets you click any element and leave a comment; comments auto-save to `feedback.md` (gitignored) via a Vite dev middleware. disable the tool with `?fb=off`.
-- `pnpm build` → static `dist/`.
+- the **feedback** button (bottom-right) lets you click any element and leave a comment; comments
+  auto-save to `feedback.md` (gitignored) via a Vite dev middleware. disable with `?fb=off`.
+- `?cap` is a review-only capture mode that shrinks the full-screen hero/intro so the whole page
+  fits one screenshot (see `HANDOFF.md` → rendering).
 
-## stack / layout
+## structure
 
-- [`../index.html`](../index.html) — Vite shell (fonts + theme preload + `#root`).
-- `../src/index.css` — Tailwind v4: design tokens in `@theme`, base + reused primitives as `@apply` component classes (the hybrid). single source of truth for styling.
-- `../src/gallery.html` — the gallery markup (raw HTML blob, not componentized yet).
-- `../src/App.jsx` — injects the gallery and runs the feedback tool as React.
-- `../vite.config.js` — react + tailwind plugins + the `/feedback` write middleware.
-- `llm/` — these docs (`DESIGN.md`, `HANDOFF.md`, this `README.md`).
+- [`../index.html`](../index.html) — Vite shell (fonts + theme/cap preload + lucide UMD + `#root`).
+- `../src/sections/*.html` — one HTML partial per section (numbered for order), injected as raw markup.
+- `../src/App.jsx` — composition root: injects the partials, renders the React sections (hero, intro,
+  cards), the sticky on-this-page rail + scroll-spy, the copy-token handler, and the feedback tool.
+- `../src/index.css` — Tailwind v4: design tokens in `:root` / `[data-theme="light"]`, the base layer,
+  the ported component classes, and the doc-primitives (specimen / do-don't / token tables / rail /
+  copy-token / ruler / anatomy). single source of truth for styling.
+- `../src/effects.jsx` — image→ascii / halftone / duotone filters (wheat hero, peasant portraits).
+- `llm/` — the docs: [`DESIGN.md`](./DESIGN.md) (system spec), [`PRESENTATION.md`](./PRESENTATION.md)
+  (the single-page build spec), [`NEUROINCLUSIVE.md`](./NEUROINCLUSIVE.md) (accessibility defaults),
+  [`HANDOFF.md`](./HANDOFF.md) (this stack, in detail), [`inspiration.md`](./inspiration.md).
 
-## philosophy (short)
+## the page (information architecture)
 
-1. styled, but functional
-2. always know where you are (fixed nav, sticky headers, breadcrumbs)
-3. tools stay on screen
-4. aligned, left-aligned
-5. glanceable (icons lead data, not chrome)
-6. readable first
-7. maximize usability
+- **intro** — hero (wheat ascii + wordmark), value-prop, start-here on-ramp.
+- **foundations** — principles · voice · color · typography · spacing & layout · iconography ·
+  motion · controls.
+- **components** — badges & states · trails & tabs · cards & rows · conversation window ·
+  canvas & dialog · forms & empty states.
+- **using the system** — accessibility & neuroinclusive · tokens reference · resources.
+
+Each section reads: overview → live specimen → (anatomy / do-don't / specs + token tables) →
+a quiet accessibility note.
 
 ## at a glance
 
-- **themes:** dark (default, deep near-black) + light (genuinely white, low-chroma), token-driven; glow is dark-only.
-- **type:** **Atkinson Hyperlegible Mono** carries the ascii/terminal identity (display + chrome + code); **Atkinson Hyperlegible** (proportional) for reading prose.
-- **icons:** [Lucide](https://lucide.dev) for UI, [Simple Icons](https://simpleicons.org) for brand marks, the peasant wheat logo for the brand. vector only, no ascii art.
+- **themes:** dark (default, deep near-black) + light (genuinely white, warm paper), token-driven;
+  glow is dark-only; amber is a scarce accent.
+- **type:** Atkinson Hyperlegible Mono (display + chrome + code) + Atkinson Hyperlegible (reading prose).
+- **icons:** Lucide for UI, Simple Icons for brand marks, the wheat logo for the brand. vector only.
 - **standardized:** one 4/8 spacing scale, one type scale, one control height, one border token, radius 0.
+- **neuroinclusive by default:** 16px floor, 1.5 line-height, capped measure, ≥3:1 borders, global
+  focus ring, tabular numbers, static-first motion. (see `NEUROINCLUSIVE.md`.)
 
 ## rollout
 
-A shared token layer is the source of truth; token names are preserved across the apps so values + fonts change and components reflavor in place, then the system fans out across every screen. See [`DESIGN.md`](./DESIGN.md).
+A shared token layer is the source of truth; token names are preserved across the three apps so only
+values + fonts change and components reflavor in place, then the system fans out across every screen.
+See [`DESIGN.md`](./DESIGN.md) and [`HANDOFF.md`](./HANDOFF.md).

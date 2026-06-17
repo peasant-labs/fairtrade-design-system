@@ -38,5 +38,8 @@ function feedbackWriter() {
 }
 
 export default defineConfig({
+  // root for dev/preview and most hosts; GitHub Pages project sites set
+  // VITE_BASE=/peasant-design-system/ at build time (see .github/workflows/deploy.yml)
+  base: process.env.VITE_BASE || '/',
   plugins: [tailwindcss(), react(), feedbackWriter()],
 })

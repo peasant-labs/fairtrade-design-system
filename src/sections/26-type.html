@@ -1,0 +1,55 @@
+<!-- TYPOGRAPHY -->
+<section class="band" id="typography">
+  <span class="label">typography</span>
+  <div class="sub">two faces from the atkinson hyperlegible superfamily, one system</div>
+  <p class="prose">one type split does all the work. the monospaced face carries every piece of chrome, code and display: headings, nav, labels, chips, buttons, breadcrumbs and code blocks, holding the terminal grid. the proportional sibling is used only for reading prose, where comfort beats the column. the same scale and tokens drive both.</p>
+
+  <div class="type-faces">
+    <div class="face">
+      <div class="face-aa mono">Aa</div>
+      <div class="face-meta">
+        <h3>atkinson hyperlegible mono</h3>
+        <div class="face-role">display, ui chrome &amp; code</div>
+        <p>the monospaced voice of the system: every heading, label, button, badge, breadcrumb and code block. it carries the terminal and ascii identity.</p>
+        <div class="face-glyphs mono">abcdefghijklmnopqrstuvwxyz 0123456789 &amp; * + = / ( ) [ ] { } # @ _ : ;</div>
+      </div>
+    </div>
+    <div class="face">
+      <div class="face-aa">Aa</div>
+      <div class="face-meta">
+        <h3>atkinson hyperlegible</h3>
+        <div class="face-role">reading prose</div>
+        <p>the proportional sibling, used only for long-form body text in transcripts and docs, where reading comfort beats the mono grid.</p>
+        <div class="face-glyphs">abcdefghijklmnopqrstuvwxyz 0123456789 &amp; ? ! ( ) : ; ,</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="type-scale">
+    <div class="ts-row"><div class="ts-sample mono" style="font-size:var(--fs-display)">foundations</div><div class="ts-meta"><span class="ts-name">chapter</span><span class="ts-px tnum">52px</span><span class="ts-use">group openers</span></div></div>
+    <div class="ts-row"><div class="ts-sample mono" style="font-size:var(--fs-hero)">kept low to the ground</div><div class="ts-meta"><span class="ts-name">display</span><span class="ts-px tnum">40px</span><span class="ts-use">hero headline</span></div></div>
+    <div class="ts-row"><div class="ts-sample mono" style="font-size:var(--fs-xl)">a commons for transcripts</div><div class="ts-meta"><span class="ts-name">title</span><span class="ts-px tnum">28px</span><span class="ts-use">group &amp; section titles</span></div></div>
+    <div class="ts-row"><div class="ts-sample mono" style="font-size:var(--fs-lg)">refactor ingest pipeline</div><div class="ts-meta"><span class="ts-name">heading</span><span class="ts-px tnum">22px</span><span class="ts-use">card &amp; dialog headings</span></div></div>
+    <div class="ts-row"><div class="ts-sample mono" style="font-size:var(--fs-md)">a shared shelf, redacted</div><div class="ts-meta"><span class="ts-name">subhead</span><span class="ts-px tnum">18px</span><span class="ts-use">sub-headings, lead-ins</span></div></div>
+    <div class="ts-row"><div class="ts-sample" style="font-size:var(--fs-body)">ingest your sessions locally, redact them, and share what is worth sharing.</div><div class="ts-meta"><span class="ts-name">body</span><span class="ts-px tnum">16px</span><span class="ts-use">paragraph prose</span></div></div>
+    <div class="ts-row"><div class="ts-sample mono" style="font-size:var(--fs-label)">orientation lives here</div><div class="ts-meta"><span class="ts-name">label</span><span class="ts-px tnum">14px</span><span class="ts-use">labels, chrome, captions</span></div></div>
+  </div>
+
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead>
+        <tr><th>token</th><th>face</th><th>role</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="dt-name">--font-display</td><td class="dt-val">atkinson hyperlegible mono</td><td class="dt-role">group openers, section titles, hero</td></tr>
+        <tr><td class="dt-name">--font-mono</td><td class="dt-val">atkinson hyperlegible mono</td><td class="dt-role">labels, chips, buttons, code, tabular data</td></tr>
+        <tr><td class="dt-name">--font-body</td><td class="dt-val">atkinson hyperlegible</td><td class="dt-role">reading prose only</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <i data-lucide="shield-check"></i>
+    <div>reading text never drops below 16px, with 1.5 line-height on prose. proportional prose gets 0.03em tracking; mono and tabular numbers keep letter-spacing 0 so columns stay aligned.</div>
+  </div>
+</section>

@@ -1,6 +1,6 @@
 # unified visual identity
 
-One design system for **peasant** (local web), **village** (the commons), and **transcript-browser** (the shared viewer). The live reference is the gallery app: `pnpm install && pnpm dev` (Vite + React + Tailwind v4), then use the dark/light toggle.
+One design system for **peasant** (local web), **village** (the commons), and **transcript-browser** (the shared viewer). The live reference is the single-page presentation site: `pnpm install && pnpm dev` (Vite + React + Tailwind v4), then use the dark/light toggle. For how that page is built (IA, the on-this-page rail, the doc-primitives), see [`PRESENTATION.md`](./PRESENTATION.md); for the stack and file layout, [`HANDOFF.md`](./HANDOFF.md).
 
 > **Read [`NEUROINCLUSIVE.md`](./NEUROINCLUSIVE.md) alongside this.** Because this is a data-heavy
 > product, the system is **neuroinclusive by default** (dyslexia / ADHD / autism / low-vision) — not
