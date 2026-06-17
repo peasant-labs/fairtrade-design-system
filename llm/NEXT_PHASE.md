@@ -1,5 +1,19 @@
 # ▶ NEXT PHASE — START HERE (priority set 2026-06-17)
 
+> ## ▶ REMAINING WORK (do this next — fresh-context entry point)
+> P1–P6 + the LAYOUT_AUDIT + the QA sweep are DONE and merged to `main` (commit `437f3f2`, build green,
+> `validate.mjs` 19/19, 0 overflow). Run order for what is left:
+> 1. **Quick deferred QA nits** (fast, visible polish) — the "deferred minor QA nits" list near the
+>    bottom of this file. A 1-pass workflow (one agent per nit) + re-gate is plenty.
+> 2. **tier-2.5 JSX component port** — formalise `Button/Input/Checkbox/Switch/Chip/Card/Tabs/Dialog/Menu`
+>    into typed `src/ui/*` components **keeping the existing class names**, then stand up Storybook
+>    ([`STORYBOOK_PLAN.md`](./STORYBOOK_PLAN.md)). This is the big structural item; see "carried over" below.
+> 3. **more tier-2 coverage** — sortable/selectable data table, numbered pagination, collapsible/accordion,
+>    per-tool transcript renderers (some may be subsumed by the P6 transcript-viewer mockup).
+> Gates to keep green every pass: `pnpm build` (contrast) + `node scripts/validate.mjs "http://localhost:5180/?fb=off"`
+> + `node scripts/findover.mjs <w>` for overflow. Capture QA crops with `node scripts/shoot.mjs <theme> <dir> [ids…]`.
+> Dev server: `pnpm dev --port 5180`. Stay in `unified-identity`; unification rollout stays deferred.
+>
 > **STATUS 2026-06-17 (overnight pass): P1–P6 below are ALL DONE, verified, and gated green** (build +
 > contrast gate both themes, `validate.mjs` 19/19, 0 overflow at 360/390/768/1024/1440). The full
 > 147-finding [`LAYOUT_AUDIT.md`](./LAYOUT_AUDIT.md) was applied (systemic CSS + one-agent-per-section
