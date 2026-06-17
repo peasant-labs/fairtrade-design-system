@@ -1,9 +1,9 @@
 # fairtrade design system — single-page presentation spec (build-ready)
 
-> **Status (2026-06-17):** this presentation is BUILT and interactive (22 sections, command palette, dialog,
-> tablists, menus). The hero, scroll behaviour, value-prop, and per-section layout are being revised per
-> [`NEXT_PHASE.md`](./NEXT_PHASE.md); `src/gallery.html` (referenced below) was removed, superseded by the
-> `src/sections/*` partials. Read this for the IA + doc-primitive conventions.
+> **Status (2026-06-17):** this presentation is BUILT and interactive (command palette, dialog, tablists,
+> menus, the tier-2 components, and the full-screen "in use" showcase). `src/gallery.html` (referenced below)
+> was removed, superseded by the `src/sections/*` partials. Current state + roadmap live in
+> [`HANDOFF.md`](./HANDOFF.md); read this file for the IA + doc-primitive conventions.
 
 This is the build spec for turning the existing component gallery (`src/gallery.html` + `src/App.jsx`) into a top-tier, single long-scroll design-system presentation, modeled on wise.design's structural polish but fully bound to the locked fairtrade identity. It does **not** propose multi-page. It adds the in-page devices that make one scroll read like a serious docs site.
 

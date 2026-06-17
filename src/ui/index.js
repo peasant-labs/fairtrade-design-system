@@ -1,0 +1,22 @@
+/* barrel: the single import surface for the ported + new tier-2 components.
+   visual styling lives in src/index.css (token-driven classes) — import that once at
+   the app / storybook root; these components only emit the matching class names. */
+export { default as Button, ButtonGroup, Segmented } from './Button.jsx'
+export { default as Input, Textarea, Select, Field } from './Input.jsx'
+export { default as Checkbox, Radio, RadioGroup } from './Checkbox.jsx'
+export { default as Switch } from './Switch.jsx'
+export { default as Chip, FilterChip, StatusDot, CountBadge } from './Chip.jsx'
+export { default as Card, CardImg, Row, MetaItem } from './Card.jsx'
+export { default as Tabs } from './Tabs.jsx'
+export { default as Breadcrumb, Steps } from './Breadcrumb.jsx'
+export { default as Pager } from './Pager.jsx'
+export { default as Pagination } from './Pagination.jsx'
+export { default as Menu } from './Menu.jsx'
+export { default as Tooltip, Popover } from './Tooltip.jsx'
+export { Avatar, AvatarGroup, Kbd, KbdChord, Tag } from './Avatar.jsx'
+export { default as EmptyState } from './EmptyState.jsx'
+export { Skeleton, Progress, Spinner, Toast, FeedbackPanel } from './Feedback.jsx'
+export { default as DataTable } from './DataTable.jsx'
+export { default as Accordion } from './Accordion.jsx'
+export { default as Dialog } from './Dialog.jsx'
+export { default as CommandPalette } from './CommandPalette.jsx'

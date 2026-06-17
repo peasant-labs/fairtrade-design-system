@@ -1,8 +1,7 @@
 # unified visual identity
 
-> **Current priorities: [`NEXT_PHASE.md`](./NEXT_PHASE.md)** (2026-06-17 direction — ascii hero, snap-scroll,
-> value-prop art, 1-column layout, spacing cleanup, interactive use-case mockups) and [`IMPROVE.md`](./IMPROVE.md)
-> (quality + coverage backlog). This file is the system reference (tokens, principles, rules).
+> **Current state + roadmap: [`HANDOFF.md`](./HANDOFF.md)** (the single entry point). This file is the
+> system reference (tokens, principles, rules).
 
 One design system for **peasant** (local web), **village** (the commons), and **transcript-browser** (the shared viewer). The live reference is the single-page presentation site: `pnpm install && pnpm dev` (Vite + React + Tailwind v4), then use the dark/light toggle. For how that page is built (IA, the on-this-page rail, the doc-primitives), see [`PRESENTATION.md`](./PRESENTATION.md); for the stack and file layout, [`HANDOFF.md`](./HANDOFF.md).
 

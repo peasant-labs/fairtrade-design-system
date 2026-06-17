@@ -10,3 +10,4 @@ package-lock.json
 *.log
 .vite/
 .verify_dist/
+storybook-static/

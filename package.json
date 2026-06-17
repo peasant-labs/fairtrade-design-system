@@ -8,7 +8,9 @@
     "dev": "vite",
     "contrast": "node scripts/contrast.mjs",
     "build": "node scripts/contrast.mjs && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "lucide": "^1.20.0",
@@ -17,9 +19,13 @@
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "^10.4.6",
+    "@storybook/addon-themes": "^10.4.6",
+    "@storybook/react-vite": "^10.4.6",
     "@tailwindcss/vite": "^4.3.1",
     "@vitejs/plugin-react": "^6.0.2",
     "puppeteer-core": "^25.1.0",
+    "storybook": "^10.4.6",
     "tailwindcss": "^4.3.1",
     "vite": "^8.0.16"
   }

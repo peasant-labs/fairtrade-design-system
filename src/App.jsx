@@ -21,9 +21,8 @@ import { AsciiImage, AsciiVideo, AsciiWordmark } from './effects.jsx'
 import { paintIcons } from './icons.js'
 import CommandPalette from './CommandPalette.jsx'
 import Dialog from './Dialog.jsx'
-import TranscriptViewer from './mockups/TranscriptViewer.jsx'
-import Commons from './mockups/Commons.jsx'
-import Chart from './mockups/Chart.jsx'
+import InUseShell from './mockups/inuse/InUseShell.jsx'
+import { DataTableSection, PaginationSection, AccordionSection } from './ComponentSections.jsx'
 /* imagery: a runtime-sampled ascii video of the wheat in the hero (src/assets/wheat.mp4);
    classic chiaroscuro peasant portraits (lit subject on a dark ground) rendered through
    the image->ascii filter on the cards, like the inspiration reference */
@@ -58,7 +57,6 @@ import groupUsingHtml from './sections/60-group-using.html?raw'
 import a11yHtml from './sections/62-a11y.html?raw'
 import tokensHtml from './sections/64-tokens.html?raw'
 import resourcesHtml from './sections/66-resources.html?raw'
-import groupInuseHtml from './sections/70-group-inuse.html?raw'
 
 const KEY = 'pds_feedback_v1'
 const isHttp = /^https?:$/.test(location.protocol)
@@ -87,14 +85,15 @@ const RAIL = [
   { kind: 'link', id: 'canvas', label: 'canvas & dialog' },
   { kind: 'link', id: 'forms', label: 'forms & empty' },
   { kind: 'link', id: 'overlays', label: 'overlays' },
+  { kind: 'link', id: 'data-table', label: 'data table' },
+  { kind: 'link', id: 'pagination', label: 'pagination' },
+  { kind: 'link', id: 'accordion', label: 'accordion' },
   { kind: 'group', id: 'using', label: 'using the system' },
   { kind: 'link', id: 'a11y', label: 'accessibility' },
   { kind: 'link', id: 'tokens', label: 'tokens' },
   { kind: 'link', id: 'resources', label: 'resources' },
   { kind: 'group', id: 'inuse', label: 'in use' },
-  { kind: 'link', id: 'mock-viewer', label: 'transcript viewer' },
-  { kind: 'link', id: 'mock-commons', label: 'commons' },
-  { kind: 'link', id: 'mock-chart', label: 'chart' },
+  { kind: 'link', id: 'inuse-stage', label: 'live demos' },
 ]
 /* id -> owning group id (null before the first group, i.e. the intro on-ramp) */
 const GROUP_OF = (() => {
@@ -766,16 +765,16 @@ export default function App() {
             <Raw html={canvasHtml} />
             <Raw html={formsHtml} />
             <Raw html={overlaysHtml} />
+            <DataTableSection />
+            <PaginationSection />
+            <AccordionSection />
             <Raw html={groupUsingHtml} />
             <Raw html={a11yHtml} />
             <Raw html={tokensHtml} />
             <Raw html={resourcesHtml} />
-            <Raw html={groupInuseHtml} />
-            <TranscriptViewer theme={theme} />
-            <Commons theme={theme} />
-            <Chart />
           </main>
         </div>
+        <InUseShell theme={theme} />
         <footer className="foot"><div className="foot-in"><svg className="logo" width="15" height="15" viewBox="0 0 32 32"><use href="#logo" /></svg> <b>fairtrade design system</b> <span className="right"><span>one identity, three apps</span> <a href="https://github.com/peasant-labs/peasant-design-system">github</a></span></div></footer>
       </div>
 

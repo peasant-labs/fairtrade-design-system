@@ -6,10 +6,11 @@ One visual identity across **peasant** (local web), **village** (the commons), a
 documented sections in three groups, with a sticky on-this-page rail and scroll-spy. Built with
 **Vite + React + Tailwind v4**.
 
-> **▶ Working on this? Start at [`NEXT_PHASE.md`](./NEXT_PHASE.md)** (current priorities) and
-> [`HANDOFF.md`](./HANDOFF.md) (state + gates). The page is now interactive end-to-end (command
-> palette ⌘k, modal dialog, tablist, dropdown menu) and gated by `pnpm build` (contrast) +
-> `node scripts/validate.mjs` (19-check interactive). Use **agent teams + workflows**.
+> **▶ Working on this? Start at [`HANDOFF.md`](./HANDOFF.md)** — the single entry point (current state,
+> roadmap, architecture, gates, locked rules). The page is interactive end-to-end (⌘k palette, modal dialog,
+> tablists, menus), ships a typed `src/ui/*` component library in **Storybook**, and a full-screen "in use"
+> showcase of the three apps. Gates: `pnpm build` (contrast) + `node scripts/validate.mjs` (19-check) +
+> `pnpm build-storybook` + `node scripts/sbsmoke.mjs`. Use **agent teams + workflows**.
 
 ## run
 
@@ -33,16 +34,22 @@ pnpm preview        # serve dist/
 - `../src/App.jsx` — composition root: injects the partials, renders the React sections (hero, intro,
   cards) + interactive `CommandPalette.jsx` / `Dialog.jsx`, the sticky rail + scroll-spy, nav-reveal,
   and the delegated handlers (theme, copy-token, ⌘k palette, dialog, tablists, dropdown menus).
+- `../src/ui/*` — the typed (JSDoc) component library (Button, Input, Switch, Chip, Card, Tabs, Menu,
+  Tooltip, DataTable, Pagination, Accordion, …) reusing the `index.css` classes; barrel `index.js`.
+- `../src/mockups/inuse/*` — the full-screen "in use" showcase (`InUseShell` + the three app demos).
+- `../.storybook/` — Storybook (SB10 + Vite): `main.js` + `preview.jsx` (theme/a11y/viewport wiring).
 - `../src/icons.js` — bundled lucide painter (`paintIcons()`); `lucide-react` for React components.
 - `../scripts/` — `contrast.mjs` (gate, run by `pnpm build`), `validate.mjs` (19-check interactive gate),
-  `diag.mjs` (interactive diagnostics).
+  `findover.mjs` (overflow), `sbsmoke.mjs` (storybook play-test smoke), `shoot.mjs` / `shootdemo.mjs`
+  (QA screenshots), `diag.mjs` (diagnostics).
 - `../src/index.css` — Tailwind v4: design tokens in `:root` / `[data-theme="light"]`, the base layer,
-  the ported component classes, and the doc-primitives (specimen / do-don't / token tables / rail /
-  copy-token / ruler / anatomy). single source of truth for styling.
+  the component classes + tier-2 families + the in-use namespaces, and the doc-primitives. single source
+  of truth for styling.
 - `../src/effects.jsx` — image→ascii / halftone / duotone filters (wheat hero, peasant portraits).
-- `llm/` — the docs: [`DESIGN.md`](./DESIGN.md) (system spec), [`PRESENTATION.md`](./PRESENTATION.md)
-  (the single-page build spec), [`NEUROINCLUSIVE.md`](./NEUROINCLUSIVE.md) (accessibility defaults),
-  [`HANDOFF.md`](./HANDOFF.md) (this stack, in detail), [`inspiration.md`](./inspiration.md).
+- `llm/` — the docs: [`HANDOFF.md`](./HANDOFF.md) (entry: state + roadmap + gates),
+  [`DESIGN.md`](./DESIGN.md) (system spec), [`PRESENTATION.md`](./PRESENTATION.md) (single-page build spec),
+  [`NEUROINCLUSIVE.md`](./NEUROINCLUSIVE.md) (accessibility defaults),
+  [`UNIFICATION_PLAN.md`](./UNIFICATION_PLAN.md) (the deferred multi-app rollout).
 
 ## the page (information architecture)
 
@@ -50,10 +57,13 @@ pnpm preview        # serve dist/
 - **foundations** — principles, voice, color, typography, spacing & layout, iconography, motion,
   controls, **states** (disabled/loading/error/etc.).
 - **components** — badges & states, trails & tabs, cards & rows, conversation window, canvas &
-  dialog, forms & empty states, **overlays** (tooltip, dropdown menu, command palette, avatar/kbd/tag).
+  dialog, forms & empty states, **overlays** (tooltip, dropdown menu, command palette, avatar/kbd/tag),
+  **data table** (sortable/selectable), **pagination** (numbered), **accordion**.
 - **using the system** — accessibility & neuroinclusive, tokens reference, resources.
+- **in use** — a full-screen workspace (`InUseShell`) whose app-rail switches between live, feature-complete
+  demos of the three apps: the transcript viewer, the village commons, and peasant's code-map + analytics.
 
-Each section reads: overview → live specimen → (anatomy / do-don't / specs + token tables) →
+Each documented section reads: overview → live specimen → (anatomy / do-don't / specs + token tables) →
 a quiet accessibility note.
 
 ## at a glance
