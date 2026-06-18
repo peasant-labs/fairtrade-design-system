@@ -303,14 +303,29 @@ function mulberry32(a) {
    from real wheat, not a generic evenly-spaced point), and the top `overlap` band is drawn dense in
    wheat-ramp glyphs so the seam reads as one continuous plant -> roots before thinning to tendrils. */
 const ROOT_RAMP = 'cvoxoO0Qcvx*+'
-const SEAM_DENSE = 'O0Q#%@&8B' // VID_RAMP's dense end -> the seam band matches the wheat above it
-export function AsciiRoots({ cols = 220, rows = 64, seed = 7, density = 1, spread = 0.5, bases = 4, nodes = false, ramp = false, seeds = null, overlap = 0.16, className = '', style }) {
-  const grid = Array.from({ length: rows }, () => new Array(cols).fill(' '))
+export function AsciiRoots({ cols = 220, rows = 64, seed = 7, density = 1, spread = 0.5, bases = 4, nodes = false, ramp = false, seeds = null, overlap = 0.16, fill = false, fan = false, className = '', style }) {
+  // `fill`: derive the row count from the live container height so the roots fill it top-to-bottom (the
+  // wordmark sits below in its own row; the roots own all the space above it). otherwise use the `rows` prop.
+  const ref = useRef(null)
+  const [autoRows, setAutoRows] = useState(rows)
+  useEffect(() => {
+    if (!fill) return
+    const pre = ref.current, box = pre && pre.parentElement
+    if (!box) return
+    const measure = () => {
+      const fs = parseFloat(getComputedStyle(pre).fontSize) || 9
+      setAutoRows(Math.max(12, Math.round(box.clientHeight / fs)))
+    }
+    measure()
+    const ro = new ResizeObserver(measure); ro.observe(box)
+    return () => ro.disconnect()
+  }, [fill])
+  const R = fill ? autoRows : rows
+  const grid = Array.from({ length: R }, () => new Array(cols).fill(' '))
   const rnd = mulberry32(seed)
   const mid = cols / 2
-  const bandRows = Math.max(1, Math.round(rows * overlap))
+  const bandRows = Math.max(1, Math.round(R * overlap))
   const nodeGlyph = ramp ? '#' : 'O'
-  const denseGlyph = (xi, y) => SEAM_DENSE[((xi * 131 + y * 17) >>> 0) % SEAM_DENSE.length]
   const cell = (xi, y, drift) => {
     if (ramp) return ROOT_RAMP[((xi * 131 + y * 17) >>> 0) % ROOT_RAMP.length]
     return drift < 0.34 ? '\\' : drift > 0.74 ? '/' : '|'
@@ -340,47 +355,82 @@ export function AsciiRoots({ cols = 220, rows = 64, seed = 7, density = 1, sprea
     const x = Math.round(mid + ((i + 0.5) / bases - 0.5) * cols * 0.6 + (rnd() - 0.5) * cols * 0.05)
     baseList.push({ x, strength: 0.7 })
   }
+  // walkers: when `fan`, they START narrow near the centre and OPEN OUT toward their target column (spread
+  // across the width) as they descend, so the root system is narrow at the top and fills the full width at
+  // the bottom. otherwise they walk straight down with random drift.
   let walkers = []
   for (const b of baseList) {
-    const x = Math.max(0, Math.min(cols - 1, Math.round(b.x)))
-    if (nodes) grid[0][x] = nodeGlyph
-    walkers.push({ x, bias: (rnd() - 0.5) * spread, strength: b.strength })
+    const tx = Math.max(0, Math.min(cols - 1, Math.round(b.x)))
+    const x0 = fan ? mid + (rnd() - 0.5) * cols * 0.12 : tx
+    if (nodes) { const xi = Math.round(x0); if (xi >= 0 && xi < cols) grid[0][xi] = nodeGlyph }
+    walkers.push({ tx, x0, x: x0, jit: 0, bias: (rnd() - 0.5) * spread, strength: b.strength })
   }
-  for (let y = 1; y < rows; y++) {
+  for (let y = 1; y < R; y++) {
     const next = []
-    const depth = y / rows
-    const inBand = y < bandRows
+    const depth = y / R
     for (const w of walkers) {
-      const xi = Math.round(w.x)
-      if (xi >= 0 && xi < cols) {
+      if (fan) {
+        const open = Math.pow(depth, 1.35) // narrow at the top, opening to full width lower down
+        w.jit = (w.jit + (rnd() - 0.5) * 1.2) * 0.9
+        w.x = w.x0 + (w.tx - w.x0) * open + w.jit
+      } else {
         const r = rnd() + w.bias * 0.4
-        if (grid[y][xi] === ' ') grid[y][xi] = inBand ? denseGlyph(xi, y) : cell(xi, y, r) // don't overwrite a node
-        // seam band: lay a dense cluster either side of the strand so the top reads as a continuation
-        // of the wheat mass; the cluster (and its width) fades through the band into single tendrils.
-        if (inBand) {
-          const reach = 1 + Math.round(w.strength * 2)
-          for (let dx = -reach; dx <= reach; dx++) {
-            const x2 = xi + dx
-            if (x2 >= 0 && x2 < cols && grid[y][x2] === ' ' &&
-                rnd() < (1 - Math.abs(dx) / (reach + 1)) * (1 - (y / bandRows) * 0.5))
-              grid[y][x2] = denseGlyph(x2, y)
-          }
-        }
         w.x += (r < 0.34 ? -1 : r > 0.74 ? 1 : 0) + w.bias * 0.5
       }
-      // branch most near the TOP (from the stalk), decaying with depth; each branch point is a node
+      const xi = Math.round(w.x)
+      if (xi >= 0 && xi < cols && grid[y][xi] === ' ') grid[y][xi] = cell(xi, y, rnd())
+      // branch most near the TOP, decaying with depth; each branch point is a node
       if (rnd() < density * 0.2 * (1 - depth) * (1 - depth) && walkers.length + next.length < cols * 0.5) {
         if (nodes && xi >= 0 && xi < cols) grid[y][xi] = nodeGlyph
-        next.push({ x: w.x + (rnd() < 0.5 ? -1.4 : 1.4), bias: w.bias + (rnd() - 0.5) * spread, strength: w.strength })
+        next.push({ tx: Math.max(0, Math.min(cols - 1, w.tx + (rnd() < 0.5 ? -1 : 1) * cols * 0.04)), x0: w.x0, x: w.x, jit: w.jit, bias: w.bias + (rnd() - 0.5) * spread, strength: w.strength })
       }
-      // taper toward the bottom: below the seam band, strands thin out as they descend, but enough survive
-      // all the way to the wordmark so the roots GROW INTO the name (no dead gap above it)
-      if (!inBand && rnd() < 0.008 + 0.035 * depth && walkers.length + next.length > Math.max(2, bases - 1)) continue
+      // gentle taper so the field fills top-to-bottom (down to the wordmark) instead of dwindling to tendrils
+      if (rnd() < 0.003 + 0.01 * depth && walkers.length + next.length > Math.max(2, bases - 1)) continue
       next.push(w)
     }
     walkers = next
   }
-  return <pre className={'ascii ' + className} style={style} aria-hidden="true">{grid.map((r) => r.join('')).join('\n')}</pre>
+  return <pre ref={ref} className={'ascii ' + className} style={style} aria-hidden="true">{grid.map((r) => r.join('')).join('\n')}</pre>
+}
+
+/* a full-width band of soil/earth ascii that sits between the wheat (above) and the roots (below) so the
+   plant -> ground -> roots transition reads as one continuous thing. densest through the middle, fading at
+   the top edge (up into the plant) and the bottom edge (down into the descending roots). same glyph family
+   as the wheat + roots so it is the same material. deterministic (seeded). theme-colored via .ascii. */
+const SOIL_DENSE = '@#%&8B0OQ', SOIL_MID = 'oxcv*+=zn'
+export function AsciiSoil({ cols = 300, rows = 9, seed = 5, className = '', style }) {
+  const rnd = mulberry32(seed)
+  const lines = []
+  for (let y = 0; y < rows; y++) {
+    const f = 1 - y / (rows - 1) // 1 at the top (packed, meeting the plant) -> 0 at the bottom (crumbling into the roots)
+    let line = ''
+    for (let x = 0; x < cols; x++) {
+      if (rnd() > 0.1 + f * 0.82) { line += ' '; continue } // dense up top, progressively fewer grains toward the bottom
+      line += rnd() < 0.4 + f * 0.35 ? SOIL_DENSE[(rnd() * SOIL_DENSE.length) | 0] : SOIL_MID[(rnd() * SOIL_MID.length) | 0]
+    }
+    lines.push(line)
+  }
+  return <pre className={'ascii ' + className} style={style} aria-hidden="true">{lines.join('\n')}</pre>
+}
+
+/* a DIM full-section ascii texture (same earthy glyph family as the soil/roots) that paints the whole roots
+   section as a soil backdrop behind the roots and the wordmark. denser up near the top (the packed surface
+   under the plant), crumbling sparser toward the bottom. kept very dim via CSS so the roots read on top of
+   it. deterministic. `rows` is generous so the grid overflows and fills any section height (clipped). */
+export function AsciiSoilField({ cols = 300, rows = 170, seed = 9, className = '', style }) {
+  const rnd = mulberry32(seed)
+  const lines = []
+  for (let y = 0; y < rows; y++) {
+    const f = Math.max(0, 1 - y / (rows * 0.55)) // packed near the top surface, thinning lower down
+    const dens = 0.14 + f * 0.42
+    let line = ''
+    for (let x = 0; x < cols; x++) {
+      if (rnd() > dens) { line += ' '; continue }
+      line += rnd() < 0.4 ? SOIL_DENSE[(rnd() * SOIL_DENSE.length) | 0] : SOIL_MID[(rnd() * SOIL_MID.length) | 0]
+    }
+    lines.push(line)
+  }
+  return <pre className={'ascii ' + className} style={style} aria-hidden="true">{lines.join('\n')}</pre>
 }
 
 /* ---- ascii video, sampled from a (seamless, watermark-free) source video at

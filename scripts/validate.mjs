@@ -39,6 +39,10 @@ ok('decorative icons aria-hidden', base.ariaHiddenSvg > 200, `${base.ariaHiddenS
 
 // scroll-spy
 const spy = await page.evaluate(async () => {
+  // disable snap for deterministic programmatic scrolling (mandatory snap would hijack scrollTo); this
+  // tests the scroll-spy LOGIC, not snap behaviour
+  const prevSnap = document.documentElement.style.scrollSnapType
+  document.documentElement.style.scrollSnapType = 'none'
   const res = []
   for (const t of ['#color', '#states', '#overlays', '#tokens']) {
     const el = document.querySelector(t)
@@ -48,6 +52,7 @@ const spy = await page.evaluate(async () => {
     res.push(a && a.getAttribute('href') === t)
   }
   window.scrollTo(0, 0)
+  document.documentElement.style.scrollSnapType = prevSnap
   return res
 })
 ok('scroll-spy tracks every target', spy.every(Boolean), `${spy.filter(Boolean).length}/4`)

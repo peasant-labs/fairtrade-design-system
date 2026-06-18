@@ -17,7 +17,7 @@ import {
   FileText,
   Link2,
 } from 'lucide-react'
-import { AsciiImage, AsciiRoots, AsciiVideo } from './effects.jsx'
+import { AsciiImage, AsciiRoots, AsciiSoilField, AsciiVideo } from './effects.jsx'
 import CommandPalette from './CommandPalette.jsx'
 import Dialog from './Dialog.jsx'
 import InUseShell from './mockups/inuse/InUseShell.jsx'
@@ -186,14 +186,64 @@ function labelIconA11y() {
    densest wheat columns and draw a dense seam band, so each strand visibly descends from real wheat. */
 function Hero() {
   const [seeds, setSeeds] = useState(null)
+  const [returning, setReturning] = useState(false)
+  const growRef = useRef(null)
+  // returning visitor (2nd visit onward): surface a quiet skip-to-docs affordance so they can bypass the splash
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('ft-seen')) setReturning(true)
+      else localStorage.setItem('ft-seen', '1')
+    } catch {}
+  }, [])
+  // grow the roots downward (a clip-path reveal) the first time the brand section scrolls into view
+  useEffect(() => {
+    const el = growRef.current
+    if (!el) return
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { el.classList.add('grown'); return }
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { el.classList.add('grow'); io.disconnect() }
+    }, { threshold: 0.2 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  // strong snapping across the full-screen top zone (crop -> roots -> philosophy): any wheel gesture advances
+  // exactly one section so you never rest half-way between them. below philosophy the docs scroll natively.
+  useEffect(() => {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let busy = false, timer = 0
+    const onWheel = (e) => {
+      const crop = document.querySelector('.hero-crop'), roots = document.getElementById('brand'), philos = document.getElementById('manifesto')
+      if (!crop || !roots || !philos) return
+      const y = window.scrollY
+      if (y > philos.offsetTop + window.innerHeight * 0.5) return // in the docs / in-use: leave scroll native
+      if (Math.abs(e.deltaY) < 2) return
+      e.preventDefault()
+      if (busy) return
+      const els = [crop, roots, philos]
+      let idx = 0, best = Infinity
+      els.forEach((el, i) => { const d = Math.abs(el.offsetTop - y); if (d < best) { best = d; idx = i } })
+      const target = idx + (e.deltaY > 0 ? 1 : -1)
+      busy = true; clearTimeout(timer); timer = setTimeout(() => { busy = false }, 600)
+      if (target < 0) return
+      if (target >= els.length) { document.getElementById('start')?.scrollIntoView({ behavior: 'smooth' }); return }
+      els[target].scrollIntoView({ behavior: 'smooth' })
+    }
+    window.addEventListener('wheel', onWheel, { passive: false })
+    return () => { window.removeEventListener('wheel', onWheel); clearTimeout(timer) }
+  }, [])
+  const toDocs = () => document.getElementById('start')?.scrollIntoView({ behavior: 'smooth' })
   return (
     <section className="hero" id="top">
+      {returning && <button className="hero-skip" type="button" onClick={toDocs}>skip to documentation</button>}
       <div className="hero-crop">
         <AsciiVideo src={wheatVid} cols={300} boost={2.05} contrast={1.5} fps={24} smooth={6} waveAmp={0} onColumns={setSeeds} className="hero-bg" />
       </div>
-      <div className="hero-grow" id="brand">
+      <div className="hero-grow" id="brand" ref={growRef}>
+        <div className="hero-soil-bg" aria-hidden="true">
+          <AsciiSoilField cols={300} seed={9} className="hero-soil-field" />
+        </div>
         <div className="hero-roots-wrap" aria-hidden="true">
-          <AsciiRoots cols={300} rows={82} seed={11} bases={22} density={1.15} overlap={0.24} seeds={seeds} nodes className="hero-roots" />
+          <AsciiRoots cols={300} bases={13} seed={11} density={1.0} spread={0.7} ramp fill fan seeds={seeds} className="hero-roots" />
         </div>
         <div className="hero-foot">
           <div className="hero-word" role="img" aria-label="fairtrade">fairtrade</div>
@@ -238,17 +288,16 @@ function Philosophy({ theme }) {
   const secRef = useRef(null)
   const sp = useRef({ x: OFF, y: OFF, tx: OFF, ty: OFF, vx: 0, vy: 0, active: false, raf: 0 })
 
-  // a springy spotlight: the reveal chases the cursor with a little overshoot/bounce (not an instant
-  // jump), and glides back off-screen the moment the cursor leaves the section, so it never gets stuck.
+  // the spotlight is a pure delayed follow (an exponential low-pass, NOT a spring): each frame it eases a
+  // fraction of the way toward the cursor, so it TRAILS the pointer with a steady lag and never overshoots
+  // or bounces. it glides back off-screen the moment the cursor leaves the section, so it never gets stuck.
   useEffect(() => {
     const s = sp.current
     const el = secRef.current
     const tick = () => {
-      const k = 0.16, damp = 0.74 // spring stiffness + damping -> a gentle bounce
-      s.vx = (s.vx + (s.tx - s.x) * k) * damp
-      s.vy = (s.vy + (s.ty - s.y) * k) * damp
-      s.x += s.vx
-      s.y += s.vy
+      const ease = 0.05 // smaller = more delay/lag behind the cursor (no bounce)
+      s.x += (s.tx - s.x) * ease
+      s.y += (s.ty - s.y) * ease
       if (el) {
         el.style.setProperty('--mx', s.x + 'px')
         el.style.setProperty('--my', s.y + 'px')
@@ -257,6 +306,18 @@ function Philosophy({ theme }) {
     }
     s.raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(s.raf)
+  }, [])
+
+  // reveal the statement (fade + rise) the first time the section scrolls into view
+  useEffect(() => {
+    const el = secRef.current
+    if (!el) return
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { el.classList.add('reveal'); return }
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { el.classList.add('reveal'); io.disconnect() }
+    }, { threshold: 0.3 })
+    io.observe(el)
+    return () => io.disconnect()
   }, [])
 
   const onMove = (e) => {
@@ -278,8 +339,7 @@ function Philosophy({ theme }) {
         ))}
       </div>
       <div className="philos-text">
-        <h1 className="philos-lead">one honest system, three apps.</h1>
-        <p className="philos-body">fairtrade is the shared language of peasant, village and the transcript viewer. legible before clever, restrained before decorated, one token layer under every screen. nothing here is decoration; everything earns its keep.</p>
+        <h1 className="philos-lead">legible before clever, restrained before decorated.</h1>
       </div>
     </section>
   )
