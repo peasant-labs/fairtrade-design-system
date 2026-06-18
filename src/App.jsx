@@ -206,6 +206,26 @@ function Hero() {
     io.observe(el)
     return () => io.disconnect()
   }, [])
+  // snap to the nearest splash section (crop / roots / philosophy) a moment AFTER scrolling stops. this is a
+  // passive, debounced listener: it never calls preventDefault, so it can't block or lock scrolling (the
+  // wheel-hijack approach did). it only acts in the top zone; the docs scroll freely.
+  useEffect(() => {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let timer = 0, programmatic = false
+    const snap = () => {
+      if (programmatic) { programmatic = false; return } // ignore our own smooth scroll settling
+      const els = [document.querySelector('.hero-crop'), document.getElementById('brand'), document.getElementById('manifesto')].filter(Boolean)
+      if (els.length < 3) return
+      const y = window.scrollY
+      if (y > els[2].offsetTop + window.innerHeight * 0.6) return // past philosophy: leave the docs to scroll
+      let nearest = els[0], best = Infinity
+      for (const el of els) { const d = Math.abs(el.offsetTop - y); if (d < best) { best = d; nearest = el } }
+      if (best > 6) { programmatic = true; nearest.scrollIntoView({ behavior: 'smooth' }) }
+    }
+    const onScroll = () => { clearTimeout(timer); timer = setTimeout(snap, 140) }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => { window.removeEventListener('scroll', onScroll); clearTimeout(timer) }
+  }, [])
   const toDocs = () => document.getElementById('start')?.scrollIntoView({ behavior: 'smooth' })
   return (
     <section className="hero" id="top">

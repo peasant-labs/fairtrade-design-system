@@ -116,7 +116,10 @@
 @layer base {
   /* PROXIMITY snap (never mandatory - mandatory traps users in long sections); only the full-screen
      splash sections opt in below. scroll-padding-top clears the sticky nav. */
-  html { scroll-behavior: smooth; scroll-padding-top: var(--nav-h); scroll-snap-type: y proximity; overscroll-behavior-y: none; }
+  /* no CSS scroll-snap: it was either too weak (proximity) or it skipped/trapped sections (mandatory).
+     the splash sections are snapped by a passive, debounced scroll listener in Hero() instead, which never
+     blocks scrolling. */
+  html { scroll-behavior: smooth; scroll-padding-top: var(--nav-h); overscroll-behavior-y: none; }
   body {
     @apply bg-canvas text-ink font-body;
     margin: 0;
