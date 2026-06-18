@@ -67,29 +67,34 @@ the command palette): `start`, `principles`, `voice`, `color`, `typography`, `sp
 
 The top of the page is two immersive, full-viewport screens before the docs begin.
 
-**Hero (`#top`).** One ascii video, the wheat crop, sampled at runtime from `src/assets/wheat.mp4`
-via `AsciiVideo`. Below it, `AsciiRoots` draws procedural ascii roots growing out of the crop's base
-into a large `fairtrade` wordmark set in the system font (`.hero-word`, the `role="img"` element).
-There is exactly one wheat video; the roots and wordmark sit in the `#brand` block beneath it. The
-two are joined by a seed handoff: `AsciiVideo` emits a one-time per-column density profile of the
-wheat's lower body (`onColumns`); the roots seed their bases at those densest wheat columns and draw
-a dense seam band at the top, so each strand descends from real wheat. `.hero-grow` is pulled up
-`-20vh` to overlap, and `.hero-bg`'s mask fades the wheat's bottom edge into the dense roots so the
-seam is a continuous plant rather than two stacked layers. (The brand moment is owner-reviewed; see
-`HANDOFF.md` for its history and any remaining polish.)
+**Hero crop (`#top`).** Screen 1 is the wheat crop: one ascii video sampled at runtime from
+`src/assets/wheat.mp4` via `AsciiVideo`. It emits a one-time per-column density profile of its lower
+body (`onColumns`), lifted into state as `seeds`. The hero has no solid background, so the body's
+dotted grid shows through.
 
-**Philosophy (`#manifesto`).** Minimalist by design: a short centered statement over a dark
-ground that is tiled edge-to-edge with ~30 ascii peasant portraits (`AsciiImage`, the
-`PHILOS_ARTS` grid, two source faces alternating). A cursor-following spotlight — a springy
-rAF loop that chases the pointer and glides off-screen on leave — reveals the portrait field
-behind the text. No reveal on touch. The H1 lives here.
+**Brand (`#brand`).** Screen 2 sits right after the crop (no overlap) and holds three layered ascii
+elements plus the wordmark, each with a scroll-in reveal driven by one `.grow` class
+(IntersectionObserver on `#brand`): a dim full-section soil texture (`AsciiSoilField`, behind
+everything incl. the wordmark, fades up); the **roots** (`AsciiRoots ramp fill fan`, seeded from the
+wheat `seeds`) which fan narrow-at-top to full-width-at-bottom as sparse root-like strands and grow
+downward on reveal; and the `fairtrade` wordmark (`.hero-word`, plain white, no glow, the
+`role="img"` element) pinned at the bottom, wiping in left-to-right. Reduced-motion shows everything
+at once (`.grown`). A returning visitor (2nd visit, `localStorage` `ft-seen`) gets a faint top-right
+`.hero-skip` jump-to-docs button.
+
+**Philosophy (`#manifesto`).** Minimalist: one short centered statement
+(`legible before clever, restrained before decorated.`) that fades + rises in on scroll
+(`.philos.reveal`), over a dark ground tiled edge-to-edge with ~30 ascii peasant portraits
+(`AsciiImage`, the `PHILOS_ARTS` grid, two source faces alternating). A cursor-following spotlight (a
+pure delayed-lerp follow, dim, glides off-screen on leave) reveals the portrait field behind the
+text. No reveal on touch. The H1 lives here.
 
 ## the one H1
 
-The page has a single `<h1>`: `one honest system, three apps.` in the Philosophy section
-(`.philos-lead`). The old `#intro` value-prop and its `receipts for agentic work` H1 are gone.
-Every group opener is an `<h2>` (`.group h2`); every section title is an `<h2 class="label">`.
-Do not add a second H1 or a competing display heading.
+The page has a single `<h1>`: the Philosophy statement
+(`legible before clever, restrained before decorated.`, `.philos-lead`). Every group opener is an
+`<h2>` (`.group h2`); every section title is an `<h2 class="label">`. Do not add a second H1 or a
+competing display heading.
 
 ## the rail (`Rail`, `.page-rail`)
 
@@ -123,9 +128,13 @@ section's owning group.
 
 ## scroll behaviour
 
-`html` uses `scroll-snap-type: y proximity` with `scroll-behavior: smooth` (auto under
-reduced-motion). Only the full-screen surfaces snap: `.hero`, `.hero-grow`, `.philos`, `.iu`
-carry `scroll-snap-align: start`. The docs scroll freely.
+`html` uses `scroll-snap-type: y proximity` (NOT mandatory - that skipped the docs and trapped the
+user in philosophy) with `scroll-behavior: smooth` and `overscroll-behavior-y: none`. Snap targets:
+`.hero-crop`, `.hero-grow`, `.philos` (with `scroll-snap-stop: always`) and `.docs` (at its start, so
+it is never skipped). `.iu` is deliberately NOT a snap target - a snap point there traps the short
+footer below it out of reach. For the "any scroll advances one section" feel across the splash, `Hero`
+adds a wheel handler scoped to the top zone that jumps crop -> roots -> philosophy one section per
+gesture; below philosophy the docs scroll natively.
 
 **Scroll-spy** is a rAF-throttled scroll/resize listener, not an `IntersectionObserver`. On each
 frame it walks the section ids in order and sets the active item to the **last** section whose top

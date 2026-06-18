@@ -91,7 +91,7 @@ Procedurally generated and image-filtered ascii is a deliberate centerpiece, res
 low-traffic, full-screen or thumbnail display surfaces. It is rendered at runtime by `src/effects.jsx`:
 
 - **hero crop:** an ascii-filtered wheat **video** (`src/assets/wheat.mp4` via `AsciiVideo`) fills the first screen.
-- **hero wordmark:** procedural ascii **roots** (`AsciiRoots`) grow out of the crop's base toward the "fairtrade" wordmark (the wordmark itself is set in the system display font, not ascii).
+- **brand section:** a dim full-section ascii **soil** texture (`AsciiSoilField`) behind procedural ascii **roots** (`AsciiRoots`) that fan from narrow-at-top to full-width-at-bottom, seeded from the wheat's columns; below them the "fairtrade" wordmark in the system display font (white, not ascii). The soil/roots/wordmark each reveal on scroll-in.
 - **philosophy field:** a tiled field of about 30 ascii portraits (`AsciiImage`) on the dark ground, revealed only inside a cursor-following spotlight behind the centered statement.
 - **card thumbnails:** `AsciiImage` portraits in the transcript/collective card thumbs.
 
@@ -102,7 +102,7 @@ both themes). Dense, high-traffic reading views (a transcript) stay icon-light: 
 
 ## hero / brand mark
 
-- The **hero** is the ascii wheat **video**: `src/assets/wheat.mp4` rendered through `AsciiVideo` (see `App.jsx`). Screen 1 is the crop alone; screen 2 grows ascii roots out of its base down into the "fairtrade" wordmark, as one continuous piece (no second/duplicate video).
+- The **hero** is the ascii wheat **video**: `src/assets/wheat.mp4` rendered through `AsciiVideo` (see `App.jsx`). Screen 1 is the crop; screen 2 (`#brand`) is a dim ascii soil field with roots fanning down into the "fairtrade" wordmark, each layer revealing on scroll-in. The wheat video seeds the roots (`onColumns` -> `seeds`). See `HANDOFF.md` for the full mechanics.
 - The only **inline brand glyph** is `#logo`, a small 5-path stalk `<symbol>` defined in `src/sections-react/00-defs.jsx`. It is used by the nav brand, the footer, and the in-use banner via `<use href="#logo">`. It is not the wheat video and not an external asset.
 
 ---

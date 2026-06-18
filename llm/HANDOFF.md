@@ -7,47 +7,58 @@
 > cross-app rollout), [`README.md`](./README.md) (repo orientation).
 
 State: the page is 100% component-driven, all automated gates are green, and the tier-2.5 component
-library + Storybook + full-screen app demos are in. The single owner-reviewed item is the hero brand
-moment (below). Everything that was done in this repo is the as-built state described in `DESIGN.md` /
-`PRESENTATION.md`; the cross-app rollout is deferred (`UNIFICATION_PLAN.md`).
+library + Storybook + full-screen app demos are in. The hero/splash + philosophy were reworked through a
+long owner-driven review (soil/roots/wordmark with staged reveals, scroll snapping); see below. The
+as-built system is in `DESIGN.md` / `PRESENTATION.md`; the cross-app rollout is deferred
+(`UNIFICATION_PLAN.md`).
 
 ---
 
-## the hero brand moment (`#top` / `#brand`)
+## the hero brand moment + splash (`#top` / `#brand`)
 
-The intent: screen 1 is the wheat **crop** (an ascii video); scrolling down, **roots grow out of the
-bottom of that crop** and taper into a big **`fairtrade`** wordmark. One crop, one continuous
-plant -> roots -> name. The owner rejected several earlier attempts where the roots read as a separate,
-faded layer ("not connecting", "duplicating the video", "shouldn't be faded at the start").
+Two full-screen scroll-snap screens open the page (`App.jsx` `Hero()`):
 
-**How it works now (Option D - seed the roots from the video):**
-- `App.jsx` `Hero()`: `.hero-crop` wraps the wheat `<AsciiVideo className="hero-bg">`; `.hero-grow#brand`
-  wraps `.hero-roots-wrap` (`<AsciiRoots cols=300 rows=82 bases=22 overlap=0.24 seeds=… nodes>`) +
-  `.hero-foot` (the `.hero-word` "fairtrade").
-- **Seed handoff:** `AsciiVideo` takes an `onColumns` callback and emits a **one-time per-column density
-  profile** of the wheat's lower body (a band ~30% up from the bottom, after boost/contrast/gamma, so it
-  catches the stalk columns rather than the dark bottom edge). `Hero` lifts that profile into state and
-  passes it to `AsciiRoots` as `seeds`.
-- **AsciiRoots** (`effects.jsx`): when `seeds` are present it **bins the wheat's active width into `bases`
-  equal slots and takes the densest column in each** - so the bases span the full width and the lower
-  roots don't funnel into a center cone (the owner's prior rejection). It draws a **dense seam band** in
-  the top `overlap` rows using the wheat ramp's dense end (`SEAM_DENSE`), then thins to tendrils, with the
-  bottom-taper tuned so strands survive down toward the wordmark. A small breathing gap (~18px) sits
-  between the shortest tails and the letter caps by design - don't crash the roots into the wordmark.
-- **The seam (CSS, `index.css`):** `.hero-grow` is pulled up `margin-top:-20vh` to overlap the crop;
-  `.hero-bg`'s mask fades the wheat's **top and bottom** edges (`…#000 15%, #000 84%, transparent`) so the
-  wheat dissolves into the dense roots instead of ending on a hard line. `.hero .hero-roots` uses the
-  **same cell size** as `.hero-bg` (`clamp(5px,0.95vw,9.5px)`) so root columns register against the stalk
-  columns they were seeded from; opacity is 1 (dark) / 0.9 (light).
-- **Capture mode:** `[data-cap] .hero-grow { margin-top:-72px }` keeps a proportional overlap so
-  `?cap` / `shoot.mjs` review shots show the real seam (the old rule zeroed it and showed a false gap).
+- **screen 1 (`.hero-crop`, anchor `#top`):** the wheat **crop** - an ascii video sampled from
+  `wheat.mp4` (`AsciiVideo className="hero-bg"`). It emits a one-time per-column density profile of its
+  lower body via the `onColumns` callback; `Hero` lifts that into state as `seeds`.
+- **screen 2 (`.hero-grow`, anchor `#brand`):** the roots + wordmark, laid out as ONE section right after
+  the crop (no negative-margin overlap). Three layers, each with a scroll-in reveal:
+  - **dimmed soil bg** (`AsciiSoilField`, `.hero-soil-bg`, z0): a faint (`opacity .14`) full-section ascii
+    texture in the same earthy glyph family, behind everything incl. the wordmark; packed near the top
+    surface, crumbling lower. `wheat.mp4`'s dotted-grid backdrop also shows through (the hero has no solid
+    background). fades up on reveal.
+  - **roots** (`<AsciiRoots cols=300 bases=13 ramp fill fan seeds=…>`, `.hero-roots`, z1): seeded from the
+    wheat `seeds` (bases binned across the wheat's width), they **fan** - narrow at the top, opening to
+    full width at the bottom - as thin, sparse, root-like strands; `fill` measures the container so they
+    fill the section top-to-bottom. they **grow downward** (a top-to-bottom clip reveal) on scroll-in.
+  - **wordmark** (`.hero-word` "fairtrade", `.hero-foot`, z2): plain **white** (`--ink-strong`), no accent
+    or glow, pinned at the bottom; wipes in left-to-right (a terminal print) on reveal.
+- The three reveals are staged off one `.grow` class added by an IntersectionObserver on `#brand`
+  (`soilReveal` / `rootGrow` / `wordWipe` keyframes); reduced-motion shows everything at once (`.grown`).
+- A returning visitor (2nd visit onward, `localStorage` key `ft-seen`) gets a faint top-right `.hero-skip`
+  "skip to documentation" button that jumps to `#start`.
 
-**Verifying it / iterating:** screenshot the seam with `node scripts/viewport.mjs <theme> <dir> top brand`
-(the **non-`?cap`** real view; `?cap` shrinks the section). The seam is the `brand` anchor. This moment is
-owner taste-driven - **review the crops yourself and get the owner's eye before declaring it done.** If
-asked to push it further: the remaining levers are the overlap depth (`-20vh`), the wheat-bottom mask fade,
-the seam-band depth (`overlap`), and the bottom-taper rate in `AsciiRoots`. The honest fallback the owner
-offered before is to **ask for a visual reference** rather than keep re-tuning blind.
+**`AsciiRoots` modes** (`effects.jsx`): `seeds` (per-column wheat profile -> bases binned across the
+width), `fan` (start narrow at centre, open to the target columns with depth), `fill` (measure the parent
+and set the row count so the field fills it), `ramp` (draw in the wheat glyph family, not line glyphs).
+
+**Verifying:** `node scripts/viewport.mjs <theme> <dir> top brand` (non-`?cap`). The roots grow on
+scroll-in, so a shot taken right after scrolling catches them mid-grow - wait out the ~1.9s reveal (see the
+ad-hoc capture scripts pattern used during review). This moment is owner taste-driven; review the crops and
+get the owner's eye.
+
+## scroll & snapping (don't relitigate without re-reading this)
+
+CSS `scroll-snap-type: y proximity` (NOT `mandatory` - mandatory skipped the docs and trapped the user in
+philosophy). The full-screen splash sections (`.hero-crop`, `.hero-grow`, `.philos`) and `.docs` are snap
+targets; **`.iu` is intentionally NOT** (a snap point there is followed by a short footer and traps the
+footer out of reach). `overscroll-behavior-y: none` blocks scrolling above the top.
+
+For the "any scroll advances exactly one section" feel across the splash, `Hero()` adds a **wheel handler
+scoped to the top zone** (`scrollY < #manifesto.offsetTop + 0.5vh`): one debounced wheel gesture jumps to
+the next/prev of crop -> roots -> philosophy; below philosophy the docs scroll natively. Reduced-motion
+disables it. If the owner reports a snap bug, it is almost always this interplay - prefer adjusting the JS
+handler over reaching for `mandatory`.
 
 ## what's next
 
@@ -121,10 +132,11 @@ pnpm build-storybook   # compile every component + story
   (`bs-`/`is-`/`sw-`/`fb-`/`chipx-`/`tbl-`/`pgn-`/`acc-`/`tl-`/`tsx-`/`dr-`), and the in-use namespaces
   (`iu-`/`txn-`/`cex-`/`cmg-`/`gmp-`/`gan-`). `@source "./sections-react"` + `@source "./App.jsx"`
   (`src/ui` + `src/mockups` are NOT in `@source` - they don't rely on Tailwind utilities at runtime here).
-- **`src/effects.jsx`** - the ascii filters: `AsciiVideo` (runtime-sampled wheat, with the `onColumns` seam
-  profile), `AsciiImage` (image->ascii on canvas; `fit` + theme-adaptive ink), `AsciiArt` (image->ascii
-  `<pre>`), `AsciiText`/`AsciiWordmark` (block-font wordmarks), `AsciiRoots` (procedural roots, seeded from
-  the wheat columns), `Halftone`, `GlyphField`.
+- **`src/effects.jsx`** - the ascii filters: `AsciiVideo` (runtime-sampled wheat, emits the `onColumns`
+  seed profile), `AsciiImage` (image->ascii on canvas; `fit` + theme-adaptive ink), `AsciiArt`
+  (image->ascii `<pre>`), `AsciiText`/`AsciiWordmark` (block-font wordmarks), `AsciiRoots` (procedural
+  roots; `seeds`/`fan`/`fill`/`ramp` modes), `AsciiSoilField` (the dim full-section soil texture),
+  `Halftone`, `GlyphField`.
 
 ## doc-primitives (in `index.css`, reuse them; do not reinvent)
 
