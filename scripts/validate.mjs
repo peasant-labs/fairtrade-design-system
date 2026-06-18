@@ -4,7 +4,7 @@
    usage: node scripts/validate.mjs [url] */
 import puppeteer from 'puppeteer-core'
 
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const URL = process.argv[2] || 'http://localhost:5180/?fb=off'
 const checks = []
 const ok = (name, pass, detail = '') => checks.push({ name, pass, detail })
@@ -52,21 +52,24 @@ const spy = await page.evaluate(async () => {
 })
 ok('scroll-spy tracks every target', spy.every(Boolean), `${spy.filter(Boolean).length}/4`)
 
-// nav reveal — driven with REAL wheel events on a fresh page (matches how a user scrolls; the
-// direction detection is reliable with continuous deltas, unlike coalesced programmatic scrollTo)
+// header gating by zone: the page header is HIDDEN over the top splash + philosophy, SHOWN across the
+// documentation (from "start here"), and HIDDEN again over the in-use stage (its own banner replaces it).
 const navPage = await browser.newPage()
 await navPage.setViewport({ width: 1440, height: 900 })
 await navPage.goto(URL, { waitUntil: 'networkidle0' }); await new Promise((r) => setTimeout(r, 900))
-await navPage.mouse.move(700, 450)
-const navRead = () => navPage.evaluate(() => document.querySelector('.nav').classList.contains('nav--hidden'))
-for (let i = 0; i < 7; i++) { await navPage.mouse.wheel({ deltaY: 300 }); await new Promise((r) => setTimeout(r, 60)) }
-await new Promise((r) => setTimeout(r, 350)); const navDown = await navRead()
-for (let i = 0; i < 5; i++) { await navPage.mouse.wheel({ deltaY: -300 }); await new Promise((r) => setTimeout(r, 60)) }
-await new Promise((r) => setTimeout(r, 350)); const navUp = await navRead()
+const navAt = (anchor) => navPage.evaluate((a) => {
+  document.documentElement.style.scrollSnapType = 'none'; document.documentElement.style.scrollBehavior = 'auto'
+  if (a === 'top') window.scrollTo(0, 0)
+  else { const el = document.getElementById(a); if (el) el.scrollIntoView({ block: 'start', behavior: 'instant' }) }
+  return new Promise((res) => setTimeout(() => res(document.querySelector('.nav').classList.contains('nav--hidden')), 260))
+}, anchor)
+const navTop = await navAt('top')
+const navDocs = await navAt('color')
+const navInuse = await navAt('inuse')
 await navPage.close()
-const nav = { down: navDown, up: navUp }
-ok('nav hides on scroll-down', nav.down === true)
-ok('nav restores on scroll-up', nav.up === false)
+ok('header hidden over the splash', navTop === true)
+ok('header shown across the docs', navDocs === false)
+ok('header hidden over the in-use stage', navInuse === true)
 
 // command palette
 await page.keyboard.down('Meta'); await page.keyboard.press('k'); await page.keyboard.up('Meta')
@@ -112,7 +115,7 @@ ok('no overflow >= 390px', Object.entries(over).filter(([w]) => +w >= 390).every
 // reduced-motion disables animation
 const rm = await browser.newPage()
 await rm.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }])
-await rm.goto(URL, { waitUntil: 'networkidle0' }); await new Promise((r) => setTimeout(r, 800))
+await rm.goto(URL, { waitUntil: 'load' }); await new Promise((r) => setTimeout(r, 1000))
 const rmDur = await rm.evaluate(() => {
   const el = document.querySelector('.card-img') || document.querySelector('.card')
   return el ? getComputedStyle(el).transitionDuration : '0s'

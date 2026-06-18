@@ -1,8 +1,11 @@
 import { useState } from 'react'
-import { BadgeCheck, Clock, Check, X, Info, Boxes, ShieldCheck, KeyRound, Workflow } from 'lucide-react'
+import { BadgeCheck, Clock, Check, X, Info, Boxes, ShieldCheck, KeyRound, Workflow, AlertTriangle } from 'lucide-react'
 import DataTable from './ui/DataTable.jsx'
 import Pagination from './ui/Pagination.jsx'
 import Accordion from './ui/Accordion.jsx'
+import Timeline from './ui/Timeline.jsx'
+import ToastProvider, { useToast } from './ui/ToastHost.jsx'
+import DateRange, { DateRangeCalendar } from './ui/DateRange.jsx'
 
 /* live showcase sections for the three new tier-2 components, interleaved into the
    "components" group of the page (App.jsx) like Cards(). each follows the existing
@@ -211,3 +214,284 @@ export function AccordionSection() {
     </section>
   )
 }
+
+/* ============================ tier-2 (2026-06-17) ============================ */
+/* three new live-component sections: timeline, toast host, date range. each drives
+   the real src/ui component and follows the band/specimen/anatomy/cmp/callout rhythm. */
+
+/* a trimmed, TranscriptApp-shaped mixed stream for the live timeline specimen: one
+   user turn, an assistant turn with an OPEN read tool + thinking, a phase divider, an
+   assistant turn with an edit diff + a failing bash, a subagent turn at depth 1, and a
+   checkpoint. chrome stays lowercase; the transcript bodies + code keep their case. */
+const TIMELINE_ITEMS = [
+  {
+    id: 'u1', kind: 'turn', role: 'user', label: '1', time: '8m ago', longTime: 'jun 17, 2026 at 09:12',
+    tokens: { in: 280, out: 0 },
+    body: 'Port the transcript canvas into the shared package. Start by reading the existing renderer before extracting it.',
+  },
+  {
+    id: 'a1', kind: 'turn', role: 'assistant', label: '1a', time: '8m ago', longTime: 'jun 17, 2026 at 09:12',
+    tokens: { in: 1840, out: 920 },
+    thinking: { words: 84, text: 'The renderer lives under web/src/components/session-detail/v2/canvas. I should read TurnRow.tsx first to understand how role glyphs + tool calls compose before I move anything into packages/browser.' },
+    body: 'Let me look at the current renderer before extracting it. I will read TurnRow.tsx and find where rendererFor is wired so the move preserves the per-tool dispatch.',
+    tools: [
+      { id: 't1a', kind: 'read', name: 'Read', preview: 'web/src/components/session-detail/v2/canvas/TurnRow.tsx', path: 'web/src/components/session-detail/v2/canvas/TurnRow.tsx', lines: '1–40', excerpt: 'export function TurnRow({ turn, depth }: TurnRowProps) {\n  const Glyph = roleGlyph(turn.role)\n  return (\n    <div className="turn-row" data-depth={depth}>\n      <RoleGlyph as={Glyph} />\n      <Markdown source={turn.content} />\n    </div>\n  )\n}' },
+    ],
+  },
+  { id: 'p1', kind: 'phase', phaseLabel: 'debugging', icon: AlertTriangle, range: 'turns 2–3, 1 error' },
+  {
+    id: 'a2', kind: 'turn', role: 'assistant', label: '2a', time: '6m ago', longTime: 'jun 17, 2026 at 09:16',
+    error: true, tokens: { in: 2600, out: 1320 },
+    body: 'The index access is unguarded under strict mode. Adding a null-guard, then re-running the workspace typecheck.',
+    tools: [
+      { id: 't2a', kind: 'edit', name: 'Edit', preview: 'packages/browser/src/lib/tasks.ts', path: 'packages/browser/src/lib/tasks.ts', adds: 3, dels: 1, hunk: [
+        { sign: 'ctx', a: '46', b: '46', t: '  const groups = groupByTask(turns)' },
+        { sign: 'del', a: '47', b: '', t: '  const first = groups[0]' },
+        { sign: 'add', a: '', b: '47', t: '  const first = groups[0]' },
+        { sign: 'add', a: '', b: '48', t: '  if (!first || first.turns.length === 0) return null' },
+        { sign: 'del', a: '48', b: '', t: '  return first.turns[0].index' },
+      ] },
+      { id: 't2b', kind: 'bash', name: 'Bash', preview: 'pnpm -r typecheck', command: 'pnpm -r typecheck', stdout: "src/lib/tasks.ts(48,9): error TS2532: Object is possibly 'undefined'.\nELIFECYCLE  Command failed with exit code 2.", duration: '4.1s', exit: 2 },
+    ],
+  },
+  {
+    id: 's1', kind: 'turn', role: 'assistant', label: '2d', depth: 1, subagent: 'docs-writer', time: '3m ago', longTime: 'jun 17, 2026 at 09:18',
+    tokens: { in: 1700, out: 1140 },
+    body: 'Spawned a subagent to document the props/callback/capability contract for the extracted package.',
+    tools: [
+      { id: 't3a', kind: 'task', name: 'Task', preview: 'docs-writer document the props/callback contract', agent: 'docs-writer', status: 'completed', task: 'Document the props/callback/capability contract', owner: 'main', promptBody: 'Write the README contract section for <SessionDetail>: every prop, every host callback, and the capability flags that gate the action menu.', result: 'Drafted README.md contract section (78 lines). Documented 14 props, 3 callbacks, 4 capability flags.' },
+    ],
+  },
+  { id: 'cp1', kind: 'checkpoint', hash: '9f3c1ad', msg: 'feat(canvas): port TurnRow + tool renderers', stat: { files: 7, adds: 312, dels: 24 } },
+]
+
+export function TimelineSection() {
+  return (
+    <section className="band" id="timeline">
+      <h2 className="label">timeline</h2>
+      <div className="sub">a vertical spine for a whole session: phases, role turns, tool calls, subagents and checkpoints, read top to bottom</div>
+      <p className="prose">a timeline is the vertical sibling of the horizontal step wizard. the step wizard marks progress through a short fixed flow; the timeline strings an open-ended, mixed event stream down one continuous spine. role is carried by a glyph and a label, tool calls and thinking collapse to a summary line and open on demand, the spine stays unbroken even through a subagent inset, and a checkpoint ties the prose back to a commit. for a short linear flow (choose to label to redact) reach for the step wizard instead; the timeline is for the open-ended session.</p>
+
+      <div className="specimen">
+        <div className="specimen-bar"><span className="specimen-cap">example</span></div>
+        <div className="specimen-body">
+          <Timeline items={TIMELINE_ITEMS} ariaLabel="session timeline" />
+        </div>
+      </div>
+
+      <div className="anatomy">
+        <div className="anatomy-legend">
+          <span className="anatomy-item"><span className="anatomy-num">1</span> the continuous spine</span>
+          <span className="anatomy-item"><span className="anatomy-num">2</span> role dot + glyph (tint never alone)</span>
+          <span className="anatomy-item"><span className="anatomy-num">3</span> turn head: glyph, label, tabular turn number and time</span>
+          <span className="anatomy-item"><span className="anatomy-num">4</span> body in the reading face, original case</span>
+          <span className="anatomy-item"><span className="anatomy-num">5</span> collapsible thinking block</span>
+          <span className="anatomy-item"><span className="anatomy-num">6</span> collapsible tool call, type-dispatched</span>
+          <span className="anatomy-item"><span className="anatomy-num">7</span> the reused diff renderer</span>
+          <span className="anatomy-item"><span className="anatomy-num">8</span> subagent inset, the spine staying continuous</span>
+          <span className="anatomy-item"><span className="anatomy-num">9</span> phase divider with range</span>
+          <span className="anatomy-item"><span className="anatomy-num">10</span> checkpoint marker</span>
+        </div>
+      </div>
+
+      <div className="cmp">
+        <div className="cmp-card cmp-do">
+          <div className="cmp-tag"><Check size={14} /> do</div>
+          <div className="cmp-body"><p>lead each node with a glyph and a label, and keep the spine continuous through nesting.</p></div>
+          <div className="cmp-note">depth rides on an inset and the subagent label together, never indentation alone.</div>
+        </div>
+        <div className="cmp-card cmp-dont">
+          <div className="cmp-tag"><X size={14} /> don't</div>
+          <div className="cmp-body"><p>break the spine into separate nested lists per subagent, lean on tint alone for role, or lowercase the transcript body.</p></div>
+          <div className="cmp-note">chrome is lowercase; the transcript content and code keep their original case.</div>
+        </div>
+      </div>
+
+      <div className="callout"><Info size={16} /><div>the ordered list reads in visual order; subagent depth is conveyed by an inset and the subagent label, not indentation alone; every collapse is a real aria-expanded button whose body mounts on open; turn numbers, durations and tokens are tabular; the spine and dots are decorative and aria-hidden, so they never enter the reading order.</div></div>
+    </section>
+  )
+}
+
+export function ToastSection() {
+  const propRows = [
+    { prop: 'placement', type: "'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'bottom-center' | 'top-center'", def: "'bottom-right'", note: 'corner the host pins to and the edge toasts enter from' },
+    { prop: 'max', type: 'number', def: '4', note: 'cap on visible toasts; the oldest drops from the front (fifo)' },
+    { prop: 'duration', type: 'number', def: '5000', note: 'default auto-dismiss in ms; 0 or Infinity is sticky' },
+    { prop: 'gap', type: 'number', def: '-', note: 'optional px override of the stack gap (defaults to --sp-3)' },
+    { prop: 'inline', type: 'boolean', def: 'false', note: 'pin absolutely inside a relative container instead of the viewport' },
+    { prop: 'toast.ok(msg, opts?)', type: '(string, opts) => id', def: '-', note: 'success tone: olive circle-check, role=status' },
+    { prop: 'toast.err(msg, opts?)', type: '(string, opts) => id', def: '-', note: 'error tone: clay circle-x, role=alert' },
+    { prop: 'toast.show(opts)', type: '(opts) => id', def: '-', note: 'full control; title, variant, icon, duration, closeLabel, id' },
+    { prop: 'toast.dismiss(id)', type: '(id) => void', def: '-', note: 'remove one immediately (runs the exit transition)' },
+    { prop: 'toast.dismissAll()', type: '() => void', def: '-', note: 'clear the whole stack' },
+    { prop: 'toast.update(id, opts)', type: '(id, opts) => void', def: '-', note: 'patch a live toast, e.g. promote a pending one to ok/err' },
+  ]
+
+  return (
+    <section className="band" id="toast">
+      <h2 className="label">toast host</h2>
+      <div className="sub">stacked, self-dismissing notifications</div>
+      <p className="prose">a toast host is an imperative layer over the toast surface. call toast.ok or toast.err from anywhere inside the provider and a notification stacks into a fixed corner, then dismisses itself after a few seconds. the timer pauses while a toast is hovered or focused so a slow reader is never timed out mid-read. success is olive, error is clay, each led by an icon and a lowercase title, never colour alone, and amber is kept out so the accent stays scarce.</p>
+
+      <div className="specimen" style={{ position: 'relative' }}>
+        <div className="specimen-bar"><span className="specimen-cap">example</span></div>
+        <div className="specimen-body" style={{ position: 'relative', minHeight: 220 }}>
+          <ToastProvider placement="bottom-right" inline>
+            <ToastBar />
+          </ToastProvider>
+        </div>
+      </div>
+
+      <span className="label">props</span>
+      <div className="dtable-wrap">
+        <table className="dtable">
+          <thead>
+            <tr><th scope="col">prop</th><th scope="col">type</th><th scope="col">default</th><th scope="col">note</th></tr>
+          </thead>
+          <tbody>
+            {propRows.map((r) => (
+              <tr key={r.prop}>
+                <td className="dt-name">{r.prop}</td>
+                <td className="dt-val">{r.type}</td>
+                <td className="dt-val">{r.def}</td>
+                <td className="dt-role">{r.note}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="cmp">
+        <div className="cmp-card cmp-do">
+          <div className="cmp-tag"><Check size={14} /> do</div>
+          <div className="cmp-body"><p>let toasts auto-dismiss, but pause the timer while a toast is hovered or focused, and keep success and error distinct by icon and title.</p></div>
+          <div className="cmp-note">tone never rides on colour alone; the glyph and the label carry it.</div>
+        </div>
+        <div className="cmp-card cmp-dont">
+          <div className="cmp-tag"><X size={14} /> don't</div>
+          <div className="cmp-body"><p>queue more than a handful at once, or use a toast for an error the user must act on.</p></div>
+          <div className="cmp-note">a blocking error belongs in an inline panel or a dialog, not a transient toast.</div>
+        </div>
+      </div>
+
+      <div className="callout"><ShieldCheck size={16} /><div>the host is one polite live region created up front; success rides it as role=status, an error adds role=alert so it speaks at once. each toast pairs a circle-check or circle-x glyph with a lowercase title, never colour alone, and amber is kept out so the accent stays scarce. the dismiss button is a real 24px target with the global focus ring; the auto-dismiss timer pauses while a toast is hovered or focused, and enter and exit motion is dropped entirely under reduced-motion.</div></div>
+    </section>
+  )
+}
+
+function ToastBar() {
+  const toast = useToast()
+  return (
+    <div className="btn-row">
+      <button type="button" className="btn btn-primary" onClick={() => toast.ok('shared to the claude-code collective.', { title: 'transcript published' })}>
+        publish
+      </button>
+      <button type="button" className="btn btn-secondary" onClick={() => toast.err('2 names still exposed in the gemini-cli session.', { title: 'redaction failed' })}>
+        retry
+      </button>
+      <button type="button" className="btn btn-secondary" onClick={() => {
+        toast.ok('first transcript queued.', { title: 'queued' })
+        toast.ok('second transcript queued.', { title: 'queued' })
+        toast.ok('third transcript queued.', { title: 'queued' })
+      }}>
+        stack 3
+      </button>
+      <button type="button" className="btn btn-secondary" onClick={() => toast.dismissAll()}>
+        dismiss all
+      </button>
+    </div>
+  )
+}
+
+export function DateRangeSection() {
+  const [value, setValue] = useState({ from: '2026-06-01', to: '2026-06-14' })
+
+  const propCols = [
+    { key: 'prop', label: 'prop' },
+    { key: 'type', label: 'type' },
+    { key: 'def', label: 'default' },
+    { key: 'note', label: 'note' },
+  ]
+  const propRows = [
+    { prop: 'value / defaultValue', type: '{ from, to }', def: '{from:null,to:null}', note: 'controlled / seed; iso yyyy-mm-dd strings, never date objects' },
+    { prop: 'onChange / onDraftChange', type: '(value) => void', def: '-', note: 'committed range or preset / each in-popover click before commit' },
+    { prop: 'presets', type: '{ id, label, range }[]', def: 'DATE_PRESETS', note: 'quick ranges down the rail; pass [] to hide it' },
+    { prop: 'numberOfMonths', type: '1 | 2', def: '2', note: 'auto-collapses to 1 under ~560px via a container query' },
+    { prop: 'weekStartsOn', type: '0..6', def: '1', note: 'monday-first by default, matching the iso week anchor' },
+    { prop: 'min / max', type: 'string', def: '-', note: 'iso bounds; out-of-range days are aria-disabled and skipped by the arrows' },
+  ]
+
+  return (
+    <section className="band" id="date-range">
+      <h2 className="label">date range</h2>
+      <div className="sub">a trigger plus a two-month grid for picking a span. presets for the common cases, a keyboard-navigable calendar for the exact one.</div>
+      <p className="prose">a date range is one trigger that reads like a field and one panel that holds the work: a rail of quick ranges for the cases people ask for ninety percent of the time, and two month grids for the exact span. dates cross the boundary as iso strings, so the value stays tabular, serializable, and stable across locales. the two endpoints are the only amber-filled cells; today is a hairline ring; the run between the ends is a quiet wash, never a saturated fill.</p>
+
+      <div className="specimen">
+        <div className="specimen-bar"><span className="specimen-cap">date-range / interactive</span></div>
+        <div className="specimen-body">
+          <div className="btn-row">
+            <DateRange value={value} onChange={setValue} />
+            <DateRange defaultValue={{ from: '2026-06-03', to: '2026-06-03' }} size="sm" />
+            <button type="button" className="btn btn-secondary btn-sm">filter</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="specimen">
+        <div className="specimen-bar"><span className="specimen-cap">calendar / static</span></div>
+        <div className="specimen-body">
+          <DateRangeCalendar className="is-static" defaultValue={{ from: '2026-06-04', to: '2026-06-18' }} />
+        </div>
+      </div>
+
+      <span className="label">anatomy</span>
+      <div className="anatomy">
+        <div className="anatomy-legend">
+          <span className="anatomy-item"><span className="anatomy-num tnum">1</span> trigger: calendar icon, the tabular value, a caret that rotates open</span>
+          <span className="anatomy-item"><span className="anatomy-num tnum">2</span> preset rail: quick ranges as aria-pressed toggles down the left edge</span>
+          <span className="anatomy-item"><span className="anatomy-num tnum">3</span> month header: prev / next chevrons flanking a month-year caption</span>
+          <span className="anatomy-item"><span className="anatomy-num tnum">4</span> day grid: a roving-tabindex grid, 32px cells, monday-first columns</span>
+          <span className="anatomy-item"><span className="anatomy-num tnum">5</span> selected endpoints: the two amber-filled cells, bold and aria-selected</span>
+          <span className="anatomy-item"><span className="anatomy-num tnum">6</span> range band: a quiet color-mix wash so the span reads as one run</span>
+          <span className="anatomy-item"><span className="anatomy-num tnum">7</span> footer: the resolved readout plus clear and apply</span>
+        </div>
+      </div>
+
+      <span className="label">props</span>
+      <div className="dtable-wrap">
+        <table className="dtable">
+          <thead>
+            <tr>{propCols.map((c) => <th key={c.key} scope="col">{c.label}</th>)}</tr>
+          </thead>
+          <tbody>
+            {propRows.map((r) => (
+              <tr key={r.prop}>
+                <td className="dt-name">{r.prop}</td>
+                <td className="dt-val">{r.type}</td>
+                <td className="dt-val">{r.def}</td>
+                <td className="dt-role">{r.note}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="cmp">
+        <div className="cmp-card cmp-do">
+          <div className="cmp-tag"><Check size={14} /> do</div>
+          <div className="cmp-body"><p>anchor the calendar with presets for the 90 percent cases, and keep the exact grid one click away for the rest.</p></div>
+          <div className="cmp-note">the active preset is announced by aria-pressed, not by its amber border alone.</div>
+        </div>
+        <div className="cmp-card cmp-dont">
+          <div className="cmp-tag"><X size={14} /> don't</div>
+          <div className="cmp-body"><p>fill the range days with saturated amber.</p></div>
+          <div className="cmp-note">reserve amber for the two endpoints; the interior is a quiet wash and today is a hairline ring.</div>
+        </div>
+      </div>
+
+      <div className="callout"><Info size={16} /><div>each month is a role=grid with a roving tabindex: arrows move by day or week, home and end jump within the week, page up and page down change the month, and shift adds a year. every day carries its full date as an aria-label, out-of-bounds days are aria-disabled and skipped by the arrows, the endpoints are aria-selected, and a polite live region spells the resolved span on every change so colour is never the only cue.</div></div>
+    </section>
+  )
+}
+

@@ -1,6 +1,6 @@
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import Menu from './Menu.jsx'
-import { Copy, Download, Share2, Eye, EyeOff, Trash2, Archive } from 'lucide-react'
+import { Copy, Download, Share2, Eye, EyeOff, Trash2, Archive, FilePen } from 'lucide-react'
 
 /* overlays/Menu - a self-contained accessible dropdown. the trigger is a .btn.menu-trigger
    with aria-haspopup="menu"; the popout is a role="menu" list of role="menuitem" rows. items
@@ -59,6 +59,24 @@ export const WithDangerItem = {
 
 export const Empty = {
   args: { label: 'no actions', items: [] },
+}
+
+// caption + separator: a .menu-cap context line above the list, and a role="separator" .menu-sep
+// hairline before the destructive row. both are skipped by keyboard nav (the separator like a
+// disabled row). mirrors the overlays-section live menu specimen.
+export const WithCaptionAndSeparator = {
+  args: {
+    label: 'transcript actions',
+    caption: 'desert-archivists / run 18',
+    items: [
+      { label: 'rename transcript', icon: FilePen, kbd: 'F2' },
+      { label: 'duplicate', icon: Copy, kbd: '⌘D' },
+      { label: 'copy share link', icon: Share2, kbd: '⌘L' },
+      { label: 'archive', icon: Archive, kbd: '⌘E', disabled: true },
+      { separator: true },
+      { label: 'delete transcript', icon: Trash2, kbd: '⌫', danger: true },
+    ],
+  },
 }
 
 // the important interaction: open the menu via the trigger, assert role=menu becomes visible,

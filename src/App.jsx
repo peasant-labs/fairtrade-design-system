@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   MessageSquarePlus,
   MessagesSquare,
@@ -17,12 +17,12 @@ import {
   FileText,
   Link2,
 } from 'lucide-react'
-import { AsciiImage, AsciiVideo, AsciiWordmark } from './effects.jsx'
-import { paintIcons } from './icons.js'
+import { AsciiImage, AsciiRoots, AsciiVideo } from './effects.jsx'
 import CommandPalette from './CommandPalette.jsx'
 import Dialog from './Dialog.jsx'
 import InUseShell from './mockups/inuse/InUseShell.jsx'
-import { DataTableSection, PaginationSection, AccordionSection } from './ComponentSections.jsx'
+import { DataTableSection, PaginationSection, AccordionSection, TimelineSection, ToastSection, DateRangeSection } from './ComponentSections.jsx'
+import { GroupOpener, StartSection, MotionSection, PrinciplesSection, VoiceSection, ResourcesSection } from './DocSections.jsx'
 /* imagery: a runtime-sampled ascii video of the wheat in the hero (src/assets/wheat.mp4);
    classic chiaroscuro peasant portraits (lit subject on a dark ground) rendered through
    the image->ascii filter on the cards, like the inspiration reference */
@@ -30,33 +30,25 @@ import wheatVid from './assets/wheat.mp4'
 import peasantWoman from './img/peasant-woman.jpg'
 import peasantMan from './img/peasant-man.jpg'
 
-/* the page is composed from per-section html partials (src/sections, injected as raw
-   markup) interleaved with the few react sections that need the imagery effects. each
-   partial owns one section so it can be edited in isolation. */
-import defsHtml from './sections/00-defs.html?raw'
-import navHtml from './sections/01-nav.html?raw'
-import startHtml from './sections/10-start.html?raw'
-import groupFoundationsHtml from './sections/15-group-foundations.html?raw'
-import principlesHtml from './sections/20-principles.html?raw'
-import voiceHtml from './sections/22-voice.html?raw'
-import colorHtml from './sections/24-color.html?raw'
-import typeHtml from './sections/26-type.html?raw'
-import spacingHtml from './sections/28-spacing.html?raw'
-import iconsHtml from './sections/30-icons.html?raw'
-import motionHtml from './sections/32-motion.html?raw'
-import controlsHtml from './sections/34-controls.html?raw'
-import statesHtml from './sections/36-states.html?raw'
-import groupComponentsHtml from './sections/40-group-components.html?raw'
-import badgesHtml from './sections/42-badges.html?raw'
-import trailsHtml from './sections/44-trails.html?raw'
-import conversationHtml from './sections/48-conversation.html?raw'
-import canvasHtml from './sections/50-canvas.html?raw'
-import formsHtml from './sections/52-forms.html?raw'
-import overlaysHtml from './sections/54-overlays.html?raw'
-import groupUsingHtml from './sections/60-group-using.html?raw'
-import a11yHtml from './sections/62-a11y.html?raw'
-import tokensHtml from './sections/64-tokens.html?raw'
-import resourcesHtml from './sections/66-resources.html?raw'
+/* the page renders from per-section components (roadmap #1): one file per section under
+   src/sections-react, mirroring the old partial names, interleaved with the react sections
+   that need the imagery effects. each file owns one section so it can be edited in isolation. */
+import { Defs } from './sections-react/00-defs.jsx'
+import { NavBar } from './sections-react/01-nav.jsx'
+import { ColorSection } from './sections-react/24-color.jsx'
+import { TypographySection } from './sections-react/26-type.jsx'
+import { SpacingSection } from './sections-react/28-spacing.jsx'
+import { IconsSection } from './sections-react/30-icons.jsx'
+import { ControlsSection } from './sections-react/34-controls.jsx'
+import { StatesSection } from './sections-react/36-states.jsx'
+import { BadgesSection } from './sections-react/42-badges.jsx'
+import { ConversationSection } from './sections-react/48-conversation.jsx'
+import { CanvasSection } from './sections-react/50-canvas.jsx'
+import { FormsSection } from './sections-react/52-forms.jsx'
+import { A11ySection } from './sections-react/62-a11y.jsx'
+import { TokensSection } from './sections-react/64-tokens.jsx'
+import { TrailsSection } from './sections-react/44-trails.jsx'
+import { OverlaysSection } from './sections-react/54-overlays.jsx'
 
 const KEY = 'pds_feedback_v1'
 const isHttp = /^https?:$/.test(location.protocol)
@@ -82,12 +74,15 @@ const RAIL = [
   { kind: 'link', id: 'trails', label: 'trails & tabs' },
   { kind: 'link', id: 'cards', label: 'cards & rows' },
   { kind: 'link', id: 'conversation', label: 'conversation' },
+  { kind: 'link', id: 'timeline', label: 'timeline' },
   { kind: 'link', id: 'canvas', label: 'canvas & dialog' },
   { kind: 'link', id: 'forms', label: 'forms & empty' },
   { kind: 'link', id: 'overlays', label: 'overlays' },
   { kind: 'link', id: 'data-table', label: 'data table' },
   { kind: 'link', id: 'pagination', label: 'pagination' },
   { kind: 'link', id: 'accordion', label: 'accordion' },
+  { kind: 'link', id: 'toast', label: 'toast host' },
+  { kind: 'link', id: 'date-range', label: 'date range' },
   { kind: 'group', id: 'using', label: 'using the system' },
   { kind: 'link', id: 'a11y', label: 'accessibility' },
   { kind: 'link', id: 'tokens', label: 'tokens' },
@@ -168,15 +163,9 @@ function stamp() {
   )
 }
 
-/* a raw-html partial dropped transparently into the flow (display:contents wrapper). memoized so it
-   renders exactly once: the html prop is a stable module import, and re-rendering would make React
-   reset innerHTML and clobber the lucide svgs that createIcons painted into it (which also detaches
-   any captured DOM refs - that broke the dialog's focus-return). */
-const Raw = memo(({ html }) => <div className="contents" dangerouslySetInnerHTML={{ __html: html }} />)
-
 /* icon a11y: name icon-only copy buttons from the token they copy, and hide every
    decorative glyph from assistive tech (meaning is carried by adjacent text or a
-   labelled parent button). runs after lucide paints the partials' <i data-lucide>. */
+   labelled parent button). a belt-and-suspenders pass over the whole tree on mount. */
 function labelIconA11y() {
   const root = document.querySelector('.pds-root')
   if (!root) return
@@ -190,41 +179,107 @@ function labelIconA11y() {
   })
 }
 
-/* section 1 - full-screen brand splash: the wheat video sampled to ascii, the wordmark drawn in
-   wheat-ramp glyphs anchored bottom-right (no container, no alpha), a descending-grain scroll cue */
+/* sections 1+2, ONE continuous piece so there is a single wheat video and the roots come straight out of
+   it: screen 1 is only the wheat video (the crop); screen 2 is the roots growing out of the video's base
+   into "fairtrade" (the system font, full width at the bottom). no second/duplicate video. the video
+   emits a one-time density profile of its bottom edge (`onColumns`); the roots seed their bases at those
+   densest wheat columns and draw a dense seam band, so each strand visibly descends from real wheat. */
 function Hero() {
+  const [seeds, setSeeds] = useState(null)
   return (
     <section className="hero" id="top">
-      <AsciiVideo src={wheatVid} cols={300} boost={2.05} contrast={1.5} fps={24} smooth={6} waveAmp={0} className="hero-video" />
-      <div className="hero-mark">
-        <AsciiWordmark text="fairtrade" gap={1} className="hero-wordmark" />
+      <div className="hero-crop">
+        <AsciiVideo src={wheatVid} cols={300} boost={2.05} contrast={1.5} fps={24} smooth={6} waveAmp={0} onColumns={setSeeds} className="hero-bg" />
       </div>
-      <a className="hero-scroll" href="#intro" aria-label="scroll to the value proposition">
-        <span className="hsc-grain" aria-hidden="true"><b>:</b><b>*</b><b>x</b><b>#</b><b>@</b></span>
-        <span className="hsc-chevron" aria-hidden="true">&#9661;</span>
-        <span className="hsc-label">scroll</span>
-        <span className="hsc-key" aria-hidden="true">&#8595; / space</span>
-      </a>
+      <div className="hero-grow" id="brand">
+        <div className="hero-roots-wrap" aria-hidden="true">
+          <AsciiRoots cols={300} rows={82} seed={11} bases={22} density={1.15} overlap={0.24} seeds={seeds} nodes className="hero-roots" />
+        </div>
+        <div className="hero-foot">
+          <div className="hero-word" role="img" aria-label="fairtrade">fairtrade</div>
+        </div>
+      </div>
     </section>
   )
 }
 
-/* section 2 - the value proposition, composed with a framed ascii portrait (P3) */
-function Intro({ theme }) {
+/* section 3 - philosophy: a short centered statement; the whole dark ground is tiled with ascii
+   portraits (hidden context - the chat transcripts behind the code) that a cursor-following spotlight
+   reveals on hover, including behind the text. no reveal on touch (it stays minimal). */
+/* a dense tiled field of portraits that REPEATS edge to edge with generous overlap, so the spotlight
+   always lands on art (no vignette fade, no gaps between rows/cols). */
+const PHILOS_GRID = { cols: 6, rows: 5 }
+const PHILOS_SRC = [peasantWoman, peasantMan]
+const PHILOS_ARTS = (() => {
+  const out = []
+  const { cols, rows } = PHILOS_GRID
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const i = r * cols + c
+      out.push({
+        key: i,
+        src: PHILOS_SRC[(r + c) % 2],
+        cols: 54,
+        contrast: (r + c) % 2 ? 1.14 : 1.22,
+        gamma: (r + c) % 2 ? 0.74 : 0.8,
+        style: {
+          top: `${(r * 100) / rows - 3}%`,
+          left: `${(c * 100) / cols - 1.5}%`,
+          width: `${100 / cols + 9}%`,
+          height: `${100 / rows + 14}%`,
+        },
+      })
+    }
+  }
+  return out
+})()
+const OFF = -800 // spotlight parked off-screen (no reveal)
+function Philosophy({ theme }) {
+  const secRef = useRef(null)
+  const sp = useRef({ x: OFF, y: OFF, tx: OFF, ty: OFF, vx: 0, vy: 0, active: false, raf: 0 })
+
+  // a springy spotlight: the reveal chases the cursor with a little overshoot/bounce (not an instant
+  // jump), and glides back off-screen the moment the cursor leaves the section, so it never gets stuck.
+  useEffect(() => {
+    const s = sp.current
+    const el = secRef.current
+    const tick = () => {
+      const k = 0.16, damp = 0.74 // spring stiffness + damping -> a gentle bounce
+      s.vx = (s.vx + (s.tx - s.x) * k) * damp
+      s.vy = (s.vy + (s.ty - s.y) * k) * damp
+      s.x += s.vx
+      s.y += s.vy
+      if (el) {
+        el.style.setProperty('--mx', s.x + 'px')
+        el.style.setProperty('--my', s.y + 'px')
+      }
+      s.raf = requestAnimationFrame(tick)
+    }
+    s.raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(s.raf)
+  }, [])
+
+  const onMove = (e) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    const s = sp.current
+    s.tx = e.clientX - r.left
+    s.ty = e.clientY - r.top
+    if (!s.active) { s.active = true; s.x = s.tx; s.y = s.ty } // first entry: start at the cursor
+  }
+  const onLeave = () => { const s = sp.current; s.active = false; s.tx = OFF; s.ty = OFF } // glide off -> reveal clears
+
   return (
-    <section className="intro" id="intro">
-      <div className="intro-in">
-        <div className="intro-copy">
-          <h1>receipts for <span className="hl">agentic work</span>,<br />kept low to the ground.</h1>
-          <p>ingest your sessions locally, redact them, and share what's worth sharing.</p>
-          <div className="btn-row">
-            <button className="btn btn-primary">explore the commons</button>
-            <button className="btn btn-secondary">publish a transcript</button>
+    <section className="philos" id="manifesto" ref={secRef} onMouseMove={onMove} onMouseLeave={onLeave}>
+      <div className="philos-arts" aria-hidden="true">
+        {PHILOS_ARTS.map((a) => (
+          <div key={a.key} className="philos-art-tile" style={a.style}>
+            <AsciiImage src={a.src} cols={a.cols} fit isolated contrast={a.contrast} gamma={a.gamma} black={0.16} white={0.82} theme={theme} />
           </div>
-        </div>
-        <figure className="intro-art framed" aria-hidden="true">
-          <AsciiImage src={peasantWoman} cols={150} aspect={1.18} isolated contrast={1.18} gamma={0.78} black={0.22} white={0.86} vignette={0.18} ink="#ece7dd" theme={theme} className="intro-art-ascii" />
-        </figure>
+        ))}
+      </div>
+      <div className="philos-text">
+        <h1 className="philos-lead">one honest system, three apps.</h1>
+        <p className="philos-body">fairtrade is the shared language of peasant, village and the transcript viewer. legible before clever, restrained before decorated, one token layer under every screen. nothing here is decoration; everything earns its keep.</p>
       </div>
     </section>
   )
@@ -274,7 +329,7 @@ function Cards({ theme }) {
         <div className="specimen-body">
       <div className="grid-cards">
         <a className="card card-img">
-          <div className="card-thumb"><AsciiImage src={peasantWoman} cols={224} aspect={0.6} isolated contrast={1.18} gamma={0.78} black={0.22} white={0.86} vignette={0.16} ink="#ece7dd" theme={theme} className="thumb-ascii" /></div>
+          <div className="card-thumb"><AsciiImage src={peasantWoman} cols={224} aspect={0.6} isolated contrast={1.18} gamma={0.78} black={0.22} white={0.86} vignette={0.16} theme={theme} className="thumb-ascii" /></div>
           <div className="card-body">
             <div className="card-head"><span className="metaitem"><Claude /> claude-code</span><Eye size={14} style={{ color: 'var(--ink-3)' }} /></div>
             <h3>refactor ingest pipeline to stream</h3>
@@ -287,7 +342,7 @@ function Cards({ theme }) {
           </div>
         </a>
         <a className="card card-img">
-          <div className="card-thumb"><AsciiImage src={peasantMan} cols={224} aspect={0.6} isolated contrast={1.12} gamma={0.74} black={0.12} white={0.6} vignette={0.16} ink="#ece7dd" theme={theme} className="thumb-ascii" /></div>
+          <div className="card-thumb"><AsciiImage src={peasantMan} cols={224} aspect={0.6} isolated contrast={1.12} gamma={0.74} black={0.12} white={0.6} vignette={0.16} theme={theme} className="thumb-ascii" /></div>
           <div className="card-body">
             <div className="card-head"><span className="metaitem"><Users /> desert-archivists</span></div>
             <h3>desert archivists</h3>
@@ -325,23 +380,9 @@ export default function App() {
     else document.documentElement.removeAttribute('data-theme')
   }, [theme])
 
-  /* paint the partials' lucide icons (bundled, no CDN), then apply icon a11y. a MutationObserver
-     re-paints if any <i data-lucide> placeholder ever re-appears, so icons never silently vanish. */
-  useEffect(() => {
-    const repaint = () => { paintIcons(); labelIconA11y() }
-    repaint()
-    const root = document.querySelector('.pds-root')
-    if (!root) return
-    let queued = false
-    const obs = new MutationObserver(() => {
-      if (queued) return
-      if (!root.querySelector('i[data-lucide]')) return
-      queued = true
-      requestAnimationFrame(() => { queued = false; repaint() })
-    })
-    obs.observe(root, { childList: true, subtree: true })
-    return () => obs.disconnect()
-  }, [])
+  /* icon a11y on mount. the page now renders entirely from components with lucide-react, so
+     there are no <i data-lucide> placeholders left to paint and no MutationObserver is needed. */
+  useEffect(() => { labelIconA11y() }, [])
 
   /* scroll-spy: the active rail item is the LAST section whose top has crossed a fold line below
      the nav - deterministic, unlike the prior IntersectionObserver band that got stuck early.
@@ -376,23 +417,27 @@ export default function App() {
     }
   }, [])
 
-  /* nav reveal - its OWN direct scroll listener (no rAF, no setState), so it is immune to the
-     re-render churn of the scroll-spy and processes every scroll event in order. an 8px deadzone
-     kills jitter; once hidden it stays hidden until a clear up-scroll, so it never thrashes. */
+  /* header gating by zone: the page header is HIDDEN over the top splash + philosophy, SHOWN across
+     the documentation (from "start here" onward), and HIDDEN again over the in-use stage (whose own
+     sticky top banner replaces it). its own direct scroll listener so it never thrashes. */
   useEffect(() => {
     const nav = document.querySelector('.nav')
     if (!nav) return
     const navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 56
-    let lastY = window.scrollY
-    const onNav = () => {
+    const apply = () => {
       const y = window.scrollY
-      if (y < navH * 2) { nav.classList.remove('nav--hidden'); lastY = y; return }
-      if (Math.abs(y - lastY) < 8) return
-      nav.classList.toggle('nav--hidden', y > lastY) // down -> hide, up -> show
-      lastY = y
+      const line = y + navH + 4
+      const start = document.getElementById('start')
+      const inuse = document.getElementById('inuse')
+      const startTop = start ? start.getBoundingClientRect().top + y : Infinity
+      const inuseTop = inuse ? inuse.getBoundingClientRect().top + y : Infinity
+      const inDocs = line >= startTop && line < inuseTop
+      nav.classList.toggle('nav--hidden', !inDocs)
     }
-    window.addEventListener('scroll', onNav, { passive: true })
-    return () => window.removeEventListener('scroll', onNav)
+    apply()
+    window.addEventListener('scroll', apply, { passive: true })
+    window.addEventListener('resize', apply, { passive: true })
+    return () => { window.removeEventListener('scroll', apply); window.removeEventListener('resize', apply) }
   }, [])
   useEffect(() => {
     const grp = GROUP_OF[active]
@@ -400,6 +445,15 @@ export default function App() {
       a.classList.toggle('active', a.getAttribute('data-spy') === grp)
     })
   }, [active])
+
+  /* the nav storybook link points at the deployed copy (relative `storybook/`, nested in
+     dist/ by the deploy workflow) in production; in dev there is no built storybook under
+     the vite server, so retarget it to the storybook dev server (pnpm storybook on 6006). */
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    const a = document.querySelector('.sb-link')
+    if (a) a.setAttribute('href', 'http://localhost:6006')
+  }, [])
 
   /* command palette (the nav "search ⌘k" control + the ⌘k / ctrl-k shortcut) */
   const [paletteOpen, setPaletteOpen] = useState(false)
@@ -417,97 +471,11 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  /* wire the static ARIA tablists (trails section) for click + arrow-key selection with a roving
-     tabindex, toggling the matching tabpanel. partials are memoized, so this runs once. */
-  useEffect(() => {
-    const lists = [...document.querySelectorAll('.tabs[role="tablist"]')]
-    const cleanups = []
-    lists.forEach((list) => {
-      const tabs = [...list.querySelectorAll('[role="tab"]')]
-      const select = (tab) => {
-        tabs.forEach((t) => {
-          const on = t === tab
-          t.setAttribute('aria-selected', on ? 'true' : 'false')
-          t.tabIndex = on ? 0 : -1
-          t.classList.toggle('active', on)
-          const panel = document.getElementById(t.getAttribute('aria-controls'))
-          if (panel) panel.hidden = !on
-        })
-      }
-      const onClick = (e) => {
-        const tab = e.target.closest('[role="tab"]')
-        if (tab && list.contains(tab)) { select(tab); tab.focus() }
-      }
-      const onKey = (e) => {
-        const i = tabs.indexOf(document.activeElement)
-        if (i < 0) return
-        let j = i
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') j = (i + 1) % tabs.length
-        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') j = (i - 1 + tabs.length) % tabs.length
-        else if (e.key === 'Home') j = 0
-        else if (e.key === 'End') j = tabs.length - 1
-        else return
-        e.preventDefault(); select(tabs[j]); tabs[j].focus()
-      }
-      list.addEventListener('click', onClick)
-      list.addEventListener('keydown', onKey)
-      cleanups.push(() => { list.removeEventListener('click', onClick); list.removeEventListener('keydown', onKey) })
-    })
-    return () => cleanups.forEach((c) => c())
-  }, [])
+  /* (the trails tablist is now the self-managed <Tabs> component; the in-use mockup tablists
+     manage their own roving keyboard nav, so the old global delegated tablist effect is gone.) */
 
-  /* wire the static dropdown menus ([data-menu-trigger]): click/Down opens, arrows move between
-     enabled items, Esc/Tab/outside-click close, focus returns to the trigger. */
-  useEffect(() => {
-    const triggers = [...document.querySelectorAll('[data-menu-trigger]')]
-    const cleanups = []
-    triggers.forEach((trigger) => {
-      const menu = document.getElementById(trigger.getAttribute('aria-controls'))
-      if (!menu) return
-      const items = () => [...menu.querySelectorAll('[role="menuitem"]:not([aria-disabled="true"])')]
-      let isOpen = false
-      const setOpen = (v, which) => {
-        isOpen = v
-        trigger.setAttribute('aria-expanded', v ? 'true' : 'false')
-        menu.hidden = !v
-        if (v) {
-          const its = items()
-          ;(which === 'last' ? its[its.length - 1] : its[0])?.focus()
-        }
-      }
-      const close = (returnFocus) => { setOpen(false); if (returnFocus) trigger.focus() }
-      const onTriggerClick = (e) => { e.preventDefault(); isOpen ? close(true) : setOpen(true, 'first') }
-      const onTriggerKey = (e) => {
-        if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true, 'first') }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); setOpen(true, 'last') }
-      }
-      const onMenuKey = (e) => {
-        const its = items()
-        const i = its.indexOf(document.activeElement)
-        if (e.key === 'Escape') { e.preventDefault(); close(true) }
-        else if (e.key === 'ArrowDown') { e.preventDefault(); its[(i + 1) % its.length]?.focus() }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); its[(i - 1 + its.length) % its.length]?.focus() }
-        else if (e.key === 'Home') { e.preventDefault(); its[0]?.focus() }
-        else if (e.key === 'End') { e.preventDefault(); its[its.length - 1]?.focus() }
-        else if (e.key === 'Tab') close(false)
-      }
-      const onMenuClick = (e) => { if (e.target.closest('[role="menuitem"]:not([aria-disabled="true"])')) close(true) }
-      const onDocDown = (e) => { if (isOpen && !menu.contains(e.target) && !trigger.contains(e.target)) close(false) }
-      trigger.addEventListener('click', onTriggerClick)
-      trigger.addEventListener('keydown', onTriggerKey)
-      menu.addEventListener('keydown', onMenuKey)
-      menu.addEventListener('click', onMenuClick)
-      document.addEventListener('mousedown', onDocDown)
-      cleanups.push(() => {
-        trigger.removeEventListener('click', onTriggerClick)
-        trigger.removeEventListener('keydown', onTriggerKey)
-        menu.removeEventListener('keydown', onMenuKey)
-        menu.removeEventListener('click', onMenuClick)
-        document.removeEventListener('mousedown', onDocDown)
-      })
-    })
-    return () => cleanups.forEach((c) => c())
-  }, [])
+  /* (the overlays dropdown is now the self-managed <Menu> component; the in-use mockup menus
+     manage their own open/close state, so the old global delegated menu effect is gone.) */
 
   /* feedback state */
   const [entries, setEntries] = useState(() => {
@@ -726,7 +694,7 @@ export default function App() {
   /* scroll-reveal: fade/lift each section in as it enters the viewport */
   useEffect(() => {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const targets = Array.from(document.querySelectorAll('.intro, .band, .group, .card-img'))
+    const targets = Array.from(document.querySelectorAll('.philos, .band, .group, .card-img'))
     targets.forEach((t) => t.classList.add('reveal'))
     const io = new IntersectionObserver(
       (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target) } }),
@@ -739,39 +707,42 @@ export default function App() {
   return (
     <>
       <div className="pds-root" onClick={rootClick}>
-        <Raw html={defsHtml} />
-        <Raw html={navHtml} />
+        <Defs />
+        <NavBar />
         <Hero />
-        <Intro theme={theme} />
+        <Philosophy theme={theme} />
         <div className="docs">
           <Rail active={active} />
           <main className="docs-main">
-            <Raw html={startHtml} />
-            <Raw html={groupFoundationsHtml} />
-            <Raw html={principlesHtml} />
-            <Raw html={voiceHtml} />
-            <Raw html={colorHtml} />
-            <Raw html={typeHtml} />
-            <Raw html={spacingHtml} />
-            <Raw html={iconsHtml} />
-            <Raw html={motionHtml} />
-            <Raw html={controlsHtml} />
-            <Raw html={statesHtml} />
-            <Raw html={groupComponentsHtml} />
-            <Raw html={badgesHtml} />
-            <Raw html={trailsHtml} />
+            <StartSection />
+            <GroupOpener id="foundations" title="foundations" sub="principles, type, color and controls" />
+            <PrinciplesSection />
+            <VoiceSection />
+            <ColorSection />
+            <TypographySection />
+            <SpacingSection />
+            <IconsSection />
+            <MotionSection />
+            <ControlsSection />
+            <StatesSection />
+            <GroupOpener id="components" title="components" sub="everything we build with, ported from peasant, village & the transcript viewer" />
+            <BadgesSection />
+            <TrailsSection />
             <Cards theme={theme} />
-            <Raw html={conversationHtml} />
-            <Raw html={canvasHtml} />
-            <Raw html={formsHtml} />
-            <Raw html={overlaysHtml} />
+            <ConversationSection />
+            <TimelineSection />
+            <CanvasSection />
+            <FormsSection />
+            <OverlaysSection />
             <DataTableSection />
             <PaginationSection />
             <AccordionSection />
-            <Raw html={groupUsingHtml} />
-            <Raw html={a11yHtml} />
-            <Raw html={tokensHtml} />
-            <Raw html={resourcesHtml} />
+            <ToastSection />
+            <DateRangeSection />
+            <GroupOpener id="using" title="using the system" sub="how to build on it without breaking it" />
+            <A11ySection />
+            <TokensSection />
+            <ResourcesSection />
           </main>
         </div>
         <InUseShell theme={theme} />

@@ -20,6 +20,8 @@ import {
   GitCommitHorizontal,
   Sparkles,
   ListTree,
+  LayoutList,
+  SlidersHorizontal,
   ListChecks,
   CornerDownRight,
   Share2,
@@ -850,9 +852,27 @@ export default function TranscriptApp({ theme = 'dark' }) {
   const [openTools, setOpenTools] = useState({ t1a: true, t4a: true, t5a: true })
   const [activeTurn, setActiveTurn] = useState(0)
   const [copiedTurn, setCopiedTurn] = useState(null)
-  const [railTab, setRailTab] = useState('outline') // outline | filters
   const [savedLabels, setSavedLabels] = useState({}) // turnId -> {outcome, flag}
   const [labelFor, setLabelFor] = useState(null) // turnId open in popover
+
+  /* roving keyboard nav for the top tab strip, self-contained (this was previously supplied
+     by a global delegated tablist effect in App.jsx that has since been removed). arrows wrap,
+     home/end jump, and focus follows selection - matching the shared ui/Tabs component. */
+  const tabRefs = useRef({})
+  const onTabKey = (e) => {
+    const ids = TABS.map((t) => t.id)
+    const i = ids.indexOf(tab)
+    if (i < 0) return
+    let j = i
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') j = (i + 1) % ids.length
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') j = (i - 1 + ids.length) % ids.length
+    else if (e.key === 'Home') j = 0
+    else if (e.key === 'End') j = ids.length - 1
+    else return
+    e.preventDefault()
+    setTab(ids[j])
+    tabRefs.current[ids[j]]?.focus()
+  }
 
   /* action menu state */
   const [shareOpen, setShareOpen] = useState(false)
@@ -1170,12 +1190,13 @@ export default function TranscriptApp({ theme = 'dark' }) {
       )}
 
       {/* ===================== TAB STRIP ===================== */}
-      <div className="tabs txn-tabs" role="tablist" aria-label="session views">
+      <div className="tabs txn-tabs" role="tablist" aria-label="session views" onKeyDown={onTabKey}>
         {TABS.map((t) => {
           const on = tab === t.id
           return (
             <button
               key={t.id}
+              ref={(el) => (tabRefs.current[t.id] = el)}
               type="button"
               role="tab"
               aria-selected={on}
@@ -1190,7 +1211,17 @@ export default function TranscriptApp({ theme = 'dark' }) {
       </div>
 
       {/* ===================== BODY ===================== */}
+      {/* split layout matching the viewer's railLayout="split": outline (user turns) left, transcript
+         centre, filters right. */}
       <div className="txn-body-grid">
+        {/* ---- LEFT: outline / user turns ---- */}
+        <aside className="txn-rail txn-rail-left" aria-label="user turns outline">
+          <div className="txn-rail-head"><LayoutList size={13} aria-hidden="true" /> user turns</div>
+          <div className="txn-rail-body">
+            <OutlineRail tab={tab} activeTurn={activeTurn} onJump={jumpTo} />
+          </div>
+        </aside>
+
         {/* ---- CENTER ---- */}
         <main className="txn-center" role="tabpanel" aria-label={tab}>
           {tab === 'trace' && (
@@ -1393,22 +1424,14 @@ export default function TranscriptApp({ theme = 'dark' }) {
           )}
         </main>
 
-        {/* ---- RIGHT RAIL ---- */}
-        <aside className="txn-rail" aria-label="outline and filters">
-          <div className="tabs txn-rail-tabs" role="tablist" aria-label="rail">
-            <button type="button" role="tab" aria-selected={railTab === 'outline'} tabIndex={railTab === 'outline' ? 0 : -1} className={'tab txn-rail-tab' + (railTab === 'outline' ? ' active' : '')} onClick={() => setRailTab('outline')}>
-              <ListTree size={13} aria-hidden="true" /> outline
-            </button>
-            <button type="button" role="tab" aria-selected={railTab === 'filters'} tabIndex={railTab === 'filters' ? 0 : -1} className={'tab txn-rail-tab' + (railTab === 'filters' ? ' active' : '')} onClick={() => setRailTab('filters')}>
-              <FilterIcon size={13} aria-hidden="true" /> filters {filtersActive > 0 && <span className="chipx-count unread tnum">{filtersActive}</span>}
-            </button>
+        {/* ---- RIGHT: filters ---- */}
+        <aside className="txn-rail txn-rail-right" aria-label="filters">
+          <div className="txn-rail-head">
+            <SlidersHorizontal size={13} aria-hidden="true" /> filters
+            {filtersActive > 0 && <span className="chipx-count unread tnum">{filtersActive}</span>}
           </div>
-
           <div className="txn-rail-body">
-            {railTab === 'outline' ? (
-              <OutlineRail tab={tab} activeTurn={activeTurn} onJump={jumpTo} />
-            ) : (
-              <FiltersRail
+            <FiltersRail
                 tab={tab}
                 cats={cats}
                 setCats={setCats}
@@ -1433,7 +1456,6 @@ export default function TranscriptApp({ theme = 'dark' }) {
                 onJumpStart={() => jumpTo(visibleTurns[0]?.id ?? 0, { switchTab: false })}
                 onJumpLatest={() => jumpTo(visibleTurns[visibleTurns.length - 1]?.id ?? 0, { switchTab: false })}
               />
-            )}
           </div>
         </aside>
       </div>

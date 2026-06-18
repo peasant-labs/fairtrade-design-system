@@ -1,0 +1,81 @@
+name: ci
+
+on:
+  push:
+    branches: [main, 'tier-**']
+  pull_request:
+  workflow_dispatch:
+
+# read-only: this workflow validates the gates, it never deploys or writes Pages
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      # gate 1: contrast (pure JS, no browser) + production build -> dist/.
+      # base='/' is correct here (CI serves at the root, not the Pages subpath),
+      # so VITE_BASE is intentionally unset.
+      - name: Build (contrast gate + vite build)
+        run: pnpm build
+
+      # puppeteer-core bundles no browser; validate.mjs / sbsmoke.mjs read the
+      # binary path from CHROME_PATH (falls back to the local macOS default).
+      - name: Install Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      # gate 2: the 20-check interactive validator, driven against the BUILT app.
+      # serve dist/ on a fixed port, wait for it, then pass the URL explicitly so
+      # the served port and the asserted URL can never drift.
+      - name: Serve built app (vite preview)
+        run: pnpm exec vite preview --port 5180 --strictPort &
+
+      - name: Wait for app to be ready
+        run: npx --yes wait-on http://localhost:5180 --timeout 60000
+
+      - name: Validate (20-check puppeteer gate)
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.executable-path }}
+        run: node scripts/validate.mjs "http://localhost:5180/?fb=off"
+
+      # gate 3: storybook builds (the type/parse gate for src/ui/*).
+      - name: Build Storybook
+        run: pnpm build-storybook
+
+      # gate 4: storybook smoke. sbsmoke.mjs self-serves storybook-static on its
+      # own port, loads all stories headless, runs their play() tests, and exits
+      # non-zero on a real assertion error (benign resource 404s are separated out).
+      - name: Storybook smoke (render + play)
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.executable-path }}
+        run: node scripts/sbsmoke.mjs
+
+      - name: Upload Storybook build on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-static
+          path: storybook-static
+          retention-days: 7

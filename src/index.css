@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-/* scan the per-section partials + react for utility usage */
-@source "./sections";
+/* scan the per-section components + react for utility usage */
+@source "./sections-react";
 @source "./App.jsx";
 
 /* ----------------------------------------------------------------------
@@ -213,29 +213,33 @@
   /* full-screen brand splash (section 1) */
   /* full-bleed without 100vw (which includes the scrollbar gutter and caused horizontal overflow);
      .pds-root is already full width, so dropping the section max-width fills it cleanly */
-  .hero { position: relative; width: auto; margin-inline: 0; min-height: 100vh; max-width: none; padding: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  /* value-prop (section 2), full-screen */
-  .intro { position: relative; width: auto; margin-inline: 0; max-width: none; min-height: 100vh; display: flex; align-items: center; padding: 0 var(--gutter); }
-  /* the value prop is composed with a framed ascii portrait (P3): copy left, art right; stacks on narrow */
-  .intro-in { width: 100%; max-width: var(--maxw); margin: 0 auto; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: clamp(var(--sp-6), 5vw, 72px); align-items: center; }
-  .intro-copy { min-width: 0; }
-  /* a fixed dark media-well (like .card-thumb) so the cream ascii portrait reads in BOTH themes */
-  .intro-art { position: relative; margin: 0; align-self: center; aspect-ratio: 4 / 5; max-width: 360px; width: 100%; background: #0e0e0c; border: var(--bd-strong); padding: var(--sp-3); justify-self: end; }
-  .intro-art-ascii { font-size: 4px; line-height: 1; }
-  @media (max-width: 880px) { .intro-in { grid-template-columns: 1fr; } .intro-art { display: none; } }
-  /* sized so "receipts for agentic work," fits line 1 (the <br/> sets the break); mono takes only
-     a hair of negative tracking, and the hl span never splits across lines */
-  .intro h1 { @apply mb-5; font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.3vw, 54px); line-height: 1.08; letter-spacing: -0.01em; max-width: 30ch; }
-  .intro h1 .hl { white-space: nowrap; }
-  .intro p { @apply text-ink-2 mb-6; max-width: 54ch; font-size: clamp(15px, 1.5vw, 19px); }
+  /* hero = ONE continuous piece (screen 1: only the video crop; screen 2: roots out of it + wordmark).
+     a single wheat video, so nothing is duplicated. */
+  .hero { position: relative; width: auto; margin-inline: 0; max-width: none; padding: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--canvas); }
+  /* screen 1: only the wheat video */
+  .hero-crop { position: relative; height: 100vh; height: 100svh; overflow: hidden; }
+  /* screen 2: the roots grow OUT of the video's base (a small negative margin overlaps it), down into
+     "fairtrade". one structure, connected - no gap, no second crop. */
+  .hero-grow { position: relative; height: 100vh; height: 100svh; margin-top: -20vh; display: flex; flex-direction: column; overflow: hidden; z-index: 1; }
+  .hero-roots-wrap { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; }
+  .hero-foot { flex: 0 0 auto; position: relative; z-index: 2; width: 100%; display: flex; align-items: center; justify-content: center; padding: clamp(var(--sp-3), 2vh, var(--sp-5)) var(--sp-3) clamp(var(--sp-5), 4vh, var(--sp-7)); }
+  .hero-word { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 16vw; line-height: 0.8; letter-spacing: -0.04em; color: var(--amber); text-align: center; white-space: nowrap; text-shadow: 0 0 16px color-mix(in srgb, var(--amber) 22%, transparent); }
+  [data-theme="light"] .hero-word { color: var(--amber-bright); }
+
+  /* section 3 - philosophy: a centered statement; cursor-revealed ascii arts on the dark ground */
+  .philos { position: relative; width: auto; margin-inline: 0; max-width: none; min-height: 100vh; min-height: 100svh; display: flex; align-items: center; justify-content: center; padding: var(--sp-7) var(--gutter); overflow: hidden; }
+  .philos-text { position: relative; z-index: 2; max-width: 62ch; margin: 0 auto; text-align: center; }
+  .philos-lead { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 3.6vw, 44px); line-height: 1.1; letter-spacing: -0.02em; color: var(--ink-strong); margin-bottom: var(--sp-5); }
+  .philos-body { font-family: var(--font-body); font-size: clamp(16px, 1.7vw, 21px); line-height: 1.6; color: var(--ink-2); margin: 0 auto; max-width: 58ch; }
 
   /* group dividers */
   .group { @apply mx-auto; max-width: var(--maxw); padding: calc(var(--sp-8) + var(--sp-7)) var(--gutter) var(--sp-6); }
   .group h2 { @apply font-display text-ink-strong lowercase; font-weight: 700; font-size: var(--fs-group); letter-spacing: -0.025em; line-height: 1; }
 
   /* the full-screen splash sections settle with a slow snap; the long doc sections never snap */
-  .hero, .intro { scroll-snap-align: start; scroll-snap-stop: normal; }
-  .intro { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+  /* the full-screen sections snap into place; scroll-margin cancels the global nav scroll-padding so
+     they snap flush (the header is hidden over them). long doc sections never snap. */
+  .hero, .hero-grow, .philos, .iu { scroll-snap-align: start; scroll-snap-stop: normal; scroll-margin-top: calc(-1 * var(--nav-h)); }
   .band, .group { padding-top: var(--band-y); padding-bottom: var(--band-y); }
   .band + .band, .group + .band, .band + .group { border-top: var(--bd); }
   /* scroll-reveal: sections fade/lift in as they enter the viewport (JS toggles .is-in) */
@@ -549,53 +553,44 @@
   .ascii { margin: 0; font-family: var(--font-mono); font-size: 5px; line-height: 1; letter-spacing: 0; white-space: pre; color: var(--ink-strong); }
   .glyph-field { margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; white-space: pre; color: var(--ink-3); overflow: hidden; }
 
-  /* hero: imagery baked into the identity (ascii focal, halftone inset, glyph backdrop) */
-  /* wheat video fills the splash; radial mask dissolves it into the page at the edges */
-  .hero-video { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; font-size: clamp(5px, 0.95vw, 9.5px); line-height: 1; white-space: pre; color: var(--ink-strong); -webkit-mask-image: radial-gradient(72% 74% at 50% 48%, #000 46%, transparent 92%); mask-image: radial-gradient(72% 74% at 50% 48%, #000 46%, transparent 92%); }
-  /* the wordmark is drawn in wheat-ramp glyphs (AsciiWordmark) and anchored bottom-right, directly
-     over the video: no container, no alpha. colour + a soft glow + a canvas knockout halo carry it
-     where the radial mask has already thinned the wheat at the corner. */
-  .hero-mark { position: absolute; right: clamp(var(--sp-5), 5vw, var(--sp-8)); bottom: clamp(76px, 12vh, 132px); z-index: 2; pointer-events: none; }
-  .hero-wordmark { margin: 0; font-family: var(--font-mono); white-space: pre; font-size: clamp(5px, 1.7vw, 15px); line-height: 1; letter-spacing: 0; color: var(--amber); text-shadow: 0 0 1px var(--canvas), 0 0 2px var(--canvas), 0 0 4px var(--canvas), var(--glow); }
-  /* light theme: the wheat is dark-on-white and stays dense at the corner, so the dark-amber wordmark
-     gets a true white knockout outline (stacked offsets, no alpha) to carve itself out and stay legible */
-  [data-theme="light"] .hero-wordmark { color: var(--amber-bright); text-shadow:
-    0 1px 0 var(--canvas), 0 -1px 0 var(--canvas), 1px 0 0 var(--canvas), -1px 0 0 var(--canvas),
-    1px 1px 0 var(--canvas), -1px -1px 0 var(--canvas), 1px -1px 0 var(--canvas), -1px 1px 0 var(--canvas),
-    0 0 4px var(--canvas), 0 0 7px var(--canvas); }
+  /* hero: the wheat video fills the splash (it IS the hero); a soft edge vignette only */
+  /* solid down to the bottom edge (fade only the top) so the wheat reaches the roots with no faded gap */
+  /* fade the wheat's TOP in from the canvas, and its BOTTOM out so it dissolves into the dense root band
+     overlapping below it (the -20vh pull) instead of ending on a hard horizontal line */
+  .hero-bg { position: absolute; inset: 0; z-index: 0; display: flex; align-items: center; justify-content: center; font-size: clamp(5px, 0.95vw, 9.5px); line-height: 1; white-space: pre; color: var(--ink-strong); -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 15%, #000 84%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0%, #000 15%, #000 84%, transparent 100%); }
 
-  /* scroll cue: a short run of wheat-ramp grains drifting down, a chevron, a label, all a real link to
-     #intro with a keyboard hint. the drift is slow and one-directional (never a blink); reduced-motion
-     freezes it to a static column + chevron. */
-  .hero-scroll { position: absolute; bottom: var(--sp-5); left: 50%; transform: translateX(-50%); z-index: 3; display: flex; flex-direction: column; align-items: center; gap: var(--sp-1); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; text-decoration: none; color: var(--ink-3); padding: var(--sp-2); }
-  .hero-scroll:hover { color: var(--ink); }
-  .hero-scroll:hover .hsc-chevron { color: var(--amber); }
-  .hsc-grain { display: flex; flex-direction: column; align-items: center; line-height: 1.05; color: var(--amber-dim); height: 44px; overflow: hidden; }
-  .hsc-grain b { font-weight: 400; }
-  .hsc-chevron { font-size: 14px; color: var(--ink-3); line-height: 1; }
-  .hsc-label { letter-spacing: 0.14em; }
-  .hsc-key { font-size: 11px; color: var(--ink-4); letter-spacing: 0.04em; }
+  /* section 2 roots: dim, theme-adaptive ascii descending from the crop above into the wordmark, faded
+     top + bottom so it reads as roots filling the gap (centered, side overflow clipped) */
+  /* roots: a dense seam at the top (one grid with the wheat above - SAME cell size as .hero-bg, so root
+     columns register against the stalk columns the video seeded them from) thinning to tendrils below */
+  .hero .hero-roots { margin: 0; font-family: var(--font-mono); white-space: pre; font-size: clamp(5px, 0.95vw, 9.5px); line-height: 1; color: var(--ink-strong); opacity: 1; }
+  [data-theme="light"] .hero .hero-roots { opacity: 0.9; }
+
+  /* philosophy arts: the WHOLE dark ground is tiled with ascii portraits (hidden context - the chat
+     transcripts behind the code), revealed only inside a soft circle that follows the cursor, including
+     behind the centered text. AsciiImage defaults to --ink-strong, so the ink adapts per theme. */
+  .philos-arts { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0.7;
+    -webkit-mask-image: radial-gradient(circle 230px at var(--mx, -500px) var(--my, -500px), #000 0%, #000 32%, transparent 74%);
+    mask-image: radial-gradient(circle 230px at var(--mx, -500px) var(--my, -500px), #000 0%, #000 32%, transparent 74%); }
+  .philos-art-tile { position: absolute; overflow: hidden; }
+  /* keep the statement readable where the spotlight reveals art behind it */
+  .philos-text { text-shadow: 0 0 10px var(--canvas), 0 0 22px var(--canvas); }
+  /* no hover (touch) means no spotlight: keep the section minimal, just the centered statement */
+  @media (hover: none) { .philos-arts { display: none; } }
 
   /* reveal motion: the wheat resolves from a soft blur; the wordmark wipes in left-to-right like a
-     terminal printing it; the scroll grains drift downward on a slow loop. honours reduced-motion. */
+     terminal printing it. honours reduced-motion. */
   @media (prefers-reduced-motion: no-preference) {
-    .hero-video { animation: heroResolve var(--dur-entrance) var(--ease-out) 40ms both; }
-    .hero-wordmark { animation: heroName 1200ms steps(64, end) 420ms both; }
-    .hero-scroll { animation: heroFadeIn 520ms ease-out 1200ms both; }
-    .hsc-grain b { animation: grainFall 2.6s linear infinite; }
-    .hsc-grain b:nth-child(2) { animation-delay: .52s; }
-    .hsc-grain b:nth-child(3) { animation-delay: 1.04s; }
-    .hsc-grain b:nth-child(4) { animation-delay: 1.56s; }
-    .hsc-grain b:nth-child(5) { animation-delay: 2.08s; }
+    .hero-bg { animation: heroResolve var(--dur-entrance) var(--ease-out) 40ms both; }
+    .hero-word { animation: heroName 1100ms steps(64, end) 200ms both; }
   }
-  @keyframes grainFall { 0% { opacity: 0; transform: translateY(-7px); } 22% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; transform: translateY(9px); } }
   @keyframes heroResolve { from { opacity: 0; filter: blur(11px); transform: scale(1.05); } to { opacity: 1; filter: blur(0); transform: none; } }
   @keyframes heroName { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
-  @keyframes heroFadeIn { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
   /* cards with imagery on top (ref 01) */
   .card-img { padding: 0; overflow: hidden; }
-  .card-thumb { position: relative; aspect-ratio: 1 / 1; background: #0e0e0c; border-bottom: var(--bd); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  /* the thumb well + ascii ink both adapt to the theme (no fixed black box / cream ink) */
+  .card-thumb { position: relative; aspect-ratio: 1 / 1; background: var(--canvas); border-bottom: var(--bd); overflow: hidden; display: flex; align-items: center; justify-content: center; }
   .thumb-ascii { font-size: 2.95px; line-height: 1; color: var(--ink-strong); }
   .card-body { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4); }
   .bullets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
@@ -732,22 +727,36 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 
 /* capture mode (?cap): shrink the full-screen hero/intro so the whole long page
    fits one tall viewport for review screenshots. never used by real visitors. */
-[data-cap] .hero { min-height: 520px; }
-[data-cap] .intro { min-height: 440px; }
+[data-cap] .hero-crop { height: 360px; }
+/* keep a proportional overlap in capture mode (~20% of the shrunk crop) so review screenshots show the
+   real seam instead of a hard gap between the wheat and the roots */
+[data-cap] .hero-grow { height: 380px; margin-top: -72px; }
+[data-cap] .philos { min-height: 440px; }
 
 /* ---- responsive: collapse the rail, single column ---- */
 @media (max-width: 1100px) {
   .nav-in, .foot-in { max-width: var(--maxw); }
   .docs { grid-template-columns: 1fr; max-width: var(--maxw); }
   .page-rail { display: none; }
+  /* nav shed: the nav items have min-width:max-content and overflow narrow viewports.
+     drop the non-essential "connected" status first (the storybook link + search earn
+     their place); the section links go next, the search palette covers them. */
+  .navctl:not(.bx):not(.sq):not(.sb-link) { display: none; }
 }
-/* nav shed: the nav items have min-width:max-content and overflow narrow viewports.
-   drop the non-essential status, then the section links (the search palette covers nav). */
+/* below the rail width the full "storybook" label no longer fits beside the section
+   links + search; collapse it to an icon-only square (the aria-label keeps its name). */
+@media (max-width: 1000px) {
+  .sb-link .sb-label { display: none; }
+  .sb-link { width: var(--control-h-sm); padding: 0; justify-content: center; gap: 0; }
+}
 @media (max-width: 900px) {
-  .navctl:not(.bx):not(.sq) { display: none; }
-}
-@media (max-width: 800px) {
+  /* with the icon-only storybook control still present, the section links need to go
+     one breakpoint sooner so the nav never overflows in the 800-900 band */
   .nav-links { display: none; }
+}
+@media (max-width: 480px) {
+  /* on a phone the search palette covers navigation; drop the storybook control too */
+  .sb-link { display: none; }
 }
 @media (max-width: 720px) {
   .cmp, .start-jump, .icongrid { grid-template-columns: 1fr; }
@@ -1500,76 +1509,451 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 }
 
 /* ##################################################################
+   tier-2 (2026-06-17): toast host (.tsx-*), timeline (.tl-*), date range
+   (.dr-*). new namespaces, token-driven, both themes free, amber scarce.
+   ################################################################## */
+@layer components {
+  /* ---- toast host (tsx-*) ---- */
+  /* the stacking region for imperative toasts (src/ui/ToastHost.jsx). owns ONLY
+     placement, stack order, width and enter/exit motion; each item wraps an existing
+     .fb-toast for its tone, border, icon and dismiss target. one fixed aria-live region;
+     motion is opt-in (static under reduced-motion). reads only spacing / z / duration /
+     ease tokens that re-theme or are theme-neutral, so it needs no light override. */
+  .tsx-host {
+    position: fixed;
+    z-index: var(--z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    width: min(360px, calc(100vw - var(--sp-5) * 2));
+    max-height: calc(100vh - var(--sp-5) * 2);
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .tsx-item { pointer-events: auto; }
+  .tsx-item > .fb-toast { width: 100%; max-width: none; }
+
+  /* corners: one --sp-5 from each pinned edge; top placements clear the fixed nav */
+  .tsx-bottom-right  { right: var(--sp-5); bottom: var(--sp-5); align-items: stretch; }
+  .tsx-bottom-left   { left: var(--sp-5);  bottom: var(--sp-5); align-items: stretch; }
+  .tsx-top-right     { right: var(--sp-5); top: calc(var(--nav-h) + var(--sp-4)); align-items: stretch; }
+  .tsx-top-left      { left: var(--sp-5);  top: calc(var(--nav-h) + var(--sp-4)); align-items: stretch; }
+  .tsx-bottom-center { left: 50%; transform: translateX(-50%); bottom: var(--sp-5); align-items: stretch; }
+  .tsx-top-center    { left: 50%; transform: translateX(-50%); top: calc(var(--nav-h) + var(--sp-4)); align-items: stretch; }
+
+  /* newest enters at the pinned edge so a fresh toast never pushes an older one
+     across the reader's eye */
+  .tsx-bottom-right, .tsx-bottom-left, .tsx-bottom-center { flex-direction: column-reverse; }
+
+  /* inline variant: pin absolutely inside a position:relative container (the doc /
+     story specimen) rather than the viewport, and bind the width to the container so
+     no toast can spill past the page edge */
+  .tsx-host--inline {
+    position: absolute;
+    width: min(360px, calc(100% - var(--sp-5) * 2));
+    max-height: calc(100% - var(--sp-5) * 2);
+  }
+  .tsx-host--inline.tsx-bottom-center, .tsx-host--inline.tsx-top-center { max-width: calc(100% - var(--sp-5) * 2); }
+
+  /* static by default; enter/exit only when motion is allowed */
+  @media (prefers-reduced-motion: no-preference) {
+    .tsx-item { animation: tsx-in var(--dur-2) var(--ease-out) both; }
+    .tsx-item[data-state="leave"] { animation: tsx-out var(--dur-2) var(--ease-standard) both; }
+  }
+  @keyframes tsx-in  { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes tsx-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(4px); } }
+
+  @media (max-width: 480px) {
+    .tsx-host:not(.tsx-host--inline) { left: var(--sp-4); right: var(--sp-4); width: auto; }
+    .tsx-bottom-center:not(.tsx-host--inline), .tsx-top-center:not(.tsx-host--inline) { transform: none; }
+  }
+}
+
+/* ======================================================================
+   timeline (.tl-*): a NEW tier-2 component. a vertical spine for a whole
+   session: phase dividers, role-tinted turn nodes, collapsible per-tool
+   renderers, thinking blocks, subagent insets and checkpoint markers, read
+   top to bottom. it is the vertical sibling of the horizontal Steps wizard
+   and shares zero geometry with it. the diff (.dl/.rail/.gut/.sign/.t) and
+   chip/btn/empty chassis are reused, not reinvented (no new diff css). every
+   value is a token, so both themes inherit with no light overrides; amber
+   stays a scarce accent (assistant rail only); functional borders (card
+   left-edge, dot ring) read at full strength while the spine hairline is a
+   subtle --rule structural divider. namespace: tl-
+====================================================================== */
+@layer components {
+  .tl { list-style: none; margin: 0; padding: 0; position: relative; box-sizing: border-box; inline-size: 100%; min-width: 0; }
+
+  /* one node + its slice of the continuous spine */
+  .tl-item { position: relative; box-sizing: border-box; padding: var(--sp-4) 0 var(--sp-4) var(--sp-7); min-width: 0; }
+  .tl-item::before {
+    content: ""; position: absolute; left: 11px; top: 0; bottom: 0;
+    width: 1px; background: var(--rule);
+  }
+  .tl-item:first-child::before { top: calc(var(--sp-4) + 4px); }
+  .tl-item:last-child::before { bottom: calc(100% - var(--sp-4) - 13px); }
+
+  /* the node dot, sitting on the spine; ring color reads from --tl-accent. */
+  .tl-dot {
+    position: absolute; left: 7px; top: calc(var(--sp-4) + 4px);
+    width: 9px; height: 9px; background: var(--canvas);
+    border: 1.5px solid var(--tl-accent, var(--rule-strong)); z-index: 1;
+  }
+  .tl-dot--error { border-color: var(--clay); }
+
+  /* role accents — set the custom prop only; tint never carries meaning alone. */
+  .tl-item--user      { --tl-accent: var(--teal); }
+  .tl-item--assistant { --tl-accent: var(--amber); }
+  .tl-item--subagent  { --tl-accent: var(--mauve); }
+  .tl-item--tool, .tl-item--system { --tl-accent: var(--rule-strong); }
+
+  /* subagent inset: indent the card + tint the spine, keep one continuous line. */
+  .tl-item--subagent { padding-left: calc(var(--sp-7) + var(--sp-5)); }
+  .tl-item--subagent::before { left: calc(11px + var(--sp-5)); background: color-mix(in srgb, var(--mauve) 40%, var(--rule)); }
+  .tl-item--subagent .tl-dot { left: calc(7px + var(--sp-5)); }
+
+  /* the turn card */
+  .tl-card { border: var(--bd); border-left: 2px solid var(--tl-accent); background: color-mix(in srgb, var(--tl-accent) 6%, var(--surface)); padding: var(--sp-3) var(--sp-4); min-width: 0; box-sizing: border-box; }
+  .tl-item--user .tl-card { background: color-mix(in srgb, var(--teal) 7%, var(--surface)); }
+
+  /* head: role glyph + label, then tabular meta */
+  .tl-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; margin-bottom: var(--sp-2); }
+  .tl-role { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--tl-accent); font-weight: 600; }
+  .tl-head .lucide, .tl-head .brand { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+  .tl-depth { color: var(--mauve); font-variant-numeric: tabular-nums; }
+  .tl-num { color: var(--ink-4); font-variant-numeric: tabular-nums; }
+  .tl-time { color: var(--ink-4); font-variant-numeric: tabular-nums; }
+  .tl-tokens { display: inline-flex; align-items: center; gap: var(--sp-1); margin-left: auto; color: var(--ink-4); font-variant-numeric: tabular-nums; }
+  .tl-tokens .lucide { width: 12px; height: 12px; }
+
+  /* body: reading face, original case, never below the 16px floor */
+  .tl-body { color: var(--ink); font-size: var(--fs-body); line-height: 1.5; max-inline-size: var(--measure-read); }
+  .tl-body b { color: var(--amber-bright); font-weight: 700; text-shadow: var(--glow-soft); }
+  .tl-body code, .tl-inlinecode { font-family: var(--font-mono); font-size: 0.92em; color: var(--ink-2); }
+
+  /* thinking — collapsible, mono, quiet */
+  .tl-thinking { margin-top: var(--sp-3); }
+  .tl-thinking-toggle { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--target-min); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); background: none; border: 0; padding: 0; cursor: pointer; }
+  .tl-thinking-toggle:hover { color: var(--ink); }
+  .tl-thinking-toggle:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+  .tl-thinking-toggle .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+  .tl-thinking-wc { color: var(--ink-4); font-variant-numeric: tabular-nums; }
+  .tl-thinking-body { margin-top: var(--sp-2); padding-left: var(--sp-5); color: var(--ink-3); font-style: italic; line-height: 1.5; max-inline-size: var(--measure-read); }
+
+  /* tool call — a hairline panel with a real button head */
+  .tl-tool { margin-top: var(--sp-3); border: var(--bd); background: var(--canvas); min-width: 0; box-sizing: border-box; }
+  .tl-tool-head { width: 100%; display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: var(--sp-2) var(--sp-3); min-height: var(--target-min); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); background: none; border: 0; padding: var(--sp-2) var(--sp-3); cursor: pointer; text-align: left; }
+  .tl-tool-head:hover { color: var(--ink); }
+  .tl-tool-head:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -2px; }
+  .tl-tool-head .tl-tool-chev { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); flex: none; }
+  .tl-tool-kind { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--olive); font-weight: 600; white-space: nowrap; }
+  .tl-tool-kind .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+  .tl-tool-prev { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-3); }
+  .tl-tool-right { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--ink-4); white-space: nowrap; }
+  .tl-tool-right .chip .lucide { width: 12px; height: 12px; }
+  .tl-tool-body { border-top: var(--bd); padding: var(--sp-3); min-width: 0; box-sizing: border-box; }
+
+  /* key/value detail grid (read/grep/edit/task headers) */
+  .tl-kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--sp-1) var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); margin: 0 0 var(--sp-2); }
+  .tl-kv dt { color: var(--ink-4); text-transform: lowercase; }
+  .tl-kv dd { color: var(--ink-2); margin: 0; min-width: 0; overflow-wrap: anywhere; }
+
+  /* code / terminal output (content keeps its case) — scroll, never grow the page */
+  .tl-code { font-family: var(--font-mono); font-size: 12px; line-height: 1.5; color: var(--ink-2); background: var(--surface); border: var(--bd); padding: var(--sp-2) var(--sp-3); margin: var(--sp-2) 0 0; overflow-x: auto; white-space: pre; max-width: 100%; box-sizing: border-box; }
+
+  /* edit diff — reuses the locked .dl/.rail/.gut/.sign/.t renderer; only the wrapper border is set */
+  .tl-diff { border: var(--bd); }
+  .tl-churn-add { color: var(--add-rail); }
+  .tl-churn-del { color: var(--del-rail); }
+
+  /* bash terminal line + stdout header */
+  .tl-term { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-label); color: var(--ink-2); overflow-x: auto; white-space: nowrap; max-width: 100%; box-sizing: border-box; }
+  .tl-term .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--olive); flex: none; }
+  .tl-out-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-top: var(--sp-3); font-family: var(--font-mono); font-size: 12px; text-transform: lowercase; color: var(--ink-4); }
+  .tl-out-badges { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .tl-durbadge { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .tl-durbadge .lucide { width: 12px; height: 12px; }
+  .tl-out-row .chip .lucide { width: 12px; height: 12px; }
+
+  /* webfetch */
+  .tl-url { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); max-inline-size: 100%; overflow-wrap: anywhere; }
+  .tl-url .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+  .tl-fetch-prompt, .tl-fetch-md { color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.5; margin-top: var(--sp-2); max-inline-size: var(--measure-read); }
+  .tl-fetch-prompt { color: var(--ink-3); }
+
+  /* phase divider on the spine */
+  .tl-item--phase { padding-block: var(--sp-3); }
+  .tl-item--phase .tl-dot { background: var(--surface-2); border-color: var(--rule-strong); }
+  .tl-phase { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; background: var(--surface-2); border: var(--bd); padding: var(--sp-2) var(--sp-3); }
+  .tl-phase-lbl { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--ink-2); }
+  .tl-phase-lbl .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--amber); flex: none; }
+  .tl-phase-rng { color: var(--ink-4); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* checkpoint marker on the spine */
+  .tl-item--checkpoint .tl-dot { border-color: var(--olive); }
+  .tl-cp { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); border: var(--bd-strong); padding: 3px var(--sp-3); }
+  .tl-cp .lucide { width: 13px; height: 13px; color: var(--olive); flex: none; }
+  .tl-cp-hash { color: var(--ink-2); }
+  .tl-cp-msg { color: var(--ink-3); text-transform: none; }
+  .tl-cp-stat { color: var(--ink-4); font-variant-numeric: tabular-nums; }
+
+  /* dense variant — for sidebars / overview rails */
+  .tl--dense .tl-item { padding-block: var(--sp-2); }
+  .tl--dense .tl-card { padding: var(--sp-2) var(--sp-3); }
+  .tl--dense .tl-body { font-size: var(--fs-sm); }
+}
+
+@layer components {
+  /* ---- date-range (.dr-*) ----
+     a trigger button + a floating panel: preset rail | two month grids.
+     reuses .btn (trigger), the .menu-pop/.pop-card surface conventions, and adds only
+     the calendar grid + day cells as new css. square, hairline, tabular, lowercase chrome;
+     amber reserved for the two selected endpoints + the active preset border, today is a
+     hairline ring, the range interior is a quiet color-mix wash. token-only, both themes
+     derive automatically; container-type on .dr-pop drives the one-month collapse. */
+
+  /* optional Field wrapper so .label can sit above the trigger for form use */
+  .dr-field { display: flex; flex-direction: column; }
+  .dr-field > .label { margin-bottom: var(--sp-2); }
+
+  /* anchor for the absolutely-positioned panel (mirrors .menu-anchor) */
+  .dr-anchor { position: relative; display: inline-flex; flex-direction: column; align-items: flex-start; }
+
+  /* the trigger: a .btn-secondary that reads like a field. calendar icon left,
+     value (tnum) center-left, chevron right; expanded state borrows the menu look. */
+  .dr-trigger { gap: var(--sp-2); justify-content: flex-start; min-width: 220px; padding: 0 var(--sp-3); }
+  .dr-trigger .dr-ico { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); flex: none; }
+  .dr-trigger .dr-value { flex: 1 1 auto; min-width: 0; text-align: left; font-variant-numeric: tabular-nums; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dr-trigger .dr-value.dr-empty { color: var(--ink-4); }
+  .dr-trigger .dr-caret { flex: none; width: var(--ic-sm); height: var(--ic-sm); transition: transform var(--dur-1); color: var(--ink-3); }
+  .dr-trigger[aria-expanded="true"] { border-color: var(--amber-dim); color: var(--amber-bright); }
+  .dr-trigger[aria-expanded="true"] .dr-caret { transform: rotate(180deg); }
+  @media (prefers-reduced-motion: reduce) { .dr-trigger .dr-caret { transition: none; } }
+
+  /* the floating panel: elevated surface, functional border, sits over content.
+     width:max-content sizes the panel to its content (preset rail + two month grids).
+     it must NOT use container-type:inline-size here: that applies inline-size containment,
+     which makes an absolutely-positioned auto/max-content width resolve as if empty and
+     collapse to ~0. the one-month collapse below is therefore a viewport @media query. */
+  .dr-pop { position: absolute; top: calc(100% + var(--sp-2)); left: 0; z-index: var(--z-dropdown);
+    display: flex; width: max-content; max-width: calc(100vw - var(--sp-6)); background: var(--surface-elev); border: var(--bd-strong);
+    box-shadow: var(--glow), 0 16px 40px -16px rgba(0,0,0,.55); }
+  .dr-pop[hidden] { display: none; }
+  .dr-pop.dr-end { left: auto; right: 0; }
+  .dr-pop.is-static { position: static; box-shadow: none; max-width: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    .dr-pop:not([hidden]):not(.is-static) { animation: menuIn var(--dur-2) var(--ease-out) both; }
+  }
+
+  /* preset rail: a column of toggles down the left edge, hairline-divided from the grids. */
+  .dr-presets { display: flex; flex-direction: column; gap: 2px; padding: var(--sp-2);
+    border-right: var(--bd); background: var(--surface-2); min-width: 148px; }
+  .dr-preset { display: flex; align-items: center; width: 100%; box-sizing: border-box;
+    min-height: var(--target-min); padding: var(--sp-1) var(--sp-2);
+    font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase;
+    color: var(--ink-2); background: transparent; border: 1px solid transparent; text-align: left; cursor: pointer;
+    transition: background var(--dur-1), color var(--dur-1); }
+  .dr-preset:hover { background: var(--surface-hover); color: var(--ink); }
+  .dr-preset[aria-pressed="true"] { color: var(--amber-bright); border-color: var(--amber-dim); }
+  .dr-preset:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
+
+  /* the grids body wrapper + footer column */
+  .dr-cal { display: flex; flex-direction: column; min-width: 0; }
+  .dr-body { display: flex; flex-direction: column; min-width: 0; }
+  .dr-grids { display: flex; gap: var(--sp-5); padding: var(--sp-4); }
+  @media (max-width: 560px) { .dr-grids { gap: 0; } .dr-grids .dr-month + .dr-month { display: none; } }
+
+  /* per-month header: prev/next chevrons flank a month-year caption. */
+  .dr-month { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .dr-mhead { display: flex; align-items: center; justify-content: space-between; height: var(--control-h-sm); }
+  .dr-mtitle { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-sm);
+    color: var(--ink-strong); text-transform: lowercase; font-variant-numeric: tabular-nums; }
+  .dr-nav { display: inline-flex; align-items: center; justify-content: center;
+    width: var(--target-min); height: var(--target-min); border: 1px solid transparent;
+    background: transparent; color: var(--ink-3); cursor: pointer; flex: none;
+    transition: background var(--dur-1), color var(--dur-1); }
+  .dr-nav:hover { color: var(--ink); background: var(--surface-hover); }
+  .dr-nav:disabled { color: var(--ink-5); cursor: not-allowed; background: transparent; }
+  .dr-nav:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 1px; }
+  .dr-nav .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+
+  /* the 7-col grid: a column of rows, each row a 7x32px track. */
+  .dr-grid { display: flex; flex-direction: column; gap: 2px; }
+  .dr-wdrow, .dr-week { display: grid; grid-template-columns: repeat(7, 32px); gap: 2px; }
+  .dr-wd { display: flex; align-items: center; justify-content: center; height: 22px;
+    font-family: var(--font-mono); font-size: 11px; text-transform: lowercase; color: var(--ink-4); }
+  .dr-cell { display: flex; }
+
+  /* day cell: a real button, 32px box clears the 24px target floor in a dense grid. */
+  .dr-day { display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; box-sizing: border-box;
+    font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums;
+    color: var(--ink-2); background: transparent; border: 1px solid transparent; cursor: pointer;
+    transition: background var(--dur-1), color var(--dur-1); }
+  .dr-day:hover { background: var(--surface-hover); color: var(--ink); }
+  .dr-day:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; z-index: 1; }
+  .dr-day.dr-out { color: var(--ink-5); background: transparent; cursor: default; pointer-events: none; }
+  .dr-day[aria-disabled="true"] { color: var(--ink-5); cursor: not-allowed; background: transparent; }
+  .dr-day[aria-disabled="true"]:hover { background: transparent; color: var(--ink-5); }
+
+  /* today: a hairline ring, never amber fill (amber is reserved for selection). */
+  .dr-day.dr-today { border-color: var(--rule-strong); }
+
+  /* the range middle: a quiet tinted band so the span reads as one run. */
+  .dr-day.dr-in-range { background: color-mix(in srgb, var(--amber) 12%, transparent); color: var(--ink); }
+  .dr-day.dr-preview { background: color-mix(in srgb, var(--amber) 7%, transparent); }
+
+  /* the two endpoints: the only amber-filled cells in the family. */
+  .dr-day.dr-edge { background: var(--amber); color: var(--on-amber); font-weight: 600; border-color: var(--amber-dim); }
+  .dr-day.dr-edge:hover { background: var(--amber-bright); color: var(--on-amber); }
+  .dr-day.dr-edge.dr-today { border-color: var(--amber-dim); }
+
+  /* footer: resolved range echo (left) + clear/apply (right). */
+  .dr-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
+    padding: var(--sp-3) var(--sp-4); border-top: var(--bd); flex-wrap: wrap; }
+  .dr-readout { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3);
+    font-variant-numeric: tabular-nums; text-transform: lowercase; min-width: 0; }
+  .dr-foot-actions { display: flex; gap: var(--sp-2); }
+  .dr-foot-actions .dr-ico { width: var(--ic-sm); height: var(--ic-sm); }
+
+  /* polite live region: announces the resolved span, kept visually quiet. */
+  .dr-live { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+}
+
+/* ##################################################################
    IN-USE full-screen showcase (2026-06-17): the workspace shell + the
    five feature-complete app demos (transcript / commons / graph),
    each namespaced (.iu-/.txn-/.cex-/.cmg-/.gmp-/.gan-), token-driven.
    ################################################################## */
 /* ======================================================================
-   in-use showcase: the full-screen workspace shell (.iu-*). full-bleed
-   stage hosting the three apps; a left app-rail switches between them; the
-   window clips its own overflow so dense app content never grows the page.
-   token-driven, square, hairline, amber scarce, both themes free. namespace: iu-
+   in-use showcase: a FULL-VIEWPORT immersive stage hosting the three apps.
+   a sticky top app-switcher banner (.iu-bar) replaces the page header; the
+   stage (.iu-stage) fills the rest of the viewport and renders the active
+   app full-bleed. parent page owns scroll-snap. token-driven, square,
+   hairline, amber scarce, both themes free. namespace: iu-
 ====================================================================== */
 @layer components {
-  .iu { position: relative; width: auto; margin-inline: 0; max-width: none; padding: var(--group-y) var(--gutter); background: var(--canvas); border-top: var(--bd); }
-  .iu-head { max-width: var(--docs-w); margin: 0 auto var(--sp-6); }
-  .iu-title { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-group); letter-spacing: -0.025em; line-height: 1; color: var(--ink-strong); text-transform: lowercase; }
-  .iu-gloss { font-family: var(--font-mono); font-size: var(--fs-sub); color: var(--ink-3); line-height: 1.5; max-width: 74ch; margin-top: var(--sp-3); }
-  .iu-gloss .kbd { margin-left: 0; }
+  .iu {
+    position: relative;
+    width: auto; margin-inline: 0; max-width: none;
+    min-height: 100vh;            /* fallback */
+    min-height: 100svh;
+    display: flex; flex-direction: column;
+    background: var(--canvas);
+    border-top: var(--bd);
+  }
+  .iu:fullscreen, .iu.iu-is-full { min-height: 100vh; border-top: 0; }
 
-  /* the workspace window */
-  .iu-win { max-width: 1440px; margin: 0 auto; height: min(86vh, 880px); display: grid; grid-template-columns: 13.5rem minmax(0, 1fr); background: var(--surface); border: var(--bd-strong); overflow: hidden; }
-  .iu-win.is-full, .iu-win:fullscreen { max-width: none; height: 100vh; margin: 0; border: 0; }
+  /* ---- sticky top app-switcher banner (visually replaces the page header) ---- */
+  .iu-bar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; gap: var(--sp-4);
+    height: var(--nav-h); min-height: var(--nav-h);
+    padding: 0 var(--gutter);
+    background: var(--surface);
+    border-bottom: var(--bd);
+  }
+  .iu-bar-brand {
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+    font-family: var(--font-display); font-weight: 700; font-size: var(--fs-sm);
+    color: var(--ink-strong); text-transform: lowercase; white-space: nowrap;
+    flex: none;
+  }
+  .iu-bar-brand .logo { color: var(--amber); }
 
-  /* left app-switcher rail */
-  .iu-rail { display: flex; flex-direction: column; min-width: 0; background: var(--surface-2); border-right: var(--bd); padding: var(--sp-3); gap: var(--sp-2); }
-  .iu-rail-brand { display: flex; align-items: center; gap: var(--sp-2); font-family: var(--font-display); font-weight: 700; font-size: var(--fs-sm); color: var(--ink-strong); text-transform: lowercase; padding: var(--sp-2) var(--sp-2) var(--sp-3); }
-  .iu-rail-brand .logo { color: var(--amber); }
-  .iu-applist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
-  .iu-app { position: relative; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-2) var(--sp-3); background: transparent; border: 1px solid transparent; cursor: pointer; text-align: left; color: var(--ink-2); transition: background var(--dur-1), color var(--dur-1), border-color var(--dur-1); }
-  .iu-app:hover { background: var(--surface-hover); color: var(--ink); }
-  .iu-app:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
-  .iu-app.active { background: var(--surface-hover); border-color: var(--amber-dim); color: var(--ink-strong); }
-  .iu-app.active .iu-app-ico { color: var(--amber); }
-  .iu-app-ico { display: inline-flex; color: var(--ink-3); }
-  .iu-app-txt { display: flex; flex-direction: column; min-width: 0; }
-  .iu-app-mark { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .iu-app-gloss { font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .iu-app-key { font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); border: var(--bd); padding: 0 5px; }
-  .iu-app.active .iu-app-key { color: var(--amber); border-color: var(--amber-dim); }
-  .iu-rail-foot { margin-top: auto; font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); text-transform: lowercase; padding: var(--sp-3) var(--sp-2) var(--sp-1); }
+  /* ---- the app selector: a segmented tablist ---- */
+  .iu-switch {
+    display: inline-flex; align-items: stretch;
+    border: var(--bd-strong);
+    height: var(--control-h);
+    flex: none; min-width: 0;
+    margin-inline: auto;
+  }
+  .iu-opt {
+    position: relative;
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+    height: 100%; min-height: var(--target-min);
+    padding: 0 var(--sp-3);
+    background: transparent;
+    border: 0; border-right: var(--bd-strong);
+    cursor: pointer;
+    font-family: var(--font-mono); font-size: var(--fs-label);
+    text-transform: lowercase; white-space: nowrap;
+    color: var(--ink-2);
+    transition: background var(--dur-1), color var(--dur-1);
+  }
+  .iu-opt:last-child { border-right: 0; }
+  .iu-opt:hover { background: var(--surface-hover); color: var(--ink); }
+  .iu-opt:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
+  .iu-opt-ico { display: inline-flex; color: var(--ink-3); }
+  .iu-opt-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .iu-opt-key {
+    font-family: var(--font-mono); font-size: 11px; line-height: 1.3;
+    color: var(--ink-4); border: var(--bd); padding: 0 5px;
+  }
+  .iu-opt-on { background: var(--surface-hover); color: var(--ink-strong); }
+  .iu-opt-on::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 2px;
+    background: var(--amber);
+  }
+  .iu-opt-on .iu-opt-ico { color: var(--amber); }
+  .iu-opt-on .iu-opt-key { color: var(--amber); border-color: var(--amber-dim); }
 
-  /* main column */
-  .iu-main { display: flex; flex-direction: column; min-width: 0; }
-  .iu-titlebar { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-4); border-bottom: var(--bd); background: var(--surface); min-height: var(--control-h); flex: none; }
-  .iu-tb-app { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); }
-  .iu-tb-tag { font-family: var(--font-mono); font-size: 11px; text-transform: lowercase; color: var(--ink-4); border: var(--bd); padding: 0 var(--sp-2); }
-  .iu-tb-full { margin-left: auto; display: inline-flex; align-items: center; gap: var(--sp-1); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); background: transparent; border: var(--bd-strong); padding: 2px var(--sp-2); cursor: pointer; }
-  .iu-tb-full:hover { color: var(--ink); border-color: var(--amber-dim); }
-  .iu-tb-full:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
-  .iu-body { flex: 1; min-height: 0; overflow: auto; position: relative; }
-  @media (prefers-reduced-motion: no-preference) { .iu-body { animation: iuFade var(--dur-3) var(--ease-out); } }
+  /* ---- expand / fullscreen control (equal height to the selector) ---- */
+  .iu-bar-full {
+    flex: none;
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+    height: var(--control-h); min-height: var(--target-min);
+    padding: 0 var(--sp-3);
+    background: transparent; border: var(--bd-strong);
+    cursor: pointer;
+    font-family: var(--font-mono); font-size: var(--fs-label);
+    text-transform: lowercase; white-space: nowrap;
+    color: var(--ink-3);
+    transition: color var(--dur-1), border-color var(--dur-1);
+  }
+  .iu-bar-full:hover { color: var(--ink); border-color: var(--amber-dim); }
+  .iu-bar-full:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+  /* ---- the stage: fills the rest of the viewport, renders the active app full-bleed ---- */
+  .iu-stage {
+    flex: 1; min-height: 0;
+    overflow: auto; position: relative;
+    background: var(--surface);
+  }
+  .iu-stage:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
+  .iu-screen { height: 100%; min-height: 0; display: flex; flex-direction: column; }
+  @media (prefers-reduced-motion: no-preference) { .iu-screen { animation: iuFade var(--dur-3) var(--ease-out); } }
   @keyframes iuFade { from { opacity: 0; } to { opacity: 1; } }
 
-  /* per-app internal nav (rendered by the demo parents) */
-  .iu-app-root { display: flex; flex-direction: column; min-height: 100%; }
+  /* ---- per-app internal nav (rendered by the demo parents; unchanged contract) ---- */
+  .iu-app-root { display: flex; flex-direction: column; height: 100%; min-height: 0; }
   .iu-subnav { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: var(--sp-1); padding: var(--sp-2) var(--sp-4); background: var(--surface); border-bottom: var(--bd); flex-wrap: wrap; }
-  .iu-subnav-item { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); background: transparent; border: 1px solid transparent; padding: var(--sp-1) var(--sp-3); cursor: pointer; }
+  .iu-subnav-item { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); background: transparent; border: 1px solid transparent; padding: var(--sp-1) var(--sp-3); min-height: var(--target-min); cursor: pointer; }
   .iu-subnav-item:hover { color: var(--ink); background: var(--surface-hover); }
   .iu-subnav-item.active { color: var(--on-amber); background: var(--amber); border-color: var(--amber); }
   .iu-subnav-item:focus-visible, .iu-subnav-back:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
-  .iu-subnav-back { display: inline-flex; align-items: center; gap: var(--sp-1); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); background: transparent; border: var(--bd-strong); padding: var(--sp-1) var(--sp-2); margin-right: var(--sp-2); cursor: pointer; }
+  .iu-subnav-back { display: inline-flex; align-items: center; gap: var(--sp-1); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); background: transparent; border: var(--bd-strong); padding: var(--sp-1) var(--sp-2); min-height: var(--target-min); margin-right: var(--sp-2); cursor: pointer; }
   .iu-subnav-back:hover { color: var(--ink); border-color: var(--amber-dim); }
   .iu-view { flex: 1; min-width: 0; padding: var(--sp-4); }
 
-  /* narrow: rail becomes a top strip */
-  @media (max-width: 820px) {
-    .iu-win { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); height: min(90vh, 760px); }
-    .iu-rail { flex-direction: row; align-items: center; border-right: 0; border-bottom: var(--bd); overflow-x: auto; padding: var(--sp-2); }
-    .iu-rail-brand, .iu-rail-foot { display: none; }
-    .iu-applist { flex-direction: row; }
-    .iu-app { grid-template-columns: auto auto; }
-    .iu-app-gloss, .iu-app-key { display: none; }
+  /* ---- tablet: keep the app labels, but drop the expand label + tighten the banner so it fits ---- */
+  @media (max-width: 900px) {
+    .iu-bar { gap: var(--sp-3); padding: 0 var(--sp-4); }
+    .iu-bar-full-label { display: none; }
+    .iu-bar-full { width: var(--control-h); padding: 0; }
+  }
+  /* ---- narrow: selector labels collapse to icons + key hint; banner tightens ---- */
+  @media (max-width: 720px) {
+    .iu-bar { gap: var(--sp-2); padding: 0 var(--sp-4); }
+    .iu-switch { margin-inline: 0; }
+    .iu-opt { padding: 0 var(--sp-2); }
+    .iu-opt-label { display: none; }
+    .iu-bar-full-label { display: none; }
+    .iu-bar-full { width: var(--control-h); padding: 0; }
+  }
+  @media (max-width: 480px) {
+    .iu-bar-brand span { display: none; }
   }
 }
 /* ======================================================================
@@ -1632,7 +2016,8 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-tab .cnt { font-variant-numeric: tabular-nums; }
 
   /* ---- body grid: center + right rail ---- */
-  .txn-body-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 272px; }
+  /* split layout: outline (user turns) | transcript | filters */
+  .txn-body-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 240px minmax(0, 1fr) 272px; }
   .txn-center { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border-right: var(--bd); }
 
   /* ---- trace ---- */
@@ -1770,6 +2155,10 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 
   /* ---- right rail ---- */
   .txn-rail { display: flex; flex-direction: column; min-height: 0; background: var(--surface); }
+  .txn-rail-left { border-right: var(--bd); }
+  /* per-panel header (split layout): an icon + lowercase title, count badge on filters */
+  .txn-rail-head { flex: none; display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-3); border-bottom: var(--bd); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); }
+  .txn-rail-head .lucide { width: 13px; height: 13px; flex: none; color: var(--ink-3); }
   .txn-rail-tabs { flex: none; gap: var(--sp-4); padding: 0 var(--sp-3); }
   .txn-rail-tab { padding: var(--sp-3) 2px; gap: var(--sp-2); }
   .txn-rail-tab .lucide { width: 13px; height: 13px; }
@@ -1968,11 +2357,14 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-light .txn-ol-task.txn-ol-active { background: color-mix(in srgb, var(--amber) 16%, var(--surface)); }
 }
 
-/* ---- responsive: stack the rail under the center, then simplify ---- */
+/* ---- responsive: below 1080 the transcript goes full width and the side panels drop (matches the
+   viewer, where the outline/filters rails only appear on wide viewports) ---- */
+@media (max-width: 1080px) {
+  .txn-body-grid { grid-template-columns: 1fr; }
+  .txn-rail-left, .txn-rail-right { display: none; }
+  .txn-center { border-right: 0; }
+}
 @media (max-width: 860px) {
-  .txn-body-grid { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
-  .txn-center { border-right: 0; border-bottom: var(--bd); }
-  .txn-rail { max-height: 240px; }
   .txn-sc-grid { grid-template-columns: 1fr; }
   .txn-sc-card { border-right: 0; border-bottom: var(--bd); }
   .txn-sc-card:last-child { border-bottom: 0; }

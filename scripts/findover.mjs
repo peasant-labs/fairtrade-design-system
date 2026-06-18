@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer-core'
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const w = +process.argv[2] || 390
 const b = await puppeteer.launch({ executablePath: CHROME, headless: 'new' })
 const p = await b.newPage()

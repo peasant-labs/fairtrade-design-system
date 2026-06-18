@@ -168,23 +168,27 @@ export function AsciiArt({ src, cols = 84, aspect = 0.5, gamma = 0.9, contrast =
    tiny glyphs get snapped to device pixels by the browser, which shows up as periodic
    horizontal banding; drawing the same glyph grid onto a canvas removes that entirely
    and stays crisp at any DPR. one fillText per row (mono advance == cell width). ---- */
-export function AsciiImage({ src, cols = 120, aspect = 0.6, gamma = 0.9, contrast = 1.18, invert = false, vignette = 0, isolated = false, contain = false, black = 0, white = 1, ink, theme, className = '', style }) {
+export function AsciiImage({ src, cols = 120, aspect = 0.6, fit = false, gamma = 0.9, contrast = 1.18, invert = false, vignette = 0, isolated = false, contain = false, black = 0, white = 1, ink, theme, className = '', style }) {
   const ref = useRef(null)
   const img = useImage(src)
   useEffect(() => {
     const cv = ref.current; if (!cv || !img) return
-    const rows = Math.max(1, Math.round(cols * aspect))
     const light = theme === 'light' || document.documentElement.getAttribute('data-theme') === 'light'
     const cellAR = monoCellAR()
-    const lum = sampleImage(img, cols, rows, { gamma, contrast, light, invert, vignette, isolated, contain, black, white, cellAR })
     const dpr = Math.min(2, window.devicePixelRatio || 1)
     const rect = cv.getBoundingClientRect()
     const W = Math.max(1, Math.round(rect.width)), H = Math.max(1, Math.round(rect.height))
+    // `fit`: derive rows from the MEASURED box so the displayed grid aspect == the box aspect
+    // (no horizontal stretch). otherwise rows come from the `aspect` prop, as before.
+    const rows = fit ? Math.max(1, Math.round((cols * cellAR * H) / W)) : Math.max(1, Math.round(cols * aspect))
+    const lum = sampleImage(img, cols, rows, { gamma, contrast, light, invert, vignette, isolated, contain, black, white, cellAR })
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr)
     const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, W, H)
     const cw = W / cols, ch = H / rows
-    ctx.fillStyle = ink || readVar('--ink-strong', light ? '#0d0c09' : '#f8f5ed')
+    // derive ink from the `light` flag, NOT the live DOM: child effects run before the parent applies
+    // data-theme, so readVar would return the dark token (cream) and paint cream on a light well (invisible).
+    ctx.fillStyle = ink || (light ? '#0d0c09' : '#f8f5ed')
     ctx.textBaseline = 'middle'; ctx.textAlign = 'left'
     ctx.font = `${(cw / cellAR).toFixed(2)}px "Atkinson Hyperlegible Mono", ui-monospace, monospace`
     const lastr = RAMP.length - 1
@@ -193,7 +197,7 @@ export function AsciiImage({ src, cols = 120, aspect = 0.6, gamma = 0.9, contras
       for (let x = 0; x < cols; x++) row += RAMP[Math.min(lastr, Math.floor(lum[y * cols + x] * lastr))]
       ctx.fillText(row, 0, (y + 0.5) * ch)
     }
-  }, [img, cols, aspect, gamma, contrast, invert, vignette, isolated, contain, black, white, ink, theme])
+  }, [img, cols, aspect, fit, gamma, contrast, invert, vignette, isolated, contain, black, white, ink, theme])
   return <canvas ref={ref} className={className} style={{ width: '100%', height: '100%', display: 'block', ...style }} aria-hidden="true" />
 }
 
@@ -280,14 +284,115 @@ export function AsciiWordmark({ text, gap = 1, className = '', style }) {
   return <pre className={'ascii ' + className} style={style} role="img" aria-label={text}>{lines.join('\n')}</pre>
 }
 
+/* ---- procedural ascii ROOT SYSTEM read as a NODE GRAPH (analogy to the peasant code-map). a few
+   crop bases at the very top edge (so the roots connect straight to the plant above) send strands
+   straight down, drifting + branching as they go; every junction + base is a NODE glyph (O), wired by
+   edge glyphs (| / \). deterministic (seeded) so it never reshuffles; theme-colored via .ascii. ---- */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+/* `ramp`: draw the strands in the WHEAT-RAMP glyphs (same chars as AsciiVideo) so the roots blend
+   seamlessly with the plant above; nodes get a dense grain glyph. otherwise use line glyphs.
+   `seeds`: a per-column density profile sampled from the wheat video's bottom edge (passed down by the
+   hero). when present, the root bases are placed at the DENSEST wheat columns (so every strand descends
+   from real wheat, not a generic evenly-spaced point), and the top `overlap` band is drawn dense in
+   wheat-ramp glyphs so the seam reads as one continuous plant -> roots before thinning to tendrils. */
+const ROOT_RAMP = 'cvoxoO0Qcvx*+'
+const SEAM_DENSE = 'O0Q#%@&8B' // VID_RAMP's dense end -> the seam band matches the wheat above it
+export function AsciiRoots({ cols = 220, rows = 64, seed = 7, density = 1, spread = 0.5, bases = 4, nodes = false, ramp = false, seeds = null, overlap = 0.16, className = '', style }) {
+  const grid = Array.from({ length: rows }, () => new Array(cols).fill(' '))
+  const rnd = mulberry32(seed)
+  const mid = cols / 2
+  const bandRows = Math.max(1, Math.round(rows * overlap))
+  const nodeGlyph = ramp ? '#' : 'O'
+  const denseGlyph = (xi, y) => SEAM_DENSE[((xi * 131 + y * 17) >>> 0) % SEAM_DENSE.length]
+  const cell = (xi, y, drift) => {
+    if (ramp) return ROOT_RAMP[((xi * 131 + y * 17) >>> 0) % ROOT_RAMP.length]
+    return drift < 0.34 ? '\\' : drift > 0.74 ? '/' : '|'
+  }
+  // base positions: seed from the wheat's densest bottom columns when a profile is supplied (the seam),
+  // else fall back to an even spread under the crop. each base carries a `strength` (its wheat density).
+  let baseList = []
+  if (seeds && seeds.length > 1) {
+    let mxs = 0; for (const v of seeds) if (v > mxs) mxs = v
+    const thresh = mxs * 0.06
+    // active wheat span (trim the empty sky columns at each edge)
+    let lo = 0, hi = seeds.length - 1
+    while (lo < seeds.length && seeds[lo] < thresh) lo++
+    while (hi > lo && seeds[hi] < thresh) hi--
+    const span = Math.max(1, hi - lo)
+    // bin the active span into `bases` equal slots and take the densest column in EACH slot, so the bases
+    // span the full wheat width instead of clustering on the center-densest columns (which read as a cone)
+    for (let b = 0; b < bases; b++) {
+      const a0 = lo + Math.floor((b / bases) * span)
+      const a1 = lo + Math.floor(((b + 1) / bases) * span)
+      let best = -1, bestv = thresh
+      for (let i = a0; i <= a1 && i < seeds.length; i++) if (seeds[i] >= bestv) { bestv = seeds[i]; best = i }
+      if (best >= 0) baseList.push({ x: Math.round((best / (seeds.length - 1)) * (cols - 1)), strength: mxs > 0 ? bestv / mxs : 1 })
+    }
+  }
+  for (let i = baseList.length; i < bases; i++) { // fill out (or fully build) an even spread
+    const x = Math.round(mid + ((i + 0.5) / bases - 0.5) * cols * 0.6 + (rnd() - 0.5) * cols * 0.05)
+    baseList.push({ x, strength: 0.7 })
+  }
+  let walkers = []
+  for (const b of baseList) {
+    const x = Math.max(0, Math.min(cols - 1, Math.round(b.x)))
+    if (nodes) grid[0][x] = nodeGlyph
+    walkers.push({ x, bias: (rnd() - 0.5) * spread, strength: b.strength })
+  }
+  for (let y = 1; y < rows; y++) {
+    const next = []
+    const depth = y / rows
+    const inBand = y < bandRows
+    for (const w of walkers) {
+      const xi = Math.round(w.x)
+      if (xi >= 0 && xi < cols) {
+        const r = rnd() + w.bias * 0.4
+        if (grid[y][xi] === ' ') grid[y][xi] = inBand ? denseGlyph(xi, y) : cell(xi, y, r) // don't overwrite a node
+        // seam band: lay a dense cluster either side of the strand so the top reads as a continuation
+        // of the wheat mass; the cluster (and its width) fades through the band into single tendrils.
+        if (inBand) {
+          const reach = 1 + Math.round(w.strength * 2)
+          for (let dx = -reach; dx <= reach; dx++) {
+            const x2 = xi + dx
+            if (x2 >= 0 && x2 < cols && grid[y][x2] === ' ' &&
+                rnd() < (1 - Math.abs(dx) / (reach + 1)) * (1 - (y / bandRows) * 0.5))
+              grid[y][x2] = denseGlyph(x2, y)
+          }
+        }
+        w.x += (r < 0.34 ? -1 : r > 0.74 ? 1 : 0) + w.bias * 0.5
+      }
+      // branch most near the TOP (from the stalk), decaying with depth; each branch point is a node
+      if (rnd() < density * 0.2 * (1 - depth) * (1 - depth) && walkers.length + next.length < cols * 0.5) {
+        if (nodes && xi >= 0 && xi < cols) grid[y][xi] = nodeGlyph
+        next.push({ x: w.x + (rnd() < 0.5 ? -1.4 : 1.4), bias: w.bias + (rnd() - 0.5) * spread, strength: w.strength })
+      }
+      // taper toward the bottom: below the seam band, strands thin out as they descend, but enough survive
+      // all the way to the wordmark so the roots GROW INTO the name (no dead gap above it)
+      if (!inBand && rnd() < 0.008 + 0.035 * depth && walkers.length + next.length > Math.max(2, bases - 1)) continue
+      next.push(w)
+    }
+    walkers = next
+  }
+  return <pre className={'ascii ' + className} style={style} aria-hidden="true">{grid.map((r) => r.join('')).join('\n')}</pre>
+}
+
 /* ---- ascii video, sampled from a (seamless, watermark-free) source video at
    RUNTIME. detail is just `cols` (decoupled from any baked file size); a rolling
    temporal average over the last `smooth` frames kills glyph boiling so it stays
    fluid. coloured via css. honours prefers-reduced-motion (samples one frame). ---- */
 const VID_RAMP = " .,-:;=+*vcoxO0Q#%@"
-export function AsciiVideo({ src, cols = 240, aspect = 0.4, fps = 12, smooth = 5, boost = 1.5, contrast = 1.22, gamma = 0.9, rate = 0.7, waveEvery = 8, waveDur = 3.4, waveAmp = 3.6, waveLen = 2, waveSpeed = 0.75, className = '', style }) {
+export function AsciiVideo({ src, cols = 240, aspect = 0.4, fps = 12, smooth = 5, boost = 1.5, contrast = 1.22, gamma = 0.9, rate = 0.7, waveEvery = 8, waveDur = 3.4, waveAmp = 3.6, waveLen = 2, waveSpeed = 0.75, onColumns, className = '', style }) {
   const ref = useRef(null)
+  const emitted = useRef(false)
   useEffect(() => {
+    emitted.current = false
     const pre = ref.current; if (!pre || !src) return
     const rows = Math.max(1, Math.round(cols * aspect))
     const cv = document.createElement('canvas'); cv.width = cols; cv.height = rows
@@ -324,6 +429,23 @@ export function AsciiVideo({ src, cols = 240, aspect = 0.4, fps = 12, smooth = 5
         out += '\n'
       }
       pre.textContent = out
+      // one-time seam handoff: once the temporal average is warm, emit a per-column density profile of
+      // the wheat's lower body (not just the dark bottom edge, which collapses the roots to center) so
+      // the roots below can seed their bases at the densest stalk columns, spread across the real width.
+      if (onColumns && !emitted.current && hist.length >= smooth) {
+        const band = Math.max(1, Math.round(rows * 0.3))
+        const prof = new Array(cols).fill(0)
+        for (let x = 0; x < cols; x++) {
+          let s = 0
+          for (let y = rows - band; y < rows; y++) {
+            let a = 0; for (let h = 0; h < hist.length; h++) a += hist[h][y * cols + x]
+            s += Math.pow(clamp01(((a / hist.length) * boost - 0.5) * contrast + 0.5), gamma)
+          }
+          prof[x] = s / band
+        }
+        emitted.current = true
+        onColumns(prof)
+      }
     }
     const tick = (now) => { if (now - last >= 1000 / fps) { if (video.readyState >= 2) sample(now); last = now } raf = requestAnimationFrame(tick) }
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -342,7 +464,7 @@ export function AsciiVideo({ src, cols = 240, aspect = 0.4, fps = 12, smooth = 5
     }
     if (video.readyState >= 2) start(); else video.addEventListener('loadeddata', start, { once: true })
     return () => { cancelAnimationFrame(raf); video.pause(); video.removeAttribute('src') }
-  }, [src, cols, aspect, fps, smooth, boost, contrast, gamma, rate, waveEvery, waveDur, waveAmp, waveLen, waveSpeed])
+  }, [src, cols, aspect, fps, smooth, boost, contrast, gamma, rate, waveEvery, waveDur, waveAmp, waveLen, waveSpeed, onColumns])
   return <pre ref={ref} className={'ascii ' + className} style={style} aria-hidden="true" />
 }
 

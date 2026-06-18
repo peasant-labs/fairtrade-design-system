@@ -17,6 +17,7 @@ import { ChevronDown } from 'lucide-react'
  * @property {string}   [kbd]            right-aligned shortcut hint (e.g. "⌘D")
  * @property {boolean}  [danger]         destructive (.menu-danger) variant - clay, keeps icon + label
  * @property {boolean}  [disabled]       aria-disabled row, skipped by arrow keys, not selectable
+ * @property {boolean}  [separator]      a role="separator" .menu-sep hairline row, skipped by keyboard nav
  * @property {() => void} [onSelect]     invoked when the row is chosen (click or Enter/Space)
  */
 
@@ -27,16 +28,17 @@ import { ChevronDown } from 'lucide-react'
  * @param {React.ReactNode} props.label             trigger label (lowercase chrome by default)
  * @param {MenuItem[]} [props.items=[]]             menu rows
  * @param {'start'|'end'} [props.align='start']     which edge of the trigger the popout aligns to
+ * @param {React.ReactNode} [props.caption]         optional .menu-cap caption rendered inside the popout before the list
  */
-export default function Menu({ label, items = [], align = 'start' }) {
+export default function Menu({ label, items = [], align = 'start', caption }) {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef(null)
   const menuRef = useRef(null)
   const menuId = useId()
 
-  // index of each item that is selectable (skips aria-disabled rows), matching App.jsx's
-  // items() helper that queries [role="menuitem"]:not([aria-disabled="true"]).
-  const enabledIndexes = items.map((it, i) => (it.disabled ? -1 : i)).filter((i) => i >= 0)
+  // index of each item that is selectable (skips aria-disabled rows AND role="separator" rows),
+  // matching App.jsx's items() helper that queries [role="menuitem"]:not([aria-disabled="true"]).
+  const enabledIndexes = items.map((it, i) => (it.disabled || it.separator ? -1 : i)).filter((i) => i >= 0)
 
   // focus an item row by its index into `items`. refs are collected per-render below.
   const itemRefs = useRef([])
@@ -123,8 +125,10 @@ export default function Menu({ label, items = [], align = 'start' }) {
         hidden={!open}
         style={align === 'end' ? { left: 'auto', right: 0 } : undefined}
       >
+        {caption != null && <p className="menu-cap">{caption}</p>}
         <ul className="menu-list" role="menu" aria-label={typeof label === 'string' ? label : undefined} onKeyDown={onMenuKey}>
           {items.map((item, i) => {
+            if (item.separator) return <li key={i} role="separator" className="menu-sep" />
             const Icon = item.icon
             return (
               <li
