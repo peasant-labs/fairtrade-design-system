@@ -20,7 +20,7 @@ is stated.
 
 ## the defaults that ship in the tokens
 
-These are baked into `src/index.css` (and flow to every app via `@peasant-labs/theme`):
+These are baked into `src/index.css` (and are intended to flow to every app once the multi-app rollout lands - that shared `@peasant-labs/theme` package does not exist in this repo yet):
 
 | token | value | rule |
 |---|---|---|
@@ -85,7 +85,7 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
 
 - **Light theme: warm paper, not pure white.** `#fff` dazzles and the `#000`-on-`#fff` edge triggers
   pattern glare/migraine; warm off-white reads faster. Default `--canvas`/`--surface` to a faint
-  warm paper (~`#FAF7F0`/`#FCFBF6`); body ink stays the locked off-black `#27241f`. *(BDA 2023; Rello & Bigham ASSETS 2017)*
+  warm paper (`#fbfaf7`/`#fdfcfa`); body ink stays the locked off-black `#27241f`. *(BDA 2023; Rello & Bigham ASSETS 2017)*
 - **Dark theme: off-white on near-black, never `#fff` on `#000`.** Pure white on black causes
   halation (haloing) for ~1-in-3 adults with astigmatism. Body uses `--ink #e9e5db` (16:1);
   `--ink-strong #f8f5ed` (18.5:1) only for short emphasis; the amber text-shadow glow never touches
@@ -115,8 +115,10 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
 - **Reduced-motion is the base state.** Author static-first, then add motion only inside
   `@media (prefers-reduced-motion:no-preference)`. Under "reduce", kill non-essential
   transitions/animations; cap any remainder at ~200ms. No parallax, carousels, marquees, looping
-  shimmer. **Defect fixed:** the locked reduce block only covered `scroll-behavior` — the `.btn`/`.input`
-  transitions and `.nav` blur are now gated. *(W3C C39; WCAG 2.3.3)*
+  shimmer. **Defect fixed:** the reduce block is now a global wildcard (`*, *::before, *::after`) that
+  zeroes every `animation-duration`/`transition-duration` (and caps iteration count) plus resets
+  `scroll-behavior` to auto - it no longer covers only `scroll-behavior` or only the `.btn`/`.input`/`.nav`
+  rules, so nothing motion-bearing slips through. *(W3C C39; WCAG 2.3.3)*
 - **No autoplay/loop/blink by default.** Nothing flashes >3×/sec (WCAG 2.3.1); the recording/live
   indicator is a **static** filled dot, not a pulse; live tables coalesce repaints to ≤1 change/sec
   as a brief non-looping settle; never auto-scroll the viewport while reading. *(WCAG 2.2.2 / 2.3.1; COGA)*
@@ -198,15 +200,18 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
 - **Author the WCAG 1.4.12 text-spacing metrics as comfortable defaults** and stay resilient: no fixed
   px heights on text containers, no `overflow:hidden`/truncation of transcript lines, so a user
   stylesheet (line-height 1.5 / paragraph 2× / letter 0.12em / word 0.16em) cannot clip content. *(WCAG 1.4.12)*
-- **Measure dark-theme contrast with APCA** (Lc 90 fluent body / 75 floor / 60 secondary / 45 large /
-  15 non-text) alongside WCAG 2.2 AA as a backstop — WCAG 2.x overstates contrast near black. *(APCA; Myndex)*
+- **APCA is aspirational, not implemented.** The shipping gate (`scripts/contrast.mjs`) measures pure
+  WCAG 2.x ratios in both themes; it does **not** compute APCA Lc. WCAG 2.x is known to overstate
+  contrast near black, so the long-term aim is to add an APCA backstop (target Lc 90 fluent body / 75
+  floor / 60 secondary / 45 large / 15 non-text) alongside WCAG 2.2 AA - but that work is not done.
+  Until then, do not claim APCA coverage. *(APCA; Myndex)*
 
 ---
 
 ## conflicts with the locked identity (and how they're reconciled)
 
 1. **Pure-white light theme vs glare.** → Shift the light *reading* canvas a few percent warm to
-   paper-white (`#FAF7F0`/`#FCFBF6`); it still reads as a crisp white theme and carries a faint amber
+   paper-white (`#fbfaf7`/`#fdfcfa`); it still reads as a crisp white theme and carries a faint amber
    kinship, while removing the documented `#000`-on-`#fff` glare. If literal `#fff` is required, scope
    it to thin chrome and make large reading surfaces the paper. *(decision pending the owner — see below)*
 2. **Amber/earthy palette vs functional contrast.** → Amber = accent/link/keyword/focus/large-bold,
@@ -229,7 +234,20 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
 
 ## what to verify in CI / review
 
-- contrast gate: every text/surface pair ≥4.5:1 (warn <7:1 primary); every functional border/icon/ring ≥3:1; APCA Lc tags on dark tokens.
+The four gates that actually run (CI mirrors these in `.github/workflows/ci.yml`):
+
+- **contrast gate** (`scripts/contrast.mjs`, run via `pnpm build` before `vite build`): pure-JS WCAG
+  2.x ratios in both themes - every text/surface pair ≥4.5:1 (reports <7:1 primary); every functional
+  border/icon/focus ring ≥3:1; structural hairline dividers are reported, not failed. No APCA today.
+- **validator** (`node scripts/validate.mjs`): the 20-check interactive puppeteer gate (icons painted,
+  one h1, heading outline, copy-token labels, decorative icons aria-hidden, scroll-spy, ZONE header
+  gating, cmd-k palette, dialog focus-trap, theme toggle, 0 overflow at 360/390/768/1024/1440,
+  reduced-motion, no console errors).
+- **storybook build** (`pnpm build-storybook`): the type/parse gate for `src/ui/*`.
+- **storybook smoke** (`node scripts/sbsmoke.mjs`): loads every story incl. `play()`, expects 0 real errors.
+
+Manual / review checks beyond the automated gates:
+
 - text-spacing resilience: apply the 1.4.12 user stylesheet; nothing clips.
 - no text token <16px in reading contexts; no `text-align:justify`; no `outline:none` without replacement; no infinite animation; no color-only status.
 - reflow at 320px / 400% zoom; reduced-motion and reduced-transparency honoured.

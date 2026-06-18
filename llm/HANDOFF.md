@@ -1,159 +1,182 @@
-# handoff — fairtrade design system
+# handoff - fairtrade design system
 
-> Single entry point for anyone (human or agent) picking this up. State, what's next, how it's built,
-> how to verify, and the locked rules. Specs live alongside: [`DESIGN.md`](./DESIGN.md) (the system),
-> [`PRESENTATION.md`](./PRESENTATION.md) (the page), [`NEUROINCLUSIVE.md`](./NEUROINCLUSIVE.md) (a11y
-> defaults), [`UNIFICATION_PLAN.md`](./UNIFICATION_PLAN.md) (the deferred multi-app rollout).
+> Single entry point for whoever (human or agent) picks this up next. Read this top-to-bottom before
+> touching anything. Companion specs: [`DESIGN.md`](./DESIGN.md) (the system: tokens, principles, voice),
+> [`PRESENTATION.md`](./PRESENTATION.md) (the as-built page IA), [`NEUROINCLUSIVE.md`](./NEUROINCLUSIVE.md)
+> (the a11y defaults baked into the tokens), [`UNIFICATION_PLAN.md`](./UNIFICATION_PLAN.md) (the deferred
+> cross-app rollout), [`README.md`](./README.md) (repo orientation).
 
-## ▶ current state (2026-06-17, branch `tier-2.5-port`)
+State: the page is 100% component-driven, all automated gates are green, and the tier-2.5 component
+library + Storybook + full-screen app demos are in. The single owner-reviewed item is the hero brand
+moment (below). Everything that was done in this repo is the as-built state described in `DESIGN.md` /
+`PRESENTATION.md`; the cross-app rollout is deferred (`UNIFICATION_PLAN.md`).
 
-Everything below is DONE and gated green (`pnpm build`, `validate.mjs` 19/19, 0 overflow, `build-storybook`,
-`sbsmoke.mjs`):
+---
 
-- **The presentation page** — a single-page design-system site (hero, value-prop, and ~25 documented
-  sections in foundations / components / using-the-system groups) with a sticky on-this-page rail +
-  scroll-spy, end-to-end interactive (⌘k command palette, modal dialog, keyboard tablists, dropdown menus).
-- **`src/ui/*` component library** — ~20 JSDoc-typed React components (`Button`/`ButtonGroup`/`Segmented`,
-  `Input`/`Textarea`/`Select`/`Field`, `Checkbox`/`Radio`/`RadioGroup`, `Switch`, `Chip`/`FilterChip`/
-  `StatusDot`/`CountBadge`, `Card`/`CardImg`/`Row`/`MetaItem`, `Tabs`, `Breadcrumb`/`Steps`, `Pager`,
-  `Pagination`, `Menu`, `Tooltip`/`Popover`, `Avatar`/`AvatarGroup`/`Kbd`/`Tag`, `EmptyState`,
-  `Feedback{Skeleton,Progress,Spinner,Toast,Panel}`, `DataTable`, `Accordion`, + `Dialog`/`CommandPalette`
-  re-exports) — each REUSES the existing `index.css` class names (zero new CSS, zero visual change for the
-  ports). Barrel: `src/ui/index.js`.
-- **Storybook** (SB10 + Vite8, `.storybook/`) — one `*.stories.jsx` per component (146 stories), `addon-a11y`
-  (axe) + `addon-themes` (data-theme toggle) + project viewports/backgrounds, `play()` interaction tests on
-  the interactive components. `pnpm storybook` to view, `pnpm build-storybook` to compile.
-- **New tier-2 components on the page** — `DataTable` (sortable/selectable, `.tbl-*`), `Pagination`
-  (numbered + ellipsis, `.pgn-*`), `Accordion` (`.acc-*`), with live showcase sections
-  (`src/ComponentSections.jsx`) in the components group.
-- **The "in use" showcase, full-screen** — a full-bleed workspace shell (`src/mockups/inuse/`, ns `.iu-*`)
-  whose left app-rail switches between the three apps (click / keys 1·2·3 / a real Fullscreen-API expand),
-  each rendering inside with its own internal nav and reflecting the real functionality of the actual apps
-  in the parent folder: `TranscriptApp` (the transcript-browser viewer — 5 tabs, per-tool renderers,
-  thinking, phases, checkpoints, outline/filters rail, list↔graph, search, annotations, scorecard);
-  commons `CommonsExplore`+`CommonsManage` (village — explore + filters, transcript detail w/ label popover
-  + approval bar, profiles, CLI-first publish, collectives + governance + review queue + redaction diff,
-  contribute); peasant `GraphMap`+`GraphAnalytics` (hand-rolled SVG code-map + node-selection rail + legend
-  + time-strip, lane git-graph, change detail, and the analytics dashboard). All charts/graphs hand-rolled
-  in SVG — no chart libraries.
-- **Deferred QA nits addressed** — filter-rail text-edge alignment, empty-state inset, start-subhead orphan,
-  theme-aware color/token tables (added a `light` column), shorter commons summaries. (Badge-state-chip
-  text already clears AA per the contrast gate; tokens are locked.)
+## the hero brand moment (`#top` / `#brand`)
 
-## ▶ what's next (roadmap)
+The intent: screen 1 is the wheat **crop** (an ascii video); scrolling down, **roots grow out of the
+bottom of that crop** and taper into a big **`fairtrade`** wordmark. One crop, one continuous
+plant -> roots -> name. The owner rejected several earlier attempts where the roots read as a separate,
+faded layer ("not connecting", "duplicating the video", "shouldn't be faded at the start").
 
-1. **Render the page FROM the `src/ui/*` components** ("one source of truth"): the components exist and keep
-   the class names, so the static `src/sections/*.html` partials can be swapped for `<Button/>` etc.
-   incrementally. Intentionally deferred (highest risk to the verified layout); do it screen by screen with
-   the gates green each step.
-2. **Optional further tier-2**: steps/timeline per-turn renderers, a date/range control, a toast host.
-   Optionally make the color swatches/`.dt-sw` theme-aware (today they paint literal DARK hex by the locked
-   rule even in light theme; the value columns already document both themes).
-3. **Visual-regression in CI** for Storybook (Chromatic or the test-runner) — the `play()` tests + a11y
-   addon are authored; only headless CI execution is missing.
-4. **The multi-app rollout** ([`UNIFICATION_PLAN.md`](./UNIFICATION_PLAN.md)) — still **deferred** until
-   approved. Stay inside `unified-identity` until then.
-5. Cosmetic: the in-use code-map view top-aligns its content, leaving whitespace at the bottom of a tall
-   window — fine for a dashboard, easy to stretch edge-to-edge if wanted.
+**How it works now (Option D - seed the roots from the video):**
+- `App.jsx` `Hero()`: `.hero-crop` wraps the wheat `<AsciiVideo className="hero-bg">`; `.hero-grow#brand`
+  wraps `.hero-roots-wrap` (`<AsciiRoots cols=300 rows=82 bases=22 overlap=0.24 seeds=… nodes>`) +
+  `.hero-foot` (the `.hero-word` "fairtrade").
+- **Seed handoff:** `AsciiVideo` takes an `onColumns` callback and emits a **one-time per-column density
+  profile** of the wheat's lower body (a band ~30% up from the bottom, after boost/contrast/gamma, so it
+  catches the stalk columns rather than the dark bottom edge). `Hero` lifts that profile into state and
+  passes it to `AsciiRoots` as `seeds`.
+- **AsciiRoots** (`effects.jsx`): when `seeds` are present it **bins the wheat's active width into `bases`
+  equal slots and takes the densest column in each** - so the bases span the full width and the lower
+  roots don't funnel into a center cone (the owner's prior rejection). It draws a **dense seam band** in
+  the top `overlap` rows using the wheat ramp's dense end (`SEAM_DENSE`), then thins to tendrils, with the
+  bottom-taper tuned so strands survive down toward the wordmark. A small breathing gap (~18px) sits
+  between the shortest tails and the letter caps by design - don't crash the roots into the wordmark.
+- **The seam (CSS, `index.css`):** `.hero-grow` is pulled up `margin-top:-20vh` to overlap the crop;
+  `.hero-bg`'s mask fades the wheat's **top and bottom** edges (`…#000 15%, #000 84%, transparent`) so the
+  wheat dissolves into the dense roots instead of ending on a hard line. `.hero .hero-roots` uses the
+  **same cell size** as `.hero-bg` (`clamp(5px,0.95vw,9.5px)`) so root columns register against the stalk
+  columns they were seeded from; opacity is 1 (dark) / 0.9 (light).
+- **Capture mode:** `[data-cap] .hero-grow { margin-top:-72px }` keeps a proportional overlap so
+  `?cap` / `shoot.mjs` review shots show the real seam (the old rule zeroed it and showed a false gap).
 
-**How to work here (proven loop):** big agent teams + workflows — design/build fan-out (one agent per
-component/view) → you integrate the shared files (`index.css`, `App.jsx`) → `pnpm build` → parallel
-screenshot QA → fix → `validate.mjs`. Keep all gates green every pass.
+**Verifying it / iterating:** screenshot the seam with `node scripts/viewport.mjs <theme> <dir> top brand`
+(the **non-`?cap`** real view; `?cap` shrinks the section). The seam is the `brand` anchor. This moment is
+owner taste-driven - **review the crops yourself and get the owner's eye before declaring it done.** If
+asked to push it further: the remaining levers are the overlap depth (`-20vh`), the wheat-bottom mask fade,
+the seam-band depth (`overlap`), and the bottom-taper rate in `AsciiRoots`. The honest fallback the owner
+offered before is to **ask for a visual reference** rather than keep re-tuning blind.
+
+## what's next
+
+1. **Hero polish, if the owner wants it** - the moment above is built and gated; any further change is
+   taste, not a blocker. Get the owner's eye.
+2. **Optional tier-2** - wire the `ToastHost` at the app root so `[data-copy]` copy uses `toast.ok(...)`;
+   a horizontal step variant alongside the vertical `Timeline`. Genuinely optional.
+3. **The multi-app rollout** ([`UNIFICATION_PLAN.md`](./UNIFICATION_PLAN.md)) - still **deferred until
+   approved**. Stay inside `unified-identity`.
+
+**Proven loop:** fan out reads/builds (one agent per section/view) -> integrate the shared files
+(`App.jsx`, `index.css`) -> `pnpm build` -> parallel screenshot QA (both themes via `viewport.mjs` /
+`shoot.mjs`) -> fix -> keep every gate green. For full-screen sections prefer `viewport.mjs` (non-`?cap`);
+`?cap` shrinks them. Spawn parallel QA reviewers on the crops - pixel-level review catches seams and gaps
+an eyeball misses on a downscaled shot.
 
 ## what this is
 
 A **single-page design-system presentation** (modeled on wise.design, bound to the locked Caves-of-Qud
-identity), not a flat component gallery. Built with **Vite 8 + React 19 + Tailwind v4**, run with **pnpm**.
-One visual identity across **peasant** (local analytics), **village** (the commons), and
-**transcript-browser** (the shared viewer).
+identity), not a flat component gallery. **Vite 8 + React 19 + Tailwind v4**, run with **pnpm**. One visual
+identity across **peasant** (local analytics), **village** (the commons), **transcript-browser** (the shared
+viewer). The top is an experiential splash; the middle is the documented system; the end is a live, immersive
+"in use" showcase of the three apps.
 
 ## stack / run
 
 ```bash
 pnpm install
 pnpm dev --port 5180   # the page (or next free port)
-pnpm build             # contrast gate + static dist/
+pnpm build             # contrast gate (scripts/contrast.mjs) + static dist/
 pnpm preview           # serve dist/
 pnpm storybook         # the component library (port 6006)
 pnpm build-storybook   # compile every component + story
 ```
 
-- `?theme=light` deep-links the paper theme. `?fb=off` hides the feedback tool. `?cap` is a review-only
-  capture mode that shrinks the full-screen hero/intro so the whole page fits one screenshot.
-- Fonts: **Atkinson Hyperlegible Mono** (chrome/display/code) + **Atkinson Hyperlegible** (reading prose),
-  via Google Fonts in `index.html`.
-- Icons: **bundled Lucide** (no CDN) — `src/icons.js` `paintIcons()` converts the partials' `<i data-lucide>`
-  to `<svg>` (re-run by a MutationObserver); **lucide-react** for React pieces. Brand marks are inline
-  `<svg><use href="#b-*">` symbols in `00-defs.html`.
+- `?theme=light` deep-links the paper theme. `?fb=off` hides the dev feedback tool. `?cap` is a review-only
+  capture mode that shrinks full-screen sections so a whole tall section fits one screenshot (it keeps a
+  proportional hero overlap, but still shrinks - judge the hero seam from non-`?cap` `viewport.mjs` shots).
+- Fonts: **Atkinson Hyperlegible Mono** (`--font-display` + `--font-mono`: chrome/display/code) +
+  **Atkinson Hyperlegible** (`--font-body`: reading prose), via Google Fonts in `index.html`.
+- Icons: **lucide-react** everywhere (no CDN, no `<i data-lucide>`, no `paintIcons`). Decorative glyphs carry
+  `aria-hidden` (added in markup, with a one-shot `labelIconA11y` backstop on mount). Brand marks are inline
+  `<svg><use href="#b-*">` symbols defined in `<Defs/>` (`src/sections-react/00-defs.jsx`); path data
+  originated from Simple Icons but is inlined (not a dependency).
 
 ## architecture
 
-- **`src/sections/*.html`** — one HTML partial per documented section (numbered for order), injected as raw
-  markup via a **memoized** `<Raw>` (renders once — do NOT un-memoize; React resetting innerHTML clobbers the
-  painted lucide svgs + detaches captured refs). Order: `00-defs` · `01-nav` · `10-start` ·
-  `15-group-foundations` · `20-principles` · `22-voice` · `24-color` · `26-type` · `28-spacing` · `30-icons` ·
-  `32-motion` · `34-controls` · `36-states` · `40-group-components` · `42-badges` · `44-trails` ·
-  `48-conversation` · `50-canvas` · `52-forms` · `54-overlays` · `60-group-using` · `62-a11y` · `64-tokens` ·
-  `66-resources`.
-- **`src/App.jsx`** — composition root. Injects the partials in order, interleaving the React sections
-  (`Hero`, `Intro`, `Cards`; `DataTableSection`/`PaginationSection`/`AccordionSection` from
-  `src/ComponentSections.jsx`), then renders `<InUseShell>` **full-bleed, outside the `.docs` grid**. Also:
-  the `Rail` (sticky on-this-page index from the `RAIL` array), the scroll-spy, nav-reveal, the delegated
-  handlers (theme toggle, `[data-copy]` copy-token, ⌘k palette, dialog trigger, tablists, dropdown menus),
-  scroll-reveal, and the dev feedback tool.
-- **`src/index.css`** — the single styling source of truth: tokens in `:root` / `[data-theme="light"]` (do
-  NOT rename; values re-theme), the base layer, the component classes, the doc-primitives, the tier-2
-  families (`bs-`/`is-`/`sw-`/`fb-`/`chipx-`/`tbl-`/`pgn-`/`acc-`), and the in-use namespaces
-  (`iu-`/`txn-`/`cex-`/`cmg-`/`gmp-`/`gan-`). Tailwind v4 `@source "./sections"` + `@source "./App.jsx"`.
-- **`src/ui/*`** — the typed component library (above). **`src/mockups/inuse/*`** — the full-screen showcase
-  (`InUseShell` + `TranscriptApp` + `CommonsApp`/`CommonsExplore`/`CommonsManage` + `GraphApp`/`GraphMap`/
-  `GraphAnalytics`). **`.storybook/`** — `main.js` + `preview.jsx`.
-- **`src/effects.jsx`** — image→ascii / halftone / duotone filters (wheat hero, peasant portraits).
-  **`vite.config.js`** — react + tailwind plugins + the `/feedback` dev middleware.
+- **`src/App.jsx`** - composition root. Renders, in order: `<Defs/>`, `<NavBar/>`, `<Hero/>` (`#top`, inner
+  `#brand`), `<Philosophy/>` (`#manifesto`), then `.docs` (`<Rail/>` + `<main class=docs-main>` with the
+  section components interleaved with inline `Cards`), then `<InUseShell/>` (`#inuse` + `#inuse-stage`,
+  full-bleed outside `.docs`), then `<footer>`. The `RAIL` array drives the sticky on-this-page index +
+  scroll-spy. **Effects:** theme apply; one-shot `labelIconA11y`; rAF scroll-spy (last-section-past-fold
+  model); **zone header gate** (hidden over splash, shown over docs, hidden over in-use); `data-spy`
+  group-active sync; cmd-k palette; `rootClick` delegation (theme toggle, palette, `[data-open-dialog]`,
+  `[data-copy]` copy-token); scroll-reveal (reduced-motion-aware); the dev feedback tool. Live
+  `CommandPalette`/`Dialog` are `src/CommandPalette.jsx`/`src/Dialog.jsx` (the `src/ui/*` ones are shims).
+- **`src/sections-react/*.jsx`** - one component per documented section (names mirror the section numbers):
+  `00-defs`->`Defs` `01-nav`->`NavBar` `24-color` `26-type` `28-spacing` `30-icons` `34-controls` `36-states`
+  `42-badges` `44-trails` `48-conversation` `50-canvas` `52-forms` `54-overlays` `62-a11y` `64-tokens`, plus
+  `_tokens.jsx` (shared `CopyBtn`/`Swatch`/`TokenTable`). `src/DocSections.jsx`: `GroupOpener`/`StartSection`/
+  `MotionSection`/`PrinciplesSection`/`VoiceSection`/`ResourcesSection`. `src/ComponentSections.jsx`: the live
+  tier-2 showcases (`DataTable`/`Pagination`/`Accordion`/`Timeline`/`Toast`/`DateRange`).
+- **`src/ui/*`** - the typed (JSDoc) component library + a `*.stories.jsx` each (Storybook source of truth).
+  **`src/mockups/inuse/*`** - `InUseShell` (the immersive shell + sticky top app-switcher banner) +
+  `TranscriptApp` (split rail: left outline / centre transcript / right filters), `CommonsApp`/
+  `CommonsExplore`/`CommonsManage`, `GraphApp`/`GraphMap`/`GraphAnalytics`. All charts/graphs are hand-rolled
+  SVG (no chart libraries). **`.storybook/`** - `main.js` + `preview.jsx`.
+- **`src/index.css`** - the single styling source of truth: tokens in `:root` / `[data-theme="light"]`
+  (do NOT rename; values re-theme), the base layer, component classes, doc-primitives, the page-shell rules
+  (`.hero*`/`.philos*`, scroll-snap + `scroll-behavior`, `.nav.nav--hidden`), the tier-2 families
+  (`bs-`/`is-`/`sw-`/`fb-`/`chipx-`/`tbl-`/`pgn-`/`acc-`/`tl-`/`tsx-`/`dr-`), and the in-use namespaces
+  (`iu-`/`txn-`/`cex-`/`cmg-`/`gmp-`/`gan-`). `@source "./sections-react"` + `@source "./App.jsx"`
+  (`src/ui` + `src/mockups` are NOT in `@source` - they don't rely on Tailwind utilities at runtime here).
+- **`src/effects.jsx`** - the ascii filters: `AsciiVideo` (runtime-sampled wheat, with the `onColumns` seam
+  profile), `AsciiImage` (image->ascii on canvas; `fit` + theme-adaptive ink), `AsciiArt` (image->ascii
+  `<pre>`), `AsciiText`/`AsciiWordmark` (block-font wordmarks), `AsciiRoots` (procedural roots, seeded from
+  the wheat columns), `Halftone`, `GlyphField`.
 
 ## doc-primitives (in `index.css`, reuse them; do not reinvent)
 
 `.docs` (rail + content grid) · `.page-rail`/`.rail-link`/`.rail-group` (sticky index, active = amber + `>`) ·
-`.specimen` (+`.specimen-bar`/`.specimen-cap`/`.specimen-body`) · `.cmp`/`.cmp-card.cmp-do|.cmp-dont` do/don't
-· `.dtable` (+`.dt-name`/`.dt-val`/`.dt-role`/`.dt-sw`) token/spec/props tables · `.copy-token` (`data-copy`
-handled in `App.jsx`) · `.anatomy`/`.anatomy-legend`/`.anatomy-num` · `.ruler` · `.icongrid`/`.icontile` ·
-`.start-card` · `.reslist`/`.res`. The **first** `.band > .label` is the section title; subsequent
-direct-child `.label`s are sub-headings. Section a11y notes use a quieted `.band > .callout`; the amber
-`.callout` is reserved for in-component emphasis.
+`.band` (a section; first `.band > .label` = title, later `.label`s = sub-headings) · `.specimen`
+(+`.specimen-bar`/`.specimen-cap`/`.specimen-body`) · `.cmp`/`.cmp-card.cmp-do|.cmp-dont` do/don't ·
+`.dtable` (+`.dt-name`/`.dt-val`/`.dt-role`/`.dt-sw`) token/spec/props tables (use `_tokens.jsx`'s
+`TokenTable`/`CopyBtn`/`Swatch` for copy-token tables) · `.copy-token` (`data-copy`, handled by `rootClick`) ·
+`.anatomy`/`.anatomy-legend`/`.anatomy-num` · `.icongrid`/`.icontile` · `.start-card` · `.reslist`/`.res`.
 
 ## gates / how to verify (keep all green)
 
-- `pnpm build` — runs `scripts/contrast.mjs` (WCAG contrast, both themes) then compiles. `--rule-strong`
-  functional borders must clear 3:1; `--rule` dividers are intentionally sub-3:1 (report-only) — do not "fix".
-- `node scripts/validate.mjs "http://localhost:5180/?fb=off"` — 19-check puppeteer-core interactive gate
-  (icons painted, exactly one h1, heading outline, scroll-spy, nav-reveal, palette, dialog focus-trap, theme
-  toggle, **0 overflow at 360/390/768/1024/1440**, reduced-motion, no console errors).
-- `node scripts/findover.mjs <w>` — lists horizontal-overflow offenders at width w.
-- `pnpm build-storybook` — compiles every component + story (the type/parse gate for `src/ui/*`).
-- `node scripts/sbsmoke.mjs` — serves the built storybook, loads all 146 stories headless, runs their
-  `play()` tests, and separates REAL assertion errors from benign resource 404s.
-- `node scripts/shoot.mjs <theme> <dir> [ids…]` — per-section crops for QA. `node scripts/shootdemo.mjs
-  <theme> <dir>` — drives the in-use app-switcher + sub-nav and crops each demo. `node scripts/diag.mjs` —
-  interactive diagnostics.
+- `pnpm build` - runs `scripts/contrast.mjs` (pure-JS WCAG contrast, both themes; functional borders/icons/
+  focus must clear 3:1, text 4.5:1; structural dividers are intentionally sub-3:1, report-only - do not
+  "fix") then compiles.
+- `node scripts/validate.mjs "http://localhost:5180/?fb=off"` - **20-check** puppeteer-core interactive gate
+  (icons painted, exactly one h1, heading outline, copy-tokens named, decorative icons aria-hidden, scroll-spy,
+  zone header gating, cmd-k palette, dialog focus-trap + Esc return, theme toggle, icons persist across toggle,
+  0 overflow at 360/390/768/1024/1440, reduced-motion, no console errors).
+- `node scripts/findover.mjs <w>` - lists horizontal-overflow offenders at width w.
+- `pnpm build-storybook` then `node scripts/sbsmoke.mjs` - compiles + headlessly loads every story, runs their
+  `play()` tests, separates real assertion errors from benign 404s.
+- Screenshot QA: `node scripts/viewport.mjs <theme> <dir> [anchors…]` (full-viewport, real view - use for the
+  full-screen sections + header-gating + the hero seam) · `node scripts/shoot.mjs <theme> <dir> [ids…]`
+  (clipped section crops, uses `?cap`) · `node scripts/shootdemo.mjs <theme> <dir>` (drives the in-use
+  app-switcher) · `node scripts/imgdiff.mjs <theme> [ids…]` (pixel diff `shots/baseline-*` vs `shots/after-*`)
+  · `scripts/diag.mjs` / `scripts/fullpage.mjs`.
+- CI: `.github/workflows/ci.yml` runs the 4 gates on push/PR; `deploy.yml` builds + nests Storybook into
+  `dist/storybook/` for Pages.
 
-Gotchas: headless `--screenshot` clips to the window height (window must exceed the page); anchor-scroll
-(`#section`) does not settle in headless — capture the real hero at `#top` (no `?cap`) and judge other
-sections from `?cap` slices. The shell is **zsh** (no word-splitting of unquoted `$VAR`; quote `--include`
-globs for grep). Storybook play tests: components with a `tabIn`/`menuIn` entrance animation fail an instant
-`toBeVisible()` (opacity 0 mid-animation) — assert the `[hidden]` attribute / content existence instead; and
-`userEvent.keyboard('{Escape}')` only reaches a handler after you `waitFor` the component's auto-focus.
+Gotchas: headless capture clips to the window height (window must exceed the section). Anchor-scroll does not
+settle in headless - `viewport.mjs` kills snap+smooth for deterministic landing. zsh: no word-splitting of
+unquoted `$VAR` (pass ids as separate args; quote grep `--include` globs). Storybook `play()`: components with
+an entrance animation fail an instant `toBeVisible()` (assert `[hidden]`/content instead); `userEvent.keyboard`
+needs a `waitFor` after auto-focus. Pixel-diffing the tall full-screen sections is **noisy** (sub-pixel capture
+drift) - prefer DOM/structural diffing or the deterministic `viewport.mjs` for those.
 
 ## LOCKED decisions (do not relitigate)
 
-- two themes only: dark default (`--canvas #070706`) + a genuinely-white warm-paper light; palette
-  desaturated/earthy (amber `#cba35c` primary; teal/olive/clay/mauve). amber is a **scarce** accent.
+- two themes only: dark default (`--canvas #070706`) + a genuinely-white warm-paper light (`--canvas #fbfaf7`);
+  palette desaturated/earthy (amber `#cba35c` primary; teal/olive/clay/mauve). amber is a **scarce** accent.
 - all-lowercase ui chrome; never lowercase user content / code / data values.
-- vector icons only (Lucide + Simple Icons brand marks + the wheat logo); every inline `<svg>` carries a
-  `viewBox` + `width`/`height`. swatches paint their **literal hex**, never a themed var.
-- standardized tokens: 4/8 spacing, one type scale, one control height (36/28), radius 0.
+- **two-tier imagery:** functional UI / chrome / tools / status / nav are **vector (lucide) only** - no ascii
+  there. Procedural + filtered **ascii imagery is intentional** on low-traffic display surfaces (the wheat
+  hero video, the roots wordmark, the philosophy portrait field, the card thumbnails). Brand marks are inline
+  SVG `<symbol>`s. Every inline `<svg>` carries `viewBox` + `width`/`height`. Swatches paint their **literal
+  hex**, never a themed var.
+- standardized tokens: 4/8 spacing, one type scale (label14/sm14/body16/md18/lg22/xl28/hero40/display52, 16px
+  floor), one control height (36/28), radius 0. Never rename a token; values re-theme.
 - single elevated page (the owner chose this over multi-page). keep the fairtrade narrative.
-- neuroinclusive defaults ship in the tokens (16px floor, 1.5 line-height, 66ch measure, ≥3:1 borders,
-  global focus ring, ≥24/44px targets, tabular numbers, static-first motion). See `NEUROINCLUSIVE.md`.
+- neuroinclusive defaults ship in the tokens (16px floor, 1.5 line-height, ~66ch measure, ≥3:1 functional
+  borders, global focus ring, ≥24/44px targets, tabular numbers, static-first motion). See `NEUROINCLUSIVE.md`.
 
 ## the user's rules (enforced hard)
 
@@ -165,12 +188,13 @@ globs for grep). Storybook play tests: components with a `tabIn`/`menuIn` entran
 5. sharp tones / contrast; dark deep, light truly white, titles crisp.
 6. caves-of-qud flavor, never at the cost of readability.
 7. review everything yourself via screenshots before declaring done; spawn parallel QA-reviewers on the crops.
-8. namespace classes; avoid generic collisions.
+8. namespace classes; avoid generic collisions. (Lesson: a `.brand` section class once collided with the icon
+   `.brand` class and leaked nav styles - section/page classes use distinct namespaces.)
 
-## phase 2 — the rollout (deferred until approved)
+## phase 2 - the rollout (deferred until approved)
 
-Build the shared `@peasant-labs/theme` token package (`transcript-browser/packages/theme/src/tokens.css`
-mirrors the names via `--tb-*`). Swap values + fonts, retarget the three apps' globals
-(`peasant/web/src/app/globals.css`, `village/frontend/src/app/globals.css`, the viewer's `styles.css`). Token
-NAMES are preserved, so components reflavor in place; then fan out screen by screen. Full plan:
-[`UNIFICATION_PLAN.md`](./UNIFICATION_PLAN.md).
+Build the shared `@peasant-labs/theme` token package and a shared `@peasant-labs/ui` React package consumed by
+the docs site AND the three apps; swap values + fonts; retarget the apps' globals. **The premise "token names
+are preserved, only values change" is FALSE today** - there are three live token namespaces to reconcile first.
+Full plan + the cross-repo component catalog: [`UNIFICATION_PLAN.md`](./UNIFICATION_PLAN.md). Stay inside
+`unified-identity` until the owner approves the rollout.
