@@ -54,18 +54,23 @@ pnpm build-storybook # compile every component + story
 - `src/App.jsx` - composition root: nav, the hero/brand splash, philosophy, the docs (sticky rail +
   scroll-spy), the in-use showcase, footer.
 - `src/sections-react/*.jsx`, `src/DocSections.jsx`, `src/ComponentSections.jsx` - the documented sections.
-- `src/ui/*` - the typed component library; Storybook is the source of truth (`pnpm storybook`).
-- `src/mockups/inuse/*` - the in-use app demos (hand-rolled SVG, no chart libraries).
+- `src/ui/*` - the typed component library; Storybook is the source of truth (`pnpm storybook`). Tables
+  are TanStack-Table-backed (`DataTable`), charts are Recharts-backed (`ChartBar` / `ChartLine` /
+  `Sparkline`), and provider logos use `BrandMark` - all wrapped so the engines match the system.
+- `src/mockups/inuse/*` - the in-use app demos (hand-rolled SVG visualizations).
 - `src/index.css` - the single source of truth for design tokens and styling.
 - `src/effects.jsx` - the ascii filters (wheat video, soil, roots, portrait thumbnails).
 - `scripts/*` - the gate and QA scripts.
+- machine-readable for agents: `AGENTS.md` (hard rules + commands), `llms.txt`, and generated
+  `public/tokens.json` (W3C DTCG) + `public/components.json` (kept fresh by `pnpm llm:check`).
 
 ## gates / ci
 
-`pnpm build` runs a pure-JS WCAG contrast gate (both themes) then builds. `scripts/validate.mjs` is a
-20-check puppeteer interactive gate (icons, single h1, heading outline, copy-token labels, decorative
-icons `aria-hidden`, scroll-spy, zone header gating, command palette, dialog focus-trap, theme toggle, 0
-overflow at 360/390/768/1024/1440, reduced-motion, no console errors). `build-storybook` +
-`scripts/sbsmoke.mjs` load every story (incl. `play()`). All four run in CI
+`pnpm build` regenerates the machine-readable artifacts then runs a pure-JS WCAG contrast gate (both
+themes) before building; `pnpm llm:check` fails if those artifacts drift from their sources.
+`scripts/validate.mjs` is a 20-check puppeteer interactive gate (icons, single h1, heading outline,
+copy-token labels, decorative icons `aria-hidden`, scroll-spy, zone header gating, command palette, dialog
+focus-trap, theme toggle, 0 overflow at 360/390/768/1024/1440, reduced-motion, no console errors).
+`build-storybook` + `scripts/sbsmoke.mjs` load every story (incl. `play()`). All run in CI
 ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)); `deploy.yml` publishes to GitHub Pages with
 Storybook nested under `dist/storybook/`.
