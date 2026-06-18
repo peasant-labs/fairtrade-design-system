@@ -17,7 +17,7 @@ import {
   FileText,
   Link2,
 } from 'lucide-react'
-import { AsciiImage, AsciiRoots, AsciiSoilField, AsciiVideo } from './effects.jsx'
+import { AsciiImage, AsciiRoots, AsciiSoil, AsciiSoilField, AsciiVideo } from './effects.jsx'
 import CommandPalette from './CommandPalette.jsx'
 import Dialog from './Dialog.jsx'
 import InUseShell from './mockups/inuse/InUseShell.jsx'
@@ -216,15 +216,17 @@ function Hero() {
       if (!crop || !roots || !philos) return
       const y = window.scrollY
       if (y > philos.offsetTop + window.innerHeight * 0.5) return // in the docs / in-use: leave scroll native
-      if (Math.abs(e.deltaY) < 2) return
       e.preventDefault()
-      if (busy) return
+      // keep the cooldown alive as long as the gesture (incl. trackpad momentum) keeps firing wheels, so a
+      // single gesture advances AT MOST ONE section - you can never skip past one
+      clearTimeout(timer); timer = setTimeout(() => { busy = false }, 550)
+      if (busy || Math.abs(e.deltaY) < 2) return
+      busy = true
       const els = [crop, roots, philos]
       let idx = 0, best = Infinity
       els.forEach((el, i) => { const d = Math.abs(el.offsetTop - y); if (d < best) { best = d; idx = i } })
       const target = idx + (e.deltaY > 0 ? 1 : -1)
-      busy = true; clearTimeout(timer); timer = setTimeout(() => { busy = false }, 600)
-      if (target < 0) return
+      if (target < 0) { busy = false; return }
       if (target >= els.length) { document.getElementById('start')?.scrollIntoView({ behavior: 'smooth' }); return }
       els[target].scrollIntoView({ behavior: 'smooth' })
     }
@@ -242,8 +244,11 @@ function Hero() {
         <div className="hero-soil-bg" aria-hidden="true">
           <AsciiSoilField cols={300} seed={9} className="hero-soil-field" />
         </div>
+        <div className="hero-soil-band" aria-hidden="true">
+          <AsciiSoil cols={300} rows={9} seed={5} className="hero-soil-art" />
+        </div>
         <div className="hero-roots-wrap" aria-hidden="true">
-          <AsciiRoots cols={300} bases={13} seed={11} density={1.0} spread={0.7} ramp fill fan seeds={seeds} className="hero-roots" />
+          <AsciiRoots cols={300} bases={18} seed={11} density={1.2} spread={0.7} ramp fill fan seeds={seeds} className="hero-roots" />
         </div>
         <div className="hero-foot">
           <div className="hero-word" role="img" aria-label="fairtrade">fairtrade</div>

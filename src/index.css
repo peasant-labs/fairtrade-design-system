@@ -215,14 +215,20 @@
      .pds-root is already full width, so dropping the section max-width fills it cleanly */
   /* hero = ONE continuous piece (screen 1: only the video crop; screen 2: roots out of it + wordmark).
      a single wheat video, so nothing is duplicated. */
-  /* no solid background: the body's dotted-grid backdrop shows through behind the wheat, roots and wordmark */
-  .hero { position: relative; width: auto; margin-inline: 0; max-width: none; padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+  /* no solid background: the body's dotted-grid backdrop shows through behind the wheat, roots and wordmark.
+     margin-top cancels the sticky nav's reserved height so the splash fills from the very top (the nav is
+     hidden over it anyway) - without this there is a ~56px gap above the crop */
+  .hero { position: relative; width: auto; margin-inline: 0; max-width: none; padding: 0; margin-top: calc(-1 * var(--nav-h)); display: flex; flex-direction: column; overflow: hidden; }
   /* returning-visitor escape hatch: a quiet skip-to-docs button, top-right of the splash, faint until hover */
   .hero-skip { position: absolute; top: var(--sp-4); right: var(--sp-5); z-index: 6; font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-4); background: color-mix(in srgb, var(--canvas) 60%, transparent); border: 1px solid var(--rule); padding: var(--sp-1) var(--sp-3); cursor: pointer; opacity: 0.4; transition: opacity var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out); }
   .hero-skip:hover, .hero-skip:focus-visible { opacity: 1; color: var(--ink); border-color: var(--amber-dim); }
   /* dimmed soil texture filling the WHOLE brand section, behind the roots and the wordmark */
   .hero-soil-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; pointer-events: none; opacity: 0.14; }
   .hero .hero-soil-field { margin: 0; font-family: var(--font-mono); white-space: pre; font-size: clamp(5px, 0.95vw, 9.5px); line-height: 1; color: var(--ink-strong); }
+  /* the soil band: a full-width strip across the top of the brand section that fades out at the left/right
+     edges. sits in front of the dim bg but behind the roots, so the ground reads full-width under them. */
+  .hero-soil-band { position: absolute; top: 0; left: 0; right: 0; z-index: 1; overflow: hidden; display: flex; justify-content: center; pointer-events: none; opacity: 0.5; -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
+  .hero .hero-soil-art { margin: 0; font-family: var(--font-mono); white-space: pre; font-size: clamp(5px, 0.95vw, 9.5px); line-height: 1; color: var(--ink-strong); }
   /* screen 1: only the wheat video */
   .hero-crop { position: relative; height: 100vh; height: 100svh; overflow: hidden; }
   /* screen 2: the roots grow OUT of the video's base (a small negative margin overlaps it), down into
@@ -230,8 +236,8 @@
   /* no negative margin: the roots section sits RIGHT AFTER the crop (no overlap, no wheat bleeding into it).
      the roots fill this whole section from the top (right under the plant) down to the wordmark. */
   .hero-grow { position: relative; height: 100vh; height: 100svh; display: flex; flex-direction: column; overflow: hidden; z-index: 1; }
-  .hero-roots-wrap { position: relative; z-index: 1; flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; }
-  .hero-foot { flex: 0 0 auto; position: relative; z-index: 2; width: 100%; display: flex; align-items: center; justify-content: center; padding: clamp(var(--sp-3), 2vh, var(--sp-5)) var(--sp-3) clamp(var(--sp-5), 4vh, var(--sp-7)); }
+  .hero-roots-wrap { position: relative; z-index: 2; flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; }
+  .hero-foot { flex: 0 0 auto; position: relative; z-index: 3; width: 100%; display: flex; align-items: center; justify-content: center; padding: clamp(var(--sp-3), 2vh, var(--sp-5)) var(--sp-3) clamp(var(--sp-5), 4vh, var(--sp-7)); }
   /* the wordmark is plain white, no accent colour and no glow */
   .hero-word { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 16vw; line-height: 0.8; letter-spacing: -0.04em; color: var(--ink-strong); text-align: center; white-space: nowrap; }
 
