@@ -206,33 +206,6 @@ function Hero() {
     io.observe(el)
     return () => io.disconnect()
   }, [])
-  // strong snapping across the full-screen top zone (crop -> roots -> philosophy): any wheel gesture advances
-  // exactly one section so you never rest half-way between them. below philosophy the docs scroll natively.
-  useEffect(() => {
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    let busy = false, timer = 0
-    const onWheel = (e) => {
-      const crop = document.querySelector('.hero-crop'), roots = document.getElementById('brand'), philos = document.getElementById('manifesto')
-      if (!crop || !roots || !philos) return
-      const y = window.scrollY
-      if (y > philos.offsetTop + window.innerHeight * 0.5) return // in the docs / in-use: leave scroll native
-      e.preventDefault()
-      // keep the cooldown alive as long as the gesture (incl. trackpad momentum) keeps firing wheels, so a
-      // single gesture advances AT MOST ONE section - you can never skip past one
-      clearTimeout(timer); timer = setTimeout(() => { busy = false }, 550)
-      if (busy || Math.abs(e.deltaY) < 2) return
-      busy = true
-      const els = [crop, roots, philos]
-      let idx = 0, best = Infinity
-      els.forEach((el, i) => { const d = Math.abs(el.offsetTop - y); if (d < best) { best = d; idx = i } })
-      const target = idx + (e.deltaY > 0 ? 1 : -1)
-      if (target < 0) { busy = false; return }
-      if (target >= els.length) { document.getElementById('start')?.scrollIntoView({ behavior: 'smooth' }); return }
-      els[target].scrollIntoView({ behavior: 'smooth' })
-    }
-    window.addEventListener('wheel', onWheel, { passive: false })
-    return () => { window.removeEventListener('wheel', onWheel); clearTimeout(timer) }
-  }, [])
   const toDocs = () => document.getElementById('start')?.scrollIntoView({ behavior: 'smooth' })
   return (
     <section className="hero" id="top">
