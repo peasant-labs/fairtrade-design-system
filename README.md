@@ -49,18 +49,18 @@ pnpm build-storybook # compile every component + story
 - **standardized:** one 4/8 spacing scale, one type scale (16px floor), one control height, one border
   token, radius 0.
 
-## documentation
+## structure
 
-The working docs live in [`llm/`](./llm):
+- `src/App.jsx` - composition root: nav, the hero/brand splash, philosophy, the docs (sticky rail +
+  scroll-spy), the in-use showcase, footer.
+- `src/sections-react/*.jsx`, `src/DocSections.jsx`, `src/ComponentSections.jsx` - the documented sections.
+- `src/ui/*` - the typed component library; Storybook is the source of truth (`pnpm storybook`).
+- `src/mockups/inuse/*` - the in-use app demos (hand-rolled SVG, no chart libraries).
+- `src/index.css` - the single source of truth for design tokens and styling.
+- `src/effects.jsx` - the ascii filters (wheat video, soil, roots, portrait thumbnails).
+- `scripts/*` - the gate and QA scripts.
 
-- [`HANDOFF.md`](./llm/HANDOFF.md) - **start here**: current state, the hero/splash mechanics, scroll &
-  snapping, architecture, gates, locked decisions, the user's rules.
-- [`DESIGN.md`](./llm/DESIGN.md) - the system reference (tokens, principles, voice, component families).
-- [`PRESENTATION.md`](./llm/PRESENTATION.md) - the as-built page information architecture.
-- [`NEUROINCLUSIVE.md`](./llm/NEUROINCLUSIVE.md) - the accessibility defaults baked into the tokens.
-- [`UNIFICATION_PLAN.md`](./llm/UNIFICATION_PLAN.md) - the deferred cross-app rollout plan.
-
-## gates / CI
+## gates / ci
 
 `pnpm build` runs a pure-JS WCAG contrast gate (both themes) then builds. `scripts/validate.mjs` is a
 20-check puppeteer interactive gate (icons, single h1, heading outline, copy-token labels, decorative
