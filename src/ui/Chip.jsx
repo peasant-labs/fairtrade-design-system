@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Check, X } from 'lucide-react'
+import BrandMark from './BrandMark.jsx'
 
-/* chip family — the React port of the badges/states specimens. all variants ride the existing
-   parametric .chip chassis (26px box, hairline, lowercase mono) plus the additive chipx-* depth;
-   ZERO new css. icons are lucide component refs and inherit .chip .lucide sizing from index.css. */
+/* chip family, the React port of the badges/states specimens. all variants ride the existing
+   parametric .chip chassis (--chip-h box, hairline, mono) plus the additive chipx-* depth.
+   icons are lucide component refs and inherit .chip .lucide sizing from index.css; provider
+   chips lead with the real mark via the brand prop (BrandMark), never a generic glyph. */
 
 /**
  * @typedef {'ok'|'warn'|'err'} ChipTone
@@ -16,17 +18,22 @@ import { Check, X } from 'lucide-react'
  * @param {object} props
  * @param {ChipTone} [props.tone] - semantic tone -> .chip-ok / .chip-warn / .chip-err (default: none)
  * @param {ChipSize} [props.size] - 'sm' -> .chip-sm dense box (default: none)
- * @param {React.ElementType} [props.icon] - leading lucide icon component ref (e.g. icon={Hash})
+ * @param {string} [props.brand] - a provider/company name (claude, gemini, openai, cursor, opencode, or an alias).
+ *        When the chip names a company, pass this instead of `icon`: it leads with the real brand mark, never a generic glyph. (ignored when not resolvable)
+ * @param {React.ElementType} [props.icon] - leading lucide icon component ref (e.g. icon={Hash}) (ignored when `brand` is set)
+ * @param {boolean} [props.chrome=false] - mark this as a ui-chrome chip -> lowercases the label. Leave off for user content (ids, names, data values).
  * @param {boolean} [props.removable=false] - render a real .chipx-x button with an X icon
  * @param {() => void} [props.onRemove] - called when the x-button is clicked
- * @param {string} [props.removeLabel] - aria-label for the x-button (default: `remove ${children}`)
+ * @param {string} [props.removeLabel] - aria-label for the x-button (default: `remove ${children}`; effectively required when children is not a plain string)
  * @param {string} [props.className] - extra classes appended after the chip classes
- * @param {React.ReactNode} props.children - the chip label / content (not force-lowercased)
+ * @param {React.ReactNode} props.children - the chip label / content (not force-lowercased unless chrome)
  */
 export default function Chip({
   tone,
   size,
+  brand,
   icon: Icon,
+  chrome = false,
   removable = false,
   onRemove,
   removeLabel,
@@ -38,19 +45,25 @@ export default function Chip({
     'chip',
     tone && `chip-${tone}`,
     size === 'sm' && 'chip-sm',
+    chrome && 'chip-chrome',
     removable && 'chip-removable',
     className,
   ]
     .filter(Boolean)
     .join(' ')
 
+  if (import.meta.env?.DEV && removable && typeof children !== 'string' && !removeLabel) {
+    console.warn(
+      'Chip: removable chip has non-string children and no removeLabel; the remove button will announce a bare "remove". Pass removeLabel.',
+    )
+  }
+
   const label =
     removeLabel || (typeof children === 'string' ? `remove ${children}` : 'remove')
 
   return (
     <span className={cls} {...rest}>
-      {Icon && <Icon aria-hidden="true" />}
-      {Icon ? ' ' : null}
+      {brand ? <BrandMark name={brand} /> : Icon && <Icon aria-hidden="true" />}
       {children}
       {removable && (
         <button type="button" className="chipx-x" aria-label={label} onClick={onRemove}>
@@ -69,7 +82,8 @@ export default function Chip({
  * @param {boolean} [props.pressed] - controlled pressed state
  * @param {boolean} [props.defaultPressed=false] - initial pressed state when uncontrolled
  * @param {(next: boolean) => void} [props.onChange] - called with the next pressed state on click
- * @param {React.ElementType} [props.icon] - leading icon shown when NOT pressed (e.g. icon={Filter})
+ * @param {string} [props.brand] - a provider/company name; leads with the real brand mark when NOT pressed (ignored when `icon` is wanted instead)
+ * @param {React.ElementType} [props.icon] - leading icon shown when NOT pressed (e.g. icon={Filter}) (ignored when `brand` is set)
  * @param {string} [props.className] - extra classes appended after the chip classes
  * @param {React.ReactNode} props.children - the toggle label (not force-lowercased)
  */
@@ -77,6 +91,7 @@ export function FilterChip({
   pressed,
   defaultPressed = false,
   onChange,
+  brand,
   icon: Icon,
   className = '',
   children,
@@ -96,10 +111,9 @@ export function FilterChip({
 
   return (
     <button type="button" className={cls} aria-pressed={on} onClick={toggle} {...rest}>
-      {/* tick is always present; css hides it unless aria-pressed="true" */}
+      {/* tick is always present; css hides it unless aria-pressed is true */}
       <Check className="chipx-tick" aria-hidden="true" />
-      {!on && Icon && <Icon aria-hidden="true" />}
-      {' '}
+      {!on && (brand ? <BrandMark name={brand} /> : Icon && <Icon aria-hidden="true" />)}
       {children}
     </button>
   )
@@ -119,18 +133,16 @@ export function StatusDot({ label, color, bare = false, className = '', ...rest 
   const dot = <span className="chipx-dot" style={color ? { '--c': color } : undefined} />
   if (bare) {
     return (
-      <>
+      <span className="chipx-dot-inline" {...rest}>
         {dot}
-        {' '}
         {label}
-      </>
+      </span>
     )
   }
   const cls = ['chip', className].filter(Boolean).join(' ')
   return (
     <span className={cls} {...rest}>
       {dot}
-      {' '}
       {label}
     </span>
   )

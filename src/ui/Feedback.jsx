@@ -87,7 +87,7 @@ export function Progress({
       <div
         className="fb-prog-track"
         role="progressbar"
-        aria-valuenow={value}
+        aria-valuenow={Math.round(pct)}
         aria-valuemin={min}
         aria-valuemax={max}
         aria-label={trackLabel}

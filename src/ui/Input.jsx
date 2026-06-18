@@ -12,7 +12,7 @@ import { TriangleAlert, ChevronDown } from 'lucide-react';
  * Field — the label + control + hint/error wrapper (.is-field) the inputs compose into.
  * Renders the label above, the control (children) in the middle, and a hint (.is-hint) or, when
  * `error` is a non-empty string, an error (.is-error with a TriangleAlert icon) below. Wires the
- * label's htmlFor and the hint/error id to the control via the {labelId, descId, describedBy}
+ * label's htmlFor and the hint/error id to the control via the {id, describedBy, invalid}
  * render-prop args so the standalone <Field> can be used with any control. The shipped Input /
  * Textarea / Select use this internally, so most callers never touch Field directly.
  *
@@ -25,7 +25,7 @@ import { TriangleAlert, ChevronDown } from 'lucide-react';
  * @param {string} [props.error] - error message; a non-empty string renders `.is-error` (TriangleAlert
  *   + message) instead of the hint and is announced via aria-describedby.
  * @param {string} [props.id] - control id; auto-generated when omitted. Used for label htmlFor.
- * @param {(args:{id:string,labelId:string,descId:string|undefined,describedBy:string|undefined,invalid:boolean})=>React.ReactNode} props.children
+ * @param {(args:{id:string,describedBy:string|undefined,invalid:boolean})=>React.ReactNode} props.children
  *   - render-prop receiving wiring ids; returns the control element.
  * @returns {JSX.Element}
  */
@@ -48,7 +48,7 @@ export function Field({ label, lock: LockIcon, hint, error, id, children }) {
           )}
         </label>
       )}
-      {children({ id: fieldId, labelId: fieldId, descId, describedBy, invalid })}
+      {children({ id: fieldId, describedBy, invalid })}
       {invalid ? (
         <span className="is-error" id={descId}>
           <TriangleAlert className="lucide" aria-hidden="true" /> {error}

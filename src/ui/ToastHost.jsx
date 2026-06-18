@@ -14,20 +14,28 @@ import { Toast } from './Feedback.jsx'
 /* toast host (tsx-*): a NEW tier-2 layer over the presentational Toast (Feedback.jsx).
    it adds the queue, auto-dismiss, and the imperative toast.ok()/toast.err() api without
    changing the look of a single toast. one fixed, persistent aria-live="polite" region
-   created up front (a region added with its content is not reliably announced); an err
-   item additionally carries role="alert" so it speaks at once, mirroring the status vs
-   alert split in Feedback.jsx. each toast owns a setTimeout(duration) that PAUSES on
-   pointer-enter / focus-within and resumes on leave (a neuroinclusive must: never yank a
-   message a slow reader is mid-way through). max caps the visible stack and drops the
-   oldest from the front (fifo), never stacks off-screen. dismiss flips state to 'leave',
-   waits one --dur-2 (0 under reduced-motion) then removes. styling (tone, border, icon,
-   the >=24px dismiss target) is inherited from .fb-toast; the tsx-* css owns only
+   created up front (a region added with its content is not reliably announced); the inner
+   Toast owns its own role (status for ok, alert for err), mirroring the status vs alert
+   split in Feedback.jsx, so the wrapper adds no second live region. each toast owns a
+   setTimeout(duration) that PAUSES on pointer-enter / focus-within and resumes only when
+   focus or the pointer truly leaves the host (a neuroinclusive must: never yank a message
+   a slow reader is mid-way through, and never reset the countdown when tabbing between
+   stacked toasts). max caps the visible stack and hard-drops the oldest from the front
+   (fifo) so the live stack never overflows, never stacks off-screen. dismiss flips state
+   to 'leave', waits one --dur-2 (0 under reduced-motion) then removes. styling (tone,
+   border, icon, the dismiss target) is inherited from .fb-toast; the tsx-* css owns only
    placement, stacking, width and the enter/exit motion. amber stays scarce (status is
    olive/clay), square, all-lowercase chrome, no portals (fixed node, like the dialog). */
 
 const ToastCtx = createContext(null)
 
-const EXIT_MS = 160 // matches --dur-2; the exit transition window before removal.
+// the exit transition window before removal, read from --dur-2 so it can never drift
+// from the css exit animation. falls back to 160 when there is no document (ssr/tests).
+function exitMs() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return 160
+  const v = getComputedStyle(document.documentElement).getPropertyValue('--dur-2')
+  return parseFloat(v) || 160
+}
 
 const TONE = {
   ok: { icon: CircleCheck, title: 'done' },
@@ -37,12 +45,14 @@ const TONE = {
 function reducer(state, action) {
   switch (action.type) {
     case 'add': {
-      // cap on insert: drop the oldest non-leaving toast from the front (fifo).
+      // cap on insert: hard-remove the oldest non-leaving toast from the front (fifo).
+      // dropping it from state (rather than flipping to 'leave') keeps the live stack at
+      // most `max` tall, so a capped drop can never overflow the host and clip mid-row.
       let next = state
       const live = next.filter((t) => t.state !== 'leave')
       if (live.length >= action.max) {
         const oldest = live[0]
-        next = next.map((t) => (t.id === oldest.id ? { ...t, state: 'leave' } : t))
+        next = next.filter((t) => t.id !== oldest.id)
       }
       return [...next, action.toast]
     }
@@ -87,7 +97,6 @@ function prefersReducedMotion() {
  *        which corner the fixed region pins to and the edge new toasts enter from.
  * @param {number} [props.max=4]                    cap on simultaneously-visible toasts.
  * @param {number} [props.duration=5000]            default auto-dismiss ms; 0/Infinity = sticky.
- * @param {number} [props.gap]                      optional px override of the stack gap.
  * @param {boolean} [props.inline=false]            pin the host absolutely inside a relative
  *        container (for an in-frame doc/story example) instead of fixed to the viewport.
  */
@@ -96,7 +105,6 @@ export function ToastProvider({
   placement = 'bottom-right',
   max = 4,
   duration = 5000,
-  gap,
   inline = false,
 }) {
   const [toasts, dispatch] = useReducer(reducer, [])
@@ -104,6 +112,9 @@ export function ToastProvider({
   const counter = useRef(0)
   // per-toast timer bookkeeping: { timer, remaining, startedAt }.
   const timers = useRef(new Map())
+  // insertion order of currently-live (non-leaving) toast ids, used to apply the fifo
+  // cap and clean up the dropped toast's timer without reading state in show().
+  const liveIds = useRef([])
   const paused = useRef(false)
 
   const remove = useCallback((id) => {
@@ -120,8 +131,10 @@ export function ToastProvider({
         clearTimeout(rec.timer)
         timers.current.set(id, { ...rec, timer: null })
       }
+      // a leaving toast no longer counts toward the live cap.
+      liveIds.current = liveIds.current.filter((x) => x !== id)
       dispatch({ type: 'leave', id })
-      const wait = prefersReducedMotion() ? 0 : EXIT_MS
+      const wait = prefersReducedMotion() ? 0 : exitMs()
       const t = setTimeout(() => remove(id), wait)
       timers.current.set(id, { ...timers.current.get(id), exit: t })
     },
@@ -153,6 +166,17 @@ export function ToastProvider({
         closeLabel: opts.closeLabel ?? 'dismiss notification',
         state: 'enter',
       }
+      // mirror the reducer's fifo cap so the dropped toast's timer is cleared too
+      // (the reducer is pure and cannot reach the timer map). liveIds tracks insertion
+      // order of non-leaving toasts via a ref, so show() keeps a stable identity.
+      if (liveIds.current.length >= max) {
+        const droppedId = liveIds.current.shift()
+        const rec = timers.current.get(droppedId)
+        if (rec?.timer) clearTimeout(rec.timer)
+        if (rec?.exit) clearTimeout(rec.exit)
+        timers.current.delete(droppedId)
+      }
+      liveIds.current.push(id)
       dispatch({ type: 'add', toast, max })
       arm(id, dur)
       return id
@@ -191,9 +215,11 @@ export function ToastProvider({
       for (const [id, rec] of timers.current) {
         if (rec?.timer) clearTimeout(rec.timer)
       }
+      // every toast is leaving; none counts toward the live cap any more.
+      liveIds.current = []
       // run the exit transition on each, then remove.
       dispatch({ type: 'clear' })
-      const wait = prefersReducedMotion() ? 0 : EXIT_MS
+      const wait = prefersReducedMotion() ? 0 : exitMs()
       const snapshot = Array.from(timers.current.keys())
       setTimeout(() => {
         for (const id of snapshot) remove(id)
@@ -263,28 +289,24 @@ export function ToastProvider({
   const hostCls = ['tsx-host', `tsx-${placement}`, inline && 'tsx-host--inline']
     .filter(Boolean)
     .join(' ')
-  const hostStyle = gap != null ? { gap: `${gap}px` } : undefined
 
   return (
     <ToastCtx.Provider value={api}>
       {children}
       <div
         className={hostCls}
-        style={hostStyle}
         aria-live="polite"
         aria-atomic="false"
         onMouseEnter={pauseAll}
         onMouseLeave={resumeAll}
-        onFocus={pauseAll}
-        onBlur={resumeAll}
+        onFocusCapture={pauseAll}
+        onBlur={(e) => {
+          // only resume when focus actually leaves the host; ignore moves between toasts.
+          if (!e.currentTarget.contains(e.relatedTarget)) resumeAll()
+        }}
       >
         {toasts.map((t) => (
-          <div
-            key={t.id}
-            className="tsx-item"
-            data-state={t.state}
-            role={t.variant === 'err' ? 'alert' : undefined}
-          >
+          <div key={t.id} className="tsx-item" data-state={t.state}>
             <Toast
               variant={t.variant}
               title={t.title}

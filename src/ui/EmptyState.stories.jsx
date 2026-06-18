@@ -1,5 +1,6 @@
 import EmptyState from './EmptyState.jsx'
 import Button from './Button.jsx'
+import { frame } from './story-frame.jsx'
 import { Compass, Inbox, Users, ShieldAlert, Plus, Search } from 'lucide-react'
 
 /* CSF3: a Playground driven by argTypes plus one named story per meaningful state.
@@ -9,6 +10,7 @@ const meta = {
   title: 'feedback/EmptyState',
   component: EmptyState,
   tags: ['autodocs'],
+  decorators: frame('panel'),
   argTypes: {
     icon: { control: false },
     title: { control: 'text' },
@@ -87,4 +89,27 @@ export const ErrorState = {
       <Button variant="danger">retry redaction</Button>
     ),
   },
+}
+
+export const NoIcon = {
+  args: {
+    icon: undefined,
+    title: 'no transcripts yet',
+    message: 'nothing has been published to this collective yet.',
+  },
+}
+
+export const ActionViaChildren = {
+  args: {
+    icon: Plus,
+    title: 'start your first collective',
+    message: 'collectives bundle related transcripts.',
+  },
+  render: (args) => (
+    <EmptyState {...args}>
+      <Button variant="primary" icon={Plus}>
+        new collective
+      </Button>
+    </EmptyState>
+  ),
 }

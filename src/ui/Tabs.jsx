@@ -3,7 +3,7 @@ import { useId, useRef, useState } from 'react'
 /**
  * @typedef {Object} TabItem
  * @property {string} id        stable id for the tab/panel pair (used for ids + aria wiring)
- * @property {React.ReactNode} label  the tab's visible label (not force-lowercased)
+ * @property {React.ReactNode} label  the tab's visible label; force-lowercased as ui chrome, so pass a section name, never user content / proper nouns
  * @property {number} [count]   optional count shown in a .cnt badge after the label
  * @property {React.ReactNode} content  the panel's content
  */
@@ -84,7 +84,7 @@ export default function Tabs({ tabs, defaultTab, value, onChange, 'aria-label': 
           id={panelId(t.id)}
           role="tabpanel"
           aria-labelledby={tabId(t.id)}
-          tabIndex={0}
+          tabIndex={t.id === selected ? 0 : -1}
           hidden={t.id !== selected}
         >
           {t.content}

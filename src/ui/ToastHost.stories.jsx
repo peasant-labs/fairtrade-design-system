@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import ToastProvider, { useToast } from './ToastHost.jsx'
+import { frame } from './story-frame.jsx'
 
 /* toast host story. CSF3: a Playground driven by argTypes plus one named story per
    meaningful state (success, error, stacked, max cap, sticky, placements, reduced-motion,
@@ -7,13 +9,16 @@ import ToastProvider, { useToast } from './ToastHost.jsx'
    wraps <ToastProvider> around a button bar bound to useToast(). classes + tokens come
    from src/index.css via .storybook/preview.jsx; the theme toolbar flips data-theme.
    the host is pinned in-frame (inline variant, position:absolute) so toasts land inside
-   the decorator card rather than the page corner, giving axe + the play() tests a target.
+   the decorator card rather than the page corner, giving axe + the play() tests a target;
+   the meta runs inside the shared 'panel' (420) frame so the 360 toast sits in a stable
+   rail. the placements specimen self-fires a sticky toast in each of the six corners on
+   mount so the screenshot actually shows where each placement pins.
    play() asserts on text presence / the [data-state] attribute, never an instant
    toBeVisible() (the enter animation starts at opacity 0); auto-dismiss is checked with a
    generous real-time waitFor, not a wall-clock 5s. */
 
 /** a button bar bound to useToast(); reused by every story. */
-function Bar({ duration }) {
+function Bar() {
   const toast = useToast()
   return (
     <div className="btn-row">
@@ -52,7 +57,7 @@ function Bar({ duration }) {
 function Demo({ placement = 'bottom-right', max = 4, duration = 5000 }) {
   return (
     <ToastProvider placement={placement} max={max} duration={duration} inline>
-      <Bar duration={duration} />
+      <Bar />
     </ToastProvider>
   )
 }
@@ -62,6 +67,7 @@ const meta = {
   component: ToastProvider,
   tags: ['autodocs'],
   decorators: [
+    ...frame('panel'),
     (Story) => (
       <div style={{ minHeight: 320, position: 'relative' }}>
         <Story />
@@ -150,7 +156,7 @@ export const Sticky = {
 export const Placements = {
   render: () => (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-      {['top-left', 'top-right', 'bottom-left', 'bottom-right'].map((p) => (
+      {['top-left', 'top-right', 'bottom-left', 'bottom-right', 'top-center', 'bottom-center'].map((p) => (
         <div key={p} style={{ position: 'relative', minHeight: 180, border: '1px solid var(--rule)' }}>
           <ToastProvider placement={p} duration={0} inline>
             <div style={{ padding: 16 }}>
@@ -164,18 +170,16 @@ export const Placements = {
   ),
 }
 
+/** self-fires a sticky toast on mount so each placement specimen shows a pinned toast. */
 function Corner({ placement }) {
   const toast = useToast()
-  return (
-    <button
-      type="button"
-      className="btn btn-secondary btn-sm"
-      style={{ margin: 16 }}
-      onClick={() => toast.ok(`pinned to ${placement}.`, { title: 'placement' })}
-    >
-      fire
-    </button>
-  )
+  const fired = useRef(false)
+  useEffect(() => {
+    if (fired.current) return
+    fired.current = true
+    toast.ok(`pinned to ${placement}.`, { title: 'placement' })
+  }, [placement, toast])
+  return null
 }
 
 export const ReducedMotion = {

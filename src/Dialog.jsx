@@ -4,7 +4,9 @@ import { X } from 'lucide-react'
 /* a real, accessible modal dialog (the interactive version of the canvas-section specimen, and the
    pattern the apps copy). role=dialog + aria-modal + aria-labelledby; focus is trapped inside while
    open; Escape and a scrim click close it; focus returns to whatever was focused when it opened;
-   background scroll is locked. reuses the .scrim / .dialog / .dlg-* styles. */
+   background scroll is locked. reuses the .scrim / .dialog / .dlg-* styles.
+   when more than one Dialog can be open at once, callers must pass a unique labelId so the
+   aria-labelledby wiring does not collide on the default 'dlg-title' id. */
 export default function Dialog({ open, onClose, title, labelId = 'dlg-title', children, footer, returnFocusRef }) {
   const dialogRef = useRef(null)
   // latest onClose / returnFocusRef via refs so the effect can depend ONLY on `open`. if it also
@@ -56,8 +58,8 @@ export default function Dialog({ open, onClose, title, labelId = 'dlg-title', ch
       <div className="dialog framed" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={labelId} tabIndex={-1}>
         <div className="dlg-head">
           <h3 id={labelId}>{title}</h3>
-          <button className="btn btn-ghost btn-sm btn-icon" aria-label="close dialog" onClick={onClose}>
-            <X size={15} aria-hidden="true" />
+          <button className="btn btn-ghost btn-icon" aria-label="close dialog" onClick={onClose}>
+            <X aria-hidden="true" />
           </button>
         </div>
         <div className="dlg-body">{children}</div>

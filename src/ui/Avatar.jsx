@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
+import BrandMark from './BrandMark.jsx'
 
 /* small identity primitives ported from the avatar / kbd / tag specimen (src/sections/54-overlays.html).
    they emit the exact existing classes (.avatar / .av-* / .av-group / .kbd-key / .kbd-chord / .tag)
@@ -80,12 +81,14 @@ export function AvatarGroup({ label, children, className = '', ...rest }) {
  *
  * @param {object} props
  * @param {React.ComponentType} [props.icon] - a lucide icon component reference, rendered in place of text.
+ * @param {string} [props.label] - accessible name for an icon-only key (the glyph is aria-hidden, so a bare icon key would otherwise announce empty).
  * @param {React.ReactNode} [props.children] - the key label (e.g. "esc", "enter", "K").
  * @param {string} [props.className] - extra class names appended after .kbd-key.
  */
-export function Kbd({ icon: Icon, children, className = '', ...rest }) {
+export function Kbd({ icon: Icon, label, children, className = '', ...rest }) {
+  const a11y = Icon && label ? { 'aria-label': label } : {}
   return (
-    <kbd className={['kbd-key', className].filter(Boolean).join(' ')} {...rest}>
+    <kbd className={['kbd-key', className].filter(Boolean).join(' ')} {...a11y} {...rest}>
       {Icon ? <Icon aria-hidden="true" /> : children}
     </kbd>
   )
@@ -124,19 +127,21 @@ export function KbdChord({ label, children, className = '', ...rest }) {
  *
  * @param {object} props
  * @param {React.ReactNode} props.children - the tag label (sentence/case passed in is preserved; chrome is lowercased by CSS).
- * @param {React.ComponentType} [props.icon] - a lucide icon component reference rendered before the label.
+ * @param {string} [props.brand] - a provider/company name (claude, gemini, openai, cursor, opencode, or an alias).
+ *        When the tag names a company, pass this instead of `icon`: it leads with the real brand mark, never a generic glyph.
+ * @param {React.ComponentType} [props.icon] - a lucide icon component reference rendered before the label (ignored when `brand` is set).
  * @param {string} [props.dot] - a color value for the leading swatch dot (set as --tag-c).
  * @param {boolean} [props.selected] - apply the amber .tag-on state.
  * @param {() => void} [props.onRemove] - when set, render a real, labelled remove button (.tag-x).
  * @param {string} [props.removeLabel] - accessible label for the remove button; falls back to "remove tag".
  * @param {string} [props.className] - extra class names appended after .tag.
  */
-export function Tag({ children, icon: Icon, dot, selected = false, onRemove, removeLabel, className = '', ...rest }) {
+export function Tag({ children, brand, icon: Icon, dot, selected = false, onRemove, removeLabel, className = '', ...rest }) {
   const classes = ['tag', selected && 'tag-on', className].filter(Boolean).join(' ')
   return (
     <span className={classes} {...rest}>
       {dot && <span className="tag-dot" style={{ '--tag-c': dot }} />}
-      {Icon && <Icon aria-hidden="true" />}
+      {brand ? <BrandMark name={brand} /> : Icon && <Icon aria-hidden="true" />}
       {children}
       {onRemove && (
         <button

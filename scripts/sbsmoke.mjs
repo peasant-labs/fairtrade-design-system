@@ -37,8 +37,12 @@ for (const id of ids) {
   page.on('requestfailed', (r) => res404.push(r.url().split('/').pop() + ' (' + (r.failure()?.errorText || 'failed') + ')'))
   page.on('response', (r) => { if (r.status() === 404) res404.push(r.url().split('/').pop() + ' (404)') })
   try {
-    await page.goto(`http://localhost:${PORT}/iframe.html?id=${id}&viewMode=story`, { waitUntil: 'networkidle0', timeout: 20000 })
-    await new Promise((r) => setTimeout(r, 800)) // let play() run
+    // domcontentloaded (not networkidle0): stories whose play() drives heavy re-renders
+    // (e.g. the TanStack DataTable sort/select interactions) never settle to network-idle even
+    // with 0 in-flight requests, so networkidle0 false-times-out. errors are caught by the
+    // console/pageerror listeners regardless of the wait strategy; the settle delay lets play() run.
+    await page.goto(`http://localhost:${PORT}/iframe.html?id=${id}&viewMode=story`, { waitUntil: 'domcontentloaded', timeout: 20000 })
+    await new Promise((r) => setTimeout(r, 1200)) // let fonts paint + play() run
     const rootEmpty = await page.evaluate(() => { const r = document.querySelector('#storybook-root,#root'); return !r || r.childElementCount === 0 })
     // real failures = JS / assertion errors (play() throws are logged here); resource 404s are reported
     // separately (deliberate broken-image fallback demos + framework noise are not test failures)

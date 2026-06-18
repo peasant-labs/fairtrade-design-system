@@ -1,6 +1,7 @@
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import { FileSearch, AlertTriangle, Pencil } from 'lucide-react'
 import Timeline from './Timeline.jsx'
+import { frame } from './story-frame.jsx'
 
 /* timeline story. CSF3: a Playground driven by argTypes plus one named story per
    meaningful axis (roles + tints, every built-in tool renderer, the two render props,
@@ -137,6 +138,7 @@ const meta = {
   title: 'components/Timeline',
   component: Timeline,
   tags: ['autodocs'],
+  decorators: frame('wide'),
   argTypes: {
     dense: { control: 'boolean' },
     ariaLabel: { control: 'text' },
@@ -302,6 +304,24 @@ export const SubagentThread = {
       { id: 'st-a1', kind: 'turn', role: 'assistant', label: '2c', time: 'now', tokens: { in: 1900, out: 980 }, body: 'spawning a subagent to document the contract.' },
       { id: 'st-s1', kind: 'turn', role: 'subagent', depth: 1, subagent: 'docs-writer', label: '2d', time: 'now', tokens: { in: 1700, out: 1140 }, body: 'a depth-1 subagent turn; the spine stays continuous through the inset.' },
       { id: 'st-a2', kind: 'turn', role: 'assistant', label: '2e', time: 'now', final: true, tokens: { in: 980, out: 720 }, body: 'returned to the main thread.' },
+    ],
+  },
+}
+
+export const ErrorTurn = {
+  args: {
+    items: [
+      { id: 'et-a1', kind: 'turn', role: 'assistant', label: '3a', time: 'now', tokens: { in: 1200, out: 410 }, body: 'attempting the typecheck before the guard landed.' },
+      { id: 'et-a2', kind: 'turn', role: 'assistant', label: '3b', time: 'now', error: true, tokens: { in: 1500, out: 90 }, body: 'the workspace typecheck failed; the error is paired with the red dot and the error label, never colour alone.' },
+    ],
+  },
+}
+
+export const FinalTurn = {
+  args: {
+    items: [
+      { id: 'ft-a1', kind: 'turn', role: 'assistant', label: '4a', time: 'now', tokens: { in: 980, out: 320 }, body: 'one more pass over the renderer.' },
+      { id: 'ft-a2', kind: 'turn', role: 'assistant', label: '4b', time: 'now', final: true, tokens: { in: 640, out: 410 }, body: 'the last assistant turn; the spine caps below it.' },
     ],
   },
 }

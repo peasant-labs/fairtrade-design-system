@@ -4,7 +4,7 @@ import { ChevronRight, Check } from 'lucide-react';
  * @typedef {Object} CrumbItem
  * @property {string} label - the crumb text
  * @property {string} [href] - optional link target; when present the crumb renders as an <a>
- * @property {React.ComponentType<{size?: number}>} [icon] - optional leading lucide icon component (e.g. icon={Folder})
+ * @property {React.ComponentType<{className?: string}>} [icon] - optional leading lucide icon component (e.g. icon={Folder})
  */
 
 /**
@@ -26,13 +26,13 @@ export default function Breadcrumb({ items = [], label = 'breadcrumb' }) {
           const isCur = i === items.length - 1;
           const Icon = item.icon;
           const content = (
-            <>
-              {Icon ? <Icon size={13} aria-hidden="true" /> : null}
+            <span className="crumb-item">
+              {Icon ? <Icon className="lucide" aria-hidden="true" /> : null}
               {item.label}
-            </>
+            </span>
           );
           return (
-            <span key={i} style={{ display: 'contents' }}>
+            <span key={item.href || item.label + i} style={{ display: 'contents' }}>
               {item.href && !isCur ? (
                 <a href={item.href}>{content}</a>
               ) : isCur ? (
@@ -76,9 +76,9 @@ export function Steps({ steps = [] }) {
         const cls =
           'step' + (status === 'done' ? ' done' : status === 'cur' ? ' cur' : '');
         return (
-          <span key={i} style={{ display: 'contents' }}>
+          <span key={step.label + i} style={{ display: 'contents' }}>
             <span className={cls}>
-              <span className="num">
+              <span className="num tnum">
                 {status === 'done' ? (
                   <Check className="lucide" aria-hidden="true" />
                 ) : (

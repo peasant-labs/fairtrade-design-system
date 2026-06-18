@@ -24,12 +24,18 @@ function pageRange(page, total, sibling) {
   // first, last, current +/- sibling, and the two pages adjacent to the ends so a
   // single hidden page never becomes a gap (an ellipsis hiding one page wastes a slot)
   const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i)
+
+  if (total <= 1) return [1]
+  // when the whole range fits in the slot budget, show every page so the bar holds one
+  // stable width across pages (an ellipsis that hides only one page just wastes a slot
+  // and makes the bar narrower on some pages than others)
+  if (total <= 7) return range(1, total)
+
   const left = Math.max(2, page - sibling)
   const right = Math.min(total - 1, page + sibling)
   const showLeftGap = left > 3
   const showRightGap = right < total - 2
 
-  if (total <= 1) return [1]
   // how many fixed slots: first + last + current window + (gaps or the single page each gap would hide)
   if (!showLeftGap && !showRightGap) return range(1, total)
   if (showLeftGap && !showRightGap) return [1, 'gap-l', ...range(left, total)]
@@ -90,7 +96,7 @@ export default function Pagination({
         disabled={atStart}
         onClick={() => go(current - 1)}
       >
-        <ChevronLeft size={14} aria-hidden="true" />
+        <ChevronLeft aria-hidden="true" />
         <span>prev</span>
       </button>
       <ul className="pgn-list">
@@ -122,7 +128,7 @@ export default function Pagination({
         onClick={() => go(current + 1)}
       >
         <span>next</span>
-        <ChevronRight size={14} aria-hidden="true" />
+        <ChevronRight aria-hidden="true" />
       </button>
     </nav>
   )

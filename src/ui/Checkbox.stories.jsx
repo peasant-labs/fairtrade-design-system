@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import Checkbox, { Radio, RadioGroup } from './Checkbox.jsx'
+import BrandMark from './BrandMark.jsx'
+import { frame } from './story-frame.jsx'
 
 /* checkbox primary; radio + radiogroup shown via render fns. CSF3: a Playground driven by argTypes
    plus one named story per meaningful state. classes + tokens come from src/index.css via
@@ -9,8 +11,8 @@ const meta = {
   title: 'controls/Checkbox',
   component: Checkbox,
   tags: ['autodocs'],
+  decorators: frame('panel'),
   argTypes: {
-    checked: { control: 'boolean' },
     defaultChecked: { control: 'boolean' },
     disabled: { control: 'boolean' },
     children: { control: 'text' },
@@ -40,11 +42,18 @@ export const Group = {
   ),
 }
 
-export const SingleRadio = {
+export const LicenseRadios = {
   render: () => (
-    <Radio name="license" value="cc-by-sa" defaultChecked>
-      cc-by-sa 4.0
-    </Radio>
+    <RadioGroup
+      name="license"
+      ariaLabel="transcript license"
+      defaultValue="cc-by-sa"
+      options={[
+        { value: 'cc-by-sa', label: 'cc-by-sa 4.0' },
+        { value: 'cc-by', label: 'cc-by 4.0' },
+        { value: 'all-rights', label: 'all rights reserved' },
+      ]}
+    />
   ),
 }
 
@@ -55,8 +64,22 @@ export const RadioGroupProviders = {
       ariaLabel="transcript provider"
       defaultValue="claude-code"
       options={[
-        { value: 'claude-code', label: 'claude-code' },
-        { value: 'gemini-cli', label: 'gemini-cli' },
+        {
+          value: 'claude-code',
+          label: (
+            <span className="check-brand">
+              <BrandMark name="claude" /> claude-code
+            </span>
+          ),
+        },
+        {
+          value: 'gemini-cli',
+          label: (
+            <span className="check-brand">
+              <BrandMark name="gemini" /> gemini-cli
+            </span>
+          ),
+        },
         { value: 'manual-paste', label: 'manual paste' },
         { value: 'internal-tool', label: 'internal tool (disabled)', disabled: true },
       ]}

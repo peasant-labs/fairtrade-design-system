@@ -1,0 +1,23 @@
+# fairtrade design system
+
+> One design system for peasant, village, and transcript-browser: square, token-driven, two
+> themes (deep dark + truly-white light), neuroinclusive by default, calm desaturated earthy
+> palette with amber as a scarce accent. Built with React 19 + Tailwind v4; documented in a
+> single-page site and a Storybook component library. This file points an agent at the
+> machine-readable sources; read AGENTS.md first for the hard invariants.
+
+## start here
+- [AGENTS.md](/AGENTS.md): stack, commands, and the hard rules every change must respect.
+- [tokens.json](/tokens.json): all design tokens (colour both themes, spacing, type, motion) in DTCG shape.
+- [components.json](/components.json): the component manifest (name, category, props, controls, stories).
+
+## design reference
+- [llm/DESIGN.md](/llm/DESIGN.md): the system - philosophy, tokens, typography, iconography, voice.
+- [llm/NEUROINCLUSIVE.md](/llm/NEUROINCLUSIVE.md): the neuroinclusive defaults baked into the tokens.
+- [llm/RESEARCH_DECISIONS.md](/llm/RESEARCH_DECISIONS.md): why TanStack Table, Recharts, BrandMark, and the llm artifacts.
+- [README.md](/README.md): human-facing overview and quick start.
+
+## using it
+- Import components from the `src/ui` barrel; they emit token-styled classes from `src/index.css`.
+- Never hardcode a colour or size - reference a token. Keep both themes and WCAG AA contrast.
+- Name a company with its real logo via `<BrandMark name="claude|gemini|openai|cursor|opencode" />`.

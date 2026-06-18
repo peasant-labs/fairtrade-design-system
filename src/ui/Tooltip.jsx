@@ -1,4 +1,4 @@
-import { cloneElement, useEffect, useId, useRef, useState } from 'react'
+import { cloneElement, isValidElement, useEffect, useId, useRef, useState } from 'react'
 
 /* tooltip + popover overlays (the interactive version of the canvas-section specimens, and the
    pattern the apps copy). both reuse the namespaced .tip-* / .pop-* styling so the live tools match
@@ -7,7 +7,7 @@ import { cloneElement, useEffect, useId, useRef, useState } from 'react'
 /**
  * @typedef {Object} TooltipProps
  * @property {React.ReactNode} content    short, single-line helper text shown in the .tip-bubble (role=tooltip).
- * @property {React.ReactNode} children   the trigger; receives id-less wiring via aria-describedby.
+ * @property {React.ReactElement} children   the trigger: a single focusable, already-named element (e.g. a button or link). it receives aria-describedby pointing at the bubble.
  * @property {string} [id]                id for the bubble, linked from the trigger via aria-describedby. auto-generated if omitted.
  */
 
@@ -41,13 +41,17 @@ export default function Tooltip({ content, children, id }) {
 }
 
 /* clone the single trigger element to attach aria-describedby, so the bubble describes (never names)
-   the control. matches the specimen: one already-named button per anchor. non-element children
-   (plain text) are returned as-is. */
+   the control. matches the specimen: one already-named, focusable element per anchor. a plain-text or
+   multi-element child cannot carry the describing relationship and would orphan the bubble, so warn in
+   dev and render the child untouched. */
 function Described({ children, describedById }) {
-  if (children && typeof children === 'object' && children.type) {
+  if (isValidElement(children)) {
     const existing = children.props['aria-describedby']
     const merged = existing ? `${existing} ${describedById}` : describedById
     return cloneElement(children, { 'aria-describedby': merged })
+  }
+  if (import.meta.env?.DEV) {
+    console.warn('Tooltip: children must be a single focusable element so the bubble can describe it via aria-describedby; received a non-element child, leaving it unwired.')
   }
   return children
 }
@@ -57,7 +61,7 @@ function Described({ children, describedById }) {
  * @property {React.ReactNode} children   the trigger button content (e.g. an icon + label).
  * @property {string} label               accessible name for the floating dialog (aria-label on .pop-card).
  * @property {React.ReactNode} [title]    .pop-title text shown in the .pop-head; defaults to `label`.
- * @property {import('react').ComponentType<{size?: number}>} [icon]  lucide icon component for the .pop-head; decorative.
+ * @property {import('react').ComponentType} [icon]  lucide icon component for the .pop-head; decorative, sized by css (.pop-head .lucide -> --ic-sm).
  * @property {React.ReactNode} content    the .pop-body content.
  * @property {React.ReactNode} [footer]   the .pop-foot content (e.g. cancel / confirm buttons).
  * @property {string} [triggerClassName]  classes for the trigger button. defaults to "btn btn-secondary btn-sm".
@@ -114,7 +118,7 @@ export function Popover({
       {open && (
         <div className="pop-card" role="dialog" aria-label={label} id={popId}>
           <div className="pop-head">
-            {Icon && <Icon size={14} aria-hidden="true" />}
+            {Icon && <Icon aria-hidden="true" />}
             <span className="pop-title">{title ?? label}</span>
           </div>
           <div className="pop-body">{content}</div>

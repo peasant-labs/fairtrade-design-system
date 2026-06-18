@@ -1,5 +1,8 @@
+import { expect, within } from 'storybook/test'
 import Card, { CardImg, Row, MetaItem } from './Card.jsx'
-import { Clock, MessageSquare, ScissorsLineDashed, Users, Star, FileText } from 'lucide-react'
+import BrandMark from './BrandMark.jsx'
+import { frame } from './story-frame.jsx'
+import { Clock, MessageSquare, ScissorsLineDashed, Users, Star, FileText, Hash } from 'lucide-react'
 
 /* card & row primitives storied: the default export is the bare <Card/> surface; CardImg, Row and
    MetaItem are shown via render fns under one meta/title. classes + tokens come from src/index.css via
@@ -32,6 +35,7 @@ const meta = {
   title: 'components/Card',
   component: Card,
   tags: ['autodocs'],
+  decorators: frame('panel'),
   argTypes: {
     link: { control: 'boolean' },
     className: { control: 'text' },
@@ -62,7 +66,7 @@ export const AsLink = {
     children: (
       <div className="card-body">
         <h3>onboarding a new collective</h3>
-        <p className="desc">click anywhere — the entire surface is one target.</p>
+        <p className="desc">click anywhere. the entire surface is one target.</p>
       </div>
     ),
   },
@@ -76,8 +80,9 @@ export const Imagery = {
       thumb={<Thumb label="claude-code" />}
       head={
         <>
+          <BrandMark name="claude" />
           <span className="grow">claude-code</span>
-          <MessageSquare size={14} aria-hidden="true" />
+          <MessageSquare aria-hidden="true" />
         </>
       }
       title="refactoring the consent ledger"
@@ -103,11 +108,12 @@ export const Redacted = {
       thumb={<Thumb label="gemini-cli" />}
       head={
         <>
+          <BrandMark name="gemini" />
           <span className="grow">gemini-cli</span>
-          <ScissorsLineDashed size={14} aria-hidden="true" />
+          <ScissorsLineDashed aria-hidden="true" />
         </>
       }
-      title="incident replay — payment outage"
+      title="incident replay: payment outage"
       desc="shared with heavy redaction; account ids and tokens scrubbed before this entered the commons."
       bullets={['redacted: 22 spans', 'visibility: collective-only', 'retention: 90 days']}
       foot={
@@ -128,7 +134,7 @@ export const Minimal = {
     <CardImg
       link={false}
       title="a quiet pairing session"
-      desc="just a title and a summary — every other slot is optional."
+      desc="just a title and a summary, every other slot is optional."
     />
   ),
 }
@@ -157,7 +163,7 @@ export const RowList = {
       </Row>
       <Row>
         <span className="avatar" aria-hidden="true">gc</span>
-        <span className="grow">incident replay — payment outage</span>
+        <span className="grow">incident replay: payment outage</span>
         <MetaItem icon={Users}>on-call guild</MetaItem>
         <MetaItem icon={Clock} value="1h 06m" />
       </Row>
@@ -179,7 +185,50 @@ export const MetaItems = {
       <MetaItem icon={Star}>featured</MetaItem>
       <MetaItem icon={FileText} value="14">files</MetaItem>
       <span className="grow" />
-      <MetaItem className="mono" value="t-0042">id</MetaItem>
+      <MetaItem className="mono" icon={Hash}>id <b className="tnum">t-0042</b></MetaItem>
     </Row>
+  ),
+}
+
+/* a link card with focus moved onto it, so the global 3px focus ring is visible in both themes */
+export const Focused = {
+  ...AsLink,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const link = canvas.getByRole('link', { name: /onboarding a new collective/i })
+    link.focus()
+    expect(link).toHaveFocus()
+  },
+}
+
+/* coverage for the optional CardImg slots in isolation: head-only, foot-only, bullets-only,
+   and the children passthrough that renders after the slotted body */
+export const Slots = {
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+      <CardImg
+        link={false}
+        head={
+          <>
+            <BrandMark name="claude" />
+            <span className="grow">claude-code</span>
+          </>
+        }
+      />
+      <CardImg
+        link={false}
+        foot={
+          <>
+            <span className="avatar" aria-hidden="true">rc</span>
+            <span className="grow">riverbend collective</span>
+            <MetaItem icon={Clock} value="42m" />
+          </>
+        }
+      />
+      <CardImg link={false} bullets={['scope: 14 files touched', 'redacted: 3 secrets, 1 email']} />
+      <CardImg link={false} title="passthrough body">
+        <p className="desc">children render after the slotted body, before the foot.</p>
+      </CardImg>
+    </div>
   ),
 }

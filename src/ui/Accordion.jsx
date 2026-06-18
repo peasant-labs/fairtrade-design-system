@@ -31,9 +31,11 @@ import { ChevronDown } from 'lucide-react'
  * @param {string|string[]} [props.defaultOpen]         id(s) open on mount; a lone string or an array.
  *        when allowMultiple is false only the first matching id is honoured (default: none open)
  * @param {boolean} [props.allowMultiple=false]         allow several items open simultaneously
+ * @param {number} [props.headingLevel=3]               heading level (1-6) for each item header,
+ *        so the accordion fits the surrounding document outline (default: h3)
  * @param {string} [props['aria-label']]                accessible name for the accordion group
  */
-export default function Accordion({ items, defaultOpen, allowMultiple = false, 'aria-label': ariaLabel }) {
+export default function Accordion({ items, defaultOpen, allowMultiple = false, headingLevel = 3, 'aria-label': ariaLabel }) {
   const baseId = useId()
   const headerRefs = useRef([])
 
@@ -70,6 +72,19 @@ export default function Accordion({ items, defaultOpen, allowMultiple = false, '
   const headId = (id) => `${baseId}-head-${id}`
   const panelId = (id) => `${baseId}-panel-${id}`
 
+  // clamp the heading level to a valid 1-6 and render that real heading element.
+  const Heading = `h${Math.min(Math.max(headingLevel, 1), 6)}`
+
+  // empty guard: render a stable, full-width box with a lowercase chrome message
+  // instead of a near-zero floating bordered rectangle.
+  if (!items || items.length === 0) {
+    return (
+      <div className="acc acc-empty" role="group" aria-label={ariaLabel}>
+        <p className="acc-empty-msg">no items</p>
+      </div>
+    )
+  }
+
   return (
     <div className="acc" role="group" aria-label={ariaLabel} onKeyDown={onHeaderKey}>
       {items.map((it, idx) => {
@@ -77,13 +92,13 @@ export default function Accordion({ items, defaultOpen, allowMultiple = false, '
         const Icon = it.icon
         return (
           <div className={open ? 'acc-item acc-open' : 'acc-item'} key={it.id}>
-            <h3 className="acc-h">
+            <Heading className="acc-h">
               <button
                 ref={(el) => { headerRefs.current[idx] = el }}
                 type="button"
                 className="acc-trigger"
                 id={headId(it.id)}
-                aria-expanded={open ? 'true' : 'false'}
+                aria-expanded={open}
                 aria-controls={panelId(it.id)}
                 onClick={() => toggle(it.id)}
               >
@@ -91,7 +106,7 @@ export default function Accordion({ items, defaultOpen, allowMultiple = false, '
                 <span className="acc-title">{it.title}</span>
                 <ChevronDown className="acc-chevron" aria-hidden="true" />
               </button>
-            </h3>
+            </Heading>
             <div
               className="acc-region"
               id={panelId(it.id)}

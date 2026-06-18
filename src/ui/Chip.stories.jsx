@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { expect, fn, userEvent, within, waitFor } from 'storybook/test'
-import { Hash, Tag, Filter, Bot, ShieldCheck } from 'lucide-react'
+import { Hash, Tag, Filter, Mail, ShieldCheck } from 'lucide-react'
 import Chip, { FilterChip, StatusDot, CountBadge } from './Chip.jsx'
 
 /* chip family stories. CSF3: a Playground driven by argTypes plus one named story per
@@ -13,36 +13,61 @@ const meta = {
   argTypes: {
     tone: { control: 'inline-radio', options: [undefined, 'ok', 'warn', 'err'] },
     size: { control: 'inline-radio', options: [undefined, 'sm'] },
+    brand: { control: 'inline-radio', options: [undefined, 'claude', 'gemini', 'openai', 'cursor', 'opencode'] },
+    chrome: { control: 'boolean' },
     removable: { control: 'boolean' },
     children: { control: 'text' },
   },
-  args: { children: 'claude-code', tone: undefined, size: undefined, removable: false },
+  args: { children: 'claude-code', brand: 'claude', tone: undefined, size: undefined, chrome: false, removable: false },
 }
 export default meta
 
 export const Playground = {}
 
-export const WithIcon = { args: { icon: Hash, children: 'transcript-0042' } }
+export const WithIcon = { args: { brand: undefined, icon: Hash, children: 'transcript-0042' } }
 
-export const ToneOk = { args: { tone: 'ok', icon: ShieldCheck, children: 'redacted' } }
-export const ToneWarn = { args: { tone: 'warn', children: 'review pending' } }
-export const ToneErr = { args: { tone: 'err', children: 'consent revoked' } }
+export const ToneOk = { args: { brand: undefined, tone: 'ok', icon: ShieldCheck, chrome: true, children: 'redacted' } }
+export const ToneWarn = { args: { brand: undefined, tone: 'warn', chrome: true, children: 'review pending' } }
+export const ToneErr = { args: { brand: undefined, tone: 'err', chrome: true, children: 'consent revoked' } }
 
-export const Small = { args: { size: 'sm', icon: Tag, children: 'gemini-cli' } }
+export const Small = { args: { size: 'sm', brand: 'gemini', children: 'gemini-cli' } }
+
+export const SmallTones = {
+  render: () => (
+    <div className="chips">
+      <Chip size="sm" tone="ok" icon={ShieldCheck} chrome>redacted</Chip>
+      <Chip size="sm" tone="warn" chrome>review pending</Chip>
+      <Chip size="sm" tone="err" chrome>consent revoked</Chip>
+    </div>
+  ),
+}
+
+export const RemovableSmall = {
+  args: {
+    brand: undefined,
+    size: 'sm',
+    removable: true,
+    icon: Tag,
+    children: 'collective: open-commons',
+    removeLabel: 'remove collective: open-commons',
+    onRemove: fn(),
+  },
+}
 
 export const Tones = {
   render: () => (
-    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-      <Chip icon={Bot}>claude-code</Chip>
-      <Chip tone="ok" icon={ShieldCheck}>redacted</Chip>
-      <Chip tone="warn">review pending</Chip>
-      <Chip tone="err">consent revoked</Chip>
+    <div className="chips">
+      <Chip brand="claude">claude-code</Chip>
+      <Chip tone="ok" icon={ShieldCheck} chrome>redacted</Chip>
+      <Chip tone="warn" chrome>review pending</Chip>
+      <Chip tone="err" chrome>consent revoked</Chip>
     </div>
   ),
 }
 
 export const Removable = {
   args: {
+    brand: undefined,
     removable: true,
     icon: Tag,
     children: 'collective: open-commons',
@@ -59,9 +84,9 @@ export const Removable = {
 export const Filter_ = {
   name: 'FilterChip',
   render: () => (
-    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-      <FilterChip icon={Filter} defaultPressed>claude-code</FilterChip>
-      <FilterChip icon={Filter}>gemini-cli</FilterChip>
+    <div className="chips">
+      <FilterChip brand="claude" defaultPressed>claude-code</FilterChip>
+      <FilterChip brand="gemini">gemini-cli</FilterChip>
       <FilterChip icon={Filter}>redacted only</FilterChip>
     </div>
   ),
@@ -87,10 +112,21 @@ export const FilterControlled = {
 export const Status = {
   name: 'StatusDot',
   render: () => (
-    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-      <StatusDot label="published" color="var(--ok, #6aa84f)" />
-      <StatusDot label="awaiting consent" color="var(--warn, #e0a800)" />
-      <StatusDot label="withdrawn" color="var(--err, #c0392b)" />
+    <div className="chips">
+      <StatusDot label="published" color="var(--olive)" />
+      <StatusDot label="awaiting consent" color="var(--amber)" />
+      <StatusDot label="withdrawn" color="var(--clay)" />
+    </div>
+  ),
+}
+
+export const StatusDotBare = {
+  name: 'StatusDot (bare)',
+  render: () => (
+    <div className="chips">
+      <StatusDot bare label="published" color="var(--olive)" />
+      <StatusDot bare label="awaiting consent" color="var(--amber)" />
+      <StatusDot bare label="withdrawn" color="var(--clay)" />
     </div>
   ),
 }
@@ -98,9 +134,9 @@ export const Status = {
 export const Count = {
   name: 'CountBadge',
   render: () => (
-    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-      <Chip icon={Hash}>transcripts <CountBadge count={128} /></Chip>
-      <Chip icon={Bot}>unread <CountBadge count={7} unread /></Chip>
+    <div className="chips">
+      <Chip icon={Hash} chrome>transcripts <CountBadge count={128} /></Chip>
+      <Chip icon={Mail} chrome>unread <CountBadge count={7} unread /></Chip>
     </div>
   ),
 }

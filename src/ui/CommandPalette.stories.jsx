@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { fn, expect, userEvent, within, waitFor } from 'storybook/test'
 import CommandPalette from './CommandPalette.jsx'
+import { frame } from './story-frame.jsx'
 
 /* the command palette is controlled by an `open` prop, so every story wraps it in a small
    stateful harness with a real trigger button. that lets the play test open it, drive the
@@ -22,8 +23,8 @@ function Harness({ sections = SECTIONS, onClose, onTheme, startOpen = false }) {
   const [open, setOpen] = useState(startOpen)
   return (
     <div>
-      <button type="button" onClick={() => setOpen(true)}>
-        search ⌘k
+      <button type="button" className="navctl bx" onClick={() => setOpen(true)}>
+        search <span className="kbd">⌘k</span>
       </button>
       <CommandPalette
         open={open}
@@ -42,6 +43,7 @@ const meta = {
   title: 'overlays/CommandPalette',
   component: CommandPalette,
   tags: ['autodocs'],
+  decorators: frame('wide'),
   argTypes: {
     open: { control: 'boolean' },
     sections: { control: 'object' },
@@ -56,18 +58,27 @@ const meta = {
 }
 export default meta
 
-/* the canonical, controllable view: flip `open` in the controls or via the trigger button. */
+/* the canonical, controllable view: flip `open` in the controls or via the trigger button.
+   the live palette is a position:fixed overlay offset 12vh from the top, so the open stories
+   render at fullscreen layout inside a tall wrapper - otherwise the panel lands above the
+   clipped canvas and never appears in a screenshot. */
 export const Playground = {
+  parameters: { layout: 'fullscreen' },
   render: (args) => (
-    <Harness sections={args.sections} onClose={args.onClose} onTheme={args.onTheme} startOpen={args.open} />
+    <div style={{ minHeight: '100vh', padding: 'var(--sp-5)' }}>
+      <Harness sections={args.sections} onClose={args.onClose} onTheme={args.onTheme} startOpen={args.open} />
+    </div>
   ),
 }
 
 /* opens via the trigger, then drives the keyboard end-to-end. tolerant assertions: the palette
    may surface as a [role=dialog] and/or a search input. */
 export const Default = {
+  parameters: { layout: 'fullscreen' },
   render: (args) => (
-    <Harness sections={args.sections} onClose={args.onClose} onTheme={args.onTheme} />
+    <div style={{ minHeight: '100vh', padding: 'var(--sp-5)' }}>
+      <Harness sections={args.sections} onClose={args.onClose} onTheme={args.onTheme} />
+    </div>
   ),
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
@@ -98,8 +109,11 @@ export const Default = {
 
 /* typing narrows the listbox to a single matching section. */
 export const Filtered = {
+  parameters: { layout: 'fullscreen' },
   render: (args) => (
-    <Harness sections={args.sections} onClose={args.onClose} onTheme={args.onTheme} startOpen />
+    <div style={{ minHeight: '100vh', padding: 'var(--sp-5)' }}>
+      <Harness sections={args.sections} onClose={args.onClose} onTheme={args.onTheme} startOpen />
+    </div>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -113,8 +127,11 @@ export const Filtered = {
 
 /* a query that matches nothing shows the empty state instead of options. */
 export const Empty = {
+  parameters: { layout: 'fullscreen' },
   render: (args) => (
-    <Harness sections={args.sections} onClose={args.onClose} onTheme={args.onTheme} startOpen />
+    <div style={{ minHeight: '100vh', padding: 'var(--sp-5)' }}>
+      <Harness sections={args.sections} onClose={args.onClose} onTheme={args.onTheme} startOpen />
+    </div>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -127,8 +144,11 @@ export const Empty = {
 
 /* esc closes the open palette and fires onClose. */
 export const EscapeCloses = {
+  parameters: { layout: 'fullscreen' },
   render: (args) => (
-    <Harness sections={args.sections} onClose={args.onClose} onTheme={args.onTheme} startOpen />
+    <div style={{ minHeight: '100vh', padding: 'var(--sp-5)' }}>
+      <Harness sections={args.sections} onClose={args.onClose} onTheme={args.onTheme} startOpen />
+    </div>
   ),
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)

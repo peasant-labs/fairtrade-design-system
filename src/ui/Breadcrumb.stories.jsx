@@ -1,4 +1,5 @@
 import Breadcrumb, { Steps } from './Breadcrumb.jsx'
+import { frame } from './story-frame.jsx'
 import { Home, Users, FileText } from 'lucide-react'
 
 /* CSF3: a Playground driven by argTypes plus one named story per meaningful state.
@@ -8,6 +9,7 @@ import { Home, Users, FileText } from 'lucide-react'
 const meta = {
   title: 'components/Breadcrumb',
   component: Breadcrumb,
+  decorators: frame('wide'),
   tags: ['autodocs'],
   argTypes: {
     label: { control: 'text' },
@@ -51,6 +53,16 @@ export const DeepPath = {
       { label: 'transcripts', href: '#' },
       { label: 'claude-code session 0418', href: '#' },
       { label: 'redaction review' },
+    ],
+  },
+}
+
+export const LongLabel = {
+  args: {
+    items: [
+      { label: 'commons', href: '#' },
+      { label: 'collectives', href: '#' },
+      { label: 'climate-justice-coalition-of-the-greater-bay-area-working-group' },
     ],
   },
 }

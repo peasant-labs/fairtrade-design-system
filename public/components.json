@@ -1,0 +1,1003 @@
+{
+  "$description": "fairtrade component manifest, generated from src/ui. import from the barrel: import { Button } from \"src/ui\". every component is token-styled (classes in src/index.css) and works in both themes. props shows the Storybook-controllable props; full prop docs are the JSDoc in each file.",
+  "import": "src/ui (barrel: src/ui/index.js)",
+  "count": 24,
+  "components": [
+    {
+      "name": "Accordion",
+      "category": "misc",
+      "title": "transcript",
+      "file": "src/ui/Accordion.jsx",
+      "exports": [
+        "Accordion"
+      ],
+      "doc": "@property {React.ReactNode} title the header's visible label (not force-lowercased)",
+      "props": {
+        "allowMultiple": {
+          "control": "boolean"
+        },
+        "defaultOpen": {
+          "control": "text"
+        },
+        "aria-label": {
+          "control": "text"
+        },
+        "items": {
+          "control": "false"
+        }
+      },
+      "stories": [
+        "Playground",
+        "SingleOpen",
+        "Multiple",
+        "AllClosed",
+        "Empty",
+        "HeadingLevelTwo",
+        "InteractiveContent"
+      ]
+    },
+    {
+      "name": "Avatar",
+      "category": "overlays",
+      "title": "overlays/Avatar",
+      "file": "src/ui/Avatar.jsx",
+      "exports": [
+        "Avatar",
+        "AvatarGroup",
+        "Kbd",
+        "KbdChord",
+        "Tag"
+      ],
+      "doc": "",
+      "props": {
+        "name": {
+          "control": "text"
+        },
+        "initials": {
+          "control": "text"
+        },
+        "size": {
+          "control": "inline-radio",
+          "options": [
+            "sm",
+            "md",
+            "lg"
+          ]
+        },
+        "src": {
+          "control": "text"
+        },
+        "more": {
+          "control": "boolean"
+        }
+      },
+      "stories": [
+        "Playground",
+        "Base",
+        "Sizes",
+        "ExplicitInitials",
+        "Photo",
+        "PhotoFallback",
+        "More",
+        "Group",
+        "Keys",
+        "Chord",
+        "Tags",
+        "TagBrands",
+        "TagSelected",
+        "TagRemovable"
+      ]
+    },
+    {
+      "name": "BrandMark",
+      "category": "components",
+      "title": "components/BrandMark",
+      "file": "src/ui/BrandMark.jsx",
+      "exports": [
+        "BrandMark",
+        "resolveBrand"
+      ],
+      "doc": "",
+      "props": {
+        "name": {
+          "control": "select",
+          "options": [
+            "...ALL",
+            "anthropic",
+            "google",
+            "codex"
+          ]
+        },
+        "size": {
+          "control": "number"
+        },
+        "label": {
+          "control": "text"
+        }
+      },
+      "stories": [
+        "Playground",
+        "Gallery",
+        "Aliases",
+        "Sizes",
+        "InTags",
+        "Labelled",
+        "UnknownIsEmpty"
+      ]
+    },
+    {
+      "name": "Breadcrumb",
+      "category": "components",
+      "title": "components/Breadcrumb",
+      "file": "src/ui/Breadcrumb.jsx",
+      "exports": [
+        "Breadcrumb",
+        "Steps"
+      ],
+      "doc": "@property {string} label - the crumb text",
+      "props": {
+        "label": {
+          "control": "text"
+        },
+        "items": {
+          "control": "object"
+        }
+      },
+      "stories": [
+        "Playground",
+        "WithIcons",
+        "SingleCurrent",
+        "DeepPath",
+        "LongLabel",
+        "StepsWizard",
+        "StepsFirst",
+        "StepsComplete"
+      ]
+    },
+    {
+      "name": "Button",
+      "category": "controls",
+      "title": "controls/Button",
+      "file": "src/ui/Button.jsx",
+      "exports": [
+        "Button",
+        "ButtonGroup",
+        "Segmented"
+      ],
+      "doc": "",
+      "props": {
+        "variant": {
+          "control": "select",
+          "options": [
+            "primary",
+            "secondary",
+            "ghost",
+            "danger"
+          ]
+        },
+        "size": {
+          "control": "inline-radio",
+          "options": [
+            "md",
+            "sm"
+          ]
+        },
+        "disabled": {
+          "control": "boolean"
+        },
+        "loading": {
+          "control": "boolean"
+        },
+        "children": {
+          "control": "text"
+        }
+      },
+      "stories": [
+        "Playground",
+        "Primary",
+        "Loading",
+        "Disabled",
+        "DisabledStates",
+        "LoadingDisabled",
+        "DisabledLink",
+        "WithIcon",
+        "IconOnly",
+        "Small",
+        "Group",
+        "SegmentedControl"
+      ]
+    },
+    {
+      "name": "Card",
+      "category": "components",
+      "title": "components/Card",
+      "file": "src/ui/Card.jsx",
+      "exports": [
+        "Card",
+        "CardImg",
+        "Row",
+        "MetaItem"
+      ],
+      "doc": "@property {React.ReactNode} [children] - card contents (slotted, e.g. a <CardImg/> or arbitrary markup).",
+      "props": {
+        "link": {
+          "control": "boolean"
+        },
+        "className": {
+          "control": "text"
+        },
+        "children": {
+          "control": "false"
+        }
+      },
+      "stories": [
+        "Playground",
+        "AsLink",
+        "Imagery",
+        "Redacted",
+        "Minimal",
+        "DenseRow",
+        "RowList",
+        "MetaItems",
+        "Focused",
+        "Slots"
+      ]
+    },
+    {
+      "name": "Chart",
+      "category": "data",
+      "title": "data/Charts",
+      "file": "src/ui/Chart.jsx",
+      "exports": [
+        "Chart"
+      ],
+      "doc": "",
+      "props": {},
+      "stories": [
+        "Bar",
+        "GroupedBars",
+        "StackedBars",
+        "LineArea",
+        "MultiLine",
+        "Sparklines"
+      ]
+    },
+    {
+      "name": "Checkbox",
+      "category": "controls",
+      "title": "controls/Checkbox",
+      "file": "src/ui/Checkbox.jsx",
+      "exports": [
+        "Checkbox",
+        "Radio",
+        "RadioGroup"
+      ],
+      "doc": "",
+      "props": {
+        "defaultChecked": {
+          "control": "boolean"
+        },
+        "disabled": {
+          "control": "boolean"
+        },
+        "children": {
+          "control": "text"
+        }
+      },
+      "stories": [
+        "Playground",
+        "Checked",
+        "Disabled",
+        "Group",
+        "LicenseRadios",
+        "RadioGroupProviders",
+        "RadioGroupControlled",
+        "ClicksToCheck"
+      ]
+    },
+    {
+      "name": "Chip",
+      "category": "components",
+      "title": "components/Chip",
+      "file": "src/ui/Chip.jsx",
+      "exports": [
+        "Chip",
+        "FilterChip",
+        "StatusDot",
+        "CountBadge"
+      ],
+      "doc": "",
+      "props": {
+        "tone": {
+          "control": "inline-radio",
+          "options": [
+            "undefined",
+            "ok",
+            "warn",
+            "err"
+          ]
+        },
+        "size": {
+          "control": "inline-radio",
+          "options": [
+            "undefined",
+            "sm"
+          ]
+        },
+        "brand": {
+          "control": "inline-radio",
+          "options": [
+            "undefined",
+            "claude",
+            "gemini",
+            "openai",
+            "cursor",
+            "opencode"
+          ]
+        },
+        "chrome": {
+          "control": "boolean"
+        },
+        "removable": {
+          "control": "boolean"
+        },
+        "children": {
+          "control": "text"
+        }
+      },
+      "stories": [
+        "Playground",
+        "WithIcon",
+        "ToneOk",
+        "ToneWarn",
+        "ToneErr",
+        "Small",
+        "SmallTones",
+        "RemovableSmall",
+        "Tones",
+        "Removable",
+        "Filter_",
+        "FilterControlled",
+        "Status",
+        "StatusDotBare",
+        "Count"
+      ]
+    },
+    {
+      "name": "CommandPalette",
+      "category": "overlays",
+      "title": "overlays/CommandPalette",
+      "file": "src/ui/CommandPalette.jsx",
+      "exports": [
+        "CommandPalette"
+      ],
+      "doc": "",
+      "props": {
+        "open": {
+          "control": "boolean"
+        },
+        "sections": {
+          "control": "object"
+        },
+        "onClose": {},
+        "onTheme": {}
+      },
+      "stories": [
+        "Playground",
+        "Default",
+        "Filtered",
+        "Empty",
+        "EscapeCloses"
+      ]
+    },
+    {
+      "name": "DataTable",
+      "category": "misc",
+      "title": "refactoring the ledger",
+      "file": "src/ui/DataTable.jsx",
+      "exports": [
+        "DataTable"
+      ],
+      "doc": "(@tanstack/react-table, headless) while this component still renders its own markup",
+      "props": {
+        "selectable": {
+          "control": "boolean"
+        },
+        "caption": {
+          "control": "text"
+        },
+        "columns": {
+          "control": "false"
+        },
+        "rows": {
+          "control": "false"
+        },
+        "defaultSort": {
+          "control": "false"
+        },
+        "sort": {
+          "control": "false"
+        },
+        "selectedKeys": {
+          "control": "false"
+        },
+        "defaultSelectedKeys": {
+          "control": "false"
+        },
+        "onSortChange": {},
+        "onSelectionChange": {}
+      },
+      "stories": [
+        "Playground",
+        "ReadOnly",
+        "SortedAscending",
+        "SomeSelected",
+        "AllSelected",
+        "Empty",
+        "CustomRenderers",
+        "CenterAligned",
+        "Controlled",
+        "Interactions"
+      ]
+    },
+    {
+      "name": "DateRange",
+      "category": "components",
+      "title": "components/DateRange",
+      "file": "src/ui/DateRange.jsx",
+      "exports": [
+        "DateRange",
+        "DateRangeCalendar",
+        "formatRange",
+        "DATE_PRESETS"
+      ],
+      "doc": "formatRange({from,to}) -> a lowercase, tabular display string.",
+      "props": {
+        "numberOfMonths": {
+          "control": "inline-radio",
+          "options": [
+            "1",
+            "2"
+          ]
+        },
+        "weekStartsOn": {
+          "control": "number"
+        },
+        "align": {
+          "control": "inline-radio",
+          "options": [
+            "start",
+            "end"
+          ]
+        },
+        "size": {
+          "control": "inline-radio",
+          "options": [
+            "md",
+            "sm"
+          ]
+        },
+        "placeholder": {
+          "control": "text"
+        },
+        "disabled": {
+          "control": "boolean"
+        },
+        "clearable": {
+          "control": "boolean"
+        },
+        "value": {
+          "control": "false"
+        },
+        "presets": {
+          "control": "false"
+        },
+        "onChange": {},
+        "onDraftChange": {}
+      },
+      "stories": [
+        "Playground",
+        "Default",
+        "WithValue",
+        "Open",
+        "SingleMonth",
+        "PresetsOnly",
+        "Bounded",
+        "KeyboardNav",
+        "AlignEnd",
+        "Disabled",
+        "SundayStart",
+        "SmallTrigger",
+        "EmbeddedCalendar"
+      ]
+    },
+    {
+      "name": "Dialog",
+      "category": "overlays",
+      "title": "overlays/Dialog",
+      "file": "src/ui/Dialog.jsx",
+      "exports": [
+        "Dialog"
+      ],
+      "doc": "",
+      "props": {
+        "title": {
+          "control": "text"
+        },
+        "open": {
+          "control": "false"
+        },
+        "onClose": {
+          "control": "false"
+        },
+        "children": {
+          "control": "false"
+        },
+        "footer": {
+          "control": "false"
+        }
+      },
+      "stories": [
+        "Default",
+        "WithLongBody",
+        "Destructive",
+        "NoFooter",
+        "OpenStatic",
+        "LongBodyStatic",
+        "DestructiveStatic",
+        "CustomLabelId"
+      ]
+    },
+    {
+      "name": "EmptyState",
+      "category": "feedback",
+      "title": "feedback/EmptyState",
+      "file": "src/ui/EmptyState.jsx",
+      "exports": [
+        "EmptyState"
+      ],
+      "doc": "@typedef {import('react').ComponentType<{ size?: number, 'aria-hidden'?: boolean }>} IconComponent",
+      "props": {
+        "icon": {
+          "control": "false"
+        },
+        "title": {
+          "control": "text"
+        },
+        "message": {
+          "control": "text"
+        },
+        "action": {
+          "control": "false"
+        }
+      },
+      "stories": [
+        "Playground",
+        "Default",
+        "WithAction",
+        "NoMessage",
+        "NoResults",
+        "NoMembers",
+        "ErrorState",
+        "NoIcon",
+        "ActionViaChildren"
+      ]
+    },
+    {
+      "name": "Feedback",
+      "category": "feedback",
+      "title": "feedback/Feedback",
+      "file": "src/ui/Feedback.jsx",
+      "exports": [
+        "Skeleton",
+        "Progress",
+        "Spinner",
+        "Toast",
+        "FeedbackPanel"
+      ],
+      "doc": "Skeleton — a placeholder block that mirrors the shape of loading content.",
+      "props": {
+        "children": {
+          "control": "text"
+        }
+      },
+      "stories": [
+        "Playground",
+        "SpinnerDefault",
+        "SkeletonLoading",
+        "SkeletonNoAvatar",
+        "ProgressBar",
+        "ProgressEmpty",
+        "ProgressComplete",
+        "ToastOk",
+        "ToastError",
+        "ToastCustomIcon",
+        "PanelEmpty",
+        "PanelLoading",
+        "PanelError",
+        "ProgressNoPct",
+        "SkeletonAvatarOnly",
+        "SpinnerCustomIcon",
+        "ToastNoClose"
+      ]
+    },
+    {
+      "name": "Input",
+      "category": "controls",
+      "title": "controls/Input",
+      "file": "src/ui/Input.jsx",
+      "exports": [
+        "Input",
+        "Textarea",
+        "Select",
+        "Field"
+      ],
+      "doc": "Field — the label + control + hint/error wrapper (.is-field) the inputs compose into.",
+      "props": {
+        "label": {
+          "control": "text"
+        },
+        "hint": {
+          "control": "text"
+        },
+        "error": {
+          "control": "text"
+        },
+        "type": {
+          "control": "select",
+          "options": [
+            "text",
+            "email",
+            "password",
+            "search",
+            "url"
+          ]
+        },
+        "invalid": {
+          "control": "boolean"
+        },
+        "readOnly": {
+          "control": "boolean"
+        },
+        "disabled": {
+          "control": "boolean"
+        },
+        "defaultValue": {
+          "control": "text"
+        }
+      },
+      "stories": [
+        "Playground",
+        "WithLabel",
+        "Hint",
+        "Error",
+        "Invalid",
+        "ReadOnly",
+        "Disabled",
+        "WithIcon",
+        "IconError",
+        "IconReadOnly",
+        "SelectStory",
+        "TextareaStory",
+        "FieldComposed"
+      ]
+    },
+    {
+      "name": "Menu",
+      "category": "overlays",
+      "title": "overlays/Menu",
+      "file": "src/ui/Menu.jsx",
+      "exports": [
+        "Menu"
+      ],
+      "doc": "@property {string} label row label (passed-through children case preserved)",
+      "props": {
+        "label": {
+          "control": "text"
+        },
+        "align": {
+          "control": "inline-radio",
+          "options": [
+            "start",
+            "end"
+          ]
+        },
+        "defaultOpen": {
+          "control": "boolean"
+        },
+        "items": {
+          "control": "false"
+        }
+      },
+      "stories": [
+        "Playground",
+        "Aligned",
+        "Providers",
+        "WithDangerItem",
+        "Empty",
+        "WithCaptionAndSeparator",
+        "OpensAndSelects"
+      ]
+    },
+    {
+      "name": "Pager",
+      "category": "components",
+      "title": "components/Pager",
+      "file": "src/ui/Pager.jsx",
+      "exports": [
+        "Pager"
+      ],
+      "doc": "flanked by previous/next icon buttons. reuses .pager + .btn.btn-secondary.btn-sm.btn-icon",
+      "props": {
+        "page": {
+          "control": "number"
+        },
+        "total": {
+          "control": "number"
+        },
+        "label": {
+          "control": "text"
+        },
+        "onPrev": {},
+        "onNext": {},
+        "onChange": {}
+      },
+      "stories": [
+        "Playground",
+        "Middle",
+        "AtStart",
+        "AtEnd",
+        "SinglePage",
+        "Interactive",
+        "PrevNextPrecedence"
+      ]
+    },
+    {
+      "name": "Pagination",
+      "category": "components",
+      "title": "components/Pagination",
+      "file": "src/ui/Pagination.jsx",
+      "exports": [
+        "Pagination"
+      ],
+      "doc": "a run of pages is collapsed. returns an array of page numbers and 'gap-l' / 'gap-r'",
+      "props": {
+        "page": {
+          "control": "number"
+        },
+        "defaultPage": {
+          "control": "number"
+        },
+        "total": {
+          "control": "number"
+        },
+        "totalItems": {
+          "control": "number"
+        },
+        "pageSize": {
+          "control": "number"
+        },
+        "siblingCount": {
+          "control": "inline-radio",
+          "options": [
+            "0",
+            "1",
+            "2"
+          ]
+        },
+        "label": {
+          "control": "text"
+        },
+        "onChange": {}
+      },
+      "stories": [
+        "Playground",
+        "ShortRange",
+        "LongRange",
+        "FromItems",
+        "AtFirstPage",
+        "AtLastPage",
+        "WideWindow",
+        "Collapsed",
+        "Controlled",
+        "ControlledFrozen",
+        "ClickPage"
+      ]
+    },
+    {
+      "name": "Switch",
+      "category": "controls",
+      "title": "controls/Switch",
+      "file": "src/ui/Switch.jsx",
+      "exports": [
+        "Switch"
+      ],
+      "doc": "@property {boolean} [busy=false] sets aria-busy; pairs with an aria-live marker.",
+      "props": {
+        "checked": {
+          "control": "boolean"
+        },
+        "defaultChecked": {
+          "control": "boolean"
+        },
+        "disabled": {
+          "control": "boolean"
+        },
+        "busy": {
+          "control": "boolean"
+        },
+        "label": {
+          "control": "text"
+        },
+        "onText": {
+          "control": "text"
+        },
+        "offText": {
+          "control": "text"
+        },
+        "onChange": {}
+      },
+      "stories": [
+        "Playground",
+        "On",
+        "Off",
+        "Disabled",
+        "Busy",
+        "CustomStateIcon",
+        "NoLabel",
+        "DisabledOff",
+        "Toggles"
+      ]
+    },
+    {
+      "name": "Tabs",
+      "category": "components",
+      "title": "components/Tabs",
+      "file": "src/ui/Tabs.jsx",
+      "exports": [
+        "Tabs"
+      ],
+      "doc": "@property {React.ReactNode} label the tab's visible label; force-lowercased as ui chrome, so pass a section name, never user content / proper nouns",
+      "props": {
+        "defaultTab": {
+          "control": "inline-radio",
+          "options": [
+            "transcripts",
+            "collectives",
+            "providers"
+          ]
+        },
+        "aria-label": {
+          "control": "text"
+        },
+        "tabs": {
+          "control": "false"
+        }
+      },
+      "stories": [
+        "Playground",
+        "SecondSelected",
+        "NoCounts",
+        "TwoTabs",
+        "Controlled",
+        "Interaction"
+      ]
+    },
+    {
+      "name": "Timeline",
+      "category": "components",
+      "title": "components/Timeline",
+      "file": "src/ui/Timeline.jsx",
+      "exports": [
+        "Timeline",
+        "TimelineItem",
+        "ToolCall",
+        "ThinkingBlock"
+      ],
+      "doc": "",
+      "props": {
+        "dense": {
+          "control": "boolean"
+        },
+        "ariaLabel": {
+          "control": "text"
+        },
+        "items": {
+          "control": "false"
+        },
+        "renderTool": {
+          "control": "false"
+        },
+        "renderBody": {
+          "control": "false"
+        }
+      },
+      "stories": [
+        "Playground",
+        "RolesAndTints",
+        "ToolRenderers",
+        "CustomRenderTool",
+        "CustomRenderBody",
+        "WithThinking",
+        "PhasesAndCheckpoints",
+        "SubagentThread",
+        "ErrorTurn",
+        "FinalTurn",
+        "Dense",
+        "Empty",
+        "LightTheme"
+      ]
+    },
+    {
+      "name": "ToastHost",
+      "category": "misc",
+      "title": "transcript published",
+      "file": "src/ui/ToastHost.jsx",
+      "exports": [
+        "ToastProvider",
+        "useToast"
+      ],
+      "doc": "@property {number} [duration] per-toast auto-dismiss ms; 0/Infinity = sticky.",
+      "props": {
+        "placement": {
+          "control": "select",
+          "options": [
+            "bottom-right",
+            "bottom-left",
+            "top-right",
+            "top-left",
+            "bottom-center",
+            "top-center"
+          ]
+        },
+        "max": {
+          "control": "number"
+        },
+        "duration": {
+          "control": "number"
+        }
+      },
+      "stories": [
+        "Playground",
+        "Success",
+        "Error",
+        "Stacked",
+        "MaxCap",
+        "Sticky",
+        "Placements",
+        "ReducedMotion",
+        "PausesOnHover"
+      ]
+    },
+    {
+      "name": "Tooltip",
+      "category": "overlays",
+      "title": "overlays/Tooltip",
+      "file": "src/ui/Tooltip.jsx",
+      "exports": [
+        "Tooltip",
+        "Popover"
+      ],
+      "doc": "@property {React.ReactNode} content short, single-line helper text shown in the .tip-bubble (role=tooltip).",
+      "props": {
+        "content": {
+          "control": "text"
+        },
+        "id": {
+          "control": "text"
+        }
+      },
+      "stories": [
+        "Playground",
+        "OnButton",
+        "OnIconButton",
+        "LongContent",
+        "FocusReveals",
+        "OnLink",
+        "PopoverBasic",
+        "PopoverOpen",
+        "PopoverWithState"
+      ]
+    }
+  ]
+}

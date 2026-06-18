@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
+import BrandMark from './BrandMark.jsx'
 
 /* a self-contained, accessible dropdown menu (the react version of the overlays-section live
    specimen). the trigger reuses .btn + .menu-trigger and declares aria-haspopup="menu" +
@@ -14,6 +15,7 @@ import { ChevronDown } from 'lucide-react'
  * @typedef {Object} MenuItem
  * @property {string}   label            row label (passed-through children case preserved)
  * @property {React.ComponentType<any>} [icon]    leading lucide icon component (e.g. icon={Copy})
+ * @property {string}   [brand]          leading provider mark (e.g. brand="claude-code"); takes precedence over icon
  * @property {string}   [kbd]            right-aligned shortcut hint (e.g. "⌘D")
  * @property {boolean}  [danger]         destructive (.menu-danger) variant - clay, keeps icon + label
  * @property {boolean}  [disabled]       aria-disabled row, skipped by arrow keys, not selectable
@@ -29,9 +31,10 @@ import { ChevronDown } from 'lucide-react'
  * @param {MenuItem[]} [props.items=[]]             menu rows
  * @param {'start'|'end'} [props.align='start']     which edge of the trigger the popout aligns to
  * @param {React.ReactNode} [props.caption]         optional .menu-cap caption rendered inside the popout before the list
+ * @param {boolean} [props.defaultOpen=false]       render with the popout already open (specimen / screenshot state)
  */
-export default function Menu({ label, items = [], align = 'start', caption }) {
-  const [open, setOpen] = useState(false)
+export default function Menu({ label, items = [], align = 'start', caption, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen)
   const triggerRef = useRef(null)
   const menuRef = useRef(null)
   const menuId = useId()
@@ -123,7 +126,7 @@ export default function Menu({ label, items = [], align = 'start', caption }) {
         className="menu-pop menu-float"
         id={menuId}
         hidden={!open}
-        style={align === 'end' ? { left: 'auto', right: 0 } : undefined}
+        data-align={align}
       >
         {caption != null && <p className="menu-cap">{caption}</p>}
         <ul className="menu-list" role="menu" aria-label={typeof label === 'string' ? label : undefined} onKeyDown={onMenuKey}>
@@ -138,15 +141,20 @@ export default function Menu({ label, items = [], align = 'start', caption }) {
                 tabIndex={-1}
                 aria-disabled={item.disabled ? 'true' : undefined}
                 className={'menu-item' + (item.danger ? ' menu-danger' : '')}
-                onClick={() => choose(item)}
+                onClick={() => { if (!item.disabled) choose(item) }}
                 onKeyDown={onItemKey(item)}
               >
-                {Icon && <Icon size={14} aria-hidden="true" />}
+                {item.brand ? <BrandMark name={item.brand} /> : Icon && <Icon aria-hidden="true" />}
                 <span className="menu-text">{item.label}</span>
                 {item.kbd && <kbd className="kbd menu-kbd">{item.kbd}</kbd>}
               </li>
             )
           })}
+          {!items.length && (
+            <li className="menu-item menu-empty" aria-disabled="true">
+              <span className="menu-text">no actions</span>
+            </li>
+          )}
         </ul>
       </div>
     </div>

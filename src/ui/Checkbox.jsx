@@ -38,7 +38,7 @@ export default function Checkbox({ checked, defaultChecked = false, onChange, di
         disabled={disabled}
         onChange={handleChange}
         {...rest}
-      />{' '}
+      />
       {children}
     </label>
   )
@@ -46,7 +46,9 @@ export default function Checkbox({ checked, defaultChecked = false, onChange, di
 
 /**
  * @typedef {Object} RadioProps
- * @property {string} [name]            shared group name (so only one in a group is selectable)
+ * @property {string} name              shared group name; radios must come in groups of >=2 so any one
+ *                                      can be deselected by picking another. for a lone binary choice
+ *                                      use Checkbox or Switch, never a single standalone Radio.
  * @property {string} [value]           the value submitted / matched when this radio is selected
  * @property {boolean} [checked]        controlled checked state (pair with onChange)
  * @property {boolean} [defaultChecked] initial state for uncontrolled use (default false)
@@ -57,7 +59,9 @@ export default function Checkbox({ checked, defaultChecked = false, onChange, di
 
 /**
  * A single radio: <label class="is-radio"> wrapping the styled <input type="radio" class="is-radio-dot">.
- * Usually rendered by RadioGroup, but exported for standalone use.
+ * Always render via RadioGroup (or at least two sibling radios sharing `name`) so a selection can be
+ * changed; a lone radio cannot be deselected, which is an accessibility anti-pattern. For a single
+ * binary choice use Checkbox or Switch instead.
  * @param {RadioProps & import('react').InputHTMLAttributes<HTMLInputElement>} props
  */
 export function Radio({ name, value, checked, defaultChecked, onChange, disabled = false, children, ...rest }) {
@@ -73,7 +77,7 @@ export function Radio({ name, value, checked, defaultChecked, onChange, disabled
         disabled={disabled}
         onChange={onChange}
         {...rest}
-      />{' '}
+      />
       {children}
     </label>
   )
@@ -93,7 +97,8 @@ export function Radio({ name, value, checked, defaultChecked, onChange, disabled
  * @property {string} [defaultValue]   initial selected value for uncontrolled use
  * @property {(value: string, event: import('react').ChangeEvent<HTMLInputElement>) => void} [onChange]
  * @property {RadioOption[]} options    the choices to render
- * @property {string} [ariaLabel]      accessible label for the role=radiogroup container
+ * @property {string} ariaLabel        accessible name for the role=radiogroup container; required for
+ *                                     an accessible group (a radiogroup with no name is an a11y failure)
  */
 
 /**

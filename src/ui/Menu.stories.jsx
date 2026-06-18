@@ -1,5 +1,6 @@
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import Menu from './Menu.jsx'
+import { frame } from './story-frame.jsx'
 import { Copy, Download, Share2, Eye, EyeOff, Trash2, Archive, FilePen } from 'lucide-react'
 
 /* overlays/Menu - a self-contained accessible dropdown. the trigger is a .btn.menu-trigger
@@ -10,14 +11,17 @@ const meta = {
   title: 'overlays/Menu',
   component: Menu,
   tags: ['autodocs'],
+  decorators: frame('panel'),
   argTypes: {
     label: { control: 'text' },
     align: { control: 'inline-radio', options: ['start', 'end'] },
+    defaultOpen: { control: 'boolean' },
     items: { control: false },
   },
   args: {
     label: 'transcript actions',
     align: 'start',
+    defaultOpen: true,
     items: [
       { label: 'copy link', icon: Copy, kbd: '⌘C' },
       { label: 'export markdown', icon: Download, kbd: '⌘E' },
@@ -39,9 +43,9 @@ export const Providers = {
   args: {
     label: 'route to provider',
     items: [
-      { label: 'claude-code', icon: Eye, kbd: '1' },
-      { label: 'gemini-cli', icon: Eye, kbd: '2' },
-      { label: 'codex-cli', icon: Eye, kbd: '3', disabled: true },
+      { label: 'claude-code', brand: 'claude-code', kbd: '1' },
+      { label: 'gemini-cli', brand: 'gemini-cli', kbd: '2' },
+      { label: 'codex-cli', brand: 'codex-cli', kbd: '3', disabled: true },
     ],
   },
 }
@@ -84,6 +88,7 @@ export const WithCaptionAndSeparator = {
 // "redact selection" row) and Enter to choose, asserting the menu closes and focus returns to
 // the trigger. scoped to the story canvas + deterministic via waitFor.
 export const OpensAndSelects = {
+  args: { defaultOpen: false },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: /transcript actions/i })

@@ -16,6 +16,7 @@ const meta = {
     children: { control: 'text' },
   },
   args: { children: 'publish transcript', variant: 'secondary', size: 'md' },
+  parameters: { layout: 'padded' },
 }
 export default meta
 
@@ -23,7 +24,21 @@ export const Playground = {}
 export const Primary = { args: { variant: 'primary' } }
 export const Loading = { args: { variant: 'primary', loading: true, children: 'publishing' } }
 export const Disabled = { args: { disabled: true } }
+export const DisabledStates = {
+  render: () => (
+    <div className="btn-row">
+      {['primary', 'secondary', 'ghost', 'danger'].map((v) => (
+        <Button key={v} variant={v} disabled>
+          {v}
+        </Button>
+      ))}
+    </div>
+  ),
+}
+export const LoadingDisabled = { args: { variant: 'primary', loading: true, disabled: true, children: 'publishing' } }
+export const DisabledLink = { args: { as: 'a', href: '#', disabled: true, children: 'open transcript' } }
 export const WithIcon = { args: { variant: 'primary', icon: Download, children: 'export' } }
+export const IconOnly = { args: { icon: Download, 'aria-label': 'export', children: undefined } }
 export const Small = { args: { size: 'sm' } }
 export const Group = {
   render: () => (

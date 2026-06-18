@@ -7,16 +7,20 @@
   "scripts": {
     "dev": "vite",
     "contrast": "node scripts/contrast.mjs",
-    "build": "node scripts/contrast.mjs && vite build",
+    "llm": "node scripts/gen-llm-artifacts.mjs",
+    "llm:check": "node scripts/gen-llm-artifacts.mjs && git diff --exit-code public/tokens.json public/components.json",
+    "build": "node scripts/gen-llm-artifacts.mjs && node scripts/contrast.mjs && vite build",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@tanstack/react-table": "^8.21.3",
     "lucide": "^1.20.0",
     "lucide-react": "^1.18.0",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "recharts": "^3.8.1"
   },
   "devDependencies": {
     "@storybook/addon-a11y": "^10.4.6",

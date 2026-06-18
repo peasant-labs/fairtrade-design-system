@@ -29,7 +29,7 @@ export default function Card({ children, link = false, className, ...rest }) {
 /**
  * @typedef {Object} CardImgProps
  * @property {React.ReactNode} [thumb] - decorative imagery rendered inside `.card-thumb` (e.g. an <AsciiImage/>).
- * @property {React.ReactNode} [head] - the `.card-head` row (provider mark + label, trailing icon).
+ * @property {React.ReactNode} [head] - the `.card-head` row. When it names a provider it MUST lead with the real brand mark via <BrandMark name="claude" /> (a label beside a visible name is decorative), never a generic glyph. A trailing icon may follow as a meta indicator.
  * @property {React.ReactNode} [title] - the card title; rendered inside an <h3> when provided.
  * @property {React.ReactNode} [desc] - the short summary; rendered inside `<p class="desc">` when provided.
  * @property {React.ReactNode[]} [bullets] - bullet metadata; rendered as `<ul class="bullets"><li>…`.
@@ -58,8 +58,18 @@ export function CardImg({
   ...rest
 }) {
   const Tag = link ? 'a' : 'div'
+  // a link card concatenates head + title + desc + bullets + foot into one noisy
+  // accessible name; when the title is a plain string, name the link by the title.
+  const linkLabel =
+    link && rest['aria-label'] == null && rest['aria-labelledby'] == null && typeof title === 'string'
+      ? title
+      : undefined
   return (
-    <Tag className={['card', 'card-img', className].filter(Boolean).join(' ')} {...rest}>
+    <Tag
+      className={['card', 'card-img', className].filter(Boolean).join(' ')}
+      {...(linkLabel != null ? { 'aria-label': linkLabel } : {})}
+      {...rest}
+    >
       {thumb != null && <div className="card-thumb">{thumb}</div>}
       <div className="card-body">
         {head != null && <div className="card-head">{head}</div>}
@@ -82,27 +92,29 @@ export function CardImg({
 /**
  * @typedef {Object} RowProps
  * @property {React.ReactNode} [children] - row contents: metaitems, a `.grow` label, an avatar, etc.
+ * @property {boolean} [link=false] - render the row as an <a> (a focusable, navigable target). Only an interactive row shows the hover affordance; a plain row stays static.
  * @property {string} [className] - extra classes appended after the base `row`.
  */
 
 /**
- * Compact dense-list row. The base `.row` styles the surface, border and hover; stacked rows collapse
+ * Compact dense-list row. The base `.row` styles the surface and border; stacked rows collapse
  * their shared border automatically (`.row + .row`). Use a child with the `grow` class for the
- * flexible label column.
- * @param {RowProps & React.HTMLAttributes<HTMLDivElement>} props
+ * flexible label column. Pass `link` (with an href) when the row is navigable so it becomes a
+ * focusable <a> that earns its hover affordance and the global focus ring; a plain row is static.
+ * @param {RowProps & React.HTMLAttributes<HTMLElement>} props
  */
-export function Row({ children, className, ...rest }) {
+export function Row({ children, link = false, className, ...rest }) {
+  const Tag = link ? 'a' : 'div'
   return (
-    <div className={['row', className].filter(Boolean).join(' ')} {...rest}>
+    <Tag className={['row', className].filter(Boolean).join(' ')} {...rest}>
       {children}
-    </div>
+    </Tag>
   )
 }
 
 /**
  * @typedef {Object} MetaItemProps
- * @property {React.ComponentType<{ size?: number }>} [icon] - leading icon component reference (e.g. icon={Clock}).
- * @property {number} [iconSize] - explicit lucide size; omit to let the CSS (`--ic-sm`) size it (the default).
+ * @property {React.ComponentType<{ size?: number }>} [icon] - leading icon component reference (e.g. icon={Clock}). Icon size is owned by the `.metaitem .lucide` token rule (`--ic-sm`); it is not configurable per-instance.
  * @property {React.ReactNode} [value] - emphasised tabular value, rendered as `<b class="tnum">` before the children.
  * @property {React.ReactNode} [children] - the trailing label / units.
  * @property {string} [className] - extra classes appended after the base `metaitem` (e.g. `mono`).
@@ -114,10 +126,10 @@ export function Row({ children, className, ...rest }) {
  * Decorative icon gets aria-hidden. Pass `value` for counts/durations so they render in the tnum face.
  * @param {MetaItemProps & React.HTMLAttributes<HTMLSpanElement>} props
  */
-export function MetaItem({ icon: Icon, iconSize, value, children, className, ...rest }) {
+export function MetaItem({ icon: Icon, value, children, className, ...rest }) {
   return (
     <span className={['metaitem', className].filter(Boolean).join(' ')} {...rest}>
-      {Icon && <Icon {...(iconSize != null ? { size: iconSize } : {})} aria-hidden="true" />}
+      {Icon && <Icon aria-hidden="true" />}
       {value != null && <b className="tnum">{value}</b>}
       {children}
     </span>

@@ -1,5 +1,6 @@
 import Input, { Field, Textarea, Select } from './Input.jsx'
 import { Search, Lock } from 'lucide-react'
+import { frame } from './story-frame.jsx'
 
 /* input-states stories. CSF3: a Playground driven by argTypes plus one named story per meaningful
    state (label / hint / error / readonly / disabled / icon) and render-fn sections for the Textarea
@@ -10,6 +11,7 @@ const meta = {
   title: 'controls/Input',
   component: Input,
   tags: ['autodocs'],
+  decorators: frame('panel'),
   argTypes: {
     label: { control: 'text' },
     hint: { control: 'text' },
@@ -50,6 +52,15 @@ export const Error = {
   },
 }
 
+export const Invalid = {
+  args: {
+    label: 'collective slug',
+    defaultValue: 'bad value',
+    invalid: true,
+    hint: 'must be a known collective; this one is not registered',
+  },
+}
+
 export const ReadOnly = {
   args: {
     label: 'transcript id',
@@ -75,6 +86,27 @@ export const WithIcon = {
     type: 'search',
     defaultValue: 'redaction',
     placeholder: 'search the commons',
+  },
+}
+
+export const IconError = {
+  args: {
+    label: 'search transcripts',
+    iconLeft: Search,
+    type: 'search',
+    defaultValue: 'redaction',
+    error: 'no transcripts match',
+  },
+}
+
+export const IconReadOnly = {
+  args: {
+    label: 'indexed query',
+    iconLeft: Search,
+    type: 'search',
+    defaultValue: 'redaction',
+    readOnly: true,
+    hint: 'the saved query that built this view',
   },
 }
 

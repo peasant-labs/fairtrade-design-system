@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import { EyeOff } from 'lucide-react'
 import Switch from './Switch.jsx'
+import { frame } from './story-frame.jsx'
 
 /* CSF3 story for the accessible toggle. classes + tokens come from src/index.css via
    .storybook/preview.jsx; the theme toolbar flips data-theme. the control is a real
@@ -10,6 +11,7 @@ const meta = {
   title: 'controls/Switch',
   component: Switch,
   tags: ['autodocs'],
+  decorators: frame('panel'),
   argTypes: {
     checked: { control: 'boolean' },
     defaultChecked: { control: 'boolean' },
@@ -61,6 +63,16 @@ export const CustomStateIcon = {
     onText: 'hidden',
     offText: 'shown',
   },
+}
+
+/* label-less layout: the empty `auto` label track collapses to 0 so the control
+   still left-aligns on the grid. */
+export const NoLabel = {
+  args: { label: undefined },
+}
+
+export const DisabledOff = {
+  args: { label: 'export raw transcripts', defaultChecked: false, disabled: true },
 }
 
 /* controlled wrapper so the play test can toggle a live <button role="switch">

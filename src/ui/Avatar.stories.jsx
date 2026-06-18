@@ -1,5 +1,5 @@
 import Avatar, { AvatarGroup, Kbd, KbdChord, Tag } from './Avatar.jsx'
-import { Command, ArrowUp, CornerDownLeft, EyeOff, Bot, GitBranch } from 'lucide-react'
+import { Command, ArrowUp, CornerDownLeft, EyeOff } from 'lucide-react'
 
 /* identity primitives from the overlays specimen (avatar / kbd / tag). classes + tokens
    come from src/index.css via .storybook/preview.jsx; the theme toolbar flips data-theme.
@@ -31,7 +31,7 @@ export const Base = {
 
 export const Sizes = {
   render: () => (
-    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+    <div className="akt-row">
       <Avatar name="claude code" size="sm" />
       <Avatar name="gemini cli" size="md" />
       <Avatar name="veil tinker" size="lg" />
@@ -86,18 +86,18 @@ export const Group = {
 
 export const Keys = {
   render: () => (
-    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+    <div className="akt-row">
       <Kbd>esc</Kbd>
       <Kbd>K</Kbd>
-      <Kbd icon={ArrowUp} />
-      <Kbd icon={CornerDownLeft} />
+      <Kbd icon={ArrowUp} label="up arrow" />
+      <Kbd icon={CornerDownLeft} label="enter" />
     </div>
   ),
 }
 
 export const Chord = {
   render: () => (
-    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+    <div className="akt-row">
       <KbdChord label="command k">
         <Kbd icon={Command} />
         <Kbd>K</Kbd>
@@ -113,14 +113,29 @@ export const Chord = {
 
 export const Tags = {
   render: () => (
-    <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+    <div className="akt-row">
       <Tag>transcript</Tag>
       <Tag dot="var(--accent, #d6953b)">commons</Tag>
-      <Tag icon={Bot}>claude-code</Tag>
-      <Tag icon={GitBranch}>gemini-cli</Tag>
+      <Tag brand="claude-code">claude-code</Tag>
+      <Tag brand="gemini-cli">gemini-cli</Tag>
       <Tag icon={EyeOff}>redacted</Tag>
     </div>
   ),
+}
+
+export const TagBrands = {
+  render: () => (
+    <div className="akt-row">
+      <Tag brand="claude">claude</Tag>
+      <Tag brand="gemini">gemini</Tag>
+      <Tag brand="openai">openai</Tag>
+      <Tag brand="cursor">cursor</Tag>
+      <Tag brand="opencode">opencode</Tag>
+    </div>
+  ),
+  parameters: {
+    docs: { description: { story: 'a tag that names a provider leads with the real brand mark via the brand= prop, never a generic glyph.' } },
+  },
 }
 
 export const TagSelected = {
@@ -129,8 +144,8 @@ export const TagSelected = {
 
 export const TagRemovable = {
   render: () => (
-    <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-      <Tag onRemove={() => {}} removeLabel="remove provider filter: claude-code" icon={Bot}>
+    <div className="akt-row">
+      <Tag onRemove={() => {}} removeLabel="remove provider filter: claude-code" brand="claude-code">
         claude-code
       </Tag>
       <Tag onRemove={() => {}} removeLabel="remove tag: collective" dot="var(--accent, #d6953b)">

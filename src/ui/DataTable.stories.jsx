@@ -1,6 +1,19 @@
+import { useState } from 'react'
 import { fn } from 'storybook/test'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import DataTable from './DataTable.jsx'
+import BrandMark from './BrandMark.jsx'
+import { frame } from './story-frame.jsx'
+
+/* lead a provider cell with the real brand mark (claude-code -> claude, gemini-cli -> gemini
+   resolve inside BrandMark). the mark sits beside its visible id, so it is decorative. the
+   value stays the real id (never force-lowercased). */
+const providerCell = (v) => (
+  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+    <BrandMark name={v} size={16} />
+    {v}
+  </span>
+)
 
 /* a sortable + selectable table. classes + tokens come from src/index.css via
    .storybook/preview.jsx; the theme toolbar flips data-theme. on-brand mock
@@ -8,10 +21,10 @@ import DataTable from './DataTable.jsx'
 
 const COLUMNS = [
   { key: 'title', label: 'transcript', sortable: true },
-  { key: 'provider', label: 'provider', sortable: true },
-  { key: 'collective', label: 'collective', sortable: true },
-  { key: 'redactions', label: 'redactions', sortable: true, align: 'right' },
-  { key: 'turns', label: 'turns', sortable: true, align: 'right' },
+  { key: 'provider', label: 'provider', sortable: true, render: providerCell, width: '12rem' },
+  { key: 'collective', label: 'collective', sortable: true, width: '12rem' },
+  { key: 'redactions', label: 'redactions', sortable: true, align: 'right', width: '8rem' },
+  { key: 'turns', label: 'turns', sortable: true, align: 'right', width: '6rem' },
 ]
 
 const ROWS = [
@@ -26,6 +39,7 @@ const meta = {
   title: 'components/DataTable',
   component: DataTable,
   tags: ['autodocs'],
+  decorators: frame('wide'),
   argTypes: {
     selectable: { control: 'boolean' },
     caption: { control: 'text' },
@@ -83,7 +97,7 @@ export const CustomRenderers = {
     caption: 'transcripts with rendered cells',
     columns: [
       { key: 'title', label: 'transcript', sortable: true },
-      { key: 'provider', label: 'provider', sortable: true },
+      { key: 'provider', label: 'provider', sortable: true, render: providerCell },
       {
         key: 'redactions',
         label: 'redactions',
@@ -92,6 +106,47 @@ export const CustomRenderers = {
         render: (value) => (value === 0 ? 'clean' : `${value} redacted`),
       },
     ],
+  },
+}
+
+/* a center-aligned column (the .tbl-center modifier on th + td). status reads as text, never
+   colour alone, and stays the real value (not force-lowercased chrome). */
+export const CenterAligned = {
+  name: 'center-aligned column',
+  args: {
+    selectable: false,
+    caption: 'transcripts with a centered status',
+    columns: [
+      { key: 'title', label: 'transcript', sortable: true },
+      { key: 'provider', label: 'provider', sortable: true, render: providerCell },
+      { key: 'status', label: 'status', sortable: true, align: 'center' },
+      { key: 'turns', label: 'turns', sortable: true, align: 'right' },
+    ],
+    rows: [
+      { id: 's-01', title: 'refactoring the ledger', provider: 'claude-code', status: 'published', turns: 48 },
+      { id: 's-02', title: 'porting tokens to css vars', provider: 'gemini-cli', status: 'draft', turns: 21 },
+      { id: 's-03', title: 'debugging the redaction pass', provider: 'claude-code', status: 'review', turns: 94 },
+    ],
+  },
+}
+
+/* the fully-controlled path: parent owns sort + selection via state, passes both value props
+   and both change callbacks. exercises the most bug-prone branch (controlled, not uncontrolled). */
+export const Controlled = {
+  name: 'controlled sort + selection',
+  args: { caption: 'controlled by the parent' },
+  render: (args) => {
+    const [sort, setSort] = useState({ key: 'turns', dir: 'desc' })
+    const [selectedKeys, setSelectedKeys] = useState(['t-02'])
+    return (
+      <DataTable
+        {...args}
+        sort={sort}
+        onSortChange={setSort}
+        selectedKeys={selectedKeys}
+        onSelectionChange={setSelectedKeys}
+      />
+    )
   },
 }
 

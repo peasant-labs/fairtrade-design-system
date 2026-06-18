@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import Tabs from './Tabs.jsx'
+import { frame } from './story-frame.jsx'
 
 /* CSF3 story for the ARIA tablist. classes + tokens come from src/index.css via
    .storybook/preview.jsx; the theme toolbar flips data-theme. */
@@ -44,6 +46,7 @@ const meta = {
   title: 'components/Tabs',
   component: Tabs,
   tags: ['autodocs'],
+  decorators: frame('panel'),
   argTypes: {
     defaultTab: {
       control: 'inline-radio',
@@ -85,10 +88,34 @@ export const TwoTabs = {
   },
 }
 
+export const Controlled = {
+  render: (args) => {
+    const [tab, setTab] = useState('collectives')
+    return <Tabs {...args} value={tab} onChange={setTab} />
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    // the controlled value drives selection: collectives starts selected
+    const transcriptsTab = canvas.getByRole('tab', { name: /transcripts/i })
+    const collectivesTab = canvas.getByRole('tab', { name: /collectives/i })
+    await expect(collectivesTab).toHaveAttribute('aria-selected', 'true')
+    await expect(transcriptsTab).toHaveAttribute('aria-selected', 'false')
+
+    // onChange updates the parent state, which feeds value back in
+    await userEvent.click(transcriptsTab)
+    await waitFor(() => expect(transcriptsTab).toHaveAttribute('aria-selected', 'true'))
+    await expect(collectivesTab).toHaveAttribute('aria-selected', 'false')
+  },
+}
+
 export const Interaction = {
   args: { defaultTab: 'transcripts' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+
+    // the tablist carries its custom accessible name from the aria-label arg
+    await expect(canvas.getByRole('tablist', { name: 'commons sections' })).toBeInTheDocument()
 
     const transcriptsTab = canvas.getByRole('tab', { name: /transcripts/i })
     const collectivesTab = canvas.getByRole('tab', { name: /collectives/i })

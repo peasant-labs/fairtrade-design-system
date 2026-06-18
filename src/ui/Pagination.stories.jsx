@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { fn, expect, userEvent, within, waitFor } from 'storybook/test'
 import Pagination from './Pagination.jsx'
 
@@ -53,6 +54,62 @@ export const AtLastPage = {
 
 export const WideWindow = {
   args: { total: 24, defaultPage: 12, siblingCount: 2, label: 'gemini-cli transcript pages' },
+}
+
+export const Collapsed = {
+  // below 880px the prev/next labels collapse to icon-only square edge buttons. a narrow
+  // viewport exercises that branch so the collapsed state is actually captured.
+  args: { total: 12, defaultPage: 6, label: 'collapsed pages' },
+  parameters: { viewport: { defaultViewport: 'mobile1' } },
+}
+
+export const Controlled = {
+  // controlled mode: the parent owns `page` and updates it from onChange. clicking a
+  // number must move the marker only because the parent re-renders with the new page.
+  args: { total: 8, siblingCount: 2, label: 'controlled pages' },
+  render: (args) => {
+    const [p, setP] = useState(1)
+    return (
+      <Pagination
+        {...args}
+        page={p}
+        onChange={(next) => {
+          args.onChange(next)
+          setP(next)
+        }}
+      />
+    )
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+
+    // page 1 starts current (controlled by the parent's state)
+    expect(canvas.getByRole('button', { name: 'page 1' })).toHaveAttribute('aria-current', 'page')
+
+    // click page 3 (visible at page 1 with siblingCount 2); the parent updates state, marker follows
+    await userEvent.click(canvas.getByRole('button', { name: 'page 3' }))
+    expect(args.onChange).toHaveBeenCalledWith(3)
+    await waitFor(() => {
+      expect(canvas.getByRole('button', { name: 'page 3' })).toHaveAttribute('aria-current', 'page')
+    })
+    expect(canvas.getByRole('button', { name: 'page 1' })).not.toHaveAttribute('aria-current')
+  },
+}
+
+export const ControlledFrozen = {
+  // controlled mode where the parent ignores onChange: the marker must NOT move on click,
+  // proving the component does not self-advance when `page` is supplied.
+  args: { total: 8, siblingCount: 2, page: 3, label: 'controlled pages' },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+
+    // page 3 is current and stays current because the parent never updates `page`
+    expect(canvas.getByRole('button', { name: 'page 3' })).toHaveAttribute('aria-current', 'page')
+    await userEvent.click(canvas.getByRole('button', { name: 'page 5' }))
+    expect(args.onChange).toHaveBeenCalledWith(5)
+    expect(canvas.getByRole('button', { name: 'page 3' })).toHaveAttribute('aria-current', 'page')
+    expect(canvas.getByRole('button', { name: 'page 5' })).not.toHaveAttribute('aria-current')
+  },
 }
 
 export const ClickPage = {

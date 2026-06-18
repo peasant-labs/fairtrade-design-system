@@ -32,7 +32,7 @@ const VARIANT_CLASS = {
  * @param {boolean} [props.pressed] - toggle button: when defined adds .bs-toggle + aria-pressed
  * @param {'button'|'a'} [props.as='button'] - element to render
  * @param {string} [props.className] - extra classes appended after the computed ones
- * @param {React.ReactNode} [props.children] - the label; omit for an icon-only button
+ * @param {React.ReactNode} [props.children] - the label; omit for an icon-only button (then aria-label is required so the control still has an accessible name)
  */
 export default function Button({
   variant = 'secondary',
@@ -48,8 +48,12 @@ export default function Button({
   ...rest
 }) {
   const hasLabel = children != null && children !== false && children !== ''
-  const iconSize = size === 'sm' ? 14 : 15
+  const iconSize = size === 'sm' ? 14 : 16
   const isToggle = pressed !== undefined
+
+  if (import.meta.env?.DEV && !hasLabel && rest['aria-label'] == null) {
+    console.warn('icon-only Button needs an aria-label so screen readers can name it')
+  }
 
   const cls = [
     'btn',
@@ -77,13 +81,18 @@ export default function Button({
   )
 
   if (as === 'a') {
+    const { href, onClick, ...anchorRest } = rest
     return (
       <a
         className={cls}
         aria-busy={loading || undefined}
         aria-pressed={isToggle ? pressed : undefined}
         aria-disabled={disabled || undefined}
-        {...rest}
+        href={disabled ? undefined : href}
+        tabIndex={disabled ? -1 : undefined}
+        role={disabled ? 'link' : undefined}
+        onClick={disabled ? (e) => e.preventDefault() : onClick}
+        {...anchorRest}
       >
         {inner}
       </a>

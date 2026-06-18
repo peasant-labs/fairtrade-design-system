@@ -1,12 +1,12 @@
 import { useId, useState } from 'react'
-import { Circle, CircleCheck } from 'lucide-react'
+import { Circle, CircleCheck, Loader } from 'lucide-react'
 
 /* a real, accessible toggle (the interactive version of the .sw-field specimen in
-   sections/36-states.html). a <button role="switch"> with aria-checked carries the
+   sections/36-states.html). a button role="switch" with aria-checked carries the
    state; the inline .sw-state marker (icon + lowercase on/off text) is the non-colour
-   cue (WCAG 1.4.1) — the CSS handles the amber, we only flip the text + icon. Space /
-   Enter / click toggle. supports controlled (checked + onChange) and uncontrolled
-   (defaultChecked). reuses the .sw / .sw-field / .sw-label / .sw-state styles — zero
+   cue (WCAG 1.4.1). the CSS handles the amber, we only flip the text + icon. Space,
+   Enter, and click toggle. supports controlled (checked + onChange) and uncontrolled
+   (defaultChecked). reuses the .sw / .sw-field / .sw-label / .sw-state styles, zero
    new CSS. note: the control class is .sw (the swatch chip elsewhere is .swc). */
 
 /**
@@ -53,9 +53,11 @@ export default function Switch({
     onChange?.(next)
   }
 
-  // Space and Enter both activate a <button>, so a native click handler covers
-  // keyboard toggling — no extra keydown wiring needed (matches the source button).
-  const Icon = StateIcon ?? (on ? CircleCheck : Circle)
+  // Space and Enter both activate a button, so a native click handler covers
+  // keyboard toggling, no extra keydown wiring needed (matches the source button).
+  // busy swaps to a spinning Loader so the affordance matches the 36-states specimen;
+  // the spin is gated under prefers-reduced-motion in CSS (.sw-busy-spin).
+  const Icon = busy ? Loader : (StateIcon ?? (on ? CircleCheck : Circle))
 
   return (
     <div className="sw-field">
@@ -75,7 +77,8 @@ export default function Switch({
         </label>
       )}
       <span className="sw-state" aria-live={busy ? 'polite' : undefined}>
-        <Icon size={14} aria-hidden="true" /> {on ? onText : offText}
+        <Icon className={busy ? 'sw-busy-spin' : undefined} aria-hidden="true" />{' '}
+        {on ? onText : offText}
       </span>
     </div>
   )

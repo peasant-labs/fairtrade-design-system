@@ -1,5 +1,13 @@
 import { expect, userEvent, within, waitFor, fn } from 'storybook/test'
 import DateRange, { DateRangeCalendar, DATE_PRESETS, formatRange } from './DateRange.jsx'
+import { frame } from './story-frame.jsx'
+
+// open stories need vertical room: the absolutely-positioned panel drops below the
+// trigger and is clipped by the centered canvas. give them height + top padding on
+// top of the shared wide frame so the calendar renders fully in-frame.
+const roomForPanel = [(Story) => (
+  <div style={{ minHeight: 520, paddingTop: 'var(--sp-5)' }}><Story /></div>
+)]
 
 /* date-range story. CSF3: a Playground driven by argTypes plus one named story per
    meaningful state (empty, seeded, open, single-month, presets-only, bounded, keyboard,
@@ -13,6 +21,7 @@ const meta = {
   title: 'components/DateRange',
   component: DateRange,
   tags: ['autodocs'],
+  decorators: frame('wide'),
   argTypes: {
     numberOfMonths: { control: { type: 'inline-radio' }, options: [1, 2] },
     weekStartsOn: { control: { type: 'number', min: 0, max: 6 } },
@@ -61,6 +70,7 @@ export const WithValue = {
 // open the panel and assert structure via attributes/content, NOT toBeVisible (menuIn).
 export const Open = {
   args: { defaultValue: { from: '2026-06-01', to: '2026-06-14' } },
+  decorators: roomForPanel,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: /dates:/i })
@@ -79,6 +89,7 @@ export const Open = {
 
 export const SingleMonth = {
   args: { numberOfMonths: 1, defaultValue: { from: '2026-06-08', to: '2026-06-08' } },
+  decorators: roomForPanel,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: /dates:/i }))
@@ -92,6 +103,7 @@ export const SingleMonth = {
 // choosing a preset commits a 7-day span and closes the panel.
 export const PresetsOnly = {
   args: { presets: DATE_PRESETS, onChange: fn() },
+  decorators: roomForPanel,
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: /any dates|dates:/i }))
@@ -121,6 +133,7 @@ export const Bounded = {
     max: '2026-06-20',
     defaultValue: { from: '2026-06-10', to: '2026-06-12' },
   },
+  decorators: roomForPanel,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: /dates:/i }))
@@ -139,6 +152,7 @@ export const Bounded = {
 // keyboard: open, focus settles on a day, arrow to move, Enter to anchor, then close.
 export const KeyboardNav = {
   args: { defaultValue: { from: null, to: null }, onChange: fn() },
+  decorators: roomForPanel,
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: /any dates|dates:/i }))
@@ -163,6 +177,51 @@ export const KeyboardNav = {
     const ms = new Date(committed.to) - new Date(committed.from)
     expect(Math.round(ms / 86400000) + 1).toBe(10)
     expect(start).toMatch(/2026/)
+  },
+}
+
+// open helper for the popover stories below: click the trigger, wait until the
+// dialog is no longer hidden (never assert toBeVisible mid menuIn).
+const openPanel = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  await userEvent.click(canvas.getByRole('button', { name: /any dates|dates:/i }))
+  await waitFor(() => {
+    expect(canvasElement.querySelector('.dr-pop')).not.toHaveAttribute('hidden')
+  })
+}
+
+// align='end' anchors the panel to the trigger's right edge (the case most likely
+// to overflow the opposite viewport edge).
+export const AlignEnd = {
+  args: { align: 'end', defaultValue: { from: '2026-06-01', to: '2026-06-14' } },
+  decorators: roomForPanel,
+  play: async (ctx) => {
+    await openPanel(ctx)
+    expect(ctx.canvasElement.querySelector('.dr-pop.dr-end')).toBeTruthy()
+  },
+}
+
+// disabled trigger: not interactive, the panel never opens.
+export const Disabled = {
+  args: { disabled: true, defaultValue: { from: '2026-06-01', to: '2026-06-14' } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: /dates:/i })
+    expect(trigger).toBeDisabled()
+    // force the click past the pointer-events:none guard to prove the handler still no-ops when disabled
+    await userEvent.click(trigger, { pointerEventsCheck: 0 })
+    expect(canvasElement.querySelector('.dr-pop')).toHaveAttribute('hidden')
+  },
+}
+
+// weekStartsOn=0 puts sunday in the first column.
+export const SundayStart = {
+  args: { weekStartsOn: 0, defaultValue: { from: '2026-06-07', to: '2026-06-20' } },
+  decorators: roomForPanel,
+  play: async (ctx) => {
+    await openPanel(ctx)
+    const firstHeader = ctx.canvasElement.querySelector('.dr-wdrow .dr-wd')
+    expect(firstHeader.textContent).toBe('sun')
   },
 }
 

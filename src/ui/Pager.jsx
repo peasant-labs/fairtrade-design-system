@@ -38,9 +38,9 @@ export default function Pager({ page = 1, total = 1, onPrev, onNext, onChange, l
         onClick={goPrev}
         disabled={atStart}
       >
-        <ChevronLeft size={14} aria-hidden="true" />
+        <ChevronLeft aria-hidden="true" />
       </button>
-      <span>
+      <span aria-live="polite">
         page <span className="tnum">{page}</span> / <span className="tnum">{total}</span>
       </span>
       <button
@@ -49,7 +49,7 @@ export default function Pager({ page = 1, total = 1, onPrev, onNext, onChange, l
         onClick={goNext}
         disabled={atEnd}
       >
-        <ChevronRight size={14} aria-hidden="true" />
+        <ChevronRight aria-hidden="true" />
       </button>
     </nav>
   )

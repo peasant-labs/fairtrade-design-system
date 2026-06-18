@@ -1,11 +1,15 @@
 import { useId, useMemo, useState } from 'react'
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
+import { useReactTable, getCoreRowModel, getSortedRowModel } from '@tanstack/react-table'
 
 /**
  * a sortable + selectable data table. square, hairline, mono headers; both themes
- * via tokens. sorting cycles asc -> desc -> none on a sortable header (a real
- * <button>, so it is keyboard-operable), exposes aria-sort on the <th>, and shows
- * a lucide chevron indicator. selection reuses the existing .check-box control:
+ * via tokens. sort + selection state/logic are powered by TanStack Table
+ * (@tanstack/react-table, headless) while this component still renders its own markup
+ * + token classes, so the look is unchanged and growth (filtering, pagination, column
+ * sizing/visibility) is a config away. sorting cycles none -> asc -> desc -> none on a
+ * sortable header (a real <button>, so it is keyboard-operable), exposes aria-sort on the
+ * <th>, and shows a lucide chevron indicator. selection reuses the existing .check-box control:
  * a header checkbox selects/clears all (with an indeterminate middle state) and
  * each row carries its own. selected rows get a subtle highlight.
  *
@@ -19,6 +23,7 @@ import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
  * @property {React.ReactNode} label header text (kept as passed; not forced-lowercase).
  * @property {boolean} [sortable]    when true the header sorts; default false.
  * @property {'left'|'right'|'center'} [align] cell alignment; 'right' also gets tabular nums. default 'left'.
+ * @property {string} [width] optional fixed column width (any css length, e.g. '12rem'); emits a <colgroup> entry so columns stay put as cell content changes.
  * @property {(value: any, row: Object) => React.ReactNode} [render] custom cell renderer; falls back to row[key].
  *
  * @typedef {{ key: string, dir: 'asc'|'desc' } | null} DataTableSort
@@ -54,7 +59,8 @@ export default function DataTable({
   const baseId = useId()
   const keyOf = (row, i) => (rowKey ? rowKey(row, i) : row.id ?? i)
 
-  /* sort: controlled if `sort` prop is supplied, else internal state seeded by defaultSort */
+  /* sort: controlled if `sort` prop is supplied, else internal state seeded by defaultSort.
+     the public shape stays {key,dir}|null; TanStack drives the cycle + row order under it. */
   const [sortState, setSortState] = useState(defaultSort)
   const sort = sortProp !== undefined ? sortProp : sortState
   const setSort = (next) => {
@@ -62,7 +68,8 @@ export default function DataTable({
     onSortChange?.(next)
   }
 
-  /* selection: controlled if `selectedKeys` prop is supplied, else internal Set seeded by defaults */
+  /* selection: controlled if `selectedKeys` prop is supplied, else internal Set seeded by defaults.
+     the public shape stays an array of the original row keys. */
   const [selState, setSelState] = useState(() => new Set(defaultSelectedKeys))
   const selected = selectedProp !== undefined ? new Set(selectedProp) : selState
   const setSelected = (nextSet) => {
@@ -70,55 +77,90 @@ export default function DataTable({
     onSelectionChange?.([...nextSet])
   }
 
-  /* sorted view: never mutate the rows prop. 'none' sort keeps source order. */
-  const sortedRows = useMemo(() => {
-    if (!sort) return rows
-    const col = columns.find((c) => c.key === sort.key)
-    if (!col) return rows
-    const sign = sort.dir === 'asc' ? 1 : -1
-    return [...rows].sort((a, b) => sign * compare(a[sort.key], b[sort.key]))
-  }, [rows, columns, sort])
+  /* TanStack column defs derived from the public `columns`: sorting only (we render our own
+     markup below, so no header/cell defs are needed). compare() stays the comparator so the
+     none -> asc -> desc -> none cycle and null-last ordering are byte-for-byte the old behaviour. */
+  const tsColumns = useMemo(
+    () =>
+      columns.map((col) => ({
+        id: col.key,
+        accessorFn: (row) => row[col.key],
+        enableSorting: !!col.sortable,
+        sortingFn: nullsLast,
+        sortDescFirst: false,
+      })),
+    [columns],
+  )
 
-  /* cycle a header: none -> asc -> desc -> none */
-  const cycleSort = (key) => {
-    if (!sort || sort.key !== key) return setSort({ key, dir: 'asc' })
-    if (sort.dir === 'asc') return setSort({ key, dir: 'desc' })
-    return setSort(null)
-  }
+  /* TanStack keys rows by a string id; map it back to the original key type so the public
+     selection callbacks keep emitting the caller's own keys (numbers stay numbers). */
+  const keyByRowId = useMemo(() => {
+    const m = new Map()
+    rows.forEach((row, i) => m.set(String(keyOf(row, i)), keyOf(row, i)))
+    return m
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, rowKey])
 
-  const allKeys = sortedRows.map((row, i) => keyOf(row, i))
-  const selectedCount = allKeys.filter((k) => selected.has(k)).length
-  const allSelected = allKeys.length > 0 && selectedCount === allKeys.length
-  const someSelected = selectedCount > 0 && !allSelected
+  /* fully-controlled adapters: our public state -> TanStack state, and back on change. */
+  const sorting = sort ? [{ id: sort.key, desc: sort.dir === 'desc' }] : []
+  const rowSelection = {}
+  rows.forEach((row, i) => {
+    if (selected.has(keyOf(row, i))) rowSelection[String(keyOf(row, i))] = true
+  })
 
-  const toggleAll = () => {
-    if (allSelected) return setSelected(new Set())
-    setSelected(new Set(allKeys))
-  }
-  const toggleRow = (key) => {
-    const next = new Set(selected)
-    next.has(key) ? next.delete(key) : next.add(key)
-    setSelected(next)
-  }
+  const table = useReactTable({
+    data: rows,
+    columns: tsColumns,
+    state: { sorting, rowSelection },
+    getRowId: (row, i) => String(keyOf(row, i)),
+    enableSortingRemoval: true, // the none-state at the end of the cycle
+    enableMultiSort: false,
+    sortDescFirst: false, // first click is ascending
+    enableRowSelection: selectable,
+    onSortingChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(sorting) : updater
+      const s = next[0]
+      setSort(s ? { key: s.id, dir: s.desc ? 'desc' : 'asc' } : null)
+    },
+    onRowSelectionChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(rowSelection) : updater
+      const set = new Set()
+      for (const rid of Object.keys(next)) if (next[rid]) set.add(keyByRowId.get(rid) ?? rid)
+      setSelected(set)
+    },
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  })
 
+  const sortedRows = table.getSortedRowModel().rows
   const colCount = columns.length + (selectable ? 1 : 0)
 
   return (
     <div className={`tbl-wrap${className ? ' ' + className : ''}`}>
       <table className="tbl">
         {caption && <caption className="tbl-caption">{caption}</caption>}
+        {(selectable || columns.some((c) => c.width)) && (
+          <colgroup>
+            {selectable && <col style={{ width: '1%' }} />}
+            {columns.map((col) => (
+              <col key={col.key} style={col.width ? { width: col.width } : undefined} />
+            ))}
+          </colgroup>
+        )}
         <thead>
           <tr>
             {selectable && (
               <th scope="col" className="tbl-sel">
-                <input
-                  type="checkbox"
-                  className="check-box"
-                  checked={allSelected}
-                  ref={(el) => el && (el.indeterminate = someSelected)}
-                  onChange={toggleAll}
-                  aria-label={allSelected ? 'clear selection' : 'select all rows'}
-                />
+                <label className="tbl-sel-hit">
+                  <input
+                    type="checkbox"
+                    className="check-box"
+                    checked={table.getIsAllRowsSelected()}
+                    ref={(el) => el && (el.indeterminate = table.getIsSomeRowsSelected())}
+                    onChange={table.getToggleAllRowsSelectedHandler()}
+                    aria-label={table.getIsAllRowsSelected() ? 'clear selection' : 'select all rows'}
+                  />
+                </label>
               </th>
             )}
             {columns.map((col) => {
@@ -136,10 +178,10 @@ export default function DataTable({
                     <button
                       type="button"
                       className={`tbl-sort${isSorted ? ' is-sorted' : ''}`}
-                      onClick={() => cycleSort(col.key)}
+                      onClick={table.getColumn(col.key)?.getToggleSortingHandler()}
                     >
                       <span className="tbl-th-label">{col.label}</span>
-                      <Indicator className="tbl-sort-ic" size={14} aria-hidden="true" />
+                      <Indicator className="tbl-sort-ic" aria-hidden="true" />
                     </button>
                   ) : (
                     <span className="tbl-th-label">{col.label}</span>
@@ -155,22 +197,23 @@ export default function DataTable({
               <td className="tbl-empty" colSpan={colCount}>no rows</td>
             </tr>
           ) : (
-            sortedRows.map((row, i) => {
-              const k = keyOf(row, i)
-              const isSel = selected.has(k)
-              const cbId = `${baseId}-row-${k}`
+            sortedRows.map((r, i) => {
+              const row = r.original
+              const isSel = r.getIsSelected()
               return (
-                <tr key={k} className={isSel ? 'tbl-row is-selected' : 'tbl-row'}>
+                <tr key={r.id} className={isSel ? 'tbl-row is-selected' : 'tbl-row'}>
                   {selectable && (
                     <td className="tbl-sel">
-                      <input
-                        id={cbId}
-                        type="checkbox"
-                        className="check-box"
-                        checked={isSel}
-                        onChange={() => toggleRow(k)}
-                        aria-label={`select row ${i + 1}`}
-                      />
+                      <label className="tbl-sel-hit">
+                        <input
+                          id={`${baseId}-row-${r.id}`}
+                          type="checkbox"
+                          className="check-box"
+                          checked={isSel}
+                          onChange={r.getToggleSelectedHandler()}
+                          aria-label={`select row ${i + 1}`}
+                        />
+                      </label>
                     </td>
                   )}
                   {columns.map((col) => (
@@ -205,4 +248,10 @@ function compare(a, b) {
   if (b == null) return -1
   if (typeof a === 'number' && typeof b === 'number') return a - b
   return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' })
+}
+
+/* TanStack sortingFn signature: ascending order by the column's accessor value, reusing the
+   comparator above so ordering (incl. null-last) is identical to the pre-library table. */
+function nullsLast(rowA, rowB, columnId) {
+  return compare(rowA.getValue(columnId), rowB.getValue(columnId))
 }

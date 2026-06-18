@@ -1,4 +1,6 @@
 import { Skeleton, Progress, Spinner, Toast, FeedbackPanel } from './Feedback.jsx'
+import BrandMark from './BrandMark.jsx'
+import { frame } from './story-frame.jsx'
 import { UploadCloud, Inbox } from 'lucide-react'
 
 /* feedback surfaces from sections/36-states.html: skeleton, progress, spinner, toast and
@@ -9,6 +11,7 @@ const meta = {
   title: 'feedback/Feedback',
   component: Spinner,
   tags: ['autodocs'],
+  decorators: frame('panel'),
   argTypes: {
     children: { control: 'text' },
   },
@@ -49,8 +52,16 @@ export const ProgressComplete = {
 export const ToastOk = {
   render: () => (
     <div aria-live="polite">
-      <Toast variant="ok" title="transcript published" onClose={() => {}}>
-        shared to the claude-code collective.
+      <Toast
+        variant="ok"
+        title={
+          <>
+            <BrandMark name="claude" /> claude-code published
+          </>
+        }
+        onClose={() => {}}
+      >
+        shared to the collective.
       </Toast>
     </div>
   ),
@@ -59,8 +70,16 @@ export const ToastOk = {
 export const ToastError = {
   render: () => (
     <div aria-live="assertive">
-      <Toast variant="err" title="redaction failed" onClose={() => {}}>
-        2 names still exposed in the gemini-cli session.
+      <Toast
+        variant="err"
+        title={
+          <>
+            <BrandMark name="gemini" /> gemini-cli redaction failed
+          </>
+        }
+        onClose={() => {}}
+      >
+        2 names still exposed in the session.
       </Toast>
     </div>
   ),
@@ -96,5 +115,28 @@ export const PanelError = {
     <FeedbackPanel variant="error">
       couldn't reach the provider. retry in a moment.
     </FeedbackPanel>
+  ),
+}
+
+// ── prop coverage ────────────────────────────────────────────────────────────
+export const ProgressNoPct = {
+  render: () => <Progress value={45} label="importing" showPct={false} />,
+}
+
+export const SkeletonAvatarOnly = {
+  render: () => <Skeleton label="loading profile" avatar lines={0} />,
+}
+
+export const SpinnerCustomIcon = {
+  render: () => <Spinner icon={UploadCloud}>uploading</Spinner>,
+}
+
+export const ToastNoClose = {
+  render: () => (
+    <div aria-live="polite">
+      <Toast variant="ok" title="saved">
+        no dismiss button on this toast.
+      </Toast>
+    </div>
   ),
 }
