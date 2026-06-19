@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   ShieldCheck,
   Share2,
@@ -25,39 +26,44 @@ import Menu from '../ui/Menu.jsx'
    lucide-react (same .lucide class, CSS-sized). this replaces the [data-menu-trigger]
    useEffect in App.jsx, so that effect is now dead. */
 export function OverlaysSection() {
+  const [popOpen, setPopOpen] = useState(false)
   return (
     <section className="band" id="overlays">
       <h2 className="label">overlays</h2>
       <div className="sub">floating surfaces: tooltip, menu, command palette</div>
-      <p className="prose">overlays sit above the page on an elevated surface with a hairline edge and square corners. they are shown here in their open state. each one is dismissible, keeps focus in view, and is reachable from the keyboard.</p>
+      <p className="prose">overlays sit above the page on an elevated surface with a hairline edge and square corners. each one opens on demand, is dismissible, keeps focus in view, and is reachable from the keyboard.</p>
       <h3 className="label" style={{ marginTop: 'var(--sp-7)', marginBottom: 'var(--sp-2)' }}>tooltip and popover</h3>
       <div className="specimen">
         <div className="specimen-bar"><span className="specimen-cap">example</span></div>
         <div className="specimen-body">
           <div className="tip-demo">
             <div>
-              <span className="label" style={{ marginBottom: 'var(--sp-3)' }}>tooltip (role=tooltip)</span>
+              <span className="label">tooltip (role=tooltip)</span>
               <div className="tip-anchor">
                 <button className="btn btn-secondary btn-icon" aria-label="redaction status" aria-describedby="tip-redact"><ShieldCheck aria-hidden="true" /></button>
                 <span className="tip-bubble" role="tooltip" id="tip-redact">scrubbed of secrets before publish</span>
               </div>
+              <span className="tip-hint mono">hover or focus the button</span>
             </div>
             <div>
-              <span className="label" style={{ marginBottom: 'var(--sp-3)' }}>popover card</span>
+              <span className="label">popover card</span>
               <div className="tip-anchor">
-                <button className="btn btn-secondary btn-sm" aria-expanded="true" aria-controls="pop-share"><Share2 aria-hidden="true" /> share</button>
-                <div className="pop-card" role="dialog" aria-label="share transcript" id="pop-share">
-                  <div className="pop-head"><Link aria-hidden="true" /><span className="pop-title">share transcript</span></div>
-                  <div className="pop-body">
-                    <p>Anyone with the link can read this transcript. Token counts and turns stay visible.</p>
-                    <div className="field input-ico" style={{ marginBottom: 0 }}><Link aria-hidden="true" /><input className="input" value="https://commons.example/t/9f3c" readOnly aria-label="share link" /></div>
+                <button className="btn btn-secondary btn-sm" aria-expanded={popOpen} aria-controls="pop-share" onClick={() => setPopOpen((o) => !o)}><Share2 aria-hidden="true" /> share</button>
+                {popOpen && (
+                  <div className="pop-card" role="dialog" aria-label="share transcript" id="pop-share">
+                    <div className="pop-head"><Link aria-hidden="true" /><span className="pop-title">share transcript</span></div>
+                    <div className="pop-body">
+                      <p>Anyone with the link can read this transcript. Token counts and turns stay visible.</p>
+                      <div className="field input-ico" style={{ marginBottom: 0 }}><Link aria-hidden="true" /><input className="input" value="https://commons.example/t/9f3c" readOnly aria-label="share link" /></div>
+                    </div>
+                    <div className="pop-foot">
+                      <button className="btn btn-ghost btn-sm" onClick={() => setPopOpen(false)}>cancel</button>
+                      <button className="btn btn-primary btn-sm"><Copy aria-hidden="true" /> copy link</button>
+                    </div>
                   </div>
-                  <div className="pop-foot">
-                    <button className="btn btn-ghost btn-sm">cancel</button>
-                    <button className="btn btn-primary btn-sm"><Copy aria-hidden="true" /> copy link</button>
-                  </div>
-                </div>
+                )}
               </div>
+              <span className="tip-hint mono">click share to open</span>
             </div>
           </div>
         </div>

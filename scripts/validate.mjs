@@ -106,8 +106,8 @@ await page.evaluate(() => document.querySelector('.theme-btn').click()); await n
 ok('theme toggles', themed === 'light')
 ok('icons persist across theme toggle', t2 >= t1 - 2, `${t1}->${t2}`)
 
-// overflow across breakpoints
-const widths = [360, 390, 768, 1024, 1440]
+// overflow across breakpoints (desktop-first floor is 320px - see RESPONSIVE_PLAN.md / DESIGN.md)
+const widths = [320, 360, 390, 768, 1024, 1440]
 const over = {}
 for (const w of widths) {
   const pp = await browser.newPage(); await pp.setViewport({ width: w, height: 800 })
@@ -115,7 +115,7 @@ for (const w of widths) {
   over[w] = await pp.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
   await pp.close()
 }
-ok('no overflow >= 390px', Object.entries(over).filter(([w]) => +w >= 390).every(([, v]) => v <= 1), JSON.stringify(over))
+ok('no horizontal overflow >= 320px', Object.values(over).every((v) => v <= 1), JSON.stringify(over))
 
 // reduced-motion disables animation
 const rm = await browser.newPage()

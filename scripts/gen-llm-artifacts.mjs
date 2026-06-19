@@ -40,6 +40,7 @@ function block(css, opener) {
 }
 
 const TYPE_GROUP = [
+  [/^bp-/, 'breakpoint', 'dimension'],
   [/^sp-|^nav-h$|^control-h|^maxw$|^gutter$|^band-y$|^group-y$|^row-h-|^target-/, 'space', 'dimension'],
   [/^fs-|^ic-|^lh-/, 'typography', 'dimension'],
   [/^dur-|^ease-|^motion-/, 'motion', 'duration'],
@@ -65,6 +66,7 @@ function buildTokens() {
     typography: {},
     motion: {},
     font: {},
+    breakpoint: {},
     'z-index': {},
     other: {},
   }

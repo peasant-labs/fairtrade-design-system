@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 /* read a themed token color at draw time (canvas can't use css vars directly) */
 function readVar(name, fallback) {
@@ -296,6 +296,59 @@ function mulberry32(a) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
 }
+
+/* a one-shot GROWTH-MORPH reveal for a procedural <pre> (the roots, the soil band): the grid fills from the
+   top down over `growMs`, and the rows just behind the growing front shimmer through ramp glyphs before
+   settling to their final form - so the ascii reads as it FORMS, descending like the plant, instead of a
+   flat clip wipe. crucially the front is RAGGED, not a straight horizontal line: each column carries a
+   stable, lightly-smoothed offset (`jitter` rows) so some columns sprout earlier than their neighbours, the
+   way real roots/soil push down unevenly. it paints `lines` imperatively (textContent) so it never reflows.
+   honours reduced-motion and only animates when `grow` flips true; otherwise it paints the final grid at
+   once. `lines` MUST be a stable reference (memoise it) or the animation restarts every render. */
+function useGrowMorph(ref, lines, { grow = false, growMs = 1600, ramp = ROOT_RAMP, fps = 30, jitter = 4 } = {}) {
+  useEffect(() => {
+    const pre = ref.current; if (!pre) return
+    const final = lines.join('\n')
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!grow || reduce) { pre.textContent = final; return }
+    const R = lines.length, lastr = ramp.length - 1
+    let W = 0; for (const l of lines) if (l.length > W) W = l.length
+    // a STABLE per-column front offset, lightly smoothed (3-tap) so neighbours stay similar - the reveal
+    // descends top->bottom but with a natural ragged edge rather than a flat wipe.
+    const colOff = new Array(W)
+    { const n = new Array(W); for (let x = 0; x < W; x++) n[x] = (Math.random() * 2 - 1) * jitter
+      for (let x = 0; x < W; x++) colOff[x] = (n[Math.max(0, x - 1)] + n[x] + n[Math.min(W - 1, x + 1)]) / 3 }
+    const FEATHER = 4 // rows of shimmer trailing the front before glyphs settle to their final form
+    const SPAN = R + jitter + FEATHER + 2 // the front travels a touch past the bottom so every column settles
+    let raf = 0, startT = 0, lastFrame = 0
+    const tick = (now) => {
+      if (!startT) startT = now
+      if (now - lastFrame >= 1000 / fps) {
+        lastFrame = now
+        const p = Math.min(1, (now - startT) / growMs)
+        const front = (1 - (1 - p) * (1 - p)) * SPAN // ease-out descent
+        const rows = new Array(R)
+        for (let y = 0; y < R; y++) {
+          const ln = lines[y]
+          let row = ''
+          for (let x = 0; x < ln.length; x++) {
+            const ef = front + colOff[x] // this column's front, ragged vs its neighbours
+            if (y > ef) { row += ' '; continue } // not yet grown to this depth in this column
+            const c = ln[x]
+            const settle = (ef - y) / FEATHER // 0 right at the front -> >=1 once settled
+            row += c !== ' ' && settle < 1 && Math.random() < (1 - settle) * 0.9 ? ramp[(Math.random() * (lastr + 1)) | 0] : c
+          }
+          rows[y] = row
+        }
+        pre.textContent = rows.join('\n')
+        if (p >= 1) { pre.textContent = final; return } // settle to the final grid, stop
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [ref, lines, grow, growMs, ramp, fps, jitter])
+}
 /* `ramp`: draw the strands in the WHEAT-RAMP glyphs (same chars as AsciiVideo) so the roots blend
    seamlessly with the plant above; nodes get a dense grain glyph. otherwise use line glyphs.
    `seeds`: a per-column density profile sampled from the wheat video's bottom edge (passed down by the
@@ -303,7 +356,7 @@ function mulberry32(a) {
    from real wheat, not a generic evenly-spaced point), and the top `overlap` band is drawn dense in
    wheat-ramp glyphs so the seam reads as one continuous plant -> roots before thinning to tendrils. */
 const ROOT_RAMP = 'cvoxoO0Qcvx*+'
-export function AsciiRoots({ cols = 220, rows = 64, seed = 7, density = 1, spread = 0.5, bases = 4, nodes = false, ramp = false, seeds = null, overlap = 0.16, fill = false, fan = false, className = '', style }) {
+export function AsciiRoots({ cols = 220, rows = 64, seed = 7, density = 1, spread = 0.5, bases = 4, nodes = false, ramp = false, seeds = null, overlap = 0.16, fill = false, fan = false, trunk = 0.34, grow = false, growMs = 1700, className = '', style }) {
   // `fill`: derive the row count from the live container height so the roots fill it top-to-bottom (the
   // wordmark sits below in its own row; the roots own all the space above it). otherwise use the `rows` prop.
   const ref = useRef(null)
@@ -321,96 +374,117 @@ export function AsciiRoots({ cols = 220, rows = 64, seed = 7, density = 1, sprea
     return () => ro.disconnect()
   }, [fill])
   const R = fill ? autoRows : rows
-  const grid = Array.from({ length: R }, () => new Array(cols).fill(' '))
-  const rnd = mulberry32(seed)
-  const mid = cols / 2
-  const bandRows = Math.max(1, Math.round(R * overlap))
-  const nodeGlyph = ramp ? '#' : 'O'
-  const cell = (xi, y, drift) => {
-    if (ramp) return ROOT_RAMP[((xi * 131 + y * 17) >>> 0) % ROOT_RAMP.length]
-    return drift < 0.34 ? '\\' : drift > 0.74 ? '/' : '|'
-  }
-  // base positions: seed from the wheat's densest bottom columns when a profile is supplied (the seam),
-  // else fall back to an even spread under the crop. each base carries a `strength` (its wheat density).
-  let baseList = []
-  if (seeds && seeds.length > 1) {
-    let mxs = 0; for (const v of seeds) if (v > mxs) mxs = v
-    const thresh = mxs * 0.06
-    // active wheat span (trim the empty sky columns at each edge)
-    let lo = 0, hi = seeds.length - 1
-    while (lo < seeds.length && seeds[lo] < thresh) lo++
-    while (hi > lo && seeds[hi] < thresh) hi--
-    const span = Math.max(1, hi - lo)
-    // bin the active span into `bases` equal slots and take the densest column in EACH slot, so the bases
-    // span the full wheat width instead of clustering on the center-densest columns (which read as a cone)
-    for (let b = 0; b < bases; b++) {
-      const a0 = lo + Math.floor((b / bases) * span)
-      const a1 = lo + Math.floor(((b + 1) / bases) * span)
-      let best = -1, bestv = thresh
-      for (let i = a0; i <= a1 && i < seeds.length; i++) if (seeds[i] >= bestv) { bestv = seeds[i]; best = i }
-      if (best >= 0) baseList.push({ x: Math.round((best / (seeds.length - 1)) * (cols - 1)), strength: mxs > 0 ? bestv / mxs : 1 })
+  // build the (deterministic) root grid into a STABLE array of strings, so the growth-morph below only
+  // re-runs when the grid actually changes (props / measured rows / wheat seam profile), not every render.
+  const lines = useMemo(() => {
+    const grid = Array.from({ length: R }, () => new Array(cols).fill(' '))
+    const rnd = mulberry32(seed)
+    const mid = cols / 2
+    const nodeGlyph = ramp ? '#' : 'O'
+    const cell = (xi, y, drift) => {
+      if (ramp) return ROOT_RAMP[((xi * 131 + y * 17) >>> 0) % ROOT_RAMP.length]
+      return drift < 0.34 ? '\\' : drift > 0.74 ? '/' : '|'
     }
-  }
-  for (let i = baseList.length; i < bases; i++) { // fill out (or fully build) an even spread
-    const x = Math.round(mid + ((i + 0.5) / bases - 0.5) * cols * 0.6 + (rnd() - 0.5) * cols * 0.05)
-    baseList.push({ x, strength: 0.7 })
-  }
-  // walkers: when `fan`, they START narrow near the centre and OPEN OUT toward their target column (spread
-  // across the width) as they descend, so the root system is narrow at the top and fills the full width at
-  // the bottom. otherwise they walk straight down with random drift.
-  let walkers = []
-  for (const b of baseList) {
-    const tx = Math.max(0, Math.min(cols - 1, Math.round(b.x)))
-    const x0 = fan ? mid + (rnd() - 0.5) * cols * 0.12 : tx
-    if (nodes) { const xi = Math.round(x0); if (xi >= 0 && xi < cols) grid[0][xi] = nodeGlyph }
-    walkers.push({ tx, x0, x: x0, jit: 0, bias: (rnd() - 0.5) * spread, strength: b.strength })
-  }
-  for (let y = 1; y < R; y++) {
-    const next = []
-    const depth = y / R
+    // base positions: seed from the wheat's densest bottom columns when a profile is supplied (the seam),
+    // else fall back to an even spread under the crop. each base carries a `strength` (its wheat density).
+    let baseList = []
+    if (seeds && seeds.length > 1) {
+      let mxs = 0; for (const v of seeds) if (v > mxs) mxs = v
+      const thresh = mxs * 0.06
+      // active wheat span (trim the empty sky columns at each edge)
+      let lo = 0, hi = seeds.length - 1
+      while (lo < seeds.length && seeds[lo] < thresh) lo++
+      while (hi > lo && seeds[hi] < thresh) hi--
+      const span = Math.max(1, hi - lo)
+      // bin the active span into `bases` equal slots and take the densest column in EACH slot, so the bases
+      // span the full wheat width instead of clustering on the center-densest columns (which read as a cone)
+      for (let b = 0; b < bases; b++) {
+        const a0 = lo + Math.floor((b / bases) * span)
+        const a1 = lo + Math.floor(((b + 1) / bases) * span)
+        let best = -1, bestv = thresh
+        for (let i = a0; i <= a1 && i < seeds.length; i++) if (seeds[i] >= bestv) { bestv = seeds[i]; best = i }
+        if (best >= 0) baseList.push({ x: Math.round((best / (seeds.length - 1)) * (cols - 1)), strength: mxs > 0 ? bestv / mxs : 1 })
+      }
+    }
+    for (let i = baseList.length; i < bases; i++) { // fill out (or fully build) an even spread
+      const x = Math.round(mid + ((i + 0.5) / bases - 0.5) * cols * 0.6 + (rnd() - 0.5) * cols * 0.05)
+      baseList.push({ x, strength: 0.7 })
+    }
+    // walkers: when `fan`, they START narrow near the centre and OPEN OUT toward their target column (spread
+    // across the width) as they descend, so the root system is narrow at the top and fills the full width at
+    // the bottom. otherwise they walk straight down with random drift.
+    // `trunk` (fan only): the roots EMERGE already spread to this fraction of their full width, so the top
+    // matches the plant's trunk instead of pinching to a point, then open out to the full span as they
+    // descend. 0 = a single point (the old pinch), 1 = full width from the very top.
+    const TRUNK = fan ? Math.max(0, Math.min(1, trunk)) : 0
+    let walkers = []
+    for (const b of baseList) {
+      const tx = Math.max(0, Math.min(cols - 1, Math.round(b.x)))
+      const x0 = fan ? mid + (tx - mid) * TRUNK + (rnd() - 0.5) * cols * 0.03 : tx
+      walkers.push({ tx, x0, x: x0, jit: 0, bias: (rnd() - 0.5) * spread, strength: b.strength })
+    }
+    // draw the emergence row (y = 0) so the roots begin right at the soil line - one row higher than before,
+    // when drawing started at y = 1 and left the very top line blank (the "begins one notch too low" gap).
     for (const w of walkers) {
-      if (fan) {
-        const open = Math.pow(depth, 1.35) // narrow at the top, opening to full width lower down
-        w.jit = (w.jit + (rnd() - 0.5) * 1.2) * 0.9
-        w.x = w.x0 + (w.tx - w.x0) * open + w.jit
-      } else {
-        const r = rnd() + w.bias * 0.4
-        w.x += (r < 0.34 ? -1 : r > 0.74 ? 1 : 0) + w.bias * 0.5
-      }
       const xi = Math.round(w.x)
-      if (xi >= 0 && xi < cols && grid[y][xi] === ' ') grid[y][xi] = cell(xi, y, rnd())
-      // branch most near the TOP, decaying with depth; each branch point is a node
-      if (rnd() < density * 0.2 * (1 - depth) * (1 - depth) && walkers.length + next.length < cols * 0.5) {
-        if (nodes && xi >= 0 && xi < cols) grid[y][xi] = nodeGlyph
-        next.push({ tx: Math.max(0, Math.min(cols - 1, w.tx + (rnd() < 0.5 ? -1 : 1) * cols * 0.04)), x0: w.x0, x: w.x, jit: w.jit, bias: w.bias + (rnd() - 0.5) * spread, strength: w.strength })
-      }
-      // gentle taper so the field fills top-to-bottom (down to the wordmark) instead of dwindling to tendrils
-      if (rnd() < 0.003 + 0.01 * depth && walkers.length + next.length > Math.max(2, bases - 1)) continue
-      next.push(w)
+      if (xi >= 0 && xi < cols && grid[0][xi] === ' ') grid[0][xi] = nodes ? nodeGlyph : cell(xi, 0, rnd())
     }
-    walkers = next
-  }
-  return <pre ref={ref} className={'ascii ' + className} style={style} aria-hidden="true">{grid.map((r) => r.join('')).join('\n')}</pre>
+    for (let y = 1; y < R; y++) {
+      const next = []
+      const depth = y / R
+      for (const w of walkers) {
+        if (fan) {
+          const open = TRUNK + (1 - TRUNK) * Math.pow(depth, 1.35) // trunk width at the top -> full width lower down
+          w.jit = (w.jit + (rnd() - 0.5) * 1.2) * 0.9
+          w.x = mid + (w.tx - mid) * open + w.jit
+        } else {
+          const r = rnd() + w.bias * 0.4
+          w.x += (r < 0.34 ? -1 : r > 0.74 ? 1 : 0) + w.bias * 0.5
+        }
+        const xi = Math.round(w.x)
+        if (xi >= 0 && xi < cols && grid[y][xi] === ' ') grid[y][xi] = cell(xi, y, rnd())
+        // branch most near the TOP, decaying with depth; each branch point is a node
+        if (rnd() < density * 0.2 * (1 - depth) * (1 - depth) && walkers.length + next.length < cols * 0.5) {
+          if (nodes && xi >= 0 && xi < cols) grid[y][xi] = nodeGlyph
+          next.push({ tx: Math.max(0, Math.min(cols - 1, w.tx + (rnd() < 0.5 ? -1 : 1) * cols * 0.04)), x0: w.x0, x: w.x, jit: w.jit, bias: w.bias + (rnd() - 0.5) * spread, strength: w.strength })
+        }
+        // gentle taper so the field fills top-to-bottom (down to the wordmark) instead of dwindling to tendrils
+        if (rnd() < 0.003 + 0.01 * depth && walkers.length + next.length > Math.max(2, bases - 1)) continue
+        next.push(w)
+      }
+      walkers = next
+    }
+    return grid.map((r) => r.join(''))
+  }, [cols, R, seed, density, spread, bases, nodes, ramp, seeds, overlap, fan, trunk])
+  // the roots GROW down with a morphing front when the brand section scrolls in (reduced-motion: static).
+  useGrowMorph(ref, lines, { grow, growMs, ramp: ROOT_RAMP, fps: 30 })
+  return <pre ref={ref} className={'ascii ' + className} style={style} aria-hidden="true" />
 }
 
 /* a full-width band of soil/earth ascii that sits between the wheat (above) and the roots (below) so the
    plant -> ground -> roots transition reads as one continuous thing. densest through the middle, fading at
    the top edge (up into the plant) and the bottom edge (down into the descending roots). same glyph family
    as the wheat + roots so it is the same material. deterministic (seeded). theme-colored via .ascii. */
-const SOIL_DENSE = '@#%&8B0OQ', SOIL_MID = 'oxcv*+=zn'
-export function AsciiSoil({ cols = 300, rows = 9, seed = 5, className = '', style }) {
-  const rnd = mulberry32(seed)
-  const lines = []
-  for (let y = 0; y < rows; y++) {
-    const f = 1 - y / (rows - 1) // 1 at the top (packed, meeting the plant) -> 0 at the bottom (crumbling into the roots)
-    let line = ''
-    for (let x = 0; x < cols; x++) {
-      if (rnd() > 0.1 + f * 0.82) { line += ' '; continue } // dense up top, progressively fewer grains toward the bottom
-      line += rnd() < 0.4 + f * 0.35 ? SOIL_DENSE[(rnd() * SOIL_DENSE.length) | 0] : SOIL_MID[(rnd() * SOIL_MID.length) | 0]
+const SOIL_DENSE = '@#%&8B0OQ', SOIL_MID = 'oxcv*+=zn', SOIL_RAMP = SOIL_DENSE + SOIL_MID
+export function AsciiSoil({ cols = 300, rows = 9, seed = 5, grow = false, growMs = 900, className = '', style }) {
+  const ref = useRef(null)
+  const lines = useMemo(() => {
+    const rnd = mulberry32(seed)
+    const out = []
+    for (let y = 0; y < rows; y++) {
+      const f = 1 - y / (rows - 1) // 1 at the top (packed, meeting the plant) -> 0 at the bottom (crumbling into the roots)
+      let line = ''
+      for (let x = 0; x < cols; x++) {
+        if (rnd() > 0.1 + f * 0.82) { line += ' '; continue } // dense up top, progressively fewer grains toward the bottom
+        line += rnd() < 0.4 + f * 0.35 ? SOIL_DENSE[(rnd() * SOIL_DENSE.length) | 0] : SOIL_MID[(rnd() * SOIL_MID.length) | 0]
+      }
+      out.push(line)
     }
-    lines.push(line)
-  }
-  return <pre className={'ascii ' + className} style={style} aria-hidden="true">{lines.join('\n')}</pre>
+    return out
+  }, [cols, rows, seed])
+  // the surface band forms with a quick morph as the section scrolls in (reduced-motion: static)
+  useGrowMorph(ref, lines, { grow, growMs, ramp: SOIL_RAMP, fps: 30 })
+  return <pre ref={ref} className={'ascii ' + className} style={style} aria-hidden="true" />
 }
 
 /* a DIM full-section ascii texture (same earthy glyph family as the soil/roots) that paints the whole roots

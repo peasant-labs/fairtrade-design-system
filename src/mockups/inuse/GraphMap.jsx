@@ -325,6 +325,42 @@ export function MapView({ theme }) {
       {/* ---- canvas + rail ---- */}
       <div className="gmp-body">
         <div className="gmp-canvas-wrap">
+          {/* time-strip sparkline with branch chips + scrub playhead — sits above the chart */}
+          <div className="gmp-timestrip-wrap">
+            <div
+              className="timestrip gmp-timestrip"
+              role="group"
+              aria-label={`session activity, ${SPARK.reduce((a, b) => a + b, 0)} sessions over ${SPARK.length} days`}
+            >
+              {SPARK.map((lvl, i) => {
+                const pct = [4, 25, 45, 70, 100][lvl]
+                const on = scrub === i
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    className={'gmp-spark-bar' + (on ? ' gmp-spark-on' : '')}
+                    style={{ height: pct + '%' }}
+                    title={`${SPARK_DATES[i]} — ${lvl === 0 ? 'no' : lvl} sessions`}
+                    aria-label={`${SPARK_DATES[i]}, ${lvl} sessions`}
+                    onClick={() => setScrub(i)}
+                  >
+                    {on && <span className="gmp-spark-head" aria-hidden="true" />}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="gmp-branch-chips">
+              {BRANCH_CHIPS.map((b) => (
+                <button key={b.name} type="button" className="chip gmp-branch-chip" title={`open ${b.name}`}>
+                  <GitBranch size={13} aria-hidden="true" />
+                  <span className="gmp-branch-name">{b.name}</span>
+                  <span className="tnum gmp-branch-ahead">+{b.ahead}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div
             className={'canvas gmp-canvas' + (scrubbed ? ' gmp-scrubbed' : '')}
             role="application"
@@ -521,41 +557,6 @@ export function MapView({ theme }) {
             <span className="gmp-legend-item gmp-legend-dim">double-click a folder to expand</span>
           </div>
 
-          {/* time-strip sparkline with branch chips + scrub playhead */}
-          <div className="gmp-timestrip-wrap">
-            <div
-              className="timestrip gmp-timestrip"
-              role="group"
-              aria-label={`session activity, ${SPARK.reduce((a, b) => a + b, 0)} sessions over ${SPARK.length} days`}
-            >
-              {SPARK.map((lvl, i) => {
-                const pct = [4, 25, 45, 70, 100][lvl]
-                const on = scrub === i
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    className={'gmp-spark-bar' + (on ? ' gmp-spark-on' : '')}
-                    style={{ height: pct + '%' }}
-                    title={`${SPARK_DATES[i]} — ${lvl === 0 ? 'no' : lvl} sessions`}
-                    aria-label={`${SPARK_DATES[i]}, ${lvl} sessions`}
-                    onClick={() => setScrub(i)}
-                  >
-                    {on && <span className="gmp-spark-head" aria-hidden="true" />}
-                  </button>
-                )
-              })}
-            </div>
-            <div className="gmp-branch-chips">
-              {BRANCH_CHIPS.map((b) => (
-                <button key={b.name} type="button" className="chip gmp-branch-chip" title={`open ${b.name}`}>
-                  <GitBranch size={13} aria-hidden="true" />
-                  <span className="gmp-branch-name">{b.name}</span>
-                  <span className="tnum gmp-branch-ahead">+{b.ahead}</span>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* ---- selection rail ---- */}

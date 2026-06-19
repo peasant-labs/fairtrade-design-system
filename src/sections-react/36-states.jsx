@@ -131,7 +131,7 @@ export function StatesSection() {
 
               <div className="is-field">
                 <span className="label">stewards</span>
-                <input className="input is-input" defaultValue="vitor.hw@outlook.com" disabled aria-describedby="is-hint-disabled" />
+                <input className="input is-input" defaultValue="steward@desert-archivists.example" disabled aria-describedby="is-hint-disabled" />
                 <span className="is-hint" id="is-hint-disabled">locked until your membership is verified</span>
               </div>
 
@@ -178,7 +178,7 @@ export function StatesSection() {
       <div className="specimen">
         <div className="specimen-bar"><span className="specimen-cap">example</span></div>
         <div className="specimen-body">
-          <div style={{ maxWidth: '340px' }}>
+          <div className="sw-group" style={{ maxWidth: '340px' }}>
             <div className="sw-field">
               <button type="button" className="sw" role="switch" aria-checked="false" id="sw-redact"></button>
               <label className="sw-label" htmlFor="sw-redact">redaction review</label>

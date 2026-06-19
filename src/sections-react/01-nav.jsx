@@ -1,4 +1,4 @@
-import { Search, Box, Moon, Sun } from 'lucide-react'
+import { Search, Moon, Sun } from 'lucide-react'
 
 /* 01-nav: the fixed top nav bar. App.jsx's delegated click handlers + effects query these
    EXACT hooks — preserve all of them: .nav, .theme-btn, .navctl.bx (search/command-k),
@@ -18,8 +18,8 @@ export function NavBar() {
           </div>
         </div>
         <div className="nav-right">
-          <button className="navctl bx" aria-haspopup="dialog" aria-label="search (command k)"><Search aria-hidden="true" /> search <span className="kbd">⌘k</span></button>
-          <a className="navctl sb-link" href="storybook/" target="_blank" rel="noopener" aria-label="open storybook, the component library"><Box aria-hidden="true" /> <span className="sb-label">storybook</span></a>
+          <button className="navctl bx" aria-haspopup="dialog" aria-label="search (command k)"><Search aria-hidden="true" /> <span className="bx-label">search</span> <span className="kbd">⌘k</span></button>
+          <span className="navctl sb-link sb-link--soon" role="link" aria-disabled="true" aria-label="storybook, coming soon"><svg className="brand" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><use href="#b-storybook" /></svg> <span className="sb-label">storybook</span> <span className="sb-soon">soon</span></span>
           <span className="navctl"><span className="dot"></span> connected</span>
           <button className="navctl sq theme-btn" aria-label="toggle theme"><span className="i-moon"><Moon aria-hidden="true" /></span><span className="i-sun"><Sun aria-hidden="true" /></span></button>
         </div>

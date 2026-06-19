@@ -1,4 +1,4 @@
-import { ShieldCheck, Gem, MapPin, Wrench, AlignLeft, Eye, Gauge, Check, X, BookMarked, Box, Users, FileText } from 'lucide-react'
+import { ShieldCheck, Gem, MapPin, Wrench, AlignLeft, Eye, BookOpen, Gauge, Check, X, BookMarked, Box, Users, FileText } from 'lucide-react'
 
 /* roadmap #1 "one source of truth": the static src/sections/*.html partials, migrated to
    JSX (and src/ui components where the markup maps to one) so the page renders from
@@ -69,15 +69,17 @@ export function MotionSection() {
   )
 }
 
-/* 20-principles: six icon tiles. <i data-lucide> -> lucide-react; CSS (.pi .lucide) sizes them. */
+/* 20-principles: seven icon tiles, mirroring the philosophy in llm/DESIGN.md.
+   <i data-lucide> -> lucide-react; CSS (.pi .lucide) sizes them. */
 export function PrinciplesSection() {
   const items = [
-    { icon: Gem, h: 'styled, but functional', p: "craft serves use. if a flourish doesn't aid legibility, orientation, or speed, it goes." },
-    { icon: MapPin, h: 'always know where you are', p: 'fixed nav, sticky headers, and breadcrumbs keep orientation at any scroll position.' },
-    { icon: Wrench, h: 'tools stay on screen', p: 'the controls for the current surface stay visible. reaching an action is never a hunt.' },
-    { icon: AlignLeft, h: 'aligned, left-aligned', p: 'one axis, one 4/8 grid. labels and values share a left edge; numbers are tabular.' },
-    { icon: Eye, h: 'glanceable', p: 'icons lead data, not chrome. one family, consistent sizing across providers, tools and states.' },
-    { icon: Gauge, h: 'maximize usability', p: 'usability beats ornament at every fork. comfortable targets, obvious states, aa contrast.' },
+    { icon: Gem, h: 'styled, but functional', p: "craft serves use. every visual choice earns its place in legibility, orientation or speed. when in doubt, remove it." },
+    { icon: MapPin, h: 'always know where you are', p: 'fixed nav, sticky section and conversation headers, and an origin-aware breadcrumb. back restores scroll and state.' },
+    { icon: Wrench, h: 'tools stay on screen', p: "the controls for the current surface stay visible. action bars, rails and toolbars don't disappear on scroll." },
+    { icon: AlignLeft, h: 'aligned, and left-aligned', p: 'one vertical axis. labels and values share a left edge, numbers are tabular, everything sits on the 4/8 grid.' },
+    { icon: Eye, h: 'glanceable', p: 'providers, tools, states and nav all lead with a real vector icon, so a dense screen is scannable in a fraction of a second.' },
+    { icon: BookOpen, h: 'readable first', p: 'calm contrast, generous line height, body type never below the 16px floor. monospace stays in code and chrome.' },
+    { icon: Gauge, h: 'maximize usability', p: 'usability beats flourish at every fork. comfortable targets, obvious states, minimal motion, aa contrast in both themes.' },
   ]
   return (
     <section className="band" id="principles">

@@ -1,15 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
-import { ScrollText, Users, Waypoints, Maximize2, Minimize2 } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { ScrollText, Users, Waypoints } from 'lucide-react'
 import TranscriptApp from './TranscriptApp.jsx'
 import CommonsApp from './CommonsApp.jsx'
 import GraphApp from './GraphApp.jsx'
 
 /* the "in use" full-screen showcase: a full-viewport immersive stage that hosts the three sibling apps.
    a sticky top app-switcher banner REPLACES the page header (same height) and carries the brand mark + a
-   keyboard-accessible tablist for the three apps (click, or keys 1/2/3) with a guarded crossfade; an expand
-   control drops the whole section into true browser fullscreen. below the banner the stage fills the rest of
-   the viewport and renders the active app full-bleed. each app owns its internal navigation so every feature
-   stays reachable. */
+   keyboard-accessible tablist for the three apps (click, or keys 1/2/3) with a guarded crossfade. below the
+   banner the stage fills the rest of the viewport and renders the active app full-bleed. each app owns its
+   internal navigation so every feature stays reachable. */
 
 const APPS = [
   { id: 'transcript', mark: 'transcript-browser', icon: ScrollText },
@@ -19,23 +18,7 @@ const APPS = [
 
 export default function InUseShell({ theme }) {
   const [app, setApp] = useState('transcript')
-  const [full, setFull] = useState(false)
-  const sectionRef = useRef(null)
   const tabRefs = useRef({})
-
-  /* track real fullscreen so the expand control + class stay in sync (Esc, browser ui, etc.) */
-  useEffect(() => {
-    const onFs = () => setFull(document.fullscreenElement === sectionRef.current)
-    document.addEventListener('fullscreenchange', onFs)
-    return () => document.removeEventListener('fullscreenchange', onFs)
-  }, [])
-
-  const toggleFull = () => {
-    const el = sectionRef.current
-    if (!el) return
-    if (document.fullscreenElement === el) document.exitFullscreen?.()
-    else el.requestFullscreen?.().catch(() => {})
-  }
 
   /* 1/2/3 switch apps when focus is inside the section and you are not typing in a field */
   const onKeyDown = (e) => {
@@ -65,10 +48,9 @@ export default function InUseShell({ theme }) {
 
   return (
     <section
-      className={'iu' + (full ? ' iu-is-full' : '')}
+      className="iu"
       id="inuse"
       aria-label="the design system in use"
-      ref={sectionRef}
       onKeyDown={onKeyDown}
     >
       {/* sticky top app-switcher banner: sits exactly where the page header would, visually replacing it */}
@@ -108,16 +90,6 @@ export default function InUseShell({ theme }) {
             )
           })}
         </div>
-
-        <button
-          type="button"
-          className="iu-bar-full"
-          onClick={toggleFull}
-          aria-label={full ? 'exit fullscreen' : 'expand to fullscreen'}
-        >
-          {full ? <Minimize2 size={16} aria-hidden="true" /> : <Maximize2 size={16} aria-hidden="true" />}
-          <span className="iu-bar-full-label">{full ? 'exit' : 'expand'}</span>
-        </button>
       </div>
 
       {/* the stage fills the rest of the viewport and renders the active app full-bleed */}

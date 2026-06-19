@@ -8,7 +8,7 @@ export function A11ySection() {
     <section className="band" id="a11y">
       <h2 className="label">accessibility &amp; neuroinclusive</h2>
       <div className="sub">readability ships in the tokens</div>
-      <p className="prose">the product is data-heavy and our users include people who are dyslexic, have adhd, or are autistic. designing for them by default makes every screen calmer to scan and less tiring to read, which is faster for everyone. so the rules below ship in the tokens and govern every component, with no toggle to find.</p>
+      <p className="prose">the product is data-heavy and our users include people who are dyslexic, have ADHD, or are autistic. designing for them by default makes every screen calmer to scan and less tiring to read, which is faster for everyone. so the rules below ship in the tokens and govern every component, with no toggle to find.</p>
       <div className="dtable-wrap">
         <table className="dtable">
           <thead>

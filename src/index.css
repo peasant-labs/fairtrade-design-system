@@ -16,6 +16,10 @@
   --bd: 1px solid var(--rule); --bd-strong: 1px solid var(--rule-strong);
   --control-h: 36px; --control-h-sm: 28px; --nav-h: 56px;
   --maxw: 1040px; --gutter: var(--sp-6);
+  /* breakpoint scale (desktop-first reference; @media can't consume var(), so these document the
+     one canonical scale that the max-width queries below target): xs <480, sm 480-767, md 768-1023,
+     lg 1024-1439, xl >=1440. exported to public/tokens.json so agents + consumers share one scale. */
+  --bp-sm: 480px; --bp-md: 768px; --bp-lg: 1024px; --bp-xl: 1440px;
   --dialog-w: 420px;
   --fs-label: 14px; --fs-sm: 14px; --fs-body: 16px; --fs-md: 18px; --fs-lg: 22px; --fs-xl: 28px; --fs-hero: 40px; --fs-display: 52px;
   --fs-micro: 11px;
@@ -162,7 +166,7 @@
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   }
   @media (prefers-reduced-transparency: reduce) {
-    .nav, .foot { backdrop-filter: none; }
+    .nav { backdrop-filter: none; }
     .nav { background: var(--surface); }
   }
 }
@@ -217,8 +221,11 @@
   .navctl.sq { @apply cursor-pointer justify-center; border: var(--bd-strong); width: var(--control-h-sm); padding: 0; }
   .navctl.sq:hover { @apply text-ink; border-color: var(--amber-dim); }
   .navctl .lucide { width: var(--ic-sm); height: var(--ic-sm); }
-  .kbd { @apply font-mono text-ink-3; font-size: 12px; border: var(--bd-strong); padding: 1px 5px; line-height: 1.3; margin-left: var(--sp-1); font-variant-numeric: tabular-nums; }
-  .dot { @apply rounded-full; width: 7px; height: 7px; background: var(--olive); box-shadow: none; }
+  .kbd { @apply font-mono text-ink-3; font-size: 12px; border: var(--bd-strong); padding: 0 5px; height: 18px; line-height: 1; margin-left: var(--sp-1); font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; justify-content: center; }
+  .dot { @apply rounded-full; width: 7px; height: 7px; flex: none; align-self: center; background: var(--olive); box-shadow: none; }
+  /* storybook nav entry is disabled until the component library ships (landing page first) */
+  .sb-link.sb-link--soon { opacity: 0.55; cursor: default; }
+  .sb-soon { font-family: var(--font-mono); font-size: 10px; line-height: 1.4; text-transform: lowercase; color: var(--ink-4); border: var(--bd); padding: 0 4px; }
   .theme-btn .i-moon, .theme-btn .i-sun { @apply inline-flex items-center justify-center; }
   .theme-btn .i-sun { display: none; }
   [data-theme="light"] .theme-btn .i-moon { display: none; }
@@ -239,7 +246,9 @@
   .hero-skip { position: absolute; top: var(--sp-4); right: var(--sp-5); z-index: 6; font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-4); background: color-mix(in srgb, var(--canvas) 60%, transparent); border: 1px solid var(--rule); padding: var(--sp-1) var(--sp-3); cursor: pointer; opacity: 0.4; transition: opacity var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out); }
   .hero-skip:hover, .hero-skip:focus-visible { opacity: 1; color: var(--ink); border-color: var(--amber-dim); }
   /* dimmed soil texture filling the WHOLE brand section, behind the roots and the wordmark */
-  .hero-soil-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; pointer-events: none; opacity: 0.14; }
+  /* the dim full-section field stays BELOW the original seam (offset by the section's upward overlap) so it
+     never fogs the wheat; only the dense connector band reaches up to the plant base. */
+  .hero-soil-bg { position: absolute; inset: 0; top: max(0px, calc(50svh - var(--wheat-foot))); z-index: 0; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; pointer-events: none; opacity: 0.14; }
   .hero .hero-soil-field { margin: 0; font-family: var(--font-mono); white-space: pre; font-size: clamp(5px, 0.95vw, 9.5px); line-height: 1; color: var(--ink-strong); }
   /* the soil band: a full-width strip across the top of the brand section that fades out at the left/right
      edges. sits in front of the dim bg but behind the roots, so the ground reads full-width under them. */
@@ -247,11 +256,13 @@
   .hero .hero-soil-art { margin: 0; font-family: var(--font-mono); white-space: pre; font-size: clamp(5px, 0.95vw, 9.5px); line-height: 1; color: var(--ink-strong); }
   /* screen 1: only the wheat video */
   .hero-crop { position: relative; height: 100vh; height: 100svh; overflow: hidden; }
-  /* screen 2: the roots grow OUT of the video's base (a small negative margin overlaps it), down into
-     "fairtrade". one structure, connected - no gap, no second crop. */
-  /* no negative margin: the roots section sits RIGHT AFTER the crop (no overlap, no wheat bleeding into it).
-     the roots fill this whole section from the top (right under the plant) down to the wordmark. */
-  .hero-grow { position: relative; height: 100vh; height: 100svh; display: flex; flex-direction: column; overflow: hidden; z-index: 1; }
+  /* screen 2: the soil band + roots emerge where the wheat meets the ground. the wheat block's ground line
+     (its bottom edge, below the lowest stalks ~99%) sits at (1.0 - 0.5) * blockHeight below the crop centre.
+     --wheat-foot is that distance; pull this section up by (50svh - --wheat-foot) so its top (the connector
+     band + the roots' origin) lands at the wheat's foot - no gap on tall screens, and just BELOW the plant
+     so the soil never invades the stalks. blockHeight = 120 rows * the wheat font, so it tracks every width. */
+  .hero { --wheat-foot: calc(60 * clamp(5px, 0.95vw, 9.5px)); }
+  .hero-grow { position: relative; height: 100vh; height: 100svh; margin-top: min(0px, calc(var(--wheat-foot) - 50svh)); display: flex; flex-direction: column; overflow: hidden; z-index: 1; }
   .hero-roots-wrap { position: relative; z-index: 2; flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; }
   .hero-foot { flex: 0 0 auto; position: relative; z-index: 3; width: 100%; display: flex; align-items: center; justify-content: center; padding: clamp(var(--sp-3), 2vh, var(--sp-5)) var(--sp-3) clamp(var(--sp-5), 4vh, var(--sp-7)); }
   /* the wordmark is plain white, no accent colour and no glow */
@@ -281,10 +292,12 @@
   .docs { scroll-snap-align: start; }
   .band, .group { padding-top: var(--band-y); padding-bottom: var(--band-y); }
   .band + .band, .group + .band, .band + .group { border-top: var(--bd); }
-  /* scroll-reveal: sections fade/lift in as they enter the viewport (JS toggles .is-in) */
+  /* scroll-reveal: sections fade/lift in as they enter the viewport (JS toggles .is-in). NOT .philos - it
+     has its own text reveal (.philos .philos-text), and a section-level translateY would shift its measured
+     top and make the section snap land a few px off. */
   @media (prefers-reduced-motion: no-preference) {
-    .reveal { opacity: 0; transform: translateY(26px); }
-    .reveal.is-in { opacity: 1; transform: none; transition: opacity var(--dur-entrance) var(--ease-out), transform var(--dur-entrance) var(--ease-out); }
+    .reveal:not(.philos) { opacity: 0; transform: translateY(26px); }
+    .reveal.is-in:not(.philos) { opacity: 1; transform: none; transition: opacity var(--dur-entrance) var(--ease-out), transform var(--dur-entrance) var(--ease-out); }
   }
   .group .gs { @apply font-mono text-sm text-ink-3 mt-2; max-width: 58ch; }
 
@@ -369,7 +382,7 @@
   .cols-2 { @apply items-start; grid-template-columns: 1fr; }
 
   /* palette / specimen */
-  .swatches { @apply grid gap-2; grid-template-columns: repeat(2, 1fr); }
+  .swatches { @apply grid gap-2; grid-template-columns: repeat(2, 1fr); margin-top: var(--sp-5); }
   .swatch { border: var(--bd-strong); }
   /* .swc (not .sw) - .sw is the switch control; sharing the name leaked the switch box onto the chip */
   .swatch .swc { display: block; width: 100%; height: 52px; background: var(--c); }
@@ -380,7 +393,7 @@
   .k { @apply text-mauve; } .s { @apply text-olive; } .f { @apply text-teal; } .c { @apply text-ink-4; }
 
   /* typography specimen: the two faces + the type scale */
-  .type-faces { @apply grid gap-4; grid-template-columns: 1fr; margin-bottom: var(--sp-6); }
+  .type-faces { @apply grid gap-4; grid-template-columns: 1fr; margin-top: var(--sp-5); margin-bottom: var(--sp-6); }
   .face { @apply flex items-start bg-surface; gap: var(--sp-4); padding: var(--sp-4); border: var(--bd); }
   .face-aa { font-family: var(--font-body); font-size: 60px; line-height: .92; color: var(--ink-strong); flex: none; width: 1.7em; text-align: center; }
   .face-aa.mono { font-family: var(--font-mono); }
@@ -392,19 +405,19 @@
   .type-scale { border-top: var(--bd); }
   /* sample wins; the metadata is one quiet right cluster where px is the only accent (role + usage
      demoted a step). meta widths are kept tight so the row never pokes past the divider. */
-  .ts-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: var(--sp-6); padding: var(--sp-4) 0; border-bottom: var(--bd); }
+  .ts-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-6); padding: var(--sp-4) 0; border-bottom: var(--bd); }
   .ts-sample { @apply text-ink-strong; line-height: 1.1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .ts-meta { @apply flex items-baseline font-mono; gap: var(--sp-4); flex: none; }
-  .ts-name { color: var(--ink-3); font-size: 13px; width: 56px; }
+  .ts-meta { @apply flex items-center font-mono; font-size: var(--fs-label); gap: var(--sp-4); flex: none; }
+  .ts-name { color: var(--ink-3); width: 56px; }
   .ts-px { color: var(--amber); font-weight: 600; font-variant-numeric: tabular-nums; width: 44px; text-align: right; }
-  .ts-use { color: var(--ink-4); font-size: 13px; width: 150px; text-align: left; }
+  .ts-use { color: var(--ink-4); white-space: nowrap; text-align: left; }
 
   /* cards / rows */
   .grid-cards { @apply grid gap-4 items-stretch; grid-template-columns: 1fr 1fr; }
   .card { @apply flex flex-col gap-3 bg-surface p-4; border: var(--bd-strong); }
   .card-head { @apply flex items-center justify-between gap-2; }
   .card h3 { @apply text-md; }
-  .card .desc { @apply text-ink-2 text-sm; }
+  .card .desc { @apply text-ink-2; font-size: var(--fs-body); }
   .card-foot { @apply flex items-center gap-4 flex-wrap; border-top: var(--bd); padding-top: var(--sp-3); margin-top: auto; }
   .metaitem { @apply inline-flex items-center gap-2 font-mono text-label text-ink-3; }
   .metaitem b { @apply text-ink-2; font-weight: 600; }
@@ -528,14 +541,14 @@
   .canvas-ctrls .lucide { width: var(--ic-sm); height: var(--ic-sm); }
   .minimap { @apply absolute; right: var(--sp-3); top: var(--sp-3); width: 108px; height: 68px; border: var(--bd-strong); background: color-mix(in srgb, var(--canvas) 60%, transparent); }
   .minimap i { @apply absolute; background: var(--ink-5); }
-  .timestrip { @apply flex bg-surface; align-items: flex-end; gap: 3px; height: 46px; margin-top: var(--sp-4); padding: var(--sp-3); border: var(--bd); }
+  .timestrip { @apply flex bg-surface; align-items: flex-end; gap: 3px; height: 46px; margin-bottom: var(--sp-4); padding: var(--sp-3); border: var(--bd); }
   .timestrip .bar { @apply flex-1; min-width: 4px; background: var(--rule-strong); }
 
   /* empty / sidebar */
   /* left-aligned to match the rest of the system (was centered, read as a decorative island) */
   /* horizontal inset matches the sibling form/filter cards (--sp-4); vertical stays generous */
   .empty { @apply flex flex-col items-start gap-3 bg-surface text-left; padding: var(--sp-6) var(--sp-4); border: var(--bd); width: 100%; box-sizing: border-box; }
-  .empty .ring { @apply flex items-center justify-center text-ink-3; width: var(--sp-7); height: var(--sp-7); border: var(--bd-strong); }
+  .empty .ring { @apply flex items-center justify-center text-ink-3; width: var(--sp-7); height: var(--sp-7); }
   .empty .ring .lucide { width: var(--ic-lg); height: var(--ic-lg); }
   .empty h3 { @apply text-md; }
   .empty p { @apply text-ink-3 text-sm; }
@@ -554,53 +567,41 @@
   .sb-opt.on > .lucide { @apply text-amber; width: var(--ic-sm); height: var(--ic-sm); }
 
   .note { @apply font-mono text-label lowercase text-ink-3; margin-top: var(--sp-5); border-left: 2px solid var(--rule-strong); padding-left: var(--sp-3); line-height: 1.6; }
-  .foot { border-top: var(--bd); background: var(--surface); margin-top: var(--sp-8); }
-  .foot-in { @apply flex items-center gap-3 font-mono text-label lowercase text-ink-3; max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); height: 52px; }
-  .foot-in .logo { @apply text-amber; width: 15px; height: 15px; } .foot-in b { @apply text-ink-2; font-weight: 400; }
-  .foot-in .right { @apply flex items-center gap-4; margin-left: auto; min-width: max-content; }
+  /* footer removed so the reader stays in the in-use demos to the end */
 
-  /* feedback tool (dev iteration aid; feedback.md is gitignored; disable with ?fb=off) */
-  .fbk-dock { @apply fixed z-[60] flex items-center gap-2; right: var(--sp-5); bottom: calc(44px + var(--sp-3)); }
-  .fbk-list-btn { @apply inline-flex items-center gap-2 bg-surface text-ink-3 font-mono text-label lowercase cursor-pointer; height: var(--control-h); padding: 0 var(--sp-3); border: var(--bd-strong); }
-  .fbk-list-btn:hover { @apply text-ink; border-color: var(--amber-dim); }
-  .fbk-list-btn .lucide { width: var(--ic-sm); height: var(--ic-sm); }
-  .fbk-list-btn .cnt { @apply text-amber; font-variant-numeric: tabular-nums; }
-  .fbk-launch { @apply inline-flex items-center gap-2 bg-surface text-ink-2 font-mono text-label lowercase cursor-pointer; height: var(--control-h); padding: 0 var(--sp-4); border: var(--bd-strong); box-shadow: var(--glow-soft); }
+  /* feedback tool (dev iteration aid; comments append to feedback.md through the vite
+     /feedback middleware, and feedback.md is gitignored; disable with ?fb=off). one flow:
+     the launch button (bottom-left, clear of the bottom-right toast corner) arms a dom
+     picker; a click opens the right-side note popup; the highlight + label track the hover. */
+  .fbk-launch { @apply fixed z-[60] inline-flex items-center gap-2 bg-surface text-ink-2 font-mono text-label lowercase cursor-pointer; left: var(--sp-5); bottom: var(--sp-5); height: var(--control-h); padding: 0 var(--sp-4); border: var(--bd-strong); box-shadow: var(--glow-soft); }
   .fbk-launch:hover { @apply text-amber-bright; border-color: var(--amber-dim); }
   .fbk-launch .lucide { width: var(--ic-sm); height: var(--ic-sm); }
-  .fbk-launch .cnt { @apply text-amber; font-variant-numeric: tabular-nums; }
+  .fbk-launch .cnt { @apply inline-flex items-center justify-center text-ink-3; min-width: 18px; height: 18px; padding: 0 5px; border: var(--bd); font-variant-numeric: tabular-nums; }
   .fbk-launch.armed { @apply text-amber; border-color: var(--amber); }
-  .fbk-panel { @apply fixed right-0 top-0 bottom-0 z-[62] hidden flex-col bg-surface; width: 340px; max-width: 90vw; border-left: var(--bd-strong); }
-  .fbk-panel.open { @apply flex; }
-  .fbk-ph { @apply flex items-center justify-between font-mono text-label lowercase text-ink-2; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); }
-  .fbk-ph > span { @apply inline-flex items-center gap-2; }
-  .fbk-ph .lucide { width: var(--ic-sm); height: var(--ic-sm); }
-  .fbk-status { @apply flex items-center gap-2 font-mono text-ink-3; padding: var(--sp-2) var(--sp-4); border-bottom: var(--bd); font-size: 11px; line-height: 1.4; }
-  .fbk-status .dot { @apply rounded-full; width: 7px; height: 7px; flex: none; }
-  .fbk-actions { @apply flex flex-wrap gap-2; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); }
-  .fbk-list { @apply flex flex-1 flex-col gap-3 overflow-auto; padding: var(--sp-3) var(--sp-4); }
-  .fbk-empty { @apply font-mono text-label text-ink-3; line-height: 1.5; }
-  .fbk-item { @apply bg-canvas; padding: var(--sp-3); border: var(--bd); }
-  .fbk-item .sc { @apply font-mono text-ink-3 lowercase; font-size: 11px; }
-  .fbk-item .tg { @apply font-mono text-amber; font-size: 11px; word-break: break-all; margin-top: 2px; }
-  .fbk-item .cm { @apply text-ink text-sm; margin-top: var(--sp-2); }
-  .fbk-item .ix { @apply flex gap-4; margin-top: var(--sp-2); }
-  .fbk-item .ix button { @apply bg-transparent font-mono text-ink-3 lowercase cursor-pointer; border: 0; padding: 0; font-size: 11px; }
-  .fbk-item .ix button:hover { @apply text-amber-bright; }
-  .fbk-hi { @apply fixed z-[61] hidden; pointer-events: none; border: 2px solid var(--amber); box-shadow: var(--glow-soft); }
-  .fbk-hi.on { @apply block; }
+  .fbk-launch.armed .cnt { @apply text-amber; border-color: var(--amber-dim); }
+
+  /* the hover highlight is an OUTLINE on the hovered element itself (outline never triggers reflow, so
+     the picker needs no per-frame getBoundingClientRect - see FeedbackTool.jsx). its label is a small
+     fixed tag placed near the pointer. */
+  /* outline ONLY - no box-shadow. a blurred glow painted around an arbitrarily large hovered element
+     (a full-width bar, a whole section) is an expensive main-thread repaint every frame as the pointer
+     sweeps, which froze the heavier sections; an outline is just the perimeter and is cheap at any size. */
+  .fbk-target { outline: 2px solid var(--amber) !important; outline-offset: -2px; }
   .fbk-tag { @apply fixed z-[61] hidden bg-amber text-on-amber font-mono lowercase; pointer-events: none; font-size: 11px; padding: 1px 6px; white-space: nowrap; }
   body.fbk-arming, body.fbk-arming * { cursor: crosshair !important; }
-  .fbk-compose { @apply fixed z-[64] hidden flex-col bg-surface; right: var(--sp-5); bottom: calc(44px + var(--sp-3)); width: 340px; max-width: 90vw; border: var(--bd-strong); box-shadow: var(--glow); }
-  .fbk-compose.open { @apply flex; }
-  .fbk-ch { @apply flex items-center gap-2 font-mono text-label lowercase text-amber; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); }
-  .fbk-ch .lucide { width: var(--ic-sm); height: var(--ic-sm); }
-  .fbk-cb { padding: var(--sp-3) var(--sp-4); }
-  .fbk-target { @apply font-mono text-ink-3; font-size: 11px; margin-bottom: var(--sp-2); word-break: break-all; line-height: 1.4; }
-  .fbk-cf { @apply flex justify-end gap-2; padding: var(--sp-3) var(--sp-4); border-top: var(--bd); }
-  .fbk-toast { @apply fixed z-[70] hidden bg-surface-2 text-ink font-mono text-label lowercase; left: 50%; transform: translateX(-50%); bottom: calc(44px + var(--sp-5)); border: var(--bd-strong); padding: var(--sp-2) var(--sp-4); }
-  .fbk-toast.show { @apply block; }
-  .fbk-flash { animation: fbkflash 1.3s ease-out; }
+
+  /* the right-side note popup (top set inline, near the picked element) */
+  .fbk-pop { @apply fixed z-[64] flex flex-col bg-surface; right: var(--sp-5); width: 320px; max-width: calc(100vw - var(--sp-5) * 2); border: var(--bd-strong); box-shadow: var(--glow); }
+  .fbk-pop-h { @apply flex items-center justify-between font-mono text-label lowercase text-amber; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); }
+  .fbk-pop-h > span { @apply inline-flex items-center gap-2; }
+  .fbk-pop-h .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+  .fbk-x { @apply inline-flex items-center justify-center bg-transparent text-ink-3 cursor-pointer; width: var(--sp-5); height: var(--sp-5); border: 0; padding: 0; }
+  .fbk-x:hover { @apply text-amber-bright; }
+  .fbk-x .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+  .fbk-pop-b { padding: var(--sp-3) var(--sp-4); }
+  .fbk-pop-tgt { @apply font-mono text-ink-3; font-size: 11px; margin-bottom: var(--sp-2); word-break: break-all; line-height: 1.4; }
+  .fbk-pop-f { @apply flex items-center justify-end gap-2; padding: 0 var(--sp-4) var(--sp-3); }
+  .fbk-pop-f .fbk-kbd { @apply font-mono text-ink-3; font-size: 11px; }
 }
 
 @layer components {
@@ -618,21 +619,19 @@
      top + bottom so it reads as roots filling the gap (centered, side overflow clipped) */
   /* roots: a dense seam at the top (one grid with the wheat above - SAME cell size as .hero-bg, so root
      columns register against the stalk columns the video seeded them from) thinning to tendrils below */
-  /* the roots start hidden and GROW downward (a top-to-bottom clip reveal) the first time the brand section
-     scrolls into view (.grow); reduced-motion shows them at once (.grown) */
-  .hero .hero-roots { margin: 0; font-family: var(--font-mono); white-space: pre; font-size: clamp(5px, 0.95vw, 9.5px); line-height: 1; color: var(--ink-strong); opacity: 1; clip-path: inset(0 0 100% 0); }
+  /* the roots GROW downward with a morphing front (src/effects.jsx useGrowMorph, driven by the `grow` prop
+     the brand section's IntersectionObserver flips); no CSS clip is needed - the <pre> populates row by row
+     in JS, and reduced-motion paints it whole. */
+  .hero .hero-roots { margin: 0; font-family: var(--font-mono); white-space: pre; font-size: clamp(5px, 0.95vw, 9.5px); line-height: 1; color: var(--ink-strong); opacity: 1; }
   [data-theme="light"] .hero .hero-roots { opacity: 0.9; }
-  .hero-grow.grown .hero-roots { clip-path: inset(0 0 0 0); }
   @media (prefers-reduced-motion: no-preference) {
-    /* staged reveal when the brand section scrolls in: the soil fades up, the roots grow down, the wordmark
-       wipes in left-to-right (a terminal print). all driven off the one .grow class. */
+    /* staged reveal when the brand section scrolls in: the soil-bg fades up while the roots + soil band
+       grow/morph down (in JS), and the wordmark wipes in left-to-right (a terminal print). */
     .hero-grow .hero-soil-bg { opacity: 0; }
     .hero-grow .hero-word { clip-path: inset(0 100% 0 0); }
     .hero-grow.grow .hero-soil-bg { animation: soilReveal 1.3s var(--ease-out) both; }
-    .hero-grow.grow .hero-roots { animation: rootGrow 1.7s var(--ease-out) 0.18s both; }
     .hero-grow.grow .hero-word { animation: wordWipe 0.95s steps(48, end) 0.7s both; }
   }
-  @keyframes rootGrow { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
   @keyframes soilReveal { from { opacity: 0; } to { opacity: 0.14; } }
   @keyframes wordWipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 
@@ -685,7 +684,6 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .ts-row { grid-template-columns: 1fr; row-gap: var(--sp-2); }
   .ts-sample { white-space: normal; overflow: visible; }
 }
-@keyframes fbkflash { 0% { box-shadow: 0 0 0 2px var(--amber), var(--glow); } 100% { box-shadow: 0 0 0 2px transparent; } }
 
 /* ======================================================================
    docs presentation layer: the on-this-page rail + content grid + the
@@ -696,7 +694,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 
 /* widen the persistent chrome to the docs frame so the brand aligns with the
    rail and the nav controls align with the content's right edge */
-.nav-in, .foot-in { max-width: var(--docs-w); }
+.nav-in { max-width: var(--docs-w); }
 
 @layer components {
   /* ---- docs grid: sticky rail + content column, centered as one unit ---- */
@@ -741,8 +739,8 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .cmp-do .cmp-tag { color: var(--olive); }
   .cmp-dont .cmp-tag { color: var(--clay); }
   .cmp-body { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-4); flex: 1; }
-  .cmp-body p { color: var(--ink-2); font-size: var(--fs-sm); }
-  .cmp-note { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); padding: var(--sp-2) var(--sp-3); border-top: var(--bd); line-height: 1.5; }
+  .cmp-body p { color: var(--ink-2); font-size: var(--fs-body); }
+  .cmp-note { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); padding: var(--sp-2) var(--sp-3); border-top: var(--bd); line-height: 1.5; }
 
   /* ---- doc tables (token / spec / props share one chassis) ---- */
   .dtable { width: 100%; border-collapse: collapse; margin-top: var(--sp-5); font-family: var(--font-mono); font-size: var(--fs-sm); }
@@ -750,7 +748,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .dtable tbody td { padding: var(--sp-3); border-bottom: var(--bd); vertical-align: top; }
   .dtable tbody tr:hover { background: var(--surface-hover); }
   .dtable .dt-name { color: var(--ink); }
-  .dtable .dt-val { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .dtable .dt-val { color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .dtable .dt-role { color: var(--ink-3); }
   .dtable td:last-child:has(.copy-token) { width: 1%; white-space: nowrap; text-align: right; }
   .dt-sw { display: inline-block; width: 16px; height: 16px; border: var(--bd-strong); vertical-align: -3px; margin-right: var(--sp-2); background: var(--c); }
@@ -786,8 +784,8 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 
   /* ---- resources list ---- */
   .reslist { display: flex; flex-direction: column; margin-top: var(--sp-4); border: var(--bd); }
-  .res { display: grid; grid-template-columns: minmax(6rem, 13rem) minmax(0, 1fr); align-items: baseline; gap: var(--sp-4); padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-2); }
-  @media (max-width: 640px) { .res { grid-template-columns: 1fr; gap: var(--sp-1); } }
+  .res { display: grid; grid-template-columns: auto minmax(6rem, 13rem) minmax(0, 1fr); align-items: center; gap: var(--sp-3) var(--sp-4); padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-2); }
+  @media (max-width: 640px) { .res { grid-template-columns: auto 1fr; gap: var(--sp-2); } }
   .res:last-child { border-bottom: 0; }
   .res:hover { background: var(--surface-hover); }
   .res .lucide { width: var(--ic-md); height: var(--ic-md); color: var(--ink-3); flex: none; }
@@ -799,7 +797,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 
   /* recurring section-level notes stay quiet (a note, not an alert); the amber
      .callout treatment is reserved for in-component emphasis (e.g. the dialog) */
-  .band > .callout { border-color: var(--rule-strong); background: var(--surface); }
+  .band > .callout { border-color: var(--rule-strong); background: var(--surface); margin-top: var(--sp-5); }
   .band > .callout > .lucide { color: var(--ink-3); }
 }
 
@@ -811,7 +809,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 
 /* ---- responsive: collapse the rail, single column ---- */
 @media (max-width: 1100px) {
-  .nav-in, .foot-in { max-width: var(--maxw); }
+  .nav-in { max-width: var(--maxw); }
   .docs { grid-template-columns: 1fr; max-width: var(--maxw); }
   .page-rail { display: none; }
   /* nav shed: the nav items have min-width:max-content and overflow narrow viewports.
@@ -819,10 +817,11 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
      their place); the section links go next, the search palette covers them. */
   .navctl:not(.bx):not(.sq):not(.sb-link) { display: none; }
 }
-/* below the rail width the full "storybook" label no longer fits beside the section
-   links + search; collapse it to an icon-only square (the aria-label keeps its name). */
-@media (max-width: 1000px) {
-  .sb-link .sb-label { display: none; }
+/* the full "storybook" label + "soon" badge only fit beside the section links + search + the live
+   status from ~1160px up; below that, collapse storybook to an icon-only square (the aria-label keeps
+   its name). 1200 gives a margin so the full label never crowds the live status in the 1100-1160 band. */
+@media (max-width: 1200px) {
+  .sb-link .sb-label, .sb-soon { display: none; }
   .sb-link { width: var(--control-h-sm); padding: 0; justify-content: center; gap: 0; }
 }
 @media (max-width: 900px) {
@@ -833,6 +832,14 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 @media (max-width: 480px) {
   /* on a phone the search palette covers navigation; drop the storybook control too */
   .sb-link { display: none; }
+  /* collapse the search control to its icon so the nav fits down to a 320px phone (the aria-label
+     keeps its name, the cmd-k / ctrl-k shortcut still opens it). */
+  .navctl.bx .bx-label, .navctl.bx .kbd { display: none; }
+  .navctl.bx { width: var(--control-h-sm); padding: 0; justify-content: center; gap: 0; }
+  /* the full-bleed splash ascii is intentionally wider than a phone (center-cropped art); clip any
+     horizontal spill at the root so a phone never side-scrolls. overflow-x: clip (not hidden) does
+     not create a scroll container, so the sticky nav + in-use snap keep working. */
+  .pds-root { overflow-x: clip; }
 }
 @media (max-width: 720px) {
   .cmp, .start-jump, .icongrid { grid-template-columns: 1fr; }
@@ -946,8 +953,11 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
      to honour radius-0; amber fill marks ON (the one place amber appears here).
      state is never colour-only -> every switch pairs with an on/off text marker. */
   /* 3-col grid so the status marker shares one left edge across every row (was right-floated, ragged) */
-  .sw-field { display: grid; grid-template-columns: auto 1fr minmax(var(--sp-8), max-content); align-items: center; gap: var(--sp-3); min-height: var(--target-min); width: 100%; }
-  .sw-field + .sw-field { margin-top: var(--sp-4); }
+  /* one shared grid for all switch rows so every row resolves to the same column widths and the
+     left axis (switch / label / state) is straight; display:contents promotes each row's three
+     children into this grid. */
+  .sw-group { display: grid; grid-template-columns: auto 1fr minmax(var(--sp-8), max-content); grid-auto-rows: minmax(var(--target-min), auto); align-items: center; gap: var(--sp-4) var(--sp-3); width: 100%; }
+  .sw-field { display: contents; }
 
   /* the control: a 48x28 track, hairline border, square corners */
   .sw {
@@ -1059,18 +1069,18 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .fb-toast.is-err .fb-toast-ico .lucide { color: var(--clay); }
   .fb-toast-body { min-width: 0; flex: 1; }
   .fb-toast-title { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink); }
-  .fb-toast-msg { font-size: var(--fs-sm); color: var(--ink-2); margin-top: var(--sp-1); line-height: 1.5; }
+  .fb-toast-msg { font-size: var(--fs-body); color: var(--ink-2); margin-top: var(--sp-1); line-height: 1.5; }
   .fb-toast-x { display: inline-flex; align-items: center; justify-content: center; width: var(--target-comfortable); height: var(--target-comfortable); flex: none; border: 1px solid transparent; background: transparent; color: var(--ink-3); cursor: pointer; }
   .fb-toast-x:hover { color: var(--ink); border-color: var(--rule-strong); }
   .fb-toast-x .lucide { width: var(--ic-sm); height: var(--ic-sm); }
 
   /* inline panels: loading / error / no-results (icon + label, never color alone) */
   .fb-panel { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); text-align: center; border: var(--bd); background: var(--surface); padding: var(--sp-6) var(--sp-5); }
-  .fb-panel .fb-panel-ico { display: inline-flex; align-items: center; justify-content: center; width: var(--sp-7); height: var(--sp-7); border: var(--bd-strong); color: var(--ink-3); }
+  .fb-panel .fb-panel-ico { display: inline-flex; align-items: center; justify-content: center; width: var(--sp-7); height: var(--sp-7); color: var(--ink-3); }
   .fb-panel .fb-panel-ico .lucide { width: var(--ic-lg); height: var(--ic-lg); }
-  .fb-panel.is-err .fb-panel-ico { border-color: color-mix(in srgb, var(--clay) 55%, var(--rule-strong)); color: var(--clay); }
+  .fb-panel.is-err .fb-panel-ico { color: var(--clay); }
   .fb-panel-title { font-family: var(--font-mono); font-size: var(--fs-md); text-transform: lowercase; color: var(--ink-strong); }
-  .fb-panel-msg { font-size: var(--fs-sm); color: var(--ink-3); max-width: 36ch; line-height: 1.5; }
+  .fb-panel-msg { font-size: var(--fs-body); color: var(--ink-3); max-width: 36ch; line-height: 1.5; }
   .fb-panel.is-err .fb-panel-title { color: var(--clay); }
   .fb-panel[aria-busy="true"] .fb-panel-ico .lucide { color: var(--amber); }
   @media (prefers-reduced-motion: no-preference) {
@@ -1142,7 +1152,9 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
      themes re-skin for free. static specimens render the open state inline. */
   /* the popover is absolutely positioned below its trigger; reserve room so it never overlaps
      the reference table beneath the specimen, and headroom for the tooltip that floats above */
-  .tip-demo { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-8); min-height: 300px; padding-top: var(--sp-6); }
+  .tip-demo { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-8); }
+  .tip-demo > div { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); }
+  .tip-hint { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-4); }
   .tip-anchor { position: relative; display: inline-block; }
 
   /* the floating tooltip bubble: short, single-line helper text. intentionally static-first: no
@@ -1156,7 +1168,10 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
     font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.4; text-transform: lowercase;
     color: var(--ink); background: var(--surface-elev); border: var(--bd-strong);
     padding: var(--sp-2) var(--sp-3);
+    opacity: 0; pointer-events: none;   /* the tooltip only appears on hover/focus of its trigger */
   }
+  .tip-anchor:hover .tip-bubble, .tip-anchor:focus-within .tip-bubble { opacity: 1; pointer-events: auto; }
+  @media (prefers-reduced-motion: no-preference) { .tip-bubble { transition: opacity var(--dur-1) var(--ease-out); } }
   /* a hairline pointer (square nub) seated on the trigger edge */
   .tip-bubble::before, .tip-bubble::after {
     content: ""; position: absolute; top: 100%; left: 18px; width: 8px; height: 8px;
@@ -1173,7 +1188,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .pop-head .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--amber); flex: none; }
   .pop-title { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-sm); color: var(--ink-strong); text-transform: lowercase; }
   .pop-body { padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
-  .pop-body p { color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.5; }
+  .pop-body p { color: var(--ink-2); font-size: var(--fs-body); line-height: 1.5; }
   .pop-body .brand { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--ink-2); }
   .pop-foot { display: flex; justify-content: flex-end; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); border-top: var(--bd); }
 
@@ -1387,7 +1402,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .card, a.row, .start-card, .res, .icontile, .chip, .tag, .principle,
   .rail-link, .nav-links a, .tab, .sb-opt, .copy-token, .menu-item,
   .face, .type-faces .face, .swatch, .ruler-row, .crumb .cur,
-  .dtable tbody tr, .fbk-launch, .fbk-list-btn, .navctl {
+  .dtable tbody tr, .fbk-launch, .navctl {
     transition: background var(--dur-1) var(--ease-standard),
                 border-color var(--dur-1) var(--ease-standard),
                 color var(--dur-1) var(--ease-standard),
@@ -1904,7 +1919,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .dr-nav .lucide { width: var(--ic-sm); height: var(--ic-sm); }
 
   /* the 7-col grid: a column of rows, each row a 7x32px track. */
-  .dr-grid { display: flex; flex-direction: column; gap: var(--dr-gutter); }
+  .dr-grid { display: flex; flex-direction: column; gap: var(--dr-gutter); min-height: calc(6 * var(--dr-cell) + 7 * var(--dr-gutter)); }
   .dr-wdrow, .dr-week { display: grid; grid-template-columns: repeat(7, var(--dr-cell)); gap: var(--dr-gutter); }
   .dr-wd { display: flex; align-items: center; justify-content: center; height: var(--sp-5);
     font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-4); }
@@ -1968,7 +1983,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
     background: var(--canvas);
     border-top: var(--bd);
   }
-  .iu:fullscreen, .iu.iu-is-full { min-height: 100vh; border-top: 0; }
+  .iu:fullscreen { min-height: 100vh; border-top: 0; }
 
   /* ---- sticky top app-switcher banner (visually replaces the page header) ---- */
   .iu-bar {
@@ -2025,22 +2040,6 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .iu-opt-on .iu-opt-ico { color: var(--amber); }
   .iu-opt-on .iu-opt-key { color: var(--amber); border-color: var(--amber-dim); }
 
-  /* ---- expand / fullscreen control (equal height to the selector) ---- */
-  .iu-bar-full {
-    flex: none;
-    display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
-    height: var(--control-h); min-height: var(--target-min);
-    padding: 0 var(--sp-3);
-    background: transparent; border: var(--bd-strong);
-    cursor: pointer;
-    font-family: var(--font-mono); font-size: var(--fs-label);
-    text-transform: lowercase; white-space: nowrap;
-    color: var(--ink-3);
-    transition: color var(--dur-1), border-color var(--dur-1);
-  }
-  .iu-bar-full:hover { color: var(--ink); border-color: var(--amber-dim); }
-  .iu-bar-full:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
-
   /* ---- the stage: fills the rest of the viewport, renders the active app full-bleed ---- */
   .iu-stage {
     flex: 1; min-height: 0;
@@ -2066,8 +2065,6 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   /* ---- tablet: keep the app labels, but drop the expand label + tighten the banner so it fits ---- */
   @media (max-width: 900px) {
     .iu-bar { gap: var(--sp-3); padding: 0 var(--sp-4); }
-    .iu-bar-full-label { display: none; }
-    .iu-bar-full { width: var(--control-h); padding: 0; }
   }
   /* ---- narrow: selector labels collapse to icons + key hint; banner tightens ---- */
   @media (max-width: 720px) {
@@ -2075,8 +2072,6 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
     .iu-switch { margin-inline: 0; }
     .iu-opt { padding: 0 var(--sp-2); }
     .iu-opt-label { display: none; }
-    .iu-bar-full-label { display: none; }
-    .iu-bar-full { width: var(--control-h); padding: 0; }
   }
   @media (max-width: 480px) {
     .iu-bar-brand span { display: none; }
@@ -2137,7 +2132,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-scrub:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 
   /* ---- tab strip ---- */
-  .txn-tabs { flex: none; gap: var(--sp-5); padding: 0 var(--sp-4); }
+  .txn-tabs { flex: none; gap: var(--sp-5); padding: 0 var(--sp-4); position: sticky; top: 0; z-index: 10; background: var(--surface); }
   .txn-tab { padding: var(--sp-3) 2px; }
   .txn-tab .cnt { font-variant-numeric: tabular-nums; }
 
@@ -2502,6 +2497,12 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-sticky-model { display: none; }
   .txn-anno-row { flex-wrap: wrap; }
   .txn-anno-preview { flex-basis: 100%; }
+}
+/* ---- phone: truncate checkpoint strip so it never overflows the stage ---- */
+@media (max-width: 480px) {
+  .txn-checkpoint .mc { max-width: calc(100% - 2rem); overflow: hidden; min-width: 0; }
+  .txn-cp-msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 16ch; }
+  .txn-cp-stat { display: none; }
 }/* ======================================================================
    CommonsExplore (in-use mockup): browse/discovery + embedded viewer +
    profile. namespace .cex-* only; existing tokens only; square, hairline,
@@ -2772,6 +2773,18 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
     .cex-explore-body { grid-template-columns: 1fr; row-gap: var(--sp-4); }
     .cex-rail { position: static; }
   }
+  /* ---- phone: prevent card overflow and tighten padding ---- */
+  @media (max-width: 480px) {
+    .iu-view { padding: var(--sp-3); }
+    .cex-results, .cex-grid { min-width: 0; }
+    .cex-tcard { min-width: 0; width: 100%; }
+    /* profile project sections */
+    .cex-psec { min-width: 0; }
+    .cex-project { min-width: 0; overflow: hidden; }
+    .cex-project-head { min-width: 0; overflow: hidden; }
+    .cex-project-name { min-width: 0; overflow: hidden; }
+    .cex-project-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  }
 }@layer components {
   /* ======================================================================
      COMMONS MANAGE (.cmg-*) — publish / collectives / governance views.
@@ -2784,6 +2797,8 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .cmg-page,
   .cmg-detail { flex: 1; min-height: 0; min-width: 0; overflow: auto; padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-5); }
   .cmg-detail { gap: var(--sp-4); }
+  /* mockup pages span the full stage width: cancel the global <section> max-width + auto-margins */
+  .cmg-page > section, .cmg-detail > section { max-width: none; margin-inline: 0; padding-inline: 0; }
 
   .cmg-crumb { margin-bottom: var(--sp-1); }
   .cmg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; }
@@ -3003,6 +3018,11 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
     .cmg-tiles { grid-template-columns: 1fr; }
     .cmg-tx-row { grid-template-columns: auto auto minmax(0, 1fr) auto; }
     .cmg-tx-row > .btn-icon { display: none; }
+    .cmg-page, .cmg-detail { padding: var(--sp-3); }
+    /* publish row: drop the date column at phone, keep icon+title+visibility+action */
+    .cmg-pub-row { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+    .cmg-pub-date { display: none; }
+    .cmg-pub-meta:last-of-type { display: none; }
   }
 }/* ======================================================================
    GraphMap.jsx — peasant code-MAP + changes git-graph (namespace .gmp-*)
@@ -3018,7 +3038,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   /* ====================================================================
      MAP VIEW
   ==================================================================== */
-  .gmp-toolbar { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); background: var(--surface); flex: none; }
+  .gmp-toolbar { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); background: var(--surface); flex: none; position: sticky; top: 0; z-index: 10; }
   .gmp-toolbar-spacer { flex: 1; }
   .gmp-conn { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); white-space: nowrap; }
 
@@ -3048,7 +3068,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   @media (max-width: 720px) { .gmp-body { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; } }
 
   .gmp-canvas-wrap { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: var(--sp-4); gap: var(--sp-3); overflow: hidden; }
-  .gmp-canvas { flex: 1; min-height: 220px; height: auto; }
+  .gmp-canvas { flex: 1; min-height: 360px; height: auto; }
   .gmp-edges { transition: transform var(--dur-2) var(--ease-standard); }
   .gmp-nodes { position: absolute; inset: 0; transition: transform var(--dur-2) var(--ease-standard); }
   @media (prefers-reduced-motion: reduce) { .gmp-edges, .gmp-nodes { transition: none; } }
@@ -3103,6 +3123,21 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .gmp-branch-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
   .gmp-branch-ahead { color: var(--ink-4); margin-left: auto; flex: none; }
   @media (max-width: 720px) { .gmp-branch-chips { display: none; } }
+  /* ---- phone: push search below the seg buttons so toolbar doesn't overflow ---- */
+  @media (max-width: 600px) {
+    .gmp-toolbar { gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); }
+    .gmp-seg { order: 1; }
+    .gmp-find { order: 2; flex: 1 1 100%; max-width: none; min-width: 0; }
+    .gmp-toolbar-spacer { display: none; }
+    .gmp-conn { order: 3; }
+  }
+  @media (max-width: 480px) {
+    .gmp-conn { display: none; }
+    .gmp-seg-btn { padding: 0 var(--sp-2); gap: var(--sp-1); font-size: 11px; }
+    /* tighten the canvas + toolbar gutters so the map fits a 320px phone with no inner side-scroll */
+    .gmp-canvas-wrap { padding: var(--sp-2); }
+    .gmp-toolbar { padding-inline: var(--sp-2); }
+  }
 
   /* ---- selection rail ---- */
   .gmp-rail { min-width: 0; min-height: 0; border-left: var(--bd); overflow: auto; background: var(--surface); }
@@ -3241,6 +3276,23 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .gmp-older:hover { color: var(--amber-bright); }
 
   .gmp-changes-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4); margin-top: var(--sp-5); padding-top: var(--sp-4); border-top: var(--bd); }
+
+  /* ---- phone: collapse the absolute-positioned commit graph to in-flow stack ---- */
+  @media (max-width: 600px) {
+    .gmp-changes-body { padding: var(--sp-3); overflow: hidden; }
+    /* collapse side-by-side gutter + rows into a single column */
+    .gmp-graph { grid-template-columns: 1fr; }
+    .gmp-gutter { width: 100%; max-width: 100%; overflow: hidden; }
+    .gmp-gutter-svg { width: 100%; }
+    /* pull absolutely-positioned tip cards back into normal flow */
+    .gmp-tip-card { position: static !important; width: 100%; margin-top: var(--sp-3); }
+    /* commit rows: clip the recency badge to prevent overflow */
+    .gmp-commit-row { overflow: hidden; }
+    .gmp-commit-row-rec { display: none; }
+    .gmp-commit-row-msg { min-width: 0; flex: 1 1 0; }
+    /* merged chip: pull out of absolute flow */
+    .gmp-merged-chip { position: static !important; margin-top: var(--sp-2); }
+  }
 
   /* ====================================================================
      CHANGE DETAIL VIEW
@@ -3426,7 +3478,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .gan-typp90 { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-4); font-variant-numeric: tabular-nums; }
 
   /* ---- contributor table card (reuses .tbl-*) ---- */
-  .gan-tablecard { display: flex; flex-direction: column; gap: var(--sp-2); background: var(--surface); border: var(--bd-strong); padding: var(--sp-3) var(--sp-4) var(--sp-4); }
+  .gan-tablecard { display: flex; flex-direction: column; gap: var(--sp-2); background: var(--surface); border: var(--bd-strong); padding: var(--sp-3) var(--sp-4) var(--sp-4); min-width: 0; overflow: hidden; }
   .gan-tablecard .tbl-wrap { margin-top: var(--sp-2); }
   .gan-contrib { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--ink); }
   .gan-table-foot { display: flex; flex-wrap: wrap; gap: var(--sp-4); margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: var(--bd); }
@@ -3445,6 +3497,8 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
     .gan-legend { width: 100%; }
     .gan-head { padding: var(--sp-3); }
     .gan-scroll { padding: var(--sp-3); }
+    .gan-tablecard { padding: var(--sp-2) var(--sp-3) var(--sp-3); }
+    .gan-tablecard .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   }
 }
 

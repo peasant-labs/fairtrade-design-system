@@ -12,24 +12,19 @@ export function ColorSection() {
       <div className="sub">desaturated earth, theme-aware, meaning never carried by hue alone</div>
       <p className="prose">a small palette built from a near-black canvas, a warm ink ramp, two border weights, and one scarce amber accent. teal, olive, clay and mauve are supporting tints for roles (user, add, del, system) and never stand in for an icon or a label. every token re-themes between dark and light; the table lists both the dark and light value of every token.</p>
 
-      <div className="specimen">
-        <div className="specimen-bar"><span className="specimen-cap">example</span></div>
-        <div className="specimen-body">
-          <div className="swatches">
-            <div className="swatch" style={{ '--c': '#070706' }}><div className="swc"></div><div className="nm">canvas</div></div>
-            <div className="swatch" style={{ '--c': '#0e0e0c' }}><div className="swc"></div><div className="nm">surface</div></div>
-            <div className="swatch" style={{ '--c': '#e9e5db' }}><div className="swc"></div><div className="nm">ink</div></div>
-            <div className="swatch" style={{ '--c': '#cba35c' }}><div className="swc"></div><div className="nm">amber</div></div>
-            <div className="swatch" style={{ '--c': '#7ea69d' }}><div className="swc"></div><div className="nm">teal</div></div>
-            <div className="swatch" style={{ '--c': '#9aa779' }}><div className="swc"></div><div className="nm">olive</div></div>
-            <div className="swatch" style={{ '--c': '#c07f64' }}><div className="swc"></div><div className="nm">clay</div></div>
-            <div className="swatch" style={{ '--c': '#9a8cae' }}><div className="swc"></div><div className="nm">mauve</div></div>
-            <div className="swatch" style={{ '--c': '#b8b3a4' }}><div className="swc"></div><div className="nm">ink-2</div></div>
-            <div className="swatch" style={{ '--c': '#9a9488' }}><div className="swc"></div><div className="nm">ink-3</div></div>
-            <div className="swatch" style={{ '--c': '#3c382f' }}><div className="swc"></div><div className="nm">rule</div></div>
-            <div className="swatch" style={{ '--c': '#e6c483' }}><div className="swc"></div><div className="nm">amber-bright</div></div>
-          </div>
-        </div>
+      <div className="swatches">
+        <div className="swatch" style={{ '--c': '#070706' }}><div className="swc"></div><div className="nm">canvas</div></div>
+        <div className="swatch" style={{ '--c': '#0e0e0c' }}><div className="swc"></div><div className="nm">surface</div></div>
+        <div className="swatch" style={{ '--c': '#e9e5db' }}><div className="swc"></div><div className="nm">ink</div></div>
+        <div className="swatch" style={{ '--c': '#cba35c' }}><div className="swc"></div><div className="nm">amber</div></div>
+        <div className="swatch" style={{ '--c': '#7ea69d' }}><div className="swc"></div><div className="nm">teal</div></div>
+        <div className="swatch" style={{ '--c': '#9aa779' }}><div className="swc"></div><div className="nm">olive</div></div>
+        <div className="swatch" style={{ '--c': '#c07f64' }}><div className="swc"></div><div className="nm">clay</div></div>
+        <div className="swatch" style={{ '--c': '#9a8cae' }}><div className="swc"></div><div className="nm">mauve</div></div>
+        <div className="swatch" style={{ '--c': '#b8b3a4' }}><div className="swc"></div><div className="nm">ink-2</div></div>
+        <div className="swatch" style={{ '--c': '#9a9488' }}><div className="swc"></div><div className="nm">ink-3</div></div>
+        <div className="swatch" style={{ '--c': '#3c382f' }}><div className="swc"></div><div className="nm">rule</div></div>
+        <div className="swatch" style={{ '--c': '#e6c483' }}><div className="swc"></div><div className="nm">amber-bright</div></div>
       </div>
 
       <TokenTable

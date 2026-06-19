@@ -17,7 +17,7 @@ manager: **pnpm**. Source is **JS/JSX only - no TypeScript**. Icons: `lucide-rea
 - `public/tokens.json`, `public/components.json` - generated machine-readable token + component
   manifests (DTCG-ish). Do not hand-edit; run `node scripts/gen-llm-artifacts.mjs`.
 - `llm/*.md` - the design system reference (`DESIGN.md`), neuroinclusive rules
-  (`NEUROINCLUSIVE.md`), open work (`HANDOFF.md`), research decisions (`RESEARCH_DECISIONS.md`).
+  (`NEUROINCLUSIVE.md`), the deferred multi-app rollout (`UNIFICATION_PLAN.md`).
 
 ## commands
 - `pnpm dev` - run the page (Vite, port 5180).

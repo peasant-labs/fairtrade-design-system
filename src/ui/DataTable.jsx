@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react'
+import { useCallback, useId, useMemo, useState } from 'react'
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 import { useReactTable, getCoreRowModel, getSortedRowModel } from '@tanstack/react-table'
 
@@ -57,7 +57,9 @@ export default function DataTable({
   className = '',
 }) {
   const baseId = useId()
-  const keyOf = (row, i) => (rowKey ? rowKey(row, i) : row.id ?? i)
+  /* stable references so TanStack doesn't treat these as changed options every render */
+  const keyOf = useCallback((row, i) => (rowKey ? rowKey(row, i) : row.id ?? i), [rowKey])
+  const getRowId = useCallback((row, i) => String(keyOf(row, i)), [keyOf])
 
   /* sort: controlled if `sort` prop is supplied, else internal state seeded by defaultSort.
      the public shape stays {key,dir}|null; TanStack drives the cycle + row order under it. */
@@ -112,7 +114,7 @@ export default function DataTable({
     data: rows,
     columns: tsColumns,
     state: { sorting, rowSelection },
-    getRowId: (row, i) => String(keyOf(row, i)),
+    getRowId,
     enableSortingRemoval: true, // the none-state at the end of the cycle
     enableMultiSort: false,
     sortDescFirst: false, // first click is ascending

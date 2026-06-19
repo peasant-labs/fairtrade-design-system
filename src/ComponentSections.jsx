@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { BadgeCheck, Clock, Check, X, Info, Boxes, ShieldCheck, KeyRound, Workflow, AlertTriangle } from 'lucide-react'
 import DataTable from './ui/DataTable.jsx'
 import Pagination from './ui/Pagination.jsx'
 import Accordion from './ui/Accordion.jsx'
 import Timeline from './ui/Timeline.jsx'
+import { Steps } from './ui/Breadcrumb.jsx'
 import ToastProvider, { useToast } from './ui/ToastHost.jsx'
 import DateRange, { DateRangeCalendar } from './ui/DateRange.jsx'
 
@@ -15,29 +16,39 @@ import DateRange, { DateRangeCalendar } from './ui/DateRange.jsx'
 export function DataTableSection() {
   const [selected, setSelected] = useState(['t-204'])
 
-  const columns = [
-    { key: 'agent', label: 'agent', sortable: true },
-    { key: 'title', label: 'title', sortable: true },
-    { key: 'date', label: 'date', sortable: true },
-    { key: 'turns', label: 'turns', sortable: true, align: 'right' },
-    {
-      key: 'status',
-      label: 'status',
-      sortable: true,
-      render: (v) => (
-        <span className="metaitem">
-          {v === 'verified' ? <BadgeCheck size={14} /> : <Clock size={14} />} {v}
-        </span>
-      ),
-    },
-  ]
+  /* columns + rows MUST be stable references: an unmemoized `data`/`columns` array makes
+     TanStack Table re-derive its row model every render and re-fire onRowSelectionChange,
+     which calls back into setSelected -> re-render -> new array -> loop. that infinite loop
+     is what froze the whole page on a checkbox click. memoize them (and the cell renderer). */
+  const renderStatus = useCallback(
+    (v) => (
+      <span className="metaitem">
+        {v === 'verified' ? <BadgeCheck size={14} /> : <Clock size={14} />} {v}
+      </span>
+    ),
+    [],
+  )
 
-  const rows = [
-    { id: 't-204', agent: 'claude-code', title: 'refactor ingest pipeline to stream', date: '2026-06-12', turns: 18, status: 'verified' },
-    { id: 't-205', agent: 'gemini-cli', title: 'tune redaction rules', date: '2026-06-11', turns: 9, status: 'review' },
-    { id: 't-206', agent: 'claude-code', title: 'add fts5 search index', date: '2026-06-10', turns: 24, status: 'verified' },
-    { id: 't-207', agent: 'codex-cli', title: 'desert archivists onboarding', date: '2026-06-09', turns: 6, status: 'review' },
-  ]
+  const columns = useMemo(
+    () => [
+      { key: 'agent', label: 'agent', sortable: true },
+      { key: 'title', label: 'title', sortable: true },
+      { key: 'date', label: 'date', sortable: true },
+      { key: 'turns', label: 'turns', sortable: true, align: 'right' },
+      { key: 'status', label: 'status', sortable: true, render: renderStatus },
+    ],
+    [renderStatus],
+  )
+
+  const rows = useMemo(
+    () => [
+      { id: 't-204', agent: 'claude-code', title: 'refactor ingest pipeline to stream', date: '2026-06-12', turns: 18, status: 'verified' },
+      { id: 't-205', agent: 'gemini-cli', title: 'tune redaction rules', date: '2026-06-11', turns: 9, status: 'review' },
+      { id: 't-206', agent: 'claude-code', title: 'add fts5 search index', date: '2026-06-10', turns: 24, status: 'verified' },
+      { id: 't-207', agent: 'codex-cli', title: 'desert archivists onboarding', date: '2026-06-09', turns: 6, status: 'review' },
+    ],
+    [],
+  )
 
   const propCols = [
     { key: 'prop', label: 'prop' },
@@ -63,7 +74,7 @@ export function DataTableSection() {
       <p className="prose">a data table is the scannable form for many transcripts or collectives at once. click a column header to sort it (asc, desc, then back to source order); the header checkbox selects every row, each row carries its own, and the selection is reported back to the caller. it is a real &lt;table&gt; with scope, aria-sort, and the existing checkbox control.</p>
 
       <div className="specimen">
-        <div className="specimen-bar"><span className="specimen-cap">example · {selected.length} selected</span></div>
+        <div className="specimen-bar"><span className="specimen-cap">example ({selected.length} selected)</span></div>
         <div className="specimen-body">
           <DataTable
             columns={columns}
@@ -273,7 +284,19 @@ export function TimelineSection() {
       <p className="prose">a timeline is the vertical sibling of the horizontal step wizard. the step wizard marks progress through a short fixed flow; the timeline strings an open-ended, mixed event stream down one continuous spine. role is carried by a glyph and a label, tool calls and thinking collapse to a summary line and open on demand, the spine stays unbroken even through a subagent inset, and a checkpoint ties the prose back to a commit. for a short linear flow (choose to label to redact) reach for the step wizard instead; the timeline is for the open-ended session.</p>
 
       <div className="specimen">
-        <div className="specimen-bar"><span className="specimen-cap">example</span></div>
+        <div className="specimen-bar"><span className="specimen-cap">the horizontal sibling: a step wizard for a short fixed flow</span></div>
+        <div className="specimen-body">
+          <Steps steps={[
+            { label: 'choose', status: 'done' },
+            { label: 'label', status: 'done' },
+            { label: 'redact', status: 'cur' },
+            { label: 'submit' },
+          ]} />
+        </div>
+      </div>
+
+      <div className="specimen">
+        <div className="specimen-bar"><span className="specimen-cap">the vertical timeline: an open-ended session, read top to bottom</span></div>
         <div className="specimen-body">
           <Timeline items={TIMELINE_ITEMS} ariaLabel="session timeline" />
         </div>
@@ -424,7 +447,7 @@ export function DateRangeSection() {
   return (
     <section className="band" id="date-range">
       <h2 className="label">date range</h2>
-      <div className="sub">a trigger plus a two-month grid for picking a span. presets for the common cases, a keyboard-navigable calendar for the exact one.</div>
+      <div className="sub">a trigger plus a two-month grid for picking a span</div>
       <p className="prose">a date range is one trigger that reads like a field and one panel that holds the work: a rail of quick ranges for the cases people ask for ninety percent of the time, and two month grids for the exact span. dates cross the boundary as iso strings, so the value stays tabular, serializable, and stable across locales. the two endpoints are the only amber-filled cells; today is a hairline ring; the run between the ends is a quiet wash, never a saturated fill.</p>
 
       <div className="specimen">
