@@ -128,12 +128,14 @@
 
 /* ---------------------------------------------------------------------- */
 @layer base {
-  /* NO scroll snapping, in CSS or JS. every approach we tried trapped or froze: CSS mandatory skipped
-     sections, CSS proximity was too weak, and a JS wheel handler that owned the gesture (preventDefault +
-     a per-gesture cooldown) swallowed half of every flick and made the whole page feel frozen. the splash
-     is 100svh per section, so it still reads as full-screen stops under plain native scroll.
-     scroll-padding-top clears the sticky nav for anchor / rail-link jumps. */
-  html { scroll-behavior: smooth; scroll-padding-top: var(--nav-h); overscroll-behavior-y: none; }
+  /* section snapping is PURE CSS - never JS. the old JS wheel handler (preventDefault + per-gesture
+     cooldown) owned the gesture, swallowed half of every flick and froze the page; that is gone for
+     good. `mandatory` gives the firm one-section-per-flick feel (proximity was too weak to notice).
+     it does NOT trap the long docs because the docs region itself is a single oversized snap area
+     (.docs has scroll-snap-align + is far taller than the viewport, so you can rest anywhere inside
+     it); only the full-screen landmark stops (.hero-crop, .hero-grow, .philos, .iu) + .docs snap.
+     scroll-padding-top clears the sticky nav for anchor / rail-link jumps and where docs settles. */
+  html { scroll-behavior: smooth; scroll-snap-type: y mandatory; scroll-padding-top: var(--nav-h); overscroll-behavior-y: none; }
   body {
     @apply bg-canvas text-ink font-body;
     margin: 0;
@@ -278,9 +280,14 @@
   .group { @apply mx-auto; max-width: var(--maxw); padding: calc(var(--sp-8) + var(--sp-7)) var(--gutter) var(--sp-6); }
   .group h2 { @apply font-display text-ink-strong lowercase; font-weight: 700; font-size: var(--fs-group); letter-spacing: -0.025em; line-height: 1; }
 
-  /* native scroll only - no snap (see the @layer base note). the splash sections are each 100svh so they
-     read as full-screen stops as you scroll through them; the docs free-scroll; the in-use stage is the
-     last 100svh block, so scrolling to the bottom aligns it and its own internal scroll takes over. */
+  /* section snap targets (see the @layer base note): the full-screen landmark stops are each <= one
+     viewport and sit in a nav-hidden zone (splash, philosophy, in-use - see App.jsx header gating), so
+     they settle flush to the viewport top (the negative scroll-margin cancels the nav-h scroll-padding).
+     .docs is an OVERSIZED snap area: it carries snap-align so mandatory snaps to it on entry, but because
+     it is far taller than the viewport you can rest anywhere inside it (the individual .band/.group doc
+     sections free-scroll). .docs keeps the nav-h scroll-padding since the nav is shown across the docs. */
+  .hero-crop, .hero-grow, .philos, .iu { scroll-snap-align: start; scroll-margin-top: calc(-1 * var(--nav-h)); }
+  .docs { scroll-snap-align: start; }
   .band, .group { padding-top: var(--band-y); padding-bottom: var(--band-y); }
   .band + .band, .group + .band, .band + .group { border-top: var(--bd); }
   /* scroll-reveal: sections fade/lift in as they enter the viewport (JS toggles .is-in). NOT .philos - it
@@ -628,10 +635,11 @@
     .hero-grow .hero-soil-bg { opacity: 0; }
     .hero-grow .hero-word { clip-path: inset(0 100% 0 0); }
     .hero-grow.grow .hero-soil-bg { animation: soilReveal 1.3s var(--ease-out) both; }
-    /* the wordmark starts about HALFWAY through the roots' descent (roots growMs is 4800 in App.jsx, so the
-       delay is ~half of that) and wipes in left-to-right - the name forms WITH the roots as they reach it,
-       not a label that waits for them to finish. keep this delay near half the roots' growMs. */
-    .hero-grow.grow .hero-word { animation: wordWipe 1.2s steps(48, end) 2.4s both; }
+    /* the wordmark starts about a THIRD of the way through the roots' descent (roots growMs is 4800 in
+       App.jsx, so the delay is ~1/3 of that) and wipes in left-to-right - the name forms WITH the roots
+       early, as they push past it, not a label that waits for them to finish. keep this delay near a third
+       of the roots' growMs. */
+    .hero-grow.grow .hero-word { animation: wordWipe 1.2s steps(48, end) 1.6s both; }
   }
   @keyframes soilReveal { from { opacity: 0; } to { opacity: 0.14; } }
   @keyframes wordWipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
@@ -2114,7 +2122,6 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-actions { display: inline-flex; align-items: center; gap: var(--sp-2); flex: none; }
 
   .txn-title { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-md); color: var(--ink-strong); line-height: 1.2; margin-top: var(--sp-3); }
-  .txn-title-proj { color: var(--amber); }
 
   .txn-meta { margin-top: var(--sp-3); gap: var(--sp-2) var(--sp-3); }
   .txn-meta .chip { height: 24px; }
@@ -2127,9 +2134,19 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-pill { height: 20px; padding: 0 var(--sp-2); font-size: 11px; gap: var(--sp-1); }
   .txn-pill .lucide { width: 12px; height: 12px; }
 
-  /* ---- sticky condensed header (revealed on scroll) ---- */
+  /* ---- sticky condensed header (revealed on scroll) ----
+     it overlays the TOP OF THE STREAM (not the app header): .txn-streamwrap is the
+     non-scrolling frame it anchors to. --txn-sticky-h is the header's DETERMINISTIC
+     height (forced via box-sizing so it never drifts with content; clears the 22px
+     scrubber row). the per-phase stickies pin flush directly beneath it — see
+     .txn-stream-pinned .txn-phase, which offsets by the header height MINUS the
+     stream's own top padding (sticky `top` is measured from the stream's content
+     box, inside that --sp-3 padding; without the subtraction a --sp-3 gap opened
+     between the header bottom and the pinned phase). */
+  .txn-streamwrap { --txn-sticky-h: calc(var(--control-h) + var(--sp-1)); position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
   .txn-sticky {
     position: absolute; top: 0; left: 0; right: 0; z-index: var(--z-sticky);
+    box-sizing: border-box; height: var(--txn-sticky-h);
     display: flex; align-items: center; gap: var(--sp-3);
     padding: var(--sp-2) var(--sp-4); background: var(--nav-bg);
     border-bottom: var(--bd-strong); backdrop-filter: blur(8px);
@@ -2167,8 +2184,13 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 
   .txn-stream { flex: 1; min-height: 0; overflow: auto; padding: var(--sp-3) var(--sp-4) var(--sp-7); }
 
-  /* phase divider sticks to the top of the scroller */
+  /* phase divider sticks to the top of the scroller. when the condensed header is
+     revealed (.txn-stream-pinned) it pins FLUSH directly below that header: the
+     offset is the header height minus the stream's top padding, because sticky `top`
+     is measured from the stream's content box (inside the --sp-3 padding). z-index
+     stays under the condensed header (--z-sticky). */
   .txn-phase { position: sticky; top: 0; z-index: 2; margin: var(--sp-3) calc(var(--sp-4) * -1) var(--sp-2); }
+  .txn-stream-pinned .txn-phase { top: calc(var(--txn-sticky-h) - var(--sp-3)); }
   /* the first phase sits snug under the trace head: the stream's own top padding
      already separates it, so drop this phase's leading margin to remove the
      doubled gap. spacing between later phases is untouched. */
@@ -2556,8 +2578,12 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .cex-explore-body { display: grid; grid-template-columns: minmax(0, 16rem) minmax(0, 1fr); column-gap: var(--sp-5); align-items: start; min-height: 0; flex: 1; }
   .cex-rail { align-self: start; position: sticky; top: 0; }
   .cex-rail .cex-topics { display: flex; flex-wrap: wrap; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); }
-  .cex-topic { gap: var(--sp-1); }
-  .cex-topic-n { color: var(--ink-4); font-size: 11px; }
+  /* topic chips: single-line pills. the label flexes and truncates so a long
+     topic (#iterative-refinement) can't wrap inside the fixed-height chip and
+     break its centering; the count stays pinned to the end with tabular nums. */
+  .cex-topic { gap: var(--sp-1); max-width: 100%; min-width: 0; }
+  .cex-topic-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cex-topic-n { flex: none; color: var(--ink-4); font-size: 11px; }
   button.chip-toggle[aria-pressed="true"] .cex-topic-n { color: var(--on-amber); }
   .cex-opt { min-height: var(--target-min); }
   .cex-opt > span { display: inline-flex; align-items: center; gap: var(--sp-2); }
@@ -3075,12 +3101,20 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 ====================================================================== */
 @layer components {
   /* ---- shared root: fills the clipping window body ---- */
-  .gmp-root { display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0; background: var(--canvas); font-family: var(--font-body); }
+  /* full-bleed frame, capped content (matches .gmp-changes-root / .gan-root): the map chrome (sticky
+     toolbar, canvas band, right rail) reaches the full .iu-view body edges, but the readable content -
+     the toolbar controls, the time-strip + map canvas - centres at the same ~1360px measure the changes /
+     analytics dashboards use, so the code-map body reads at the same width as its sibling demos instead of
+     sprawling edge-to-edge on a wide monitor. --gmp-map-pad-x is the shared inset; below the threshold it
+     resolves to the page-gutter floor (--sp-4), i.e. the plain .iu-view inset, so nothing changes on narrow
+     screens. the rail stays a fixed side panel anchored to the right frame edge (it is chrome, like the
+     changes head's surface band), so the canvas/rail border seam is untouched. */
+  .gmp-root { display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0; background: var(--canvas); font-family: var(--font-body); --gmp-map-pad-x: max(var(--sp-4), calc((100% - 1360px) / 2)); }
 
   /* ====================================================================
      MAP VIEW
   ==================================================================== */
-  .gmp-toolbar { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); background: var(--surface); flex: none; position: sticky; top: 0; z-index: 10; }
+  .gmp-toolbar { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; padding: var(--sp-3) var(--gmp-map-pad-x); border-bottom: var(--bd); background: var(--surface); flex: none; position: sticky; top: 0; z-index: 10; }
   .gmp-toolbar-spacer { flex: 1; }
   .gmp-conn { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); white-space: nowrap; }
 
@@ -3105,11 +3139,29 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .gmp-find-meta { color: var(--ink-4); font-family: var(--font-mono); font-size: 11px; white-space: nowrap; }
 
   /* canvas + rail body */
-  .gmp-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; min-height: 0; flex: 1; }
+  /* the left inset that caps the readable column lives HERE, on the body grid (a direct flex child of
+     .gmp-root), NOT on the canvas-wrap inside the 1fr track: --gmp-map-pad-x contains a `100%`, and a `%`
+     in a custom property resolves against the CONSUMING element's containing block. on .gmp-body that
+     containing block is .gmp-root (full width) - the SAME width the .gmp-toolbar resolves against - so the
+     canvas content-left lines up with the toolbar content-left to the pixel. consumed on the canvas-wrap
+     it resolved against the narrower 1fr track (next to the 320px rail), so the two left edges diverged
+     (~280 vs ~108 at 1920) - the misalignment. padding-left only: the rail still reaches the right frame
+     edge (full-bleed chrome). floors to --sp-4 below the cap threshold, so narrow screens are unchanged. */
+  .gmp-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; min-height: 0; flex: 1; padding-left: var(--gmp-map-pad-x); }
   @media (max-width: 980px) { .gmp-body { grid-template-columns: minmax(0, 1fr) 264px; } }
-  @media (max-width: 720px) { .gmp-body { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; } }
+  /* single-column mobile: drop the centred left inset (rail stacks below the canvas, so the body padding
+     would push BOTH inward) and hand the canvas back its own symmetric --sp-4 left, matching the original
+     mobile gutters. below this width --gmp-map-pad-x is at its --sp-4 floor anyway, so nothing visual is
+     lost. */
+  @media (max-width: 720px) {
+    .gmp-body { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; padding-left: 0; }
+    .gmp-canvas-wrap { padding-left: var(--sp-4); }
+  }
 
-  .gmp-canvas-wrap { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: var(--sp-4); gap: var(--sp-3); overflow: hidden; }
+  /* left padding 0: the centred left inset is supplied by .gmp-body's padding-left (which resolves against
+     the full root width, same as the toolbar), so the canvas content-left == the toolbar content-left to
+     the pixel. top/right/bottom keep --sp-4 (right is the seam toward the rail). */
+  .gmp-canvas-wrap { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: var(--sp-4) var(--sp-4) var(--sp-4) 0; gap: var(--sp-3); overflow: hidden; }
   .gmp-canvas { flex: 1; min-height: 360px; height: auto; }
   .gmp-edges { transition: transform var(--dur-2) var(--ease-standard); }
   .gmp-nodes { position: absolute; inset: 0; transition: transform var(--dur-2) var(--ease-standard); }

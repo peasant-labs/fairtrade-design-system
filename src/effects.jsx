@@ -204,12 +204,25 @@ export function AsciiImage({ src, cols = 120, aspect = 0.6, fit = false, gamma =
       const cw = W / cols, ch = H / rows
       ctx.fillStyle = ink || (light ? '#0d0c09' : '#f8f5ed')
       ctx.textBaseline = 'middle'; ctx.textAlign = 'left'
-      ctx.font = `${(cw / cellAR).toFixed(2)}px "Atkinson Hyperlegible Mono", ui-monospace, monospace`
+      // size the font OFF THE ROW HEIGHT (not the column width). a glyph's ink only fills ~0.7 of its em, so
+      // an em == cell-height left a ~0.3-cell blank strip between every row of ink; at this tiny font size
+      // that strip beats against the device-pixel grid and shows up as periodic horizontal lines. drawing the
+      // em slightly TALLER than the cell (FILL) overlaps the ink row-to-row and closes those seams, then a
+      // per-row horizontal squeeze (sx) keeps each glyph's advance == cw so the row still spans exactly W
+      // (no horizontal stretch). 1px ink, no inter-row gap, no banding.
+      const FILL = 1.2
+      const fs = ch * FILL
+      const sx = cw / (fs * cellAR) // squeeze so the taller glyph's advance still equals the column width
+      ctx.font = `${fs.toFixed(2)}px "Atkinson Hyperlegible Mono", ui-monospace, monospace`
       const lastr = RAMP.length - 1
       for (let y = 0; y < rows; y++) {
         let row = ''
         for (let x = 0; x < cols; x++) row += RAMP[Math.min(lastr, Math.floor(lum[y * cols + x] * lastr))]
-        ctx.fillText(row, 0, (y + 0.5) * ch)
+        ctx.save()
+        ctx.translate(0, (y + 0.5) * ch)
+        ctx.scale(sx, 1)
+        ctx.fillText(row, 0, 0)
+        ctx.restore()
       }
     }
     // draw LAZILY (only when the canvas is on/near screen) so a long page or a freshly-mounted in-use app

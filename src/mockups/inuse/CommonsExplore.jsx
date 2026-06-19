@@ -636,7 +636,8 @@ export function ExploreView({ theme } = {}) {
                     aria-pressed={on}
                     onClick={() => toggleTopic(tp.id)}
                   >
-                    <Check size={13} aria-hidden="true" className="chipx-tick" />#{tp.id}
+                    <Check size={13} aria-hidden="true" className="chipx-tick" />
+                    <span className="cex-topic-label" title={`#${tp.id}`}>#{tp.id}</span>
                     <span className="cex-topic-n tnum">{tp.count}</span>
                   </button>
                 )

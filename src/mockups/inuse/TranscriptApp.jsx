@@ -1119,7 +1119,7 @@ export default function TranscriptApp({ theme = 'dark' }) {
                 <ChevronDown size={13} aria-hidden="true" className="menu-caret" />
               </button>
               {shareOpen && (
-                <div className="menu-pop menu-float" role="menu" aria-label="share">
+                <div className="menu-pop menu-float" data-align="end" role="menu" aria-label="share">
                   <ul className="menu-list">
                     <li><button type="button" className="menu-item" role="menuitem" onClick={() => setShareOpen(false)}><Users size={14} aria-hidden="true" /><span className="menu-text">contribute</span></button></li>
                     <li>
@@ -1145,7 +1145,7 @@ export default function TranscriptApp({ theme = 'dark' }) {
                 <MoreHorizontal size={14} aria-hidden="true" />
               </button>
               {moreOpen && (
-                <div className="menu-pop menu-float txn-more-pop" role="menu" aria-label="more actions">
+                <div className="menu-pop menu-float txn-more-pop" data-align="end" role="menu" aria-label="more actions">
                   <ul className="menu-list">
                     <li><button type="button" className="menu-item" role="menuitem" onClick={() => setMoreOpen(false)}><Pencil size={14} aria-hidden="true" /><span className="menu-text">edit</span></button></li>
                     <li role="separator"><hr className="menu-sep" /></li>
@@ -1162,8 +1162,8 @@ export default function TranscriptApp({ theme = 'dark' }) {
           </div>
         </div>
 
-        <h2 className="txn-title" title="transcript-browser: Port the transcript canvas into the shared package">
-          <span className="txn-title-proj">transcript-browser:</span> Port the transcript canvas into the shared package
+        <h2 className="txn-title" title="Port the transcript canvas into the shared package">
+          Port the transcript canvas into the shared package
         </h2>
 
         {/* ===== METADATA CHIPS ===== */}
@@ -1183,16 +1183,6 @@ export default function TranscriptApp({ theme = 'dark' }) {
           <span className="metaitem txn-churn-meta tnum"><span className="txn-churn-add">+312</span> <span className="txn-churn-del">−24</span></span>
         </div>
       </header>
-
-      {/* ===================== STICKY CONDENSED HEADER ===================== */}
-      {sticky && (tab === 'trace') && (
-        <div className="txn-sticky">
-          <span className="g-claude"><ClaudeMark /></span>
-          <span className="txn-sticky-title">transcript-browser</span>
-          <span className="txn-sticky-model mono">claude-opus-4-7</span>
-          <Scrubber turns={TURNS} active={activeTurn} onSeek={seekScrub} draggingRef={draggingRef} />
-        </div>
-      )}
 
       {/* ===================== TAB STRIP ===================== */}
       <div className="tabs txn-tabs" role="tablist" aria-label="session views" onKeyDown={onTabKey}>
@@ -1248,7 +1238,18 @@ export default function TranscriptApp({ theme = 'dark' }) {
               {viewMode === 'graph' ? (
                 <TrajectoryGraph turns={TURNS} activeTurn={activeTurn} onSelect={(id) => setActiveTurn(id)} />
               ) : (
-                <div className="txn-stream" ref={scrollRef} onScroll={onScroll} tabIndex={-1}>
+                <div className="txn-streamwrap">
+                {/* condensed header — pinned over the top of the stream, above the
+                    per-phase stickies (revealed once you scroll past the full header) */}
+                {sticky && (
+                  <div className="txn-sticky">
+                    <span className="g-claude"><ClaudeMark /></span>
+                    <span className="txn-sticky-title">transcript-browser</span>
+                    <span className="txn-sticky-model mono">claude-opus-4-7</span>
+                    <Scrubber turns={TURNS} active={activeTurn} onSeek={seekScrub} draggingRef={draggingRef} />
+                  </div>
+                )}
+                <div className={'txn-stream' + (sticky ? ' txn-stream-pinned' : '')} ref={scrollRef} onScroll={onScroll} tabIndex={-1}>
                   {visibleTurns.length === 0 && (
                     <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><h3>no turns to display</h3><p>every turn is filtered out. clear a filter to bring them back.</p></div>
                   )}
@@ -1289,6 +1290,7 @@ export default function TranscriptApp({ theme = 'dark' }) {
                       </div>
                     )
                   })}
+                </div>
                 </div>
               )}
             </div>

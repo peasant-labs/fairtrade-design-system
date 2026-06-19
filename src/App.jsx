@@ -455,10 +455,10 @@ function AppShell() {
     return () => { window.removeEventListener('scroll', apply); window.removeEventListener('resize', apply) }
   }, [])
 
-  /* the in-use stage settles by native scroll: #inuse is the page's last 100svh block, so scrolling to the
-     bottom aligns it to the viewport (the sticky app-switcher bar pins at top:0 and the stage's own scroll
-     takes over). the old scroll-stop snap that auto-completed this is gone - paired with the splash wheel
-     hijack it was the source of the "everything freezes" feel. */
+  /* the in-use stage is a CSS proximity snap target (.iu scroll-snap-align in index.css): #inuse is the
+     page's last 100svh block, so scrolling near it settles it flush to the viewport (the sticky
+     app-switcher bar pins at top:0 and the stage's own scroll takes over). snapping is pure CSS now - the
+     old JS wheel hijack that owned the gesture (the "everything freezes" feel) is not coming back. */
 
   /* the nav storybook link points at the deployed copy (relative `storybook/`, nested in
      dist/ by the deploy workflow) in production; in dev there is no built storybook under
