@@ -12,10 +12,13 @@
     "build": "node scripts/gen-llm-artifacts.mjs && node scripts/contrast.mjs && vite build",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "build:all": "pnpm build && pnpm build-storybook && rm -rf dist/storybook && cp -r storybook-static dist/storybook",
+    "start": "http-server dist -p ${PORT:-3000} -a 0.0.0.0 --silent"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
+    "http-server": "^14.1.1",
     "lucide": "^1.20.0",
     "lucide-react": "^1.18.0",
     "react": "^19.2.7",
