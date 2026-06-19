@@ -103,12 +103,26 @@ export default function DataTable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, rowKey])
 
-  /* fully-controlled adapters: our public state -> TanStack state, and back on change. */
-  const sorting = sort ? [{ id: sort.key, desc: sort.dir === 'desc' }] : []
-  const rowSelection = {}
-  rows.forEach((row, i) => {
-    if (selected.has(keyOf(row, i))) rowSelection[String(keyOf(row, i))] = true
-  })
+  /* fully-controlled adapters: our public state -> TanStack state, and back on change.
+     these MUST be memoized to stable references. TanStack compares the `state` it receives
+     against the value its onChange updater produced; if we hand it a brand-new `sorting`
+     array / `rowSelection` object on every render (even with identical contents), a toggle
+     can re-emit onRowSelectionChange -> setSelected -> re-render -> new object -> re-emit,
+     i.e. the "Maximum update depth exceeded" freeze. memoizing on the actual contents keeps
+     the reference identical whenever the selection/sort is unchanged, breaking that loop. */
+  const sorting = useMemo(
+    () => (sort ? [{ id: sort.key, desc: sort.dir === 'desc' }] : []),
+    [sort?.key, sort?.dir],
+  )
+  const rowSelection = useMemo(() => {
+    const sel = {}
+    rows.forEach((row, i) => {
+      if (selected.has(keyOf(row, i))) sel[String(keyOf(row, i))] = true
+    })
+    return sel
+    // selected is a fresh Set when controlled; depend on its stable serialization instead.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, keyOf, selectedKey(selected)])
 
   const table = useReactTable({
     data: rows,
@@ -233,6 +247,13 @@ export default function DataTable({
       </table>
     </div>
   )
+}
+
+/* a stable, order-independent fingerprint of a selection Set so a memo keyed on it only
+   recomputes when the *contents* change, not when a controlled caller hands us a brand-new
+   Set instance with the same keys. */
+function selectedKey(set) {
+  return [...set].map(String).sort().join(' ')
 }
 
 /* align -> alignment modifier class (right cells also carry .tnum on the value span) */

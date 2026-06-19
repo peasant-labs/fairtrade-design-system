@@ -177,10 +177,10 @@ export function ResourcesSection() {
       <h2 className="label">resources</h2>
       <div className="sub">one token layer, three apps</div>
       <div className="reslist">
-        <a className="res" href="https://github.com/peasant-labs/peasant-design-system"><BookMarked /> <span className="res-k">repository</span> <span className="res-d">peasant-labs/peasant-design-system</span></a>
-        <span className="res"><Box /> <span className="res-k">peasant</span> <span className="res-d">the local web app</span></span>
-        <span className="res"><Users /> <span className="res-k">village</span> <span className="res-d">the commons</span></span>
+        <a className="res" href="https://github.com/peasant-labs/fairtrade-design-system"><BookMarked /> <span className="res-k">fairtrade design system</span> <span className="res-d">peasant-labs/fairtrade-design-system</span></a>
         <span className="res"><FileText /> <span className="res-k">transcript-browser</span> <span className="res-d">the shared viewer</span></span>
+        <span className="res"><Box /> <span className="res-k">peasant</span> <span className="res-d">the cli and local dashboard</span></span>
+        <span className="res"><Users /> <span className="res-k">village</span> <span className="res-d">the commons</span></span>
       </div>
       <p className="prose">token names are preserved across the three apps, so only the values and fonts change between them. a component reflavors in place: the same <span className="mono">--ink</span>, <span className="mono">--rule</span>, and <span className="mono">--surface</span> resolve to each app's palette, and the markup never moves.</p>
     </section>

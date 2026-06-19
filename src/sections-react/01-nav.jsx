@@ -19,7 +19,7 @@ export function NavBar() {
         </div>
         <div className="nav-right">
           <button className="navctl bx" aria-haspopup="dialog" aria-label="search (command k)"><Search aria-hidden="true" /> <span className="bx-label">search</span> <span className="kbd">⌘k</span></button>
-          <span className="navctl sb-link sb-link--soon" role="link" aria-disabled="true" aria-label="storybook, coming soon"><svg className="brand" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><use href="#b-storybook" /></svg> <span className="sb-label">storybook</span> <span className="sb-soon">soon</span></span>
+          <a className="navctl sb-link" href={(import.meta.env.BASE_URL || '/') + 'storybook/'} aria-label="storybook"><svg className="brand" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><use href="#b-storybook" /></svg> <span className="sb-label">storybook</span></a>
           <span className="navctl"><span className="dot"></span> connected</span>
           <button className="navctl sq theme-btn" aria-label="toggle theme"><span className="i-moon"><Moon aria-hidden="true" /></span><span className="i-sun"><Sun aria-hidden="true" /></span></button>
         </div>

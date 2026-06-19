@@ -366,12 +366,16 @@ export function MapView({ theme }) {
             role="application"
             aria-label={`code map, ${grain} grain, ${nodes.length} areas`}
           >
-            {/* edges first so they sit behind nodes */}
+            {/* edges first so they sit behind nodes. preserveAspectRatio="none" makes the 780x360 user
+                space map LINEARLY onto the canvas box, exactly like the .gmp-nodes layer positions tiles by
+                percentage (left=x/780, top=y/360). the old "xMidYMid meet" uniformly scaled + letterboxed
+                the viewBox, so edge endpoints drifted off the tiles whenever the canvas aspect ratio wasn't
+                780:360. vectorEffect keeps the stroke width uniform despite the non-uniform scale. */}
             <svg
               ref={svgRef}
               className="edges gmp-edges"
               viewBox="0 0 780 360"
-              preserveAspectRatio="xMidYMid meet"
+              preserveAspectRatio="none"
               aria-hidden="true"
               style={{ transform: `scale(${zoom})`, transformOrigin: 'center' }}
             >
@@ -434,10 +438,17 @@ export function MapView({ theme }) {
                       (isNew ? ' gmp-node-new' : '')
                     }
                     style={{
+                      /* position AND size the tile in the same 780x360 percentage space the edge layer
+                         draws in, so each tile's geometric centre sits exactly at ((x+w/2)/780,
+                         (y+h/2)/360) - the point center() feeds the connector endpoints. the old fixed
+                         `minHeight: h*0.62` px decoupled the rendered height from the viewBox rectangle,
+                         so vertical centres (and therefore the arrow ends) never matched the tiles. the
+                         minHeight floor keeps short tiles legible without affecting the alignment. */
                       left: (n.x / 780) * 100 + '%',
                       top: (n.y / 360) * 100 + '%',
                       width: (n.w / 780) * 100 + '%',
-                      minHeight: n.h * 0.62,
+                      height: (n.h / 360) * 100 + '%',
+                      minHeight: 40,
                       background: removed ? 'transparent' : fillFor(cov),
                     }}
                     aria-pressed={on}
@@ -939,9 +950,12 @@ export function ChangesView({ theme }) {
                 strokeWidth="1"
                 vectorEffect="non-scaling-stroke"
               />
-              {/* merged m1: fork out earlier + merge elbow back in (dashed join) */}
+              {/* merged m1 (the nested lane-2 branch): fork out at its real fork commit (k4, row 3 -
+                 `fork: 2`), run down lane 2, then the merge elbow back in at row 4 (k5, `mergeFrom: 2`).
+                 it previously forked at row 2 - the SAME point as b1 - so the nested line started a row too
+                 high, overlapped b1's fork and crossed lane 1, which read as the "weird nested lines". */}
               <polyline
-                points={`${laneX(0)},${rowY(2)} ${laneX(2)},${rowY(2)} ${laneX(2)},${rowY(4)} ${laneX(0)},${rowY(4)}`}
+                points={`${laneX(0)},${rowY(3)} ${laneX(2)},${rowY(3)} ${laneX(2)},${rowY(4)} ${laneX(0)},${rowY(4)}`}
                 fill="none"
                 stroke="var(--ink-5)"
                 strokeWidth="1"
@@ -986,7 +1000,9 @@ export function ChangesView({ theme }) {
                   type="button"
                   role="listitem"
                   className={'gmp-tip-card' + (on ? ' gmp-tip-sel' : '')}
-                  style={{ top: rowY(b.tipRow) + 24, left: laneX(b.lane) + 26 }}
+                  /* float in the open right-hand gap (clear of the captions on the left and the recorded
+                     column on the right) instead of on top of the commit messages. */
+                  style={{ top: rowY(b.tipRow) + 24, right: 150 }}
                   aria-pressed={on}
                   onClick={() => setSelected(b.id)}
                 >
@@ -1021,7 +1037,7 @@ export function ChangesView({ theme }) {
                 type="button"
                 role="listitem"
                 className="gmp-merged-chip"
-                style={{ top: rowY(m.mergeRow) - 10, left: laneX(m.lane) + 26 }}
+                style={{ top: rowY(m.mergeRow) - 10, left: 360 }}
                 onClick={() => setSelected(m.id)}
               >
                 <GitMerge size={13} aria-hidden="true" /> folded in · {m.human} · {m.when}

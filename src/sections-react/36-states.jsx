@@ -1,9 +1,49 @@
+import { useRef, useState } from 'react'
 import { Bell, BellOff, ExternalLink, Pencil, Download, Link, Archive, Eye, Users, Lock, ShieldCheck, TriangleAlert, ChevronDown, Info, Circle, CircleCheck, Loader, LoaderCircle, X, CircleX, CircleAlert, SearchX } from 'lucide-react'
 
 /* 36-states: button / input / switch / feedback-surface state specimens + dtables + callouts.
    faithful port of src/sections/36-states.html. <i data-lucide> -> lucide-react (CSS-sized,
    aria-hidden). inputs with value= become defaultValue= unless readonly (then readOnly value=);
    checked radio -> defaultChecked. swatches: none here. no DOM wiring. */
+
+/* interactive segmented control: single-select, roving focus + arrow keys.
+   reuses the global .bs-seg / aria-pressed active state (no global css change). */
+const SEG_OPTS = [
+  { id: 'public', label: 'public', Icon: Eye },
+  { id: 'collective', label: 'collective', Icon: Users },
+  { id: 'private', label: 'private', Icon: Lock },
+]
+function VisibilitySeg() {
+  const [active, setActive] = useState('public')
+  const refs = useRef([])
+  function onKeyDown(e, i) {
+    let next = i
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % SEG_OPTS.length
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + SEG_OPTS.length) % SEG_OPTS.length
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = SEG_OPTS.length - 1
+    else return
+    e.preventDefault()
+    setActive(SEG_OPTS[next].id)
+    refs.current[next]?.focus()
+  }
+  return (
+    <div className="bs-seg" role="group" aria-label="visibility">
+      {SEG_OPTS.map(({ id, label, Icon }, i) => (
+        <button
+          key={id}
+          ref={(el) => { refs.current[i] = el }}
+          className="bs-seg-opt"
+          aria-pressed={active === id}
+          tabIndex={active === id ? 0 : -1}
+          onClick={() => setActive(id)}
+          onKeyDown={(e) => onKeyDown(e, i)}
+        ><Icon aria-hidden="true" /> {label}</button>
+      ))}
+    </div>
+  )
+}
+
 export function StatesSection() {
   return (
     <section className="band" id="states">
@@ -45,7 +85,7 @@ export function StatesSection() {
           <span className="label" style={{ marginBottom: 'var(--sp-3)' }}>link-button + icon-button sizes</span>
           <div className="bs-grid">
             <div className="bs-cell">
-              <a className="btn btn-secondary" href="https://github.com/fairtrade-ds" target="_blank" rel="noopener"><ExternalLink aria-hidden="true" /> open repository</a>
+              <a className="btn btn-secondary" href="https://github.com/peasant-labs/fairtrade-design-system" target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" /> open repository</a>
               <span className="bs-cap">link-button (real anchor)</span>
             </div>
             <div className="bs-cell">
@@ -71,11 +111,7 @@ export function StatesSection() {
           </div>
 
           <span className="label" style={{ marginBottom: 'var(--sp-3)' }}>segmented control (aria-pressed marks the choice)</span>
-          <div className="bs-seg" role="group" aria-label="visibility">
-            <button className="bs-seg-opt" aria-pressed="true"><Eye aria-hidden="true" /> public</button>
-            <button className="bs-seg-opt" aria-pressed="false"><Users aria-hidden="true" /> collective</button>
-            <button className="bs-seg-opt" aria-pressed="false"><Lock aria-hidden="true" /> private</button>
-          </div>
+          <VisibilitySeg />
         </div>
       </div>
 

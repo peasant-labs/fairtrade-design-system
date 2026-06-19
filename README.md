@@ -14,7 +14,7 @@ typed component library (`src/ui/*`) with storybook, and is **neuroinclusive by 
 
 ```bash
 pnpm install
-pnpm dev              # the presentation (http://localhost:5173, or next free port)
+pnpm dev              # the presentation (http://localhost:5180, or next free port)
 pnpm build           # contrast gate + static dist/
 pnpm preview         # serve dist/
 pnpm storybook       # the component library (http://localhost:6006)
@@ -22,8 +22,9 @@ pnpm build-storybook # compile every component + story
 ```
 
 - toggle dark/light top-right, or deep-link a theme with `?theme=light`.
-- `?fb=off` hides the in-page feedback tool. `?cap` is a review-only capture mode that shrinks the
-  full-screen sections so a whole tall section fits one screenshot.
+- the in-page comment tool is **dev-only** (it posts to a dev-server endpoint); `?fb=off` hides it in dev.
+  `?cap` is a review-only capture mode that shrinks the full-screen sections so a whole tall section fits
+  one screenshot.
 
 ## the page
 
@@ -52,7 +53,7 @@ pnpm build-storybook # compile every component + story
 ## structure
 
 - `src/App.jsx` - composition root: nav, the hero/brand splash, philosophy, the docs (sticky rail +
-  scroll-spy), the in-use showcase, footer.
+  scroll-spy), and the in-use showcase.
 - `src/sections-react/*.jsx`, `src/DocSections.jsx`, `src/ComponentSections.jsx` - the documented sections.
 - `src/ui/*` - the typed component library; storybook is the source of truth (`pnpm storybook`). tables
   are tanstack-table-backed (`DataTable`), charts are recharts-backed (`ChartBar` / `ChartLine` /

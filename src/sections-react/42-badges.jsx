@@ -1,9 +1,46 @@
+import { useState } from 'react'
 import { SquareTerminal, ShieldCheck, TriangleAlert, CircleX, Hash, Clock, GitBranch, Eye, X, Check, Filter, Bell, Inbox } from 'lucide-react'
 
 /* 42-badges: chips (.chip variants), status dots, count badges; each state pairs an
    icon + label. provider marks use brand <svg><use href="#b-*"/> (NOT lucide) and stay
    as raw svg; all other glyphs were <i data-lucide> -> lucide-react. swatch-like
    .chipx-dot keeps its literal --c var. dtable keeps the literal ">=24px" cue text. */
+
+/* interactive filter chips: each is an independent toggle. reuses the global
+   .chip-toggle aria-pressed active style (amber fill); the tick / filter glyph is
+   swapped in jsx, so no global chip css is touched. */
+const FILTER_CHIPS = [
+  { id: 'verified', label: 'verified', on: true },
+  { id: 'public', label: 'public', on: true },
+  { id: 'has-subagents', label: 'has-subagents', on: false },
+  { id: 'long-running', label: 'long-running', on: false },
+]
+function FilterChips() {
+  const [pressed, setPressed] = useState(() =>
+    Object.fromEntries(FILTER_CHIPS.map((c) => [c.id, c.on]))
+  )
+  return (
+    <div className="chips" style={{ marginBottom: 'var(--sp-6)' }}>
+      {FILTER_CHIPS.map(({ id, label }) => {
+        const isOn = pressed[id]
+        return (
+          <button
+            key={id}
+            className="chip chip-toggle"
+            type="button"
+            aria-pressed={isOn}
+            onClick={() => setPressed((p) => ({ ...p, [id]: !p[id] }))}
+          >
+            {isOn
+              ? <Check className="chipx-tick" aria-hidden="true" />
+              : <Filter aria-hidden="true" />} {label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 export function BadgesSection() {
   return (
     <section className="band" id="badges">
@@ -48,12 +85,7 @@ export function BadgesSection() {
           </div>
 
           <span className="label" style={{ marginBottom: 'var(--sp-2)' }}>filter / toggle (aria-pressed)</span>
-          <div className="chips" style={{ marginBottom: 'var(--sp-6)' }}>
-            <button className="chip chip-toggle" type="button" aria-pressed="true"><Check className="chipx-tick" aria-hidden="true" /> verified</button>
-            <button className="chip chip-toggle" type="button" aria-pressed="true"><Check className="chipx-tick" aria-hidden="true" /> public</button>
-            <button className="chip chip-toggle" type="button" aria-pressed="false"><Filter aria-hidden="true" /> has-subagents</button>
-            <button className="chip chip-toggle" type="button" aria-pressed="false"><Filter aria-hidden="true" /> long-running</button>
-          </div>
+          <FilterChips />
 
           <span className="label" style={{ marginBottom: 'var(--sp-2)' }}>status dot + label</span>
           <div className="chips" style={{ marginBottom: 'var(--sp-6)' }}>

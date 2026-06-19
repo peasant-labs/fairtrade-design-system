@@ -128,11 +128,11 @@
 
 /* ---------------------------------------------------------------------- */
 @layer base {
-  /* PROXIMITY snap (never mandatory - mandatory traps users in long sections); only the full-screen
-     splash sections opt in below. scroll-padding-top clears the sticky nav. */
-  /* no CSS scroll-snap: it was either too weak (proximity) or it skipped/trapped sections (mandatory).
-     the splash sections are snapped by a passive, debounced scroll listener in Hero() instead, which never
-     blocks scrolling. */
+  /* NO scroll snapping, in CSS or JS. every approach we tried trapped or froze: CSS mandatory skipped
+     sections, CSS proximity was too weak, and a JS wheel handler that owned the gesture (preventDefault +
+     a per-gesture cooldown) swallowed half of every flick and made the whole page feel frozen. the splash
+     is 100svh per section, so it still reads as full-screen stops under plain native scroll.
+     scroll-padding-top clears the sticky nav for anchor / rail-link jumps. */
   html { scroll-behavior: smooth; scroll-padding-top: var(--nav-h); overscroll-behavior-y: none; }
   body {
     @apply bg-canvas text-ink font-body;
@@ -223,9 +223,8 @@
   .navctl .lucide { width: var(--ic-sm); height: var(--ic-sm); }
   .kbd { @apply font-mono text-ink-3; font-size: 12px; border: var(--bd-strong); padding: 0 5px; height: 18px; line-height: 1; margin-left: var(--sp-1); font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; justify-content: center; }
   .dot { @apply rounded-full; width: 7px; height: 7px; flex: none; align-self: center; background: var(--olive); box-shadow: none; }
-  /* storybook nav entry is disabled until the component library ships (landing page first) */
-  .sb-link.sb-link--soon { opacity: 0.55; cursor: default; }
-  .sb-soon { font-family: var(--font-mono); font-size: 10px; line-height: 1.4; text-transform: lowercase; color: var(--ink-4); border: var(--bd); padding: 0 4px; }
+  /* storybook nav entry links to the deployed component library (dist/storybook on Pages; the storybook
+     dev server in local dev - retargeted in App.jsx). */
   .theme-btn .i-moon, .theme-btn .i-sun { @apply inline-flex items-center justify-center; }
   .theme-btn .i-sun { display: none; }
   [data-theme="light"] .theme-btn .i-moon { display: none; }
@@ -279,17 +278,9 @@
   .group { @apply mx-auto; max-width: var(--maxw); padding: calc(var(--sp-8) + var(--sp-7)) var(--gutter) var(--sp-6); }
   .group h2 { @apply font-display text-ink-strong lowercase; font-weight: 700; font-size: var(--fs-group); letter-spacing: -0.025em; line-height: 1; }
 
-  /* the full-screen splash sections settle with a slow snap; the long doc sections never snap */
-  /* the full-screen sections snap into place; scroll-margin cancels the global nav scroll-padding so
-     they snap flush (the header is hidden over them). `snap-stop:always` makes the scroll CATCH on each
-     one (you can't drift past or park between them); the long doc sections have no snap point, so they
-     stay free-scrolling under `proximity`. */
-  /* the in-use stage (.iu) is intentionally NOT a snap target: it is followed by a short footer, and a snap
-     point there would keep pulling back and trap the footer out of reach */
-  .hero-crop, .hero-grow, .philos { scroll-snap-align: start; scroll-snap-stop: always; scroll-margin-top: calc(-1 * var(--nav-h)); }
-  /* the docs are ALSO a snap target (at their start) so mandatory snap never jumps philosophy -> in-use and
-     skips them; the docs are taller than the viewport, so you free-scroll through them once snapped in */
-  .docs { scroll-snap-align: start; }
+  /* native scroll only - no snap (see the @layer base note). the splash sections are each 100svh so they
+     read as full-screen stops as you scroll through them; the docs free-scroll; the in-use stage is the
+     last 100svh block, so scrolling to the bottom aligns it and its own internal scroll takes over. */
   .band, .group { padding-top: var(--band-y); padding-bottom: var(--band-y); }
   .band + .band, .group + .band, .band + .group { border-top: var(--bd); }
   /* scroll-reveal: sections fade/lift in as they enter the viewport (JS toggles .is-in). NOT .philos - it
@@ -407,9 +398,12 @@
      demoted a step). meta widths are kept tight so the row never pokes past the divider. */
   .ts-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-6); padding: var(--sp-4) 0; border-bottom: var(--bd); }
   .ts-sample { @apply text-ink-strong; line-height: 1.1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .ts-meta { @apply flex items-center font-mono; font-size: var(--fs-label); gap: var(--sp-4); flex: none; }
-  .ts-name { color: var(--ink-3); width: 56px; }
-  .ts-px { color: var(--amber); font-weight: 600; font-variant-numeric: tabular-nums; width: 44px; text-align: right; }
+  /* fixed three-column grid so name / px / usage line up across every row and the whole
+     meta block stays one constant width (the .ts-row `auto` track then resolves identically,
+     so the right cluster shares one left edge top to bottom). */
+  .ts-meta { @apply items-center font-mono; display: grid; grid-template-columns: 56px 44px 210px; font-size: var(--fs-label); column-gap: var(--sp-4); flex: none; }
+  .ts-name { color: var(--ink-3); }
+  .ts-px { color: var(--amber); font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
   .ts-use { color: var(--ink-4); white-space: nowrap; text-align: left; }
 
   /* cards / rows */
@@ -548,7 +542,11 @@
   /* left-aligned to match the rest of the system (was centered, read as a decorative island) */
   /* horizontal inset matches the sibling form/filter cards (--sp-4); vertical stays generous */
   .empty { @apply flex flex-col items-start gap-3 bg-surface text-left; padding: var(--sp-6) var(--sp-4); border: var(--bd); width: 100%; box-sizing: border-box; }
-  .empty .ring { @apply flex items-center justify-center text-ink-3; width: var(--sp-7); height: var(--sp-7); }
+  /* the empty-state icon's class name `.ring` collides with Tailwind's `ring` utility, which paints a
+     1px box-shadow ring. that utility lives in @layer utilities (outranks this components rule), so the
+     borderless, standardised zero-state needs !important to drop it here - scoped to .empty only, so the
+     intentional rings elsewhere (avatars, timeline, status dots) keep theirs. */
+  .empty .ring { @apply flex items-center justify-center text-ink-3; width: var(--sp-7); height: var(--sp-7); box-shadow: none !important; }
   .empty .ring .lucide { width: var(--ic-lg); height: var(--ic-lg); }
   .empty h3 { @apply text-md; }
   .empty p { @apply text-ink-3 text-sm; }
@@ -630,7 +628,10 @@
     .hero-grow .hero-soil-bg { opacity: 0; }
     .hero-grow .hero-word { clip-path: inset(0 100% 0 0); }
     .hero-grow.grow .hero-soil-bg { animation: soilReveal 1.3s var(--ease-out) both; }
-    .hero-grow.grow .hero-word { animation: wordWipe 0.95s steps(48, end) 0.7s both; }
+    /* the wordmark starts about HALFWAY through the roots' descent (roots growMs is 4800 in App.jsx, so the
+       delay is ~half of that) and wipes in left-to-right - the name forms WITH the roots as they reach it,
+       not a label that waits for them to finish. keep this delay near half the roots' growMs. */
+    .hero-grow.grow .hero-word { animation: wordWipe 1.2s steps(48, end) 2.4s both; }
   }
   @keyframes soilReveal { from { opacity: 0; } to { opacity: 0.14; } }
   @keyframes wordWipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
@@ -655,19 +656,18 @@
   }
   @keyframes philReveal { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
-  /* reveal motion: the wheat resolves from a soft blur; the wordmark wipes in left-to-right like a
-     terminal printing it. honours reduced-motion. */
+  /* reveal motion: the wheat crop resolves from a soft blur on load. (the wordmark is NOT revealed here -
+     it is driven solely by the staged .grow wipe above, which holds it back until the roots arrive; an
+     earlier heroName wipe on load fought that and flashed the name in before the roots, so it's gone.) */
   @media (prefers-reduced-motion: no-preference) {
     .hero-bg { animation: heroResolve var(--dur-entrance) var(--ease-out) 40ms both; }
-    .hero-word { animation: heroName 1100ms steps(64, end) 200ms both; }
   }
   @keyframes heroResolve { from { opacity: 0; filter: blur(11px); transform: scale(1.05); } to { opacity: 1; filter: blur(0); transform: none; } }
-  @keyframes heroName { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 
   /* cards with imagery on top (ref 01) */
   .card-img { padding: 0; overflow: hidden; }
   /* the thumb well + ascii ink both adapt to the theme (no fixed black box / cream ink) */
-  .card-thumb { position: relative; aspect-ratio: 16 / 7; max-height: 160px; background: var(--canvas); border-bottom: var(--bd); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .card-thumb { position: relative; aspect-ratio: 4 / 3; max-height: 240px; background: var(--canvas); border-bottom: var(--bd); overflow: hidden; display: flex; align-items: center; justify-content: center; }
   .thumb-ascii { font-size: 2.95px; line-height: 1; color: var(--ink-strong); }
   .card-body { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4); }
   .bullets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
@@ -817,11 +817,11 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
      their place); the section links go next, the search palette covers them. */
   .navctl:not(.bx):not(.sq):not(.sb-link) { display: none; }
 }
-/* the full "storybook" label + "soon" badge only fit beside the section links + search + the live
-   status from ~1160px up; below that, collapse storybook to an icon-only square (the aria-label keeps
-   its name). 1200 gives a margin so the full label never crowds the live status in the 1100-1160 band. */
+/* the full "storybook" label only fits beside the section links + search + the live status from ~1160px
+   up; below that, collapse storybook to an icon-only square (the aria-label keeps its name). 1200 gives a
+   margin so the full label never crowds the live status in the 1100-1160 band. */
 @media (max-width: 1200px) {
-  .sb-link .sb-label, .sb-soon { display: none; }
+  .sb-link .sb-label { display: none; }
   .sb-link { width: var(--control-h-sm); padding: 0; justify-content: center; gap: 0; }
 }
 @media (max-width: 900px) {
@@ -1004,6 +1004,8 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .sw-label { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); }
   .sw-state {
     display: inline-flex; align-items: center; gap: var(--sp-1);
+    /* extra inline-start gap so the right-side state cluster is not crowded against the label */
+    padding-inline-start: var(--sp-3);
     font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase;
     color: var(--ink-2);
   }
@@ -1070,7 +1072,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .fb-toast-body { min-width: 0; flex: 1; }
   .fb-toast-title { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink); }
   .fb-toast-msg { font-size: var(--fs-body); color: var(--ink-2); margin-top: var(--sp-1); line-height: 1.5; }
-  .fb-toast-x { display: inline-flex; align-items: center; justify-content: center; width: var(--target-comfortable); height: var(--target-comfortable); flex: none; border: 1px solid transparent; background: transparent; color: var(--ink-3); cursor: pointer; }
+  .fb-toast-x { display: inline-flex; align-items: center; justify-content: center; width: var(--control-h); height: var(--control-h); flex: none; border: 1px solid transparent; background: transparent; color: var(--ink-3); cursor: pointer; }
   .fb-toast-x:hover { color: var(--ink); border-color: var(--rule-strong); }
   .fb-toast-x .lucide { width: var(--ic-sm); height: var(--ic-sm); }
 
@@ -1435,8 +1437,8 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   /* footer: let the right cluster wrap instead of forcing max-content width */
   .foot-in { flex-wrap: wrap; height: auto; padding-top: var(--sp-3); padding-bottom: var(--sp-3); gap: var(--sp-2) var(--sp-3); }
   .foot-in .right { margin-left: 0; }
-  /* type-scale meta: drop the fixed 200px use-column so the row fits */
-  .ts-meta { flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); }
+  /* type-scale meta: drop the fixed grid use-column so the cluster wraps and the row fits */
+  .ts-meta { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); }
   .ts-use { width: auto; }
 }
 
@@ -1977,13 +1979,29 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .iu {
     position: relative;
     width: auto; margin-inline: 0; max-width: none;
-    min-height: 100vh;            /* fallback */
-    min-height: 100svh;
+    /* a FIXED viewport height (not min-height): the bar + the flex:1 stage must add up to exactly one
+       viewport so the stage becomes the internal scroller (overflow:auto engages) and the app's own
+       sticky subnav pins under the bar. with min-height the flex container grew to content height, the
+       stage never scrolled, and the subnav scrolled away - the "stickies don't work" bug. */
+    height: 100vh;                /* fallback */
+    height: 100svh;
     display: flex; flex-direction: column;
     background: var(--canvas);
     border-top: var(--bd);
   }
-  .iu:fullscreen { min-height: 100vh; border-top: 0; }
+  .iu:fullscreen { height: 100vh; border-top: 0; }
+  /* the global base reset `section { max-width: --maxw; margin: 0 auto }` is for the presentation page's
+     centred content column. inside the in-use apps, <section> is just semantic grouping (chart cards,
+     panels), and those auto margins on a grid/flex child shrink-wrap + CENTER it instead of letting it fill
+     its track - which left the analytics chart cards narrow and misaligned under the full-width kpi row.
+     neutralise the cap + the centering here (NOT padding: the cards set their own, and .iu section would
+     out-specify it). */
+  .iu section { max-width: none; margin-inline: 0; }
+  /* the dashboard-style in-use views (analytics, the changes git-graph) cap their content and centre it:
+     on a wide monitor they otherwise sprawl edge to edge - the kpi row goes full-bleed and the commit
+     "recorded" status gets flung to the far right with a vast empty gap. the full-bleed apps (code map,
+     transcript, commons) keep using the whole width. up to ~1400px this is a no-op (content fills). */
+  .gan-root, .gmp-changes-root { max-width: 1400px; margin-inline: auto; }
 
   /* ---- sticky top app-switcher banner (visually replaces the page header) ---- */
   .iu-bar {
@@ -2151,6 +2169,10 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 
   /* phase divider sticks to the top of the scroller */
   .txn-phase { position: sticky; top: 0; z-index: 2; margin: var(--sp-3) calc(var(--sp-4) * -1) var(--sp-2); }
+  /* the first phase sits snug under the trace head: the stream's own top padding
+     already separates it, so drop this phase's leading margin to remove the
+     doubled gap. spacing between later phases is untouched. */
+  .txn-stream > div:first-child .txn-phase { margin-top: 0; }
 
   /* task boundary chip */
   .txn-taskboundary { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-4) 0 var(--sp-2); }
@@ -2381,17 +2403,21 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-scorecard { border: var(--bd-strong); background: var(--surface); }
   .txn-sc-head { display: flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); }
   .txn-sc-head .lucide { color: var(--amber); }
-  .txn-sc-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
-  .txn-sc-card { padding: var(--sp-4); border-right: var(--bd); display: flex; flex-direction: column; gap: var(--sp-2); }
+  /* tiles share one row grid so axis / headline / band / flags / delta line up
+     across all three. each card is a subgrid spanning those five rows, so a
+     differing flag count never shifts the band or the delta out of alignment;
+     the flexible flags row pins the delta to a common baseline at the bottom. */
+  .txn-sc-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: auto auto auto 1fr auto; }
+  .txn-sc-card { grid-row: 1 / -1; display: grid; grid-template-rows: subgrid; gap: var(--sp-2); padding: var(--sp-4); border-right: var(--bd); }
   .txn-sc-card:last-child { border-right: 0; }
   .txn-sc-axis { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: 11px; text-transform: lowercase; color: var(--ink-3); }
   .txn-sc-axis .lucide { color: var(--ink-3); }
-  .txn-sc-headline { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-md); color: var(--ink-strong); }
-  .txn-sc-band { align-self: flex-start; height: 20px; }
-  .txn-sc-flags { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
+  .txn-sc-headline { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-md); color: var(--ink-strong); font-variant-numeric: tabular-nums; align-self: end; }
+  .txn-sc-band { align-self: start; justify-self: start; height: 20px; }
+  .txn-sc-flags { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-1); align-self: start; }
   .txn-sc-flags li { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); line-height: 1.4; }
   .txn-sc-flags li::before { content: "- "; color: var(--ink-5); }
-  .txn-sc-delta { display: inline-flex; align-items: center; gap: var(--sp-1); font-family: var(--font-mono); font-size: 11px; margin-top: var(--sp-1); }
+  .txn-sc-delta { display: inline-flex; align-items: center; gap: var(--sp-1); font-family: var(--font-mono); font-size: 11px; align-self: end; }
   .txn-sc-delta.txn-up { color: var(--olive); }
   .txn-sc-delta.txn-down { color: var(--clay); }
 
@@ -2486,8 +2512,11 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-center { border-right: 0; }
 }
 @media (max-width: 860px) {
-  .txn-sc-grid { grid-template-columns: 1fr; }
-  .txn-sc-card { border-right: 0; border-bottom: var(--bd); }
+  /* stacked: drop the shared row grid (there's only one column to align) so each
+     card flows independently instead of collapsing into the same subgrid rows. */
+  .txn-sc-grid { grid-template-columns: 1fr; grid-template-rows: none; }
+  .txn-sc-card { grid-row: auto; grid-template-rows: none; display: flex; flex-direction: column; border-right: 0; border-bottom: var(--bd); }
+  .txn-sc-headline, .txn-sc-flags, .txn-sc-delta { align-self: auto; }
   .txn-sc-card:last-child { border-bottom: 0; }
 }
 @media (max-width: 720px) {
@@ -2541,7 +2570,9 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .cex-viewseg .bs-seg-opt { height: var(--control-h-sm); }
 
   /* collectives results strip */
-  .cex-coll-results { display: flex; flex-direction: column; gap: var(--sp-3); padding-bottom: var(--sp-4); border-bottom: var(--bd); }
+  /* also a real <section>: zero the global `section { padding: 0 var(--gutter) }` side inset so the
+     matching-collectives strip aligns with the transcript results below it in the same column. */
+  .cex-coll-results { display: flex; flex-direction: column; gap: var(--sp-3); padding-inline: 0; padding-bottom: var(--sp-4); border-bottom: var(--bd); }
   .cex-coll-grid { display: grid; grid-template-columns: 1fr; gap: var(--sp-3); }
   @media (min-width: 720px) { .cex-coll-grid { grid-template-columns: 1fr 1fr; } }
   .cex-nomatch-inline { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-3); }
@@ -2723,8 +2754,12 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .cex-kpi-v { font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: 600; color: var(--ink-strong); font-variant-numeric: tabular-nums; line-height: 1; }
   .cex-kpi-k { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); }
 
-  /* sections */
-  .cex-psec { display: flex; flex-direction: column; gap: var(--sp-3); }
+  /* sections. NB: `.cex-psec` is a real <section>, so the global `section { padding: 0 var(--gutter) }`
+     applied a 32px side inset that `.iu section` does NOT reset (it only neutralises max-width + margin).
+     that pushed the library / attestations / privacy / danger sections 32px further in than the sibling
+     crumb, hero and kpi <div>s directly above them - the "weird padding/width" misalignment. zero the
+     inline padding so every profile container shares the .iu-view inset and lines up. */
+  .cex-psec { display: flex; flex-direction: column; gap: var(--sp-3); padding-inline: 0; }
   .cex-psec-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
   .cex-psec-title { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-md); color: var(--ink-strong); text-transform: lowercase; }
 
@@ -2797,8 +2832,13 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .cmg-page,
   .cmg-detail { flex: 1; min-height: 0; min-width: 0; overflow: auto; padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-5); }
   .cmg-detail { gap: var(--sp-4); }
-  /* mockup pages span the full stage width: cancel the global <section> max-width + auto-margins */
-  .cmg-page > section, .cmg-detail > section { max-width: none; margin-inline: 0; padding-inline: 0; }
+  /* mockup pages span the full stage width: cancel the global <section> max-width + auto-margins + the
+     page gutter. NB: zeroing padding-inline here out-specified the .card `p-4` on these
+     <section class="... card"> elements - it stripped the getting-started + recent cards' left/right
+     padding so their content sat flush on the card border (the "weird padding/width"). reset padding to 0
+     to kill the gutter, then restore the card padding so .card sections look like every other card. */
+  .cmg-page > section, .cmg-detail > section { max-width: none; margin-inline: 0; padding: 0; }
+  .cmg-page > section.card, .cmg-detail > section.card { padding: var(--sp-4); }
 
   .cmg-crumb { margin-bottom: var(--sp-1); }
   .cmg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; }
@@ -2970,7 +3010,9 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .cmg-repo-note { margin: var(--sp-3) var(--sp-4); }
 
   /* ---- contribute: project-grouped tri-state list ---- */
-  .cmg-contribute { gap: 0; padding: 0; }
+  /* the rows own their own edges, so this card is intentionally padding-less; match the specificity of the
+     .cmg-page > section.card padding restore above so it stays edge-to-edge. */
+  .cmg-page > section.cmg-contribute.card { gap: 0; padding: 0; }
   .cmg-proj { border-bottom: var(--bd); }
   .cmg-proj:last-child { border-bottom: 0; }
   .cmg-proj-head { display: flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-3); background: var(--surface-2); }
@@ -3223,10 +3265,18 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   /* ====================================================================
      CHANGES VIEW (lane-based git graph)
   ==================================================================== */
-  .gmp-changes-root { overflow: auto; }
-  .gmp-changes-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-4); border-bottom: var(--bd); background: var(--surface); flex: none; }
+  /* full-bleed for immersion: the view spans the whole stage edge-to-edge instead of the old centered
+     1400px window (the "windowed / not immersive" feedback). this overrides the shared
+     `.gan-root, .gmp-changes-root` cap at the top of the in-use block for both dashboards (.gan-root gets the
+     same full-bleed-frame treatment below). the header rule, surface band and legend now reach both edges; the readable content
+     stays at a comfortable measure by centering it with symmetric side padding (page gutter floor), so
+     the git-graph + its floating tip cards keep the same internal geometry they had in the capped layout,
+     just framed by a full-width chrome. --gmp-pad-x is the shared inset both the head and body use, which
+     keeps the header text column aligned with the graph below it. */
+  .gmp-changes-root { overflow: auto; max-width: none; margin-inline: 0; --gmp-pad-x: max(var(--sp-4), calc((100% - 1360px) / 2)); }
+  .gmp-changes-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-4) var(--gmp-pad-x); border-bottom: var(--bd); background: var(--surface); flex: none; }
   .gmp-changes-sub { font-size: 11px; color: var(--ink-4); margin-top: var(--sp-1); }
-  .gmp-changes-body { padding: var(--sp-4); min-width: 0; }
+  .gmp-changes-body { padding: var(--sp-4) var(--gmp-pad-x); min-width: 0; }
 
   .gmp-graph { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; }
   .gmp-gutter { position: relative; flex: none; }
@@ -3277,6 +3327,13 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 
   .gmp-changes-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4); margin-top: var(--sp-5); padding-top: var(--sp-4); border-top: var(--bd); }
 
+  /* the floating tip cards / merged chips need the open right-hand gap of the wide (capped) layout; below
+     ~1460px there isn't room and they'd collide with each other or the captions, so drop them into normal
+     flow and stack them under the commit list instead. */
+  @media (max-width: 1460px) {
+    .gmp-tip-card { position: static !important; width: 100%; margin-top: var(--sp-3); }
+    .gmp-merged-chip { position: static !important; margin-top: var(--sp-2); }
+  }
   /* ---- phone: collapse the absolute-positioned commit graph to in-flow stack ---- */
   @media (max-width: 600px) {
     .gmp-changes-body { padding: var(--sp-3); overflow: hidden; }
@@ -3371,12 +3428,15 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 ====================================================================== */
 @layer components {
   /* ---- shell: fills its container, internal scroll ---- */
-  .gan-root { display: flex; flex-direction: column; height: 100%; min-width: 0; min-height: 0; font-family: var(--font-mono); }
-  .gan-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; padding: var(--sp-4); border-bottom: var(--bd); }
+  /* full-bleed frame, capped content (matches .gmp-changes-root): drop the centered 1400px cap so the
+     header rule spans the whole stage, and inset the head + scroll body to a readable measure via
+     --gan-pad-x, so the kpis + charts keep a comfortable width instead of sprawling on a wide monitor. */
+  .gan-root { display: flex; flex-direction: column; height: 100%; min-width: 0; min-height: 0; font-family: var(--font-mono); max-width: none; margin-inline: 0; --gan-pad-x: max(var(--sp-4), calc((100% - 1360px) / 2)); }
+  .gan-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; padding: var(--sp-4) var(--gan-pad-x); border-bottom: var(--bd); }
   .gan-head-titles { min-width: 0; }
   .gan-h2 { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-md); color: var(--ink-strong); text-transform: lowercase; line-height: 1.15; margin: 0; }
   .gan-sub { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); text-transform: lowercase; margin-top: var(--sp-1); }
-  .gan-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-4); }
+  .gan-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; padding: var(--sp-4) var(--gan-pad-x); display: flex; flex-direction: column; gap: var(--sp-4); }
 
   /* ---- section toggle (the 8 ProjectOverview sections) ---- */
   .gan-toggle { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; min-width: 0; }

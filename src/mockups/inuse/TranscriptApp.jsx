@@ -902,7 +902,6 @@ export default function TranscriptApp({ theme = 'dark' }) {
 
   /* sticky condensed header */
   const [sticky, setSticky] = useState(false)
-  const [scrubFrac, setScrubFrac] = useState(0)
 
   const turnRefs = useRef({})
   const scrollRef = useRef(null)
@@ -1037,15 +1036,13 @@ export default function TranscriptApp({ theme = 'dark' }) {
     setLabelFor(null)
   }
 
-  /* scroll handler: drives sticky reveal, scrubber bracket + active turn */
+  /* scroll handler: drives sticky reveal + active turn. the scrubber bracket now
+     tracks the active turn (turn-index space), so no scroll-fraction is needed. */
   function onScroll() {
     const sc = scrollRef.current
     if (!sc) return
-    const max = sc.scrollHeight - sc.clientHeight
-    const frac = max > 0 ? sc.scrollTop / max : 0
-    setScrubFrac(frac)
     setSticky(sc.scrollTop > 56)
-    // active turn = first turn whose top is past the threshold
+    // active turn = the last turn whose top has crossed the 40% threshold line
     let best = visibleTurns[0]?.id ?? 0
     for (const t of visibleTurns) {
       const el = turnRefs.current[t.id]
@@ -1054,14 +1051,22 @@ export default function TranscriptApp({ theme = 'dark' }) {
     setActiveTurn(best)
   }
 
-  /* scrubber drag (click-to-seek + draggable bracket) */
+  /* scrubber drag (click-to-seek + draggable bracket). the track is in turn-index
+     space — ticks sit at i/(N-1) — so map the cursor to the NEAREST tick and scroll
+     that turn to the top of the viewport. this keeps the mouse, the bracket and the
+     active turn in lockstep (the old version seeked by raw scroll fraction, which
+     never matched the evenly-spaced ticks). */
   function seekScrub(clientX, track) {
     const rect = track.getBoundingClientRect()
     const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+    const last = TURNS.length - 1
+    const idx = last > 0 ? Math.round(frac * last) : 0
+    const id = TURNS[idx].id
+    const el = turnRefs.current[id]
     const sc = scrollRef.current
-    if (sc) {
-      const max = sc.scrollHeight - sc.clientHeight
-      sc.scrollTo({ top: frac * max, behavior: 'auto' })
+    if (el && sc) {
+      sc.scrollTo({ top: el.offsetTop - 12, behavior: 'auto' })
+      setActiveTurn(id)
     }
   }
 
@@ -1185,7 +1190,7 @@ export default function TranscriptApp({ theme = 'dark' }) {
           <span className="g-claude"><ClaudeMark /></span>
           <span className="txn-sticky-title">transcript-browser</span>
           <span className="txn-sticky-model mono">claude-opus-4-7</span>
-          <Scrubber turns={TURNS} frac={scrubFrac} active={activeTurn} onSeek={seekScrub} draggingRef={draggingRef} />
+          <Scrubber turns={TURNS} active={activeTurn} onSeek={seekScrub} draggingRef={draggingRef} />
         </div>
       )}
 
@@ -1508,8 +1513,17 @@ export default function TranscriptApp({ theme = 'dark' }) {
 }
 
 /* ---------------------------------------------------------------- scrubber */
-function Scrubber({ turns, frac, active, onSeek, draggingRef }) {
+/* the scrubber lives in turn-index space: every tick sits at i/(N-1) of the
+   track. the bracket and the active highlight must share that space, and a
+   click must map back to a turn — otherwise the indicator drifts from the
+   mouse and from the active turn (it used raw scroll fraction before). */
+function Scrubber({ turns, active, onSeek, draggingRef }) {
   const trackRef = useRef(null)
+  const last = turns.length - 1
+  const activeIdx = Math.max(0, turns.findIndex((t) => t.id === active))
+  /* the bracket follows the active turn, exactly co-located with its tick. */
+  const bracketPct = last > 0 ? (activeIdx / last) * 100 : 0
+
   function down(e) {
     draggingRef.current = true
     if (trackRef.current) onSeek(e.clientX, trackRef.current)
@@ -1528,10 +1542,11 @@ function Scrubber({ turns, frac, active, onSeek, draggingRef }) {
       className="txn-scrub"
       ref={trackRef}
       role="slider"
-      aria-label="scroll position"
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(frac * 100)}
+      aria-label="position in transcript"
+      aria-valuemin={1}
+      aria-valuemax={turns.length}
+      aria-valuenow={activeIdx + 1}
+      aria-valuetext={'turn ' + (activeIdx + 1) + ' of ' + turns.length}
       tabIndex={0}
       onMouseDown={down}
     >
@@ -1539,10 +1554,10 @@ function Scrubber({ turns, frac, active, onSeek, draggingRef }) {
         <span
           key={t.id}
           className={'txn-scrub-tick' + (t.role === 'user' ? ' txn-tick-user' : '') + (t.error ? ' txn-tick-err' : '') + (active === t.id ? ' txn-tick-on' : '')}
-          style={{ left: (i / (turns.length - 1)) * 100 + '%' }}
+          style={{ left: (last > 0 ? (i / last) * 100 : 0) + '%' }}
         />
       ))}
-      <span className="txn-scrub-bracket" style={{ left: frac * 100 + '%' }} aria-hidden="true" />
+      <span className="txn-scrub-bracket" style={{ left: bracketPct + '%' }} aria-hidden="true" />
     </div>
   )
 }

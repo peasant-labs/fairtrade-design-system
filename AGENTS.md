@@ -1,6 +1,7 @@
 # AGENTS.md - fairtrade design system
 
-Guidance for AI agents working in this repo. Humans: see `README.md` and `llm/`.
+Guidance for AI agents working in this repo. Humans: see `README.md`, plus the design reference in
+`llm/DESIGN.md` and `llm/NEUROINCLUSIVE.md`.
 
 ## what this is
 A single-page presentation site for the **fairtrade** design system plus the component library
@@ -16,11 +17,11 @@ manager: **pnpm**. Source is **JS/JSX only - no TypeScript**. Icons: `lucide-rea
 - `src/sections-react/*.jsx`, `src/App.jsx` - the presentation page (not the library).
 - `public/tokens.json`, `public/components.json` - generated machine-readable token + component
   manifests (DTCG-ish). Do not hand-edit; run `node scripts/gen-llm-artifacts.mjs`.
-- `llm/*.md` - the design system reference (`DESIGN.md`), neuroinclusive rules
-  (`NEUROINCLUSIVE.md`), the deferred multi-app rollout (`UNIFICATION_PLAN.md`).
+- `llm/DESIGN.md` - the design system reference (tokens, principles, voice, component families).
+  `llm/NEUROINCLUSIVE.md` - the neuroinclusive defaults baked into the tokens, with their research sources.
 
 ## commands
-- `pnpm dev` - run the page (Vite, port 5180).
+- `pnpm dev` - run the page (Vite, http://localhost:5180).
 - `pnpm build` - generate llm artifacts + contrast gate (WCAG, both themes) + Vite build. Must pass.
 - `pnpm storybook` / `pnpm build-storybook` - the component reference.
 - `node scripts/sbsmoke.mjs` - load every story incl. `play()`; 0 real errors required.

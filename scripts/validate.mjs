@@ -106,7 +106,7 @@ await page.evaluate(() => document.querySelector('.theme-btn').click()); await n
 ok('theme toggles', themed === 'light')
 ok('icons persist across theme toggle', t2 >= t1 - 2, `${t1}->${t2}`)
 
-// overflow across breakpoints (desktop-first floor is 320px - see RESPONSIVE_PLAN.md / DESIGN.md)
+// overflow across breakpoints (desktop-first floor is 320px - see llm/DESIGN.md)
 const widths = [320, 360, 390, 768, 1024, 1440]
 const over = {}
 for (const w of widths) {

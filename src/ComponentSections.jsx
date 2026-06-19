@@ -453,10 +453,18 @@ export function DateRangeSection() {
       <div className="specimen">
         <div className="specimen-bar"><span className="specimen-cap">date-range / interactive</span></div>
         <div className="specimen-body">
+          {/* a filter toolbar: every control sits on the same --control-h (36px) line so the
+              row reads as one intentional bar, not three ragged heights. the sm trigger size
+              is a documented prop (see the table below); mixing it into a filter row made one
+              control look broken, so the live demo of size="sm" lives in its own row. */}
           <div className="btn-row">
             <DateRange value={value} onChange={setValue} />
+            <DateRange defaultValue={{ from: '2026-06-03', to: '2026-06-03' }} />
+            <button type="button" className="btn btn-secondary">filter</button>
+          </div>
+          <div className="btn-row" style={{ marginTop: 'var(--sp-3)' }}>
+            <span className="label">small</span>
             <DateRange defaultValue={{ from: '2026-06-03', to: '2026-06-03' }} size="sm" />
-            <button type="button" className="btn btn-secondary btn-sm">filter</button>
           </div>
         </div>
       </div>

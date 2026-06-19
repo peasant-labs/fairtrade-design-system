@@ -6,6 +6,21 @@ function readVar(name, fallback) {
   return v || fallback
 }
 
+/* canvas glyphs/dots BAKE the themed ink colour in at draw time (a canvas can't reference a css var), so
+   they must redraw when the theme flips. threading a `theme` prop forced a React re-render of the WHOLE page
+   on every toggle (a long freeze); instead every canvas subscribes to ONE shared MutationObserver on
+   <html data-theme> and redraws itself imperatively - no React render, no prop, so the page can stay static. */
+const themeSubs = new Set()
+let themeMO = null
+function onThemeChange(fn) {
+  themeSubs.add(fn)
+  if (!themeMO && typeof MutationObserver === 'function' && typeof document !== 'undefined') {
+    themeMO = new MutationObserver(() => { for (const f of themeSubs) f() })
+    themeMO.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+  }
+  return () => themeSubs.delete(fn)
+}
+
 /* ----------------------------------------------------------------------
    imagery source = a real public-domain peasant / crop painting, rendered
    through the terminal filters (image -> ascii / halftone). all sources
@@ -173,30 +188,40 @@ export function AsciiImage({ src, cols = 120, aspect = 0.6, fit = false, gamma =
   const img = useImage(src)
   useEffect(() => {
     const cv = ref.current; if (!cv || !img) return
-    const light = theme === 'light' || document.documentElement.getAttribute('data-theme') === 'light'
-    const cellAR = monoCellAR()
-    const dpr = Math.min(2, window.devicePixelRatio || 1)
-    const rect = cv.getBoundingClientRect()
-    const W = Math.max(1, Math.round(rect.width)), H = Math.max(1, Math.round(rect.height))
-    // `fit`: derive rows from the MEASURED box so the displayed grid aspect == the box aspect
-    // (no horizontal stretch). otherwise rows come from the `aspect` prop, as before.
-    const rows = fit ? Math.max(1, Math.round((cols * cellAR * H) / W)) : Math.max(1, Math.round(cols * aspect))
-    const lum = sampleImage(img, cols, rows, { gamma, contrast, light, invert, vignette, isolated, contain, black, white, cellAR })
-    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr)
-    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    ctx.clearRect(0, 0, W, H)
-    const cw = W / cols, ch = H / rows
-    // derive ink from the `light` flag, NOT the live DOM: child effects run before the parent applies
-    // data-theme, so readVar would return the dark token (cream) and paint cream on a light well (invisible).
-    ctx.fillStyle = ink || (light ? '#0d0c09' : '#f8f5ed')
-    ctx.textBaseline = 'middle'; ctx.textAlign = 'left'
-    ctx.font = `${(cw / cellAR).toFixed(2)}px "Atkinson Hyperlegible Mono", ui-monospace, monospace`
-    const lastr = RAMP.length - 1
-    for (let y = 0; y < rows; y++) {
-      let row = ''
-      for (let x = 0; x < cols; x++) row += RAMP[Math.min(lastr, Math.floor(lum[y * cols + x] * lastr))]
-      ctx.fillText(row, 0, (y + 0.5) * ch)
+    const draw = () => {
+      const light = theme === 'light' || document.documentElement.getAttribute('data-theme') === 'light'
+      const cellAR = monoCellAR()
+      const dpr = Math.min(2, window.devicePixelRatio || 1)
+      const rect = cv.getBoundingClientRect()
+      const W = Math.max(1, Math.round(rect.width)), H = Math.max(1, Math.round(rect.height))
+      // `fit`: derive rows from the MEASURED box so the displayed grid aspect == the box aspect
+      // (no horizontal stretch). otherwise rows come from the `aspect` prop, as before.
+      const rows = fit ? Math.max(1, Math.round((cols * cellAR * H) / W)) : Math.max(1, Math.round(cols * aspect))
+      const lum = sampleImage(img, cols, rows, { gamma, contrast, light, invert, vignette, isolated, contain, black, white, cellAR })
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr)
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.clearRect(0, 0, W, H)
+      const cw = W / cols, ch = H / rows
+      ctx.fillStyle = ink || (light ? '#0d0c09' : '#f8f5ed')
+      ctx.textBaseline = 'middle'; ctx.textAlign = 'left'
+      ctx.font = `${(cw / cellAR).toFixed(2)}px "Atkinson Hyperlegible Mono", ui-monospace, monospace`
+      const lastr = RAMP.length - 1
+      for (let y = 0; y < rows; y++) {
+        let row = ''
+        for (let x = 0; x < cols; x++) row += RAMP[Math.min(lastr, Math.floor(lum[y * cols + x] * lastr))]
+        ctx.fillText(row, 0, (y + 0.5) * ch)
+      }
     }
+    // draw LAZILY (only when the canvas is on/near screen) so a long page or a freshly-mounted in-use app
+    // doesn't sample dozens of off-screen canvases up front; redraw on a theme flip, deferred to next-visible
+    // when off-screen. this is also why the draw reads `light` itself rather than a prop - by the time it runs
+    // (on visibility) the parent has already applied data-theme.
+    let onScreen = false, dirty = true
+    const flush = () => { if (onScreen && dirty) { draw(); dirty = false } }
+    const io = new IntersectionObserver((es) => { onScreen = !!es[0]?.isIntersecting; flush() }, { rootMargin: '300px' })
+    io.observe(cv)
+    const unsub = onThemeChange(() => { dirty = true; flush() })
+    return () => { io.disconnect(); unsub() }
   }, [img, cols, aspect, fit, gamma, contrast, invert, vignette, isolated, contain, black, white, ink, theme])
   return <canvas ref={ref} className={className} style={{ width: '100%', height: '100%', display: 'block', ...style }} aria-hidden="true" />
 }
@@ -207,20 +232,29 @@ export function Halftone({ src, cols = 42, accent = true, gamma = 0.9, contrast 
   const img = useImage(src)
   useEffect(() => {
     const cv = ref.current; if (!cv || !img) return
-    const dpr = Math.min(2, window.devicePixelRatio || 1)
-    const rect = cv.getBoundingClientRect()
-    const W = Math.max(1, Math.round(rect.width)), H = Math.max(1, Math.round(rect.height))
-    cv.width = W * dpr; cv.height = H * dpr
-    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    const cell = W / cols, rows = Math.max(1, Math.round(H / cell))
-    const light = theme === 'light' || document.documentElement.getAttribute('data-theme') === 'light'
-    const lum = sampleImage(img, cols, rows, { gamma, contrast, light, invert, vignette, isolated, contain })
-    ctx.clearRect(0, 0, W, H)
-    ctx.fillStyle = readVar(accent ? '--amber' : '--ink-strong', '#cba35c')
-    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
-      const r = lum[y * cols + x] * cell * 0.62
-      if (r > 0.35) { ctx.beginPath(); ctx.arc((x + 0.5) * cell, (y + 0.5) * cell, r, 0, 7); ctx.fill() }
+    const draw = () => {
+      const dpr = Math.min(2, window.devicePixelRatio || 1)
+      const rect = cv.getBoundingClientRect()
+      const W = Math.max(1, Math.round(rect.width)), H = Math.max(1, Math.round(rect.height))
+      cv.width = W * dpr; cv.height = H * dpr
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      const cell = W / cols, rows = Math.max(1, Math.round(H / cell))
+      const light = theme === 'light' || document.documentElement.getAttribute('data-theme') === 'light'
+      const lum = sampleImage(img, cols, rows, { gamma, contrast, light, invert, vignette, isolated, contain })
+      ctx.clearRect(0, 0, W, H)
+      ctx.fillStyle = readVar(accent ? '--amber' : '--ink-strong', '#cba35c')
+      for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+        const r = lum[y * cols + x] * cell * 0.62
+        if (r > 0.35) { ctx.beginPath(); ctx.arc((x + 0.5) * cell, (y + 0.5) * cell, r, 0, 7); ctx.fill() }
+      }
     }
+    // lazy draw + theme-flip redraw (see AsciiImage for the rationale)
+    let onScreen = false, dirty = true
+    const flush = () => { if (onScreen && dirty) { draw(); dirty = false } }
+    const io = new IntersectionObserver((es) => { onScreen = !!es[0]?.isIntersecting; flush() }, { rootMargin: '300px' })
+    io.observe(cv)
+    const unsub = onThemeChange(() => { dirty = true; flush() })
+    return () => { io.disconnect(); unsub() }
   }, [img, cols, accent, gamma, contrast, invert, vignette, isolated, contain, theme])
   return <canvas ref={ref} className={className} style={{ width: '100%', height: '100%', display: 'block', ...style }} />
 }
@@ -298,14 +332,16 @@ function mulberry32(a) {
 }
 
 /* a one-shot GROWTH-MORPH reveal for a procedural <pre> (the roots, the soil band): the grid fills from the
-   top down over `growMs`, and the rows just behind the growing front shimmer through ramp glyphs before
-   settling to their final form - so the ascii reads as it FORMS, descending like the plant, instead of a
-   flat clip wipe. crucially the front is RAGGED, not a straight horizontal line: each column carries a
-   stable, lightly-smoothed offset (`jitter` rows) so some columns sprout earlier than their neighbours, the
-   way real roots/soil push down unevenly. it paints `lines` imperatively (textContent) so it never reflows.
-   honours reduced-motion and only animates when `grow` flips true; otherwise it paints the final grid at
-   once. `lines` MUST be a stable reference (memoise it) or the animation restarts every render. */
-function useGrowMorph(ref, lines, { grow = false, growMs = 1600, ramp = ROOT_RAMP, fps = 30, jitter = 4 } = {}) {
+   top down over `growMs`, and the rows behind the growing front shimmer through ramp glyphs before settling
+   to their final form - so the ascii reads as it FORMS, descending like the plant, instead of a flat clip
+   wipe. it is NOT a straight horizontal front: columns are grouped into BRANCHES (spatially-smoothed bands)
+   that each get their own START position (`off`, so some branches sprout higher/lower) AND their own DESCENT
+   RATE (`rate`, so some branches visibly trail behind / grow slower), the way real roots push down unevenly.
+   the shimmer band (`feather`) trails well behind the front - the longer it is, the more each cell LAGS the
+   descent and the more glyph morphs it churns through before resolving. paints `lines` imperatively
+   (textContent) so it never reflows. honours reduced-motion and only animates when `grow` flips true;
+   otherwise paints the final grid at once. `lines` MUST be a stable reference (memoise it). */
+function useGrowMorph(ref, lines, { grow = false, growMs = 1600, ramp = ROOT_RAMP, fps = 30, jitter = 6, feather = 8, minRate = 0.72 } = {}) {
   useEffect(() => {
     const pre = ref.current; if (!pre) return
     const final = lines.join('\n')
@@ -313,30 +349,49 @@ function useGrowMorph(ref, lines, { grow = false, growMs = 1600, ramp = ROOT_RAM
     if (!grow || reduce) { pre.textContent = final; return }
     const R = lines.length, lastr = ramp.length - 1
     let W = 0; for (const l of lines) if (l.length > W) W = l.length
-    // a STABLE per-column front offset, lightly smoothed (3-tap) so neighbours stay similar - the reveal
-    // descends top->bottom but with a natural ragged edge rather than a flat wipe.
-    const colOff = new Array(W)
-    { const n = new Array(W); for (let x = 0; x < W; x++) n[x] = (Math.random() * 2 - 1) * jitter
-      for (let x = 0; x < W; x++) colOff[x] = (n[Math.max(0, x - 1)] + n[x] + n[Math.min(W - 1, x + 1)]) / 3 }
-    const FEATHER = 4 // rows of shimmer trailing the front before glyphs settle to their final form
-    const SPAN = R + jitter + FEATHER + 2 // the front travels a touch past the bottom so every column settles
+    // STABLE per-column noise, smoothed over a wide kernel so neighbouring columns share a value - they read
+    // as BRANCHES (bands), not per-pixel fuzz. normalised to [0,1] so every band set spans its full range.
+    const bands = (passes, kernel) => {
+      let a = new Array(W); for (let x = 0; x < W; x++) a[x] = Math.random() * 2 - 1
+      for (let p = 0; p < passes; p++) {
+        const b = new Array(W)
+        for (let x = 0; x < W; x++) { let s = 0, n = 0
+          for (let d = -kernel; d <= kernel; d++) { const i = x + d; if (i >= 0 && i < W) { s += a[i]; n++ } }
+          b[x] = s / n }
+        a = b
+      }
+      let mn = Infinity, mx = -Infinity
+      for (const v of a) { if (v < mn) mn = v; if (v > mx) mx = v }
+      const span = (mx - mn) || 1
+      return a.map((v) => (v - mn) / span)
+    }
+    const off = bands(3, 2).map((v) => (v * 2 - 1) * jitter)                  // start stagger: +- jitter rows
+    const rate = bands(4, 3).map((v) => 1 - Math.pow(v, 1.5) * (1 - minRate)) // 1.0 (lead) .. minRate (slow branches)
+    const FEATHER = Math.max(3, Math.round(feather)) // rows of shimmer trailing the front (the descent "lag")
+    // the slowest branch still has to fill to the bottom by p=1, so size the travel by minRate (no end-pop).
+    const SPAN = (R + jitter + FEATHER + 2) / minRate
     let raf = 0, startT = 0, lastFrame = 0
     const tick = (now) => {
       if (!startT) startT = now
       if (now - lastFrame >= 1000 / fps) {
         lastFrame = now
         const p = Math.min(1, (now - startT) / growMs)
-        const front = (1 - (1 - p) * (1 - p)) * SPAN // ease-out descent
+        // LINEAR descent. an ease-out front front-loaded the motion so hard that the fill finished at ~45% of
+        // growMs and then sat idle (the roots looked done at 2.5s of a 4.8s grow); linear spreads the growth
+        // evenly across the whole growMs, so a slower growMs actually reads as a slower descent.
+        const front = p * SPAN
         const rows = new Array(R)
         for (let y = 0; y < R; y++) {
           const ln = lines[y]
           let row = ''
           for (let x = 0; x < ln.length; x++) {
-            const ef = front + colOff[x] // this column's front, ragged vs its neighbours
-            if (y > ef) { row += ' '; continue } // not yet grown to this depth in this column
+            const ef = front * rate[x] + off[x] // this branch's front: slower branches trail, staggered start
+            if (y > ef) { row += ' '; continue } // not yet grown to this depth in this branch
             const c = ln[x]
-            const settle = (ef - y) / FEATHER // 0 right at the front -> >=1 once settled
-            row += c !== ' ' && settle < 1 && Math.random() < (1 - settle) * 0.9 ? ramp[(Math.random() * (lastr + 1)) | 0] : c
+            const settle = (ef - y) / FEATHER // 0 right at the front -> >=1 once settled past the feather band
+            // shimmer high across the whole (long) feather band so a cell morphs through several ramp glyphs,
+            // easing out only near the tail (1 - settle^2) instead of resolving the instant the front passes.
+            row += c !== ' ' && settle < 1 && Math.random() < (1 - settle * settle) * 0.92 ? ramp[(Math.random() * (lastr + 1)) | 0] : c
           }
           rows[y] = row
         }
@@ -347,7 +402,7 @@ function useGrowMorph(ref, lines, { grow = false, growMs = 1600, ramp = ROOT_RAM
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [ref, lines, grow, growMs, ramp, fps, jitter])
+  }, [ref, lines, grow, growMs, ramp, fps, jitter, feather, minRate])
 }
 /* `ramp`: draw the strands in the WHEAT-RAMP glyphs (same chars as AsciiVideo) so the roots blend
    seamlessly with the plant above; nodes get a dense grain glyph. otherwise use line glyphs.
@@ -457,7 +512,9 @@ export function AsciiRoots({ cols = 220, rows = 64, seed = 7, density = 1, sprea
     return grid.map((r) => r.join(''))
   }, [cols, R, seed, density, spread, bases, nodes, ramp, seeds, overlap, fan, trunk])
   // the roots GROW down with a morphing front when the brand section scrolls in (reduced-motion: static).
-  useGrowMorph(ref, lines, { grow, growMs, ramp: ROOT_RAMP, fps: 30 })
+  // the hero visual: WIDE branch variation (some strands trail far behind, very staggered sprout heights)
+  // and a long shimmer lag so the tendrils churn through many glyphs over a long descent before settling.
+  useGrowMorph(ref, lines, { grow, growMs, ramp: ROOT_RAMP, fps: 30, jitter: 14, feather: 24, minRate: 0.46 })
   return <pre ref={ref} className={'ascii ' + className} style={style} aria-hidden="true" />
 }
 
@@ -482,8 +539,9 @@ export function AsciiSoil({ cols = 300, rows = 9, seed = 5, grow = false, growMs
     }
     return out
   }, [cols, rows, seed])
-  // the surface band forms with a quick morph as the section scrolls in (reduced-motion: static)
-  useGrowMorph(ref, lines, { grow, growMs, ramp: SOIL_RAMP, fps: 30 })
+  // the surface band forms as the section scrolls in (reduced-motion: static). it is a thin band, so the
+  // stagger + lag stay moderate (a few clumps crumble ahead of the rest) but it still morphs for a while.
+  useGrowMorph(ref, lines, { grow, growMs, ramp: SOIL_RAMP, fps: 30, jitter: 7, feather: 10, minRate: 0.56 })
   return <pre ref={ref} className={'ascii ' + className} style={style} aria-hidden="true" />
 }
 
@@ -571,8 +629,15 @@ export function AsciiVideo({ src, cols = 240, aspect = 0.4, fps = 12, smooth = 5
         onColumns(prof)
       }
     }
-    const tick = (now) => { if (now - last >= 1000 / fps) { if (video.readyState >= 2) sample(now); last = now } raf = requestAnimationFrame(tick) }
+    let visible = true
+    const loop = (now) => { if (now - last >= 1000 / fps) { if (video.readyState >= 2) sample(now); last = now } raf = requestAnimationFrame(loop) }
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    // run the sampler ONLY while the hero is on screen. the per-frame getImageData over cols*rows is the
+    // page's heaviest steady cost, and it used to keep running at full rate even when the hero was scrolled
+    // far off-screen (down in the docs / the in-use stage), starving the main thread so every click stuttered.
+    // pause the video + stop sampling when off-screen, resume when it scrolls back into view.
+    const play = () => { if (reduce || raf) return; video.play().catch(() => {}); raf = requestAnimationFrame(loop) }
+    const stop = () => { if (raf) { cancelAnimationFrame(raf); raf = 0 } video.pause() }
     const start = () => {
       if (reduce) {
         // reduced-motion: show a single still wheat frame (don't animate). seek into the
@@ -584,10 +649,15 @@ export function AsciiVideo({ src, cols = 240, aspect = 0.4, fps = 12, smooth = 5
         raf = requestAnimationFrame(grab)
         return
       }
-      sample(); video.play().catch(() => {}); raf = requestAnimationFrame(tick)
+      sample(); if (visible) play()
     }
     if (video.readyState >= 2) start(); else video.addEventListener('loadeddata', start, { once: true })
-    return () => { cancelAnimationFrame(raf); video.pause(); video.removeAttribute('src') }
+    let io = null
+    if (!reduce && typeof IntersectionObserver === 'function') {
+      io = new IntersectionObserver((ents) => { visible = !!ents[0]?.isIntersecting; if (visible) play(); else stop() }, { threshold: 0 })
+      io.observe(pre)
+    }
+    return () => { io && io.disconnect(); if (raf) cancelAnimationFrame(raf); video.pause(); video.removeAttribute('src') }
   }, [src, cols, aspect, fps, smooth, boost, contrast, gamma, rate, waveEvery, waveDur, waveAmp, waveLen, waveSpeed, onColumns])
   return <pre ref={ref} className={'ascii ' + className} style={style} aria-hidden="true" />
 }

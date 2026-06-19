@@ -49,7 +49,7 @@ export function CanvasSection() {
                 <div className="dialog framed" role="dialog" aria-label="join collective, static preview">
                   <div className="dlg-head"><h3>join collective</h3><span className="btn btn-ghost btn-sm btn-icon" aria-hidden="true"><X aria-hidden="true" /></span></div>
                   <div className="dlg-body">
-                    <p>joining <b style={{ color: 'var(--ink-strong)' }}>desert-archivists</b> reveals your profile to its members. your shared transcripts stay redacted.</p>
+                    <p>joining <b style={{ color: 'var(--ink-strong)' }}>desert-archivists</b> lists you as a member and grants access to its shared data. it publishes none of your own transcripts; you choose those later when you contribute.</p>
                     <label className="check"><input type="checkbox" className="check-box" /> i understand and consent</label>
                   </div>
                   <div className="dlg-foot"><span className="btn btn-secondary btn-sm">cancel</span><span className="btn btn-primary btn-sm"><Users aria-hidden="true" /> reveal &amp; join</span></div>

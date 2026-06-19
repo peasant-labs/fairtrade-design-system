@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   X,
   Check,
@@ -46,7 +46,11 @@ import { TokensSection } from './sections-react/64-tokens.jsx'
 import { TrailsSection } from './sections-react/44-trails.jsx'
 import { OverlaysSection } from './sections-react/54-overlays.jsx'
 
+/* the in-page comment/feedback tool is a DEV-ONLY authoring aid: it posts to the vite dev middleware's
+   /feedback endpoint (which doesn't exist in a production build), so it only mounts under `import.meta.env.DEV`.
+   `?fb=off` still force-hides it in dev (used by the screenshot scripts). */
 const fbOff = /[?&]fb=off/.test(location.search)
+const showFeedback = import.meta.env.DEV && !fbOff
 
 /* on-this-page rail / scroll-spy model. ids match the section[id] in the partials and
    the react sections; group rows anchor to the group openers and drive the nav active
@@ -141,75 +145,11 @@ function Hero() {
     io.observe(el)
     return () => io.disconnect()
   }, [])
-  // move through the splash (crop / brand / philosophy) and on into the docs with ONE gesture per stop. a
-  // wheel notch or a trackpad flick advances exactly one stop and smooth-scrolls there - no half-screen drag,
-  // no waiting for inertia to settle (that lag was the "too much effort" feel). the stops are the three
-  // splash sections PLUS the docs top (#start), so philosophy snaps down into the docs; once at the docs top,
-  // scrolling down releases into free scroll, so it can never lock. a directional scroll-stop snap stays as
-  // the touch / keyboard / safety fallback, and reduced-motion disables all of it. positions are ABSOLUTE
-  // (rect.top + scrollY) so the stops share one coordinate space.
-  useEffect(() => {
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    let cooldownUntil = 0, timer = 0, lastY = window.scrollY, dir = 1
-    const tops = () => {
-      const splash = [document.querySelector('.hero-crop'), document.getElementById('brand'), document.getElementById('manifesto')].filter(Boolean)
-      if (splash.length < 3) return null
-      const y = window.scrollY
-      const arr = splash.map((el) => Math.round(el.getBoundingClientRect().top + y))
-      // #start (the docs top) is a FOURTH stop, so philosophy snaps DOWN into the docs with one more
-      // gesture instead of releasing straight to free scroll. unlike the splash sections (which cancel the
-      // nav's scroll-padding), the docs sit below the now-visible sticky nav, so its anchor is offset by
-      // --nav-h to land exactly where an anchor link / the scroll-spy do.
-      const docsTop = document.getElementById('start')
-      if (docsTop) {
-        const navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 56
-        arr.push(Math.round(docsTop.getBoundingClientRect().top + y) - navH)
-      }
-      return arr
-    }
-    const floorIndex = (t, y) => { let c = 0; for (let i = 0; i < t.length; i++) if (y >= t[i] - 2) c = i; return c }
-    const go = (target) => { cooldownUntil = performance.now() + 650; window.scrollTo({ top: target, behavior: 'smooth' }) }
-
-    const onWheel = (e) => {
-      const t = tops(); if (!t) return
-      const vh = window.innerHeight, y = window.scrollY
-      if (y > t[t.length - 1] + vh * 0.35) return // in / below the docs top: native free scroll through the docs
-      if (Math.abs(e.deltaY) < 1) return
-      const down = e.deltaY > 0
-      const cur = floorIndex(t, y)
-      const into = (y - t[cur]) / vh
-      if (down && cur >= t.length - 1) return // at the docs top, downward -> release into free scroll
-      if (!down && cur <= 0 && into < 0.04) return // at the very top, upward -> nothing above
-      e.preventDefault() // we own this gesture now
-      if (performance.now() < cooldownUntil) return // absorb the rest of the flick / inertia; one advance per gesture
-      if (down) go(t[Math.min(cur + 1, t.length - 1)])
-      else go(into > 0.04 ? t[cur] : t[Math.max(0, cur - 1)]) // unaligned: settle to this top first, else go up one
-    }
-
-    // touch / keyboard / safety: after scrolling pauses, finish the move with a low-threshold directional
-    // snap (a small swipe still advances). respects the wheel cooldown so it never double-fires.
-    const snap = () => {
-      if (performance.now() < cooldownUntil) return
-      const t = tops(); if (!t) return
-      const vh = window.innerHeight, y = window.scrollY
-      if (y > t[t.length - 1] + vh * 0.5 || y < t[0] - 4) return
-      const cur = floorIndex(t, y)
-      if (dir > 0 && cur >= t.length - 1) return // at the docs top scrolling down: release, don't pull back
-      const into = (y - t[cur]) / vh
-      let ti = cur
-      if (dir > 0) ti = into > 0.08 && cur < t.length - 1 ? cur + 1 : cur
-      else ti = into < 0.92 ? cur : Math.min(cur + 1, t.length - 1)
-      if (Math.abs(t[ti] - y) > 4) go(t[ti])
-    }
-    const onScroll = () => {
-      const y = window.scrollY
-      if (y !== lastY) { dir = y > lastY ? 1 : -1; lastY = y }
-      clearTimeout(timer); timer = setTimeout(snap, 200)
-    }
-    window.addEventListener('wheel', onWheel, { passive: false })
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => { window.removeEventListener('wheel', onWheel); window.removeEventListener('scroll', onScroll); clearTimeout(timer) }
-  }, [])
+  // the splash (crop / brand / philosophy) scrolls NATIVELY - no wheel hijack, no scroll-stop snap. the
+  // previous "one gesture per stop" wheel handler called preventDefault on every notch and forced a
+  // full-viewport smooth-scroll per 650ms cooldown, so half of every flick was swallowed and the page felt
+  // frozen. native scroll is smooth, never blocks input, and each splash section is 100svh so it still reads
+  // as a distinct full-screen stop as you scroll through it.
   const toDocs = () => document.getElementById('start')?.scrollIntoView({ behavior: 'smooth' })
   return (
     <section className="hero" id="top">
@@ -222,10 +162,10 @@ function Hero() {
           <AsciiSoilField cols={300} seed={9} className="hero-soil-field" />
         </div>
         <div className="hero-soil-band" aria-hidden="true">
-          <AsciiSoil cols={300} rows={18} seed={5} grow={grown} growMs={1500} className="hero-soil-art" />
+          <AsciiSoil cols={300} rows={18} seed={5} grow={grown} growMs={2400} className="hero-soil-art" />
         </div>
         <div className="hero-roots-wrap" aria-hidden="true">
-          <AsciiRoots cols={300} bases={18} seed={11} density={1.2} spread={0.7} ramp fill fan trunk={0.34} seeds={seeds} grow={grown} growMs={2900} className="hero-roots" />
+          <AsciiRoots cols={300} bases={18} seed={11} density={1.2} spread={0.7} ramp fill fan trunk={0.34} seeds={seeds} grow={grown} growMs={4800} className="hero-roots" />
         </div>
         <div className="hero-foot">
           <div className="hero-word" role="img" aria-label="fairtrade">fairtrade</div>
@@ -273,21 +213,30 @@ function Philosophy({ theme }) {
   // the spotlight is a pure delayed follow (an exponential low-pass, NOT a spring): each frame it eases a
   // fraction of the way toward the cursor, so it TRAILS the pointer with a steady lag and never overshoots
   // or bounces. it glides back off-screen the moment the cursor leaves the section, so it never gets stuck.
+  // the rAF runs ONLY while the section is on screen - off-screen it set css vars (forcing style recalc on a
+  // section full of canvases) every frame for nothing, adding to the steady load that made clicks stutter.
   useEffect(() => {
     const s = sp.current
     const el = secRef.current
+    if (!el) return
+    let running = false
     const tick = () => {
+      if (!running) return
       const ease = 0.05 // smaller = more delay/lag behind the cursor (no bounce)
       s.x += (s.tx - s.x) * ease
       s.y += (s.ty - s.y) * ease
-      if (el) {
-        el.style.setProperty('--mx', s.x + 'px')
-        el.style.setProperty('--my', s.y + 'px')
-      }
+      el.style.setProperty('--mx', s.x + 'px')
+      el.style.setProperty('--my', s.y + 'px')
       s.raf = requestAnimationFrame(tick)
     }
-    s.raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(s.raf)
+    const startRAF = () => { if (running) return; running = true; s.raf = requestAnimationFrame(tick) }
+    const stopRAF = () => { running = false; if (s.raf) { cancelAnimationFrame(s.raf); s.raf = 0 } }
+    let io = null
+    if (typeof IntersectionObserver === 'function') {
+      io = new IntersectionObserver((ents) => { if (ents[0]?.isIntersecting) startRAF(); else stopRAF() }, { threshold: 0 })
+      io.observe(el)
+    } else startRAF()
+    return () => { io && io.disconnect(); stopRAF() }
   }, [])
 
   // reveal the statement (fade + rise) the first time the section scrolls into view
@@ -462,8 +411,11 @@ function Cards({ theme }) {
 
 function AppShell() {
   /* the system toast host (mounted by <App> below). copy + save confirmations route
-     through it so they read as real toasts, not the old feedback-only bubble. */
+     through it so they read as real toasts, not the old feedback-only bubble. kept in a ref too so the
+     delegated click handler can stay a STABLE useCallback (see rootClick / the memoised page below). */
   const notify = useToast()
+  const notifyRef = useRef(notify)
+  notifyRef.current = notify
   /* theme (toggled by the nav .theme-btn via click delegation) */
   const [theme, setTheme] = useState(() =>
     document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'
@@ -503,36 +455,10 @@ function AppShell() {
     return () => { window.removeEventListener('scroll', apply); window.removeEventListener('resize', apply) }
   }, [])
 
-  /* snap the in-use stage to fill the viewport when the reader scrolls DOWN into it. with the footer
-     gone, #inuse is the page's last 100svh block, so once it aligns to the top the sticky app-switcher
-     bar pins and the stage's own internal scroll takes over - which is what makes the demo's tabs and
-     headers stay put (they were never sticking because the section never settled at the top). this is
-     a scroll-stop snap (fires after scrolling pauses), directional so an upward exit is never trapped,
-     and disabled under reduced-motion. it is independent of the splash wheel-snap, which releases into
-     free scroll well above here. */
-  useEffect(() => {
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    let timer = 0, lastY = window.scrollY, dir = 1, cooldownUntil = 0
-    const trySnap = () => {
-      if (performance.now() < cooldownUntil) return
-      const inuse = document.getElementById('inuse')
-      if (!inuse) return
-      const r = inuse.getBoundingClientRect()
-      const vh = window.innerHeight
-      // entering on the way down, with the section top in the upper 60% of the viewport
-      if (dir > 0 && r.top > 4 && r.top < vh * 0.6) {
-        cooldownUntil = performance.now() + 700
-        window.scrollTo({ top: Math.round(r.top + window.scrollY), behavior: 'smooth' })
-      }
-    }
-    const onScroll = () => {
-      const y = window.scrollY
-      if (y !== lastY) { dir = y > lastY ? 1 : -1; lastY = y }
-      clearTimeout(timer); timer = setTimeout(trySnap, 180)
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => { window.removeEventListener('scroll', onScroll); clearTimeout(timer) }
-  }, [])
+  /* the in-use stage settles by native scroll: #inuse is the page's last 100svh block, so scrolling to the
+     bottom aligns it to the viewport (the sticky app-switcher bar pins at top:0 and the stage's own scroll
+     takes over). the old scroll-stop snap that auto-completed this is gone - paired with the splash wheel
+     hijack it was the source of the "everything freezes" feel. */
 
   /* the nav storybook link points at the deployed copy (relative `storybook/`, nested in
      dist/ by the deploy workflow) in production; in dev there is no built storybook under
@@ -565,8 +491,10 @@ function AppShell() {
   /* (the overlays dropdown is now the self-managed <Menu> component; the in-use mockup menus
      manage their own open/close state, so the old global delegated menu effect is gone.) */
 
-  /* delegated clicks inside the page: theme toggle + copy-token affordances */
-  function rootClick(e) {
+  /* delegated clicks inside the page: theme toggle + search + dialog + copy-token affordances. STABLE
+     (useCallback with no deps - the state setters are stable and notify is read through a ref) so the
+     memoised page below never invalidates on it. */
+  const rootClick = useCallback((e) => {
     const t = e.target
     if (t.closest && t.closest('.theme-btn')) {
       setTheme((x) => (x === 'light' ? 'dark' : 'light'))
@@ -588,9 +516,9 @@ function AppShell() {
       if (navigator.clipboard) navigator.clipboard.writeText(v).catch(() => {})
       copy.classList.add('copied')
       setTimeout(() => copy.classList.remove('copied'), 1200)
-      notify.ok(v + ' is on the clipboard.', { title: 'copied' })
+      notifyRef.current.ok(v + ' is on the clipboard.', { title: 'copied' })
     }
-  }
+  }, [])
 
   /* scroll-reveal: fade/lift each section in as it enters the viewport */
   useEffect(() => {
@@ -605,13 +533,19 @@ function AppShell() {
     return () => io.disconnect()
   }, [])
 
-  return (
-    <>
+  /* the whole page tree is memoised on the STABLE rootClick alone, so it renders ONCE and no AppShell state
+     change (theme, command palette, dialog) ever re-renders the hero ascii, the docs, or the in-use apps -
+     that full-tree re-render on every click was the "everything freezes when I click" bug. theme used to be
+     a dep (the canvas ascii bakes in the themed ink), but the canvases now self-redraw off a shared
+     data-theme MutationObserver (see effects.jsx onThemeChange), so even a theme flip leaves the tree alone.
+     all interactivity lives in self-managing leaf components (InUseShell, the mockups, RailSpy). */
+  const paletteSections = useMemo(() => RAIL.filter((r) => r.kind === 'link'), [])
+  const page = useMemo(() => (
       <div className="pds-root" onClick={rootClick}>
         <Defs />
         <NavBar />
         <Hero />
-        <Philosophy theme={theme} />
+        <Philosophy />
         <div className="docs">
           <RailSpy />
           <main className="docs-main">
@@ -629,7 +563,7 @@ function AppShell() {
             <GroupOpener id="components" title="components" sub="everything we build with, ported from peasant, village & the transcript viewer" />
             <BadgesSection />
             <TrailsSection />
-            <Cards theme={theme} />
+            <Cards />
             <ConversationSection />
             <TimelineSection />
             <CanvasSection />
@@ -646,14 +580,19 @@ function AppShell() {
             <ResourcesSection />
           </main>
         </div>
-        <InUseShell theme={theme} />
+        <InUseShell />
       </div>
+  ), [rootClick])
+
+  return (
+    <>
+      {page}
 
       <CommandPalette
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
         onTheme={() => setTheme((x) => (x === 'light' ? 'dark' : 'light'))}
-        sections={RAIL.filter((r) => r.kind === 'link')}
+        sections={paletteSections}
       />
 
       <Dialog
@@ -676,12 +615,12 @@ function AppShell() {
       >
         <div className="callout">
           <Eye size={16} aria-hidden="true" />
-          <div>joining <b style={{ color: 'var(--ink-strong)' }}>desert-archivists</b> reveals your profile to its members. your shared transcripts stay redacted.</div>
+          <div>joining <b style={{ color: 'var(--ink-strong)' }}>desert-archivists</b> lists you as a member and grants access to its shared data. it publishes none of your own transcripts; you choose those later when you contribute.</div>
         </div>
         <label className="check"><input type="checkbox" className="check-box" /> i understand and consent</label>
       </Dialog>
 
-      {!fbOff && <FeedbackTool />}
+      {showFeedback && <FeedbackTool />}
     </>
   )
 }
