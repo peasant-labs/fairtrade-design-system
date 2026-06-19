@@ -1,14 +1,16 @@
 # fairtrade design system
 
-one visual identity across **peasant** (local analytics), **village** (the commons), and
-**transcript-browser** (the shared viewer), presented as a **single-page design-system site** in the
-locked caves-of-qud identity (amber on near-black + warm paper, atkinson hyperlegible mono, lowercase
-chrome, square corners). built with **vite 8 + react 19 + tailwind v4**, run with **pnpm**.
+**fairtrade** is an **open-source** design system for building agent products of every kind:
+orchestration, analysis, transcripts, pr review, and more. it ships design tokens, a documented
+component library, and the rules that keep every screen aligned, glanceable and readable, in a locked
+identity (amber on near-black + warm paper, atkinson hyperlegible mono, lowercase chrome, square
+corners). built with **vite 8 + react 19 + tailwind v4**, run with **pnpm**.
 
-the page is a wise.design-style presentation that reads top to bottom: an ascii splash at the top, the
-documented system in the middle, and a live "in use" showcase of the three apps at the end. it ships a
-typed component library (`src/ui/*`) with storybook, and is **neuroinclusive by default** (the dyslexia
-/ adhd / autism / low-vision rules are baked into the tokens, not a toggle).
+this repo is the single-page presentation site: a wise.design-style page that reads top to bottom, with
+an ascii splash at the top, the documented system in the middle, and a live "in use" showcase at the end
+across three example apps (an analytics dashboard, a commons, and a transcript viewer) that exercise the
+system's range. it ships a component library (`src/ui/*`) with storybook, and is **neuroinclusive by
+default** (the dyslexia / adhd / autism / low-vision rules are baked into the tokens, not a toggle).
 
 ## run
 
@@ -75,3 +77,7 @@ focus-trap, theme toggle, 0 overflow at 360/390/768/1024/1440, reduced-motion, n
 `build-storybook` + `scripts/sbsmoke.mjs` load every story (incl. `play()`). all run in ci
 ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)); `deploy.yml` publishes to github pages with
 storybook nested under `dist/storybook/`.
+
+## license
+
+open source under the [MIT license](./LICENSE).

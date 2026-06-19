@@ -24,8 +24,8 @@ export function StartSection() {
   return (
     <section className="band" id="start">
       <h2 className="label">start here</h2>
-      <div className="sub">one identity across peasant, village and the transcript&nbsp;viewer</div>
-      <p className="prose">fairtrade is the shared visual system for three sibling apps. it ships as design tokens, a component set, and the rules that keep every screen aligned, glanceable and readable. this page documents the foundations that everything is built from, the components we assemble, and how to build on the system without breaking it.</p>
+      <div className="sub">an open-source design system for building agent products</div>
+      <p className="prose">fairtrade is an open-source design system for agent products of every kind: orchestration, analysis, transcripts, pr review, and more. it ships as design tokens, a component set, and the rules that keep every screen aligned, glanceable and readable. the foundations and components here are shown across three example apps; this page documents what the system is built from, the components we assemble, and how to build on it without breaking it.</p>
       <div className="start-jump">
         <a className="start-card" href="#foundations"><span className="sc-k">foundations</span><span className="sc-d">principles, color, type, spacing, icons, motion, controls</span></a>
         <a className="start-card" href="#components"><span className="sc-k">components</span><span className="sc-d">badges, trails, cards, the conversation window, canvas, forms</span></a>

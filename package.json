@@ -1,8 +1,9 @@
 {
-  "name": "peasant-design-system",
+  "name": "fairtrade-design-system",
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "license": "MIT",
   "packageManager": "pnpm@10.33.2",
   "scripts": {
     "dev": "vite",
