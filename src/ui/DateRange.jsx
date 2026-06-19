@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react'
 
 /* date-range (.dr-*): a NEW tier-2 control. a trigger button (reuses the .btn chassis)
@@ -459,6 +459,7 @@ export default function DateRange({
   const [open, setOpen] = useState(false)
   const anchorRef = useRef(null)
   const triggerRef = useRef(null)
+  const popRef = useRef(null)
 
   const setValue = (next, fireCommit) => {
     if (!controlled) setInternal(next)
@@ -484,6 +485,29 @@ export default function DateRange({
       document.removeEventListener('keydown', onKey)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  /* keep the popover inside the viewport: the two-month grid can be wider than the room to the right of
+     the trigger, so it would spill off the page edge. on open + resize, shift it horizontally by its
+     overflow. we move it with margin (not transform) so it never fights the menuIn slide-in, and .dr-pop's
+     max-width already caps it at the viewport width, so a horizontal shift always makes it fit. */
+  useLayoutEffect(() => {
+    const pop = popRef.current
+    if (!pop) return
+    if (!open) { pop.style.marginLeft = ''; pop.style.marginRight = ''; return }
+    const place = () => {
+      pop.style.marginLeft = ''
+      pop.style.marginRight = ''
+      const gutter = 8
+      const r = pop.getBoundingClientRect()
+      const overRight = r.right - (window.innerWidth - gutter)
+      const overLeft = gutter - r.left
+      if (overRight > 0) pop.style.marginLeft = `${-Math.round(overRight)}px`
+      else if (overLeft > 0) pop.style.marginRight = `${-Math.round(overLeft)}px`
+    }
+    place()
+    window.addEventListener('resize', place)
+    return () => window.removeEventListener('resize', place)
   }, [open])
 
   const onTriggerKey = (e) => {
@@ -540,6 +564,7 @@ export default function DateRange({
         </button>
 
         <div
+          ref={popRef}
           className={['dr-pop', align === 'end' ? 'dr-end' : ''].filter(Boolean).join(' ')}
           id={popId}
           role="dialog"

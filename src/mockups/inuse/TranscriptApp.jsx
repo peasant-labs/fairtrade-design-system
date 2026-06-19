@@ -1220,7 +1220,19 @@ export default function TranscriptApp({ theme = 'dark' }) {
         {/* ---- CENTER ---- */}
         <main className="txn-center" role="tabpanel" aria-label={tab}>
           {tab === 'trace' && (
-            <div className="txn-trace">
+            <div className={'txn-trace' + (sticky && viewMode === 'list' ? ' txn-trace-pinned' : '')}>
+              {/* tier 1 — condensed scrubber header, pinned ABOVE the turns bar
+                  (revealed once you scroll past the full header). it overlays the top
+                  strip of .txn-trace; the turns bar reserves space beneath it. */}
+              {sticky && viewMode === 'list' && (
+                <div className="txn-sticky">
+                  <span className="g-claude"><ClaudeMark /></span>
+                  <span className="txn-sticky-title">transcript-browser</span>
+                  <span className="txn-sticky-model mono">claude-opus-4-7</span>
+                  <Scrubber turns={TURNS} active={activeTurn} onSeek={seekScrub} draggingRef={draggingRef} />
+                </div>
+              )}
+              {/* tier 2 — the turns bar (count + list/graph toggle) */}
               <div className="txn-trace-head">
                 <span className="txn-trace-count tnum">
                   {visibleTurns.length === TURNS.length ? `${TURNS.length} turns` : `${visibleTurns.length} of ${TURNS.length} turns`}
@@ -1239,17 +1251,9 @@ export default function TranscriptApp({ theme = 'dark' }) {
                 <TrajectoryGraph turns={TURNS} activeTurn={activeTurn} onSelect={(id) => setActiveTurn(id)} />
               ) : (
                 <div className="txn-streamwrap">
-                {/* condensed header — pinned over the top of the stream, above the
-                    per-phase stickies (revealed once you scroll past the full header) */}
-                {sticky && (
-                  <div className="txn-sticky">
-                    <span className="g-claude"><ClaudeMark /></span>
-                    <span className="txn-sticky-title">transcript-browser</span>
-                    <span className="txn-sticky-model mono">claude-opus-4-7</span>
-                    <Scrubber turns={TURNS} active={activeTurn} onSeek={seekScrub} draggingRef={draggingRef} />
-                  </div>
-                )}
-                <div className={'txn-stream' + (sticky ? ' txn-stream-pinned' : '')} ref={scrollRef} onScroll={onScroll} tabIndex={-1}>
+                {/* tier 3 — per-phase stickies pin at the top of the scroller, which
+                    already sits below tiers 1+2, so they need no extra offset */}
+                <div className="txn-stream" ref={scrollRef} onScroll={onScroll} tabIndex={-1}>
                   {visibleTurns.length === 0 && (
                     <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><h3>no turns to display</h3><p>every turn is filtered out. clear a filter to bring them back.</p></div>
                   )}

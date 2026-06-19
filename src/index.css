@@ -280,14 +280,16 @@
   .group { @apply mx-auto; max-width: var(--maxw); padding: calc(var(--sp-8) + var(--sp-7)) var(--gutter) var(--sp-6); }
   .group h2 { @apply font-display text-ink-strong lowercase; font-weight: 700; font-size: var(--fs-group); letter-spacing: -0.025em; line-height: 1; }
 
-  /* section snap targets (see the @layer base note): the full-screen landmark stops are each <= one
-     viewport and sit in a nav-hidden zone (splash, philosophy, in-use - see App.jsx header gating), so
-     they settle flush to the viewport top (the negative scroll-margin cancels the nav-h scroll-padding).
-     .docs is an OVERSIZED snap area: it carries snap-align so mandatory snaps to it on entry, but because
-     it is far taller than the viewport you can rest anywhere inside it (the individual .band/.group doc
-     sections free-scroll). .docs keeps the nav-h scroll-padding since the nav is shown across the docs. */
-  .hero-crop, .hero-grow, .philos, .iu { scroll-snap-align: start; scroll-margin-top: calc(-1 * var(--nav-h)); }
-  .docs { scroll-snap-align: start; }
+  /* section snap targets (see the @layer base note). FIRM stops: .philos and .iu are each <= one viewport
+     and sit in a nav-hidden zone, so they settle flush to the top (negative scroll-margin cancels the
+     nav-h scroll-padding) and mandatory snaps to them crisply. OVERSIZED free-scroll areas: .hero (the
+     ~200svh cinematic intro) and .docs (the long documentation) each carry snap-align but are far taller
+     than the viewport, so mandatory lets you rest ANYWHERE inside them - you can scroll the hero up/down
+     and the page opens at the very top. (snapping the hero's two 100svh halves individually + a negative
+     scroll-margin pushed their first snap position above 0, so mandatory skipped the hero and the page
+     opened mid-way; treating the whole .hero as one oversized area fixes that.) */
+  .philos, .iu { scroll-snap-align: start; scroll-margin-top: calc(-1 * var(--nav-h)); }
+  .hero, .docs { scroll-snap-align: start; }
   .band, .group { padding-top: var(--band-y); padding-bottom: var(--band-y); }
   .band + .band, .group + .band, .band + .group { border-top: var(--bd); }
   /* scroll-reveal: sections fade/lift in as they enter the viewport (JS toggles .is-in). NOT .philos - it
@@ -2134,16 +2136,15 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-pill { height: 20px; padding: 0 var(--sp-2); font-size: 11px; gap: var(--sp-1); }
   .txn-pill .lucide { width: 12px; height: 12px; }
 
-  /* ---- sticky condensed header (revealed on scroll) ----
-     it overlays the TOP OF THE STREAM (not the app header): .txn-streamwrap is the
-     non-scrolling frame it anchors to. --txn-sticky-h is the header's DETERMINISTIC
-     height (forced via box-sizing so it never drifts with content; clears the 22px
-     scrubber row). the per-phase stickies pin flush directly beneath it — see
-     .txn-stream-pinned .txn-phase, which offsets by the header height MINUS the
-     stream's own top padding (sticky `top` is measured from the stream's content
-     box, inside that --sp-3 padding; without the subtraction a --sp-3 gap opened
-     between the header bottom and the pinned phase). */
-  .txn-streamwrap { --txn-sticky-h: calc(var(--control-h) + var(--sp-1)); position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+  /* ---- sticky condensed scrubber header (revealed on scroll) ----
+     TIER 1 of the pinned stack: it overlays the TOP STRIP of .txn-trace, ABOVE the
+     turns bar (.txn-trace-head, tier 2), which reserves space beneath it via
+     .txn-trace-pinned. --txn-sticky-h (declared on .txn-trace) is the header's
+     DETERMINISTIC height (forced via box-sizing so it never drifts with content;
+     clears the 22px scrubber row). because the scrubber sits ABOVE the scroller (not
+     over it), the phase stickies (tier 3) need no offset — the scroller already
+     starts below tiers 1+2, so phases pin at the scroller's own top. */
+  .txn-streamwrap { position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
   .txn-sticky {
     position: absolute; top: 0; left: 0; right: 0; z-index: var(--z-sticky);
     box-sizing: border-box; height: var(--txn-sticky-h);
@@ -2177,20 +2178,25 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-center { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border-right: var(--bd); }
 
   /* ---- trace ---- */
-  .txn-trace { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+  /* position:relative anchors the absolute scrubber header (tier 1) to the trace's
+     top strip; --txn-sticky-h is shared by that header and the turns-bar reservation. */
+  .txn-trace { --txn-sticky-h: calc(var(--control-h) + var(--sp-1)); position: relative; display: flex; flex-direction: column; min-height: 0; flex: 1; }
   .txn-trace-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); background: var(--surface-2); }
+  /* when the scrubber header is revealed, drop the turns bar (tier 2) by the header
+     height so it sits flush BENEATH the scrubber instead of being covered by it. */
+  .txn-trace-pinned .txn-trace-head { margin-top: var(--txn-sticky-h); }
   .txn-trace-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .txn-viewtoggle .bs-seg-opt { height: var(--control-h-sm); }
 
   .txn-stream { flex: 1; min-height: 0; overflow: auto; padding: var(--sp-3) var(--sp-4) var(--sp-7); }
 
-  /* phase divider sticks to the top of the scroller. when the condensed header is
-     revealed (.txn-stream-pinned) it pins FLUSH directly below that header: the
-     offset is the header height minus the stream's top padding, because sticky `top`
-     is measured from the stream's content box (inside the --sp-3 padding). z-index
-     stays under the condensed header (--z-sticky). */
-  .txn-phase { position: sticky; top: 0; z-index: 2; margin: var(--sp-3) calc(var(--sp-4) * -1) var(--sp-2); }
-  .txn-stream-pinned .txn-phase { top: calc(var(--txn-sticky-h) - var(--sp-3)); }
+  /* phase divider (tier 3) sticks to the top of the scroller. the scroller already
+     starts below tiers 1+2 (scrubber header + turns bar, both above .txn-streamwrap),
+     so the only offset needed is to cancel the stream's own top padding (--sp-3):
+     sticky `top` is measured from the content box, so a negative top pins the phase
+     flush at the scroller's BORDER-box top — i.e. flush against the turns-bar bottom,
+     no gap. (in normal flow the --sp-3 still spaces the first phase off the top.) */
+  .txn-phase { position: sticky; top: calc(-1 * var(--sp-3)); z-index: 2; margin: var(--sp-3) calc(var(--sp-4) * -1) var(--sp-2); }
   /* the first phase sits snug under the trace head: the stream's own top padding
      already separates it, so drop this phase's leading margin to remove the
      doubled gap. spacing between later phases is untouched. */

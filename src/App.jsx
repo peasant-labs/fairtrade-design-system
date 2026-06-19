@@ -455,8 +455,8 @@ function AppShell() {
     return () => { window.removeEventListener('scroll', apply); window.removeEventListener('resize', apply) }
   }, [])
 
-  /* the in-use stage is a CSS proximity snap target (.iu scroll-snap-align in index.css): #inuse is the
-     page's last 100svh block, so scrolling near it settles it flush to the viewport (the sticky
+  /* the in-use stage is a CSS mandatory snap target (.iu scroll-snap-align in index.css): #inuse is the
+     page's last 100svh block, so scrolling near it snaps it flush to the viewport (the sticky
      app-switcher bar pins at top:0 and the stage's own scroll takes over). snapping is pure CSS now - the
      old JS wheel hijack that owned the gesture (the "everything freezes" feel) is not coming back. */
 
