@@ -3870,3 +3870,9 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .tuiw-btn-primary:hover:not(:disabled) { background: var(--amber-bright); border-color: var(--amber-bright); color: var(--amber-fill-ink); }
   .tuiw-keys { color: var(--ink-4); font-style: italic; }
 }
+
+/* the "rebuilt apps" showcases compose full-width app layouts into the constrained docs column; clip
+   any horizontal spill so a wide composed app never makes the whole page side-scroll. refinement for
+   later (see HANDOFF.md): stack these app layouts to a single column on narrow widths so the composed
+   components show in full rather than clip at the section edge. */
+#app-commons, #app-map, #app-viewer { overflow-x: clip; }

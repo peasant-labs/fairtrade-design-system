@@ -52,6 +52,9 @@ import { CodeDiffSection } from './sections-react/74-codediff.jsx'
 import { TranscriptExtSection } from './sections-react/76-transcript-ext.jsx'
 import { FlowsSection } from './sections-react/78-flows.jsx'
 import { OnboardingSection } from './sections-react/80-onboarding.jsx'
+import { CommonsAppSection } from './sections-react/82-app-commons.jsx'
+import { MapAppSection } from './sections-react/84-app-map.jsx'
+import { ViewerAppSection } from './sections-react/86-app-viewer.jsx'
 
 /* the in-page comment/feedback tool is a DEV-ONLY authoring aid: it posts to the vite dev middleware's
    /feedback endpoint (which doesn't exist in a production build), so it only mounts under `import.meta.env.DEV`.
@@ -96,6 +99,10 @@ const RAIL = [
   { kind: 'link', id: 'ds-transcript-ext', label: 'transcript orientation' },
   { kind: 'link', id: 'ds-flows', label: 'flows & shells' },
   { kind: 'link', id: 'ds-onboarding', label: 'onboarding & teaching' },
+  { kind: 'group', id: 'app-shells', label: 'rebuilt apps' },
+  { kind: 'link', id: 'app-commons', label: 'the commons' },
+  { kind: 'link', id: 'app-map', label: 'the code map' },
+  { kind: 'link', id: 'app-viewer', label: 'the transcript viewer' },
   { kind: 'group', id: 'using', label: 'using the system' },
   { kind: 'link', id: 'a11y', label: 'accessibility' },
   { kind: 'link', id: 'tokens', label: 'tokens' },
@@ -597,6 +604,10 @@ function AppShell() {
             <TranscriptExtSection />
             <FlowsSection />
             <OnboardingSection />
+            <GroupOpener id="app-shells" title="rebuilt apps" sub="the peasant apps reassembled from this system's components" />
+            <CommonsAppSection />
+            <MapAppSection />
+            <ViewerAppSection />
             <GroupOpener id="using" title="using the system" sub="how to build on it without breaking it" />
             <A11ySection />
             <TokensSection />
