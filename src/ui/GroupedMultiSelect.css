@@ -1,0 +1,321 @@
+/* GroupedMultiSelect — project-grouped tri-state multi-select tree. every dimension/colour is a
+   token from src/index.css; no hardcoded hex or px. namespace gms-. radius 0 throughout.
+
+   the tri-state is conveyed by the glyph SHAPE inside .gms-box (check / dash / empty), never by
+   colour alone (WCAG 1.4.1 / neuroinclusive). amber is the scarce "this is selected" emphasis,
+   layered on top of the shape cue — not a replacement for it. */
+
+.gms {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-mono);
+  color: var(--ink);
+  border: var(--bd);
+  background: var(--surface);
+}
+
+.gms-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── sticky toolbar ──────────────────────────────────────────────────────────
+   select-all tri-box on the left, the running selected/token tally on the right.
+   sits flush to the top of a scrolling container so the tally never scrolls away. */
+.gms-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: var(--control-h);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface-2);
+  border-bottom: var(--bd-strong);
+}
+
+/* select-all is a real button so it is keyboard-reachable; the box + lowercase label form one row */
+.gms-selectall {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--control-h-sm);
+  padding: 0 var(--sp-1);
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  cursor: pointer;
+}
+
+.gms-selectall:hover:not(:disabled) .gms-selectall-text {
+  color: var(--ink-strong);
+}
+
+.gms-selectall:disabled {
+  color: var(--ink-4);
+  cursor: not-allowed;
+}
+
+.gms-selectall:focus-visible,
+.gms-toggle:focus-visible,
+.gms-group-disclosure:focus-visible,
+.gms-item-row:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* the tally: count + token sum, the numbers tabular so they don't jitter as they change */
+.gms-tally {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.gms-tally-count,
+.gms-tally-tokens {
+  color: var(--ink-strong);
+}
+
+.gms-tally-dot {
+  margin: 0 var(--sp-2);
+  color: var(--ink-5);
+}
+
+.gms-tally-unit,
+.gms-tally-sep {
+  text-transform: lowercase;
+}
+
+/* ── the tri-state box (shared by toolbar / group / item) ────────────────────
+   a bordered square sized off the icon token; the glyph inside is the state cue.
+   >=24px hit target is provided by the surrounding buttons' padding/min-height. */
+.gms-box {
+  flex: none;
+  box-sizing: border-box;
+  width: var(--ic-lg);
+  height: var(--ic-lg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rule-strong);
+  background: var(--canvas);
+  color: var(--amber-fill-ink);
+}
+
+/* selected (all) / partial (some) fill with the scarce amber; empty stays canvas. the GLYPH is
+   what distinguishes all from some — the fill is a secondary, redundant cue. */
+.gms-box[data-state='all'],
+.gms-box[data-state='some'] {
+  background: var(--amber-fill);
+  border-color: var(--amber-fill);
+}
+
+.gms-box-glyph {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+}
+
+/* ── group list ──────────────────────────────────────────────────────────── */
+.gms-groups,
+.gms-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gms-group + .gms-group {
+  border-top: var(--bd);
+}
+
+/* group header row: tri-box toggle | disclosure(label + meta). the two are separate buttons so
+   the checkbox cascades selection while the rest of the row expands the sublist. */
+.gms-group-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-3);
+  background: var(--surface);
+}
+
+.gms-group[data-selected] > .gms-group-row {
+  background: var(--surface-hover);
+}
+
+/* the tri-box toggle button — its own >=24px hit target */
+.gms-toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--sp-6);
+  min-height: var(--control-h);
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* the disclosure fills the rest of the row: caret + label (user content) + meta tally */
+.gms-group-disclosure {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--control-h);
+  padding: var(--sp-2) 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-label);
+  text-align: left;
+  cursor: pointer;
+}
+
+.gms-caret {
+  flex: none;
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  color: var(--ink-3);
+}
+
+.gms-caret[data-open] {
+  transform: rotate(90deg);
+}
+
+/* group label is USER CONTENT — never lowercased; truncates rather than wrapping the row */
+.gms-group-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-strong);
+}
+
+.gms-group-disclosure:hover .gms-group-label {
+  color: var(--ink-strong);
+}
+
+.gms-group-meta {
+  flex: none;
+  display: inline-flex;
+  align-items: baseline;
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.gms-group-count {
+  color: var(--ink-2);
+}
+
+.gms-group-dot {
+  margin: 0 var(--sp-2);
+  color: var(--ink-5);
+}
+
+.gms-group-tokens {
+  color: var(--ink-2);
+}
+
+.gms-group-unit {
+  text-transform: lowercase;
+  color: var(--ink-4);
+}
+
+/* ── item sublist (the "customize" drill-in) ────────────────────────────────
+   indented under the group; a hairline separates it from the header and each row. */
+.gms-items {
+  border-top: var(--bd);
+  background: var(--canvas);
+}
+
+.gms-item + .gms-item {
+  border-top: var(--bd);
+}
+
+.gms-item-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  /* indent the items past the group's tri-box column */
+  padding: var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-6);
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-label);
+  text-align: left;
+  cursor: pointer;
+}
+
+.gms-item-row:hover {
+  background: var(--surface-hover);
+}
+
+.gms-item[data-selected] > .gms-item-row {
+  background: var(--surface-hover);
+}
+
+/* item label is USER CONTENT — verbatim; takes the slack and truncates */
+.gms-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.gms-item[data-selected] .gms-item-label {
+  color: var(--ink-strong);
+}
+
+/* meta (turns / date) — secondary, dim, doesn't grow; user content so not lowercased */
+.gms-item-meta {
+  flex: none;
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.gms-item-tokens {
+  flex: none;
+  min-width: var(--sp-8);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ── motion (only when the user hasn't asked to reduce it) ───────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .gms-selectall,
+  .gms-selectall-text,
+  .gms-group-row,
+  .gms-group-label,
+  .gms-item-row,
+  .gms-item-label,
+  .gms-box,
+  .gms-caret {
+    transition:
+      background-color var(--dur-1) var(--ease-out),
+      border-color var(--dur-1) var(--ease-out),
+      color var(--dur-1) var(--ease-out),
+      transform var(--dur-2) var(--ease-out);
+  }
+}

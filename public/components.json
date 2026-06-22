@@ -1,7 +1,7 @@
 {
   "$description": "fairtrade component manifest, generated from src/ui. import from the barrel: import { Button } from \"src/ui\". every component is token-styled (classes in src/index.css) and works in both themes. props shows the Storybook-controllable props; full prop docs are the JSDoc in each file.",
   "import": "src/ui (barrel: src/ui/index.js)",
-  "count": 24,
+  "count": 51,
   "components": [
     {
       "name": "Accordion",
@@ -364,6 +364,24 @@
       ]
     },
     {
+      "name": "CliOnboard",
+      "category": "misc",
+      "title": "install",
+      "file": "src/ui/CliOnboard.jsx",
+      "exports": [
+        "CliSteps",
+        "CommandBlock",
+        "GettingStarted"
+      ],
+      "doc": "",
+      "props": {},
+      "stories": [
+        "Steps",
+        "Command",
+        "GettingStartedCard"
+      ]
+    },
+    {
       "name": "CommandPalette",
       "category": "overlays",
       "title": "overlays/CommandPalette",
@@ -388,6 +406,75 @@
         "Filtered",
         "Empty",
         "EscapeCloses"
+      ]
+    },
+    {
+      "name": "CommitGraph",
+      "category": "in use",
+      "title": "in use/CommitGraph",
+      "file": "src/ui/CommitGraph.jsx",
+      "exports": [
+        "CommitGraph"
+      ],
+      "doc": "@property {string} id - stable key (e.g. short hash)",
+      "props": {},
+      "stories": [
+        "Default",
+        "Linear"
+      ]
+    },
+    {
+      "name": "ConnectionState",
+      "category": "in use",
+      "title": "in use/ConnectionState",
+      "file": "src/ui/ConnectionState.jsx",
+      "exports": [
+        "ConnectionPill",
+        "DataState",
+        "TeachingEmptyState"
+      ],
+      "doc": "a tiny inline copy button — navigator.clipboard with a guard for environments where it is",
+      "props": {
+        "status": {
+          "control": "inline-radio",
+          "options": [
+            "live",
+            "connecting",
+            "disconnected"
+          ]
+        },
+        "showNote": {
+          "control": "boolean"
+        }
+      },
+      "stories": [
+        "Pills",
+        "SinglePill",
+        "Disconnected",
+        "TeachingEmpty",
+        "TeachingStandalone",
+        "Loading",
+        "LightTheme"
+      ]
+    },
+    {
+      "name": "ConsentDialog",
+      "category": "in use",
+      "title": "in use/ConsentDialog",
+      "file": "src/ui/ConsentDialog.jsx",
+      "exports": [
+        "ConsentDialog",
+        "ConsentSummary"
+      ],
+      "doc": "@property {React.ReactNode} value the chosen value — may contain user content (NOT lowercased)",
+      "props": {},
+      "stories": [
+        "Join",
+        "Contribute",
+        "Leave",
+        "Summary",
+        "JoinStatic",
+        "LeaveStatic"
       ]
     },
     {
@@ -549,6 +636,41 @@
       ]
     },
     {
+      "name": "DiffView",
+      "category": "in use",
+      "title": "in use/DiffView",
+      "file": "src/ui/DiffView.jsx",
+      "exports": [
+        "DiffView"
+      ],
+      "doc": "",
+      "props": {
+        "variant": {
+          "control": "inline-radio",
+          "options": [
+            "default",
+            "redaction"
+          ]
+        },
+        "file": {
+          "control": "text"
+        },
+        "hunks": {
+          "control": "false"
+        },
+        "matches": {
+          "control": "false"
+        }
+      },
+      "stories": [
+        "Default",
+        "Redaction",
+        "Empty",
+        "RedactionEmpty",
+        "LightTheme"
+      ]
+    },
+    {
       "name": "EmptyState",
       "category": "feedback",
       "title": "feedback/EmptyState",
@@ -581,6 +703,63 @@
         "ErrorState",
         "NoIcon",
         "ActionViaChildren"
+      ]
+    },
+    {
+      "name": "EvidenceCaption",
+      "category": "in use",
+      "title": "in use/EvidenceCaption",
+      "file": "src/ui/EvidenceCaption.jsx",
+      "exports": [
+        "EvidenceCaption",
+        "EvidenceTarget"
+      ],
+      "doc": "it into view (smooth only when motion is allowed), then toggles the `data-ec-flash` attribute the",
+      "props": {
+        "fragments": {
+          "control": "false"
+        },
+        "onJump": {
+          "control": "false"
+        }
+      },
+      "stories": [
+        "Default",
+        "LightTheme"
+      ]
+    },
+    {
+      "name": "Explainer",
+      "category": "in use",
+      "title": "in use/Explainer",
+      "file": "src/ui/Explainer.jsx",
+      "exports": [
+        "Explainer",
+        "Term"
+      ],
+      "doc": "@property {React.ReactNode} children the explanatory PROSE (rendered in var(--font-body)); may contain <Term> words.",
+      "props": {},
+      "stories": [
+        "Default",
+        "Inline",
+        "Terms"
+      ]
+    },
+    {
+      "name": "FacetRail",
+      "category": "in use",
+      "title": "in use/FacetRail",
+      "file": "src/ui/FacetRail.jsx",
+      "exports": [
+        "FacetRail"
+      ],
+      "doc": "",
+      "props": {},
+      "stories": [
+        "Default",
+        "Empty",
+        "AllActive",
+        "TogglesProvider"
       ]
     },
     {
@@ -619,6 +798,27 @@
         "SkeletonAvatarOnly",
         "SpinnerCustomIcon",
         "ToastNoClose"
+      ]
+    },
+    {
+      "name": "GroupedMultiSelect",
+      "category": "in use",
+      "title": "in use/GroupedMultiSelect",
+      "file": "src/ui/GroupedMultiSelect.jsx",
+      "exports": [
+        "GroupedMultiSelect"
+      ],
+      "doc": "@property {import('react').ReactNode} label the item title — user content, rendered verbatim.",
+      "props": {
+        "tokenLabel": {
+          "control": "text"
+        },
+        "onChange": {}
+      },
+      "stories": [
+        "Default",
+        "Collapsed",
+        "TogglesCascade"
       ]
     },
     {
@@ -683,6 +883,100 @@
       ]
     },
     {
+      "name": "Intensity",
+      "category": "in use",
+      "title": "in use/Intensity",
+      "file": "src/ui/Intensity.jsx",
+      "exports": [
+        "MapNode",
+        "IntensitySwatch",
+        "RampLegend",
+        "Heatmap",
+        "IntensityScope",
+        "coverageLevel",
+        "effortLevel",
+        "locSize"
+      ],
+      "doc": "",
+      "props": {
+        "label": {
+          "control": "text"
+        },
+        "loc": {
+          "control": "number"
+        },
+        "coverage": {
+          "control": "range"
+        },
+        "selected": {
+          "control": "boolean"
+        },
+        "violation": {
+          "control": "number"
+        },
+        "effortPct": {
+          "control": "range"
+        },
+        "size": {
+          "control": "inline-radio",
+          "options": [
+            "undefined",
+            "xs",
+            "sm",
+            "md",
+            "lg",
+            "xl"
+          ]
+        }
+      },
+      "stories": [
+        "Playground",
+        "Ramp",
+        "Nodes",
+        "Sizes",
+        "HeatmapRow"
+      ]
+    },
+    {
+      "name": "MapCanvas",
+      "category": "in use",
+      "title": "in use/MapCanvas",
+      "file": "src/ui/MapCanvas.jsx",
+      "exports": [
+        "MapCanvas"
+      ],
+      "doc": "@property {string} id stable key (repo-relative path)",
+      "props": {
+        "grain": {
+          "control": "inline-radio",
+          "options": [
+            "overview",
+            "folders",
+            "files"
+          ]
+        },
+        "height": {
+          "control": "range"
+        },
+        "onSelect": {},
+        "data": {
+          "control": "false"
+        },
+        "selectedId": {
+          "control": "false"
+        },
+        "ariaLabel": {
+          "control": "text"
+        }
+      },
+      "stories": [
+        "Default",
+        "Overview",
+        "Violations",
+        "Light"
+      ]
+    },
+    {
       "name": "Menu",
       "category": "overlays",
       "title": "overlays/Menu",
@@ -717,6 +1011,24 @@
         "Empty",
         "WithCaptionAndSeparator",
         "OpensAndSelects"
+      ]
+    },
+    {
+      "name": "ModerationQueue",
+      "category": "in use",
+      "title": "in use/ModerationQueue",
+      "file": "src/ui/ModerationQueue.jsx",
+      "exports": [
+        "ModerationQueue",
+        "ApprovalBar"
+      ],
+      "doc": "ApprovalBar — a sticky top bar for reviewing a single pending item. Once acted on it collapses",
+      "props": {},
+      "stories": [
+        "MemberRequests",
+        "PendingShares",
+        "ApprovalBarSticky",
+        "Empty"
       ]
     },
     {
@@ -805,6 +1117,213 @@
       ]
     },
     {
+      "name": "PolicySelect",
+      "category": "in use",
+      "title": "in use/PolicySelect",
+      "file": "src/ui/PolicySelect.jsx",
+      "exports": [
+        "PolicySelect"
+      ],
+      "doc": "@property {import('react').ReactNode} [rationale] one-line plain-prose explanation (body font).",
+      "props": {
+        "variant": {
+          "control": "inline-radio",
+          "options": [
+            "radio",
+            "select"
+          ]
+        },
+        "label": {
+          "control": "text"
+        },
+        "hint": {
+          "control": "text"
+        },
+        "onChange": {}
+      },
+      "stories": [
+        "DataAccess",
+        "Acceptance",
+        "Retention",
+        "Select",
+        "WithDisabledOption",
+        "Selects"
+      ]
+    },
+    {
+      "name": "ProviderIcon",
+      "category": "in use",
+      "title": "in use/ProviderIcon",
+      "file": "src/ui/ProviderIcon.jsx",
+      "exports": [
+        "ProviderIcon",
+        "ProviderTag",
+        "ProviderName",
+        "AccentLegend"
+      ],
+      "doc": "ProviderIcon — the real brand mark for a harness, single-color via currentColor.",
+      "props": {},
+      "stories": [
+        "Marks",
+        "Tags",
+        "Names",
+        "AccentLegendStory"
+      ]
+    },
+    {
+      "name": "RailShell",
+      "category": "in use",
+      "title": "in use/RailShell",
+      "file": "src/ui/RailShell.jsx",
+      "exports": [
+        "RailShell",
+        "RailSection",
+        "SplitRail"
+      ],
+      "doc": "@property {React.ReactNode} children the main content / canvas column (scrolls; min-width:0).",
+      "props": {},
+      "stories": [
+        "Default",
+        "RailLeft",
+        "Split",
+        "SplitInShell",
+        "MobileSheet"
+      ]
+    },
+    {
+      "name": "Redaction",
+      "category": "in use",
+      "title": "in use/Redaction",
+      "file": "src/ui/Redaction.jsx",
+      "exports": [
+        "RedactionReview",
+        "WhereDoesThisGo"
+      ],
+      "doc": "the level selector — a segmented control of mutually-exclusive options. the selected option",
+      "props": {
+        "level": {
+          "control": "inline-radio",
+          "options": [
+            "minimal",
+            "standard",
+            "maximum"
+          ]
+        },
+        "total": {
+          "control": "number"
+        },
+        "scanned": {
+          "control": "number"
+        },
+        "matches": {
+          "control": "false"
+        },
+        "onToggle": {
+          "control": "false"
+        },
+        "onLevel": {
+          "control": "false"
+        }
+      },
+      "stories": [
+        "Default",
+        "WithScanFailure",
+        "Empty",
+        "Transparency",
+        "LightTheme"
+      ]
+    },
+    {
+      "name": "RoleRoster",
+      "category": "in use",
+      "title": "in use/RoleRoster",
+      "file": "src/ui/RoleRoster.jsx",
+      "exports": [
+        "RoleRoster",
+        "ConfirmInline",
+        "DangerZone"
+      ],
+      "doc": "The inline destructive-confirm: a trigger button that, on click, swaps in place to",
+      "props": {},
+      "stories": [
+        "Roster",
+        "ConfirmRemove",
+        "Danger"
+      ]
+    },
+    {
+      "name": "SignIn",
+      "category": "in use",
+      "title": "in use/SignIn",
+      "file": "src/ui/SignIn.jsx",
+      "exports": [
+        "SignInProviders",
+        "HandleClaim",
+        "OnboardingCard"
+      ],
+      "doc": "SignInProviders — a multi-provider OAuth split button.",
+      "props": {},
+      "stories": [
+        "SplitButton",
+        "HandleClaimStory",
+        "States",
+        "Combined"
+      ]
+    },
+    {
+      "name": "StatTiles",
+      "category": "in use",
+      "title": "in use/StatTiles",
+      "file": "src/ui/StatTiles.jsx",
+      "exports": [
+        "StatTile",
+        "StatGrid",
+        "GovTile",
+        "ProviderBars"
+      ],
+      "doc": "The earth-tone accents a GovTile value may carry. Anything else (or omitted) reads as plain ink.",
+      "props": {},
+      "stories": [
+        "KPIs",
+        "Governance",
+        "ProviderDistribution",
+        "SingleTile"
+      ]
+    },
+    {
+      "name": "StepWizard",
+      "category": "in use",
+      "title": "in use/StepWizard",
+      "file": "src/ui/StepWizard.jsx",
+      "exports": [
+        "StepWizard",
+        "StepIndicator"
+      ],
+      "doc": "",
+      "props": {},
+      "stories": [
+        "Default",
+        "Indicator"
+      ]
+    },
+    {
+      "name": "StepsWaterfall",
+      "category": "in use",
+      "title": "in use/StepsWaterfall",
+      "file": "src/ui/StepsWaterfall.jsx",
+      "exports": [
+        "StepsWaterfall"
+      ],
+      "doc": "Human-readable ms duration: \"4.2s\", \"42s\", \"2m 14s\", \"1.5h\". Tabular-friendly, no leading zeros.",
+      "props": {},
+      "stories": [
+        "Default",
+        "Dense",
+        "WithError",
+        "Collapsed"
+      ]
+    },
+    {
       "name": "Switch",
       "category": "controls",
       "title": "controls/Switch",
@@ -881,6 +1400,22 @@
         "TwoTabs",
         "Controlled",
         "Interaction"
+      ]
+    },
+    {
+      "name": "TimeStrip",
+      "category": "in use",
+      "title": "in use/TimeStrip",
+      "file": "src/ui/TimeStrip.jsx",
+      "exports": [
+        "TimeStrip"
+      ],
+      "doc": "",
+      "props": {},
+      "stories": [
+        "Default",
+        "Sparse",
+        "Uncontrolled"
       ]
     },
     {
@@ -970,6 +1505,33 @@
       ]
     },
     {
+      "name": "ToolRenderers",
+      "category": "misc",
+      "title": "bufio package - bufio - Go Packages",
+      "file": "src/ui/ToolRenderers.jsx",
+      "exports": [
+        "ToolCall"
+      ],
+      "doc": "trim + single-line + bound a string for the collapsed-row arg preview.",
+      "props": {
+        "tool": {
+          "control": "false"
+        },
+        "defaultOpen": {
+          "control": "boolean"
+        }
+      },
+      "stories": [
+        "AllTools",
+        "Expanded",
+        "BashError",
+        "Read",
+        "Edit",
+        "Default",
+        "LightTheme"
+      ]
+    },
+    {
       "name": "Tooltip",
       "category": "overlays",
       "title": "overlays/Tooltip",
@@ -997,6 +1559,114 @@
         "PopoverBasic",
         "PopoverOpen",
         "PopoverWithState"
+      ]
+    },
+    {
+      "name": "Tour",
+      "category": "in use",
+      "title": "in use/Tour",
+      "file": "src/ui/Tour.jsx",
+      "exports": [
+        "Tour"
+      ],
+      "doc": "padding (px-ish, in CSS px) between the anchor and the spotlight ring.",
+      "props": {},
+      "stories": [
+        "Default",
+        "ReachesDone",
+        "SkipWithEsc"
+      ]
+    },
+    {
+      "name": "TranscriptMarkers",
+      "category": "in use",
+      "title": "in use/TranscriptMarkers",
+      "file": "src/ui/TranscriptMarkers.jsx",
+      "exports": [
+        "PhaseDivider",
+        "Phase",
+        "TaskBoundary",
+        "CheckpointMarker",
+        "TurnContextBar"
+      ],
+      "doc": "",
+      "props": {},
+      "stories": [
+        "Phases",
+        "TaskBoundaryDivider",
+        "Checkpoint",
+        "TurnContext",
+        "Divider"
+      ]
+    },
+    {
+      "name": "Treemap",
+      "category": "in use",
+      "title": "in use/Treemap",
+      "file": "src/ui/Treemap.jsx",
+      "exports": [
+        "Treemap",
+        "squarify"
+      ],
+      "doc": "tile per item (input length preserved). Zero/negative-value items get zero-size",
+      "props": {
+        "height": {
+          "control": "range"
+        },
+        "onSelect": {},
+        "data": {
+          "control": "false"
+        },
+        "ariaLabel": {
+          "control": "text"
+        }
+      },
+      "stories": [
+        "Default",
+        "Dense",
+        "SingleTile",
+        "Light"
+      ]
+    },
+    {
+      "name": "VisibilityControl",
+      "category": "in use",
+      "title": "in use/VisibilityControl",
+      "file": "src/ui/VisibilityControl.jsx",
+      "exports": [
+        "VisibilitySegmented",
+        "VisibilityEye",
+        "ScopeChip",
+        "FocusedModeToggle"
+      ],
+      "doc": "VisibilityEye — a compact glyph that signals a transcript's visibility, with a tooltip naming the",
+      "props": {
+        "value": {
+          "control": "inline-radio",
+          "options": [
+            "private",
+            "public",
+            "shared"
+          ]
+        },
+        "onChange": {
+          "control": "false"
+        },
+        "sharedNote": {
+          "control": "text"
+        },
+        "label": {
+          "control": "text"
+        }
+      },
+      "stories": [
+        "Eyes",
+        "Segmented",
+        "SharedNote",
+        "Scope",
+        "FocusedMode",
+        "AllControls",
+        "LightTheme"
       ]
     }
   ]

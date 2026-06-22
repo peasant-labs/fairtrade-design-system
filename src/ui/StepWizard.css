@@ -1,0 +1,170 @@
+/* StepWizard — a horizontal step indicator rail + a reachability-gated linear flow.
+   self-contained: this file owns every `sw-` rule; it leans on src/index.css only for the
+   shared design tokens (--sp-*, --ink-*, --amber*, --olive/--success, --rule*, --control-h,
+   --font-mono/-display, --focus-ring). square, hairline, amber-scarce, lowercase chrome.
+   step state never rides on color alone: current = amber fill + bold near-black number,
+   complete = olive + check glyph, future/locked = hairline + --ink-4 + a disabled cursor. */
+
+/* ── indicator rail ────────────────────────────────────────────────────────── */
+
+.sw-rail {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
+/* one number-marker + its label, stacked. the flex:1 connectors live between cells. */
+.sw-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+/* clickable marker (jump-back / current); future-locked renders the same box, disabled. */
+.sw-step {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.sw-step:disabled,
+.sw-step[aria-disabled='true'] { cursor: not-allowed; }
+.sw-step:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+/* the square number marker. hairline by default (future/locked). */
+.sw-mark {
+  --sw-mark-size: 28px;
+  width: var(--sw-mark-size);
+  height: var(--sw-mark-size);
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: var(--bd);
+  background: var(--surface);
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* complete = olive fill + check glyph; the marker stays square. */
+.sw-step--complete .sw-mark {
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--success-fg);
+}
+.sw-step--complete:not(:disabled):hover .sw-mark {
+  background: color-mix(in srgb, var(--success) 88%, var(--canvas));
+}
+
+/* current = amber fill + bold near-black number. the scarce amber, spent here. */
+.sw-step--current .sw-mark {
+  background: var(--amber-fill);
+  border-color: var(--amber-fill);
+  color: var(--amber-fill-ink);
+  font-weight: 700;
+}
+
+/* future-but-reachable: still hairline, but ink-2 + a live cursor so it reads as openable. */
+.sw-step--reachable .sw-mark { color: var(--ink-2); }
+.sw-step--reachable:hover .sw-mark { border-color: var(--rule-strong); color: var(--ink); }
+
+/* locked future step: hairline + dim, no affordance. */
+.sw-step--locked { cursor: not-allowed; }
+.sw-step--locked .sw-mark { color: var(--ink-4); }
+
+.sw-mark-check { width: var(--ic-sm); height: var(--ic-sm); }
+
+/* label under each number — lowercase chrome, mono, dims with the step. */
+.sw-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1.2;
+  text-transform: lowercase;
+  text-align: center;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+.sw-step--current .sw-label { color: var(--ink); }
+.sw-step--complete .sw-label,
+.sw-step--reachable .sw-label { color: var(--ink-2); }
+
+/* connector line between two markers. olive once the step behind it is complete. sits at the
+   marker's vertical mid so it reads as a rail, not an underline. */
+.sw-line {
+  flex: 1 1 auto;
+  height: 1px;
+  min-width: var(--sp-4);
+  margin-top: 14px; /* half of the 28px marker, so the rule meets each marker's centre */
+  background: var(--rule);
+}
+.sw-line--done { background: var(--success); }
+
+/* ── wizard shell ──────────────────────────────────────────────────────────── */
+
+.sw {
+  display: flex;
+  flex-direction: column;
+  border: var(--bd);
+  background: var(--surface);
+}
+
+.sw-head {
+  padding: var(--sp-5) var(--sp-5) var(--sp-4);
+  border-bottom: var(--bd);
+}
+
+/* per-step body slot. min-height keeps the footer from jumping as bodies change size. */
+.sw-body {
+  padding: var(--sp-5);
+  min-height: 96px;
+  color: var(--ink);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+}
+.sw-body:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
+
+/* a small mono kicker naming the active step above its body. */
+.sw-body-kicker {
+  display: block;
+  margin-bottom: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  color: var(--ink-3);
+}
+
+/* sticky footer action bar: back on the left, continue/submit on the right. */
+.sw-foot {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  border-top: var(--bd);
+  background: var(--surface);
+}
+
+/* a quiet "step n of m" counter, centred between the two actions. */
+.sw-count {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-variant-numeric: tabular-nums;
+  text-transform: lowercase;
+  color: var(--ink-3);
+}

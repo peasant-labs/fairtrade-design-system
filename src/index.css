@@ -45,6 +45,10 @@
   /* rule-strong is a functional control/input border (>=3:1); rule is a subtle structural divider */
   --rule: #3c382f; --rule-strong: #6f6a5f; --focus-ring: #cba35c;
   --amber: #cba35c; --amber-bright: #e6c483; --amber-dim: #937a45;
+  /* amber-fill is the golden amber used as a FILL behind near-black ink on selected/pressed/toggled
+     controls; split from --amber (which doubles as accent TEXT) so the light theme can keep amber-text
+     dark for WCAG while still rendering toggles as a genuine golden amber, not amber-dark. */
+  --amber-fill: #cba35c; --amber-fill-ink: #141003;
   --teal: #7ea69d; --olive: #9aa779; --clay: #c07f64; --mauve: #9a8cae; --on-amber: #141003;
   /* semantic status, mapped onto the earth palette (soft = tinted background, fg = label on a filled chip) */
   --success: #9aa779; --success-fg: #141003; --success-soft: rgba(154,167,121,.14);
@@ -72,6 +76,9 @@
   --ink-strong: #0d0c09; --ink: #27241f; --ink-2: #4a463e; --ink-3: #5c574d; --ink-4: #6f695e; --ink-5: #837d72;
   --rule: #c4bca8; --rule-strong: #8b836d; --focus-ring: #0d0c09;
   --amber: #8a5f1f; --amber-bright: #6e4c16; --amber-dim: #b09a63;
+  /* golden honey-amber fill for selected/toggled controls: reads as "amber" (not amber-dark), and
+     clears WCAG with near-black ink (5.6:1) plus a real 3.2:1 boundary against the white surface. */
+  --amber-fill: #b8841a; --amber-fill-ink: #1a1206;
   --teal: #3a675e; --olive: #586a3c; --clay: #974b32; --mauve: #594e72; --on-amber: #fffdf8;
   --success: #586a3c; --success-fg: #fffdf8; --success-soft: rgba(88,106,60,.14);
   --warning: #8a5f1f; --warning-fg: #fffdf8; --warning-soft: rgba(138,95,31,.14);
@@ -419,7 +426,11 @@
   .grid-cards { @apply grid gap-4 items-stretch; grid-template-columns: 1fr 1fr; }
   .card { @apply flex flex-col gap-3 bg-surface p-4; border: var(--bd-strong); }
   .card-head { @apply flex items-center justify-between gap-2; }
-  .card h3 { @apply text-md; }
+  /* card title rides the system display (mono) face like every other heading, so it never reads as a
+     lone sans heading marooned among the card's mono chrome. case is preserved (titles are user
+     content). the short summary below stays in the proportional reading face: that single sans block,
+     bracketed by mono chrome, is the intended chrome/prose boundary, not an accident. */
+  .card h3 { @apply text-md text-ink-strong; font-family: var(--font-display); font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; }
   .card .desc { @apply text-ink-2; font-size: var(--fs-body); }
   .card-foot { @apply flex items-center gap-4 flex-wrap; border-top: var(--bd); padding-top: var(--sp-3); margin-top: auto; }
   .metaitem { @apply inline-flex items-center gap-2 font-mono text-label text-ink-3; }
@@ -479,8 +490,10 @@
   .turn.asst .turn-head { @apply text-amber; }
   .turn.sub { border-left: 0; border-bottom: 0; background: color-mix(in srgb, var(--mauve) 7%, var(--surface)); }
   .turn.sub .turn-head { @apply text-mauve; }
-  /* subagent work bracketed as a nested thread */
-  .subtask { margin-left: var(--sp-5); border-left: 2px solid var(--mauve); border-bottom: var(--bd); }
+  /* subagent work as a contained nested block. the nesting reads from the indent + the "subagent"
+     head/foot elbows + the mauve top-accent; we deliberately DON'T draw a full-height left spine,
+     which on tall subagent threads distends into a long vertical line (visual noise). */
+  .subtask { margin-left: var(--sp-4); border: var(--bd); border-top: 2px solid var(--mauve); }
   .subtask-head { @apply flex items-center gap-2 font-mono text-label lowercase text-ink-3; padding: var(--sp-2) var(--sp-4); border-bottom: var(--bd); }
   .subtask-head .lucide { @apply text-mauve; width: var(--ic-sm); height: var(--ic-sm); }
   .subtask-head .who { @apply text-mauve; }
@@ -526,6 +539,17 @@
   .callout { @apply flex gap-3 text-ink-2 text-sm; padding: var(--sp-3); border: 1px solid color-mix(in srgb, var(--amber) 45%, var(--rule)); background: color-mix(in srgb, var(--amber) 10%, transparent); }
   .callout .lucide { @apply text-amber; width: var(--ic-md); height: var(--ic-md); margin-top: 2px; }
   .dlg-foot { @apply flex justify-end gap-3; flex: none; padding: var(--sp-3) var(--sp-4); border-top: var(--bd); }
+
+  /* consent axes: a compact, aligned summary of exactly what a consequential opt-in grants, so the
+     choice is legible at a glance before consent. an icon names each axis, a mono key labels it, the
+     value states the setting; keys and values each share a left edge (aligned columns). square,
+     token-driven, both themes free. (governance-summary pattern for join/consent dialogs.) */
+  .axes { list-style: none; margin: 0; padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); border: var(--bd); background: var(--surface-2); }
+  .axes li { display: grid; grid-template-columns: var(--ic-md) max-content 1fr; align-items: center; gap: var(--sp-1) var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.4; }
+  .axes li .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); }
+  .axes-k { color: var(--ink-3); text-transform: lowercase; }
+  .axes-v { color: var(--ink); }
+  @media (max-width: 420px) { .axes li { grid-template-columns: var(--ic-md) 1fr; } .axes-v { grid-column: 2; } }
 
   /* canvas */
   .canvas { @apply relative bg-surface overflow-hidden; height: 340px; border: var(--bd); background-image: radial-gradient(var(--grid) 1.2px, transparent 1.2px); background-size: 22px 22px; }
@@ -861,6 +885,12 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .tip-demo { gap: var(--sp-5); }
 }
 
+/* mobile horizontal padding: the 32px desktop gutter eats too much of a phone's width, so the page
+   gutter steps down on small screens (desktop-first; this only narrows, never widens). every surface
+   that pads off --gutter (sections, bands, groups, nav, docs) tightens together. */
+@media (max-width: 640px) { :root { --gutter: var(--sp-4); } }
+@media (max-width: 380px) { :root { --gutter: var(--sp-3); } }
+
 /* ======================================================================
    tier-2 components: states + overlays + chip depth (added 2026-06-16).
    additive, namespaced, token-driven; themes for free.
@@ -894,7 +924,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .btn[aria-busy="true"] { cursor: progress; }
 
   /* toggle: aria-pressed=true gets the filled, "on" treatment; off stays secondary */
-  .bs-toggle[aria-pressed="true"] { background: var(--amber); color: var(--on-amber); border-color: var(--amber); font-weight: 600; }
+  .bs-toggle[aria-pressed="true"] { background: var(--amber-fill); color: var(--amber-fill-ink); border-color: var(--amber-fill); font-weight: 600; }
   .bs-toggle[aria-pressed="true"]:hover { background: var(--amber-bright); border-color: var(--amber-bright); }
 
   /* button-group: one shared height, hairline seams, no double borders */
@@ -917,7 +947,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .bs-seg-opt + .bs-seg-opt { border-left: var(--bd-strong); }
   .bs-seg-opt .lucide { width: var(--ic-sm); height: var(--ic-sm); }
   .bs-seg-opt:hover { background: var(--surface-hover); color: var(--ink); }
-  .bs-seg-opt[aria-pressed="true"] { background: var(--amber); color: var(--on-amber); font-weight: 600; }
+  .bs-seg-opt[aria-pressed="true"] { background: var(--amber-fill); color: var(--amber-fill-ink); font-weight: 600; }
   .bs-seg-opt[aria-pressed="true"]:hover { background: var(--amber-bright); }
   .bs-seg-opt:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
 
@@ -1138,7 +1168,8 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   button.chip-toggle:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
   button.chip-toggle .chipx-tick { display: none; }
   button.chip-toggle[aria-pressed="true"] {
-    color: var(--on-amber); background: var(--amber); border-color: var(--amber);
+    color: var(--amber-fill-ink); background: var(--amber-fill); border-color: var(--amber-fill);
+    font-weight: 600;
   }
   button.chip-toggle[aria-pressed="true"] .chipx-tick { display: inline-flex; }
   button.chip-toggle[aria-pressed="true"]:hover { background: var(--amber-bright); border-color: var(--amber-bright); }
@@ -1156,7 +1187,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
     font-variant-numeric: tabular-nums;
     color: var(--ink-2); background: var(--surface-2); border: var(--bd-strong);
   }
-  .chipx-count.unread { color: var(--on-amber); background: var(--amber); border-color: var(--amber); }
+  .chipx-count.unread { color: var(--amber-fill-ink); background: var(--amber-fill); border-color: var(--amber-fill); font-weight: 600; }
 
   /* ---- tooltip ---- */
   /* tooltip + popover overlays (namespaced .tip-* / .pop-*); square, hairline,
@@ -1428,6 +1459,20 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .res:hover { transform: translateX(2px); }
   /* press feedback: controls dip slightly on active */
   .btn:active, .chip:active, .bs-seg-opt:active, .tag-on:active, .navctl.bx:active { transform: translateY(1px); }
+  /* press "glow then settle" on selected/toggle controls (button groups + chips/filters/toggles):
+     an amber ring + brighten snap in near-instantly on :active, then ease back to rest. the base
+     rule carries the slow settle; :active overrides the duration so the punch-in reads instant
+     (asymmetric transition). lives under no-preference, so reduced-motion gets neither glow nor settle.
+     in dark the amber ring on near-black reads as a soft glow; in light it is a subtle press ring. */
+  .bs-toggle, .bs-seg-opt {
+    transition: background var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease-out),
+                color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
+  }
+  button.chip-toggle:active, .bs-toggle:active, .bs-seg-opt:active {
+    background: var(--amber-bright); border-color: var(--amber-bright);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--amber) 34%, transparent);
+    transition-duration: 20ms;
+  }
   /* the live status dot gets a soft steady glow ring (no pulse/blink, just presence) */
   .navctl .dot { box-shadow: 0 0 0 3px color-mix(in srgb, var(--olive) 22%, transparent); }
   /* rail marker slides in rather than snapping */
@@ -2590,7 +2635,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .cex-topic { gap: var(--sp-1); max-width: 100%; min-width: 0; }
   .cex-topic-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cex-topic-n { flex: none; color: var(--ink-4); font-size: 11px; }
-  button.chip-toggle[aria-pressed="true"] .cex-topic-n { color: var(--on-amber); }
+  button.chip-toggle[aria-pressed="true"] .cex-topic-n { color: var(--amber-fill-ink); }
   .cex-opt { min-height: var(--target-min); }
   .cex-opt > span { display: inline-flex; align-items: center; gap: var(--sp-2); }
   .cex-fcount { color: var(--ink-4); font-size: var(--fs-label); }
@@ -3684,4 +3729,144 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 /* motion: Recharts entrance only when motion is welcome (we pass isAnimationActive accordingly). */
 @media (prefers-reduced-motion: reduce) {
   .chart .recharts-layer { animation: none !important; }
+}
+
+@layer components {
+  /* ---- terminal / tui recreation (56-terminal.jsx) ----
+     the peasant bubbletea/lipgloss tui (dashboard / sessions / trends) re-skinned onto the system
+     tokens: a windowed tab bar + screen + help bar, all-mono, square, amber-scarce, earth accents
+     mapping the original tokyo-night pastels (pink->clay, lilac->mauve, mint->olive, sky->teal). */
+  .tui { display: flex; flex-direction: column; min-height: 380px; background: var(--canvas); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); }
+  /* tab bar (app.go) */
+  .tui-tabs { display: flex; align-items: stretch; background: var(--surface-2); border-bottom: var(--bd); padding: 0 var(--sp-2); flex-wrap: wrap; }
+  .tui-tab { display: inline-flex; align-items: center; gap: var(--sp-2); height: var(--control-h); padding: 0 var(--sp-3); background: transparent; border: 0; color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; cursor: pointer; }
+  .tui-tab .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+  .tui-tab:hover { color: var(--ink); }
+  .tui-tab:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
+  .tui-tab-on { background: var(--amber-fill); color: var(--amber-fill-ink); font-weight: 600; }
+  .tui-tabs-spacer { flex: 1 1 var(--sp-4); }
+  .tui-status { display: inline-flex; align-items: center; color: var(--ink-4); padding-right: var(--sp-2); }
+  /* screen + help bar */
+  .tui-screen { flex: 1; min-height: 0; padding: var(--sp-4); overflow: auto; }
+  .tui-help { border-top: var(--bd); padding: var(--sp-2) var(--sp-4); color: var(--ink-4); font-style: italic; background: var(--surface); }
+
+  /* dashboard: labelled sections of metric cards (dashboard.go) */
+  .tui-dash { display: flex; flex-direction: column; gap: var(--sp-4); }
+  .tui-sec { border: var(--bd); padding: var(--sp-3); }
+  .tui-sec-head { font-weight: 700; text-transform: lowercase; margin-bottom: var(--sp-3); }
+  .tui-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--sp-3); }
+  .tui-card { display: flex; flex-direction: column; gap: 2px; padding: var(--sp-3); background: var(--surface); border: var(--bd); }
+  .tui-card-title { color: var(--ink-3); }
+  .tui-card-val { color: var(--ink-strong); font-weight: 700; font-size: var(--fs-lg); line-height: 1.1; }
+  .tui-card-sec { color: var(--ink-4); }
+  .tui-card-spark { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-1); }
+  .tui-spark { letter-spacing: 1px; line-height: 1; }
+  .tui-trend { font-weight: 600; }
+  .tui-trend-up { color: var(--olive); }
+  .tui-trend-down { color: var(--clay); }
+  .tui-trend-flat { color: var(--ink-4); }
+
+  /* sessions table -> detail (session.go) */
+  .tui-table { width: 100%; border-collapse: collapse; font-size: var(--fs-label); }
+  .tui-table th { text-align: left; text-transform: lowercase; color: var(--ink-3); font-weight: 700; padding: var(--sp-2) var(--sp-3); border-bottom: var(--bd-strong); }
+  .tui-table td { padding: var(--sp-2) var(--sp-3); border-bottom: var(--bd); color: var(--ink-2); }
+  .tui-num { text-align: right; }
+  .tui-mono { color: var(--ink); }
+  .tui-row-sel td { background: color-mix(in srgb, var(--mauve) 14%, var(--surface)); }
+  .tui-row-act { width: var(--control-h); text-align: center; padding: 0 !important; }
+  .tui-open { display: inline-flex; align-items: center; justify-content: center; width: var(--target-min); height: var(--target-min); background: transparent; border: 0; color: var(--ink-3); cursor: pointer; }
+  .tui-open:hover { color: var(--amber); }
+  .tui-open:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
+  .tui-detail { display: flex; flex-direction: column; gap: var(--sp-1); }
+  .tui-detail-h { font-weight: 700; color: var(--ink-strong); text-transform: lowercase; border-bottom: var(--bd); padding-bottom: 2px; margin-top: var(--sp-3); }
+  .tui-detail-h:first-child { margin-top: 0; }
+  .tui-kv { display: grid; grid-template-columns: max-content 1fr; gap: 2px var(--sp-4); margin-top: var(--sp-1); }
+  .tui-kv-k { color: var(--ink-3); }
+  .tui-kv-v { color: var(--ink); }
+  .tui-turns { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-1); }
+  .tui-turn-line { display: flex; gap: var(--sp-2); align-items: baseline; flex-wrap: wrap; }
+  .tui-turn-cur, .tui-turn-mark { color: var(--amber); white-space: pre; }
+  .tui-turn-n { color: var(--ink-2); font-weight: 600; }
+  .tui-turn-role { color: var(--amber); }
+  .tui-turn-text { color: var(--ink-2); flex: 1 1 55%; min-width: 12ch; }
+  .tui-turn-tool { display: flex; align-items: center; gap: var(--sp-1); color: var(--ink-4); padding-left: var(--sp-5); }
+  .tui-turn-tool .lucide { width: 12px; height: 12px; flex: none; }
+  .tui-back { align-self: flex-start; margin-top: var(--sp-3); height: var(--control-h-sm); padding: 0 var(--sp-3); background: transparent; border: var(--bd-strong); color: var(--ink-2); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; cursor: pointer; }
+  .tui-back:hover { color: var(--ink); border-color: var(--amber-dim); }
+  .tui-back:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+  /* trends: 7-day horizontal bar charts (trends.go) */
+  .tui-trends { display: flex; flex-direction: column; gap: var(--sp-4); }
+  .tui-chart { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .tui-bars { display: flex; flex-direction: column; gap: 2px; }
+  .tui-bar-row { display: grid; grid-template-columns: 11ch 1fr max-content; align-items: center; gap: var(--sp-3); }
+  .tui-bar-label { color: var(--ink-4); }
+  .tui-bar-track { height: 12px; background: var(--surface-2); }
+  .tui-bar-fill { display: block; height: 100%; min-width: 2px; }
+  .tui-bar-val { color: var(--ink); }
+  .tui-trends-foot { color: var(--ink-4); margin-top: var(--sp-2); }
+
+  @media (max-width: 560px) {
+    .tui-bar-row { grid-template-columns: 9ch 1fr; }
+    .tui-bar-val { display: none; }
+    .tui-status { display: none; }
+  }
+}
+
+@layer components {
+  /* ---- flow B: the peasant kickstart first-run wizard (56-terminal.jsx TuiWizard) ----
+     one frame, a "step N of M" header (the tui's lilac mapped to --mauve), interactive radios,
+     a config summary, and a staged ingestion progress view. all-mono, square, amber-scarce. */
+  .tuiw { min-height: 340px; }
+  .tuiw-head { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); background: var(--surface-2); }
+  .tuiw-step { color: var(--mauve); font-weight: 600; text-transform: lowercase; }
+  .tuiw-title { color: var(--ink-strong); font-weight: 700; text-transform: lowercase; }
+  .tuiw-body { flex: 1; min-height: 0; overflow: auto; padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
+  .tuiw-lede { font-family: var(--font-body); font-size: var(--fs-sm); line-height: 1.5; color: var(--ink-2); margin: 0; max-width: 64ch; }
+  /* radios */
+  .tuiw-radio { display: flex; flex-direction: column; gap: var(--sp-1); }
+  .tuiw-opt { display: grid; grid-template-columns: 1ch 1ch 1fr; align-items: baseline; gap: var(--sp-2); width: 100%; text-align: left; background: transparent; border: 0; padding: var(--sp-1) var(--sp-2); cursor: pointer; font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
+  .tuiw-opt:hover { background: var(--surface-hover); }
+  .tuiw-opt:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
+  .tuiw-cur { color: var(--amber); white-space: pre; }
+  .tuiw-dot { color: var(--ink-4); }
+  .tuiw-opt-on .tuiw-dot { color: var(--amber); }
+  .tuiw-opt-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .tuiw-opt-label { color: var(--ink-2); }
+  .tuiw-opt-on .tuiw-opt-label { color: var(--ink-strong); font-weight: 600; }
+  .tuiw-opt-desc { color: var(--ink-4); font-family: var(--font-body); font-size: var(--fs-sm); line-height: 1.45; }
+  /* provider checklist */
+  .tuiw-checks { display: flex; flex-direction: column; gap: var(--sp-1); font-size: var(--fs-label); color: var(--ink-2); }
+  .tuiw-check { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2); }
+  .tuiw-box { color: var(--olive); }
+  .tuiw-check-off { color: var(--ink-5); }
+  .tuiw-check-off .tuiw-box { color: var(--ink-5); }
+  .tuiw-check-n { color: var(--ink-4); }
+  .tuiw-sub { flex-basis: 100%; padding-left: var(--sp-5); color: var(--ink-4); }
+  /* summary kv */
+  .tuiw-kv { display: grid; grid-template-columns: max-content 1fr; gap: 2px var(--sp-4); font-size: var(--fs-label); }
+  .tuiw-kv-k { color: var(--ink-3); }
+  .tuiw-kv-v { color: var(--ink); }
+  /* ingestion stages */
+  .tuiw-stages { display: flex; flex-direction: column; gap: var(--sp-1); font-size: var(--fs-label); }
+  .tuiw-stage { display: grid; grid-template-columns: 1.5ch 10ch 1fr 6ch; align-items: center; gap: var(--sp-2); }
+  .tuiw-stage-icon { color: var(--ink-4); }
+  .tuiw-stage-done .tuiw-stage-icon { color: var(--olive); }
+  .tuiw-stage-active .tuiw-stage-icon { color: var(--amber); }
+  .tuiw-stage-label { color: var(--ink-2); text-transform: lowercase; }
+  .tuiw-stage-bar { height: 10px; background: var(--surface-2); }
+  .tuiw-stage-fill { display: block; height: 100%; background: var(--ink-3); }
+  .tuiw-stage-active .tuiw-stage-fill { background: var(--amber); }
+  .tuiw-stage-done .tuiw-stage-fill { background: var(--olive); }
+  .tuiw-stage-n { color: var(--ink-4); text-align: right; }
+  /* footer */
+  .tuiw-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; border-top: var(--bd); padding: var(--sp-2) var(--sp-4); background: var(--surface); }
+  .tuiw-foot-btns { display: flex; gap: var(--sp-2); }
+  .tuiw-btn { height: var(--control-h-sm); padding: 0 var(--sp-3); background: transparent; border: var(--bd-strong); color: var(--ink-2); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; cursor: pointer; }
+  .tuiw-btn:hover:not(:disabled) { color: var(--ink); border-color: var(--amber-dim); }
+  .tuiw-btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+  .tuiw-btn:disabled { opacity: .42; cursor: not-allowed; }
+  .tuiw-btn-primary { background: var(--amber-fill); color: var(--amber-fill-ink); border-color: var(--amber-fill); font-weight: 600; }
+  .tuiw-btn-primary:hover:not(:disabled) { background: var(--amber-bright); border-color: var(--amber-bright); color: var(--amber-fill-ink); }
+  .tuiw-keys { color: var(--ink-4); font-style: italic; }
 }

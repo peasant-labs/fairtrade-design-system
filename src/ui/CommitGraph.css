@@ -1,0 +1,270 @@
+/* CommitGraph styles — self-contained, token-only, square + hairline + mono.
+   Namespaced `cg-`. Lanes read by INK WEIGHT and dash pattern, never hue:
+     .cg-stroke-lane0 / .cg-stroke-self  -> var(--rule-strong)  (the spine)
+     .cg-stroke-branch                   -> var(--rule)         (lighter branch lanes)
+     dashed strokes                      -> "forked/merged out of view"
+   The only colour accent is amber, scarce, on the selected row + its dot. radius 0 throughout.
+   Motion is gated behind prefers-reduced-motion: no-preference; focus uses focus-visible only. */
+
+.cg {
+  display: flex;
+  flex-direction: column;
+  border: var(--bd);
+  background: var(--surface);
+  font-family: var(--font-mono);
+}
+
+.cg-empty {
+  margin: 0;
+  padding: var(--sp-5);
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+/* --- One commit band: gutter + row, stretched to a shared height ------------------------- */
+
+.cg-band {
+  display: flex;
+  align-items: stretch;
+  min-height: var(--sp-7); /* 40px — enough for the dot + a two-piece meta line */
+}
+
+.cg-band + .cg-band {
+  border-top: var(--bd);
+}
+
+/* --- Lane gutter: the SVG holds lines; the dot is an absolutely-placed HTML square -------- */
+
+.cg-gutter {
+  position: relative;
+  flex: 0 0 auto;
+  align-self: stretch;
+}
+
+.cg-svg {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+
+/* Stroke weights carry the lane hierarchy — colour stays out of it. */
+.cg-stroke-self,
+.cg-stroke-lane0 {
+  stroke: var(--rule-strong);
+  stroke-width: 1.25;
+}
+
+.cg-stroke-branch {
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+
+.cg-svg line {
+  stroke-linecap: square; /* square joins, no rounded ends */
+}
+
+/* The commit dot — a square, centred on its lane line. */
+.cg-dot {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+}
+
+.cg-dot-hollow {
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+}
+
+.cg-dot-filled {
+  background: var(--ink); /* filled = a session is behind it */
+  border: 1px solid var(--ink);
+}
+
+/* Selected: the scarce amber accent, on the dot (filled or hollow). */
+.cg-dot-sel.cg-dot-filled {
+  background: var(--amber-fill);
+  border-color: var(--amber-fill);
+}
+
+.cg-dot-sel.cg-dot-hollow {
+  border-color: var(--amber);
+}
+
+/* The sparkle: the non-colour, redundant "has a session" signal, pinned to the dot's corner. */
+.cg-spark {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  transform: translate(2px, -120%);
+  color: var(--ink-3);
+  pointer-events: none;
+}
+
+/* When the row is selected, the spark (in the sibling gutter) picks up the amber too. */
+.cg-band:has(.cg-row-sel) .cg-spark {
+  color: var(--amber);
+}
+
+/* --- The row button: message + meta ------------------------------------------------------- */
+
+.cg-row {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4) var(--sp-2) 0;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  color: var(--ink-2);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cg-row,
+  .cg-older {
+    transition: background-color var(--dur-1, 120ms) var(--ease-out, ease);
+  }
+}
+
+.cg-row:hover {
+  background: var(--surface-hover);
+}
+
+.cg-row:focus-visible,
+.cg-older:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Selected row: a hairline amber spine + slightly stronger ink. Square, no fill flood. */
+.cg-row-sel {
+  color: var(--ink);
+  box-shadow: inset 2px 0 0 0 var(--amber);
+}
+
+.cg-msg {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-sm);
+  color: inherit;
+  /* USER CONTENT — never lowercase the commit message. */
+}
+
+/* --- Meta cluster: merged chip, tip, branch chip, time ------------------------------------ */
+
+.cg-meta {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.cg-branch {
+  display: inline-flex;
+  align-items: center;
+  max-width: 16ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px var(--sp-2);
+  border: var(--bd);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink-3);
+  /* USER CONTENT — branch name keeps its case. */
+}
+
+.cg-merged {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 1px var(--sp-2);
+  border: var(--bd);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  color: var(--ink-3); /* dimmed — folded into the main line */
+}
+
+.cg-merged-ic {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+}
+
+/* A branch-tip affordance — a small square mono tag (weight, not hue). */
+.cg-tip {
+  padding: 1px var(--sp-2);
+  border: var(--bd-strong);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.cg-time {
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* visually-hidden — keeps "session" available to AT without crowding the row. */
+.cg-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- "show older" ghost row --------------------------------------------------------------- */
+
+.cg-older-band {
+  display: flex;
+  align-items: stretch;
+  min-height: var(--sp-6);
+  border-top: var(--bd);
+}
+
+.cg-gutter-older {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.cg-older {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-4) var(--sp-2) 0;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  color: var(--ink-3);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cg-older:hover {
+  background: var(--surface-hover);
+  color: var(--ink-2);
+}
+
+.cg-older-ic {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+}

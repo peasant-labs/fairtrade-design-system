@@ -1,0 +1,212 @@
+/* PolicySelect — governance policy selector. all dimensions/colours are tokens from src/index.css;
+   no hardcoded hex or px (markers/hit-areas are sized off the icon + spacing tokens). namespace pol-.
+   selection is conveyed by the drawn marker dot + bold label, never colour alone (WCAG 1.4.1). */
+
+.pol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* mono, lowercase chrome label + optional one-line mono hint */
+.pol-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1.3;
+  text-transform: lowercase;
+  color: var(--ink-2);
+}
+
+.pol-hint {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1.4;
+  color: var(--ink-3);
+  margin-top: calc(-1 * var(--sp-1));
+}
+
+/* ── radio variant ───────────────────────────────────────────────────────── */
+
+.pol-radios {
+  display: flex;
+  flex-direction: column;
+  border: var(--bd);
+  background: var(--surface);
+}
+
+/* each row: marker column + text column. >=24px hit target via padding + marker height.
+   hairline divider between rows (not on the first) keeps the group as one bordered block. */
+.pol-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.pol-row + .pol-row {
+  border-top: var(--bd);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pol-row {
+    transition: background-color var(--dur-1, 120ms) var(--ease-out, ease),
+      border-color var(--dur-1, 120ms) var(--ease-out, ease);
+  }
+  .pol-marker,
+  .pol-marker-dot {
+    transition: border-color var(--dur-1, 120ms) var(--ease-out, ease),
+      transform var(--dur-1, 120ms) var(--ease-out, ease),
+      opacity var(--dur-1, 120ms) var(--ease-out, ease);
+  }
+}
+
+.pol-row:hover {
+  background: var(--surface-hover);
+}
+
+.pol-row:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.pol-row[data-checked] {
+  background: var(--surface-2);
+}
+
+.pol-row[data-disabled] {
+  cursor: not-allowed;
+  color: var(--ink-4);
+  background: var(--surface);
+}
+
+/* marker: a square outline that contains a centred dot; the dot is hidden when unchecked
+   and shown (amber fill) when checked. sized off the icon token so it scales with the type. */
+.pol-marker {
+  flex: none;
+  box-sizing: border-box;
+  width: var(--ic-lg);
+  height: var(--ic-lg);
+  /* align the marker optically with the first line of the label */
+  margin-top: calc((var(--fs-body) * 1.3 - var(--ic-lg)) / 2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rule-strong);
+  background: var(--canvas);
+}
+
+.pol-marker-dot {
+  width: var(--sp-2);
+  height: var(--sp-2);
+  background: var(--amber-fill);
+  opacity: 0;
+  transform: scale(0.4);
+}
+
+.pol-row[data-checked] .pol-marker {
+  border-color: var(--amber-dim);
+}
+
+.pol-row[data-checked] .pol-marker-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.pol-row[data-disabled] .pol-marker {
+  border-color: var(--rule);
+}
+
+.pol-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+/* mono option label; bolds when its row is the current selection (a second, non-colour cue) */
+.pol-opt-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.pol-row[data-checked] .pol-opt-label {
+  font-weight: 700;
+  color: var(--ink-strong);
+}
+
+.pol-row[data-disabled] .pol-opt-label {
+  color: var(--ink-4);
+}
+
+/* the one-line rationale: plain prose in the body font, dim, sits beneath the label */
+.pol-rationale {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.pol-row[data-disabled] .pol-rationale {
+  color: var(--ink-5);
+}
+
+/* ── select variant ──────────────────────────────────────────────────────── */
+
+.pol-select-wrap {
+  position: relative;
+  display: block;
+}
+
+.pol-select {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--control-h);
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  color: var(--ink);
+  background: var(--surface);
+  border: var(--bd-strong);
+  padding: 0 var(--sp-7) 0 var(--sp-3);
+  outline: none;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pol-select {
+    transition: border-color var(--dur-1, 120ms) var(--ease-out, ease);
+  }
+}
+
+.pol-select:hover {
+  border-color: var(--amber-dim);
+}
+
+.pol-select:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* decorative trailing chevron; clicks fall through to the native select */
+.pol-caret {
+  position: absolute;
+  right: var(--sp-3);
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  color: var(--ink-3);
+  pointer-events: none;
+}
+
+/* rationale beneath the select tracks the chosen option */
+.pol-select-rationale {
+  margin-top: var(--sp-1);
+}

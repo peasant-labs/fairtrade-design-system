@@ -1,0 +1,441 @@
+/* MapCanvas (.mc-*) — self-contained styles for the code-structure map. tokens only,
+   square corners (radius 0) EVERYWHERE incl nodes, edges (90° joins) + minimap,
+   hairline rule borders, mono labels with tabular nums. the node FILL is a STRICT
+   MONOCHROME coverage ramp (--ink-strong mixed into --surface at a rising weight per
+   data-cov 0..4, NO hue). amber is scarce — selection only. clay is the ONLY red —
+   violations only. transitions live solely inside prefers-reduced-motion:no-preference,
+   and the canvas NEVER hijacks page scroll (zoom is controls + keys, not wheel). */
+
+.mc {
+  --mc-cov-mix: 0%; /* per-node coverage mix weight, set by [data-cov] below */
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface);
+  border: var(--bd);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  overflow: hidden;
+}
+
+/* visually-hidden live region (does not collapse to display:none — SRs must read it). */
+.mc-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ toolbar */
+.mc-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex: none;
+  height: var(--control-h);
+  padding: 0 var(--sp-3);
+  border-bottom: var(--bd);
+  background: var(--surface-2);
+}
+
+/* segmented control: three square cells sharing seams; the active cell sits on the
+   elevated surface with a strong rule + amber-dim left edge marker (not colour-only —
+   the active cell also carries a check glyph). */
+.mc-seg {
+  display: inline-flex;
+  border: var(--bd-strong);
+  height: var(--control-h-sm);
+}
+.mc-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 24px;
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-left: var(--bd);
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  cursor: pointer;
+}
+.mc-seg-btn:first-child { border-left: 0; }
+.mc-seg-btn:hover { color: var(--ink); background: var(--surface-hover); }
+.mc-seg-btn[data-active='true'] {
+  color: var(--ink-strong);
+  background: var(--surface-elev);
+  box-shadow: inset 2px 0 0 var(--amber-dim);
+}
+.mc-seg-btn .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--amber); }
+
+/* search combobox */
+.mc-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h-sm);
+  min-width: 180px;
+  border: var(--bd-strong);
+  background: var(--canvas);
+}
+.mc-search-ico {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  margin: 0 var(--sp-1) 0 var(--sp-2);
+  color: var(--ink-3);
+  flex: none;
+}
+.mc-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  padding: 0 var(--sp-2) 0 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  outline: none;
+}
+.mc-search-input::placeholder { color: var(--ink-4); }
+.mc-search:focus-within { border-color: var(--amber-dim); }
+
+/* results popover: a square dropdown of matched nodes, listbox semantics. */
+.mc-results {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 0;
+  z-index: 5;
+  min-width: 240px;
+  max-width: 360px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--surface-elev);
+  border: var(--bd-strong);
+  box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--canvas) 80%, transparent);
+}
+.mc-result {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-top: var(--bd);
+  color: var(--ink-2);
+  font-size: var(--fs-label);
+  cursor: pointer;
+}
+.mc-result:first-child { border-top: 0; }
+.mc-result:hover { background: var(--surface-hover); color: var(--ink); }
+.mc-result[aria-selected='true'] { box-shadow: inset 2px 0 0 var(--amber); }
+.mc-result .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); flex: none; }
+.mc-result-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ------------------------------------------------------------------ viewport */
+/* the pannable canvas surface: a square dot-grid drawn from two layered radial
+   gradients on the page canvas. position:relative so the absolutely-placed stage,
+   zoom controls, minimap + legend anchor to it. overflow:hidden clips the panned
+   stage; touch-action:none lets pointer-drag pan without the browser scrolling. */
+.mc-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background-color: var(--canvas);
+  background-image: radial-gradient(var(--rule) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: 0 0;
+  cursor: grab;
+  touch-action: none;
+  outline: none;
+}
+.mc-viewport:active { cursor: grabbing; }
+/* the neuroinclusive focus ring on the canvas surface itself (keyboard entry point). */
+.mc-viewport:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: -3px;
+}
+
+.mc-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: var(--ink-4);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+}
+
+/* the transformed stage: a single translate+scale frame shared by edges + nodes.
+   transform-origin top-left so the px translate maths in JS stays simple. */
+.mc-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+/* edges sit under the nodes (same coordinate frame). pointer-events:none so the SVG
+   never eats node/canvas pointers. */
+.mc-edges {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.mc-edge-path {
+  fill: none;
+  stroke: var(--rule-strong);
+  /* shape-rendering crispEdges keeps the 90° joins hard (square, never blurred). */
+  shape-rendering: crispEdges;
+}
+.mc-edge[data-kind='activity'] .mc-edge-path {
+  stroke: var(--rule);
+  stroke-dasharray: 4 3; /* dashed = co-edit activity (kind, orthogonal to width) */
+}
+.mc-edge-head { fill: var(--rule-strong); shape-rendering: crispEdges; }
+
+/* ------------------------------------------------------------------ node */
+/* the square node. [data-cov] sets --mc-cov-mix; the fill mixes --ink-strong into
+   --surface at that weight — a pure monochrome step, NO hue. the ramp is even-ish in
+   perceived weight (not linear) so the middle band stays distinguishable. */
+.mc-node[data-cov='0'] { --mc-cov-mix: 4%; }
+.mc-node[data-cov='1'] { --mc-cov-mix: 18%; }
+.mc-node[data-cov='2'] { --mc-cov-mix: 38%; }
+.mc-node[data-cov='3'] { --mc-cov-mix: 64%; }
+.mc-node[data-cov='4'] { --mc-cov-mix: 90%; }
+
+.mc-node {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--sp-1);
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border: var(--bd);
+  background: color-mix(in srgb, var(--ink-strong) var(--mc-cov-mix), var(--surface));
+  color: var(--ink);
+  font-family: var(--font-mono);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+}
+/* contrast-aware ink: the top coverage levels are dark enough (light enough in dark
+   theme) that --ink fails 4.5:1 against the fill, so the name + meta flip to --canvas
+   — the readable inverse in BOTH themes by construction of the ramp. */
+.mc-node[data-ink-flip='true'] { color: var(--canvas); }
+
+.mc-node:hover { border-color: var(--rule-strong); }
+
+/* keyboard roving focus: the standard neuroinclusive ring (3px, offset). z-index so
+   it clears neighbours + the edges layer. */
+.mc-node[data-focused='true'] {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  z-index: 3;
+}
+
+/* SELECTION: an amber border (the scarce accent) PLUS a corner marker — never colour
+   alone. an inset amber box-shadow reads as a 2px square border without disturbing
+   the 1px layout border. */
+.mc-node[data-selected='true'] {
+  border-color: var(--amber);
+  box-shadow: inset 0 0 0 2px var(--amber);
+  z-index: 2;
+}
+/* the discrete selection marker: a small amber square pinned to the top-left corner
+   (a SHAPE that appears — the orthogonal "selected" channel). */
+.mc-node-marker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--sp-2);
+  height: var(--sp-2);
+  background: var(--amber);
+  pointer-events: none;
+}
+
+.mc-node-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.mc-node-ico {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: none;
+  color: inherit;
+  opacity: 0.85;
+}
+.mc-node-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-label);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
+}
+
+/* VIOLATION badge: clay (the ONLY red here) + a warning glyph + a count. shape + glyph
+   + count are all present, so the signal never rests on colour. */
+.mc-node-viol {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  padding: 0 4px;
+  border: 1px solid var(--clay);
+  color: var(--clay);
+  font-size: var(--fs-micro);
+  line-height: 1.4;
+}
+.mc-node-viol .lucide { width: 11px; height: 11px; color: var(--clay); }
+/* on the darkest fills the clay still needs to read — its own border carries it, but
+   keep the ink-flip from washing the badge: pin the badge ink regardless of flip. */
+.mc-node[data-ink-flip='true'] .mc-node-viol,
+.mc-node[data-ink-flip='true'] .mc-node-viol .lucide { color: var(--clay); }
+
+.mc-node-meta {
+  display: block;
+  font-size: var(--fs-micro);
+  line-height: 1.2;
+  color: inherit;
+  opacity: 0.72;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ zoom controls */
+/* a vertical stack of square buttons, bottom-right, sharing seams (peasant amendment 3
+   on-canvas controls). each clears the 24px target via --control-h-sm (28). */
+.mc-zoom {
+  position: absolute;
+  right: var(--sp-3);
+  bottom: var(--sp-3);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  border: var(--bd-strong);
+  background: var(--surface);
+}
+.mc-zoom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  border: 0;
+  border-top: var(--bd);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.mc-zoom-btn:first-child { border-top: 0; }
+.mc-zoom-btn:hover { color: var(--ink-strong); background: var(--surface-hover); }
+.mc-zoom-btn .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+
+/* ------------------------------------------------------------------ minimap */
+/* a small scaled overview, top-right: every node as a faint coverage-ramped square,
+   the current viewport as an amber-outlined rectangle. decorative (aria-hidden) — it
+   restates on-canvas state. square frame, no rounding. */
+.mc-minimap {
+  position: absolute;
+  top: var(--sp-3);
+  right: var(--sp-3);
+  z-index: 6;
+  width: 152px;
+  height: 100px;
+  padding: var(--sp-1);
+  border: var(--bd-strong);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-sizing: border-box;
+}
+.mc-minimap-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.mc-mini-node {
+  fill: color-mix(in srgb, var(--ink-strong) 22%, var(--surface));
+  stroke: none;
+}
+.mc-mini-node[data-cov='3'] { fill: color-mix(in srgb, var(--ink-strong) 50%, var(--surface)); }
+.mc-mini-node[data-cov='4'] { fill: color-mix(in srgb, var(--ink-strong) 72%, var(--surface)); }
+.mc-mini-view {
+  fill: color-mix(in srgb, var(--amber) 12%, transparent);
+  stroke: var(--amber);
+  stroke-width: 6; /* in graph-space units; reads as a hairline once scaled down */
+  vector-effect: non-scaling-stroke;
+  shape-rendering: crispEdges;
+}
+
+/* ------------------------------------------------------------------ legend */
+/* a quiet bottom-left caption keeping the four channels self-describing, text + glyph
+   only (never hue). aria-hidden — the encoding is also carried per-node in aria-label. */
+.mc-legend {
+  position: absolute;
+  left: var(--sp-3);
+  bottom: var(--sp-3);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-1) var(--sp-3);
+  border: var(--bd);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--ink-3);
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+  pointer-events: none;
+}
+.mc-legend-item { display: inline-flex; align-items: center; gap: var(--sp-1); }
+.mc-legend-item .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-4); }
+.mc-legend-viol .lucide { color: var(--clay); }
+.mc-legend-ramp { gap: var(--sp-2); }
+.mc-ramp-sw {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--rule);
+}
+.mc-ramp-sw[data-cov='0'] { background: color-mix(in srgb, var(--ink-strong) 4%, var(--surface)); }
+.mc-ramp-sw[data-cov='1'] { background: color-mix(in srgb, var(--ink-strong) 18%, var(--surface)); }
+.mc-ramp-sw[data-cov='2'] { background: color-mix(in srgb, var(--ink-strong) 38%, var(--surface)); }
+.mc-ramp-sw[data-cov='3'] { background: color-mix(in srgb, var(--ink-strong) 64%, var(--surface)); }
+.mc-ramp-sw[data-cov='4'] { background: color-mix(in srgb, var(--ink-strong) 90%, var(--surface)); }
+
+/* ------------------------------------------------------------------ motion */
+/* transitions ONLY when motion is welcome; otherwise hover/selection edges snap. the
+   stage transform is deliberately NOT transitioned even here — pan/zoom must track the
+   pointer 1:1 with no lag (an eased transform fights a drag). */
+@media (prefers-reduced-motion: no-preference) {
+  .mc-seg-btn,
+  .mc-result,
+  .mc-zoom-btn,
+  .mc-node {
+    transition:
+      color var(--dur-1) var(--ease-out),
+      background var(--dur-1) var(--ease-out),
+      border-color var(--dur-1) var(--ease-out),
+      box-shadow var(--dur-1) var(--ease-out);
+  }
+}

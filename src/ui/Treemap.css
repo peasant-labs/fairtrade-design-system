@@ -1,0 +1,116 @@
+/* treemap (.tm-*) — self-contained styles for the squarified treemap. tokens only,
+   square corners (radius 0), hairline rule borders, mono labels with tabular nums.
+   the fill is a STRICT MONOCHROME ramp: each tile mixes the foreground ink into
+   --surface at a weight rising with data-level (0..4), so faint -> strong reads as
+   the second metric with NO hue. levels >= 3 get dark enough that --ink fails
+   contrast, so .tm-tile--ink-flip switches the label to --canvas (the readable
+   inverse). transitions live only inside prefers-reduced-motion: no-preference. */
+
+.tm {
+  position: relative;
+  width: 100%;
+  /* the hairline gaps between tiles ARE this backdrop showing through the 1px
+     border-box insets; --rule on --surface keeps the grid legible as a unit. */
+  background: var(--surface);
+  border: var(--bd);
+  box-sizing: border-box;
+  /* tabular figures everywhere a number sits (the meta line + any numeric label). */
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ a tile */
+.tm-tile {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  /* the hairline gap: every tile carries its own rule, and the 1px overlap reads as
+     a single crisp seam between neighbours (square corners, never rounded). */
+  border: var(--bd);
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  /* min hit area: tiny tiles still clear the 24px target (the label is suppressed
+     below MIN_LABEL_* in jsx, but the button stays clickable + focusable). */
+  min-width: 24px;
+  min-height: 24px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+  /* level 0 baseline; data-level overrides --tm-mix below. the fill mixes the ink
+     into the surface at --tm-mix, a pure monochrome step — no accent, no hue. */
+  --tm-mix: 0%;
+  background: color-mix(in srgb, var(--ink-strong) var(--tm-mix), var(--surface));
+  font-family: var(--font-mono);
+}
+
+/* the ramp: five deliberate steps. faint (barely above surface) -> strong (deep,
+   near --ink-strong). gaps are even-ish in perceived weight, not linear, so the
+   middle band stays distinguishable. */
+.tm-tile[data-level='0'] { --tm-mix: 6%; }
+.tm-tile[data-level='1'] { --tm-mix: 20%; }
+.tm-tile[data-level='2'] { --tm-mix: 40%; }
+.tm-tile[data-level='3'] { --tm-mix: 66%; }
+.tm-tile[data-level='4'] { --tm-mix: 92%; }
+
+/* contrast-aware ink: the top two levels are dark enough (in dark theme, light
+   enough) that --ink fails 4.5:1 against the fill, so flip the label to --canvas,
+   which is the ink's readable inverse in BOTH themes by construction of the ramp. */
+.tm-tile--ink-flip { color: var(--canvas); }
+
+.tm-tile-label {
+  display: block;
+  max-width: 100%;
+  padding: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-label);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  /* truncate to one line with an ellipsis; the full label lives in title + aria. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: inherit;
+}
+
+/* hover/focus: a subtle inset lift via the border (not a colour swap, so the
+   monochrome encoding never moves). amber-dim is the scarce accent, used only on
+   the rule to mark the interactive edge — the fill stays put. */
+.tm-tile:hover {
+  border-color: var(--amber-dim);
+}
+
+/* the standard neuroinclusive focus ring — must clear the overflow:hidden of the
+   tile, so it sits above siblings while focused. */
+.tm-tile:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: -1px;
+  z-index: 2;
+  position: absolute;
+}
+
+/* ------------------------------------------------------------------ meta line */
+/* a quiet bottom-right caption: tile count + summed value. decorative (aria-hidden):
+   it restates the group aria-label, so it never double-announces. */
+.tm-meta {
+  position: absolute;
+  right: var(--sp-2);
+  bottom: var(--sp-1);
+  z-index: 3;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1;
+  text-transform: lowercase;
+  color: var(--ink-4);
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  padding: var(--sp-1) var(--sp-2);
+  border: var(--bd);
+}
+
+/* transitions ONLY when motion is welcome; otherwise the hover edge snaps. */
+@media (prefers-reduced-motion: no-preference) {
+  .tm-tile {
+    transition: border-color var(--dur-1) var(--ease-out),
+      background var(--dur-1) var(--ease-out);
+  }
+}

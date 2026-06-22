@@ -1,0 +1,433 @@
+/* ToolRenderers — the agent transcript's tool-call renderers. all values are tokens (no
+   hardcoded hex/px): spacing, borders, icons, the diff add/del palette, surfaces, ink, rules, and
+   the earth accents (mauve task, clay error, teal webfetch, amber accent). square corners
+   (radius 0). type is
+   var(--font-mono) for ALL code/args/output (line numbers tabular); chrome is lowercased but
+   code CONTENT is NEVER lowercased (.trx-code opts out). status is icon + word, never color
+   alone. focus-visible = 3px var(--focus-ring) offset 2px; toggle targets clear the 24px floor.
+   transitions only under prefers-reduced-motion: no-preference. classes namespaced trx-. */
+
+.trx {
+  display: flex;
+  flex-direction: column;
+  border: var(--bd);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+.trx + .trx { border-top: 0; }
+
+/* ── collapsed row (the toggle button) ──────────────────────────────────────── */
+/* the whole row is the toggle — a real <button> carrying aria-expanded. its min-height
+   clears the 24px target floor; chevron + tool icon + name + preview + duration + status. */
+.trx-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: var(--control-h);
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.trx-row:hover { background: var(--surface-hover); }
+
+.trx-chevron {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: none;
+  color: var(--ink-4);
+}
+/* the chevron rotates to point down when open — a redundant cue alongside aria-expanded. */
+.trx-open > .trx-row > .trx-chevron { transform: rotate(90deg); }
+
+.trx-tool-icon {
+  width: var(--ic-md);
+  height: var(--ic-md);
+  flex: none;
+  color: var(--ink-2);
+}
+
+/* tool name — the one bit of display-font emphasis; it is a proper name, kept verbatim. */
+.trx-tool-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--ink-strong);
+  letter-spacing: -0.01em;
+  flex: none;
+}
+
+/* one-line arg preview — code, so it keeps its case; truncates to keep the row a single line. */
+.trx-tool-preview {
+  color: var(--ink-3);
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trx-tool-dur {
+  color: var(--ink-4);
+  font-size: var(--fs-micro);
+  flex: none;
+  margin-left: auto;
+}
+/* when there is no preview to push it, the duration still parks at the right edge. */
+.trx-tool-preview + .trx-tool-dur { margin-left: var(--sp-2); }
+
+/* ── status pill — icon + WORD, never color alone ───────────────────────────── */
+.trx-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex: none;
+  padding: 0 var(--sp-2);
+  height: var(--ic-lg);
+  border: var(--bd);
+  background: var(--surface-2);
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+}
+.trx-status svg { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+
+.trx-status-ok { color: var(--olive); border-color: var(--olive); }
+.trx-status-error { color: var(--clay); border-color: var(--clay); }
+.trx-status-word { letter-spacing: 0; }
+
+/* ── expanded panel ─────────────────────────────────────────────────────────── */
+.trx-panel { border-top: var(--bd); background: var(--surface); }
+
+.trx-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+}
+
+.trx-empty {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+}
+
+/* the eyebrow label that captions a sub-block (stdout / arguments / exit). */
+.trx-eyebrow {
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-4);
+}
+
+/* ── code: the universal mono surface, case preserved ───────────────────────── */
+/* every code/args/output cell carries .trx-code: mono, never lowercased even inside the
+   lowercased chrome around it. */
+.trx-code {
+  font-family: var(--font-mono);
+  text-transform: none;
+}
+
+.trx-codeblock {
+  border: var(--bd);
+  background: var(--surface-2);
+  overflow-x: auto;
+  line-height: 1.55;
+}
+
+.trx-pre {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border: var(--bd);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* ── shared file header (read / edit / write) ───────────────────────────────── */
+.trx-fileline {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+}
+.trx-fileline-path {
+  color: var(--ink-strong);
+  font-size: var(--fs-sm);
+  word-break: break-all;
+  min-width: 0;
+}
+.trx-fileline-meta {
+  color: var(--ink-4);
+  font-size: var(--fs-micro);
+  flex: none;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* ── read: numbered excerpt ─────────────────────────────────────────────────── */
+.trx-coderow {
+  display: grid;
+  grid-template-columns: 3.25rem 1fr;
+  align-items: stretch;
+  min-height: calc(var(--fs-sm) * 1.55);
+}
+.trx-lineno {
+  padding: 0 var(--sp-2);
+  text-align: right;
+  color: var(--ink-4);
+  user-select: none;
+  border-right: var(--bd);
+}
+.trx-coderow > .trx-code {
+  padding: 0 var(--sp-2);
+  color: var(--ink);
+  white-space: pre;
+}
+
+/* ── edit: a tiny unified diff ──────────────────────────────────────────────── */
+/* mirrors DiffView: rail | sign | text. the +/− glyph is a REDUNDANT cue so add/del is
+   never color-only; add/del backgrounds + matching rails + glyph colors, no highlighting. */
+.trx-diff {
+  border: var(--bd);
+  background: var(--surface-2);
+  overflow-x: auto;
+  line-height: 1.55;
+}
+.trx-diffrow {
+  display: grid;
+  grid-template-columns: 3px 1.25rem 1fr;
+  align-items: stretch;
+  min-height: calc(var(--fs-sm) * 1.55);
+}
+.trx-diff-rail { grid-column: 1; background: transparent; }
+.trx-diff-sign {
+  grid-column: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+  user-select: none;
+}
+.trx-diff-sign svg { width: var(--ic-sm); height: var(--ic-sm); }
+.trx-diff-text {
+  grid-column: 3;
+  padding: 0 var(--sp-2);
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.trx-diff-add { background: var(--add-bg); }
+.trx-diff-add .trx-diff-rail { background: var(--add-rail); }
+.trx-diff-add .trx-diff-sign { color: var(--add-rail); }
+.trx-diff-add .trx-diff-text { color: var(--add-text); }
+
+.trx-diff-del { background: var(--del-bg); }
+.trx-diff-del .trx-diff-rail { background: var(--del-rail); }
+.trx-diff-del .trx-diff-sign { color: var(--del-rail); }
+.trx-diff-del .trx-diff-text { color: var(--del-text); }
+
+/* ── bash ───────────────────────────────────────────────────────────────────── */
+.trx-bash-cmd {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border: var(--bd-strong);
+  background: var(--surface-2);
+}
+.trx-bash-prompt {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: none;
+  color: var(--amber);
+  margin-top: 0.15em;
+}
+.trx-bash-cmd > .trx-code {
+  margin: 0;
+  color: var(--ink-strong);
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.55;
+}
+
+.trx-bash-out { display: flex; flex-direction: column; gap: var(--sp-1); }
+.trx-bash-out-head { display: flex; align-items: center; }
+
+/* exit code line — failure reads in clay with an icon + the word "failed", not color alone. */
+.trx-exit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  align-self: flex-start;
+  padding: 0 var(--sp-2);
+  height: var(--ic-lg);
+  border: var(--bd);
+  background: var(--surface-2);
+  color: var(--ink-3);
+  font-size: var(--fs-micro);
+}
+.trx-exit-icon { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+.trx-exit-num { color: var(--ink-2); }
+.trx-exit-word { text-transform: lowercase; letter-spacing: 0; }
+.trx-exit-failed {
+  border-color: var(--clay);
+  color: var(--clay);
+}
+.trx-exit-failed .trx-exit-num,
+.trx-exit-failed .trx-exit-icon { color: var(--clay); }
+
+/* ── grep ───────────────────────────────────────────────────────────────────── */
+.trx-grepline {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.trx-grep-label { color: var(--ink-4); font-size: var(--fs-micro); text-transform: lowercase; }
+.trx-grep-pattern {
+  color: var(--amber);
+  background: var(--surface-2);
+  border: var(--bd);
+  padding: 0 var(--sp-1);
+}
+.trx-grep-scope { color: var(--ink-3); }
+.trx-grep-count {
+  color: var(--ink-4);
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+  margin-left: auto;
+  flex: none;
+}
+
+.trx-greprow {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) 1fr;
+  gap: var(--sp-3);
+  align-items: baseline;
+  padding: var(--sp-1) var(--sp-2);
+  line-height: 1.55;
+}
+.trx-greprow + .trx-greprow { border-top: var(--bd); }
+/* the file:line locator reads quiet in --ink-4; the matched text carries at --ink. */
+.trx-grep-loc { color: var(--ink-4); white-space: nowrap; }
+.trx-grep-text { color: var(--ink); white-space: pre; overflow-x: auto; min-width: 0; }
+
+/* ── task: a subagent spawn, keyed in --mauve ───────────────────────────────── */
+.trx-task {
+  border-left: 3px solid var(--mauve);
+  padding-left: var(--sp-3);
+}
+.trx-task-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.trx-task-icon { width: var(--ic-md); height: var(--ic-md); flex: none; color: var(--mauve); }
+.trx-task-agent {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--ink-strong);
+}
+.trx-task-status {
+  margin-left: auto;
+  flex: none;
+  padding: 0 var(--sp-2);
+  height: var(--ic-lg);
+  display: inline-flex;
+  align-items: center;
+  border: var(--bd);
+  background: var(--surface-2);
+  color: var(--mauve);
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+}
+
+.trx-task-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+.trx-task-arrow { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--ink-4); align-self: center; }
+.trx-task-desc { color: var(--ink-2); }
+.trx-task-prompt {
+  margin: 0;
+  padding-left: calc(var(--ic-sm) + var(--sp-2));
+  color: var(--ink-3);
+  font-size: var(--fs-micro);
+  line-height: 1.5;
+}
+
+/* ── webfetch ───────────────────────────────────────────────────────────────── */
+.trx-webfetch-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.trx-webfetch-icon { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--teal); }
+.trx-webfetch-url {
+  color: var(--teal);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+  min-width: 0;
+}
+.trx-webfetch-empty { color: var(--ink-4); font-size: var(--fs-micro); text-transform: lowercase; }
+.trx-webfetch-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--ink-strong);
+}
+.trx-webfetch-snippet {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+}
+
+/* ── default (catch-all) ────────────────────────────────────────────────────── */
+.trx-default-head { display: flex; align-items: center; }
+
+/* ── visually-hidden helper — carries the add/removed label the diff glyph shows ── */
+.trx-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── focus ──────────────────────────────────────────────────────────────────── */
+.trx-row:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.trx-webfetch-url:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ── motion: only when the user has not asked to reduce it ───────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .trx-row { transition: background var(--dur-1) var(--ease-out); }
+  .trx-chevron { transition: transform var(--dur-2) var(--ease-out); }
+}

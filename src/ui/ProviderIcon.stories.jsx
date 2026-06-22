@@ -1,0 +1,129 @@
+import { expect, within } from 'storybook/test'
+import {
+  ProviderIcon,
+  ProviderTag,
+  ProviderName,
+  AccentLegend,
+  HARNESSES,
+  PROVIDER_ACCENT,
+} from './ProviderIcon.jsx'
+import { frame } from './story-frame.jsx'
+
+/* ProviderIcon stories. CSF3. the five coding-agent HARNESSES (peasant's wire
+   values) → their REAL brand marks, never a generic glyph; the mark is always
+   paired with the provider name (nominative fair use). the per-provider accent
+   (PROVIDER_ACCENT) is the documented divergence from the system's fixed
+   user=teal / assistant=amber turn colors: in the real transcript browser the
+   assistant IS the provider, so its accent varies by provider. tokens come from
+   src/index.css via .storybook/preview.jsx; the theme toolbar flips data-theme,
+   so marks + accents re-theme live. */
+const meta = {
+  title: 'in use/ProviderIcon',
+  component: ProviderIcon,
+  tags: ['autodocs'],
+  parameters: { layout: 'padded' },
+}
+export default meta
+
+/* a tiny labelled-row helper so each demo reads as "what it is : the thing". */
+function Demo({ label, children }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--sp-4)',
+        fontFamily: 'var(--font-mono)',
+        fontSize: 'var(--fs-label)',
+        color: 'var(--ink-3)',
+      }}
+    >
+      <span style={{ minWidth: 120, textTransform: 'lowercase' }}>{label}</span>
+      {children}
+    </div>
+  )
+}
+
+/* ── Marks — all five real brand marks, single-color ─────────────────────────
+   the headline rule made visible: claude-code wears Claude, codex wears OpenAI
+   (its parent — a documented fallback, not a stand-in glyph), cursor wears
+   Cursor. every mark is paired with its name. */
+export const Marks = {
+  decorators: frame('panel'),
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+      {HARNESSES.map((harness) => (
+        <Demo key={harness} label={harness}>
+          {/* standalone, informative mark (gets a screen-reader name) */}
+          <ProviderIcon harness={harness} label size={18} />
+          {/* the same mark tinted with its provider accent */}
+          <ProviderIcon harness={harness} accent size={18} />
+        </Demo>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // codex must NOT render a generic glyph — it resolves to the real OpenAI mark.
+    await expect(canvas.getByLabelText('Codex')).toBeInTheDocument()
+    // cursor and claude-code resolve to their own distinct marks (5 informative icons).
+    await expect(canvas.getByLabelText('Cursor')).toBeInTheDocument()
+    await expect(canvas.getByLabelText('Claude Code')).toBeInTheDocument()
+  },
+}
+
+/* ── Tags — all five chips: mark + lowercase harness slug ─────────────────────
+   the system chip look (hairline, mono, radius 0). never color-only — the slug
+   names the provider even fully monochrome; `accent` only tints the mark. */
+export const Tags = {
+  decorators: frame('panel'),
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
+        {HARNESSES.map((harness) => (
+          <ProviderTag key={harness} harness={harness} />
+        ))}
+      </div>
+      {/* the same chips with the mark accented per provider */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
+        {HARNESSES.map((harness) => (
+          <ProviderTag key={harness} harness={harness} accent />
+        ))}
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // each chip carries the harness slug as readable text (color is never the only signal).
+    for (const harness of HARNESSES) {
+      await expect(canvas.getAllByText(harness).length).toBeGreaterThan(0)
+    }
+  },
+}
+
+/* ── Names — the inline (no-chip) form, for prose + table cells ──────────────── */
+export const Names = {
+  decorators: frame('panel'),
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+      {HARNESSES.map((harness) => (
+        <ProviderName key={harness} harness={harness} accent />
+      ))}
+    </div>
+  ),
+}
+
+/* ── AccentLegend — the per-provider accent map, documented as a UI ──────────── */
+export const AccentLegendStory = {
+  name: 'AccentLegend',
+  decorators: frame('panel'),
+  render: () => <AccentLegend />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // every provider + its accent token name is spelled out (mark + name + word).
+    for (const harness of HARNESSES) {
+      await expect(canvas.getByText(harness)).toBeInTheDocument()
+      await expect(canvas.getByText(PROVIDER_ACCENT[harness])).toBeInTheDocument()
+    }
+  },
+}

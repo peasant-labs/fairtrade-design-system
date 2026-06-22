@@ -92,6 +92,11 @@ const PAIRS = [
   { fg: 'ink-4', bg: 'surface-2', kind: 'text', note: 'meta/counts/line-numbers (text-safe)' },
   // primary button label
   { fg: 'on-amber', bg: 'amber', kind: 'text', note: 'primary button label' },
+  // selected/toggled control label + unread count on the golden amber fill (both themes)
+  { fg: 'amber-fill-ink', bg: 'amber-fill', kind: 'text', note: 'toggle/selected chip + unread count label' },
+  // the toggle fill as a component boundary against the surfaces it sits on (1.4.11)
+  { fg: 'amber-fill', bg: 'surface', kind: 'nontext', required: false, note: 'toggle fill boundary (report)' },
+  { fg: 'amber-fill', bg: 'canvas', kind: 'nontext', required: false, note: 'toggle fill boundary (report)' },
   // functional borders / control outlines (1.4.11) — measured against the surfaces they bound
   { fg: 'rule-strong', bg: 'canvas', kind: 'nontext', note: 'control/input border on canvas fill' },
   { fg: 'rule-strong', bg: 'surface', kind: 'nontext', note: 'control border on panels' },

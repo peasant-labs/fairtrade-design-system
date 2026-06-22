@@ -1,0 +1,311 @@
+/* ModerationQueue styles — self-contained, token-only, square + hairline + mono.
+   Namespaced `mod-`. Two surfaces share one vocabulary:
+     ApprovalBar     a sticky scarcity bar (amber hairline + amber-tinted clock) over one item.
+     ModerationQueue a bordered panel of rows; each resolves in place to an olive/clay pill.
+   approve/reject are NEVER colour-only — the .mod-act / .mod-resolved markup always carries the
+   WORD next to the icon, so olive vs clay is reinforcement, not the only signal. radius 0
+   throughout. Motion (the resolve fade) is gated behind prefers-reduced-motion: no-preference;
+   focus uses the global :focus-visible ring (3px var(--focus-ring), offset 2px). */
+
+/* ── ApprovalBar: a sticky, amber-edged review bar over a single pending item ─────────────── */
+
+.mod-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--amber-fill) 8%, var(--surface));
+  border-bottom: 1px solid var(--amber-dim);
+  font-family: var(--font-mono);
+}
+
+.mod-bar.is-resolved {
+  background: var(--surface);
+  border-bottom: var(--bd);
+}
+
+.mod-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-5);
+  min-height: var(--control-h);
+}
+
+.mod-bar-subject {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.mod-bar-clock {
+  flex: none;
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  color: var(--amber);
+}
+
+/* the subject is USER CONTENT (collective / title) — preserve its case, only truncate. */
+.mod-bar-text {
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mod-bar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+}
+
+/* ── ModerationQueue: a bordered panel of pending rows ────────────────────────────────────── */
+
+.mod-queue {
+  display: flex;
+  flex-direction: column;
+  border: var(--bd);
+  background: var(--surface);
+  font-family: var(--font-mono);
+}
+
+.mod-queue-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-5);
+  border-bottom: var(--bd);
+}
+
+.mod-queue-ico {
+  flex: none;
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  color: var(--ink-3);
+}
+
+/* header label is chrome — lowercase mono. */
+.mod-queue-title {
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  text-transform: lowercase;
+}
+
+.mod-queue-count {
+  margin-left: auto;
+  font-size: var(--fs-label);
+  color: var(--ink-3);
+}
+
+/* ── rows ─────────────────────────────────────────────────────────────────────────────────── */
+
+.mod-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mod-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+}
+
+.mod-row + .mod-row {
+  border-top: var(--bd);
+}
+
+/* an acted-on row stays put (audit trail) — struck + dimmed, never removed. */
+.mod-row.is-resolved {
+  opacity: 0.62;
+}
+
+.mod-row.is-resolved .mod-row-who {
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-4);
+}
+
+.mod-row-ico {
+  display: inline-flex;
+  flex: none;
+  align-self: flex-start;
+  margin-top: 1px;
+  color: var(--ink-4);
+}
+
+.mod-row-ico .lucide {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+}
+
+.mod-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* who + detail are USER CONTENT — case preserved, truncated when long. */
+.mod-row-who {
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mod-row-detail {
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mod-row-when {
+  flex: none;
+  font-size: var(--fs-micro);
+  color: var(--ink-4);
+  text-transform: lowercase;
+}
+
+.mod-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+}
+
+/* ── action buttons: square hairline controls; olive=approve, clay=reject ─────────────────── */
+
+.mod-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  box-sizing: border-box;
+  height: var(--control-h-sm);
+  min-height: 24px;
+  padding: 0 var(--sp-3);
+  border: var(--bd-strong);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1;
+  text-transform: lowercase;
+  cursor: pointer;
+}
+
+.mod-act .lucide {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+}
+
+.mod-act-approve {
+  color: var(--olive);
+}
+
+.mod-act-reject {
+  color: var(--clay);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mod-act {
+    transition: background var(--dur-1), color var(--dur-1), border-color var(--dur-1);
+  }
+}
+
+.mod-act-approve:hover {
+  background: var(--success-soft);
+  border-color: var(--olive);
+}
+
+.mod-act-reject:hover {
+  background: var(--danger-soft);
+  border-color: var(--clay);
+}
+
+/* ── resolved pill: the optimistic outcome — icon + word, olive (approved) / clay (rejected) ── */
+
+.mod-resolved {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex: none;
+  box-sizing: border-box;
+  min-height: 24px;
+  padding: 0 var(--sp-2);
+  border: 1px solid transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1;
+  text-transform: lowercase;
+}
+
+.mod-resolved .lucide {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+}
+
+.mod-resolved-approved {
+  color: var(--olive);
+  background: var(--success-soft);
+  border-color: var(--olive);
+}
+
+.mod-resolved-rejected {
+  color: var(--clay);
+  background: var(--danger-soft);
+  border-color: var(--clay);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mod-resolved {
+    animation: modResolveIn var(--dur-2) var(--ease-out) both;
+  }
+
+  @keyframes modResolveIn {
+    from {
+      opacity: 0;
+      transform: translateY(-2px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/* ── empty state: a calm centred panel when nothing is pending ────────────────────────────── */
+
+.mod-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-7) var(--sp-5);
+  text-align: center;
+}
+
+.mod-empty-ico {
+  display: inline-flex;
+  color: var(--ink-4);
+}
+
+.mod-empty-ico .lucide {
+  width: var(--ic-lg);
+  height: var(--ic-lg);
+}
+
+.mod-empty-msg {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+  text-transform: lowercase;
+}

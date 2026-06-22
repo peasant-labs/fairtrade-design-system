@@ -1,0 +1,437 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   railshell — fairtrade canvas + sticky-rail app-shell
+   ─────────────────────────────────────────────────────────────────────────
+   ported from peasant's RailShell / RailSection / split-rail. the layout: a
+   scrolling main canvas column (min-width:0) beside a 320px sticky hairline
+   rail card. desktop-first — the rail is a real second column that STAYS in
+   view as the canvas scrolls; only below the two-column breakpoint (<=880px)
+   does it detach into a fixed bottom-sheet, so mobile complements without ever
+   compromising the desktop two-column reading.
+
+   chrome (toolbar, section headers, the sheet toggle) is mono + lowercase;
+   section bodies carry the caller's content. tokens only, square corners,
+   hairline rules; every transition gated behind prefers-reduced-motion:
+   no-preference. classes namespaced `rs-` so nothing collides with index.css.
+
+   the desktop<->mobile switch is a CONTAINER query, not a viewport one: the
+   shell responds to its OWN width (the same idiom DateRange's .dr-pop uses).
+   so a full-width shell stays two-column on any viewport (desktop is never
+   compromised), and a shell placed in a narrow column — a story wrapper, a
+   nested pane — folds to the bottom-sheet on its own. fixed/sticky inside the
+   container still resolve against the viewport, which is what the sticky rail
+   and the pinned sheet want.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* the shell is its own query container so the desktop<->compact switch keys off
+   the shell's own width, not the viewport. */
+.rs {
+  container-type: inline-size;
+  container-name: rs-shell;
+}
+
+.rs {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+.rs-frame {
+  min-width: 0;
+}
+
+/* at/above the two-column width the shell is canvas + sticky rail. */
+@container rs-shell (min-width: 561px) {
+  /* ── shell frame ───────────────────────────────────────────────────────────
+     a two-column flex row: main canvas (flex:1, min-width:0 so a wide canvas is
+     contained, never overflowing) and a fixed 320px rail. railSide flips order. */
+  .rs-frame {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-5);
+  }
+  .rs--left .rs-frame {
+    flex-direction: row-reverse;
+  }
+
+  .rs-main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* the rail column: fixed 320px, sticky so it holds as the page scrolls. the
+     card inside caps its height to the viewport and scrolls its own overflow. */
+  .rs-rail {
+    flex: 0 0 320px;
+    width: 320px;
+    align-self: stretch;
+    position: sticky;
+    top: var(--sp-5);
+  }
+
+  /* the bottom-sheet only exists below the breakpoint. */
+  .rs-sheet {
+    display: none;
+  }
+}
+
+/* ── main canvas column ──────────────────────────────────────────────────────
+   the toolbar (optional) sticks to the top of the main column; the canvas below
+   it is the caller's scrolling content. */
+.rs-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: var(--control-h);
+  box-sizing: border-box;
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--surface);
+  border: var(--bd);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+}
+/* the toolbar and the canvas share a left edge; collapse the doubled hairline. */
+.rs-toolbar + .rs-canvas {
+  border-top: 0;
+}
+
+.rs-canvas {
+  min-width: 0;
+}
+
+/* ── rail card ───────────────────────────────────────────────────────────────
+   the hairline panel: a bordered surface whose sections divide with rules. caps
+   to the viewport height (minus the sticky top offset) and scrolls internally so
+   a long rail never runs off the bottom of the screen. */
+.rs-rail-card {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - var(--sp-5) * 2);
+  overflow-y: auto;
+  background: var(--surface);
+  border: var(--bd);
+  box-sizing: border-box;
+}
+
+/* ── rail section ────────────────────────────────────────────────────────────
+   each section is a mono-headed block; sections stack with a hairline between
+   them (a top rule on every section after the first). */
+.rs-sec + .rs-sec {
+  border-top: var(--bd);
+}
+
+.rs-sec-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  box-sizing: border-box;
+  min-height: var(--control-h-sm);
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+}
+/* the collapsible header is a real button — strip the native chrome, keep it a
+   full-width left-aligned hit target (well over the 24px minimum). */
+.rs-sec-head--button {
+  text-align: left;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rs-sec-head--button {
+    transition: color var(--dur-1) var(--ease-standard),
+                background var(--dur-1) var(--ease-standard);
+  }
+}
+.rs-sec-head--button:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+.rs-sec-head--button:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.rs-sec-icon {
+  flex: none;
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  color: var(--ink-3);
+}
+.rs-sec-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rs-sec-end {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
+}
+/* the right-aligned count/glyph stays quiet — dim mono, sits beside the chevron. */
+.rs-sec-meta {
+  color: var(--ink-4);
+  font-size: var(--fs-micro);
+}
+.rs-sec-chevron {
+  flex: none;
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  color: var(--ink-3);
+}
+/* the chevron points right when closed, down when open — a non-color cue for
+   state (the section also hides its body), gated behind reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .rs-sec-chevron {
+    transition: transform var(--dur-1) var(--ease-standard);
+  }
+}
+.rs-sec.is-open .rs-sec-chevron {
+  transform: rotate(90deg);
+}
+
+.rs-sec-body {
+  padding: 0 var(--sp-4) var(--sp-4);
+  color: var(--ink-2);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+}
+.rs-sec-body[hidden] {
+  display: none;
+}
+/* a gentle reveal as a collapsible body opens, frozen instant under reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .rs-sec--collapsible.is-open .rs-sec-body {
+    animation: rs-reveal var(--dur-2) var(--ease-out);
+  }
+}
+@keyframes rs-reveal {
+  from { opacity: 0; transform: translateY(calc(-1 * var(--sp-1))); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── split-rail: dual-rail variant ───────────────────────────────────────────
+   two independently-collapsible columns side by side; each is its own hairline
+   card so they read as peers. stacks to one column below the breakpoint. */
+.rs-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+  width: 100%;
+  box-sizing: border-box;
+}
+.rs-split-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--surface);
+  border: var(--bd);
+  box-sizing: border-box;
+}
+/* the column header — same mono chrome as a section head, always a button. */
+.rs-split-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  box-sizing: border-box;
+  min-height: var(--control-h-sm);
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  text-align: left;
+  border: 0;
+  border-bottom: var(--bd);
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  appearance: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rs-split-head {
+    transition: color var(--dur-1) var(--ease-standard),
+                background var(--dur-1) var(--ease-standard);
+  }
+}
+.rs-split-head:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+.rs-split-head:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  /* keep the focus ring above the adjacent column's border. */
+  position: relative;
+  z-index: 1;
+}
+/* when a panel collapses, its header loses the divider (nothing below it). */
+.rs-split-panel:not(.is-open) .rs-split-head {
+  border-bottom: 0;
+}
+.rs-split-body {
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  color: var(--ink-2);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+}
+.rs-split-body[hidden] {
+  display: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rs-split-panel.is-open .rs-split-body {
+    animation: rs-reveal var(--dur-2) var(--ease-out);
+  }
+}
+
+/* ── mobile: canvas + bottom-sheet ───────────────────────────────────────────
+   below the two-column width the shell stops being two columns: the rail card
+   hides and a bottom-sheet takes over. the shell becomes a bounded flex column —
+   the frame scrolls in the space above, the sheet sits pinned at the bottom as a
+   flex item. this needs no fixed/absolute positioning (so no containing-block
+   surprises from container containment) and behaves the same whether the shell is
+   the page or a nested pane: it fills its parent's height (height:100%), the frame
+   takes the slack and scrolls, the sheet rides the bottom. give the shell's parent
+   a height (the in-use app stage is height:100svh; a story wrapper caps its own
+   box) so "the bottom" is the screen's bottom, not the content's. */
+@container rs-shell (max-width: 560px) {
+  .rs {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  /* the frame scrolls; the sheet, below it, stays put at the shell's bottom. */
+  .rs-frame {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .rs-rail {
+    display: none;
+  }
+
+  /* the sheet: a full-width hairline panel sitting at the shell's bottom edge as
+     the last flex item. only its header shows until expanded. */
+  .rs-sheet {
+    flex: none;
+    z-index: var(--z-sticky);
+    background: var(--surface);
+    border-top: var(--bd-strong);
+  }
+  .rs-sheet-toggle {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: var(--sp-2) var(--sp-4) var(--sp-3);
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    appearance: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .rs-sheet-toggle {
+      transition: background var(--dur-1) var(--ease-standard);
+    }
+  }
+  .rs-sheet-toggle:hover {
+    background: var(--surface-hover);
+  }
+  .rs-sheet-toggle:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* the drag-handle: a short centered hairline bar that reads "grabbable". */
+  .rs-sheet-grip {
+    display: block;
+    width: var(--sp-6);
+    height: 3px;
+    margin: 0 auto var(--sp-2);
+    background: var(--rule-strong);
+  }
+  .rs-sheet-row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
+  }
+  .rs-sheet-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rs-sheet-end {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+  .rs-sheet-meta {
+    color: var(--ink-4);
+    font-size: var(--fs-micro);
+  }
+  .rs-sheet-chevron {
+    flex: none;
+    width: var(--ic-md);
+    height: var(--ic-md);
+    color: var(--ink-3);
+  }
+  /* chevron points down when collapsed, flips up when the sheet is open — a
+     non-color state cue paired with the body actually showing. */
+  @media (prefers-reduced-motion: no-preference) {
+    .rs-sheet-chevron {
+      transition: transform var(--dur-1) var(--ease-standard);
+    }
+  }
+  .rs[data-sheet-open='true'] .rs-sheet-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* the expanded body: caps to half the viewport and scrolls; a hairline divides
+     it from the header. hidden from layout + a11y tree when collapsed. */
+  .rs-sheet-body {
+    max-height: 50vh;
+    overflow-y: auto;
+    border-top: var(--bd);
+  }
+  .rs-sheet-body[hidden] {
+    display: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .rs[data-sheet-open='true'] .rs-sheet-body {
+      animation: rs-reveal var(--dur-2) var(--ease-out);
+    }
+  }
+
+  /* inside the sheet, sections and split-rail still divide cleanly. the split
+     stacks to a single column so two panels don't crush side by side. */
+  .rs-sheet-body .rs-split {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,169 @@
+/* StatTiles styles — self-contained, token-only, square + hairline + mono/display. Namespaced
+   `st-`. The KPI tiles + governance tiles share one hairline shell on var(--surface); the big
+   figure is var(--font-display) tabular, the eyebrow + sub + bars are var(--font-mono). The
+   provider bars read by INK WEIGHT, never hue: the fill is a color-mix of --ink-strong over
+   --surface (a single calm grey), and every row carries its own written %. The only colour accent
+   is amber (plus the earth tones), scarce, on a governance value via [data-tone]. radius 0
+   throughout. Motion gated behind prefers-reduced-motion: no-preference; focus uses focus-visible. */
+
+/* --- Shared tile shell + the eyebrow label (KPI + governance) ----------------------------- */
+
+.st-tile,
+.st-gov {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-4) var(--sp-5);
+  border: var(--bd);
+  background: var(--surface);
+  /* square KPI feel: never collapse below a readable height when a tile has no sub line. */
+  min-height: 92px;
+}
+
+/* the v2-eyebrow-style label — tracked mono, dim, lowercase chrome. */
+.st-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+
+.st-eyebrow-ic {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: 0 0 auto;
+  color: var(--ink-4);
+}
+
+/* --- KPI tile: the big display-font tabular number + optional sub line --------------------- */
+
+.st-value {
+  margin: var(--sp-1) 0 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-xl); /* 28 — the headline figure */
+  line-height: 1;
+  color: var(--ink-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.st-sub {
+  margin: var(--sp-1) 0 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- StatGrid: auto-fit grid, columns min ~160px ------------------------------------------- */
+
+.st-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--sp-4);
+}
+
+/* --- Governance tile: label + mono value, the value may carry one scarce earth-tone ------- */
+
+.st-gov-value {
+  margin: var(--sp-2) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-md); /* 18 — a stated setting, not the big metric */
+  line-height: 1.3;
+  color: var(--ink);
+  /* USER CONTENT — governance value keeps its case. */
+}
+
+/* the scarce accents: amber for a "scarce"/restricted policy, earth tones for the rest. */
+.st-gov-value[data-tone='amber'] {
+  color: var(--amber);
+}
+.st-gov-value[data-tone='teal'] {
+  color: var(--teal);
+}
+.st-gov-value[data-tone='olive'] {
+  color: var(--olive);
+}
+.st-gov-value[data-tone='clay'] {
+  color: var(--clay);
+}
+.st-gov-value[data-tone='mauve'] {
+  color: var(--mauve);
+}
+
+/* --- ProviderBars: provider name + monochrome bar + tabular % ------------------------------ */
+
+.st-bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  border: var(--bd);
+  background: var(--surface);
+}
+
+.st-bars-empty {
+  margin: 0;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+.st-bar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.st-bar-name {
+  flex: 0 0 auto;
+  width: 13ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-2);
+  /* USER CONTENT — provider name keeps its case. */
+}
+
+/* the bar track: a hairline-bordered well; the fill is the single calm ink-weight grey. */
+.st-bar-track {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 6px;
+  border: var(--bd);
+  background: var(--surface-hover);
+  overflow: hidden;
+}
+
+.st-bar-fill {
+  display: block;
+  height: 100%;
+  /* monochrome — a color-mix of ink-strong over the surface, NOT a hue. weight carries it. */
+  background: color-mix(in oklab, var(--ink-strong) 64%, var(--surface));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .st-bar-fill {
+    transition: width var(--dur-3, 200ms) var(--ease-out, ease);
+  }
+}
+
+.st-bar-pct {
+  flex: 0 0 auto;
+  width: 5ch;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}

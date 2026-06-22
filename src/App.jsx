@@ -45,6 +45,7 @@ import { A11ySection } from './sections-react/62-a11y.jsx'
 import { TokensSection } from './sections-react/64-tokens.jsx'
 import { TrailsSection } from './sections-react/44-trails.jsx'
 import { OverlaysSection } from './sections-react/54-overlays.jsx'
+import { TerminalSection } from './sections-react/56-terminal.jsx'
 
 /* the in-page comment/feedback tool is a DEV-ONLY authoring aid: it posts to the vite dev middleware's
    /feedback endpoint (which doesn't exist in a production build), so it only mounts under `import.meta.env.DEV`.
@@ -76,6 +77,7 @@ const RAIL = [
   { kind: 'link', id: 'canvas', label: 'canvas & dialog' },
   { kind: 'link', id: 'forms', label: 'forms & empty' },
   { kind: 'link', id: 'overlays', label: 'overlays' },
+  { kind: 'link', id: 'terminal', label: 'terminal & tui' },
   { kind: 'link', id: 'data-table', label: 'data table' },
   { kind: 'link', id: 'pagination', label: 'pagination' },
   { kind: 'link', id: 'accordion', label: 'accordion' },
@@ -569,6 +571,7 @@ function AppShell() {
             <CanvasSection />
             <FormsSection />
             <OverlaysSection />
+            <TerminalSection />
             <DataTableSection />
             <PaginationSection />
             <AccordionSection />
@@ -617,6 +620,11 @@ function AppShell() {
           <Eye size={16} aria-hidden="true" />
           <div>joining <b style={{ color: 'var(--ink-strong)' }}>desert-archivists</b> lists you as a member and grants access to its shared data. it publishes none of your own transcripts; you choose those later when you contribute.</div>
         </div>
+        <ul className="axes" aria-label="what you are opting into">
+          <li><Eye aria-hidden="true" /><span className="axes-k">group membership</span><span className="axes-v">public visibility</span></li>
+          <li><Users aria-hidden="true" /><span className="axes-k">group data</span><span className="axes-v">access for members only</span></li>
+          <li><FileText aria-hidden="true" /><span className="axes-k">your transcripts</span><span className="axes-v">none contributed on joining</span></li>
+        </ul>
         <label className="check"><input type="checkbox" className="check-box" /> i understand and consent</label>
       </Dialog>
 

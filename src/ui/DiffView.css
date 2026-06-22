@@ -1,0 +1,275 @@
+/* DiffView — a unified hunk diff renderer. all values are tokens (no hardcoded hex/px):
+   spacing var(--sp-*), borders var(--bd)/--bd-strong, icons var(--ic-*), the diff palette
+   --add-* / --del-*, surfaces + ink + rules. square corners (radius 0). type is var(--font-mono)
+   for ALL code/diff content (line numbers tabular), var(--font-display) for the file header.
+   chrome is lowercased; code content is NEVER lowercased. transitions only under
+   prefers-reduced-motion: no-preference. classes are namespaced dv-. */
+
+.dv {
+  display: flex;
+  flex-direction: column;
+  border: var(--bd);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  overflow: hidden;
+}
+
+/* ── file header ─────────────────────────────────────────────────────────── */
+/* the one display-font line. the path is content -> keeps its case; only the chrome
+   around it (churn label) is lowercased. */
+.dv-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface-2);
+  border-bottom: var(--bd);
+}
+
+.dv-file {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--ink-strong);
+  letter-spacing: -0.01em;
+  word-break: break-all;
+  min-width: 0;
+}
+
+.dv-churn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
+  flex: none;
+  font-size: var(--fs-micro);
+}
+
+.dv-churn-add { color: var(--add-rail); }
+.dv-churn-del { color: var(--del-rail); }
+.dv-churn-r { color: var(--ink-2); }
+.dv-churn-label { color: var(--ink-3); text-transform: lowercase; }
+
+/* ── body / table ────────────────────────────────────────────────────────── */
+.dv-body {
+  overflow-x: auto;
+  line-height: 1.55;
+}
+
+.dv-empty {
+  margin: 0;
+  padding: var(--sp-3);
+  color: var(--ink-3);
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+}
+
+/* ── hunk header ─────────────────────────────────────────────────────────── */
+/* orientation, not a content line. the literal `@@` + range stay verbatim. */
+.dv-hunk + .dv-hunk { border-top: var(--bd); }
+
+.dv-hunk-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--surface-2);
+  color: var(--ink-4);
+  font-size: var(--fs-micro);
+  border-bottom: var(--bd);
+  user-select: none;
+}
+
+.dv-hunk-at { color: var(--ink-4); flex: none; }
+.dv-hunk-range {
+  color: var(--ink-3);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── a diff line ─────────────────────────────────────────────────────────── */
+/* grid columns: rail | old# | new# | sign | text. fixed-narrow gutters keep numbers +
+   the sign aligned; text flexes and wraps. */
+.dv-line {
+  display: grid;
+  grid-template-columns: 3px 3.25rem 3.25rem 1.25rem 1fr;
+  align-items: stretch;
+  min-height: calc(var(--fs-sm) * 1.55);
+}
+
+/* the 3px left rail per changed line — a redundant structural cue alongside bg + glyph. */
+.dv-rail { grid-column: 1; background: transparent; }
+
+.dv-num {
+  grid-row: 1;
+  padding: 0 var(--sp-2);
+  text-align: right;
+  color: var(--ink-4);
+  user-select: none;
+  border-right: var(--bd);
+  align-self: stretch;
+}
+.dv-num-old { grid-column: 2; }
+.dv-num-new { grid-column: 3; }
+
+/* the sign gutter — carries the REDUNDANT +/− glyph so add/del is not color-only. */
+.dv-sign {
+  grid-column: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+  user-select: none;
+}
+.dv-sign svg { width: var(--ic-sm); height: var(--ic-sm); }
+
+.dv-text {
+  grid-column: 5;
+  padding: 0 var(--sp-2);
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+  /* code content is NEVER lowercased, even inside lowercased chrome. */
+  text-transform: none;
+}
+
+/* add / del treatments: bg + matching rail + glyph color. NO syntax highlighting. */
+.dv-add { background: var(--add-bg); }
+.dv-add .dv-rail { background: var(--add-rail); }
+.dv-add .dv-sign { color: var(--add-rail); }
+.dv-add .dv-text { color: var(--add-text); }
+
+.dv-del { background: var(--del-bg); }
+.dv-del .dv-rail { background: var(--del-rail); }
+.dv-del .dv-sign { color: var(--del-rail); }
+.dv-del .dv-text { color: var(--del-text); }
+
+.dv-ctx .dv-text { color: var(--ink); }
+
+/* visually-hidden helper — gives AT the add/del/original/redacted label the glyph carries. */
+.dv-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── redaction variant ───────────────────────────────────────────────────── */
+.dv-matches {
+  display: flex;
+  flex-direction: column;
+}
+
+.dv-match { padding: var(--sp-3); }
+.dv-match + .dv-match { border-top: var(--bd); }
+
+/* a kept (un-redacted) match is flagged: the original will leave as-is, so it picks up the
+   del rail as a left marker + a faint del wash to keep the warning honest without color-only. */
+.dv-match-kept {
+  border-left: 3px solid var(--del-rail);
+  background: var(--del-bg);
+}
+
+.dv-match-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+/* category · confidence badge — square, hairline, mono, tabular confidence. */
+.dv-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 0 var(--sp-2);
+  height: var(--ic-lg);
+  border: var(--bd);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: var(--fs-micro);
+}
+.dv-badge-cat { color: var(--ink-2); }
+.dv-badge-dot { color: var(--ink-4); }
+.dv-badge-conf { color: var(--ink-3); }
+
+/* a low-confidence match (< 0.70) earns the amber caution treatment. */
+.dv-badge-low {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+.dv-badge-low .dv-badge-cat,
+.dv-badge-low .dv-badge-conf,
+.dv-badge-low .dv-badge-dot { color: var(--amber); }
+
+/* the kept flag, paired with an icon so the state never rides on color alone. */
+.dv-kept-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  color: var(--del-rail);
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+}
+.dv-kept-flag svg { width: var(--ic-sm); height: var(--ic-sm); }
+
+/* keep / revert affordance — a real button, lowercased chrome, square. */
+.dv-keep {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-left: auto;
+  flex: none;
+  padding: var(--sp-1) var(--sp-2);
+  border: var(--bd-strong);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+  cursor: pointer;
+}
+.dv-keep svg { width: var(--ic-sm); height: var(--ic-sm); }
+.dv-keep[aria-pressed='true'] {
+  border-color: var(--del-rail);
+  color: var(--del-text);
+}
+
+.dv-match-pair {
+  border: var(--bd);
+  background: var(--surface);
+  overflow-x: auto;
+}
+
+.dv-strike { text-decoration: line-through; }
+
+/* when a match is kept, its redacted (add) row reads as "no longer applied" -> dim it; the
+   original (del) row stays legible because it is what will actually be shared. */
+.dv-match-kept .dv-add.dv-line-muted { opacity: 0.45; }
+
+/* ── focus ───────────────────────────────────────────────────────────────── */
+.dv-keep:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+/* focusable rows: code lines are reachable for keyboard inspection. */
+.dv :focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* ── motion: only when the user has not asked to reduce it ─────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .dv-keep { transition: border-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
+  .dv-add.dv-line-muted, .dv-del.dv-line-muted { transition: opacity var(--dur-2) var(--ease-out); }
+  .dv-match { transition: background var(--dur-2) var(--ease-out); }
+}

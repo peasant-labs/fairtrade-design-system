@@ -1,0 +1,158 @@
+/* EvidenceCaption — the click-to-evidence recap + its proof targets. every value is a token (no
+   hardcoded hex/px): spacing var(--sp-*), borders var(--bd)/--bd-strong + the rules, icons
+   var(--ic-*), the scarce accent --amber/--amber-dim, surfaces + ink. square corners (radius 0).
+   type: the recap is reading PROSE → var(--font-body) (sentence case); the anchor eyebrows are
+   chrome → var(--font-mono), lowercased. the clickable fragments never read on color alone — a
+   dotted underline + a focus ring carry "this is a target". transitions + the highlight pulse run
+   only under prefers-reduced-motion: no-preference. classes are namespaced ec-. */
+
+/* ── the recap sentence ──────────────────────────────────────────────────────── */
+.ec {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  color: var(--ink);
+  /* the recap is prose: do NOT lowercase it — fragments may carry counts/paths with their own
+     casing, and the sentence reads as written. */
+  text-wrap: pretty;
+}
+
+/* a plain (non-clickable) fragment — just prose flowing inline. */
+.ec-text {
+  color: var(--ink);
+}
+
+/* a clickable evidence fragment — a real <button> reset to read inline as prose, then marked as a
+   target with a dotted underline (so it's distinct from surrounding text without color alone). the
+   underline sits in --amber-dim at rest so it reads as a quiet affordance, not a shout. >=24px hit
+   target via min-height + the vertical padding (the box stays inline via inline-flex). */
+.ec-frag {
+  display: inline;
+  margin: 0;
+  padding: 0 var(--sp-1);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--ink-strong);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--amber-dim);
+  text-underline-offset: 3px;
+  cursor: pointer;
+  /* a generous, square hit zone — the inline box still flows in the sentence, but the click target
+     is padded out to clear the >=24px minimum top-to-bottom. */
+  min-height: var(--sp-5); /* 24px */
+  border-radius: 0;
+}
+
+/* hover/focus pull the fragment + its underline up to full strength — the amber goes bright and the
+   ink goes strong, so the active target is unmistakable (still backed by the underline, not color
+   alone). a faint surface wash gives the inline button a body to land on. */
+.ec-frag:hover {
+  color: var(--ink-strong);
+  text-decoration-color: var(--amber);
+  background: var(--surface-hover);
+}
+
+.ec-frag:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  text-decoration-color: var(--amber);
+  background: var(--surface-hover);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ec-frag {
+    transition: color 120ms ease, background-color 120ms ease, text-decoration-color 120ms ease;
+  }
+}
+
+/* visually-hidden helper — carries the "jump to <target>" description the dotted underline implies
+   visually, so AT announces the destination before activation. */
+.ec-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── the evidence targets ────────────────────────────────────────────────────── */
+.ec-target {
+  display: block;
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  border: var(--bd);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  /* the flash sits in an inset outline; reserve the offset so the pulse never shifts layout. */
+  outline: 0 solid transparent;
+  outline-offset: 2px;
+}
+
+/* a target focused programmatically after a jump (tabIndex=-1) shows the standard focus ring, so a
+   keyboard reader sees exactly where they landed. */
+.ec-target:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* the anchor eyebrow — a small mono label naming the block. chrome → lowercased. */
+.ec-target-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+.ec-target-eyebrow-icon {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: none;
+  color: var(--amber);
+}
+
+/* the arrival highlight. the `data-ec-flash` attribute is the switch: by default the target holds a
+   steady (briefly-shown) amber outline — this is the reduced-motion / no-animation baseline, so a
+   reader who opts out of motion still gets a clear "you landed here" marker that the JS removes on
+   animationend. under prefers-reduced-motion: no-preference it's upgraded to a pulse. */
+.ec-target[data-ec-flash] {
+  outline: var(--bd-strong);
+  outline-color: var(--amber);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ec-target[data-ec-flash] {
+    animation: ec-flash 1200ms ease-out forwards;
+  }
+  @keyframes ec-flash {
+    0% {
+      outline-width: 3px;
+      outline-color: var(--amber);
+      background: var(--surface-hover);
+    }
+    70% {
+      outline-width: 3px;
+      outline-color: var(--amber);
+      background: var(--surface);
+    }
+    100% {
+      outline-width: 0;
+      outline-color: transparent;
+      background: var(--surface);
+    }
+  }
+}

@@ -1,0 +1,337 @@
+/* RoleRoster — a member role roster + the inline destructive-confirm pattern + a danger zone.
+   self-contained: this file owns every `rr-` rule; it leans on src/index.css only for the shared
+   design tokens (spacing, ink, surface, rule, amber, clay/danger, control-height, icon-size, the mono
+   and body fonts, the font-size scale, the focus ring, and the duration + easing tokens). square
+   (radius 0), hairline, amber-scarce.
+
+   conventions held throughout:
+     - chrome (labels, role names, the confirm prompt) is var(--font-mono) and lowercased.
+     - user content (handles, names, org logins) is var(--font-body) and NEVER text-transformed.
+     - danger reads as the clay/--danger accent, but always paired with a word ("warning",
+       "remove?", "yes") or glyph — never color alone.
+     - focus is a 3px var(--focus-ring) ring, 2px offset; targets are >= 24px.
+     - transitions live only inside @media (prefers-reduced-motion: no-preference). */
+
+/* ── shared inline buttons (used by ConfirmInline) ───────────────────────────── */
+
+.rr-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.rr-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: var(--control-h-sm);
+  min-height: 28px; /* >= 24px hit target */
+  padding: 0 var(--sp-3);
+  border: var(--bd-strong);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  line-height: 1;
+  cursor: pointer;
+}
+.rr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.rr-btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+.rr-btn-ico {
+  display: inline-flex;
+}
+.rr-btn-ico > svg { width: var(--ic-sm); height: var(--ic-sm); }
+
+/* the resting trigger: a quiet hairline that warms to clay/danger on hover so the destructive
+   intent is legible before the click, not only after. */
+.rr-btn--danger-ghost { color: var(--ink-3); }
+.rr-btn--danger-ghost:not(:disabled):hover {
+  border-color: var(--clay);
+  color: var(--clay);
+  background: var(--danger-soft);
+}
+
+/* yes: the committed destructive action — a filled clay control. */
+.rr-btn--danger {
+  border-color: var(--clay);
+  background: var(--danger-soft);
+  color: var(--clay);
+  font-weight: 600;
+}
+.rr-btn--danger:not(:disabled):hover {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--danger-fg);
+}
+
+/* cancel: the safe escape — stays neutral. */
+.rr-btn--quiet { color: var(--ink-2); }
+.rr-btn--quiet:not(:disabled):hover {
+  border-color: var(--rule-strong);
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+
+/* the open prompt word — clay, mono, lowercased; the word itself carries the warning. */
+.rr-confirm-q {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  color: var(--clay);
+  white-space: nowrap;
+}
+
+/* ── roster shell ────────────────────────────────────────────────────────────── */
+
+.rr {
+  display: flex;
+  flex-direction: column;
+  border: var(--bd);
+  background: var(--surface);
+}
+
+.rr-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  border-bottom: var(--bd);
+}
+.rr-head-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  text-transform: lowercase;
+  color: var(--ink);
+}
+.rr-count {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+
+.rr-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* one member row: identity | org chip | role control | remove action. a 4-track grid keeps the
+   role + remove columns aligned across rows regardless of handle length. */
+.rr-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+}
+.rr-row + .rr-row { border-top: var(--bd); }
+
+/* identity cell — avatar + handle + optional name, all user content. */
+.rr-who {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.rr-avatar {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border: var(--bd);
+  background: var(--surface-2);
+  object-fit: cover;
+}
+.rr-avatar--fallback {
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--ink-2);
+  /* a handle initial is user content — keep its case, don't lowercase it. */
+}
+
+.rr-id {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+/* handle + name are user content: var(--font-body), never text-transformed. */
+.rr-handle {
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  color: var(--ink);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rr-name {
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  color: var(--ink-3);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* org chip — a hairline square tag. user content; mono for the terse logins but case preserved. */
+.rr-org {
+  justify-self: start;
+  max-width: 14ch;
+  padding: 2px var(--sp-2);
+  border: var(--bd);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  color: var(--ink-2);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* an empty placeholder so rows without an org keep the role column aligned. */
+.rr-org--none {
+  border-color: transparent;
+  background: transparent;
+  min-width: var(--sp-7);
+}
+
+/* role cell. */
+.rr-role { display: flex; align-items: center; justify-self: end; }
+
+/* locked owner role: lock glyph + the word "owner", amber to mark the one privileged seat. */
+.rr-role-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: var(--control-h-sm);
+  padding: 0 var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  color: var(--amber);
+}
+.rr-lock { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+
+/* the role <select> — a square hairline control matching the system select. */
+.rr-select {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  height: var(--control-h-sm);
+  min-height: 28px;
+  padding: 0 var(--sp-3);
+  border: var(--bd-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  line-height: 1;
+  cursor: pointer;
+}
+.rr-select:focus { border-color: var(--amber-dim); }
+.rr-select:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.rr-select:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* remove action cell — a fixed min so the locked owner spacer and a ConfirmInline line up. */
+.rr-act {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: end;
+  min-width: 72px;
+}
+.rr-act-locked { display: block; }
+
+/* visually-hidden label kept in the a11y tree (paired with each role select). */
+.rr-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── danger zone ─────────────────────────────────────────────────────────────── */
+
+/* clay border + a faint danger wash, so the section reads as set-apart. the framing is doubled
+   in the header (icon + the word "warning") so it never relies on the border color alone. */
+.rr-danger {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--clay);
+  background: var(--danger-soft);
+}
+
+.rr-danger-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-5);
+  border-bottom: 1px solid var(--clay);
+}
+.rr-danger-ico {
+  width: var(--ic-md);
+  height: var(--ic-md);
+  flex: none;
+  color: var(--clay);
+}
+/* the literal warning word — uppercased for emphasis, the one place chrome breaks lowercase, to
+   read as a klaxon rather than a label. */
+.rr-danger-word {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--clay);
+}
+.rr-danger-title {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  color: var(--ink-2);
+}
+
+.rr-danger-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.rr-danger-body p { margin: 0; }
+
+/* ── motion (gated) ──────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: no-preference) {
+  .rr-btn {
+    transition: background var(--dur-1) var(--ease-standard),
+                color var(--dur-1) var(--ease-standard),
+                border-color var(--dur-1) var(--ease-standard);
+  }
+  .rr-select {
+    transition: border-color var(--dur-1) var(--ease-standard);
+  }
+}

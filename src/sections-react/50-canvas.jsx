@@ -1,4 +1,4 @@
-import { Box, Folder, File, Plus, Minus, Maximize, Users, X, BoxSelect } from 'lucide-react'
+import { Box, Folder, File, Plus, Minus, Maximize, Users, X, BoxSelect, Eye, FileText } from 'lucide-react'
 
 /* 50-canvas: the map/graph surface + a live modal dialog. the trigger button keeps the
    literal data-open-dialog attribute so App.jsx's delegation opens the React <Dialog>
@@ -50,6 +50,11 @@ export function CanvasSection() {
                   <div className="dlg-head"><h3>join collective</h3><span className="btn btn-ghost btn-sm btn-icon" aria-hidden="true"><X aria-hidden="true" /></span></div>
                   <div className="dlg-body">
                     <p>joining <b style={{ color: 'var(--ink-strong)' }}>desert-archivists</b> lists you as a member and grants access to its shared data. it publishes none of your own transcripts; you choose those later when you contribute.</p>
+                    <ul className="axes" aria-label="what you are opting into">
+                      <li><Eye aria-hidden="true" /><span className="axes-k">group membership</span><span className="axes-v">public visibility</span></li>
+                      <li><Users aria-hidden="true" /><span className="axes-k">group data</span><span className="axes-v">access for members only</span></li>
+                      <li><FileText aria-hidden="true" /><span className="axes-k">your transcripts</span><span className="axes-v">none contributed on joining</span></li>
+                    </ul>
                     <label className="check"><input type="checkbox" className="check-box" /> i understand and consent</label>
                   </div>
                   <div className="dlg-foot"><span className="btn btn-secondary btn-sm">cancel</span><span className="btn btn-primary btn-sm"><Users aria-hidden="true" /> reveal &amp; join</span></div>

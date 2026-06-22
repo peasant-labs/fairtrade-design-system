@@ -1,0 +1,468 @@
+/* Redaction — the safe-by-default review surface + the transparency panel. every value is a
+   token (no hardcoded hex/px): spacing var(--sp-*), borders var(--bd)/--bd-strong, icons
+   var(--ic-*), the diff palette --add-* / --del-*, danger --clay, scarce accent --amber,
+   success --olive, surfaces + ink + rules. square corners (radius 0). type: var(--font-mono)
+   for ALL code/secret content (the secret + redacted forms; never lowercased), var(--font-body)
+   for guidance prose, var(--font-display) for the panel title. chrome is lowercased; code is
+   NEVER lowercased. status NEVER rides on color alone — every state pairs an icon + a word.
+   transitions only under prefers-reduced-motion: no-preference. classes are namespaced rdx-. */
+
+.rdx {
+  display: flex;
+  flex-direction: column;
+  border: var(--bd);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+/* shared eyebrow — a small lowercased section label. */
+.rdx-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+/* visually-hidden helper — gives AT the label the glyph/color carries. */
+.rdx-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── review: control bar (level + scan) ────────────────────────────────────── */
+.rdx-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--surface-2);
+  border-bottom: var(--bd);
+}
+
+/* level selector — segmented control. selected option carries aria-pressed + the amber fill +
+   a leading icon, so the choice never reads on color alone. */
+.rdx-level {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.rdx-seg {
+  display: inline-flex;
+  align-self: flex-start;
+  max-width: 100%;
+  border: var(--bd-strong);
+  background: var(--surface);
+}
+
+.rdx-seg-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: var(--control-h-sm);
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-left: var(--bd);
+  background: transparent;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  cursor: pointer;
+}
+.rdx-seg-opt:first-child { border-left: 0; }
+.rdx-seg-opt svg { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+
+.rdx-seg-opt:hover { color: var(--ink); }
+
+.rdx-seg-opt[aria-pressed='true'] {
+  background: var(--amber-fill);
+  color: var(--amber-fill-ink);
+  font-weight: 600;
+}
+
+/* the level description — guidance prose, not code. */
+.rdx-level-desc {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  color: var(--ink-3);
+}
+
+/* ── review: scan progress ─────────────────────────────────────────────────── */
+.rdx-scan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.rdx-scan-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.rdx-scan-label {
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+.rdx-scan-count { color: var(--ink-2); font-size: var(--fs-micro); }
+
+/* neutral track — work completing, not a danger signal. */
+.rdx-scan-track {
+  height: var(--sp-2);
+  background: var(--surface-hover);
+  border: var(--bd);
+  overflow: hidden;
+}
+.rdx-scan-fill {
+  height: 100%;
+  background: var(--rule-strong);
+}
+
+/* ── review: honest-failure banner ─────────────────────────────────────────── */
+/* an un-scanned file must not read as "all clear". amber caution (scarce), icon + words. */
+.rdx-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin: var(--sp-4) var(--sp-4) 0;
+  padding: var(--sp-3);
+  border: 1px solid var(--amber);
+  background: var(--amber-fill);
+  color: var(--amber-fill-ink);
+}
+.rdx-banner-icon {
+  width: var(--ic-md);
+  height: var(--ic-md);
+  flex: none;
+  margin-top: 1px;
+}
+.rdx-banner-text {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  line-height: 1.45;
+}
+
+/* ── review: summary line ──────────────────────────────────────────────────── */
+.rdx-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: var(--bd);
+}
+.rdx-summary-total { color: var(--ink-2); font-size: var(--fs-label); }
+
+.rdx-summary-safe,
+.rdx-summary-kept {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-left: auto;
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+}
+.rdx-summary-safe svg,
+.rdx-summary-kept svg { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+.rdx-summary-safe { color: var(--olive); }
+/* kept (un-redacted) → danger: the secret would leave the machine. */
+.rdx-summary-kept { color: var(--clay); font-weight: 600; }
+
+/* ── review: empty state ───────────────────────────────────────────────────── */
+.rdx-empty {
+  margin: 0;
+  padding: var(--sp-4);
+  color: var(--ink-3);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+}
+
+/* ── review: match list + cards ────────────────────────────────────────────── */
+.rdx-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.rdx-card { padding: var(--sp-4); }
+.rdx-card + .rdx-card { border-top: var(--bd); }
+
+/* a kept (un-redacted) card is flagged loudly: the secret WILL leave as-is, so it picks up the
+   clay (danger) left rail + a faint clay wash — honest, and never color-only (the head also
+   flips to a "will be sent" icon+word). */
+.rdx-card-kept {
+  border-left: 3px solid var(--clay);
+  background: var(--del-bg);
+}
+
+.rdx-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
+}
+
+/* category · confidence badge — square, hairline, mono, tabular confidence. */
+.rdx-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 0 var(--sp-2);
+  min-height: var(--control-h-sm);
+  border: var(--bd);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: var(--fs-micro);
+}
+.rdx-badge-cat { color: var(--ink-2); }
+.rdx-badge-dot { color: var(--ink-4); }
+.rdx-badge-conf { color: var(--ink-3); }
+
+/* a low-confidence match (< 0.70) earns the amber caution treatment + a warning glyph, so the
+   "verify me" cue is not color-only. */
+.rdx-badge-low {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+.rdx-badge-low .rdx-badge-cat,
+.rdx-badge-low .rdx-badge-conf,
+.rdx-badge-low .rdx-badge-dot { color: var(--amber); }
+.rdx-badge-warn { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--amber); }
+
+/* the live state of a match — redacted (safe) or kept (will be sent). icon + word, never color
+   alone. the kept state is danger; the safe state is success. */
+.rdx-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+}
+.rdx-state svg { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+.rdx-state-safe { color: var(--olive); }
+.rdx-state-kept { color: var(--clay); font-weight: 600; }
+
+/* keep / revert toggle — a real button, lowercased chrome, square. when pressed (kept) it picks
+   up the clay danger border + text to match the warning the card now carries. */
+.rdx-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-left: auto;
+  flex: none;
+  min-height: var(--control-h-sm);
+  padding: 0 var(--sp-3);
+  border: var(--bd-strong);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+  cursor: pointer;
+}
+.rdx-toggle svg { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+.rdx-toggle:hover { color: var(--ink); border-color: var(--rule-strong); }
+.rdx-toggle[aria-pressed='true'] {
+  border-color: var(--clay);
+  color: var(--clay);
+}
+
+/* ── review: before → after pair ───────────────────────────────────────────── */
+/* the same chassis as DiffView: rail | glyph | code. the secret + its redacted form are CODE
+   (mono, never lowercased); the −/+ glyph + the sr-only label carry add/del without color. */
+.rdx-pair {
+  border: var(--bd);
+  background: var(--surface);
+  overflow-x: auto;
+}
+
+.rdx-row {
+  display: grid;
+  grid-template-columns: 3px 1.5rem 1fr;
+  align-items: stretch;
+  min-height: calc(var(--fs-sm) * 1.6);
+  line-height: 1.6;
+}
+
+/* the 3px left rail — a redundant structural cue alongside bg + glyph. */
+.rdx-rail { grid-column: 1; background: transparent; }
+
+.rdx-glyph {
+  grid-column: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+.rdx-glyph svg { width: var(--ic-sm); height: var(--ic-sm); }
+
+.rdx-code {
+  grid-column: 3;
+  padding: var(--sp-1) var(--sp-2);
+  font-family: var(--font-mono);
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+  /* code is NEVER lowercased, even inside lowercased chrome. */
+  text-transform: none;
+}
+
+/* del = the original secret (what would leave the machine). add = the safe redacted form. */
+.rdx-row-del { background: var(--del-bg); }
+.rdx-row-del .rdx-rail { background: var(--del-rail); }
+.rdx-row-del .rdx-glyph { color: var(--del-rail); }
+.rdx-row-del .rdx-code { color: var(--del-text); }
+.rdx-strike { text-decoration: line-through; }
+
+.rdx-row-add { background: var(--add-bg); }
+.rdx-row-add .rdx-rail { background: var(--add-rail); }
+.rdx-row-add .rdx-glyph { color: var(--add-rail); }
+.rdx-row-add .rdx-code { color: var(--add-text); }
+
+/* when a match is kept, the redacted (add) row no longer applies → dim it; the original (del)
+   row stays fully legible because it is what will actually be shared. */
+.rdx-card-kept .rdx-row-add.rdx-row-muted { opacity: 0.45; }
+
+/* ── transparency panel: where does this go ────────────────────────────────── */
+.rdx-where { border: var(--bd-strong); }
+
+.rdx-where-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: var(--bd);
+  background: var(--surface-2);
+}
+.rdx-where-head-icon { width: var(--ic-md); height: var(--ic-md); flex: none; color: var(--ink-2); }
+.rdx-where-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  text-transform: lowercase;
+  letter-spacing: -0.01em;
+  color: var(--ink-strong);
+}
+
+/* the boundary line — guidance prose, plain. */
+.rdx-where-note {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: var(--bd);
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+/* destination — the url is code: mono, not lowercased, breakable. */
+.rdx-where-dest {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: var(--bd);
+}
+.rdx-where-url {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  word-break: break-all;
+}
+.rdx-where-url-icon { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--ink-3); }
+
+/* the two-column split — a hairline rule between the columns. on a narrow viewport it stacks
+   (the divider flips from a left border to a top border). */
+.rdx-where-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  background: var(--surface);
+}
+@media (min-width: 480px) {
+  .rdx-where-split { grid-template-columns: 1fr 1fr; }
+}
+
+.rdx-where-col {
+  background: var(--surface);
+  padding: var(--sp-3) var(--sp-4);
+}
+/* the divider — top border when stacked, left border when side-by-side. */
+.rdx-where-col + .rdx-where-col { border-top: var(--bd); }
+@media (min-width: 480px) {
+  .rdx-where-col + .rdx-where-col { border-top: 0; border-left: var(--bd); }
+}
+.rdx-where-col-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.rdx-where-col-icon { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+/* sent vs private — each header icon pairs with its word; the icons + rails differ so the two
+   halves never read on color alone. */
+.rdx-where-col-icon-sent { color: var(--add-rail); }
+.rdx-where-col-icon-private { color: var(--ink-3); }
+
+/* transparency rows — icon + label, square, hairline. label text is content → mono. */
+.rdx-trows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.rdx-trow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding-left: var(--sp-3);
+  border-left: 3px solid var(--rule);
+}
+.rdx-trow-sent { border-left-color: var(--add-rail); }
+.rdx-trow-private { border-left-color: var(--ink-4); }
+.rdx-trow-icon { width: var(--ic-sm); height: var(--ic-sm); flex: none; margin-top: 2px; }
+.rdx-trow-sent .rdx-trow-icon { color: var(--add-rail); }
+.rdx-trow-private .rdx-trow-icon { color: var(--ink-3); }
+.rdx-trow-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  color: var(--ink);
+}
+
+/* ── focus ─────────────────────────────────────────────────────────────────── */
+.rdx :focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ── motion: only when the user has not asked to reduce it ─────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .rdx-seg-opt { transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
+  .rdx-scan-fill { transition: width var(--dur-3) var(--ease-out); }
+  .rdx-toggle { transition: border-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
+  .rdx-card { transition: background var(--dur-2) var(--ease-out); }
+  .rdx-row-add.rdx-row-muted { transition: opacity var(--dur-2) var(--ease-out); }
+}

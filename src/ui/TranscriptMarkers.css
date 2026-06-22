@@ -1,0 +1,314 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   TranscriptMarkers — fairtrade "in use" component family
+   ─────────────────────────────────────────────────────────────────────────
+   the orientation layer between turns: a sticky per-phase header (PhaseDivider
+   pinned by a <Phase> section), horizontal "user turn N" / git-commit dividers
+   (TaskBoundary / CheckpointMarker), and a sticky prompt strip (TurnContextBar).
+
+   tokens only — no raw hex; the only raw px is local hairline geometry (1px
+   rules, the 2px chip accent) that has no token. square corners (radius 0). all
+   chrome type is var(--font-mono), lowercased; user CONTENT (prompt text, commit
+   messages) is var(--font-body) and never lowercased. counts are tabular. amber
+   is the scarce accent — it appears only on the ACTIVE phase + the next-jump
+   focus, never on idle structure. transitions are gated behind
+   prefers-reduced-motion: no-preference. classes are namespaced `tm2-` (NOT
+   `tm-`, which is Treemap's).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* shared eyebrow — the tiny mono uppercase-feel label used across all four. */
+.tm2-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* ── Phase section + sticky PhaseDivider ────────────────────────────────────
+   the <section> is the scroll container the sticky divider pins against: as
+   long as ANY of this section's box is on screen the divider stays pinned; the
+   moment the next section's top crosses the sticky line, the browser hands the
+   pinned slot to the next divider. no JS. */
+.tm2-phase-section {
+  position: relative;
+  display: block;
+}
+.tm2-phase-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding-top: var(--sp-3);
+}
+
+.tm2-phase {
+  position: sticky;
+  /* top is set inline (defaults to var(--nav-h)) so hosts can clear their nav. */
+  z-index: var(--z-sticky);
+  display: flex;
+  /* a hairline-bounded bar with a translucent, blurred backdrop so turns scroll
+     UNDER it legibly. solid fallback first for prefers-reduced-transparency. */
+  background: var(--surface);
+  border-top: var(--bd);
+  border-bottom: var(--bd-strong);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tm2-phase {
+    background: var(--glass-solid);
+    -webkit-backdrop-filter: blur(8px) saturate(1.4);
+    backdrop-filter: blur(8px) saturate(1.4);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .tm2-phase {
+    background: var(--surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+.tm2-phase-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: var(--target-min);     /* >=24px hit target */
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+  /* a left accent rail carries the active state without relying on colour alone:
+     idle = the structural rule, active = amber + heavier weight + aria-current. */
+  border-left: 2px solid var(--rule);
+}
+.tm2-phase-btn:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.tm2-phase-btn[data-active='true'] {
+  border-left-color: var(--amber);
+}
+.tm2-phase-icon {
+  color: var(--ink-4);
+  flex: none;
+}
+.tm2-phase-btn[data-active='true'] .tm2-phase-icon {
+  color: var(--amber);
+}
+.tm2-phase-label {
+  font-size: var(--fs-label);
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.tm2-phase-btn[data-active='true'] .tm2-phase-label {
+  color: var(--ink-strong);
+}
+.tm2-phase-range {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--ink-4);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tm2-phase-btn {
+    transition: border-color var(--dur-1) var(--ease-standard),
+      background var(--dur-1) var(--ease-standard);
+  }
+  .tm2-phase-btn:hover {
+    background: var(--surface-hover);
+  }
+}
+
+/* ── TaskBoundary / CheckpointMarker — horizontal dividers ──────────────────
+   a centred chip flanked by two hairline rules. the chip floats on the canvas
+   so the rule appears to pass behind it. */
+.tm2-marker {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  margin: var(--sp-2) 0;
+}
+.tm2-marker-rule {
+  flex: 1 1 auto;
+  height: 0;
+  border-top: var(--bd);
+}
+.tm2-marker-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  max-width: 100%;
+  min-height: var(--target-min);
+  padding: var(--sp-1) var(--sp-3);
+  border: var(--bd);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.tm2-marker-icon {
+  flex: none;
+  color: var(--ink-4);
+}
+.tm2-marker-eyebrow {
+  color: var(--ink-2);
+  font-weight: 700;
+}
+.tm2-marker-ord {
+  margin-left: 0.25em;
+}
+.tm2-marker-meta {
+  color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+}
+.tm2-marker-hash {
+  font-family: var(--font-mono);
+  color: var(--amber);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+/* the commit message is user content: body font, natural case, may truncate. */
+.tm2-marker-message {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* the task boundary leads with the olive "done" tick — semantic, not the only
+   cue (the "user turn N" label carries the meaning in text). */
+.tm2-marker--task .tm2-marker-icon {
+  color: var(--olive);
+}
+
+/* ── shared churn — +ins / −del, add/del coloured, +/− glyphs, tabular ─────── */
+.tm2-churn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  font-variant-numeric: tabular-nums;
+}
+.tm2-churn-add { color: var(--add-text); }
+.tm2-churn-del { color: var(--del-text); }
+.tm2-churn-sep { color: var(--ink-5); }
+
+/* ── TurnContextBar — sticky prompt strip ───────────────────────────────────
+   a one-line strip that echoes the active turn's prompt with a "next" jump. the
+   eyebrow + next are chrome; the prompt is body-font CONTENT, truncated. */
+.tm2-contextbar {
+  position: sticky;
+  /* top is inline (defaults to var(--nav-h)). */
+  z-index: var(--z-sticky);
+  width: 100%;
+  background: var(--surface);
+  border-top: var(--bd);
+  border-bottom: var(--bd-strong);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tm2-contextbar {
+    background: var(--glass-solid);
+    -webkit-backdrop-filter: blur(8px) saturate(1.4);
+    backdrop-filter: blur(8px) saturate(1.4);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .tm2-contextbar {
+    background: var(--surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+.tm2-contextbar-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: var(--control-h);
+  padding: 0 var(--sp-3);
+}
+.tm2-contextbar-main {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  flex: 1 1 auto;
+  min-width: 0;                       /* let the prompt truncate inside the flex row */
+  margin: 0;
+  padding: var(--sp-1) 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.tm2-contextbar-main:disabled {
+  cursor: default;
+}
+.tm2-contextbar-main:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.tm2-contextbar-eyebrow {
+  flex: none;
+  color: var(--ink-3);
+  font-weight: 700;
+}
+.tm2-contextbar-ord {
+  margin-left: 0.25em;
+  color: var(--ink-2);
+}
+.tm2-contextbar-dot {
+  flex: none;
+  color: var(--ink-5);
+}
+/* the prompt — user content: body font, natural case, single truncated line. */
+.tm2-contextbar-prompt {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tm2-contextbar-next {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex: none;
+  min-height: var(--target-min);
+  padding: var(--sp-1) var(--sp-2);
+  border: var(--bd);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.tm2-contextbar-next:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.tm2-contextbar-next-icon {
+  color: var(--amber);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tm2-contextbar-next {
+    transition: background var(--dur-1) var(--ease-standard),
+      color var(--dur-1) var(--ease-standard);
+  }
+  .tm2-contextbar-next:hover {
+    background: var(--surface-hover);
+    color: var(--ink-strong);
+  }
+}

@@ -1,0 +1,270 @@
+/* StepsWaterfall styles — self-contained, token-only, square + hairline + mono.
+   Namespaced `swf-`. The signal is DURATION:
+     .swf-bar-fill  -> color-mix(--ink-strong over --surface) — a MONOCHROME bar, never hue.
+     .swf-row-longest -> the scarce amber emphasis on the single longest task.
+     .swf-row-error -> a clay marker rail + the "error" word/icon (failure never colour-only).
+   radius 0 throughout. Motion is gated behind prefers-reduced-motion: no-preference; focus uses
+   focus-visible only (3px ring, 2px offset). Chrome is lowercase; the prompt (user content) is not. */
+
+.swf {
+  display: flex;
+  flex-direction: column;
+  border: var(--bd);
+  background: var(--surface);
+  font-family: var(--font-mono);
+}
+
+.swf-empty {
+  margin: 0;
+  padding: var(--sp-5);
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+/* --- Header: total duration + task count + collapse-all toggle --------------------------- */
+
+.swf-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: var(--control-h-sm);
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: var(--bd);
+  background: var(--surface-2);
+}
+
+.swf-head-meta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.swf-head-total {
+  font-size: var(--fs-label);
+  color: var(--ink);
+}
+
+.swf-head-sep {
+  color: var(--ink-5);
+}
+
+.swf-head-count {
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+}
+
+.swf-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: var(--control-h-sm);
+  padding: 0 var(--sp-2);
+  background: transparent;
+  border: var(--bd);
+  color: var(--ink-3);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.swf-toggle:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.swf-toggle:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.swf-toggle-ic {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: 0 0 auto;
+}
+
+.swf-toggle-chev {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: 0 0 auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .swf-toggle-chev {
+    transition: transform var(--dur-1, 120ms) var(--ease-out, ease);
+  }
+}
+
+.swf-toggle-chev-open {
+  transform: rotate(180deg);
+}
+
+/* --- The list of task rows ---------------------------------------------------------------- */
+
+.swf-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.swf-item + .swf-item {
+  border-top: var(--bd);
+}
+
+.swf-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: var(--sp-7); /* 40px — comfortably clears the 24px target floor */
+  padding: var(--sp-2) var(--sp-3);
+  background: transparent;
+  border: 0;
+  text-align: left;
+  color: var(--ink-2);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .swf-row {
+    transition: background-color var(--dur-1, 120ms) var(--ease-out, ease);
+  }
+  .swf-bar-fill {
+    transition:
+      width var(--dur-2, 160ms) var(--ease-out, ease),
+      background-color var(--dur-2, 160ms) var(--ease-out, ease);
+  }
+}
+
+.swf-row:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.swf-row:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Longest task: the scarce amber accent — a hairline left spine + slightly stronger ink. */
+.swf-row-longest {
+  color: var(--ink);
+  box-shadow: inset 2px 0 0 0 var(--amber);
+}
+
+/* Error task: a clay marker rail (paired with the "error" word + icon — never colour alone). */
+.swf-row-error {
+  box-shadow: inset 2px 0 0 0 var(--clay);
+}
+
+/* Mono task index (#1). */
+.swf-index {
+  flex: 0 0 auto;
+  min-width: 3ch;
+  font-size: 12px;
+  color: var(--ink-4);
+}
+
+/* The user prompt — body font, case preserved, single-line truncated. */
+.swf-prompt {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: inherit;
+  /* USER CONTENT — never lowercase the prompt. */
+}
+
+/* Error chip: clay marker + the "error" word/icon, the non-colour failure signal. */
+.swf-error {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  max-width: 18ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px var(--sp-2);
+  border: 1px solid color-mix(in srgb, var(--clay) 55%, var(--rule));
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--clay);
+}
+
+.swf-error-ic {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+}
+
+/* Turn / tool count. */
+.swf-count {
+  flex: 0 0 auto;
+  min-width: 7ch;
+  text-align: right;
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* --- The monochrome duration bar ---------------------------------------------------------- */
+
+.swf-bar {
+  position: relative;
+  flex: 0 0 auto;
+  width: 120px;
+  height: 6px;
+  background: var(--surface-hover);
+  /* a hairline track so the empty end of a short bar still reads as a measured extent */
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+@media (max-width: 480px) {
+  /* desktop-first: the bar is the first thing to fold away on a narrow rail (the duration value
+     beside it still carries the fact). */
+  .swf-bar {
+    display: none;
+  }
+}
+
+.swf-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  /* MONOCHROME: intensity is a color-mix of --ink-strong over --surface (set per-row via --swf-mix),
+     so longer tasks read darker as well as wider. Never a hue. */
+  background: color-mix(in srgb, var(--ink-strong) var(--swf-mix, 40%), var(--surface));
+}
+
+/* The longest task's bar picks up the scarce amber so the emphasis is consistent with its row. */
+.swf-row-longest .swf-bar-fill {
+  background: color-mix(in srgb, var(--amber) 78%, var(--surface));
+}
+
+/* Error rows may use clay on the bar (still paired with the redundant word/icon above). */
+.swf-bar-fill[data-error] {
+  background: color-mix(in srgb, var(--clay) 64%, var(--surface));
+}
+
+/* --- The duration value ------------------------------------------------------------------- */
+
+.swf-dur {
+  flex: 0 0 auto;
+  min-width: 7ch;
+  text-align: right;
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.swf-row-longest .swf-dur {
+  color: var(--ink);
+}

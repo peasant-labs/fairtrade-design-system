@@ -1,0 +1,334 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   ConnectionState — fairtrade "in use" component family (styles)
+   ─────────────────────────────────────────────────────────────────────────
+   tokens only — no raw hex. the only raw px are tiny local geometry with no
+   token: the status dot (7px, matched to src/index.css .dot), the glow radius,
+   the skeleton bar height, and the ring box (derived from the icon scale).
+   classes are namespaced cx-. status is never color-only: every tone pairs the
+   dot + an icon + the word. static-first: the only motion is the live dot's
+   soft STEADY glow + the connecting spin, both gated behind
+   prefers-reduced-motion: no-preference. radius 0 throughout.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* a visually-hidden label for AT-only text (skeleton "loading…", low-conf notes). */
+.cx-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* ── pill ──────────────────────────────────────────────────────────────────
+   the small, glanceable connection indicator. a square hairline chip, mono +
+   lowercase chrome, the dot + icon + word at its head, the local-first note as
+   quiet trailing chrome. the per-tone dot color lives in the cx-pill-* rules. */
+.cx-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--control-h-sm);
+  padding: var(--sp-1) var(--sp-3);
+  border: var(--bd);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1;
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+.cx-pill-icon {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: none;
+  color: var(--ink-3);
+}
+.cx-pill-word {
+  color: var(--ink);
+  letter-spacing: 0;
+}
+.cx-pill-note {
+  color: var(--ink-3);
+  letter-spacing: 0;
+}
+
+/* the dot — matched to the global .dot geometry (7px round). its color is the
+   tone; it is paired with the icon + word, never the sole signal. */
+.cx-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  align-self: center;
+  background: var(--ink-4);
+}
+
+/* per-tone: olive = live, amber = connecting, clay = disconnected. the dot tone
+   and the icon color move together so the state reads at a glance. */
+.cx-pill-live .cx-dot { background: var(--olive); }
+.cx-pill-live .cx-pill-icon { color: var(--olive); }
+
+.cx-pill-connecting .cx-dot { background: var(--amber); }
+.cx-pill-connecting .cx-pill-icon { color: var(--amber); }
+
+.cx-pill-disconnected .cx-dot { background: var(--clay); }
+.cx-pill-disconnected .cx-pill-icon { color: var(--clay); }
+.cx-pill-disconnected .cx-pill-word { color: var(--ink); }
+
+/* motion: ONLY where motion is welcome. the live dot earns a soft, STEADY glow
+   (no blink — a blink reads as a warning, and the steady "ok" must stay calm).
+   the connecting icon spins to signal work in flight. both off by default. */
+@media (prefers-reduced-motion: no-preference) {
+  .cx-pill-live .cx-dot {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--olive) 22%, transparent);
+  }
+  .cx-pill-connecting .cx-pill-icon {
+    animation: cx-spin 1.1s linear infinite;
+  }
+}
+@keyframes cx-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── state discriminator wrapper ────────────────────────────────────────────
+   a passthrough box; it just scopes the inner states. */
+.cx-state {
+  display: block;
+}
+
+/* ── lost-connection panel ──────────────────────────────────────────────────
+   the calm content-area "we lost the local program" block. plain, square,
+   hairline; an unplug icon (paired with the words, not color alone), the
+   explanation, and a retry. NOT a danger banner — a dropped local socket is
+   recoverable, so the treatment stays neutral, with clay reserved for the icon
+   as the one tonal cue. */
+.cx-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+  border: var(--bd);
+  background: var(--surface);
+}
+.cx-panel-icon {
+  width: var(--ic-lg);
+  height: var(--ic-lg);
+  flex: none;
+  margin-top: 2px; /* optical: align the icon to the title cap-height */
+  color: var(--clay);
+}
+.cx-panel-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.cx-panel-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1.3;
+  text-transform: lowercase;
+  color: var(--ink-strong);
+}
+.cx-panel-body {
+  margin: var(--sp-1) 0 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* the retry control — a square hairline button, mono + lowercase, icon + word.
+   the global :focus-visible (3px var(--focus-ring), offset 2px) handles focus;
+   nothing here suppresses it. */
+.cx-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+  min-height: var(--control-h-sm);
+  padding: 0 var(--sp-3);
+  border: var(--bd-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1;
+  text-transform: lowercase;
+  cursor: pointer;
+}
+.cx-retry:hover {
+  color: var(--ink-strong);
+  border-color: var(--amber-dim);
+}
+.cx-retry .lucide {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: none;
+}
+
+/* ── loading skeleton ───────────────────────────────────────────────────────
+   a few quiet bars. neutral surface, no shimmer by default — work completing,
+   not a signal. a gentle pulse is added only where motion is welcome. */
+.cx-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border: var(--bd);
+  background: var(--surface);
+}
+.cx-skel-bar {
+  height: var(--sp-3);
+  background: var(--surface-hover);
+  border: var(--bd);
+}
+.cx-skel-bar:nth-child(3) { width: 86%; }
+.cx-skel-bar:nth-child(4) { width: 64%; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cx-skel-bar {
+    animation: cx-pulse 1.4s ease-in-out infinite;
+  }
+  .cx-skel-bar:nth-child(3) { animation-delay: 0.12s; }
+  .cx-skel-bar:nth-child(4) { animation-delay: 0.24s; }
+}
+@keyframes cx-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* ── teaching empty state ───────────────────────────────────────────────────
+   left-aligned, like the system's other empty states: a ringed icon, a title,
+   a line of guidance, the command chip, then the privacy line. */
+.cx-teach {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-6);
+  border: var(--bd);
+  background: var(--surface);
+}
+.cx-teach-ring {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sp-7);
+  height: var(--sp-7);
+  border: var(--bd-strong);
+  color: var(--ink-3);
+}
+.cx-teach-ring .lucide {
+  width: var(--ic-lg);
+  height: var(--ic-lg);
+}
+.cx-teach-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-body);
+  line-height: 1.25;
+  text-transform: lowercase;
+  color: var(--ink-strong);
+}
+.cx-teach-body {
+  margin: 0;
+  max-width: 52ch;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* the command chip — the actual command to run, as code (mono, NOT lowercased),
+   with a `$` prompt glyph and a copy button. a square hairline group, set on a
+   darker surface so the command reads as a terminal line. wraps the copy button
+   to a new line on a tight panel rather than overflowing. */
+.cx-cmd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+.cx-cmd-code {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--control-h-sm);
+  padding: var(--sp-1) var(--sp-3);
+  border: var(--bd-strong);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+  color: var(--ink-strong);
+  /* a long command stays selectable + wraps instead of forcing horizontal scroll. */
+  overflow-wrap: anywhere;
+}
+.cx-cmd-prompt {
+  flex: none;
+  color: var(--amber-dim); /* the prompt glyph echoes the nav's "> " accent */
+  user-select: none;
+}
+.cx-cmd-text {
+  letter-spacing: 0;
+}
+
+/* the inline copy button — square, hairline, mono + lowercase, icon + word
+   ("copy" → "copied"). never icon-alone, so the action + its confirmation read
+   for everyone. global :focus-visible handles the ring. */
+.cx-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+  min-height: var(--control-h-sm);
+  padding: 0 var(--sp-3);
+  border: var(--bd-strong);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1;
+  text-transform: lowercase;
+  cursor: pointer;
+}
+.cx-copy:hover {
+  color: var(--ink-strong);
+  border-color: var(--amber-dim);
+}
+.cx-copy .lucide {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: none;
+}
+.cx-copy-label {
+  letter-spacing: 0;
+}
+
+/* the privacy line — the local-first promise, paired with a lock icon so it is
+   not a bare claim. teal: the system's "private / safe" tonal cue, here on the
+   icon only, with the words carrying the meaning. */
+.cx-teach-privacy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: var(--sp-1) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1.3;
+  text-transform: lowercase;
+  color: var(--ink-3);
+}
+.cx-teach-privacy-icon {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: none;
+  color: var(--teal);
+}

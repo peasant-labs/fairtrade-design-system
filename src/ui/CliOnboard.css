@@ -1,0 +1,255 @@
+/* CliOnboard styles — self-contained, token-only, square + hairline + mono. Namespaced `cli-`.
+   The signal is the COMMAND, drawn in mono with a leading dim `$`; the scarce amber accent tints
+   the step number marker. The copied state reads in olive AND a word + check (never colour-only).
+   radius 0 throughout. Motion is gated behind prefers-reduced-motion: no-preference; focus uses
+   focus-visible only (3px ring, 2px offset). Chrome is lowercase; the literal command is NOT. */
+
+/* --- CommandBlock: a `$ command` line + a copy button ------------------------------------- */
+
+.cli-cmd {
+  display: flex;
+  align-items: stretch;
+  border: var(--bd);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+}
+
+.cli-cmd-line {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  overflow-x: auto;
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--ink);
+  /* COMMAND — literal content, case preserved; never lowercase it */
+}
+
+.cli-cmd-line code {
+  font-family: inherit;
+  white-space: pre;
+}
+
+/* the leading prompt sigil — chrome, dim, and not selectable so a copy of the line is just the cmd */
+.cli-cmd-sigil {
+  color: var(--ink-4);
+  user-select: none;
+}
+
+/* The copy button: icon + word, in its own hairline-divided cell on the right. */
+.cli-copy {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-width: max-content;
+  min-height: var(--control-h-sm);
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-left: var(--bd);
+  background: transparent;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cli-copy {
+    transition:
+      background-color var(--dur-1) var(--ease-out),
+      color var(--dur-1) var(--ease-out);
+  }
+}
+
+.cli-copy:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.cli-copy:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Copied: olive ink/icon PAIRED with the "copied" word + check — never colour alone. */
+.cli-copy-done,
+.cli-copy-done:hover {
+  color: var(--olive);
+  background: transparent;
+}
+
+.cli-copy-ic {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: 0 0 auto;
+}
+
+.cli-copy-word {
+  white-space: nowrap;
+}
+
+/* --- CliSteps: a numbered step list ------------------------------------------------------- */
+
+.cli-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+}
+
+.cli-empty {
+  margin: 0;
+  padding: var(--sp-5);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+.cli-step {
+  position: relative;
+  display: flex;
+  gap: var(--sp-4);
+  padding-bottom: var(--sp-6);
+}
+
+.cli-step:last-child {
+  padding-bottom: 0;
+}
+
+/* The connector line: a hairline that runs from below one marker to the next. It starts just under
+   the square marker and stops at the list edge; the last step has no following marker, so none. */
+.cli-step:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: var(--sp-7); /* 40px — just below the 24px marker + a gap */
+  bottom: 0;
+  /* centered on the marker: half the marker width (24px / 2 = 12px) from its left edge */
+  left: 12px;
+  width: 1px;
+  background: var(--rule);
+}
+
+/* The square amber number marker — the scarce accent. >=24px clears the target floor. */
+.cli-step-marker {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--amber-fill);
+  color: var(--amber-fill-ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.cli-step-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  /* align the title's cap-height with the marker's number */
+  padding-top: 2px;
+}
+
+/* Step title — mono chrome, lowercase, the label voice of the list. */
+.cli-step-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  text-transform: lowercase;
+  color: var(--ink-strong);
+}
+
+/* Step body — PROSE, body font, case preserved, comfortable measure. */
+.cli-step-body {
+  margin: 0;
+  max-width: 60ch;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* --- GettingStarted: a dismissible card --------------------------------------------------- */
+
+.cli-card {
+  display: flex;
+  flex-direction: column;
+  border: var(--bd);
+  background: var(--surface);
+}
+
+.cli-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: var(--control-h-sm);
+  padding: var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-4);
+  border-bottom: var(--bd);
+  background: var(--surface-2);
+}
+
+.cli-card-title {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  text-transform: lowercase;
+  color: var(--ink);
+}
+
+/* Square close button — meets the 24px floor, hairline-less until hover. */
+.cli-card-close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cli-card-close {
+    transition:
+      background-color var(--dur-1) var(--ease-out),
+      color var(--dur-1) var(--ease-out);
+  }
+}
+
+.cli-card-close:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.cli-card-close:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.cli-card-close-ic {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: 0 0 auto;
+}
+
+.cli-card-body {
+  padding: var(--sp-5) var(--sp-4);
+}

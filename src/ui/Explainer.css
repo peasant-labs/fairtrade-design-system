@@ -1,0 +1,238 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   explainer + term — fairtrade "in use" teaching pair
+   ─────────────────────────────────────────────────────────────────────────
+   ported from peasant's Explainer + Term. the idea: teach IN PLACE, never in a
+   modal or a tour. each surface gets one collapsible "what am i looking at?" box
+   behind a square "?" toggle (open state persisted per surface); Term is the
+   inline companion — a dotted-underline glossary word with a square tooltip.
+
+   the chrome (toggle, title, term trigger) is mono + lowercase; the explanatory
+   BODY is var(--font-body) because it is reading prose. tokens only, square
+   corners, hairline rules. every transition is gated behind
+   prefers-reduced-motion: no-preference. classes are namespaced `xpl-` and
+   `term-` so nothing collides with index.css.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── explainer root ──────────────────────────────────────────────────────────
+   the `card` tone is a bordered surface panel; `inline` is a quieter ghost that
+   leans on the toggle row alone (no fill, no frame) for dense layouts. */
+.xpl {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+.xpl--card {
+  border: var(--bd);
+  background: var(--surface);
+}
+/* once open, a card's header gets a hairline divider from the prose below. */
+.xpl--card.is-open .xpl-toggle {
+  border-bottom: var(--bd);
+}
+
+/* ── toggle row ──────────────────────────────────────────────────────────────
+   the whole header is the hit target (well over the 24px minimum). mono chrome,
+   lowercase; the square "?" mark leads, the "show/hide" hint trails. */
+.xpl-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  box-sizing: border-box;
+  min-height: var(--control-h-sm);
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  cursor: pointer;
+  appearance: none;
+}
+.xpl--inline .xpl-toggle {
+  padding-inline: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .xpl-toggle {
+    transition: color var(--dur-1) var(--ease-standard),
+                background var(--dur-1) var(--ease-standard);
+  }
+}
+.xpl--card .xpl-toggle:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+.xpl--inline .xpl-toggle:hover {
+  color: var(--ink);
+}
+.xpl-toggle:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* the square "?" badge — a hairline box housing the lucide help glyph. */
+.xpl-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  border: var(--bd-strong);
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .xpl-mark { transition: color var(--dur-1) var(--ease-standard),
+                          border-color var(--dur-1) var(--ease-standard); }
+}
+.xpl-toggle:hover .xpl-mark {
+  color: var(--amber);
+  border-color: var(--amber-dim);
+}
+.xpl-mark .lucide {
+  width: var(--ic-md);
+  height: var(--ic-md);
+}
+
+.xpl-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  letter-spacing: 0.02em;
+}
+/* the trailing affordance — dim, mono, lowercase; says where the click leads. */
+.xpl-hint {
+  flex: none;
+  color: var(--ink-4);
+  font-size: var(--fs-micro);
+}
+
+/* ── prose body ──────────────────────────────────────────────────────────────
+   reading text, so var(--font-body) at full body size with generous leading —
+   NOT the mono chrome of the toggle. `hidden` collapses it from layout and the
+   a11y tree when closed; the inline tone indents to align under the toggle text
+   so the prose sits in the same column as the title. */
+.xpl-body {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.xpl-body[hidden] {
+  display: none;
+}
+.xpl--card .xpl-body {
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+}
+.xpl--inline .xpl-body {
+  /* align under the toggle's title: square mark + its gap. */
+  padding: var(--sp-2) 0 0;
+  padding-inline-start: calc(var(--control-h-sm) + var(--sp-3));
+}
+.xpl-body > * + * {
+  margin-top: var(--sp-2);
+}
+.xpl-body p {
+  margin: 0;
+}
+.xpl-body p + p {
+  margin-top: var(--sp-2);
+}
+/* a gentle fade+rise as the prose opens, frozen instant under reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .xpl.is-open .xpl-body {
+    animation: xpl-reveal var(--dur-2) var(--ease-out);
+  }
+  @keyframes xpl-reveal {
+    from { opacity: 0; transform: translateY(calc(-1 * var(--sp-1))); }
+    to   { opacity: 1; transform: none; }
+  }
+}
+
+/* ── term: inline glossary trigger ───────────────────────────────────────────
+   a dotted-underline word that's a real <button> so it's keyboard-operable. it
+   sits inline in body prose, so it inherits the surrounding font/size and only
+   adds the underline + the help cursor. */
+.term-anchor {
+  position: relative;
+  display: inline;
+  white-space: nowrap;
+}
+.term {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  line-height: inherit;
+  /* the dotted underline is the affordance: "this word has a definition". */
+  border-bottom: 1px dotted var(--ink-4);
+  cursor: help;
+  appearance: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .term { transition: border-color var(--dur-1) var(--ease-standard),
+                      color var(--dur-1) var(--ease-standard); }
+}
+.term:hover,
+.term-anchor.is-pinned .term {
+  color: var(--ink);
+  border-bottom-color: var(--amber);
+}
+.term:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ── term tooltip bubble ─────────────────────────────────────────────────────
+   a small square panel — mono, --surface-2, hairline — mirroring the canvas
+   .tip-bubble. hidden until the trigger is hovered, focused, or tapped (pinned).
+   the prose around it stays put: the bubble is absolutely positioned. */
+.term-bubble {
+  position: absolute;
+  bottom: calc(100% + var(--sp-2));
+  left: 0;
+  z-index: var(--z-tooltip);
+  width: max-content;
+  max-width: 240px;
+  padding: var(--sp-2) var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1.4;
+  text-transform: lowercase;
+  white-space: normal;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: var(--bd-strong);
+  opacity: 0;
+  pointer-events: none;
+}
+.term-anchor:hover .term-bubble,
+.term-anchor:focus-within .term-bubble,
+.term-anchor.is-pinned .term-bubble {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .term-bubble { transition: opacity var(--dur-1) var(--ease-out); }
+}
+/* a square hairline nub seated on the word's edge. */
+.term-bubble::before,
+.term-bubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 12px;
+  width: 8px;
+  height: 8px;
+  background: var(--surface-2);
+  transform: translate(-50%, -5px) rotate(45deg);
+}
+.term-bubble::before {
+  background: var(--rule-strong);
+  transform: translate(-50%, -4px) rotate(45deg);
+}

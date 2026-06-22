@@ -1,0 +1,333 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   FacetRail — fairtrade "in use" component family (styles)
+   ─────────────────────────────────────────────────────────────────────────
+   tokens only — no raw hex. the only raw px are local geometry that has no
+   token: the provider mark box and a couple of focus-target floors, all kept
+   >=24px for neuroinclusive tap/click area. radius is 0 throughout. chrome is
+   mono + lowercase; counts are tabular-nums. amber is scarce — it appears only
+   on an active facet (the radio dot, the provider check fill, the filled topic
+   chip). classes are namespaced `fr-`. static-first: every transition is
+   gated behind prefers-reduced-motion: no-preference at the bottom.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── rail shell ───────────────────────────────────────────────────────────────
+   a ~260px hairline column. it stacks its sections with a hairline rule between
+   them and pins the footer to the bottom when it is given a height by its host
+   (sticky in a tall layout); otherwise it sits at natural height. */
+.fr-rail {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 260px;
+  max-width: 100%;
+  border: var(--bd);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  color: var(--ink);
+}
+
+/* ── section ──────────────────────────────────────────────────────────────────
+   each facet group: a lowercase mono heading then its controls, divided from
+   the next by the hairline rule. */
+.fr-section {
+  padding: var(--sp-4);
+}
+.fr-section + .fr-section {
+  border-top: var(--bd);
+}
+
+.fr-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 400;
+  line-height: 1;
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+.fr-heading-ico {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  color: var(--ink-4);
+}
+
+/* the running count of selected facets, reused by the provider rows + topic
+   chips. tabular so the digits never shift the layout as counts change. */
+.fr-count {
+  margin-left: auto;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-4);
+}
+
+/* ── order (radiogroup) ───────────────────────────────────────────────────────
+   a stack of radio rows. the native input is visually hidden but stays in the
+   tab/arrow order; the dot + label carry the visible state. */
+.fr-orders {
+  display: flex;
+  flex-direction: column;
+}
+.fr-order {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 28px; /* >=24px target floor */
+  padding: var(--sp-1) 0;
+  cursor: pointer;
+  color: var(--ink-2);
+}
+.fr-order:hover {
+  color: var(--ink);
+}
+.fr-order-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.fr-order-dot {
+  box-sizing: border-box;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--rule-strong);
+  background: var(--canvas);
+}
+.fr-order-label {
+  text-transform: lowercase;
+  letter-spacing: 0;
+}
+/* selected: the dot fills amber with a ring of canvas, and the label goes to
+   full ink — a fill + weight signal, not color alone. */
+.fr-order-input:checked + .fr-order-dot {
+  border-color: var(--amber-dim);
+  background: var(--amber-fill);
+  box-shadow: inset 0 0 0 3px var(--canvas);
+}
+.fr-order-input:checked ~ .fr-order-label {
+  color: var(--ink-strong);
+}
+/* the visually-hidden input still owns focus; mirror the global ring onto the
+   visible dot so keyboard users see where they are. */
+.fr-order-input:focus-visible + .fr-order-dot {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ── provider checklist ───────────────────────────────────────────────────────
+   full-width aria-pressed rows: a mark box, the slug, then the count. */
+.fr-providers {
+  display: flex;
+  flex-direction: column;
+}
+.fr-provider {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: 28px; /* >=24px target floor */
+  padding: var(--sp-1) 0;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  text-align: left;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.fr-provider:hover {
+  color: var(--ink);
+}
+/* the mark: a hairline square that fills amber and shows a check when pressed —
+   so the active provider reads as checked even with color removed. */
+.fr-provider-mark {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--ic-lg);
+  height: var(--ic-lg);
+  border: 1px solid var(--rule-strong);
+  background: var(--canvas);
+  color: var(--amber-fill-ink);
+  line-height: 0;
+}
+.fr-provider-mark .lucide {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+}
+.fr-provider-name {
+  letter-spacing: 0;
+}
+.fr-provider[aria-pressed='true'] {
+  color: var(--ink-strong);
+}
+.fr-provider[aria-pressed='true'] .fr-provider-mark {
+  border-color: var(--amber-dim);
+  background: var(--amber-fill);
+}
+.fr-provider[aria-pressed='true'] .fr-count {
+  color: var(--ink-2);
+}
+.fr-provider:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ── topics tag cloud ─────────────────────────────────────────────────────────
+   square chips wrapping into the column. data-weight (1..4) drives the chip's
+   font-size + weight + padding so usage reads as size, not hue. each chip pairs
+   its tag with the usage count. */
+.fr-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.fr-topic {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-height: 24px; /* target floor */
+  padding: var(--sp-1) var(--sp-2);
+  border: var(--bd-strong);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1.2;
+  text-transform: lowercase;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.fr-topic:hover {
+  border-color: var(--amber-dim);
+  color: var(--ink);
+}
+.fr-topic-tag {
+  letter-spacing: 0;
+}
+.fr-topic .fr-count {
+  margin-left: 0;
+  color: var(--ink-4);
+}
+/* weight buckets — size + weight carry magnitude (never color). bucket 1 is the
+   resting label size; 4 is the busiest tag. */
+.fr-topic[data-weight='1'] {
+  font-size: var(--fs-label);
+  font-weight: 400;
+}
+.fr-topic[data-weight='2'] {
+  font-size: 15px;
+  font-weight: 500;
+}
+.fr-topic[data-weight='3'] {
+  font-size: 16px;
+  font-weight: 600;
+  padding: var(--sp-1) var(--sp-3);
+}
+.fr-topic[data-weight='4'] {
+  font-size: 18px;
+  font-weight: 700;
+  padding: var(--sp-2) var(--sp-3);
+}
+/* active: filled amber with the on-amber ink — and a heavier weight so the
+   selection survives a grayscale read. */
+.fr-topic[aria-pressed='true'] {
+  border-color: var(--amber-dim);
+  background: var(--amber-fill);
+  color: var(--amber-fill-ink);
+  font-weight: 700;
+}
+.fr-topic[aria-pressed='true'] .fr-count {
+  color: var(--amber-fill-ink);
+}
+.fr-topic:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ── sticky footer ────────────────────────────────────────────────────────────
+   the running active count on the left, the clear-all on the right. it sticks
+   to the bottom of the rail's scroll area so it stays reachable in a tall list. */
+.fr-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-top: auto;
+  padding: var(--sp-3) var(--sp-4);
+  border-top: var(--bd);
+  background: var(--surface);
+}
+.fr-active {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  color: var(--ink-3);
+}
+.fr-active-n {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.fr-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 24px; /* target floor */
+  padding: var(--sp-1) var(--sp-2);
+  border: var(--bd-strong);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.fr-clear .lucide {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+}
+.fr-clear:hover {
+  border-color: var(--clay);
+  color: var(--clay);
+}
+.fr-clear:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ── motion (gated) ───────────────────────────────────────────────────────────
+   the only transitions in the component — color/border/background nudges on
+   hover + state — live behind the reduced-motion preference so a reader who
+   asked for stillness gets instant state changes. */
+@media (prefers-reduced-motion: no-preference) {
+  .fr-order,
+  .fr-order-dot,
+  .fr-order-label,
+  .fr-provider,
+  .fr-provider-mark,
+  .fr-topic,
+  .fr-clear {
+    transition:
+      color var(--dur-1) var(--ease-out),
+      border-color var(--dur-1) var(--ease-out),
+      background var(--dur-1) var(--ease-out);
+  }
+}

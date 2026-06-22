@@ -1,0 +1,254 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   Tour — fairtrade "in use" guided-tour / spotlight coachmark
+   ─────────────────────────────────────────────────────────────────────────
+   a full-viewport overlay that dims the canvas with a single dark scrim (the
+   system's one bg-black/55-style scrim exception) EXCEPT for a square cut-out
+   over the current step's anchor — drawn as four scrim panels around the anchor
+   rect — with a faint amber spotlight ring around the cut-out. beside the anchor
+   sits a coachmark popover: mono lowercase chrome (eyebrow, skip, buttons), a
+   display title, reading-prose body, progress dots (current = amber), and back /
+   next / done controls. focus is trapped inside the coachmark; esc + skip close.
+
+   amber is kept scarce — only the spotlight ring and the active progress dot
+   carry it. square corners, hairline rules, tokens only. every transition is
+   gated behind prefers-reduced-motion: no-preference; under reduced motion the
+   spotlight jumps between steps with no animation. classes namespaced `tour-`.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── root ────────────────────────────────────────────────────────────────────
+   fixed, fills the viewport, above dialogs/toasts so the spotlight owns the
+   screen. children (scrim panels + coachmark) are absolutely placed by inline
+   geometry computed from the live anchor rect. */
+.tour-root {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-toast) + 10);
+}
+
+/* ── scrim panels ────────────────────────────────────────────────────────────
+   each panel is one dark rectangle; four of them frame the square cut-out (or a
+   single one dims the whole viewport when there's no anchor). pointer-events stay
+   on so clicks don't fall through to the inert page behind the overlay. */
+.tour-scrim {
+  position: fixed;
+  display: block;
+  /* theme-aware scrim, matching the system's .scrim (var(--canvas) 55%) — no hardcoded color. */
+  background: color-mix(in srgb, var(--canvas) 78%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tour-scrim { animation: tour-fade var(--dur-2) ease both; }
+  @keyframes tour-fade { from { opacity: 0; } to { opacity: 1; } }
+}
+
+/* ── the spotlight ring ──────────────────────────────────────────────────────
+   a faint amber frame around the cut-out — the one scarce accent here. it must
+   not eat clicks meant for the lit element. the ring tracks the anchor every
+   frame, so we keep it transition-free (the rAF re-position is the motion). */
+.tour-ring {
+  position: fixed;
+  pointer-events: none;
+  border: 1px solid var(--amber);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--amber) 30%, transparent),
+    0 0 0 99vmax color-mix(in srgb, var(--amber) 0%, transparent);
+}
+
+/* ── coachmark popover ───────────────────────────────────────────────────────
+   square, hairline-strong framed, elevated surface, a column of head / body /
+   foot. placed beside the anchor by inline top|bottom + left from the component;
+   a short rise-in on appearance, gated behind reduced-motion. */
+.tour-coach {
+  position: fixed;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: calc(100vw - var(--sp-8));
+  background: var(--surface-elev);
+  border: var(--bd-strong);
+  box-shadow: var(--glow), 0 24px 60px -20px rgba(0, 0, 0, .6);
+}
+.tour-coach:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tour-coach { animation: tour-rise var(--dur-2) var(--ease-out) both; }
+  @keyframes tour-rise {
+    from { opacity: 0; transform: translateY(var(--sp-2)); }
+    to   { opacity: 1; transform: none; }
+  }
+  /* when placed above the anchor, rise from below for a consistent feel. */
+  .tour-coach--above { animation-name: tour-rise-up; }
+  @keyframes tour-rise-up {
+    from { opacity: 0; transform: translateY(calc(-1 * var(--sp-2))); }
+    to   { opacity: 1; transform: none; }
+  }
+}
+/* the centered fallback keeps its translate transform; don't let the rise
+   animation clobber it. */
+.tour-coach--center { animation: none; }
+
+/* ── head: mono lowercase eyebrow ("step n of m") + a square ghost skip ──────── */
+.tour-coach-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex: none;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: var(--bd);
+}
+.tour-eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--ink-3);
+}
+.tour-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  min-width: 24px;
+  min-height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  appearance: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tour-close {
+    transition: color var(--dur-1) var(--ease-standard),
+                border-color var(--dur-1) var(--ease-standard);
+  }
+}
+.tour-close:hover { color: var(--ink); border-color: var(--amber-dim); }
+.tour-close:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.tour-close .lucide { width: var(--ic-md); height: var(--ic-md); }
+
+/* ── body: display title + reading prose ─────────────────────────────────────── */
+.tour-coach-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--sp-4);
+}
+.tour-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: var(--ink-strong);
+}
+.tour-prose {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.tour-prose p { margin: 0; }
+.tour-prose p + p { margin-top: var(--sp-2); }
+/* user content woven into prose stays mono + ink, never lowercased. */
+.tour-mono { font-family: var(--font-mono); text-transform: none; color: var(--ink); }
+
+/* ── foot: progress dots + back / next-or-done ──────────────────────────────── */
+.tour-coach-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex: none;
+  padding: var(--sp-3) var(--sp-4);
+  border-top: var(--bd);
+}
+
+/* progress dots — square (no radius); the current dot is amber, the rest a quiet
+   rule. the textual "step n of m" eyebrow carries the same state for AT, so the
+   active step is never signalled by color alone. */
+.tour-dots {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tour-dot {
+  display: block;
+  width: 6px;
+  height: 6px;
+  background: var(--rule-strong);
+}
+.tour-dot--on {
+  background: var(--amber);
+  outline: 1px solid var(--amber-dim);
+  outline-offset: 1px;
+}
+
+/* ── buttons ─────────────────────────────────────────────────────────────────
+   square, hairline, one shared height, mono lowercase — mirror the system .btn.
+   each is a >=24px target with an icon paired to its label. */
+.tour-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.tour-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  box-sizing: border-box;
+  height: var(--control-h-sm);
+  min-height: 24px;
+  padding: 0 var(--sp-3);
+  border: 1px solid transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1;
+  text-transform: lowercase;
+  cursor: pointer;
+  appearance: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tour-btn {
+    transition: background var(--dur-1) var(--ease-standard),
+                color var(--dur-1) var(--ease-standard),
+                border-color var(--dur-1) var(--ease-standard);
+  }
+}
+.tour-btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.tour-btn:disabled { opacity: .5; cursor: not-allowed; }
+.tour-btn .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+
+.tour-btn--ghost {
+  background: transparent;
+  color: var(--ink-2);
+  border-color: var(--rule-strong);
+}
+.tour-btn--ghost:not(:disabled):hover { color: var(--ink); border-color: var(--amber-dim); }
+
+/* the primary ("next" / "done"): amber fill, dark ink — the move-forward
+   affordance. amber stays scarce; this is the only filled element. */
+.tour-btn--primary {
+  background: var(--amber-fill);
+  color: var(--amber-fill-ink);
+  border-color: var(--amber-fill);
+  font-weight: 600;
+}
+.tour-btn--primary:not(:disabled):hover {
+  background: var(--amber-bright);
+  border-color: var(--amber-bright);
+}

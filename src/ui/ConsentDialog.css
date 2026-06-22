@@ -1,0 +1,400 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   ConsentDialog + ConsentSummary — fairtrade "in use" governance dialog
+   ─────────────────────────────────────────────────────────────────────────
+   reuses the system's .dialog / .dlg-* look (scrim + bordered square modal,
+   head / body / foot) but namespaced `cns-` so nothing collides with index.css.
+   the body holds a <ConsentSummary> — an aligned grid of governance axes — and
+   a consent gate that holds the amber primary disabled until ticked.
+
+   chrome (title, keys, checkbox, buttons) is mono + lowercase; the intro is
+   reading prose (var(--font-body)); user content (.cns-name / .cns-mono) is mono
+   but NEVER text-transformed, so collective names and handles keep their case.
+   square corners, hairline rules, tokens only. every transition is gated behind
+   prefers-reduced-motion: no-preference. ────────────────────────────────────── */
+
+/* ── overlay + scrim ─────────────────────────────────────────────────────────
+   a fixed, viewport-centered overlay (mirrors .dlg-overlay); the scrim sits
+   under the panel and dims/blurs the canvas. */
+.cns-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-5);
+}
+.cns-scrim {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--canvas) 55%, transparent);
+  backdrop-filter: blur(2px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cns-scrim { animation: cns-fade var(--dur-2) ease both; }
+  @keyframes cns-fade { from { opacity: 0; } to { opacity: 1; } }
+}
+
+/* ── the modal panel ─────────────────────────────────────────────────────────
+   square, hairline-strong border, surface, a column of head / body / foot. */
+.cns-dialog {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(var(--dialog-w), 100%);
+  max-height: calc(100dvh - var(--sp-8));
+  background: var(--surface);
+  border: var(--bd-strong);
+  box-shadow: var(--glow), 0 24px 60px -20px rgba(0, 0, 0, .6);
+}
+.cns-dialog:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cns-dialog { animation: cns-rise var(--dur-2) var(--ease-out) both; }
+  @keyframes cns-rise {
+    from { opacity: 0; transform: translateY(var(--sp-2)); }
+    to   { opacity: 1; transform: none; }
+  }
+}
+
+/* ── head ────────────────────────────────────────────────────────────────────
+   mono lowercase title + a square ghost close control. */
+.cns-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex: none;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: var(--bd);
+}
+.cns-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-transform: lowercase;
+  color: var(--ink-strong);
+}
+.cns-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  appearance: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cns-close { transition: color var(--dur-1) var(--ease-standard),
+                           border-color var(--dur-1) var(--ease-standard); }
+}
+.cns-close:hover { color: var(--ink); border-color: var(--amber-dim); }
+.cns-close:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.cns-close:disabled { opacity: .5; cursor: not-allowed; }
+.cns-close .lucide { width: var(--ic-md); height: var(--ic-md); }
+
+/* ── body ────────────────────────────────────────────────────────────────────
+   stacks the intro prose, the summary, any extra children, and the consent gate;
+   scrolls within the capped panel height. */
+.cns-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--sp-4);
+  overflow-y: auto;
+}
+
+/* the lede: reading prose, NOT mono chrome. */
+.cns-intro {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.cns-intro p { margin: 0; }
+.cns-intro p + p { margin-top: var(--sp-2); }
+
+/* user content woven into prose / values — mono, ink, but NEVER lowercased. */
+.cns-name,
+.cns-mono {
+  font-family: var(--font-mono);
+  text-transform: none;
+  color: var(--ink-strong);
+}
+.cns-intro .cns-name,
+.cns-intro .cns-mono { color: var(--ink); }
+/* a quiet inline emphasis for prose (e.g. "owners only") without color-coding. */
+.cns-em { color: var(--ink); font-weight: 700; }
+
+/* ── ConsentSummary ──────────────────────────────────────────────────────────
+   the aligned axes panel: a square surface-2 block, hairline framed, each row a
+   [icon chip | mono key | value + scope] grid so keys and values line up across
+   rows. this is the seed the join dialog used, generalized. */
+.cns-summary {
+  border: var(--bd);
+  background: var(--surface-2);
+}
+.cns-summary-cap {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: var(--bd);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--ink-3);
+}
+.cns-axes {
+  margin: 0;
+  padding: 0;
+}
+.cns-axis {
+  display: grid;
+  grid-template-columns: var(--control-h-sm) minmax(5.5rem, max-content) 1fr;
+  align-items: start;
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-3);
+}
+.cns-axis + .cns-axis { border-top: var(--bd); }
+
+/* the square icon chip — leads each row, tone gives it a quiet accent border so
+   the axis is not signalled by color alone (the key + value carry the meaning). */
+.cns-axis-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  border: var(--bd-strong);
+  background: var(--surface);
+  color: var(--ink-3);
+}
+.cns-axis-chip .lucide { width: var(--ic-md); height: var(--ic-md); }
+.cns-axis--reveal .cns-axis-chip { color: var(--amber); border-color: var(--amber-dim); }
+.cns-axis--open .cns-axis-chip { color: var(--teal); border-color: var(--teal); }
+.cns-axis--restricted .cns-axis-chip { color: var(--clay); border-color: var(--clay); }
+
+/* the mono lowercase key — the axis name ("identity", "data access"). */
+.cns-axis-key {
+  margin: 0;
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1.4;
+  text-transform: lowercase;
+  color: var(--ink-3);
+}
+/* the value column: the chosen value + an optional "who can see" scope note. */
+.cns-axis-val {
+  margin: 0;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+.cns-axis-value {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+  color: var(--ink);
+}
+/* values that carry user content keep their case via .cns-name / .cns-mono. */
+.cns-axis-value .cns-name,
+.cns-axis-value .cns-mono { color: var(--ink-strong); }
+.cns-axis-scope {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: 1.4;
+  text-transform: lowercase;
+  color: var(--ink-4);
+}
+
+/* ── a generic listed-detail block (transcripts, contributions) ───────────────
+   reused by the contribute/leave stories for "what is moving" lists. mono
+   eyebrow + hairline-divided rows on the plain surface. */
+.cns-list {
+  border: var(--bd);
+  background: var(--surface);
+}
+.cns-list-cap {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: var(--bd);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--ink-3);
+}
+.cns-list ul { list-style: none; margin: 0; padding: 0; }
+.cns-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  min-height: var(--target-min);
+}
+.cns-list li + li { border-top: var(--bd); }
+.cns-list-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cns-list-meta {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+.cns-list-more {
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+}
+
+/* ── the consent gate ────────────────────────────────────────────────────────
+   reproduces the system .check / .check-box control, namespaced. the styled box
+   IS the native input (appearance:none; ::after draws the tick). the whole label
+   row is a >=24px target. when unticked, the primary stays disabled. */
+.cns-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  min-height: var(--target-comfortable);
+  padding: var(--sp-3);
+  border: var(--bd);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+.cns-consent:has(.cns-consent-box:disabled) { cursor: not-allowed; }
+.cns-consent-box {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--ic-lg);
+  height: var(--ic-lg);
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--rule-strong);
+  background: var(--canvas);
+  cursor: pointer;
+}
+.cns-consent-box::after {
+  content: "";
+  width: 5px;
+  height: 9px;
+  border: solid var(--on-amber);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translateY(-1px);
+  opacity: 0;
+}
+.cns-consent-box:checked { background: var(--amber); border-color: var(--amber-dim); }
+.cns-consent-box:checked::after { opacity: 1; }
+.cns-consent-box:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.cns-consent-box:disabled { opacity: .5; cursor: not-allowed; }
+.cns-consent-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1.4;
+  text-transform: lowercase;
+  color: var(--ink-2);
+}
+.cns-consent:has(.cns-consent-box:disabled) .cns-consent-label { color: var(--ink-4); }
+
+/* ── foot + buttons ──────────────────────────────────────────────────────────
+   right-aligned: a ghost cancel and the primary confirm. buttons mirror the
+   system .btn (square, hairline, one shared height, mono lowercase). */
+.cns-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-3);
+  flex: none;
+  padding: var(--sp-3) var(--sp-4);
+  border-top: var(--bd);
+}
+.cns-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  box-sizing: border-box;
+  height: var(--control-h);
+  padding: 0 var(--sp-4);
+  border: 1px solid transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1;
+  text-transform: lowercase;
+  cursor: pointer;
+  appearance: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cns-btn { transition: background var(--dur-1), color var(--dur-1), border-color var(--dur-1); }
+}
+.cns-btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.cns-btn:disabled { opacity: .5; cursor: not-allowed; }
+.cns-btn .lucide { width: var(--ic-md); height: var(--ic-md); flex: none; }
+
+.cns-btn--ghost {
+  background: transparent;
+  color: var(--ink-2);
+  border-color: var(--rule-strong);
+}
+.cns-btn--ghost:not(:disabled):hover { color: var(--ink); border-color: var(--amber-dim); }
+
+/* the primary: amber fill, dark ink — the affordance that crosses the boundary. */
+.cns-btn--primary {
+  background: var(--amber-fill);
+  color: var(--amber-fill-ink);
+  border-color: var(--amber-fill);
+  font-weight: 600;
+}
+.cns-btn--primary:not(:disabled):hover { background: var(--amber-bright); border-color: var(--amber-bright); }
+
+/* the danger primary (leave / retract): clay-soft, escalating to filled on hover.
+   color is paired with the explicit label + the consent gate, never color alone. */
+.cns-btn--danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  font-weight: 600;
+}
+.cns-btn--danger:not(:disabled):hover { background: var(--danger); color: var(--danger-fg); border-color: var(--danger); }
+
+/* busy spinner on the primary — a square-cornered ring (no border-radius would
+   read as a square; we keep it round only as the spinner glyph idiom). */
+.cns-spin {
+  display: inline-block;
+  width: var(--ic-md);
+  height: var(--ic-md);
+  flex: none;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cns-spin { animation: cns-spin 0.7s linear infinite; }
+  @keyframes cns-spin { to { transform: rotate(360deg); } }
+}

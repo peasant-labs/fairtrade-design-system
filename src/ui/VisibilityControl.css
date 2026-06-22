@@ -1,0 +1,249 @@
+/* VisibilityControl — visibility + scope controls. every value is a token (no hardcoded hex/px):
+   spacing var(--sp-*), borders var(--bd)/--bd-strong, icons var(--ic-*), control heights
+   var(--control-h)/--control-h-sm, the scarce accent --amber (selected / shared override), --teal
+   (public), --clay (private), surfaces + ink + rules. square corners (radius 0). type:
+   var(--font-mono) for labels + chrome, var(--font-body) for descriptions. chrome is lowercased;
+   user content (a shared group name) is NEVER lowercased. state NEVER rides on color alone — every
+   mode pairs a glyph + the word, and the selected segment / chip / focus carries aria-pressed.
+   transitions only under prefers-reduced-motion: no-preference. classes are namespaced vc-. */
+
+/* visually-hidden helper — gives AT the word the glyph carries. */
+.vc-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── VisibilityEye: glyph + tooltip ──────────────────────────────────────────── */
+/* the anchor is focusable so the tooltip naming the exact mode reaches keyboard users too. the
+   glyph alone never carries meaning — the .vc-sr word + the tooltip do. */
+.vc-eye {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+  cursor: default;
+}
+.vc-eye-icon { flex: none; }
+.vc-eye-sm .vc-eye-icon { width: var(--ic-sm); height: var(--ic-sm); }
+.vc-eye-md .vc-eye-icon { width: var(--ic-md); height: var(--ic-md); }
+.vc-eye-lg .vc-eye-icon { width: var(--ic-lg); height: var(--ic-lg); }
+
+/* the tooltip bubble — square, hairline, floating on the elevated surface. names the mode (and the
+   exact group for shared); positioned with css only, above the glyph. */
+.vc-tip {
+  position: absolute;
+  bottom: calc(100% + var(--sp-2));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  max-width: 18rem;
+  width: max-content;
+  padding: var(--sp-1) var(--sp-2);
+  border: var(--bd-strong);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: 1.4;
+  /* the group name inside is user content → not lowercased. */
+  text-transform: none;
+  white-space: normal;
+  pointer-events: none;
+}
+
+/* ── VisibilitySegmented ─────────────────────────────────────────────────────── */
+.vc-seg-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.vc-seg-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+/* the two-up control. options sit side by side with a hairline between them. */
+.vc-seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: var(--bd-strong);
+  background: var(--surface);
+}
+
+.vc-seg-opt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  align-items: flex-start;
+  text-align: left;
+  min-height: var(--control-h);
+  padding: var(--sp-3);
+  border: 0;
+  border-left: var(--bd);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.vc-seg-opt:first-child { border-left: 0; }
+.vc-seg-opt:hover { color: var(--ink); background: var(--surface-hover); }
+
+/* the head — the leading icon + the word. */
+.vc-seg-opt-head {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+}
+.vc-seg-opt-icon { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+
+/* the description — guidance prose (not chrome), so body type + sentence case. */
+.vc-seg-opt-desc {
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+
+/* the pressed option — amber selected fill + a bolder word. the icon + aria-pressed already carry
+   the choice, so the fill is reinforcement, not the sole signal. */
+.vc-seg-opt[aria-pressed='true'] {
+  background: var(--amber-fill);
+  color: var(--amber-fill-ink);
+}
+.vc-seg-opt[aria-pressed='true'] .vc-seg-opt-head { font-weight: 600; }
+.vc-seg-opt[aria-pressed='true'] .vc-seg-opt-desc { color: var(--amber-fill-ink); }
+.vc-seg-opt[aria-pressed='true']:hover { background: var(--amber-fill); }
+
+/* the shared override note — the server owns this state; the note explains how to override it. amber
+   caution (scarce), icon + words, never color-only. */
+.vc-seg-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--amber);
+  background: var(--amber-fill);
+  color: var(--amber-fill-ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  line-height: 1.4;
+}
+.vc-seg-note-icon {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: none;
+  margin-top: 2px;
+}
+
+/* ── ScopeChip ───────────────────────────────────────────────────────────────── */
+.vc-scope {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.vc-scope-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+.vc-scope-set {
+  display: inline-flex;
+  border: var(--bd-strong);
+  background: var(--surface);
+}
+
+.vc-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-h-sm);
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-left: var(--bd);
+  background: transparent;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  cursor: pointer;
+}
+.vc-chip:first-child { border-left: 0; }
+.vc-chip:hover { color: var(--ink); background: var(--surface-hover); }
+
+/* the pressed chip — amber selected fill + a bolder word, alongside aria-pressed. */
+.vc-chip[aria-pressed='true'] {
+  background: var(--amber-fill);
+  color: var(--amber-fill-ink);
+  font-weight: 600;
+}
+.vc-chip[aria-pressed='true']:hover { background: var(--amber-fill); }
+
+/* ── FocusedModeToggle ───────────────────────────────────────────────────────── */
+.vc-focus {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--control-h-sm);
+  padding: 0 var(--sp-3);
+  border: var(--bd-strong);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  cursor: pointer;
+}
+.vc-focus-icon { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+.vc-focus-word { font-weight: 500; }
+/* the hint trails the word, dimmer, so the button reads as one phrase. */
+.vc-focus-hint { color: var(--ink-3); }
+.vc-focus:hover { color: var(--ink); border-color: var(--rule-strong); }
+.vc-focus:hover .vc-focus-hint { color: var(--ink-2); }
+
+/* on — amber selected fill, the icon stays, aria-pressed carries it for AT. */
+.vc-focus[aria-pressed='true'] {
+  background: var(--amber-fill);
+  border-color: var(--amber);
+  color: var(--amber-fill-ink);
+}
+.vc-focus[aria-pressed='true'] .vc-focus-hint { color: var(--amber-fill-ink); }
+
+/* ── focus ───────────────────────────────────────────────────────────────────── */
+.vc-eye:focus-visible,
+.vc-seg-opt:focus-visible,
+.vc-chip:focus-visible,
+.vc-focus:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ── motion: only when the user has not asked to reduce it ───────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .vc-seg-opt,
+  .vc-chip,
+  .vc-focus {
+    transition:
+      background var(--dur-1) var(--ease-out),
+      color var(--dur-1) var(--ease-out),
+      border-color var(--dur-1) var(--ease-out);
+  }
+}

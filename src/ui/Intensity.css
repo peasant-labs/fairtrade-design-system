@@ -1,0 +1,283 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   intensity ramp + map node — fairtrade "in use" component family
+   ─────────────────────────────────────────────────────────────────────────
+   ported from peasant's code-map (MapSquareNode + intensity.ts). the core idea:
+   a metric's MAGNITUDE is encoded by FILL WEIGHT, not hue. a monochrome 0–4 ramp
+   (--ir-0 faint → --ir-4 strong) keeps the map glanceable and colour-blind-safe.
+
+   the map node keeps FOUR encodings strictly ORTHOGONAL so they never collide:
+     • size      → loc            (.ir-node--{xs,sm,md,lg,xl} width/height class)
+     • fill      → coverage 0..4  (the --ir-* ramp; the ramp's ONLY consumer)
+     • selection → amber border + a check marker (never colour alone)
+     • violation → a clay badge with a warning icon (never colour alone)
+   an optional bottom-edge bar carries a second magnitude (effort) on the ramp.
+
+   tokens only — no raw hex, no raw px outside the local ramp math. all classes
+   are namespaced `ir-` so nothing collides with index.css. static-first: every
+   transition is wrapped in `prefers-reduced-motion: no-preference`.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── the ramp ──────────────────────────────────────────────────────────────
+   stepped color-mix of --ink over --surface. because both ends are theme
+   tokens, the whole ramp re-themes for free (dark: ink is light → ramp climbs
+   toward the light ink; light: ink is dark → ramp climbs toward dark ink),
+   exactly mirroring peasant's two-direction --intensity-0..4.
+   --ir-0 stays a hair off --surface so an empty cell still reads as a cell. */
+.ir-scope {
+  --ir-0: color-mix(in srgb, var(--ink) 4%,  var(--surface));
+  --ir-1: color-mix(in srgb, var(--ink) 14%, var(--surface));
+  --ir-2: color-mix(in srgb, var(--ink) 30%, var(--surface));
+  --ir-3: color-mix(in srgb, var(--ink) 52%, var(--surface));
+  --ir-4: color-mix(in srgb, var(--ink) 82%, var(--surface));
+
+  /* amber variant of the ramp — used only where a magnitude is also "scarce"
+     / attention-worthy. kept rare on purpose (amber is the scarce accent). */
+  --ir-a0: color-mix(in srgb, var(--amber) 6%,  var(--surface));
+  --ir-a1: color-mix(in srgb, var(--amber) 20%, var(--surface));
+  --ir-a2: color-mix(in srgb, var(--amber) 40%, var(--surface));
+  --ir-a3: color-mix(in srgb, var(--amber) 64%, var(--surface));
+  --ir-a4: color-mix(in srgb, var(--amber) 90%, var(--surface));
+}
+
+/* ── swatch ────────────────────────────────────────────────────────────────
+   the atomic ramp unit. a square chip filled at one of the 5 levels. */
+.ir-swatch {
+  display: inline-block;
+  box-sizing: border-box;
+  width: var(--ic-lg);
+  height: var(--ic-lg);
+  border: var(--bd);
+  background: var(--ir-0);
+  flex: none;
+  vertical-align: middle;
+}
+.ir-swatch[data-level="0"] { background: var(--ir-0); }
+.ir-swatch[data-level="1"] { background: var(--ir-1); }
+.ir-swatch[data-level="2"] { background: var(--ir-2); }
+.ir-swatch[data-level="3"] { background: var(--ir-3); }
+.ir-swatch[data-level="4"] { background: var(--ir-4); }
+
+.ir-swatch[data-accent="amber"][data-level="0"] { background: var(--ir-a0); }
+.ir-swatch[data-accent="amber"][data-level="1"] { background: var(--ir-a1); }
+.ir-swatch[data-accent="amber"][data-level="2"] { background: var(--ir-a2); }
+.ir-swatch[data-accent="amber"][data-level="3"] { background: var(--ir-a3); }
+.ir-swatch[data-accent="amber"][data-level="4"] { background: var(--ir-a4); }
+
+.ir-swatch--lg { width: var(--sp-5); height: var(--sp-5); }
+
+/* ── legend ────────────────────────────────────────────────────────────────
+   the ramp made self-documenting: "none → full" with every step labelled. */
+.ir-legend {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+}
+.ir-legend__title {
+  color: var(--ink-2);
+  letter-spacing: 0.04em;
+}
+.ir-legend__steps {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border: var(--bd);
+}
+.ir-legend__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  min-width: calc(var(--sp-8) + var(--sp-2));
+  border-right: var(--bd);
+}
+.ir-legend__step:last-child { border-right: 0; }
+.ir-legend__cell {
+  width: 100%;
+  height: var(--sp-5);
+  border: var(--bd);
+}
+.ir-legend__cell[data-level="0"] { background: var(--ir-0); }
+.ir-legend__cell[data-level="1"] { background: var(--ir-1); }
+.ir-legend__cell[data-level="2"] { background: var(--ir-2); }
+.ir-legend__cell[data-level="3"] { background: var(--ir-3); }
+.ir-legend__cell[data-level="4"] { background: var(--ir-4); }
+.ir-legend__num {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+.ir-legend__label {
+  color: var(--ink-4);
+  font-size: var(--fs-micro, 11px);
+  text-align: center;
+}
+.ir-legend__ends {
+  display: flex;
+  justify-content: space-between;
+  color: var(--ink-4);
+  font-size: var(--fs-micro, 11px);
+}
+
+/* ── heatmap row ───────────────────────────────────────────────────────────
+   a strip of ramp cells — the ramp applied as a sparkline-style magnitude row. */
+.ir-heatmap {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+}
+.ir-heatmap__cell {
+  width: var(--sp-5);
+  height: var(--sp-5);
+  border: var(--bd);
+  background: var(--ir-0);
+}
+.ir-heatmap__cell[data-level="0"] { background: var(--ir-0); }
+.ir-heatmap__cell[data-level="1"] { background: var(--ir-1); }
+.ir-heatmap__cell[data-level="2"] { background: var(--ir-2); }
+.ir-heatmap__cell[data-level="3"] { background: var(--ir-3); }
+.ir-heatmap__cell[data-level="4"] { background: var(--ir-4); }
+
+/* ── map node ──────────────────────────────────────────────────────────────
+   the square node. fill = coverage ramp; size = loc; border+marker = selected;
+   badge = violation. square corners, mono label, tabular counts. */
+.ir-node {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 2px;
+  overflow: hidden;
+  padding: var(--sp-2);
+  text-align: left;
+  border: var(--bd);
+  background: var(--ir-0);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  cursor: pointer;
+  appearance: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ir-node {
+    transition: border-color var(--dur-1) var(--ease-standard),
+                background var(--dur-1) var(--ease-standard);
+  }
+}
+
+/* size class hints at loc — the only channel that touches the box footprint. */
+.ir-node--xs { width: var(--sp-8); min-height: var(--sp-8); }
+.ir-node--sm { width: calc(var(--sp-8) + var(--sp-4)); min-height: calc(var(--sp-8) + var(--sp-3)); }
+.ir-node--md { width: calc(var(--sp-8) + var(--sp-7)); min-height: calc(var(--sp-8) + var(--sp-5)); }
+.ir-node--lg { width: calc(var(--sp-8) * 2); min-height: calc(var(--sp-8) + var(--sp-6)); }
+.ir-node--xl { width: calc(var(--sp-8) * 2 + var(--sp-6)); min-height: calc(var(--sp-8) * 2); }
+
+/* fill ladder — coverage's ONLY channel. higher coverage = heavier fill. */
+.ir-node[data-coverage="0"] { background: var(--ir-0); }
+.ir-node[data-coverage="1"] { background: var(--ir-1); }
+.ir-node[data-coverage="2"] { background: var(--ir-2); }
+.ir-node[data-coverage="3"] { background: var(--ir-3); }
+.ir-node[data-coverage="4"] { background: var(--ir-4); }
+
+/* on the heavy end of the ramp the fill is dark (dark theme: light); flip the
+   text to the strong ink so the label keeps ≥AA contrast on its own cell. */
+.ir-node[data-coverage="3"] .ir-node__label,
+.ir-node[data-coverage="4"] .ir-node__label { color: var(--ink-strong); }
+.ir-node[data-coverage="0"] .ir-node__label,
+.ir-node[data-coverage="1"] .ir-node__label { color: var(--ink-2); }
+
+.ir-node__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-1);
+}
+.ir-node__label {
+  font-size: var(--fs-label);
+  line-height: 1.15;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.ir-node__count {
+  display: block;
+  font-size: var(--fs-micro, 11px);
+  line-height: 1.2;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ir-node[data-coverage="3"] .ir-node__count,
+.ir-node[data-coverage="4"] .ir-node__count { color: var(--ink-2); }
+
+/* selection — orthogonal channel #3: amber border + a corner check marker.
+   never colour alone: the marker (an icon) carries the same meaning. */
+.ir-node[data-selected="true"] {
+  border-color: var(--amber);
+  box-shadow: inset 0 0 0 1px var(--amber);
+}
+.ir-node__mark {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ic-md);
+  height: var(--ic-md);
+  background: var(--amber-fill);
+  color: var(--amber-fill-ink);
+}
+.ir-node__mark .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+
+/* violation — orthogonal channel #4: a clay badge with a warning icon + count. */
+.ir-node__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  padding: 0 3px;
+  color: var(--clay);
+  border: 1px solid color-mix(in srgb, var(--clay) 55%, var(--rule));
+  background: color-mix(in srgb, var(--clay) 12%, var(--surface));
+  font-size: var(--fs-micro, 11px);
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+.ir-node__badge .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+
+/* effort bar — a second magnitude on the ramp, pinned to the bottom edge.
+   does NOT reuse the coverage fill, so the two magnitudes never alias. */
+.ir-node__effort {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--ir-a0);
+}
+.ir-node__effort[data-level="0"] { background: var(--ir-a0); }
+.ir-node__effort[data-level="1"] { background: var(--ir-a1); }
+.ir-node__effort[data-level="2"] { background: var(--ir-a2); }
+.ir-node__effort[data-level="3"] { background: var(--ir-a3); }
+.ir-node__effort[data-level="4"] { background: var(--ir-a4); }
+
+/* keyboard focus — global ring, matches index.css :focus-visible. */
+.ir-node:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* node grid helper for stories / consumers. */
+.ir-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}

@@ -1,9 +1,10 @@
 shots/
 inspiration/
-# llm/ holds working notes; only the two shipped design-reference docs are tracked
+# llm/ holds working notes; only the shipped design-reference docs are tracked
 llm/*
 !llm/DESIGN.md
 !llm/NEUROINCLUSIVE.md
+!llm/GAPS.md
 .DS_Store
 node_modules
 dist
