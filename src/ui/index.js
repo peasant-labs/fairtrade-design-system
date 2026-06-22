@@ -51,7 +51,7 @@ export { default as StepsWaterfall } from './StepsWaterfall.jsx'
 export { default as GroupedMultiSelect } from './GroupedMultiSelect.jsx'
 export { default as EvidenceCaption, EvidenceTarget } from './EvidenceCaption.jsx'
 export { PhaseDivider, Phase, TaskBoundary, CheckpointMarker, TurnContextBar } from './TranscriptMarkers.jsx'
-export { default as ToolCall } from './ToolRenderers.jsx'
+export { default as ToolCallRenderer } from './ToolRenderers.jsx' // distinct from Timeline's ToolCall
 export { default as Tour } from './Tour.jsx'
 export { default as ConnectionPill, DataState, TeachingEmptyState } from './ConnectionState.jsx'
 export { default as SignInProviders, HandleClaim, OnboardingCard } from './SignIn.jsx'

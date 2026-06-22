@@ -1510,7 +1510,7 @@
       "title": "bufio package - bufio - Go Packages",
       "file": "src/ui/ToolRenderers.jsx",
       "exports": [
-        "ToolCall"
+        "ToolCallRenderer"
       ],
       "doc": "trim + single-line + bound a string for the collapsed-row arg preview.",
       "props": {

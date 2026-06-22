@@ -46,6 +46,12 @@ import { TokensSection } from './sections-react/64-tokens.jsx'
 import { TrailsSection } from './sections-react/44-trails.jsx'
 import { OverlaysSection } from './sections-react/54-overlays.jsx'
 import { TerminalSection } from './sections-react/56-terminal.jsx'
+import { GovernanceSection } from './sections-react/70-governance.jsx'
+import { MapVizSection } from './sections-react/72-mapviz.jsx'
+import { CodeDiffSection } from './sections-react/74-codediff.jsx'
+import { TranscriptExtSection } from './sections-react/76-transcript-ext.jsx'
+import { FlowsSection } from './sections-react/78-flows.jsx'
+import { OnboardingSection } from './sections-react/80-onboarding.jsx'
 
 /* the in-page comment/feedback tool is a DEV-ONLY authoring aid: it posts to the vite dev middleware's
    /feedback endpoint (which doesn't exist in a production build), so it only mounts under `import.meta.env.DEV`.
@@ -83,6 +89,13 @@ const RAIL = [
   { kind: 'link', id: 'accordion', label: 'accordion' },
   { kind: 'link', id: 'toast', label: 'toast host' },
   { kind: 'link', id: 'date-range', label: 'date range' },
+  { kind: 'group', id: 'ds-components', label: 'in-use components' },
+  { kind: 'link', id: 'ds-governance', label: 'governance & consent' },
+  { kind: 'link', id: 'ds-mapviz', label: 'map & canvas' },
+  { kind: 'link', id: 'ds-codediff', label: 'code & diffs' },
+  { kind: 'link', id: 'ds-transcript-ext', label: 'transcript orientation' },
+  { kind: 'link', id: 'ds-flows', label: 'flows & shells' },
+  { kind: 'link', id: 'ds-onboarding', label: 'onboarding & teaching' },
   { kind: 'group', id: 'using', label: 'using the system' },
   { kind: 'link', id: 'a11y', label: 'accessibility' },
   { kind: 'link', id: 'tokens', label: 'tokens' },
@@ -577,6 +590,13 @@ function AppShell() {
             <AccordionSection />
             <ToastSection />
             <DateRangeSection />
+            <GroupOpener id="ds-components" title="in-use components" sub="the composites that rebuild the peasant apps, from this system" />
+            <GovernanceSection />
+            <MapVizSection />
+            <CodeDiffSection />
+            <TranscriptExtSection />
+            <FlowsSection />
+            <OnboardingSection />
             <GroupOpener id="using" title="using the system" sub="how to build on it without breaking it" />
             <A11ySection />
             <TokensSection />
