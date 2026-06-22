@@ -1,8 +1,5 @@
-import { useMemo, useRef, useState, useCallback } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
-  Plus,
-  Minus,
-  Maximize,
   Search,
   TriangleAlert,
   X,
@@ -10,12 +7,10 @@ import {
   Box,
   Folder,
   FileCode,
-  GitBranch,
   GitCommitHorizontal,
   GitMerge,
   Share2,
   RotateCw,
-  CircleDot,
   Coins,
   Link2,
   CornerDownRight,
@@ -26,7 +21,10 @@ import {
   MessageSquare,
   FileDiff,
   Layers,
+  Hash,
+  FileText,
 } from 'lucide-react'
+import { CommitGraph, MapCanvas, RailShell, RailSection, TimeStrip, ConnectionPill, DataState, TeachingEmptyState } from '../../ui'
 
 /* ============================================================================
    GraphMap.jsx — peasant's code-MAP + changes git-graph, hand-rolled in the
@@ -45,22 +43,6 @@ import {
 ============================================================================ */
 
 const fmt = (n) => n.toLocaleString('en-US')
-
-/* coverage fill ramp (recorded / total). bright = built-with-AI-on-record,
-   dim = predates recording. deliberately on surface tokens (not the intensity
-   ramp) to hold WCAG AA in both themes — coverage owns the fill exclusively. */
-const FILL = [
-  'var(--canvas)',
-  'var(--surface)',
-  'var(--surface-2)',
-  'var(--surface-hover)',
-  'var(--surface-elev)',
-]
-function fillFor(cov) {
-  // cov 0..1 -> 0..4
-  const lvl = Math.min(4, Math.max(0, Math.round(cov * 4)))
-  return FILL[lvl]
-}
 
 /* ====================================================================== */
 /* === MAP VIEW ========================================================== */
@@ -183,13 +165,84 @@ const ALL_TASKS = [
   { id: 'ff21e8a0', title: 'Fix pipeline bug on empty source', when: '6d ago', lights: ['internal/ingest'], outcome: 'failed' },
 ]
 
-const GRAINS = [
-  { id: 'overview', label: 'overview', Icon: Box },
-  { id: 'folders', label: 'folders', Icon: Folder },
-  { id: 'files', label: 'files', Icon: FileCode },
-]
+/* ---- kit adapter: ONE parent-linked tree fed to MapCanvas ----------------
+   the three per-grain MAP_NODES sets become tree DEPTHS: overview modules are
+   the roots, folders parent under them by path prefix, files parent under the
+   folder whose path-leaf opens their id. MapCanvas owns the semantic-zoom
+   (overview/folders/files) + edge-lift + violation-aggregate from this one
+   set, so we no longer keep a node set per grain.
 
-const ZOOMS = [0.7, 0.85, 1, 1.2, 1.45]
+   coverage(0..4) = round(recorded / files * 4). kind package|module → folder,
+   else file. ids are the SAME strings NODE_DETAIL keys on, so selecting a node
+   still resolves the bespoke rail. */
+const covOf = (recorded, files) =>
+  files > 0 ? Math.min(4, Math.max(0, Math.round((recorded / files) * 4))) : 0
+
+const MAP_DATA = (() => {
+  // roots: the overview modules.
+  const roots = MAP_NODES.overview.map((n) => ({
+    id: n.id,
+    label: n.name,
+    kind: 'folder',
+    loc: n.loc,
+    coverage: covOf(n.recorded, n.files),
+    violations: n.violations,
+  }))
+  // folders parent under the overview module that prefixes their id
+  // (internal/ingest → internal, web/src/map → web, cmd/peasant → cmd).
+  const folders = MAP_NODES.folders.map((n) => ({
+    id: n.id,
+    label: n.name,
+    kind: 'folder',
+    loc: n.loc,
+    coverage: covOf(n.recorded, n.files),
+    violations: n.violations,
+    parent: n.id.split('/')[0],
+  }))
+  // files parent under the folder their id's first segment names
+  // (ingest/pipeline.go → internal/ingest, codegraph/build.go →
+  // internal/codegraph, map/Canvas.tsx → web/src/map).
+  const FILE_PARENT = {
+    'ingest/pipeline.go': 'internal/ingest',
+    'ingest/replay.go': 'internal/ingest',
+    'codegraph/build.go': 'internal/codegraph',
+    'codegraph/layout.go': 'internal/codegraph',
+    'map/Canvas.tsx': 'web/src/map',
+    'map/Rail.tsx': 'web/src/map',
+  }
+  const files = MAP_NODES.files.map((n) => ({
+    id: n.id,
+    label: n.name,
+    kind: 'file',
+    loc: n.loc,
+    coverage: covOf(n.recorded, n.files),
+    violations: n.violations,
+    parent: FILE_PARENT[n.id],
+  }))
+
+  // author edges at the leaf grains; MapCanvas lifts them to visible ancestors.
+  // import → structure, coedit → activity. `tangle` has no MapCanvas equivalent:
+  // we render it as an activity edge AND rely on the target's violation badge to
+  // carry the tangle signal (accepted regression — no bespoke red tangle edge).
+  const edgeKind = (k) => (k === 'import' ? 'structure' : 'activity')
+  const edges = [...MAP_EDGES.folders, ...MAP_EDGES.files].map((e) => ({
+    from: e.from,
+    to: e.to,
+    kind: edgeKind(e.kind),
+  }))
+
+  return { nodes: [...roots, ...folders, ...files], edges }
+})()
+
+/* ---- kit adapter: the session sparkline → TimeStrip buckets ----------------
+   SPARK levels (0..4) carry both the bar HEIGHT (via value) and the FILL
+   intensity; SPARK_DATES label each bucket. oldest → newest, so the rightmost
+   is "now" exactly as before. */
+const SPARK_BUCKETS = SPARK.map((lvl, i) => ({
+  label: SPARK_DATES[i],
+  value: lvl,
+  intensity: lvl,
+}))
 
 function OutcomeDot({ outcome }) {
   const tone =
@@ -206,44 +259,22 @@ function OutcomeDot({ outcome }) {
 
 export function MapView({ theme }) {
   void theme
-  const [grain, setGrain] = useState('folders')
-  const [selected, setSelected] = useState(null) // node id
-  const [hotNode, setHotNode] = useState(null) // hover-lit node id (from rail)
-  const [zoomIx, setZoomIx] = useState(2)
-  const [query, setQuery] = useState('')
+  const [selected, setSelected] = useState(null) // node id (keys NODE_DETAIL)
   const [showAll, setShowAll] = useState(false)
   const [taskFilter, setTaskFilter] = useState('')
-  const [scrub, setScrub] = useState(null) // sparkline index, null = "now"
-  const svgRef = useRef(null)
+  const [scrub, setScrub] = useState(1) // TimeStrip playhead fraction 0..1
+  // MOCK connection feed — there is no backend; the toolbar button cycles the
+  // state so the ConnectionPill + DataState lost-program panel can be seen live.
+  const [conn, setConn] = useState('live')
 
-  const nodes = MAP_NODES[grain]
-  const edges = MAP_EDGES[grain]
-  const zoom = ZOOMS[zoomIx]
-
-  const nodeById = useMemo(() => Object.fromEntries(nodes.map((n) => [n.id, n])), [nodes])
-
-  // node-search matches (combobox suggestions)
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return []
-    return nodes.filter((n) => n.id.toLowerCase().includes(q)).slice(0, 5)
-  }, [query, nodes])
-
-  // edge endpoint centers (drawn in svg user units)
-  const center = useCallback(
-    (id) => {
-      const n = nodeById[id]
-      if (!n) return null
-      return { x: n.x + n.w / 2, y: n.y + n.h / 2 }
-    },
-    [nodeById],
-  )
-
-  function selectNode(id) {
-    setSelected(id)
-    setQuery('')
-  }
-
+  // the selected node, looked up in the ORIGINAL MAP_NODES (all grains
+  // flattened) so the bespoke rail still reads recorded/files/kind/loc. ids are
+  // unique across grains and match both NODE_DETAIL and the MapCanvas tree.
+  const nodeById = useMemo(() => {
+    const m = {}
+    for (const set of Object.values(MAP_NODES)) for (const n of set) m[n.id] = n
+    return m
+  }, [])
   const detail = selected ? NODE_DETAIL[selected] : null
   const selNode = selected ? nodeById[selected] : null
 
@@ -254,350 +285,100 @@ export function MapView({ theme }) {
     return tasks.filter((t) => t.title.toLowerCase().includes(q))
   }, [tasks, taskFilter])
 
-  // which canvas nodes light up from a hovered rail row
-  const litSet = useMemo(() => {
-    if (!hotNode) return null
-    const t = ALL_TASKS.find((x) => x.id === hotNode)
-    if (!t) return new Set([hotNode])
-    return new Set(t.lights)
-  }, [hotNode])
+  // cycle the mock connection so the disconnected panel + retry are reachable.
+  const CONN_CYCLE = { live: 'connecting', connecting: 'disconnected', disconnected: 'live' }
+  const nextConn = CONN_CYCLE[conn]
 
-  const scrubbed = scrub != null
+  const toolbar = (
+    <>
+      <ConnectionPill status={conn} />
+      <span className="gmp-toolbar-spacer" />
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm"
+        onClick={() => setConn(nextConn)}
+        title={`simulate connection: ${nextConn}`}
+      >
+        <RotateCw size={13} aria-hidden="true" /> simulate {nextConn}
+      </button>
+    </>
+  )
+
+  const rail = detail ? (
+    <RailSection
+      title="code area"
+      icon={Folder}
+      meta={
+        <button type="button" className="gmp-rail-close" aria-label="clear selection" onClick={() => setSelected(null)}>
+          <X size={14} aria-hidden="true" className="lucide" />
+        </button>
+      }
+    >
+      <NodeRail
+        node={selNode}
+        detail={detail}
+        onSelectNode={(id) => nodeById[id] && setSelected(id)}
+      />
+    </RailSection>
+  ) : (
+    <RailSection title="project" icon={Box} meta={<span className="mono">peasant</span>}>
+      <ProjectRail
+        tasks={filteredTasks}
+        total={ALL_TASKS.length}
+        showAll={showAll}
+        onShowAll={() => setShowAll(true)}
+        filter={taskFilter}
+        onFilter={setTaskFilter}
+      />
+    </RailSection>
+  )
 
   return (
     <div className="gmp-root">
-      {/* ---- toolbar: grain control + node search ---- */}
-      <div className="gmp-toolbar">
-        <div className="gmp-seg" role="group" aria-label="detail grain">
-          {GRAINS.map((g) => {
-            const on = grain === g.id
-            return (
-              <button
-                key={g.id}
-                type="button"
-                className="gmp-seg-btn"
-                aria-pressed={on}
-                onClick={() => {
-                  setGrain(g.id)
-                  setSelected(null)
-                }}
-              >
-                <g.Icon size={14} aria-hidden="true" /> {g.label}
-              </button>
-            )
-          })}
-        </div>
-
-        <div className="gmp-find">
-          <div className="input-ico">
-            <Search size={14} aria-hidden="true" className="lucide" />
-            <input
-              className="input"
-              type="text"
-              role="combobox"
-              aria-expanded={matches.length > 0}
-              aria-label="find a node"
-              placeholder="find a node…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+      <RailShell
+        toolbar={toolbar}
+        sheetTitle="node detail"
+        sheetMeta={selected ?? 'project'}
+        rail={rail}
+      >
+        <DataState
+          status={conn}
+          empty={false}
+          onRetry={() => setConn('live')}
+          emptyState={
+            <TeachingEmptyState
+              title="no map yet"
+              body="record a session with the local program, then the code map fills in."
+              command="peasant ingest"
             />
-          </div>
-          {matches.length > 0 && (
-            <ul className="gmp-find-list" role="listbox" aria-label="matches">
-              {matches.map((m) => (
-                <li key={m.id} role="option" aria-selected={false}>
-                  <button type="button" className="gmp-find-opt" onClick={() => selectNode(m.id)}>
-                    <span className="mono">{m.id}</span>
-                    <span className="gmp-find-meta tnum">{fmt(m.loc)} loc</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+          }
+        >
+          <MapCanvas
+            data={MAP_DATA}
+            grain="folders"
+            selectedId={selected}
+            onSelect={(id) => setSelected(id)}
+            height={480}
+            ariaLabel="peasant code map"
+          />
+        </DataState>
+      </RailShell>
 
-        <div className="gmp-toolbar-spacer" />
-        <span className="gmp-conn" title="connected — receiving live updates">
-          <span className="dot" aria-hidden="true" /> live
-        </span>
-      </div>
-
-      {/* ---- canvas + rail ---- */}
-      <div className="gmp-body">
-        <div className="gmp-canvas-wrap">
-          {/* time-strip sparkline with branch chips + scrub playhead — sits above the chart */}
-          <div className="gmp-timestrip-wrap">
-            <div
-              className="timestrip gmp-timestrip"
-              role="group"
-              aria-label={`session activity, ${SPARK.reduce((a, b) => a + b, 0)} sessions over ${SPARK.length} days`}
-            >
-              {SPARK.map((lvl, i) => {
-                const pct = [4, 25, 45, 70, 100][lvl]
-                const on = scrub === i
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    className={'gmp-spark-bar' + (on ? ' gmp-spark-on' : '')}
-                    style={{ height: pct + '%' }}
-                    title={`${SPARK_DATES[i]} — ${lvl === 0 ? 'no' : lvl} sessions`}
-                    aria-label={`${SPARK_DATES[i]}, ${lvl} sessions`}
-                    onClick={() => setScrub(i)}
-                  >
-                    {on && <span className="gmp-spark-head" aria-hidden="true" />}
-                  </button>
-                )
-              })}
-            </div>
-            <div className="gmp-branch-chips">
-              {BRANCH_CHIPS.map((b) => (
-                <button key={b.name} type="button" className="chip gmp-branch-chip" title={`open ${b.name}`}>
-                  <GitBranch size={13} aria-hidden="true" />
-                  <span className="gmp-branch-name">{b.name}</span>
-                  <span className="tnum gmp-branch-ahead">+{b.ahead}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div
-            className={'canvas gmp-canvas' + (scrubbed ? ' gmp-scrubbed' : '')}
-            role="application"
-            aria-label={`code map, ${grain} grain, ${nodes.length} areas`}
-          >
-            {/* edges first so they sit behind nodes. preserveAspectRatio="none" makes the 780x360 user
-                space map LINEARLY onto the canvas box, exactly like the .gmp-nodes layer positions tiles by
-                percentage (left=x/780, top=y/360). the old "xMidYMid meet" uniformly scaled + letterboxed
-                the viewBox, so edge endpoints drifted off the tiles whenever the canvas aspect ratio wasn't
-                780:360. vectorEffect keeps the stroke width uniform despite the non-uniform scale. */}
-            <svg
-              ref={svgRef}
-              className="edges gmp-edges"
-              viewBox="0 0 780 360"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-              style={{ transform: `scale(${zoom})`, transformOrigin: 'center' }}
-            >
-              <defs>
-                <marker id="gmp-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                  <path d="M0 0 L8 4 L0 8 z" fill="var(--ink-4)" />
-                </marker>
-                <marker id="gmp-arrow-tangle" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                  <path d="M0 0 L8 4 L0 8 z" fill="var(--danger)" />
-                </marker>
-              </defs>
-              {edges.map((e, i) => {
-                const a = center(e.from)
-                const b = center(e.to)
-                if (!a || !b) return null
-                const tangle = e.kind === 'tangle'
-                const coedit = e.kind === 'coedit'
-                const stroke = tangle ? 'var(--danger)' : 'var(--ink-4)'
-                return (
-                  <line
-                    key={i}
-                    x1={a.x}
-                    y1={a.y}
-                    x2={b.x}
-                    y2={b.y}
-                    stroke={stroke}
-                    strokeWidth={tangle ? 1.5 : 1}
-                    strokeDasharray={coedit ? '5 4' : tangle ? '3 3' : undefined}
-                    markerEnd={tangle ? 'url(#gmp-arrow-tangle)' : coedit ? undefined : 'url(#gmp-arrow)'}
-                    vectorEffect="non-scaling-stroke"
-                    opacity={litSet ? 0.25 : tangle ? 0.95 : 0.7}
-                  />
-                )
-              })}
-            </svg>
-
-            {/* nodes: square, loc-sized, coverage-dimmed fill */}
-            <div
-              className="gmp-nodes"
-              style={{ transform: `scale(${zoom})`, transformOrigin: 'center' }}
-              onClick={(e) => {
-                if (e.currentTarget === e.target) setSelected(null)
-              }}
-            >
-              {nodes.map((n) => {
-                const cov = n.recorded / n.files
-                const on = selected === n.id
-                const lit = litSet ? litSet.has(n.id) : false
-                const removed = n.delta === 'removed'
-                const isNew = n.delta === 'new'
-                return (
-                  <button
-                    key={n.id}
-                    type="button"
-                    className={
-                      'gmp-node' +
-                      (on ? ' gmp-node-sel' : '') +
-                      (lit ? ' gmp-node-lit' : '') +
-                      (removed ? ' gmp-node-removed' : '') +
-                      (isNew ? ' gmp-node-new' : '')
-                    }
-                    style={{
-                      /* position AND size the tile in the same 780x360 percentage space the edge layer
-                         draws in, so each tile's geometric centre sits exactly at ((x+w/2)/780,
-                         (y+h/2)/360) - the point center() feeds the connector endpoints. the old fixed
-                         `minHeight: h*0.62` px decoupled the rendered height from the viewBox rectangle,
-                         so vertical centres (and therefore the arrow ends) never matched the tiles. the
-                         minHeight floor keeps short tiles legible without affecting the alignment. */
-                      left: (n.x / 780) * 100 + '%',
-                      top: (n.y / 360) * 100 + '%',
-                      width: (n.w / 780) * 100 + '%',
-                      height: (n.h / 360) * 100 + '%',
-                      minHeight: 40,
-                      background: removed ? 'transparent' : fillFor(cov),
-                    }}
-                    aria-pressed={on}
-                    aria-label={`${n.id}, ${n.kind}, ${n.recorded} of ${n.files} files recorded, ${fmt(n.loc)} lines${n.violations ? `, ${n.violations} contained violations` : ''}${isNew ? ', new' : ''}${removed ? ', removed' : ''}`}
-                    onClick={() => selectNode(n.id)}
-                  >
-                    {isNew && <span className="gmp-node-eyebrow">new</span>}
-                    {removed && <span className="gmp-node-eyebrow gmp-node-eyebrow-rm">removed</span>}
-                    <span className="gmp-node-name">
-                      {n.kind === 'file' ? (
-                        <FileCode size={12} aria-hidden="true" />
-                      ) : n.kind === 'package' ? (
-                        <Folder size={12} aria-hidden="true" />
-                      ) : (
-                        <Box size={12} aria-hidden="true" />
-                      )}
-                      <span className="gmp-node-label">{n.name}</span>
-                      {n.violations > 0 && (
-                        <span className="gmp-node-warn" title={`${n.violations} tangle violations`}>
-                          <TriangleAlert size={12} aria-hidden="true" />
-                          <span className="tnum">{n.violations}</span>
-                        </span>
-                      )}
-                    </span>
-                    <span className="gmp-node-meta tnum">
-                      {n.recorded}/{n.files} · {fmt(n.loc)} loc
-                    </span>
-                    <span className="gmp-node-lang">{n.lang}</span>
-                    {/* effort intensity bottom-bar */}
-                    {!removed && (
-                      <span
-                        className="gmp-node-eff"
-                        style={{ opacity: 0.35 + cov * 0.55 }}
-                        aria-hidden="true"
-                      />
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* on-canvas zoom controls (reuse .canvas-ctrls) */}
-            <div className="canvas-ctrls" role="group" aria-label="zoom">
-              <button
-                type="button"
-                aria-label="zoom in"
-                title="zoom in"
-                onClick={() => setZoomIx((i) => Math.min(ZOOMS.length - 1, i + 1))}
-              >
-                <Plus size={14} aria-hidden="true" className="lucide" />
-              </button>
-              <button
-                type="button"
-                aria-label="zoom out"
-                title="zoom out"
-                onClick={() => setZoomIx((i) => Math.max(0, i - 1))}
-              >
-                <Minus size={14} aria-hidden="true" className="lucide" />
-              </button>
-              <button type="button" aria-label="fit to view" title="fit to view" onClick={() => setZoomIx(2)}>
-                <Maximize size={14} aria-hidden="true" className="lucide" />
-              </button>
-            </div>
-
-            {/* persistent minimap */}
-            <div className="minimap" aria-hidden="true">
-              {nodes.map((n) => (
-                <i
-                  key={n.id}
-                  style={{
-                    left: (n.x / 780) * 100 + '%',
-                    top: (n.y / 360) * 100 + '%',
-                    width: Math.max(4, (n.w / 780) * 100) + '%',
-                    height: Math.max(3, (n.h / 360) * 100) + '%',
-                    background: selected === n.id ? 'var(--amber)' : 'var(--ink-5)',
-                  }}
-                />
-              ))}
-            </div>
-
-            {scrubbed && (
-              <div className="gmp-scrub-note" role="status">
-                showing the map as it stood on <b>{SPARK_DATES[scrub]}</b> (commit{' '}
-                <span className="mono">a3f9c1d4</span>) ·{' '}
-                <button type="button" className="gmp-link" onClick={() => setScrub(null)}>
-                  back to now
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* persistent legend */}
-          <div className="gmp-legend" aria-label="legend">
-            <span className="gmp-legend-item">
-              <span className="gmp-legend-ramp" aria-hidden="true">
-                {FILL.map((f, i) => (
-                  <i key={i} style={{ background: f }} />
-                ))}
-              </span>
-              coverage (dim → built with ai)
-            </span>
-            <span className="gmp-legend-item">
-              <svg width="26" height="8" aria-hidden="true">
-                <line x1="0" y1="4" x2="20" y2="4" stroke="var(--ink-4)" strokeWidth="1" markerEnd="url(#gmp-arrow)" />
-              </svg>
-              imports
-            </span>
-            <span className="gmp-legend-item">
-              <svg width="26" height="8" aria-hidden="true">
-                <line x1="0" y1="4" x2="24" y2="4" stroke="var(--ink-4)" strokeWidth="1" strokeDasharray="5 4" />
-              </svg>
-              co-edits
-            </span>
-            <span className="gmp-legend-item gmp-legend-warn">
-              <TriangleAlert size={13} aria-hidden="true" /> tangle
-            </span>
-            <span className="gmp-legend-item gmp-legend-dim">double-click a folder to expand</span>
-          </div>
-
-        </div>
-
-        {/* ---- selection rail ---- */}
-        <aside className="gmp-rail" aria-label={detail ? 'node detail' : 'project'}>
-          {detail ? (
-            <NodeRail
-              node={selNode}
-              detail={detail}
-              onClose={() => setSelected(null)}
-              onSelectNode={(id) => MAP_NODES[grain].some((n) => n.id === id) && selectNode(id)}
-            />
-          ) : (
-            <ProjectRail
-              tasks={filteredTasks}
-              total={ALL_TASKS.length}
-              showAll={showAll}
-              onShowAll={() => setShowAll(true)}
-              filter={taskFilter}
-              onFilter={setTaskFilter}
-              onHover={setHotNode}
-            />
-          )}
-        </aside>
+      <div style={{ flex: 'none' }}>
+        <TimeStrip
+          buckets={SPARK_BUCKETS}
+          value={scrub}
+          onScrub={setScrub}
+          branches={BRANCH_CHIPS.map((b) => ({ label: `${b.name} +${b.ahead}` }))}
+          label="session activity"
+        />
       </div>
     </div>
   )
 }
 
 /* project (unselected) rail: coverage line, recent + all conversations. */
-function ProjectRail({ tasks, total, showAll, onShowAll, filter, onFilter, onHover }) {
+function ProjectRail({ tasks, total, showAll, onShowAll, filter, onFilter }) {
   const recordedPct = 35
   return (
     <div className="sidebar gmp-rail-inner">
@@ -622,14 +403,7 @@ function ProjectRail({ tasks, total, showAll, onShowAll, filter, onFilter, onHov
         <ul className="gmp-tasklist">
           {tasks.slice(0, showAll ? tasks.length : 3).map((t) => (
             <li key={t.id}>
-              <button
-                type="button"
-                className="gmp-task-row"
-                onMouseEnter={() => onHover(t.id)}
-                onMouseLeave={() => onHover(null)}
-                onFocus={() => onHover(t.id)}
-                onBlur={() => onHover(null)}
-              >
+              <button type="button" className="gmp-task-row">
                 <OutcomeDot outcome={t.outcome} />
                 <span className="gmp-task-title">{t.title}</span>
                 <span className="gmp-task-when tnum">{t.when}</span>
@@ -666,17 +440,13 @@ function ProjectRail({ tasks, total, showAll, onShowAll, filter, onFilter, onHov
 
 /* node (selected) rail: path+lang, depends/used, ai-built files, conversations
    that built this (tasks interleaved with commits), coupling, effort + $ spend. */
-function NodeRail({ node, detail, onClose, onSelectNode }) {
+function NodeRail({ node, detail, onSelectNode }) {
   const cov = node.recorded / node.files
   return (
     <div className="sidebar gmp-rail-inner">
       <div className="sb-sec gmp-rail-node-head">
-        <div className="gmp-rail-nh-top">
-          <span className="label">code area</span>
-          <button type="button" className="gmp-rail-close" aria-label="clear selection" onClick={onClose}>
-            <X size={14} aria-hidden="true" className="lucide" />
-          </button>
-        </div>
+        {/* the "code area" label + clear-selection control now live in the
+            enclosing RailSection's title + meta; this head keeps the identity. */}
         <div className="gmp-rail-name mono">{detail.path}</div>
         <div className="gmp-rail-meta">
           <span className="metaitem">
@@ -834,63 +604,28 @@ function NodeRail({ node, detail, onClose, onSelectNode }) {
 /* === CHANGES VIEW (lane-based git graph) ============================== */
 /* ====================================================================== */
 
-/* a hand-rolled git graph. time flows DOWN. lane 0 = default branch (develop).
-   commits are square dots (filled = recorded AI session behind it, hollow =
-   none). open branches fork out to tip cards; merged branches rejoin as dimmed
-   chips. 90° square elbows ONLY — no curves, no color. */
-const LANE_W = 64
-const ROW_H = 52
-const DOT = 11
-
-/* commits down lane 0, plus fork/merge events. y = row index. */
-const COMMITS = [
-  { id: 'k1', row: 0, lane: 0, filled: true, hash: 'f1a920', msg: 'Add redaction tests', recorded: true },
-  { id: 'k2', row: 1, lane: 0, filled: false, hash: '8c0e41', msg: 'Bump deps', recorded: false },
-  { id: 'k3', row: 2, lane: 0, filled: true, hash: 'a3f9c1', msg: 'Fix pipeline bug', recorded: true, fork: 1 },
-  { id: 'k4', row: 3, lane: 0, filled: true, hash: 'b7e220', msg: 'stream replay path', recorded: true, fork: 2 },
-  { id: 'k5', row: 4, lane: 0, filled: false, hash: 'd14c0a', msg: 'Merge fix--kickstart-config', recorded: false, mergeFrom: 2 },
-  { id: 'k6', row: 5, lane: 0, filled: true, hash: 'c1d4a3', msg: 'squarify treemap', recorded: true },
+/* the develop history as a CommitGraph dataset (newest-first, lane 0 = develop). a feature lane (1)
+   forks at a3f9c1 and is still open (tip); a short fix lane (2) forked + folded back at the merge
+   commit d14c0a. `session` = a recorded AI session sits behind the commit (filled dot + sparkle).
+   hashes / messages / branch names are USER CONTENT — case preserved. (was a hand-rolled lane graph;
+   now the kit CommitGraph, which owns the same square-dot / 90° elbow / amber-scarce language.) */
+const HISTORY = [
+  { id: 'c1d4a3', lane: 0, parents: ['d14c0a'], message: 'squarify treemap', branch: 'develop', session: true, time: '5h ago' },
+  { id: 'd14c0a', lane: 0, parents: ['b7e220', 'k-fix'], message: 'Merge fix--kickstart-config', branch: 'develop', merged: true, time: '3d ago' },
+  { id: 'k-fix', lane: 2, parents: ['a3f9c1'], message: 'kickstart config defaults', branch: 'fix--kickstart-config', tip: true, time: '3d ago' },
+  { id: 'mrc1', lane: 1, parents: ['a3f9c1'], message: 'wire map review + contribute', branch: 'feat/map-review-contribute', tip: true, session: true, time: '5h ago' },
+  { id: 'b7e220', lane: 0, parents: ['a3f9c1'], message: 'stream replay path', branch: 'develop', session: true, time: '1d ago' },
+  { id: 'a3f9c1', lane: 0, parents: ['8c0e41'], message: 'Fix pipeline bug', branch: 'develop', session: true, time: '2d ago' },
+  { id: '8c0e41', lane: 0, parents: ['f1a920'], message: 'Bump deps', branch: 'develop', time: '2d ago' },
+  { id: 'f1a920', lane: 0, parents: [], message: 'Add redaction tests', branch: 'develop', session: true, time: '3d ago' },
 ]
-/* open branches forking from a commit row, on their own lane. */
-const BRANCHES = [
-  {
-    id: 'b1',
-    lane: 1,
-    forkRow: 2,
-    tipRow: 2,
-    name: 'feat/map-review-contribute',
-    human: 'Map review contribute',
-    raw: 'feat/map-review-contribute',
-    life: 'active',
-    last: 'last worked 5h ago',
-    facts: '8 new updates · 136 files · 70 conversations · 98 requests · +39/−22 connections',
-    violations: 3,
-    filled: true,
-  },
-]
-/* merged branches that rejoined — dimmed chips at their merge commit. */
-const MERGED = [
-  { id: 'm1', mergeRow: 4, lane: 2, name: 'fix--kickstart-config', human: 'Kickstart config', kind: 'folded', when: '3d ago' },
-]
+/* reverted lines of work, listed under the graph (kept from the bespoke view). */
 const REVERTED = [{ id: 'r1', name: 'feat/experimental-cache', human: 'Experimental cache', when: '1wk ago' }]
 
-const LIFE = {
-  active: { label: 'active', sub: '< 3 days', cls: 'gmp-life-active' },
-  idle: { label: 'idle', sub: '3–14 days', cls: 'gmp-life-idle' },
-  stale: { label: 'stale', sub: '> 2 weeks', cls: 'gmp-life-stale' },
-}
-
-export function ChangesView({ theme }) {
+export function ChangesView({ theme, onNavigate }) {
   void theme
-  const [selected, setSelected] = useState('b1')
+  const [selectedId, setSelectedId] = useState('mrc1')
   const [showOlder, setShowOlder] = useState(false)
-
-  const laneCount = 3
-  const gutterW = laneCount * LANE_W + 24
-  const gutterH = (COMMITS.length + 1) * ROW_H
-
-  const laneX = (lane) => 20 + lane * LANE_W
-  const rowY = (row) => 26 + row * ROW_H
 
   return (
     <div className="gmp-root gmp-changes-root">
@@ -899,179 +634,45 @@ export function ChangesView({ theme }) {
           <span className="label">lines of work · peasant-labs/peasant</span>
           <div className="gmp-changes-sub mono">default branch develop · 1 open · 1 merged</div>
         </div>
-        <button type="button" className="btn btn-secondary btn-sm">
+        <button type="button" className="btn btn-secondary btn-sm" onClick={() => onNavigate?.('map')}>
           <Box size={14} aria-hidden="true" /> open the map
         </button>
       </div>
 
       <div className="gmp-changes-body">
-        {showOlder && (
-          <button type="button" className="gmp-older" onClick={() => setShowOlder(false)}>
-            <ChevronDown size={13} aria-hidden="true" /> hide older
-          </button>
-        )}
+        {/* the kit CommitGraph (square dots, 90° elbows, filled = recorded session + sparkle); selecting
+            a commit opens the change detail. */}
+        <CommitGraph
+          className="gmp-cg"
+          commits={HISTORY}
+          selectedId={selectedId}
+          label="develop commit history"
+          onSelect={(c) => { setSelectedId(c.id); onNavigate?.('change-detail') }}
+          hasMore={!showOlder}
+          onShowOlder={() => setShowOlder(true)}
+        />
 
-        <div className="gmp-graph" role="list" aria-label="branches and commits">
-          {/* SVG lane gutter: verticals + 90° elbows, square dots as html */}
-          <div className="gmp-gutter" style={{ width: gutterW, minHeight: gutterH }}>
-            <svg
-              className="gmp-gutter-svg"
-              viewBox={`0 0 ${gutterW} ${gutterH}`}
-              width={gutterW}
-              height={gutterH}
-              aria-hidden="true"
-            >
-              {/* lane 0 vertical (default branch) */}
-              <line
-                x1={laneX(0)}
-                y1={rowY(0)}
-                x2={laneX(0)}
-                y2={rowY(COMMITS.length - 1)}
-                stroke="var(--ink-4)"
-                strokeWidth="1.5"
-                vectorEffect="non-scaling-stroke"
-              />
-              {/* dashed tail above (started before this view) */}
-              <line
-                x1={laneX(0)}
-                y1={4}
-                x2={laneX(0)}
-                y2={rowY(0)}
-                stroke="var(--ink-5)"
-                strokeWidth="1"
-                strokeDasharray="3 3"
-                vectorEffect="non-scaling-stroke"
-              />
-              {/* branch b1: fork elbow out + vertical (square 90°) */}
-              <polyline
-                points={`${laneX(0)},${rowY(2)} ${laneX(1)},${rowY(2)} ${laneX(1)},${rowY(2) + 18}`}
-                fill="none"
-                stroke="var(--rule-strong)"
-                strokeWidth="1"
-                vectorEffect="non-scaling-stroke"
-              />
-              {/* merged m1 (the nested lane-2 branch): fork out at its real fork commit (k4, row 3 -
-                 `fork: 2`), run down lane 2, then the merge elbow back in at row 4 (k5, `mergeFrom: 2`).
-                 it previously forked at row 2 - the SAME point as b1 - so the nested line started a row too
-                 high, overlapped b1's fork and crossed lane 1, which read as the "weird nested lines". */}
-              <polyline
-                points={`${laneX(0)},${rowY(3)} ${laneX(2)},${rowY(3)} ${laneX(2)},${rowY(4)} ${laneX(0)},${rowY(4)}`}
-                fill="none"
-                stroke="var(--ink-5)"
-                strokeWidth="1"
-                strokeDasharray="3 3"
-                vectorEffect="non-scaling-stroke"
-              />
-            </svg>
-
-            {/* square commit dots on lane 0 */}
-            {COMMITS.map((c) => (
-              <span
-                key={c.id}
-                className={'gmp-dot' + (c.filled ? ' gmp-dot-filled' : '')}
-                style={{ left: laneX(c.lane) - DOT / 2, top: rowY(c.row) - DOT / 2 }}
-                title={`${c.hash} — ${c.msg}${c.recorded ? ' (recorded session)' : ''}`}
-                aria-hidden="true"
-              />
-            ))}
-          </div>
-
-          {/* the rows: commit captions + tip cards + merged chips */}
-          <div className="gmp-rows">
-            {COMMITS.map((c) => (
-              <div key={c.id} className="gmp-commit-row" style={{ height: ROW_H }}>
-                <span className="mono gmp-commit-row-hash">{c.hash}</span>
-                <span className="gmp-commit-row-msg">{c.msg}</span>
-                {c.recorded && (
-                  <span className="gmp-commit-row-rec" title="a recorded AI session is behind this commit">
-                    <CircleDot size={12} aria-hidden="true" /> recorded
-                  </span>
-                )}
-              </div>
-            ))}
-
-            {/* open-branch tip card, absolutely placed at its fork row, lane 1 */}
-            {BRANCHES.map((b) => {
-              const on = selected === b.id
-              const life = LIFE[b.life]
-              return (
-                <button
-                  key={b.id}
-                  type="button"
-                  role="listitem"
-                  className={'gmp-tip-card' + (on ? ' gmp-tip-sel' : '')}
-                  /* float in the open right-hand gap (clear of the captions on the left and the recorded
-                     column on the right) instead of on top of the commit messages. */
-                  style={{ top: rowY(b.tipRow) + 24, right: 150 }}
-                  aria-pressed={on}
-                  onClick={() => setSelected(b.id)}
-                >
-                  <span className="gmp-tip-top">
-                    <GitBranch size={14} aria-hidden="true" />
-                    <span className="gmp-tip-human">{b.human}</span>
-                    <span className={'gmp-life ' + life.cls} title={life.sub}>
-                      {life.label}
-                    </span>
-                  </span>
-                  <span className="mono gmp-tip-raw">{b.raw}</span>
-                  <span className="gmp-tip-facts mono">{b.facts}</span>
-                  <span className="gmp-tip-foot">
-                    {b.violations > 0 && (
-                      <span className="gmp-tip-warn">
-                        <TriangleAlert size={12} aria-hidden="true" /> <span className="tnum">{b.violations}</span> rule breaks
-                      </span>
-                    )}
-                    <span className="gmp-tip-last">{b.last}</span>
-                    <span className="gmp-tip-view">
-                      view <ArrowRight size={12} aria-hidden="true" />
-                    </span>
-                  </span>
-                </button>
-              )
-            })}
-
-            {/* merged chip at its merge commit */}
-            {MERGED.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                role="listitem"
-                className="gmp-merged-chip"
-                style={{ top: rowY(m.mergeRow) - 10, left: 360 }}
-                onClick={() => setSelected(m.id)}
-              >
-                <GitMerge size={13} aria-hidden="true" /> folded in · {m.human} · {m.when}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* already-merged + reverted section */}
+        {/* already-merged + reverted section (kept) */}
         <div className="gmp-merged-sec">
           <div className="sb-head gmp-merged-head">already merged in</div>
           <div className="gmp-merged-list">
             {REVERTED.map((r) => (
-              <button key={r.id} type="button" className="gmp-merged-chip gmp-merged-revert" onClick={() => setSelected(r.id)}>
+              <button key={r.id} type="button" className="gmp-merged-chip gmp-merged-revert" onClick={() => setSelectedId(r.id)}>
                 <GitMerge size={13} aria-hidden="true" /> reverted · {r.human} · then undone · {r.when}
               </button>
             ))}
-            {!showOlder && (
-              <button type="button" className="gmp-older" onClick={() => setShowOlder(true)}>
-                <ChevronRight size={13} aria-hidden="true" /> show older
-              </button>
-            )}
           </div>
         </div>
 
-        {/* legend / explainer */}
+        {/* legend — the kit's filled = has-session semantics */}
         <div className="gmp-changes-legend">
           <span className="gmp-legend-item">
-            <span className="gmp-dot gmp-dot-filled gmp-dot-static" aria-hidden="true" /> recorded commit
+            <span className="cg-dot cg-dot-filled" style={{ position: 'static', width: 9, height: 9, display: 'inline-block' }} aria-hidden="true" /> commit with a recorded session
           </span>
           <span className="gmp-legend-item">
-            <span className="gmp-dot gmp-dot-static" aria-hidden="true" /> no session captured
+            <span className="cg-dot cg-dot-hollow" style={{ position: 'static', width: 9, height: 9, display: 'inline-block' }} aria-hidden="true" /> no session captured
           </span>
-          <span className="gmp-legend-item gmp-legend-dim">tip cards = open lines of work · chips = merged</span>
+          <span className="gmp-legend-item gmp-legend-dim">a filled dot also flies a sparkle · select a commit to open it</span>
         </div>
       </div>
     </div>

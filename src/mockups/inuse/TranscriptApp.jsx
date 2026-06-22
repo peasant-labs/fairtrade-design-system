@@ -50,6 +50,7 @@ import {
   Wrench,
   Filter as FilterIcon,
 } from 'lucide-react'
+import { StepsWaterfall, ProviderIcon, PROVIDER_ACCENT } from '../../ui'
 
 /* ============================================================================
    TranscriptApp — full transcript-browser demo inside the qud identity.
@@ -67,6 +68,13 @@ function ClaudeMark({ size = 14 }) {
     </svg>
   )
 }
+
+/* the session's coding-agent harness (peasant bestiary wire value). the ASSISTANT side IS the
+   provider, so its icon + accent are keyed off this one value via the ProviderIcon family. the system
+   default stays user=teal / assistant=amber; claude-code's PROVIDER_ACCENT is amber, so the default
+   session looks identical — switch this to gemini-cli / codex / opencode / cursor and the assistant
+   re-accents (teal / olive / mauve / clay) for free. */
+const HARNESS = 'claude-code'
 
 /* ---- the recorded session, baked in (sess_demo_0001 / transcript-browser) ---- */
 const TURNS = [
@@ -295,6 +303,21 @@ const PHASES = [
   { id: 'implementation', label: 'implementation', icon: Pencil, from: 5, to: 8 },
 ]
 
+/* the per-task duration trail for the trace outline (StepsWaterfall), matching the documented
+   app-viewer's "what happened, in order" timeline. id is the user turn's TURNS id so onJump reuses
+   jumpTo(id). prompt is USER CONTENT (case preserved). userTurn 2 carried the typecheck error, so it
+   reads as an error task (clay spine + the word "error", never colour alone). durations come from the
+   existing rail meta line (5m / 3m). */
+const TRACE_TASKS = TURNS.filter((t) => t.userTurn).map((t) => ({
+  id: t.id,
+  index: t.userTurn,
+  prompt: t.body,
+  durationMs: t.userTurn === 1 ? 300_000 : 180_000,
+  tools: 3,
+  outcome: t.userTurn === 2 ? 'error' : 'ok',
+  error: t.userTurn === 2 ? 'typecheck failed' : undefined,
+}))
+
 /* the touched files index (Files tab) */
 const FILES = [
   { path: 'packages/browser/src/lib/tasks.ts', leaf: 'tasks.ts', edits: 1, reads: 0, writes: 0, adds: 4, dels: 2, edited: true, turn: 5 },
@@ -514,12 +537,16 @@ const ROLE_GLYPH = {
 function TurnCard({ turn, active, openTools, toggleTool, onCopyAnchor, copied, registerRef, onLabel, savedLabel, compact, expandAll }) {
   const isUser = turn.role === 'user'
   const isSub = turn.depth && turn.depth > 0
-  const roleLabel = isSub ? 'subagent · ' + turn.subagent : turn.role === 'assistant' ? 'claude' : turn.role
+  const roleLabel = isSub ? 'subagent · ' + turn.subagent : turn.role === 'assistant' ? HARNESS : turn.role
+  // the assistant IS the agent → its accent is the provider accent (PROVIDER_ACCENT[HARNESS]), falling
+  // back to the system fixed assistant amber. a token var so it re-themes; fed to the ProviderIcon
+  // (accent prop) and the rolelabel colour. user stays teal / subagent mauve (their .user/.sub CSS).
+  const asstAccent = PROVIDER_ACCENT[HARNESS] ? `var(--${PROVIDER_ACCENT[HARNESS]})` : 'var(--amber)'
 
   const head = (
     <div className="txn-turnhead">
-      <span className="txn-rolelabel">
-        {turn.role === 'assistant' && !isSub ? <ClaudeMark /> : isSub ? <CornerDownRight size={14} aria-hidden="true" /> : isUser ? <User size={14} aria-hidden="true" /> : <Wrench size={14} aria-hidden="true" />}
+      <span className="txn-rolelabel" style={turn.role === 'assistant' && !isSub ? { color: asstAccent } : undefined}>
+        {turn.role === 'assistant' && !isSub ? <ProviderIcon harness={HARNESS} accent /> : isSub ? <CornerDownRight size={14} aria-hidden="true" /> : isUser ? <User size={14} aria-hidden="true" /> : <Wrench size={14} aria-hidden="true" />}
         {roleLabel}
       </span>
       {isSub && <span className="txn-depth tnum">depth {turn.depth}</span>}
@@ -1670,30 +1697,15 @@ function OutlineRail({ tab, activeTurn, onJump }) {
       </div>
     )
   }
-  /* trace -> user turns / tasks */
-  const userTurns = TURNS.filter((t) => t.userTurn)
+  /* trace -> the per-task duration trail (StepsWaterfall), matching the documented app-viewer's
+     "what happened, in order" timeline. onJump stays on the trace tab (no tab switch). */
   return (
-    <ul className="txn-outline">
-      {userTurns.map((t) => {
-        const active = activeTurn === t.id
-        const hasError = t.userTurn === 2 // debugging phase task had the error
-        return (
-          <li key={t.id}>
-            <button type="button" className={'txn-ol-task' + (active ? ' txn-ol-active' : '')} aria-current={active ? 'true' : undefined} onClick={() => onJump(t.id, { switchTab: false })}>
-              <span className="txn-ol-ord tnum">{t.userTurn}</span>
-              <span className="txn-ol-body">
-                <span className="txn-ol-prompt">{t.body.slice(0, 56)}{t.body.length > 56 ? '…' : ''}</span>
-                <span className="txn-ol-taskmeta tnum">
-                  {t.userTurn === 1 ? '5m · 3 tools · 5 files' : '3m · 3 tools · 2 files'}
-                  {hasError && <span className="txn-ol-alert"><AlertTriangle size={11} aria-hidden="true" /></span>}
-                </span>
-              </span>
-              {active && <span className="txn-ol-dot" aria-hidden="true" />}
-            </button>
-          </li>
-        )
-      })}
-    </ul>
+    <StepsWaterfall
+      className="txn-ol-waterfall"
+      tasks={TRACE_TASKS}
+      label="user turns by duration"
+      onJump={(id) => onJump(id, { switchTab: false })}
+    />
   )
 }
 

@@ -44,6 +44,7 @@ import {
   Layers,
   Upload,
 } from 'lucide-react'
+import { StatGrid, DangerZone, ConfirmInline, ApprovalBar } from '../../ui'
 
 /* =====================================================================
    CommonsExplore — the COMMONS browse/discovery half of Village.
@@ -1178,29 +1179,17 @@ export function TranscriptDetailView({ theme, seedId = 'd41a8e', embedded = fals
 
   return (
     <div className={'cex-root cex-detail' + (embedded ? ' cex-detail-embedded' : '')}>
-      {/* PENDING APPROVAL BAR (owner of a collective the transcript is pending in) */}
+      {/* PENDING APPROVAL BAR (owner of a collective the transcript is pending in).
+          one kit ApprovalBar per pending entry — each owns its own resolved state. */}
       {pending.length > 0 && (
         <div className="cex-pending" role="region" aria-label="pending shares">
           {pending.map((p, i) => (
-            <div className="cex-pending-row" key={p.collective}>
-              <span className="cex-pending-lbl">
-                <Clock size={14} aria-hidden="true" /> pending review in <b>{p.collective}</b>
-              </span>
-              {p.status === 'pending' ? (
-                <span className="cex-pending-actions">
-                  <button type="button" className="btn btn-primary btn-sm" onClick={() => resolvePending(i, 'approved')}>
-                    <Check size={14} aria-hidden="true" /> approve
-                  </button>
-                  <button type="button" className="btn btn-danger btn-sm" onClick={() => resolvePending(i, 'rejected')}>
-                    <X size={14} aria-hidden="true" /> reject
-                  </button>
-                </span>
-              ) : (
-                <span className={'chip chip-sm ' + (p.status === 'approved' ? 'chip-ok' : 'chip-err')}>
-                  {p.status === 'approved' ? <Check size={13} aria-hidden="true" /> : <X size={13} aria-hidden="true" />} {p.status}
-                </span>
-              )}
-            </div>
+            <ApprovalBar
+              key={p.collective}
+              subject={<>pending review in <b>{p.collective}</b></>}
+              onApprove={() => resolvePending(i, 'approved')}
+              onReject={() => resolvePending(i, 'rejected')}
+            />
           ))}
         </div>
       )}
@@ -1876,21 +1865,14 @@ export function ProfileView({ theme }) {
         </div>
       </header>
 
-      {/* KPI TILES */}
-      <div className="cex-kpis">
-        <div className="cex-kpi">
-          <span className="cex-kpi-v tnum">{totalTranscripts}</span>
-          <span className="cex-kpi-k">transcripts</span>
-        </div>
-        <div className="cex-kpi">
-          <span className="cex-kpi-v tnum">{projects.length}</span>
-          <span className="cex-kpi-k">projects</span>
-        </div>
-        <div className="cex-kpi">
-          <span className="cex-kpi-v tnum">{fmtTokens(PROFILE.tokens)}</span>
-          <span className="cex-kpi-k">tokens</span>
-        </div>
-      </div>
+      {/* KPI TILES (kit StatGrid) */}
+      <StatGrid
+        tiles={[
+          { key: 'transcripts', label: 'transcripts', value: totalTranscripts },
+          { key: 'projects', label: 'projects', value: projects.length },
+          { key: 'tokens', label: 'tokens', value: fmtTokens(PROFILE.tokens) },
+        ]}
+      />
 
       {/* PUBLISHED LIBRARY */}
       <section className="cex-psec" aria-label="published library">
@@ -2034,19 +2016,23 @@ export function ProfileView({ theme }) {
             </div>
           </section>
 
-          <section className="cex-psec cex-danger-sec" aria-label="danger zone">
-            <h3 className="cex-psec-title cex-danger-title">danger zone</h3>
-            <div className="cex-priv-card cex-danger-card">
+          {/* danger zone (kit DangerZone wrapping a kit ConfirmInline delete) */}
+          <section className="cex-psec" aria-label="danger zone">
+            <DangerZone title="danger zone">
               <div className="cex-priv-row">
                 <div className="cex-priv-text">
                   <span className="cex-priv-k">delete account</span>
                   <span className="cex-priv-d mono">removes all your transcripts and any collectives you own. this cannot be undone.</span>
                 </div>
-                <button type="button" className="btn btn-danger btn-sm">
-                  <Trash2 size={14} aria-hidden="true" /> delete account
-                </button>
+                <ConfirmInline
+                  label="delete account"
+                  confirmLabel="delete"
+                  icon={<Trash2 size={14} aria-hidden="true" />}
+                  aria-label="delete account"
+                  onConfirm={() => {}}
+                />
               </div>
-            </div>
+            </DangerZone>
           </section>
         </>
       )}

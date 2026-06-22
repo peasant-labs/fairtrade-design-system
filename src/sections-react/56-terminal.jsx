@@ -1,5 +1,5 @@
-import { useState, Fragment } from 'react'
-import { LayoutDashboard, List, TrendingUp, ChevronRight, CornerDownRight } from 'lucide-react'
+import { useState, useRef, Fragment } from 'react'
+import { LayoutDashboard, List, TrendingUp, CornerDownRight } from 'lucide-react'
 
 /* 56-terminal: the peasant TUI (a bubbletea/lipgloss terminal app: dashboard / sessions / trends)
    recreated faithfully in fairtrade. the flow, screens, metrics and keybindings mirror
@@ -113,8 +113,7 @@ const DETAIL_TURNS = [
   { n: 3, role: 'assistant', text: 'race detector is green; wiring the stream into the session pipeline.', tools: ['bash(go test -race ./...)'], mark: true },
   { n: 4, role: 'user', text: 'add a null-guard on the index access under strict mode, then re-run.' },
 ]
-function Sessions() {
-  const [openId, setOpenId] = useState(null)
+function Sessions({ openId, setOpenId, cursor, setCursor }) {
   if (openId) {
     return (
       <div className="tui-detail">
@@ -147,28 +146,33 @@ function Sessions() {
             </div>
           ))}
         </div>
-        <button type="button" className="tui-back" onClick={() => setOpenId(null)}>esc · back to sessions</button>
+        <button type="button" className="tui-back" tabIndex={-1} onClick={() => setOpenId(null)}>esc · back to sessions</button>
       </div>
     )
   }
   return (
     <table className="tui-table">
       <thead>
-        <tr><th>id</th><th>provider</th><th>outcome</th><th>date</th><th>duration</th><th className="tui-num">tokens</th><th className="tui-num">turns</th><th aria-hidden="true"></th></tr>
+        <tr><th aria-hidden="true"></th><th>id</th><th>provider</th><th>outcome</th><th>date</th><th>duration</th><th className="tui-num">tokens</th><th className="tui-num">turns</th></tr>
       </thead>
       <tbody>
-        {SESSIONS.map((s, i) => (
-          <tr key={s.id} className={i === 0 ? 'tui-row-sel' : undefined}>
-            <td className="tui-mono">{s.id}</td>
-            <td>{s.provider}</td>
-            <td><span style={{ color: `var(--${OUTCOME_TONE[s.outcome]})`, fontWeight: 600 }}>{s.outcome}</span></td>
-            <td>{s.date}</td>
-            <td className="tnum">{s.dur}</td>
-            <td className="tui-num tnum">{s.tokens.toLocaleString()}</td>
-            <td className="tui-num tnum">{s.turns}</td>
-            <td className="tui-row-act"><button type="button" className="tui-open" onClick={() => setOpenId(s.id)} aria-label={`open session ${s.id}`}><ChevronRight size={14} aria-hidden="true" /></button></td>
-          </tr>
-        ))}
+        {SESSIONS.map((s, i) => {
+          const sel = i === cursor
+          return (
+            <tr key={s.id} className={sel ? 'tui-row-sel' : undefined} aria-selected={sel}>
+              <td className="tui-row-cur" aria-hidden="true">{sel ? '▸' : ' '}</td>
+              <td className="tui-mono">
+                <button type="button" className="tui-open" tabIndex={-1} onClick={() => { setCursor(i); setOpenId(s.id) }} aria-label={`open session ${s.id}`}>{s.id}</button>
+              </td>
+              <td>{s.provider}</td>
+              <td><span style={{ color: `var(--${OUTCOME_TONE[s.outcome]})`, fontWeight: 600 }}>{s.outcome}</span></td>
+              <td>{s.date}</td>
+              <td className="tnum">{s.dur}</td>
+              <td className="tui-num tnum">{s.tokens.toLocaleString()}</td>
+              <td className="tui-num tnum">{s.turns}</td>
+            </tr>
+          )
+        })}
       </tbody>
     </table>
   )
@@ -213,23 +217,32 @@ function Trends() {
 }
 
 const HELP = {
-  dashboard: 'tab/shift-tab: switch • 1-3: jump • q: quit',
-  sessions: 'enter: open • ↑↓: move • tab: switch • q: quit',
-  trends: '↑↓/j/k: scroll • tab/shift-tab: switch • q: quit',
+  dashboard: 'tab/shift-tab: switch • 1-3: jump • esc: exit • q: quit',
+  sessions: 'enter: open • ↑↓/j/k: move • esc: back • tab: switch • q: quit',
+  trends: '↑↓/j/k: scroll • tab/shift-tab: switch • esc: exit • q: quit',
 }
 
 /* ---- flow B: the `peasant kickstart` first-run wizard (internal/tui/ftue) ----
    a 9-page bubbletea wizard in one frame with a "step N of M" header; here the core pages, re-skinned
    from the tui's lilac onto the system tokens. radios are interactive; the summary reflects choices. */
-function Radio({ options, value, onChange, name }) {
+function Radio({ options, value, onChange, name, cursor }) {
   return (
     <div className="tuiw-radio" role="radiogroup" aria-label={name}>
-      {options.map((o) => {
+      {options.map((o, i) => {
         const on = value === o.id
+        const cur = i === cursor
         return (
-          <button key={o.id} type="button" role="radio" aria-checked={on} className={'tuiw-opt' + (on ? ' tuiw-opt-on' : '')} onClick={() => onChange(o.id)}>
-            <span className="tuiw-cur">{on ? '▸' : ' '}</span>
-            <span className="tuiw-dot">{on ? '●' : '○'}</span>
+          <button
+            key={o.id}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            tabIndex={-1}
+            className={'tuiw-opt' + (on ? ' tuiw-opt-on' : '') + (cur ? ' tuiw-opt-cur' : '')}
+            onClick={() => onChange(o.id)}
+          >
+            <span className="tuiw-cur" aria-hidden="true">{cur ? '▸' : ' '}</span>
+            <span className="tuiw-dot" aria-hidden="true">{on ? '●' : '○'}</span>
             <span className="tuiw-opt-main">
               <span className="tuiw-opt-label">{o.label}</span>
               {o.desc && <span className="tuiw-opt-desc">{o.desc}</span>}
@@ -272,107 +285,158 @@ function TuiWizard() {
   const [village, setVillage] = useState('connect')
   const [redaction, setRedaction] = useState('standard')
   const [retention, setRetention] = useState('never')
+  const [optCursor, setOptCursor] = useState(0)
+  const regionRef = useRef(null)
+
+  const VILLAGE_OPTS = [
+    { id: 'connect', label: 'connect to peasant village', desc: 'share anonymized session analytics with the community' },
+    { id: 'local', label: 'stay local', desc: 'all data stays on your machine' },
+  ]
 
   const pages = [
-    {
-      title: 'welcome to peasant',
-      body: (
-        <>
-          <p className="tuiw-lede">connect to the peasant village for shared analytics, or stay local for private-only usage.</p>
-          <Radio name="village" value={village} onChange={setVillage} options={[
-            { id: 'connect', label: 'connect to peasant village', desc: 'share anonymized session analytics with the community' },
-            { id: 'local', label: 'stay local', desc: 'all data stays on your machine' },
-          ]} />
-        </>
-      ),
-    },
-    {
-      title: 'select providers',
-      body: (
-        <>
-          <p className="tuiw-lede">discovered 152 transcripts. select providers to import from.</p>
-          <div className="tuiw-checks">
-            {WIZ_PROVIDERS.map((p) => (
-              <div key={p.id} className={'tuiw-check' + (p.n === 0 ? ' tuiw-check-off' : '')}>
-                <span className="tuiw-box">{p.on ? '[✓]' : '[ ]'}</span> {p.label} <span className="tuiw-check-n">({p.n} sessions)</span>
-                {p.on && <span className="tuiw-sub">▸ ● import all   ○ select sessions</span>}
-              </div>
-            ))}
-          </div>
-        </>
-      ),
-    },
-    {
-      title: 'privacy preference',
-      body: (
-        <>
-          <p className="tuiw-lede">choose your default redaction level. this controls what is redacted before transcripts leave your machine.</p>
-          <Radio name="redaction" value={redaction} onChange={setRedaction} options={REDACTION} />
-        </>
-      ),
-    },
-    {
-      title: 'transcript retention',
-      body: (
-        <>
-          <p className="tuiw-lede">claude code deletes conversation history after a period of inactivity; peasant needs these to analyze your sessions.</p>
-          <Radio name="retention" value={retention} onChange={setRetention} options={RETENTION} />
-        </>
-      ),
-    },
-    {
-      title: 'summary',
-      body: (
-        <div className="tuiw-kv">
-          <span className="tuiw-kv-k">village</span><span className="tuiw-kv-v">{village === 'connect' ? 'connected' : 'local only'}</span>
-          <span className="tuiw-kv-k">redaction</span><span className="tuiw-kv-v">{REDACTION.find((r) => r.id === redaction).label.replace(' (recommended)', '')}</span>
-          <span className="tuiw-kv-k">retention</span><span className="tuiw-kv-v">{RETENTION.find((r) => r.id === retention).label.replace(' (recommended)', '')}</span>
-          <span className="tuiw-kv-k">import</span><span className="tuiw-kv-v">claude code (all), codex (all)</span>
-          <span className="tuiw-kv-k">selected</span><span className="tuiw-kv-v tnum">140 sessions</span>
-        </div>
-      ),
-    },
-    {
-      title: 'importing transcripts',
-      body: (
-        <div className="tuiw-stages">
-          {INGEST_STAGES.map((s) => {
-            const pct = Math.round((s.n / s.m) * 100)
-            const icon = s.state === 'done' ? '✔' : s.state === 'active' ? '●' : '○'
-            return (
-              <div key={s.label} className={'tuiw-stage tuiw-stage-' + s.state}>
-                <span className="tuiw-stage-icon">{icon}</span>
-                <span className="tuiw-stage-label">{s.label}</span>
-                <span className="tuiw-stage-bar"><span className="tuiw-stage-fill" style={{ width: pct + '%' }} /></span>
-                <span className="tuiw-stage-n tnum">{s.n > 0 ? `${s.n}/${s.m}` : ''}</span>
-              </div>
-            )
-          })}
-        </div>
-      ),
-    },
+    { title: 'welcome to peasant', radio: { options: VILLAGE_OPTS, value: village, set: setVillage, name: 'village' },
+      lede: 'connect to the peasant village for shared analytics, or stay local for private-only usage.' },
+    { title: 'select providers', radio: null,
+      lede: 'discovered 152 transcripts. select providers to import from.' },
+    { title: 'privacy preference', radio: { options: REDACTION, value: redaction, set: setRedaction, name: 'redaction' },
+      lede: 'choose your default redaction level. this controls what is redacted before transcripts leave your machine.' },
+    { title: 'transcript retention', radio: { options: RETENTION, value: retention, set: setRetention, name: 'retention' },
+      lede: 'claude code deletes conversation history after a period of inactivity; peasant needs these to analyze your sessions.' },
+    { title: 'summary', radio: null },
+    { title: 'importing transcripts', radio: null },
   ]
   const isLast = page === pages.length - 1
+  const cur = pages[page]
+  const radio = cur.radio
+
+  function goPage(next) {
+    const n = Math.max(0, Math.min(pages.length - 1, next))
+    setPage(n)
+    const r = pages[n].radio
+    setOptCursor(r ? Math.max(0, r.options.findIndex((o) => o.id === r.value)) : 0)
+  }
+
+  function onWizKeyDown(e) {
+    const k = e.key
+    if (k === 'r') { e.preventDefault(); goPage(0); return }
+    if (k === 'b' || k === 'Backspace') { e.preventDefault(); goPage(page - 1); return }
+    if (radio) {
+      if (k === 'ArrowDown' || k === 'j') { e.preventDefault(); setOptCursor((c) => Math.min(radio.options.length - 1, c + 1)); return }
+      if (k === 'ArrowUp' || k === 'k') { e.preventDefault(); setOptCursor((c) => Math.max(0, c - 1)); return }
+      if (/^[1-9]$/.test(k)) {
+        const idx = Number(k) - 1
+        if (idx < radio.options.length) { e.preventDefault(); setOptCursor(idx); radio.set(radio.options[idx].id) }
+        return
+      }
+      if (k === 'Enter') { e.preventDefault(); radio.set(radio.options[optCursor].id); if (!isLast) goPage(page + 1); return }
+    }
+    if (k === 'Enter') { e.preventDefault(); if (!isLast) goPage(page + 1); return }
+    if (k === 'q') e.preventDefault()
+  }
+
+  const body = (() => {
+    if (page === 0 || page === 2 || page === 3) {
+      return (<><p className="tuiw-lede">{cur.lede}</p>
+        <Radio name={radio.name} value={radio.value} onChange={radio.set} options={radio.options} cursor={optCursor} /></>)
+    }
+    if (page === 1) {
+      return (<><p className="tuiw-lede">{cur.lede}</p>
+        <div className="tuiw-checks">
+          {WIZ_PROVIDERS.map((p) => (
+            <div key={p.id} className={'tuiw-check' + (p.n === 0 ? ' tuiw-check-off' : '')}>
+              <span className="tuiw-box">{p.on ? '[✓]' : '[ ]'}</span> {p.label} <span className="tuiw-check-n">({p.n} sessions)</span>
+              {p.on && <span className="tuiw-sub">▸ ● import all   ○ select sessions</span>}
+            </div>
+          ))}
+        </div></>)
+    }
+    if (page === 4) {
+      return (<div className="tuiw-kv">
+        <span className="tuiw-kv-k">village</span><span className="tuiw-kv-v">{village === 'connect' ? 'connected' : 'local only'}</span>
+        <span className="tuiw-kv-k">redaction</span><span className="tuiw-kv-v">{REDACTION.find((r) => r.id === redaction).label.replace(' (recommended)', '')}</span>
+        <span className="tuiw-kv-k">retention</span><span className="tuiw-kv-v">{RETENTION.find((r) => r.id === retention).label.replace(' (recommended)', '')}</span>
+        <span className="tuiw-kv-k">import</span><span className="tuiw-kv-v">claude code (all), codex (all)</span>
+        <span className="tuiw-kv-k">selected</span><span className="tuiw-kv-v tnum">140 sessions</span>
+      </div>)
+    }
+    return (<div className="tuiw-stages">
+      {INGEST_STAGES.map((s) => {
+        const pct = Math.round((s.n / s.m) * 100)
+        const icon = s.state === 'done' ? '✔' : s.state === 'active' ? '●' : '○'
+        return (
+          <div key={s.label} className={'tuiw-stage tuiw-stage-' + s.state}>
+            <span className="tuiw-stage-icon" aria-hidden="true">{icon}</span>
+            <span className="tuiw-stage-label">{s.label}</span>
+            <span className="tuiw-stage-bar"><span className="tuiw-stage-fill" style={{ width: pct + '%' }} /></span>
+            <span className="tuiw-stage-n tnum">{s.n > 0 ? `${s.n}/${s.m}` : ''}</span>
+          </div>
+        )
+      })}
+    </div>)
+  })()
+
   return (
-    <div className="tui tuiw">
+    <div
+      className="tui tuiw"
+      role="application"
+      aria-label="peasant kickstart wizard — keyboard driven"
+      aria-roledescription="terminal wizard"
+      tabIndex={0}
+      ref={regionRef}
+      onKeyDown={onWizKeyDown}
+    >
       <div className="tuiw-head">
         <span className="tuiw-step">step {page + 1} of {pages.length}</span>
-        <span className="tuiw-title">{pages[page].title}</span>
+        <span className="tuiw-title">{cur.title}</span>
       </div>
-      <div className="tuiw-body">{pages[page].body}</div>
+      <div className="tuiw-body">{body}</div>
       <div className="tuiw-foot">
         <div className="tuiw-foot-btns">
-          <button type="button" className="tuiw-btn" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>back</button>
-          <button type="button" className="tuiw-btn tuiw-btn-primary" onClick={() => setPage((p) => Math.min(pages.length - 1, p + 1))} disabled={isLast}>{page === 4 ? 'save & import' : 'continue'}</button>
+          <button type="button" className="tuiw-btn" tabIndex={-1} onClick={() => goPage(page - 1)} disabled={page === 0}>b · back</button>
+          <button type="button" className="tuiw-btn tuiw-btn-primary" tabIndex={-1} onClick={() => goPage(page + 1)} disabled={isLast}>{page === 4 ? 'enter · save & import' : 'enter · continue'}</button>
         </div>
-        <span className="tuiw-keys">b: back • enter: continue • r: restart • q: quit</span>
+        <span className="tuiw-keys">↑↓/1-9: pick • enter: continue • b: back • r: restart • q: quit</span>
       </div>
+      <div className="tuiw-hint" aria-hidden="true">focus this panel, then use the keys below</div>
     </div>
   )
 }
 
 export function TerminalSection() {
   const [tab, setTab] = useState('dashboard')
+  const [openId, setOpenId] = useState(null)
+  const [sessionCursor, setSessionCursor] = useState(0)
+  const regionRef = useRef(null)
+
+  const tabIndexOf = (id) => TABS.findIndex((t) => t.id === id)
+
+  function onTuiKeyDown(e) {
+    const k = e.key
+    if (openId) {
+      if (k === 'Escape' || k === 'Backspace') { e.preventDefault(); setOpenId(null) }
+      return
+    }
+    if (k === 'Escape') { e.preventDefault(); regionRef.current?.blur(); return }
+    if (k === 'Tab') {
+      e.preventDefault()
+      const i = tabIndexOf(tab)
+      const next = (i + (e.shiftKey ? -1 : 1) + TABS.length) % TABS.length
+      setTab(TABS[next].id)
+      return
+    }
+    if (k === '1' || k === '2' || k === '3') {
+      e.preventDefault()
+      setTab(TABS[Number(k) - 1].id)
+      return
+    }
+    if (tab === 'sessions') {
+      if (k === 'ArrowDown' || k === 'j') { e.preventDefault(); setSessionCursor((c) => Math.min(SESSIONS.length - 1, c + 1)); return }
+      if (k === 'ArrowUp' || k === 'k') { e.preventDefault(); setSessionCursor((c) => Math.max(0, c - 1)); return }
+      if (k === 'Enter') { e.preventDefault(); setOpenId(SESSIONS[sessionCursor].id); return }
+    }
+    if (k === 'q') e.preventDefault()
+  }
+
   return (
     <section className="band" id="terminal">
       <h2 className="label">terminal &amp; tui</h2>
@@ -381,13 +445,21 @@ export function TerminalSection() {
       <div className="specimen">
         <div className="specimen-bar"><span className="specimen-cap">peasant · tui</span></div>
         <div className="specimen-body" style={{ padding: 0 }}>
-          <div className="tui" role="group" aria-label="peasant tui recreation">
+          <div
+            className="tui"
+            role="application"
+            aria-label="peasant tui recreation — keyboard driven"
+            aria-roledescription="terminal"
+            tabIndex={0}
+            ref={regionRef}
+            onKeyDown={onTuiKeyDown}
+          >
             <div className="tui-tabs" role="tablist" aria-label="tui tabs">
               {TABS.map((t) => {
                 const Icon = t.icon
                 const on = tab === t.id
                 return (
-                  <button key={t.id} type="button" role="tab" aria-selected={on} className={'tui-tab' + (on ? ' tui-tab-on' : '')} onClick={() => setTab(t.id)}>
+                  <button key={t.id} type="button" role="tab" aria-selected={on} tabIndex={-1} className={'tui-tab' + (on ? ' tui-tab-on' : '')} onClick={() => setTab(t.id)}>
                     <Icon size={14} aria-hidden="true" /> {t.label}
                   </button>
                 )
@@ -397,9 +469,10 @@ export function TerminalSection() {
             </div>
             <div className="tui-screen">
               {tab === 'dashboard' && <Dashboard />}
-              {tab === 'sessions' && <Sessions />}
+              {tab === 'sessions' && <Sessions openId={openId} setOpenId={setOpenId} cursor={sessionCursor} setCursor={setSessionCursor} />}
               {tab === 'trends' && <Trends />}
             </div>
+            <div className="tui-hint" aria-hidden="true">focus this panel, then use the keys below</div>
             <div className="tui-help">{HELP[tab]}</div>
           </div>
         </div>

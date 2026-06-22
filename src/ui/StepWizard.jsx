@@ -39,7 +39,7 @@ export function StepIndicator({
   'aria-label': ariaLabel = 'progress',
 }) {
   return (
-    <nav className="sw-rail" aria-label={ariaLabel}>
+    <nav className="swz-rail" aria-label={ariaLabel}>
       {steps.map((step, idx) => {
         const isCurrent = step.id === current
         const isComplete = completed.has(step.id)
@@ -48,33 +48,33 @@ export function StepIndicator({
         const isLocked = !isCurrent && !canJump
 
         const stateClass = isCurrent
-          ? 'sw-step--current'
+          ? 'swz-step--current'
           : isComplete
-            ? 'sw-step--complete'
+            ? 'swz-step--complete'
             : canJump
-              ? 'sw-step--reachable'
-              : 'sw-step--locked'
+              ? 'swz-step--reachable'
+              : 'swz-step--locked'
 
         // the connector behind a marker reads "done" once the previous step is complete.
         const prevDone = idx > 0 && completed.has(steps[idx - 1].id)
 
         return (
-          <div key={step.id} className="sw-cell" style={{ flex: idx === 0 ? '0 0 auto' : '1 1 0' }}>
-            {idx > 0 && <span className={`sw-line${prevDone ? ' sw-line--done' : ''}`} aria-hidden="true" />}
+          <div key={step.id} className="swz-cell" style={{ flex: idx === 0 ? '0 0 auto' : '1 1 0' }}>
+            {idx > 0 && <span className={`swz-line${prevDone ? ' swz-line--done' : ''}`} aria-hidden="true" />}
             <button
               type="button"
-              className={`sw-step ${stateClass}`}
+              className={`swz-step ${stateClass}`}
               onClick={() => { if (canJump) onJump?.(step.id) }}
               disabled={isLocked}
               aria-current={isCurrent ? 'step' : undefined}
               aria-disabled={isLocked || undefined}
             >
-              <span className="sw-mark">
+              <span className="swz-mark">
                 {isComplete
-                  ? <Check className="sw-mark-check" size={14} aria-hidden="true" />
+                  ? <Check className="swz-mark-check" size={14} aria-hidden="true" />
                   : idx + 1}
               </span>
-              <span className="sw-label">{step.label}</span>
+              <span className="swz-label">{step.label}</span>
             </button>
           </div>
         )
@@ -83,7 +83,7 @@ export function StepIndicator({
   )
 }
 
-/* this `sw-cell` only needs flex on the connectors; the first cell hugs its marker (no leading
+/* this `swz-cell` only needs flex on the connectors; the first cell hugs its marker (no leading
    line), the rest share the remaining width so the rail spans its container evenly. */
 
 /**
@@ -174,8 +174,8 @@ export default function StepWizard({
   const panelId = `${baseId}-panel`
 
   return (
-    <section className="sw" aria-label={ariaLabel ?? 'step wizard'}>
-      <div className="sw-head">
+    <section className="swz" aria-label={ariaLabel ?? 'step wizard'}>
+      <div className="swz-head">
         <StepIndicator
           steps={steps}
           current={current?.id}
@@ -187,23 +187,23 @@ export default function StepWizard({
       </div>
 
       <div
-        className="sw-body"
+        className="swz-body"
         id={panelId}
         role="group"
         aria-label={current ? `step ${index + 1}: ${current.label}` : undefined}
         tabIndex={-1}
       >
-        <span className="sw-body-kicker">
+        <span className="swz-body-kicker">
           step {index + 1} — {current?.label}
         </span>
         {body}
       </div>
 
-      <div className="sw-foot">
+      <div className="swz-foot">
         <Button variant="ghost" onClick={back} disabled={index === 0}>
           {backLabel}
         </Button>
-        <span className="sw-count" aria-hidden="true">
+        <span className="swz-count" aria-hidden="true">
           {index + 1} / {steps.length}
         </span>
         <Button

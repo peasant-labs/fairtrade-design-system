@@ -209,8 +209,9 @@ export function AsciiImage({ src, cols = 120, aspect = 0.6, fit = false, gamma =
       // that strip beats against the device-pixel grid and shows up as periodic horizontal lines. drawing the
       // em slightly TALLER than the cell (FILL) overlaps the ink row-to-row and closes those seams, then a
       // per-row horizontal squeeze (sx) keeps each glyph's advance == cw so the row still spans exactly W
-      // (no horizontal stretch). 1px ink, no inter-row gap, no banding.
-      const FILL = 1.2
+      // (no horizontal stretch). FILL must be >=~1.5: a glyph's ink is only ~0.66 of its em, so a smaller
+      // overlap leaves a ~0.2*ch empty strip per row that scales with backing size and re-bands at high DPR.
+      const FILL = 1.6
       const fs = ch * FILL
       const sx = cw / (fs * cellAR) // squeeze so the taller glyph's advance still equals the column width
       ctx.font = `${fs.toFixed(2)}px "Atkinson Hyperlegible Mono", ui-monospace, monospace`

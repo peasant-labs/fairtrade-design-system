@@ -1159,7 +1159,8 @@
         "ProviderIcon",
         "ProviderTag",
         "ProviderName",
-        "AccentLegend"
+        "AccentLegend",
+        "PROVIDER_ACCENT"
       ],
       "doc": "ProviderIcon — the real brand mark for a harness, single-color via currentColor.",
       "props": {},

@@ -194,7 +194,7 @@ function CommonsHub() {
       <div
         style={{
           display: 'grid', gap: 'var(--sp-5)', alignItems: 'start',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 19rem), 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 30rem), 1fr))',
         }}
       >
         {/* left: a short data note + provider distribution + the owner's data-access control. */}

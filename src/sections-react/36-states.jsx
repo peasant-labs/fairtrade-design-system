@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { Bell, BellOff, ExternalLink, Pencil, Download, Link, Archive, Eye, Users, Lock, ShieldCheck, TriangleAlert, ChevronDown, Info, Circle, CircleCheck, Loader, LoaderCircle, X, CircleX, CircleAlert, SearchX } from 'lucide-react'
+import { Switch } from '../ui'
 
 /* 36-states: button / input / switch / feedback-surface state specimens + dtables + callouts.
    faithful port of src/sections/36-states.html. <i data-lucide> -> lucide-react (CSS-sized,
@@ -215,31 +216,14 @@ export function StatesSection() {
         <div className="specimen-bar"><span className="specimen-cap">example</span></div>
         <div className="specimen-body">
           <div className="sw-group" style={{ maxWidth: '340px' }}>
-            <div className="sw-field">
-              <button type="button" className="sw" role="switch" aria-checked="false" id="sw-redact"></button>
-              <label className="sw-label" htmlFor="sw-redact">redaction review</label>
-              <span className="sw-state"><Circle aria-hidden="true" /> off</span>
-            </div>
-            <div className="sw-field">
-              <button type="button" className="sw" role="switch" aria-checked="true" id="sw-public"></button>
-              <label className="sw-label" htmlFor="sw-public">public transcript</label>
-              <span className="sw-state"><CircleCheck aria-hidden="true" /> on</span>
-            </div>
-            <div className="sw-field">
-              <button type="button" className="sw" role="switch" aria-checked="false" disabled id="sw-lock-off"></button>
-              <label className="sw-label" htmlFor="sw-lock-off">verified only</label>
-              <span className="sw-state"><Lock aria-hidden="true" /> off, locked</span>
-            </div>
-            <div className="sw-field">
-              <button type="button" className="sw" role="switch" aria-checked="true" disabled id="sw-lock-on"></button>
-              <label className="sw-label" htmlFor="sw-lock-on">audit logging</label>
-              <span className="sw-state"><Lock aria-hidden="true" /> on, locked</span>
-            </div>
-            <div className="sw-field">
-              <button type="button" className="sw" role="switch" aria-checked="false" aria-busy="true" id="sw-sync"></button>
-              <label className="sw-label" htmlFor="sw-sync">sync to commons</label>
-              <span className="sw-state" aria-live="polite"><Loader className="sw-busy-spin" aria-hidden="true" /> saving</span>
-            </div>
+            {/* the two unlocked switches are interactive (the real <Switch> — click / space / enter flip
+                aria-checked + the on/off marker). the locked pair stays disabled and sync stays busy:
+                those demonstrate the non-interactive states. */}
+            <Switch label="redaction review" defaultChecked={false} />
+            <Switch label="public transcript" defaultChecked={true} />
+            <Switch label="verified only" disabled offText="off, locked" stateIcon={Lock} />
+            <Switch label="audit logging" disabled defaultChecked onText="on, locked" stateIcon={Lock} />
+            <Switch label="sync to commons" busy offText="saving" />
           </div>
         </div>
       </div>

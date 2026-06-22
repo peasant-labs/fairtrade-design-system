@@ -9,7 +9,6 @@ import {
   Users,
   ChevronRight,
   ChevronDown,
-  Clock,
   Hash,
   Eye,
   EyeOff,
@@ -26,6 +25,7 @@ import {
   Lock,
   ArrowRight,
 } from 'lucide-react'
+import { StatGrid, GovTile, ProviderBars, ModerationQueue, RoleRoster, ConsentDialog, PolicySelect } from '../../ui'
 
 /* ============================================================================
    COMMONS MANAGE — the publish / collectives / governance half of Village
@@ -237,14 +237,14 @@ export function PublishView() {
    2) COLLECTIVES VIEW — list/grid of collectives + create form
 ============================================================================ */
 const ACCEPTANCE_MODES = [
-  { value: 'open', short: 'Open', label: 'Open — anyone can share, auto-approved' },
-  { value: 'verified_only', short: 'Verified only', label: 'Verified only — requires org affiliation' },
-  { value: 'curated', short: 'Curated', label: 'Curated — owner must approve each share' },
+  { value: 'open', short: 'Open', label: 'open', rationale: 'anyone can share — contributions are auto-approved.' },
+  { value: 'verified_only', short: 'Verified only', label: 'verified only', rationale: 'sharing requires an org affiliation.' },
+  { value: 'curated', short: 'Curated', label: 'curated', rationale: 'the owner must approve each share before it appears.' },
 ]
 const ACCESS_POLICIES = [
-  { value: 'members_only', short: 'Members only', label: 'Members only — full members can browse data' },
-  { value: 'contributors', short: 'Contributors', label: 'Contributors — anyone who contributes can browse' },
-  { value: 'public', short: 'Public', label: 'Public — anyone can browse the dataset' },
+  { value: 'members_only', short: 'Members only', label: 'members only', rationale: 'full members can browse the collected data.' },
+  { value: 'contributors', short: 'Contributors', label: 'contributors', rationale: 'anyone who contributes can browse the data.' },
+  { value: 'public', short: 'Public', label: 'public', rationale: 'anyone at all can browse the dataset.' },
 ]
 const LINKED_ORGS = ['@anthropic-labs', '@data-collective', '@openai-research']
 
@@ -303,28 +303,26 @@ export function CollectivesView() {
                 <span className="label">purpose</span>
                 <textarea className="input" rows={2} placeholder="What does this collective do?" value={purpose} onChange={(e) => setPurpose(e.target.value)} />
               </label>
-              <label className="cmg-field">
-                <span className="label">acceptance mode</span>
-                <div className="select-wrap">
-                  <select className="select" value={mode} onChange={(e) => setMode(e.target.value)}>
-                    {ACCEPTANCE_MODES.map((m) => (
-                      <option key={m.value} value={m.value}>{m.label}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="lucide" aria-hidden="true" />
-                </div>
-              </label>
-              <label className="cmg-field">
-                <span className="label">data access policy</span>
-                <div className="select-wrap">
-                  <select className="select" value={access} onChange={(e) => setAccess(e.target.value)}>
-                    {ACCESS_POLICIES.map((a) => (
-                      <option key={a.value} value={a.value}>{a.label}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="lucide" aria-hidden="true" />
-                </div>
-              </label>
+              <div className="cmg-field">
+                <PolicySelect
+                  variant="select"
+                  label="acceptance mode"
+                  name="acceptance-mode"
+                  value={mode}
+                  onChange={setMode}
+                  options={ACCEPTANCE_MODES}
+                />
+              </div>
+              <div className="cmg-field">
+                <PolicySelect
+                  variant="select"
+                  label="data access policy"
+                  name="data-access"
+                  value={access}
+                  onChange={setAccess}
+                  options={ACCESS_POLICIES}
+                />
+              </div>
               <label className="cmg-field">
                 <span className="label">link to github org (optional)</span>
                 <div className="select-wrap">
@@ -341,7 +339,7 @@ export function CollectivesView() {
             <div className="cmg-form-foot">
               <button type="button" className="btn btn-sm btn-primary" disabled={!name.trim()} aria-describedby={uid}>create collective</button>
               <span id={uid} className="cmg-form-hint mono">
-                {ACCEPTANCE_MODES.find((m) => m.value === mode)?.label.toLowerCase()}
+                {ACCEPTANCE_MODES.find((m) => m.value === mode)?.rationale}
               </span>
             </div>
           </section>
@@ -387,7 +385,6 @@ const PROVIDER_SHARE = [
   { id: 'opencode', pct: 12 },
   { id: 'codex', pct: 6 },
 ]
-const PROVIDER_TONE = { 'claude-code': 'var(--amber)', 'gemini-cli': 'var(--teal)', opencode: 'var(--olive)', codex: 'var(--ink-3)' }
 
 const PENDING_REVIEW = [
   { id: 'p1', provider: 'claude-code', title: 'Building a REST API from scratch', by: '@alice-dev' },
@@ -443,24 +440,6 @@ const REDACTIONS = [
     summary: 'local path detected',
   },
 ]
-
-function GovTile({ label, value, tone }) {
-  return (
-    <div className="cmg-tile">
-      <span className="label">{label}</span>
-      <span className={'cmg-tile-v ' + (tone || '')}>{value}</span>
-    </div>
-  )
-}
-function KpiTile({ label, value, sub }) {
-  return (
-    <div className="cmg-tile">
-      <span className="label">{label}</span>
-      <span className="cmg-tile-v tnum cmg-kpi">{value}</span>
-      {sub ? <span className="cmg-tile-sub mono">{sub}</span> : null}
-    </div>
-  )
-}
 
 /* one redaction-review item: line-numbered diff (strike original -> highlighted
    replacement) + category/confidence badges + sticky keep/expose opt-out. */
@@ -529,17 +508,11 @@ function RedactionItem({ item }) {
 
 export function CollectiveDetailView() {
   const [role, setRole] = useState('owner') // role switcher to demo capability gating
-  const [queue, setQueue] = useState(PENDING_REVIEW.map((p) => ({ ...p, status: null })))
   const [showRedaction, setShowRedaction] = useState(true)
   const [browseGated, setBrowseGated] = useState(false)
 
   const isOwner = role === 'owner'
   const isGuest = role === 'guest'
-  const pendingCount = queue.filter((q) => q.status == null).length
-
-  function resolve(id, status) {
-    setQueue((q) => q.map((x) => (x.id === id ? { ...x, status } : x)))
-  }
 
   return (
     <div className="cmg-root">
@@ -578,67 +551,44 @@ export function CollectiveDetailView() {
           </div>
         </header>
 
-        {/* governance + KPI tiles */}
+        {/* governance facts (kit GovTile) + KPI metrics (kit StatGrid) */}
         <div className="cmg-tiles">
-          <GovTile label="contributions" value="Open" tone="chip-ok cmg-tile-chip" />
-          <GovTile label="access" value="Members only" />
-          <GovTile label="your role" value={role === 'guest' ? 'Guest' : role.charAt(0).toUpperCase() + role.slice(1)} />
-          <KpiTile label="transcripts" value="248" sub="across 31 projects" />
-          <KpiTile label="tokens" value="4.2M" sub="18.4K turns" />
-          <KpiTile label="contributors" value="12" sub="63h total" />
+          <GovTile label="contributions" value="open" tone="teal" />
+          <GovTile label="access" value="members only" tone="amber" />
+          <GovTile label="your role" value={role} />
         </div>
+        <StatGrid
+          tiles={[
+            { key: 'transcripts', label: 'transcripts', value: '248', sub: 'across 31 projects' },
+            { key: 'tokens', label: 'tokens', value: '4.2M', sub: '18.4K turns' },
+            { key: 'contributors', label: 'contributors', value: '12', sub: '63h total' },
+          ]}
+        />
 
         <div className="cmg-d-grid">
           <main className="cmg-d-main">
-            {/* provider share bars */}
+            {/* provider share bars (kit ProviderBars — monochrome by design) */}
             <section className="card cmg-share" aria-labelledby="cmg-share-h">
               <h3 id="cmg-share-h" className="cmg-sub">provider share</h3>
-              <ul className="cmg-share-list">
-                {PROVIDER_SHARE.map((p) => (
-                  <li key={p.id} className="cmg-share-row">
-                    <span className="cmg-share-name mono"><ProviderMark id={p.id} /> {PROVIDER_LABEL[p.id]}</span>
-                    <span className="cmg-share-track" aria-hidden="true">
-                      <span className="cmg-share-fill" style={{ width: p.pct + '%', background: PROVIDER_TONE[p.id] }} />
-                    </span>
-                    <span className="cmg-share-pct mono tnum">{p.pct}%</span>
-                  </li>
-                ))}
-              </ul>
+              <ProviderBars
+                label="provider share"
+                total={100}
+                data={PROVIDER_SHARE.map((p) => ({ label: PROVIDER_LABEL[p.id], value: p.pct }))}
+              />
             </section>
 
-            {/* curated owner review queue */}
+            {/* curated owner review queue (kit ModerationQueue — owns its own resolve + count + empty state) */}
             {isOwner && (
-              <section className="card cmg-queue" aria-labelledby="cmg-queue-h">
-                <div className="cmg-queue-head">
-                  <h3 id="cmg-queue-h" className="cmg-sub"><Clock size={15} aria-hidden="true" /> pending review</h3>
-                  <span className="chip chip-warn tnum">{pendingCount}</span>
-                </div>
-                {pendingCount === 0 ? (
-                  <div className="cmg-recent-empty mono">no shares awaiting review.</div>
-                ) : (
-                  <ul className="cmg-queue-list">
-                    {queue.map((q) => (
-                      <li key={q.id} className={'cmg-queue-row' + (q.status ? ' cmg-queue-done' : '')}>
-                        <span className="cmg-pub-prov"><ProviderMark id={q.provider} /></span>
-                        <span className="cmg-queue-title">{q.title}</span>
-                        <span className="cmg-queue-by mono">by {q.by}</span>
-                        {q.status ? (
-                          <span className={'chip ' + (q.status === 'approved' ? 'chip-ok' : 'chip-err')}>
-                            {q.status === 'approved' ? <Check size={13} aria-hidden="true" /> : <X size={13} aria-hidden="true" />}
-                            {q.status}
-                          </span>
-                        ) : (
-                          <span className="cmg-queue-acts">
-                            <button type="button" className="btn btn-sm btn-ghost" aria-label={`preview ${q.title}`}><ExternalLink size={14} aria-hidden="true" /> preview</button>
-                            <button type="button" className="btn btn-sm btn-secondary" onClick={() => resolve(q.id, 'approved')}><Check size={14} aria-hidden="true" /> approve</button>
-                            <button type="button" className="btn btn-sm btn-danger" onClick={() => resolve(q.id, 'rejected')}><X size={14} aria-hidden="true" /> reject</button>
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
+              <ModerationQueue
+                title="pending review"
+                emptyLabel="no shares awaiting review."
+                items={PENDING_REVIEW.map((q) => ({
+                  id: q.id,
+                  kind: 'share',
+                  who: q.title,
+                  detail: `by ${q.by}`,
+                }))}
+              />
             )}
 
             {/* redaction review snippet */}
@@ -705,37 +655,25 @@ export function CollectiveDetailView() {
 
           {/* right rail: members + pending member requests */}
           <aside className="sidebar cmg-d-rail" aria-label="collective sidebar">
+            {/* pending member requests (kit ModerationQueue, kind 'member' — icon+word actions) */}
             {isOwner && (
-              <div className="sb-sec">
-                <div className="sb-head"><UserPlus size={14} aria-hidden="true" style={{ verticalAlign: '-0.16em', marginRight: 6 }} /> pending requests <span className="chip chip-warn tnum" style={{ marginLeft: 6 }}>1</span></div>
-                <div className="cmg-req-row">
-                  <span className="avatar" aria-hidden="true">d</span>
-                  <span className="cmg-req-name mono">@dana-codes</span>
-                  <span className="cmg-req-acts">
-                    <button type="button" className="btn btn-sm btn-icon btn-secondary" aria-label="approve dana-codes"><Check size={14} aria-hidden="true" /></button>
-                    <button type="button" className="btn btn-sm btn-icon btn-danger" aria-label="reject dana-codes"><X size={14} aria-hidden="true" /></button>
-                  </span>
-                </div>
-              </div>
+              <ModerationQueue
+                title="pending requests"
+                emptyLabel="no pending requests."
+                items={[{ id: 'dana-codes', kind: 'member', who: '@dana-codes' }]}
+              />
             )}
-            <div className="sb-sec">
-              <div className="sb-head">members <span className="chip tnum" style={{ marginLeft: 6 }}>{MEMBERS.length}</span></div>
-              <ul className="cmg-member-list">
-                {MEMBERS.map((m) => (
-                  <li key={m.handle} className="cmg-member-row">
-                    <span className="avatar" aria-hidden="true">{m.handle === 'anon' ? '?' : m.handle[1]}</span>
-                    <span className="cmg-member-main">
-                      <span className="cmg-member-handle mono">{m.handle}</span>
-                      <span className="cmg-member-name">{m.name}</span>
-                    </span>
-                    <span className={'chip ' + (m.role === 'owner' ? 'chip-warn' : '')}>{m.role}</span>
-                    {isOwner && m.role !== 'owner' && (
-                      <button type="button" className="btn btn-sm btn-icon btn-ghost" aria-label={`remove ${m.handle}`}><X size={13} aria-hidden="true" /></button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {/* members roster (kit RoleRoster — owner row locked; member/contributor roles only) */}
+            <RoleRoster
+              title="members"
+              roles={['member', 'contributor']}
+              members={MEMBERS.map((m) => ({
+                handle: m.handle,
+                name: m.name,
+                role: m.role,
+                owner: m.role === 'owner',
+              }))}
+            />
             <div className="sb-sec">
               <div className="sb-head"><FolderGit2 size={14} aria-hidden="true" style={{ verticalAlign: '-0.16em', marginRight: 6 }} /> linked repositories</div>
               <div className="cmg-repo-note callout">
@@ -903,57 +841,54 @@ export function ContributeView() {
         </div>
       </div>
 
-      {confirming && (
-        <div className="cmg-scrim" role="presentation" onClick={() => setConfirming(false)}>
-          <div
-            className="cmg-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="cmg-confirm-h"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.key === 'Escape' && setConfirming(false)}
-          >
-            <div className="cmg-dlg-head">
-              <h3 id="cmg-confirm-h" className="cmg-sub">make {privateCount > 1 ? 'these' : 'this'} visible?</h3>
-              <button type="button" className="btn btn-sm btn-icon btn-ghost" onClick={() => setConfirming(false)} aria-label="close dialog">
-                <X size={14} aria-hidden="true" />
-              </button>
-            </div>
-            <div className="cmg-dlg-body">
-              {privateCount > 0 ? (
-                <div className="callout">
-                  <AlertTriangle size={16} aria-hidden="true" />
-                  <div>
-                    <span className="tnum">{privateCount}</span> private transcript{privateCount === 1 ? '' : 's'} will become visible to members of{' '}
-                    <b>{TARGET_COLLECTIVE.name}</b>. visibility will change from private to shared.
-                  </div>
-                </div>
-              ) : (
-                <p className="cmg-dlg-intro mono">contributing {selected.size} already-visible transcript{selected.size === 1 ? '' : 's'}. no visibility change.</p>
-              )}
-              <ul className="cmg-confirm-list">
-                {selectedList.slice(0, 5).map((t) => (
-                  <li key={t.id} className="cmg-confirm-tx">
-                    <ProviderMark id={t.provider} />
-                    <span className="cmg-confirm-title">{t.title}</span>
-                    <VisibilityEye v={t.visibility} />
-                  </li>
-                ))}
-                {selectedList.length > 5 ? <li className="cmg-confirm-more mono">…and {selectedList.length - 5} more</li> : null}
-              </ul>
-              <div className="cmg-confirm-target mono">
-                <Users size={13} aria-hidden="true" /> {TARGET_COLLECTIVE.name} · <span className="tnum">{TARGET_COLLECTIVE.members}</span> members
-              </div>
-            </div>
-            <div className="cmg-dlg-foot">
-              <button type="button" className="btn btn-sm btn-secondary" onClick={() => setConfirming(false)}>cancel</button>
-              <button type="button" className="btn btn-sm btn-primary" onClick={() => setConfirming(false)}>
-                {privateCount > 0 ? 'contribute & make visible' : 'contribute'} <ArrowRight size={14} aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* contribute-confirm (kit ConsentDialog — focus-trap/esc/scrim/return-focus for free).
+          consent gate is required only when private transcripts flip to shared. */}
+      <ConsentDialog
+        open={confirming}
+        title={<>make {privateCount > 1 ? 'these' : 'this'} visible?</>}
+        intro={
+          privateCount > 0 ? (
+            <p>
+              <span className="tnum">{privateCount}</span> private transcript{privateCount === 1 ? '' : 's'} will become visible to members
+              of <b>{TARGET_COLLECTIVE.name}</b>. visibility will change from private to shared.
+            </p>
+          ) : (
+            <p>contributing {selected.size} already-visible transcript{selected.size === 1 ? '' : 's'}. no visibility change.</p>
+          )
+        }
+        axes={[
+          {
+            icon: Eye,
+            key: 'visibility',
+            value: privateCount > 0 ? 'private → shared' : 'unchanged',
+            scope: privateCount > 0 ? `${privateCount} transcript${privateCount === 1 ? '' : 's'} newly exposed` : 'no visibility change',
+            tone: privateCount > 0 ? 'reveal' : 'open',
+          },
+          {
+            icon: Users,
+            key: 'shared with',
+            value: TARGET_COLLECTIVE.name,
+            scope: `${TARGET_COLLECTIVE.members} members can see it`,
+            tone: 'open',
+          },
+        ]}
+        requireConsent={privateCount > 0}
+        confirmLabel={privateCount > 0 ? 'contribute & make visible' : 'contribute'}
+        confirmIcon={ArrowRight}
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => setConfirming(false)}
+      >
+        <ul className="cmg-confirm-list">
+          {selectedList.slice(0, 5).map((t) => (
+            <li key={t.id} className="cmg-confirm-tx">
+              <ProviderMark id={t.provider} />
+              <span className="cmg-confirm-title">{t.title}</span>
+              <VisibilityEye v={t.visibility} />
+            </li>
+          ))}
+          {selectedList.length > 5 ? <li className="cmg-confirm-more mono">…and {selectedList.length - 5} more</li> : null}
+        </ul>
+      </ConsentDialog>
     </div>
   )
 }
