@@ -2445,12 +2445,10 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
      so without !important the outline rendered as a nested card-in-a-card inside the rail. force the
      frame off so the waterfall is the rail body's only content, flush, not a boxed panel. */
   .txn-ol-waterfall { border: 0 !important; background: transparent !important; }
-  .txn-ol-waterfall .swf-head { padding: 0 0 var(--sp-2) var(--sp-2) !important; background: transparent !important; border-top: 0; border-bottom: 0 !important; }
-  /* the "collapse all" toggle collapses the whole outline you opened the rail to read — pointless and
-     visually heavy here (a bordered button mis-aligned with the meta), so drop it; the "8m · 2 tasks"
-     meta stays as a quiet caption above the turns, on the same left edge as the rows. */
-  .txn-ol-waterfall .swf-toggle { display: none !important; }
-  .txn-ol-waterfall .swf-head-meta { font-size: var(--fs-label); color: var(--ink-3); }
+  /* drop the outline head entirely (the "Nm · N tasks" meta + the "collapse all" toggle): the rail
+     already carries its "user turns" title, so the meta is redundant and the toggle is pointless here.
+     the turns sit directly under the rail head. (.swf-head is unlayered, so display:none needs !important.) */
+  .txn-ol-waterfall .swf-head { display: none !important; }
   /* the StepsWaterfall row is a wide bar-chart line (index | prompt | bar | count | dur). fold it into
      this ~210px outline rail as a compact card per turn. the base lives in an UNLAYERED stylesheet, so
      the layout props need !important to win (otherwise the prompt stayed nowrap-truncated, the duration
