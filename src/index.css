@@ -2445,23 +2445,37 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
      so without !important the outline rendered as a nested card-in-a-card inside the rail. force the
      frame off so the waterfall is the rail body's only content, flush, not a boxed panel. */
   .txn-ol-waterfall { border: 0 !important; background: transparent !important; }
-  .txn-ol-waterfall .swf-head { padding: 0 0 var(--sp-2); background: transparent !important; border-top: 0; border-bottom: 0 !important; }
+  .txn-ol-waterfall .swf-head { padding: 0 0 var(--sp-2) var(--sp-2) !important; background: transparent !important; border-top: 0; border-bottom: 0 !important; }
   /* the "collapse all" toggle collapses the whole outline you opened the rail to read — pointless and
      visually heavy here (a bordered button mis-aligned with the meta), so drop it; the "8m · 2 tasks"
      meta stays as a quiet caption above the turns, on the same left edge as the rows. */
   .txn-ol-waterfall .swf-toggle { display: none !important; }
   .txn-ol-waterfall .swf-head-meta { font-size: var(--fs-label); color: var(--ink-3); }
-  .txn-ol-waterfall .swf-row { padding-left: var(--sp-1); padding-right: 0; gap: var(--sp-1) var(--sp-2); flex-wrap: wrap; }
-  /* the StepsWaterfall is a wide component; in this 240px outline rail its fixed bar (120px) + count +
-     dur columns overflowed. drop the bar + tool-count (the duration VALUE still carries the signal,
-     matching the component's own narrow-rail fold), let the head + row wrap so the error chip never
-     forces a horizontal scroll, and right-align the duration on its wrapped line. the prompt keeps
-     min-width:0 + ellipsis from .swf-prompt. */
+  /* the StepsWaterfall row is a wide bar-chart line (index | prompt | bar | count | dur). fold it into
+     this ~210px outline rail as a compact card per turn. the base lives in an UNLAYERED stylesheet, so
+     the layout props need !important to win (otherwise the prompt stayed nowrap-truncated, the duration
+     wrapped far below, and the error chip clipped at a fixed 125px). layout:
+       line 1 — index (left) + duration (right, justified)
+       line 2 — the prompt, wrapping to a 2-line preview (no abrupt mid-word 1-line cut)
+       line 3 — the error chip, sized to its label so "typecheck failed" is never clipped
+     the decorative duration bar + tool-count drop (the duration value carries the signal for AT). */
+  .txn-ol-waterfall .swf-row {
+    display: flex !important; flex-wrap: wrap; align-items: baseline;
+    column-gap: var(--sp-2); row-gap: var(--sp-2);
+    padding: var(--sp-2) 0 var(--sp-2) var(--sp-2) !important; min-height: 0 !important;
+  }
   .txn-ol-waterfall .swf-bar,
-  .txn-ol-waterfall .swf-count { display: none; }
-  .txn-ol-waterfall .swf-prompt { flex-basis: 100%; }
-  .txn-ol-waterfall .swf-error { max-width: 100%; }
-  .txn-ol-waterfall .swf-dur { margin-left: auto; min-width: 4ch; }
+  .txn-ol-waterfall .swf-count { display: none !important; }
+  .txn-ol-waterfall .swf-index { order: 0; flex: none; }
+  .txn-ol-waterfall .swf-dur { order: 1; margin-left: auto !important; min-width: 0 !important; }
+  .txn-ol-waterfall .swf-prompt {
+    order: 2; flex: 1 0 100% !important; min-width: 0; line-height: 1.4;
+    white-space: normal !important; overflow: hidden;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  }
+  .txn-ol-waterfall .swf-error {
+    order: 3; flex: 0 0 auto; max-width: 100% !important; overflow: visible !important;
+  }
 
   /* outline rows */
   .txn-outline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
