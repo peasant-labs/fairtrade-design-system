@@ -23,7 +23,23 @@ function hexToRgb(hex) {
   let h = hex.trim().replace('#', '')
   if (h.length === 3) h = h.split('').map((c) => c + c).join('')
   const n = parseInt(h, 16)
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255, 1]
+}
+function parseColor(value) {
+  const raw = value.trim()
+  if (/^#[0-9a-fA-F]{3,8}$/.test(raw)) return hexToRgb(raw)
+  const rgba = raw.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([0-9.]+))?\)$/i)
+  if (rgba) return [Number(rgba[1]), Number(rgba[2]), Number(rgba[3]), rgba[4] == null ? 1 : Number(rgba[4])]
+  throw new Error(`unsupported color ${value}`)
+}
+function composite(over, under) {
+  const alpha = over[3]
+  return [
+    Math.round(over[0] * alpha + under[0] * (1 - alpha)),
+    Math.round(over[1] * alpha + under[1] * (1 - alpha)),
+    Math.round(over[2] * alpha + under[2] * (1 - alpha)),
+    1,
+  ]
 }
 function relLum([r, g, b]) {
   const f = (v) => {
@@ -33,16 +49,22 @@ function relLum([r, g, b]) {
   return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
 }
 function contrast(a, b) {
-  const la = relLum(hexToRgb(a)) + 0.05
-  const lb = relLum(hexToRgb(b)) + 0.05
+  const la = relLum(a) + 0.05
+  const lb = relLum(b) + 0.05
   return (Math.max(la, lb) / Math.min(la, lb))
+}
+function resolveColor(tokens, name, base = null) {
+  const color = parseColor(tokens[name])
+  if (color[3] === 1) return color
+  if (!base) throw new Error(`${name} is translucent but no composite base was provided`)
+  return composite(color, parseColor(tokens[base]))
 }
 
 /* ---- probe mode ---- */
 const argv = process.argv.slice(2)
 if (argv[0] === '--probe') {
   const [, fg, bg] = argv
-  console.log(`${fg} on ${bg} = ${contrast(fg, bg).toFixed(2)}:1`)
+  console.log(`${fg} on ${bg} = ${contrast(parseColor(fg), parseColor(bg)).toFixed(2)}:1`)
   process.exit(0)
 }
 
@@ -59,7 +81,7 @@ function parseBlock(css, opener) {
   }
   const body = css.slice(open + 1, i)
   const map = {}
-  for (const m of body.matchAll(/(--[a-z0-9-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\b/g)) {
+  for (const m of body.matchAll(/(--[a-z0-9-]+)\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\))/g)) {
     map[m[1].slice(2)] = m[2]
   }
   return map
@@ -94,6 +116,9 @@ const PAIRS = [
   { fg: 'on-amber', bg: 'amber', kind: 'text', note: 'primary button label' },
   // selected/toggled control label + unread count on the golden amber fill (both themes)
   { fg: 'amber-fill-ink', bg: 'amber-fill', kind: 'text', note: 'toggle/selected chip + unread count label' },
+  // diff body text: required because add/del tokens are used directly as readable diff rows.
+  { fg: 'add-text', bg: 'add-bg', bgBase: 'surface', kind: 'text', note: 'diff added line text' },
+  { fg: 'del-text', bg: 'del-bg', bgBase: 'surface', kind: 'text', note: 'diff deleted line text' },
   // the toggle fill as a component boundary against the surfaces it sits on (1.4.11)
   { fg: 'amber-fill', bg: 'surface', kind: 'nontext', required: false, note: 'toggle fill boundary (report)' },
   { fg: 'amber-fill', bg: 'canvas', kind: 'nontext', required: false, note: 'toggle fill boundary (report)' },
@@ -115,14 +140,14 @@ const PAIRS = [
   { fg: 'focus-ring', bg: 'surface', kind: 'nontext', note: 'focus ring (primary indicator)' },
   { fg: 'amber-dim', bg: 'canvas', kind: 'nontext', required: false, note: 'supplementary :focus/:hover tint' },
   { fg: 'amber-dim', bg: 'surface', kind: 'nontext', required: false, note: 'supplementary :focus/:hover tint' },
-  // accent-as-text — report only (used for links/role text; small-text AA is aspirational)
-  { fg: 'amber', bg: 'canvas', kind: 'text', required: false, note: 'links/accent text' },
-  { fg: 'amber', bg: 'surface', kind: 'text', required: false, note: 'links/accent text' },
+  // accent-as-text — role/status accents are readable labels and must clear small-text AA.
+  { fg: 'amber', bg: 'canvas', kind: 'text', note: 'links/accent text' },
+  { fg: 'amber', bg: 'surface', kind: 'text', note: 'links/accent text' },
   { fg: 'amber-bright', bg: 'surface', kind: 'text', required: false, note: 'hover/highlight (large/bold)', large: true },
-  { fg: 'teal', bg: 'surface', kind: 'text', required: false, note: 'user role text' },
-  { fg: 'olive', bg: 'surface', kind: 'text', required: false, note: 'success/add text' },
-  { fg: 'clay', bg: 'surface', kind: 'text', required: false, note: 'danger/del text' },
-  { fg: 'mauve', bg: 'surface', kind: 'text', required: false, note: 'system/subagent text' },
+  { fg: 'teal', bg: 'surface', kind: 'text', note: 'user role text' },
+  { fg: 'olive', bg: 'surface', kind: 'text', note: 'success/add text' },
+  { fg: 'clay', bg: 'surface', kind: 'text', note: 'danger/del text' },
+  { fg: 'mauve', bg: 'surface', kind: 'text', note: 'system/subagent text' },
 ]
 
 function minFor(p) {
@@ -136,7 +161,7 @@ for (const [themeName, tokens] of [['dark', dark], ['light', light]]) {
   for (const p of PAIRS) {
     const fg = tokens[p.fg], bg = tokens[p.bg]
     if (!fg || !bg) { console.log(`  SKIP  ${p.fg} / ${p.bg} (token missing)`); continue }
-    const ratio = contrast(fg, bg)
+    const ratio = contrast(resolveColor(tokens, p.fg), resolveColor(tokens, p.bg, p.bgBase))
     const min = minFor(p)
     const ok = ratio >= min
     const req = p.required !== false

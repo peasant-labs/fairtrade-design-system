@@ -65,12 +65,14 @@ pnpm build-storybook # compile every component + story
 - `src/effects.jsx` - the ascii filters (wheat video, soil, roots, portrait thumbnails).
 - `scripts/*` - the gate and qa scripts.
 - machine-readable for agents: `AGENTS.md` (hard rules + commands), `llms.txt`, and generated
-  `public/tokens.json` (w3c dtcg) + `public/components.json` (kept fresh by `pnpm llm:check`).
+  `public/tokens.json` (w3c dtcg) + `public/components.json` + `packages/tokens/*` (kept fresh by
+  `pnpm gen:check`).
 
 ## gates / ci
 
 `pnpm build` regenerates the machine-readable artifacts then runs a pure-js wcag contrast gate (both
-themes) before building; `pnpm llm:check` fails if those artifacts drift from their sources.
+themes) before building; `pnpm gen:check` fails if those artifacts or the token package drift from
+their sources.
 `scripts/validate.mjs` is a 20-check puppeteer interactive gate (icons, single h1, heading outline,
 copy-token labels, decorative icons `aria-hidden`, scroll-spy, zone header gating, command palette, dialog
 focus-trap, theme toggle, 0 overflow at 360/390/768/1024/1440, reduced-motion, no console errors).

@@ -32,10 +32,9 @@ jobs:
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
-      # gate 0: the generated llm artifacts (public/tokens.json + components.json) must stay in sync
-      # with their sources (src/index.css + src/ui). regenerate and fail if the committed copies drift.
-      - name: Check generated llm artifacts are fresh
-        run: pnpm llm:check
+      # gate 0: generated artifacts and the published token package must stay in sync.
+      - name: Check generated artifacts and token package are fresh
+        run: pnpm gen:check
 
       # gate 1: contrast (pure JS, no browser) + production build -> dist/.
       # base='/' is correct here (CI serves at the root, not the Pages subpath),

@@ -1,0 +1,28 @@
+/* @peasant-labs/fairtrade-lib/fonts.css - font loader.
+
+   The canonical fairtrade typefaces, loaded via the SAME Google Fonts request the design-system
+   app uses (index.html). Two families, weights matched exactly:
+     - Atkinson Hyperlegible        ital,wght 0,400; 0,700; 1,400; 1,700   (--font-body)
+     - Atkinson Hyperlegible Mono   ital,wght 0,400; 0,500; 0,600; 0,700; 1,400  (--font-mono / --font-display)
+   display=swap keeps text visible during load (no FOIT).
+
+   These are neuroinclusive faces (high legibility, disambiguated glyphs); do not substitute.
+   Importing this file is the self-contained option. For best performance, prefer the documented
+   <link> form below (it lets the browser preconnect and avoids an extra CSS round-trip from @import).
+
+   --- Option A: @import (this file). Just `@import "@peasant-labs/fairtrade-lib/fonts.css";`
+       or add it to a <link rel="stylesheet">. Simplest; one extra request hop vs. Option B. */
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Atkinson+Hyperlegible+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap");
+
+/* --- Option B: <link> + preconnect (recommended for apps). Put this in your <head> INSTEAD of
+       importing this file, so the browser can warm the connections early:
+
+       <link rel="preconnect" href="https://fonts.googleapis.com">
+       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+       <link rel="stylesheet"
+         href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Atkinson+Hyperlegible+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+
+   --- Self-hosting: if you cannot reach Google Fonts (offline, CSP, privacy), self-host the same
+       families (e.g. via @fontsource/atkinson-hyperlegible) and keep the family names identical to
+       the token contract: "Atkinson Hyperlegible" and "Atkinson Hyperlegible Mono". The token
+       --font-* values in tokens.css already fall back to ui-sans-serif / ui-monospace stacks. */

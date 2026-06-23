@@ -174,5 +174,8 @@ Functional labels are not eyebrows: form-field labels (`name`, `acceptance mode`
 ## scope
 
 The system currently lives in this single repo, where it is both documented (the presentation page) and
-implemented (`src/ui/*`). Fanning it across peasant / village / transcript-browser via a shared token
-package is future work, out of scope here; build against this repo's tokens and components.
+implemented (`src/ui/*`). Its shared token package now ships as
+`@peasant-labs/fairtrade-tokens`, exporting the canonical `tokens.css`, `tokens.json`, `fonts.css`,
+and `preset.css` artifacts generated from this repo. Consumers in peasant / village /
+transcript-browser should build against that package for tokens, fonts, and Tailwind aliases while
+this repo remains the source of truth for token values and components.

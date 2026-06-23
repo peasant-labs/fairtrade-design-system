@@ -60,6 +60,9 @@
      themes) so chart colour re-themes for free; amber stays the scarce emphasis series. grid is
      the hairline rule, axis lines + tick labels read at --ink-3. (used by the .recharts-* +
      .chart-* css; see the chart block lower down.) */
+  --font-display: "Atkinson Hyperlegible Mono", ui-monospace, Menlo, Consolas, monospace;
+  --font-body: "Atkinson Hyperlegible", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, Menlo, Consolas, monospace;
   --chart-1: var(--teal); --chart-2: var(--olive); --chart-3: var(--clay); --chart-4: var(--mauve); --chart-amber: var(--amber);
   --chart-grid: var(--rule); --chart-axis: var(--ink-3); --chart-surface: var(--surface); --chart-point-stroke: var(--surface);
   --nav-bg: rgba(7,7,6,.92); --grid: rgba(203,163,92,.12); --hero-tex: .16;
