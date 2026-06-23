@@ -53,8 +53,9 @@
 .dv-churn-label { color: var(--ink-3); text-transform: lowercase; }
 
 /* ── body / table ────────────────────────────────────────────────────────── */
+/* wide code scrolls inside each hunk's framed pair (.dv-hunk-pair), not on the body, so
+   the hunk padding stays put — mirrors how the redaction body lets each match-pair scroll. */
 .dv-body {
-  overflow-x: auto;
   line-height: 1.55;
 }
 
@@ -66,19 +67,22 @@
   text-transform: lowercase;
 }
 
-/* ── hunk header ─────────────────────────────────────────────────────────── */
-/* orientation, not a content line. the literal `@@` + range stay verbatim. */
+/* ── hunk ────────────────────────────────────────────────────────────────── */
+/* a hunk is a padded block carrying a `@@` caption above its framed lines — the same
+   shape the redaction variant gives each match (head + inset pair), so the two diff
+   specimens read as one component family rather than two unrelated treatments. */
+.dv-hunk { padding: var(--sp-3); }
 .dv-hunk + .dv-hunk { border-top: var(--bd); }
 
+/* hunk header — orientation, not a content line. the literal `@@` + range stay verbatim.
+   mirrors .dv-match-head: a caption row sitting above the framed body, not a full-bleed bar. */
 .dv-hunk-head {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-1) var(--sp-3);
-  background: var(--surface-2);
+  margin-bottom: var(--sp-2);
   color: var(--ink-4);
   font-size: var(--fs-micro);
-  border-bottom: var(--bd);
   user-select: none;
 }
 
@@ -246,6 +250,10 @@
   color: var(--del-text);
 }
 
+/* the inset frame around a run of diff lines — shared by both variants: the default
+   hunk's lines (.dv-hunk-pair) and the redaction match's before→after pair. one rule so
+   both specimens carry the identical framed-card look. */
+.dv-hunk-pair,
 .dv-match-pair {
   border: var(--bd);
   background: var(--surface);

@@ -243,24 +243,40 @@
 /* ── split-rail: dual-rail variant ───────────────────────────────────────────
    two independently-collapsible columns side by side; each is its own hairline
    card so they read as peers. stacks to one column below the breakpoint.
-   align-items:start so a COLLAPSED panel hugs its own header instead of being
-   stretched to the taller (open) neighbour's height — which left an empty, off
-   hairline card (the "weird layout"). */
+
+   a flex row packed from the LEFT (justify-content:flex-start) with a single
+   tokened gutter — NOT a 1fr/1fr grid. the grid forced every panel to half the
+   row, so two COLLAPSED panels read as "outline 6 >" pinned far left and
+   "filters >" flung to the far right with a wide hole between them. here an open
+   panel grows to share the width (flex:1) so two open columns still match as a
+   pair, while a collapsed panel sizes to its own header width (flex:0 1 auto
+   below) and the pair simply sits together at the left with one sane gap.
+   align-items:stretch keeps two OPEN panels the same height; a collapsed one
+   opts out (align-self:flex-start) so it hugs its header, not the neighbour. */
 .rs-split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: stretch;
   gap: var(--sp-4);
   width: 100%;
   box-sizing: border-box;
 }
 .rs-split-panel {
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   min-width: 0;
   background: var(--surface);
   border: var(--bd);
   box-sizing: border-box;
+}
+/* a collapsed panel is just its header — size it to that header (don't grow to
+   half the row) and keep it that tall (don't stretch to the open neighbour's
+   height, which left an empty off card). the pair then packs tidily to the left. */
+.rs-split-panel:not(.is-open) {
+  flex: 0 1 auto;
+  align-self: flex-start;
 }
 /* the column header — same mono chrome as a section head, always a button. */
 .rs-split-head {
@@ -449,8 +465,14 @@
   }
 
   /* inside the sheet, sections and split-rail still divide cleanly. the split
-     stacks to a single column so two panels don't crush side by side. */
+     stacks to a single column so two panels don't crush side by side: a flex
+     column, each panel full-width regardless of open/collapsed. */
   .rs-sheet-body .rs-split {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+  .rs-sheet-body .rs-split-panel,
+  .rs-sheet-body .rs-split-panel:not(.is-open) {
+    flex: none;
+    align-self: stretch;
   }
 }

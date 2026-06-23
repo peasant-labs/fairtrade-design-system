@@ -163,9 +163,9 @@ export function CodeDiffSection() {
     <section className="band" id="ds-codediff">
       <h2 className="label">code &amp; diffs</h2>
       <div className="sub">the surfaces where the work itself shows up</div>
-      <p className="prose">a recorded session ends in code: lines changed, tools run, commits made. these three composites carry that payload at reading size and never lowercase it. a diff frames a change as before&rarr;after with a churn tally; the same chassis runs the redaction pass, swapping a secret for a placeholder while you keep or revert each match. tool calls collapse to a status line and open to their body. a commit graph threads the lanes so a branch reads at a glance. code, commands, hashes and commit messages stay verbatim — only the chrome is lowercase.</p>
+      <p className="prose">a recorded session ends in code: lines changed, tools run, commits made. these three composites carry that payload at reading size and never lowercase it. a diff frames a change as before&rarr;after with a churn tally; the same chassis runs the redaction pass, swapping a secret for a placeholder while you keep or revert each match. tool calls collapse to a status line and open to their body. a commit graph threads the lanes so a branch reads at a glance. code, commands, hashes and commit messages stay verbatim. only the chrome is lowercase.</p>
 
-      <h3 className="label" style={subHead}>diffview &mdash; unified diff</h3>
+      <h3 className="label" style={subHead}>diffview: unified diff</h3>
       <div className="specimen">
         <div className="specimen-bar"><span className="specimen-cap">example</span></div>
         <div className="specimen-body" style={scrollBody}>
@@ -173,7 +173,7 @@ export function CodeDiffSection() {
         </div>
       </div>
 
-      <h3 className="label" style={subHead}>diffview &mdash; redaction pass</h3>
+      <h3 className="label" style={subHead}>diffview: redaction pass</h3>
       <div className="specimen">
         <div className="specimen-bar"><span className="specimen-cap">example</span></div>
         <div className="specimen-body" style={scrollBody}>
@@ -181,7 +181,7 @@ export function CodeDiffSection() {
         </div>
       </div>
 
-      <h3 className="label" style={subHead}>toolcall &mdash; read, edit, bash, task</h3>
+      <h3 className="label" style={subHead}>toolcall: read, edit, bash, task</h3>
       <div className="specimen">
         <div className="specimen-bar"><span className="specimen-cap">example</span></div>
         <div className="specimen-body" style={scrollBody}>
@@ -193,7 +193,7 @@ export function CodeDiffSection() {
         </div>
       </div>
 
-      <h3 className="label" style={subHead}>commitgraph &mdash; multi-lane history</h3>
+      <h3 className="label" style={subHead}>commitgraph: multi-lane history</h3>
       <div className="specimen">
         <div className="specimen-bar"><span className="specimen-cap">example</span></div>
         <div className="specimen-body" style={scrollBody}>

@@ -160,24 +160,34 @@
   color: var(--ink-3);
 }
 
-/* sticky footer action bar: back on the left, continue/submit on the right. */
+/* sticky footer action bar: back on the left, continue/submit on the right, with the step
+   counter dead-centre between them. a three-track grid (not space-between) keeps the counter
+   on the footer's true centre line regardless of the two buttons' differing widths — space-between
+   would have floated it off-centre between a narrow "back" and a wider "continue". the side tracks
+   are symmetric (1fr each) so the centre track is the geometric middle of the bar. */
 .swz-foot {
   position: sticky;
   bottom: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-5);
   border-top: var(--bd);
   background: var(--surface);
 }
+/* back hugs the left edge of its track; the primary hugs the right edge of its track. */
+.swz-foot > :first-child { justify-self: start; }
+.swz-foot > :last-child { justify-self: end; }
 
-/* a quiet "step n of m" counter, centred between the two actions. */
+/* a quiet "step n / m" counter on the footer's centre line — the wizard's mate to <Pager>'s
+   "page n / m". mono, tabular, lowercase; the slash-separated count matches the rail's "1 / 4". */
 .swz-count {
+  justify-self: center;
   font-family: var(--font-mono);
   font-size: var(--fs-label);
   font-variant-numeric: tabular-nums;
   text-transform: lowercase;
+  white-space: nowrap;
   color: var(--ink-3);
 }

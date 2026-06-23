@@ -33,7 +33,7 @@ const JOIN_AXES = [
     tone: 'reveal',
     key: 'identity',
     value: (
-      <>your profile — <span className="cns-mono">handle</span>, name &amp; avatar — becomes visible</>
+      <>your profile (<span className="cns-mono">handle</span>, name &amp; avatar) becomes visible</>
     ),
     scope: 'to owners only, to review membership',
   },
@@ -59,7 +59,7 @@ const SUMMARY_AXES = [
     icon: Globe,
     tone: 'open',
     key: 'data access',
-    value: 'public — anyone can browse the dataset',
+    value: 'public: anyone can browse the dataset',
     scope: 'no membership required',
   },
   {
@@ -73,7 +73,7 @@ const SUMMARY_AXES = [
     icon: Archive,
     tone: 'restricted',
     key: 'retention',
-    value: 'mandatory — auto-retracted on leave',
+    value: 'mandatory: auto-retracted on leave',
     scope: 'set by the collective',
   },
 ]
@@ -108,7 +108,7 @@ function ConsentDialogDemo() {
               hidden across the commons.
             </p>
             <p>
-              joining reveals your profile to the collective&apos;s <span className="cns-em">owners</span> —
+              joining reveals your profile to the collective&apos;s <span className="cns-em">owners</span>.
               they need it to review your membership and contributions. other members still see you as anon.
             </p>
           </>
@@ -119,7 +119,7 @@ function ConsentDialogDemo() {
         confirmLabel="reveal profile & join"
         confirmIcon={UserCheck}
         onCancel={() => setOpen(false)}
-        onConfirm={() => { setOpen(false); setDone('joined — profile revealed to owners') }}
+        onConfirm={() => { setOpen(false); setDone('joined: profile revealed to owners') }}
       />
     </div>
   )
@@ -235,7 +235,7 @@ export function GovernanceSection() {
     <section className="band" id="ds-governance">
       <h2 className="label">governance &amp; consent</h2>
       <div className="sub">name what crosses the boundary, before it crosses</div>
-      <p className="prose">governance is the moment a thing changes hands — identity revealed, data shared, a member admitted, a secret about to leave the machine. these surfaces make that moment legible: a consent dialog states exactly what crosses the boundary and to whom, policies carry a one-line rationale, approvals resolve in place as an audit trail, and a redaction review keeps the safe choice the default. state never rides on color alone, and an action this consequential never rides on a single reflexive click.</p>
+      <p className="prose">governance is the moment a thing changes hands: identity revealed, data shared, a member admitted, a secret about to leave the machine. these surfaces make that moment legible: a consent dialog states exactly what crosses the boundary and to whom, policies carry a one-line rationale, approvals resolve in place as an audit trail, and a redaction review keeps the safe choice the default. state never rides on color alone, and an action this consequential never rides on a single reflexive click.</p>
 
       <h3 className="label" style={{ marginTop: 'var(--sp-7)', marginBottom: 'var(--sp-2)' }}>consent summary &amp; dialog</h3>
       <div className="specimen">
@@ -289,7 +289,7 @@ export function GovernanceSection() {
               onReject={() => {}}
             />
           </div>
-          <div className="note">approve / reject resolve optimistically in place — the row swaps for an olive "approved" or clay "rejected" pill and stays as an audit trail, never removed. the action and the word stay together, so the outcome never rides on color alone.</div>
+          <div className="note">approve / reject resolve optimistically in place. the row swaps for an olive "approved" or clay "rejected" pill and stays as an audit trail, never removed. the action and the word stay together, so the outcome never rides on color alone.</div>
         </div>
       </div>
 
@@ -312,7 +312,7 @@ export function GovernanceSection() {
               <ConfirmInline label="delete collective" confirmLabel="delete" onConfirm={() => {}} />
             </DangerZone>
           </div>
-          <div className="note">owner rows are locked — a lock glyph + "owner" text, no remove. destructive actions swap to an inline "remove? [yes] [cancel]" in place (never a modal that reflows the row), and the danger zone is fronted by a warning glyph + the word so the framing never rides on the clay border alone.</div>
+          <div className="note">owner rows are locked: a lock glyph + "owner" text, no remove. destructive actions swap to an inline "remove? [yes] [cancel]" in place (never a modal that reflows the row), and the danger zone is fronted by a warning glyph + the word so the framing never rides on the clay border alone.</div>
         </div>
       </div>
 
@@ -338,7 +338,7 @@ export function GovernanceSection() {
           <div style={{ overflow: 'auto', maxWidth: '100%' }}>
             <FocusedModeDemo />
           </div>
-          <div className="note">every mode pairs a glyph with its word, and the segmented / scope / focus selections carry aria-pressed — so the active choice reads the same for AT and sighted users, never on color alone. the shared eye names the exact group verbatim.</div>
+          <div className="note">every mode pairs a glyph with its word, and the segmented / scope / focus selections carry aria-pressed, so the active choice reads the same for AT and sighted users, never on color alone. the shared eye names the exact group verbatim.</div>
         </div>
       </div>
 

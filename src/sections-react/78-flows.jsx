@@ -178,7 +178,7 @@ export function FlowsSection() {
       <h2 className="label">flows &amp; shells</h2>
       <div className="sub">the multi-step + app-shell composites</div>
       <p className="prose">
-        these are the assembled surfaces — a guided wizard with a reachability gate, the canvas
+        these are the assembled surfaces: a guided wizard with a reachability gate, the canvas
         beside a sticky inspector rail, and a grouped tri-state picker for choosing what to
         contribute. each gates its own progress: a step stays visible but locked until earned, a
         rail folds to a bottom-sheet only when the container is narrow, and a group cascades its
@@ -202,7 +202,7 @@ export function FlowsSection() {
             aria-label="contribute progress"
           />
 
-          <span className="label" style={{ marginTop: 'var(--sp-6)', marginBottom: 'var(--sp-3)' }}>step wizard (interactive — working back / continue)</span>
+          <span className="label" style={{ marginTop: 'var(--sp-6)', marginBottom: 'var(--sp-3)' }}>step wizard (interactive: working back / continue)</span>
           {/* the full flow: four steps, placeholder bodies, working continue/back. continue marks
               the step complete and unlocks the next; the gate keeps a future step visible but locked. */}
           <StepWizard

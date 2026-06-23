@@ -756,7 +756,7 @@ export default function MapCanvas({
         ref={viewportRef}
         tabIndex={0}
         role="group"
-        aria-label="map canvas — arrow keys move focus, enter selects, plus and minus zoom"
+        aria-label="map canvas: arrow keys move focus, enter selects, plus and minus zoom"
         aria-activedescendant={
           focusedId && visibleIds.has(focusedId) ? `${baseId}-node-${cssId(focusedId)}` : undefined
         }
@@ -943,7 +943,7 @@ function cssId(id) {
 function nodeAriaLabel(node, state = {}) {
   const { selected, expanded, violations = 0 } = state
   const cov = clampCoverage(node.coverage)
-  let label = `${leaf(node.label || node.id)} — ${node.kind} · coverage ${cov} of 4`
+  let label = `${leaf(node.label || node.id)}: ${node.kind} · coverage ${cov} of 4`
   if (node.loc) label += ` · ${node.loc} loc`
   if (violations > 0) label += ` · ${violations} violation${violations === 1 ? '' : 's'}`
   if (selected) label += ' · selected'

@@ -49,6 +49,10 @@ import {
   TrendingDown,
   Wrench,
   Filter as FilterIcon,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
 } from 'lucide-react'
 import { StepsWaterfall, ProviderIcon, PROVIDER_ACCENT } from '../../ui'
 
@@ -876,6 +880,9 @@ const CATEGORIES = [
 export default function TranscriptApp({ theme = 'dark' }) {
   const [tab, setTab] = useState('trace')
   const [viewMode, setViewMode] = useState('list') // list | graph
+  // each body rail collapses to a thin re-open strip, freeing the centre column. both sides behave the same.
+  const [leftRailOpen, setLeftRailOpen] = useState(true)
+  const [rightRailOpen, setRightRailOpen] = useState(true)
   const [openTools, setOpenTools] = useState({ t1a: true, t4a: true, t5a: true })
   const [activeTurn, setActiveTurn] = useState(0)
   const [copiedTurn, setCopiedTurn] = useState(null)
@@ -1235,14 +1242,44 @@ export default function TranscriptApp({ theme = 'dark' }) {
       {/* ===================== BODY ===================== */}
       {/* split layout matching the viewer's railLayout="split": outline (user turns) left, transcript
          centre, filters right. */}
-      <div className="txn-body-grid">
+      <div className="txn-body-grid" data-left-rail={leftRailOpen ? 'open' : 'closed'} data-right-rail={rightRailOpen ? 'open' : 'closed'}>
         {/* ---- LEFT: outline / user turns ---- */}
-        <aside className="txn-rail txn-rail-left" aria-label="user turns outline">
-          <div className="txn-rail-head"><LayoutList size={13} aria-hidden="true" /> user turns</div>
-          <div className="txn-rail-body">
-            <OutlineRail tab={tab} activeTurn={activeTurn} onJump={jumpTo} />
+        {leftRailOpen ? (
+          <aside className="txn-rail txn-rail-left" aria-label="user turns outline">
+            <div className="txn-rail-head">
+              <LayoutList size={13} aria-hidden="true" /> user turns
+              <button
+                type="button"
+                className="txn-rail-collapse"
+                aria-expanded="true"
+                aria-controls="txn-rail-left-body"
+                aria-label="collapse user turns outline"
+                title="collapse"
+                onClick={() => setLeftRailOpen(false)}
+              >
+                <PanelLeftClose size={14} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="txn-rail-body" id="txn-rail-left-body">
+              <OutlineRail tab={tab} activeTurn={activeTurn} onJump={jumpTo} />
+            </div>
+          </aside>
+        ) : (
+          <div className="txn-rail-strip txn-rail-strip-left">
+            <button
+              type="button"
+              className="txn-rail-reopen"
+              aria-expanded="false"
+              aria-controls="txn-rail-left-body"
+              aria-label="expand user turns outline"
+              title="expand user turns"
+              onClick={() => setLeftRailOpen(true)}
+            >
+              <PanelLeftOpen size={14} aria-hidden="true" />
+              <span className="txn-rail-strip-label">user turns</span>
+            </button>
           </div>
-        </aside>
+        )}
 
         {/* ---- CENTER ---- */}
         <main className="txn-center" role="tabpanel" aria-label={tab}>
@@ -1462,12 +1499,24 @@ export default function TranscriptApp({ theme = 'dark' }) {
         </main>
 
         {/* ---- RIGHT: filters ---- */}
+        {rightRailOpen ? (
         <aside className="txn-rail txn-rail-right" aria-label="filters">
           <div className="txn-rail-head">
             <SlidersHorizontal size={13} aria-hidden="true" /> filters
             {filtersActive > 0 && <span className="chipx-count unread tnum">{filtersActive}</span>}
+            <button
+              type="button"
+              className="txn-rail-collapse"
+              aria-expanded="true"
+              aria-controls="txn-rail-right-body"
+              aria-label="collapse filters"
+              title="collapse"
+              onClick={() => setRightRailOpen(false)}
+            >
+              <PanelRightClose size={14} aria-hidden="true" />
+            </button>
           </div>
-          <div className="txn-rail-body">
+          <div className="txn-rail-body" id="txn-rail-right-body">
             <FiltersRail
                 tab={tab}
                 cats={cats}
@@ -1495,6 +1544,24 @@ export default function TranscriptApp({ theme = 'dark' }) {
               />
           </div>
         </aside>
+        ) : (
+          <div className="txn-rail-strip txn-rail-strip-right">
+            <button
+              type="button"
+              className="txn-rail-reopen"
+              aria-expanded="false"
+              aria-controls="txn-rail-right-body"
+              aria-label="expand filters"
+              title="expand filters"
+              onClick={() => setRightRailOpen(true)}
+            >
+              <PanelRightOpen size={14} aria-hidden="true" />
+              <span className="txn-rail-strip-label">
+                filters{filtersActive > 0 ? <span className="chipx-count unread tnum">{filtersActive}</span> : null}
+              </span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ===================== OVERLAYS ===================== */}

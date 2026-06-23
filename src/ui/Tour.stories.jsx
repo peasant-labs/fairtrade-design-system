@@ -35,7 +35,7 @@ const STEPS = [
     body: (
       <>
         start here. <span className="tour-mono">search</span> spans every collective you can
-        see — transcripts, decisions, contributions — without revealing who&apos;s asking.
+        see (transcripts, decisions, contributions) without revealing who&apos;s asking.
       </>
     ),
   },
@@ -55,7 +55,7 @@ const STEPS = [
     body: (
       <>
         <span className="tour-mono">account</span> is where your identity and every consent you&apos;ve
-        granted live — review, revoke, or stay anon at any time.
+        granted live: review, revoke, or stay anon at any time.
       </>
     ),
   },
@@ -160,7 +160,7 @@ export const Default = {
       await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true))
     })
 
-    await step('next advances to step 2 — the step actually changed', async () => {
+    await step('next advances to step 2: the step actually changed', async () => {
       await expect(canvas.queryByText(/compose a contribution/i)).not.toBeInTheDocument()
       await userEvent.click(canvas.getByRole('button', { name: /^next$/i }))
       await waitFor(() => expect(canvas.getByText(/step 2 of 3/i)).toBeInTheDocument())

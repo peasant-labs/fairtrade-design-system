@@ -107,7 +107,7 @@ export const SharedNote = {
   render: (args) => <SegmentedHarness {...args} />,
   args: {
     value: 'shared',
-    sharedNote: 'shared with the AI Research Team — choose private or public to override.',
+    sharedNote: 'shared with the AI Research Team: choose private or public to override.',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

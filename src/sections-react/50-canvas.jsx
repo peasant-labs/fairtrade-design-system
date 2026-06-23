@@ -1,9 +1,39 @@
+import { useState } from 'react'
 import { Box, Folder, File, Plus, Minus, Maximize, Users, X, BoxSelect, Eye, FileText } from 'lucide-react'
+import { TimeStrip } from '../ui'
+
+/* the canvas activity strip uses the SAME real <TimeStrip> the in-use apps ship, not a hand-rolled
+   bar row — so the specimen reads identically to the demo (quantized bars on the monochrome ramp, a
+   draggable playhead, the "now" edge, an accessible readout). buckets are session counts per day. */
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+function dayLabel(daysAgo) {
+  const d = new Date(2026, 5, 22) // jun 22 2026 — the project "today"
+  d.setDate(d.getDate() - daysAgo)
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}`
+}
+const CANVAS_ACTIVITY = [3, 6, 2, 9, 7, 12, 5, 8, 4, 11, 3, 7]
+const CANVAS_BUCKETS = CANVAS_ACTIVITY.map((value, i) => ({
+  label: dayLabel(CANVAS_ACTIVITY.length - 1 - i),
+  value,
+}))
+
+/* controlled wrapper so the playhead drags/keyboards — mirrors the in-use ActivityStrip pattern. */
+function CanvasActivityStrip() {
+  const [value, setValue] = useState(10 / 11) // land near "now", a couple buckets back
+  return (
+    <TimeStrip
+      buckets={CANVAS_BUCKETS}
+      value={value}
+      onScrub={setValue}
+      label="repository activity"
+    />
+  )
+}
 
 /* 50-canvas: the map/graph surface + a live modal dialog. the trigger button keeps the
    literal data-open-dialog attribute so App.jsx's delegation opens the React <Dialog>
-   and returns focus here. svg edges, nodes, controls, minimap, timestrip and the static
-   dialog preview are converted verbatim. icons move from <i data-lucide> to lucide-react. */
+   and returns focus here. svg edges, nodes, controls, minimap and the static dialog preview
+   are converted verbatim; the activity strip renders the real <TimeStrip> (see above). */
 export function CanvasSection() {
   return (
     <section className="band" id="canvas">
@@ -16,9 +46,7 @@ export function CanvasSection() {
           <div className="cols cols-2">
             <div>
               <span className="label" style={{ marginBottom: 'var(--sp-3)' }}>graph canvas</span>
-              <div className="timestrip">
-                <div className="bar" style={{ height: '30%' }}></div><div className="bar" style={{ height: '55%' }}></div><div className="bar" style={{ height: '20%' }}></div><div className="bar" style={{ height: '80%' }}></div><div className="bar" style={{ height: '65%' }}></div><div className="bar" style={{ height: '100%' }}></div><div className="bar" style={{ height: '45%' }}></div><div className="bar" style={{ height: '70%' }}></div><div className="bar" style={{ height: '35%' }}></div><div className="bar" style={{ height: '90%' }}></div><div className="bar" style={{ height: '25%' }}></div><div className="bar" style={{ height: '60%' }}></div>
-              </div>
+              <div style={{ marginBottom: 'var(--sp-4)' }}><CanvasActivityStrip /></div>
               <div className="canvas framed">
                 {/* edges drawn first (behind the nodes); no viewBox so 1 svg unit = 1px and the
                     orthogonal connectors land on the fixed-width nodes' centers at any column width */}

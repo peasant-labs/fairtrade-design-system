@@ -200,17 +200,28 @@
   display: flex;
   flex-direction: column;
 }
-.rdx-card { padding: var(--sp-4); }
+/* position:relative on every card so the kept card's accent rail can be an absolutely-positioned
+   overlay (see .rdx-card-kept::before) — it sits on top of the card's left edge without consuming
+   any layout width, which is what keeps a kept card's content flush with its siblings. */
+.rdx-card { position: relative; padding: var(--sp-4); }
 .rdx-card + .rdx-card { border-top: var(--bd); }
 
-/* a kept (un-redacted) card is flagged loudly: the secret WILL leave as-is, so it picks up the
-   clay (danger) left rail + a faint clay wash — honest, and never color-only (the head also
-   flips to a "will be sent" icon+word). the 3px rail is absorbed out of the left padding (border-box
-   would otherwise inset the content 3px), so a kept card's content sits flush with its siblings. */
-.rdx-card-kept {
-  border-left: 3px solid var(--clay);
-  padding-left: calc(var(--sp-4) - 3px);
-  background: var(--del-bg);
+/* a kept (un-redacted) card is flagged loudly: the secret WILL leave as-is. the warning is carried
+   by the clay (danger) left rail + the head flipping to a "will be sent" icon+word + the clay toggle
+   border — three redundant cues, never color-only. it deliberately does NOT wash the whole card:
+   the inner before→after pair is a surface-backed bordered box, so a full-card clay wash framed it
+   like a nested, indented panel. */
+.rdx-card-kept::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--clay);
+  /* overlay only — it must not enter the card's flow, so the head row + diff rows keep the exact
+     same left x as the api-key / bearer-token cards above and below. */
+  pointer-events: none;
 }
 
 .rdx-card-head {
@@ -343,7 +354,11 @@
 .rdx-card-kept .rdx-row-add.rdx-row-muted { opacity: 0.45; }
 
 /* ── transparency panel: where does this go ────────────────────────────────── */
-.rdx-where { border: var(--bd-strong); }
+/* width:100% pins the panel to its wrapper instead of letting the flex column shrink-wrap to its
+   widest child. with a DEFINITE panel width, every section (head, note, dest, split) resolves its
+   align-items:stretch against that full width — so each one's bottom hairline reaches the panel's
+   right edge, not just the header's. */
+.rdx-where { box-sizing: border-box; width: 100%; border: var(--bd-strong); }
 
 .rdx-where-head {
   display: flex;
@@ -364,9 +379,14 @@
   color: var(--ink-strong);
 }
 
-/* the boundary line — guidance prose, plain. */
+/* the boundary line — guidance prose. the global `p` rule caps every paragraph at the prose measure
+   (--measure-prose, 66ch) for readability; here that cap stopped the note (and its bottom hairline)
+   short of the panel's right edge while the header rule spanned full. this is a single guidance line,
+   not a measure-bound paragraph, so it opts out of the cap — it then stretches to the full panel
+   width (the panel's align-items:stretch) and its rule reaches the right edge like the header above. */
 .rdx-where-note {
   margin: 0;
+  max-inline-size: none;
   padding: var(--sp-3) var(--sp-4);
   border-bottom: var(--bd);
   font-family: var(--font-body);

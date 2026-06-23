@@ -145,6 +145,14 @@
    [icon chip | mono key | value + scope] grid so keys and values line up across
    rows. this is the seed the join dialog used, generalized. */
 .cns-summary {
+  /* a flex column so the block hugs the widest child (the axes grid, whose key
+     column is max-content): align-items:stretch then pulls the caption out to
+     that same full width, instead of the caption stopping at the narrower
+     container edge while the grid scrolls wider beneath it. */
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  max-width: 100%;
   border: var(--bd);
   background: var(--surface-2);
 }
@@ -168,13 +176,19 @@
   padding: 0;
   display: grid;
   grid-template-columns: var(--control-h-sm) max-content 1fr;
-  column-gap: var(--sp-3);
+  /* the [chip | key | value] gutter. set on BOTH the grid and the subgrid row
+     below because browsers disagree on whether a subgrid inherits the parent's
+     column-gap — declaring it in both places makes the chip→key clearance the
+     same everywhere. sp-5 leaves the key a clear glyph's width off the 28px chip
+     (sp-3 read flush/cramped against it). */
+  column-gap: var(--sp-5);
 }
 .cns-axis {
   display: grid;
   grid-template-columns: subgrid;
   grid-column: 1 / -1;
   align-items: start;
+  column-gap: var(--sp-5);
   row-gap: var(--sp-2);
   padding: var(--sp-3);
 }

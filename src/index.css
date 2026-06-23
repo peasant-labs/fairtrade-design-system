@@ -583,8 +583,8 @@
   .canvas-ctrls .lucide { width: var(--ic-sm); height: var(--ic-sm); }
   .minimap { @apply absolute; right: var(--sp-3); top: var(--sp-3); width: 108px; height: 68px; border: var(--bd-strong); background: color-mix(in srgb, var(--canvas) 60%, transparent); }
   .minimap i { @apply absolute; background: var(--ink-5); }
-  .timestrip { @apply flex bg-surface; align-items: flex-end; gap: 3px; height: 46px; margin-bottom: var(--sp-4); padding: var(--sp-3); border: var(--bd); }
-  .timestrip .bar { @apply flex-1; min-width: 4px; background: var(--rule-strong); }
+  /* the canvas section's activity strip now renders the real <TimeStrip> component (ts2-* classes),
+     so the old hand-rolled `.timestrip`/`.bar` shell was removed — it had drifted to look too plain. */
 
   /* empty / sidebar */
   /* left-aligned to match the rest of the system (was centered, read as a decorative island) */
@@ -594,7 +594,10 @@
      1px box-shadow ring. that utility lives in @layer utilities (outranks this components rule), so the
      borderless, standardised zero-state needs !important to drop it here - scoped to .empty only, so the
      intentional rings elsewhere (avatars, timeline, status dots) keep theirs. */
-  .empty .ring { @apply flex items-center justify-center text-ink-3; width: var(--sp-7); height: var(--sp-7); box-shadow: none !important; }
+  /* sizing/centering mirrors the gold-standard empty-state icon (.cx-teach-ring): no fixed box around
+     the glyph (a box bigger than the icon reads as an off-centre frame), just an inline-flex that
+     shrink-wraps the icon at icon scale. box-shadow:none still drops the Tailwind `ring` utility (see above). */
+  .empty .ring { @apply inline-flex items-center justify-center text-ink-3; box-shadow: none !important; }
   .empty .ring .lucide { width: var(--ic-lg); height: var(--ic-lg); }
   .empty h3 { @apply text-md; }
   .empty p { @apply text-ink-3 text-sm; }
@@ -2232,8 +2235,13 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-tab .cnt { font-variant-numeric: tabular-nums; }
 
   /* ---- body grid: center + right rail ---- */
-  /* split layout: outline (user turns) | transcript | filters */
-  .txn-body-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 240px minmax(0, 1fr) 272px; }
+  /* split layout: outline (user turns) | transcript | filters. each side rail collapses to a thin strip
+     (a re-open button + rotated label); the data-*-rail attrs drive the column track widths so the centre
+     transcript reclaims the space. --txn-rail-strip-w is the collapsed strip width (square hit target). */
+  .txn-body-grid { --txn-rail-strip-w: var(--sp-7); flex: 1; min-height: 0; display: grid; grid-template-columns: 240px minmax(0, 1fr) 272px; }
+  .txn-body-grid[data-left-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) 272px; }
+  .txn-body-grid[data-right-rail="closed"] { grid-template-columns: 240px minmax(0, 1fr) var(--txn-rail-strip-w); }
+  .txn-body-grid[data-left-rail="closed"][data-right-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) var(--txn-rail-strip-w); }
   .txn-center { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border-right: var(--bd); }
 
   /* ---- trace ---- */
@@ -2394,6 +2402,36 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-rail-tab { padding: var(--sp-3) 2px; gap: var(--sp-2); }
   .txn-rail-tab .lucide { width: 13px; height: 13px; }
   .txn-rail-body { flex: 1; min-height: 0; overflow: auto; padding: var(--sp-3); }
+
+  /* ---- rail collapse: a square head button (right-aligned) collapses the rail to a thin re-open strip.
+     same affordance on both sides; >=24px target, visible focus, aria-expanded reflecting open state. */
+  .txn-rail-collapse {
+    margin-left: auto; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: var(--sp-5); height: var(--sp-5); padding: 0;
+    background: transparent; border: var(--bd); color: var(--ink-3); cursor: pointer;
+  }
+  .txn-rail-collapse .lucide { width: var(--ic-sm); height: var(--ic-sm); color: inherit; }
+  .txn-rail-collapse:hover { color: var(--ink-strong); border-color: var(--rule-strong); }
+  .txn-rail-collapse:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+  /* the collapsed strip: a thin full-height column with a single vertical re-open control. */
+  .txn-rail-strip { display: flex; flex-direction: column; min-height: 0; background: var(--surface); }
+  .txn-rail-strip-left { border-right: var(--bd); }
+  .txn-rail-strip-right { border-left: var(--bd); }
+  /* the re-open button fills the strip; its icon + rotated label read vertically (writing-mode), so the
+     panel's name stays visible while collapsed. lowercase mono chrome, like the rail head it replaces. */
+  .txn-rail-reopen {
+    flex: 1; min-height: 0; width: 100%;
+    display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
+    padding: var(--sp-3) 0; background: transparent; border: 0; cursor: pointer;
+    font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase;
+    color: var(--ink-3);
+  }
+  .txn-rail-reopen .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: inherit; }
+  .txn-rail-reopen:hover { color: var(--ink-strong); }
+  .txn-rail-reopen:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
+  .txn-rail-strip-label { writing-mode: vertical-rl; display: inline-flex; align-items: center; gap: var(--sp-2); white-space: nowrap; }
+
   /* trace outline = the StepsWaterfall duration trail (the transcript-viewer outline pattern). it ships its own
      header (total · n tasks · collapse); drop its outer border + surface so it reads as part of the
      rail body, not a nested card. tokens only, radius 0. */
@@ -2611,8 +2649,12 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 /* ---- responsive: below 1080 the transcript goes full width and the side panels drop (matches the
    viewer, where the outline/filters rails only appear on wide viewports) ---- */
 @media (max-width: 1080px) {
-  .txn-body-grid { grid-template-columns: 1fr; }
-  .txn-rail-left, .txn-rail-right { display: none; }
+  /* single column regardless of collapse state; the rails + their collapsed strips both drop here. */
+  .txn-body-grid,
+  .txn-body-grid[data-left-rail="closed"],
+  .txn-body-grid[data-right-rail="closed"],
+  .txn-body-grid[data-left-rail="closed"][data-right-rail="closed"] { grid-template-columns: 1fr; }
+  .txn-rail-left, .txn-rail-right, .txn-rail-strip { display: none; }
   .txn-center { border-right: 0; }
 }
 @media (max-width: 860px) {
@@ -2896,6 +2938,21 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .cex-priv-d { font-size: var(--fs-label); color: var(--ink-3); max-width: 60ch; }
   .cex-priv-ctrl { display: inline-flex; align-items: center; gap: var(--sp-3); flex: none; }
   .cex-priv-ctrl .sw-state { color: var(--ink-3); }
+
+  /* danger zone in the profile reuses the kit DangerZone (rr-danger). its body already pads, so the
+     privacy-row inside must NOT add its own --sp-4 again — that double-padded the row and pushed the
+     delete control out of line with the heading. drop the row pad here (cex-scoped, not in RoleRoster.css),
+     let the row span the body, and top-align so the multi-line copy + the delete control read against the
+     same top edge. */
+  .cex-profile .rr-danger .cex-priv-row { padding: 0; width: 100%; align-items: flex-start; }
+  .cex-profile .rr-danger .cex-priv-text { flex: 1 1 auto; }
+  /* the kit body/head pad horizontally at --sp-5 (24px), but the sibling profile sections (attestations
+     .row, privacy .cex-priv-row) inset their content at --sp-4 (16px). that left the danger-zone content
+     indented 8px further in + narrower than its siblings. bring the head + body to the same --sp-4
+     horizontal inset (cex-scoped) so the warning line, the "delete account" heading, the body copy and the
+     action all line up on the siblings' left edge and share their content width. */
+  .cex-profile .rr-danger .rr-danger-head { padding-inline: var(--sp-4); }
+  .cex-profile .rr-danger .rr-danger-body { padding-inline: var(--sp-4); }
 
   @media (max-width: 720px) {
     .cex-explore-body { grid-template-columns: 1fr; row-gap: var(--sp-4); }
@@ -3199,17 +3256,32 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   @media (max-width: 720px) { .gmp-rail { border-left: 0; border-top: var(--bd); max-height: 44vh; } }
   .gmp-rail-inner { border: 0; }
   .gmp-rail-pad { padding: var(--sp-3) var(--sp-4); }
+  /* the rail content (.gmp-rail-inner) sits inside the kit RailSection body (.rs-sec-body), which pads
+     0 --sp-4 --sp-4. the inner sidebar's own .sb-head / .gmp-rail-pad ALSO pad --sp-4, so the content was
+     inset twice — its left edge fell 32px from the card while the section header sat at 16px, reading as
+     lopsided padding. zero the body padding here (gmp-scoped, NOT in RailShell.css) so the inner sidebar's
+     single even inset governs and every block lines up with the section head. */
+  .gmp-root .rs-sec-body:has(> .gmp-rail-inner) { padding: 0; }
+  /* with the body flush, let the inner section dividers + headers span the full card width edge-to-edge. */
+  .gmp-root .rs-sec-body > .gmp-rail-inner > .sb-sec:last-child { border-bottom: 0; }
 
   /* coverage line + micro-bar */
   .gmp-coverage { display: flex; flex-direction: column; gap: var(--sp-2); }
   .gmp-coverage-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); }
-  .gmp-coverage-pct { color: var(--ink-strong); font-weight: 600; }
+  /* the "files built with ai" label takes the remaining width (and ellipsises if pinched); the percentage
+     never shrinks or breaks, so "35%" stays on one line instead of dropping the "%" below "35". */
+  .gmp-coverage-top > .label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gmp-coverage-pct { flex: none; white-space: nowrap; color: var(--ink-strong); font-weight: 600; }
   .gmp-coverage-bar { height: 6px; background: var(--surface-2); border: 1px solid var(--rule); }
   .gmp-coverage-bar > span { display: block; height: 100%; background: var(--amber-dim); }
   .gmp-coverage-sub { font-size: 11px; color: var(--ink-4); }
 
   /* task / conversation rows */
-  .gmp-tasklist, .gmp-convos, .gmp-coupling { list-style: none; margin: 0; padding: 0; }
+  /* the .gmp-tasklist section has no .gmp-rail-pad wrapper (the rows are full-width hover targets), so add
+     the same --sp-3-equivalent breathing room above/below the rows that the .gmp-rail-pad sections (coverage,
+     filter) carry below their head — otherwise the recent-conversations rows sit tighter to the head than the
+     sibling sections, reading as uneven vertical rhythm down the rail. (--sp-1 + the row's own --sp-2 = --sp-3.) */
+  .gmp-tasklist, .gmp-convos, .gmp-coupling { list-style: none; margin: 0; padding: var(--sp-1) 0; }
   .gmp-task-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-2) var(--sp-4); background: transparent; border: 0; border-left: 2px solid transparent; text-align: left; cursor: pointer; min-height: var(--target-min); }
   .gmp-task-row:hover, .gmp-task-row:focus-visible { background: var(--surface-hover); border-left-color: var(--amber); outline: none; }
   .gmp-task-row:focus-visible { box-shadow: inset 0 0 0 2px var(--focus-ring); }
@@ -3306,6 +3378,13 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 
 
   .gmp-changes-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4); margin-top: var(--sp-5); padding-top: var(--sp-4); border-top: var(--bd); }
+  /* the legend reuses the kit .cg-dot marker, which is built for ABSOLUTE placement on a lane line:
+     its base (CommitGraph.css) carries position:absolute + top:50% + transform: translate(-50%,-50%),
+     which floats the square off its label. that base is UNLAYERED (a component stylesheet imported via
+     JS), so it beats this gmp-scoped rule living in a Tailwind @layer regardless of specificity —
+     hence !important is required to neutralise it here (NOT in CommitGraph.css, which the real graph
+     still needs). with the marker back in flow, .gmp-legend-item's align-items:center centres it. */
+  .gmp-changes-legend .cg-dot { position: static !important; transform: none !important; flex: none; }
 
   /* the floating tip cards / merged chips need the open right-hand gap of the wide (capped) layout; below
      ~1460px there isn't room and they'd collide with each other or the captions, so drop them into normal
@@ -3696,7 +3775,8 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
      one frame, a "step N of M" header (the tui's lilac mapped to --mauve), interactive radios,
      a config summary, and a staged ingestion progress view. all-mono, square, amber-scarce. */
   .tuiw { min-height: 340px; }
-  .tuiw-head { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); background: var(--surface-2); }
+  /* left-aligned, like the rest of the tui chrome (tabs, section heads, table) — not centered */
+  .tuiw-head { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); background: var(--surface-2); }
   .tuiw-step { color: var(--mauve); font-weight: 600; text-transform: lowercase; }
   .tuiw-title { color: var(--ink-strong); font-weight: 700; text-transform: lowercase; }
   .tuiw-body { flex: 1; min-height: 0; overflow: auto; padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }

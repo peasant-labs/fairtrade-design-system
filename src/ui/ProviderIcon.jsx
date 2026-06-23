@@ -172,10 +172,11 @@ export function ProviderName({ harness, accent = false, className = '', ...rest 
 /**
  * AccentLegend — the per-provider accent map, documented as a UI.
  *
- * one row per harness: the real mark, the provider name, and the accent swatch
- * with its token name written out. the swatch is the LAST column on purpose —
- * the mark + name already identify the provider, so the legend reads correctly
- * with the color stripped (the neuroinclusive rule made visible).
+ * one row per harness across four aligned columns: the real mark, the provider
+ * name, the accent swatch, then its token name written out. the swatch sits after
+ * the mark + name on purpose — they already identify the provider, so the legend
+ * reads correctly with the color stripped (the neuroinclusive rule made visible),
+ * and the swatch keeps its own column so the colors line up down the list.
  *
  * @param {object} props
  * @param {string} [props.className]
@@ -191,14 +192,14 @@ export function AccentLegend({ className = '', ...rest }) {
           <li key={harness} className="pv-legend-row">
             <ProviderIcon harness={harness} accent className="pv-legend-mark" />
             <span className="pv-legend-name">{harness}</span>
-            <span className="pv-legend-accent">
-              <span
-                className="pv-swatch"
-                style={{ background: `var(--${token})` }}
-                aria-hidden="true"
-              />
-              <span className="pv-legend-token">{token}</span>
-            </span>
+            {/* swatch + token are direct grid children (the row is display:contents),
+                so each lands on its own track and the swatches share one left edge. */}
+            <span
+              className="pv-swatch"
+              style={{ background: `var(--${token})` }}
+              aria-hidden="true"
+            />
+            <span className="pv-legend-token">{token}</span>
           </li>
         )
       })}

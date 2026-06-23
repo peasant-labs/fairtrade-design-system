@@ -59,7 +59,7 @@ export const Ramp = {
             textTransform: 'lowercase',
           }}
         >
-          monochrome swatches — none → full
+          monochrome swatches: none → full
         </span>
       </div>
     </div>

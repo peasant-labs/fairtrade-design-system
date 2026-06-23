@@ -194,7 +194,7 @@ export default function StepWizard({
         tabIndex={-1}
       >
         <span className="swz-body-kicker">
-          step {index + 1} — {current?.label}
+          step {index + 1}: {current?.label}
         </span>
         {body}
       </div>
@@ -204,7 +204,7 @@ export default function StepWizard({
           {backLabel}
         </Button>
         <span className="swz-count" aria-hidden="true">
-          {index + 1} / {steps.length}
+          step <span className="tnum">{index + 1}</span> / <span className="tnum">{steps.length}</span>
         </span>
         <Button
           variant="primary"

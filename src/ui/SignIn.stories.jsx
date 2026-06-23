@@ -79,7 +79,7 @@ export const HandleClaimStory = {
 /* a tiny "checking…" validator to show the async/in-flight state in the picker. */
 const STATE_DEMO = {
   available: () => ({ state: 'available' }),
-  taken: () => ({ state: 'taken', hint: '@taken-handle is already claimed — try another.' }),
+  taken: () => ({ state: 'taken', hint: '@taken-handle is already claimed. try another.' }),
   invalid: () => ({ state: 'invalid', hint: '3–30 characters: letters, numbers, and single hyphens.' }),
   'checking…': () => ({ state: 'checking' }),
 }

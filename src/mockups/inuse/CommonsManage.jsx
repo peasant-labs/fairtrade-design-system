@@ -237,7 +237,7 @@ export function PublishView() {
    2) COLLECTIVES VIEW — list/grid of collectives + create form
 ============================================================================ */
 const ACCEPTANCE_MODES = [
-  { value: 'open', short: 'Open', label: 'open', rationale: 'anyone can share — contributions are auto-approved.' },
+  { value: 'open', short: 'Open', label: 'open', rationale: 'anyone can share. contributions are auto-approved.' },
   { value: 'verified_only', short: 'Verified only', label: 'verified only', rationale: 'sharing requires an org affiliation.' },
   { value: 'curated', short: 'Curated', label: 'curated', rationale: 'the owner must approve each share before it appears.' },
 ]
@@ -604,7 +604,7 @@ export function CollectiveDetailView() {
                 <>
                   <div className="callout cmg-redact-note">
                     <ShieldAlert size={16} aria-hidden="true" />
-                    <div>safe by default — every detected item stays redacted unless you opt out per item. there is no bulk accept.</div>
+                    <div>safe by default: every detected item stays redacted unless you opt out per item. there is no bulk accept.</div>
                   </div>
                   <div className="cmg-redact-list">
                     {REDACTIONS.map((r) => (
@@ -678,7 +678,7 @@ export function CollectiveDetailView() {
               <div className="sb-head"><FolderGit2 size={14} aria-hidden="true" style={{ verticalAlign: '-0.16em', marginRight: 6 }} /> linked repositories</div>
               <div className="cmg-repo-note callout">
                 <CircleDot size={16} aria-hidden="true" />
-                <div>the github connection isn't set up — an admin must register the github app to overlay commit timelines.</div>
+                <div>the github connection isn't set up. an admin must register the github app to overlay commit timelines.</div>
               </div>
             </div>
           </aside>

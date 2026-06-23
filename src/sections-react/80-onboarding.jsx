@@ -35,7 +35,7 @@ const TOUR_STEPS = [
     body: (
       <>
         start here. <span className="tour-mono">search</span> spans every collective you can
-        see — transcripts, decisions, contributions — without revealing who&apos;s asking.
+        see (transcripts, decisions, contributions) without revealing who&apos;s asking.
       </>
     ),
   },
@@ -55,7 +55,7 @@ const TOUR_STEPS = [
     body: (
       <>
         <span className="tour-mono">account</span> is where your identity and every consent you&apos;ve
-        granted live — review, revoke, or stay anon at any time.
+        granted live: review, revoke, or stay anon at any time.
       </>
     ),
   },
@@ -141,7 +141,7 @@ const INGEST_TEACH = (
   <TeachingEmptyState
     icon={Compass}
     title="no ai work recorded yet"
-    body="run the command below in your terminal. it scans this computer for your ai coding conversations — claude code, codex, and others — and shows what it finds here."
+    body="run the command below in your terminal. it scans this computer for your ai coding conversations (claude code, codex, and others) and shows what it finds here."
     command="peasant ingest"
   />
 )
@@ -150,12 +150,12 @@ const INGEST_TEACH = (
 const PEASANT_STEPS = [
   {
     title: 'install',
-    body: 'Install the peasant CLI with Homebrew. It runs entirely on this machine — nothing is uploaded until you choose to.',
+    body: 'Install the peasant CLI with Homebrew. It runs entirely on this machine. Nothing is uploaded until you choose to.',
     command: 'brew install peasant-labs/tap/peasant',
   },
   {
     title: 'ingest your transcripts',
-    body: 'Scan this computer for your AI coding conversations — Claude Code, Codex, and others — and record them locally.',
+    body: 'Scan this computer for your AI coding conversations (Claude Code, Codex, and others) and record them locally.',
     command: 'peasant ingest',
   },
   {
@@ -251,11 +251,11 @@ export function OnboardingSection() {
       <div className="specimen">
         <div className="specimen-bar"><span className="specimen-cap">example</span></div>
         <div className="specimen-body" style={SPECIMEN_FIT}>
-          <span className="label" style={{ marginBottom: 'var(--sp-3)' }}>teach in place — never a modal</span>
+          <span className="label" style={{ marginBottom: 'var(--sp-3)' }}>teach in place: never a modal</span>
           <Explainer title="what am i looking at?" defaultOpen>
             <p>
               this is a <Term def="every square is one file; its size is the file's line count, its fill the test coverage.">code-map</Term>{' '}
-              of the repository — one square per file, sized by length and shaded by how well it&apos;s tested.
+              of the repository: one square per file, sized by length and shaded by how well it&apos;s tested.
             </p>
             <p>
               hover a square to trace it back to its module:{' '}
@@ -277,7 +277,7 @@ export function OnboardingSection() {
             <Term def="the shared, public pool of transcripts everyone can learn from.">commons</Term>{' '}
             only after you{' '}
             <Term def="removing names, secrets, and anything sensitive before the data leaves your machine.">redact</Term>{' '}
-            it locally — nothing is uploaded until you confirm. each example carries{' '}
+            it locally. nothing is uploaded until you confirm. each example carries{' '}
             <Term def="short tags that let others find the right examples by task, tool, or outcome.">labels</Term>{' '}
             so the collective stays searchable.
           </p>

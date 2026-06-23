@@ -1859,7 +1859,7 @@ export function ProfileView({ theme }) {
           <span className="cex-phandle mono">@{PROFILE.handle}</span>
           {!discoverable && (
             <span className="cex-disc-note mono">
-              <EyeOff size={13} aria-hidden="true" /> not discoverable — you appear as <b>anon</b> to others
+              <EyeOff size={13} aria-hidden="true" /> not discoverable: you appear as <b>anon</b> to others
             </span>
           )}
         </div>

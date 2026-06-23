@@ -22,13 +22,17 @@
    tokens, the whole ramp re-themes for free (dark: ink is light → ramp climbs
    toward the light ink; light: ink is dark → ramp climbs toward dark ink),
    exactly mirroring peasant's two-direction --intensity-0..4.
-   --ir-0 stays a hair off --surface so an empty cell still reads as a cell. */
+   --ir-0 stays a hair off --surface so an empty cell still reads as a cell.
+   the top two steps (3,4) match MapCanvas's proven ramp weights (64/90): below
+   that mix a node's text fails AA no matter which ink you pick (the fill sits in
+   the perceptual dead-zone), so the heavy end must be heavy enough to flip the
+   label to --canvas and clear contrast — see the --node-fg flip below. */
 .ir-scope {
   --ir-0: color-mix(in srgb, var(--ink) 4%,  var(--surface));
   --ir-1: color-mix(in srgb, var(--ink) 14%, var(--surface));
   --ir-2: color-mix(in srgb, var(--ink) 30%, var(--surface));
-  --ir-3: color-mix(in srgb, var(--ink) 52%, var(--surface));
-  --ir-4: color-mix(in srgb, var(--ink) 82%, var(--surface));
+  --ir-3: color-mix(in srgb, var(--ink) 64%, var(--surface));
+  --ir-4: color-mix(in srgb, var(--ink) 90%, var(--surface));
 
   /* amber variant of the ramp — used only where a magnitude is also "scarce"
      / attention-worthy. kept rare on purpose (amber is the scarce accent). */
@@ -145,6 +149,10 @@
    the square node. fill = coverage ramp; size = loc; border+marker = selected;
    badge = violation. square corners, mono label, tabular counts. */
 .ir-node {
+  /* the readable text pair for this cell's fill (set per [data-coverage] below);
+     defaults cover the cov0 fill in case coverage is ever unset. */
+  --node-fg: var(--ink-strong);
+  --node-fg-dim: var(--ink);
   position: relative;
   box-sizing: border-box;
   display: flex;
@@ -156,7 +164,7 @@
   text-align: left;
   border: var(--bd);
   background: var(--ir-0);
-  color: var(--ink);
+  color: var(--node-fg-dim);
   font-family: var(--font-mono);
   cursor: pointer;
   appearance: none;
@@ -175,19 +183,20 @@
 .ir-node--lg { width: calc(var(--sp-8) * 2); min-height: calc(var(--sp-8) + var(--sp-6)); }
 .ir-node--xl { width: calc(var(--sp-8) * 2 + var(--sp-6)); min-height: calc(var(--sp-8) * 2); }
 
-/* fill ladder — coverage's ONLY channel. higher coverage = heavier fill. */
-.ir-node[data-coverage="0"] { background: var(--ir-0); }
-.ir-node[data-coverage="1"] { background: var(--ir-1); }
-.ir-node[data-coverage="2"] { background: var(--ir-2); }
-.ir-node[data-coverage="3"] { background: var(--ir-3); }
-.ir-node[data-coverage="4"] { background: var(--ir-4); }
-
-/* on the heavy end of the ramp the fill is dark (dark theme: light); flip the
-   text to the strong ink so the label keeps ≥AA contrast on its own cell. */
-.ir-node[data-coverage="3"] .ir-node__label,
-.ir-node[data-coverage="4"] .ir-node__label { color: var(--ink-strong); }
-.ir-node[data-coverage="0"] .ir-node__label,
-.ir-node[data-coverage="1"] .ir-node__label { color: var(--ink-2); }
+/* fill ladder — coverage's ONLY channel. higher coverage = heavier fill. each
+   step also sets --node-fg/--node-fg-dim: the readable text pair FOR THAT FILL,
+   so every label + count clears WCAG AA on its own cell in BOTH themes (verified
+   against the lightest and darkest ramp steps in dark + light). on the light end
+   the inks read; once the fill crosses cov3 (64% mix) it's dark enough — light
+   enough in dark theme — that the inks fail, so the text flips to --canvas, the
+   readable inverse in both themes by construction (the same trick MapCanvas uses).
+   --node-fg carries the label (the stronger weight); --node-fg-dim carries the
+   count, kept to --ink (not a dimmer grey) because the dim greys fail at cov2. */
+.ir-node[data-coverage="0"] { background: var(--ir-0); --node-fg: var(--ink-strong); --node-fg-dim: var(--ink); }
+.ir-node[data-coverage="1"] { background: var(--ir-1); --node-fg: var(--ink-strong); --node-fg-dim: var(--ink); }
+.ir-node[data-coverage="2"] { background: var(--ir-2); --node-fg: var(--ink-strong); --node-fg-dim: var(--ink); }
+.ir-node[data-coverage="3"] { background: var(--ir-3); --node-fg: var(--canvas); --node-fg-dim: var(--canvas); }
+.ir-node[data-coverage="4"] { background: var(--ir-4); --node-fg: var(--canvas); --node-fg-dim: var(--canvas); }
 
 .ir-node__head {
   display: flex;
@@ -198,7 +207,8 @@
 .ir-node__label {
   font-size: var(--fs-label);
   line-height: 1.15;
-  color: var(--ink);
+  /* the stronger of the cell's two readable inks (AA on every ramp step). */
+  color: var(--node-fg);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -208,14 +218,13 @@
   display: block;
   font-size: var(--fs-micro, 11px);
   line-height: 1.2;
-  color: var(--ink-3);
+  /* the cell's dim ink — still AA on every step (the old --ink-3 failed cov2+). */
+  color: var(--node-fg-dim);
   font-variant-numeric: tabular-nums;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.ir-node[data-coverage="3"] .ir-node__count,
-.ir-node[data-coverage="4"] .ir-node__count { color: var(--ink-2); }
 
 /* selection — orthogonal channel #3: amber border + a corner check marker.
    never colour alone: the marker (an icon) carries the same meaning. */

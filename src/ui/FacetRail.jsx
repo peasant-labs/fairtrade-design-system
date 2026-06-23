@@ -114,7 +114,7 @@ export default function FacetRail({
       <section className="fr-section" role="radiogroup" aria-label="order">
         <h3 className="fr-heading">
           <ArrowDownWideNarrow className="lucide fr-heading-ico" aria-hidden="true" />
-          order
+          <span className="fr-heading-text">order</span>
         </h3>
         <div className="fr-orders">
           {ORDER_OPTIONS.map((opt) => {
@@ -139,7 +139,7 @@ export default function FacetRail({
 
       {/* provider — a checklist of toggle rows */}
       <section className="fr-section" aria-label="provider">
-        <h3 className="fr-heading">provider</h3>
+        <h3 className="fr-heading"><span className="fr-heading-text">provider</span></h3>
         <div className="fr-providers" role="group" aria-label="providers">
           {rows.map(({ slug, count }) => (
             <ProviderRow
@@ -156,7 +156,7 @@ export default function FacetRail({
       {/* topics — a uniform-size tag cloud (count carries magnitude, not size) */}
       {topics.length > 0 && (
         <section className="fr-section" aria-label="topics">
-          <h3 className="fr-heading">topics</h3>
+          <h3 className="fr-heading"><span className="fr-heading-text">topics</span></h3>
           <div className="fr-topics" role="group" aria-label="topics">
             {topics.map(({ tag, count }) => (
               <TopicChip

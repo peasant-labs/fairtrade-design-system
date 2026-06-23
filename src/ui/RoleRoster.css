@@ -124,14 +124,20 @@
 }
 
 /* one member row: identity | org chip | role control | remove action. the org, role and remove
-   tracks are FIXED-width (not auto) so every row shares the same column edges no matter the row's
-   state: an owner row (locked "owner" text + a spacer remove) lines up exactly with an editable
-   row (a role <select> + a ConfirmInline), and an org chip lines up with the no-org placeholder. */
+   tracks are FIXED-width so every row shares the same column EDGES no matter the row's state — and
+   each track's content fills its track (justify-self:stretch + width:100%), so both the left AND
+   right edge of every org chip, every role control, and every action line up vertically down all
+   rows. an owner row places its locked "owner" in the role track and leaves the action track empty
+   while keeping the same rhythm, so it lines up with the editable rows below it. */
 .rr-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 14ch 15ch minmax(72px, auto);
+  /* identity flexes; org + role are fixed tracks their content fills; the action track has a fixed
+     floor but may grow (minmax …auto) so an OPEN inline-confirm ("remove? [yes] [cancel]") has room
+     without clipping. it is the last column, and its content is left-anchored, so that growth never
+     shifts the resting rows — the remove buttons stay put at the shared left edge. */
+  grid-template-columns: minmax(0, 1fr) 15ch 16ch minmax(80px, auto);
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-4);
   padding: var(--sp-3) var(--sp-5);
 }
 .rr-row + .rr-row { border-top: var(--bd); }
@@ -188,10 +194,14 @@
   white-space: nowrap;
 }
 
-/* org chip — a hairline square tag. user content; mono for the terse logins but case preserved. */
+/* org chip — a hairline square tag. user content; mono for the terse logins but case preserved.
+   it FILLS its fixed track (justify-self:stretch + width:100%, box-sizing:border-box), so every org
+   chip is exactly one width — both its left and right edge line up down the rows — and a long login
+   ellipses inside that shared box instead of floating at a ragged left edge. */
 .rr-org {
-  justify-self: start;
-  max-width: 14ch;
+  box-sizing: border-box;
+  justify-self: stretch;
+  width: 100%;
   padding: 2px var(--sp-2);
   border: var(--bd);
   background: var(--surface-2);
@@ -203,17 +213,20 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* an empty placeholder so rows without an org keep the role column aligned. */
+/* an empty placeholder so rows without an org keep the column open + the role/action edges aligned;
+   the fixed track gives it width, and the transparent border/background make it invisible. */
 .rr-org--none {
   border-color: transparent;
   background: transparent;
-  min-width: var(--sp-7);
 }
 
-/* role cell. */
-.rr-role { display: flex; align-items: center; justify-self: end; }
+/* role cell — fills its fixed track (justify-self:stretch) so the role control's left + right edges
+   line up down every row. the editable rows hold a full-width <select>; the owner row holds the
+   locked "owner" text in this SAME track, sharing the track's left edge with the selects below it. */
+.rr-role { display: flex; align-items: center; justify-self: stretch; }
 
-/* locked owner role: lock glyph + the word "owner", amber to mark the one privileged seat. */
+/* locked owner role: lock glyph + the word "owner", amber to mark the one privileged seat. left-
+   aligned in the role track so its glyph sits at the same left edge as the role selects below it. */
 .rr-role-locked {
   display: inline-flex;
   align-items: center;
@@ -227,11 +240,13 @@
 }
 .rr-lock { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
 
-/* the role <select> — a square hairline control matching the system select. */
+/* the role <select> — a square hairline control matching the system select. it fills the role
+   track (width:100%) so every select shares one left and one right edge down the rows. */
 .rr-select {
   appearance: none;
   -webkit-appearance: none;
   box-sizing: border-box;
+  width: 100%;
   height: var(--control-h-sm);
   min-height: 28px;
   padding: 0 var(--sp-3);
@@ -248,13 +263,15 @@
 .rr-select:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 .rr-select:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* remove action cell — a fixed min so the locked owner spacer and a ConfirmInline line up. */
+/* remove action cell — fills its fixed track and left-aligns its content, so the remove button (and
+   the empty owner spacer) all start at the SAME left edge down the rows. when a ConfirmInline opens
+   to "remove? [yes] [cancel]" it grows rightward from that anchored edge without shifting the rest. */
 .rr-act {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  justify-self: end;
-  min-width: 72px;
+  justify-content: flex-start;
+  justify-self: stretch;
+  width: 100%;
 }
 .rr-act-locked { display: block; }
 

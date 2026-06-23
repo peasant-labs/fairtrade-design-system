@@ -170,9 +170,9 @@ export default function DiffView({
       </figcaption>
 
       {isRedaction ? (
-        <div className="dv-body dv-matches">
+        <div className="dv-body dv-matches" role="table" aria-label={`redactions in ${file}`}>
           {matches.length === 0 ? (
-            <p className="dv-empty">no sensitive content detected — safe to share as-is.</p>
+            <p className="dv-empty">no sensitive content detected. safe to share as-is.</p>
           ) : (
             matches.map((m, i) => <RedactionMatch key={m.id ?? i} match={m} />)
           )}
@@ -183,17 +183,24 @@ export default function DiffView({
             <p className="dv-empty">no line changes.</p>
           ) : (
             hunks.map((h, hi) => (
-              <div className="dv-hunk" key={hi} role="rowgroup">
-                {/* hunk header — orientation, not a content line. lowercased chrome aside
-                    from the literal `@@ … @@` range, which stays verbatim. */}
-                <div className="dv-hunk-head" role="row">
+              <div className="dv-hunk" key={hi}>
+                {/* hunk header — orientation, not a content line, so it sits OUTSIDE the row
+                    structure (it is not a role="row"). lowercased chrome aside from the literal
+                    `@@ … @@` range, which stays verbatim. mirrors the redaction variant's
+                    match-head so both diffs read as one component family. */}
+                <div className="dv-hunk-head">
                   <span className="dv-hunk-at" aria-hidden="true">@@</span>
                   <span className="dv-hunk-range tnum">{h.header}</span>
                   <span className="dv-hunk-at" aria-hidden="true">@@</span>
                 </div>
-                {h.lines.map((l, li) => (
-                  <DiffLine key={li} line={l} />
-                ))}
+                {/* the lines, framed in their own inset card — the same treatment the redaction
+                    variant gives its before→after pair (dv-match-pair role="rowgroup"). this
+                    rowgroup directly wraps the role="row" lines, keeping a valid table hierarchy. */}
+                <div className="dv-hunk-pair" role="rowgroup">
+                  {h.lines.map((l, li) => (
+                    <DiffLine key={li} line={l} />
+                  ))}
+                </div>
               </div>
             ))
           )}
