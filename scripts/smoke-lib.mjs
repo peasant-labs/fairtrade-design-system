@@ -2,6 +2,7 @@
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import * as ui from '../dist/lib/ui.js'
+import * as icons from '../dist/lib/icons.js'
 
 const chartData = [{ label: 'a', count: 1 }, { label: 'b', count: 2 }]
 const diffHunks = [
@@ -77,6 +78,19 @@ for (const [name, value] of Object.entries(ui)) {
   }
 }
 
+// ./icons passthrough: confirm the externalized lucide-react re-export resolves
+// and surfaces named icons + createLucideIcon for consumers that tree-shake them.
+const expectedIcons = ['Code2', 'createLucideIcon']
+for (const name of expectedIcons) {
+  if (!(name in icons)) {
+    failures.push(`${name}: missing from dist/lib/icons.js (lucide-react passthrough re-export)`)
+  }
+}
+const iconCount = Object.keys(icons).length
+if (iconCount < 100) {
+  failures.push(`dist/lib/icons.js re-exported only ${iconCount} symbols; expected the full lucide-react surface (>100)`)
+}
+
 if (failures.length) {
   throw new Error(
     [
@@ -90,4 +104,4 @@ if (failures.length) {
   )
 }
 
-console.log(`fairtrade smoke: imported ${Object.keys(ui).length} symbols; rendered ${rendered} component exports`)
+console.log(`fairtrade smoke: imported ${Object.keys(ui).length} symbols; rendered ${rendered} component exports; ./icons re-exported ${iconCount} lucide symbols`)

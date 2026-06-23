@@ -26,7 +26,15 @@ if (existsSync(jsImportCss)) rmSync(jsImportCss)
 const cssEntry = join(OUT, 'components-entry.js')
 if (existsSync(cssEntry)) rmSync(cssEntry)
 
-const required = ['ui.js', 'tokens.css', 'base.css', 'components.css', 'tokens.json', 'fonts.css']
+// ./icons is a lucide-react passthrough; the Vite lib build externalizes
+// lucide-react, so dist/lib/icons.js is a thin re-export. Emit a matching
+// declaration so the "./icons" export resolves types for consumers. tsc runs
+// after this script and does not clean dist/lib/types, so this file survives.
+const TYPES = join(OUT, 'types')
+mkdirSync(TYPES, { recursive: true })
+writeFileSync(join(TYPES, 'icons.d.ts'), "export * from 'lucide-react'\n")
+
+const required = ['ui.js', 'icons.js', 'tokens.css', 'base.css', 'components.css', 'tokens.json', 'fonts.css']
 const missing = required.filter((file) => !existsSync(join(OUT, file)))
 if (missing.length) {
   throw new Error(
@@ -50,6 +58,8 @@ writeFileSync(
     '```',
     '',
     'Import React UI from `@peasant-labs/fairtrade/ui`.',
+    '',
+    'Import icons (lucide-react passthrough) from `@peasant-labs/fairtrade/icons`.',
     '',
   ].join('\n'),
 )

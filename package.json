@@ -1,7 +1,7 @@
 {
   "name": "@peasant-labs/fairtrade",
   "private": false,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Private fairtrade design-system library: canonical tokens, base styles, component CSS, and React UI exports.",
   "type": "module",
   "license": "MIT",
@@ -13,6 +13,10 @@
     "./ui": {
       "types": "./dist/lib/types/index.d.ts",
       "import": "./dist/lib/ui.js"
+    },
+    "./icons": {
+      "types": "./dist/lib/types/icons.d.ts",
+      "import": "./dist/lib/icons.js"
     },
     "./tokens.css": "./dist/lib/tokens.css",
     "./base.css": "./dist/lib/base.css",
@@ -46,7 +50,6 @@
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
-    "http-server": "^14.1.1",
     "lucide": "^1.20.0",
     "lucide-react": "^1.18.0",
     "react": "^19.2.7",
@@ -55,6 +58,7 @@
   },
   "devDependencies": {
     "@storybook/addon-a11y": "^10.4.6",
+    "http-server": "^14.1.1",
     "@storybook/addon-themes": "^10.4.6",
     "@storybook/react-vite": "^10.4.6",
     "@tailwindcss/vite": "^4.3.1",

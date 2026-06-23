@@ -11,9 +11,6 @@ importers:
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      http-server:
-        specifier: ^14.1.1
-        version: 14.1.1
       lucide:
         specifier: ^1.20.0
         version: 1.20.0
@@ -45,6 +42,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.0.2
         version: 6.0.2(vite@8.0.16(esbuild@0.28.1))
+      http-server:
+        specifier: ^14.1.1
+        version: 14.1.1
       puppeteer-core:
         specifier: ^25.1.0
         version: 25.1.0

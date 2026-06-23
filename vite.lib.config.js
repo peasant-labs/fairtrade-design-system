@@ -8,9 +8,14 @@ export default defineConfig({
     outDir: 'dist/lib',
     emptyOutDir: true,
     lib: {
-      entry: 'src/ui/index.js',
+      entry: {
+        ui: 'src/ui/index.js',
+        // ./icons passthrough — re-exports lucide-react (kept external below),
+        // so consumers tree-shake named icons from the shared fairtrade copy.
+        icons: 'src/icons.js',
+      },
       formats: ['es'],
-      fileName: () => 'ui.js',
+      fileName: (_format, entryName) => `${entryName}.js`,
       cssFileName: 'ui-imports',
     },
     rollupOptions: {
