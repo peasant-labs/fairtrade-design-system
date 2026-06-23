@@ -34,18 +34,6 @@ function normalizeProvider(p) {
   return { slug: p.slug ?? p.value ?? p.name, count: p.count }
 }
 
-/* map a topic's usage count into one of four weight buckets (1..4) relative to
-   the busiest tag in the cloud. weight — never color — encodes magnitude, so a
-   color-blind reader still sees the heavier tags as larger/bolder. */
-function weightFor(count, max) {
-  if (!max || count <= 0) return 1
-  const r = count / max
-  if (r > 0.75) return 4
-  if (r > 0.5) return 3
-  if (r > 0.25) return 2
-  return 1
-}
-
 /* ── one provider row ─────────────────────────────────────────────────────────
    a full-width aria-pressed toggle: a square mark, the slug, then the count.
    active = aria-pressed true + a check glyph + the amber fill (three signals,
@@ -72,14 +60,14 @@ function ProviderRow({ slug, count, active, onToggle }) {
 }
 
 /* ── one topic chip ───────────────────────────────────────────────────────────
-   a square chip whose size + weight comes from its usage bucket. active flips
-   aria-pressed + fills it amber + shows the count in the on-amber ink. */
-function TopicChip({ tag, count, weight, active, onToggle }) {
+   a square chip at one uniform size (magnitude is carried by the count, not the
+   chip size). active flips aria-pressed + fills it amber + shows the count in the
+   on-amber ink. */
+function TopicChip({ tag, count, active, onToggle }) {
   return (
     <button
       type="button"
       className="fr-topic"
-      data-weight={weight}
       aria-pressed={active}
       onClick={onToggle}
     >
@@ -111,7 +99,6 @@ export default function FacetRail({
   const orderName = useId()
 
   const rows = providers.map(normalizeProvider)
-  const maxTopic = topics.reduce((m, t) => Math.max(m, t.count ?? 0), 0)
 
   // every selected facet counts toward the running total + the clear gate.
   const activeCount = activeProviders.size + activeTopics.size
@@ -166,7 +153,7 @@ export default function FacetRail({
         </div>
       </section>
 
-      {/* topics — a weighted tag cloud */}
+      {/* topics — a uniform-size tag cloud (count carries magnitude, not size) */}
       {topics.length > 0 && (
         <section className="fr-section" aria-label="topics">
           <h3 className="fr-heading">topics</h3>
@@ -176,7 +163,6 @@ export default function FacetRail({
                 key={tag}
                 tag={tag}
                 count={count}
-                weight={weightFor(count, maxTopic)}
                 active={activeTopics.has(tag)}
                 onToggle={() => onTopic?.(tag)}
               />
