@@ -597,7 +597,10 @@
   /* sizing/centering mirrors the gold-standard empty-state icon (.cx-teach-ring): no fixed box around
      the glyph (a box bigger than the icon reads as an off-centre frame), just an inline-flex that
      shrink-wraps the icon at icon scale. box-shadow:none still drops the Tailwind `ring` utility (see above). */
-  .empty .ring { @apply inline-flex items-center justify-center text-ink-3; box-shadow: none !important; }
+  /* the small light glyph leaves optical whitespace, so the column's --sp-3 gap reads as too much
+     air between it and the heavy heading below. pull the heading up a notch so the icon hugs its
+     title (the gaps lower in the stack, between text lines, stay --sp-3). */
+  .empty .ring { @apply inline-flex items-center justify-center text-ink-3; box-shadow: none !important; margin-bottom: calc(-1 * var(--sp-1)); }
   .empty .ring .lucide { width: var(--ic-lg); height: var(--ic-lg); }
   .empty h3 { @apply text-md; }
   .empty p { @apply text-ink-3 text-sm; }
@@ -2396,12 +2399,14 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-rail { display: flex; flex-direction: column; min-height: 0; background: var(--surface); }
   .txn-rail-left { border-right: var(--bd); }
   /* per-panel header (split layout): an icon + lowercase title, count badge on filters */
-  .txn-rail-head { flex: none; display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-3); border-bottom: var(--bd); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); }
+  /* rail content inset is --sp-4, matching every other in-use rail/panel (the graph project rail,
+     the commons facet rail, all cards) so the side panels read at one consistent inset. */
+  .txn-rail-head { flex: none; display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-4); border-bottom: var(--bd); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); }
   .txn-rail-head .lucide { width: 13px; height: 13px; flex: none; color: var(--ink-3); }
-  .txn-rail-tabs { flex: none; gap: var(--sp-4); padding: 0 var(--sp-3); }
+  .txn-rail-tabs { flex: none; gap: var(--sp-4); padding: 0 var(--sp-4); }
   .txn-rail-tab { padding: var(--sp-3) 2px; gap: var(--sp-2); }
   .txn-rail-tab .lucide { width: 13px; height: 13px; }
-  .txn-rail-body { flex: 1; min-height: 0; overflow: auto; padding: var(--sp-3); }
+  .txn-rail-body { flex: 1; min-height: 0; overflow: auto; padding: var(--sp-4); }
 
   /* ---- rail collapse: a square head button (right-aligned) collapses the rail to a thin re-open strip.
      same affordance on both sides; >=24px target, visible focus, aria-expanded reflecting open state. */

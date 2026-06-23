@@ -77,10 +77,10 @@ export function CanvasSection() {
                 <div className="dialog framed" role="dialog" aria-label="join collective, static preview">
                   <div className="dlg-head"><h3>join collective</h3><span className="btn btn-ghost btn-sm btn-icon" aria-hidden="true"><X aria-hidden="true" /></span></div>
                   <div className="dlg-body">
-                    <p>joining <b style={{ color: 'var(--ink-strong)' }}>desert-archivists</b> lists you as a member and grants access to its shared data. it publishes none of your own transcripts; you choose those later when you contribute.</p>
+                    <p>you're currently <b style={{ color: 'var(--ink-strong)' }}>not discoverable</b>, so your handle is hidden across the commons. joining <b style={{ color: 'var(--ink-strong)' }}>desert-archivists</b> reveals your profile to its owners so they can review your membership and contributions. other members still see you as <b style={{ color: 'var(--ink-strong)' }}>anon</b>.</p>
                     <ul className="axes" aria-label="what you are opting into">
-                      <li><Eye aria-hidden="true" /><span className="axes-k">group membership</span><span className="axes-v">public visibility</span></li>
-                      <li><Users aria-hidden="true" /><span className="axes-k">group data</span><span className="axes-v">access for members only</span></li>
+                      <li><Eye aria-hidden="true" /><span className="axes-k">identity</span><span className="axes-v">profile shown to owners only</span></li>
+                      <li><Users aria-hidden="true" /><span className="axes-k">to other members</span><span className="axes-v">you stay anon</span></li>
                       <li><FileText aria-hidden="true" /><span className="axes-k">your transcripts</span><span className="axes-v">none contributed on joining</span></li>
                     </ul>
                     <label className="check"><input type="checkbox" className="check-box" /> i understand and consent</label>
