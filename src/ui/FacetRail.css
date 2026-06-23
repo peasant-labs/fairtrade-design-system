@@ -96,11 +96,13 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+/* the radio mark — sized to the same box as the provider mark (var(--ic-lg)) so
+   the order labels and the provider labels share one left edge down the rail. */
 .fr-order-dot {
   box-sizing: border-box;
   flex: none;
-  width: 14px;
-  height: 14px;
+  width: var(--ic-lg);
+  height: var(--ic-lg);
   border: 1px solid var(--rule-strong);
   background: var(--canvas);
 }
@@ -189,9 +191,9 @@
 }
 
 /* ── topics tag cloud ─────────────────────────────────────────────────────────
-   square chips wrapping into the column. data-weight (1..4) drives the chip's
-   font-size + weight + padding so usage reads as size, not hue. each chip pairs
-   its tag with the usage count. */
+   square chips wrapping into the column, all at ONE uniform size (no size-by-
+   weight effect — mismatched tag sizes read as ugly noise). each chip pairs its
+   tag with the usage count, so magnitude is carried by the count, not the size. */
 .fr-topics {
   display: flex;
   flex-wrap: wrap;
@@ -223,26 +225,6 @@
 .fr-topic .fr-count {
   margin-left: 0;
   color: var(--ink-4);
-}
-/* weight buckets — size + weight carry magnitude (never color). bucket 1 is the
-   resting label size; 4 is the busiest tag. */
-.fr-topic[data-weight='1'] {
-  font-size: var(--fs-label);
-  font-weight: 400;
-}
-.fr-topic[data-weight='2'] {
-  font-size: 15px;
-  font-weight: 500;
-}
-.fr-topic[data-weight='3'] {
-  font-size: 16px;
-  font-weight: 600;
-  padding: var(--sp-1) var(--sp-3);
-}
-.fr-topic[data-weight='4'] {
-  font-size: 18px;
-  font-weight: 700;
-  padding: var(--sp-2) var(--sp-3);
 }
 /* active: filled amber with the on-amber ink — and a heavier weight so the
    selection survives a grayscale read. */

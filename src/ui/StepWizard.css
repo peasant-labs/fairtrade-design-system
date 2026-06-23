@@ -8,28 +8,39 @@
 /* ── indicator rail ────────────────────────────────────────────────────────── */
 
 .swz-rail {
+  /* one source of truth for the marker side; both the marker box and the connector's vertical
+     offset derive from it, so they can never drift out of alignment. */
+  --swz-mark-size: 28px;
   display: flex;
   align-items: flex-start;
   width: 100%;
 }
 
-/* one number-marker + its label, stacked. the flex:1 connectors live between cells. */
+/* one cell = [connector line | a marker+label stack], laid out as a ROW so the line lies
+   horizontally to the LEFT of the marker (bridging from the previous marker) while the label
+   still hangs under its own marker. the connector is flex:1 so cells share the rail width; the
+   first cell carries no leading line and hugs its marker (inline style flex on the cell). */
 .swz-cell {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: flex-start;
   gap: var(--sp-2);
   min-width: 0;
 }
 
-/* clickable marker (jump-back / current); future-locked renders the same box, disabled. */
+/* clickable marker (jump-back / current); future-locked renders the same box, disabled. the
+   marker+label stack keeps its intrinsic width (flex:none) so the connector line — its row
+   sibling — takes the slack and bridges to the previous marker. */
 .swz-step {
   appearance: none;
   background: transparent;
   border: 0;
   padding: 0;
   margin: 0;
+  flex: none;
+  /* the stack is exactly the marker's width so the connector meets the marker's edge (not a wider
+     label's edge) and the marker stays dead-centre on the rail axis. */
+  width: var(--swz-mark-size);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -42,11 +53,11 @@
 .swz-step[aria-disabled='true'] { cursor: not-allowed; }
 .swz-step:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 
-/* the square number marker. hairline by default (future/locked). */
+/* the square number marker. hairline by default (future/locked). side derives from the rail's
+   --swz-mark-size so the connector's vertical offset stays locked to the marker's centre. */
 .swz-mark {
-  --sw-mark-size: 28px;
-  width: var(--sw-mark-size);
-  height: var(--sw-mark-size);
+  width: var(--swz-mark-size);
+  height: var(--swz-mark-size);
   flex: none;
   display: grid;
   place-items: center;
@@ -102,13 +113,15 @@
 .swz-step--complete .swz-label,
 .swz-step--reachable .swz-label { color: var(--ink-2); }
 
-/* connector line between two markers. olive once the step behind it is complete. sits at the
-   marker's vertical mid so it reads as a rail, not an underline. */
+/* connector line between two markers. olive once the step behind it is complete. it's the row
+   sibling LEFT of its marker stack: flex:1 so it bridges to the previous marker, offset down by
+   half the marker side so it meets each marker's vertical centre (a rail, not an underline). */
 .swz-line {
   flex: 1 1 auto;
+  align-self: flex-start;
   height: 1px;
   min-width: var(--sp-4);
-  margin-top: 14px; /* half of the 28px marker, so the rule meets each marker's centre */
+  margin-top: calc(var(--swz-mark-size) / 2);
   background: var(--rule);
 }
 .swz-line--done { background: var(--success); }

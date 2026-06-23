@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, X, Clock, UserPlus, Inbox } from 'lucide-react'
+import { Check, X, Clock, UserPlus, Inbox, ListChecks } from 'lucide-react'
 import './ModerationQueue.css'
 
 /* approval / moderation surfaces, modeled on village's PendingApprovalBar + the collective-hub
@@ -144,7 +144,9 @@ export function ModerationQueue({
   return (
     <section className={cls} aria-label={typeof title === 'string' ? title : 'pending review'}>
       <header className="mod-queue-head">
-        <UserPlus className="mod-queue-ico" aria-hidden="true" />
+        {/* a queue glyph (list-checks), NOT a person — the header marks the review
+            list itself; per-row person/inbox glyphs carry who/what each item is. */}
+        <ListChecks className="mod-queue-ico" aria-hidden="true" />
         <span className="mod-queue-title">{title}</span>
         <span className="mod-queue-count tnum" aria-label={`${pendingCount} pending`}>
           {pendingCount}

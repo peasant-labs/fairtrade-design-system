@@ -303,8 +303,8 @@ const PHASES = [
   { id: 'implementation', label: 'implementation', icon: Pencil, from: 5, to: 8 },
 ]
 
-/* the per-task duration trail for the trace outline (StepsWaterfall), matching the documented
-   app-viewer's "what happened, in order" timeline. id is the user turn's TURNS id so onJump reuses
+/* the per-task duration trail for the trace outline (StepsWaterfall), the transcript-viewer's
+   "what happened, in order" timeline. id is the user turn's TURNS id so onJump reuses
    jumpTo(id). prompt is USER CONTENT (case preserved). userTurn 2 carried the typecheck error, so it
    reads as an error task (clay spine + the word "error", never colour alone). durations come from the
    existing rail meta line (5m / 3m). */
@@ -621,7 +621,7 @@ function TurnCard({ turn, active, openTools, toggleTool, onCopyAnchor, copied, r
       {turn.checkpoint && (
         <div className="marker txn-checkpoint">
           <span className="r" />
-          <span className="mc">
+          <span className="mkc">
             <GitCommitHorizontal size={14} aria-hidden="true" />
             <span className="hash mono">{turn.checkpoint.hash}</span>
             <span className="txn-cp-msg">{turn.checkpoint.msg}</span>
@@ -1254,7 +1254,6 @@ export default function TranscriptApp({ theme = 'dark' }) {
               {sticky && viewMode === 'list' && (
                 <div className="txn-sticky">
                   <span className="g-claude"><ClaudeMark /></span>
-                  <span className="txn-sticky-title">transcript-browser</span>
                   <span className="txn-sticky-model mono">claude-opus-4-7</span>
                   <Scrubber turns={TURNS} active={activeTurn} onSeek={seekScrub} draggingRef={draggingRef} />
                 </div>
@@ -1697,7 +1696,7 @@ function OutlineRail({ tab, activeTurn, onJump }) {
       </div>
     )
   }
-  /* trace -> the per-task duration trail (StepsWaterfall), matching the documented app-viewer's
+  /* trace -> the per-task duration trail (StepsWaterfall), the transcript-viewer's
      "what happened, in order" timeline. onJump stays on the trace tab (no tab switch). */
   return (
     <StepsWaterfall

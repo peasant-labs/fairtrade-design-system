@@ -2,11 +2,10 @@
    ConnectionState — fairtrade "in use" component family (styles)
    ─────────────────────────────────────────────────────────────────────────
    tokens only — no raw hex. the only raw px are tiny local geometry with no
-   token: the status dot (7px, matched to src/index.css .dot), the glow radius,
-   the skeleton bar height, and the ring box (derived from the icon scale).
-   classes are namespaced cx-. status is never color-only: every tone pairs the
-   dot + an icon + the word. static-first: the only motion is the live dot's
-   soft STEADY glow + the connecting spin, both gated behind
+   token: the skeleton bar height and the ring box (derived from the icon scale).
+   classes are namespaced cx-. status is never color-only: every tone pairs an
+   icon + the word (no status dot — a color-only dot would break that rule).
+   static-first: the only motion is the connecting spin, gated behind
    prefers-reduced-motion: no-preference. radius 0 throughout.
    ─────────────────────────────────────────────────────────────────────────── */
 
@@ -26,8 +25,9 @@
 
 /* ── pill ──────────────────────────────────────────────────────────────────
    the small, glanceable connection indicator. a square hairline chip, mono +
-   lowercase chrome, the dot + icon + word at its head, the local-first note as
-   quiet trailing chrome. the per-tone dot color lives in the cx-pill-* rules. */
+   lowercase chrome, the icon + word at its head, the local-first note as quiet
+   trailing chrome. the per-tone icon color lives in the cx-pill-* rules — a tint
+   on top of the icon + word, never a color-only dot. */
 .cx-pill {
   display: inline-flex;
   align-items: center;
@@ -58,36 +58,19 @@
   letter-spacing: 0;
 }
 
-/* the dot — matched to the global .dot geometry (7px round). its color is the
-   tone; it is paired with the icon + word, never the sole signal. */
-.cx-dot {
-  width: 7px;
-  height: 7px;
-  flex: none;
-  border-radius: 50%;
-  align-self: center;
-  background: var(--ink-4);
-}
-
-/* per-tone: olive = live, amber = connecting, clay = disconnected. the dot tone
-   and the icon color move together so the state reads at a glance. */
-.cx-pill-live .cx-dot { background: var(--olive); }
+/* per-tone: olive = live, amber = connecting, clay = disconnected. the icon
+   color is a tint on top of the icon + word — never color alone — so the state
+   still reads with the hue stripped. */
 .cx-pill-live .cx-pill-icon { color: var(--olive); }
 
-.cx-pill-connecting .cx-dot { background: var(--amber); }
 .cx-pill-connecting .cx-pill-icon { color: var(--amber); }
 
-.cx-pill-disconnected .cx-dot { background: var(--clay); }
 .cx-pill-disconnected .cx-pill-icon { color: var(--clay); }
 .cx-pill-disconnected .cx-pill-word { color: var(--ink); }
 
-/* motion: ONLY where motion is welcome. the live dot earns a soft, STEADY glow
-   (no blink — a blink reads as a warning, and the steady "ok" must stay calm).
-   the connecting icon spins to signal work in flight. both off by default. */
+/* motion: ONLY where motion is welcome. the connecting icon spins to signal work
+   in flight. off by default. */
 @media (prefers-reduced-motion: no-preference) {
-  .cx-pill-live .cx-dot {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--olive) 22%, transparent);
-  }
   .cx-pill-connecting .cx-pill-icon {
     animation: cx-spin 1.1s linear infinite;
   }
@@ -204,7 +187,7 @@
 }
 
 /* ── teaching empty state ───────────────────────────────────────────────────
-   left-aligned, like the system's other empty states: a ringed icon, a title,
+   left-aligned, like the system's other empty states: a leading icon, a title,
    a line of guidance, the command chip, then the privacy line. */
 .cx-teach {
   display: flex;
@@ -215,13 +198,12 @@
   border: var(--bd);
   background: var(--surface);
 }
+/* the leading icon — no border/ring frame (a box around it reads as a control it
+   is not). it sits at the icon scale and carries the empty state's subject. */
 .cx-teach-ring {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--sp-7);
-  height: var(--sp-7);
-  border: var(--bd-strong);
   color: var(--ink-3);
 }
 .cx-teach-ring .lucide {

@@ -351,12 +351,16 @@
 
 /* ── suggestion chips ─────────────────────────────────────────────────────────
    one or two handle-shaped suggestions; clicking one fills the field. mono,
-   hairline, radius 0 — the system chip look. the @ + handle keep their case. */
+   hairline, radius 0 — the system chip look. the @ + handle keep their case.
+   the status line above always reserves a row (so the layout never jumps), which
+   would push the suggestions far from the input — so pull them back up to sit
+   right after the field, cancelling most of the column gap. */
 .si-suggest {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--sp-2);
+  margin-top: calc(-1 * var(--sp-3));
 }
 .si-suggest-label {
   font-family: var(--font-mono);

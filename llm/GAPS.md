@@ -3,8 +3,9 @@
 Goal: fairtrade carries everything needed to rebuild peasant's apps from scratch — **peasant web**
 (local code-map + change review + contribute), **village** (the commons), the **transcript browser**
 (shared viewer), and the **peasant TUI** (two terminal flows). Derived from a full scout of all four
-sibling repos. As of 2026-06-22 the component coverage is **complete**; what remains is app-level
-*integration* (wiring these into real pages/data), not missing components.
+sibling repos. As of 2026-06-22 the component coverage, the app-level integration (§3), AND the
+feedback round-3 component polish are all **complete** — the in-use mockups are wired onto the kit and
+the redundant "rebuilt apps" doc bands were removed (superseded by the in-use stage). No pending backlog.
 
 Legend: **[have]** pre-existing · **[new]** added this pass · **[wire]** component exists, app
 integration is the remaining work.
@@ -81,18 +82,21 @@ All self-contained: `src/ui/<Name>.jsx` + colocated `<Name>.css` + `<Name>.stori
 - **Flow B** — the `peasant kickstart` FTUE wizard (welcome+oauth → providers → privacy → retention →
   summary → staged ingestion), interactive, one frame with a "step N of M" header.
 
-## 3. remaining work — integration, not components
+## 3. integration — DONE (shipped in `9bb1ef5`)
 
-- **[wire]** the transcript viewer should key the assistant icon+accent off `harness` via `ProviderIcon`
-  + the accent map (the system default is user=teal/assistant=amber).
-- **[wire]** the governance surfaces (collective hub page, settings) compose from PolicySelect +
-  RoleRoster + StatTiles/GovTile + ModerationQueue + ConsentDialog — assemble per village's page layout.
-- **[wire]** CommitGraph + a SHA join = village's commit-timeline overlay (a data binding, not a new
-  component).
-- **[wire]** the map app = MapCanvas + RailShell + TimeStrip + DataState/ConnectionPill (the shell + the
-  panels exist; assemble + connect to a live local-program feed).
-- the new composites live in Storybook + the `src/ui` barrel; only the TUI is placed as a page section.
-  Placing each as its own doc-page band (like the TUI) is optional polish.
+The in-use mockups now consume the kit (they were bespoke re-implementations):
+- **[done]** transcript: assistant icon + accent keyed off the session `HARNESS` via `ProviderIcon` +
+  `PROVIDER_ACCENT` (user=teal / assistant=amber default; re-themes per provider).
+- **[done]** commons governance: PolicySelect + RoleRoster + StatTiles/GovTile + ProviderBars +
+  ModerationQueue + ConsentDialog + DangerZone in `CommonsManage`/`CommonsExplore`.
+- **[done]** changes view: the kit `CommitGraph` bound to a SHA-keyed `HISTORY` dataset (select → detail).
+- **[done]** map app: `MapView` = `RailShell` + `MapCanvas` + `TimeStrip` + `ConnectionPill`/`DataState`
+  with a mock connection feed (accepted regressions: tangle edge → activity + violation badge,
+  delta/lit-hover/time-scrub-coupling dropped, auto-row layout).
+
+The composites are showcased as the doc bands `70`–`80` (the earlier `82`–`86` "rebuilt apps" bands
+were removed — the in-use stage carries the better, kit-wired versions). Feedback round 3 (component
+polish) is complete; no pending backlog.
 
 ### governance vocabulary (for the wired surfaces)
 Identity visibility: joining reveals your profile to OWNERS ONLY; other members see `anon`. Data access:

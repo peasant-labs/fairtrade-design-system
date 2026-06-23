@@ -116,12 +116,14 @@
 .dv-num-old { grid-column: 2; }
 .dv-num-new { grid-column: 3; }
 
-/* the sign gutter — carries the REDUNDANT +/− glyph so add/del is not color-only. */
+/* the sign gutter — carries the REDUNDANT +/− glyph so add/del is not color-only. a small right
+   margin separates the colored sign tile from the code text so it never butts against the line. */
 .dv-sign {
   grid-column: 4;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  margin-right: var(--sp-1);
   color: var(--ink-3);
   user-select: none;
 }

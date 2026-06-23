@@ -58,7 +58,7 @@ export function ConversationSection() {
             <div className="toolcall"><div className="tc-head"><span className="kind"><Terminal aria-hidden="true" /> bash</span><span className="path">go test -race ./internal/ingest/</span><span className="right" style={{ color: 'var(--olive)' }}><Check aria-hidden="true" /> ok</span></div></div>
           </div>
         </div>
-        <div className="marker"><span className="r"></span><span className="mc"><GitCommitHorizontal aria-hidden="true" /> commit <span className="hash">a3f9c1</span> stream ingest, constant memory</span><span className="r"></span></div>
+        <div className="marker"><span className="r"></span><span className="mkc"><GitCommitHorizontal aria-hidden="true" /> commit <span className="hash">a3f9c1</span> <span className="mkc-msg">stream ingest, constant memory</span></span><span className="r"></span></div>
         <div className="win-foot"><span className="chip chip-ok"><Check aria-hidden="true" /> tests green</span><span className="chip"><FileDiff aria-hidden="true" /> +1 -1 in 1 file</span><span style={{ marginLeft: 'auto', display: 'flex', gap: 'var(--sp-3)' }}><button className="btn btn-secondary btn-sm"><Share2 aria-hidden="true" /> share</button><button className="btn btn-primary btn-sm"><Upload aria-hidden="true" /> contribute</button></span></div>
       </div>
       <div className="anatomy">

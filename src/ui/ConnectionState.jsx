@@ -16,10 +16,10 @@ import './ConnectionState.css'
    we talk to runs on THIS computer (no internet), so the copy leads with that; and a dropped
    socket must never read as "empty". three pieces, one voice:
 
-     <ConnectionPill status />        the small, glanceable, always-on indicator: a status dot
-                                      (olive live / amber connecting / clay disconnected) + an
-                                      icon + the word. status is never color-only — the dot, the
-                                      word, and the icon all carry it. copy stays plain and local
+     <ConnectionPill status />        the small, glanceable, always-on indicator: an icon + the
+                                      word. status is never color-only — the word and the icon both
+                                      carry it (no status dot — a color-only dot would break that
+                                      rule). copy stays plain and local
                                       ("on this computer · no internet").
 
      <DataState ...>                  the discriminator. losing the connection is NOT the same as
@@ -37,8 +37,8 @@ import './ConnectionState.css'
    is body. commands are CODE → mono, never lowercased by us. classes are namespaced cx-; tokens +
    the cx-* rules live in ConnectionState.css (imported here). */
 
-// the three connection states, each pairing a dot tone + an icon + a word so the state reads
-// without color. copy is local-first: the program is on this machine, no internet.
+// the three connection states, each pairing an icon + a word so the state reads without color.
+// copy is local-first: the program is on this machine, no internet.
 const STATUS = {
   live: {
     tone: 'live',
@@ -97,11 +97,11 @@ function CopyChipButton({ value, label = 'copy' }) {
 }
 
 /**
- * ConnectionPill — the small, glanceable connection indicator. a square hairline pill carrying a
- * status dot, an icon, and the word; the note ("on this computer · no internet") sits beside it as
- * quiet mono chrome. the state never rides on color alone: the dot tone, the icon, and the word
- * all encode it, and the whole pill is announced via role=status. the live dot earns a soft,
- * STEADY glow (no blink) only where motion is welcome.
+ * ConnectionPill — the small, glanceable connection indicator. a square hairline pill carrying an
+ * icon and the word; the note ("on this computer · no internet") sits beside it as quiet mono
+ * chrome. the state never rides on color alone: the icon and the word both encode it (no status
+ * dot — a color-only dot would break that rule), and the whole pill is announced via role=status.
+ * the per-tone icon color is a tint on top, only where color is welcome.
  *
  * @param {object} props
  * @param {'live'|'connecting'|'disconnected'} [props.status='live'] - the connection state.
@@ -116,8 +116,8 @@ export function ConnectionPill({ status = 'live', showNote = true, className = '
 
   return (
     <span className={cls} role="status" {...rest}>
-      {/* the dot is decoration — the word carries the state for AT — so it is aria-hidden. */}
-      <span className="cx-dot" aria-hidden="true" />
+      {/* no status dot: a color-only dot violates "meaning never on color alone". the icon + the
+          word carry the state; the per-tone icon color is a tint on top, never the sole signal. */}
       <Icon className="cx-pill-icon" aria-hidden="true" />
       <span className="cx-pill-word">{s.word}</span>
       {showNote && <span className="cx-pill-note">{s.note}</span>}
@@ -232,12 +232,12 @@ export function DataState({
 
 /**
  * TeachingEmptyState — an empty state that TEACHES the mechanism instead of just declaring the
- * absence. a ringed icon, a title, a line of guidance, and a copy-able `$ command` chip (the
+ * absence. a leading icon, a title, a line of guidance, and a copy-able `$ command` chip (the
  * actual command to run, e.g. `peasant ingest`) with an inline copy button — then a short privacy
  * line, because the whole point is that this runs locally and nothing leaves the machine.
  *
  * @param {object} props
- * @param {import('react').ComponentType} [props.icon=HardDrive] - lucide icon for the ring.
+ * @param {import('react').ComponentType} [props.icon=HardDrive] - lucide icon for the heading.
  * @param {import('react').ReactNode} props.title - the short headline.
  * @param {import('react').ReactNode} [props.body] - a line of guidance prose (what the command
  *        does, in plain words).

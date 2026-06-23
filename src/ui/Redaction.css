@@ -205,9 +205,11 @@
 
 /* a kept (un-redacted) card is flagged loudly: the secret WILL leave as-is, so it picks up the
    clay (danger) left rail + a faint clay wash — honest, and never color-only (the head also
-   flips to a "will be sent" icon+word). */
+   flips to a "will be sent" icon+word). the 3px rail is absorbed out of the left padding (border-box
+   would otherwise inset the content 3px), so a kept card's content sits flush with its siblings. */
 .rdx-card-kept {
   border-left: 3px solid var(--clay);
+  padding-left: calc(var(--sp-4) - 3px);
   background: var(--del-bg);
 }
 

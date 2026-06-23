@@ -158,17 +158,29 @@
   text-transform: lowercase;
   color: var(--ink-3);
 }
+/* the axes list OWNS the three shared columns — [chip | key | value] — so the key
+   column is one width across every row and all values share a single left edge. a
+   per-row grid would let the longest key ("contribution") grow only its own row's
+   key track and shove that value ~30px right of the others. each .cns-axis is a
+   subgrid row that inherits these tracks. */
 .cns-axes {
   margin: 0;
   padding: 0;
+  display: grid;
+  grid-template-columns: var(--control-h-sm) max-content 1fr;
+  column-gap: var(--sp-3);
 }
 .cns-axis {
   display: grid;
-  grid-template-columns: var(--control-h-sm) minmax(5.5rem, max-content) 1fr;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
   align-items: start;
-  gap: var(--sp-2) var(--sp-3);
+  row-gap: var(--sp-2);
   padding: var(--sp-3);
 }
+/* divider between rows. the +-combinator gives a top border to every row but the
+   first, so a no-caption summary opens flush and a captioned one rests on the
+   cap's own bottom border — never a doubled or missing rule at the top. */
 .cns-axis + .cns-axis { border-top: var(--bd); }
 
 /* the square icon chip — leads each row, tone gives it a quiet accent border so
@@ -189,20 +201,24 @@
 .cns-axis--open .cns-axis-chip { color: var(--teal); border-color: var(--teal); }
 .cns-axis--restricted .cns-axis-chip { color: var(--clay); border-color: var(--clay); }
 
-/* the mono lowercase key — the axis name ("identity", "data access"). */
+/* the mono lowercase key — the axis name ("identity", "data access"). top-aligned
+   (not centered) so its first line shares a baseline with the value's first line
+   and the chip, keeping the three columns level whether the value wraps or not. */
 .cns-axis-key {
   margin: 0;
-  align-self: center;
+  align-self: start;
   font-family: var(--font-mono);
   font-size: var(--fs-label);
   line-height: 1.4;
   text-transform: lowercase;
   color: var(--ink-3);
 }
-/* the value column: the chosen value + an optional "who can see" scope note. */
+/* the value column: the chosen value + an optional "who can see" scope note.
+   top-aligned so a one-line value and a two-line (value + scope) value both start
+   level with the key — the right column stays aligned across rows of any height. */
 .cns-axis-val {
   margin: 0;
-  align-self: center;
+  align-self: start;
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);

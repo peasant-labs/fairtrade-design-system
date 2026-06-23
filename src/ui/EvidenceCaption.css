@@ -16,6 +16,10 @@
   /* the recap is prose: do NOT lowercase it — fragments may carry counts/paths with their own
      casing, and the sentence reads as written. */
   text-wrap: pretty;
+  /* this renders as a <p>, which inherits the global prose tracking (heavy 0.16em word-spacing).
+     the recap reads as one tight sentence, so reset to comfortable/normal spacing here. */
+  letter-spacing: normal;
+  word-spacing: normal;
 }
 
 /* a plain (non-clickable) fragment — just prose flowing inline. */
@@ -105,9 +109,11 @@
   outline-offset: 2px;
 }
 
-/* the anchor eyebrow — a small mono label naming the block. chrome → lowercased. */
+/* the anchor eyebrow — a small mono label naming the block (the "files / diff / signals" signal
+   row). chrome → lowercased. it sits as its own row above the body with a clear gap below so the
+   signal never butts against the prose. */
 .ec-target-eyebrow {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: var(--sp-1);
   margin-bottom: var(--sp-3);

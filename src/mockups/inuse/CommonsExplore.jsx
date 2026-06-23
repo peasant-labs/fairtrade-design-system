@@ -1676,8 +1676,8 @@ function DetailTurn({ turn, selected, openTools, toggleTool, registerRef, labels
       {turn.commit && (
         <div className="marker">
           <span className="r" />
-          <span className="mc">
-            <GitCommitHorizontal size={14} aria-hidden="true" /> commit <span className="hash mono">{turn.commit.hash}</span> {turn.commit.msg}
+          <span className="mkc">
+            <GitCommitHorizontal size={14} aria-hidden="true" /> commit <span className="hash mono">{turn.commit.hash}</span> <span className="mkc-msg">{turn.commit.msg}</span>
             <span className="cex-commit-stat tnum"> · {turn.commit.files} file · +{turn.commit.ins} −{turn.commit.del}</span>
           </span>
           <span className="r" />

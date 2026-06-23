@@ -123,11 +123,13 @@
   padding: 0;
 }
 
-/* one member row: identity | org chip | role control | remove action. a 4-track grid keeps the
-   role + remove columns aligned across rows regardless of handle length. */
+/* one member row: identity | org chip | role control | remove action. the org, role and remove
+   tracks are FIXED-width (not auto) so every row shares the same column edges no matter the row's
+   state: an owner row (locked "owner" text + a spacer remove) lines up exactly with an editable
+   row (a role <select> + a ConfirmInline), and an org chip lines up with the no-org placeholder. */
 .rr-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  grid-template-columns: minmax(0, 1fr) 14ch 15ch minmax(72px, auto);
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-5);

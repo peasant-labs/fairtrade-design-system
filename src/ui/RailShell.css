@@ -83,6 +83,7 @@
   display: flex;
   align-items: center;
   gap: var(--sp-3);
+  min-width: 0; /* let a long toolbar label (e.g. a file path) shrink instead of widening the column */
   min-height: var(--control-h);
   box-sizing: border-box;
   padding: var(--sp-2) var(--sp-4);
@@ -92,6 +93,13 @@
   font-family: var(--font-mono);
   font-size: var(--fs-label);
   text-transform: lowercase;
+}
+/* truncate a long single-line toolbar label (a file path) rather than letting it force overflow. */
+.rs-toolbar > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 /* the toolbar and the canvas share a left edge; collapse the doubled hairline. */
 .rs-toolbar + .rs-canvas {
@@ -109,8 +117,10 @@
 .rs-rail-card {
   display: flex;
   flex-direction: column;
+  min-width: 0; /* the card is clamped to the 320px rail; let its content shrink, not overflow */
   max-height: calc(100vh - var(--sp-5) * 2);
   overflow-y: auto;
+  overflow-x: hidden; /* clip stray horizontal overflow — long content wraps/breaks instead */
   background: var(--surface);
   border: var(--bd);
   box-sizing: border-box;
@@ -168,12 +178,15 @@
   height: var(--ic-sm);
   color: var(--ink-3);
 }
+/* a long section header WRAPS to a second line inside the clamped 320px rail rather than
+   truncating — a header cut mid-word ("…built th") against the card's overflow-x:hidden reads as
+   broken. the head is a centered flex row, so a two-line title still sits tidily beside its
+   icon/chevron. */
 .rs-sec-title {
   flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .rs-sec-end {
   flex: none;
@@ -210,6 +223,8 @@
   font-family: var(--font-body);
   font-size: var(--fs-body);
   line-height: 1.5;
+  /* long unbroken strings (file paths, hashes) wrap inside the clamped rail rather than overflowing. */
+  overflow-wrap: anywhere;
 }
 .rs-sec-body[hidden] {
   display: none;
@@ -227,10 +242,14 @@
 
 /* ── split-rail: dual-rail variant ───────────────────────────────────────────
    two independently-collapsible columns side by side; each is its own hairline
-   card so they read as peers. stacks to one column below the breakpoint. */
+   card so they read as peers. stacks to one column below the breakpoint.
+   align-items:start so a COLLAPSED panel hugs its own header instead of being
+   stretched to the taller (open) neighbour's height — which left an empty, off
+   hairline card (the "weird layout"). */
 .rs-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  align-items: start;
   gap: var(--sp-4);
   width: 100%;
   box-sizing: border-box;

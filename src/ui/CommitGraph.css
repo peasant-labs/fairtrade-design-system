@@ -92,13 +92,18 @@
   border-color: var(--amber);
 }
 
-/* The sparkle: the non-colour, redundant "has a session" signal, pinned to the dot's corner. */
+/* The sparkle: the non-colour, redundant "has a session" signal, pinned just off the dot's
+   TOP-RIGHT corner. The dot is a 9px square centred on (laneX, 50%); the spark's box is set with
+   left:laneX (JSX), so translateX moves it relative to the dot's centre. We push it right to clear
+   the dot's right edge (half the 9px dot) and up so its bottom sits at the dot's top edge — it
+   never covers the dot body (filled OR hollow) and, since it's the dot's NEXT sibling, paints on
+   top. 9px to match the dot, so the badge reads as a peer, not an oversized glyph. */
 .cg-spark {
   position: absolute;
   top: 50%;
   width: 9px;
   height: 9px;
-  transform: translate(2px, -120%);
+  transform: translate(3px, calc(-50% - 9px));
   color: var(--ink-3);
   pointer-events: none;
 }
@@ -116,7 +121,9 @@
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  padding: var(--sp-2) var(--sp-4) var(--sp-2) 0;
+  /* a token-sized left gap normalises the gutter→message distance (the SVG's GUTTER_TAIL alone
+     read as a cramped, off-rhythm sliver); right padding matches so the row reads evenly. */
+  padding: var(--sp-2) var(--sp-4) var(--sp-2) var(--sp-3);
   background: transparent;
   border: 0;
   text-align: left;
@@ -249,7 +256,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
-  padding: var(--sp-2) var(--sp-4) var(--sp-2) 0;
+  /* match the commit rows' gutter→content gap so the ghost row lines up with them. */
+  padding: var(--sp-2) var(--sp-4) var(--sp-2) var(--sp-3);
   background: transparent;
   border: 0;
   text-align: left;

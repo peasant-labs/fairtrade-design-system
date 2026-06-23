@@ -141,8 +141,13 @@
      it does NOT trap the long docs because the docs region itself is a single oversized snap area
      (.docs has scroll-snap-align + is far taller than the viewport, so you can rest anywhere inside
      it); only the full-screen landmark stops (.hero-crop, .hero-grow, .philos, .iu) + .docs snap.
-     scroll-padding-top clears the sticky nav for anchor / rail-link jumps and where docs settles. */
-  html { scroll-behavior: smooth; scroll-snap-type: y mandatory; scroll-padding-top: var(--nav-h); overscroll-behavior-y: none; }
+     scroll-padding-top clears the sticky nav for anchor / rail-link jumps and where docs settles.
+     scroll-behavior is AUTO, not smooth: a smooth snap-SETTLE animation pinned the scroll for ~300ms
+     after every flick, and a second flick started during it was swallowed ("can't scroll while the
+     previous scroll is still running"). instant snap lets each flick take effect immediately while
+     `mandatory` keeps the firm one-section feel. explicit JS scrolls (App.jsx toDocs, CommandPalette)
+     still pass behavior:'smooth', so those keep their glide. */
+  html { scroll-snap-type: y mandatory; scroll-padding-top: var(--nav-h); overscroll-behavior-y: none; }
   body {
     @apply bg-canvas text-ink font-body;
     margin: 0;
@@ -505,9 +510,16 @@
   .phase .rng { @apply text-ink-4; }
   .marker { @apply flex items-center gap-3; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); }
   .marker .r { @apply flex-1; height: 1px; background: var(--rule); }
-  .marker .mc { @apply inline-flex items-center gap-2 font-mono text-label lowercase text-ink-3; border: var(--bd-strong); padding: 3px var(--sp-3); }
-  .marker .mc .lucide { @apply text-olive; width: 13px; height: 13px; }
-  .marker .mc .hash { @apply text-ink-2; }
+  /* .mkc = marker content (the commit chip). renamed from the 2-letter .mc to avoid a hard
+     collision with MapCanvas's unlayered root `.mc` (src/ui/MapCanvas.css), whose
+     display:flex/flex-direction:column/width:100% were leaking in and stacking this chip
+     vertically (unlayered beats @layer components regardless of specificity). */
+  .marker .mkc { @apply inline-flex items-center gap-2 font-mono text-label lowercase text-ink-3; border: var(--bd-strong); padding: 3px var(--sp-3); min-width: 0; }
+  .marker .mkc .lucide { @apply text-olive; width: 13px; height: 13px; flex: none; }
+  .marker .mkc .hash { @apply text-ink-2; flex: none; }
+  /* the commit message is the only flexible part: it ellipsizes so the chip stays one clean
+     horizontal line instead of wrapping a long message into a ragged stack. */
+  .marker .mkc-msg { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .turn .body { @apply text-ink; line-height: 1.5; }
   .turn .body b { @apply text-amber-bright; font-weight: 700; text-shadow: var(--glow-soft); }
   .thinking { @apply inline-flex items-center gap-2 font-mono text-label text-ink-3; margin-top: var(--sp-3); }
@@ -520,7 +532,10 @@
   .tc-head .right { @apply inline-flex items-center gap-2 text-ink-4; margin-left: auto; }
   .tc-head .right .lucide { width: var(--ic-sm); height: var(--ic-sm); }
   .diff { @apply font-mono text-sm; line-height: 1.5; border-top: var(--bd); }
-  .dl { @apply grid; grid-template-columns: 4px 34px 16px 1fr; }
+  .dl { @apply grid; grid-template-columns: 8px 34px 16px 1fr; }
+  /* the add/del rail is a 4px colored tile justified to the start of an 8px track, so a small gap
+     sits between the red/green tile and the line-number gutter instead of butting against it. */
+  .dl .rail { width: 4px; justify-self: start; }
   .dl .gut { @apply text-ink-4; text-align: right; padding-right: var(--sp-2); user-select: none; }
   .dl .sign { @apply text-ink-5; text-align: center; }
   .dl .t { @apply overflow-hidden; padding-right: var(--sp-3); white-space: pre; }
@@ -540,21 +555,16 @@
   .callout .lucide { @apply text-amber; width: var(--ic-md); height: var(--ic-md); margin-top: 2px; }
   .dlg-foot { @apply flex justify-end gap-3; flex: none; padding: var(--sp-3) var(--sp-4); border-top: var(--bd); }
 
-  /* consent axes: a compact, aligned summary of exactly what a consequential opt-in grants, so the
-     choice is legible at a glance before consent. an icon names each axis, a mono key labels it, the
-     value states the setting; keys and values each share a left edge (aligned columns). square,
+  /* consent axes: a compact summary of exactly what a consequential opt-in grants, so the choice is
+     legible at a glance before consent. each axis is STACKED — an icon + lowercase mono key on the
+     first line, the value on the line beneath, indented to share the key's left edge. stacking (rather
+     than aligned key|value columns) means a long value never wraps ragged against its key. square,
      token-driven, both themes free. (governance-summary pattern for join/consent dialogs.) */
-  .axes { list-style: none; margin: 0; padding: var(--sp-3); display: grid; grid-template-columns: var(--ic-md) minmax(0, max-content) 1fr; align-items: start; gap: var(--sp-2) var(--sp-3); border: var(--bd); background: var(--surface-2); }
-  .axes li { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; align-items: start; font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.4; }
-  .axes li .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); margin-top: 3px; }
-  .axes-k { color: var(--ink-3); text-transform: lowercase; }
-  .axes-v { color: var(--ink); }
-  @media (max-width: 420px) {
-    .axes { grid-template-columns: var(--ic-md) 1fr; }
-    .axes li { grid-template-columns: subgrid; }
-    .axes-k { grid-column: 2; }
-    .axes-v { grid-column: 2; }
-  }
+  .axes { list-style: none; margin: 0; padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-3); border: var(--bd); background: var(--surface-2); }
+  .axes li { display: grid; grid-template-columns: var(--ic-md) minmax(0, 1fr); column-gap: var(--sp-2); row-gap: 2px; align-items: start; font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.4; }
+  .axes li .lucide { grid-column: 1; grid-row: 1; width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); margin-top: 3px; }
+  .axes-k { grid-column: 2; grid-row: 1; color: var(--ink-3); text-transform: lowercase; }
+  .axes-v { grid-column: 2; grid-row: 2; color: var(--ink); }
 
   /* canvas */
   .canvas { @apply relative bg-surface overflow-hidden; height: 340px; border: var(--bd); background-image: radial-gradient(var(--grid) 1.2px, transparent 1.2px); background-size: 22px 22px; }
@@ -2204,7 +2214,6 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   }
   @media (prefers-reduced-motion: no-preference) { .txn-sticky { animation: txn-slidedown var(--dur-2) var(--ease-out) both; } }
   @keyframes txn-slidedown { from { transform: translateY(-100%); } to { transform: none; } }
-  .txn-sticky-title { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-sm); color: var(--ink-strong); }
   .txn-sticky-model { font-size: 12px; color: var(--ink-3); }
 
   /* the horizontal scrubber: ticks + draggable viewport bracket */
@@ -2295,8 +2304,8 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-subtask .txn-turn { margin-top: 0; border: 0; }
 
   /* checkpoint marker */
-  .txn-checkpoint .mc { gap: var(--sp-2); }
-  .txn-checkpoint .mc .lucide { color: var(--olive); }
+  .txn-checkpoint .mkc { gap: var(--sp-2); flex-wrap: wrap; }
+  .txn-checkpoint .mkc .lucide { color: var(--olive); }
   .txn-cp-msg { color: var(--ink-2); }
   .txn-cp-stat { color: var(--ink-4); }
 
@@ -2328,7 +2337,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 
   /* edit diff (the ONLY red/green). dual gutters: 4px rail | a-gut | b-gut | sign | text */
   .txn-diff { border: var(--bd); }
-  .txn-diff .dl { grid-template-columns: 4px 30px 30px 16px 1fr; }
+  .txn-diff .dl { grid-template-columns: 8px 30px 30px 16px 1fr; }
   .txn-diff .dl .t { font-size: 12px; }
 
   /* bash terminal */
@@ -2385,12 +2394,22 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .txn-rail-tab { padding: var(--sp-3) 2px; gap: var(--sp-2); }
   .txn-rail-tab .lucide { width: 13px; height: 13px; }
   .txn-rail-body { flex: 1; min-height: 0; overflow: auto; padding: var(--sp-3); }
-  /* trace outline = the StepsWaterfall duration trail (matches the doc app-viewer). it ships its own
+  /* trace outline = the StepsWaterfall duration trail (the transcript-viewer outline pattern). it ships its own
      header (total · n tasks · collapse); drop its outer border + surface so it reads as part of the
      rail body, not a nested card. tokens only, radius 0. */
   .txn-ol-waterfall { border: 0; background: transparent; }
-  .txn-ol-waterfall .swf-head { padding-left: 0; padding-right: 0; background: transparent; border-top: 0; }
-  .txn-ol-waterfall .swf-row { padding-left: var(--sp-1); padding-right: 0; }
+  .txn-ol-waterfall .swf-head { padding-left: 0; padding-right: 0; background: transparent; border-top: 0; flex-wrap: wrap; row-gap: var(--sp-1); }
+  .txn-ol-waterfall .swf-row { padding-left: var(--sp-1); padding-right: 0; gap: var(--sp-1) var(--sp-2); flex-wrap: wrap; }
+  /* the StepsWaterfall is a wide component; in this 240px outline rail its fixed bar (120px) + count +
+     dur columns overflowed. drop the bar + tool-count (the duration VALUE still carries the signal,
+     matching the component's own narrow-rail fold), let the head + row wrap so the error chip never
+     forces a horizontal scroll, and right-align the duration on its wrapped line. the prompt keeps
+     min-width:0 + ellipsis from .swf-prompt. */
+  .txn-ol-waterfall .swf-bar,
+  .txn-ol-waterfall .swf-count { display: none; }
+  .txn-ol-waterfall .swf-prompt { flex-basis: 100%; }
+  .txn-ol-waterfall .swf-error { max-width: 100%; }
+  .txn-ol-waterfall .swf-dur { margin-left: auto; min-width: 4ch; }
 
   /* outline rows */
   .txn-outline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
@@ -2614,7 +2633,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
 }
 /* ---- phone: truncate checkpoint strip so it never overflows the stage ---- */
 @media (max-width: 480px) {
-  .txn-checkpoint .mc { max-width: calc(100% - 2rem); overflow: hidden; min-width: 0; }
+  .txn-checkpoint .mkc { max-width: calc(100% - 2rem); overflow: hidden; min-width: 0; }
   .txn-cp-msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 16ch; }
   .txn-cp-stat { display: none; }
 }/* ======================================================================
@@ -3735,14 +3754,3 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .tuiw-btn-primary:hover:not(:disabled) { color: var(--amber-bright); }
   .tuiw-keys { color: var(--ink-4); font-style: italic; }
 }
-
-/* the "rebuilt apps" showcases compose full-width app layouts into the constrained docs column. the
-   commons moderation queue was the one real overflow: its action-row min-content exceeded the 2-up
-   sidebar, so the approve/reject buttons were clipped. let that row wrap its actions (scoped to this
-   section — the shared ModerationQueue keeps its wide native layout) and stack the commons body to one
-   full-width column earlier (82-app-commons.jsx). map/viewer never overflow at any width, so the clip
-   below is now a belt-and-suspenders safety net that hides nothing. */
-#app-commons .mod-row { flex-wrap: wrap; }
-#app-commons .mod-row-actions { margin-left: auto; }
-#app-commons .mod-row-body { flex-basis: 12rem; }
-#app-commons, #app-map, #app-viewer { overflow-x: clip; }
