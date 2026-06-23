@@ -679,10 +679,7 @@ function AppShell() {
           </>
         }
       >
-        <div className="callout">
-          <Eye size={16} aria-hidden="true" />
-          <div>you're currently <b style={{ color: 'var(--ink-strong)' }}>not discoverable</b>, so your handle is hidden across the commons. joining <b style={{ color: 'var(--ink-strong)' }}>desert-archivists</b> reveals your profile to its owners so they can review your membership and contributions. other members still see you as <b style={{ color: 'var(--ink-strong)' }}>anon</b>.</div>
-        </div>
+        <p>you're currently <b style={{ color: 'var(--ink-strong)' }}>not discoverable</b>, so your handle is hidden across the commons. joining <b style={{ color: 'var(--ink-strong)' }}>desert-archivists</b> reveals your profile to its owners so they can review your membership and contributions. other members still see you as <b style={{ color: 'var(--ink-strong)' }}>anon</b>.</p>
         <ul className="axes" aria-label="what you are opting into">
           <li><Eye aria-hidden="true" /><span className="axes-k">identity</span><span className="axes-v">profile shown to owners only</span></li>
           <li><Users aria-hidden="true" /><span className="axes-k">to other members</span><span className="axes-v">you stay anon</span></li>

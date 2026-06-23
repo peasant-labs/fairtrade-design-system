@@ -2951,13 +2951,16 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
      same top edge. */
   .cex-profile .rr-danger .cex-priv-row { padding: 0; width: 100%; align-items: flex-start; }
   .cex-profile .rr-danger .cex-priv-text { flex: 1 1 auto; }
-  /* the kit body/head pad horizontally at --sp-5 (24px), but the sibling profile sections (attestations
-     .row, privacy .cex-priv-row) inset their content at --sp-4 (16px). that left the danger-zone content
-     indented 8px further in + narrower than its siblings. bring the head + body to the same --sp-4
-     horizontal inset (cex-scoped) so the warning line, the "delete account" heading, the body copy and the
-     action all line up on the siblings' left edge and share their content width. */
-  .cex-profile .rr-danger .rr-danger-head { padding-inline: var(--sp-4); }
-  .cex-profile .rr-danger .rr-danger-body { padding-inline: var(--sp-4); }
+  /* standardise the danger zone with the sibling profile cards: its content must sit on the SAME left
+     edge (privacy/attestation text is inset 1 border + --sp-4 from the card edge). the kit DangerZone
+     double-insets — the outer .rr-danger pads --sp-6 (32px) horizontally AND the head/body pad --sp-5
+     (24px) — pushing the content ~40px past the siblings. flatten to a single --sp-4 inset: drop the
+     outer horizontal pad, set head + body to --sp-4. NB: the .rr-danger base lives in RoleRoster.css
+     (a JS-imported, UNLAYERED stylesheet) which outranks this gmp/cex rule in a Tailwind @layer
+     regardless of specificity — so !important is required to win, and only here (cex-scoped). */
+  .cex-profile .rr-danger { padding-inline: 0 !important; }
+  .cex-profile .rr-danger .rr-danger-head { padding-inline: var(--sp-4) !important; }
+  .cex-profile .rr-danger .rr-danger-body { padding-inline: var(--sp-4) !important; }
 
   @media (max-width: 720px) {
     .cex-explore-body { grid-template-columns: 1fr; row-gap: var(--sp-4); }
@@ -3265,8 +3268,11 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
      0 --sp-4 --sp-4. the inner sidebar's own .sb-head / .gmp-rail-pad ALSO pad --sp-4, so the content was
      inset twice — its left edge fell 32px from the card while the section header sat at 16px, reading as
      lopsided padding. zero the body padding here (gmp-scoped, NOT in RailShell.css) so the inner sidebar's
-     single even inset governs and every block lines up with the section head. */
-  .gmp-root .rs-sec-body:has(> .gmp-rail-inner) { padding: 0; }
+     single even inset governs and every block lines up with the section head. NB: the .rs-sec / .rs-sec-body
+     base lives in RailShell.css (JS-imported, UNLAYERED) which outranks this @layer rule regardless of
+     specificity, so !important is required; zero the section pad too so the rail isn't triple-inset. */
+  .gmp-root .rs-sec:has(.gmp-rail-inner) { padding: 0 !important; }
+  .gmp-root .rs-sec-body:has(> .gmp-rail-inner) { padding: 0 !important; }
   /* with the body flush, let the inner section dividers + headers span the full card width edge-to-edge. */
   .gmp-root .rs-sec-body > .gmp-rail-inner > .sb-sec:last-child { border-bottom: 0; }
 
