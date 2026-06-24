@@ -262,11 +262,11 @@ const WIZ_PROVIDERS = [
 ]
 const REDACTION = [
   { id: 'minimal', label: 'minimal', desc: 'redacts only detected secrets (api keys, tokens, passwords).' },
-  { id: 'standard', label: 'standard (recommended)', desc: 'redacts secrets and pii — emails, file paths.' },
+  { id: 'standard', label: 'standard (recommended)', desc: 'redacts secrets and pii: emails, file paths.' },
   { id: 'maximum', label: 'maximum', desc: 'full anonymization including code identifiers.' },
 ]
 const RETENTION = [
-  { id: '30d', label: '30 days', desc: 'claude code default — deleted after 30 days of inactivity.' },
+  { id: '30d', label: '30 days', desc: 'claude code default: deleted after 30 days of inactivity.' },
   { id: '90d', label: '90 days', desc: 'keep transcripts for 3 months.' },
   { id: '1y', label: '1 year', desc: 'keep transcripts for a full year.' },
   { id: 'never', label: 'never expire (recommended)', desc: 'transcripts are never automatically deleted.' },
@@ -379,7 +379,7 @@ function TuiWizard() {
     <div
       className="tui tuiw"
       role="application"
-      aria-label="peasant kickstart wizard — keyboard driven"
+      aria-label="peasant kickstart wizard: keyboard driven"
       aria-roledescription="terminal wizard"
       tabIndex={0}
       ref={regionRef}
@@ -448,7 +448,7 @@ export function TerminalSection() {
           <div
             className="tui"
             role="application"
-            aria-label="peasant tui recreation — keyboard driven"
+            aria-label="peasant tui recreation: keyboard driven"
             aria-roledescription="terminal"
             tabIndex={0}
             ref={regionRef}
@@ -478,7 +478,7 @@ export function TerminalSection() {
         </div>
       </div>
       <h3 className="label" style={{ marginTop: 'var(--sp-7)', marginBottom: 'var(--sp-2)' }}>first-run wizard (peasant kickstart)</h3>
-      <p className="prose" style={{ marginTop: 0 }}>the second tui flow: a nine-page setup wizard in one frame with a step header. the core pages, interactive — pick a redaction level or retention and the summary updates.</p>
+      <p className="prose" style={{ marginTop: 0 }}>the second tui flow: a nine-page setup wizard in one frame with a step header. the core pages, interactive: pick a redaction level or retention and the summary updates.</p>
       <div className="specimen">
         <div className="specimen-bar"><span className="specimen-cap">peasant · kickstart</span></div>
         <div className="specimen-body" style={{ padding: 0 }}><TuiWizard /></div>

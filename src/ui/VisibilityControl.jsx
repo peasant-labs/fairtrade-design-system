@@ -32,8 +32,8 @@ function visibilityTooltip(visibility, sharedWith) {
   if (visibility === 'shared') {
     return sharedWith ? `shared with: ${sharedWith}` : 'shared with a group'
   }
-  if (visibility === 'public') return 'public — anyone with the link can view'
-  return 'private — only you can view'
+  if (visibility === 'public') return 'public: anyone with the link can view'
+  return 'private: only you can view'
 }
 
 /**
@@ -125,7 +125,7 @@ export function VisibilitySegmented({
       {isShared && (
         <p className="vc-seg-note">
           <Users className="vc-seg-note-icon" aria-hidden="true" />
-          <span>{sharedNote || 'shared with one or more groups — choose private or public to override.'}</span>
+          <span>{sharedNote || 'shared with one or more groups: choose private or public to override.'}</span>
         </p>
       )}
     </div>

@@ -75,7 +75,10 @@
 .mod-queue-head {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
+  /* sp-3 (matching .mod-row) so the title's left edge lines up with each row's
+     who/detail: header + rows share the same sp-5 padding and the same ic-sm
+     leading glyph, so an equal gap is what keeps the two columns flush. */
+  gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-5);
   border-bottom: var(--bd);
 }

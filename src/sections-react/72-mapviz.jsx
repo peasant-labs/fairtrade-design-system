@@ -140,7 +140,7 @@ export function MapVizSection() {
     <section className="band" id="ds-mapviz">
       <h2 className="label">map &amp; canvas</h2>
       <div className="sub">spatial surfaces for reading a repo or a collective at a glance</div>
-      <p className="prose">these are the views that turn a pile of files or sessions into something you can see: an interactive code map, a monochrome intensity ramp that encodes magnitude by fill weight (never hue), a churn treemap, an activity scrubber, and the governance tiles a collective leads with. nothing animates on its own — the map pans and zooms on your input, the strip scrubs on drag or arrow keys.</p>
+      <p className="prose">these are the views that turn a pile of files or sessions into something you can see: an interactive code map, a monochrome intensity ramp that encodes magnitude by fill weight (never hue), a churn treemap, an activity scrubber, and the governance tiles a collective leads with. nothing animates on its own. the map pans and zooms on your input, the strip scrubs on drag or arrow keys.</p>
 
       <h3 className="label" style={h3Style}>map canvas</h3>
       <div className="specimen">
@@ -164,7 +164,7 @@ export function MapVizSection() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
             <RampLegend title="fill = coverage" />
             <div>
-              <span className="label" style={{ marginBottom: 'var(--sp-3)' }}>nodes — size ∝ loc, fill ∝ coverage</span>
+              <span className="label" style={{ marginBottom: 'var(--sp-3)' }}>nodes: size ∝ loc, fill ∝ coverage</span>
               <IntensityScope className="ir-grid">
                 {INTENSITY_TREE.map((n) => (
                   <MapNode key={n.label} {...n} />
@@ -172,7 +172,7 @@ export function MapVizSection() {
               </IntensityScope>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
-              <span className="label">heatmap — commits / day · store/</span>
+              <span className="label">heatmap: commits / day · store/</span>
               <Heatmap
                 values={HEAT_VALUES}
                 max={9}

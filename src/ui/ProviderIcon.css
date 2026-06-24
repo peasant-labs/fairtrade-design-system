@@ -77,11 +77,14 @@
 }
 
 /* ── accent legend ───────────────────────────────────────────────────────────
-   one row per provider: mark, name, then the accent swatch + token name. a tidy
-   three-column grid so the names and swatches align down the list. */
+   one row per provider: mark, name, swatch, token name. four explicit columns so
+   EVERY column shares one left edge down the list — the swatch in particular gets
+   its own fixed track (not packed against a variable-width token), so the colors
+   line up in a clean vertical band. each row is display:contents, dropping its <li>
+   box so the four children land directly on the grid tracks. */
 .pv-legend {
   display: grid;
-  grid-template-columns: max-content 1fr max-content;
+  grid-template-columns: max-content 1fr max-content max-content;
   align-items: center;
   gap: var(--sp-2) var(--sp-4);
   margin: 0;
@@ -103,12 +106,8 @@
   text-transform: lowercase;
   letter-spacing: 0;
 }
-.pv-legend-accent {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  justify-self: end;
-}
+/* the swatch shares the gap between it and the token with the rest of the grid, so
+   the swatch column and the token column each keep a stable left edge across rows. */
 .pv-legend-token {
   color: var(--ink-3);
   text-transform: lowercase;

@@ -247,7 +247,7 @@ function defaultValidate(raw) {
       hint: '3–30 characters: letters, numbers, and single hyphens, starting and ending alphanumeric.',
     }
   }
-  if (TAKEN.has(normal)) return { state: 'taken', hint: `@${handle} is already claimed — try another.` }
+  if (TAKEN.has(normal)) return { state: 'taken', hint: `@${handle} is already claimed. try another.` }
   return { state: 'available' }
 }
 
@@ -337,7 +337,7 @@ export function HandleClaim({
         <span className="si-eyebrow">welcome</span>
         <h2 className="si-claim-title">claim your handle</h2>
         <p className="si-claim-note">
-          your public handle on fairtrade — <span className="si-mono">/@your-handle</span>. it is independent of the
+          your public handle on fairtrade, <span className="si-mono">/@your-handle</span>. it is independent of the
           account you signed in with.
         </p>
       </div>
@@ -372,36 +372,44 @@ export function HandleClaim({
         </div>
       </label>
 
-      {/* the live status line: icon + WORD (+ hint), never color alone. announced
-          to assistive tech via aria-live. */}
-      <p
-        id={msgId}
-        className={['si-status', meta ? meta.tone : ''].filter(Boolean).join(' ')}
-        role="status"
-        aria-live="polite"
-      >
-        {showMsg && meta && (
-          <>
-            <meta.Icon
-              className={['si-status-icon', meta.spin ? 'si-spin' : ''].filter(Boolean).join(' ')}
-              aria-hidden="true"
-            />
-            <span className="si-status-word">{meta.word}</span>
-            {result.hint && <span className="si-status-hint">{result.hint}</span>}
-          </>
+      {/* one helper region hugging the input: the suggestion ("try @handle") and
+          the live validation status share this slot directly under the field so
+          they read as one piece of guidance, not two competing helper lines. the
+          suggestion only shows while there is no active status to surface, so the
+          two never crowd each other — when the handle starts validating, the
+          status takes over the slot. */}
+      <div className="si-help">
+        {chips.length > 0 && !showMsg && (
+          <div className="si-suggest">
+            <span className="si-suggest-label">try</span>
+            {chips.map((chip) => (
+              <button key={chip} type="button" className="si-chip" onClick={() => applyChip(chip)}>
+                @{chip}
+              </button>
+            ))}
+          </div>
         )}
-      </p>
 
-      {chips.length > 0 && (
-        <div className="si-suggest">
-          <span className="si-suggest-label">try</span>
-          {chips.map((chip) => (
-            <button key={chip} type="button" className="si-chip" onClick={() => applyChip(chip)}>
-              @{chip}
-            </button>
-          ))}
-        </div>
-      )}
+        {/* the live status line: icon + WORD (+ hint), never color alone. announced
+            to assistive tech via aria-live. */}
+        <p
+          id={msgId}
+          className={['si-status', meta ? meta.tone : ''].filter(Boolean).join(' ')}
+          role="status"
+          aria-live="polite"
+        >
+          {showMsg && meta && (
+            <>
+              <meta.Icon
+                className={['si-status-icon', meta.spin ? 'si-spin' : ''].filter(Boolean).join(' ')}
+                aria-hidden="true"
+              />
+              <span className="si-status-word">{meta.word}</span>
+              {result.hint && <span className="si-status-hint">{result.hint}</span>}
+            </>
+          )}
+        </p>
+      </div>
 
       <button type="submit" className="si-claim-submit" disabled={!valid}>
         claim handle
@@ -428,7 +436,7 @@ export function OnboardingCard({ providers, onSignIn, onSubmit, suggestedFrom = 
   return (
     <div className={classes} {...rest}>
       <div className="si-onboard-step">
-        <span className="si-eyebrow">step 1 — sign in</span>
+        <span className="si-eyebrow">step 1: sign in</span>
         <SignInProviders providers={providers} onSignIn={onSignIn} />
       </div>
       <div className="si-onboard-divider" aria-hidden="true" />

@@ -14,12 +14,12 @@ import { frame } from './story-frame.jsx'
 const PEASANT_STEPS = [
   {
     title: 'install',
-    body: 'Install the peasant CLI with Homebrew. It runs entirely on this machine — nothing is uploaded until you choose to.',
+    body: 'Install the peasant CLI with Homebrew. It runs entirely on this machine. Nothing is uploaded until you choose to.',
     command: 'brew install peasant-labs/tap/peasant',
   },
   {
     title: 'ingest your transcripts',
-    body: 'Scan this computer for your AI coding conversations — Claude Code, Codex, and others — and record them locally.',
+    body: 'Scan this computer for your AI coding conversations (Claude Code, Codex, and others) and record them locally.',
     command: 'peasant ingest',
   },
   {

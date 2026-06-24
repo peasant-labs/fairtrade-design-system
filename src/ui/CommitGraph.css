@@ -92,25 +92,30 @@
   border-color: var(--amber);
 }
 
-/* The sparkle: the non-colour, redundant "has a session" signal, pinned just off the dot's
-   TOP-RIGHT corner. The dot is a 9px square centred on (laneX, 50%); the spark's box is set with
-   left:laneX (JSX), so translateX moves it relative to the dot's centre. We push it right to clear
-   the dot's right edge (half the 9px dot) and up so its bottom sits at the dot's top edge — it
-   never covers the dot body (filled OR hollow) and, since it's the dot's NEXT sibling, paints on
-   top. 9px to match the dot, so the badge reads as a peer, not an oversized glyph. */
+/* The sparkle: the redundant, non-colour "has a session" signal. It is a SOLID glyph laid
+   directly OVER the filled commit dot (centred on it), reading as a star-shaped node — so a
+   session is obvious at a glance, not a faint corner mark. fill:currentColor makes lucide's
+   outline star read solid; the colour INVERTS against the dot fill so it stays legible in both
+   themes (a --surface star cuts out of the --ink dot — --ink is the high-contrast foreground in
+   both themes, --surface the background, so it is always dark-on-light or light-on-dark).
+   Because the spark is centred on the dot (laneX, 50%) and sized to the 9px dot, it lives ENTIRELY
+   within the dot's footprint — it can never reach a lane line at ANY indent depth (the dot already
+   interrupts its own lane there, and the nearest neighbour lane is a full LANE_W away). As the
+   dot's NEXT sibling it paints on top. */
 .cg-spark {
   position: absolute;
   top: 50%;
   width: 9px;
   height: 9px;
-  transform: translate(3px, calc(-50% - 9px));
-  color: var(--ink-3);
+  transform: translate(-50%, -50%);
+  color: var(--surface);
+  fill: currentColor;
   pointer-events: none;
 }
 
-/* When the row is selected, the spark (in the sibling gutter) picks up the amber too. */
+/* On a selected (amber-fill) dot, the star inverts to the on-amber ink token instead. */
 .cg-band:has(.cg-row-sel) .cg-spark {
-  color: var(--amber);
+  color: var(--amber-fill-ink);
 }
 
 /* --- The row button: message + meta ------------------------------------------------------- */
@@ -175,9 +180,11 @@
   gap: var(--sp-2);
 }
 
+/* inline-BLOCK, not inline-flex: text-overflow:ellipsis is ignored on a flex container, so the
+   old inline-flex hard-clipped the name mid-word ("feat/ingest-loa") with no ellipsis. a block
+   box lets the ellipsis render ("feat/ingest-…"). square (radius 0), branch name keeps its case. */
 .cg-branch {
-  display: inline-flex;
-  align-items: center;
+  display: inline-block;
   max-width: 16ch;
   overflow: hidden;
   text-overflow: ellipsis;

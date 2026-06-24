@@ -20,23 +20,37 @@
   min-height: 92px;
 }
 
-/* the v2-eyebrow-style label — tracked mono, dim, lowercase chrome. */
+/* the v2-eyebrow-style label — tracked mono, dim, lowercase chrome. the label text
+   wraps (and breaks a long single word like "contributors" rather than overflowing
+   the tile), and the row reserves room for up to two lines so the big value below it
+   lands at the SAME height whether the eyebrow is one line ("tokens") or two
+   ("avg duration") — values stay aligned across a row. */
 .st-eyebrow {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--sp-1);
   margin: 0;
+  /* two lines of text at 1.3 line-height — the stable eyebrow band. */
+  min-height: calc(var(--fs-label) * 1.3 * 2);
   font-family: var(--font-mono);
   font-size: var(--fs-label);
-  line-height: 1.2;
+  line-height: 1.3;
   letter-spacing: 0.08em;
   color: var(--ink-3);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .st-eyebrow-ic {
   width: var(--ic-sm);
   height: var(--ic-sm);
   flex: 0 0 auto;
+  /* the eyebrow top-aligns its children (so the icon anchors to the FIRST line of a
+     wrapped label, not centred across both lines). that first line's box (font-size ×
+     line-height) is taller than the icon, so nudge the icon down by the half-leading
+     to optically centre the glyph on the line — derived from the same line-height the
+     row uses, never a raw px. */
+  margin-top: calc((var(--fs-label) * 1.3 - var(--ic-sm)) / 2);
   color: var(--ink-4);
 }
 
@@ -60,12 +74,30 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* --- StatGrid: auto-fit grid, columns min ~160px ------------------------------------------- */
-
+/* --- StatGrid: a CAPPED, stable column grid ------------------------------------------------
+   auto-fit floats the column COUNT with the width, which squeezes tiles to uneven widths and
+   makes their eyebrows wrap at different points. instead the grid keys off its OWN width (a
+   query container — the RailShell pattern) and takes a FIXED column count per breakpoint,
+   capped at 4: every tile on a row is the SAME width (5 KPIs land as 4 + 1, all equal) and the
+   eyebrows wrap identically. degrades to 1 column at the narrowest (360px). the container lives
+   on a thin wrapper because an element cannot query the container it itself establishes. */
+.st-grid-wrap {
+  container-type: inline-size;
+  container-name: st-grid;
+}
 .st-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: 1fr;
   gap: var(--sp-4);
+}
+@container st-grid (min-width: 360px) {
+  .st-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@container st-grid (min-width: 560px) {
+  .st-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@container st-grid (min-width: 760px) {
+  .st-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 /* --- Governance tile: label + mono value, the value may carry one scarce earth-tone ------- */

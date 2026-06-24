@@ -62,7 +62,7 @@ export const Default = {
     const canvas = within(canvasElement)
     // the largest-churn tile renders its leaf label and is a real button.
     const biggest = await canvas.findByRole('button', {
-      name: 'ingest/stream.go — 320 lines',
+      name: 'ingest/stream.go: 320 lines',
     })
     await expect(biggest).toBeInTheDocument()
     // a tile is keyboard-reachable + fires onSelect with (id, datum).

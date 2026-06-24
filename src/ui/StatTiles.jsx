@@ -56,7 +56,10 @@ export function StatTile({ label, value, sub, icon: Icon, className = '', ...res
  */
 
 /**
- * StatGrid — an auto-fit responsive grid of StatTiles (columns min ~160px, equal gaps).
+ * StatGrid — a responsive grid of StatTiles with a STABLE, capped column count (1→4 across
+ * breakpoints) so tiles keep equal widths and their eyebrows wrap consistently. The grid keys
+ * off its own width via a thin query-container wrapper (an element cannot query a container it
+ * establishes itself), so it stays correct wherever it is dropped — not just at the page width.
  *
  * @param {object} props
  * @param {TileSpec[]} props.tiles - the KPI tiles to render, in order.
@@ -65,10 +68,12 @@ export function StatTile({ label, value, sub, icon: Icon, className = '', ...res
 export function StatGrid({ tiles = [], className = '', ...rest }) {
   const cls = ['st-grid', className].filter(Boolean).join(' ')
   return (
-    <div className={cls} {...rest}>
-      {tiles.map(({ key, label, value, sub, icon }) => (
-        <StatTile key={key ?? label} label={label} value={value} sub={sub} icon={icon} />
-      ))}
+    <div className="st-grid-wrap">
+      <div className={cls} {...rest}>
+        {tiles.map(({ key, label, value, sub, icon }) => (
+          <StatTile key={key ?? label} label={label} value={value} sub={sub} icon={icon} />
+        ))}
+      </div>
     </div>
   )
 }

@@ -31,16 +31,25 @@
    each facet group: a lowercase mono heading then its controls, divided from
    the next by the hairline rule. */
 .fr-section {
+  /* stretch every section to the full rail width — otherwise a section shrink-wraps
+     to its content (the short "order" group narrower than "topics"), so the groups
+     stagger and their controls no longer share one left edge down the rail. */
+  box-sizing: border-box;
+  width: 100%;
   padding: var(--sp-4);
 }
 .fr-section + .fr-section {
   border-top: var(--bd);
 }
 
+/* the heading text shares the rail's one left edge with the option labels +
+   provider names below it: a fixed gutter (the mark box + its gap) sits to the
+   left, so an optional leading icon lives IN that gutter instead of shoving the
+   word right. headings with no icon still start at the same text edge. */
 .fr-heading {
-  display: flex;
+  display: grid;
+  grid-template-columns: calc(var(--ic-lg) + var(--sp-3)) auto;
   align-items: center;
-  gap: var(--sp-2);
   margin: 0 0 var(--sp-3);
   font-family: var(--font-mono);
   font-size: var(--fs-label);
@@ -50,7 +59,14 @@
   letter-spacing: 0.04em;
   color: var(--ink-3);
 }
+/* the heading word always sits in the second (text) column so every left edge —
+   heading, option label, provider name — lines up down the rail. */
+.fr-heading-text {
+  grid-column: 2;
+}
 .fr-heading-ico {
+  grid-column: 1;
+  justify-self: start;
   width: var(--ic-sm);
   height: var(--ic-sm);
   color: var(--ink-4);
@@ -194,6 +210,9 @@
    square chips wrapping into the column, all at ONE uniform size (no size-by-
    weight effect — mismatched tag sizes read as ugly noise). each chip pairs its
    tag with the usage count, so magnitude is carried by the count, not the size. */
+/* the cloud starts at the section content edge — the SAME left edge the order
+   dots + provider marks sit on above — so every interactive control down the rail
+   (radio dot, provider mark, topic chip) shares one continuous left edge. */
 .fr-topics {
   display: flex;
   flex-wrap: wrap;

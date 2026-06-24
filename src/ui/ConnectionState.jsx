@@ -213,7 +213,7 @@ export function DataState({
         body={
           typeof error === 'string'
             ? error
-            : 'the peasant program on this computer may have stopped. nothing has left your machine — this returns on its own, or retry.'
+            : 'the peasant program on this computer may have stopped. nothing has left your machine. this returns on its own, or retry.'
         }
       />
     )

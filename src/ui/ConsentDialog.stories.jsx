@@ -53,7 +53,7 @@ const JOIN_AXES = [
     tone: 'reveal',
     key: 'identity',
     value: (
-      <>your profile — <span className="cns-mono">handle</span>, name &amp; avatar — becomes visible</>
+      <>your profile (<span className="cns-mono">handle</span>, name &amp; avatar) becomes visible</>
     ),
     scope: 'to owners only, to review membership',
   },
@@ -80,7 +80,7 @@ export const Join = {
             hidden across the commons.
           </p>
           <p>
-            joining reveals your profile to the collective&apos;s <span className="cns-em">owners</span> —
+            joining reveals your profile to the collective&apos;s <span className="cns-em">owners</span>.
             they need it to review your membership and contributions. other members still see you as anon.
           </p>
         </>
@@ -90,7 +90,7 @@ export const Join = {
       consentLabel="i understand and consent to revealing my profile to owners"
       confirmLabel="reveal profile & join"
       confirmIcon={UserCheck}
-      doneNote="joined — profile revealed to owners"
+      doneNote="joined: profile revealed to owners"
     />
   ),
   play: async ({ canvasElement, step }) => {
@@ -163,7 +163,7 @@ export const Contribute = {
             icon: Globe,
             tone: 'open',
             key: 'data access',
-            value: 'contributors — anyone who contributes can browse',
+            value: 'contributors: anyone who contributes can browse',
             scope: 'this collective’s policy',
           },
         ]}
@@ -171,7 +171,7 @@ export const Contribute = {
         consentLabel="i understand and consent to sharing these transcripts"
         confirmLabel="contribute & make visible"
         confirmIcon={Share2}
-        doneNote="contributed — visibility flipped to shared"
+        doneNote="contributed: visibility flipped to shared"
       >
         <div className="cns-list">
           <p className="cns-list-cap">transcripts ({CONTRIBUTE_TRANSCRIPTS.length})</p>
@@ -247,7 +247,7 @@ function LeaveDemo() {
             icon: Archive,
             key: 'retention',
             value: 'each leaving member decides',
-            scope: 'user_choice — your call below',
+            scope: 'user_choice: your call below',
           },
         ]}
         summaryCaption="what crosses the boundary"
@@ -255,7 +255,7 @@ function LeaveDemo() {
         confirmLabel={retract ? 'leave & retract' : 'leave collective'}
         confirmIcon={LogOut}
         onCancel={() => setOpen(false)}
-        onConfirm={() => { setOpen(false); setDone(retract ? `left — ${shareCount} transcripts retracted` : 'left — contributions kept in the collective') }}
+        onConfirm={() => { setOpen(false); setDone(retract ? `left: ${shareCount} transcripts retracted` : 'left: contributions kept in the collective') }}
       >
         <div className="cns-list">
           <p className="cns-list-cap">your contributions</p>
@@ -275,7 +275,7 @@ function LeaveDemo() {
             onChange={(e) => setRetract(e.target.checked)}
           />
           <span className="cns-consent-label">
-            also retract my transcripts — they stay in your library, just unshared from soil-and-syntax
+            also retract my transcripts. they stay in your library, just unshared from soil-and-syntax
           </span>
         </label>
       </ConsentDialog>
@@ -336,7 +336,7 @@ export const Summary = {
             icon: Globe,
             tone: 'open',
             key: 'data access',
-            value: 'public — anyone can browse the dataset',
+            value: 'public: anyone can browse the dataset',
             scope: 'no membership required',
           },
           {
@@ -350,7 +350,7 @@ export const Summary = {
             icon: Archive,
             tone: 'restricted',
             key: 'retention',
-            value: 'mandatory — auto-retracted on leave',
+            value: 'mandatory: auto-retracted on leave',
             scope: 'set by the collective',
           },
         ]}

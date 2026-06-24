@@ -664,13 +664,15 @@ export function ChangesView({ theme, onNavigate }) {
           </div>
         </div>
 
-        {/* legend — the kit's filled = has-session semantics */}
+        {/* legend — the kit's filled = has-session semantics. the .cg-dot marker is sized inline (the kit
+            sizes it via its absolute lane geometry, which doesn't apply here); position/transform/centering
+            are reset in index.css (.gmp-changes-legend .cg-dot) so the square lines up with its label. */}
         <div className="gmp-changes-legend">
           <span className="gmp-legend-item">
-            <span className="cg-dot cg-dot-filled" style={{ position: 'static', width: 9, height: 9, display: 'inline-block' }} aria-hidden="true" /> commit with a recorded session
+            <span className="cg-dot cg-dot-filled" style={{ width: 9, height: 9 }} aria-hidden="true" /> commit with a recorded session
           </span>
           <span className="gmp-legend-item">
-            <span className="cg-dot cg-dot-hollow" style={{ position: 'static', width: 9, height: 9, display: 'inline-block' }} aria-hidden="true" /> no session captured
+            <span className="cg-dot cg-dot-hollow" style={{ width: 9, height: 9 }} aria-hidden="true" /> no session captured
           </span>
           <span className="gmp-legend-item gmp-legend-dim">a filled dot also flies a sparkle · select a commit to open it</span>
         </div>
@@ -882,7 +884,7 @@ export function ChangeDetailView({ theme }) {
           <TriangleAlert size={14} aria-hidden="true" /> <b className="tnum">3</b> rule breaks
         </span>
         <span className="gmp-signal">
-          recurring friction · <span className="mono">build.go</span> — unparsed import <b className="tnum">2×</b> across 2 conversations
+          recurring friction · <span className="mono">build.go</span>: unparsed import <b className="tnum">2×</b> across 2 conversations
         </span>
       </div>
 
@@ -973,7 +975,7 @@ export function ChangeDetailView({ theme }) {
         <code className="gmp-gitdiff mono">git diff develop...feat/map-review-contribute</code>
       </div>
       <p className="gmp-boundary mono">
-        shows what changed and the recorded work behind it — not whether the change is correct or secure.
+        shows what changed and the recorded work behind it, not whether the change is correct or secure.
       </p>
     </div>
   )

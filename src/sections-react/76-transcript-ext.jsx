@@ -151,7 +151,7 @@ export function TranscriptExtSection() {
           <div style={STICKY_WRAP}>
             <Phase label="planning" range="turns 1–3" active stickyTop={0}>
               <FillerTurn role="user" text="Read the harvest-ledger schema and tell me where the per-plot yield gets aggregated before it hits the co-op report." />
-              <FillerTurn role="subagent" text="The aggregation happens in ledger/rollup.py — daily plot yields fold into weekly co-op totals via accumulate_plot_yields(). I'll trace the call sites." />
+              <FillerTurn role="subagent" text="The aggregation happens in ledger/rollup.py. Daily plot yields fold into weekly co-op totals via accumulate_plot_yields(). I'll trace the call sites." />
               <FillerTurn role="user" text="Good. Now sketch a migration that adds a fallow flag per plot without breaking the existing rollup." />
               <TaskBoundary turn={1} duration="2m 14s" tools={6} files={3} ins={48} del={12} />
             </Phase>
@@ -181,7 +181,7 @@ export function TranscriptExtSection() {
             <EvidenceCaption fragments={FRAGMENTS} onJump={() => {}} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)', marginTop: 'var(--sp-4)' }}>
               <EvidenceTarget id="tx-ec-files" eyebrow="files">
-                8 files changed across the loader and its callers — the table below lists each path with its
+                8 files changed across the loader and its callers. The table below lists each path with its
                 added and removed line counts.
               </EvidenceTarget>
               <EvidenceTarget id="tx-ec-diff" eyebrow="diff">
@@ -189,7 +189,7 @@ export function TranscriptExtSection() {
                 feeds a buffered channel that the consumer ranges over, so back-pressure is bounded.
               </EvidenceTarget>
               <EvidenceTarget id="tx-ec-signals" eyebrow="signals">
-                One request took several attempts — the first stream returned a partial read, the retry loop
+                One request took several attempts. The first stream returned a partial read, then the retry loop
                 re-opened the channel and completed cleanly. No other tasks needed a retry.
               </EvidenceTarget>
             </div>

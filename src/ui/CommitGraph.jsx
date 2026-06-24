@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Sparkle, GitMerge, ChevronDown } from 'lucide-react'
+import { Star, GitMerge, ChevronDown } from 'lucide-react'
 import './CommitGraph.css'
 
 /* CommitGraph — a source-control history rendered as a commit graph, ported in intent from
@@ -233,9 +233,10 @@ function CommitRow({ row, width, selected, onSelect }) {
           style={{ left: laneX(lane), width: DOT, height: DOT }}
           data-has-session={hasSession || undefined}
         />
-        {/* Redundant, non-colour session signal: a tiny sparkle pinned to the dot. */}
+        {/* Redundant, non-colour session signal: a tiny 5-point star pinned to the dot
+            (a 4-point sparkle read as a plus at this size). */}
         {hasSession && (
-          <Sparkle className="cg-spark" style={{ left: laneX(lane) }} aria-hidden="true" />
+          <Star className="cg-spark" style={{ left: laneX(lane) }} aria-hidden="true" />
         )}
       </span>
 

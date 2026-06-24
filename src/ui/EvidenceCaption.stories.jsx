@@ -53,7 +53,7 @@ function CaptionDemo({ onJump, ...args }) {
       <div style={{ height: '60vh' }} aria-hidden="true" />
 
       <EvidenceTarget id="ec-files" eyebrow="files">
-        8 files changed across the loader and its callers — the table below lists each path with its
+        8 files changed across the loader and its callers. The table below lists each path with its
         added and removed line counts.
       </EvidenceTarget>
 
@@ -63,7 +63,7 @@ function CaptionDemo({ onJump, ...args }) {
       </EvidenceTarget>
 
       <EvidenceTarget id="ec-signals" eyebrow="signals">
-        One request took several attempts — the first stream returned a partial read, the retry loop
+        One request took several attempts. The first stream returned a partial read, the retry loop
         re-opened the channel and completed cleanly. No other tasks needed a retry.
       </EvidenceTarget>
     </div>

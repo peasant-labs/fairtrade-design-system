@@ -21,7 +21,7 @@ export default {
     docs: {
       description: {
         component:
-          'An interactive code-structure map: pan (drag), zoom (square controls / +,− keys — never wheel), semantic zoom (overview / folders / files) with edge ancestor-lifting, a minimap and a node-search combobox. Square metric-encoded nodes (width ∝ LOC, monochrome coverage fill 0..4, folder/file icon, amber selection + marker, clay violation badge) and square orthogonal edges (solid structure / dashed activity, width ∝ weight). Full roving-focus keyboard nav with an aria-live region. Deterministic, dependency-free (plain SVG + divs).',
+          'An interactive code-structure map: pan (drag), zoom (square controls / +,− keys, never wheel), semantic zoom (overview / folders / files) with edge ancestor-lifting, a minimap and a node-search combobox. Square metric-encoded nodes (width ∝ LOC, monochrome coverage fill 0..4, folder/file icon, amber selection + marker, clay violation badge) and square orthogonal edges (solid structure / dashed activity, width ∝ weight). Full roving-focus keyboard nav with an aria-live region. Deterministic, dependency-free (plain SVG + divs).',
       },
     },
   },
@@ -105,7 +105,7 @@ export const Default = {
     // at folders grain the files render; the biggest-loc file is a real button whose
     // accessible name carries identity + kind + coverage (never colour-only).
     const stream = await canvas.findByRole('button', {
-      name: /stream\.go — file · coverage 3 of 4/i,
+      name: /stream\.go: file · coverage 3 of 4/i,
     })
     await expect(stream).toBeInTheDocument()
 
@@ -137,12 +137,12 @@ export const Overview = {
   args: {
     ...Default.args,
     grain: 'overview',
-    ariaLabel: 'peasant code map — folder overview',
+    ariaLabel: 'peasant code map: folder overview',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     // at overview only folders render; the files are collapsed into them.
-    const store = await canvas.findByRole('button', { name: /^store — folder/i })
+    const store = await canvas.findByRole('button', { name: /^store: folder/i })
     await expect(store).toBeInTheDocument()
     await expect(canvas.queryByRole('button', { name: /sqlite\.go/i })).toBeNull()
   },
@@ -165,14 +165,14 @@ export const Violations = {
     ...Default.args,
     data: { nodes: VIOLATION_NODES, edges: EDGES },
     grain: 'overview',
-    ariaLabel: 'peasant code map — violations',
+    ariaLabel: 'peasant code map: violations',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     // store/ holds 1 (sqlite) + 2 (cache) = 3 violations collapsed inside it; the badge
     // sums onto the folder, and the accessible name spells the count out.
     const store = await canvas.findByRole('button', {
-      name: /^store — folder.*3 violations/i,
+      name: /^store: folder.*3 violations/i,
     })
     await expect(store).toBeInTheDocument()
   },

@@ -23,7 +23,7 @@ import { frame } from './story-frame.jsx'
 const INGEST_TEACH = (
   <TeachingEmptyState
     title="no ai work recorded yet"
-    body="run the command below in your terminal. it scans this computer for your ai coding conversations — claude code, codex, and others — and shows what it finds here."
+    body="run the command below in your terminal. it scans this computer for your ai coding conversations (claude code, codex, and others) and shows what it finds here."
     command="peasant ingest"
   />
 )
@@ -129,7 +129,7 @@ export const TeachingStandalone = {
     <TeachingEmptyState
       icon={Compass}
       title="no map yet"
-      body="build a map of this project's ai work from what's already on disk — no upload, no account."
+      body="build a map of this project's ai work from what's already on disk: no upload, no account."
       command="peasant map ./my-project"
     />
   ),

@@ -293,13 +293,25 @@
   height: var(--ic-sm);
 }
 
+/* ── the helper region under the input ────────────────────────────────────────
+   one slot directly below the field, pulled up tight against it (cancelling most
+   of the column gap) so the guidance hugs the input. it holds the suggestion
+   ("try @handle") OR the live validation status — never two competing helper
+   lines stacked apart. it reserves one line of height so swapping suggestion for
+   status never shifts the button below. */
+.si-help {
+  display: flex;
+  flex-direction: column;
+  min-height: var(--ic-md);
+  margin-top: calc(-1 * var(--sp-2));
+}
+
 /* ── the live status line: icon + WORD (+ hint), never color alone ───────────── */
 .si-status {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   gap: var(--sp-1) var(--sp-2);
-  min-height: var(--ic-md); /* reserve a line so the layout never jumps */
   margin: 0;
   font-family: var(--font-mono);
   font-size: var(--fs-label);
@@ -351,16 +363,14 @@
 
 /* ── suggestion chips ─────────────────────────────────────────────────────────
    one or two handle-shaped suggestions; clicking one fills the field. mono,
-   hairline, radius 0 — the system chip look. the @ + handle keep their case.
-   the status line above always reserves a row (so the layout never jumps), which
-   would push the suggestions far from the input — so pull them back up to sit
-   right after the field, cancelling most of the column gap. */
+   hairline, radius 0 — the system chip look. the @ + handle keep their case. it
+   lives in the .si-help slot directly under the input (the same spot the status
+   uses), so it reads as guidance hugging the field, not a second helper line. */
 .si-suggest {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--sp-2);
-  margin-top: calc(-1 * var(--sp-3));
 }
 .si-suggest-label {
   font-family: var(--font-mono);

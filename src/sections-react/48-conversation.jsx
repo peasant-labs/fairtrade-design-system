@@ -18,7 +18,6 @@ export function ConversationSection() {
             <span className="metaitem"><Clock aria-hidden="true" /> <b className="tnum">2h 14m</b></span>
             <span className="metaitem"><GitBranch aria-hidden="true" /> <b className="tnum">18</b> turns</span>
             <span className="metaitem"><Hash aria-hidden="true" /> <b className="tnum">42,318</b> tokens</span>
-            <span className="chip chip-ok" style={{ marginLeft: 'auto' }}><ShieldCheck aria-hidden="true" /> redacted</span>
           </div>
         </div>
         <div className="phase"><span className="lbl"><Flag aria-hidden="true" /> phase: streaming refactor</span><span className="rng">turns 1-8</span></div>

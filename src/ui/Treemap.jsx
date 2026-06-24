@@ -245,7 +245,7 @@ export default function Treemap({
             type="button"
             className={'tm-tile' + (inkFlipped ? ' tm-tile--ink-flip' : '')}
             data-level={level}
-            aria-label={`${d.label} — ${value} ${unit}`}
+            aria-label={`${d.label}: ${value} ${unit}`}
             title={`${d.label} · ${value} ${unit}`}
             onClick={() => onSelect?.(t.id, d)}
             style={{

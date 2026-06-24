@@ -24,7 +24,7 @@ export const Default = {
     <Explainer title="what am i looking at?" defaultOpen>
       <p>
         this is a <Term def="every square is one file; its size is the file's line count, its fill the test coverage.">code-map</Term>{' '}
-        of the repository — one square per file, sized by length and shaded by how well it's tested.
+        of the repository, one square per file, sized by length and shaded by how well it's tested.
       </p>
       <p>
         hover a square to trace it back to its module:{' '}
@@ -60,7 +60,7 @@ export const Inline = {
   render: () => (
     <Explainer title="about this view" tone="inline">
       <p>
-        the <Term def="a saved unit of work — a set of related edits committed together.">commit</Term>{' '}
+        the <Term def="a saved unit of work: a set of related edits committed together.">commit</Term>{' '}
         list shows every change in reverse-chronological order. click a row to open its diff; the dot
         on the left marks commits that touched files you own.
       </p>
@@ -85,7 +85,7 @@ export const Terms = {
       <Term def="the shared, public pool of transcripts everyone can learn from.">commons</Term>{' '}
       only after you{' '}
       <Term def="removing names, secrets, and anything sensitive before the data leaves your machine.">redact</Term>{' '}
-      it locally — nothing is uploaded until you confirm. each example carries{' '}
+      it locally. nothing is uploaded until you confirm. each example carries{' '}
       <Term def="short tags that let others find the right examples by task, tool, or outcome.">labels</Term>{' '}
       so the collective stays searchable.
     </p>

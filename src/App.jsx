@@ -193,37 +193,80 @@ function Hero() {
 /* section 3 - philosophy: a short centered statement; the whole dark ground is tiled with ascii
    portraits (hidden context - the chat transcripts behind the code) that a cursor-following spotlight
    reveals on hover, including behind the text. no reveal on touch (it stays minimal). */
-/* a dense tiled field of portraits that REPEATS edge to edge with generous overlap, so the spotlight
-   always lands on art (no vignette fade, no gaps between rows/cols). */
-const PHILOS_GRID = { cols: 6, rows: 5 }
+/* a dense tiled field of portraits that REPEATS edge to edge, so the spotlight always lands on art
+   (no gaps between rows/cols). the tile COUNT is derived from the measured section width (usePhilosArts)
+   so each tile holds a roughly fixed pixel footprint: more, smaller tiles on wide viewports, fewer on
+   narrow ones. that keeps each portrait's ascii cell size bounded — without it a fixed grid stretched
+   each tile (and so each character) larger and larger on big screens until the chars overlapped. */
 const PHILOS_SRC = [peasantWoman, peasantMan]
-const PHILOS_ARTS = (() => {
+// target on-screen tile footprint; the cell/char size stays ~proportional to this, not to the viewport.
+const PHILOS_TILE_W = 240 // px — a tile's nominal width; column count = round(sectionWidth / this)
+const PHILOS_TILE_H = 300 // px — a tile's nominal height; row count = round(sectionHeight / this)
+const PHILOS_TILE_COLS = 54 // ascii columns per tile (drives char density within a tile)
+
+/* build the tile descriptors for a measured w×h section. tiles abut with a hairline of overlap (the
+   +1 span past each edge) so no theme-coloured seam shows between them, but not so much that whole
+   portraits stack and read as doubled. cols/rows are clamped so the field is never absurdly dense or
+   sparse on extreme viewports. */
+function buildPhilosArts(w, h) {
+  const cols = Math.max(3, Math.min(10, Math.round(w / PHILOS_TILE_W) || 1))
+  const rows = Math.max(3, Math.min(8, Math.round(h / PHILOS_TILE_H) || 1))
   const out = []
-  const { cols, rows } = PHILOS_GRID
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const i = r * cols + c
       out.push({
         key: i,
         src: PHILOS_SRC[(r + c) % 2],
-        cols: 54,
+        cols: PHILOS_TILE_COLS,
         contrast: (r + c) % 2 ? 1.14 : 1.22,
         gamma: (r + c) % 2 ? 0.74 : 0.8,
+        // 1% bleed past each edge closes seams without overlapping a full portrait onto its neighbour.
         style: {
-          top: `${(r * 100) / rows - 3}%`,
-          left: `${(c * 100) / cols - 1.5}%`,
-          width: `${100 / cols + 9}%`,
-          height: `${100 / rows + 14}%`,
+          top: `${(r * 100) / rows - 1}%`,
+          left: `${(c * 100) / cols - 1}%`,
+          width: `${100 / cols + 2}%`,
+          height: `${100 / rows + 2}%`,
         },
       })
     }
   }
   return out
-})()
+}
 const OFF = -800 // spotlight parked off-screen (no reveal)
 function Philosophy({ theme }) {
   const secRef = useRef(null)
   const sp = useRef({ x: OFF, y: OFF, tx: OFF, ty: OFF, vx: 0, vy: 0, active: false, raf: 0 })
+
+  // the tiled ascii field is sized from the MEASURED section box so each portrait keeps a roughly
+  // fixed footprint (and so a bounded character size) at any viewport — recomputed on resize. the grid
+  // only rebuilds when the derived col/row COUNT actually changes, so a continuous resize drag (or the
+  // canvases' own redraws) doesn't thrash a new tile array every frame.
+  const [arts, setArts] = useState(() => buildPhilosArts(1280, 800))
+  const gridRef = useRef('')
+  useEffect(() => {
+    const el = secRef.current
+    if (!el) return
+    const measure = () => {
+      const r = el.getBoundingClientRect()
+      const w = Math.round(r.width) || 1280
+      const h = Math.round(r.height) || 800
+      const cols = Math.max(3, Math.min(10, Math.round(w / PHILOS_TILE_W) || 1))
+      const rows = Math.max(3, Math.min(8, Math.round(h / PHILOS_TILE_H) || 1))
+      const sig = `${cols}x${rows}`
+      if (sig === gridRef.current) return
+      gridRef.current = sig
+      setArts(buildPhilosArts(w, h))
+    }
+    measure()
+    if (typeof ResizeObserver === 'function') {
+      const ro = new ResizeObserver(measure)
+      ro.observe(el)
+      return () => ro.disconnect()
+    }
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [])
 
   // the spotlight is a pure delayed follow (an exponential low-pass, NOT a spring): each frame it eases a
   // fraction of the way toward the cursor, so it TRAILS the pointer with a steady lag and never overshoots
@@ -278,7 +321,7 @@ function Philosophy({ theme }) {
   return (
     <section className="philos" id="manifesto" ref={secRef} onMouseMove={onMove} onMouseLeave={onLeave}>
       <div className="philos-arts" aria-hidden="true">
-        {PHILOS_ARTS.map((a) => (
+        {arts.map((a) => (
           <div key={a.key} className="philos-art-tile" style={a.style}>
             <AsciiImage src={a.src} cols={a.cols} fit isolated contrast={a.contrast} gamma={a.gamma} black={0.16} white={0.82} theme={theme} />
           </div>
@@ -636,13 +679,10 @@ function AppShell() {
           </>
         }
       >
-        <div className="callout">
-          <Eye size={16} aria-hidden="true" />
-          <div>joining <b style={{ color: 'var(--ink-strong)' }}>desert-archivists</b> lists you as a member and grants access to its shared data. it publishes none of your own transcripts; you choose those later when you contribute.</div>
-        </div>
+        <p>you're currently <b style={{ color: 'var(--ink-strong)' }}>not discoverable</b>, so your handle is hidden across the commons. joining <b style={{ color: 'var(--ink-strong)' }}>desert-archivists</b> reveals your profile to its owners so they can review your membership and contributions. other members still see you as <b style={{ color: 'var(--ink-strong)' }}>anon</b>.</p>
         <ul className="axes" aria-label="what you are opting into">
-          <li><Eye aria-hidden="true" /><span className="axes-k">group membership</span><span className="axes-v">public visibility</span></li>
-          <li><Users aria-hidden="true" /><span className="axes-k">group data</span><span className="axes-v">access for members only</span></li>
+          <li><Eye aria-hidden="true" /><span className="axes-k">identity</span><span className="axes-v">profile shown to owners only</span></li>
+          <li><Users aria-hidden="true" /><span className="axes-k">to other members</span><span className="axes-v">you stay anon</span></li>
           <li><FileText aria-hidden="true" /><span className="axes-k">your transcripts</span><span className="axes-v">none contributed on joining</span></li>
         </ul>
         <label className="check"><input type="checkbox" className="check-box" /> i understand and consent</label>

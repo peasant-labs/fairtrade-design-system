@@ -13,7 +13,7 @@ const transcriptTabs = [
     count: 42,
     content: (
       <p>
-        shared transcripts from the commons — debugging sessions with claude-code,
+        shared transcripts from the commons: debugging sessions with claude-code,
         scaffolding runs through gemini-cli, and pair-programming logs.
       </p>
     ),
@@ -35,7 +35,7 @@ const transcriptTabs = [
     count: 3,
     content: (
       <p>
-        upstream providers: claude-code, gemini-cli, and codex — each with its own
+        upstream providers: claude-code, gemini-cli, and codex, each with its own
         consent and revenue-share terms.
       </p>
     ),

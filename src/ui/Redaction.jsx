@@ -239,7 +239,7 @@ export function RedactionReview({
           <p className="rdx-banner-text">
             {typeof failure === 'string'
               ? failure
-              : 'some files could not be fully scanned — don’t treat an empty result as “all clear”.'}
+              : 'some files could not be fully scanned. don’t treat an empty result as “all clear”.'}
           </p>
         </div>
       )}
@@ -264,7 +264,7 @@ export function RedactionReview({
       </div>
 
       {matches.length === 0 ? (
-        <p className="rdx-empty">no sensitive content detected — safe to share as-is.</p>
+        <p className="rdx-empty">no sensitive content detected. safe to share as-is.</p>
       ) : (
         <ul className="rdx-list">
           {matches.map((m, i) => (
@@ -319,7 +319,7 @@ export function WhereDoesThisGo({
 
       {/* the boundary line — one plain sentence at the boundary (guidance prose). */}
       <p className="rdx-where-note">
-        nothing leaves your machine until you choose to send it — redacted by default.
+        nothing leaves your machine until you choose to send it. redacted by default.
       </p>
 
       {/* destination — the url is code: mono, not lowercased, breakable. */}

@@ -125,7 +125,7 @@ export const ApprovalBarSticky = {
         }}
       >
         The bar sits sticky at the top of the transcript while you scroll. Approve folds it to an
-        olive acknowledgement; reject folds it to a clay one — the action and the word stay together
+        olive acknowledgement; reject folds it to a clay one. The action and the word stay together
         so the outcome never rides on colour alone.
       </p>
     </div>
