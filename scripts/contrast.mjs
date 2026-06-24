@@ -13,10 +13,17 @@
 */
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const CSS = join(HERE, '..', 'src', 'index.css')
+// Default to the src single-source-of-truth. `--css <path>` lets the lib build
+// re-run the gate against the SHIPPED bytes (dist/lib/tokens.css after finalize),
+// so a finalize copy-source bug can't evade contrast (REVIEW-4 plabs-yy0e).
+const cssArgIdx = process.argv.indexOf('--css')
+const CSS =
+  cssArgIdx !== -1 && process.argv[cssArgIdx + 1]
+    ? resolve(process.cwd(), process.argv[cssArgIdx + 1])
+    : join(HERE, '..', 'src', 'index.css')
 
 /* ---- color math (WCAG 2.x) ---- */
 function hexToRgb(hex) {

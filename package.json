@@ -1,7 +1,7 @@
 {
   "name": "@peasant-labs/fairtrade",
   "private": false,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Private fairtrade design-system library: canonical tokens, base styles, component CSS, and React UI exports.",
   "type": "module",
   "license": "MIT",
@@ -30,17 +30,19 @@
     "README.md"
   ],
   "sideEffects": [
-    "*.css",
-    "dist/lib/*.css"
+    "*.css"
   ],
   "packageManager": "pnpm@10.33.2",
   "scripts": {
     "dev": "vite",
     "contrast": "node scripts/contrast.mjs",
     "llm": "node scripts/gen-llm-artifacts.mjs",
-    "gen:check": "node scripts/gen-llm-artifacts.mjs && git diff --exit-code public/tokens.json public/components.json packages/tokens/tokens.css packages/tokens/tokens.json packages/tokens/base.css",
+    "gen:check": "node scripts/gen-llm-artifacts.mjs && git diff --exit-code public/tokens.json public/components.json packages/tokens/tokens.css packages/tokens/tokens.json packages/tokens/base.css packages/tokens/fonts.css",
     "build:app": "node scripts/gen-llm-artifacts.mjs && node scripts/contrast.mjs && vite build",
-    "build:lib": "node scripts/gen-llm-artifacts.mjs && node scripts/contrast.mjs && vite build --config vite.lib.config.js && vite build --config vite.lib-css.config.js && node scripts/finalize-lib-build.mjs && tsc -p tsconfig.lib.json && node scripts/smoke-lib.mjs",
+    "build:lib": "node scripts/gen-llm-artifacts.mjs && node scripts/contrast.mjs && vite build --config vite.lib.config.js && vite build --config vite.lib-css.config.js && node scripts/finalize-lib-build.mjs && tsc -p tsconfig.lib.json && node scripts/smoke-lib.mjs && node scripts/contrast.mjs --css dist/lib/tokens.css && node scripts/assert-pack-contents.mjs",
+    "pack:check": "node scripts/assert-pack-contents.mjs",
+    "smoke:tarball": "node scripts/smoke-tarball.mjs",
+    "prepack": "pnpm build:lib",
     "build": "pnpm build:app",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",

@@ -1,8 +1,35 @@
 #!/usr/bin/env node
+import { existsSync, statSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import * as ui from '../dist/lib/ui.js'
 import * as icons from '../dist/lib/icons.js'
+
+// Types-emit assertion (runs after `tsc -p tsconfig.lib.json`). tsconfig.lib has
+// noEmitOnError:false, so a silent declaration-emit failure (bad include glob,
+// wrong outDir) would ship a package whose ./ui + ./icons "types" paths 404 —
+// runtime fine, types broken. The exports map points ./ui types -> index.d.ts
+// and ./icons types -> icons.d.ts, so assert both exist and are non-empty.
+const TYPES = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'lib', 'types')
+const typeFailures = []
+for (const decl of ['index.d.ts', 'icons.d.ts']) {
+  const p = join(TYPES, decl)
+  if (!existsSync(p)) typeFailures.push(`${decl}: missing from dist/lib/types (tsc did not emit it)`)
+  else if (statSync(p).size === 0) typeFailures.push(`${decl}: present but empty in dist/lib/types`)
+}
+if (typeFailures.length) {
+  throw new Error(
+    [
+      'fairtrade smoke failed in scripts/smoke-lib.mjs: declaration-emit assertion failed after tsc.',
+      'What went wrong: a "types" target named in package.json exports is missing/empty:',
+      ...typeFailures.map((f) => `  - ${f}`),
+      'Why it matters: consumers resolving @peasant-labs/fairtrade/ui or /icons types would hit a 404 type path.',
+      'How to fix: check tsconfig.lib.json include/exclude + outDir and re-run pnpm build:lib.',
+    ].join('\n'),
+  )
+}
 
 const chartData = [{ label: 'a', count: 1 }, { label: 'b', count: 2 }]
 const diffHunks = [

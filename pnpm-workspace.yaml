@@ -1,6 +1,6 @@
 # pnpm workspace. The root (.) is the publishable private design-system package
 # plus the local presentation app. packages/* can hold generated artifact folders,
-# but package publication now happens from the root @peasant-labs/fairtrade.
+# but package publication now happens from the root @peasant-labs/fairtrade-lib.
 packages:
   - '.'
   - 'packages/*'

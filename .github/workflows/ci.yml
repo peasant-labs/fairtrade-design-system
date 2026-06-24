@@ -15,6 +15,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Continuous gate on the PUBLISHABLE artifact. Before this, the library build
+  # chain (vite.lib + vite.lib-css + finalize + tsc + smoke-lib + contrast-on-dist
+  # + the pack-content assertion) ran ONLY at prepack/publish time — so a PR that
+  # broke the exports/files map or the lib build was green in CI and only failed
+  # when someone next published (the 0.0.1 incident). This validates the exact
+  # tarball that would publish, on every PR/push, independent of who publishes.
+  lib:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      # Full library build: vite lib + CSS, finalize (CSS content assertion),
+      # tsc declarations, smoke-lib (render + types-emit assertion), contrast on
+      # the shipped dist/lib/tokens.css, and the pack-content assertion.
+      - name: Build library (publishable artifact)
+        run: pnpm build:lib
+
+      # Belt-and-suspenders: assert the npm tarball file set matches exports[].
+      - name: Assert pack contents (exports <-> tarball)
+        run: pnpm pack:check
+
   gates:
     runs-on: ubuntu-latest
     steps:
