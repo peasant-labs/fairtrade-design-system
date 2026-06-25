@@ -1,5 +1,11 @@
 shots/
 inspiration/
+# screenshot parity-gate captures are transient and must NOT be committed — post-lift "after" sets,
+# imgdiff diff PNGs, and ad-hoc /tmp/demo-* dumps. shots/ above already covers the after/diff sets the
+# scripts write there. The ONE tracked exception is the pre-lift golden baseline (the pre/post parity
+# reference), so ignore everything under baselines/ EXCEPT baselines/prelift/.
+/baselines/*
+!/baselines/prelift/
 # llm/ holds working notes; only the shipped design-reference docs are tracked
 llm/*
 !llm/DESIGN.md

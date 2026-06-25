@@ -8,7 +8,7 @@ import { extname, join, normalize } from 'node:path'
 
 const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const ROOT = 'storybook-static'
-const PORT = 6017
+const PORT = Number(process.env.SB_PORT) || 6017 // env override so concurrent review runs don't collide on the port; default 6017 preserved
 const MIME = { '.html':'text/html', '.js':'text/javascript', '.json':'application/json', '.css':'text/css', '.svg':'image/svg+xml', '.png':'image/png', '.jpg':'image/jpeg', '.mp4':'video/mp4', '.woff2':'font/woff2', '.woff':'font/woff', '.ttf':'font/ttf' }
 const server = createServer(async (req, res) => {
   try {

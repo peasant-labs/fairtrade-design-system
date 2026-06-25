@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    // checkJs is OFF so the JSX components re-exported by the transcript sub-barrel (the lifted
+    // render primitives + the composite viewer) are NOT strict-type-checked here. The
+    // project never type-checks JSX — there is no @types/react and the lib build is checkJs:false
+    // too — so the existing /ui components (ProviderIcon, BrandMark, …) are not strict-clean. The
+    // DATA contract is still fully enforced: every type-test + data module carries `// @ts-check`,
+    // which opts it back in even under checkJs:false. The two typedef-only data modules
+    // (view-model.js, wire-types.js) are listed as explicit roots below so their OWN type
+    // definitions are strict-checked here, not just consumed transitively by the type-tests.
+    "checkJs": false,
+    "noImplicitAny": true,
+    "strict": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2020",
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/ui/transcript/contract.type-test.js",
+    "src/ui/transcript/adapter.contract.type-test.js",
+    "src/ui/transcript/state-capabilities.contract.type-test.js",
+    "src/ui/transcript/view-model.js",
+    "src/ui/transcript/wire-types.js"
+  ]
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* tarball-install smoke (REVIEW-4 plabs-q30f)
+/* tarball-install smoke
    The pre-publish proxy for "what npm actually serves": packs the REAL tarball,
    lays it out as a clean consumer in a temp dir, and imports every documented
    subpath through the package's own exports map. smoke-lib runs against the

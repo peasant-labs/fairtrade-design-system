@@ -18,7 +18,7 @@ import { dirname, join, resolve } from 'node:path'
 const HERE = dirname(fileURLToPath(import.meta.url))
 // Default to the src single-source-of-truth. `--css <path>` lets the lib build
 // re-run the gate against the SHIPPED bytes (dist/lib/tokens.css after finalize),
-// so a finalize copy-source bug can't evade contrast (REVIEW-4 plabs-yy0e).
+// so a finalize copy-source bug can't evade contrast.
 const cssArgIdx = process.argv.indexOf('--css')
 const CSS =
   cssArgIdx !== -1 && process.argv[cssArgIdx + 1]

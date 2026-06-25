@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* pack-content assertion (REVIEW-4 plabs-pt6x)
+/* pack-content assertion
    Asserts the ACTUAL npm tarball file set — not just on-disk dist — so a
    files[] <-> exports drift (or a dist-less build) cannot ship a package that
    omits a documented export. This is the tarball-level guard against the exact
