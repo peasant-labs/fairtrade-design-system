@@ -1,0 +1,213 @@
+/* Trajectory-graph node VISUALS — the aesthetic half of the graph split.
+   Self-contained, token-only, square + hairline + mono, radius 0. Namespaced
+   `ft-gnode-*` (node cards) and `ft-graph-*` (legend + edge/lane palette) so
+   nothing here collides with — or depends on — the canonical mockup SVG
+   `.txn-graph-*` rules (which stay SVG-only and untouched) or transcript-browser's
+   `tb-gnode-*` engine wrappers.
+
+   The ONLY hue on a node is its role accent (a scarce left rule): you = teal,
+   subagent = mauve, assistant = its provider accent, error = clay. Everything
+   else reads by ink weight. The accent token is injected per-node by GraphTurnNode
+   via the `--ft-gnode-accent` custom property. */
+
+/* ── node shell (shared by turn card + tool pill) ─────────────────────────────── */
+.ft-gnode {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* engine display states — opacity/ring only, never a layout shift */
+.ft-gnode-dimmed { opacity: 0.35; }
+.ft-gnode-match {
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--ink) 55%, transparent),
+    0 0 0 3px var(--canvas);
+}
+.ft-gnode-selected {
+  box-shadow:
+    0 0 0 2px var(--amber),
+    0 0 0 3px var(--canvas);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ft-gnode { transition: opacity var(--dur-1) var(--ease-standard), box-shadow var(--dur-1) var(--ease-standard); }
+}
+
+/* ── turn card ────────────────────────────────────────────────────────────────── */
+.ft-gnode-turn { cursor: pointer; }
+.ft-gnode-accented { box-shadow: inset 3px 0 0 0 var(--ft-gnode-accent, var(--rule-strong)); }
+.ft-gnode-error { border-left: 2px solid var(--clay); }
+.ft-gnode-turn:hover { background: var(--surface-hover); border-color: var(--rule-strong); }
+
+.ft-gnode-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-hover);
+}
+.ft-gnode-role {
+  font-size: var(--fs-label);
+  color: var(--ink-2);
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+.ft-gnode-agent {
+  font-size: var(--fs-label);
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.ft-gnode-num {
+  margin-left: auto;
+  font-size: var(--fs-label);
+  color: var(--amber);
+  flex-shrink: 0;
+}
+.ft-gnode-flag {
+  flex-shrink: 0;
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  border: 1px solid transparent;
+}
+.ft-gnode-flag-err {
+  color: var(--clay);
+  border-color: color-mix(in srgb, var(--clay) 45%, transparent);
+  background: color-mix(in srgb, var(--clay) 12%, transparent);
+}
+.ft-gnode-flag-warn {
+  color: var(--amber);
+  border-color: color-mix(in srgb, var(--amber) 45%, transparent);
+  background: color-mix(in srgb, var(--amber) 12%, transparent);
+}
+
+.ft-gnode-prev {
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-label);
+  line-height: 1.45;
+  color: var(--ink-3);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+.ft-gnode-prev-user { color: var(--ink-2); }
+
+.ft-gnode-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-1) var(--sp-3);
+  border-top: 1px solid var(--rule);
+  font-size: var(--fs-label);
+  color: var(--ink-4);
+}
+.ft-gnode-meta-tokens { margin-left: auto; }
+
+/* ── tool-cluster pill ────────────────────────────────────────────────────────── */
+.ft-gnode-tools-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-hover);
+  font-size: var(--fs-label);
+  color: var(--ink-3);
+  text-transform: lowercase;
+}
+.ft-gnode-tools-dur { color: var(--ink-4); }
+.ft-gnode-tools-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ft-gnode-tools-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-label);
+  border-top: 1px solid var(--rule);
+}
+.ft-gnode-tools-list > .ft-gnode-tools-row:first-child { border-top: 0; }
+.ft-gnode-tools-row-failed { color: var(--clay); }
+.ft-gnode-tools-name { color: var(--ink); flex-shrink: 0; }
+.ft-gnode-tools-arg {
+  color: var(--ink-4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.ft-gnode-tools-err { margin-left: auto; color: var(--clay); text-transform: lowercase; }
+.ft-gnode-tools-more {
+  padding: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-label);
+  color: var(--ink-4);
+  border-top: 1px solid var(--rule);
+}
+
+/* ── subagent swimlane header ─────────────────────────────────────────────────── */
+.ft-gnode-lane {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--canvas);
+  border: 1px solid var(--rule-strong);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+}
+.ft-gnode-lane-eyebrow { color: var(--mauve); }
+.ft-gnode-lane-name { color: var(--ink-2); }
+.ft-gnode-lane-depth { color: var(--ink-4); }
+
+/* ── legend ───────────────────────────────────────────────────────────────────── */
+.ft-graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  color: var(--ink-3);
+}
+.ft-graph-legend-item { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.ft-graph-legend-glyph { width: 9px; height: 9px; flex: none; }
+.ft-graph-legend-glyph[data-kind="tool"] {
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+}
+
+/* ── edge / lane STYLE tokens (the graph's connective aesthetic) ───────────────────
+   fairtrade owns the graph palette so every engine host draws the same edges. A
+   host (e.g. transcript-browser's @xyflow mapper) reads these custom properties
+   for stroke colours and the dashed lane divider; the dash patterns below name
+   each edge class (sequential / spawn / return / phase / error / turn-to-tool).
+   Scope a graph container with `.ft-graph` to pick up the palette. */
+.ft-graph {
+  --ft-edge: var(--rule-strong);
+  --ft-edge-error: var(--clay);
+  --ft-edge-spawn-dash: 6 4;
+  --ft-edge-return-dash: 2 3;
+  --ft-edge-tool-dash: 4 4;
+  --ft-lane-divider: var(--rule);
+}

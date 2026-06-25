@@ -1,77 +1,24 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
+// the only lucide glyphs the demo itself draws are the rewired trajectory-graph zoom controls;
+// every transcript glyph now lives inside the lifted /ui components.
+import { Plus, Minus, Maximize, RefreshCw } from 'lucide-react'
 import {
-  ChevronRight,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  Coins,
-  ShieldCheck,
-  Flag,
-  User,
-  FileText,
-  FilePlus2,
-  Search,
-  FileSearch,
-  Pencil,
-  Terminal,
-  Brain,
-  Check,
-  Copy,
-  GitCommitHorizontal,
-  Sparkles,
-  ListTree,
-  LayoutList,
-  SlidersHorizontal,
-  ListChecks,
-  CornerDownRight,
-  Share2,
-  Users,
-  Link as LinkIcon,
-  MoreHorizontal,
-  Download,
-  MessageSquareText,
-  Globe,
-  BookOpen,
-  AlertTriangle,
-  RefreshCw,
-  RotateCcw,
-  Play,
-  X,
-  ArrowUpToLine,
-  ArrowDownToLine,
-  ArrowRight,
-  List,
-  Network,
-  Plus,
-  Minus,
-  Maximize,
-  TrendingUp,
-  TrendingDown,
-  Wrench,
-  Filter as FilterIcon,
-  PanelLeftClose,
-  PanelLeftOpen,
-  PanelRightClose,
-  PanelRightOpen,
-} from 'lucide-react'
-import { StepsWaterfall, ProviderIcon, PROVIDER_ACCENT } from '../../ui'
+  TranscriptViewer,
+  adaptTranscript,
+  GraphTurnNode,
+  GraphToolNode,
+  GraphSubagentBranch,
+  GraphLegend,
+} from '../../ui'
 
 /* ============================================================================
-   TranscriptApp — full transcript-browser demo inside the qud identity.
-   one self-contained component. owns its own session mock + every bit of
-   interactive state. namespace txn- for new chrome; reuses turn, toolcall,
-   diff, tabs, chip, btn, menu, canvas, node, sidebar, check-box, sw, empty.
-   chrome stays lowercase; transcript content + code keep their case.
+   TranscriptApp — the canonical transcript demo, now a CONSUMER of the lifted
+   fairtrade /ui components (no inline transcript components remain). It owns its
+   baked-in session fixtures, projects them into the canonical wire payload, feeds
+   them through the ONE adapter (adaptTranscript) → TranscriptViewModel, and renders
+   the composite <TranscriptViewer> + the rewired trajectory graph. The demo proves
+   the lift by construction: the SAME components transcript-browser consumes render it.
 ============================================================================ */
-
-/* ---- the brand mark (svg symbol is document-global, defined in 00-defs.html) ---- */
-function ClaudeMark({ size = 14 }) {
-  return (
-    <svg className="brand" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <use href="#b-claude" />
-    </svg>
-  )
-}
 
 /* the session's coding-agent harness (peasant bestiary wire value). the ASSISTANT side IS the
    provider, so its icon + accent are keyed off this one value via the ProviderIcon family. the system
@@ -89,7 +36,6 @@ const TURNS = [
     userTurn: 1,
     time: '8m ago',
     longTime: 'jun 17, 2026 · 09:12',
-    phase: 'exploration',
     tokens: { in: 280, out: 0 },
     body:
       'Port the transcript canvas into the shared package. Start by reading the existing renderer before extracting it.',
@@ -100,7 +46,6 @@ const TURNS = [
     label: '1a',
     time: '8m ago',
     longTime: 'jun 17, 2026 · 09:12',
-    phase: 'exploration',
     tokens: { in: 1840, out: 920 },
     thinking: {
       words: 84,
@@ -116,7 +61,6 @@ const TURNS = [
         name: 'Read',
         preview: 'web/src/components/session-detail/v2/canvas/TurnRow.tsx',
         path: 'web/src/components/session-detail/v2/canvas/TurnRow.tsx',
-        lines: '1–40',
         excerpt:
           'export function TurnRow({ turn, depth }: TurnRowProps) {\n  const Glyph = roleGlyph(turn.role)\n  const tokens = formatTokens(turn.usage)\n  return (\n    <div className="turn-row" data-depth={depth}>\n      <RoleGlyph as={Glyph} provider={turn.provider} />\n      <TurnHeader label={turn.label} time={turn.time} />\n      <Markdown source={turn.content} />\n      <ToolCallList calls={turn.toolCalls} />\n    </div>\n  )\n}',
       },
@@ -128,7 +72,6 @@ const TURNS = [
     label: '1b',
     time: '8m ago',
     longTime: 'jun 17, 2026 · 09:13',
-    phase: 'exploration',
     tokens: { in: 2100, out: 640 },
     body: 'Now locate every call site of `rendererFor` so the dispatch table comes across intact.',
     tools: [
@@ -153,7 +96,6 @@ const TURNS = [
     userTurn: 2,
     time: '6m ago',
     longTime: 'jun 17, 2026 · 09:15',
-    phase: 'debugging',
     tokens: { in: 90, out: 0 },
     body: 'Looks right. Run a typecheck across the workspace before you start moving files.',
   },
@@ -163,7 +105,6 @@ const TURNS = [
     label: '2a',
     time: '6m ago',
     longTime: 'jun 17, 2026 · 09:15',
-    phase: 'debugging',
     error: true,
     tokens: { in: 2400, out: 1180 },
     body: 'Running the workspace typecheck first. It surfaces a strict-mode error in the tasks helper.',
@@ -188,7 +129,6 @@ const TURNS = [
     label: '2b',
     time: '5m ago',
     longTime: 'jun 17, 2026 · 09:16',
-    phase: 'implementation',
     tokens: { in: 2600, out: 1320 },
     thinking: {
       words: 41,
@@ -222,7 +162,6 @@ const TURNS = [
     label: '2c',
     time: '4m ago',
     longTime: 'jun 17, 2026 · 09:17',
-    phase: 'implementation',
     tokens: { in: 1900, out: 980 },
     body: 'Verifying the fix: the workspace typechecks clean now, so I will commit the canvas port.',
     tools: [
@@ -254,7 +193,6 @@ const TURNS = [
     subagent: 'docs-writer',
     time: '3m ago',
     longTime: 'jun 17, 2026 · 09:18',
-    phase: 'implementation',
     tokens: { in: 1700, out: 1140 },
     body: 'Spawned a subagent to document the props/callback/capability contract for the extracted package.',
     tools: [
@@ -279,7 +217,6 @@ const TURNS = [
     label: '2e',
     time: 'just now',
     longTime: 'jun 17, 2026 · 09:19',
-    phase: 'implementation',
     final: true,
     tokens: { in: 980, out: 720 },
     body:
@@ -302,9 +239,9 @@ const TURNS = [
 
 /* phases drawn between turn ranges */
 const PHASES = [
-  { id: 'exploration', label: 'exploration', icon: FileSearch, from: 0, to: 2 },
-  { id: 'debugging', label: 'debugging', icon: AlertTriangle, from: 3, to: 4, errors: 1 },
-  { id: 'implementation', label: 'implementation', icon: Pencil, from: 5, to: 8 },
+  { id: 'exploration', label: 'exploration', from: 0, to: 2 },
+  { id: 'debugging', label: 'debugging', from: 3, to: 4, errors: 1 },
+  { id: 'implementation', label: 'implementation', from: 5, to: 8 },
 ]
 
 /* the per-task duration trail for the trace outline (StepsWaterfall), the transcript-viewer's
@@ -340,458 +277,103 @@ const ANNOTATIONS = [
   { id: 'a3', turn: 7, role: 'assistant', type: 'subagent', label: 'docs-writer · depth 1', preview: 'Task spawned a subagent to document the package contract' },
 ]
 
-const ANNOTATION_META = {
-  error: { label: 'error', icon: AlertTriangle, chip: 'chip-err', tip: 'a tool returned an error or a non-zero exit code' },
-  retry: { label: 'retry', icon: RefreshCw, chip: 'chip-warn', tip: 'the same tool ran 3+ times within 5 turns' },
-  revert: { label: 'reverted edit', icon: RotateCcw, chip: 'chip-warn', tip: 'a file was edited again after an earlier change' },
-  subagent: { label: 'subagent', icon: CornerDownRight, chip: '', tip: 'a Task spawned a nested subagent at depth > 0' },
-}
-
 /* highlights = curated key moments */
 const HIGHLIGHTS = [
-  { id: 'h1', kind: 'request', turn: 0, icon: Play, title: 'initial request', sub: 'Port the transcript canvas into the shared package…', time: '8m ago' },
-  { id: 'h2', kind: 'phase', turn: 3, icon: Flag, title: 'debugging begins', sub: 'turn 2 · 1 error in this phase', tag: 'debugging' },
-  { id: 'h3', kind: 'error', turn: 4, icon: AlertTriangle, title: 'pnpm -r typecheck failed', sub: '1 failed · exit 2', err: true },
-  { id: 'h4', kind: 'checkpoint', turn: 6, icon: GitCommitHorizontal, title: '9f3c1ad', sub: 'feat(canvas): port TurnRow + tool renderers', stat: '+312 −24 · 7 files' },
-  { id: 'h5', kind: 'final', turn: 8, icon: Sparkles, title: 'final response', sub: 'All packages typecheck and build…', tokens: '1.7k' },
+  { id: 'h1', kind: 'request', turn: 0, title: 'initial request', sub: 'Port the transcript canvas into the shared package…', time: '8m ago' },
+  { id: 'h2', kind: 'phase', turn: 3, title: 'debugging begins', sub: 'turn 2 · 1 error in this phase', tag: 'debugging' },
+  { id: 'h3', kind: 'error', turn: 4, title: 'pnpm -r typecheck failed', sub: '1 failed · exit 2', err: true },
+  { id: 'h4', kind: 'checkpoint', turn: 6, title: '9f3c1ad', sub: 'feat(canvas): port TurnRow + tool renderers', stat: '+312 −24 · 7 files' },
+  { id: 'h5', kind: 'final', turn: 8, title: 'final response', sub: 'All packages typecheck and build…', tokens: '1.7k' },
 ]
 
-/* tool-group breakdown for the Filters rail */
-const TOOL_GROUPS = [
-  { id: 'edits', label: 'file edits', icon: Pencil, count: 1 },
-  { id: 'bash', label: 'bash', icon: Terminal, count: 3 },
-  { id: 'read', label: 'read', icon: BookOpen, count: 1 },
-  { id: 'search', label: 'search', icon: Search, count: 1 },
-  { id: 'fetch', label: 'fetch', icon: Globe, count: 0 },
-  { id: 'tasks', label: 'tasks', icon: ListChecks, count: 1 },
-  { id: 'other', label: 'other', icon: Wrench, count: 0 },
-]
+/* ============================================================================
+   TrajectoryGraph — the demo's trajectory graph, REWIRED to consume the lifted
+   fairtrade graph node visuals (GraphTurnNode / GraphToolNode / GraphSubagentBranch
+   / GraphLegend) instead of its old hand-rolled <rect>/<text> SVG nodes.
 
-const TOOL_ICON = {
-  read: BookOpen,
-  grep: Search,
-  edit: Pencil,
-  write: FilePlus2,
-  bash: Terminal,
-  task: ListChecks,
-  webfetch: Globe,
-  default: Wrench,
-}
+   This is the canonical ANCHOR for the graph node-visual snapshot oracle: the demo
+   renders the SAME node-visual components transcript-browser plugs into its @xyflow
+   engine, so the aesthetic is shared by construction. Graph LAYOUT is explicitly
+   carved out of pixel-parity (the engine topology lives in transcript-browser, not
+   fairtrade) — only the node VISUALS are graded, via the GraphNodes storybook story.
 
-const fmtTokens = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n))
-
-/* ---------------------------------------------------------------- thinking block */
-function Thinking({ block }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="txn-thinking">
-      <button type="button" className="txn-thinking-toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        {open ? <ChevronDown size={13} aria-hidden="true" /> : <ChevronRight size={13} aria-hidden="true" />}
-        <Brain size={14} aria-hidden="true" />
-        <i>thinking</i>
-        <span className="txn-thinking-wc tnum">{block.words}w</span>
-      </button>
-      {open && <div className="txn-thinking-body"><em>{block.text}</em></div>}
-    </div>
-  )
-}
-
-/* ---------------------------------------------------------------- per-tool renderers */
-function ToolBody({ tool }) {
-  if (tool.kind === 'read') {
-    return (
-      <div className="txn-tcbody">
-        <div className="txn-code-head">
-          <span className="mono txn-code-path">{tool.path}</span>
-          <span className="txn-code-meta tnum">lines {tool.lines}</span>
-        </div>
-        <pre className="txn-code">{tool.excerpt}</pre>
-      </div>
-    )
-  }
-  if (tool.kind === 'edit') {
-    return (
-      <div className="txn-tcbody">
-        <div className="txn-diff-head">
-          <span className="mono txn-code-path">{tool.path}</span>
-          <span className="txn-churn tnum">
-            <span className="txn-churn-add">+{tool.adds}</span> <span className="txn-churn-del">−{tool.dels}</span>
-          </span>
-        </div>
-        <div className="diff txn-diff">
-          {tool.hunk.map((d, i) => (
-            <div className={'dl ' + d.sign} key={i}>
-              <span className="rail" />
-              <span className="gut tnum">{d.a}</span>
-              <span className="gut tnum">{d.b}</span>
-              <span className="sign">{d.sign === 'add' ? '+' : d.sign === 'del' ? '−' : ''}</span>
-              <span className="t">{d.t}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
-  if (tool.kind === 'bash') {
-    const failed = tool.exit !== 0
-    return (
-      <div className="txn-tcbody">
-        {tool.description && <div className="txn-tc-desc">{tool.description}</div>}
-        <div className="txn-term">
-          <span className="txn-term-prompt"><Terminal size={13} aria-hidden="true" /> $</span>
-          <span className="mono">{tool.command}</span>
-        </div>
-        <div className="txn-out-eyebrow">
-          <span>stdout</span>
-          <span className="txn-out-badges">
-            {tool.duration && <span className="txn-durbadge tnum"><Clock size={12} aria-hidden="true" /> {tool.duration}</span>}
-            <span className={'txn-exitbadge tnum' + (failed ? ' txn-exit-failed' : '')} title={'exit code ' + tool.exit}>
-              exit {tool.exit}
-            </span>
-          </span>
-        </div>
-        <pre className="txn-code">{tool.stdout}</pre>
-      </div>
-    )
-  }
-  if (tool.kind === 'grep') {
-    return (
-      <div className="txn-tcbody">
-        <div className="txn-grep-meta">
-          <code className="txn-grep-pat mono">{tool.pattern}</code>
-          <span className="txn-grep-in">in <span className="mono">{tool.scope}</span></span>
-          {tool.glob && <span className="txn-grep-type tnum">type={tool.glob}</span>}
-          <span className="txn-grep-n tnum">{tool.matches} matches</span>
-        </div>
-        <pre className="txn-code">{tool.results}</pre>
-      </div>
-    )
-  }
-  if (tool.kind === 'webfetch') {
-    return (
-      <div className="txn-tcbody">
-        <a className="link txn-url" href={tool.url} target="_blank" rel="noreferrer">
-          <Globe size={13} aria-hidden="true" /> {tool.url}
-        </a>
-        <div className="txn-tc-desc">{tool.prompt}</div>
-        <div className="txn-fetch-md">{tool.result}</div>
-      </div>
-    )
-  }
-  if (tool.kind === 'task') {
-    return <TaskBody tool={tool} />
-  }
-  /* default catch-all: pretty args + result */
-  return (
-    <div className="txn-tcbody">
-      <div className="txn-out-eyebrow"><span>arguments</span></div>
-      <pre className="txn-code">{JSON.stringify(tool.args || {}, null, 2)}</pre>
-      <div className="txn-out-eyebrow"><span>result</span></div>
-      <pre className="txn-code">{tool.result || '—'}</pre>
-    </div>
-  )
-}
-
-function TaskBody({ tool }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="txn-tcbody">
-      <dl className="txn-kv">
-        <div><dt>agent</dt><dd className="mono">{tool.agent}</dd></div>
-        <div><dt>status</dt><dd>{tool.status}</dd></div>
-        <div><dt>task</dt><dd>{tool.task}</dd></div>
-        <div><dt>owner</dt><dd className="mono">{tool.owner}</dd></div>
-      </dl>
-      <div className="txn-fetch-md">{tool.promptBody}</div>
-      <button type="button" className="txn-details-toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        {open ? <ChevronDown size={13} aria-hidden="true" /> : <ChevronRight size={13} aria-hidden="true" />} result
-      </button>
-      {open && <pre className="txn-code">{tool.result}</pre>}
-    </div>
-  )
-}
-
-function ToolCall({ tool, open, onToggle }) {
-  const Icon = TOOL_ICON[tool.kind] || TOOL_ICON.default
-  const failed = tool.kind === 'bash' && tool.exit !== 0
-  return (
-    <div className="toolcall txn-toolcall">
-      <button type="button" className="tc-head txn-tc-head" aria-expanded={open} onClick={onToggle}>
-        {open ? <ChevronDown size={13} aria-hidden="true" className="txn-tc-chev" /> : <ChevronRight size={13} aria-hidden="true" className="txn-tc-chev" />}
-        <span className="kind"><Icon size={14} aria-hidden="true" /> {tool.name}</span>
-        <span className="path mono">{tool.preview}</span>
-        <span className="right">
-          {tool.duration && <span className="tnum txn-tc-dur">{tool.duration}</span>}
-          {failed && <span className="chip chip-err txn-pill"><AlertTriangle size={12} aria-hidden="true" /> exit 2</span>}
-        </span>
-      </button>
-      {open && <ToolBody tool={tool} />}
-    </div>
-  )
-}
-
-/* ---------------------------------------------------------------- turn card */
-const ROLE_GLYPH = {
-  user: 'user',
-  assistant: 'asst',
-  tool: 'tool',
-  system: 'system',
-}
-
-function TurnCard({ turn, active, openTools, toggleTool, onCopyAnchor, copied, registerRef, onLabel, savedLabel, compact, expandAll }) {
-  const isUser = turn.role === 'user'
-  const isSub = turn.depth && turn.depth > 0
-  const roleLabel = isSub ? 'subagent · ' + turn.subagent : turn.role === 'assistant' ? HARNESS : turn.role
-  // the assistant IS the agent → its accent is the provider accent (PROVIDER_ACCENT[HARNESS]), falling
-  // back to the system fixed assistant amber. a token var so it re-themes; fed to the ProviderIcon
-  // (accent prop) and the rolelabel colour. user stays teal / subagent mauve (their .user/.sub CSS).
-  const asstAccent = PROVIDER_ACCENT[HARNESS] ? `var(--${PROVIDER_ACCENT[HARNESS]})` : 'var(--amber)'
-
-  const head = (
-    <div className="txn-turnhead">
-      <span className="txn-rolelabel" style={turn.role === 'assistant' && !isSub ? { color: asstAccent } : undefined}>
-        {turn.role === 'assistant' && !isSub ? <ProviderIcon harness={HARNESS} accent /> : isSub ? <CornerDownRight size={14} aria-hidden="true" /> : isUser ? <User size={14} aria-hidden="true" /> : <Wrench size={14} aria-hidden="true" />}
-        {roleLabel}
-      </span>
-      {isSub && <span className="txn-depth tnum">depth {turn.depth}</span>}
-      <span className="txn-turnnum tnum">#{turn.label}</span>
-      <span className="txn-turntime" title={turn.longTime}>{turn.time}</span>
-      <button
-        type="button"
-        className="txn-anchor"
-        aria-label={'copy link to turn ' + turn.label}
-        title="copy link to this turn"
-        onClick={() => onCopyAnchor(turn.id)}
-      >
-        {copied ? <Check size={13} aria-hidden="true" /> : <LinkIcon size={13} aria-hidden="true" />}
-      </button>
-      {onLabel && (
-        <button type="button" className="txn-labelbtn" onClick={() => onLabel(turn.id)}>
-          label
-        </button>
-      )}
-      {turn.error && <span className="chip chip-err txn-pill"><AlertTriangle size={12} aria-hidden="true" /> error</span>}
-      <span className="txn-tokbadge tnum" title={fmtTokens(turn.tokens.in) + ' in · ' + fmtTokens(turn.tokens.out) + ' out'}>
-        <Coins size={12} aria-hidden="true" /> {fmtTokens(turn.tokens.in + turn.tokens.out)}
-      </span>
-    </div>
-  )
-
-  const body = (
-    <>
-      {savedLabel && (
-        <div className="txn-savedchips">
-          <span className={'chip ' + (savedLabel.outcome === 'bad' ? 'chip-err' : savedLabel.outcome === 'good' ? 'chip-ok' : '')} title={'saved label · ' + savedLabel.outcome}>
-            {savedLabel.outcome}{savedLabel.flag ? ' · ' + savedLabel.flag : ''}
-          </span>
-        </div>
-      )}
-      <Markdown text={turn.body} />
-      {turn.thinking && <Thinking block={turn.thinking} />}
-      {turn.tools &&
-        turn.tools.map((t) => (
-          <ToolCall key={t.id} tool={t} open={expandAll || !!openTools[t.id]} onToggle={() => toggleTool(t.id)} />
-        ))}
-    </>
-  )
-
-  const cardClass =
-    'turn txn-turn ' +
-    (isUser ? 'user' : isSub ? 'sub' : 'asst') +
-    (active ? ' txn-active' : '') +
-    (compact ? ' txn-compact' : '')
-
-  return (
-    <div className="txn-turnwrap" ref={(el) => registerRef(turn.id, el)} data-turn={turn.id} id={'turn-' + turn.id}>
-      {isSub ? (
-        <div className="subtask txn-subtask">
-          <div className="subtask-head">
-            <CornerDownRight size={13} aria-hidden="true" /> <span className="who">{turn.subagent}</span> subagent
-          </div>
-          <div className={cardClass}>
-            {head}
-            {body}
-          </div>
-          <div className="subtask-foot">
-            <span className="elbow"><CornerDownRight size={13} aria-hidden="true" /> returned to claude</span>
-          </div>
-        </div>
-      ) : (
-        <div className={cardClass}>
-          {head}
-          {body}
-        </div>
-      )}
-      {turn.checkpoint && (
-        <div className="marker txn-checkpoint">
-          <span className="r" />
-          <span className="mkc">
-            <GitCommitHorizontal size={14} aria-hidden="true" />
-            <span className="hash mono">{turn.checkpoint.hash}</span>
-            <span className="txn-cp-msg">{turn.checkpoint.msg}</span>
-            <span className="txn-cp-stat tnum">+{turn.checkpoint.adds} −{turn.checkpoint.dels} · {turn.checkpoint.files} files</span>
-          </span>
-          <span className="r" />
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* a tiny markdown-ish renderer: **bold** + `code`, plain text otherwise (chrome
-   stays minimal; the content keeps its case). search highlight handled by caller. */
-function Markdown({ text }) {
-  const parts = useMemo(() => {
-    const out = []
-    const re = /(\*\*[^*]+\*\*|`[^`]+`)/g
-    let last = 0
-    let m
-    while ((m = re.exec(text))) {
-      if (m.index > last) out.push({ t: 'text', v: text.slice(last, m.index) })
-      const tok = m[0]
-      if (tok.startsWith('**')) out.push({ t: 'b', v: tok.slice(2, -2) })
-      else out.push({ t: 'code', v: tok.slice(1, -1) })
-      last = m.index + tok.length
-    }
-    if (last < text.length) out.push({ t: 'text', v: text.slice(last) })
-    return out
-  }, [text])
-  return (
-    <div className="body txn-body">
-      {parts.map((p, i) =>
-        p.t === 'b' ? <b key={i}>{p.v}</b> : p.t === 'code' ? <code key={i} className="txn-inlinecode">{p.v}</code> : <span key={i}>{p.v}</span>
-      )}
-    </div>
-  )
-}
-
-/* ---------------------------------------------------------------- trajectory graph (hand-rolled svg) */
-function TrajectoryGraph({ turns, activeTurn, onSelect }) {
+   Rendered through the composite TranscriptViewer's `graphSlot` render-prop: the
+   composite owns no graph engine, so it hands this a cooked context
+   ({ viewModel, activeTurn, onSelectTurn }) and renders whatever this returns.
+============================================================================ */
+function TrajectoryGraph({ viewModel, activeTurn, onSelectTurn }) {
   const [zoom, setZoom] = useState(1)
-  const [hover, setHover] = useState(null)
-  const W = 520
-  const laneX = 150
-  const subLaneX = 320
-  const rowH = 92
-  const top = 28
-  const H = top + turns.length * rowH
-
-  const nodes = turns.map((t, i) => ({
-    t,
-    i,
-    x: t.depth ? subLaneX : laneX,
-    y: top + i * rowH,
-  }))
-
+  const turns = viewModel?.turns ?? []
   return (
     <div className="txn-graphwrap">
       <div className="canvas txn-canvas" role="img" aria-label="trajectory graph of the session">
         <div className="txn-graph-scroll">
-          <svg
-            className="txn-graph-svg"
-            viewBox={`0 0 ${W} ${H}`}
-            width={W * zoom}
-            height={H * zoom}
-            style={{ display: 'block' }}
+          <div
+            className="txn-graph-flow"
+            style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: 18, transform: `scale(${zoom})`, transformOrigin: 'top left' }}
           >
-            {/* sequential edges down the main rail */}
-            {nodes.slice(0, -1).map((n, i) => {
-              const next = nodes[i + 1]
-              return (
-                <line
-                  key={'e' + i}
-                  x1={n.t.depth ? subLaneX : laneX}
-                  y1={n.y + 30}
-                  x2={next.t.depth ? subLaneX : laneX}
-                  y2={next.y}
-                  stroke="var(--rule-strong)"
-                  strokeWidth="1"
-                  vectorEffect="non-scaling-stroke"
-                />
-              )
-            })}
-            {/* subagent lane header */}
-            <line x1={subLaneX} y1={top} x2={subLaneX} y2={H - 20} stroke="var(--rule)" strokeWidth="1" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
-            <text x={subLaneX} y={18} className="txn-graph-lane" textAnchor="middle">subagent · docs-writer · d1</text>
-
-            {nodes.map((n) => {
-              const isUser = n.t.role === 'user'
-              const sel = activeTurn === n.t.id
-              const hot = hover === n.t.id
-              const fill = sel ? 'color-mix(in srgb, var(--amber) 14%, var(--surface-2))' : 'var(--surface-2)'
-              return (
-                <g key={n.t.id} transform={`translate(${n.x - 64}, ${n.y})`}>
-                  <rect
-                    width="128"
-                    height="60"
-                    fill={fill}
-                    stroke={sel ? 'var(--amber)' : n.t.error ? 'var(--clay)' : 'var(--rule-strong)'}
-                    strokeWidth={sel || hot ? 1.5 : 1}
-                    vectorEffect="non-scaling-stroke"
-                    className="txn-graph-node"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => onSelect(n.t.id)}
-                    onMouseEnter={() => setHover(n.t.id)}
-                    onMouseLeave={() => setHover((h) => (h === n.t.id ? null : h))}
+            {turns.map((t) => {
+              const isSub = (t.depth ?? 0) > 0
+              const tools = t.toolCalls ?? []
+              const card = (
+                <button
+                  type="button"
+                  className="txn-graph-nodebtn"
+                  style={{ display: 'block', width: isSub ? 300 : 320, marginLeft: isSub ? 48 : 0, padding: 0, border: 0, background: 'none', cursor: 'pointer', textAlign: 'left' }}
+                  onClick={() => onSelectTurn(t.index)}
+                >
+                  <GraphTurnNode
+                    role={t.role}
+                    agentName={t.agentName}
+                    turnNumber={t.label}
+                    contentPreview={(t.content || '').replace(/\s+/g, ' ').trim().slice(0, 56)}
+                    toolCount={tools.length}
+                    totalTokens={(t.tokens?.in ?? 0) + (t.tokens?.out ?? 0)}
+                    tokensIn={t.tokens?.in}
+                    tokensOut={t.tokens?.out}
+                    hasError={t.isError}
+                    isSelected={activeTurn === t.index}
+                    provider={t.accent}
                   />
-                  <text x="8" y="16" className="txn-graph-role">{isUser ? 'you' : n.t.depth ? 'subagent' : 'claude'}</text>
-                  <text x="120" y="16" textAnchor="end" className="txn-graph-num">#{n.t.label}</text>
-                  <text x="8" y="33" className="txn-graph-prev">{(n.t.body || '').slice(0, 22)}…</text>
-                  <text x="8" y="50" className="txn-graph-meta">
-                    {(n.t.tools ? n.t.tools.length : 0)} tools · {fmtTokens(n.t.tokens.in + n.t.tokens.out)}
-                  </text>
-                  {n.t.error && <rect x="0" y="0" width="3" height="60" fill="var(--clay)" />}
-                </g>
+                </button>
+              )
+              return (
+                <div key={t.index} className="txn-graph-row" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {isSub && <GraphSubagentBranch agentName={t.agentName ?? 'subagent'} depth={t.depth ?? 1} />}
+                  {card}
+                  {!isSub && tools.length > 0 && (
+                    <div style={{ width: 220, marginLeft: 96 }}>
+                      <GraphToolNode
+                        tools={tools.map((tc) => ({ id: tc.id, name: tc.name, kind: tc.kind, filePath: tc.filePath, preview: tc.preview, isError: tc.isError, exitCode: tc.exitCode }))}
+                        totalDurationMs={tools.reduce((s, tc) => s + (tc.durationMs ?? 0), 0)}
+                        hasError={tools.some((tc) => tc.isError)}
+                      />
+                    </div>
+                  )}
+                </div>
               )
             })}
-
-            {/* tool pill cluster beside turns with tools */}
-            {nodes.filter((n) => n.t.tools && n.t.tools.length && !n.t.depth).map((n) => (
-              <g key={'tp' + n.t.id} transform={`translate(${laneX + 74}, ${n.y + 6})`}>
-                {n.t.tools.slice(0, 2).map((tool, ti) => (
-                  <g key={tool.id} transform={`translate(0, ${ti * 22})`}>
-                    <rect width="86" height="18" fill="var(--surface)" stroke="var(--rule)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                    <text x="6" y="13" className="txn-graph-tool">{tool.name.toLowerCase()}</text>
-                  </g>
-                ))}
-              </g>
-            ))}
-          </svg>
+          </div>
         </div>
 
-        {/* zoom / fit / reset controls — reuse .canvas-ctrls */}
+        {/* zoom / fit / reset controls — reuse the canvas control chrome */}
         <div className="canvas-ctrls">
           <button type="button" aria-label="zoom in" onClick={() => setZoom((z) => Math.min(1.6, +(z + 0.2).toFixed(2)))}><Plus size={14} aria-hidden="true" /></button>
           <button type="button" aria-label="zoom out" onClick={() => setZoom((z) => Math.max(0.6, +(z - 0.2).toFixed(2)))}><Minus size={14} aria-hidden="true" /></button>
           <button type="button" aria-label="fit view" onClick={() => setZoom(1)}><Maximize size={14} aria-hidden="true" /></button>
           <button type="button" aria-label="reset" onClick={() => setZoom(1)}><RefreshCw size={14} aria-hidden="true" /></button>
         </div>
-
-        {/* minimap */}
-        <div className="minimap" aria-hidden="true">
-          {nodes.map((n, i) => (
-            <i key={n.t.id} style={{ left: n.t.depth ? '60%' : '24%', top: (i / nodes.length) * 100 + 4 + '%', width: '20%', height: '7%', background: n.t.error ? 'var(--clay)' : activeTurn === n.t.id ? 'var(--amber)' : 'var(--ink-5)' }} />
-          ))}
-        </div>
       </div>
 
-      {/* legend */}
-      <div className="txn-graph-legend" aria-hidden="true">
-        <span><span className="txn-leg-glyph" style={{ background: 'var(--teal)' }} /> you</span>
-        <span><span className="txn-leg-glyph" style={{ background: 'var(--amber)' }} /> claude</span>
-        <span><span className="txn-leg-glyph" style={{ background: 'var(--mauve)' }} /> subagent</span>
-        <span><span className="txn-leg-glyph txn-leg-tool" /> tool</span>
-        <span><span className="txn-leg-glyph" style={{ background: 'var(--clay)' }} /> error</span>
-      </div>
+      {/* the lifted legend (the shared node-visual aesthetic) */}
+      <GraphLegend className="txn-graph-legend" />
     </div>
   )
 }
-
 /* ---------------------------------------------------------------- scorecard */
 const SCORECARD = [
   {
     id: 'token',
-    icon: Coins,
     label: 'token efficiency',
     headline: '8% retry tokens',
     band: 'watch',
@@ -800,7 +382,6 @@ const SCORECARD = [
   },
   {
     id: 'prompt',
-    icon: FileText,
     label: 'prompt quality',
     headline: 'spec 72/100',
     band: 'ok',
@@ -809,7 +390,6 @@ const SCORECARD = [
   },
   {
     id: 'loop',
-    icon: RefreshCw,
     label: 'loop efficiency',
     headline: '1 max error streak',
     band: 'ok',
@@ -818,1145 +398,342 @@ const SCORECARD = [
   },
 ]
 
-const BAND_META = {
-  ok: { label: 'on track', chip: 'chip-ok' },
-  watch: { label: 'watch', chip: 'chip-warn' },
-  off: { label: 'off track', chip: 'chip-err' },
-}
-
-function Scorecard() {
-  return (
-    <div className="txn-scorecard">
-      <div className="txn-sc-head">
-        <ShieldCheck size={15} aria-hidden="true" />
-        <span>how this session went</span>
-      </div>
-      <div className="txn-sc-grid">
-        {SCORECARD.map((s) => {
-          const Icon = s.icon
-          const band = BAND_META[s.band]
-          const Trend = s.delta.dir === 'up' ? TrendingUp : TrendingDown
-          return (
-            <div className="txn-sc-card" key={s.id}>
-              <div className="txn-sc-axis">
-                <Icon size={14} aria-hidden="true" /> {s.label}
-              </div>
-              <div className="txn-sc-headline">{s.headline}</div>
-              <span className={'chip txn-sc-band ' + band.chip}>{band.label}</span>
-              <ul className="txn-sc-flags">
-                {s.flags.map((f) => (
-                  <li key={f}>{f}</li>
-                ))}
-              </ul>
-              <div className={'txn-sc-delta ' + (s.delta.dir === 'up' ? 'txn-up' : 'txn-down')}>
-                <Trend size={13} aria-hidden="true" /> {s.delta.text}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 /* ============================================================================
-   MAIN
-============================================================================ */
-const TABS = [
-  { id: 'highlights', label: 'highlights', count: HIGHLIGHTS.length },
-  { id: 'trace', label: 'full trace', count: TURNS.length },
-  { id: 'diffs', label: 'diffs', count: 1 },
-  { id: 'files', label: 'files', count: FILES.length },
-  { id: 'annotations', label: 'annotations', count: ANNOTATIONS.length },
-]
+   MAIN — TranscriptApp: the canonical demo, refactored to CONSUME the lifted
+   fairtrade /ui components. It projects its editorial fixtures into the
+   canonical wire payload, feeds them through the ONE adapter (adaptTranscript) ->
+   TranscriptViewModel, and renders the composite <TranscriptViewer> + the rewired
+   trajectory graph (graphSlot). Parity by construction: the SAME lifted components
+   transcript-browser will consume render this demo.
 
-const CATEGORIES = [
-  { id: 'prompts', label: 'prompts', count: 2 },
-  { id: 'responses', label: 'responses', count: 6 },
-  { id: 'thinking', label: 'thinking', count: 2 },
-  { id: 'toolcalls', label: 'tool calls', count: 5 },
-]
+   Editorial overlay: a curated demo carries DISPLAY values a real wire payload
+   cannot (relative times, the short title, per-tool one-line previews, the
+   editorial diff hunk, the touched-file index, the curated highlights, the rich
+   scorecard). These are overlaid onto the cooked VM render-when-present. The
+   adapter still owns the STRUCTURAL cooking: turn labels/accents/depth, tool
+   parsing + classification, the filter index, git normalisation + commit anchoring.
+============================================================================ */
+
+/* map a turn id -> a monotonic RFC3339 timestamp (drives commit anchoring only; the
+   VISIBLE time is the editorial `time` overlaid below, never this absolute value). */
+const TS_BASE = Date.parse('2026-06-17T09:12:00Z')
+const turnTimestamp = (id) => new Date(TS_BASE + id * 60_000).toISOString()
+
+/* a demo tool fixture -> canonical ToolCallDetail (JSON-encoded arguments/result). */
+function toolToWire(tool) {
+  let args = {}
+  let result = ''
+  let toolKind
+  let filePath
+  let exitCode
+  let isError = false
+  let durationMs
+
+  const secs = (d) => (typeof d === 'string' && /([\d.]+)s/.test(d) ? Math.round(parseFloat(d) * 1000) : undefined)
+
+  switch (tool.kind) {
+    case 'read':
+      args = { file_path: tool.path, offset: 1, limit: 40 }
+      result = JSON.stringify(tool.excerpt ?? '')
+      toolKind = 'read'
+      filePath = tool.path
+      break
+    case 'grep':
+      args = { pattern: tool.pattern, path: tool.scope, type: tool.glob }
+      result = JSON.stringify(tool.results ?? '')
+      toolKind = 'search'
+      break
+    case 'bash':
+      args = { command: tool.command, ...(tool.description ? { description: tool.description } : {}) }
+      result = JSON.stringify(tool.stdout ?? '')
+      toolKind = 'execute'
+      exitCode = tool.exit
+      isError = tool.exit !== 0
+      durationMs = secs(tool.duration)
+      break
+    case 'edit': {
+      // reconstruct the pre/post text from the editorial hunk so the wire carries REAL edit content
+      // and the adapter's LCS diff path runs on it. (The demo still overlays the editorial hunk for
+      // display — see buildMockupVM — because its rewritten-line-as-del+add is an editorial
+      // representation an LCS would render as context; TB shows the LCS hunk.)
+      const hunk = Array.isArray(tool.hunk) ? tool.hunk : []
+      const oldText = hunk.filter((d) => d.sign === 'ctx' || d.sign === 'del').map((d) => d.t).join('\n')
+      const newText = hunk.filter((d) => d.sign === 'ctx' || d.sign === 'add').map((d) => d.t).join('\n')
+      args = { file_path: tool.path, old_string: oldText, new_string: newText }
+      result = JSON.stringify('ok')
+      toolKind = 'edit'
+      filePath = tool.path
+      break
+    }
+    case 'task':
+      args = { subagent_type: tool.agent, status: tool.status, description: tool.task, owner: tool.owner, prompt: tool.promptBody }
+      result = JSON.stringify(tool.result ?? '')
+      toolKind = 'other'
+      break
+    case 'webfetch':
+      args = { url: tool.url, prompt: tool.prompt }
+      result = JSON.stringify(tool.result ?? '')
+      toolKind = 'fetch'
+      break
+    default:
+      args = {}
+      result = JSON.stringify(tool.result ?? '')
+  }
+
+  const wire = { id: tool.id, name: tool.name, arguments: JSON.stringify(args), result }
+  if (toolKind) wire.toolKind = toolKind
+  if (filePath) wire.filePath = filePath
+  if (exitCode != null) wire.exitCode = exitCode
+  if (isError) wire.isError = true
+  if (durationMs != null) wire.durationMs = durationMs
+  return wire
+}
+
+/* a demo turn -> canonical TurnDetail. */
+function turnToWire(t) {
+  // Fold the demo's tool-sibling thinking into the turn content as a <thinking>…</thinking> block so the
+  // ADAPTER (not a VM overlay) extracts ThinkingVM back out. SCOPE — this <thinking> fold is a FORWARD/DEMO
+  // convention that peasant does NOT emit today: the backend suppresses the redundant tool-sibling thinking
+  // entry (transcript.go:154,164) and keeps its text in the parent's ContentPreview, so the adapter's
+  // inline-thinking path does not fire in production — it is render-when-present pending a backend
+  // follow-up. (STANDALONE thinking — a separate entryType=thinking turn — IS production-grounded, so a
+  // real consumer renders that today.) No current regression either way: TB never rendered inline thinking.
+  const content = t.thinking ? `<thinking>${t.thinking.text}</thinking>\n${t.body ?? ''}` : (t.body ?? '')
+  const wire = {
+    index: t.id,
+    role: t.role,
+    content,
+    timestamp: turnTimestamp(t.id),
+    depth: t.depth ?? 0,
+  }
+  if (t.thinking) wire.hasThinking = true
+  if (t.tools) wire.toolCalls = t.tools.map(toolToWire)
+  if (t.subagent) wire.agentName = t.subagent
+  if (t.tokens) { wire.tokensIn = t.tokens.in; wire.tokensOut = t.tokens.out }
+  return wire
+}
+
+/* the canonical wire payload (folded turns + nested gitContext for the checkpoint). */
+function buildWire() {
+  const checkpoint = TURNS.find((t) => t.checkpoint)?.checkpoint
+  const payload = {
+    id: 'sess_dem',
+    harness: HARNESS,
+    startTime: turnTimestamp(0),
+    endTime: turnTimestamp(8),
+    durationMins: 8,
+    totalTokens: 18400,
+    tokensIn: 12200,
+    tokensOut: 6200,
+    turnCount: 8,
+    toolCallCount: 5,
+    project: 'transcript-browser',
+    model: 'claude-opus-4-7',
+    outcome: 'resolved',
+    turns: TURNS.map(turnToWire),
+    scorecard: { outcome: 'resolved' },
+  }
+  if (checkpoint) {
+    payload.gitContext = {
+      branch: 'lift/transcript-canvas',
+      user: 'Dev',
+      commits: [
+        {
+          hash: checkpoint.hash,
+          message: checkpoint.msg,
+          authorName: 'Dev',
+          // ~30s after the checkpoint turn (id 6) so the adapter anchors it to that turn
+          timestamp: new Date(TS_BASE + 6 * 60_000 + 30_000).toISOString(),
+          filesChanged: checkpoint.files,
+          insertions: checkpoint.adds,
+          deletions: checkpoint.dels,
+        },
+      ],
+    }
+  }
+  return payload
+}
+
+/* precomputed analytics that reproduce the editorial fixtures EXACTLY (phases /
+   scorecard / annotations / tasks are curated, not mechanically derivable). The
+   adapter embeds a precomputed analytics block as-is when supplied. */
+function buildAnalytics() {
+  const phases = PHASES.map((p, i) => {
+    const vm = { id: `phase-${i + 1}`, label: p.label, from: p.from, to: p.to, icon: p.id }
+    if (p.errors) vm.errors = p.errors
+    return vm
+  })
+
+  // The scorecard STRUCTURE (icon + flag list + trend) is now emitted by the shared analytics
+  // (assessScorecard), so a real app's DERIVED bands render the rich card too. The demo's specific
+  // band/flag/trend COPY is editorial illustration — session-specific narrative ("after typecheck",
+  // "recovered in 1 turn", "N pts below your median") that threshold logic can't reproduce — so it
+  // is supplied here via the adapter's precomputed-analytics input (a documented editorial residual).
+  const scorecardBands = SCORECARD.map((s) => ({
+    id: s.id,
+    label: s.label,
+    band: s.band,
+    value: s.headline,
+    icon: s.id, // 'token' | 'prompt' | 'loop' -> the Scorecard's axis-icon map
+    flags: s.flags,
+    delta: s.delta,
+  }))
+
+  const patternAnnotations = ANNOTATIONS.map((a) => ({
+    id: a.id,
+    kind: a.type,
+    turn: a.turn,
+    label: a.label,
+    preview: a.preview,
+  }))
+
+  const taskGroups = TRACE_TASKS.map((t, i) => {
+    const next = TRACE_TASKS[i + 1]
+    const turnIndices = TURNS.filter((x) => x.id >= t.id && (!next || x.id < next.id)).map((x) => x.id)
+    const vm = {
+      id: `task-${t.index}`,
+      index: t.index,
+      prompt: t.prompt,
+      turnIndices,
+      durationMs: t.durationMs,
+      tools: t.tools,
+      outcome: t.outcome,
+      // the editorial per-task churn/file summary the task boundary chip shows
+      stat: t.index === 1 ? '5 files' : '2 files · +316 −25',
+    }
+    if (t.error) vm.error = t.error
+    return vm
+  })
+
+  return { phases, scorecardBands, patternAnnotations, taskGroups }
+}
+
+/* a demo diff hunk row {sign,a,b,t} -> cooked DiffLineVM. */
+function mkDiffLine(d) {
+  const line = { sign: d.sign, text: d.t }
+  if (d.a) line.oldNo = d.a
+  if (d.b) line.newNo = d.b
+  return line
+}
+
+/* the cooked VM. The adapter DERIVES the structure + every wire-derivable display value (turn
+   labels/accents/depth, tool kind/group/preview, diffs, the touched-file set, the filter index,
+   git, commit anchoring). What remains overlaid below is ONLY genuine editorial curation a real
+   wire cannot carry — each is a DOCUMENTED RESIDUAL (with why-non-derivable + the real-app gap):
+     • title         — no wire title field (the composite derives a fallback from the first prompt).
+     • turn time     — "Nm ago" is non-deterministic; the demo pins a stable label (TurnCard derives
+                       it from the timestamp for a real app).
+     • task preview  — a curated shortening of the wire description (makePreview derives "agent · description").
+     • diff hunk     — the demo draws the rewritten line as del+add; the adapter's LCS (run on the real
+                       reconstructed args) renders it as context, so a real app shows the LCS hunk.
+     • files         — the demo's index includes grep-result + attributed files NO tool call carries a
+                       path for; buildFiles derives only the tool-path-touched files, so a real app
+                       shows FEWER files (a real, documented "leaner TB" gap, not a masked one).
+     • highlights    — a curated key-moment set + copy; buildHighlights derives a FULLER set for a real app. */
+function buildMockupVM() {
+  const base = adaptTranscript(buildWire(), [], buildAnalytics())
+  const srcById = Object.fromEntries(TURNS.map((t) => [t.id, t]))
+
+  const turns = base.turns.map((tv) => {
+    const src = srcById[tv.index]
+    const out = { ...tv }
+    if (src?.time) out.time = src.time
+    if (src?.longTime) out.timeTitle = src.longTime
+    // NOTE: thinking is NOT overlaid — the adapter derives ThinkingVM from turn content. STANDALONE
+    // thinking (entryType=thinking turn) is PRODUCTION-GROUNDED: a real consumer renders it today. The
+    // demo's INLINE tool-sibling thinking rides the adapter's render-when-present <thinking> fold path
+    // (see turnToWire + the adapter) — a FORWARD/DEMO convention peasant does NOT emit yet, so it does
+    // not fire in production (no regression). Neither case is a VM overlay.
+    out.toolCalls = tv.toolCalls.map((tc) => {
+      const st = (src?.tools ?? []).find((x) => x.id === tc.id)
+      const o = { ...tc }
+      // makePreview now DERIVES the read/edit/grep/bash head previews from the wire (matching the
+      // canonical reference); only the task preview is a curated shortening of the wire description,
+      // so it is the lone preview overlaid here.
+      if (st?.kind === 'task' && st.preview) o.preview = st.preview
+      if (st?.kind === 'edit' && Array.isArray(st.hunk)) {
+        o.diff = [{ lines: st.hunk.map(mkDiffLine) }]
+        o.adds = st.adds
+        o.dels = st.dels
+      }
+      return o
+    })
+    return out
+  })
+
+  // the editorial touched-file index (the demo lists files no single tool call carries a path for)
+  const files = FILES.map((f) => ({
+    path: f.path,
+    leaf: f.leaf,
+    reads: f.reads,
+    writes: f.writes,
+    edits: f.edits,
+    deletes: 0,
+    adds: f.adds,
+    dels: f.dels,
+    edited: f.edited,
+    turn: f.turn,
+  }))
+
+  // the editorial diff hunk (the demo's del+add representation; an LCS diff would differ)
+  const editSrc = TURNS.find((t) => t.id === 5)?.tools?.[0]
+  const diffs = editSrc
+    ? [{
+        path: editSrc.path,
+        leaf: 'tasks.ts',
+        adds: editSrc.adds,
+        dels: editSrc.dels,
+        hunks: [{ lines: editSrc.hunk.map(mkDiffLine) }],
+        turn: 5,
+        toolCallId: editSrc.id,
+      }]
+    : base.diffs
+
+  // the curated highlights backing the highlights tab
+  const highlights = HIGHLIGHTS.map((h) => {
+    const vm = { id: h.id, kind: h.kind, turn: h.turn, title: h.title }
+    if (h.sub) vm.sub = h.sub
+    if (h.stat) vm.stat = h.stat
+    if (h.time) vm.time = h.time
+    if (h.tokens) vm.tokens = h.tokens
+    if (h.err) vm.err = true
+    if (h.tag) vm.tag = h.tag
+    return vm
+  })
+
+  return {
+    ...base,
+    session: { ...base.session, title: 'Port the transcript canvas into the shared package' },
+    turns,
+    files,
+    diffs,
+    highlights,
+  }
+}
+
+/* the permission surface the demo grants (REQUIRED by the composite, no default). */
+const CAPABILITIES = {
+  canEdit: true,
+  canExport: true,
+  canContribute: true,
+  canChangeVisibility: false,
+  canLabel: true,
+}
 
 export default function TranscriptApp({ theme = 'dark' }) {
-  const [tab, setTab] = useState('trace')
-  const [viewMode, setViewMode] = useState('list') // list | graph
-  // each body rail collapses to a thin re-open strip, freeing the centre column. both sides behave the same.
-  const [leftRailOpen, setLeftRailOpen] = useState(true)
-  const [rightRailOpen, setRightRailOpen] = useState(true)
+  const vm = useMemo(buildMockupVM, [])
+  // seed the same three tool calls expanded as the canonical demo (the rest default closed).
   const [openTools, setOpenTools] = useState({ t1a: true, t4a: true, t5a: true })
-  const [activeTurn, setActiveTurn] = useState(0)
-  const [copiedTurn, setCopiedTurn] = useState(null)
-  const [savedLabels, setSavedLabels] = useState({}) // turnId -> {outcome, flag}
-  const [labelFor, setLabelFor] = useState(null) // turnId open in popover
-
-  /* roving keyboard nav for the top tab strip, self-contained (this was previously supplied
-     by a global delegated tablist effect in App.jsx that has since been removed). arrows wrap,
-     home/end jump, and focus follows selection - matching the shared ui/Tabs component. */
-  const tabRefs = useRef({})
-  const onTabKey = (e) => {
-    const ids = TABS.map((t) => t.id)
-    const i = ids.indexOf(tab)
-    if (i < 0) return
-    let j = i
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') j = (i + 1) % ids.length
-    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') j = (i - 1 + ids.length) % ids.length
-    else if (e.key === 'Home') j = 0
-    else if (e.key === 'End') j = ids.length - 1
-    else return
-    e.preventDefault()
-    setTab(ids[j])
-    tabRefs.current[ids[j]]?.focus()
-  }
-
-  /* action menu state */
-  const [shareOpen, setShareOpen] = useState(false)
-  const [moreOpen, setMoreOpen] = useState(false)
-  const [copiedLink, setCopiedLink] = useState(false)
-
-  /* filters */
-  const [cats, setCats] = useState({ prompts: true, responses: true, thinking: true, toolcalls: true })
-  const [toolGroups, setToolGroups] = useState(() => Object.fromEntries(TOOL_GROUPS.map((g) => [g.id, true])))
-  const [toolGroupsOpen, setToolGroupsOpen] = useState(true)
-  const [tags, setTags] = useState({ errors: false, retries: false, revert: false })
-  const [views, setViews] = useState({ hidden: true, expandAll: false, compact: false })
-  const [checkpointOpen, setCheckpointOpen] = useState(false)
-  const [checkpoint, setCheckpoint] = useState('all')
-
-  /* diffs tab */
-  const [diffMode, setDiffMode] = useState('file') // file | turn
-  const [diffGroupsOpen, setDiffGroupsOpen] = useState({ 'packages/browser/src/lib/tasks.ts': true })
-
-  /* files tab sort */
-  const [fileSort, setFileSort] = useState({ key: 'path', dir: 'asc' })
-
-  /* search overlay */
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const [matchIdx, setMatchIdx] = useState(0)
-
-  /* sticky condensed header */
-  const [sticky, setSticky] = useState(false)
-
-  const turnRefs = useRef({})
-  const scrollRef = useRef(null)
-  const searchInputRef = useRef(null)
-  const draggingRef = useRef(false)
-
-  const registerRef = useCallback((id, el) => {
-    if (el) turnRefs.current[id] = el
-  }, [])
-
-  const toggleTool = (id) => setOpenTools((o) => ({ ...o, [id]: !o[id] }))
-
-  /* filtered turn set (categories OR-ish at the turn level; tags AND) */
-  const visibleTurns = useMemo(() => {
-    return TURNS.filter((t) => {
-      if (t.role === 'user' && !cats.prompts) return false
-      if (t.role === 'assistant' && !cats.responses) return false
-      if (tags.errors && !t.error && !(t.tools && t.tools.some((x) => x.kind === 'bash' && x.exit !== 0))) return false
-      if (checkpoint !== 'all') {
-        // scope to turns up to & including the checkpoint turn
-        if (t.id > 6) return false
-      }
-      return true
-    })
-  }, [cats, tags, checkpoint])
-
-  const filtersActive =
-    (cats.prompts ? 0 : 1) +
-    (cats.responses ? 0 : 1) +
-    (cats.thinking ? 0 : 1) +
-    (cats.toolcalls ? 0 : 1) +
-    (tags.errors ? 1 : 0) +
-    (tags.retries ? 1 : 0) +
-    (tags.revert ? 1 : 0) +
-    Object.values(toolGroups).filter((v) => !v).length
-
-  /* search matches: simple substring across turn bodies + tool previews */
-  const matches = useMemo(() => {
-    if (!query.trim()) return []
-    const q = query.toLowerCase()
-    const found = []
-    for (const t of TURNS) {
-      if ((t.body || '').toLowerCase().includes(q)) found.push({ turn: t.id, where: 'body' })
-      for (const tool of t.tools || []) {
-        const hay = [tool.preview, tool.stdout, tool.results, tool.excerpt, tool.result].filter(Boolean).join(' ').toLowerCase()
-        if (hay.includes(q)) found.push({ turn: t.id, where: tool.id })
-      }
-    }
-    return found
-  }, [query])
-
-  /* scroll the active match into view */
-  useEffect(() => {
-    if (!searchOpen || matches.length === 0) return
-    const m = matches[Math.min(matchIdx, matches.length - 1)]
-    const el = turnRefs.current[m.turn]
-    const sc = scrollRef.current
-    if (el && sc) {
-      const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      sc.scrollTo({ top: el.offsetTop - 12, behavior: reduce ? 'auto' : 'smooth' })
-      setActiveTurn(m.turn)
-    }
-  }, [matchIdx, matches, searchOpen])
-
-  /* global cmd/ctrl+F + j/k nav */
-  useEffect(() => {
-    function onKey(e) {
-      const mod = e.metaKey || e.ctrlKey
-      if (mod && (e.key === 'f' || e.key === 'F')) {
-        e.preventDefault()
-        setSearchOpen(true)
-        setTab('trace')
-        setTimeout(() => searchInputRef.current?.focus(), 0)
-        return
-      }
-      if (e.key === 'Escape' && searchOpen) {
-        setSearchOpen(false)
-        return
-      }
-      const typing = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)
-      if (searchOpen || typing || e.metaKey || e.ctrlKey || e.altKey) return
-      if (tab !== 'trace' || viewMode !== 'list') return
-      if (e.key === 'j' || e.key === 'ArrowDown') {
-        e.preventDefault()
-        stepTurn(1)
-      } else if (e.key === 'k' || e.key === 'ArrowUp') {
-        e.preventDefault()
-        stepTurn(-1)
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchOpen, tab, viewMode, activeTurn, visibleTurns])
-
-  function jumpTo(id, { switchTab = true } = {}) {
-    if (switchTab && tab !== 'trace') setTab('trace')
-    setViewMode('list')
-    setActiveTurn(id)
-    requestAnimationFrame(() => {
-      const el = turnRefs.current[id]
-      const sc = scrollRef.current
-      if (el && sc) {
-        const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        sc.scrollTo({ top: el.offsetTop - 12, behavior: reduce ? 'auto' : 'smooth' })
-      }
-    })
-  }
-
-  function stepTurn(dir) {
-    const ids = visibleTurns.map((t) => t.id)
-    const cur = ids.indexOf(activeTurn)
-    const next = Math.max(0, Math.min(ids.length - 1, cur + dir))
-    jumpTo(ids[next], { switchTab: false })
-  }
-
-  function copyAnchor(id) {
-    setCopiedTurn(id)
-    if (navigator.clipboard) navigator.clipboard.writeText('https://transcripts.peasant.dev/sess_dem#turn-' + id).catch(() => {})
-    setTimeout(() => setCopiedTurn((c) => (c === id ? null : c)), 1500)
-  }
-
-  function copyLink() {
-    setCopiedLink(true)
-    if (navigator.clipboard) navigator.clipboard.writeText('https://transcripts.peasant.dev/sess_dem').catch(() => {})
-    setTimeout(() => setCopiedLink(false), 1500)
-  }
-
-  function saveLabel(outcome, flag) {
-    if (labelFor == null) return
-    setSavedLabels((m) => ({ ...m, [labelFor]: { outcome, flag } }))
-    setLabelFor(null)
-  }
-
-  /* scroll handler: drives sticky reveal + active turn. the scrubber bracket now
-     tracks the active turn (turn-index space), so no scroll-fraction is needed. */
-  function onScroll() {
-    const sc = scrollRef.current
-    if (!sc) return
-    setSticky(sc.scrollTop > 56)
-    // active turn = the last turn whose top has crossed the 40% threshold line
-    let best = visibleTurns[0]?.id ?? 0
-    for (const t of visibleTurns) {
-      const el = turnRefs.current[t.id]
-      if (el && el.offsetTop - sc.scrollTop <= sc.clientHeight * 0.4) best = t.id
-    }
-    setActiveTurn(best)
-  }
-
-  /* scrubber drag (click-to-seek + draggable bracket). the track is in turn-index
-     space — ticks sit at i/(N-1) — so map the cursor to the NEAREST tick and scroll
-     that turn to the top of the viewport. this keeps the mouse, the bracket and the
-     active turn in lockstep (the old version seeked by raw scroll fraction, which
-     never matched the evenly-spaced ticks). */
-  function seekScrub(clientX, track) {
-    const rect = track.getBoundingClientRect()
-    const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-    const last = TURNS.length - 1
-    const idx = last > 0 ? Math.round(frac * last) : 0
-    const id = TURNS[idx].id
-    const el = turnRefs.current[id]
-    const sc = scrollRef.current
-    if (el && sc) {
-      sc.scrollTo({ top: el.offsetTop - 12, behavior: 'auto' })
-      setActiveTurn(id)
-    }
-  }
-
-  const progress = useMemo(() => {
-    const idx = visibleTurns.findIndex((t) => t.id === activeTurn)
-    return { cur: Math.max(1, idx + 1), total: visibleTurns.length }
-  }, [activeTurn, visibleTurns])
-
-  /* sorted files for the Files tab */
-  const sortedFiles = useMemo(() => {
-    const arr = [...FILES]
-    arr.sort((a, b) => {
-      let cmp = 0
-      if (fileSort.key === 'path') cmp = a.path.localeCompare(b.path)
-      else cmp = a.adds + a.dels - (b.adds + b.dels)
-      return fileSort.dir === 'asc' ? cmp : -cmp
-    })
-    return arr
-  }, [fileSort])
-
-  const editedFiles = FILES.filter((f) => f.edited)
-
-  /* turns containing edits for the Diffs tab */
-  const diffTurns = TURNS.filter((t) => t.tools && t.tools.some((x) => x.kind === 'edit'))
-
   return (
-    <div className={'txn-app' + (theme === 'light' ? ' txn-light' : '')}>
-      {/* ===================== HEADER ===================== */}
-      <header className="txn-header">
-        <div className="txn-header-top">
-          <nav className="crumb txn-crumb" aria-label="breadcrumb">
-            <a className="link" href="#">sessions</a>
-            <ChevronRight size={13} aria-hidden="true" />
-            <a className="link" href="#">transcript-browser</a>
-            <ChevronRight size={13} aria-hidden="true" />
-            <span className="cur">sess_dem</span>
-          </nav>
-
-          {/* ===== ACTION MENU ===== */}
-          <div className="txn-actions">
-            <div className="menu-anchor">
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm menu-trigger"
-                aria-expanded={shareOpen}
-                aria-haspopup="menu"
-                onClick={() => { setShareOpen((o) => !o); setMoreOpen(false) }}
-              >
-                <Share2 size={14} aria-hidden="true" /> share
-                <ChevronDown size={13} aria-hidden="true" className="menu-caret" />
-              </button>
-              {shareOpen && (
-                <div className="menu-pop menu-float" data-align="end" role="menu" aria-label="share">
-                  <ul className="menu-list">
-                    <li><button type="button" className="menu-item" role="menuitem" onClick={() => setShareOpen(false)}><Users size={14} aria-hidden="true" /><span className="menu-text">contribute</span></button></li>
-                    <li>
-                      <button type="button" className="menu-item" role="menuitem" onClick={copyLink}>
-                        {copiedLink ? <Check size={14} aria-hidden="true" /> : <LinkIcon size={14} aria-hidden="true" />}
-                        <span className="menu-text">{copiedLink ? 'copied' : 'copy link'}</span>
-                      </button>
-                    </li>
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            <div className="menu-anchor">
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm btn-icon menu-trigger"
-                aria-label="more actions"
-                aria-expanded={moreOpen}
-                aria-haspopup="menu"
-                onClick={() => { setMoreOpen((o) => !o); setShareOpen(false) }}
-              >
-                <MoreHorizontal size={14} aria-hidden="true" />
-              </button>
-              {moreOpen && (
-                <div className="menu-pop menu-float txn-more-pop" data-align="end" role="menu" aria-label="more actions">
-                  <ul className="menu-list">
-                    <li><button type="button" className="menu-item" role="menuitem" onClick={() => setMoreOpen(false)}><Pencil size={14} aria-hidden="true" /><span className="menu-text">edit</span></button></li>
-                    <li role="separator"><hr className="menu-sep" /></li>
-                    <li className="menu-cap">download</li>
-                    <li><button type="button" className="menu-item" role="menuitem" onClick={() => setMoreOpen(false)}><Download size={14} aria-hidden="true" /><span className="menu-text">json</span></button></li>
-                    <li><button type="button" className="menu-item" role="menuitem" onClick={() => setMoreOpen(false)}><Download size={14} aria-hidden="true" /><span className="menu-text">jsonl</span></button></li>
-                    <li><button type="button" className="menu-item" role="menuitem" onClick={() => setMoreOpen(false)}><Download size={14} aria-hidden="true" /><span className="menu-text">markdown</span></button></li>
-                    <li role="separator"><hr className="menu-sep" /></li>
-                    <li><button type="button" className="menu-item" role="menuitem" onClick={() => setMoreOpen(false)}><MessageSquareText size={14} aria-hidden="true" /><span className="menu-text">chat with trace</span></button></li>
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <h2 className="txn-title" title="Port the transcript canvas into the shared package">
-          Port the transcript canvas into the shared package
-        </h2>
-
-        {/* ===== METADATA CHIPS ===== */}
-        <div className="txn-meta chips">
-          <span className="chip chip-ok" title="resolved · typecheck + build green, committed">
-            <ShieldCheck size={14} aria-hidden="true" /> resolved
-          </span>
-          <span className="chip"><span className="g-claude"><ClaudeMark /></span> claude code</span>
-          <span className="chip mono">claude-opus-4-7</span>
-          <span className="metaitem"><User size={14} aria-hidden="true" /> Dev</span>
-          <span className="metaitem" title="started 8 minutes ago"><Clock size={14} aria-hidden="true" /> <b className="tnum">8m</b></span>
-          <span className="metaitem"><ListTree size={14} aria-hidden="true" /> <b className="tnum">8</b> turns</span>
-          <span className="metaitem"><Wrench size={14} aria-hidden="true" /> <b className="tnum">5</b> tools</span>
-          <span className="metaitem" title="12.2k in · 6.2k out"><Coins size={14} aria-hidden="true" /> <b className="tnum">18.4k</b> tokens</span>
-          <span className="metaitem"><GitCommitHorizontal size={14} aria-hidden="true" /> <b className="tnum">1</b> commit</span>
-          <span className="metaitem"><FileText size={14} aria-hidden="true" /> <b className="tnum">7</b> files</span>
-          <span className="metaitem txn-churn-meta tnum"><span className="txn-churn-add">+312</span> <span className="txn-churn-del">−24</span></span>
-        </div>
-      </header>
-
-      {/* ===================== TAB STRIP ===================== */}
-      <div className="tabs txn-tabs" role="tablist" aria-label="session views" onKeyDown={onTabKey}>
-        {TABS.map((t) => {
-          const on = tab === t.id
-          return (
-            <button
-              key={t.id}
-              ref={(el) => (tabRefs.current[t.id] = el)}
-              type="button"
-              role="tab"
-              aria-selected={on}
-              tabIndex={on ? 0 : -1}
-              className={'tab txn-tab' + (on ? ' active' : '')}
-              onClick={() => setTab(t.id)}
-            >
-              {t.label} <span className="cnt tnum">{t.count}</span>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* ===================== BODY ===================== */}
-      {/* split layout matching the viewer's railLayout="split": outline (user turns) left, transcript
-         centre, filters right. */}
-      <div className="txn-body-grid" data-left-rail={leftRailOpen ? 'open' : 'closed'} data-right-rail={rightRailOpen ? 'open' : 'closed'}>
-        {/* ---- LEFT: outline / user turns ---- */}
-        {leftRailOpen ? (
-          <aside className="txn-rail txn-rail-left" aria-label="user turns outline">
-            <div className="txn-rail-head">
-              <LayoutList size={13} aria-hidden="true" /> user turns
-              <button
-                type="button"
-                className="txn-rail-collapse"
-                aria-expanded="true"
-                aria-controls="txn-rail-left-body"
-                aria-label="collapse user turns outline"
-                title="collapse"
-                onClick={() => setLeftRailOpen(false)}
-              >
-                <PanelLeftClose size={14} aria-hidden="true" />
-              </button>
-            </div>
-            <div className="txn-rail-body" id="txn-rail-left-body">
-              <OutlineRail tab={tab} activeTurn={activeTurn} onJump={jumpTo} />
-            </div>
-          </aside>
-        ) : (
-          <div className="txn-rail-strip txn-rail-strip-left">
-            <button
-              type="button"
-              className="txn-rail-reopen"
-              aria-expanded="false"
-              aria-controls="txn-rail-left-body"
-              aria-label="expand user turns outline"
-              title="expand user turns"
-              onClick={() => setLeftRailOpen(true)}
-            >
-              <PanelLeftOpen size={14} aria-hidden="true" />
-              <span className="txn-rail-strip-label">user turns</span>
-            </button>
-          </div>
-        )}
-
-        {/* ---- CENTER ---- */}
-        <main className="txn-center" role="tabpanel" aria-label={tab}>
-          {tab === 'trace' && (
-            <div className={'txn-trace' + (sticky && viewMode === 'list' ? ' txn-trace-pinned' : '')}>
-              {/* tier 1 — condensed scrubber header, pinned ABOVE the turns bar
-                  (revealed once you scroll past the full header). it overlays the top
-                  strip of .txn-trace; the turns bar reserves space beneath it. */}
-              {sticky && viewMode === 'list' && (
-                <div className="txn-sticky">
-                  <span className="g-claude"><ClaudeMark /></span>
-                  <span className="txn-sticky-model mono">claude-opus-4-7</span>
-                  <Scrubber turns={TURNS} active={activeTurn} onSeek={seekScrub} draggingRef={draggingRef} />
-                </div>
-              )}
-              {/* tier 2 — the turns bar (count + list/graph toggle) */}
-              <div className="txn-trace-head">
-                <span className="txn-trace-count tnum">
-                  {visibleTurns.length === TURNS.length ? `${TURNS.length} turns` : `${visibleTurns.length} of ${TURNS.length} turns`}
-                </span>
-                <div className="bs-seg txn-viewtoggle" role="group" aria-label="view mode">
-                  <button type="button" className="bs-seg-opt" aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}>
-                    <List size={14} aria-hidden="true" /> list
-                  </button>
-                  <button type="button" className="bs-seg-opt" aria-pressed={viewMode === 'graph'} onClick={() => setViewMode('graph')}>
-                    <Network size={14} aria-hidden="true" /> graph
-                  </button>
-                </div>
-              </div>
-
-              {viewMode === 'graph' ? (
-                <TrajectoryGraph turns={TURNS} activeTurn={activeTurn} onSelect={(id) => setActiveTurn(id)} />
-              ) : (
-                <div className="txn-streamwrap">
-                {/* tier 3 — per-phase stickies pin at the top of the scroller, which
-                    already sits below tiers 1+2, so they need no extra offset */}
-                <div className="txn-stream" ref={scrollRef} onScroll={onScroll} tabIndex={-1}>
-                  {visibleTurns.length === 0 && (
-                    <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><h3>no turns to display</h3><p>every turn is filtered out. clear a filter to bring them back.</p></div>
-                  )}
-                  {visibleTurns.map((t, i) => {
-                    const prev = visibleTurns[i - 1]
-                    const phase = PHASES.find((p) => t.id >= p.from && t.id <= p.to)
-                    const showPhase = views.hidden && phase && (!prev || PHASES.find((p) => prev.id >= p.from && prev.id <= p.to)?.id !== phase.id)
-                    const showTask = t.role === 'user' && t.userTurn
-                    return (
-                      <div key={t.id}>
-                        {showPhase && (
-                          <div className="phase txn-phase">
-                            <span className="lbl"><phase.icon size={14} aria-hidden="true" /> {phase.label}</span>
-                            <span className="rng tnum">turns {phase.from}–{phase.to}{phase.errors ? ` · ${phase.errors} error` : ''}</span>
-                          </div>
-                        )}
-                        {showTask && (
-                          <div className="txn-taskboundary">
-                            <span className="txn-tb-chip">user turn {t.userTurn}</span>
-                            <span className="txn-tb-meta tnum">
-                              {t.userTurn === 1 ? '5m · 3 tools · 5 files' : '3m · 3 tools · 2 files · +316 −25'}
-                            </span>
-                          </div>
-                        )}
-                        <TurnCard
-                          turn={t}
-                          active={activeTurn === t.id}
-                          openTools={openTools}
-                          toggleTool={toggleTool}
-                          onCopyAnchor={copyAnchor}
-                          copied={copiedTurn === t.id}
-                          registerRef={registerRef}
-                          onLabel={(id) => setLabelFor(id)}
-                          savedLabel={savedLabels[t.id]}
-                          compact={views.compact}
-                          expandAll={views.expandAll}
-                        />
-                      </div>
-                    )
-                  })}
-                </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {tab === 'highlights' && (
-            <div className="txn-highlights">
-              <Scorecard />
-              <div className="txn-hl-cards">
-                {HIGHLIGHTS.map((h) => {
-                  const Icon = h.icon
-                  const isStatic = h.kind === 'checkpoint'
-                  return (
-                    <button
-                      key={h.id}
-                      type="button"
-                      className={'txn-hl-card' + (isStatic ? ' txn-hl-static' : '')}
-                      disabled={isStatic}
-                      onClick={() => !isStatic && jumpTo(h.turn)}
-                    >
-                      <span className={'txn-hl-ico' + (h.err ? ' txn-hl-err' : '')}>
-                        {h.kind === 'final' ? <ClaudeMark /> : <Icon size={15} aria-hidden="true" />}
-                      </span>
-                      <span className="txn-hl-text">
-                        <span className="txn-hl-title">{h.title}{h.tag && <span className="txn-hl-tag">{h.tag}</span>}</span>
-                        <span className="txn-hl-sub">{h.sub}</span>
-                        {h.stat && <span className="txn-hl-stat tnum">{h.stat}</span>}
-                      </span>
-                      <span className="txn-hl-side">
-                        {h.err && <span className="chip chip-err txn-pill"><AlertTriangle size={12} aria-hidden="true" /> failed</span>}
-                        {h.tokens && <span className="txn-tokbadge tnum"><Coins size={12} aria-hidden="true" /> {h.tokens}</span>}
-                        {h.time && <span className="txn-hl-time">{h.time}</span>}
-                        {!isStatic && <ChevronRight size={14} aria-hidden="true" />}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {tab === 'diffs' && (
-            <div className="txn-diffs">
-              <div className="txn-diffs-head">
-                <span className="txn-diffs-count tnum">1 edit across 1 file</span>
-                <div className="bs-seg" role="group" aria-label="group diffs by">
-                  <button type="button" className="bs-seg-opt" aria-pressed={diffMode === 'file'} onClick={() => setDiffMode('file')}>by file</button>
-                  <button type="button" className="bs-seg-opt" aria-pressed={diffMode === 'turn'} onClick={() => setDiffMode('turn')}>by turn</button>
-                </div>
-              </div>
-
-              {diffMode === 'file' ? (
-                <div className="txn-filegroup" id="diff-file-tasks">
-                  <button
-                    type="button"
-                    className="txn-fg-head"
-                    aria-expanded={!!diffGroupsOpen['packages/browser/src/lib/tasks.ts']}
-                    onClick={() => setDiffGroupsOpen((m) => ({ ...m, 'packages/browser/src/lib/tasks.ts': !m['packages/browser/src/lib/tasks.ts'] }))}
-                  >
-                    {diffGroupsOpen['packages/browser/src/lib/tasks.ts'] ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
-                    <Pencil size={14} aria-hidden="true" />
-                    <span className="mono txn-fg-path">packages/browser/src/lib/tasks.ts</span>
-                    <span className="chipx-count">1 edit</span>
-                    <span className="txn-churn tnum"><span className="txn-churn-add">+3</span> <span className="txn-churn-del">−1</span></span>
-                  </button>
-                  {diffGroupsOpen['packages/browser/src/lib/tasks.ts'] && (
-                    <DiffEntryCard turn={TURNS[5]} tool={TURNS[5].tools[0]} onJump={() => jumpTo(5)} />
-                  )}
-                </div>
-              ) : (
-                <div className="txn-difflist">
-                  {diffTurns.map((t) => (
-                    <DiffEntryCard key={t.id} turn={t} tool={t.tools.find((x) => x.kind === 'edit')} byTurn onJump={() => jumpTo(t.id)} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {tab === 'files' && (
-            <div className="txn-files">
-              <table className="dtable txn-filetable">
-                <thead>
-                  <tr>
-                    <th>
-                      <button type="button" className="txn-sort" onClick={() => setFileSort((s) => ({ key: 'path', dir: s.key === 'path' && s.dir === 'asc' ? 'desc' : 'asc' }))}>
-                        file {fileSort.key === 'path' ? (fileSort.dir === 'asc' ? <ChevronUp size={12} aria-hidden="true" /> : <ChevronDown size={12} aria-hidden="true" />) : null}
-                      </button>
-                    </th>
-                    <th className="txn-files-churn-col">
-                      <button type="button" className="txn-sort" onClick={() => setFileSort((s) => ({ key: 'churn', dir: s.key === 'churn' && s.dir === 'asc' ? 'desc' : 'asc' }))}>
-                        lines +/− {fileSort.key === 'churn' ? (fileSort.dir === 'asc' ? <ChevronUp size={12} aria-hidden="true" /> : <ChevronDown size={12} aria-hidden="true" />) : null}
-                      </button>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedFiles.map((f) => (
-                    <tr key={f.path} className="txn-filerow" onClick={() => (f.edited ? setTab('diffs') : jumpTo(f.turn))} title={f.edited ? 'jump to diffs' : 'jump to last read'}>
-                      <td>
-                        <span className="txn-file-cell">
-                          {f.edited ? <Pencil size={13} aria-hidden="true" /> : <FileText size={13} aria-hidden="true" />}
-                          <span className="mono txn-file-path">…/{f.leaf}</span>
-                          <span className="txn-file-counts tnum">{f.reads ? `${f.reads}r ` : ''}{f.edits ? `${f.edits}e ` : ''}{f.writes ? `${f.writes}w` : ''}</span>
-                        </span>
-                      </td>
-                      <td className="txn-files-churn-col">
-                        {f.adds || f.dels ? (
-                          <span className="txn-churn tnum"><span className="txn-churn-add">+{f.adds}</span> <span className="txn-churn-del">−{f.dels}</span></span>
-                        ) : (
-                          <span className="txn-readonly tnum" title="read-only, no edits">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {tab === 'annotations' && (
-            <div className="txn-annotations">
-              <p className="txn-anno-intro">auto-detected friction moments: tool errors and non-zero exits, retry loops, edits that re-touch a file, and subagent spawns. click a row to jump to the turn.</p>
-              {ANNOTATIONS.map((a) => {
-                const meta = ANNOTATION_META[a.type]
-                const Icon = meta.icon
-                return (
-                  <button key={a.id} type="button" className="txn-anno-row" onClick={() => jumpTo(a.turn)}>
-                    <span className="txn-anno-turn tnum">turn {a.turn} · assistant</span>
-                    <span className={'chip txn-pill ' + meta.chip} title={meta.tip}><Icon size={12} aria-hidden="true" /> {meta.label}</span>
-                    <span className="txn-anno-label">{a.label}</span>
-                    <span className="txn-anno-preview mono">{a.preview}</span>
-                    <ChevronRight size={14} aria-hidden="true" />
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </main>
-
-        {/* ---- RIGHT: filters ---- */}
-        {rightRailOpen ? (
-        <aside className="txn-rail txn-rail-right" aria-label="filters">
-          <div className="txn-rail-head">
-            <SlidersHorizontal size={13} aria-hidden="true" /> filters
-            {filtersActive > 0 && <span className="chipx-count unread tnum">{filtersActive}</span>}
-            <button
-              type="button"
-              className="txn-rail-collapse"
-              aria-expanded="true"
-              aria-controls="txn-rail-right-body"
-              aria-label="collapse filters"
-              title="collapse"
-              onClick={() => setRightRailOpen(false)}
-            >
-              <PanelRightClose size={14} aria-hidden="true" />
-            </button>
-          </div>
-          <div className="txn-rail-body" id="txn-rail-right-body">
-            <FiltersRail
-                tab={tab}
-                cats={cats}
-                setCats={setCats}
-                toolGroups={toolGroups}
-                setToolGroups={setToolGroups}
-                toolGroupsOpen={toolGroupsOpen}
-                setToolGroupsOpen={setToolGroupsOpen}
-                tags={tags}
-                setTags={setTags}
-                views={views}
-                setViews={setViews}
-                checkpoint={checkpoint}
-                setCheckpoint={setCheckpoint}
-                checkpointOpen={checkpointOpen}
-                setCheckpointOpen={setCheckpointOpen}
-                filtersActive={filtersActive}
-                onClear={() => {
-                  setCats({ prompts: true, responses: true, thinking: true, toolcalls: true })
-                  setToolGroups(Object.fromEntries(TOOL_GROUPS.map((g) => [g.id, true])))
-                  setTags({ errors: false, retries: false, revert: false })
-                }}
-                onJumpStart={() => jumpTo(visibleTurns[0]?.id ?? 0, { switchTab: false })}
-                onJumpLatest={() => jumpTo(visibleTurns[visibleTurns.length - 1]?.id ?? 0, { switchTab: false })}
-              />
-          </div>
-        </aside>
-        ) : (
-          <div className="txn-rail-strip txn-rail-strip-right">
-            <button
-              type="button"
-              className="txn-rail-reopen"
-              aria-expanded="false"
-              aria-controls="txn-rail-right-body"
-              aria-label="expand filters"
-              title="expand filters"
-              onClick={() => setRightRailOpen(true)}
-            >
-              <PanelRightOpen size={14} aria-hidden="true" />
-              <span className="txn-rail-strip-label">
-                filters{filtersActive > 0 ? <span className="chipx-count unread tnum">{filtersActive}</span> : null}
-              </span>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ===================== OVERLAYS ===================== */}
-      {searchOpen && (
-        <div className="txn-search">
-          <Search size={15} aria-hidden="true" className="txn-search-ico" />
-          <input
-            ref={searchInputRef}
-            className="txn-search-input"
-            placeholder="search across turns, tool args, and results…"
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); setMatchIdx(0) }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); setMatchIdx((i) => (matches.length ? (e.shiftKey ? (i - 1 + matches.length) % matches.length : (i + 1) % matches.length) : 0)) }
-              if (e.key === 'Escape') setSearchOpen(false)
-            }}
-            aria-label="search transcript"
-          />
-          <span className="txn-search-count tnum">{matches.length ? `${matchIdx + 1}/${matches.length}` : '0 matches'}</span>
-          <button type="button" className="txn-search-nav" aria-label="previous match" disabled={!matches.length} onClick={() => setMatchIdx((i) => (i - 1 + matches.length) % matches.length)}><ChevronUp size={14} aria-hidden="true" /></button>
-          <button type="button" className="txn-search-nav" aria-label="next match" disabled={!matches.length} onClick={() => setMatchIdx((i) => (i + 1) % matches.length)}><ChevronDown size={14} aria-hidden="true" /></button>
-          <kbd className="kbd-key txn-search-esc">esc</kbd>
-          <button type="button" className="txn-search-x" aria-label="close search" onClick={() => setSearchOpen(false)}><X size={14} aria-hidden="true" /></button>
-        </div>
+    <TranscriptViewer
+      viewModel={vm}
+      theme={theme}
+      capabilities={CAPABILITIES}
+      openTools={openTools}
+      onOpenToolsChange={setOpenTools}
+      graphSlot={({ viewModel: gvm, activeTurn, onSelectTurn }) => (
+        <TrajectoryGraph viewModel={gvm} activeTurn={activeTurn} onSelectTurn={onSelectTurn} />
       )}
-
-      {/* progress indicator */}
-      {tab === 'trace' && viewMode === 'list' && visibleTurns.length > 0 && (
-        <div className="txn-progress tnum" aria-hidden="true">{progress.cur} of {progress.total}</div>
-      )}
-
-      {/* per-turn label popover */}
-      {labelFor != null && (
-        <LabelPopover
-          turnId={labelFor}
-          current={savedLabels[labelFor]}
-          onSave={saveLabel}
-          onClose={() => setLabelFor(null)}
-        />
-      )}
-
-      {/* a hint strip so the search affordance is discoverable */}
-      <div className="txn-hint">
-        <kbd className="kbd-key">⌘</kbd><kbd className="kbd-key">f</kbd> search · <kbd className="kbd-key">j</kbd>/<kbd className="kbd-key">k</kbd> step turns
-      </div>
-    </div>
-  )
-}
-
-/* ---------------------------------------------------------------- scrubber */
-/* the scrubber lives in turn-index space: every tick sits at i/(N-1) of the
-   track. the bracket and the active highlight must share that space, and a
-   click must map back to a turn — otherwise the indicator drifts from the
-   mouse and from the active turn (it used raw scroll fraction before). */
-function Scrubber({ turns, active, onSeek, draggingRef }) {
-  const trackRef = useRef(null)
-  const last = turns.length - 1
-  const activeIdx = Math.max(0, turns.findIndex((t) => t.id === active))
-  /* the bracket follows the active turn, exactly co-located with its tick. */
-  const bracketPct = last > 0 ? (activeIdx / last) * 100 : 0
-
-  function down(e) {
-    draggingRef.current = true
-    if (trackRef.current) onSeek(e.clientX, trackRef.current)
-  }
-  useEffect(() => {
-    function move(e) {
-      if (draggingRef.current && trackRef.current) onSeek(e.clientX, trackRef.current)
-    }
-    function up() { draggingRef.current = false }
-    window.addEventListener('mousemove', move)
-    window.addEventListener('mouseup', up)
-    return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
-  }, [onSeek, draggingRef])
-  return (
-    <div
-      className="txn-scrub"
-      ref={trackRef}
-      role="slider"
-      aria-label="position in transcript"
-      aria-valuemin={1}
-      aria-valuemax={turns.length}
-      aria-valuenow={activeIdx + 1}
-      aria-valuetext={'turn ' + (activeIdx + 1) + ' of ' + turns.length}
-      tabIndex={0}
-      onMouseDown={down}
-    >
-      {turns.map((t, i) => (
-        <span
-          key={t.id}
-          className={'txn-scrub-tick' + (t.role === 'user' ? ' txn-tick-user' : '') + (t.error ? ' txn-tick-err' : '') + (active === t.id ? ' txn-tick-on' : '')}
-          style={{ left: (last > 0 ? (i / last) * 100 : 0) + '%' }}
-        />
-      ))}
-      <span className="txn-scrub-bracket" style={{ left: bracketPct + '%' }} aria-hidden="true" />
-    </div>
-  )
-}
-
-/* ---------------------------------------------------------------- diff entry card (Diffs tab) */
-function DiffEntryCard({ turn, tool, byTurn, onJump }) {
-  const Icon = tool.kind === 'write' ? FilePlus2 : Pencil
-  return (
-    <div className="txn-diffentry">
-      <div className="txn-de-head">
-        <Icon size={14} aria-hidden="true" />
-        <span className="mono txn-de-label">{byTurn ? `turn ${turn.id}` : tool.path}</span>
-        <span className="txn-churn tnum"><span className="txn-churn-add">+{tool.adds}</span> <span className="txn-churn-del">−{tool.dels}</span></span>
-        <button type="button" className="txn-jump" onClick={onJump}>jump to turn <ArrowRight size={13} aria-hidden="true" /></button>
-      </div>
-      <div className="diff txn-diff">
-        {tool.hunk.map((d, i) => (
-          <div className={'dl ' + d.sign} key={i}>
-            <span className="rail" />
-            <span className="gut tnum">{d.a}</span>
-            <span className="gut tnum">{d.b}</span>
-            <span className="sign">{d.sign === 'add' ? '+' : d.sign === 'del' ? '−' : ''}</span>
-            <span className="t">{d.t}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* ---------------------------------------------------------------- outline rail */
-function OutlineRail({ tab, activeTurn, onJump }) {
-  if (tab === 'diffs') {
-    return (
-      <ul className="txn-outline">
-        {FILES.filter((f) => f.edited).sort((a, b) => b.adds + b.dels - (a.adds + a.dels)).map((f) => (
-          <li key={f.path}>
-            <button type="button" className="txn-ol-row" onClick={() => onJump(f.turn)}>
-              <Pencil size={13} aria-hidden="true" />
-              <span className="txn-ol-leaf mono">{f.leaf}</span>
-              <span className="txn-churn tnum"><span className="txn-churn-add">+{f.adds}</span> <span className="txn-churn-del">−{f.dels}</span></span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    )
-  }
-  if (tab === 'files') {
-    return (
-      <ul className="txn-outline">
-        {[...FILES].sort((a, b) => a.leaf.localeCompare(b.leaf)).map((f) => (
-          <li key={f.path}>
-            <button type="button" className="txn-ol-row" onClick={() => onJump(f.turn)}>
-              <FileText size={13} aria-hidden="true" />
-              <span className="txn-ol-leaf mono">{f.leaf}</span>
-              <span className="txn-ol-meta tnum">{f.reads}r {f.edits}e {f.writes}w</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    )
-  }
-  if (tab === 'highlights') {
-    return (
-      <ul className="txn-outline">
-        {HIGHLIGHTS.map((h) => {
-          const Icon = h.icon
-          return (
-            <li key={h.id}>
-              <button type="button" className="txn-ol-row" disabled={h.kind === 'checkpoint'} onClick={() => h.kind !== 'checkpoint' && onJump(h.turn)}>
-                <Icon size={13} aria-hidden="true" className={h.err ? 'txn-ol-err' : ''} />
-                <span className="txn-ol-leaf">{h.title}</span>
-              </button>
-            </li>
-          )
-        })}
-      </ul>
-    )
-  }
-  if (tab === 'annotations') {
-    const groups = ['error', 'retry', 'revert', 'subagent']
-    return (
-      <div className="txn-outline-grouped">
-        {groups.map((g) => {
-          const items = ANNOTATIONS.filter((a) => a.type === g)
-          if (!items.length) return null
-          const meta = ANNOTATION_META[g]
-          const Icon = meta.icon
-          return (
-            <div key={g} className="txn-ol-group">
-              <div className="txn-ol-grouphead" title={meta.tip}><Icon size={13} aria-hidden="true" /> {meta.label} <span className="chipx-count">{items.length}</span></div>
-              <ul className="txn-outline">
-                {items.map((a) => (
-                  <li key={a.id}>
-                    <button type="button" className="txn-ol-row" onClick={() => onJump(a.turn)}>
-                      <span className="txn-ol-leaf tnum">turn {a.turn}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )
-        })}
-      </div>
-    )
-  }
-  /* trace -> the per-task duration trail (StepsWaterfall), the transcript-viewer's
-     "what happened, in order" timeline. onJump stays on the trace tab (no tab switch). */
-  return (
-    <StepsWaterfall
-      className="txn-ol-waterfall"
-      tasks={TRACE_TASKS}
-      label="user turns by duration"
-      onJump={(id) => onJump(id, { switchTab: false })}
     />
-  )
-}
-
-/* ---------------------------------------------------------------- filters rail */
-function FilterSection({ title, children, defaultOpen = true }) {
-  const [open, setOpen] = useState(defaultOpen)
-  return (
-    <div className="txn-fsec">
-      <button type="button" className="txn-fsec-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        {open ? <ChevronDown size={13} aria-hidden="true" /> : <ChevronRight size={13} aria-hidden="true" />} {title}
-      </button>
-      {open && <div className="txn-fsec-body">{children}</div>}
-    </div>
-  )
-}
-
-function CheckRow({ checked, onChange, children, count }) {
-  return (
-    <label className="txn-checkrow">
-      <input type="checkbox" className="check-box" checked={checked} onChange={onChange} />
-      <span className="txn-cr-label">{children}</span>
-      {count != null && <span className="txn-cr-count tnum">{count}</span>}
-    </label>
-  )
-}
-
-function FiltersRail({
-  tab, cats, setCats, toolGroups, setToolGroups, toolGroupsOpen, setToolGroupsOpen,
-  tags, setTags, views, setViews, checkpoint, setCheckpoint, checkpointOpen, setCheckpointOpen,
-  filtersActive, onClear, onJumpStart, onJumpLatest,
-}) {
-  if (tab !== 'trace' && tab !== 'highlights') {
-    return <div className="txn-filter-ph">filters are not available for this view yet.</div>
-  }
-  if (tab === 'highlights') {
-    return (
-      <div className="txn-filters">
-        <FilterSection title="outcome">
-          <CheckRow checked={tags.errors} onChange={() => setTags((t) => ({ ...t, errors: !t.errors }))}>errors</CheckRow>
-          <CheckRow checked={tags.retries} onChange={() => setTags((t) => ({ ...t, retries: !t.retries }))}>retries</CheckRow>
-          <CheckRow checked={tags.revert} onChange={() => setTags((t) => ({ ...t, revert: !t.revert }))}>re-edit</CheckRow>
-        </FilterSection>
-      </div>
-    )
-  }
-  return (
-    <div className="txn-filters">
-      <div className="txn-filters-top">
-        <span className="txn-filters-cap">categories</span>
-        {filtersActive > 0 && (
-          <button type="button" className="txn-clear" onClick={onClear}>clear ({filtersActive})</button>
-        )}
-      </div>
-
-      <div className="txn-catlist">
-        <CheckRow checked={cats.prompts} onChange={() => setCats((c) => ({ ...c, prompts: !c.prompts }))} count={CATEGORIES[0].count}>prompts</CheckRow>
-        <CheckRow checked={cats.responses} onChange={() => setCats((c) => ({ ...c, responses: !c.responses }))} count={CATEGORIES[1].count}>responses</CheckRow>
-        <CheckRow checked={cats.thinking} onChange={() => setCats((c) => ({ ...c, thinking: !c.thinking }))} count={CATEGORIES[2].count}>thinking</CheckRow>
-        <div className="txn-toolcat">
-          <CheckRow checked={cats.toolcalls} onChange={() => setCats((c) => ({ ...c, toolcalls: !c.toolcalls }))} count={CATEGORIES[3].count}>
-            <button type="button" className="txn-toolcat-toggle" aria-expanded={toolGroupsOpen} onClick={(e) => { e.preventDefault(); setToolGroupsOpen((o) => !o) }}>
-              tool calls {toolGroupsOpen ? <ChevronDown size={12} aria-hidden="true" /> : <ChevronRight size={12} aria-hidden="true" />}
-            </button>
-          </CheckRow>
-          {toolGroupsOpen && (
-            <div className="txn-toolgroups">
-              {TOOL_GROUPS.map((g) => {
-                const Icon = g.icon
-                return (
-                  <label key={g.id} className="txn-checkrow txn-subcheck">
-                    <input type="checkbox" className="check-box" checked={toolGroups[g.id]} disabled={g.count === 0} onChange={() => setToolGroups((m) => ({ ...m, [g.id]: !m[g.id] }))} />
-                    <span className="txn-cr-label"><Icon size={13} aria-hidden="true" /> {g.label}</span>
-                    <span className="txn-cr-count tnum">{g.count}</span>
-                  </label>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="txn-filter-divider" />
-      <span className="txn-filters-cap">semantic tags</span>
-      <div className="txn-catlist">
-        <CheckRow checked={tags.errors} onChange={() => setTags((t) => ({ ...t, errors: !t.errors }))}>
-          <AlertTriangle size={13} aria-hidden="true" className="txn-tag-err" /> errors
-        </CheckRow>
-        <CheckRow checked={tags.retries} onChange={() => setTags((t) => ({ ...t, retries: !t.retries }))}>
-          <RefreshCw size={13} aria-hidden="true" /> retries
-        </CheckRow>
-        <CheckRow checked={tags.revert} onChange={() => setTags((t) => ({ ...t, revert: !t.revert }))}>
-          <RotateCcw size={13} aria-hidden="true" /> re-edit
-        </CheckRow>
-      </div>
-
-      <div className="txn-filter-divider" />
-      <span className="txn-filters-cap">checkpoints</span>
-      <div className="txn-cp-select">
-        <button type="button" className="select txn-cp-trigger" aria-expanded={checkpointOpen} aria-haspopup="listbox" onClick={() => setCheckpointOpen((o) => !o)}>
-          <span className="mono">{checkpoint === 'all' ? 'all checkpoints (1)' : '9f3c1ad · port TurnRow'}</span>
-          <ChevronDown size={13} aria-hidden="true" />
-        </button>
-        {checkpointOpen && (
-          <div className="menu-pop txn-cp-pop" role="listbox">
-            <button type="button" role="option" aria-selected={checkpoint === 'all'} className="txn-cp-opt" onClick={() => { setCheckpoint('all'); setCheckpointOpen(false) }}>all checkpoints (1)</button>
-            <button type="button" role="option" aria-selected={checkpoint === '9f3c1ad'} className="txn-cp-opt" onClick={() => { setCheckpoint('9f3c1ad'); setCheckpointOpen(false) }}>
-              <span className="mono txn-cp-hash">9f3c1ad</span>
-              <span className="txn-cp-detail">port TurnRow · 4m ago · 7 files</span>
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="txn-filter-divider" />
-      <span className="txn-filters-cap">view options</span>
-      <div className="txn-views">
-        <ViewSwitch label="show hidden indicators" on={views.hidden} onToggle={() => setViews((v) => ({ ...v, hidden: !v.hidden }))} />
-        <ViewSwitch label="expand all tool calls" on={views.expandAll} onToggle={() => setViews((v) => ({ ...v, expandAll: !v.expandAll }))} />
-        <ViewSwitch label="compact mode" on={views.compact} onToggle={() => setViews((v) => ({ ...v, compact: !v.compact }))} />
-      </div>
-
-      <div className="txn-filter-divider" />
-      <span className="txn-filters-cap">jump to</span>
-      <div className="txn-jumprow">
-        <button type="button" className="btn btn-secondary btn-sm" onClick={onJumpStart}><ArrowUpToLine size={14} aria-hidden="true" /> start</button>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={onJumpLatest}><ArrowDownToLine size={14} aria-hidden="true" /> latest</button>
-      </div>
-    </div>
-  )
-}
-
-function ViewSwitch({ label, on, onToggle }) {
-  return (
-    <div className="txn-viewsw">
-      <button type="button" role="switch" aria-checked={on} className="sw" onClick={onToggle} aria-label={label} />
-      <span className="txn-viewsw-label">{label}</span>
-      <span className="txn-viewsw-state">{on ? 'on' : 'off'}</span>
-    </div>
-  )
-}
-
-/* ---------------------------------------------------------------- label popover */
-function LabelPopover({ turnId, current, onSave, onClose }) {
-  const [outcome, setOutcome] = useState(current?.outcome || 'neutral')
-  const [flag, setFlag] = useState(current?.flag || '')
-  const ref = useRef(null)
-  useEffect(() => {
-    function onDoc(e) { if (ref.current && !ref.current.contains(e.target)) onClose() }
-    function onKey(e) { if (e.key === 'Escape') onClose() }
-    document.addEventListener('mousedown', onDoc)
-    document.addEventListener('keydown', onKey)
-    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey) }
-  }, [onClose])
-  const OUTCOMES = [['good', 'good'], ['neutral', 'neutral'], ['bad', 'bad']]
-  const FLAGS = [['', 'none'], ['error', 'error'], ['retry-loop', 'retry loop'], ['revert', 'revert'], ['highlight', 'highlight']]
-  return (
-    <div className="txn-label-scrim">
-      <div className="pop-card txn-label-pop" ref={ref}>
-        <div className="pop-head">
-          <Flag size={14} aria-hidden="true" />
-          <span className="pop-title">label turn {turnId}</span>
-        </div>
-        <div className="pop-body">
-          <div>
-            <span className="txn-label-cap">outcome</span>
-            <div className="bs-seg txn-label-seg">
-              {OUTCOMES.map(([v, l]) => (
-                <button key={v} type="button" className="bs-seg-opt" aria-pressed={outcome === v} onClick={() => setOutcome(v)}>{l}</button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <span className="txn-label-cap">flag</span>
-            <div className="txn-label-flags">
-              {FLAGS.map(([v, l]) => (
-                <button key={v || 'none'} type="button" className={'chip txn-label-flag' + (flag === v ? ' txn-flag-on' : '')} aria-pressed={flag === v} onClick={() => setFlag(v)}>{l}</button>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="pop-foot">
-          <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>cancel</button>
-          <button type="button" className="btn btn-primary btn-sm" onClick={() => onSave(outcome, flag)}>save label</button>
-        </div>
-      </div>
-    </div>
   )
 }

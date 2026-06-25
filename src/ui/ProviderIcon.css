@@ -27,6 +27,14 @@
   height: 100%;
   vertical-align: middle;
 }
+/* inside a chip, the mark takes the chip's small-icon size (matching .chip .brand /
+   .chip .lucide); the default .pv-icon box is --ic-md, too large beside chip text. This
+   lives here (unlayered, beside .pv-icon) so it beats the base box on specificity — a
+   layered override would lose to this unlayered rule. */
+.chip .pv-icon {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+}
 
 /* ── tag ─────────────────────────────────────────────────────────────────────
    the system chip look: hairline border, radius 0, mono, lowercase chrome. a

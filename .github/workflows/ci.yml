@@ -38,6 +38,14 @@ jobs:
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
+      # Contract gate: checkJs + strict + noImplicitAny on the transcript wire
+      # contract / TranscriptViewModel type-test. Runs first so a contract leak
+      # fails early with a clear attribution (not buried in the Vite/tsc build).
+      # Also called as the first step of build:lib below; explicit here for CI
+      # step attribution.
+      - name: Contract type gate (wire contract + VM leak assertions)
+        run: pnpm test:contract
+
       # Full library build: vite lib + CSS, finalize (CSS content assertion),
       # tsc declarations, smoke-lib (render + types-emit assertion), contrast on
       # the shipped dist/lib/tokens.css, and the pack-content assertion.

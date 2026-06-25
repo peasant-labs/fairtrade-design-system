@@ -47,6 +47,40 @@ const timelineItem = { id: 't1', kind: 'turn', role: 'user', label: '1', body: '
 const timelineTool = { id: 'tool1', kind: 'read', name: 'Read', preview: 'src/index.css', path: 'src/index.css' }
 const rendererTool = { kind: 'read', status: 'ok', args: { file: 'src/index.css', excerpt: ':root {}' }, durationMs: 1 }
 
+// transcript rendering primitives: cooked TranscriptViewModel fixtures so the smoke renders the
+// real render path (the dumb components read these cooked shapes; they never parse wire).
+const txnReadTool = { id: 'r1', name: 'Read', kind: 'read', group: 'read', preview: 'TurnRow.tsx', filePath: 'src/canvas/TurnRow.tsx', args: { file_path: 'src/canvas/TurnRow.tsx' }, output: 'export function TurnRow() {}' }
+const txnBashTool = { id: 'b1', name: 'Bash', kind: 'execute', group: 'bash', preview: 'pnpm -r typecheck', exitCode: 0, durationMs: 820, args: { command: 'pnpm -r typecheck' }, output: 'ok' }
+const txnTaskTool = { id: 'k1', name: 'Task', kind: 'other', group: 'tasks', preview: 'verify exports', args: { subagent_type: 'researcher', description: 'verify exports', prompt: 'check exports resolve' }, output: 'done' }
+const txnDiffEntry = { path: 'src/lib/tasks.ts', leaf: 'tasks.ts', adds: 1, dels: 0, turn: 5, toolCallId: 't5a', hunks: [{ lines: [{ sign: 'ctx', oldNo: '1', newNo: '1', text: 'const a = 1' }, { sign: 'add', newNo: '2', text: 'const b = 2' }, { sign: 'add', text: '' }] }] }
+const txnTurn = { index: 2, role: 'assistant', label: '2', depth: 0, accent: 'claude-code', content: 'Reading **TurnRow** before extracting it.', thinking: { text: 'read first', words: 2 }, toolCalls: [txnReadTool], annotations: [], tokens: { in: 2100, out: 640 }, timestamp: '2026-06-17T09:13:00Z' }
+const txnUserTurn = { index: 0, role: 'user', label: '1', depth: 0, content: 'Port the transcript canvas into the shared package.', toolCalls: [], annotations: [], tokens: { in: 280, out: 0 } }
+
+// a fully-populated cooked TranscriptViewModel + a complete capability surface, so the composite
+// TranscriptViewer + the rails/scrubber/scorecard render their real production path in the smoke.
+const txnViewModel = {
+  session: {
+    id: 'sess_demo_0001', harness: 'claude-code', startTime: '', endTime: '', durationMins: 8,
+    totalTokens: 18400, tokensIn: 12200, tokensOut: 6200, turnCount: 2, toolCallCount: 1,
+    project: 'transcript-browser', model: 'claude-opus-4-7', outcome: 'resolved',
+    git: { branch: 'main', insertions: 312, deletions: 24, commits: [{ hash: '9f3c1ad0', shortHash: '9f3c1ad', message: 'port TurnRow + tool renderers', turn: 2, adds: 312, dels: 24, files: 7 }] },
+  },
+  turns: [txnUserTurn, txnTurn],
+  toolCallsById: new Map([[txnReadTool.id, txnReadTool]]),
+  diffs: [txnDiffEntry],
+  files: [{ path: 'src/lib/tasks.ts', leaf: 'tasks.ts', reads: 0, writes: 0, edits: 1, deletes: 0, adds: 3, dels: 1, edited: true, turn: 2 }],
+  tasks: [{ id: 'task-0', index: 1, prompt: 'Port the transcript canvas into the shared package.', turnIndices: [0], durationMs: 300000, tools: 1, outcome: 'ok' }],
+  highlights: [{ id: 'h1', kind: 'request', turn: 0, title: 'initial request', sub: 'Port the transcript canvas…', time: '8m ago' }],
+  filterIndex: { toolGroupCounts: { edits: 1, bash: 0, read: 1, search: 0, fetch: 0, tasks: 0, other: 0 }, annotationsByTurn: {}, tags: [], tagCounts: {}, totalTurns: 2 },
+  analytics: {
+    phases: [{ id: 'exploration', label: 'exploration', from: 0, to: 1 }],
+    scorecardBands: [{ id: 'token', label: 'token efficiency', band: 'watch', value: '8% retry tokens', detail: '1,300 tokens spent on the retry' }],
+    patternAnnotations: [{ id: 'a1', kind: 'error', turn: 1, label: 'pnpm -r typecheck · exit 2', preview: 'error TS2532' }],
+  },
+}
+const txnCaps = { canEdit: true, canLabel: true, canContribute: true, canChangeVisibility: true, canExport: true }
+const txnFilters = { categories: { prompts: true, responses: true, thinking: true, toolcalls: true }, toolGroups: { edits: true, bash: true, read: true, search: true, fetch: true, tasks: true, other: true }, tags: { errors: false, retries: false, revert: false }, views: { hidden: true, expandAll: false, compact: false }, checkpoint: 'all' }
+
 const sampleProps = {
   ChartBar: { data: chartData, xKey: 'label', series: [{ key: 'count', name: 'count' }], title: 'bars' },
   ChartLine: { data: chartData, xKey: 'label', series: [{ key: 'count', name: 'count' }], title: 'line' },
@@ -72,6 +106,35 @@ const sampleProps = {
   Timeline: { items: [timelineItem] },
   ToolCall: { tool: timelineTool },
   ToolCallRenderer: { tool: rendererTool },
+  GraphTurnNode: {
+    role: 'assistant',
+    turnNumber: 1,
+    contentPreview: 'sample turn',
+    toolCount: 2,
+    totalTokens: 1200,
+    provider: 'claude-code',
+  },
+  GraphToolNode: { tools: [{ id: 't1', name: 'Read', preview: 'src/index.css' }], totalDurationMs: 120 },
+  GraphSubagentBranch: { agentName: 'docs-writer', depth: 1 },
+  // transcript rendering primitives (Transcript* public-export convention)
+  TranscriptMarkdown: { text: 'a **bold** word and `code`.' },
+  TranscriptThinking: { block: { words: 3, text: 'weighing the options' } },
+  TranscriptToolCall: { tool: txnReadTool, open: true },
+  TranscriptToolBody: { tool: txnBashTool },
+  TranscriptTaskBody: { tool: txnTaskTool },
+  TranscriptDiffHunks: { hunks: txnDiffEntry.hunks },
+  TranscriptDiffEntryCard: { entry: txnDiffEntry },
+  TranscriptTurnCard: { turn: txnTurn, expandAll: true },
+  // transcript composite + view chrome (consume the cooked TranscriptViewModel)
+  TranscriptViewer: { viewModel: txnViewModel, capabilities: txnCaps },
+  TranscriptOutlineRail: { viewModel: txnViewModel, tab: 'trace' },
+  TranscriptFiltersRail: { tab: 'trace', filters: txnFilters, counts: { categories: { prompts: 1, responses: 1, thinking: 1, toolcalls: 1 }, toolGroups: txnViewModel.filterIndex.toolGroupCounts }, checkpoints: txnViewModel.session.git.commits },
+  TranscriptFilterSection: { title: 'outcome', children: 'rows' },
+  TranscriptCheckRow: { checked: true, count: 2, children: 'errors' },
+  TranscriptViewSwitch: { label: 'compact mode', on: true },
+  TranscriptScrubber: { turns: txnViewModel.turns, active: 0 },
+  TranscriptScorecard: { bands: txnViewModel.analytics.scorecardBands },
+  TranscriptLabelPopover: { turnId: 0, current: { outcome: 'good', flag: 'clean' } },
 }
 
 const expectedExports = [
@@ -86,6 +149,24 @@ const expectedExports = [
   'DataTable',
   'Timeline',
   'ToolCallRenderer',
+  // transcript rendering primitives + composite (barrel presence; Transcript* convention)
+  'TranscriptTurnCard',
+  'TranscriptThinking',
+  'TranscriptMarkdown',
+  'TranscriptToolCall',
+  'TranscriptToolBody',
+  'TranscriptTaskBody',
+  'TranscriptDiffEntryCard',
+  'TranscriptDiffHunks',
+  'TranscriptViewer',
+  'TranscriptOutlineRail',
+  'TranscriptFiltersRail',
+  'TranscriptFilterSection',
+  'TranscriptCheckRow',
+  'TranscriptViewSwitch',
+  'TranscriptScrubber',
+  'TranscriptScorecard',
+  'TranscriptLabelPopover',
 ]
 
 const failures = []

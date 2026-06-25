@@ -59,3 +59,9 @@ export { default as CliSteps, CommandBlock, GettingStarted } from './CliOnboard.
 export { default as FacetRail } from './FacetRail.jsx'
 export { StatTile, StatGrid, GovTile, ProviderBars } from './StatTiles.jsx'
 export { default as VisibilitySegmented, VisibilityEye, ScopeChip, FocusedModeToggle } from './VisibilityControl.jsx'
+/* transcript family: the canonical wire contract + cooked TranscriptViewModel, plus the lifted
+   single-transcript components (composite + primitives) and the graph node visuals. The two
+   sub-barrels carry the actual surface, so additions land in those files rather than on this
+   hand-maintained barrel. */
+export * from './transcript/index.js'
+export * from './transcript/graph/index.js'

@@ -1,4 +1,9 @@
 @import "tailwindcss";
+/* graph node-visual aesthetics (.ft-gnode / .ft-graph). Colocated in the graph sub-barrel and
+   also pulled into the lib CSS bundle (lib-components.css) for npm consumers; importing it here
+   loads the SAME node-visual styling into the fairtrade app + mockup + storybook, which render the
+   lifted graph node components but otherwise only get tailwind + the inline rules below. */
+@import "./ui/transcript/graph/graph-visuals.css";
 
 /* scan the per-section components + react for utility usage */
 @source "./sections-react";
@@ -2214,6 +2219,10 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
      over it), the phase stickies (tier 3) need no offset — the scroller already
      starts below tiers 1+2, so phases pin at the scroller's own top. */
   .txn-streamwrap { position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+  /* graph-view sibling of .txn-streamwrap: both are the view-mode branches that fill the flex-column
+     .txn-trace, so the graph slot needs the same flex:1/min-height:0. Without it a fill-parent graph
+     engine (e.g. @xyflow, height:100%) resolves against a 0-height parent and collapses to 0px. */
+  .txn-graphslot { flex: 1; min-height: 0; }
   .txn-sticky {
     position: absolute; top: 0; left: 0; right: 0; z-index: var(--z-sticky);
     box-sizing: border-box; height: var(--txn-sticky-h);
