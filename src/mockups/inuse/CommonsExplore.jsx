@@ -366,6 +366,51 @@ const TOPICS = [
   { id: 'iterative-refinement', count: 14 },
 ]
 
+export function getExploreFixture() {
+  return {
+    transcripts: {
+      transcripts: TRANSCRIPTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        visibility: t.visibility,
+        modelProvider: t.provider,
+        modelName: t.modelName,
+        harnessVersion: t.model,
+        sessionStart: `${t.date}T00:00:00Z`,
+        sessionEnd: `${t.date}T00:00:00Z`,
+        turnCount: t.turns,
+        tokenCount: t.tokens,
+        toolCallCount: t.tools,
+        durationMs: t.durMin * 60 * 1000,
+        gitBranch: 'main',
+        projectName: t.project,
+        tags: t.tags.map((name) => ({ id: name, name })),
+        owner: {
+          githubUsername: AUTHORS[t.author].handle,
+          displayName: AUTHORS[t.author].discoverable ? AUTHORS[t.author].name : null,
+          avatarUrl: null,
+        },
+      })),
+      total: TRANSCRIPTS.length,
+      page: 0,
+      limit: 4,
+    },
+    collectives: COLLECTIVES.map((c) => ({
+      id: c.id,
+      name: c.name,
+      description: c.desc,
+      linkedGithubOrg: c.org,
+      memberCount: c.members,
+      transcriptCount: c.transcripts,
+    })),
+    popularTags: TOPICS.map((tag) => ({
+      id: tag.id,
+      name: tag.id,
+      usageCount: tag.count,
+    })),
+  }
+}
+
 const PAGE_SIZE = 4 /* small so pagination is visible on the mock corpus */
 
 /* a single radio-like sidebar option (single-select group) */

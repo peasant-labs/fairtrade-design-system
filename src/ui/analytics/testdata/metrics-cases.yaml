@@ -1,0 +1,323 @@
+# Named test cases for the analytics metric core (metrics.js, stats.js,
+# time.js, format.js), consumed by metrics.test.mjs — the same
+# named-case-corpus YAML pattern as the peasant repo's pkg/schema/testdata/
+# fixtures (see also peasant web/src/test/fixtures/*.ts, the JS side of that
+# harness).
+#
+# Case shape:
+#   name             stable case id (shows in test output + failure messages)
+#   fn               exported function under test
+#   args             positional arguments; special resolver forms:
+#                      { corpus: sample | empty }   the shared session corpus
+#                                                   (fixtures.js SAMPLE_SESSIONS)
+#                      { sessions: [partial, ...] } rows via makeSession defaults
+#                      { session: { partial } }     one record via makeSession
+#   expected         exact deep-equality on the full result (key sets checked)
+#   expect           subset match on an object result (only listed keys)
+#   expected_length  array length assertion
+#   rows             per-index subset matches on an array result
+#   Any expected VALUE may be { approx: <num> } (float comparison, eps 1e-6).
+
+cases:
+  # ── time helpers ─────────────────────────────────────────────────────────────
+  - name: weekKey buckets a Wednesday to the UTC Monday
+    fn: weekKey
+    args: ["2026-01-07T15:00:00Z"]
+    expected: "2026-01-05"
+  - name: weekKey keeps a Monday as itself
+    fn: weekKey
+    args: ["2026-01-05T00:00:00Z"]
+    expected: "2026-01-05"
+  - name: weekKey buckets a Sunday to the PREVIOUS Monday
+    fn: weekKey
+    args: ["2026-01-04T23:59:59Z"]
+    expected: "2025-12-29"
+  - name: weekKey returns null on garbage
+    fn: weekKey
+    args: ["not-a-date"]
+    expected: null
+  - name: dayKey returns null on empty input
+    fn: dayKey
+    args: [""]
+    expected: null
+  - name: daysBetween counts whole days forward
+    fn: daysBetween
+    args: ["2026-01-05", "2026-01-12"]
+    expected: 7
+  - name: daysBetween counts whole days backward
+    fn: daysBetween
+    args: ["2026-01-12", "2026-01-05"]
+    expected: -7
+
+  # ── stats helpers ─────────────────────────────────────────────────────────────
+  - name: median interpolates an even-length distribution
+    fn: median
+    args: [[1, 2, 3, 4]]
+    expected: 2.5
+  - name: median of a single sample is that sample
+    fn: median
+    args: [[5]]
+    expected: 5
+  - name: percentile interpolates linearly (p90 of 1..10)
+    fn: percentile
+    args: [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 0.9]
+    expected: { approx: 9.1 }
+  - name: median of an empty distribution is null
+    fn: median
+    args: [[]]
+    expected: null
+  - name: percentile of an empty distribution is null
+    fn: percentile
+    args: [[], 0.5]
+    expected: null
+  - name: medianAndP90 of an empty distribution
+    fn: medianAndP90
+    args: [[]]
+    expected: { count: 0, median: null, p90: null }
+  - name: medianAndP90 drops non-finite values
+    fn: medianAndP90
+    args: [[10, .nan, 20, .inf, 30]]
+    expected: { count: 3, median: 20, p90: { approx: 28 } }
+
+  # ── sessionHasCommit ──────────────────────────────────────────────────────────
+  - name: sessionHasCommit prefers commitCount 0 over hasCommit true
+    fn: sessionHasCommit
+    args: [{ session: { id: x, commitCount: 0, hasCommit: true } }]
+    expected: false
+  - name: sessionHasCommit true when commitCount positive
+    fn: sessionHasCommit
+    args: [{ session: { id: x, commitCount: 2 } }]
+    expected: true
+  - name: sessionHasCommit falls back to hasCommit true
+    fn: sessionHasCommit
+    args: [{ session: { id: x, hasCommit: true } }]
+    expected: true
+  - name: sessionHasCommit falls back to hasCommit false
+    fn: sessionHasCommit
+    args: [{ session: { id: x, hasCommit: false } }]
+    expected: false
+
+  # ── sessionsPerWeek ───────────────────────────────────────────────────────────
+  - name: sessionsPerWeek counts per ISO week, sorted ascending
+    fn: sessionsPerWeek
+    args: [{ corpus: sample }]
+    expected:
+      - { week: "2026-01-05", count: 2 }
+      - { week: "2026-01-12", count: 3 }
+      - { week: "2026-01-19", count: 3 }
+  - name: sessionsPerWeek of an empty corpus
+    fn: sessionsPerWeek
+    args: [{ corpus: empty }]
+    expected: []
+  - name: sessionsPerWeek drops unparseable start times
+    fn: sessionsPerWeek
+    args: [{ sessions: [{ id: bad, startTime: nope }] }]
+    expected: []
+
+  # ── weeklyActiveContributors ──────────────────────────────────────────────────
+  - name: weeklyActiveContributors counts distinct contributors per week
+    fn: weeklyActiveContributors
+    args: [{ corpus: sample }]
+    expected:
+      - { week: "2026-01-05", contributors: 2 } # alice, bob
+      - { week: "2026-01-12", contributors: 3 } # alice, carol, bob
+      - { week: "2026-01-19", contributors: 2 } # alice, carol
+  # ── returningContributorRate ──────────────────────────────────────────────────
+  - name: returningContributorRate — all three sample contributors are multi-week
+    fn: returningContributorRate
+    args: [{ corpus: sample }]
+    expected: { total: 3, returning: 3, rate: 1 }
+  - name: a single-week contributor is not returning
+    fn: returningContributorRate
+    args:
+      - sessions:
+          - { id: a, contributorId: solo, startTime: "2026-01-05T10:00:00Z" }
+          - { id: b, contributorId: solo, startTime: "2026-01-06T10:00:00Z" }
+          - { id: c, contributorId: regular, startTime: "2026-01-05T10:00:00Z" }
+          - { id: d, contributorId: regular, startTime: "2026-01-13T10:00:00Z" }
+    expected: { total: 2, returning: 1, rate: 0.5 }
+  - name: returningContributorRate — empty corpus has zero rate, no divide-by-zero
+    fn: returningContributorRate
+    args: [{ corpus: empty }]
+    expected: { total: 0, returning: 0, rate: 0 }
+
+  # ── longestStreak ─────────────────────────────────────────────────────────────
+  - name: longestStreak finds the longest consecutive-week run
+    fn: longestStreak
+    args: [{ corpus: sample }]
+    expected: { weeks: 3, startWeek: "2026-01-05", endWeek: "2026-01-19" }
+  - name: longestStreak resets across a gap week
+    fn: longestStreak
+    args:
+      - sessions:
+          - { id: a, startTime: "2026-01-05T10:00:00Z" }
+          - { id: b, startTime: "2026-01-12T10:00:00Z" }
+          # gap: 2026-01-19 skipped
+          - { id: c, startTime: "2026-01-26T10:00:00Z" }
+          - { id: d, startTime: "2026-02-02T10:00:00Z" }
+          - { id: e, startTime: "2026-02-09T10:00:00Z" }
+    expected: { weeks: 3, startWeek: "2026-01-26", endWeek: "2026-02-09" }
+  - name: longestStreak of an empty corpus
+    fn: longestStreak
+    args: [{ corpus: empty }]
+    expected: { weeks: 0, startWeek: null, endWeek: null }
+
+  # ── newContributorVelocity ────────────────────────────────────────────────────
+  - name: newContributorVelocity counts first appearances per week
+    fn: newContributorVelocity
+    args: [{ corpus: sample }]
+    expected:
+      - { week: "2026-01-05", newContributors: 2 } # alice, bob
+      - { week: "2026-01-12", newContributors: 1 } # carol
+
+  # ── sessionToCommitRate ───────────────────────────────────────────────────────
+  - name: sessionToCommitRate — 4 of the 8 sample sessions have commits
+    fn: sessionToCommitRate
+    args: [{ corpus: sample }]
+    expected: { total: 8, withCommit: 4, rate: 0.5 }
+  - name: sessionToCommitRate of an empty corpus
+    fn: sessionToCommitRate
+    args: [{ corpus: empty }]
+    expected: { total: 0, withCommit: 0, rate: 0 }
+
+  # ── avgDurationPerActiveWeek ──────────────────────────────────────────────────
+  - name: avgDurationPerActiveWeek averages within each active week
+    fn: avgDurationPerActiveWeek
+    args: [{ corpus: sample }]
+    expected_length: 3
+    rows:
+      - index: 0 # (20+40)/2
+        expect: { week: "2026-01-05", avgDurationMins: 30, sessions: 2 }
+      - index: 1 # (60+15+35)/3
+        expect: { avgDurationMins: { approx: 36.666666667 }, sessions: 3 }
+      - index: 2 # (25+50+10)/3
+        expect: { avgDurationMins: { approx: 28.333333333 }, sessions: 3 }
+
+  # ── outcomeDistribution ───────────────────────────────────────────────────────
+  - name: outcomeDistribution buckets all outcomes, unknown for absent
+    fn: outcomeDistribution
+    args: [{ corpus: sample }]
+    expected: { resolved: 4, partial: 1, failed: 2, unknown: 1, total: 8 }
+
+  # ── resolvedRate ──────────────────────────────────────────────────────────────
+  - name: resolvedRate excludes unknown outcomes from the denominator
+    fn: resolvedRate
+    args: [{ resolved: 2, partial: 0, failed: 1, unknown: 1, total: 4 }] # 2 of 3 known
+    expected: { approx: 0.666666667 }
+  - name: resolvedRate is null when no session has a known outcome
+    fn: resolvedRate
+    args: [{ resolved: 0, partial: 0, failed: 0, unknown: 3, total: 3 }]
+    expected: null
+
+  # ── sessionStats ──────────────────────────────────────────────────────────────
+  - name: sessionStats — median + p90 of the four core numeric fields
+    fn: sessionStats
+    args: [{ corpus: sample }]
+    expected:
+      durationMins: { count: 8, median: 30, p90: { approx: 53 } }
+      totalTokens: { count: 8, median: 10500, p90: { approx: 23000 } }
+      turnCount: { count: 8, median: 12.5, p90: { approx: 26.5 } }
+      toolCallCount: { count: 8, median: 8, p90: { approx: 19.2 } }
+
+  # ── perContributorBreakdown ───────────────────────────────────────────────────
+  - name: perContributorBreakdown rolls up per contributor, sessions desc
+    fn: perContributorBreakdown
+    args: [{ corpus: sample }]
+    expected_length: 3
+    rows:
+      - index: 0
+        expect:
+          contributorId: alice
+          sessions: 4 # s1, s3, s6, s7
+          activeWeeks: 3
+          sessionsWithCommit: 3 # s1, s3, s7
+          totalCommits: 4 # s1(2) + s3(1) + s7(1)
+          outcomes: { resolved: 2, partial: 1, failed: 0, unknown: 1, total: 4 }
+          firstSeen: "2026-01-05"
+          lastSeen: "2026-01-21"
+          totalTokens: 62000
+      - index: 1
+        expect: { contributorId: bob, sessions: 2, totalCommits: 3, sessionsWithCommit: 1 }
+      - index: 2
+        expect: { contributorId: carol, sessions: 2, totalCommits: 0, sessionsWithCommit: 0 }
+  - name: perContributorBreakdown of an empty corpus
+    fn: perContributorBreakdown
+    args: [{ corpus: empty }]
+    expected: []
+  - name: perContributorBreakdown skips empty contributor ids
+    fn: perContributorBreakdown
+    args: [{ sessions: [{ id: x, contributorId: "" }] }]
+    expected: []
+  - name: totalCommits — a hasCommit-only session counts as 1 (lower bound)
+    fn: perContributorBreakdown
+    args:
+      - sessions:
+          - { id: a, contributorId: flag-only, hasCommit: true } # flag only: +1
+          - { id: b, contributorId: flag-only, commitCount: 5 } # count wins: +5
+          - { id: c, contributorId: flag-only, commitCount: 0, hasCommit: true } # count wins: +0
+    rows:
+      - index: 0
+        expect: { totalCommits: 6, sessionsWithCommit: 2 }
+
+  # ── computeProjectAnalytics ───────────────────────────────────────────────────
+  - name: computeProjectAnalytics is robust to an empty corpus
+    fn: computeProjectAnalytics
+    args: [{ corpus: empty }]
+    expect:
+      totalSessions: 0
+      totalContributors: 0
+      totalProjects: 0
+      returningContributorRate: { total: 0, returning: 0, rate: 0 }
+      longestStreak: { weeks: 0, startWeek: null, endWeek: null }
+      sessionStats:
+        durationMins: { count: 0, median: null, p90: null }
+        totalTokens: { count: 0, median: null, p90: null }
+        turnCount: { count: 0, median: null, p90: null }
+        toolCallCount: { count: 0, median: null, p90: null }
+      perContributorBreakdown: []
+
+  # ── presentation formatters (oracle notation) ─────────────────────────────────
+  - name: formatTokens drops a trailing .0 (62k, not 62.0k)
+    fn: formatTokens
+    args: [62000]
+    expected: "62k"
+  - name: formatTokens keeps a real decimal (10.5k)
+    fn: formatTokens
+    args: [10500]
+    expected: "10.5k"
+  - name: formatTokens — whole hundreds of k stay integral
+    fn: formatTokens
+    args: [106000]
+    expected: "106k"
+  - name: formatTokens — millions keep two decimals
+    fn: formatTokens
+    args: [1234567]
+    expected: "1.23M"
+  - name: formatTokens — null renders the em-free placeholder
+    fn: formatTokens
+    args: [null]
+    expected: "—"
+  - name: formatNumberPair matches precision across the pair
+    fn: formatNumberPair
+    args: [8, 19.2]
+    expected: ["8.0", "19.2"]
+  - name: formatNumberPair keeps two integers integral
+    fn: formatNumberPair
+    args: [12, 27]
+    expected: ["12", "27"]
+  - name: formatNumberPair renders a null side as a placeholder
+    fn: formatNumberPair
+    args: [null, 19.2]
+    expected: ["—", "19.2"]
+  - name: formatTokenPair shares one unit and matches precision
+    fn: formatTokenPair
+    args: [10500, 23000]
+    expected: ["10.5k", "23.0k"]
+  - name: formatTokenPair keeps integral pairs integral
+    fn: formatTokenPair
+    args: [62000, 106000]
+    expected: ["62k", "106k"]
+  - name: formatTokenPair — both null
+    fn: formatTokenPair
+    args: [null, null]
+    expected: ["—", "—"]

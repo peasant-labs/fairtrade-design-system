@@ -47,9 +47,13 @@
 }
 .rr-btn-ico > svg { width: var(--ic-sm); height: var(--ic-sm); }
 
-/* the resting trigger: a quiet hairline that warms to clay/danger on hover so the destructive
-   intent is legible before the click, not only after. */
-.rr-btn--danger-ghost { color: var(--ink-3); }
+/* the resting trigger: clay/danger from the start (not just on hover) so the destructive intent
+   reads immediately -- the glyph + the word "remove"/"delete" still carry the meaning
+   (neuroinclusive: never color alone), clay is additive emphasis on top of that, per explicit
+   user feedback on the roster's remove button. Shared by ConfirmInline's trigger generally, so
+   this also applies to DangerZone's own delete trigger (e.g. "delete collective") -- consistent
+   with, not in tension with, the same destructive-action convention there. */
+.rr-btn--danger-ghost { color: var(--clay); border-color: color-mix(in srgb, var(--clay) 45%, transparent); }
 .rr-btn--danger-ghost:not(:disabled):hover {
   border-color: var(--clay);
   color: var(--clay);
@@ -88,7 +92,11 @@
 
 /* ── roster shell ────────────────────────────────────────────────────────────── */
 
+/* the roster is its own query container so the stacked<->grid row layout keys off the roster's
+   OWN width (e.g. a ~280-360px rail vs. a wide main column), not the viewport. */
 .rr {
+  container-type: inline-size;
+  container-name: rr-roster;
   display: flex;
   flex-direction: column;
   border: var(--bd);
@@ -117,30 +125,119 @@
   color: var(--ink-3);
 }
 
+/* filterSlot row -- an optional consumer-supplied row (e.g. a "show: [org ▾]" list filter)
+   rendered inside the roster's own bordered box, between the header and the member list, so it
+   reads as part of THIS box rather than a separate section floating above it. Same horizontal
+   padding as the header/rows, its own border-bottom so it stays visually distinct from the list
+   below it (matching .rr-head's own border-bottom convention), lowercase mono chrome. */
+.rr-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-5);
+  border-bottom: var(--bd);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  color: var(--ink-3);
+}
+
 .rr-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-/* one member row: identity | org chip | role control | remove action. the org, role and remove
-   tracks are FIXED-width so every row shares the same column EDGES no matter the row's state — and
-   each track's content fills its track (justify-self:stretch + width:100%), so both the left AND
-   right edge of every org chip, every role control, and every action line up vertically down all
-   rows. an owner row places its locked "owner" in the role track and leaves the action track empty
-   while keeping the same rhythm, so it lines up with the editable rows below it. */
+/* one member row: identity | org chip | role control | remove action. THREE size tiers, keyed
+   off the roster's OWN width (a query container), not the viewport — the same member list is
+   embedded in rails of genuinely different widths across village (e.g. the collective-detail
+   rail measures ~156px of row content; the settings rail ~276px), and a role <select> (112px)
+   plus a remove button (~79px) plus their gap (12px) need >= ~203px to share a line at all
+   without overlapping.
+
+   ULTRA-NARROW default (< 260px roster width, below that ~203px floor): identity, org (if
+   present), role, and remove EACH get their own line — role and remove do NOT share a line
+   here, because measured against the narrowest real rail (collective-detail, ~156px of row
+   content) they don't fit side by side (112 + 79 + 12 = 203 > 156) and would silently overlap
+   instead of wrapping (CSS grid tracks don't reflow the way flex-wrap does). remove still
+   right-aligns on its own line, for the same "paired with this row's role, not a trailing
+   global action" reasoning as the compact tier below.
+
+   COMPACT (>= 260px, e.g. a ~276-360px rail): revises the earlier one-line-per-cell narrow
+   layout per explicit, later user feedback (they'd tried the fully-stacked version, then asked
+   for the display name back and for identity/role/remove each on their own line — handle, then
+   display name, then role + remove sharing the bottom line with remove right-aligned): identity
+   (avatar + handle, with .rr-who's own internal stack rendering the display name on a second
+   line beneath the handle automatically when `member.name` is set — no separate grid row
+   needed for it) is its own top line; org chip (if present) its own line; role + remove NOW
+   share the bottom line, role at its own natural width on the left, remove right-aligned on
+   the right. */
 .rr-row {
   display: grid;
-  /* identity flexes; org + role are fixed tracks their content fills; the action track has a fixed
-     floor but may grow (minmax …auto) so an OPEN inline-confirm ("remove? [yes] [cancel]") has room
-     without clipping. it is the last column, and its content is left-anchored, so that growth never
-     shifts the resting rows — the remove buttons stay put at the shared left edge. */
-  grid-template-columns: minmax(0, 1fr) 15ch 16ch minmax(80px, auto);
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "who who"
+    "org org"
+    "role role"
+    "act act";
+  column-gap: var(--sp-3);
+  row-gap: var(--sp-2);
   align-items: center;
-  gap: var(--sp-4);
   padding: var(--sp-3) var(--sp-5);
 }
 .rr-row + .rr-row { border-top: var(--bd); }
+.rr-who { grid-area: who; }
+.rr-org, .rr-org--none { grid-area: org; }
+.rr-role { justify-self: start; }
+/* remove right-aligns at its own natural width (not stretched full-width) so it sits flush
+   with the row's right edge — per explicit user feedback ("remove button should be
+   right-aligned", both here and in the demo, since this is a shared component) — whether it's
+   sharing role's line (COMPACT tier below) or on its own line (this ULTRA-NARROW default). */
+.rr-act { grid-area: act; justify-self: end; justify-content: flex-end; }
+/* a row with no org affiliation would otherwise leave a blank line where the invisible
+   .rr-org--none placeholder sits (needed in WIDE mode below for column alignment, not needed
+   here since narrow rows don't share column edges) — collapse it so the row skips straight
+   from identity to role/act instead of leaving an empty org gap. */
+.rr-org--none { display: none; }
+.rr-row:has(.rr-org--none) { grid-template-areas: "who who" "role role" "act act"; }
+
+/* COMPACT (>= 260px): role and remove now fit side by side (see the width math above) — merge
+   their two separate lines back into one shared line, remove staying right-aligned. */
+@container rr-roster (min-width: 260px) {
+  .rr-row {
+    grid-template-areas:
+      "who who"
+      "org org"
+      "role act";
+  }
+  .rr-row:has(.rr-org--none) { grid-template-areas: "who who" "role act"; }
+}
+
+/* WIDE (>= 480px roster width): restore the fixed-track grid so every row's org chip, role
+   control, and remove action share the same column edges down the list (the original layout;
+   see the track-width rationale on grid-template-columns below). */
+@container rr-roster (min-width: 480px) {
+  .rr-row {
+    display: grid;
+    /* identity flexes; org + role are fixed tracks their content fills; the action track has a
+       fixed floor but may grow (minmax …auto) so an OPEN inline-confirm ("remove? [yes]
+       [cancel]") has room without clipping. it is the last column, and its content is
+       left-anchored, so that growth never shifts the resting rows — the remove buttons stay put
+       at the shared left edge. */
+    grid-template-columns: minmax(0, 1fr) 15ch 16ch minmax(80px, auto);
+    grid-template-areas: "who org role act";
+    align-items: center;
+    gap: var(--sp-4);
+  }
+  .rr-org--none { display: block; }
+  .rr-row:has(.rr-org--none) { grid-template-areas: "who org role act"; }
+  .rr-role { justify-self: stretch; }
+  .rr-select { width: 100%; padding: 0 var(--sp-3); }
+  /* WIDE mode keeps its own original, deliberate left-anchored action track (see the comment
+     on grid-template-columns above) -- reset both properties the narrow rule above sets, so
+     narrow's right-alignment doesn't leak into the wide fixed-column layout. */
+  .rr-act { justify-self: stretch; justify-content: flex-start; }
+}
 
 /* identity cell — avatar + handle + optional name, all user content. */
 .rr-who {
@@ -220,10 +317,14 @@
   background: transparent;
 }
 
-/* role cell — fills its fixed track (justify-self:stretch) so the role control's left + right edges
-   line up down every row. the editable rows hold a full-width <select>; the owner row holds the
-   locked "owner" text in this SAME track, sharing the track's left edge with the selects below it. */
-.rr-role { display: flex; align-items: center; justify-self: stretch; }
+/* role cell. NARROW: grid-area "role" (bottom line, beside remove), left-aligned at its own
+   natural width (compact — not stretched full-width, see the justify-self:start rule above
+   near .rr-row) so it sits at the row's left edge with remove sharing the same line on the
+   right. WIDE: fills its fixed track (justify-self:stretch, set in the @container block below)
+   so the role control's left + right edges line up down every row — the editable rows hold a
+   full-width <select>; the owner row holds the locked "owner" text in this SAME track, sharing
+   the track's left edge with the selects below it. */
+.rr-role { display: flex; align-items: center; grid-area: role; }
 
 /* locked owner role: lock glyph + the word "owner", amber to mark the one privileged seat. left-
    aligned in the role track so its glyph sits at the same left edge as the role selects below it. */
@@ -240,16 +341,34 @@
 }
 .rr-lock { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
 
-/* the role <select> — a square hairline control matching the system select. it fills the role
-   track (width:100%) so every select shares one left and one right edge down the rows. */
+/* read-only role text: a viewer who can't manage this roster (canManage=false) sees the role as
+   plain text, not the interactive select -- neutral ink-3, no lock glyph (this isn't "locked
+   because owner", it's "you don't have permission to change this"), same mono/lowercase
+   treatment as the select's own option text so swapping between the two states doesn't shift
+   the visual weight of the row. */
+.rr-role-readonly {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h-sm);
+  padding: 0 var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  color: var(--ink-3);
+}
+
+/* the role <select> — a square hairline control matching the system select. NARROW: a compact
+   fixed width (fits "contributor", the longest option, without stretching the row) so it sits
+   beside the identity on one line. WIDE: fills the role track (width:100%, set in the
+   @container block below) so every select shares one left and one right edge down the rows. */
 .rr-select {
   appearance: none;
   -webkit-appearance: none;
   box-sizing: border-box;
-  width: 100%;
+  width: 112px;
   height: var(--control-h-sm);
   min-height: 28px;
-  padding: 0 var(--sp-3);
+  padding: 0 var(--sp-2);
   border: var(--bd-strong);
   background: var(--surface);
   color: var(--ink);
@@ -263,15 +382,17 @@
 .rr-select:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 .rr-select:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* remove action cell — fills its fixed track and left-aligns its content, so the remove button (and
-   the empty owner spacer) all start at the SAME left edge down the rows. when a ConfirmInline opens
-   to "remove? [yes] [cancel]" it grows rightward from that anchored edge without shifting the rest. */
+/* remove action cell — shared display/alignment properties; NARROW right-aligns at its own
+   natural width (justify-self:end + justify-content:flex-end, set near .rr-row above) so the
+   remove button sits flush with the row's right edge. WIDE reverts to its own original,
+   deliberate left-anchored fixed track (justify-self:stretch + justify-content:flex-start, set
+   in the @container block above) — it fills its column and left-anchors so an opened
+   ConfirmInline ("remove? [yes] [cancel]") grows rightward without shifting the rest, and every
+   row's remove button (or the empty owner spacer) still starts at the SAME left edge down the
+   rail's fixed columns. */
 .rr-act {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  justify-self: stretch;
-  width: 100%;
 }
 .rr-act-locked { display: block; }
 
@@ -329,13 +450,17 @@
   color: var(--ink-2);
 }
 
+/* body copy is Atkinson MONO, not the body/prose font -- a user-directed divergence (round 5
+   village settings UAT), not a demo match: this was var(--font-body) before, the SAME as every
+   other DangerZone consumer including the demo's own (shared component, unconditional -- there's
+   no separate "village mono" variant), so this changes the demo's own danger-zone rendering too. */
 .rr-danger-body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--sp-3);
   padding: var(--sp-4) var(--sp-5);
-  font-family: var(--font-body);
+  font-family: var(--font-mono);
   font-size: var(--fs-body);
   line-height: 1.5;
   color: var(--ink-2);

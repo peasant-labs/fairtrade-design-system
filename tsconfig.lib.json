@@ -14,6 +14,12 @@
     "strict": false,
     "noEmitOnError": false
   },
-  "include": ["src/ui/**/*.jsx", "src/ui/index.js"],
+  "include": [
+    "src/ui/**/*.jsx",
+    "src/ui/index.js",
+    "src/ui/graph/index.js",
+    "src/ui/commons/index.js",
+    "src/ui/analytics/index.js"
+  ],
   "exclude": ["src/ui/**/*.stories.jsx", "src/ui/story-frame.jsx"]
 }

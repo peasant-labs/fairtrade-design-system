@@ -8,9 +8,10 @@
    Wired into build:lib (= the prepack hook), and runnable standalone via
    `pnpm pack:check`. */
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { SURFACE_BUNDLES, findForeignNamespaces } from './surface-namespaces.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
@@ -70,4 +71,44 @@ if (problems.length) {
   )
 }
 
-console.log(`pack-content assertion: all ${targets.size} exports targets present in the tarball; fileCount ${fileCount} (floor ${FLOOR}).`)
+// ── Per-surface JS bundle isolation (HYBRID boundary) ─────────────────────────
+// Each per-surface JS entry that the tarball ships (graph.js / commons.js) must
+// carry ONLY its own surface code — never the OTHER surface family's class-name
+// namespaces. A lifted surface emits its prefixed className strings into its
+// bundle, so a co-bundling leak (e.g. peasant's ./graph entry pulling in village's
+// ./commons surface) would surface the foreign prefix in the wrong bundle. This is
+// the JS half of the intra-package isolation guarantee (the CSS half is asserted
+// in finalize-lib-build.mjs). Asserted on the packed dist bytes.
+const DIST = join(ROOT, 'dist', 'lib')
+const isoProblems = []
+for (const { surface, js, forbidden } of SURFACE_BUNDLES) {
+  const path = join(DIST, js)
+  if (!existsSync(path)) {
+    isoProblems.push(`${js} is missing from dist/lib (the per-surface JS entry did not build)`)
+    continue
+  }
+  const text = readFileSync(path, 'utf8')
+  const leaked = findForeignNamespaces(text, forbidden)
+  if (leaked.length) {
+    isoProblems.push(
+      `${js} (the ${surface} entry) contains foreign surface namespace(s) ${leaked.join(', ')} — a consumer importing ./${surface} would bundle the other app's surface code`,
+    )
+  }
+}
+if (isoProblems.length) {
+  throw new Error(
+    [
+      'pack-content assertion FAILED in scripts/assert-pack-contents.mjs: per-surface JS bundle isolation FAILED.',
+      'What went wrong (a per-surface entry co-bundled the OTHER surface family):',
+      ...isoProblems.map((p) => `  - ${p}`),
+      'Why it matters: the HYBRID package boundary promises an app importing one surface entry (./graph or',
+      './commons) never ships the other app\'s surfaces; a leaked namespace breaks that intra-package isolation.',
+      'How to fix: keep src/ui/graph/index.js and src/ui/commons/index.js importing ONLY their own surface',
+      'modules — never cross-import the other sub-barrel.',
+    ].join('\n'),
+  )
+}
+
+console.log(
+  `pack-content assertion: all ${targets.size} exports targets present in the tarball; fileCount ${fileCount} (floor ${FLOOR}); per-surface bundle isolation OK.`,
+)

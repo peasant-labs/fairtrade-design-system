@@ -91,11 +91,17 @@ function compareOrder(a, b) {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
 }
 
-/* index nodes by id, children by parent (sorted), roots (sorted). `_order` is a
-   stable index assigned from input order so siblings keep a deterministic layout. */
+/* index nodes by id, children by parent (sorted), roots (sorted). `_order` prefers the
+   caller's explicit `order` field (the backend's deterministic layer/order contract,
+   peasant/codegraph's layering); when a node carries no explicit `order`, `_order` falls
+   back to its input-array index so mock/story data without the contract still lays out
+   deterministically. */
 function buildTree(nodes) {
   const byId = new Map()
-  nodes.forEach((n, i) => byId.set(n.id, { ...n, _order: i }))
+  nodes.forEach((n, i) => {
+    const order = Number.isFinite(n.order) ? n.order : i
+    byId.set(n.id, { ...n, _order: order })
+  })
   const children = new Map()
   const roots = []
   for (const n of byId.values()) {
@@ -113,8 +119,9 @@ function buildTree(nodes) {
   return { byId, children, roots }
 }
 
-/* depth of every node from its root (roots = 0). used to lay rows out by depth so a
-   subtree's files always sit a row below their folder. */
+/* depth of every node from its root (roots = 0). drives the grain's semantic-zoom
+   threshold (visibleNodes below) — that is a pure tree-structure question and stays
+   depth-based regardless of `layer`. */
 function depthOf(node, byId) {
   let d = 0
   let cur = node
@@ -123,6 +130,15 @@ function depthOf(node, byId) {
     d += 1
   }
   return d
+}
+
+/* the ROW a node lays out in. Prefers the caller's explicit `layer` (the backend's
+   deterministic layer/order contract) so real maps position by the server's dependency
+   rows even when they diverge from parent-chain depth (e.g. a node reparented for
+   display purposes, or a layer that intentionally skips a depth). Falls back to
+   `depthOf` for data with no `layer` (mock/story fixtures, older payloads). */
+function layerOf(node, byId) {
+  return Number.isFinite(node.layer) ? node.layer : depthOf(node, byId)
 }
 
 /* which nodes render at the current grain + expansion set. a node descends (shows
@@ -157,10 +173,11 @@ function layout(visible, byId) {
     return Math.round(MIN_NODE_WIDTH + ratio * (MAX_NODE_WIDTH - MIN_NODE_WIDTH))
   }
 
-  // group by depth (the row), sort within row by (order, id).
+  // group by layer (the row; server-assigned when present, else tree depth), sort
+  // within row by (order, id) — see layerOf/compareOrder.
   const rows = new Map()
   for (const n of visible) {
-    const d = depthOf(n, byId)
+    const d = layerOf(n, byId)
     const row = rows.get(d)
     if (row) row.push(n)
     else rows.set(d, [n])
@@ -307,6 +324,12 @@ function nearestAcrossRows(positioned, cur, dir) {
  * @property {number} [coverage=0]             0..4 monochrome coverage ramp (the FILL)
  * @property {string} [parent]                 parent id (forms the tree)
  * @property {number} [violations=0]           violation count — a clay badge
+ * @property {number} [layer]                  server-assigned row (0 = top row); when
+ *   present, positions this node's ROW instead of tree depth (peasant/codegraph's
+ *   deterministic layer/order contract). Falls back to tree depth when absent.
+ * @property {number} [order]                  server-assigned stable sort key within a
+ *   layer; when present, orders siblings/row-mates instead of input-array position.
+ *   Falls back to input order when absent.
  */
 
 /**
@@ -329,17 +352,31 @@ function nearestAcrossRows(positioned, cur, dir) {
  * @param {Object} props
  * @param {{nodes: MapNode[], edges?: MapEdge[]}} [props.data]   the graph
  * @param {'overview'|'folders'|'files'} [props.grain='folders'] initial semantic zoom
- * @param {string} [props.selectedId]                            initial selection
+ * @param {Iterable<string>} [props.expandedIds]                 expanded node ids
+ * @param {string|null} [props.selectedId]                       selected node id
+ * @param {Iterable<string>} [props.highlightedIds]              host hover/relay ids
+ * @param {Record<string,'new'|'removed'>} [props.nodeDeltas]    per-node review deltas
+ * @param {Record<string,'new'|'removed'>} [props.edgeDeltas]    per-edge review deltas
  * @param {(id:string|null, node:MapNode|null)=>void} [props.onSelect]  selection cb
- * @param {number} [props.height=520]                            canvas height (px)
+ * @param {(grain:'overview'|'folders'|'files')=>void} [props.onGrainChange]
+ * @param {(ids:string[])=>void} [props.onExpandedIdsChange]
+ * @param {(id:string)=>void} [props.onExpand]
+ * @param {number|string} [props.height=520]                     canvas height
  * @param {string} [props.ariaLabel='code map']                  application label
  * @param {string} [props.className]                             extra container class
  */
 export default function MapCanvas({
   data = { nodes: [], edges: [] },
-  grain: initialGrain = 'folders',
-  selectedId: initialSelected = null,
+  grain: grainProp = 'folders',
+  expandedIds,
+  selectedId: selectedIdProp,
+  highlightedIds,
+  nodeDeltas = {},
+  edgeDeltas = {},
   onSelect,
+  onGrainChange,
+  onExpandedIdsChange,
+  onExpand,
   height = 520,
   ariaLabel = 'code map',
   className = '',
@@ -353,10 +390,15 @@ export default function MapCanvas({
 
   /* ----- view state ----- */
   const [grain, setGrain] = useState(
-    GRAIN_DEPTH[initialGrain] !== undefined ? initialGrain : 'folders'
+    GRAIN_DEPTH[grainProp] !== undefined ? grainProp : 'folders'
   )
-  const [expanded, setExpanded] = useState(() => new Set())
-  const [selectedId, setSelectedId] = useState(initialSelected)
+  // initialise synchronously from the controlled `expandedIds` prop (matching
+  // `grain`/`selectedId` below) so the FIRST render already reflects it — not
+  // just renders after the sync effect runs post-mount. Matters for SSR/initial
+  // paint (the effect never runs server-side) and avoids a one-frame flash of
+  // the collapsed grain-base tree before the effect widens it.
+  const [expanded, setExpanded] = useState(() => toIdSet(expandedIds))
+  const [selectedId, setSelectedId] = useState(selectedIdProp ?? null)
   const [focusedId, setFocusedId] = useState(null)
   const [scale, setScale] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 }) // translate of the inner group, px
@@ -366,12 +408,34 @@ export default function MapCanvas({
   const viewportRef = useRef(null)
   const dragRef = useRef(null) // { startX, startY, panX, panY, moved }
   const didInitFit = useRef(false)
+  const grainPropRef = useRef(grainProp)
+  const selectedIdPropRef = useRef(selectedIdProp)
   // live mirrors of scale/pan so callbacks can read the latest values without a
   // nested-setState (calling setPan inside a setScale updater warns in StrictMode).
   const scaleRef = useRef(scale)
   const panRef = useRef(pan)
   scaleRef.current = scale
   panRef.current = pan
+
+  const expandedIdsKey = idsKey(expandedIds)
+  const highlightedIdsKey = idsKey(highlightedIds)
+
+  useEffect(() => {
+    if (grainProp === grainPropRef.current) return
+    grainPropRef.current = grainProp
+    if (GRAIN_DEPTH[grainProp] !== undefined) setGrain(grainProp)
+  }, [grainProp])
+
+  useEffect(() => {
+    if (expandedIds !== undefined) setExpanded(toIdSet(expandedIds))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expandedIdsKey])
+
+  useEffect(() => {
+    if (selectedIdProp === selectedIdPropRef.current) return
+    selectedIdPropRef.current = selectedIdProp
+    if (selectedIdProp !== undefined) setSelectedId(selectedIdProp)
+  }, [selectedIdProp])
 
   /* ----- derived: tree, visible set, layout, edges, violations ----- */
   const tree = useMemo(() => buildTree(nodes), [nodes])
@@ -410,6 +474,18 @@ export default function MapCanvas({
     () => aggregateViolations(nodes, tree.byId, visibleIds),
     [nodes, tree.byId, visibleIds]
   )
+  const highlightedVisibleIds = useMemo(() => {
+    const source = toIdSet(highlightedIds)
+    if (source.size === 0) return source
+    const resolve = makeResolver(tree.byId, visibleIds)
+    const out = new Set()
+    for (const id of source) {
+      const visibleId = resolve(id)
+      if (visibleId) out.add(visibleId)
+    }
+    return out
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightedIdsKey, tree.byId, visibleIds])
 
   /* ----- search matches (a path-substring combobox) ----- */
   const matches = useMemo(() => {
@@ -492,20 +568,24 @@ export default function MapCanvas({
   const changeGrain = useCallback((id) => {
     setGrain(id)
     setExpanded(new Set())
-  }, [])
+    onGrainChange?.(id)
+    onExpandedIdsChange?.([])
+  }, [onExpandedIdsChange, onGrainChange])
 
   /* ----- expand a folder in place (double-click / E / shift+enter) ----- */
   const toggleExpand = useCallback(
     (id) => {
       if ((childCount.get(id) || 0) === 0) return
-      setExpanded((prev) => {
-        const next = new Set(prev)
-        if (next.has(id)) next.delete(id)
-        else next.add(id)
-        return next
-      })
+      const next = new Set(expanded)
+      if (next.has(id)) next.delete(id)
+      else {
+        next.add(id)
+        onExpand?.(id)
+      }
+      setExpanded(next)
+      onExpandedIdsChange?.(Array.from(next))
     },
-    [childCount]
+    [childCount, expanded, onExpand, onExpandedIdsChange]
   )
 
   /* ----- keyboard model on the application wrapper ----- */
@@ -792,6 +872,7 @@ export default function MapCanvas({
                   const a = posById.get(e.from)
                   const b = posById.get(e.to)
                   if (!a || !b) return null
+                  const delta = edgeDeltas[edgeKey(e.from, e.to)] ?? edgeDeltas[edgeKey(e.from, e.to, 'arrow')]
                   return (
                     <Edge
                       key={`${e.kind}:${e.from}->${e.to}`}
@@ -800,6 +881,7 @@ export default function MapCanvas({
                       kind={e.kind}
                       weight={e.weight}
                       maxWeight={maxWeight}
+                      delta={delta}
                     />
                   )
                 })}
@@ -813,6 +895,8 @@ export default function MapCanvas({
                   p={p}
                   selected={selectedId === p.node.id}
                   focused={focusedId === p.node.id}
+                  highlighted={highlightedVisibleIds.has(p.node.id)}
+                  delta={nodeDeltas[p.node.id]}
                   expandable={(childCount.get(p.node.id) || 0) > 0}
                   expanded={expanded.has(p.node.id)}
                   violations={violationCounts.get(p.node.id) || 0}
@@ -898,21 +982,21 @@ export default function MapCanvas({
   function jumpTo(node) {
     // ensure the node will be visible: at file grain everything renders, so flip
     // grain to files if the match is a file buried under collapsed folders.
-    let nextGrain = grain
     if (node.kind === 'file' && GRAIN_DEPTH[grain] < Infinity) {
-      nextGrain = 'files'
-      setGrain('files')
+      changeGrain('files')
     }
     // expand the node's ancestors so it (or its visible ancestor) is on-canvas.
-    setExpanded((prev) => {
-      const next = new Set(prev)
-      let cur = node.parent
-      while (cur && tree.byId.has(cur)) {
-        next.add(cur)
-        cur = tree.byId.get(cur).parent
+    const nextExpanded = new Set(node.kind === 'file' && GRAIN_DEPTH[grain] < Infinity ? [] : expanded)
+    let cur = node.parent
+    while (cur && tree.byId.has(cur)) {
+      if (!nextExpanded.has(cur)) {
+        nextExpanded.add(cur)
+        onExpand?.(cur)
       }
-      return next
-    })
+      cur = tree.byId.get(cur).parent
+    }
+    setExpanded(nextExpanded)
+    onExpandedIdsChange?.(Array.from(nextExpanded))
     setQuery('')
     setSearchOpen(false)
     setFocusedId(node.id)
@@ -921,7 +1005,6 @@ export default function MapCanvas({
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => focusNode(node.id))
     })
-    void nextGrain
   }
 }
 
@@ -930,6 +1013,20 @@ function stripInternal(node) {
   const { _order, ...rest } = node
   void _order
   return rest
+}
+
+function toIdSet(ids) {
+  if (!ids) return new Set()
+  return ids instanceof Set ? new Set(ids) : new Set(Array.from(ids))
+}
+
+function idsKey(ids) {
+  if (!ids) return ''
+  return Array.from(ids).map(String).sort().join('\u0000')
+}
+
+function edgeKey(from, to, style = 'plain') {
+  return style === 'arrow' ? `${from}->${to}` : `${from}→${to}`
 }
 
 /* sanitize an id into a css/dom-safe token for the node element id. */
@@ -978,6 +1075,8 @@ function Node({
   p,
   selected,
   focused,
+  highlighted,
+  delta,
   expandable,
   expanded,
   violations,
@@ -995,6 +1094,8 @@ function Node({
       data-cov={cov}
       data-selected={selected ? 'true' : undefined}
       data-focused={focused ? 'true' : undefined}
+      data-highlighted={highlighted ? 'true' : undefined}
+      data-delta={delta || undefined}
       data-ink-flip={inkFlip ? 'true' : undefined}
       aria-label={nodeAriaLabel(node, { selected, expanded, violations })}
       aria-pressed={selected}
@@ -1044,7 +1145,7 @@ function Node({
    (--rule-strong), activity = dashed; stroke WIDTH scales with weight (never hue).
    routing: down out of `a`'s bottom edge, an L through the mid-band, into `b`'s top
    edge — three segments, all 90° joins, radius 0. (peasant/edges.tsx, plain SVG.) */
-function Edge({ a, b, kind, weight, maxWeight }) {
+function Edge({ a, b, kind, weight, maxWeight, delta }) {
   const x1 = a.x + a.w / 2
   const y1 = a.y + a.h
   const x2 = b.x + b.w / 2
@@ -1056,7 +1157,7 @@ function Edge({ a, b, kind, weight, maxWeight }) {
   // weight -> width: 1px..3px, mapped by the visible max so the heaviest reads clearly.
   const w = 1 + (Math.min(weight, maxWeight) / maxWeight) * 2
   return (
-    <g className="mc-edge" data-kind={kind}>
+    <g className="mc-edge" data-kind={kind} data-delta={delta || undefined}>
       <path className="mc-edge-path" d={d} style={{ strokeWidth: w }} />
       {/* structure edges carry a square arrowhead at the target; activity is
           symmetric (co-work), so no marker. drawn as a path so it stays square. */}

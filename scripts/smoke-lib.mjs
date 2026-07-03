@@ -6,6 +6,9 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import * as ui from '../dist/lib/ui.js'
 import * as icons from '../dist/lib/icons.js'
+import * as graph from '../dist/lib/graph.js'
+import * as commons from '../dist/lib/commons.js'
+import * as analytics from '../dist/lib/analytics.js'
 
 // Types-emit assertion (runs after `tsc -p tsconfig.lib.json`). tsconfig.lib has
 // noEmitOnError:false, so a silent declaration-emit failure (bad include glob,
@@ -14,7 +17,9 @@ import * as icons from '../dist/lib/icons.js'
 // and ./icons types -> icons.d.ts, so assert both exist and are non-empty.
 const TYPES = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'lib', 'types')
 const typeFailures = []
-for (const decl of ['index.d.ts', 'icons.d.ts']) {
+// index.d.ts/icons.d.ts back ./ui + ./icons; graph/commons back the per-surface
+// ./graph + ./commons entries (their "types" targets in package.json exports).
+for (const decl of ['index.d.ts', 'icons.d.ts', 'graph/index.d.ts', 'commons/index.d.ts', 'analytics/index.d.ts']) {
   const p = join(TYPES, decl)
   if (!existsSync(p)) typeFailures.push(`${decl}: missing from dist/lib/types (tsc did not emit it)`)
   else if (statSync(p).size === 0) typeFailures.push(`${decl}: present but empty in dist/lib/types`)
@@ -197,6 +202,24 @@ for (const name of expectedIcons) {
 const iconCount = Object.keys(icons).length
 if (iconCount < 100) {
   failures.push(`dist/lib/icons.js re-exported only ${iconCount} symbols; expected the full lucide-react surface (>100)`)
+}
+
+// Per-surface entries (./graph, ./commons): confirm each surface bundle resolves
+// and surfaces its canonical enum-value arrays (the runtime exports that anchor
+// the contract). Empty here would mean a broken per-surface entry import.
+const surfaceChecks = [
+  ['graph', graph, ['MAP_NODE_KINDS', 'CHANGE_BINDINGS', 'EDGE_VIOLATION_KINDS', 'FILE_CHANGE_STATUSES', 'DIFF_LINE_KINDS']],
+  ['commons', commons, ['TRANSCRIPT_VISIBILITIES', 'ACCEPTANCE_MODES', 'DATA_ACCESS_POLICIES', 'TRANSCRIPT_DELETION_POLICIES', 'COLLECTIVE_ROLES']],
+  ['analytics', analytics, ['ANALYTICS_SESSION_OUTCOMES', 'PROJECT_OVERVIEW_SECTION_KEYS']],
+]
+for (const [surface, mod, names] of surfaceChecks) {
+  for (const name of names) {
+    if (!(name in mod)) {
+      failures.push(`${name}: missing from dist/lib/${surface}.js (per-surface entry export)`)
+    } else if (!Array.isArray(mod[name]) || mod[name].length === 0) {
+      failures.push(`${name}: not a non-empty frozen array in dist/lib/${surface}.js`)
+    }
+  }
 }
 
 if (failures.length) {

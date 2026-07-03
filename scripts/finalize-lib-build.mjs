@@ -2,6 +2,7 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { SURFACE_BUNDLES, findForeignNamespaces } from './surface-namespaces.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = join(ROOT, 'dist', 'lib')
@@ -31,8 +32,12 @@ for (const [from, to] of copies) {
 const jsImportCss = join(OUT, 'ui-imports.css')
 if (existsSync(jsImportCss)) rmSync(jsImportCss)
 
-const cssEntry = join(OUT, 'components-entry.js')
-if (existsSync(cssEntry)) rmSync(cssEntry)
+// One dummy JS entry per CSS bundle (components/graph/commons) — Vite needs each
+// to coax the matching stylesheet out (see vite.lib-css.config.js); all discarded.
+for (const dummy of ['components-entry.js', 'graph-entry.js', 'commons-entry.js', 'analytics-entry.js']) {
+  const p = join(OUT, dummy)
+  if (existsSync(p)) rmSync(p)
+}
 
 // ./icons is a lucide-react passthrough; the Vite lib build externalizes
 // lucide-react, so dist/lib/icons.js is a thin re-export. Emit a matching
@@ -42,7 +47,23 @@ const TYPES = join(OUT, 'types')
 mkdirSync(TYPES, { recursive: true })
 writeFileSync(join(TYPES, 'icons.d.ts'), "export * from 'lucide-react'\n")
 
-const required = ['ui.js', 'icons.js', 'tokens.css', 'base.css', 'components.css', 'tokens.json', 'fonts.css']
+const required = [
+  'ui.js',
+  'icons.js',
+  // per-surface JS entries (HYBRID boundary)
+  'graph.js',
+  'commons.js',
+  'analytics.js',
+  'tokens.css',
+  'base.css',
+  'components.css',
+  // per-surface stylesheets (HYBRID boundary)
+  'graph.css',
+  'commons.css',
+  'analytics.css',
+  'tokens.json',
+  'fonts.css',
+]
 const missing = required.filter((file) => !existsSync(join(OUT, file)))
 if (missing.length) {
   throw new Error(
@@ -156,6 +177,41 @@ if (contractProblems.length) {
       'What went wrong (these ship green through JS smokes but break in a real browser):',
       ...contractProblems.map((p) => `  - ${p}`),
       'Where/when: post-finalize, asserting the bytes in dist/lib/base.css and dist/lib/components.css.',
+    ].join('\n'),
+  )
+}
+
+// ── Per-surface CSS bundle isolation (HYBRID boundary) ────────────────────────
+// Each per-surface stylesheet (graph.css / commons.css) must carry ONLY its own
+// surface namespaces plus the shared `iu-` shell — NEVER the other surface
+// family's namespaces. This is the CSS half of the guarantee that a consumer
+// importing ./graph.css never ships the village ./commons selectors and vice-
+// versa. Asserted on the shipped bytes, so a cross-import regression fails here.
+const cssIsoProblems = []
+for (const { surface, css, forbidden } of SURFACE_BUNDLES) {
+  const path = join(OUT, css)
+  if (!existsSync(path)) {
+    cssIsoProblems.push(`${css} is missing from dist/lib (the per-surface stylesheet did not build)`)
+    continue
+  }
+  const text = stripComments(readFileSync(path, 'utf8'))
+  const leaked = findForeignNamespaces(text, forbidden)
+  if (leaked.length) {
+    cssIsoProblems.push(
+      `${css} (the ${surface} bundle) contains foreign surface namespace(s) ${leaked.join(', ')} — it must carry only its own selectors plus the shared "iu-" shell`,
+    )
+  }
+}
+if (cssIsoProblems.length) {
+  throw new Error(
+    [
+      'fairtrade lib build failed in scripts/finalize-lib-build.mjs: per-surface CSS bundle isolation FAILED.',
+      'What went wrong (a surface stylesheet leaked the OTHER surface family in):',
+      ...cssIsoProblems.map((p) => `  - ${p}`),
+      'Why it matters: the HYBRID package boundary promises a consumer importing one surface bundle never',
+      'ships the other app\'s surface selectors; a leaked namespace breaks that intra-package isolation.',
+      'How to fix: ensure each surface @import-s ONLY its own colocated CSS into src/lib-<surface>.css',
+      '(graph: .gmp-/.gan-; commons: .cex-/.cmg-; shared .iu- is allowed in both).',
     ].join('\n'),
   )
 }

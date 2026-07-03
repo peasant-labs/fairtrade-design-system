@@ -121,6 +121,15 @@ export function ConfirmInline({
  * @param {(member: RosterMember) => (void | Promise<void>)} [props.onRemove]  fired when a row's remove is confirmed
  * @param {string} [props.title='members']         section header label (lowercase chrome)
  * @param {string[]} [props.roles]                 selectable roles (default member/contributor/guest; owner is never offered)
+ * @param {boolean} [props.canManage=true]         whether the CURRENT VIEWER may edit roles / remove members at
+ *   all (distinct from `member.owner`, which locks one specific ROW regardless of viewer). When `false`, every
+ *   non-owner row's role renders as plain read-only text (no select) and its remove action is hidden entirely
+ *   -- e.g. a non-owner viewing a roster they can't manage. Defaults to `true` (the prior, only behaviour) so
+ *   existing callers are unaffected.
+ * @param {React.ReactNode} [props.filterSlot]     an optional row rendered INSIDE the roster's own bordered
+ *   box, directly under the header and before the member list (e.g. a "show: [org ▾]" list filter) -- lets a
+ *   consumer add a filter/toolbar control that reads as part of THIS box, not a separate section floating
+ *   above it. Undefined by default, so existing callers render exactly as before.
  */
 export default function RoleRoster({
   members = [],
@@ -128,6 +137,8 @@ export default function RoleRoster({
   onRemove,
   title = 'members',
   roles = ['member', 'contributor', 'guest'],
+  canManage = true,
+  filterSlot,
 }) {
   const baseId = useId()
 
@@ -137,6 +148,8 @@ export default function RoleRoster({
         <span className="rr-head-label">{title}</span>
         <span className="rr-count" aria-hidden="true">{members.length}</span>
       </header>
+
+      {filterSlot != null && <div className="rr-filter">{filterSlot}</div>}
 
       <ul className="rr-list">
         {members.map((m, i) => {
@@ -167,17 +180,20 @@ export default function RoleRoster({
                 <span className="rr-org rr-org--none" aria-hidden="true" />
               )}
 
-              {/* role control: locked text + lock glyph for owners, a labelled select otherwise. */}
+              {/* role control: locked text + lock glyph for owners, a labelled select for a viewer who
+                  can manage the roster, plain read-only text otherwise. */}
               <div className="rr-role">
-                <label className="rr-sr-only" htmlFor={selectId}>
-                  role for {m.handle}
-                </label>
+                {!isOwner && canManage && (
+                  <label className="rr-sr-only" htmlFor={selectId}>
+                    role for {m.handle}
+                  </label>
+                )}
                 {isOwner ? (
                   <span className="rr-role-locked">
                     <Lock className="rr-lock" aria-hidden="true" />
                     owner
                   </span>
-                ) : (
+                ) : canManage ? (
                   <select
                     id={selectId}
                     className="rr-select"
@@ -189,12 +205,15 @@ export default function RoleRoster({
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
+                ) : (
+                  <span className="rr-role-readonly">{m.role}</span>
                 )}
               </div>
 
-              {/* remove: locked for owners (a fixed-width spacer keeps the columns aligned). */}
+              {/* remove: locked for owners, and hidden for a viewer who can't manage this roster at all
+                  (a fixed-width spacer keeps the columns aligned either way). */}
               <div className="rr-act">
-                {isOwner ? (
+                {isOwner || !canManage ? (
                   <span className="rr-act-locked" aria-hidden="true" />
                 ) : (
                   <ConfirmInline

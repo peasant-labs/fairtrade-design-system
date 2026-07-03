@@ -22,3 +22,11 @@ package-lock.json
 .vite/
 .verify_dist/
 storybook-static/
+# tsc -p tsconfig.lib.json (declaration emit) stray output: Manage.jsx (src/ui/commons/, inside
+# tsconfig.lib.json's rootDir "src/ui") re-exports PublishView/CollectivesView/etc. from
+# src/mockups/inuse/CommonsManage.jsx, which is OUTSIDE that rootDir. tsc can't map an outDir
+# location for a file outside rootDir, so it emits CommonsManage.jsx's declaration file ADJACENT
+# to the source instead of into dist/lib/types/ -- a real, repeatable build artifact (reappears on
+# every `pnpm run build:lib`/`pnpm run test:contract`), not a one-off accident. Not consumed by
+# anything (dist/lib/types/ is the real published output); ignored rather than tracked.
+src/mockups/inuse/CommonsManage.d.ts

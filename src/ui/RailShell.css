@@ -129,6 +129,21 @@
 /* ── rail section ────────────────────────────────────────────────────────────
    each section is a mono-headed block; sections stack with a hairline between
    them (a top rule on every section after the first). */
+.rs-sec {
+  /* .rs-rail-card is a COLUMN flex container; width is its CROSS axis, sized
+     by align-items:stretch (the flexbox default), not by the grow/shrink
+     algorithm — so a section with a long unbroken white-space:nowrap
+     descendant (a conversation title, a commit subject — anywhere `truncate`
+     is used further down) can still report its OWN min-content width as this
+     box's width even with min-width:0 set, because stretch alone doesn't
+     force a narrower box when auto-width content wants more room. width:100%
+     makes the intent unambiguous: fill the rail's cross size exactly, so
+     content that's too wide is forced to wrap/ellipsis at THIS edge, not
+     silently widen the section and get raggedly clipped (mid-word, no
+     ellipsis) by the card's own overflow-x:hidden instead. */
+  width: 100%;
+  min-width: 0;
+}
 .rs-sec + .rs-sec {
   border-top: var(--bd);
 }

@@ -208,7 +208,17 @@
   stroke: var(--rule);
   stroke-dasharray: 4 3; /* dashed = co-edit activity (kind, orthogonal to width) */
 }
+.mc-edge[data-delta='new'] .mc-edge-path {
+  stroke: var(--amber);
+  stroke-dasharray: none;
+}
+.mc-edge[data-delta='removed'] .mc-edge-path {
+  stroke: var(--clay);
+  stroke-dasharray: 2 4;
+}
 .mc-edge-head { fill: var(--rule-strong); shape-rendering: crispEdges; }
+.mc-edge[data-delta='new'] .mc-edge-head { fill: var(--amber); }
+.mc-edge[data-delta='removed'] .mc-edge-head { fill: var(--clay); }
 
 /* ------------------------------------------------------------------ node */
 /* the square node. [data-cov] sets --mc-cov-mix; the fill mixes --ink-strong into
@@ -243,6 +253,22 @@
 .mc-node[data-ink-flip='true'] { color: var(--canvas); }
 
 .mc-node:hover { border-color: var(--rule-strong); }
+
+.mc-node[data-highlighted='true'] {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 4px;
+  z-index: 2;
+}
+
+.mc-node[data-delta='new'] {
+  border-style: double;
+  border-color: var(--amber);
+}
+
+.mc-node[data-delta='removed'] {
+  border-style: dashed;
+  border-color: var(--clay);
+}
 
 /* keyboard roving focus: the standard neuroinclusive ring (3px, offset). z-index so
    it clears neighbours + the edges layer. */

@@ -25,7 +25,24 @@ import {
   Lock,
   ArrowRight,
 } from 'lucide-react'
-import { StatGrid, GovTile, ProviderBars, ModerationQueue, RoleRoster, ConsentDialog, PolicySelect } from '../../ui'
+import { providerLabel } from '../../ui/commons/providers.js'
+import {
+  StatGrid,
+  GovTile,
+  ProviderBars,
+  ModerationQueue,
+  RoleRoster,
+  ConsentDialog,
+  PolicySelect,
+  Input,
+  Textarea,
+  Select,
+  Switch,
+  RadioGroup,
+  DangerZone,
+  ConfirmInline,
+  Tag,
+} from '../../ui'
 
 /* ============================================================================
    COMMONS MANAGE — the publish / collectives / governance half of Village
@@ -57,8 +74,6 @@ function ProviderMark({ id }) {
     </span>
   )
 }
-const PROVIDER_LABEL = { 'claude-code': 'Claude Code', 'gemini-cli': 'Gemini', opencode: 'OpenCode', codex: 'Codex' }
-
 /* small copyable command block with $ prompt + Copy→Check (transient "copied"). */
 function CommandBlock({ cmd, note }) {
   const [copied, setCopied] = useState(false)
@@ -260,7 +275,18 @@ function ModeBadge({ mode }) {
   return <span className={'chip ' + cls}>{m ? m.short.toLowerCase() : mode}</span>
 }
 
-export function CollectivesView() {
+export function CollectivesView({ data = {}, actions = {} } = {}) {
+  const {
+    collectives = COLLECTIVES,
+    linkedOrgs = LINKED_ORGS,
+    title = 'collectives',
+    deck = 'groups that govern shared data together.',
+    crumb = 'collectives',
+    createLabel = 'new collective',
+    createBusy = false,
+  } = data
+  const { onCreateCollective, onOpenCollective } = actions
+
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
   const [purpose, setPurpose] = useState('')
@@ -269,16 +295,18 @@ export function CollectivesView() {
   const [org, setOrg] = useState('')
   const uid = useId()
 
+  const createCollective = () => onCreateCollective?.({ name, purpose, mode, access, org })
+
   return (
     <div className="cmg-root">
       <div className="cmg-page">
         <div className="crumb cmg-crumb">
-          village <ChevronRight size={13} aria-hidden="true" /> <span className="cur">collectives</span>
+          village <ChevronRight size={13} aria-hidden="true" /> <span className="cur">{crumb}</span>
         </div>
         <header className="cmg-head">
           <div>
-            <h2 className="cmg-title">collectives</h2>
-            <p className="cmg-deck">groups that govern shared data together.</p>
+            <h2 className="cmg-title">{title}</h2>
+            <p className="cmg-deck">{deck}</p>
           </div>
           <button
             type="button"
@@ -287,7 +315,7 @@ export function CollectivesView() {
             onClick={() => setShowForm((s) => !s)}
           >
             {showForm ? <X size={14} aria-hidden="true" /> : <Plus size={14} aria-hidden="true" />}
-            {showForm ? 'cancel' : 'new collective'}
+            {showForm ? 'cancel' : createLabel}
           </button>
         </header>
 
@@ -328,7 +356,7 @@ export function CollectivesView() {
                 <div className="select-wrap">
                   <select className="select" value={org} onChange={(e) => setOrg(e.target.value)}>
                     <option value="">Not linked</option>
-                    {LINKED_ORGS.map((o) => (
+                    {linkedOrgs.map((o) => (
                       <option key={o} value={o}>{o}</option>
                     ))}
                   </select>
@@ -337,7 +365,7 @@ export function CollectivesView() {
               </label>
             </div>
             <div className="cmg-form-foot">
-              <button type="button" className="btn btn-sm btn-primary" disabled={!name.trim()} aria-describedby={uid}>create collective</button>
+              <button type="button" className="btn btn-sm btn-primary" disabled={!name.trim() || createBusy} aria-describedby={uid} onClick={createCollective}>{createBusy ? 'creating…' : 'create collective'}</button>
               <span id={uid} className="cmg-form-hint mono">
                 {ACCEPTANCE_MODES.find((m) => m.value === mode)?.rationale}
               </span>
@@ -346,9 +374,9 @@ export function CollectivesView() {
         )}
 
         <ul className="cmg-grid">
-          {COLLECTIVES.map((c) => (
+          {collectives.map((c) => (
             <li key={c.id}>
-              <button type="button" className="card cmg-col-card">
+              <button type="button" className="card cmg-col-card" onClick={() => onOpenCollective?.(c.id)}>
                 <span className="cmg-col-ico" aria-hidden="true"><Users size={18} /></span>
                 <span className="cmg-col-main">
                   <span className="cmg-col-head">
@@ -358,10 +386,12 @@ export function CollectivesView() {
                   <span className="cmg-col-desc">{c.desc}</span>
                   <span className="cmg-col-foot mono">
                     <span className="cmg-col-role">{c.role}</span>
-                    <span className="cmg-dot" aria-hidden="true">·</span>
-                    <span className="tnum">{c.members} members</span>
-                    <span className="cmg-dot" aria-hidden="true">·</span>
-                    <span className="tnum">{c.transcripts} transcripts</span>
+                    {c.since ? <>
+                      <span className="cmg-dot" aria-hidden="true">·</span>
+                      <span>{c.since}</span>
+                    </> : null}
+                    {c.members != null ? <><span className="cmg-dot" aria-hidden="true">·</span><span className="tnum">{c.members} members</span></> : null}
+                    {c.transcripts != null ? <><span className="cmg-dot" aria-hidden="true">·</span><span className="tnum">{c.transcripts} transcripts</span></> : null}
                   </span>
                 </span>
                 <ChevronRight size={16} aria-hidden="true" className="cmg-col-chev" />
@@ -506,13 +536,35 @@ function RedactionItem({ item }) {
   )
 }
 
-export function CollectiveDetailView() {
-  const [role, setRole] = useState('owner') // role switcher to demo capability gating
-  const [showRedaction, setShowRedaction] = useState(true)
-  const [browseGated, setBrowseGated] = useState(false)
+export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
+  const {
+    collective = { name: 'AI Research Team', description: 'Sharing transcripts related to AI research', linkedGithubOrg: '@anthropic-labs' },
+    providerShare = PROVIDER_SHARE,
+    pendingReview = PENDING_REVIEW,
+    members = MEMBERS,
+    redactions = REDACTIONS,
+    browseRows = [
+      { title: 'Building a REST API from scratch', contributor: '@alice-dev', providerId: 'claude-code', provider: 'Claude Code', turns: '64', tokens: '182K', date: 'Jun 15' },
+      { title: 'Debugging auth middleware', contributor: 'anon', providerId: 'gemini-cli', provider: 'Gemini', turns: '31', tokens: '94K', date: 'Jun 14' },
+      { title: 'Greenfield React app setup', contributor: '@bob-ai', providerId: 'opencode', provider: 'OpenCode', turns: '47', tokens: '121K', date: 'Jun 12' },
+    ],
+    roleOptions = ROLES,
+    initialRole = 'owner',
+    initialShowRedaction = true,
+    initialBrowseGated = false,
+    targetCollective = TARGET_COLLECTIVE,
+    stats = { transcripts: '248', projects: '31 projects', tokens: '4.2M', turns: '18.4K turns', contributors: '12', hours: '63h total' },
+  } = data
+  const { onRoleChange, onJoin, onLeave, onSettings, onToggleBrowse, onContribute } = actions
+
+  const [role, setRole] = useState(initialRole) // role switcher to demo capability gating
+  const [showRedaction, setShowRedaction] = useState(initialShowRedaction)
+  const [browseGated, setBrowseGated] = useState(initialBrowseGated)
 
   const isOwner = role === 'owner'
   const isGuest = role === 'guest'
+  const setRoleAndNotify = (next) => { setRole(next); onRoleChange?.(next) }
+  const toggleBrowse = () => { setBrowseGated((g) => { const next = !g; onToggleBrowse?.(next); return next }) }
 
   return (
     <div className="cmg-root">
@@ -520,48 +572,48 @@ export function CollectiveDetailView() {
         {/* hero + action cluster */}
         <header className="cmg-d-hero">
           <div className="crumb cmg-crumb">
-            village <ChevronRight size={13} aria-hidden="true" /> collectives <ChevronRight size={13} aria-hidden="true" /> <span className="cur">AI Research Team</span>
+            village <ChevronRight size={13} aria-hidden="true" /> collectives <ChevronRight size={13} aria-hidden="true" /> <span className="cur">{collective.name}</span>
           </div>
           <div className="cmg-d-hero-row">
             <div>
-              <h2 className="cmg-title">AI Research Team</h2>
-              <p className="cmg-deck">Sharing transcripts related to AI research</p>
-              <span className="cmg-orgpill mono"><FolderGit2 size={13} aria-hidden="true" /> @anthropic-labs</span>
+              <h2 className="cmg-title">{collective.name}</h2>
+              <p className="cmg-deck">{collective.description}</p>
+              <span className="cmg-orgpill mono"><FolderGit2 size={13} aria-hidden="true" /> {collective.linkedGithubOrg || 'not linked'}</span>
             </div>
             <div className="cmg-d-actions btn-row">
               {/* role switcher: demo the capability-gated action cluster */}
               <div className="cmg-roleswitch" role="group" aria-label="view as role">
-                {ROLES.map((r) => (
+                {roleOptions.map((r) => (
                   <button
                     key={r}
                     type="button"
                     className="cmg-roleseg"
                     aria-pressed={role === r}
-                    onClick={() => setRole(r)}
+                    onClick={() => setRoleAndNotify(r)}
                   >
                     {r}
                   </button>
                 ))}
               </div>
-              {isGuest && <button type="button" className="btn btn-sm btn-primary"><UserPlus size={14} aria-hidden="true" /> join as contributor</button>}
-              {(role === 'member' || role === 'contributor') && <button type="button" className="btn btn-sm btn-primary"><Upload size={14} aria-hidden="true" /> contribute</button>}
-              {(role === 'member' || role === 'contributor') && <button type="button" className="btn btn-sm btn-danger"><LogOut size={14} aria-hidden="true" /> leave</button>}
-              {isOwner && <button type="button" className="btn btn-sm btn-secondary"><Settings size={14} aria-hidden="true" /> settings</button>}
+              {isGuest && <button type="button" className="btn btn-sm btn-primary" onClick={() => onJoin?.()}><UserPlus size={14} aria-hidden="true" /> join as contributor</button>}
+              {(role === 'member' || role === 'contributor') && <button type="button" className="btn btn-sm btn-primary" onClick={() => onContribute?.()}><Upload size={14} aria-hidden="true" /> contribute</button>}
+              {(role === 'member' || role === 'contributor') && <button type="button" className="btn btn-sm btn-danger" onClick={() => onLeave?.()}><LogOut size={14} aria-hidden="true" /> leave</button>}
+              {isOwner && <button type="button" className="btn btn-sm btn-secondary" onClick={() => onSettings?.()}><Settings size={14} aria-hidden="true" /> settings</button>}
             </div>
           </div>
         </header>
 
         {/* governance facts (kit GovTile) + KPI metrics (kit StatGrid) */}
         <div className="cmg-tiles">
-          <GovTile label="contributions" value="open" tone="teal" />
-          <GovTile label="access" value="members only" tone="amber" />
+          <GovTile label="contributions" value={collective.acceptanceMode || 'open'} tone="teal" />
+          <GovTile label="access" value={collective.dataAccess || 'members only'} tone="amber" />
           <GovTile label="your role" value={role} />
         </div>
         <StatGrid
           tiles={[
-            { key: 'transcripts', label: 'transcripts', value: '248', sub: 'across 31 projects' },
-            { key: 'tokens', label: 'tokens', value: '4.2M', sub: '18.4K turns' },
-            { key: 'contributors', label: 'contributors', value: '12', sub: '63h total' },
+            { key: 'transcripts', label: 'transcripts', value: stats.transcripts, sub: `across ${stats.projects}` },
+            { key: 'tokens', label: 'tokens', value: stats.tokens, sub: stats.turns },
+            { key: 'contributors', label: 'contributors', value: stats.contributors, sub: stats.hours },
           ]}
         />
 
@@ -573,22 +625,26 @@ export function CollectiveDetailView() {
               <ProviderBars
                 label="provider share"
                 total={100}
-                data={PROVIDER_SHARE.map((p) => ({ label: PROVIDER_LABEL[p.id], value: p.pct }))}
+                data={providerShare.map((p) => ({ label: providerLabel(p.id), value: p.pct }))}
               />
             </section>
 
-            {/* curated owner review queue (kit ModerationQueue — owns its own resolve + count + empty state) */}
+            {/* curated owner review queue (kit ModerationQueue — owns its own resolve + count + empty state).
+                overflow/maxWidth wrapper matches every gov specimen in sections-react/70-governance.jsx: a
+                wide item title/detail can otherwise bleed past the card edge instead of scrolling internally. */}
             {isOwner && (
-              <ModerationQueue
-                title="pending review"
-                emptyLabel="no shares awaiting review."
-                items={PENDING_REVIEW.map((q) => ({
-                  id: q.id,
-                  kind: 'share',
-                  who: q.title,
-                  detail: `by ${q.by}`,
-                }))}
-              />
+              <div style={{ overflow: 'auto', maxWidth: '100%' }}>
+                <ModerationQueue
+                  title="pending review"
+                  emptyLabel="no shares awaiting review."
+                  items={pendingReview.map((q) => ({
+                    id: q.id,
+                    kind: 'share',
+                    who: q.title,
+                    detail: `by ${q.by}`,
+                  }))}
+                />
+              </div>
             )}
 
             {/* redaction review snippet */}
@@ -607,7 +663,7 @@ export function CollectiveDetailView() {
                     <div>safe by default: every detected item stays redacted unless you opt out per item. there is no bulk accept.</div>
                   </div>
                   <div className="cmg-redact-list">
-                    {REDACTIONS.map((r) => (
+                    {redactions.map((r) => (
                       <RedactionItem key={r.id} item={r} />
                     ))}
                   </div>
@@ -619,7 +675,7 @@ export function CollectiveDetailView() {
             <section className="card cmg-browser" aria-labelledby="cmg-browser-h">
               <div className="cmg-queue-head">
                 <h3 id="cmg-browser-h" className="cmg-sub">data</h3>
-                <button type="button" className="btn btn-sm btn-ghost" aria-pressed={browseGated} onClick={() => setBrowseGated((g) => !g)}>
+                <button type="button" className="btn btn-sm btn-ghost" aria-pressed={browseGated} onClick={toggleBrowse}>
                   {browseGated ? <Lock size={14} aria-hidden="true" /> : <Eye size={14} aria-hidden="true" />}
                   {browseGated ? 'gated view' : 'open view'}
                 </button>
@@ -644,9 +700,16 @@ export function CollectiveDetailView() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr><td>Building a REST API from scratch</td><td className="mono">@alice-dev</td><td><ProviderMark id="claude-code" /> Claude Code</td><td className="cmg-num tnum">64</td><td className="cmg-num tnum">182K</td><td className="mono tnum">Jun 15</td></tr>
-                    <tr><td>Debugging auth middleware</td><td className="mono">anon</td><td><ProviderMark id="gemini-cli" /> Gemini</td><td className="cmg-num tnum">31</td><td className="cmg-num tnum">94K</td><td className="mono tnum">Jun 14</td></tr>
-                    <tr><td>Greenfield React app setup</td><td className="mono">@bob-ai</td><td><ProviderMark id="opencode" /> OpenCode</td><td className="cmg-num tnum">47</td><td className="cmg-num tnum">121K</td><td className="mono tnum">Jun 12</td></tr>
+                    {browseRows.map((row) => (
+                      <tr key={row.title}>
+                        <td>{row.title}</td>
+                        <td className="mono">{row.contributor}</td>
+                        <td><ProviderMark id={row.providerId || 'codex'} /> {row.provider}</td>
+                        <td className="cmg-num tnum">{row.turns}</td>
+                        <td className="cmg-num tnum">{row.tokens}</td>
+                        <td className="mono tnum">{row.date}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               )}
@@ -655,31 +718,191 @@ export function CollectiveDetailView() {
 
           {/* right rail: members + pending member requests */}
           <aside className="sidebar cmg-d-rail" aria-label="collective sidebar">
-            {/* pending member requests (kit ModerationQueue, kind 'member' — icon+word actions) */}
+            {/* pending member requests (kit ModerationQueue, kind 'member' — icon+word actions).
+                overflow/maxWidth wrapper matches sections-react/70-governance.jsx's own specimen. */}
             {isOwner && (
-              <ModerationQueue
-                title="pending requests"
-                emptyLabel="no pending requests."
-                items={[{ id: 'dana-codes', kind: 'member', who: '@dana-codes' }]}
-              />
+              <div style={{ overflow: 'auto', maxWidth: '100%' }}>
+                <ModerationQueue
+                  title="pending requests"
+                  emptyLabel="no pending requests."
+                  items={[{ id: 'dana-codes', kind: 'member', who: '@dana-codes' }]}
+                />
+              </div>
             )}
-            {/* members roster (kit RoleRoster — owner row locked; member/contributor roles only) */}
-            <RoleRoster
-              title="members"
-              roles={['member', 'contributor']}
-              members={MEMBERS.map((m) => ({
-                handle: m.handle,
-                name: m.name,
-                role: m.role,
-                owner: m.role === 'owner',
-              }))}
-            />
+            {/* members roster (kit RoleRoster — owner row locked; member/contributor roles only).
+                overflow/maxWidth wrapper matches sections-react/70-governance.jsx's own specimen. */}
+            <div style={{ overflow: 'auto', maxWidth: '100%' }}>
+              <RoleRoster
+                title="members"
+                roles={['member', 'contributor']}
+                members={members.map((m) => ({
+                  handle: m.handle,
+                  name: m.name,
+                  role: m.role,
+                  owner: m.role === 'owner',
+                }))}
+              />
+            </div>
             <div className="sb-sec">
               <div className="sb-head"><FolderGit2 size={14} aria-hidden="true" style={{ verticalAlign: '-0.16em', marginRight: 6 }} /> linked repositories</div>
               <div className="cmg-repo-note callout">
                 <CircleDot size={16} aria-hidden="true" />
-                <div>the github connection isn't set up. an admin must register the github app to overlay commit timelines.</div>
+                <div>{collective.linkedGithubOrg ? `linked to ${collective.linkedGithubOrg}.` : 'the github connection isn\'t set up. an admin must register the github app to overlay commit timelines.'}</div>
               </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ==========================================================================
+   3b) COLLECTIVE SETTINGS VIEW - the governance form surface
+========================================================================== */
+
+export function CollectiveSettingsView() {
+  const [name, setName] = useState('AI Research Team')
+  const [description, setDescription] = useState('Sharing transcripts related to AI research')
+  const [acceptanceMode, setAcceptanceMode] = useState('curated')
+  const [dataAccess, setDataAccess] = useState('members_only')
+  const [displayMembers, setDisplayMembers] = useState(true)
+  const [deletionPolicy, setDeletionPolicy] = useState('user_choice')
+  const [saved, setSaved] = useState(false)
+
+  const roster = [
+    { id: 'alice-dev', handle: '@alice-dev', name: 'Alice Developer', role: 'owner', owner: true },
+    { id: 'bob-ai', handle: '@bob-ai', name: 'Bob AI', role: 'member', owner: false },
+    { id: 'charlie-ml', handle: '@charlie-ml', name: 'Charlie ML', role: 'contributor', owner: false },
+  ]
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    setSaved(true)
+    window.setTimeout(() => setSaved(false), 1800)
+  }
+
+  return (
+    <div className="cmg-root cmg-settings">
+      <div className="cmg-detail">
+        <div className="crumb cmg-crumb">
+          village <ChevronRight size={13} aria-hidden="true" /> collectives <ChevronRight size={13} aria-hidden="true" />
+          <span className="cur">settings</span>
+        </div>
+
+        <header className="cmg-d-hero">
+          <div className="cmg-d-hero-row">
+            <div>
+              <h2 className="cmg-title">collective settings</h2>
+              <p className="cmg-deck">edit how this collective accepts contributions and shares data.</p>
+            </div>
+            <Tag>settings</Tag>
+          </div>
+        </header>
+
+        <div className="cmg-d-grid">
+          <main className="cmg-d-main">
+            <form className="card cmg-settings-form" onSubmit={handleSubmit}>
+              <div className="cmg-queue-head">
+                <h3 className="cmg-sub">general</h3>
+                {saved ? <span className="chip chip-ok">saved</span> : null}
+              </div>
+
+              <div className="cmg-settings-stack">
+                <Input label="Name" id="cmg-name" value={name} onChange={(e) => setName(e.target.value)} required />
+                <Textarea label="Description" id="cmg-description" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
+                <Select
+                  label="Acceptance mode"
+                  id="cmg-acceptance"
+                  value={acceptanceMode}
+                  onChange={(e) => setAcceptanceMode(e.target.value)}
+                  options={[
+                    { value: 'open', label: 'open - anyone can share, auto-approved' },
+                    { value: 'verified_only', label: 'verified only - requires org affiliation' },
+                    { value: 'curated', label: 'curated - owner must approve each share' },
+                  ]}
+                />
+                <Select
+                  label="Data access"
+                  id="cmg-access"
+                  value={dataAccess}
+                  onChange={(e) => setDataAccess(e.target.value)}
+                  options={[
+                    { value: 'members_only', label: 'members only - full members can browse data' },
+                    { value: 'contributors', label: 'contributors - anyone who contributes can browse' },
+                    { value: 'public', label: 'public - anyone can browse the dataset' },
+                  ]}
+                />
+                {/* .sw-stack (src/index.css): label on its own top line, the hint directly beneath
+                    it, then the switch + its on/off marker sharing a third line (round 5 UAT --
+                    revises round 2's single-line-everything: the user tried that, then asked for
+                    the label and hint each back on their own line, keeping only the switch +
+                    state marker paired on one line). Round 7 fix: the label is rendered HERE,
+                    outside <Switch> (not via its `label` prop), paired to the switch via an
+                    explicit id + htmlFor -- letting .sw-field's own internal <label> render
+                    instead put the label inside the SAME grid columns as the switch/state, which
+                    (being much wider) inflated those columns and pushed the state marker far from
+                    the switch. .sw-toggle-row wraps just <Switch> in a real flex row so the
+                    switch + its on/off marker size and gap independently of the label's width. */}
+                <div className="sw-stack">
+                  <label htmlFor="cmg-display-members" className="sw-label">Show the members card on the collective page</label>
+                  <span className="sw-hint">When off, only owners can see the member list.</span>
+                  <div className="sw-toggle-row">
+                    <Switch
+                      id="cmg-display-members"
+                      checked={displayMembers}
+                      onChange={(checked) => setDisplayMembers(checked)}
+                    />
+                  </div>
+                </div>
+                <RadioGroup
+                  name="cmg-deletion-policy"
+                  ariaLabel="Transcript retention on leave"
+                  value={deletionPolicy}
+                  onChange={setDeletionPolicy}
+                  options={[
+                    {
+                      value: 'user_choice',
+                      label: (
+                        <span className="flex flex-col gap-0.5">
+                          <span className="font-mono text-[14px] text-ink-2 lowercase">User&apos;s choice</span>
+                          <span className="muted lowercase">Each leaving member decides whether to retract their contributions.</span>
+                        </span>
+                      ),
+                    },
+                    {
+                      value: 'mandatory',
+                      label: (
+                        <span className="flex flex-col gap-0.5">
+                          <span className="font-mono text-[14px] text-ink-2 lowercase">Mandatory</span>
+                          <span className="muted lowercase">All of a leaving member&apos;s contributions are auto-retracted.</span>
+                        </span>
+                      ),
+                    },
+                  ]}
+                />
+
+                <div className="flex items-center gap-3">
+                  <button type="submit" className="btn btn-sm btn-primary">save changes</button>
+                  <ConfirmInline label="reset form" onConfirm={() => setSaved(false)} />
+                </div>
+              </div>
+            </form>
+
+            <DangerZone title="danger zone">
+              <p className="mono">deleting this collective removes the governance settings and member roster.</p>
+              <ConfirmInline label="delete collective" confirmLabel="delete" onConfirm={() => setSaved(false)} />
+            </DangerZone>
+          </main>
+
+          <aside className="sidebar cmg-d-rail" aria-label="settings sidebar">
+            {/* overflow/maxWidth wrapper matches sections-react/70-governance.jsx's RoleRoster specimen. */}
+            <div style={{ overflow: 'auto', maxWidth: '100%' }}>
+              <RoleRoster
+                title="members"
+                roles={['member', 'contributor']}
+                members={roster}
+              />
             </div>
           </aside>
         </div>

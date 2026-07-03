@@ -1,0 +1,130 @@
+/* @peasant-labs/fairtrade/analytics.css — the bundled stylesheet for the
+   analytics dashboard surface (ProjectOverview + its cards and table chrome).
+
+   Consumer contract: import this ALONGSIDE the shared `tokens.css` + `base.css`
+   + `components.css` (the dashboard composes the shared chart primitives and
+   the `.tbl-*` table family / `.avatar` / `.metaitem` / `.tnum` helpers, which
+   all ship in `components.css`; this sheet carries ONLY the analytics surface
+   selectors, never the tokens/base layers, so a consumer importing several
+   surface sheets pays for the shared layers once). Token-driven only — NO
+   hardcoded colour or spacing literals are permitted here (enforced by
+   scripts/css-token-lint.mjs).
+
+   Namespaces collected by this bundle:
+     .gan-   analytics dashboard surface selectors
+   It must NEVER carry the peasant graph namespaces (.gmp-) or the village
+   commons namespaces (.cex-, .cmg-) — the intra-package bundle-isolation
+   guard asserts this.
+
+   token-driven, square, hairline, lowercase chrome, both themes free,
+   reduced-motion guarded. amber stays scarce (one series at a time). */
+@layer analytics {
+  /* ---- shell: fills its container, internal scroll ---- */
+  /* full-bleed frame, capped content: drop the centered cap so the header rule
+     spans the whole stage, and inset the head + scroll body to a readable
+     measure via --gan-pad-x, so the kpis + charts keep a comfortable width
+     instead of sprawling on a wide monitor. */
+  .gan-root { display: flex; flex-direction: column; height: 100%; min-width: 0; min-height: 0; font-family: var(--font-mono); max-width: none; margin-inline: 0; --gan-pad-x: max(var(--sp-4), calc((100% - 1360px) / 2)); }
+  .gan-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; padding: var(--sp-4) var(--gan-pad-x); border-bottom: var(--bd); }
+  .gan-head-titles { min-width: 0; }
+  .gan-h2 { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-md); color: var(--ink-strong); text-transform: lowercase; line-height: 1.15; margin: 0; }
+  .gan-sub { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); text-transform: lowercase; margin-top: var(--sp-1); }
+  .gan-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; padding: var(--sp-4) var(--gan-pad-x); display: flex; flex-direction: column; gap: var(--sp-4); }
+
+  /* ---- section toggle (the 8 ProjectOverview sections) ---- */
+  .gan-toggle { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; min-width: 0; }
+  .gan-toggle-lab { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); }
+  .gan-toggle-lab .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+  .gan-toggle-lab b { color: var(--ink-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .gan-toggle-chips { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+  .gan-seg {
+    box-sizing: border-box; height: var(--control-h-sm); padding: 0 var(--sp-2);
+    font-family: var(--font-mono); font-size: 11px; text-transform: lowercase; line-height: 1;
+    color: var(--ink-4); background: var(--canvas); border: var(--bd-strong); cursor: pointer;
+    transition: color var(--dur-1), border-color var(--dur-1), background var(--dur-1);
+  }
+  .gan-seg:hover { color: var(--ink); border-color: var(--amber-dim); }
+  .gan-seg:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+  .gan-seg.is-on { color: var(--ink); border-color: var(--rule-strong); background: var(--surface-2); }
+  .gan-seg.is-on::before { content: ">"; color: var(--amber-dim); margin-right: var(--sp-1); }
+
+  /* ---- KPI stat tiles ---- */
+  .gan-kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--sp-3); }
+  .gan-tile { display: flex; flex-direction: column; gap: var(--sp-1); background: var(--surface); border: var(--bd-strong); padding: var(--sp-3); min-width: 0; }
+  .gan-tile-lab { display: inline-flex; align-items: center; gap: var(--sp-1); font-family: var(--font-mono); font-size: 11px; text-transform: lowercase; color: var(--ink-3); }
+  .gan-tile-lab .lucide { width: 13px; height: 13px; color: var(--ink-4); flex: none; }
+  .gan-tile-val { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); line-height: 1; color: var(--ink-strong); font-variant-numeric: tabular-nums; }
+  .gan-tile-hint { font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); text-transform: lowercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---- chart grid + card shell ---- */
+  .gan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
+  .gan-card { display: flex; flex-direction: column; gap: var(--sp-3); background: var(--surface); border: var(--bd-strong); padding: var(--sp-3) var(--sp-4) var(--sp-4); min-width: 0; }
+  .gan-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
+  .gan-card-titles { min-width: 0; }
+  .gan-card-title { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-display); font-weight: 700; font-size: var(--fs-body); color: var(--ink-strong); text-transform: lowercase; line-height: 1.2; margin: 0; }
+  .gan-card-title .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); flex: none; }
+  .gan-card-sub { display: block; font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); text-transform: lowercase; margin-top: 2px; }
+  .gan-card-figure { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; }
+  .gan-card-body { min-width: 0; }
+  .gan-card-toolbar { display: inline-flex; gap: 0; border: var(--bd-strong); width: max-content; }
+  .gan-mini {
+    box-sizing: border-box; height: var(--control-h-sm); padding: 0 var(--sp-3);
+    font-family: var(--font-mono); font-size: 11px; text-transform: lowercase; line-height: 1;
+    color: var(--ink-4); background: transparent; border: 0; border-right: var(--bd); cursor: pointer;
+    transition: color var(--dur-1), background var(--dur-1);
+  }
+  .gan-mini:last-child { border-right: 0; }
+  .gan-mini:hover { color: var(--ink); }
+  .gan-mini:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -2px; }
+  .gan-mini.is-on { color: var(--ink); background: var(--surface-2); }
+
+  /* ---- donut (outcome distribution) ---- */
+  .gan-donut { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: var(--sp-4); align-items: center; }
+  .gan-donut-svg { display: block; width: 100%; max-width: 180px; height: auto; }
+  .gan-slice { cursor: pointer; transition: opacity var(--dur-1); }
+  .gan-slice:focus-visible { outline: 3px solid var(--focus-ring); }
+  .gan-donut-num { font-family: var(--font-display); font-weight: 700; font-size: 30px; fill: var(--ink-strong); font-variant-numeric: tabular-nums; }
+  .gan-donut-lab { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-3); text-transform: lowercase; }
+  .gan-donut-empty { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-3); text-transform: lowercase; padding: var(--sp-5) var(--sp-2); text-align: center; }
+  .gan-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .gan-legend-row { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto auto; align-items: center; gap: var(--sp-2); padding: var(--sp-1) var(--sp-2); cursor: default; transition: background var(--dur-1); }
+  .gan-legend-row.is-hot { background: var(--surface-hover); }
+  .gan-legend-sw { width: 10px; height: 10px; flex: none; border: 1px solid color-mix(in srgb, var(--canvas) 30%, transparent); }
+  .gan-legend-nm { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); text-transform: lowercase; overflow: hidden; text-overflow: ellipsis; }
+  .gan-legend-v { font-family: var(--font-mono); font-size: 12px; color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; }
+  .gan-legend-pct { font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); font-variant-numeric: tabular-nums; text-align: right; min-width: 34px; }
+
+  /* ---- median.p90 typical-vs-tail grid ---- */
+  .gan-typical { display: flex; flex-direction: column; }
+  .gan-typrow { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) 0; border-bottom: var(--bd); }
+  .gan-typrow:last-child { border-bottom: 0; }
+  .gan-typlab { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-2); text-transform: lowercase; }
+  .gan-typvals { display: inline-flex; align-items: baseline; gap: var(--sp-2); }
+  .gan-typmed { font-family: var(--font-mono); font-size: var(--fs-md); color: var(--ink-strong); font-variant-numeric: tabular-nums; }
+  .gan-typsep { color: var(--ink-5); }
+  .gan-typp90 { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-4); font-variant-numeric: tabular-nums; }
+
+  /* ---- contributor table card (reuses .tbl-*) ---- */
+  .gan-tablecard { display: flex; flex-direction: column; gap: var(--sp-2); background: var(--surface); border: var(--bd-strong); padding: var(--sp-3) var(--sp-4) var(--sp-4); min-width: 0; overflow: hidden; }
+  .gan-tablecard .tbl-wrap { margin-top: var(--sp-2); }
+  .gan-contrib { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--ink); }
+  .gan-table-foot { display: flex; flex-wrap: wrap; gap: var(--sp-4); margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: var(--bd); }
+
+  /* ---- footnote ---- */
+  .gan-foot { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); line-height: 1.6; max-width: 64ch; border-left: 2px solid var(--rule-strong); padding-left: var(--sp-3); }
+
+  /* ---- responsive: stack the grid + donut, scroll the table at narrow widths ---- */
+  @media (max-width: 920px) {
+    .gan-kpis { grid-template-columns: repeat(3, 1fr); }
+    .gan-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .gan-kpis { grid-template-columns: repeat(2, 1fr); }
+    .gan-donut { grid-template-columns: 1fr; justify-items: center; }
+    .gan-legend { width: 100%; }
+    .gan-head { padding: var(--sp-3); }
+    .gan-scroll { padding: var(--sp-3); }
+    .gan-tablecard { padding: var(--sp-2) var(--sp-3) var(--sp-3); }
+    .gan-tablecard .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  }
+}

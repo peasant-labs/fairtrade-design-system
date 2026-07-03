@@ -1,7 +1,7 @@
 {
   "name": "@peasant-labs/fairtrade",
   "private": false,
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Private fairtrade design-system library: canonical tokens, base styles, component CSS, and React UI exports.",
   "type": "module",
   "license": "MIT",
@@ -12,15 +12,40 @@
   "exports": {
     "./ui": {
       "types": "./dist/lib/types/index.d.ts",
-      "import": "./dist/lib/ui.js"
+      "import": "./dist/lib/ui.js",
+      "require": "./dist/lib/ui.js",
+      "default": "./dist/lib/ui.js"
+    },
+    "./graph": {
+      "types": "./dist/lib/types/graph/index.d.ts",
+      "import": "./dist/lib/graph.js",
+      "require": "./dist/lib/graph.js",
+      "default": "./dist/lib/graph.js"
+    },
+    "./commons": {
+      "types": "./dist/lib/types/commons/index.d.ts",
+      "import": "./dist/lib/commons.js",
+      "require": "./dist/lib/commons.js",
+      "default": "./dist/lib/commons.js"
+    },
+    "./analytics": {
+      "types": "./dist/lib/types/analytics/index.d.ts",
+      "import": "./dist/lib/analytics.js",
+      "require": "./dist/lib/analytics.js",
+      "default": "./dist/lib/analytics.js"
     },
     "./icons": {
       "types": "./dist/lib/types/icons.d.ts",
-      "import": "./dist/lib/icons.js"
+      "import": "./dist/lib/icons.js",
+      "require": "./dist/lib/icons.js",
+      "default": "./dist/lib/icons.js"
     },
     "./tokens.css": "./dist/lib/tokens.css",
     "./base.css": "./dist/lib/base.css",
     "./components.css": "./dist/lib/components.css",
+    "./graph.css": "./dist/lib/graph.css",
+    "./commons.css": "./dist/lib/commons.css",
+    "./analytics.css": "./dist/lib/analytics.css",
     "./tokens.json": "./dist/lib/tokens.json",
     "./fonts.css": "./dist/lib/fonts.css"
   },
@@ -40,9 +65,14 @@
     "gen:check": "node scripts/gen-llm-artifacts.mjs && git diff --exit-code public/tokens.json public/components.json packages/tokens/tokens.css packages/tokens/tokens.json packages/tokens/base.css packages/tokens/fonts.css",
     "build:app": "node scripts/gen-llm-artifacts.mjs && node scripts/contrast.mjs && vite build",
     "test:contract": "tsc -p tsconfig.contract.json",
+    "test:gates": "node scripts/gates.test.mjs",
+    "test:analytics": "node src/ui/analytics/metrics.test.mjs",
+    "lint:css": "node scripts/css-token-lint.mjs",
     "smoke:transcript": "node scripts/smoke-transcript.mjs",
     "smoke:transcript-ui": "node scripts/smoke-transcript-ui.mjs",
-    "build:lib": "pnpm test:contract && node scripts/gen-llm-artifacts.mjs && node scripts/contrast.mjs && vite build --config vite.lib.config.js && vite build --config vite.lib-css.config.js && node scripts/finalize-lib-build.mjs && tsc -p tsconfig.lib.json && node scripts/smoke-lib.mjs && node scripts/smoke-transcript.mjs && node scripts/smoke-transcript-ui.mjs && node scripts/contrast.mjs --css dist/lib/tokens.css && node scripts/assert-pack-contents.mjs",
+    "smoke:map": "node scripts/smoke-map.mjs",
+    "shoot:manage": "node scripts/shootmanage.mjs",
+    "build:lib": "pnpm test:contract && node scripts/gates.test.mjs && node src/ui/analytics/metrics.test.mjs && node scripts/css-token-lint.mjs && node scripts/gen-llm-artifacts.mjs && node scripts/contrast.mjs && vite build --config vite.lib.config.js && vite build --config vite.lib-css.config.js && node scripts/finalize-lib-build.mjs && tsc -p tsconfig.lib.json && node scripts/smoke-lib.mjs && node scripts/smoke-transcript.mjs && node scripts/smoke-transcript-ui.mjs && node scripts/smoke-map.mjs && node scripts/contrast.mjs --css dist/lib/tokens.css && node scripts/assert-pack-contents.mjs",
     "pack:check": "node scripts/assert-pack-contents.mjs",
     "smoke:tarball": "node scripts/smoke-tarball.mjs",
     "oracle:graph": "node scripts/graph-oracle.mjs",
@@ -65,15 +95,16 @@
   },
   "devDependencies": {
     "@storybook/addon-a11y": "^10.4.6",
-    "http-server": "^14.1.1",
     "@storybook/addon-themes": "^10.4.6",
     "@storybook/react-vite": "^10.4.6",
     "@tailwindcss/vite": "^4.3.1",
     "@vitejs/plugin-react": "^6.0.2",
+    "http-server": "^14.1.1",
     "puppeteer-core": "^25.1.0",
     "storybook": "^10.4.6",
     "tailwindcss": "^4.3.1",
     "typescript": "^6.0.3",
-    "vite": "^8.0.16"
+    "vite": "^8.0.16",
+    "yaml": "2.9.0"
   }
 }
