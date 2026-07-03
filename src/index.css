@@ -69,7 +69,7 @@
   --font-body: "Atkinson Hyperlegible", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, Menlo, Consolas, monospace;
   --chart-1: var(--teal); --chart-2: var(--olive); --chart-3: var(--clay); --chart-4: var(--mauve); --chart-amber: var(--amber);
-  --chart-grid: var(--rule); --chart-axis: var(--ink-3); --chart-surface: var(--surface); --chart-point-stroke: var(--surface);
+  --chart-grid: var(--rule-strong); --chart-axis: var(--ink-3); --chart-surface: var(--surface); --chart-point-stroke: var(--surface);
   --nav-bg: rgba(7,7,6,.92); --grid: rgba(203,163,92,.12); --hero-tex: .16;
   --glow: 0 0 6px rgba(203,163,92,.22); --glow-soft: 0 0 4px rgba(203,163,92,.13);
   --glass-bg: rgba(245,243,235,.06); --glass-solid: rgba(20,20,18,.62); --glass-edge: rgba(245,243,235,.18); --glass-hi: rgba(245,243,235,.26);
@@ -3587,7 +3587,7 @@
      measure via --gan-pad-x, so the kpis + charts keep a comfortable width
      instead of sprawling on a wide monitor. */
   .gan-root { display: flex; flex-direction: column; height: 100%; min-width: 0; min-height: 0; font-family: var(--font-mono); max-width: none; margin-inline: 0; --gan-pad-x: max(var(--sp-4), calc((100% - 1360px) / 2)); }
-  .gan-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; padding: var(--sp-4) var(--gan-pad-x); border-bottom: var(--bd); }
+  .gan-head { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-4) var(--gan-pad-x); border-bottom: var(--bd); }
   .gan-head-titles { min-width: 0; }
   .gan-h2 { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-md); color: var(--ink-strong); text-transform: lowercase; line-height: 1.15; margin: 0; }
   .gan-sub { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); text-transform: lowercase; margin-top: var(--sp-1); }
@@ -3628,17 +3628,6 @@
   .gan-card-sub { display: block; font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); text-transform: lowercase; margin-top: 2px; }
   .gan-card-figure { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; }
   .gan-card-body { min-width: 0; }
-  .gan-card-toolbar { display: inline-flex; gap: 0; border: var(--bd-strong); width: max-content; }
-  .gan-mini {
-    box-sizing: border-box; height: var(--control-h-sm); padding: 0 var(--sp-3);
-    font-family: var(--font-mono); font-size: 11px; text-transform: lowercase; line-height: 1;
-    color: var(--ink-4); background: transparent; border: 0; border-right: var(--bd); cursor: pointer;
-    transition: color var(--dur-1), background var(--dur-1);
-  }
-  .gan-mini:last-child { border-right: 0; }
-  .gan-mini:hover { color: var(--ink); }
-  .gan-mini:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -2px; }
-  .gan-mini.is-on { color: var(--ink); background: var(--surface-2); }
 
   /* ---- donut (outcome distribution) ---- */
   .gan-donut { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: var(--sp-4); align-items: center; }
@@ -3689,6 +3678,27 @@
     .gan-tablecard { padding: var(--sp-2) var(--sp-3) var(--sp-3); }
     .gan-tablecard .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   }
+}
+
+/* ── consumer-context guard (UNLAYERED on purpose) ────────────────────────────
+   The presentation site's bare `section { max-width; margin: 0 auto;
+   padding: 0 gutter }` reading-measure rule ships inside components.css's
+   @layer base. A consumer bundle is free to DECLARE @layer analytics before
+   @layer base (Next.js bundling does), and between layers the LATER-declared
+   one wins — so the site rule can out-cascade the whole analytics layer and
+   clamp the dashboard's cards (ch-based, so the mono-font cards shrink to
+   ~360px and center). Same collision the commons surfaces guard with
+   `.cmg-page section` and the demo stage with `.iu section`. This guard is
+   UNLAYERED because unlayered declarations beat every layer regardless of
+   declaration order — it cannot lose to either bundle ordering. Re-assert
+   the card box the bare rule overrode, including the ≤560px compact variant
+   (the layered mobile rule would otherwise lose to this unlayered
+   re-assert). */
+.gan-root section { max-width: none; margin: 0; padding: 0; }
+.gan-root .gan-card,
+.gan-root .gan-tablecard { padding: var(--sp-3) var(--sp-4) var(--sp-4); }
+@media (max-width: 560px) {
+  .gan-root .gan-tablecard { padding: var(--sp-2) var(--sp-3) var(--sp-3); }
 }
 
 /* ######################################################################

@@ -62,20 +62,19 @@ export const WeeklyMetricToggleSwapsSeries = {
     const canvas = within(canvasElement)
     const toggle = within(canvas.getByRole('group', { name: 'series' }))
 
-    // Starts on the active-contributor series.
+    // Starts on the active-contributor series; the subtitle carries the
+    // current series' total.
     await expect(toggle.getByRole('button', { name: 'active' })).toHaveAttribute('aria-pressed', 'true')
-    await expect(canvas.getByText('distinct contributors active each week')).toBeInTheDocument()
-    await expect(canvas.getByText('7 active')).toBeInTheDocument()
+    await expect(canvas.getByText('distinct contributors active each week · 7 active')).toBeInTheDocument()
 
-    // Switching to "new" swaps the card's subtitle/aside/series without
-    // touching its title or the standalone new-contributors card.
+    // Switching to "new" swaps the card's subtitle/series without touching
+    // its title or the standalone new-contributors card (whose aside stays
+    // the only exact "3 new" text — the subtitle's is merged).
     await userEvent.click(toggle.getByRole('button', { name: 'new' }))
     await waitFor(() =>
-      expect(canvas.getByText('first-ever appearance per week')).toBeInTheDocument(),
+      expect(canvas.getByText('new contributors per week · 3 new')).toBeInTheDocument(),
     )
-    // "3 new" now shows twice: this card's aside AND the standalone
-    // new-contributors card's aside (which never leaves the screen).
-    await expect(canvas.getAllByText('3 new')).toHaveLength(2)
+    await expect(canvas.getByText('3 new')).toBeInTheDocument()
     await expect(canvas.getByText('weekly active contributors')).toBeInTheDocument()
     await expect(canvas.getByText('new contributors per week')).toBeInTheDocument()
   },
