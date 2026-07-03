@@ -27,8 +27,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - uses: actions/setup-node@v4
         with:
@@ -62,8 +60,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - uses: actions/setup-node@v4
         with:
@@ -91,6 +87,17 @@ jobs:
         with:
           chrome-version: stable
 
+      # setup-chrome's tool-cache install ships a chrome-sandbox helper without
+      # the setuid bit, and the runner kernel restricts unprivileged user
+      # namespaces — Chrome refuses to start rather than drop sandboxing. Give
+      # the helper exactly what Chrome's own error prescribes (root-owned,
+      # mode 4755) so the browser gates keep running SANDBOXED (no --no-sandbox).
+      - name: Configure Chrome sandbox helper
+        run: |
+          SANDBOX="$(dirname "${{ steps.chrome.outputs.chrome-path }}")/chrome-sandbox"
+          sudo chown root:root "$SANDBOX"
+          sudo chmod 4755 "$SANDBOX"
+
       # gate 2: the 20-check interactive validator, driven against the BUILT app.
       # serve dist/ on a fixed port, wait for it, then pass the URL explicitly so
       # the served port and the asserted URL can never drift.
@@ -102,7 +109,7 @@ jobs:
 
       - name: Validate (20-check puppeteer gate)
         env:
-          CHROME_PATH: ${{ steps.chrome.outputs.executable-path }}
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
         run: node scripts/validate.mjs "http://localhost:5180/?fb=off"
 
       # gate 3: storybook builds (the type/parse gate for src/ui/*).
@@ -114,7 +121,7 @@ jobs:
       # non-zero on a real assertion error (benign resource 404s are separated out).
       - name: Storybook smoke (render + play)
         env:
-          CHROME_PATH: ${{ steps.chrome.outputs.executable-path }}
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
         run: node scripts/sbsmoke.mjs
 
       - name: Upload Storybook build on failure

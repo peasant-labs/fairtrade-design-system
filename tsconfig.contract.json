@@ -24,6 +24,18 @@
     "src/ui/transcript/adapter.contract.type-test.js",
     "src/ui/transcript/state-capabilities.contract.type-test.js",
     "src/ui/transcript/view-model.js",
-    "src/ui/transcript/wire-types.js"
+    "src/ui/transcript/wire-types.js",
+    "src/ui/graph/contract.type-test.js",
+    "src/ui/commons/contract.type-test.js",
+    "src/ui/analytics/contract.type-test.js",
+    "src/ui/graph/types.js",
+    "src/ui/commons/types.js",
+    "src/ui/analytics/types.js",
+    "src/ui/graph/index.js",
+    "src/ui/commons/index.js",
+    "src/ui/analytics/index.js",
+    "src/ui/graph/**/*.js",
+    "src/ui/commons/**/*.js",
+    "src/ui/analytics/**/*.js"
   ]
 }

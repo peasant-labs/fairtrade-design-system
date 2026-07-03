@@ -1,30 +1,23 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Search,
-  TriangleAlert,
   X,
   ArrowRight,
   Box,
   Folder,
   FileCode,
   GitCommitHorizontal,
-  GitMerge,
   Share2,
   RotateCw,
   Coins,
   Link2,
   CornerDownRight,
-  ChevronDown,
-  ChevronRight,
   Tag,
-  Check,
-  MessageSquare,
   FileDiff,
   Layers,
-  Hash,
-  FileText,
 } from 'lucide-react'
-import { CommitGraph, MapCanvas, RailShell, RailSection, TimeStrip, ConnectionPill, DataState, TeachingEmptyState } from '../../ui'
+import { RailSection, TimeStrip, ConnectionPill, DataState, TeachingEmptyState } from '../../ui'
+import { Changes, ChangeDetail, CodeMap, CodeMapComposition } from '../../ui/graph/index.js'
 
 /* ============================================================================
    GraphMap.jsx — peasant's code-MAP + changes git-graph, hand-rolled in the
@@ -165,73 +158,86 @@ const ALL_TASKS = [
   { id: 'ff21e8a0', title: 'Fix pipeline bug on empty source', when: '6d ago', lights: ['internal/ingest'], outcome: 'failed' },
 ]
 
-/* ---- kit adapter: ONE parent-linked tree fed to MapCanvas ----------------
-   the three per-grain MAP_NODES sets become tree DEPTHS: overview modules are
-   the roots, folders parent under them by path prefix, files parent under the
-   folder whose path-leaf opens their id. MapCanvas owns the semantic-zoom
-   (overview/folders/files) + edge-lift + violation-aggregate from this one
-   set, so we no longer keep a node set per grain.
+/* ---- kit adapter: ONE parent-linked tree fed to the REAL <CodeMap> ------------
+   full-lift: this fixture is now shaped as a CodeMapPayload (the
+   SAME cooked prop contract peasant's map adapter produces from GET
+   /api/v1/map/{projectHash} — src/ui/graph/types.js MapNodePayload), not a raw
+   MapCanvas dataset. The demo renders through the real <CodeMapComposition>, so
+   this mockup and the peasant app exercise byte-identical composition + adapter
+   code, not two parallel implementations.
 
-   coverage(0..4) = round(recorded / files * 4). kind package|module → folder,
-   else file. ids are the SAME strings NODE_DETAIL keys on, so selecting a node
-   still resolves the bespoke rail. */
-const covOf = (recorded, files) =>
-  files > 0 ? Math.min(4, Math.max(0, Math.round((recorded / files) * 4))) : 0
+   the three per-grain MAP_NODES sets become tree LAYERS: overview modules are
+   layer 0, folders layer 1 (parented by path prefix), files layer 2 (parented by
+   the folder their id's first segment names). `order` is the set's array index —
+   MapCanvas's layer/order contract positions rows/order from these
+   fields, not tree depth / payload position (exercised with shuffled/non-depth
+   fixtures in fairtrade's own scripts/smoke-map.mjs + MapCanvas.stories.jsx).
 
-const MAP_DATA = (() => {
-  // roots: the overview modules.
-  const roots = MAP_NODES.overview.map((n) => ({
+   ids are the SAME strings NODE_DETAIL keys on, so selecting a node still
+   resolves the bespoke rail. */
+const FILE_PARENT = {
+  'ingest/pipeline.go': 'internal/ingest',
+  'ingest/replay.go': 'internal/ingest',
+  'codegraph/build.go': 'internal/codegraph',
+  'codegraph/layout.go': 'internal/codegraph',
+  'map/Canvas.tsx': 'web/src/map',
+  'map/Rail.tsx': 'web/src/map',
+}
+
+const CODE_MAP_PAYLOAD = (() => {
+  const roots = MAP_NODES.overview.map((n, order) => ({
     id: n.id,
-    label: n.name,
-    kind: 'folder',
+    kind: 'module',
+    name: n.name,
     loc: n.loc,
-    coverage: covOf(n.recorded, n.files),
-    violations: n.violations,
+    recordedFiles: n.recorded,
+    totalFiles: n.files,
+    layer: 0,
+    order,
   }))
   // folders parent under the overview module that prefixes their id
   // (internal/ingest → internal, web/src/map → web, cmd/peasant → cmd).
-  const folders = MAP_NODES.folders.map((n) => ({
+  const folders = MAP_NODES.folders.map((n, order) => ({
     id: n.id,
-    label: n.name,
-    kind: 'folder',
+    kind: 'package',
+    name: n.name,
     loc: n.loc,
-    coverage: covOf(n.recorded, n.files),
-    violations: n.violations,
+    recordedFiles: n.recorded,
+    totalFiles: n.files,
     parent: n.id.split('/')[0],
+    layer: 1,
+    order,
   }))
-  // files parent under the folder their id's first segment names
-  // (ingest/pipeline.go → internal/ingest, codegraph/build.go →
-  // internal/codegraph, map/Canvas.tsx → web/src/map).
-  const FILE_PARENT = {
-    'ingest/pipeline.go': 'internal/ingest',
-    'ingest/replay.go': 'internal/ingest',
-    'codegraph/build.go': 'internal/codegraph',
-    'codegraph/layout.go': 'internal/codegraph',
-    'map/Canvas.tsx': 'web/src/map',
-    'map/Rail.tsx': 'web/src/map',
-  }
-  const files = MAP_NODES.files.map((n) => ({
+  const files = MAP_NODES.files.map((n, order) => ({
     id: n.id,
-    label: n.name,
     kind: 'file',
+    name: n.name,
     loc: n.loc,
-    coverage: covOf(n.recorded, n.files),
-    violations: n.violations,
+    recordedFiles: n.recorded,
+    totalFiles: n.files,
     parent: FILE_PARENT[n.id],
+    layer: 2,
+    order,
   }))
 
-  // author edges at the leaf grains; MapCanvas lifts them to visible ancestors.
-  // import → structure, coedit → activity. `tangle` has no MapCanvas equivalent:
-  // we render it as an activity edge AND rely on the target's violation badge to
-  // carry the tangle signal (accepted regression — no bespoke red tangle edge).
-  const edgeKind = (k) => (k === 'import' ? 'structure' : 'activity')
-  const edges = [...MAP_EDGES.folders, ...MAP_EDGES.files].map((e) => ({
-    from: e.from,
-    to: e.to,
-    kind: edgeKind(e.kind),
-  }))
+  // structureEdges: the import-kind edges only (CodeMapPayload has no activityEdges —
+  // co-edit coupling surfaces via the rail's "usually changed alongside" rows instead,
+  // matching the real wire contract).
+  const structureEdges = [...MAP_EDGES.folders, ...MAP_EDGES.files]
+    .filter((e) => e.kind === 'import')
+    .map((e) => ({ from: e.from, to: e.to, count: e.weight ?? 1 }))
 
-  return { nodes: [...roots, ...folders, ...files], edges }
+  // violations: edge-pair records (EdgeViolationPayload), aggregated onto each
+  // endpoint by the shared CodeMap adapter (countViolationsByEndpoint) — chosen so
+  // the resulting per-node counts match the DEMO's original fixture (codegraph 1,
+  // build.go 1, web/src/map 2, Canvas.tsx 2).
+  const violations = [
+    { kind: 'cycle', from: 'internal/codegraph', to: 'codegraph/build.go' },
+    { kind: 'wrongway', from: 'web/src/map', to: 'map/Canvas.tsx' },
+    { kind: 'cycle', from: 'web/src/map', to: 'map/Canvas.tsx' },
+  ]
+
+  return { repoFound: true, nodes: [...roots, ...folders, ...files], structureEdges, violations }
 })()
 
 /* ---- kit adapter: the session sparkline → TimeStrip buckets ----------------
@@ -266,6 +272,9 @@ export function MapView({ theme }) {
   // MOCK connection feed — there is no backend; the toolbar button cycles the
   // state so the ConnectionPill + DataState lost-program panel can be seen live.
   const [conn, setConn] = useState('live')
+  // controlled CodeMap zoom (grain + per-node expansion) — F16: open to Folders
+  // (package) grain, same default as the peasant app.
+  const [zoom, setZoom] = useState({ level: 'package', expanded: [] })
 
   // the selected node, looked up in the ORIGINAL MAP_NODES (all grains
   // flattened) so the bespoke rail still reads recorded/files/kind/loc. ids are
@@ -335,34 +344,47 @@ export function MapView({ theme }) {
 
   return (
     <div className="gmp-root">
-      <RailShell
+      {/* full-lift: the shell (toolbar + rail + legend + canvas), not
+          just the canvas, is the shared <CodeMapComposition> — the SAME
+          composition the peasant app mounts at /map/{project}. `rail`/`toolbar`
+          stay host-specific slots (this demo's mock data vs. peasant's real API
+          data); `canvasSlot` substitutes this demo's MOCK connection-state
+          simulation for the default plain <CodeMap> render (peasant instead
+          slots its own WS/REST loading-state machine here). CodeMapComposition
+          renders its own nested `.gmp-root` frame (the shared shell); this outer
+          one groups it with the page-level TimeStrip below, exactly as before. */}
+      <CodeMapComposition
+        rail={rail}
         toolbar={toolbar}
         sheetTitle="node detail"
         sheetMeta={selected ?? 'project'}
-        rail={rail}
-      >
-        <DataState
-          status={conn}
-          empty={false}
-          onRetry={() => setConn('live')}
-          emptyState={
-            <TeachingEmptyState
-              title="no map yet"
-              body="record a session with the local program, then the code map fills in."
-              command="peasant ingest"
+        height={480}
+        ariaLabel="peasant code map"
+        canvasSlot={
+          <DataState
+            status={conn}
+            empty={false}
+            onRetry={() => setConn('live')}
+            emptyState={
+              <TeachingEmptyState
+                title="no map yet"
+                body="record a session with the local program, then the code map fills in."
+                command="peasant ingest"
+              />
+            }
+          >
+            <CodeMap
+              payload={CODE_MAP_PAYLOAD}
+              zoom={zoom}
+              onZoomChange={setZoom}
+              selectedId={selected}
+              onSelect={(id) => setSelected(id)}
+              height={480}
+              ariaLabel="peasant code map"
             />
-          }
-        >
-          <MapCanvas
-            data={MAP_DATA}
-            grain="folders"
-            selectedId={selected}
-            onSelect={(id) => setSelected(id)}
-            height={480}
-            ariaLabel="peasant code map"
-          />
-        </DataState>
-      </RailShell>
+          </DataState>
+        }
+      />
 
       <div style={{ flex: 'none' }}>
         <TimeStrip
@@ -604,80 +626,47 @@ function NodeRail({ node, detail, onSelectNode }) {
 /* === CHANGES VIEW (lane-based git graph) ============================== */
 /* ====================================================================== */
 
-/* the develop history as a CommitGraph dataset (newest-first, lane 0 = develop). a feature lane (1)
-   forks at a3f9c1 and is still open (tip); a short fix lane (2) forked + folded back at the merge
-   commit d14c0a. `session` = a recorded AI session sits behind the commit (filled dot + sparkle).
-   hashes / messages / branch names are USER CONTENT — case preserved. (was a hand-rolled lane graph;
-   now the kit CommitGraph, which owns the same square-dot / 90° elbow / amber-scarce language.) */
-const HISTORY = [
-  { id: 'c1d4a3', lane: 0, parents: ['d14c0a'], message: 'squarify treemap', branch: 'develop', session: true, time: '5h ago' },
-  { id: 'd14c0a', lane: 0, parents: ['b7e220', 'k-fix'], message: 'Merge fix--kickstart-config', branch: 'develop', merged: true, time: '3d ago' },
-  { id: 'k-fix', lane: 2, parents: ['a3f9c1'], message: 'kickstart config defaults', branch: 'fix--kickstart-config', tip: true, time: '3d ago' },
-  { id: 'mrc1', lane: 1, parents: ['a3f9c1'], message: 'wire map review + contribute', branch: 'feat/map-review-contribute', tip: true, session: true, time: '5h ago' },
-  { id: 'b7e220', lane: 0, parents: ['a3f9c1'], message: 'stream replay path', branch: 'develop', session: true, time: '1d ago' },
-  { id: 'a3f9c1', lane: 0, parents: ['8c0e41'], message: 'Fix pipeline bug', branch: 'develop', session: true, time: '2d ago' },
-  { id: '8c0e41', lane: 0, parents: ['f1a920'], message: 'Bump deps', branch: 'develop', time: '2d ago' },
-  { id: 'f1a920', lane: 0, parents: [], message: 'Add redaction tests', branch: 'develop', session: true, time: '3d ago' },
-]
-/* reverted lines of work, listed under the graph (kept from the bespoke view). */
-const REVERTED = [{ id: 'r1', name: 'feat/experimental-cache', human: 'Experimental cache', when: '1wk ago' }]
+/* the develop history as a ChangesPayload fixture (the cooked adapter-output shape the lifted
+   <Changes> takes). lane 0 = develop's recent commits; an open feature change forks at a3f9c1 and
+   sits at its tip; a fix change merged back at d14c0a; an experimental change was merged then
+   reverted. The lifted component derives the lane geometry (buildChangesGraph) and draws it on the
+   kit CommitGraph — so this demo and the peasant app render byte-identically from the same payload.
+   times are pinned to a fixed reference so the relative labels are stable. hashes / messages /
+   branch names are USER CONTENT — case preserved. */
+const CHANGES_NOW = Date.UTC(2026, 5, 27, 12, 0, 0)
+const H = 3600e3
+const D = 24 * H
+/** @type {import('../../ui/graph/index.js').ChangesPayload} */
+const CHANGES_FIXTURE = {
+  repoFound: true,
+  defaultBranch: 'develop',
+  recentCommits: [
+    { hash: 'c1d4a3', subject: 'squarify treemap', timeMs: CHANGES_NOW - 5 * H, hasSession: true },
+    { hash: 'd14c0a', subject: 'Merge fix--kickstart-config', timeMs: CHANGES_NOW - 3 * D, hasSession: false },
+    { hash: 'b7e220', subject: 'stream replay path', timeMs: CHANGES_NOW - 1 * D, hasSession: true },
+    { hash: 'a3f9c1', subject: 'Fix pipeline bug', timeMs: CHANGES_NOW - 2 * D, hasSession: true },
+    { hash: '8c0e41', subject: 'Bump deps', timeMs: CHANGES_NOW - 2 * D, hasSession: false },
+    { hash: 'f1a920', subject: 'Add redaction tests', timeMs: CHANGES_NOW - 3 * D, hasSession: true },
+  ],
+  changes: [
+    { branch: 'feat/map-review-contribute', merged: false, baseHash: 'a3f9c1', tipCommitMs: CHANGES_NOW - 5 * H, sessionCount: 2, aheadCount: 3, behindCount: 0, filesChanged: 136, taskCount: 70, newEdges: 39, removedEdges: 22, violations: 3 },
+    { branch: 'fix--kickstart-config', merged: true, baseHash: 'a3f9c1', mergeCommitHash: 'd14c0a', mergedAtMs: CHANGES_NOW - 3 * D, sessionCount: 0, aheadCount: 1, behindCount: 0, filesChanged: 4, taskCount: 2, newEdges: 0, removedEdges: 0, violations: 0 },
+    { branch: 'feat/experimental-cache', merged: true, reverted: true, mergedAtMs: CHANGES_NOW - 7 * D, sessionCount: 0, aheadCount: 0, behindCount: 0, filesChanged: 0, taskCount: 0, newEdges: 0, removedEdges: 0, violations: 0 },
+  ],
+}
 
 export function ChangesView({ theme, onNavigate }) {
   void theme
-  const [selectedId, setSelectedId] = useState('mrc1')
-  const [showOlder, setShowOlder] = useState(false)
-
+  const [selectedId, setSelectedId] = useState('tip:feat/map-review-contribute')
   return (
-    <div className="gmp-root gmp-changes-root">
-      <div className="gmp-changes-head">
-        <div>
-          <span className="label">lines of work · peasant-labs/peasant</span>
-          <div className="gmp-changes-sub mono">default branch develop · 1 open · 1 merged</div>
-        </div>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={() => onNavigate?.('map')}>
-          <Box size={14} aria-hidden="true" /> open the map
-        </button>
-      </div>
-
-      <div className="gmp-changes-body">
-        {/* the kit CommitGraph (square dots, 90° elbows, filled = recorded session + sparkle); selecting
-            a commit opens the change detail. */}
-        <CommitGraph
-          className="gmp-cg"
-          commits={HISTORY}
-          selectedId={selectedId}
-          label="develop commit history"
-          onSelect={(c) => { setSelectedId(c.id); onNavigate?.('change-detail') }}
-          hasMore={!showOlder}
-          onShowOlder={() => setShowOlder(true)}
-        />
-
-        {/* already-merged + reverted section (kept) */}
-        <div className="gmp-merged-sec">
-          <div className="sb-head gmp-merged-head">already merged in</div>
-          <div className="gmp-merged-list">
-            {REVERTED.map((r) => (
-              <button key={r.id} type="button" className="gmp-merged-chip gmp-merged-revert" onClick={() => setSelectedId(r.id)}>
-                <GitMerge size={13} aria-hidden="true" /> reverted · {r.human} · then undone · {r.when}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* legend — the kit's filled = has-session semantics. the .cg-dot marker is sized inline (the kit
-            sizes it via its absolute lane geometry, which doesn't apply here); position/transform/centering
-            are reset in index.css (.gmp-changes-legend .cg-dot) so the square lines up with its label. */}
-        <div className="gmp-changes-legend">
-          <span className="gmp-legend-item">
-            <span className="cg-dot cg-dot-filled" style={{ width: 9, height: 9 }} aria-hidden="true" /> commit with a recorded session
-          </span>
-          <span className="gmp-legend-item">
-            <span className="cg-dot cg-dot-hollow" style={{ width: 9, height: 9 }} aria-hidden="true" /> no session captured
-          </span>
-          <span className="gmp-legend-item gmp-legend-dim">a filled dot also flies a sparkle · select a commit to open it</span>
-        </div>
-      </div>
-    </div>
+    <Changes
+      payload={CHANGES_FIXTURE}
+      projectLabel="peasant-labs/peasant"
+      nowMs={CHANGES_NOW}
+      selectedId={selectedId}
+      onSelectChange={(c) => { setSelectedId(c.id); onNavigate?.('change-detail') }}
+      onOpenMap={() => onNavigate?.('map')}
+    />
   )
 }
 
@@ -685,298 +674,109 @@ export function ChangesView({ theme, onNavigate }) {
 /* === CHANGE DETAIL VIEW =============================================== */
 /* ====================================================================== */
 
-/* one line of work, told in full. a deterministic caption with clickable
-   font-mono fragments; the lines-of-work footnotes; per-file lazy diffs with
-   per-hunk conversation attribution; an inline annotation chip. */
-const CAP_FRAGS = {
-  files: '136 files',
-  conversations: '70 conversations',
-  requests: '98 requests',
-  conn: '+39/−22 connections',
+/* one line of work, told in full — the demo's ChangeDetailView is now a thin wrapper over the lifted
+   <ChangeDetail>, fed a ChangeDetailPayload fixture + a per-file ChangeDiffPayload (the lazy diff,
+   resolved on expand). The same component the peasant app mounts → byte-identical render. */
+
+/* the lazy per-file diffs (ChangeDiffPayload), keyed by path. each hunk carries the recorded session
+   that wrote it (sessionId/sessionTitle = the per-hunk attribution). */
+const DETAIL_BRANCH = 'feat/map-review-contribute'
+const DIFF_BY_FILE = {
+  'internal/codegraph/build.go': {
+    branch: DETAIL_BRANCH, file: 'internal/codegraph/build.go', status: 'A', binary: false, truncated: false,
+    hunks: [{
+      oldStart: 1, oldLines: 1, newStart: 1, newLines: 6,
+      sessionId: 'c1d4a3f9', sessionTitle: 'Build deterministic node layout',
+      lines: [
+        { kind: 'context', text: 'package codegraph' },
+        { kind: 'add', text: '' },
+        { kind: 'add', text: 'func Build(g *Graph) *Layout {' },
+        { kind: 'add', text: '  nodes := squarify(g.Nodes())' },
+        { kind: 'add', text: '  return &Layout{Nodes: nodes}' },
+        { kind: 'add', text: '}' },
+      ],
+    }],
+  },
+  'internal/ingest/pipeline.go': {
+    branch: DETAIL_BRANCH, file: 'internal/ingest/pipeline.go', status: 'M', binary: false, truncated: false,
+    hunks: [
+      {
+        oldStart: 211, oldLines: 3, newStart: 211, newLines: 3,
+        sessionId: 'a3f9c1d4', sessionTitle: 'Refactor ingest pipeline to stream',
+        lines: [
+          { kind: 'context', text: 'func (p *Pipeline) Run(ctx context.Context) error {' },
+          { kind: 'del', text: '  sessions, err := loadAll(ctx, p.src)' },
+          { kind: 'add', text: '  stream, err := openStream(ctx, p.src)' },
+          { kind: 'context', text: '  if err != nil { return err }' },
+        ],
+      },
+      {
+        oldStart: 240, oldLines: 2, newStart: 240, newLines: 4,
+        sessionId: '7b21e0aa', sessionTitle: 'Add backpressure to the reader',
+        lines: [
+          { kind: 'context', text: '  for s := range stream {' },
+          { kind: 'add', text: '    sem <- struct{}{}' },
+          { kind: 'add', text: '    go p.process(s, sem)' },
+          { kind: 'context', text: '  }' },
+        ],
+      },
+    ],
+  },
+  'cmd/peasant/main.go': {
+    branch: DETAIL_BRANCH, file: 'cmd/peasant/main.go', status: 'D', binary: false, truncated: false,
+    hunks: [{
+      oldStart: 1, oldLines: 2, newStart: 0, newLines: 0,
+      sessionId: 'ff21e8a0', sessionTitle: 'Drop the legacy entrypoint',
+      lines: [
+        { kind: 'del', text: 'package main' },
+        { kind: 'del', text: 'func main() { legacy.Run() }' },
+      ],
+    }],
+  },
 }
 
-const CHANGE_FILES = [
-  {
-    path: 'internal/codegraph/build.go',
-    dir: 'internal/codegraph',
-    status: 'added',
-    convos: 3,
-    hunks: [
-      {
-        attrib: { id: 'c1d4a3f9', title: 'Build deterministic node layout', hash: 'c1d4a3' },
-        lines: [
-          { sign: 'ctx', gut: '1', t: 'package codegraph' },
-          { sign: 'add', gut: '2', t: '' },
-          { sign: 'add', gut: '3', t: 'func Build(g *Graph) *Layout {' },
-          { sign: 'add', gut: '4', t: '  nodes := squarify(g.Nodes())' },
-          { sign: 'add', gut: '5', t: '  return &Layout{Nodes: nodes}' },
-          { sign: 'add', gut: '6', t: '}' },
-        ],
-      },
-    ],
-  },
-  {
-    path: 'internal/ingest/pipeline.go',
-    dir: 'internal/ingest',
-    status: 'changed',
-    convos: 2,
-    hunks: [
-      {
-        attrib: { id: 'a3f9c1d4', title: 'Refactor ingest pipeline to stream', hash: 'a3f9c1' },
-        lines: [
-          { sign: 'ctx', gut: '211', t: 'func (p *Pipeline) Run(ctx context.Context) error {' },
-          { sign: 'del', gut: '212', t: '  sessions, err := loadAll(ctx, p.src)' },
-          { sign: 'add', gut: '212', t: '  stream, err := openStream(ctx, p.src)' },
-          { sign: 'ctx', gut: '213', t: '  if err != nil { return err }' },
-        ],
-      },
-      {
-        attrib: { id: '7b21e0aa', title: 'Add backpressure to the reader', hash: 'b7e220' },
-        lines: [
-          { sign: 'ctx', gut: '240', t: '  for s := range stream {' },
-          { sign: 'add', gut: '241', t: '    sem <- struct{}{}' },
-          { sign: 'add', gut: '242', t: '    go p.process(s, sem)' },
-          { sign: 'ctx', gut: '243', t: '  }' },
-        ],
-      },
-    ],
-  },
-  {
-    path: 'cmd/peasant/main.go',
-    dir: 'cmd/peasant',
-    status: 'deleted',
-    convos: 1,
-    hunks: [
-      {
-        attrib: { id: 'ff21e8a0', title: 'Drop the legacy entrypoint', hash: 'ff21e8' },
-        lines: [
-          { sign: 'del', gut: '1', t: 'package main' },
-          { sign: 'del', gut: '2', t: 'func main() { legacy.Run() }' },
-        ],
-      },
-    ],
-  },
-]
-
-const STATUS_TONE = {
-  added: 'chip-ok',
-  changed: '',
-  deleted: 'chip-err',
-  renamed: 'chip-warn',
-}
-
-/* one file's lazy diff. closed by default; opens to render hunks with per-hunk
-   conversation attribution. */
-function DiffFile({ file, open, onToggle }) {
-  return (
-    <div className="gmp-file">
-      <button type="button" className="gmp-file-head" aria-expanded={open} onClick={onToggle}>
-        {open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
-        <span className="mono gmp-file-path">{file.path}</span>
-        <span className={'chip gmp-file-status ' + STATUS_TONE[file.status]}>{file.status}</span>
-        <span className="gmp-file-convos metaitem">
-          <MessageSquare size={13} aria-hidden="true" /> <span className="tnum">{file.convos}</span>
-        </span>
-      </button>
-      {open && (
-        <div className="gmp-file-body">
-          {file.hunks.map((h, i) => (
-            <div key={i} className="gmp-hunk">
-              <div className="gmp-hunk-attrib">
-                <CornerDownRight size={13} aria-hidden="true" />
-                <span className="gmp-hunk-from">from</span>
-                <button type="button" className="gmp-hunk-link">
-                  {h.attrib.title}
-                </button>
-                <span className="mono gmp-hunk-hash">{h.attrib.hash}</span>
-              </div>
-              <div className="diff">
-                {h.lines.map((d, j) => (
-                  <div className={'dl ' + d.sign} key={j}>
-                    <span className="rail" />
-                    <span className="gut tnum">{d.gut}</span>
-                    <span className="sign">{d.sign === 'add' ? '+' : d.sign === 'del' ? '−' : ''}</span>
-                    <span className="t">{d.t || ' '}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
+const rep = (n, f) => Array.from({ length: n }, (_, i) => f(i))
+/** @type {import('../../ui/graph/index.js').ChangeDetailPayload} */
+const CHANGE_DETAIL_FIXTURE = {
+  branch: DETAIL_BRANCH,
+  baseRef: 'a3f9c1',
+  defaultBranch: 'develop',
+  files: [
+    { path: 'internal/codegraph/build.go', status: 'A', linesAdded: 5, linesRemoved: 0 },
+    { path: 'internal/ingest/pipeline.go', status: 'M', linesAdded: 3, linesRemoved: 1 },
+    { path: 'cmd/peasant/main.go', status: 'D', linesAdded: 0, linesRemoved: 2 },
+  ],
+  slice: { nodes: [], structureEdges: [], activityEdges: [] },
+  newEdges: rep(39, (i) => ({ from: `n${i}`, to: `m${i}`, count: 1 })),
+  removedEdges: rep(22, (i) => ({ from: `r${i}`, to: `s${i}`, count: 1 })),
+  newNodes: [],
+  removedNodes: [],
+  violations: rep(3, (i) => ({ kind: 'cycle', from: `c${i}`, to: `d${i}` })),
+  work: rep(70, (i) => ({ sessionId: `sess-${i}`, title: `conversation ${i}`, harness: 'claude-code', binding: 'bound', tasks: [] })),
+  unrecordedCommits: [],
+  unusual: [],
+  frictions: [
+    { kind: 'retryLoop', label: 'retry loop', file: 'pipeline.go', count: 4, sessions: 2 },
+    { kind: 'recurring', label: 'unparsed import', file: 'build.go', count: 2, sessions: 2 },
+  ],
+  filesChanged: 136,
+  linesAdded: 8,
+  linesRemoved: 3,
+  outputTokens: 12400,
+  costUsd: 4.81,
 }
 
 export function ChangeDetailView({ theme }) {
   void theme
-  const [openFiles, setOpenFiles] = useState({ 'internal/ingest/pipeline.go': true })
-  const [jumpTarget, setJumpTarget] = useState(null)
   const [annotation, setAnnotation] = useState('good handoff')
-  const [annotOpen, setAnnotOpen] = useState(false)
-  const [annotDraft, setAnnotDraft] = useState('')
-  const fileRefs = useRef({})
-  const scrollRef = useRef(null)
-
-  function toggleFile(path) {
-    setOpenFiles((o) => ({ ...o, [path]: !o[path] }))
-  }
-
-  function jumpTo(fragKey, filePath) {
-    setJumpTarget(fragKey)
-    if (filePath) {
-      setOpenFiles((o) => ({ ...o, [filePath]: true }))
-      const el = fileRefs.current[filePath]
-      const scroller = scrollRef.current
-      if (el && scroller) {
-        const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        scroller.scrollTo({ top: el.offsetTop - 12, behavior: reduce ? 'auto' : 'smooth' })
-      }
-    }
-  }
-
-  function saveAnnotation(e) {
-    e.preventDefault()
-    if (annotDraft.trim()) setAnnotation(annotDraft.trim())
-    setAnnotOpen(false)
-    setAnnotDraft('')
-  }
-
   return (
-    <div className="gmp-root gmp-detail-root" ref={scrollRef}>
-      <div className="gmp-detail-head">
-        <div className="crumb">
-          review <ChevronRight size={13} aria-hidden="true" /> peasant{' '}
-          <ChevronRight size={13} aria-hidden="true" />{' '}
-          <span className="cur">feat/map-review-contribute</span>
-        </div>
-        <div className="gmp-detail-title">Map review contribute</div>
-
-        {/* deterministic caption with clickable proof-jump fragments */}
-        <p className="gmp-caption">
-          this line of work touched{' '}
-          <button type="button" className={'gmp-frag' + (jumpTarget === 'files' ? ' gmp-frag-on' : '')} onClick={() => jumpTo('files', 'internal/codegraph/build.go')}>
-            {CAP_FRAGS.files}
-          </button>{' '}
-          across{' '}
-          <button type="button" className={'gmp-frag' + (jumpTarget === 'conversations' ? ' gmp-frag-on' : '')} onClick={() => jumpTo('conversations')}>
-            {CAP_FRAGS.conversations}
-          </button>{' '}
-          and{' '}
-          <button type="button" className={'gmp-frag' + (jumpTarget === 'requests' ? ' gmp-frag-on' : '')} onClick={() => jumpTo('requests')}>
-            {CAP_FRAGS.requests}
-          </button>
-          , reshaping{' '}
-          <button type="button" className={'gmp-frag' + (jumpTarget === 'conn' ? ' gmp-frag-on' : '')} onClick={() => jumpTo('conn')}>
-            {CAP_FRAGS.conn}
-          </button>
-          .
-        </p>
-        <span className="gmp-caption-hint mono">click any number to jump to its proof</span>
-      </div>
-
-      {/* signal band (renders with friction) */}
-      <div className="gmp-signals">
-        <span className="gmp-signal">
-          <RotateCw size={14} aria-hidden="true" /> retry loop · <b className="tnum">4×</b> in pipeline.go
-        </span>
-        <span className="gmp-signal gmp-signal-warn">
-          <TriangleAlert size={14} aria-hidden="true" /> <b className="tnum">3</b> rule breaks
-        </span>
-        <span className="gmp-signal">
-          recurring friction · <span className="mono">build.go</span>: unparsed import <b className="tnum">2×</b> across 2 conversations
-        </span>
-      </div>
-
-      {/* lines of work footnotes / totals */}
-      <div className="gmp-totals">
-        <span className="metaitem tnum">
-          <FileDiff size={14} aria-hidden="true" /> 136 files touched
-        </span>
-        <span className="metaitem tnum">
-          <span className="gmp-add">+39</span>/<span className="gmp-del">−22</span> connections
-        </span>
-        <span className="metaitem tnum">
-          <Hash size={14} aria-hidden="true" /> ai wrote ≈12.4k tokens
-        </span>
-        <span className="metaitem tnum">
-          <Coins size={14} aria-hidden="true" /> est. spend $4.81
-        </span>
-      </div>
-
-      {/* files changed with lazy per-file diffs + per-hunk attribution */}
-      <div className="gmp-detail-sec">
-        <div className="sb-head gmp-detail-sechead">files changed · click a path to open its diff</div>
-        <div className="gmp-files">
-          {CHANGE_FILES.map((f) => (
-            <div key={f.path} ref={(el) => (fileRefs.current[f.path] = el)}>
-              <DiffFile file={f} open={!!openFiles[f.path]} onToggle={() => toggleFile(f.path)} />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* inline annotation chip + popover */}
-      <div className="gmp-detail-sec">
-        <div className="sb-head gmp-detail-sechead">your annotation</div>
-        <div className="gmp-annot">
-          {annotation && (
-            <span className="gmp-label-chip gmp-annot-chip">
-              <Tag size={12} aria-hidden="true" /> {annotation}
-              <button type="button" className="gmp-annot-x" aria-label="remove annotation" onClick={() => setAnnotation('')}>
-                <X size={11} aria-hidden="true" />
-              </button>
-            </span>
-          )}
-          <button
-            type="button"
-            className="gmp-annot-add"
-            aria-expanded={annotOpen}
-            onClick={() => setAnnotOpen((o) => !o)}
-          >
-            <Tag size={13} aria-hidden="true" /> {annotation ? 'change label' : 'add a label'}
-          </button>
-          {annotOpen && (
-            <form className="gmp-annot-pop" onSubmit={saveAnnotation}>
-              <span className="label">user.custom_label</span>
-              <input
-                className="input"
-                type="text"
-                autoFocus
-                value={annotDraft}
-                onChange={(e) => setAnnotDraft(e.target.value)}
-                placeholder="e.g. good handoff"
-                aria-label="annotation value"
-              />
-              <div className="gmp-annot-pop-foot">
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAnnotOpen(false)}>
-                  cancel
-                </button>
-                <button type="submit" className="btn btn-primary btn-sm">
-                  <Check size={13} aria-hidden="true" /> save
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-      </div>
-
-      {/* exits */}
-      <div className="gmp-exits">
-        <button type="button" className="btn btn-secondary btn-sm">
-          <Box size={14} aria-hidden="true" /> see this work on the code map
-        </button>
-        <button type="button" className="btn btn-secondary btn-sm">
-          <Share2 size={14} aria-hidden="true" /> share 70 conversations…
-        </button>
-        <button type="button" className="btn btn-secondary btn-sm">
-          <FileText size={14} aria-hidden="true" /> copy recap
-        </button>
-        <code className="gmp-gitdiff mono">git diff develop...feat/map-review-contribute</code>
-      </div>
-      <p className="gmp-boundary mono">
-        shows what changed and the recorded work behind it, not whether the change is correct or secure.
-      </p>
-    </div>
+    <ChangeDetail
+      payload={CHANGE_DETAIL_FIXTURE}
+      getDiff={(f) => DIFF_BY_FILE[f.path] ?? null}
+      initialOpenFiles={{ 'internal/ingest/pipeline.go': true }}
+      annotation={annotation}
+      onSaveAnnotation={setAnnotation}
+      onRemoveAnnotation={() => setAnnotation('')}
+    />
   )
 }

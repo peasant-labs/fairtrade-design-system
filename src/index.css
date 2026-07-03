@@ -738,8 +738,11 @@
   .bullets li::before { content: "- "; color: var(--ink-5); }
 }
 
-/* faint dotted-grid surface (technical terminal backdrop, theme-aware via --grid) */
-body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); background-size: 22px 22px; }
+/* Removed (user decision, round 9): the dotted-grid "technical terminal backdrop" conflicted
+   with the DS's own neuroinclusive flat-background rule -- a DS followup tracks this. Every
+   fairtrade consumer (this demo, village, peasant) now gets a flat body background by default;
+   village's own local override (globals.css `background-image: none`) was removed alongside
+   this since it's now redundant -- one source of truth here instead of two places agreeing. */
 
 @media (max-width: 880px) {
   .cols-2, .grid-cards, .type-faces { grid-template-columns: 1fr; }
@@ -1027,6 +1030,28 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
      children into this grid. */
   .sw-group { display: grid; grid-template-columns: auto 1fr minmax(var(--sp-8), max-content); grid-auto-rows: minmax(var(--target-min), auto); align-items: center; gap: var(--sp-4) var(--sp-3); width: 100%; }
   .sw-field { display: contents; }
+
+  /* a SINGLE switch, stacked: label on its own top line, an optional hint line directly beneath
+     it, then the switch control + its on/off state marker sharing a third line (round 5 village
+     UAT).
+     round 7 fixes a real layout bug the round-5/6 version had: .sw-field's `display: contents`
+     promotes the switch's button/label/state as DIRECT grid items, so when label/hint ALSO
+     shared the same 2 named columns ("label label" / "hint hint" spanning both), their much
+     wider text inflated BOTH of the toggle-row's columns (measured: 207px + 191px for a ~90px
+     toggle and a ~50px state marker) -- CSS grid distributes a spanning item's extra width need
+     across the tracks it spans even when using max-content/min-content column sizing, so
+     shrinking the columns wasn't fixable from the column-sizing side alone. Fixed by NOT passing
+     `label` to <Switch> at all (avoiding .sw-field's own internal <label>) -- the consumer
+     renders `.sw-label` itself, OUTSIDE <Switch>, paired to an explicit `id` via htmlFor -- and
+     wrapping <Switch> in `.sw-toggle-row` (a real flex row, NOT a shared grid column), so the
+     switch button + its state marker size and gap independently of label/hint's width entirely.
+     One column now (was two): label/hint/toggle-row each own a full-width row, no column
+     spanning to inflate. */
+  .sw-stack { display: grid; grid-template-columns: 1fr; grid-template-areas: "label" "hint" "toggle"; row-gap: var(--sp-2); }
+  .sw-stack .sw-label { grid-area: label; justify-self: start; }
+  .sw-stack .sw-hint { grid-area: hint; justify-self: start; font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); }
+  .sw-stack .sw-toggle-row { grid-area: toggle; display: flex; align-items: center; gap: var(--sp-2); justify-self: start; }
+  .sw-stack .sw-toggle-row .sw-state { padding-inline-start: 0; }
 
   /* the control: a 48x28 track, hairline border, square corners */
   .sw {
@@ -3027,9 +3052,18 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
      page gutter. NB: zeroing padding-inline here out-specified the .card `p-4` on these
      <section class="... card"> elements - it stripped the getting-started + recent cards' left/right
      padding so their content sat flush on the card border (the "weird padding/width"). reset padding to 0
-     to kill the gutter, then restore the card padding so .card sections look like every other card. */
-  .cmg-page > section, .cmg-detail > section { max-width: none; margin-inline: 0; padding: 0; }
-  .cmg-page > section.card, .cmg-detail > section.card { padding: var(--sp-4); }
+     to kill the gutter, then restore the card padding so .card sections look like every other card.
+     descendant (not just direct-child) combinator: cmg-d-grid's <main class="cmg-d-main"> sits BETWEEN
+     .cmg-detail and its inner <section>s (provider share, redaction review, data browser), so a `>`
+     direct-child selector never matched them - those sections kept the global centred/clamped width
+     (visible as e.g. the provider-share card rendering narrow + auto-centered instead of filling the
+     main column, in any host that does not also wrap content in the .iu showcase shell's own
+     `.iu section` reset). */
+  /* .cmg-settings covers hosts (e.g. village's /groups/:id/settings route) that render the
+     settings surface's DangerZone/etc. sections without the .cmg-page/.cmg-detail wrapper the
+     mockup page uses - same narrow/centered-section bug, different host markup. */
+  .cmg-page section, .cmg-detail section, .cmg-settings section { max-width: none; margin-inline: 0; padding: 0; }
+  .cmg-page section.card, .cmg-detail section.card, .cmg-settings section.card { padding: var(--sp-4); }
 
   .cmg-crumb { margin-bottom: var(--sp-1); }
   .cmg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; }
@@ -3037,6 +3071,24 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .cmg-deck { margin-top: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-3); line-height: 1.5; }
   .cmg-sub { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-md); line-height: 1.2; color: var(--ink-strong); text-transform: lowercase; display: inline-flex; align-items: center; gap: var(--sp-2); }
   .cmg-sub .lucide { color: var(--ink-3); flex: none; }
+
+  /* settings-form title/hint TWO-TIER hierarchy (round 7, reverses round 6's flattening):
+     titles distinctive (--ink-2, matching .sw-label's own base color and the settings toggle's
+     already-correct tone), hints/descriptions faint (--ink-3, one step fainter). Scoped to
+     .cmg-settings-form specifically, NOT these classes' own base colors -- .label is used 175+
+     times across every fairtrade surface (form fields, doc sections, other mockup apps), .is-hint
+     is the base class every Input/Select/Textarea field's helper text renders through (Input.jsx's
+     <Field>), and .is-radio is the base class every RadioGroup consumer app-wide renders through
+     Checkbox.jsx's <Radio> -- lifting any of their OWN base colors would ripple far beyond this
+     one form. This scoped override touches ONLY titles/hints rendered inside a
+     `<form class="cmg-settings-form">` (both fairtrade's own CollectiveSettingsView and village's
+     settings page, which adds the same class to opt in). .is-hint moves ink-4 -> ink-3 here (one
+     step LESS faint than its own base) to match the OTHER hints/descriptions on this form, which
+     already used ink-3 via .muted -- so every hint on the form reads at the SAME faint tone, not
+     two different fainter-than-faint levels. */
+  .cmg-settings-form .label,
+  .cmg-settings-form .is-radio { color: var(--ink-2); }
+  .cmg-settings-form .is-hint { color: var(--ink-3); }
 
   /* visually-hidden label for the icon-only visibility eye */
   .cmg-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
@@ -3131,6 +3183,11 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .cmg-roleseg[aria-pressed="true"] { background: var(--amber); color: var(--on-amber); font-weight: 600; }
   .cmg-roleseg[aria-pressed="true"]:hover { background: var(--amber-bright); }
   .cmg-roleseg:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; position: relative; z-index: 1; }
+  /* read-only production role indicator (a <span>, not a <button> -- see Manage.jsx): same amber
+     "current" treatment as the demo's interactive aria-pressed segment, keyed off data-active
+     instead so a non-interactive element never carries a false aria-pressed toggle affordance. */
+  .cmg-roleseg[data-active] { background: var(--amber); color: var(--on-amber); font-weight: 600; }
+  .cmg-roleseg[data-active]:hover { background: var(--amber); }
 
   /* ---- governance + kpi tiles ---- */
   .cmg-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
@@ -3515,17 +3572,20 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .gmp-gitdiff { padding: 0 var(--sp-3); height: var(--control-h); display: inline-flex; align-items: center; background: var(--canvas); border: var(--bd); font-size: 12px; color: var(--ink-2); }
   .gmp-boundary { margin-top: var(--sp-4); font-size: 11px; text-transform: lowercase; color: var(--ink-4); border-left: 2px solid var(--rule-strong); padding-left: var(--sp-3); line-height: 1.5; }
 }/* ======================================================================
-   GRAPH / ANALYTICS mockup (.gan-*): the @peasant-labs/analytics
-   <ProjectOverview> dashboard. KPI tiles + a 5-chart grid (hand-rolled
-   svg) + median.p90 grid + a 7-col contributor table (reuses .tbl-*).
-   token-driven, square, hairline, lowercase chrome, both themes free,
-   reduced-motion guarded. amber stays scarce (one series at a time).
+   GRAPH / ANALYTICS surface (.gan-*): the fairtrade-owned <ProjectOverview>
+   dashboard (src/ui/analytics/). KPI tiles + chart grid (shared ChartBar/
+   ChartLine primitives) + median.p90 grid + a 7-col contributor table
+   (reuses .tbl-*). token-driven, square, hairline, lowercase chrome, both
+   themes free, reduced-motion guarded. amber stays scarce (one series at a
+   time). KEEP IN SYNC with src/lib-analytics.css (the shipped analytics.css
+   bundle carries the same rules under @layer analytics).
 ====================================================================== */
 @layer components {
   /* ---- shell: fills its container, internal scroll ---- */
-  /* full-bleed frame, capped content (matches .gmp-changes-root): drop the centered 1400px cap so the
-     header rule spans the whole stage, and inset the head + scroll body to a readable measure via
-     --gan-pad-x, so the kpis + charts keep a comfortable width instead of sprawling on a wide monitor. */
+  /* full-bleed frame, capped content: drop the centered cap so the header rule
+     spans the whole stage, and inset the head + scroll body to a readable
+     measure via --gan-pad-x, so the kpis + charts keep a comfortable width
+     instead of sprawling on a wide monitor. */
   .gan-root { display: flex; flex-direction: column; height: 100%; min-width: 0; min-height: 0; font-family: var(--font-mono); max-width: none; margin-inline: 0; --gan-pad-x: max(var(--sp-4), calc((100% - 1360px) / 2)); }
   .gan-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; padding: var(--sp-4) var(--gan-pad-x); border-bottom: var(--bd); }
   .gan-head-titles { min-width: 0; }
@@ -3548,7 +3608,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .gan-seg:hover { color: var(--ink); border-color: var(--amber-dim); }
   .gan-seg:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
   .gan-seg.is-on { color: var(--ink); border-color: var(--rule-strong); background: var(--surface-2); }
-  .gan-seg.is-on::before { content: ">"; color: var(--amber-dim); margin-right: 4px; }
+  .gan-seg.is-on::before { content: ">"; color: var(--amber-dim); margin-right: var(--sp-1); }
 
   /* ---- KPI stat tiles ---- */
   .gan-kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--sp-3); }
@@ -3580,33 +3640,7 @@ body { background-image: radial-gradient(var(--grid) 1.4px, transparent 1.4px); 
   .gan-mini:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -2px; }
   .gan-mini.is-on { color: var(--ink); background: var(--surface-2); }
 
-  /* ---- plot area (svg + html axis overlays + tooltip), mirrors Chart.jsx ---- */
-  .gan-plot { position: relative; width: 100%; }
-  .gan-svg { display: block; width: 100%; height: auto; overflow: visible; }
-  .gan-bar { cursor: pointer; transition: opacity var(--dur-1); }
-  .gan-bar:focus-visible { outline: 3px solid var(--focus-ring); }
-  .gan-pt { cursor: pointer; }
-  .gan-pt:focus-visible { outline: 3px solid var(--focus-ring); }
-
-  /* y axis value labels (html for crisp type) */
-  .gan-yaxis { position: absolute; left: 0; top: 0; bottom: 0; pointer-events: none; }
-  .gan-ylab { position: absolute; right: 6px; transform: translateY(-50%); font-family: var(--font-mono); font-size: 10px; color: var(--ink-4); font-variant-numeric: tabular-nums; }
-  /* x axis week ticks (MM-DD) */
-  .gan-xaxis { position: absolute; left: 0; right: 0; bottom: 0; height: 14px; pointer-events: none; }
-  .gan-xlab { position: absolute; transform: translateX(-50%); bottom: 0; font-family: var(--font-mono); font-size: 10px; color: var(--ink-4); font-variant-numeric: tabular-nums; white-space: nowrap; transition: color var(--dur-1); }
-  .gan-xlab.is-hot { color: var(--ink); }
-
-  /* tooltip: surface bg, hairline, radius 0, lifted above the mark; no transition (reduced-motion safe by omission) */
-  .gan-tip {
-    position: absolute; z-index: 3; transform: translate(-50%, calc(-100% - 8px)); pointer-events: none;
-    display: flex; flex-direction: column; gap: 1px; white-space: nowrap;
-    background: var(--surface); border: var(--bd-strong); padding: var(--sp-1) var(--sp-2);
-    box-shadow: var(--glow-soft);
-  }
-  .gan-tip-k { font-family: var(--font-mono); font-size: 10px; text-transform: lowercase; color: var(--ink-3); }
-  .gan-tip-v { font-family: var(--font-mono); font-size: 12px; color: var(--ink-strong); font-variant-numeric: tabular-nums; }
-
-  /* ---- donut (chart 5) ---- */
+  /* ---- donut (outcome distribution) ---- */
   .gan-donut { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: var(--sp-4); align-items: center; }
   .gan-donut-svg { display: block; width: 100%; max-width: 180px; height: auto; }
   .gan-slice { cursor: pointer; transition: opacity var(--dur-1); }

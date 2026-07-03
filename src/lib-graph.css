@@ -1,0 +1,208 @@
+/* @peasant-labs/fairtrade/graph.css — the bundled stylesheet for the code-graph
+   surfaces (Changes, ChangeDetail, CodeMap).
+
+   Consumer contract: import this ALONGSIDE the shared `tokens.css` + `base.css`
+   (this sheet carries ONLY the graph surface component selectors, never the
+   tokens/base layers, so a consumer importing both `graph.css` and `commons.css`
+   pays for the shared layers once). Token-driven only — NO hardcoded colour or
+   spacing literals are permitted here (enforced by scripts/css-token-lint.mjs).
+
+   Namespaces collected by this bundle:
+     .gmp-   code-map / changes surface selectors
+     .iu-    shared in-use shell chrome (also collected by commons.css)
+   It must NEVER carry the village commons namespaces (.cex-, .cmg-) or the
+   analytics dashboard namespace (.gan-, shipped as analytics.css) — the
+   intra-package bundle-isolation guard asserts this.
+
+   Surface selectors are added under `@layer graph` as each surface lands. */
+@layer graph {
+  /* ── shared graph-surface shell ──────────────────────────────────────────── */
+  .gmp-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+    background: var(--canvas);
+    font-family: var(--font-body);
+    --gmp-map-pad-x: max(var(--sp-4), calc((100% - 1360px) / 2));
+  }
+
+  /* ── CodeMap composition (full-lift: toolbar/rail/legend shell) ── */
+  .gmp-map-canvas-region {
+    position: relative;
+    min-height: 0;
+    height: 100%;
+    border: var(--bd);
+    background: var(--canvas);
+  }
+  .gmp-map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-4);
+    row-gap: var(--sp-1);
+    margin-top: var(--sp-2);
+  }
+  .gmp-map-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: var(--sp-1);
+    vertical-align: middle;
+    border: 1px solid var(--rule-strong);
+    background: var(--surface-elev);
+  }
+  .gmp-map-swatch--empty { border-color: var(--ink-5); background: var(--surface); }
+  .gmp-map-swatch--edge { width: 16px; height: 0; margin-top: -1px; border: 0; border-top: 1px solid var(--rule-strong); background: none; }
+  .gmp-map-legend-danger { color: var(--danger); }
+
+  /* ── Changes view (lane-based git graph over the kit CommitGraph) ─────────── */
+  .gmp-changes-root {
+    overflow: auto;
+    max-width: none;
+    margin-inline: 0;
+    --gmp-pad-x: max(var(--sp-4), calc((100% - 1360px) / 2));
+  }
+  .gmp-changes-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    padding: var(--sp-4) var(--gmp-pad-x);
+    border-bottom: var(--bd);
+    background: var(--surface);
+    flex: none;
+  }
+  .gmp-changes-sub { font-size: 11px; color: var(--ink-4); margin-top: var(--sp-1); }
+  .gmp-changes-body { padding: var(--sp-4) var(--gmp-pad-x); min-width: 0; }
+
+  /* merged / reverted chips listed under the graph */
+  .gmp-merged-chip {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: 3px var(--sp-3);
+    background: var(--surface-2);
+    border: 1px dashed var(--ink-5);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: lowercase;
+    color: var(--ink-4);
+    cursor: pointer;
+    z-index: 3;
+  }
+  .gmp-merged-chip:hover { color: var(--ink-2); border-color: var(--rule-strong); }
+  .gmp-merged-chip .lucide { width: 13px; height: 13px; flex: none; }
+  .gmp-merged-sec { margin-top: var(--sp-5); border-top: var(--bd); padding-top: var(--sp-4); }
+  .gmp-merged-head { border: 0; padding: 0 0 var(--sp-2); }
+  .gmp-merged-list { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
+  .gmp-merged-revert { position: static; }
+
+  /* legend (reuses the kit .cg-dot marker, reset out of its absolute lane placement) */
+  .gmp-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: lowercase;
+    color: var(--ink-3);
+  }
+  .gmp-legend-dim { color: var(--ink-4); }
+  .gmp-changes-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-4);
+    margin-top: var(--sp-5);
+    padding-top: var(--sp-4);
+    border-top: var(--bd);
+  }
+  /* the kit .cg-dot base (CommitGraph.css, unlayered) floats the square via absolute
+     placement; neutralise it here so the legend marker sits in flow next to its label. */
+  .gmp-changes-legend .cg-dot { position: static !important; transform: none !important; flex: none; }
+
+  /* below the wide layout there isn't room for floating merged chips — drop them into flow. */
+  @media (max-width: 1460px) {
+    .gmp-merged-chip { position: static !important; margin-top: var(--sp-2); }
+  }
+  @media (max-width: 600px) {
+    .gmp-changes-body { padding: var(--sp-3); overflow: hidden; }
+    .gmp-merged-chip { position: static !important; margin-top: var(--sp-2); }
+  }
+
+  /* ── ChangeDetail view (caption / signals / totals / lazy diffs / annotation) ── */
+  .gmp-detail-root { overflow: auto; padding: var(--sp-5); gap: 0; }
+  .gmp-detail-head { margin-bottom: var(--sp-5); }
+  .gmp-detail-title { font-family: var(--font-display); font-weight: 700; color: var(--ink-strong); font-size: var(--fs-lg); margin-top: var(--sp-2); }
+  .gmp-caption { margin-top: var(--sp-4); color: var(--ink-2); font-size: var(--fs-body); line-height: 1.6; max-width: 64ch; }
+  .gmp-frag { display: inline; padding: 0 var(--sp-1); background: transparent; border: 0; border-bottom: 1px dotted var(--amber-dim); color: var(--amber); font-family: var(--font-mono); font-size: 0.94em; cursor: pointer; }
+  .gmp-frag:hover { color: var(--amber-bright); border-bottom-style: solid; }
+  .gmp-frag-on { color: var(--amber-bright); border-bottom-style: solid; background: color-mix(in srgb, var(--amber) 12%, transparent); }
+  .gmp-caption-hint { display: block; margin-top: var(--sp-2); font-size: 11px; text-transform: lowercase; color: var(--ink-4); }
+
+  /* signals band */
+  .gmp-signals { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+  .gmp-signal { display: inline-flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); background: var(--surface); border: var(--bd); font-family: var(--font-mono); font-size: 11px; text-transform: lowercase; color: var(--ink-3); }
+  .gmp-signal .lucide { color: var(--ink-4); width: 14px; height: 14px; }
+  .gmp-signal b { color: var(--ink); font-weight: 600; }
+  .gmp-signal .mono { text-transform: none; color: var(--ink-2); }
+  .gmp-signal-warn { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--rule)); }
+  .gmp-signal-warn .lucide { color: var(--danger); }
+  .gmp-signal-warn b { color: var(--danger); }
+
+  /* totals footnotes */
+  .gmp-totals { display: flex; flex-wrap: wrap; gap: var(--sp-4); padding: var(--sp-3) 0; border-top: var(--bd); border-bottom: var(--bd); margin-bottom: var(--sp-5); }
+  .gmp-add { color: var(--add-rail); }
+  .gmp-del { color: var(--del-rail); }
+
+  .gmp-detail-sec { margin-bottom: var(--sp-5); }
+  .gmp-detail-sechead { border: 0; padding: 0 0 var(--sp-3); }
+
+  /* the shared mono label chip (the annotation chip extends it) */
+  .gmp-label-chip { display: inline-flex; align-items: center; gap: var(--sp-1); padding: 1px var(--sp-2); border: 1px solid var(--rule-strong); font-family: var(--font-mono); font-size: 10px; text-transform: lowercase; color: var(--ink-2); }
+  .gmp-label-chip .lucide { color: var(--amber); width: 11px; height: 11px; }
+
+  /* files-changed list + lazy diff */
+  .gmp-files { display: flex; flex-direction: column; }
+  .gmp-file { border: var(--bd); }
+  .gmp-file + .gmp-file { border-top: 0; }
+  .gmp-file-head { display: flex; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-2) var(--sp-3); background: var(--surface); border: 0; text-align: left; cursor: pointer; }
+  .gmp-file-head:hover { background: var(--surface-hover); }
+  .gmp-file-head:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
+  .gmp-file-head .lucide:first-child { color: var(--ink-4); flex: none; }
+  .gmp-file-path { font-size: var(--fs-sm); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+  .gmp-file-status { height: 22px; padding: 0 var(--sp-2); flex: none; }
+  .gmp-file-convos { color: var(--ink-4); flex: none; }
+  .gmp-file-convos .lucide { color: var(--ink-4); }
+  .gmp-file-body { border-top: var(--bd); background: var(--canvas); }
+  .gmp-diff-state { padding: var(--sp-2) var(--sp-3); font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); }
+  .gmp-diff-error { color: var(--danger); }
+  .gmp-hunk { border-bottom: var(--bd); }
+  .gmp-hunk:last-child { border-bottom: 0; }
+  .gmp-hunk-attrib { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); background: var(--surface-2); font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+  .gmp-hunk-attrib .lucide { color: var(--ink-5); flex: none; }
+  .gmp-hunk-from { color: var(--ink-4); text-transform: lowercase; flex: none; }
+  .gmp-hunk-link { color: var(--amber); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .gmp-hunk-hash { color: var(--ink-4); margin-left: auto; flex: none; }
+  .gmp-hunk-diff { border: 0; }
+
+  /* annotation chip + popover */
+  .gmp-annot { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
+  .gmp-annot-chip { height: 24px; padding: 0 var(--sp-1) 0 var(--sp-2); font-size: 11px; }
+  .gmp-annot-x { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; background: transparent; border: 0; color: var(--ink-4); cursor: pointer; margin-left: 2px; }
+  .gmp-annot-x:hover { color: var(--ink); }
+  .gmp-annot-add { display: inline-flex; align-items: center; gap: var(--sp-2); height: var(--control-h-sm); padding: 0 var(--sp-3); background: transparent; border: var(--bd-strong); color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; cursor: pointer; }
+  .gmp-annot-add:hover { color: var(--ink); border-color: var(--amber-dim); }
+  .gmp-annot-add .lucide { color: var(--amber); width: 13px; height: 13px; }
+  .gmp-annot-pop { position: absolute; z-index: var(--z-dropdown); top: calc(100% + 4px); left: 0; display: flex; flex-direction: column; gap: var(--sp-2); width: min(280px, 90vw); padding: var(--sp-3); background: var(--surface-elev); border: var(--bd-strong); box-shadow: var(--glow-soft); }
+  .gmp-annot-pop .input { height: var(--control-h-sm); }
+  .gmp-annot-pop-foot { display: flex; justify-content: flex-end; gap: var(--sp-2); }
+
+  /* exits */
+  .gmp-exits { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); padding-top: var(--sp-4); border-top: var(--bd); }
+  .gmp-gitdiff { padding: 0 var(--sp-3); height: var(--control-h); display: inline-flex; align-items: center; background: var(--canvas); border: var(--bd); font-size: 12px; color: var(--ink-2); }
+  .gmp-boundary { margin-top: var(--sp-4); font-size: 11px; text-transform: lowercase; color: var(--ink-4); border-left: 2px solid var(--rule-strong); padding-left: var(--sp-3); line-height: 1.5; }
+}

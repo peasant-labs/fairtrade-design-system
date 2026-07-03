@@ -45,4 +45,7 @@ export default defineConfig({
   // qa/screenshot scripts, which all target http://localhost:5180.
   server: { port: 5180 },
   plugins: [tailwindcss(), react(), feedbackWriter()],
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
 })

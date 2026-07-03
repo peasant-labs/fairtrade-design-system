@@ -13,6 +13,14 @@ export default defineConfig({
         // ./icons passthrough — re-exports lucide-react (kept external below),
         // so consumers tree-shake named icons from the shared fairtrade copy.
         icons: 'src/icons.js',
+        // Per-surface entry points (HYBRID boundary): each app imports only its
+        // own surface bundle, so a peasant app importing ./graph never pulls in
+        // the village ./commons surfaces (intra-package bundle isolation). As
+        // separate Rollup entries these code-split cleanly; the isolation guard
+        // (scripts/assert-pack-contents.mjs) asserts the split holds.
+        graph: 'src/ui/graph/index.js',
+        commons: 'src/ui/commons/index.js',
+        analytics: 'src/ui/analytics/index.js',
       },
       formats: ['es'],
       fileName: (_format, entryName) => `${entryName}.js`,

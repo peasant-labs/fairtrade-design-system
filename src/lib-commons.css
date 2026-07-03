@@ -1,0 +1,21 @@
+/* @peasant-labs/fairtrade/commons.css — the bundled stylesheet for the village
+   commons surfaces (Explore, Manage).
+
+   Consumer contract: import this ALONGSIDE the shared `tokens.css` + `base.css`
+   (this sheet carries ONLY the commons surface component selectors, never the
+   tokens/base layers, so a consumer importing both `commons.css` and `graph.css`
+   pays for the shared layers once). Token-driven only — NO hardcoded colour or
+   spacing literals are permitted here (enforced by scripts/css-token-lint.mjs).
+
+   Namespaces collected by this bundle:
+     .cex-   explore surface selectors
+     .cmg-   manage surface selectors
+     .iu-    shared in-use shell chrome (also collected by graph.css)
+   It must NEVER carry the peasant graph namespace (.gmp-) or the analytics
+   dashboard namespace (.gan-, shipped as analytics.css) — the intra-package
+   bundle-isolation guard asserts this.
+
+   Each surface's colocated stylesheet is @import-ed here as the surface lands,
+   e.g. `@import "./ui/commons/CommonsExplore.css";`. The `commons` layer is
+   declared up front so surface sheets slot into a stable cascade order. */
+@layer commons;
