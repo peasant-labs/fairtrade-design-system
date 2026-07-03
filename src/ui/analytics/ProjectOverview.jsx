@@ -223,20 +223,17 @@ export default function ProjectOverview({
               title="weekly active contributors"
               subtitle={
                 effectiveWeeklyView === 'new'
-                  ? 'first-ever appearance per week'
-                  : 'distinct contributors active each week'
+                  ? `new contributors per week · ${formatNumber(sumValues(weekPoints(data.newContributorVelocity, 'newContributors')))} new`
+                  : `distinct contributors active each week · ${formatNumber(sumValues(weekPoints(data.weeklyActiveContributors, 'contributors')))} active`
               }
               aside={
-                effectiveWeeklyView === 'new'
-                  ? `${formatNumber(sumValues(weekPoints(data.newContributorVelocity, 'newContributors')))} new`
-                  : `${formatNumber(sumValues(weekPoints(data.weeklyActiveContributors, 'contributors')))} active`
+                <WeeklyMetricToggle
+                  view={effectiveWeeklyView}
+                  canShowNew={Boolean(show.newContributorVelocity)}
+                  onChange={setWeeklyView}
+                />
               }
             >
-              <WeeklyMetricToggle
-                view={effectiveWeeklyView}
-                canShowNew={Boolean(show.newContributorVelocity)}
-                onChange={setWeeklyView}
-              />
               {effectiveWeeklyView === 'new' ? (
                 <ChartLine
                   data={chartRows(weekPoints(data.newContributorVelocity, 'newContributors'))}
@@ -386,19 +383,19 @@ function SectionToggle({ baseSections, sections, userSections, onToggle }) {
 
 /* Two-state segmented control switching the "weekly active contributors" card
    between the active-contributor series and the new-contributor series.
-   Rendered at the top of the card body (above the plot, per the demo), with
-   the card's aside staying the summary figure. Distinct markup/class from the
-   visible-section chips (`.gan-mini` inside `.gan-card-toolbar`, not
-   `.gan-seg`) — this toggle selects WHICH DATA a single card plots; the
-   section chips select WHICH CARDS render at all. A host-hidden "new
-   contributors" section (canShowNew=false) disables the "new" option the same
-   way a host-hidden section chip stays un-selectable. */
+   Rendered as chips in the card-head aside (top-right — the arrangement the
+   consuming apps shipped with, confirmed at UAT), with the current series'
+   total merged into the card subtitle. Same chip chrome as the visible-
+   section toggle (`.gan-seg`), but a DIFFERENT control: this selects WHICH
+   DATA one card plots; the section chips select WHICH CARDS render at all. A
+   host-hidden "new contributors" section (canShowNew=false) disables the
+   "new" option the same way a host-hidden section chip stays un-selectable. */
 function WeeklyMetricToggle({ view, canShowNew, onChange }) {
   return (
-    <div className="gan-card-toolbar" role="group" aria-label="series">
+    <div className="gan-toggle-chips" role="group" aria-label="series">
       <button
         type="button"
-        className={['gan-mini', view === 'active' && 'is-on'].filter(Boolean).join(' ')}
+        className={['gan-seg', view === 'active' && 'is-on'].filter(Boolean).join(' ')}
         aria-pressed={view === 'active'}
         onClick={() => onChange('active')}
       >
@@ -406,7 +403,7 @@ function WeeklyMetricToggle({ view, canShowNew, onChange }) {
       </button>
       <button
         type="button"
-        className={['gan-mini', view === 'new' && 'is-on'].filter(Boolean).join(' ')}
+        className={['gan-seg', view === 'new' && 'is-on'].filter(Boolean).join(' ')}
         aria-pressed={view === 'new'}
         disabled={!canShowNew}
         onClick={() => onChange('new')}

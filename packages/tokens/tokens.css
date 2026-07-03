@@ -105,7 +105,7 @@
   --chart-3: var(--clay);
   --chart-4: var(--mauve);
   --chart-amber: var(--amber);
-  --chart-grid: var(--rule);
+  --chart-grid: var(--rule-strong);
   --chart-axis: var(--ink-3);
   --chart-surface: var(--surface);
   --chart-point-stroke: var(--surface);

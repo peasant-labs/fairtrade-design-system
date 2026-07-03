@@ -4,6 +4,35 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.5 — 2026-07-03
+
+Patch: the analytics surface renders correctly inside consuming apps.
+
+### Fixed
+
+- **Analytics cards un-clamped in consumer contexts.** The presentation site's
+  bare `section` reading-measure rule (`max-width` in `ch`, centered margins,
+  gutter padding) ships inside `components.css`'s `@layer base`; a consumer
+  bundle may declare `@layer analytics` before `@layer base`, and the
+  later-declared layer wins — so the site rule clamped the dashboard's cards
+  in the apps (the mono-font cards shrank to ~360px and centered; card
+  vertical padding collapsed). Same collision the commons surfaces guard
+  against with `.cmg-page section` and the demo stage with `.iu section` —
+  `analytics.css` now carries an UNLAYERED `.gan-root section` un-clamp
+  (order-robust: unlayered beats every layer) and re-asserts the card box,
+  including the ≤560px compact variant.
+- **Deterministic dashboard header.** The header is a column (title block,
+  then the section-chip row below it, left-aligned) instead of a
+  width-dependent flex-row wrap — chip placement no longer changes between
+  the demo stage and app pages.
+- **Weekly active|new toggle returns to the card-head aside** (chips,
+  top-right — the arrangement the consuming apps shipped with, confirmed at
+  UAT), with the current series' total merged back into the card subtitle;
+  the body toolbar chrome is retired.
+- **Chart gridlines are legible again**: `--chart-grid` moves from `--rule`
+  (decorative-tier, ~1.8:1 on canvas) to `--rule-strong` (~3.6:1) — applies
+  to every chart consumer.
+
 ## 0.0.4 — 2026-07-02
 
 The **consumer-adoption** release. `@peasant-labs/fairtrade` now exports the
