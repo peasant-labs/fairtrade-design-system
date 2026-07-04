@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { ChartFrame, ChartTooltip, cartesianProps, noAnim, seriesClass, resolveSeries } from './chart-shared.jsx'
+import { ChartFrame, ChartTooltip, cartesianProps, noAnim, seriesClass, resolveSeries, compactTick } from './chart-shared.jsx'
 
 /* ChartBar - a vertical bar chart, Recharts-backed but forced onto the system: square bars
    (radius 0), token colour via currentColor (re-themes on the toggle), hairline grid, mono
@@ -26,12 +26,13 @@ import { ChartFrame, ChartTooltip, cartesianProps, noAnim, seriesClass, resolveS
  * @param {number} [props.height=200]           plot height in px.
  * @param {number[]} [props.yTicks]             explicit y ticks; omit to auto-pick integers.
  * @param {(v:any)=>React.ReactNode} [props.xFormatter]     format x tick + tooltip label.
+ * @param {(v:any)=>React.ReactNode} [props.yFormatter]     format y ticks; defaults to thousands-compaction (3000 → 3k).
  * @param {(v:any)=>React.ReactNode} [props.valueFormatter] format the tooltip value.
  * @param {string} [props.className]            extra class on the chart frame.
  */
 export default function ChartBar({
   data, xKey, series, stacked = false, icon, title, aside, sub,
-  height = 200, yTicks, xFormatter, valueFormatter, className = '',
+  height = 200, yTicks, xFormatter, yFormatter = compactTick, valueFormatter, className = '',
 }) {
   const s = resolveSeries(series)
   return (
@@ -39,8 +40,11 @@ export default function ChartBar({
       <ResponsiveContainer width="100%" height={height}>
         <BarChart data={data} barCategoryGap="22%" {...cartesianProps()}>
           <CartesianGrid vertical={false} />
-          <XAxis dataKey={xKey} tickLine={false} interval={0} tickFormatter={xFormatter} tickMargin={8} minTickGap={0} />
-          <YAxis width={28} tickLine={false} axisLine={false} ticks={yTicks} allowDecimals={false} tickMargin={4} />
+          {/* interval="preserveStartEnd" + a real minTickGap lets recharts thin
+              x labels when the series outgrows the plot (27 iso-weeks of live
+              data overlapped into illegibility under the old interval={0}). */}
+          <XAxis dataKey={xKey} tickLine={false} interval="preserveStartEnd" tickFormatter={xFormatter} tickMargin={8} minTickGap={28} />
+          <YAxis width={40} tickLine={false} axisLine={false} ticks={yTicks} allowDecimals={false} tickMargin={4} tickFormatter={yFormatter} />
           <Tooltip
             cursor={{ className: 'chart-cursor' }}
             content={<ChartTooltip valueFormatter={valueFormatter} labelFormatter={xFormatter} />}

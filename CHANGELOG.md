@@ -4,6 +4,37 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.6 — 2026-07-04
+
+The transcript composite becomes the one viewer every consumer renders, and
+charts stay legible at live data scale.
+
+### Added
+
+- **TranscriptViewer host seams** — apps mount the composite directly instead
+  of sibling composers: `breadcrumb` + `LinkComponent` (host-routable,
+  origin-aware trails through the app router), `renderTurnPanel` (host
+  content under each turn card), `renderTurnActions` (replaces the built-in
+  label affordance so hosts with typed label models keep their own popovers),
+  `anchorHref` (copied turn anchors become real permalinks; root-relative
+  returns absolutized), and `headerActions` (host session-level actions —
+  village's attest — lead the hero action row instead of floating in their
+  own strip). Every seam renders the demo
+  byte-identically when unused. `BreadcrumbItem` joins the published types.
+
+### Fixed
+
+- **Chart axes at live data scale.** X ticks thin automatically instead of
+  overlapping (27 iso-weeks of labels were illegible under the old
+  every-tick layout); y ticks compact thousands (3000 → 3k, overridable via
+  the new `yFormatter` prop) in a wider gutter instead of clipping to their
+  trailing digits. A live-scale fixture story gates the regressions.
+- **Map zoom controls receive real clicks.** The canvas pan handler captured
+  pointers born on its own buttons; pointer capture retargeted the pointerup
+  so no click was ever composed. Pointers born on interactive controls are
+  excluded from the pan capture, and a real-input CI gate (CDP mouse) keeps
+  the class dead — synthetic-event tests cannot see it.
+
 ## 0.0.5 — 2026-07-03
 
 Patch: the analytics surface renders correctly inside consuming apps.

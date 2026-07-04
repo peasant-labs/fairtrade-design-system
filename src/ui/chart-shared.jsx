@@ -35,6 +35,16 @@ export const cartesianProps = () => ({
 })
 export const noAnim = { isAnimationActive: false }
 
+/* Default y-tick formatter: abbreviate thousands so 4+ digit ticks fit the
+   fixed axis gutter instead of clipping to their trailing digits ("3000"
+   rendered in a 28px gutter showed as "000" — caught on live data). */
+export const compactTick = (v) => {
+  if (typeof v !== 'number' || !Number.isFinite(v) || Math.abs(v) < 1000) return v
+  const k = v / 1000
+  const shown = Math.abs(k) >= 10 ? Math.round(k) : Math.round(k * 10) / 10
+  return `${shown}k`
+}
+
 /**
  * ChartFrame - the hairline card chrome shared by ChartBar + ChartLine: an optional head
  * (lucide icon + lowercase title + tabular aside), an optional sub line, the plot, and an
