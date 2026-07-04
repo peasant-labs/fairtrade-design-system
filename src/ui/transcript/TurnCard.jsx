@@ -46,6 +46,7 @@ function formatRelative(ts) {
  * @param {boolean} [props.copied]
  * @param {(turnIndex: number, el: HTMLElement | null) => void} [props.registerRef]
  * @param {(turnIndex: number) => void} [props.onLabel]   omit to hide the "label" affordance
+ * @param {(turn: object) => unknown} [props.renderActions]  host-owned per-turn actions; replaces the built-in label button (hosts with their own label models render their own popover)
  * @param {{ outcome: string, flag?: string }} [props.savedLabel]
  * @param {boolean} [props.compact]
  * @param {boolean} [props.expandAll]
@@ -59,6 +60,7 @@ export default function TurnCard({
   copied = false,
   registerRef = () => {},
   onLabel,
+  renderActions,
   savedLabel,
   compact = false,
   expandAll = false,
@@ -118,7 +120,9 @@ export default function TurnCard({
       >
         {copied ? <Check size={13} aria-hidden="true" /> : <LinkIcon size={13} aria-hidden="true" />}
       </button>
-      {onLabel && (
+      {renderActions ? (
+        renderActions(turn)
+      ) : onLabel && (
         <button type="button" className="txn-labelbtn" onClick={() => onLabel(turn.index)}>
           label
         </button>

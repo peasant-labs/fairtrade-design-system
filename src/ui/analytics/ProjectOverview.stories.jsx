@@ -7,7 +7,7 @@
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { frame } from '../story-frame.jsx'
 import { ProjectOverview } from './index.js'
-import { SAMPLE_SESSIONS } from './fixtures.js'
+import { SAMPLE_SESSIONS, SCALE_SESSIONS } from './fixtures.js'
 
 export default {
   title: 'analytics/ProjectOverview',
@@ -123,5 +123,55 @@ export const HostHiddenSectionsStayDisabled = {
     const toggle = within(canvas.getByRole('group', { name: 'series' }))
     await expect(toggle.getByRole('button', { name: 'new' })).toBeDisabled()
     await expect(toggle.getByRole('button', { name: 'active' })).toHaveAttribute('aria-pressed', 'true')
+  },
+}
+
+/* Live-data-scale legibility gate: 27 iso-weeks / ~1.4k sessions. Asserts the
+   axis defects a live run surfaced stay dead — x ticks must thin instead of
+   overlapping, y ticks must abbreviate instead of clipping ("3000" in a
+   too-small gutter rendered as "000"). */
+export const ScaleOverviewAxesLegible = {
+  args: { payload: { sessions: SCALE_SESSIONS }, title: 'project overview', contributorLimit: 10 },
+  play: async ({ canvasElement }) => {
+    // ResponsiveContainer paints ticks on a second pass after measuring, so
+    // gate on tick TEXTS being present in every chart, not on the axis node.
+    await waitFor(
+      () => {
+        const charts = [...canvasElement.querySelectorAll('.chart')]
+        if (charts.length < 4) throw new Error(`only ${charts.length} charts mounted`)
+        for (const chart of charts) {
+          const n = chart.querySelectorAll('.recharts-xAxis-tick-labels .recharts-cartesian-axis-tick-value').length
+          // a sparse series (single first-appearance week) legitimately renders one tick
+          if (n < 1) throw new Error(`chart has ${n} x ticks (not painted yet?)`)
+        }
+      },
+      { timeout: 10000 },
+    )
+    const charts = canvasElement.querySelectorAll('.chart')
+    for (const chart of charts) {
+      // X: no two rendered tick labels may overlap horizontally.
+      const xTicks = [...chart.querySelectorAll('.recharts-xAxis-tick-labels .recharts-cartesian-axis-tick-value')]
+      const rects = xTicks.map((el) => el.getBoundingClientRect()).sort((a, b) => a.left - b.left)
+      for (let i = 1; i < rects.length; i++) {
+        if (rects[i].left < rects[i - 1].right) {
+          throw new Error(`x ticks overlap: "${xTicks[i - 1].textContent}" and "${xTicks[i].textContent}"`)
+        }
+      }
+      // Y: every tick fits its gutter un-clipped and reads as a number or Nk.
+      for (const el of chart.querySelectorAll('.recharts-yAxis-tick-labels .recharts-cartesian-axis-tick-value')) {
+        const label = el.textContent
+        if (!/^\d+(\.\d+)?k?$/.test(label)) throw new Error(`unexpected y tick "${label}"`)
+        if (/^0\d/.test(label)) throw new Error(`y tick looks clipped: "${label}"`)
+        const box = el.getBoundingClientRect()
+        const svgBox = chart.querySelector('.recharts-surface').getBoundingClientRect()
+        if (box.left < svgBox.left - 1) throw new Error(`y tick "${label}" spills the plot gutter`)
+      }
+    }
+    // At live scale at least one chart's y axis reaches 4-digit values — the
+    // compact formatter must be active (bare "3000" clipped to "000" before).
+    const allY = [...canvasElement.querySelectorAll('.chart .recharts-yAxis-tick-labels .recharts-cartesian-axis-tick-value')].map((t) => t.textContent)
+    if (!allY.some((label) => /k$/.test(label))) {
+      throw new Error(`expected a k-compacted y tick at scale; got: ${[...new Set(allY)].join(' ')}`)
+    }
   },
 }

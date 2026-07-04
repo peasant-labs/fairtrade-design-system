@@ -148,6 +148,19 @@
  * @property {(open: boolean) => void} [onShareOpenChange]
  * @property {boolean} [moreOpen]                                      more action-menu disclosure (default closed)
  * @property {(open: boolean) => void} [onMoreOpenChange]
+ * @property {BreadcrumbItem[]} [breadcrumb]                           host-routable trail; omit for the demo's static crumb
+ * @property {import('react').ElementType} [LinkComponent]            router link for crumb items (e.g. next/link); defaults to 'a'
+ * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnPanel]  host per-turn extension rendered under each turn card
+ * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnActions]  host-owned per-turn actions; replaces the built-in label affordance (hosts with typed label models keep their own popovers)
+ * @property {(turnIndex: number) => string} [anchorHref]              host permalink for a turn's copy-anchor action; a root-relative return is absolutized against the page origin. Omitted, the demo copies its bare '#turn-N' placeholder
+ * @property {unknown} [headerActions]                                 host session-level actions rendered at the head of the hero action row (attest etc.); the composite's own actions stay the shared tail
+ */
+
+/**
+ * One breadcrumb segment. The last item renders as the current page (no link).
+ * @typedef {object} BreadcrumbItem
+ * @property {string} label
+ * @property {string} [href]
  */
 
 export {}

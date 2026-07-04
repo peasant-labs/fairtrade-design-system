@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ChevronRight, ChevronDown, ChevronUp, Clock, Coins, ShieldCheck, FileText,
   Search, Pencil, ListTree, LayoutList, SlidersHorizontal, Share2, Users, User, Wrench,
@@ -173,6 +173,12 @@ export default function TranscriptViewer({
   onShareOpenChange,
   moreOpen: moreOpenProp,
   onMoreOpenChange,
+  breadcrumb,
+  LinkComponent,
+  renderTurnPanel,
+  renderTurnActions,
+  anchorHref,
+  headerActions,
 }) {
   const vm = viewModel
   const caps = capabilities ?? {}
@@ -317,7 +323,18 @@ export default function TranscriptViewer({
   function copyAnchor(idx) {
     setCopiedTurn(idx)
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText('#turn-' + idx).catch(() => {})
+      // Hosts with real routes supply anchorHref so a copied turn link is a
+      // working permalink; a root-relative return is absolutized against the
+      // page so the clipboard always holds something shareable. The bare
+      // '#turn-N' default is the demo's (no router to link into).
+      let text = '#turn-' + idx
+      if (anchorHref) {
+        const href = anchorHref(idx)
+        text = href.startsWith('/') && typeof window !== 'undefined'
+          ? window.location.origin + href
+          : href
+      }
+      navigator.clipboard.writeText(text).catch(() => {})
     }
     setTimeout(() => setCopiedTurn((c) => (c === idx ? null : c)), 1500)
   }
@@ -425,22 +442,45 @@ export default function TranscriptViewer({
   const looseCommits = commits.filter((c) => c.turn == null)
 
   // prefer a curated session title (editorial summary); else derive one from the first task / prompt.
-  const title = session.title ?? tasks[0]?.prompt ?? turns.find((t) => t.role === 'user')?.content ?? session.id ?? 'transcript'
+  // Session titles are frequently a whole first prompt — bound the hero to
+  // 160 characters so a run-on title cannot swallow the header (the
+  // pre-composite viewers truncated; consumers rely on it).
+  const rawTitle = session.title ?? tasks[0]?.prompt ?? turns.find((t) => t.role === 'user')?.content ?? session.id ?? 'transcript'
+  // codePointAt guard: never slice through a surrogate pair (mojibake before the ellipsis).
+  const cut = (rawTitle.codePointAt(158) ?? 0) > 0xffff ? 158 : 159
+  const title = rawTitle.length > 160 ? rawTitle.slice(0, cut).trimEnd() + '…' : rawTitle
 
   return (
     <div className={'txn-app' + (theme === 'light' ? ' txn-light' : '')} data-theme={theme}>
       {/* ===================== HEADER ===================== */}
       <header className="txn-header">
         <div className="txn-header-top">
+          {/* Host-routable trail: pass `breadcrumb` (+ a router LinkComponent) to
+              replace the demo's static sessions/{project}/{id} crumb — hosts have
+              real routes and origin-aware trails (map · node > project > id). */}
           <nav className="crumb txn-crumb" aria-label="breadcrumb">
-            <a className="link" href="#">sessions</a>
-            <ChevronRight size={13} aria-hidden="true" />
-            <a className="link" href="#">{session.project ?? 'session'}</a>
-            <ChevronRight size={13} aria-hidden="true" />
-            <span className="cur">{session.id}</span>
+            {(breadcrumb ?? [
+              { label: 'sessions', href: '#' },
+              { label: session.project ?? 'session', href: '#' },
+              { label: session.id },
+            ]).map((item, i, items) => {
+              const CrumbLink = LinkComponent ?? 'a'
+              const last = i === items.length - 1
+              return (
+                <Fragment key={`${item.label}-${i}`}>
+                  {i > 0 && <ChevronRight size={13} aria-hidden="true" />}
+                  {!last && item.href != null
+                    ? <CrumbLink className="link" href={item.href}>{item.label}</CrumbLink>
+                    : <span className={last ? 'cur' : 'link'}>{item.label}</span>}
+                </Fragment>
+              )
+            })}
           </nav>
 
           <div className="txn-actions">
+            {/* host session-level actions (attest etc.) lead the row — the
+                composite's fixed capability set stays the shared tail */}
+            {headerActions}
             <div className="menu-anchor">
               <button
                 type="button"
@@ -629,10 +669,14 @@ export default function TranscriptViewer({
                             copied={copiedTurn === t.index}
                             registerRef={registerRef}
                             onLabel={labelTurn}
+                            renderActions={renderTurnActions}
                             savedLabel={savedLabels[t.index]}
                             compact={filters.views.compact}
                             expandAll={filters.views.expandAll}
                           />
+                          {/* host per-turn extension (touched-files panels etc.) —
+                              rendered under the card, inside the turn's anchor block */}
+                          {renderTurnPanel ? renderTurnPanel(t) : null}
                           {turnCommits.map((c) => <CheckpointMarker key={c.hash} commit={c} />)}
                         </div>
                       )

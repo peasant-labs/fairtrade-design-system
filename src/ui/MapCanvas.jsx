@@ -671,6 +671,11 @@ export default function MapCanvas({
     (e) => {
       // only the canvas surface pans; nodes/controls handle their own pointers.
       if (e.button !== 0) return
+      // A pointer born on an interactive control must never be captured:
+      // setPointerCapture retargets the following pointerup to the viewport,
+      // so the browser composes NO click on the control — the zoom cluster
+      // was rendered, styled, wired … and unclickable.
+      if (e.target instanceof Element && e.target.closest('button, a, input, select, textarea')) return
       const vp = viewportRef.current
       if (vp) vp.setPointerCapture?.(e.pointerId)
       dragRef.current = {

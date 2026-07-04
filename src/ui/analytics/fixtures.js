@@ -60,3 +60,49 @@ export const SAMPLE_SESSIONS = [
   makeSession({ id: 's7', startTime: '2026-01-21T08:00:00Z', contributorId: 'alice', outcome: undefined, commitCount: 1, durationMins: 50, totalTokens: 18_000, turnCount: 20, toolCallCount: 15 }),
   makeSession({ id: 's8', startTime: '2026-01-22T20:00:00Z', contributorId: 'carol', outcome: 'failed', hasCommit: false, durationMins: 10, totalTokens: 4_000, turnCount: 5, toolCallCount: 2 }),
 ]
+
+/* ── scale fixture ────────────────────────────────────────────────────────────
+   Live-data-scale sessions (27 iso-weeks, ~1.4k sessions, weekly duration sums
+   in the thousands of minutes). The tiny SAMPLE_SESSIONS fixture cannot
+   exhibit data-scale defects — 27 x-tick labels overlapping into illegibility
+   and 4-digit y ticks clipping to "000" both shipped invisible to every gate
+   until a live run surfaced them. Deterministic (seeded LCG, no Math.random)
+   so stories and smokes are stable. */
+function makeScaleSessions() {
+  let seed = 7
+  const rng = () => {
+    seed = (seed * 1_664_525 + 1_013_904_223) % 4_294_967_296
+    return seed / 4_294_967_296
+  }
+  const contributors = ['ada', 'linus', 'grace', 'dennis', 'margaret', 'ken']
+  /** @type {(import('./types.js').AnalyticsSessionOutcome | undefined)[]} */
+  const outcomes = ['resolved', 'resolved', 'resolved', 'partial', 'failed', undefined]
+  const start = Date.UTC(2025, 11, 1) // Mon 2025-12-01, 27 weeks out ≈ 2026-06
+  const sessions = []
+  let n = 0
+  for (let week = 0; week < 27; week++) {
+    const count = 30 + Math.floor(rng() * 40)
+    for (let i = 0; i < count; i++) {
+      const ts = start + week * 7 * 86_400_000 + Math.floor(rng() * 7) * 86_400_000 + (8 + Math.floor(rng() * 10)) * 3_600_000
+      sessions.push(
+        makeSession({
+          id: `scale-${n++}`,
+          startTime: new Date(ts).toISOString(),
+          contributorId: contributors[Math.floor(rng() * contributors.length)],
+          projectKey: `proj-${Math.floor(rng() * 53)}`,
+          outcome: outcomes[Math.floor(rng() * outcomes.length)],
+          commitCount: rng() > 0.5 ? 1 + Math.floor(rng() * 3) : 0,
+          hasCommit: undefined,
+          durationMins: 30 + Math.floor(rng() * 2900), // hours-long agent sessions — weekly averages reach 4 digits, exercising y-tick compaction
+          totalTokens: 5_000 + Math.floor(rng() * 120_000),
+          turnCount: 5 + Math.floor(rng() * 40),
+          toolCallCount: 2 + Math.floor(rng() * 30),
+        }),
+      )
+    }
+  }
+  return sessions
+}
+
+/** @type {AnalyticsSessionRecord[]} */
+export const SCALE_SESSIONS = makeScaleSessions()

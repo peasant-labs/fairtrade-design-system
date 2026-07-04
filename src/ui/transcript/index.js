@@ -117,6 +117,7 @@ export { default as TranscriptLabelPopover } from './LabelPopover.jsx'
    `export {}`); listed here so consumers import the contract from the sub-barrel
    and so it lands in the published `.d.ts`. ───────────────────────────────────── */
 /** @typedef {import('./state-capabilities.js').TranscriptViewerProps} TranscriptViewerProps */
+/** @typedef {import('./state-capabilities.js').BreadcrumbItem} BreadcrumbItem */
 /** @typedef {import('./state-capabilities.js').ViewerCapabilities} ViewerCapabilities */
 /** @typedef {import('./state-capabilities.js').ViewerCallbacks} ViewerCallbacks */
 /** @typedef {import('./state-capabilities.js').GraphSlotContext} GraphSlotContext */

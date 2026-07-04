@@ -124,6 +124,15 @@ jobs:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
         run: node scripts/sbsmoke.mjs
 
+      # gate 4b: REAL-input map gate. play() tests dispatch synthetic events,
+      # which skip pointer-capture retargeting — the one mechanism that made
+      # the zoom cluster render fine yet never receive a click. This drives a
+      # genuine CDP mouse against the built MapCanvas story.
+      - name: Map pointer gate (real mouse)
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: node scripts/check-map-pointer.mjs
+
       - name: Upload Storybook build on failure
         if: failure()
         uses: actions/upload-artifact@v4
