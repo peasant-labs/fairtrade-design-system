@@ -309,7 +309,9 @@ function validateDomEvidence(dom, semantic, payload, testCase, phase, label) {
   if (dom.status.role !== 'status' || dom.status.ariaLive !== 'polite' || typeof dom.status.text !== 'string') throw new Error(`${label}.status must preserve exact status role, aria-live, and text`)
   requireObject(dom.structure, `${label}.structure`)
   requireExactKeys(dom.structure, ['applicationRole', 'applicationLabel', 'roleDescription', 'statusCount'], `${label}.structure`)
-  if (!deepEqual(dom.structure, { applicationRole: 'application', applicationLabel: 'code map', roleDescription: 'code structure map', statusCount: 1 })) throw new Error(`${label}.structure must prove the mounted application and sole live region`)
+  // MapCanvas deliberately renders TWO aria-live status regions: the roving-focus
+  // announce plus the distinct folder-descent announce for the breadcrumb.
+  if (!deepEqual(dom.structure, { applicationRole: 'application', applicationLabel: 'code map', roleDescription: 'code structure map', statusCount: 2 })) throw new Error(`${label}.structure must prove the mounted application and both live regions`)
   if (!Array.isArray(dom.disclosures)) throw new Error(`${label}.disclosures must be an array`)
   for (const [index, disclosure] of dom.disclosures.entries()) {
     requireObject(disclosure, `${label}.disclosures[${index}]`)
