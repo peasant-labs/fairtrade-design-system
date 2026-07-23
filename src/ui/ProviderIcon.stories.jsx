@@ -122,9 +122,18 @@ export const AccentLegendStory = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     // every provider + its accent token name is spelled out (mark + name + word).
+    // The accent map (PROVIDER_ACCENT in provider-policy.js) is intentionally
+    // NOT injective — the same token is shared by more than one provider
+    // (gemini-cli and antigravity are BOTH `teal`), so the accent word appears
+    // more than once in the legend. Scope each token assertion to its own
+    // provider ROW (the harness name is unique) rather than querying the whole
+    // legend, which would match the duplicated token multiple times.
     for (const harness of HARNESSES) {
-      await expect(canvas.getByText(harness)).toBeInTheDocument()
-      await expect(canvas.getByText(PROVIDER_ACCENT[harness])).toBeInTheDocument()
+      const nameEl = canvas.getByText(harness)
+      const row = nameEl.closest('.pv-legend-row')
+      await expect(nameEl).toBeInTheDocument()
+      expect(row).not.toBeNull()
+      await expect(within(row).getByText(PROVIDER_ACCENT[harness])).toBeInTheDocument()
     }
   },
 }

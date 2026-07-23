@@ -180,10 +180,10 @@ cases:
 
   - name: canvas leaf single click is immediate
     surface: canvas
-    initialState: &canvas_leaf {version: 1, presentation: canvas, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+    initialState: &canvas_leaf {version: 1, presentation: canvas, selectedId: web, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
     action: {type: click, targets: [internal/ingest/pipeline.go], keys: []}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+      - {version: 1, presentation: canvas, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
     expectedLegacy: {select: [[internal/ingest/pipeline.go, *node_pipeline]], zoom: [], expand: [], presentation: []}
     expectedAria:
       - {targetId: internal/ingest/pipeline.go, expanded: null, disclosurePresent: false, disclosureDisabled: false}
@@ -239,7 +239,7 @@ cases:
     initialState: *canvas_leaf
     action: {type: double-click, targets: [internal/ingest/pipeline.go], keys: []}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+      - {version: 1, presentation: canvas, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
     expectedLegacy: {select: [[internal/ingest/pipeline.go, *node_pipeline]], zoom: [], expand: [], presentation: []}
     expectedAria:
       - {targetId: internal/ingest/pipeline.go, expanded: null, disclosurePresent: false, disclosureDisabled: false}
@@ -269,7 +269,10 @@ cases:
         disclosureExpandedIds: []
         transform: 'translate(10px, 20px) scale(1)'
         status: &empty_status {role: status, ariaLive: polite, text: ''}
-        structure: &canvas_structure {applicationRole: application, applicationLabel: code map, roleDescription: code structure map, statusCount: 1}
+        # MapCanvas renders TWO aria-live role="status" regions: the roving-focus
+        # announce (id `*-live`) and a distinct folder-descent announce for the
+        # canvas breadcrumb feature (see MapCanvas.jsx) — so statusCount is 2.
+        structure: &canvas_structure {applicationRole: application, applicationLabel: code map, roleDescription: code structure map, statusCount: 2}
     action: {type: click, targets: [internal], keys: []}
     expectedStates:
       - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}}
@@ -439,7 +442,13 @@ cases:
         grain: project
         disclosures: [{id: internal/ingest, expanded: false}, {id: solo, expanded: false}]
         disclosureExpandedIds: []
-        transform: 'translate(111.387px, 0px) scale(1.34507)'
+        # Opening a folder now frames the JUST-OPENED subtree (a fit scoped to the
+        # newly-revealed descendants) instead of re-fitting the whole graph, so
+        # descending no longer yanks the camera out to the full map (MapCanvas.jsx
+        # descent-fit branch → fitToIds on the newly-opened node). Scoping onto the
+        # single revealed `internal/ingest` clamps to the max zoom (scale 2.4);
+        # still a `change` from the pre-double-click framing below.
+        transform: 'translate(-153.4px, -331.2px) scale(2.4)'
         status: {role: status, ariaLive: polite, text: 'internal: folder · coverage 3 of 4 · 820 loc · selected · expanded'}
         structure: *canvas_structure
     expectedTransformRelation: change

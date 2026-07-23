@@ -209,7 +209,18 @@ export const LateControlledHydration = {
     await waitFor(() => expect(stageTransform(canvasElement)).toBe('translate(-12px, 9px) scale(2.4)'))
     expect(args.onStateChange).toHaveBeenCalledTimes(0)
     await userEvent.click(canvas.getByRole('button', { name: /clear viewport/i }))
-    await waitFor(() => expect(stageTransform(canvasElement)).toBe('translate(119.058px, 0px) scale(0.918269)'))
+    // Clearing the viewport (canonical viewport → null) drops back to the
+    // whole-graph auto-fit for the CURRENT visible set. "clear viewport"
+    // rehydrates to grain 'file' with NO per-node expansions, so the file-grain
+    // aggregation cap (CODE_MAP_GRAIN_DEPTH.file === 1 in codeMapState.js: a
+    // folder stays a single aggregate box until explicitly expanded) frames the
+    // aggregated top level — internal/ingest + web + solo's child — NOT every
+    // file in the repo. This transform is that whole-graph fit at 900×420; it
+    // differs from the pre-aggregation-cap value because the cap changed which
+    // nodes are visible at file grain. The fit stays LOCAL (unpublished), so no
+    // onStateChange fires (asserted below), matching the epoch rule that the
+    // first fit before any canonical viewport exists is local-only.
+    await waitFor(() => expect(stageTransform(canvasElement)).toBe('translate(0px, 32.3952px) scale(1.11694)'))
     expect(args.onStateChange).toHaveBeenCalledTimes(0)
   },
 }
@@ -301,10 +312,28 @@ export const LegacyNavigatorFallback = {
 }
 
 async function expectOneFullState(spy, expected) {
-  await waitFor(() => expect(spy).toHaveBeenCalledTimes(1))
+  // A single semantic gesture publishes its semantic proposal FIRST. When that
+  // gesture ALSO changes the visible set (e.g. the search "reveal" expands
+  // pipeline.go's ancestors to descend to file grain), the canvas auto-fit then
+  // frames the revealed content and publishes that framing as a follow-on
+  // viewport-only state change — the epoch's auto-fit-records-its-framing
+  // behavior (MapCanvas.jsx `fit`/`fitToIds` publish on a visible-set change →
+  // a `set-viewport` reduction; see codeMapState.js). So assert the semantic
+  // proposal precisely, then require every extra emission to be a pure
+  // viewport-framing delta (nothing but `viewport` changes). A select/focus/
+  // filter/presentation gesture leaves the visible set untouched and emits
+  // exactly one state.
+  await waitFor(() => expect(spy.mock.calls.length).toBeGreaterThanOrEqual(1))
   const state = spy.mock.calls[0][0]
   expect(Object.keys(state).sort()).toEqual(STATE_KEYS)
   expect(state).toEqual(expect.objectContaining(expected))
+  // Give any follow-on auto-fit framing a beat to publish, then confirm the
+  // published sequence carries exactly one semantic proposal (this state) and
+  // that every extra is a viewport-only framing — never a second semantic emit.
+  await waitFor(() => {
+    const semantic = semanticProposals(spy.mock.calls.map((call) => call[0]))
+    expect(semantic).toHaveLength(1)
+  })
 }
 
 function interactionSpies() {
@@ -332,11 +361,23 @@ async function runInteractionCases(surface, args, canvasElement) {
       }
       await executeInteraction(testCase, canvas)
       await waitFor(() => {
-        const actualStates = args.onStateChange.mock.calls.map((call) => call[0])
+        // A gesture that changes the VISIBLE SET (an expand/reveal that adds to
+        // expandedIds) makes the canvas re-fit and PUBLISH that framing as a
+        // follow-on viewport-only state change — the epoch's auto-fit-records-
+        // its-framing behavior (MapCanvas.jsx `fitToIds(..., publish=true)` in
+        // the newly-opened descent-fit branch → CodeMap `publishAction` → a
+        // `set-viewport` reduction). The fixtures describe the SEMANTIC
+        // proposals of each gesture; strip any auto-fit framing follow-on (a
+        // state that differs from its predecessor in `viewport` alone) before
+        // matching, and separately require every stripped state to be a valid
+        // framing (viewport-only delta, non-null viewport). A select-only
+        // gesture leaves the visible set untouched and emits no framing.
+        const publishedStates = args.onStateChange.mock.calls.map((call) => call[0])
+        const actualStates = semanticProposals(publishedStates)
         try {
           expect(actualStates).toEqual(testCase.expectedStates)
         } catch (error) {
-          throw new Error(`state proposals differ: expected ${JSON.stringify(testCase.expectedStates)}; received ${JSON.stringify(actualStates)}`, { cause: error })
+          throw new Error(`state proposals differ: expected ${JSON.stringify(testCase.expectedStates)}; received ${JSON.stringify(actualStates)} (raw ${JSON.stringify(publishedStates)})`, { cause: error })
         }
       })
       expect(args.onSelect.mock.calls).toEqual(testCase.expectedLegacy.select)
@@ -370,6 +411,33 @@ async function runInteractionCases(surface, args, canvasElement) {
       throw new Error(`${testCase.name}: ${error.message}`, { cause: error })
     }
   }
+}
+
+/* Drop auto-fit viewport-framing follow-ons from a sequence of published states,
+   leaving only the SEMANTIC proposals a gesture makes. A framing is a state that
+   differs from its immediate predecessor in the `viewport` field alone — the
+   canvas publishes one whenever a visible-set change (an expand/reveal) causes an
+   auto-fit (see the note at the call site). Each stripped state is asserted to be
+   a genuine framing (viewport-only delta, non-null viewport) so a real semantic
+   double-emit can never be silently swallowed. */
+function semanticProposals(states) {
+  const semantic = []
+  for (let index = 0; index < states.length; index += 1) {
+    const previous = index === 0 ? null : states[index - 1]
+    if (previous && isViewportOnlyDelta(previous, states[index])) {
+      expect(states[index].viewport).not.toBeNull()
+      continue
+    }
+    semantic.push(states[index])
+  }
+  return semantic
+}
+
+function isViewportOnlyDelta(before, after) {
+  const nonViewportUnchanged = STATE_KEYS
+    .filter((key) => key !== 'viewport')
+    .every((key) => JSON.stringify(before[key]) === JSON.stringify(after[key]))
+  return nonViewportUnchanged && JSON.stringify(before.viewport) !== JSON.stringify(after.viewport)
 }
 
 async function executeInteraction(testCase, canvas) {
@@ -432,7 +500,16 @@ function canvasDomSnapshot(canvasElement) {
     .sort((left, right) => left.id.localeCompare(right.id))
   const grainByLabel = { overview: 'project', folders: 'package', files: 'file' }
   const checkedGrain = canvas.getByRole('radio', { checked: true })
-  const status = within(application).getByRole('status')
+  // MapCanvas renders TWO aria-live status regions (see MapCanvas.jsx): the
+  // roving-focus announce (id `${baseId}-live`, whose text names the focused
+  // node's coverage/violations) and a SEPARATE folder-descent announce added for
+  // the canvas breadcrumb feature (deliberately distinct so a discrete "what
+  // changed" event never gets lost inside the ambient "what's focused" state).
+  // Snapshot the FOCUS announce specifically — selecting it by its id suffix so
+  // the second region cannot make getByRole('status') throw on "multiple
+  // elements"; the second region is counted in `structure.statusCount` below.
+  const status = application.querySelector('[role="status"][id$="-live"]')
+  if (!status) throw new Error('focus-announce live region (role="status", id ending "-live") not found')
   const transform = application.querySelector('.mc-stage')?.style.transform ?? ''
   return {
     visibleIds,
