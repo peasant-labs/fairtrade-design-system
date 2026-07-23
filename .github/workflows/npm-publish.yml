@@ -1,0 +1,90 @@
+# Publish @peasant-labs/fairtrade to npm when a release tag is pushed.
+#
+# Trigger: a `fairtrade-vX.Y.Z` tag (the manual release ceremony's tag form —
+# squash the epoch branch to one release(vX.Y.Z) commit, merge --no-ff into
+# main, tag, push). Pushing the tag replaces the old interactive
+# `pnpm publish` + OTP step; nothing else about the ceremony changes.
+#
+# Gates: `npm publish` runs this package's `prepack` = `pnpm build:lib`, the
+# full library gate chain (contract type-tests, code-map/timeline/transcript
+# behavior + mutation gates, css-token lint, contrast on the shipped dist,
+# smoke-lib/transcript/map/changes, pack-content assertion). A red gate means
+# no publish. The version-consistency guard below additionally refuses a tag
+# whose version does not byte-match package.json's committed version.
+#
+# Authentication: npm Trusted Publishing (OIDC) — NOT a long-lived NPM_TOKEN
+# secret. GitHub mints a short-lived OIDC token for this job, scoped to the
+# `npm-publish` GitHub Actions environment that the npm Trusted Publisher
+# registration is bound to; the npm CLI (>= 11.5, bundled with Node 24)
+# exchanges it with the registry when no auth token is configured, so there is
+# no secret to provision, rotate, or leak, and provenance attestation is
+# automatic. Install/build stay on the repo's pinned pnpm (10.x, which lacks
+# native OIDC publish support — the npm CLI is used for the one publish step
+# only). One-time, maintainer-side registrations (the `npm-publish` GitHub
+# environment; this repo + workflow + environment as the package's Trusted
+# Publisher on npmjs.com) are documented in AGENTS.md, "npm publication".
+name: npm-publish
+
+on:
+  push:
+    tags: ['fairtrade-v*']
+
+permissions:
+  contents: read
+
+jobs:
+  npm-publish:
+    name: publish npm package
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: npm-publish
+    permissions:
+      contents: read # checkout only; no tag/commit is pushed from this job
+      id-token: write # mint the OIDC token npm Trusted Publishing exchanges
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      # Node 24 for its bundled npm >= 11.5 (OIDC trusted publishing). The
+      # library build itself is version-agnostic within active LTS/current.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Guard tag <-> package.json version consistency
+        run: |
+          set -euo pipefail
+          tag_version="${TAG#fairtrade-v}"
+          pkg_version="$(node -p "require('./package.json').version")"
+          if [ "${tag_version}" != "${pkg_version}" ]; then
+            echo "::error::tag ${TAG} names version ${tag_version} but package.json is ${pkg_version}; retag the release commit or fix the version bump"
+            exit 1
+          fi
+
+      - name: Determine the npm dist-tag from the version kind
+        id: disttag
+        run: |
+          set -euo pipefail
+          # A prerelease version (any -suffix, e.g. 0.1.0-rc1) publishes under
+          # `next`; a final X.Y.Z takes `latest`.
+          version="${TAG#fairtrade-v}"
+          case "${version}" in
+            *-*) echo "tag=next"    >> "$GITHUB_OUTPUT" ;;
+            *)   echo "tag=latest"  >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      # npm (not pnpm) for the publish step only — see the header comment.
+      # prepack runs `pnpm build:lib`, so the full gate chain executes against
+      # the exact tarball being published.
+      - name: Publish @peasant-labs/fairtrade to npm (OIDC trusted publishing)
+        run: |
+          set -euo pipefail
+          npm publish --access public --tag "${{ steps.disttag.outputs.tag }}"
+          echo "::notice::published @peasant-labs/fairtrade@${TAG#fairtrade-v} under dist-tag ${{ steps.disttag.outputs.tag }} via OIDC trusted publishing"

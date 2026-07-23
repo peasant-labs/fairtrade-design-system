@@ -59,3 +59,20 @@ Smokes: `smoke-{lib,map,transcript,transcript-ui,tarball}.mjs`. The in-use **dem
 when a DS component changes, consumers re-shoot their surfaces SxS against it. Consumers
 (peasant/village) each carry a PARALLEL harness mirroring these primitives;
 consolidation into one shared parameterized toolkit is a tracked followup (beads IDs in the polyrepo-root `.agents.local/`).
+
+## release & npm publication
+
+The release ceremony: squash the epoch branch to one `release(vX.Y.Z): <summary>` commit,
+`merge --no-ff` into `main`, bump `package.json` to the same version in that release commit,
+tag the merge `fairtrade-vX.Y.Z` (lightweight), push `main` + the tag. **Pushing the tag
+publishes**: `.github/workflows/npm-publish.yml` re-runs the full gate chain (`prepack` =
+`build:lib`) against the exact tarball and publishes `@peasant-labs/fairtrade` via **npm
+Trusted Publishing (OIDC)** — no `NPM_TOKEN` secret exists, provenance attestation is
+automatic. A prerelease version (`-rcN` etc.) lands under dist-tag `next`; a final under
+`latest`. The workflow refuses a tag whose version does not match `package.json`.
+
+One-time maintainer registrations (already-registered state lives on npmjs.com/GitHub, not
+in-repo): (1) a `npm-publish` GitHub Actions **environment** on this repo; (2) on npmjs.com,
+this repo + `npm-publish.yml` + that environment registered as the package's **Trusted
+Publisher**. Never add a token secret as a fallback; if OIDC exchange fails, fix the
+registration.
