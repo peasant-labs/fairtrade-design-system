@@ -7,7 +7,7 @@
    which runs: tsc -p tsconfig.contract.json (checkJs:true, strict:true,
    noImplicitAny:true, noEmit). This file is wired into `build:lib` so a
    contract leak FAILS the build gate. A red error here means the integration
-   contract has drifted and must be fixed before the spine can unblock downstream
+   contract changed incompatibly and must be fixed before downstream
    component work. */
 
 /** @typedef {import('./index.js').TranscriptWireInput} TranscriptWireInput */
@@ -34,9 +34,8 @@ void TOOL_CALL_KINDS
 void TOOL_GROUPS
 void HARNESSES
 
-/* ── (2) POSITIVE: adapter input accepts FLAT Go wire shape ─────────────────── */
-/* gitBranch + gitRemote as flat strings; NO gitContext. The real session_detail
-   wire from the Go backend. */
+/* ── (2) POSITIVE: adapter input accepts canonical flat wire shape ──────────── */
+/* gitBranch + gitRemote as flat strings; NO gitContext. */
 /** @type {TranscriptWireInput} */
 const flatWire = {
   id: 's1',
@@ -56,7 +55,7 @@ const flatWire = {
       content: 'do the thing',
       timestamp: '2026-06-24T00:00:00Z',
       depth: 0,
-      // parentIndex present-and-nullable on the Go wire; consumers MUST NOT rely on it — use depth
+      // parentIndex is nullable on the canonical wire; consumers MUST NOT rely on it — use depth
       parentIndex: null,
     },
     {
@@ -76,8 +75,8 @@ const flatWire = {
 }
 void flatWire
 
-/* ── (3) POSITIVE: adapter input ALSO accepts nested (drifted TS) shape ──────── */
-/* gitContext only, no flat fields. The shape TB's sample fixtures hand-populate. */
+/* ── (3) POSITIVE: adapter input ALSO accepts the retired nested shape ──────── */
+/* gitContext only, no flat fields. This compatibility is adapter-local. */
 /** @type {TranscriptWireInput} */
 const nestedWire = {
   id: 's2',
@@ -93,8 +92,9 @@ const nestedWire = {
   turns: [],
   gitContext: {
     branch: 'feature',
+    workingDirectory: '/legacy/project',
     commits: [
-      { hash: 'abc123', message: 'init', authorName: 'a', authorEmail: 'a@b.c', commitTime: 1, authorTime: 1 },
+      { hash: 'abc123', message: 'init', authorName: 'a', authorEmail: 'a@b.c', commitTime: BigInt(1), authorTime: BigInt(1) },
     ],
   },
 }
@@ -164,8 +164,8 @@ void _pinCoreArrays
 }
 
 /* ── (8) NEGATIVE: parentIndex must NOT exist on the cooked TurnVM ────────────────
-   Consumers must key subagent nesting off `depth`, not parentIndex. The drifted
-   TS wire shape omits parentIndex entirely; TurnVM follows that consumer contract. */
+   Consumers must key subagent nesting off `depth`, not parentIndex. TurnVM keeps
+   that wire detail out of the component contract. */
 {
   /** @type {TurnVM} */
   const turn = /** @type {any} */ ({})
@@ -174,8 +174,8 @@ void _pinCoreArrays
 }
 
 /* ── (9) NEGATIVE: gitContext must NOT exist on the bare SessionDetailPayload ──────
-   gitContext is the drifted TS shape. The REAL Go wire payload has only flat
-   gitBranch/gitRemote. The TranscriptWireInput WIDENS for drift absorption;
+   gitContext is the retired compatibility shape. The canonical payload has only
+   flat git fields. TranscriptWireInput WIDENS for compatibility;
    the bare payload must NOT carry gitContext so the one adapter is the sole seam. */
 {
   /** @type {SessionDetailPayload} */

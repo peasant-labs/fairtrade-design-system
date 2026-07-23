@@ -1,0 +1,14 @@
+expectedDomainCount: 5
+expectedInvalidCaseCount: 5
+domains:
+  - {name: map-node-kind, objectExport: MapNodeKind, allExport: AllMapNodeKinds, predicateExport: isMapNodeKind, compatibilityExport: MAP_NODE_KINDS, values: [module, package, file], invalid: directory}
+  - {name: change-binding, objectExport: ChangeBinding, allExport: AllChangeBindings, predicateExport: isChangeBinding, compatibilityExport: CHANGE_BINDINGS, values: [bound, candidate], invalid: inferred}
+  - {name: edge-violation-kind, objectExport: EdgeViolationKind, allExport: AllEdgeViolationKinds, predicateExport: isEdgeViolationKind, compatibilityExport: EDGE_VIOLATION_KINDS, values: [cycle, wrong_way], invalid: crossing}
+  - {name: file-change-status, objectExport: FileChangeStatus, allExport: AllFileChangeStatuses, predicateExport: isFileChangeStatus, compatibilityExport: FILE_CHANGE_STATUSES, values: [M, A, D, R], invalid: X}
+  - {name: diff-line-kind, objectExport: DiffLineKind, allExport: AllDiffLineKinds, predicateExport: isDiffLineKind, compatibilityExport: DIFF_LINE_KINDS, values: [context, add, del], invalid: changed}
+invalidCases:
+  - {name: invalid-map-node-kind, assertionExport: assertCodeMapPayloadEnums, expectedPath: 'nodes[0].kind'}
+  - {name: invalid-edge-violation-kind, assertionExport: assertCodeMapPayloadEnums, expectedPath: 'violations[0].kind'}
+  - {name: invalid-file-change-status, assertionExport: assertChangeDetailPayloadEnums, expectedPath: 'files[0].status'}
+  - {name: invalid-change-binding, assertionExport: assertChangeDetailPayloadEnums, expectedPath: 'work[0].binding'}
+  - {name: invalid-diff-line-kind, assertionExport: assertChangeDiffPayloadEnums, expectedPath: 'hunks[0].lines[0].kind'}

@@ -9,7 +9,7 @@ import {
 } from './ProviderIcon.jsx'
 import { frame } from './story-frame.jsx'
 
-/* ProviderIcon stories. CSF3. the five coding-agent HARNESSES (peasant's wire
+/* ProviderIcon stories. CSF3. the six coding-agent HARNESSES (canonical schema wire
    values) → their REAL brand marks, never a generic glyph; the mark is always
    paired with the provider name (nominative fair use). the per-provider accent
    (PROVIDER_ACCENT) is the documented divergence from the system's fixed
@@ -44,7 +44,7 @@ function Demo({ label, children }) {
   )
 }
 
-/* ── Marks — all five real brand marks, single-color ─────────────────────────
+/* ── Marks — all six real brand marks, single-color ─────────────────────────
    the headline rule made visible: claude-code wears Claude, codex wears OpenAI
    (its parent — a documented fallback, not a stand-in glyph), cursor wears
    Cursor. every mark is paired with its name. */
@@ -66,13 +66,14 @@ export const Marks = {
     const canvas = within(canvasElement)
     // codex must NOT render a generic glyph — it resolves to the real OpenAI mark.
     await expect(canvas.getByLabelText('Codex')).toBeInTheDocument()
-    // cursor and claude-code resolve to their own distinct marks (5 informative icons).
+    // cursor and claude-code resolve to their own distinct marks; Antigravity uses Google's mark.
     await expect(canvas.getByLabelText('Cursor')).toBeInTheDocument()
     await expect(canvas.getByLabelText('Claude Code')).toBeInTheDocument()
+    await expect(canvas.getByLabelText('Google Antigravity')).toBeInTheDocument()
   },
 }
 
-/* ── Tags — all five chips: mark + lowercase harness slug ─────────────────────
+/* ── Tags — all six chips: mark + lowercase harness slug ─────────────────────
    the system chip look (hairline, mono, radius 0). never color-only — the slug
    names the provider even fully monochrome; `accent` only tints the mark. */
 export const Tags = {

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Box, GitMerge } from 'lucide-react'
 import CommitGraph from '../CommitGraph.jsx'
+import { ProviderName } from '../ProviderIcon.jsx'
 import { buildChangesGraph } from './changeGraph.js'
 
 /* Changes — the lifted "lines of work" git-graph surface (peasant's /api/v1/review),
@@ -18,25 +19,29 @@ import { buildChangesGraph } from './changeGraph.js'
  * @param {import('./types.js').ChangesPayload} props.payload  the cooked changes payload (adapter output)
  * @param {string} [props.projectLabel]  the head label (e.g. "peasant-labs/peasant"); host-supplied (not a payload field)
  * @param {string} [props.selectedId]  id of the active commit/tip row (the scarce amber treatment)
- * @param {(commit: import('./changeGraph.js').CommitGraphRow) => void} [props.onSelectChange]  a row was chosen (open its change detail)
- * @param {() => void} [props.onOpenMap]  the "open the map" affordance was pressed
+ * @param {(action: import('./timelineNavigation.js').TimelineNavigationAction) => void} [props.onNavigate] canonical semantic action callback; when present, legacy callbacks do not fire
+ * @param {(commit: import('./changeGraph.js').CommitGraphRow) => void} [props.onSelectChange]  deprecated legacy row callback; use onNavigate.
+ * @param {() => void} [props.onOpenMap]  deprecated legacy map callback; use onNavigate.
  * @param {boolean} [props.hasMore]  more history exists below the window (→ "show older")
- * @param {() => void} [props.onShowOlder]  "show older" was pressed
+ * @param {() => void} [props.onShowOlder]  deprecated legacy pagination callback; use onNavigate.
+ * @param {(sessionId: string) => void} [props.onOpenSession] deprecated legacy session callback; use onNavigate.
  * @param {number} [props.nowMs]  pins relative-time humanisation (default Date.now()); the harness fixes it for byte-stable captures
  */
 export default function Changes({
   payload,
   projectLabel,
   selectedId,
+  onNavigate,
   onSelectChange,
   onOpenMap,
   hasMore = false,
   onShowOlder,
+  onOpenSession,
   nowMs,
 }) {
   const now = nowMs ?? Date.now()
   const graph = useMemo(() => buildChangesGraph(payload, { nowMs: now }), [payload, now])
-  const { commits, reverted, openCount, mergedCount } = graph
+  const { commits, reverted, unlinkedSessions, outsideWindowSessions, openCount, mergedCount } = graph
   const defaultBranch = payload.defaultBranch
 
   return (
@@ -49,7 +54,14 @@ export default function Changes({
             {openCount} open · {mergedCount} merged
           </div>
         </div>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenMap?.()}>
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          onClick={() => {
+            if (onNavigate) onNavigate({ type: 'open-map' })
+            else onOpenMap?.()
+          }}
+        >
           <Box size={14} aria-hidden="true" /> open the map
         </button>
       </div>
@@ -62,10 +74,70 @@ export default function Changes({
           commits={commits}
           selectedId={selectedId}
           label="default-branch commit history"
+          onNavigate={onNavigate}
           onSelect={(c) => onSelectChange?.(c)}
+          onOpenSession={onOpenSession}
           hasMore={hasMore}
           onShowOlder={onShowOlder}
         />
+
+        {unlinkedSessions.length > 0 && (
+          <section className="gmp-unlinked-sessions" aria-labelledby="gmp-unlinked-sessions-heading">
+            <h2 id="gmp-unlinked-sessions-heading" className="sb-head gmp-unlinked-sessions-head">
+              sessions not linked to a commit
+            </h2>
+            <div className="gmp-unlinked-sessions-list">
+              {unlinkedSessions.map((session) => (
+                <button
+                  key={session.sessionId}
+                  type="button"
+                  className="gmp-unlinked-session"
+                  onClick={() => {
+                    if (onNavigate) {
+                      onNavigate({
+                        type: 'open-session',
+                        sessionId: session.sessionId,
+                        source: { kind: 'unlinked' },
+                      })
+                    } else onOpenSession?.(session.sessionId)
+                  }}
+                >
+                  <ProviderName harness={session.harness} />
+                  <span>{session.title || session.sessionId}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {outsideWindowSessions.length > 0 && (
+          <section className="gmp-unlinked-sessions" aria-labelledby="gmp-outside-window-sessions-heading">
+            <h2 id="gmp-outside-window-sessions-heading" className="sb-head gmp-unlinked-sessions-head">
+              sessions linked outside this visible commit window
+            </h2>
+            <div className="gmp-unlinked-sessions-list">
+              {outsideWindowSessions.map((session) => (
+                <button
+                  key={session.sessionId}
+                  type="button"
+                  className="gmp-unlinked-session"
+                  onClick={() => {
+                    if (onNavigate) {
+                      onNavigate({
+                        type: 'open-session',
+                        sessionId: session.sessionId,
+                        source: { kind: 'outside-window' },
+                      })
+                    } else onOpenSession?.(session.sessionId)
+                  }}
+                >
+                  <ProviderName harness={session.harness} />
+                  <span>{session.title || session.sessionId}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* already-merged + reverted lines of work, listed under the graph. */}
         {reverted.length > 0 && (
@@ -77,7 +149,12 @@ export default function Changes({
                   key={r.branch}
                   type="button"
                   className="gmp-merged-chip gmp-merged-revert"
-                  onClick={() => onSelectChange?.(/** @type {any} */ ({ id: `revert:${r.branch}`, branch: r.branch }))}
+                  onClick={() => {
+                    const change = /** @type {any} */ ({ id: `revert:${r.branch}`, branch: r.branch })
+                    if (onNavigate) {
+                      onNavigate({ type: 'open-change', change: { id: change.id, branch: change.branch } })
+                    } else onSelectChange?.(change)
+                  }}
                 >
                   <GitMerge size={13} aria-hidden="true" /> reverted · {r.branch} · then undone · {r.when}
                 </button>

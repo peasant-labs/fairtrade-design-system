@@ -1,5 +1,6 @@
 import { CornerDownRight, User, Wrench, Check, Link as LinkIcon, AlertTriangle, Coins } from 'lucide-react'
-import ProviderIcon, { PROVIDER_ACCENT } from '../ProviderIcon.jsx'
+import ProviderIcon from '../ProviderIcon.jsx'
+import { providerAccent, providerDisplayName } from '../provider-policy.js'
 import Markdown from './Markdown.jsx'
 import Thinking from './Thinking.jsx'
 import ToolCall from './ToolCall.jsx'
@@ -68,21 +69,17 @@ export default function TurnCard({
   if (!turn) return null
   const isUser = turn.role === 'user'
   const isSub = !!turn.depth && turn.depth > 0
-  // the assistant IS the agent → its accent is the provider accent; the adapter cooks that
-  // provider name onto `turn.accent` for top-level assistant turns. user stays teal / subagent
-  // mauve via their own .user/.sub CSS.
-  const provider = turn.accent
+  // The assistant is the agent, so a present canonical provider selects its
+  // accent. Curated turns may omit provider and use the neutral assistant
+  // fallback; a present invalid value fails through providerAccent.
+  const provider = turn.provider
   const roleLabel = isSub
     ? 'subagent · ' + (turn.agentName ?? '')
     : turn.role === 'assistant'
-      ? provider ?? turn.role
+      ? provider === undefined ? turn.role : providerDisplayName(provider)
       : turn.role
-  // `turn.accent` is a plain string (the cooked provider slug); read the accent map loosely so
-  // an unknown harness degrades to the system assistant amber rather than failing the lookup.
-  const accentName = provider
-    ? /** @type {Record<string, string | undefined>} */ (PROVIDER_ACCENT)[provider]
-    : undefined
-  const asstAccent = accentName ? `var(--${accentName})` : 'var(--amber)'
+  const accentName = provider === undefined ? 'amber' : providerAccent(provider)
+  const asstAccent = `var(--${accentName})`
 
   const head = (
     <div className="txn-turnhead">
@@ -90,9 +87,9 @@ export default function TurnCard({
         className="txn-rolelabel"
         style={turn.role === 'assistant' && !isSub ? { color: asstAccent } : undefined}
       >
-        {turn.role === 'assistant' && !isSub ? (
+        {turn.role === 'assistant' && !isSub && provider !== undefined ? (
           <ProviderIcon
-            harness={/** @type {'claude-code' | 'gemini-cli' | 'codex' | 'opencode' | 'cursor'} */ (provider)}
+            harness={provider}
             accent
           />
         ) : isSub ? (

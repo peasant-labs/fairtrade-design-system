@@ -19,6 +19,9 @@ export { default as Changes } from './Changes.jsx'
 export { default as ChangeDetail } from './ChangeDetail.jsx'
 export { default as CodeMap, codeMapPayloadToMapData } from './CodeMap.jsx'
 export { default as CodeMapComposition, DefaultMapLegend } from './CodeMapComposition.jsx'
+export { default as CodeMapNavigator } from './CodeMapNavigator.jsx'
+export { CODE_MAP_STATE_VERSION, CODE_MAP_VIEWPORT_SCALE, isCodeMapViewportScale, codeMapStatesEqual, createCodeMapState, reduceCodeMapState, deriveCodeMapView } from './codeMapState.js'
+export { assertTimelineNavigationAction } from './timelineNavigation.js'
 export { GraphAppShell, GraphSectionNav, GRAPH_APP_SECTIONS } from '../inuse/InUseShell.jsx'
 
 /* ── derivation helper (runtime) — ChangesPayload → kit CommitGraph dataset ────── */
@@ -26,12 +29,34 @@ export { buildChangesGraph, humanizeAge } from './changeGraph.js'
 
 /* ── canonical enum-value arrays (runtime) ───────────────────────────────────── */
 export {
+  assertChangeDetailPayloadEnums,
+  assertChangeDiffPayloadEnums,
+  assertCodeMapPayloadEnums,
   MAP_NODE_KINDS,
   CHANGE_BINDINGS,
   EDGE_VIOLATION_KINDS,
   FILE_CHANGE_STATUSES,
   DIFF_LINE_KINDS,
 } from './types.js'
+
+/* Canonical runtime enum objects, ordered inventories, and predicates. */
+export {
+  MapNodeKind,
+  AllMapNodeKinds,
+  isMapNodeKind,
+  ChangeBinding,
+  AllChangeBindings,
+  isChangeBinding,
+  EdgeViolationKind,
+  AllEdgeViolationKinds,
+  isEdgeViolationKind,
+  FileChangeStatus,
+  AllFileChangeStatuses,
+  isFileChangeStatus,
+  DiffLineKind,
+  AllDiffLineKinds,
+  isDiffLineKind,
+} from '@peasant-labs/schema'
 
 /* ── enum types (JSDoc re-exports; erased at build) ──────────────────────────────
    The checkJs typedef-re-export pattern has no `export type` syntax in .js files,
@@ -45,6 +70,7 @@ export {
 
 /* ── shared sub-type payloads (JSDoc re-exports; erased at build) ─────────────── */
 /** @typedef {import('./types.js').CommitRefPayload} CommitRefPayload */
+/** @typedef {import('./types.js').TimelineSessionPayload} TimelineSessionPayload */
 /** @typedef {import('./types.js').MapEdgePayload} MapEdgePayload */
 /** @typedef {import('./types.js').ActivityEdgePayload} ActivityEdgePayload */
 /** @typedef {import('./types.js').EdgeViolationPayload} EdgeViolationPayload */
@@ -70,3 +96,12 @@ export {
 
 /* ── CodeMap surface payload (JSDoc re-export; erased at build) ───────────────── */
 /** @typedef {import('./types.js').CodeMapPayload} CodeMapPayload */
+/** @typedef {import('./codeMapState.js').CodeMapPresentation} CodeMapPresentation */
+/** @typedef {import('./codeMapState.js').CodeMapGrain} CodeMapGrain */
+/** @typedef {import('./codeMapState.js').CodeMapViewport} CodeMapViewport */
+/** @typedef {import('./codeMapState.js').CodeMapState} CodeMapState */
+/** @typedef {import('./codeMapState.js').CodeMapAction} CodeMapAction */
+/** @typedef {import('./codeMapState.js').CodeMapNavigatorRow} CodeMapNavigatorRow */
+/** @typedef {import('./codeMapState.js').CodeMapCanvasView} CodeMapCanvasView */
+/** @typedef {import('./codeMapState.js').CodeMapView} CodeMapView */
+/** @typedef {import('./timelineNavigation.js').TimelineNavigationAction} TimelineNavigationAction */

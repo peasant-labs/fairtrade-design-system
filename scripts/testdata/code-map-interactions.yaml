@@ -1,0 +1,445 @@
+expectedCaseCount: 30
+
+payload:
+  repoFound: true
+  nodes:
+    - &node_internal {id: internal, name: internal, kind: module, loc: 820, recordedFiles: 5, totalFiles: 8, order: 0}
+    - &node_ingest {id: internal/ingest, name: ingest, kind: package, parent: internal, loc: 510, recordedFiles: 3, totalFiles: 5, order: 0}
+    - &node_pipeline {id: internal/ingest/pipeline.go, name: pipeline.go, kind: file, parent: internal/ingest, loc: 220, recordedFiles: 1, totalFiles: 1, order: 0}
+    - &node_web {id: web, name: web, kind: module, loc: 460, recordedFiles: 2, totalFiles: 6, order: 1}
+    - &node_solo {id: solo, name: solo, kind: module, loc: 140, recordedFiles: 1, totalFiles: 2, order: 2}
+    - &node_detached {id: detached-child, name: detached-child, kind: file, parent: solo, loc: 70, recordedFiles: 1, totalFiles: 1, order: 0}
+  structureEdges: []
+  violations: []
+
+cases:
+  - name: navigator parent single click is immediate
+    surface: navigator
+    initialState: &nav_parent {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    action: {type: click, targets: [internal], keys: []}
+    expectedStates:
+      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    expectedLegacy: {select: [[internal, *node_internal]], zoom: [], expand: [], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+
+  - name: navigator leaf single click is immediate
+    surface: navigator
+    initialState: &nav_leaf {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+    action: {type: click, targets: [internal/ingest/pipeline.go], keys: []}
+    expectedStates:
+      - {version: 1, presentation: navigator, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+    expectedLegacy: {select: [[internal/ingest/pipeline.go, *node_pipeline]], zoom: [], expand: [], presentation: []}
+    expectedAria:
+      - {targetId: internal/ingest/pipeline.go, expanded: null, disclosurePresent: false, disclosureDisabled: false}
+    expectedStructure: []
+
+  - name: navigator disclosure expands without selecting
+    surface: navigator
+    initialState: *nav_parent
+    action: {type: disclosure, targets: [internal], keys: []}
+    expectedStates:
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    expectedLegacy: {select: [], zoom: [[{level: file, expanded: [internal]}]], expand: [], presentation: []}
+    expectedAria:
+      - {targetId: internal, expanded: true, disclosurePresent: true, disclosureDisabled: false}
+    expectedStructure: []
+
+  - name: navigator disclosure enter expands focused elsewhere
+    surface: navigator
+    initialState: &nav_disclosure_key {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: web, viewport: null}
+    action: {type: disclosure-key, targets: [internal], keys: [Enter]}
+    expectedStates:
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: web, viewport: null}
+    expectedLegacy: {select: [], zoom: [[{level: file, expanded: [internal]}]], expand: [], presentation: []}
+    expectedAria:
+      - {targetId: internal, expanded: true, disclosurePresent: true, disclosureDisabled: false}
+    expectedStructure: [disclosure-outside-treeitem, disclosure-tabindex-minus-one, one-roving-tree-tabstop]
+
+  - name: navigator disclosure space expands focused elsewhere
+    surface: navigator
+    initialState: *nav_disclosure_key
+    action: {type: disclosure-key, targets: [internal], keys: [Space]}
+    expectedStates:
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: web, viewport: null}
+    expectedLegacy: {select: [], zoom: [[{level: file, expanded: [internal]}]], expand: [], presentation: []}
+    expectedAria:
+      - {targetId: internal, expanded: true, disclosurePresent: true, disclosureDisabled: false}
+    expectedStructure: [disclosure-outside-treeitem, disclosure-tabindex-minus-one, one-roving-tree-tabstop]
+
+  - name: navigator parent double click selects then expands
+    surface: navigator
+    initialState: *nav_parent
+    action: {type: double-click, targets: [internal], keys: []}
+    expectedStates:
+      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    expectedLegacy: {select: [[internal, *node_internal]], zoom: [[{level: file, expanded: [internal]}]], expand: [], presentation: []}
+    expectedAria:
+      - {targetId: internal, expanded: true, disclosurePresent: true, disclosureDisabled: false}
+    expectedStructure: []
+
+  - name: navigator leaf double click selects once without expansion
+    surface: navigator
+    initialState: *nav_leaf
+    action: {type: double-click, targets: [internal/ingest/pipeline.go], keys: []}
+    expectedStates:
+      - {version: 1, presentation: navigator, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+    expectedLegacy: {select: [[internal/ingest/pipeline.go, *node_pipeline]], zoom: [], expand: [], presentation: []}
+    expectedAria:
+      - {targetId: internal/ingest/pipeline.go, expanded: null, disclosurePresent: false, disclosureDisabled: false}
+    expectedStructure: []
+
+  - name: navigator enter selects immediately
+    surface: navigator
+    initialState: *nav_parent
+    action: {type: key-sequence, targets: [internal], keys: [Enter]}
+    expectedStates:
+      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    expectedLegacy: {select: [[internal, *node_internal]], zoom: [], expand: [], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+
+  - name: navigator space selects a leaf immediately
+    surface: navigator
+    initialState: *nav_leaf
+    action: {type: key-sequence, targets: [internal/ingest/pipeline.go], keys: [Space]}
+    expectedStates:
+      - {version: 1, presentation: navigator, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+    expectedLegacy: {select: [[internal/ingest/pipeline.go, *node_pipeline]], zoom: [], expand: [], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+
+  - name: navigator unfiltered arrows expand focus parent and collapse
+    surface: navigator
+    initialState: *nav_parent
+    action: {type: key-sequence, targets: [internal, internal, internal/ingest, internal], keys: [ArrowRight, ArrowRight, ArrowLeft, ArrowLeft]}
+    expectedStates:
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal/ingest, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    expectedLegacy: {select: [], zoom: [[{level: file, expanded: [internal]}], [{level: file, expanded: []}]], expand: [], presentation: []}
+    expectedAria:
+      - {targetId: internal, expanded: false, disclosurePresent: true, disclosureDisabled: false}
+    expectedStructure: []
+
+  - name: navigator deep filter forces open without persisted expansion
+    surface: navigator
+    initialState: &nav_deep_filter {version: 1, presentation: navigator, selectedId: web, grain: project, expandedIds: [], navigatorFilter: pipeline, navigatorFocusedId: internal, viewport: null}
+    action: {type: key-sequence, targets: [internal, internal/ingest], keys: [ArrowRight, ArrowLeft]}
+    expectedStates:
+      - {version: 1, presentation: navigator, selectedId: web, grain: project, expandedIds: [], navigatorFilter: pipeline, navigatorFocusedId: internal/ingest, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: project, expandedIds: [], navigatorFilter: pipeline, navigatorFocusedId: internal, viewport: null}
+    expectedLegacy: {select: [], zoom: [], expand: [], presentation: []}
+    expectedAria:
+      - {targetId: internal, expanded: true, disclosurePresent: true, disclosureDisabled: true}
+      - {targetId: internal/ingest, expanded: true, disclosurePresent: true, disclosureDisabled: true}
+    expectedStructure: []
+
+  - name: navigator parent only filter is not forced open
+    surface: navigator
+    initialState: {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: solo, navigatorFocusedId: solo, viewport: null}
+    action: {type: assert-only, targets: [solo], keys: []}
+    expectedStates: []
+    expectedLegacy: {select: [], zoom: [], expand: [], presentation: []}
+    expectedAria:
+      - {targetId: solo, expanded: false, disclosurePresent: true, disclosureDisabled: false}
+    expectedStructure: []
+
+  - name: navigator forced disclosure is a no op
+    surface: navigator
+    initialState: *nav_deep_filter
+    action: {type: disclosure, targets: [internal], keys: []}
+    expectedStates: []
+    expectedLegacy: {select: [], zoom: [], expand: [], presentation: []}
+    expectedAria:
+      - {targetId: internal, expanded: true, disclosurePresent: true, disclosureDisabled: true}
+    expectedStructure: []
+
+  - name: navigator rapid cross node clicks publish in order
+    surface: navigator
+    initialState: *nav_parent
+    action: {type: rapid-click, targets: [internal, web], keys: []}
+    expectedStates:
+      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: web, viewport: null}
+    expectedLegacy: {select: [[internal, *node_internal], [web, *node_web]], zoom: [], expand: [], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+
+  - name: canvas parent single click is immediate
+    surface: canvas
+    initialState: &canvas_parent {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    action: {type: click, targets: [internal], keys: []}
+    expectedStates:
+      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    expectedLegacy: {select: [[internal, *node_internal]], zoom: [], expand: [], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+
+  - name: canvas leaf single click is immediate
+    surface: canvas
+    initialState: &canvas_leaf {version: 1, presentation: canvas, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+    action: {type: click, targets: [internal/ingest/pipeline.go], keys: []}
+    expectedStates:
+      - {version: 1, presentation: canvas, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+    expectedLegacy: {select: [[internal/ingest/pipeline.go, *node_pipeline]], zoom: [], expand: [], presentation: []}
+    expectedAria:
+      - {targetId: internal/ingest/pipeline.go, expanded: null, disclosurePresent: false, disclosureDisabled: false}
+    expectedStructure: []
+
+  - name: canvas disclosure expands without selecting
+    surface: canvas
+    initialState: *canvas_parent
+    action: {type: disclosure, targets: [internal], keys: []}
+    expectedStates:
+      - {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    expectedLegacy: {select: [], zoom: [[{level: project, expanded: [internal]}]], expand: [[internal]], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+
+  - name: canvas disclosure enter expands focused elsewhere
+    surface: canvas
+    assertionsAt: before
+    initialState: &canvas_disclosure_key {version: 1, presentation: canvas, selectedId: web, grain: package, expandedIds: [], navigatorFilter: '', navigatorFocusedId: web, viewport: null}
+    action: {type: disclosure-key, targets: [internal/ingest], keys: [Enter]}
+    expectedStates:
+      - {version: 1, presentation: canvas, selectedId: web, grain: package, expandedIds: [internal/ingest], navigatorFilter: '', navigatorFocusedId: web, viewport: null}
+    expectedLegacy: {select: [], zoom: [[{level: package, expanded: [internal/ingest]}]], expand: [[internal/ingest]], presentation: []}
+    expectedAria:
+      - {targetId: internal/ingest, expanded: false, disclosurePresent: true, disclosureDisabled: false}
+    expectedStructure: [disclosure-outside-node, disclosure-sibling-node]
+
+  - name: canvas disclosure space expands focused elsewhere
+    surface: canvas
+    assertionsAt: before
+    initialState: *canvas_disclosure_key
+    action: {type: disclosure-key, targets: [internal/ingest], keys: [Space]}
+    expectedStates:
+      - {version: 1, presentation: canvas, selectedId: web, grain: package, expandedIds: [internal/ingest], navigatorFilter: '', navigatorFocusedId: web, viewport: null}
+    expectedLegacy: {select: [], zoom: [[{level: package, expanded: [internal/ingest]}]], expand: [[internal/ingest]], presentation: []}
+    expectedAria:
+      - {targetId: internal/ingest, expanded: false, disclosurePresent: true, disclosureDisabled: false}
+    expectedStructure: [disclosure-outside-node, disclosure-sibling-node]
+
+  - name: canvas parent double click selects then expands
+    surface: canvas
+    initialState: *canvas_parent
+    action: {type: double-click, targets: [internal], keys: []}
+    expectedStates:
+      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    expectedLegacy: {select: [[internal, *node_internal]], zoom: [[{level: project, expanded: [internal]}]], expand: [[internal]], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+
+  - name: canvas leaf double click selects once without expansion
+    surface: canvas
+    initialState: *canvas_leaf
+    action: {type: double-click, targets: [internal/ingest/pipeline.go], keys: []}
+    expectedStates:
+      - {version: 1, presentation: canvas, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+    expectedLegacy: {select: [[internal/ingest/pipeline.go, *node_pipeline]], zoom: [], expand: [], presentation: []}
+    expectedAria:
+      - {targetId: internal/ingest/pipeline.go, expanded: null, disclosurePresent: false, disclosureDisabled: false}
+    expectedStructure: []
+
+  - name: canvas enter selects immediately
+    surface: canvas
+    initialState: *canvas_parent
+    action: {type: key-sequence, targets: [internal], keys: [Enter]}
+    expectedStates:
+      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    expectedLegacy: {select: [[internal, *node_internal]], zoom: [], expand: [], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+
+  - name: canvas rejecting owner proposes selection without rendering it
+    surface: canvas
+    owner: reject
+    initialState: &reject_base {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}}
+    expectedBefore: &reject_before
+      ownerState: *reject_base
+      dom: &reject_dom_empty
+        visibleIds: [internal, solo, web]
+        pressedIds: [web]
+        grain: project
+        disclosures: [{id: internal, expanded: false}, {id: solo, expanded: false}]
+        disclosureExpandedIds: []
+        transform: 'translate(10px, 20px) scale(1)'
+        status: &empty_status {role: status, ariaLive: polite, text: ''}
+        structure: &canvas_structure {applicationRole: application, applicationLabel: code map, roleDescription: code structure map, statusCount: 1}
+    action: {type: click, targets: [internal], keys: []}
+    expectedStates:
+      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}}
+    expectedLegacy: {select: [[internal, *node_internal]], zoom: [], expand: [], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+    expectedAfter:
+      ownerState: *reject_base
+      dom:
+        visibleIds: [internal, solo, web]
+        pressedIds: [web]
+        grain: project
+        disclosures: [{id: internal, expanded: false}, {id: solo, expanded: false}]
+        disclosureExpandedIds: []
+        transform: 'translate(10px, 20px) scale(1)'
+        status: {role: status, ariaLive: polite, text: 'internal: folder · coverage 3 of 4 · 820 loc'}
+        structure: *canvas_structure
+    expectedTransformRelation: same
+
+  - name: canvas rejecting owner proposes disclosure without rendering it
+    surface: canvas
+    owner: reject
+    initialState: *reject_base
+    expectedBefore: *reject_before
+    action: {type: disclosure, targets: [internal], keys: []}
+    expectedStates:
+      - {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}}
+    expectedLegacy: {select: [], zoom: [[{level: project, expanded: [internal]}]], expand: [[internal]], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+    expectedAfter: *reject_before
+    expectedTransformRelation: same
+
+  - name: canvas rejecting owner proposes grain without rendering it
+    surface: canvas
+    owner: reject
+    initialState: *reject_base
+    expectedBefore: *reject_before
+    action: {type: grain-control, targets: [files], keys: []}
+    expectedStates:
+      - {version: 1, presentation: canvas, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}}
+    expectedLegacy: {select: [], zoom: [[{level: file, expanded: []}]], expand: [], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+    expectedAfter: *reject_before
+    expectedTransformRelation: same
+
+  - name: canvas rejecting owner proposes zoom without rendering it
+    surface: canvas
+    owner: reject
+    initialState: *reject_base
+    expectedBefore: *reject_before
+    action: {type: zoom-control, targets: [zoom in], keys: ['800', '400']}
+    expectedStates:
+      - {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1.25, panX: -87.5, panY: -25}}
+    expectedLegacy: {select: [], zoom: [], expand: [], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+    expectedAfter: *reject_before
+    expectedTransformRelation: same
+
+  - name: canvas rejecting owner proposes pan without rendering it
+    surface: canvas
+    owner: reject
+    initialState: *reject_base
+    expectedBefore: *reject_before
+    action: {type: pan, targets: [viewport], keys: ['10', '20', '30', '50']}
+    expectedStates:
+      - {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 30, panY: 50}}
+    expectedLegacy: {select: [], zoom: [], expand: [], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+    expectedAfter: *reject_before
+    expectedTransformRelation: same
+
+  - name: canvas rejecting owner ignores repeated selection
+    surface: canvas
+    owner: reject
+    initialState: &reject_selected {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}}
+    expectedBefore:
+      ownerState: *reject_selected
+      dom: &reject_selected_dom
+        visibleIds: [internal, solo, web]
+        pressedIds: [internal]
+        grain: project
+        disclosures: [{id: internal, expanded: false}, {id: solo, expanded: false}]
+        disclosureExpandedIds: []
+        transform: 'translate(10px, 20px) scale(1)'
+        status: *empty_status
+        structure: *canvas_structure
+    action: {type: click, targets: [internal], keys: []}
+    expectedStates: []
+    expectedLegacy: {select: [], zoom: [], expand: [], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+    expectedAfter:
+      ownerState: *reject_selected
+      dom:
+        visibleIds: [internal, solo, web]
+        pressedIds: [internal]
+        grain: project
+        disclosures: [{id: internal, expanded: false}, {id: solo, expanded: false}]
+        disclosureExpandedIds: []
+        transform: 'translate(10px, 20px) scale(1)'
+        status: {role: status, ariaLive: polite, text: 'internal: folder · coverage 3 of 4 · 820 loc · selected'}
+        structure: *canvas_structure
+    expectedTransformRelation: same
+
+  - name: canvas legacy selected click clears selection
+    surface: canvas
+    owner: legacy
+    initialState: {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    expectedBefore:
+      semanticState: {selectedId: internal, grain: project, expandedIds: []}
+      dom:
+        visibleIds: [internal, solo, web]
+        pressedIds: [internal]
+        grain: project
+        disclosures: [{id: internal, expanded: false}, {id: solo, expanded: false}]
+        disclosureExpandedIds: []
+        transform: &legacy_collapsed_transform 'translate(0px, 95.4146px) scale(1.2577)'
+        status: *empty_status
+        structure: *canvas_structure
+    action: {type: click, targets: [internal], keys: []}
+    expectedStates: []
+    expectedLegacy: {select: [[null, null]], zoom: [], expand: [], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+    expectedAfter:
+      semanticState: {selectedId: null, grain: project, expandedIds: []}
+      dom:
+        visibleIds: [internal, solo, web]
+        pressedIds: []
+        grain: project
+        disclosures: [{id: internal, expanded: false}, {id: solo, expanded: false}]
+        disclosureExpandedIds: []
+        transform: *legacy_collapsed_transform
+        status: {role: status, ariaLive: polite, text: 'internal: folder · coverage 3 of 4 · 820 loc'}
+        structure: *canvas_structure
+    expectedTransformRelation: same
+
+  - name: canvas legacy double click other node selects once then expands
+    surface: canvas
+    owner: legacy
+    initialState: *canvas_parent
+    expectedBefore:
+      semanticState: {selectedId: web, grain: project, expandedIds: []}
+      dom:
+        visibleIds: [internal, solo, web]
+        pressedIds: [web]
+        grain: project
+        disclosures: [{id: internal, expanded: false}, {id: solo, expanded: false}]
+        disclosureExpandedIds: []
+        transform: *legacy_collapsed_transform
+        status: *empty_status
+        structure: *canvas_structure
+    action: {type: double-click, targets: [internal], keys: []}
+    expectedStates: []
+    expectedLegacy: {select: [[internal, *node_internal]], zoom: [[{level: project, expanded: [internal]}]], expand: [[internal]], presentation: []}
+    expectedAria: []
+    expectedStructure: []
+    expectedAfter:
+      semanticState: {selectedId: internal, grain: project, expandedIds: [internal]}
+      dom:
+        visibleIds: [internal/ingest, solo, web]
+        pressedIds: []
+        grain: project
+        disclosures: [{id: internal/ingest, expanded: false}, {id: solo, expanded: false}]
+        disclosureExpandedIds: []
+        transform: 'translate(111.387px, 0px) scale(1.34507)'
+        status: {role: status, ariaLive: polite, text: 'internal: folder · coverage 3 of 4 · 820 loc · selected · expanded'}
+        structure: *canvas_structure
+    expectedTransformRelation: change

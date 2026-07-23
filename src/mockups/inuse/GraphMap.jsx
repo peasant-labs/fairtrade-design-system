@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useReducer, useState } from 'react'
 import {
   Search,
   X,
@@ -17,7 +17,7 @@ import {
   Layers,
 } from 'lucide-react'
 import { RailSection, TimeStrip, ConnectionPill, DataState, TeachingEmptyState } from '../../ui'
-import { Changes, ChangeDetail, CodeMap, CodeMapComposition } from '../../ui/graph/index.js'
+import { Changes, ChangeDetail, CodeMap, CodeMapComposition, CodeMapNavigator, createCodeMapState, reduceCodeMapState } from '../../ui/graph/index.js'
 
 /* ============================================================================
    GraphMap.jsx — peasant's code-MAP + changes git-graph, hand-rolled in the
@@ -233,7 +233,7 @@ const CODE_MAP_PAYLOAD = (() => {
   // build.go 1, web/src/map 2, Canvas.tsx 2).
   const violations = [
     { kind: 'cycle', from: 'internal/codegraph', to: 'codegraph/build.go' },
-    { kind: 'wrongway', from: 'web/src/map', to: 'map/Canvas.tsx' },
+    { kind: 'wrong_way', from: 'web/src/map', to: 'map/Canvas.tsx' },
     { kind: 'cycle', from: 'web/src/map', to: 'map/Canvas.tsx' },
   ]
 
@@ -265,16 +265,15 @@ function OutcomeDot({ outcome }) {
 
 export function MapView({ theme }) {
   void theme
-  const [selected, setSelected] = useState(null) // node id (keys NODE_DETAIL)
+  const [mapState, dispatchMap] = useReducer(reduceCodeMapState, null, () => createCodeMapState())
+  const selected = mapState.selectedId
+  const setSelected = (id) => dispatchMap(id ? { type: 'select', id } : { type: 'clear-selection' })
   const [showAll, setShowAll] = useState(false)
   const [taskFilter, setTaskFilter] = useState('')
   const [scrub, setScrub] = useState(1) // TimeStrip playhead fraction 0..1
   // MOCK connection feed — there is no backend; the toolbar button cycles the
   // state so the ConnectionPill + DataState lost-program panel can be seen live.
   const [conn, setConn] = useState('live')
-  // controlled CodeMap zoom (grain + per-node expansion) — F16: open to Folders
-  // (package) grain, same default as the peasant app.
-  const [zoom, setZoom] = useState({ level: 'package', expanded: [] })
 
   // the selected node, looked up in the ORIGINAL MAP_NODES (all grains
   // flattened) so the bespoke rail still reads recorded/files/kind/loc. ids are
@@ -354,6 +353,39 @@ export function MapView({ theme }) {
           renders its own nested `.gmp-root` frame (the shared shell); this outer
           one groups it with the page-level TimeStrip below, exactly as before. */}
       <CodeMapComposition
+        state={mapState}
+        onStateChange={(next) => dispatchMap({ type: 'replace', state: next })}
+        navigatorSlot={
+          <DataState
+            status={conn}
+            empty={false}
+            onRetry={() => setConn('live')}
+            emptyState={
+              <TeachingEmptyState
+                title="no map yet"
+                body="record a session with the local program, then the code map fills in."
+                command="peasant ingest"
+              />
+            }
+          >
+            <CodeMapNavigator
+              payload={CODE_MAP_PAYLOAD}
+              grain={mapState.grain}
+              expandedIds={mapState.expandedIds}
+              onExpandedIdsChange={(ids) => dispatchMap({ type: 'set-expanded', ids })}
+              selectedId={selected}
+              onSelect={(id) => setSelected(id)}
+              focusedId={mapState.navigatorFocusedId}
+              onFocusChange={(id) => dispatchMap({ type: 'focus', id })}
+              filter={mapState.navigatorFilter}
+              onFilterChange={(filter) => dispatchMap({ type: 'set-filter', filter })}
+              onOpenMap={(id) => {
+                dispatchMap({ type: 'open-in-map', id })
+              }}
+              ariaLabel="browse peasant code areas"
+            />
+          </DataState>
+        }
         rail={rail}
         toolbar={toolbar}
         sheetTitle="node detail"
@@ -375,10 +407,8 @@ export function MapView({ theme }) {
           >
             <CodeMap
               payload={CODE_MAP_PAYLOAD}
-              zoom={zoom}
-              onZoomChange={setZoom}
-              selectedId={selected}
-              onSelect={(id) => setSelected(id)}
+              state={mapState}
+              onStateChange={(next) => dispatchMap({ type: 'replace', state: next })}
               height={480}
               ariaLabel="peasant code map"
             />
@@ -641,10 +671,10 @@ const CHANGES_FIXTURE = {
   repoFound: true,
   defaultBranch: 'develop',
   recentCommits: [
-    { hash: 'c1d4a3', subject: 'squarify treemap', timeMs: CHANGES_NOW - 5 * H, hasSession: true },
+    { hash: 'c1d4a3', subject: 'squarify treemap', timeMs: CHANGES_NOW - 5 * H, hasSession: true, sessionIds: ['session-map'] },
     { hash: 'd14c0a', subject: 'Merge fix--kickstart-config', timeMs: CHANGES_NOW - 3 * D, hasSession: false },
     { hash: 'b7e220', subject: 'stream replay path', timeMs: CHANGES_NOW - 1 * D, hasSession: true },
-    { hash: 'a3f9c1', subject: 'Fix pipeline bug', timeMs: CHANGES_NOW - 2 * D, hasSession: true },
+    { hash: 'a3f9c1', subject: 'Fix pipeline bug', timeMs: CHANGES_NOW - 2 * D, hasSession: true, sessionIds: ['session-pipeline', 'session-debug'] },
     { hash: '8c0e41', subject: 'Bump deps', timeMs: CHANGES_NOW - 2 * D, hasSession: false },
     { hash: 'f1a920', subject: 'Add redaction tests', timeMs: CHANGES_NOW - 3 * D, hasSession: true },
   ],
@@ -652,6 +682,12 @@ const CHANGES_FIXTURE = {
     { branch: 'feat/map-review-contribute', merged: false, baseHash: 'a3f9c1', tipCommitMs: CHANGES_NOW - 5 * H, sessionCount: 2, aheadCount: 3, behindCount: 0, filesChanged: 136, taskCount: 70, newEdges: 39, removedEdges: 22, violations: 3 },
     { branch: 'fix--kickstart-config', merged: true, baseHash: 'a3f9c1', mergeCommitHash: 'd14c0a', mergedAtMs: CHANGES_NOW - 3 * D, sessionCount: 0, aheadCount: 1, behindCount: 0, filesChanged: 4, taskCount: 2, newEdges: 0, removedEdges: 0, violations: 0 },
     { branch: 'feat/experimental-cache', merged: true, reverted: true, mergedAtMs: CHANGES_NOW - 7 * D, sessionCount: 0, aheadCount: 0, behindCount: 0, filesChanged: 0, taskCount: 0, newEdges: 0, removedEdges: 0, violations: 0 },
+  ],
+  sessions: [
+    { sessionId: 'session-map', title: 'Make the code map easier to read', harness: 'claude-code', startMs: CHANGES_NOW - 6 * H },
+    { sessionId: 'session-pipeline', title: 'Repair the ingest pipeline', harness: 'codex', startMs: CHANGES_NOW - 2 * D },
+    { sessionId: 'session-debug', title: 'Trace the failed replay', harness: 'gemini-cli', startMs: CHANGES_NOW - 2 * D },
+    { sessionId: 'session-not-committed', title: 'Explore a safer cache design', harness: 'opencode', startMs: CHANGES_NOW - D },
   ],
 }
 

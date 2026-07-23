@@ -14,6 +14,7 @@
    BITE: relaxing the contract turns this file red. */
 
 /** @typedef {import('./index.js').TranscriptViewerProps} TranscriptViewerProps */
+/** @typedef {import('./index.js').TranscriptInitialPosition} TranscriptInitialPosition */
 /** @typedef {import('./index.js').ViewerCapabilities} ViewerCapabilities */
 /** @typedef {import('./index.js').ViewerCallbacks} ViewerCallbacks */
 /** @typedef {import('./index.js').TranscriptFilters} TranscriptFilters */
@@ -80,6 +81,7 @@ const controlled = {
   onRightRailOpenChange: (open) => void open,
   openTools: { t1: true },
   onOpenToolsChange: (m) => void m,
+  initialPosition: /** @type {TranscriptInitialPosition} */ ({ kind: 'turn', turnIndex: 42 }),
   activeTurn: 0,
   onActiveTurnChange: (i) => void i,
   search: '',
@@ -92,6 +94,7 @@ const controlled = {
   onShareOpenChange: (open) => void open,
   moreOpen: false,
   onMoreOpenChange: (open) => void open,
+  streamPrelude: 'host transcript controls',
 }
 void controlled
 
@@ -105,6 +108,8 @@ function _acceptViewerProps(_p) { void _p }
 function _acceptCapabilities(_c) { void _c }
 /** @param {Theme} _t */
 function _acceptTheme(_t) { void _t }
+/** @param {TranscriptInitialPosition} _p */
+function _acceptInitialPosition(_p) { void _p }
 
 /* ── (3) NEGATIVE: omitting `capabilities` is a COMPILE ERROR ─────────────────────
    The headline guarantee. `capabilities` has no `?` on TranscriptViewerProps, so a
@@ -123,6 +128,12 @@ _acceptCapabilities({ canEdit: true, canLabel: true, canContribute: true, canCha
    Guards against a stringly-typed theme leaking in. */
 // @ts-expect-error — theme is the closed 'dark' | 'light' union, not an arbitrary string
 _acceptTheme('midnight')
+
+// @ts-expect-error — a turn position requires a numeric sparse turn identity
+_acceptInitialPosition({ kind: 'turn', turnIndex: '42' })
+
+// @ts-expect-error — the initial-position union is closed
+_acceptInitialPosition({ kind: 'middle', turnIndex: 42 })
 
 /* ── (6) POSITIVE: a capability flag is genuinely boolean ─────────────────────────
    A bare read does not bite under strictNullChecks, so dereference through a use. */

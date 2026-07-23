@@ -52,6 +52,12 @@ const packed = new Set((report.files ?? []).map((f) => f.path))
 const fileCount = report.entryCount ?? report.files?.length ?? 0
 
 const problems = []
+const runtimeReact = ['react', 'react-dom'].filter((name) => Object.hasOwn(pkg.dependencies ?? {}, name))
+if (runtimeReact.length) problems.push(`React host packages incorrectly ship as runtime dependencies: ${runtimeReact.join(', ')}`)
+for (const name of ['react', 'react-dom']) {
+  if (pkg.peerDependencies?.[name] !== '>=19.0.0 <20') problems.push(`${name} peer range must be the supported React 19 contract ">=19.0.0 <20"`)
+  if (pkg.devDependencies?.[name] !== '19.2.7') problems.push(`${name} dev dependency must remain exactly pinned to 19.2.7 for reproducible package gates`)
+}
 const missing = [...targets].filter((t) => !packed.has(t))
 if (missing.length) problems.push(`exports targets absent from the packed tarball: ${missing.join(', ')}`)
 if (fileCount < FLOOR) {
@@ -81,6 +87,25 @@ if (problems.length) {
 // in finalize-lib-build.mjs). Asserted on the packed dist bytes.
 const DIST = join(ROOT, 'dist', 'lib')
 const isoProblems = []
+const initialPositionDeclaration = join(DIST, 'types', 'transcript', 'initial-position.d.ts')
+if (!existsSync(initialPositionDeclaration)) {
+  isoProblems.push('packed initial-position declaration is missing')
+} else if (!/resolveTranscriptInitialPosition[\s\S]*?position:\s*TranscriptInitialPosition \| null;/.test(readFileSync(initialPositionDeclaration, 'utf8'))) {
+  isoProblems.push('resolveTranscriptInitialPosition.position must be declared as TranscriptInitialPosition | null')
+}
+const bundledReactMarkers = [
+  'react.development.js',
+  'react.production.js',
+  '__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE',
+  '__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE',
+]
+for (const file of ['ui.js', 'graph.js', 'commons.js', 'analytics.js']) {
+  const path = join(DIST, file)
+  if (!existsSync(path)) continue
+  const text = readFileSync(path, 'utf8')
+  const marker = bundledReactMarkers.find((candidate) => text.includes(candidate))
+  if (marker) isoProblems.push(`${file} contains bundled React marker ${marker}; React must remain host-owned and external`)
+}
 for (const { surface, js, forbidden } of SURFACE_BUNDLES) {
   const path = join(DIST, js)
   if (!existsSync(path)) {

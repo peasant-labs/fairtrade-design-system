@@ -3,7 +3,7 @@
    This is the aesthetic half of the graph split: fairtrade owns every graph
    AESTHETIC, transcript-browser owns the @xyflow ENGINE. The component renders a
    single turn as a compact card; it knows NOTHING about @xyflow, topology,
-   layout, handles, pan/zoom or selection wiring — the engine host (TB's custom
+   layout, handles, pan/zoom or selection wiring — the transcript-browser engine host
    node) wraps this card with its own <Handle>s and feeds it cooked props.
 
    Props are a flat, engine-agnostic projection of the cooked TurnVM plus
@@ -24,11 +24,11 @@
        provider?     ⇐  the assistant's harness key (drives the accent colour)
 
    Role accents (a scarce left rule, the only hue on the card): you = teal,
-   subagent = mauve, assistant = its provider accent (amber fallback), error =
+   subagent = mauve, assistant = its provider accent (amber only when absent), error =
    clay (overrides). Everything else reads by ink weight + mono chrome, radius 0,
    hairline borders — the house style. */
 
-import { PROVIDER_ACCENT } from '../../ProviderIcon.jsx'
+import { providerAccent } from '../../provider-policy.js'
 
 /**
  * @typedef {import('../wire-types.js').Role} Role
@@ -54,12 +54,12 @@ import { PROVIDER_ACCENT } from '../../ProviderIcon.jsx'
  * @property {boolean} [isSearchMatch]         engine: highlighted as a search hit
  * @property {boolean} [isFilteredOut]         engine: dimmed because a filter excludes it
  * @property {boolean} [isSelected]            engine: the active/selected node
- * @property {string} [provider]               harness key (e.g. "claude-code") → assistant accent
+ * @property {import('@peasant-labs/schema').Harness} [provider] canonical harness → assistant accent
  * @property {string} [className]              extra classes appended after the base
  */
 
 /** Compact token label, matched to the mockup's `fmtTokens` so the graph footer
- *  reads identically wherever a turn card renders (mockup SVG ⇄ TB @xyflow). */
+ *  reads identically wherever a turn card renders (mockup SVG and transcript-browser @xyflow). */
 function fmtTokens(n) {
   return n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n)
 }
@@ -74,12 +74,12 @@ function chromeRole(role, agentName) {
 }
 
 /** Resolve the single accent token for the left rule. Error wins; then role;
- *  assistants take their provider accent (amber when the provider is unknown). */
+ *  assistants take their provider accent (amber only when provider is absent). */
 function accentToken({ role, agentName, provider, hasError }) {
   if (hasError) return 'clay'
   if (role === 'user') return 'teal'
   if (agentName) return 'mauve'
-  if (role === 'assistant') return PROVIDER_ACCENT[provider] || 'amber'
+  if (role === 'assistant') return provider === undefined ? 'amber' : providerAccent(provider)
   return null
 }
 

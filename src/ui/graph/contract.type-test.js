@@ -20,6 +20,8 @@
 /** @typedef {import('./index.js').ChangeDetailPayload} ChangeDetailPayload */
 /** @typedef {import('./index.js').ChangeDiffPayload} ChangeDiffPayload */
 /** @typedef {import('./index.js').CodeMapPayload} CodeMapPayload */
+/** @typedef {import('./index.js').CodeMapState} CodeMapState */
+/** @typedef {import('./index.js').CodeMapAction} CodeMapAction */
 
 import {
   MAP_NODE_KINDS,
@@ -27,7 +29,27 @@ import {
   EDGE_VIOLATION_KINDS,
   FILE_CHANGE_STATUSES,
   DIFF_LINE_KINDS,
+  CODE_MAP_STATE_VERSION,
+  createCodeMapState,
+  reduceCodeMapState,
+  deriveCodeMapView,
 } from './index.js'
+
+/** @type {CodeMapState} */
+const codeMapState = createCodeMapState({ grain: 'file', expandedIds: ['web'] })
+/** @type {1} */
+const stateVersion = CODE_MAP_STATE_VERSION
+void stateVersion
+void reduceCodeMapState(codeMapState, { type: 'open-in-map', id: 'web' })
+void deriveCodeMapView({ repoFound: true, nodes: [], structureEdges: [], violations: [] }, codeMapState)
+// @ts-expect-error — the canonical grain is a closed union
+createCodeMapState({ grain: 'directory' })
+// @ts-expect-error — viewport scale and pan coordinates are numeric
+createCodeMapState({ viewport: { scale: '1', panX: 0, panY: 0 } })
+/** @param {CodeMapAction} action */
+function acceptsCodeMapAction(action) { void action }
+// @ts-expect-error — unknown reducer actions are rejected at the public boundary
+acceptsCodeMapAction({ type: 'teleport' })
 
 /* ── (1) enum-value arrays are genuine runtime exports, typed by the union ────── */
 
@@ -66,7 +88,8 @@ const changes = {
       tipCommitMs: 1_700_000_000_000,
     },
   ],
-  recentCommits: [{ hash: 'def456', subject: 'init', timeMs: 1, hasSession: true }],
+  recentCommits: [{ hash: 'def456', subject: 'init', timeMs: 1, hasSession: true, sessionIds: ['session-1'] }],
+  sessions: [{ sessionId: 'session-1', title: 'Build the feature', harness: 'codex', startMs: 1, hasCommitBinding: true }],
 }
 void changes
 
@@ -152,11 +175,12 @@ _takesStatus('X')
 
 /* ── (8) POSITIVE: ChangeDetail carries the lifted-surface display stats ─────────
    outputTokens + filesChanged were un-carved (they back the demo's "ai wrote ≈N
-   tokens" + "N files touched"); both are present, non-optional numbers. */
+   tokens" + "N files touched"); both are present and non-optional — outputTokens
+   is the schema's wire int64 (bigint), filesChanged a plain number. */
 {
   /** @type {ChangeDetailPayload} */
   const detail = /** @type {any} */ ({})
-  /** @type {number} */
+  /** @type {bigint} */
   const tokens = detail.outputTokens
   /** @type {number} */
   const files = detail.filesChanged

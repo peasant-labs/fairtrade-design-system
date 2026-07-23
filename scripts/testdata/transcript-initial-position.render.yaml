@@ -1,0 +1,9 @@
+cases:
+  - name: source viewer mounts and positions without selecting or writing history
+    initialKind: turn
+    initialTurn: 42
+    turns: [0, 42]
+    expectedScrolls: [turn:42]
+    expectedCallbacks: []
+    expectedHistory: []
+    expectedContains: txn-app

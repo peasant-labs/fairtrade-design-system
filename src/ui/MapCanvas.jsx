@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
   Folder,
   FileCode,
@@ -8,7 +8,9 @@ import {
   TriangleAlert,
   Search,
   Check,
+  ChevronRight,
 } from 'lucide-react'
+import { CODE_MAP_GRAIN_DEPTH, CODE_MAP_VIEWPORT_SCALE, isCodeMapViewportScale } from './graph/codeMapState.js'
 import './MapCanvas.css'
 
 /* MapCanvas (.mc-*): the flagship spatial component — an interactive code-structure
@@ -33,9 +35,11 @@ import './MapCanvas.css'
    semantic zoom: a segmented control (overview / folders / files) changes which
    nodes are visible; edges LIFT to the nearest visible ancestor so coupling is never
    lost when a subtree collapses. pan = drag the canvas; zoom = the on-canvas square
-   controls or +/- keys (NEVER wheel — the page must keep scrolling over the canvas).
-   full keyboard model: roving focus across nodes (arrows move, enter selects), an
-   aria-live region naming the focused node + its coverage/violations. */
+   controls, +/- keys, or a MODIFIER-gated wheel/trackpad-pinch (ctrl/cmd+wheel,
+   anchored under the cursor) — a plain wheel is NEVER hijacked, so the page keeps
+   scrolling normally over the canvas. full keyboard model: roving focus across
+   nodes (arrows move, enter selects), an aria-live region naming the focused
+   node + its coverage/violations. */
 
 /* ------------------------------------------------------------------ geometry */
 /* px constants, lifted from peasant/layout.ts. exposed shapes stay deterministic. */
@@ -45,22 +49,68 @@ const MAX_NODE_WIDTH = 248
 const ROW_HEIGHT = 132 // > NODE_HEIGHT so orthogonal edges have a routing band
 const NODE_GAP = 28
 const PADDING = 48 // breathing room around the laid-out graph, inside the viewBox
-
+/* a row (all nodes sharing a layer) wraps into multiple stacked SHELVES once it
+   would exceed this width, instead of growing into one endless horizontal row.
+   Real projects routinely have 20-40+ siblings at a single tree depth (a repo's
+   top-level folders, or a package's files) -- confirmed against real projects in
+   the field: even the simplest "overview" zoom (root folders only) can overflow
+   a normal viewport several times over with no wrap. Wrapping keeps the map
+   readable by growing vertically (more shelves) instead of horizontally (one
+   unreadable row); this constant is independent of any live viewport size (the
+   canvas is pannable/zoomable) -- it is a fixed, deterministic packing width so
+   layout stays a pure function of (nodes, grain, expanded), not window size. */
+const SHELF_MAX_WIDTH = 1200
 /* manual-zoom clamp (the inner-group scale). fit picks a scale inside this band. */
-const MIN_SCALE = 0.35
-const MAX_SCALE = 2.4
 const ZOOM_STEP = 1.25 // multiplicative per +/- press
 
-/* the three semantic-zoom grains. `depth` is the base tree depth rendered before any
-   per-node expansion: overview shows only roots (folders), folders opens one level,
-   files opens everything. (peasant's BASE_DEPTH, simplified to a flat folder/file
-   tree.) */
+/* the three semantic-zoom grains, in the CANVAS vocabulary (overview/folders/
+   files) vs. codeMapState's STATE vocabulary (project/package/file) -- the
+   same three depths, just named for this component's own toolbar. */
+const CANVAS_GRAIN_TO_STATE_GRAIN = { overview: 'project', folders: 'package', files: 'file' }
+// SINGLE SOURCE OF TRUTH for the depth rule: derived from codeMapState.js's
+// CODE_MAP_GRAIN_DEPTH via the mapping above, not a second hand-maintained
+// copy. This is the uncontrolled/legacy path's own depth cap -- reached
+// whenever no canonicalState is supplied (Storybook, or any caller that
+// hasn't adopted the canonical state contract; CodeMap.jsx falls back to
+// this exact path whenever its `state` prop is absent) -- so it must track
+// the canonical rule exactly, not just "happen to agree" with it. `files`
+// previously hardcoded `Infinity` here independently of the canonical
+// `file: 1` cap; that drift alone reproduced the "one very long row"
+// regression for any consumer on the uncontrolled path even after the
+// canonical path was fixed.
+const GRAIN_DEPTH = Object.fromEntries(
+  Object.entries(CANVAS_GRAIN_TO_STATE_GRAIN).map(([canvasGrain, stateGrain]) => [canvasGrain, CODE_MAP_GRAIN_DEPTH[stateGrain]]),
+)
+/* `depth` is the base tree depth rendered before any per-node expansion:
+   overview shows only roots (folders), folders opens one level, files opens
+   one level too (deeper only via explicit expansion) -- see GRAIN_DEPTH
+   above, the actual source of truth; this array only drives the toolbar's
+   labels/order. */
 const GRAINS = [
-  { id: 'overview', label: 'overview', depth: 0 },
-  { id: 'folders', label: 'folders', depth: 1 },
-  { id: 'files', label: 'files', depth: Infinity },
+  { id: 'overview', label: 'overview' },
+  { id: 'folders', label: 'folders' },
+  { id: 'files', label: 'files' },
 ]
-const GRAIN_DEPTH = { overview: 0, folders: 1, files: Infinity }
+
+/* how long a released drag/zoom's local preview waits for the canonicalControlled
+   owner to reconcile the proposal (see the `viewport` prop doc) before giving up
+   and falling back to the canonical prop unconditionally. Long enough to absorb
+   a same-tick/next-render `useState` owner (the reference case) or a modest
+   debounce; short enough that a non-reconciling owner's snap-back reads as "my
+   change didn't stick" rather than a multi-second hang. */
+const DRAG_RECONCILE_TIMEOUT_MS = 500
+
+/* Belt-and-braces staleness bound on dragRef itself (distinct from
+   DRAG_RECONCILE_TIMEOUT_MS above, which bounds the RENDER preview after a
+   drag ends). onPointerDown's single-pointer guard ignores a second pointer
+   while dragRef is populated; onLostPointerCapture is the real, spec-
+   guaranteed safety net for a pointer whose up/cancel never arrives, but
+   this timeout is a second, independent line of defense against the same
+   "permanently wedged" failure mode should capture itself never have been
+   established (e.g. the viewport ref was somehow not yet mounted). Long
+   enough that it can never fire during a real human drag; short enough that
+   a genuinely stuck ref recovers well within a single user session. */
+const DRAG_STALE_TIMEOUT_MS = 10_000
 
 /* ------------------------------------------------------------------ intensity */
 /* coverage 0..4 -> the monochrome fill ramp (peasant/intensity.ts NODE_FILL idiom,
@@ -103,10 +153,12 @@ function buildTree(nodes) {
     byId.set(n.id, { ...n, _order: order })
   })
   const children = new Map()
+  const parentIdByChild = new Map()
   const roots = []
   for (const n of byId.values()) {
     const parent = n.parent && byId.has(n.parent) ? n.parent : null
     if (parent) {
+      parentIdByChild.set(n.id, parent)
       const list = children.get(parent)
       if (list) list.push(n)
       else children.set(parent, [n])
@@ -116,29 +168,45 @@ function buildTree(nodes) {
   }
   for (const list of children.values()) list.sort(compareOrder)
   roots.sort(compareOrder)
-  return { byId, children, roots }
-}
-
-/* depth of every node from its root (roots = 0). drives the grain's semantic-zoom
-   threshold (visibleNodes below) — that is a pure tree-structure question and stays
-   depth-based regardless of `layer`. */
-function depthOf(node, byId) {
-  let d = 0
-  let cur = node
-  while (cur && cur.parent && byId.has(cur.parent)) {
-    cur = byId.get(cur.parent)
-    d += 1
+  const depthById = new Map()
+  const orderedIds = []
+  const visit = (node, depth) => {
+    depthById.set(node.id, depth)
+    orderedIds.push(node.id)
+    for (const child of children.get(node.id) ?? []) visit(child, depth + 1)
   }
-  return d
+  for (const root of roots) visit(root, 0)
+  return { byId, children, roots, parentIdByChild, depthById, orderedIds, canonical: false }
 }
 
-/* the ROW a node lays out in. Prefers the caller's explicit `layer` (the backend's
-   deterministic layer/order contract) so real maps position by the server's dependency
-   rows even when they diverge from parent-chain depth (e.g. a node reparented for
-   display purposes, or a layer that intentionally skips a depth). Falls back to
-   `depthOf` for data with no `layer` (mock/story fixtures, older payloads). */
-function layerOf(node, byId) {
-  return Number.isFinite(node.layer) ? node.layer : depthOf(node, byId)
+/* The unified code-map path supplies hierarchy that was already validated and
+   ordered by deriveCodeMapView. This adapter only joins those IDs to the cooked
+   canvas nodes; it does not rediscover parentage or ordering. */
+function treeFromHierarchy(nodes, hierarchy) {
+  const orderById = new Map(hierarchy.orderedIds.map((id, index) => [id, index]))
+  const byId = new Map(nodes.map((node) => [node.id, { ...node, _order: orderById.get(node.id) ?? Number.MAX_SAFE_INTEGER }]))
+  const children = new Map()
+  const parentIdByChild = new Map()
+  for (const [parent, ids] of Object.entries(hierarchy.childIdsByParent)) {
+    children.set(parent, ids.map((id) => byId.get(id)).filter(Boolean))
+    for (const id of ids) parentIdByChild.set(id, parent)
+  }
+  return {
+    byId,
+    children,
+    roots: hierarchy.rootIds.map((id) => byId.get(id)).filter(Boolean),
+    parentIdByChild,
+    depthById: new Map(Object.entries(hierarchy.depthById)),
+    orderedIds: [...hierarchy.orderedIds],
+    canonical: true,
+  }
+}
+
+/* Canonical state owns layout depth. Raw `layer` remains a legacy-only contract for
+   callers that do not supply a derived hierarchy. */
+function layerOf(node, tree) {
+  if (tree.canonical) return tree.depthById.get(node.id) ?? 0
+  return Number.isFinite(node.layer) ? node.layer : tree.depthById.get(node.id) ?? 0
 }
 
 /* which nodes render at the current grain + expansion set. a node descends (shows
@@ -162,7 +230,7 @@ function visibleNodes(tree, grainDepth, expanded) {
 /* layer/order -> x/y + a LOC-scaled width, in the fixed viewBox space. distinct
    depths present among the visible nodes compact to consecutive rows (no empty
    bands), each row centred against the widest. (peasant/computePositions.) */
-function layout(visible, byId) {
+function layout(visible, tree) {
   if (visible.length === 0) return { positioned: [], width: 0, height: 0 }
 
   let maxLoc = 0
@@ -177,7 +245,7 @@ function layout(visible, byId) {
   // within row by (order, id) — see layerOf/compareOrder.
   const rows = new Map()
   for (const n of visible) {
-    const d = layerOf(n, byId)
+    const d = layerOf(n, tree)
     const row = rows.get(d)
     if (row) row.push(n)
     else rows.set(d, [n])
@@ -187,23 +255,59 @@ function layout(visible, byId) {
 
   const rowWidth = (row) =>
     row.reduce((s, n) => s + widthOf(n), 0) + NODE_GAP * (row.length - 1)
-  let maxRowWidth = 0
-  for (const d of depths) maxRowWidth = Math.max(maxRowWidth, rowWidth(rows.get(d)))
 
-  const positioned = []
-  depths.forEach((d, rowIndex) => {
-    const row = rows.get(d)
-    let x = PADDING + (maxRowWidth - rowWidth(row)) / 2
-    const y = PADDING + rowIndex * ROW_HEIGHT
+  // pack each layer's (already order-sorted) siblings into shelves: a greedy
+  // left-to-right fill that starts a new shelf once the next node would push
+  // the running width past SHELF_MAX_WIDTH. Deterministic (depends only on the
+  // sorted row + fixed widths/gap), and a shelf always holds AT LEAST one node
+  // (a single very-wide node never gets stuck / dropped). A row that already
+  // fits in one shelf (the common case for small trees) produces exactly one
+  // shelf, so this is a superset of the prior one-row-per-depth behavior.
+  const packShelves = (row) => {
+    const shelves = []
+    let current = []
+    let currentWidth = 0
     for (const n of row) {
       const w = widthOf(n)
-      positioned.push({ node: n, x, y, w, h: NODE_HEIGHT })
-      x += w + NODE_GAP
+      const additional = current.length === 0 ? w : w + NODE_GAP
+      if (current.length > 0 && currentWidth + additional > SHELF_MAX_WIDTH) {
+        shelves.push(current)
+        current = [n]
+        currentWidth = w
+      } else {
+        current.push(n)
+        currentWidth += additional
+      }
     }
-  })
+    if (current.length > 0) shelves.push(current)
+    return shelves
+  }
+
+  const shelvesByDepth = new Map()
+  for (const d of depths) shelvesByDepth.set(d, packShelves(rows.get(d)))
+
+  let maxRowWidth = 0
+  for (const d of depths) {
+    for (const shelf of shelvesByDepth.get(d)) maxRowWidth = Math.max(maxRowWidth, rowWidth(shelf))
+  }
+
+  const positioned = []
+  let shelfIndex = 0
+  for (const d of depths) {
+    for (const shelf of shelvesByDepth.get(d)) {
+      let x = PADDING + (maxRowWidth - rowWidth(shelf)) / 2
+      const y = PADDING + shelfIndex * ROW_HEIGHT
+      for (const n of shelf) {
+        const w = widthOf(n)
+        positioned.push({ node: n, x, y, w, h: NODE_HEIGHT })
+        x += w + NODE_GAP
+      }
+      shelfIndex += 1
+    }
+  }
 
   const width = maxRowWidth + PADDING * 2
-  const height = (depths.length - 1) * ROW_HEIGHT + NODE_HEIGHT + PADDING * 2
+  const height = (shelfIndex - 1) * ROW_HEIGHT + NODE_HEIGHT + PADDING * 2
   return { positioned, width, height }
 }
 
@@ -211,14 +315,13 @@ function layout(visible, byId) {
 /* walk an id up its parent chain to the nearest VISIBLE ancestor (memoised). this is
    what makes collapsed coupling survive: a file->file edge under two collapsed
    folders becomes a folder->folder edge. (peasant/makeAncestorResolver.) */
-function makeResolver(byId, visibleIds) {
+function makeResolver(parentIdByChild, visibleIds) {
   const memo = new Map()
   return (id) => {
     if (memo.has(id)) return memo.get(id)
     let cur = id
     while (cur !== undefined && cur !== null && !visibleIds.has(cur)) {
-      const n = byId.get(cur)
-      cur = n ? n.parent || null : null
+      cur = parentIdByChild.get(cur) ?? null
     }
     memo.set(id, cur ?? null)
     return cur ?? null
@@ -228,8 +331,8 @@ function makeResolver(byId, visibleIds) {
 /* aggregate edges up to visible ancestor pairs, summing weight. intra-aggregate
    edges (both ends collapse into the same node) and unknown ends drop. deterministic
    order. (peasant/aggregateEdges.) */
-function aggregateEdges(edges, byId, visibleIds) {
-  const resolve = makeResolver(byId, visibleIds)
+function aggregateEdges(edges, parentIdByChild, visibleIds) {
+  const resolve = makeResolver(parentIdByChild, visibleIds)
   const acc = new Map()
   for (const e of edges) {
     const from = resolve(e.from)
@@ -258,8 +361,8 @@ function aggregateEdges(edges, byId, visibleIds) {
 /* per-visible-node count of violations whose owning node is hidden inside it — so a
    violation buried in a collapsed subtree still badges the visible aggregate (the
    alarm never silently vanishes). a node's own violations always count. */
-function aggregateViolations(nodes, byId, visibleIds) {
-  const resolve = makeResolver(byId, visibleIds)
+function aggregateViolations(nodes, parentIdByChild, visibleIds) {
+  const resolve = makeResolver(parentIdByChild, visibleIds)
   const counts = new Map()
   for (const n of nodes) {
     const v = Math.max(0, Number(n.violations) || 0)
@@ -342,7 +445,8 @@ function nearestAcrossRows(positioned, cur, dir) {
 
 /**
  * MapCanvas — an interactive code-structure map. Pan (drag), zoom (square controls /
- * +/- keys, never wheel), semantic zoom (overview / folders / files) with edge
+ * +/- keys / ctrl-or-cmd+wheel — a plain wheel always just scrolls the page),
+ * semantic zoom (overview / folders / files) with edge
  * ancestor-lifting, a minimap, and a node search combobox. Square metric-encoded
  * nodes (width ∝ LOC, monochrome coverage fill, folder/file icon, amber selection +
  * marker, clay violation badge) and square orthogonal edges (solid structure /
@@ -353,6 +457,8 @@ function nearestAcrossRows(positioned, cur, dir) {
  * @param {{nodes: MapNode[], edges?: MapEdge[]}} [props.data]   the graph
  * @param {'overview'|'folders'|'files'} [props.grain='folders'] initial semantic zoom
  * @param {Iterable<string>} [props.expandedIds]                 expanded node ids
+ * @param {Iterable<string>} [props.visibleIds]                  canonical derived visible node ids
+ * @param {import('./graph/codeMapState.js').CodeMapHierarchy} [props.hierarchy] canonical validated hierarchy
  * @param {string|null} [props.selectedId]                       selected node id
  * @param {Iterable<string>} [props.highlightedIds]              host hover/relay ids
  * @param {Record<string,'new'|'removed'>} [props.nodeDeltas]    per-node review deltas
@@ -364,11 +470,39 @@ function nearestAcrossRows(positioned, cur, dir) {
  * @param {number|string} [props.height=520]                     canvas height
  * @param {string} [props.ariaLabel='code map']                  application label
  * @param {string} [props.className]                             extra container class
+ * @param {{scale:number, panX:number, panY:number}|null} [props.viewport] controlled/restorable spatial viewport.
+ *   In `canonicalControlled` mode this is the SOLE source of truth once a
+ *   gesture ends: MapCanvas renders it directly and does not keep its own
+ *   copy. CONTRACT: when a pan/zoom gesture ends, MapCanvas calls
+ *   `onViewportChange`/`onStateAction` with the proposed viewport, and the
+ *   owner is expected to feed that value straight back through this prop
+ *   PROMPTLY (a same-tick/next-render `useState` update, as peasant's real
+ *   integration does, is the reference case — not a debounce, network
+ *   round-trip, or anything else that can take an unbounded amount of time).
+ *   During the gesture itself MapCanvas tracks the pointer locally so the
+ *   drag/zoom stays smooth without waiting on this round-trip; it holds that
+ *   local preview for up to ~500ms after the gesture ends waiting for
+ *   `viewport` to reflect (or nearly reflect — the owner may legitimately
+ *   clamp scale/pan bounds) the proposal, THEN falls back to whatever this
+ *   prop says. An owner that never updates `viewport` in response (rejects
+ *   the change, or simply never wires the callback) will see the gesture
+ *   held for that ~500ms window and then discarded — a visible snap-back to
+ *   the pre-gesture position, not a smooth revert. An owner that reconciles
+ *   slower than ~500ms (e.g. a debounce or a network-backed proposal) will
+ *   see the SAME snap-back-then-jump-to-late-value symptom the pointer-drag
+ *   fix in this file exists to prevent — reconcile synchronously.
+ * @param {(viewport:{scale:number, panX:number, panY:number})=>void} [props.onViewportChange]
+ * @param {(action:import('./graph/codeMapState.js').CodeMapAction)=>void} [props.onStateAction] one semantic canvas gesture
+ * @param {boolean} [props.canonicalControlled=false] canonical values render directly; gestures emit proposals only.
+ *   See the `viewport` prop doc above for the synchronous-reconciliation
+ *   contract this mode requires of its owner.
  */
 export default function MapCanvas({
   data = { nodes: [], edges: [] },
   grain: grainProp = 'folders',
   expandedIds,
+  visibleIds: canonicalVisibleIds,
+  hierarchy: canonicalHierarchy,
   selectedId: selectedIdProp,
   highlightedIds,
   nodeDeltas = {},
@@ -380,6 +514,10 @@ export default function MapCanvas({
   height = 520,
   ariaLabel = 'code map',
   className = '',
+  viewport,
+  onViewportChange,
+  onStateAction,
+  canonicalControlled = false,
 }) {
   const nodes = data?.nodes ?? []
   const edges = data?.edges ?? []
@@ -389,7 +527,7 @@ export default function MapCanvas({
   const listId = `${baseId}-list`
 
   /* ----- view state ----- */
-  const [grain, setGrain] = useState(
+  const [localGrain, setLocalGrain] = useState(
     GRAIN_DEPTH[grainProp] !== undefined ? grainProp : 'folders'
   )
   // initialise synchronously from the controlled `expandedIds` prop (matching
@@ -397,58 +535,203 @@ export default function MapCanvas({
   // just renders after the sync effect runs post-mount. Matters for SSR/initial
   // paint (the effect never runs server-side) and avoids a one-frame flash of
   // the collapsed grain-base tree before the effect widens it.
-  const [expanded, setExpanded] = useState(() => toIdSet(expandedIds))
-  const [selectedId, setSelectedId] = useState(selectedIdProp ?? null)
+  const [localExpanded, setLocalExpanded] = useState(() => toIdSet(expandedIds))
+  const [localSelectedId, setLocalSelectedId] = useState(selectedIdProp ?? null)
   const [focusedId, setFocusedId] = useState(null)
-  const [scale, setScale] = useState(1)
-  const [pan, setPan] = useState({ x: 0, y: 0 }) // translate of the inner group, px
+  const [localScale, setLocalScale] = useState(() => validScale(viewport?.scale) ? viewport.scale : 1)
+  const [localPan, setLocalPan] = useState(() => ({
+    x: finiteNumber(viewport?.panX, 0),
+    y: finiteNumber(viewport?.panY, 0),
+  })) // translate of the inner group, px
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
 
   const viewportRef = useRef(null)
-  const dragRef = useRef(null) // { startX, startY, panX, panY, moved }
+  const dragRef = useRef(null) // { startX, startY, panX, panY, moved, nextPan }
+  // Live pan/scale while a drag gesture is in progress, in CANONICAL-CONTROLLED
+  // mode only. Canonical mode renders `scale`/`pan` straight from the owner's
+  // `viewport` prop so a proposal round-trip stays authoritative — but a
+  // continuous gesture (pointer drag) can't wait a render for that round-trip
+  // without visibly stalling: onPointerMove used to skip applying anything at
+  // all in this mode, so the canvas didn't move until pointerup. This preview
+  // is the local-first half of "local-first with reconciliation on release":
+  // it tracks the pointer every frame; the owner still only gets ONE `set-
+  // viewport` proposal, on release (unchanged), and once that reconciles the
+  // preview is cleared so the canonical prop takes back over.
+  const [dragPreview, setDragPreview] = useState(null)
+  // Bounded wait for the owner to reconcile a just-released proposal before
+  // dragPreview gives up control back to the canonical prop unconditionally.
+  // See DRAG_RECONCILE_TIMEOUT_MS below for why this exists.
+  const reconcileTimerRef = useRef(null)
   const didInitFit = useRef(false)
+  const preserveRestoredViewport = useRef(viewport !== undefined && viewport !== null)
+  const initialViewportKey = viewport && validScale(viewport.scale)
+    ? `${viewport.scale}|${finiteNumber(viewport.panX, 0)}|${finiteNumber(viewport.panY, 0)}`
+    : ''
+  const reportedViewportRef = useRef(initialViewportKey)
+  const hydratedViewportKeyRef = useRef(initialViewportKey)
+  const userViewportChangeRef = useRef(false)
   const grainPropRef = useRef(grainProp)
   const selectedIdPropRef = useRef(selectedIdProp)
   // live mirrors of scale/pan so callbacks can read the latest values without a
   // nested-setState (calling setPan inside a setScale updater warns in StrictMode).
+  const expandedIdsKey = idsKey(expandedIds)
+  const highlightedIdsKey = idsKey(highlightedIds)
+  const grain = canonicalControlled
+    ? GRAIN_DEPTH[grainProp] !== undefined ? grainProp : 'folders'
+    : localGrain
+  const expanded = useMemo(
+    () => canonicalControlled ? toIdSet(expandedIds) : localExpanded,
+    [canonicalControlled, expandedIdsKey, localExpanded],
+  )
+  const selectedId = canonicalControlled ? selectedIdProp ?? null : localSelectedId
+  const hasCanonicalViewport = canonicalControlled && viewport !== null && viewport !== undefined && validScale(viewport.scale)
+  // The in-gesture preview wins over the canonical prop so a drag tracks the
+  // pointer immediately; once released (dragPreview cleared) the canonical
+  // prop is authoritative again.
+  const scale = dragPreview ? dragPreview.scale : hasCanonicalViewport ? viewport.scale : localScale
+  const pan = dragPreview
+    ? { x: dragPreview.panX, y: dragPreview.panY }
+    : hasCanonicalViewport
+      ? { x: finiteNumber(viewport.panX, 0), y: finiteNumber(viewport.panY, 0) }
+      : localPan
   const scaleRef = useRef(scale)
   const panRef = useRef(pan)
   scaleRef.current = scale
   panRef.current = pan
 
-  const expandedIdsKey = idsKey(expandedIds)
-  const highlightedIdsKey = idsKey(highlightedIds)
+  // Reconcile (or time out) a released drag/zoom's local preview against the
+  // canonicalControlled owner's viewport prop. onPointerUp sets dragPreview to
+  // the proposed value and emits ONE proposal; this effect is what actually
+  // releases dragPreview — either because the owner's `viewport` prop now
+  // reflects that proposal (the common case: a synchronous owner reconciles
+  // within a render or two), or, failing that, after DRAG_RECONCILE_TIMEOUT_MS
+  // — so an owner that clamps to a different value, rejects the change, or
+  // never wires the callback still gets control back instead of pinning the
+  // preview forever (see the `viewport` prop doc for the contract this
+  // assumes of the owner).
+  useEffect(() => {
+    if (!dragPreview) return undefined
+    // Only ever (re-)arm the reconcile-or-timeout window once the gesture is
+    // actually over — i.e. dragRef has been cleared by onPointerUp/abortDrag.
+    // This effect also reruns on every onPointerMove-driven dragPreview update
+    // WHILE the gesture is still active (dragRef.current still set); gating on
+    // that is what stops a normal in-gesture PAUSE (pointer held down, simply
+    // not moving for a beat) from racing this timer and snapping the preview
+    // back to a stale canonical position mid-drag, then resuming on the next
+    // move — a real regression a user pausing a drag would actually hit.
+    // onPointerUp forces a fresh dragPreview object at release specifically so
+    // this effect reruns (and this gate then reads false) exactly once the
+    // gesture ends, restoring the original release-time reconcile/timeout.
+    if (dragRef.current) return undefined
+    const reconciled = hasCanonicalViewport
+      && viewport.scale === dragPreview.scale
+      && finiteNumber(viewport.panX, 0) === dragPreview.panX
+      && finiteNumber(viewport.panY, 0) === dragPreview.panY
+    if (reconciled) {
+      setDragPreview(null)
+      return undefined
+    }
+    reconcileTimerRef.current = setTimeout(() => setDragPreview(null), DRAG_RECONCILE_TIMEOUT_MS)
+    return () => clearTimeout(reconcileTimerRef.current)
+  }, [dragPreview, hasCanonicalViewport, viewport?.scale, viewport?.panX, viewport?.panY])
 
   useEffect(() => {
+    if (canonicalControlled) return
     if (grainProp === grainPropRef.current) return
     grainPropRef.current = grainProp
-    if (GRAIN_DEPTH[grainProp] !== undefined) setGrain(grainProp)
-  }, [grainProp])
+    if (GRAIN_DEPTH[grainProp] !== undefined) setLocalGrain(grainProp)
+  }, [canonicalControlled, grainProp])
 
   useEffect(() => {
-    if (expandedIds !== undefined) setExpanded(toIdSet(expandedIds))
+    if (!canonicalControlled && expandedIds !== undefined) setLocalExpanded(toIdSet(expandedIds))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expandedIdsKey])
+  }, [canonicalControlled, expandedIdsKey])
 
   useEffect(() => {
+    if (canonicalControlled) return
     if (selectedIdProp === selectedIdPropRef.current) return
     selectedIdPropRef.current = selectedIdProp
-    if (selectedIdProp !== undefined) setSelectedId(selectedIdProp)
-  }, [selectedIdProp])
+    if (selectedIdProp !== undefined) setLocalSelectedId(selectedIdProp)
+  }, [canonicalControlled, selectedIdProp])
+
+  useEffect(() => {
+    if (canonicalControlled) {
+      if (!viewport && hydratedViewportKeyRef.current !== '') {
+        hydratedViewportKeyRef.current = ''
+        preserveRestoredViewport.current = false
+        didInitFit.current = false
+        setLocalScale(1)
+        setLocalPan({ x: 0, y: 0 })
+      } else if (viewport && validScale(viewport.scale)) {
+        // The canonical `viewport` PROP is a fresh object literal on every
+        // derive (see CodeMap.jsx / deriveCodeMapView), even when its VALUE
+        // is unchanged -- e.g. a reducer action that only touched
+        // expandedIds, not the viewport, still produces a new `{...}` object
+        // downstream. Without this value-equality guard (already present in
+        // the non-canonical branch below), that reference churn alone would
+        // re-arm preserveRestoredViewport on every unrelated state change,
+        // permanently swallowing the very next visible-set-driven auto-fit
+        // (a collapse right after a descent-triggered fit, for example) --
+        // found via real-app verification of the descent-feedback breadcrumb
+        // (collapsing back out silently kept the zoomed-in transform).
+        const key = `${viewport.scale}|${finiteNumber(viewport.panX, 0)}|${finiteNumber(viewport.panY, 0)}`
+        if (key !== hydratedViewportKeyRef.current) {
+          hydratedViewportKeyRef.current = key
+          preserveRestoredViewport.current = true
+        }
+      }
+      return
+    }
+    if (!viewport) {
+      if (hydratedViewportKeyRef.current === '') return
+      hydratedViewportKeyRef.current = ''
+      reportedViewportRef.current = '1|0|0'
+      preserveRestoredViewport.current = false
+      setLocalScale(1)
+      setLocalPan({ x: 0, y: 0 })
+      return
+    }
+    if (!validScale(viewport.scale)) return
+    const key = `${viewport.scale}|${finiteNumber(viewport.panX, 0)}|${finiteNumber(viewport.panY, 0)}`
+    if (key === hydratedViewportKeyRef.current) return
+    hydratedViewportKeyRef.current = key
+    preserveRestoredViewport.current = true
+    reportedViewportRef.current = key
+    setLocalScale(viewport.scale)
+    setLocalPan({ x: finiteNumber(viewport.panX, 0), y: finiteNumber(viewport.panY, 0) })
+  }, [canonicalControlled, viewport, viewport?.scale, viewport?.panX, viewport?.panY])
+
+  useEffect(() => {
+    if (canonicalControlled) return
+    if (!onViewportChange && !onStateAction) return
+    const key = `${scale}|${pan.x}|${pan.y}`
+    if (reportedViewportRef.current === key) return
+    reportedViewportRef.current = key
+    onViewportChange?.({ scale, panX: pan.x, panY: pan.y })
+    if (userViewportChangeRef.current) {
+      userViewportChangeRef.current = false
+      onStateAction?.({ type: 'set-viewport', viewport: { scale, panX: pan.x, panY: pan.y } })
+    }
+  }, [canonicalControlled, onStateAction, onViewportChange, pan.x, pan.y, scale])
 
   /* ----- derived: tree, visible set, layout, edges, violations ----- */
-  const tree = useMemo(() => buildTree(nodes), [nodes])
-
-  const visible = useMemo(
-    () => visibleNodes(tree, GRAIN_DEPTH[grain], expanded),
-    [tree, grain, expanded]
+  const tree = useMemo(
+    () => canonicalHierarchy ? treeFromHierarchy(nodes, canonicalHierarchy) : buildTree(nodes),
+    [nodes, canonicalHierarchy],
   )
+
+  const canonicalVisibleKey = idsKey(canonicalVisibleIds)
+  const visible = useMemo(() => {
+    if (canonicalVisibleIds === undefined) return visibleNodes(tree, GRAIN_DEPTH[grain], expanded)
+    return Array.from(canonicalVisibleIds, (id) => tree.byId.get(id)).filter(Boolean)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tree, grain, expanded, canonicalVisibleKey])
   const visibleIds = useMemo(() => new Set(visible.map((n) => n.id)), [visible])
 
   const { positioned, width: graphW, height: graphH } = useMemo(
-    () => layout(visible, tree.byId),
-    [visible, tree.byId]
+    () => layout(visible, tree),
+    [visible, tree]
   )
   const posById = useMemo(() => {
     const m = new Map()
@@ -463,21 +746,21 @@ export default function MapCanvas({
   }, [tree])
 
   const liftedEdges = useMemo(
-    () => aggregateEdges(edges, tree.byId, visibleIds),
-    [edges, tree.byId, visibleIds]
+    () => aggregateEdges(edges, tree.parentIdByChild, visibleIds),
+    [edges, tree.parentIdByChild, visibleIds]
   )
   const maxWeight = useMemo(
     () => liftedEdges.reduce((m, e) => Math.max(m, e.weight), 1),
     [liftedEdges]
   )
   const violationCounts = useMemo(
-    () => aggregateViolations(nodes, tree.byId, visibleIds),
-    [nodes, tree.byId, visibleIds]
+    () => aggregateViolations(nodes, tree.parentIdByChild, visibleIds),
+    [nodes, tree.parentIdByChild, visibleIds]
   )
   const highlightedVisibleIds = useMemo(() => {
     const source = toIdSet(highlightedIds)
     if (source.size === 0) return source
-    const resolve = makeResolver(tree.byId, visibleIds)
+    const resolve = makeResolver(tree.parentIdByChild, visibleIds)
     const out = new Set()
     for (const id of source) {
       const visibleId = resolve(id)
@@ -485,7 +768,7 @@ export default function MapCanvas({
     }
     return out
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [highlightedIdsKey, tree.byId, visibleIds])
+  }, [highlightedIdsKey, tree.parentIdByChild, visibleIds])
 
   /* ----- search matches (a path-substring combobox) ----- */
   const matches = useMemo(() => {
@@ -496,30 +779,136 @@ export default function MapCanvas({
       .slice(0, 8)
   }, [nodes, query])
 
+  const emitViewportProposal = useCallback((next) => {
+    onViewportChange?.(next)
+    onStateAction?.({ type: 'set-viewport', viewport: next })
+  }, [onStateAction, onViewportChange])
+
+  const applyViewport = useCallback((next, publish) => {
+    if (canonicalControlled && publish) {
+      emitViewportProposal(next)
+      return
+    }
+    if (publish) userViewportChangeRef.current = true
+    setLocalScale(next.scale)
+    setLocalPan({ x: next.panX, y: next.panY })
+  }, [canonicalControlled, emitViewportProposal])
+
   /* ----- fit: pick the scale + pan that frames the whole graph, clamped ----- */
-  const fit = useCallback(() => {
+  const fit = useCallback((publish = false) => {
     const vp = viewportRef.current
     if (!vp || graphW <= 0 || graphH <= 0) return
     const vw = vp.clientWidth
     const vh = vp.clientHeight
     if (vw <= 0 || vh <= 0) return
     const raw = Math.min(vw / graphW, vh / graphH)
-    const next = Math.max(MIN_SCALE, Math.min(MAX_SCALE, raw))
-    setScale(next)
-    setPan({ x: (vw - graphW * next) / 2, y: (vh - graphH * next) / 2 })
-  }, [graphW, graphH])
+    const next = Math.max(CODE_MAP_VIEWPORT_SCALE.min, Math.min(CODE_MAP_VIEWPORT_SCALE.max, raw))
+    applyViewport({ scale: next, panX: (vw - graphW * next) / 2, panY: (vh - graphH * next) / 2 }, publish)
+  }, [applyViewport, graphW, graphH])
+
+  /* ----- fit scoped to a SUBSET of nodes (a just-opened folder's own subtree),
+     not the whole graph. Returns true if it found geometry to frame, false if
+     the caller should fall back to fit(). Reuses the same applyViewport path
+     as fit()/zoomBy -- no new viewport-ownership semantics. */
+  const fitToIds = useCallback((ids, publish = false) => {
+    const vp = viewportRef.current
+    if (!vp) return false
+    const vw = vp.clientWidth
+    const vh = vp.clientHeight
+    if (vw <= 0 || vh <= 0) return false
+    const subset = positioned.filter((p) => ids.has(p.node.id))
+    if (subset.length === 0) return false
+    const minX = Math.min(...subset.map((p) => p.x))
+    const minY = Math.min(...subset.map((p) => p.y))
+    const maxX = Math.max(...subset.map((p) => p.x + p.w))
+    const maxY = Math.max(...subset.map((p) => p.y + p.h))
+    const bw = maxX - minX
+    const bh = maxY - minY
+    if (bw <= 0 || bh <= 0) return false
+    const raw = Math.min(vw / bw, vh / bh)
+    const next = Math.max(CODE_MAP_VIEWPORT_SCALE.min, Math.min(CODE_MAP_VIEWPORT_SCALE.max, raw))
+    applyViewport({
+      scale: next,
+      panX: vw / 2 - (minX + bw / 2) * next,
+      panY: vh / 2 - (minY + bh / 2) * next,
+    }, publish)
+    return true
+  }, [applyViewport, positioned])
+
+  // The transform is deliberately NOT transitioned during drag/zoom (it must
+  // track the pointer/wheel 1:1 with no lag), but a DISCRETE, programmatic
+  // descent-fit reads better with a brief eased transition -- so this class
+  // is applied only for the short window around that one transition, timed
+  // to the CSS duration, then removed (CSS itself no-ops the transition
+  // under prefers-reduced-motion, so this class is inert there too).
+  const [autoFitAnimating, setAutoFitAnimating] = useState(false)
+  useEffect(() => {
+    if (!autoFitAnimating) return undefined
+    const id = window.setTimeout(() => setAutoFitAnimating(false), 200)
+    return () => window.clearTimeout(id)
+  }, [autoFitAnimating])
 
   // initial fit once the viewport is measured; refit when the visible set changes.
   const visKey = useMemo(() => positioned.map((p) => p.node.id).join('|'), [positioned])
+  const viewportOwnershipKey = hasCanonicalViewport
+    ? `canonical|${viewport.scale}|${finiteNumber(viewport.panX, 0)}|${finiteNumber(viewport.panY, 0)}`
+    : canonicalControlled ? 'canonical|auto-fit' : 'legacy'
+  const prevExpandedForFitRef = useRef(expanded)
   useEffect(() => {
-    if (!didInitFit.current) {
+    const prevExpanded = prevExpandedForFitRef.current
+    prevExpandedForFitRef.current = expanded
+    if (preserveRestoredViewport.current) {
+      preserveRestoredViewport.current = false
       didInitFit.current = true
-      fit()
       return
     }
-    fit()
+    if (!didInitFit.current) {
+      didInitFit.current = true
+      // Publish when a canonical viewport is ALREADY established (so this
+      // fit can actually override it -- see the note below the fallback
+      // fit() call for why an unpublished fit is otherwise a silent no-op
+      // in canonical mode); the very first fit before any viewport exists
+      // stays local/unpublished, matching the pre-existing behavior.
+      fit(hasCanonicalViewport)
+      return
+    }
+    // Prefer a fit scoped to the just-opened folder's own subtree over the
+    // default whole-graph fit -- descending into one folder should not yank
+    // the camera out to reframe the entire map, which is disorienting and
+    // gives no sense of where the newly-revealed content actually is. Any
+    // OTHER visible-set change (a collapse, a grain change, a filter) keeps
+    // the prior whole-graph fit.
+    let newlyOpened = null
+    for (const id of expanded) {
+      if (!prevExpanded.has(id)) { newlyOpened = id; break }
+    }
+    if (newlyOpened) {
+      const descendantIds = new Set([newlyOpened])
+      const stack = [newlyOpened]
+      while (stack.length > 0) {
+        const cur = stack.pop()
+        for (const child of tree.children.get(cur) ?? []) {
+          descendantIds.add(child.id)
+          stack.push(child.id)
+        }
+      }
+      const scoped = [...descendantIds].filter((id) => visibleIds.has(id))
+      setAutoFitAnimating(true)
+      if (scoped.length > 0 && fitToIds(new Set(scoped), true)) return
+    }
+    // Same publish rule as above: once a canonical viewport exists (e.g. the
+    // scoped descent-fit above already established one, or the user has
+    // manually panned/zoomed), a plain unpublished fit() only updates LOCAL
+    // scale/pan state that canonical mode never reads for rendering --
+    // `scale`/`pan` prefer the canonical `viewport` prop whenever
+    // hasCanonicalViewport is true, so the recomputed fit would be silently
+    // dropped and the stage would visibly stay frozen at the stale
+    // transform. Found via real-app verification: collapsing a folder back
+    // out via the breadcrumb left the canvas zoomed into the now-closed
+    // folder's old scoped-fit framing instead of reframing the wider view.
+    fit(hasCanonicalViewport)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visKey])
+  }, [visKey, viewportOwnershipKey])
 
   /* ----- zoom about the viewport centre (so +/- feel anchored) ----- */
   const zoomBy = useCallback((factor) => {
@@ -527,16 +916,61 @@ export default function MapCanvas({
     const cx = vp ? vp.clientWidth / 2 : 0
     const cy = vp ? vp.clientHeight / 2 : 0
     const prev = scaleRef.current
-    const next = Math.max(MIN_SCALE, Math.min(MAX_SCALE, prev * factor))
+    const next = Math.max(CODE_MAP_VIEWPORT_SCALE.min, Math.min(CODE_MAP_VIEWPORT_SCALE.max, prev * factor))
     if (next === prev) return
     const p = panRef.current
     // keep the viewport-centre point fixed under the scale change.
-    setScale(next)
-    setPan({
-      x: cx - ((cx - p.x) / prev) * next,
-      y: cy - ((cy - p.y) / prev) * next,
-    })
-  }, [])
+    applyViewport({
+      scale: next,
+      panX: cx - ((cx - p.x) / prev) * next,
+      panY: cy - ((cy - p.y) / prev) * next,
+    }, true)
+  }, [applyViewport])
+
+  /* ----- modifier-gated wheel/trackpad-pinch zoom, anchored under the cursor -----
+     A PLAIN wheel is never hijacked (no preventDefault, no handling at all) so the
+     page keeps scrolling normally when the canvas happens to be under the cursor.
+     Only ctrl/cmd+wheel zooms -- the same signal browsers already use for
+     trackpad pinch-zoom (a two-finger pinch fires wheel events with ctrlKey=true
+     even without a physical Ctrl key held), so this also covers pinch for free. */
+  const onWheel = useCallback((e) => {
+    if (!(e.ctrlKey || e.metaKey)) return
+    e.preventDefault()
+    const vp = viewportRef.current
+    if (!vp) return
+    const rect = vp.getBoundingClientRect()
+    const cx = e.clientX - rect.left
+    const cy = e.clientY - rect.top
+    const prev = scaleRef.current
+    // continuous, deltaY-proportional zoom (negative deltaY = zoom in), clamped
+    // to at most one ZOOM_STEP per event so a single fast wheel/pinch burst can't
+    // jump past a sane per-tick step.
+    const rawFactor = Math.exp(-e.deltaY * 0.01)
+    const factor = Math.max(1 / ZOOM_STEP, Math.min(ZOOM_STEP, rawFactor))
+    const next = Math.max(CODE_MAP_VIEWPORT_SCALE.min, Math.min(CODE_MAP_VIEWPORT_SCALE.max, prev * factor))
+    if (next === prev) return
+    const p = panRef.current
+    applyViewport({
+      scale: next,
+      panX: cx - ((cx - p.x) / prev) * next,
+      panY: cy - ((cy - p.y) / prev) * next,
+    }, true)
+  }, [applyViewport])
+
+  // React's synthetic onWheel is registered PASSIVE by default (the same
+  // browser optimization that makes touchstart/touchmove passive), so
+  // e.preventDefault() inside a React onWheel prop silently no-ops in a real
+  // browser — Chrome logs "Unable to preventDefault inside passive event
+  // listener invocation" and, worse, the browser's OWN native ctrl/cmd+wheel
+  // page-zoom fires at the same time as our canvas zoom (found via real-app
+  // verification, not caught by a jsdom-only unit test). A native listener
+  // attached with { passive: false } is required to actually block it.
+  useEffect(() => {
+    const vp = viewportRef.current
+    if (!vp) return undefined
+    vp.addEventListener('wheel', onWheel, { passive: false })
+    return () => vp.removeEventListener('wheel', onWheel)
+  }, [onWheel])
 
   /* ----- centre + select a node (search jump, also used after a grain change) ----- */
   const focusNode = useCallback(
@@ -545,54 +979,120 @@ export default function MapCanvas({
       const vp = viewportRef.current
       if (!p || !vp) return
       const s = Math.max(scale, 1) // don't zoom out to reveal; nudge in if tiny
-      setScale(s)
-      setPan({
-        x: vp.clientWidth / 2 - (p.x + p.w / 2) * s,
-        y: vp.clientHeight / 2 - (p.y + p.h / 2) * s,
-      })
+      applyViewport({
+        scale: s,
+        panX: vp.clientWidth / 2 - (p.x + p.w / 2) * s,
+        panY: vp.clientHeight / 2 - (p.y + p.h / 2) * s,
+      }, true)
     },
-    [posById, scale]
+    [applyViewport, posById, scale]
   )
 
   /* ----- selection ----- */
   const select = useCallback(
     (id) => {
-      setSelectedId(id)
+      if (canonicalControlled && id === selectedId) return
+      if (!canonicalControlled) setLocalSelectedId(id)
+      onStateAction?.(id ? { type: 'select', id } : { type: 'clear-selection' })
       const node = id ? tree.byId.get(id) : null
       onSelect?.(id, node ? stripInternal(node) : null)
     },
-    [onSelect, tree.byId]
+    [canonicalControlled, onSelect, onStateAction, selectedId, tree.byId]
   )
 
   /* ----- grain change: reset per-node expansions (the base depth changes) ----- */
   const changeGrain = useCallback((id) => {
-    setGrain(id)
-    setExpanded(new Set())
+    if (!canonicalControlled) {
+      setLocalGrain(id)
+      setLocalExpanded(new Set())
+    }
+    onStateAction?.({ type: 'set-grain', grain: CANVAS_GRAIN_TO_STATE_GRAIN[id] })
     onGrainChange?.(id)
-    onExpandedIdsChange?.([])
-  }, [onExpandedIdsChange, onGrainChange])
+    if (!canonicalControlled) onExpandedIdsChange?.([])
+  }, [canonicalControlled, onExpandedIdsChange, onGrainChange, onStateAction])
+
+  // "Where am I" state for the breadcrumb strip + aria-live descent
+  // announcement: the most recently OPENED folder id (not a stack -- if its
+  // ancestor collapses independently, or it collapses itself, this walks up
+  // to the nearest still-expanded ancestor, or clears to the root).
+  const [lastOpenedId, setLastOpenedId] = useState(null)
+  const [descentAnnounce, setDescentAnnounce] = useState('')
+  // Guards against staleness from ANY external expandedIds change that
+  // didn't go through toggleExpand/collapseToBreadcrumb below (a grain
+  // change, a `reveal` action, a caller-supplied expandedIds prop) -- if the
+  // tracked id is no longer actually expanded, it can no longer anchor a
+  // breadcrumb.
+  useEffect(() => {
+    if (lastOpenedId && !expanded.has(lastOpenedId)) setLastOpenedId(null)
+  }, [lastOpenedId, expanded])
 
   /* ----- expand a folder in place (double-click / E / shift+enter) ----- */
   const toggleExpand = useCallback(
     (id) => {
       if ((childCount.get(id) || 0) === 0) return
+      const node = tree.byId.get(id)
       const next = new Set(expanded)
-      if (next.has(id)) next.delete(id)
-      else {
+      if (next.has(id)) {
+        next.delete(id)
+        setLastOpenedId((prev) => {
+          if (prev !== id) return prev
+          const parent = tree.parentIdByChild.get(id) ?? null
+          return parent && next.has(parent) ? parent : null
+        })
+        setDescentAnnounce(`closed ${leaf(node?.label || id)}`)
+      } else {
         next.add(id)
         onExpand?.(id)
+        setLastOpenedId(id)
+        const count = childCount.get(id) || 0
+        setDescentAnnounce(`opened ${leaf(node?.label || id)}, showing ${count} item${count === 1 ? '' : 's'}`)
       }
-      setExpanded(next)
+      if (!canonicalControlled) setLocalExpanded(next)
+      onStateAction?.({ type: 'set-expanded', ids: Array.from(next) })
       onExpandedIdsChange?.(Array.from(next))
     },
-    [childCount, expanded, onExpand, onExpandedIdsChange]
+    [canonicalControlled, childCount, expanded, onExpand, onExpandedIdsChange, onStateAction, tree.byId, tree.parentIdByChild]
   )
+
+  /* ----- breadcrumb: the ancestor chain of the currently-drilled-into folder ----- */
+  const breadcrumb = useMemo(() => {
+    if (!lastOpenedId) return []
+    const chain = []
+    let cursor = lastOpenedId
+    while (cursor) {
+      const node = tree.byId.get(cursor)
+      if (!node) break
+      chain.unshift(node)
+      cursor = tree.parentIdByChild.get(cursor) ?? null
+    }
+    return chain
+  }, [lastOpenedId, tree])
+
+  const collapseToRoot = useCallback(() => {
+    if (!canonicalControlled) setLocalExpanded(new Set())
+    onStateAction?.({ type: 'set-expanded', ids: [] })
+    onExpandedIdsChange?.([])
+    setLastOpenedId(null)
+    setDescentAnnounce('back to the top level')
+  }, [canonicalControlled, onExpandedIdsChange, onStateAction])
+
+  const collapseToBreadcrumb = useCallback((index) => {
+    const kept = breadcrumb.slice(0, index + 1)
+    const ids = kept.map((n) => n.id)
+    const next = new Set(ids)
+    if (!canonicalControlled) setLocalExpanded(next)
+    onStateAction?.({ type: 'set-expanded', ids })
+    onExpandedIdsChange?.(ids)
+    const landedOn = kept[kept.length - 1] ?? null
+    setLastOpenedId(landedOn?.id ?? null)
+    setDescentAnnounce(landedOn ? `back to ${leaf(landedOn.label || landedOn.id)}` : 'back to the top level')
+  }, [breadcrumb, canonicalControlled, onExpandedIdsChange, onStateAction])
 
   /* ----- keyboard model on the application wrapper ----- */
   const onKeyDown = useCallback(
     (e) => {
       const key = e.key
-      // zoom keys: +/- (and =). never wheel — the page keeps scrolling.
+      // zoom keys: +/- (and =); a plain wheel still just scrolls the page (see onWheel).
       if (key === '+' || key === '=') {
         e.preventDefault()
         zoomBy(ZOOM_STEP)
@@ -605,7 +1105,7 @@ export default function MapCanvas({
       }
       if (key === '0') {
         e.preventDefault()
-        fit()
+        fit(true)
         return
       }
       const isArrow =
@@ -628,7 +1128,9 @@ export default function MapCanvas({
         else next = nearestAcrossRows(positioned, cur, 1)
         if (next) {
           setFocusedId(next.node.id)
-          ensureInView(next, viewportRef.current, scale, pan, setPan)
+          ensureInView(next, viewportRef.current, scale, pan, (nextPan) => {
+            applyViewport({ scale, panX: nextPan.x, panY: nextPan.y }, true)
+          })
         }
         return
       }
@@ -636,7 +1138,9 @@ export default function MapCanvas({
         if (!focusedId) return
         e.preventDefault()
         if (e.shiftKey) toggleExpand(focusedId)
-        else select(selectedId === focusedId ? null : focusedId)
+        else if (canonicalControlled) {
+          if (selectedId !== focusedId) select(focusedId)
+        } else select(selectedId === focusedId ? null : focusedId)
         return
       }
       if (key === 'e' || key === 'E') {
@@ -659,6 +1163,8 @@ export default function MapCanvas({
       selectedId,
       scale,
       pan,
+      canonicalControlled,
+      applyViewport,
       zoomBy,
       fit,
       toggleExpand,
@@ -667,6 +1173,21 @@ export default function MapCanvas({
   )
 
   /* ----- pan via pointer drag on the canvas background ----- */
+  // Shared "abort and release state" path for pointercancel AND
+  // lostpointercapture (see onLostPointerCapture below for why the latter
+  // exists): clears the drag ref, best-effort releases pointer capture (a
+  // no-op if capture is already gone — which it always is by the time
+  // lostpointercapture fires — so this must never throw on a stale
+  // release), and drops any held canonicalControlled preview WITHOUT
+  // committing a proposal. Not a "release" — a discard.
+  const abortDrag = useCallback((pointerId) => {
+    const d = dragRef.current
+    if (!d || pointerId !== d.pointerId) return
+    dragRef.current = null
+    const vp = viewportRef.current
+    try { vp?.releasePointerCapture?.(pointerId) } catch { /* already released — expected for lostpointercapture */ }
+    if (canonicalControlled) setDragPreview(null)
+  }, [canonicalControlled])
   const onPointerDown = useCallback(
     (e) => {
       // only the canvas surface pans; nodes/controls handle their own pointers.
@@ -676,37 +1197,111 @@ export default function MapCanvas({
       // so the browser composes NO click on the control — the zoom cluster
       // was rendered, styled, wired … and unclickable.
       if (e.target instanceof Element && e.target.closest('button, a, input, select, textarea')) return
+      // Single-pointer only, by design (a mouse-driven code map, not a
+      // multi-touch gesture surface): a SECOND pointer going down while one
+      // drag is already active must not hijack it. Ignoring it outright
+      // (rather than tracking a second concurrent drag) is the minimal fix —
+      // this is not multi-touch gesture support, just a guard against a
+      // silent rebase onto whichever pointer fired last.
+      //
+      // BUT that guard must never be permanent: if the pointer that started
+      // a drag never delivers pointerup/pointercancel/lostpointercapture —
+      // every real-world path is covered below, but defense in depth costs
+      // little here — a stale drag older than DRAG_STALE_TIMEOUT_MS is
+      // abandoned and this new pointer takes over, so no dropped-event
+      // sequence can wedge the canvas permanently.
+      if (dragRef.current) {
+        if (Date.now() - dragRef.current.startedAt < DRAG_STALE_TIMEOUT_MS) return
+        abortDrag(dragRef.current.pointerId)
+      }
       const vp = viewportRef.current
       if (vp) vp.setPointerCapture?.(e.pointerId)
       dragRef.current = {
+        pointerId: e.pointerId,
         startX: e.clientX,
         startY: e.clientY,
         panX: pan.x,
         panY: pan.y,
         moved: false,
+        nextPan: null,
+        startedAt: Date.now(),
       }
     },
-    [pan]
+    [pan, abortDrag]
   )
   const onPointerMove = useCallback((e) => {
     const d = dragRef.current
-    if (!d) return
+    if (!d || e.pointerId !== d.pointerId) return
     const dx = e.clientX - d.startX
     const dy = e.clientY - d.startY
     if (!d.moved && Math.abs(dx) + Math.abs(dy) > 3) d.moved = true
-    if (d.moved) setPan({ x: d.panX + dx, y: d.panY + dy })
-  }, [])
+    if (d.moved) {
+      d.nextPan = {
+        scale: scaleRef.current,
+        panX: d.panX + dx,
+        panY: d.panY + dy,
+      }
+      if (canonicalControlled) {
+        // Local-first: track the pointer every frame so the drag feels
+        // smooth. The owner still only gets ONE proposal, on release.
+        setDragPreview(d.nextPan)
+      } else {
+        applyViewport(d.nextPan, true)
+      }
+    }
+  }, [applyViewport, canonicalControlled])
   const onPointerUp = useCallback(
     (e) => {
       const d = dragRef.current
+      if (!d || e.pointerId !== d.pointerId) return
       dragRef.current = null
       const vp = viewportRef.current
-      if (vp) vp.releasePointerCapture?.(e.pointerId)
+      try { vp?.releasePointerCapture?.(e.pointerId) } catch { /* ignore — already released */ }
+      // dragPreview is intentionally NOT cleared here: the reconciliation
+      // effect above releases it once the owner's `viewport` prop reflects
+      // this proposal (or after DRAG_RECONCILE_TIMEOUT_MS if it never does),
+      // so a slow-but-eventually-consistent owner doesn't see the gesture
+      // snap back before it's had a chance to catch up.
+      if (d.moved && canonicalControlled && d.nextPan) {
+        applyViewport(d.nextPan, true)
+        // Force a fresh dragPreview object (same values, new reference) so
+        // the reconcile-or-timeout effect — gated on dragRef.current being
+        // null, which it now is — actually reruns and arms its window HERE,
+        // at true release. Without this, the last onPointerMove's dragPreview
+        // reference is unchanged by release alone, so the effect wouldn't
+        // rerun until some OTHER dependency changed (e.g. the owner's
+        // viewport prop), which a non-reconciling owner never does — pinning
+        // the preview forever instead of falling back after the timeout.
+        setDragPreview({ ...d.nextPan })
+      }
       // a clean click (no drag) on the empty pane clears the selection.
-      if (d && !d.moved && e.target === e.currentTarget) select(null)
+      if (!d.moved && e.target === e.currentTarget) select(null)
     },
-    [select]
+    [applyViewport, canonicalControlled, select]
   )
+  // pointercancel is an ABORT, not a release: the browser is telling us this
+  // pointer's gesture is no longer valid (e.g. the OS took over for a
+  // system gesture) — the correct response is to drop the drag WITHOUT
+  // committing whatever partial pan it had reached, unlike onPointerUp which
+  // commits a real release. Local-only, non-canonical dragging also just
+  // discards its in-progress (uncommitted-until-move) local state the same
+  // way onPointerMove drove it: nothing further to revert there since each
+  // move already applied directly.
+  const onPointerCancel = useCallback((e) => abortDrag(e.pointerId), [abortDrag])
+  // lostpointercapture is the browser's OWN safety net, fired reliably per
+  // spec whenever a captured pointer's capture is released — explicitly (our
+  // own releasePointerCapture calls above) OR implicitly (focus loss, the
+  // element being removed, the OS taking the pointer over for a system
+  // gesture, a disconnected device, or any other reason a pointerup/
+  // pointercancel never arrives). Wiring it to the SAME abort path as
+  // pointercancel is what actually closes the "single un-keyed drag ref"
+  // guard's escape hatch: without this, a lost release event would leave
+  // dragRef populated forever and onPointerDown's single-pointer guard would
+  // then silently ignore every future pointerdown — a permanent lockup, not
+  // just a missed reconciliation. (The DRAG_STALE_TIMEOUT_MS check in
+  // onPointerDown is deliberately redundant with this — belt and braces so
+  // no sequence of dropped events, however unlikely, can wedge the canvas.)
+  const onLostPointerCapture = useCallback((e) => abortDrag(e.pointerId), [abortDrag])
 
   /* ----- the focused node's spoken label (identity + coverage + violations) ----- */
   const focusedAnnounce = useMemo(() => {
@@ -835,13 +1430,48 @@ export default function MapCanvas({
         </div>
       </div>
 
+      {/* visually-hidden live region: announces folder open/close, distinct
+          from the roving-focus announcement above so "what changed" (a
+          discrete event) never gets lost inside "what's focused" (ambient
+          state that updates on every arrow-key move). */}
+      <div className="mc-sr" role="status" aria-live="polite">
+        {descentAnnounce}
+      </div>
+
+      {/* ---- breadcrumb: "where am I" feedback for the folder you've drilled
+          into on the canvas -- each crumb is clickable to collapse back up
+          to that level. Only rendered once something is expanded; the
+          navigator-first browse view is unaffected (this lives in the
+          canvas only). ---- */}
+      {breadcrumb.length > 0 && (
+        <nav className="mc-breadcrumb mono" aria-label="folder path">
+          <button type="button" className="mc-breadcrumb-crumb" onClick={collapseToRoot}>
+            top level
+          </button>
+          {breadcrumb.map((node, index) => (
+            <Fragment key={node.id}>
+              <ChevronRight className="lucide mc-breadcrumb-sep" aria-hidden="true" />
+              {index === breadcrumb.length - 1 ? (
+                <span className="mc-breadcrumb-crumb mc-breadcrumb-current" aria-current="location">
+                  {leaf(node.label || node.id)}
+                </span>
+              ) : (
+                <button type="button" className="mc-breadcrumb-crumb" onClick={() => collapseToBreadcrumb(index)}>
+                  {leaf(node.label || node.id)}
+                </button>
+              )}
+            </Fragment>
+          ))}
+        </nav>
+      )}
+
       {/* ---- the canvas viewport (dot-grid bg, pannable, focusable app surface) ---- */}
       <div
         className="mc-viewport"
         ref={viewportRef}
         tabIndex={0}
         role="group"
-        aria-label="map canvas: arrow keys move focus, enter selects, plus and minus zoom"
+        aria-label="map canvas: arrow keys move focus, enter selects, plus and minus zoom, ctrl or cmd plus wheel to zoom"
         aria-activedescendant={
           focusedId && visibleIds.has(focusedId) ? `${baseId}-node-${cssId(focusedId)}` : undefined
         }
@@ -849,7 +1479,8 @@ export default function MapCanvas({
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        onPointerCancel={onPointerCancel}
+        onLostPointerCapture={onLostPointerCapture}
       >
         {empty ? (
           <p className="mc-empty mono">no nodes to map</p>
@@ -858,7 +1489,7 @@ export default function MapCanvas({
             {/* the transformed stage: a single translate+scale over the fixed
                 graph-space coordinates, so edges + nodes share one coordinate frame. */}
             <div
-              className="mc-stage"
+              className={['mc-stage', autoFitAnimating ? 'mc-stage--auto-fit' : ''].filter(Boolean).join(' ')}
               style={{
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
                 width: graphW,
@@ -893,25 +1524,52 @@ export default function MapCanvas({
               </svg>
 
               {/* nodes */}
-              {positioned.map((p) => (
-                <Node
-                  key={p.node.id}
-                  domId={`${baseId}-node-${cssId(p.node.id)}`}
-                  p={p}
-                  selected={selectedId === p.node.id}
-                  focused={focusedId === p.node.id}
-                  highlighted={highlightedVisibleIds.has(p.node.id)}
-                  delta={nodeDeltas[p.node.id]}
-                  expandable={(childCount.get(p.node.id) || 0) > 0}
-                  expanded={expanded.has(p.node.id)}
-                  violations={violationCounts.get(p.node.id) || 0}
-                  onClick={() => {
-                    setFocusedId(p.node.id)
-                    select(selectedId === p.node.id ? null : p.node.id)
-                  }}
-                  onDoubleClick={() => toggleExpand(p.node.id)}
-                />
-              ))}
+              {positioned.map((p) => {
+                const expandable = (childCount.get(p.node.id) || 0) > 0
+                const isExpanded = expanded.has(p.node.id)
+                return (
+                  <Fragment key={p.node.id}>
+                    <Node
+                      domId={`${baseId}-node-${cssId(p.node.id)}`}
+                      p={p}
+                      selected={selectedId === p.node.id}
+                      focused={focusedId === p.node.id}
+                      highlighted={highlightedVisibleIds.has(p.node.id)}
+                      delta={nodeDeltas[p.node.id]}
+                      expandable={expandable}
+                      expanded={isExpanded}
+                      violations={violationCounts.get(p.node.id) || 0}
+                      onClick={(detail) => {
+                        if (detail >= 2) return
+                        setFocusedId(p.node.id)
+                        if (canonicalControlled) {
+                          if (selectedId !== p.node.id) select(p.node.id)
+                        } else select(selectedId === p.node.id ? null : p.node.id)
+                      }}
+                      onDoubleClick={() => {
+                        if (expandable) toggleExpand(p.node.id)
+                      }}
+                    />
+                    {expandable ? (
+                      <button
+                        type="button"
+                        className="mc-node-disclosure"
+                        aria-label={`${isExpanded ? 'hide' : 'show'} children for ${leaf(p.node.label || p.node.id)}`}
+                        aria-expanded={isExpanded}
+                        style={{ left: p.x + p.w, top: p.y + p.h }}
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          toggleExpand(p.node.id)
+                        }}
+                      >
+                        <ChevronRight aria-hidden="true" />
+                      </button>
+                    ) : null}
+                  </Fragment>
+                )
+              })}
             </div>
 
             {/* ---- on-canvas square zoom controls ---- */}
@@ -922,7 +1580,7 @@ export default function MapCanvas({
               <button type="button" className="mc-zoom-btn" aria-label="zoom out" onClick={() => zoomBy(1 / ZOOM_STEP)}>
                 <Minus className="lucide" aria-hidden="true" />
               </button>
-              <button type="button" className="mc-zoom-btn" aria-label="fit map to view" onClick={fit}>
+              <button type="button" className="mc-zoom-btn" aria-label="fit map to view" onClick={() => fit(true)}>
                 <Maximize className="lucide" aria-hidden="true" />
               </button>
             </div>
@@ -985,27 +1643,42 @@ export default function MapCanvas({
 
   /* search-result jump: open the matched node's ancestors, select + centre it. */
   function jumpTo(node) {
-    // ensure the node will be visible: at file grain everything renders, so flip
-    // grain to files if the match is a file buried under collapsed folders.
-    if (node.kind === 'file' && GRAIN_DEPTH[grain] < Infinity) {
-      changeGrain('files')
-    }
+    // Every grain now caps at the SAME base depth and reaches deeper only
+    // through explicit expansion (see GRAIN_DEPTH above), so switching grain
+    // is no longer what makes a buried file visible -- the ancestor-expansion
+    // loop below does that unconditionally, at any grain. Flipping to
+    // 'files' grain here is purely a UX preference: landing on a file result
+    // while browsing at folders/overview grain switches the toolbar to the
+    // file-oriented vocabulary for whatever comes next.
+    const targetGrain = node.kind === 'file' && grain !== 'files' ? 'files' : grain
     // expand the node's ancestors so it (or its visible ancestor) is on-canvas.
-    const nextExpanded = new Set(node.kind === 'file' && GRAIN_DEPTH[grain] < Infinity ? [] : expanded)
-    let cur = node.parent
+    const nextExpanded = new Set(targetGrain !== grain ? [] : expanded)
+    let cur = tree.parentIdByChild.get(node.id)
     while (cur && tree.byId.has(cur)) {
       if (!nextExpanded.has(cur)) {
         nextExpanded.add(cur)
         onExpand?.(cur)
       }
-      cur = tree.byId.get(cur).parent
+      cur = tree.parentIdByChild.get(cur)
     }
-    setExpanded(nextExpanded)
-    onExpandedIdsChange?.(Array.from(nextExpanded))
+    const expandedList = Array.from(nextExpanded)
+    if (!canonicalControlled) {
+      setLocalGrain(targetGrain)
+      setLocalExpanded(nextExpanded)
+    }
+    onStateAction?.({
+      type: 'reveal',
+      id: node.id,
+      grain: CANVAS_GRAIN_TO_STATE_GRAIN[targetGrain],
+      expandedIds: expandedList,
+    })
+    if (targetGrain !== grain) onGrainChange?.(targetGrain)
+    onExpandedIdsChange?.(expandedList)
     setQuery('')
     setSearchOpen(false)
     setFocusedId(node.id)
-    select(node.id)
+    if (!canonicalControlled) setLocalSelectedId(node.id)
+    onSelect?.(node.id, stripInternal(node))
     // centre after layout settles (grain/expansion just changed the positions).
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => focusNode(node.id))
@@ -1023,6 +1696,14 @@ function stripInternal(node) {
 function toIdSet(ids) {
   if (!ids) return new Set()
   return ids instanceof Set ? new Set(ids) : new Set(Array.from(ids))
+}
+
+function validScale(value) {
+  return isCodeMapViewportScale(value)
+}
+
+function finiteNumber(value, fallback) {
+  return Number.isFinite(value) ? value : fallback
 }
 
 function idsKey(ids) {
@@ -1110,7 +1791,7 @@ function Node({
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => {
         e.stopPropagation()
-        onClick()
+        onClick(e.detail)
       }}
       onDoubleClick={(e) => {
         e.stopPropagation()

@@ -1,0 +1,206 @@
+expectedAdapterCaseCount: 6
+expectedHarnessCount: 6
+expectedStopReasonCount: 5
+expectedInvalidStopReasonCount: 2
+mountedViewerCase: canonical-flat
+harnessValues:
+  - claude-code
+  - gemini-cli
+  - codex
+  - opencode
+  - cursor
+  - antigravity
+stopReasonValues:
+  - end_turn
+  - cancelled
+  - max_tokens
+  - max_turn_requests
+  - refusal
+invalidStopReasonValues:
+  - stop
+  - length
+adapterCases:
+  - name: canonical-flat
+    payload:
+      id: canonical-flat
+      harness: claude-code
+      startTime: 2026-07-16T08:00:00Z
+      endTime: 2026-07-16T08:01:00Z
+      durationMins: 1
+      totalTokens: 12
+      tokensIn: 7
+      tokensOut: 5
+      turnCount: 1
+      toolCallCount: 0
+      turns:
+        - index: 0
+          role: user
+          content: schema-backed viewer marker
+          timestamp: 2026-07-16T08:00:00Z
+          depth: 0
+          stopReason: end_turn
+      gitBranch: canonical-branch
+      gitRemote: canonical-remote
+      workingDirectory: /canonical/project
+    expected:
+      turns: 1
+      branch: canonical-branch
+      remote: canonical-remote
+      workingDirectory: /canonical/project
+      author: null
+      commitCount: 0
+      commitTime: null
+      adds: null
+      dels: null
+      files: null
+  - name: nullable-turns
+    payload:
+      id: nullable-turns
+      harness: gemini-cli
+      startTime: 2026-07-16T08:00:00Z
+      endTime: 2026-07-16T08:01:00Z
+      durationMins: 1
+      totalTokens: 0
+      tokensIn: 0
+      tokensOut: 0
+      turnCount: 0
+      toolCallCount: 0
+      turns: null
+    expected:
+      turns: 0
+      branch: null
+      remote: null
+      workingDirectory: null
+      author: null
+      commitCount: 0
+      commitTime: null
+      adds: null
+      dels: null
+      files: null
+  - name: legacy-only
+    payload:
+      id: legacy-only
+      harness: codex
+      startTime: 2026-07-16T08:00:00Z
+      endTime: 2026-07-16T08:01:00Z
+      durationMins: 1
+      totalTokens: 0
+      tokensIn: 0
+      tokensOut: 0
+      turnCount: 0
+      toolCallCount: 0
+      turns: []
+      gitContext:
+        branch: legacy-branch
+        remote: legacy-remote
+        user: legacy-author
+        workingDirectory: /legacy/project
+        commits: []
+    expected:
+      turns: 0
+      branch: legacy-branch
+      remote: legacy-remote
+      workingDirectory: /legacy/project
+      author: legacy-author
+      commitCount: 0
+      commitTime: null
+      adds: null
+      dels: null
+      files: null
+  - name: flat-conflict
+    payload:
+      id: flat-conflict
+      harness: opencode
+      startTime: 2026-07-16T08:00:00Z
+      endTime: 2026-07-16T08:01:00Z
+      durationMins: 1
+      totalTokens: 0
+      tokensIn: 0
+      tokensOut: 0
+      turnCount: 0
+      toolCallCount: 0
+      turns: []
+      gitBranch: flat-branch
+      gitRemote: flat-remote
+      workingDirectory: /flat/project
+      gitContext:
+        branch: nested-branch
+        remote: nested-remote
+        workingDirectory: /nested/project
+        commits: []
+    expected:
+      turns: 0
+      branch: flat-branch
+      remote: flat-remote
+      workingDirectory: /flat/project
+      author: null
+      commitCount: 0
+      commitTime: null
+      adds: null
+      dels: null
+      files: null
+  - name: canonical-commit
+    payload:
+      id: canonical-commit
+      harness: cursor
+      startTime: 2026-07-16T08:00:00Z
+      endTime: 2026-07-16T08:01:00Z
+      durationMins: 1
+      totalTokens: 0
+      tokensIn: 0
+      tokensOut: 0
+      turnCount: 0
+      toolCallCount: 0
+      turns: []
+      gitContext:
+        commits:
+          - hash: abcdef123456
+            message: canonical commit
+            authorName: canonical author
+            authorEmail: author@example.test
+            commitTime: 1784188800000
+            authorTime: 1784188800000
+    expected:
+      turns: 0
+      branch: null
+      remote: null
+      workingDirectory: null
+      author: null
+      commitCount: 1
+      commitTime: 1784188800000
+      adds: null
+      dels: null
+      files: null
+  - name: legacy-churn-commit
+    payload:
+      id: legacy-churn-commit
+      harness: antigravity
+      startTime: 2026-07-16T08:00:00Z
+      endTime: 2026-07-16T08:01:00Z
+      durationMins: 1
+      totalTokens: 0
+      tokensIn: 0
+      tokensOut: 0
+      turnCount: 0
+      toolCallCount: 0
+      turns: []
+      gitContext:
+        commits:
+          - hash: fedcba654321
+            message: legacy churn commit
+            timestamp: 2026-07-16T08:00:00Z
+            filesChanged: 3
+            insertions: 8
+            deletions: 2
+            session: true
+    expected:
+      turns: 0
+      branch: null
+      remote: null
+      workingDirectory: null
+      author: null
+      commitCount: 1
+      commitTime: 1784188800000
+      adds: 8
+      dels: 2
+      files: 3

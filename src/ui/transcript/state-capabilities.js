@@ -100,7 +100,7 @@
 /**
  * What the `graphSlot` render-prop receives. The composite owns NO graph engine
  * (no `@xyflow` dependency); in `viewMode: 'graph'` it hands the consumer this
- * cooked context and renders whatever the consumer returns (TB plugs its @xyflow
+ * cooked context and renders whatever the consumer returns (transcript-browser plugs its @xyflow
  * engine; the mockup plugs its SVG graph). `onSelectTurn` keeps the graph's
  * selection in lockstep with the rest of the viewer.
  *
@@ -111,6 +111,14 @@
  */
 
 /* ── the composite prop contract ─────────────────────────────────────────────── */
+
+/**
+ * A one-time position applied when a transcript target is first presented.
+ * This is deliberately separate from `activeTurn`, which represents ongoing
+ * selection while the user reads or navigates the transcript.
+ *
+ * @typedef {{kind: 'top', requestKey?: string} | {kind: 'turn', turnIndex: number, requestKey?: string}} TranscriptInitialPosition
+ */
 
 /**
  * Every TranscriptViewer prop. `viewModel` + `capabilities` are the only required
@@ -136,6 +144,7 @@
  * @property {(open: boolean) => void} [onRightRailOpenChange]
  * @property {Record<string, boolean>} [openTools]                     tool id → open?
  * @property {(openTools: Record<string, boolean>) => void} [onOpenToolsChange]
+ * @property {TranscriptInitialPosition | null} [initialPosition]     one-time position; null clears, and session/target/requestKey changes rearm
  * @property {number} [activeTurn]
  * @property {(turnIndex: number) => void} [onActiveTurnChange]
  * @property {string} [search]
@@ -154,6 +163,7 @@
  * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnActions]  host-owned per-turn actions; replaces the built-in label affordance (hosts with typed label models keep their own popovers)
  * @property {(turnIndex: number) => string} [anchorHref]              host permalink for a turn's copy-anchor action; a root-relative return is absolutized against the page origin. Omitted, the demo copies its bare '#turn-N' placeholder
  * @property {unknown} [headerActions]                                 host session-level actions rendered at the head of the hero action row (attest etc.); the composite's own actions stay the shared tail
+ * @property {unknown} [streamPrelude]                                 host controls or context rendered at the start of the list-mode transcript scroller; omitted in graph mode
  */
 
 /**

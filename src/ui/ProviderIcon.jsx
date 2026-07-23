@@ -2,14 +2,13 @@
    ProviderIcon — fairtrade "in use" component family
    ─────────────────────────────────────────────────────────────────────────
    the provider family for a transcript / session browser. every coding-agent
-   session is produced by one of five HARNESSES (the wire values that peasant's
-   bestiary emits): claude-code, gemini-cli, codex, opencode, cursor. this file
+   session is produced by a canonical @peasant-labs/schema Harness. this file
    turns that one wire value into the three things the UI needs:
 
      1. <ProviderIcon harness />  — the right REAL brand mark, single-color.
      2. <ProviderTag  harness />  — a square hairline chip = mark + the harness
         slug as a lowercase mono label.
-     3. <ProviderName harness /> + PROVIDER_ACCENT + <AccentLegend />  — the
+     3. <ProviderName harness /> + providerAccent() + <AccentLegend />  — the
         per-provider accent the real app paints the ASSISTANT side with.
 
    ── the two rules this family exists to enforce ──────────────────────────────
@@ -22,13 +21,13 @@
    • NEVER identify a provider by color alone (WCAG 1.4.1 / neuroinclusive). the
      accent is decoration ON TOP of the mark + name, never the sole signal. the
      legend spells this out: mark, name, AND swatch — remove the swatch and you
-     can still tell the five providers apart.
+   can still tell the providers apart.
 
    ── how this DIVERGES from the base system ───────────────────────────────────
    the design system fixes turn color as user = teal / assistant = amber (a
    two-color speaker contrast). but in the real transcript browser the ASSISTANT
    is the agent, and the agent IS the provider — so the assistant accent varies
-   BY provider. PROVIDER_ACCENT documents that per-provider override: one earth
+   BY provider. providerAccent() is the single public seam for that override: one earth
    token each, drawn from the system's --amber/--teal/--olive/--mauve/--clay so
    the family re-themes for free under [data-theme] and never invents a hue.
 
@@ -38,57 +37,43 @@
    ─────────────────────────────────────────────────────────────────────────── */
 
 import BrandMark from './BrandMark.jsx'
+import {
+  PROVIDER_ACCENTS,
+  PROVIDER_HARNESSES,
+  assertHarness,
+  providerAccent,
+  providerBrand,
+  providerDisplayName,
+} from './provider-policy.js'
 import './ProviderIcon.css'
 
-/* the five harness wire values, in a stable display order (mirrors peasant's
-   bestiary.Harness). exported so stories + consumers iterate one canonical list. */
-export const HARNESSES = ['claude-code', 'gemini-cli', 'codex', 'opencode', 'cursor']
+/** ProviderIcon — the real brand mark for a harness, single-color via currentColor. */
+/** @typedef {import('@peasant-labs/schema').Harness} Harness */
 
-/* harness → BrandMark name. BrandMark already aliases claude-code→claude and
-   gemini-cli→gemini and codex→openai internally, but we map explicitly here so
-   this file documents the full surface in one place and never depends on an
-   alias quietly changing. codex has no mark of its own — it is an OpenAI product,
-   so it wears the OpenAI blossom (a documented fallback, NOT a generic glyph). */
-const HARNESS_BRAND = {
-  'claude-code': 'claude',
-  'gemini-cli': 'gemini',
-  codex: 'openai',
-  opencode: 'opencode',
-  cursor: 'cursor',
-}
-
-/* human-facing provider name for the standalone (label-bearing) mark case, so an
-   icon with no visible text still ANNOUNCES the provider to a screen reader. the
-   visible chip/legend keep the lowercase harness slug (that is the app's chrome
-   vocabulary); this is the spoken/aria form only. */
-const PROVIDER_LABEL = {
-  'claude-code': 'Claude Code',
-  'gemini-cli': 'Gemini CLI',
-  codex: 'Codex',
-  opencode: 'opencode',
-  cursor: 'Cursor',
-}
+/* Derive the display inventory from the canonical runtime object. Do not use a
+   parallel list: schema additions must make this surface fail until every
+   display policy below is explicitly completed. */
+/** @type {readonly Harness[]} */
+export const HARNESSES = PROVIDER_HARNESSES
 
 /* ── the per-provider accent map (the documented divergence) ──────────────────
-   each harness → ONE earth token. these are the system's five accents, assigned
-   so no two providers collide and amber (the scarce emphasis color) goes to the
-   primary/default agent. consumers read PROVIDER_ACCENT[h] to tint the assistant
-   side of a turn, a session row's rail, a breakdown bar, etc. the VALUES are
-   token names (not hex) so the mapping re-themes with the rest of the system. */
-export const PROVIDER_ACCENT = {
-  'claude-code': 'amber',
-  'gemini-cli': 'teal',
-  codex: 'olive',
-  opencode: 'mauve',
-  cursor: 'clay',
-}
+   each harness → ONE earth token. amber (the scarce emphasis color) goes to the
+   primary/default agent. Google harnesses deliberately share teal; their mark
+   and written harness name remain the identity, never color alone. consumers
+   call providerAccent(h) to tint the assistant side of a turn, a session row's
+   rail, a breakdown bar, etc. the VALUES are token names (not hex) so the
+   mapping re-themes with the rest of the system. */
+/**
+ * @deprecated Use providerAccent(harness), which validates present values at
+ * the canonical schema boundary before returning an accent.
+ * @type {Readonly<Record<Harness, 'amber'|'teal'|'olive'|'mauve'|'clay'>>}
+ */
+export const PROVIDER_ACCENT = PROVIDER_ACCENTS
 
-/* resolve a harness to its CSS custom-property reference, e.g. var(--amber). a
-   single helper so every piece (icon tint opt-in, tag, name, legend swatch)
-   derives the color the same way and an unknown harness degrades to plain ink. */
+/* Resolve a validated Harness to its total CSS custom-property mapping, e.g.
+   var(--amber). A single helper keeps every accent-bearing piece aligned. */
 function accentVar(harness) {
-  const token = PROVIDER_ACCENT[harness]
-  return token ? `var(--${token})` : 'var(--ink)'
+  return `var(--${providerAccent(harness)})`
 }
 
 /**
@@ -100,19 +85,19 @@ function accentVar(harness) {
  * the surrounding text color — but remember the accent is never the sole signal.
  *
  * @param {object} props
- * @param {'claude-code'|'gemini-cli'|'codex'|'opencode'|'cursor'} props.harness
+ * @param {Harness} props.harness
  * @param {number} [props.size] explicit px; omit to inherit the contextual icon size.
  * @param {boolean} [props.accent] tint with PROVIDER_ACCENT[harness] (default: currentColor).
  * @param {boolean|string} [props.label] true → the provider name as aria-label; a string overrides.
  * @param {string} [props.className] extra classes appended after `pv-icon`.
- * @returns {JSX.Element|null} null when `harness` is unknown.
+ * @returns {JSX.Element}
  */
 export function ProviderIcon({ harness, size, accent = false, label, className = '', ...rest }) {
-  const brand = HARNESS_BRAND[harness]
-  if (!brand) return null
+  assertHarness(harness, 'ProviderIcon render in src/ui/ProviderIcon.jsx')
+  const brand = providerBrand(harness)
   const classes = ['pv-icon', className].filter(Boolean).join(' ')
   const style = accent ? { color: accentVar(harness) } : undefined
-  const resolvedLabel = label === true ? PROVIDER_LABEL[harness] : label
+  const resolvedLabel = label === true ? providerDisplayName(harness) : label
   return (
     <span className={classes} style={style} {...rest}>
       <BrandMark name={brand} size={size} label={resolvedLabel} />
@@ -128,13 +113,13 @@ export function ProviderIcon({ harness, size, accent = false, label, className =
  * monochrome it names the provider in words. pass `accent` to tint the mark.
  *
  * @param {object} props
- * @param {'claude-code'|'gemini-cli'|'codex'|'opencode'|'cursor'} props.harness
+ * @param {Harness} props.harness
  * @param {boolean} [props.accent] tint the mark with the provider accent (default: ink).
  * @param {string} [props.className]
- * @returns {JSX.Element|null}
+ * @returns {JSX.Element}
  */
 export function ProviderTag({ harness, accent = false, className = '', ...rest }) {
-  if (!HARNESS_BRAND[harness]) return null
+  assertHarness(harness, 'ProviderTag render in src/ui/ProviderIcon.jsx')
   const classes = ['pv-tag', className].filter(Boolean).join(' ')
   return (
     <span className={classes} {...rest}>
@@ -152,13 +137,13 @@ export function ProviderTag({ harness, accent = false, className = '', ...rest }
  * non-color cue regardless — it is real text, so it is readable mono-color too).
  *
  * @param {object} props
- * @param {'claude-code'|'gemini-cli'|'codex'|'opencode'|'cursor'} props.harness
+ * @param {Harness} props.harness
  * @param {boolean} [props.accent] tint mark + label with the provider accent.
  * @param {string} [props.className]
- * @returns {JSX.Element|null}
+ * @returns {JSX.Element}
  */
 export function ProviderName({ harness, accent = false, className = '', ...rest }) {
-  if (!HARNESS_BRAND[harness]) return null
+  assertHarness(harness, 'ProviderName render in src/ui/ProviderIcon.jsx')
   const classes = ['pv-name', className].filter(Boolean).join(' ')
   const style = accent ? { color: accentVar(harness) } : undefined
   return (
@@ -187,7 +172,7 @@ export function AccentLegend({ className = '', ...rest }) {
   return (
     <ul className={classes} {...rest}>
       {HARNESSES.map((harness) => {
-        const token = PROVIDER_ACCENT[harness]
+        const token = providerAccent(harness)
         return (
           <li key={harness} className="pv-legend-row">
             <ProviderIcon harness={harness} accent className="pv-legend-mark" />

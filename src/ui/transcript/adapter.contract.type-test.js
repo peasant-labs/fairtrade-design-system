@@ -6,7 +6,7 @@
      pnpm test:contract
    which runs `tsc -p tsconfig.contract.json` (checkJs, strict, noImplicitAny,
    noEmit) over this file. A red error here means the adapter/analytics contract
-   drifted from the integration spine and must be fixed before downstream
+   changed incompatibly and must be fixed before downstream
    component work can depend on it. */
 
 /** @typedef {import('./index.js').TranscriptWireInput} TranscriptWireInput */
@@ -94,7 +94,7 @@ void vm1.session.git?.branch
 // analytics is render-when-present on the VM
 void vm1.analytics?.phases?.length
 
-/* ── (2) adaptTranscript ALSO accepts the nested (drifted TS) git shape ──────── */
+/* ── (2) adaptTranscript ALSO accepts the retired nested git shape ──────────── */
 /** @type {TranscriptWireInput} */
 const nestedWire = {
   ...wire,
@@ -102,8 +102,9 @@ const nestedWire = {
   gitRemote: undefined,
   gitContext: {
     branch: 'feat',
+    workingDirectory: '/legacy/project',
     commits: [
-      { hash: 'abcdef1', message: 'init', authorName: 'a', authorEmail: 'a@b.c', commitTime: 1, authorTime: 1 },
+      { hash: 'abcdef1', message: 'init', authorName: 'a', authorEmail: 'a@b.c', commitTime: BigInt(1), authorTime: BigInt(1) },
     ],
   },
 }
@@ -122,24 +123,24 @@ const annotations = [
     typeId: 'user.note',
     typeName: 'Note',
     value: 'looks good',
-    createdAt: 1,
+    createdAt: BigInt(1),
   },
 ]
 /** @type {TranscriptAnalyticsVM} */
-const precomputed = computeAnalytics(prefilterTurns(wire.turns), { scorecard: wire.scorecard ?? undefined })
+const precomputed = computeAnalytics(prefilterTurns(wire.turns ?? []), { scorecard: wire.scorecard ?? undefined })
 /** @type {TranscriptViewModel} */
 const vm3 = adaptTranscript(wire, annotations, precomputed)
 void vm3
 
 /* ── (4) back-compat analytics signatures (re-exported by the browser migration) ── */
 /** @type {TaskGroup[]} */
-const tasks = computeTasks(wire.turns)
+const tasks = computeTasks(wire.turns ?? [])
 /** @type {string[]} */
-const labels = computeTurnLabels(wire.turns)
+const labels = computeTurnLabels(wire.turns ?? [])
 /** @type {WaterfallSegment[]} */
 const waterfall = buildTaskWaterfall(tasks)
 /** @type {TranscriptAnnotation[]} */
-const patterns = annotateTranscript(wire.turns)
+const patterns = annotateTranscript(wire.turns ?? [])
 /** @type {PersonalMedians} */
 const medians = computePersonalMedians([
   { totalTokens: 100, retryTokensWasted: 10, specQualityScore: 60, withinSessionReverts: 1 },
@@ -151,16 +152,16 @@ void medians
 
 /* ── (5) cooked analytics producers ─────────────────────────────────────────── */
 /** @type {PhaseVM[]} */
-const phases = detectPhases(wire.turns)
+const phases = detectPhases(wire.turns ?? [])
 /** @type {ScorecardBandVM[]} */
 const bands = assessScorecard(/** @type {SessionScorecard} */ ({ specQualityScore: 30 }), medians)
 /** @type {import('./index.js').TaskGroupVM[]} */
-const taskGroups = computeTaskGroups(wire.turns)
+const taskGroups = computeTaskGroups(wire.turns ?? [])
 void phases
 void bands
 void taskGroups
 
 /* ── (6) prefilterTurns is a WIRE→wire transform (returns TurnDetail[]) ──────── */
 /** @type {TurnDetail[]} */
-const filtered = prefilterTurns(wire.turns)
+const filtered = prefilterTurns(wire.turns ?? [])
 void filtered

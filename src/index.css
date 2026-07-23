@@ -333,8 +333,9 @@
   .btn {
     @apply inline-flex items-center justify-center gap-2 font-mono text-sm lowercase cursor-pointer;
     box-sizing: border-box; height: var(--control-h); padding: 0 var(--sp-4);
-    border: 1px solid transparent; line-height: 1; transition: background var(--dur-1), color var(--dur-1), border-color var(--dur-1);
+    border: 1px solid transparent; line-height: 1;
   }
+  @media (prefers-reduced-motion: no-preference) { .btn { transition: background var(--dur-1), color var(--dur-1), border-color var(--dur-1); } }
   .btn .lucide, .btn .brand { width: var(--ic-md); height: var(--ic-md); }
   .btn-sm { @apply text-label; height: var(--control-h-sm); padding: 0 var(--sp-3); }
   .btn-sm .lucide, .btn-sm .brand { width: var(--ic-sm); height: var(--ic-sm); }
@@ -2282,7 +2283,17 @@
   .txn-body-grid[data-left-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) 272px; }
   .txn-body-grid[data-right-rail="closed"] { grid-template-columns: 240px minmax(0, 1fr) var(--txn-rail-strip-w); }
   .txn-body-grid[data-left-rail="closed"][data-right-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) var(--txn-rail-strip-w); }
-  .txn-center { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border-right: var(--bd); }
+  /* .txn-center is a real <section>, so it inherits the presentation page's global
+     `section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }` reset. As a
+     grid item in .txn-body-grid's `minmax(0, 1fr)` centre track, an auto horizontal margin wins
+     over grid stretch alignment: the box shrink-wraps to its content width, then centres inside
+     the track with leftover space on BOTH sides — boxing the transcript into a narrow column with
+     wide empty gutters (the peasant#166 UAT "cramped composite" finding). `.iu section` already
+     neutralises this same reset, but only inside the fairtrade demo's own `.iu` wrapper - it never
+     reaches TranscriptViewer when a consuming app (peasant-web, village) embeds it WITHOUT that
+     wrapper, which is exactly where the cramped captures came from. Neutralise it directly here so
+     every host context gets full-width behaviour. */
+  .txn-center { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border-right: var(--bd); max-width: none; margin-inline: 0; padding-inline: 0; }
 
   /* ---- trace ---- */
   /* position:relative anchors the absolute scrubber header (tier 1) to the trace's
@@ -2296,6 +2307,7 @@
   .txn-viewtoggle .bs-seg-opt { height: var(--control-h-sm); }
 
   .txn-stream { flex: 1; min-height: 0; overflow: auto; padding: var(--sp-3) var(--sp-4) var(--sp-7); }
+  .txn-stream-prelude { margin-bottom: var(--sp-4); }
 
   /* phase divider (tier 3) sticks to the top of the scroller. the scroller already
      starts below tiers 1+2 (scrubber header + turns bar, both above .txn-streamwrap),
@@ -2308,6 +2320,7 @@
      already separates it, so drop this phase's leading margin to remove the
      doubled gap. spacing between later phases is untouched. */
   .txn-stream > div:first-child .txn-phase { margin-top: 0; }
+  .txn-stream > .txn-stream-prelude + div .txn-phase { margin-top: 0; }
 
   /* task boundary chip */
   .txn-taskboundary { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-4) 0 var(--sp-2); }
@@ -2730,8 +2743,40 @@
 }
 @media (max-width: 720px) {
   .txn-header { padding: var(--sp-3); }
-  .txn-title { font-size: var(--fs-sm); }
+  .txn-title {
+    font-size: var(--fs-sm);
+    margin-top: var(--sp-2);
+    /* the session title is often a full command/prompt line; on a narrow
+       viewport letting it wrap to 2-3 lines (its unconstrained desktop
+       behaviour) was one of the biggest contributors to the persistent
+       chrome crowding out the transcript itself below. clamp it to one
+       line with an ellipsis — the full text is still the tab title/aria
+       label and is available via the turn content itself. */
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  /* the meta chip row (outcome/harness/model/duration/turns/tools/tokens/…)
+     wraps to 3+ rows at narrow widths (chips is flex-wrap by default) —
+     the single biggest remaining contributor to the mobile chrome height.
+     A horizontally-scrollable single row keeps every chip reachable
+     without the wrap, matching the tab strip's own mobile treatment
+     (.txn-tabs, above) and .cg-sessions' existing pattern elsewhere. */
+  .txn-meta {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: var(--sp-1);
+    margin-top: var(--sp-2);
+  }
+  .txn-meta > * { flex: none; }
   .txn-tabs { gap: var(--sp-4); overflow-x: auto; }
+  .txn-tab { padding: var(--sp-2) 2px; }
+  /* the "N turns / list·graph toggle" bar above the stream — same treatment
+     as .txn-header: less padding buys the scrollable stream more of the
+     viewport without hiding or removing anything. */
+  .txn-trace-head { padding: var(--sp-2) var(--sp-3); }
   .txn-sticky-model { display: none; }
   .txn-anno-row { flex-wrap: wrap; }
   .txn-anno-preview { flex-basis: 100%; }
@@ -3306,6 +3351,63 @@
      MAP VIEW
   ==================================================================== */
   .gmp-toolbar-spacer { flex: 1; }
+  .gmp-presentation-switch { display: inline-flex; min-height: var(--control-h-sm); border: var(--bd-strong); }
+  .gmp-presentation-switch button { min-height: var(--target-min); padding: 0 var(--sp-3); border: 0; border-left: var(--bd); background: transparent; color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; cursor: pointer; }
+  .gmp-presentation-switch button:first-child { border-left: 0; }
+  .gmp-presentation-switch button:hover { background: var(--surface-hover); color: var(--ink); }
+  .gmp-presentation-switch button[aria-pressed='true'] { box-shadow: inset var(--sp-1) 0 0 var(--amber-dim); background: var(--surface-elev); color: var(--ink-strong); }
+  .gmp-presentation-switch button:focus-visible { outline: var(--sp-1) solid var(--focus-ring); outline-offset: calc(var(--sp-1) * -1); }
+
+  /* readable, task-first entry to the spatial map. the tree and selection
+     actions share the same canonical surface in every host; hosts own only
+     data and navigation state. */
+  .gmp-navigator { display: flex; flex-direction: column; min-height: 100%; background: var(--canvas); color: var(--ink); }
+  .gmp-navigator-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-4); border-bottom: var(--bd); background: var(--surface-2); }
+  .gmp-navigator-kicker { margin: 0; font-family: var(--font-mono); font-size: var(--fs-label); font-weight: 600; text-transform: lowercase; color: var(--ink-strong); }
+  .gmp-navigator-note { max-width: var(--measure-prose); margin: var(--sp-1) 0 0; font-size: var(--fs-sm); line-height: var(--lh-body); color: var(--ink-3); }
+  .gmp-navigator-search { display: flex; align-items: center; min-width: min(100%, var(--rail-w)); height: var(--control-h); border: var(--bd-strong); background: var(--surface); }
+  .gmp-navigator-search:focus-within { border-color: var(--amber-dim); box-shadow: inset 0 0 0 var(--sp-1) var(--focus-ring); }
+  .gmp-navigator-search > .lucide { width: var(--ic-sm); height: var(--ic-sm); margin-inline: var(--sp-2); color: var(--ink-3); }
+  .gmp-navigator-search input { flex: 1; min-width: 0; height: 100%; padding: 0 var(--sp-2) 0 0; border: 0; outline: 0; background: transparent; color: var(--ink); font-family: var(--font-mono); font-size: var(--fs-label); }
+  .gmp-navigator-search input::placeholder { color: var(--ink-4); text-transform: lowercase; }
+  .gmp-navigator-body { display: grid; grid-template-columns: minmax(0, 1fr) var(--rail-w); min-height: 0; }
+  .gmp-navigator-tree { min-height: calc(var(--control-h) * 8); padding: var(--sp-3) 0; border-right: var(--bd); }
+  .gmp-navigator-row-wrap { display: grid; grid-template-columns: var(--control-h-sm) minmax(0, 1fr); align-items: center; gap: var(--sp-2); min-height: var(--control-h); padding: var(--sp-2) var(--sp-4) var(--sp-2) calc(var(--sp-4) + var(--gmp-tree-depth) * var(--sp-5)); border-left: var(--sp-1) solid transparent; }
+  .gmp-navigator-row-wrap:hover { background: var(--surface-hover); }
+  .gmp-navigator-row-wrap:has(.gmp-navigator-row:focus-visible) { box-shadow: inset 0 0 0 var(--sp-1) var(--focus-ring); }
+  .gmp-navigator-row-wrap[data-selected='true'] { border-left-color: var(--amber); background: var(--surface-elev); }
+  .gmp-navigator-row { display: grid; grid-template-columns: var(--ic-sm) minmax(0, 1fr) auto; align-items: center; gap: var(--sp-2); min-width: 0; cursor: pointer; outline: 0; }
+  .gmp-navigator-row > .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); }
+  .gmp-navigator-disclosure, .gmp-navigator-disclosure-placeholder { width: var(--control-h-sm); height: var(--control-h-sm); }
+  .gmp-navigator-disclosure { display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0; border: 0; background: transparent; color: var(--ink-3); cursor: pointer; }
+  .gmp-navigator-disclosure:hover { background: var(--surface-hover); color: var(--ink); }
+  .gmp-navigator-disclosure:focus-visible { outline: var(--sp-1) solid var(--focus-ring); outline-offset: var(--sp-1); }
+  .gmp-navigator-disclosure[aria-disabled='true'] { cursor: default; opacity: 0.6; }
+  .gmp-navigator-chevron { visibility: hidden; transition: transform var(--dur-1) var(--ease-standard); }
+  .gmp-navigator-disclosure[aria-expanded] .gmp-navigator-chevron { visibility: visible; }
+  .gmp-navigator-disclosure[aria-expanded='true'] .gmp-navigator-chevron { transform: rotate(90deg); }
+  .gmp-navigator-path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); color: var(--ink); }
+  .gmp-navigator-meta { display: flex; gap: var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); font-variant-numeric: tabular-nums; color: var(--ink-4); }
+  .gmp-navigator-actions { padding: var(--sp-4); background: var(--surface); }
+  .gmp-navigator-selected { margin: 0; color: var(--ink-strong); font-weight: 600; overflow-wrap: anywhere; }
+  .gmp-navigator-selected-path { margin: var(--sp-1) 0 var(--sp-4); color: var(--ink-4); font-family: var(--font-mono); font-size: var(--fs-label); overflow-wrap: anywhere; }
+  .gmp-navigator-action { display: flex; align-items: center; gap: var(--sp-2); width: 100%; min-height: var(--control-h); padding: var(--sp-2) var(--sp-3); border: var(--bd-strong); background: transparent; color: var(--ink-2); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; cursor: pointer; }
+  .gmp-navigator-action + .gmp-navigator-action { margin-top: var(--sp-2); }
+  .gmp-navigator-action:hover { background: var(--surface-hover); color: var(--ink); }
+  .gmp-navigator-action:focus-visible { outline: var(--sp-1) solid var(--focus-ring); outline-offset: var(--sp-1); }
+  .gmp-navigator-action > .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+  .gmp-navigator-action--primary { border-color: var(--amber-dim); color: var(--amber); }
+  .gmp-navigator-empty { margin: 0; padding: var(--sp-4); color: var(--ink-4); font-size: var(--fs-sm); line-height: var(--lh-body); }
+  .gmp-navigator-missing { margin: 0; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); color: var(--clay); font-size: var(--fs-sm); }
+  .gmp-navigator-missing button { border: 0; background: transparent; color: var(--ink); text-decoration: underline; cursor: pointer; }
+  @media (max-width: 720px) {
+    .gmp-navigator-head { flex-direction: column; }
+    .gmp-navigator-search { width: 100%; }
+    .gmp-navigator-body { grid-template-columns: 1fr; }
+    .gmp-navigator-tree { border-right: 0; border-bottom: var(--bd); }
+    .gmp-navigator-meta { flex-direction: column; gap: 0; align-items: flex-end; }
+  }
+  @media (prefers-reduced-motion: reduce) { .gmp-navigator-chevron { transition: none; } }
 
   /* grain segmented control */
 
@@ -3462,13 +3564,33 @@
   .gmp-changes-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-4) var(--gmp-pad-x); border-bottom: var(--bd); background: var(--surface); flex: none; }
   .gmp-changes-sub { font-size: 11px; color: var(--ink-4); margin-top: var(--sp-1); }
   .gmp-changes-body { padding: var(--sp-4) var(--gmp-pad-x); min-width: 0; }
+  .gmp-unlinked-sessions { margin-top: var(--sp-5); border-top: var(--bd); padding-top: var(--sp-4); }
+  .gmp-unlinked-sessions-head { border: 0; padding: 0 0 var(--sp-2); }
+  .gmp-unlinked-sessions-list { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .gmp-unlinked-session {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--sp-6);
+    max-width: 100%;
+    gap: var(--sp-2);
+    padding: var(--sp-1) var(--sp-2);
+    border: var(--bd);
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    text-align: left;
+    cursor: pointer;
+  }
+  .gmp-unlinked-session:hover { background: var(--surface-hover); }
+  .gmp-unlinked-session:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 
 
 
   /* tip card (open branch) */
 
   /* merged chips */
-  .gmp-merged-chip { position: absolute; display: inline-flex; align-items: center; gap: var(--sp-2); padding: 3px var(--sp-3); background: var(--surface-2); border: 1px dashed var(--ink-5); font-family: var(--font-mono); font-size: 11px; text-transform: lowercase; color: var(--ink-4); cursor: pointer; z-index: 3; }
+  .gmp-merged-chip { position: absolute; display: inline-flex; align-items: center; gap: var(--sp-2); padding: var(--sp-1) var(--sp-3); background: var(--surface-2); border: 1px dashed var(--ink-5); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-4); cursor: pointer; z-index: 3; }
   .gmp-merged-chip:hover { color: var(--ink-2); border-color: var(--rule-strong); }
   .gmp-merged-chip .lucide { width: 13px; height: 13px; flex: none; }
 

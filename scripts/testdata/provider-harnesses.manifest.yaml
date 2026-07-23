@@ -1,0 +1,69 @@
+expectedHarnessCount: 6
+expectedInvalidHarnessCount: 3
+expectedSurfaceCount: 3
+expectedMutationCount: 5
+absentProviderAccent: amber
+surfaces:
+  - turn-card
+  - graph-turn-node
+  - graph-legend
+harnesses:
+  - slug: claude-code
+    accessibleName: Claude Code
+    brand: claude
+    accent: amber
+  - slug: gemini-cli
+    accessibleName: Gemini CLI
+    brand: gemini
+    accent: teal
+  - slug: codex
+    accessibleName: Codex
+    brand: openai
+    accent: olive
+  - slug: opencode
+    accessibleName: opencode
+    brand: opencode
+    accent: mauve
+  - slug: cursor
+    accessibleName: Cursor
+    brand: cursor
+    accent: clay
+  - slug: antigravity
+    accessibleName: Google Antigravity
+    brand: gemini
+    accent: teal
+invalidHarnesses:
+  - google
+  - unknown-provider
+  - ""
+mutations:
+  - name: antigravity-accessible-name-is-observable
+    target: provider-policy
+    find: Google Antigravity
+    replace: Gemini CLI
+    expectedFailedCheckCount: 2
+    expectedError: "antigravity: accessible name"
+  - name: antigravity-accent-is-observable
+    target: provider-policy
+    find: 'antigravity: "teal"'
+    replace: 'antigravity: "olive"'
+    expectedFailedCheckCount: 2
+    expectedError: "antigravity: accent"
+  - name: invalid-present-cannot-fall-back-to-amber
+    target: ui
+    find: 'n === void 0 ? "amber" : e(n)'
+    replace: 'n === void 0 || n === "google" ? "amber" : e(n)'
+    expectedFailedCheckCount: 1
+    expectedError: "did not fail loudly through graph-legend"
+  - name: five-provider-inventory-cannot-omit-antigravity
+    target: provider-policy
+    find: Object.freeze(Object.values(fe))
+    replace: 'Object.freeze(Object.values(fe).filter((value) => value !== "antigravity"))'
+    expectedFailedCheckCount: 2
+    expectedError: "mounted legend: expected 6 rows, received 5"
+  - name: arbitrary-string-provider-cannot-pass-validation
+    target: provider-policy
+    find: 'if (C(e)) return;'
+    replace: 'if (typeof e === "string") return;'
+    expectedFailedCheckCount: 9
+    expectedError: "did not fail loudly through public accent helper"

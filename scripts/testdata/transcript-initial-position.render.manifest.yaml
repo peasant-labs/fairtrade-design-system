@@ -1,0 +1,14 @@
+expectedCaseCount: 1
+requiredNames:
+  - source viewer mounts and positions without selecting or writing history
+expectedLoaderMutationCount: 4
+loaderMutations:
+  - {name: render manifest count drift is rejected, target: manifest, find: "expectedCaseCount: 1\nrequiredNames:", replace: "expectedCaseCount: 2\nrequiredNames:", expectedError: do not match}
+  - {name: render manifest duplicate names are rejected, target: manifest, find: "requiredNames:\n  - source viewer mounts and positions without selecting or writing history", replace: "requiredNames:\n  - source viewer mounts and positions without selecting or writing history\n  - source viewer mounts and positions without selecting or writing history", expectedError: unique}
+  - {name: render case unknown fields are rejected, target: cases, find: "    initialKind: turn", replace: "    unknown: true\n    initialKind: turn", expectedError: fields}
+  - {name: render multiple YAML documents are rejected, target: cases, find: "cases:", replace: "---\ncases:", expectedError: exactly one YAML document}
+expectedMutationCount: 3
+mutations:
+  - {name: mounted source hook drops normalizer import, file: hook, find: "  normalizeTranscriptInitialPosition,\n", replace: "", expectedError: mounted source module invariant failed}
+  - {name: mounted source positioning selects the target, file: viewer, find: "    el.scrollIntoView({ block: 'start', behavior: 'auto' })\n    return 'applied'", replace: "    el.scrollIntoView({ block: 'start', behavior: 'auto' })\n    setActiveTurn(position.turnIndex)\n    return 'applied'", expectedError: positioning selection invariant failed}
+  - {name: mounted source positioning writes browser history, file: viewer, find: "    el.scrollIntoView({ block: 'start', behavior: 'auto' })\n    return 'applied'", replace: "    el.scrollIntoView({ block: 'start', behavior: 'auto' })\n    window.history.replaceState({}, '', '/mutated')\n    return 'applied'", expectedError: positioning history invariant failed}

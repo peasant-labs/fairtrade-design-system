@@ -1,0 +1,271 @@
+expectedCaseCount: 12
+cases:
+  - name: defaults survive json roundtrip
+    initial: &defaultState
+      version: 1
+      presentation: navigator
+      selectedId: null
+      grain: package
+      expandedIds: []
+      navigatorFilter: ''
+      navigatorFocusedId: null
+      viewport: null
+    sequence:
+      - {type: hydrate, state: *defaultState}
+    expected: *defaultState
+  - name: selection also focuses the navigator
+    initial: *defaultState
+    sequence:
+      - {type: select, id: internal/ingest}
+    expected:
+      version: 1
+      presentation: navigator
+      selectedId: internal/ingest
+      grain: package
+      expandedIds: []
+      navigatorFilter: ''
+      navigatorFocusedId: internal/ingest
+      viewport: null
+  - name: keyboard semantic selection uses the reducer
+    initial: *defaultState
+    sequence:
+      - {type: focus, id: web}
+      - {type: select, id: web}
+    expected:
+      version: 1
+      presentation: navigator
+      selectedId: web
+      grain: package
+      expandedIds: []
+      navigatorFilter: ''
+      navigatorFocusedId: web
+      viewport: null
+  - name: expansion ids are normalized
+    initial:
+      version: 1
+      presentation: navigator
+      selectedId: null
+      grain: package
+      expandedIds: [web, ' internal ', web]
+      navigatorFilter: ''
+      navigatorFocusedId: null
+      viewport: null
+    sequence: []
+    expected:
+      version: 1
+      presentation: navigator
+      selectedId: null
+      grain: package
+      expandedIds: [' internal ', web]
+      navigatorFilter: ''
+      navigatorFocusedId: null
+      viewport: null
+
+  - name: filter retains deep matching context
+    initial: *defaultState
+    sequence:
+      - {type: set-filter, filter: HANDLER}
+    expected:
+      version: 1
+      presentation: navigator
+      selectedId: null
+      grain: package
+      expandedIds: []
+      navigatorFilter: HANDLER
+      navigatorFocusedId: null
+      viewport: null
+    deriveExpected:
+      rowIds: [web, web/src, web/src/app, web/src/app/handler.ts]
+      focusedId: web
+      staleSelectedId: null
+  - name: open in map is atomic
+    initial: *defaultState
+    sequence:
+      - {type: open-in-map, id: internal/ingest}
+    expected:
+      version: 1
+      presentation: canvas
+      selectedId: internal/ingest
+      grain: package
+      expandedIds: []
+      navigatorFilter: ''
+      navigatorFocusedId: internal/ingest
+      viewport: null
+  - name: grain change clears expansion
+    initial:
+      version: 1
+      presentation: navigator
+      selectedId: null
+      grain: package
+      expandedIds: [internal, web]
+      navigatorFilter: ''
+      navigatorFocusedId: null
+      viewport: null
+    sequence:
+      - {type: set-grain, grain: file}
+    expected:
+      version: 1
+      presentation: navigator
+      selectedId: null
+      grain: file
+      expandedIds: []
+      navigatorFilter: ''
+      navigatorFocusedId: null
+      viewport: null
+  - name: canvas and navigator share selection
+    initial:
+      version: 1
+      presentation: canvas
+      selectedId: null
+      grain: file
+      expandedIds: []
+      navigatorFilter: ''
+      navigatorFocusedId: null
+      viewport: null
+    sequence:
+      - {type: select, id: internal/ingest/pipeline.go}
+    expected:
+      version: 1
+      presentation: canvas
+      selectedId: internal/ingest/pipeline.go
+      grain: file
+      expandedIds: []
+      navigatorFilter: ''
+      navigatorFocusedId: internal/ingest/pipeline.go
+      viewport: null
+    deriveExpected:
+      selectedId: internal/ingest/pipeline.go
+      canvasSelectedId: internal/ingest/pipeline.go
+  - name: viewport accepts finite values and rejects invalid scale
+    initial: *defaultState
+    sequence:
+      - type: set-viewport
+        viewport: {scale: 0.35, panX: 32, panY: -18}
+      - type: set-viewport
+        viewport: {scale: 2.4, panX: -12, panY: 9}
+    rejects:
+      - {type: set-viewport, viewport: {scale: 0.34, panX: 32, panY: -18}}
+      - {type: set-viewport, viewport: {scale: 2.41, panX: 32, panY: -18}}
+      - {type: set-viewport, viewport: {scale: 0, panX: 32, panY: -18}}
+    expected:
+      version: 1
+      presentation: navigator
+      selectedId: null
+      grain: package
+      expandedIds: []
+      navigatorFilter: ''
+      navigatorFocusedId: null
+      viewport: {scale: 2.4, panX: -12, panY: 9}
+  - name: replace never carries stale fields
+    initial: *defaultState
+    sequence:
+      - type: replace
+        state:
+          version: 1
+          presentation: canvas
+          selectedId: web
+          grain: file
+          expandedIds: [web, web/src]
+          navigatorFilter: page
+          navigatorFocusedId: web/src
+          viewport: {scale: 1.5, panX: 10, panY: 20}
+      - {type: replace, state: {}}
+      - type: replace
+        state:
+          version: 1
+          presentation: navigator
+          selectedId: internal
+          grain: project
+          expandedIds: []
+          navigatorFilter: ''
+          navigatorFocusedId: internal
+          viewport: null
+    expected:
+      version: 1
+      presentation: navigator
+      selectedId: internal
+      grain: project
+      expandedIds: []
+      navigatorFilter: ''
+      navigatorFocusedId: internal
+      viewport: null
+
+  - name: file grain stays aggregate until explicit expansion
+    initial:
+      version: 1
+      presentation: canvas
+      selectedId: null
+      grain: file
+      expandedIds: []
+      navigatorFilter: ''
+      navigatorFocusedId: null
+      viewport: null
+    sequence: []
+    expected:
+      version: 1
+      presentation: canvas
+      selectedId: null
+      grain: file
+      expandedIds: []
+      navigatorFilter: ''
+      navigatorFocusedId: null
+      viewport: null
+    deriveExpected:
+      # Unexpanded file grain must stay bounded — identical to package grain —
+      # never auto-descend the whole tree (the "one very long row of every
+      # file" regression this locks against). rowIds locks the NAVIGATOR side
+      # of this too — the navigator and canvas must agree, since a divergence
+      # here (AND vs OR in the depth/expansion check) previously hid a real
+      # regression that only smoke-map.mjs's SSR string check ever caught.
+      canvasVisibleIds: [internal/ingest, web/src, cmd/peasant, orphan]
+      rowIds: [internal, internal/ingest, web, web/src, cmd, cmd/peasant, orphan]
+  - name: explicit expansion reaches file grain within one folder
+    initial:
+      version: 1
+      presentation: canvas
+      selectedId: null
+      grain: file
+      expandedIds: []
+      navigatorFilter: ''
+      navigatorFocusedId: null
+      viewport: null
+    sequence:
+      - {type: set-expanded, ids: [internal/ingest]}
+    expected:
+      version: 1
+      presentation: canvas
+      selectedId: null
+      grain: file
+      expandedIds: [internal/ingest]
+      navigatorFilter: ''
+      navigatorFocusedId: null
+      viewport: null
+    deriveExpected:
+      # Only the explicitly-expanded folder reveals its file; every other
+      # sibling folder stays a collapsed aggregate box. rowIds locks the
+      # navigator side agreeing with the canvas (see the case above).
+      canvasVisibleIds: [internal/ingest/pipeline.go, web/src, cmd/peasant, orphan]
+      rowIds: [internal, internal/ingest, internal/ingest/pipeline.go, web, web/src, cmd, cmd/peasant, orphan]
+
+opaqueIdCase:
+  state:
+    version: 1
+    presentation: canvas
+    selectedId: ' internal '
+    grain: file
+    expandedIds: [' internal ', web, ' internal ']
+    navigatorFilter: ''
+    navigatorFocusedId: ' internal '
+    viewport: null
+  payload:
+    repoFound: true
+    nodes:
+      - {id: ' internal ', name: spaced, kind: module, loc: 1, recordedFiles: 0, totalFiles: 1, order: 0}
+      - {id: web, name: web, kind: module, loc: 1, recordedFiles: 0, totalFiles: 1, order: 1}
+    structureEdges: []
+    violations: []
+  expected:
+    selectedId: ' internal '
+    focusedId: ' internal '
+    expandedIds: [' internal ', web]
+    orderedIds: [' internal ', web]

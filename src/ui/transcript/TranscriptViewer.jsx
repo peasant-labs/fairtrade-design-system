@@ -18,6 +18,8 @@ import FiltersRail from './FiltersRail.jsx'
 import Scrubber from './Scrubber.jsx'
 import Scorecard from './Scorecard.jsx'
 import LabelPopover from './LabelPopover.jsx'
+import useTranscriptInitialPosition from './useTranscriptInitialPosition.jsx'
+import { transcriptInitialPositionReadiness } from './initial-position.js'
 
 /* ───────────────────────────────────────────────────────────────────────────
    TranscriptViewer — the composite single-transcript surface (the headline)
@@ -38,7 +40,7 @@ import LabelPopover from './LabelPopover.jsx'
 
    GRAPH: the composite owns NO graph engine. In `viewMode:'graph'` it hands
    the `graphSlot` render-prop a cooked context and renders whatever it returns
-   (TB plugs @xyflow; the mockup plugs SVG) — no `@xyflow` dependency here.
+   (transcript-browser plugs @xyflow; the mockup plugs SVG) — no `@xyflow` dependency here.
 
    CHECKPOINTS: S3 relocated commits off the per-turn card; the composite draws
    them between turns from the cooked `session.git.commits` (render-when-present),
@@ -161,6 +163,7 @@ export default function TranscriptViewer({
   onRightRailOpenChange,
   openTools: openToolsProp,
   onOpenToolsChange,
+  initialPosition: initialPositionProp,
   activeTurn: activeTurnProp,
   onActiveTurnChange,
   search: searchProp,
@@ -179,6 +182,7 @@ export default function TranscriptViewer({
   renderTurnActions,
   anchorHref,
   headerActions,
+  streamPrelude,
 }) {
   const vm = viewModel
   const caps = capabilities ?? {}
@@ -215,7 +219,11 @@ export default function TranscriptViewer({
   const draggingRef = useRef(false)
   const tabRefs = useRef({})
 
-  const registerRef = useCallback((id, el) => { if (el) turnRefs.current[id] = el }, [])
+  const registerRef = useCallback((id, el) => {
+    if (el) turnRefs.current[id] = el
+    else delete turnRefs.current[id]
+  }, [])
+
   const toggleTool = (id) => setOpenTools({ ...openTools, [id]: !openTools[id] })
 
   /* ── cooked slices off the VM ───────────────────────────────────────────────── */
@@ -255,6 +263,35 @@ export default function TranscriptViewer({
       return true
     })
   }, [turns, filters, commits])
+
+  const applyInitialPosition = useCallback((position) => {
+    const sc = scrollRef.current
+    const el = position.kind === 'turn' ? turnRefs.current[position.turnIndex] : null
+    const result = transcriptInitialPositionReadiness(position, {
+      authoritativeTurnIndices: turns.map((turn) => turn.index),
+      renderedTurnIndices: visibleTurns.map((turn) => turn.index),
+      viewReady: tab === 'trace' && viewMode === 'list',
+      scrollerReady: sc != null,
+      targetReady: position.kind === 'top' || el != null,
+    })
+    if (result !== 'applied') return result
+
+    if (position.kind === 'top') {
+      sc.scrollTo({ top: 0, behavior: 'auto' })
+      return 'applied'
+    }
+
+    el.scrollIntoView({ block: 'start', behavior: 'auto' })
+    return 'applied'
+  }, [tab, turns, viewMode, visibleTurns])
+
+  useTranscriptInitialPosition({
+    sessionId: session?.id,
+    initialPosition: initialPositionProp,
+    legacyInitialPosition: activeTurnProp == null ? null : { kind: 'turn', turnIndex: activeTurnProp },
+    readiness: [tab, viewMode, turns, visibleTurns],
+    apply: applyInitialPosition,
+  })
 
   /* category + tool-group counts the FiltersRail shows. */
   const counts = useMemo(() => ({
@@ -617,7 +654,7 @@ export default function TranscriptViewer({
         )}
 
         {/* CENTER */}
-        <main className="txn-center" role="tabpanel" aria-label={tab}>
+        <section className="txn-center" role="tabpanel" aria-label={tab}>
           {tab === 'trace' && (
             <div className={'txn-trace' + (sticky && viewMode === 'list' ? ' txn-trace-pinned' : '')}>
               {sticky && viewMode === 'list' && (
@@ -646,6 +683,9 @@ export default function TranscriptViewer({
               ) : (
                 <div className="txn-streamwrap">
                   <div className="txn-stream" ref={scrollRef} onScroll={onScroll} tabIndex={-1}>
+                    {streamPrelude != null && (
+                      <div className="txn-stream-prelude">{streamPrelude}</div>
+                    )}
                     {visibleTurns.length === 0 && (
                       <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><h3>no turns to display</h3><p>every turn is filtered out. clear a filter to bring them back.</p></div>
                     )}
@@ -804,7 +844,7 @@ export default function TranscriptViewer({
               })}
             </div>
           )}
-        </main>
+        </section>
 
         {/* RIGHT: filters */}
         {rightRailOpen ? (

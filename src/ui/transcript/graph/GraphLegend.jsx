@@ -8,7 +8,7 @@
    per-provider accent used on the turn cards. The default set mirrors the
    mockup: you · agent · subagent · tool · error. */
 
-import { PROVIDER_ACCENT } from '../../ProviderIcon.jsx'
+import { providerAccent } from '../../provider-policy.js'
 
 /**
  * One legend entry.
@@ -16,7 +16,7 @@ import { PROVIDER_ACCENT } from '../../ProviderIcon.jsx'
  * @property {'user' | 'assistant' | 'subagent' | 'tool' | 'error' | (string & {})} kind
  *   the node kind this swatch stands for; selects the accent
  * @property {string} label                    the lowercase word shown beside the swatch
- * @property {string} [provider]               harness key → assistant swatch accent
+ * @property {import('@peasant-labs/schema').Harness} [provider] canonical harness → assistant swatch accent
  */
 
 /**
@@ -41,7 +41,7 @@ function swatchToken({ kind, provider }) {
     case 'user':
       return 'teal'
     case 'assistant':
-      return PROVIDER_ACCENT[provider] || 'amber'
+      return provider === undefined ? 'amber' : providerAccent(provider)
     case 'subagent':
       return 'mauve'
     case 'error':

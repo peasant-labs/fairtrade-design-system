@@ -41,12 +41,19 @@ try {
   mkdirSync(pkgDir, { recursive: true })
   execFileSync('tar', ['-xzf', tgz, '-C', pkgDir, '--strip-components=1'], { stdio: 'inherit' })
 
-  for (const dep of Object.keys(pkg.dependencies ?? {})) {
+  const hostPackages = new Set([
+    ...Object.keys(pkg.dependencies ?? {}),
+    ...Object.keys(pkg.peerDependencies ?? {}),
+  ])
+  for (const dep of hostPackages) {
     const fromRepo = join(ROOT, 'node_modules', dep)
     if (!existsSync(fromRepo)) continue
     const target = join(nm, dep)
     mkdirSync(dirname(target), { recursive: true })
     symlinkSync(fromRepo, target, 'dir')
+  }
+  if (existsSync(join(pkgDir, 'node_modules', 'react')) || existsSync(join(pkgDir, 'node_modules', 'react-dom'))) {
+    throw new Error('fairtrade tarball smoke FAILED: the packed package contains a private React runtime. Fix: keep react and react-dom peer-only and external.')
   }
 
   // 3. Run a REAL ESM consumer from the temp dir so Node's resolver applies the

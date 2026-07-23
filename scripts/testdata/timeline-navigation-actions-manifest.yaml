@@ -1,0 +1,20 @@
+expectedFamilyCount: 6
+families:
+  - name: open_change
+    actionType: open-change
+    sourceKind: null
+  - name: open_linked_session
+    actionType: open-session
+    sourceKind: commit
+  - name: open_unlinked_session
+    actionType: open-session
+    sourceKind: unlinked
+  - name: open_outside_window_session
+    actionType: open-session
+    sourceKind: outside-window
+  - name: open_map
+    actionType: open-map
+    sourceKind: null
+  - name: show_older
+    actionType: show-older
+    sourceKind: null

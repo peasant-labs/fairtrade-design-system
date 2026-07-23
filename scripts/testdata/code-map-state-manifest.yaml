@@ -1,0 +1,90 @@
+expectedCaseCount: 12
+caseNames:
+  - defaults survive json roundtrip
+  - selection also focuses the navigator
+  - keyboard semantic selection uses the reducer
+  - expansion ids are normalized
+  - filter retains deep matching context
+  - open in map is atomic
+  - grain change clears expansion
+  - canvas and navigator share selection
+  - viewport accepts finite values and rejects invalid scale
+  - replace never carries stale fields
+  - file grain stays aggregate until explicit expansion
+  - explicit expansion reaches file grain within one folder
+
+actionSamples:
+  - {name: replace, action: {type: replace, state: {}}}
+  - {name: hydrate, action: {type: hydrate, state: {}}}
+  - {name: set presentation, action: {type: set-presentation, presentation: canvas}}
+  - {name: select, action: {type: select, id: internal}}
+  - {name: clear selection, action: {type: clear-selection}}
+  - {name: focus, action: {type: focus, id: null}}
+  - {name: set filter, action: {type: set-filter, filter: ingest}}
+  - {name: set expanded, action: {type: set-expanded, ids: [internal]}}
+  - {name: toggle expanded, action: {type: toggle-expanded, id: internal}}
+  - {name: set grain, action: {type: set-grain, grain: file}}
+  - {name: set viewport, action: {type: set-viewport, viewport: {scale: 1, panX: 0, panY: 0}}}
+  - {name: open in map, action: {type: open-in-map, id: internal}}
+  - {name: reveal, action: {type: reveal, id: internal, grain: file, expandedIds: [internal]}}
+
+actionValueProbes:
+  - {name: replace undefined state, actionType: replace, field: state, valueKind: undefined, outcome: reject, expectedError: required value is not an object}
+  - {name: replace null state, actionType: replace, field: state, valueKind: literal, value: null, outcome: reject, expectedError: required value is not an object}
+  - {name: replace wrong state, actionType: replace, field: state, valueKind: literal, value: [], outcome: reject, expectedError: required value is not an object}
+  - {name: hydrate undefined state, actionType: hydrate, field: state, valueKind: undefined, outcome: reject, expectedError: required value is not an object}
+  - {name: hydrate null state, actionType: hydrate, field: state, valueKind: literal, value: null, outcome: reject, expectedError: required value is not an object}
+  - {name: hydrate wrong state, actionType: hydrate, field: state, valueKind: literal, value: [], outcome: reject, expectedError: required value is not an object}
+  - {name: presentation undefined, actionType: set-presentation, field: presentation, valueKind: undefined, outcome: reject, expectedError: unsupported}
+  - {name: presentation null, actionType: set-presentation, field: presentation, valueKind: literal, value: null, outcome: reject, expectedError: unsupported}
+  - {name: presentation wrong type, actionType: set-presentation, field: presentation, valueKind: literal, value: 7, outcome: reject, expectedError: unsupported}
+  - {name: select undefined id, actionType: select, field: id, valueKind: undefined, outcome: reject, expectedError: not a nonempty string}
+  - {name: select null id, actionType: select, field: id, valueKind: literal, value: null, outcome: reject, expectedError: not a nonempty string}
+  - {name: select wrong id, actionType: select, field: id, valueKind: literal, value: 7, outcome: reject, expectedError: not a nonempty string}
+  - {name: clear undefined type, actionType: clear-selection, field: type, valueKind: undefined, outcome: reject, expectedError: no string type}
+  - {name: clear null type, actionType: clear-selection, field: type, valueKind: literal, value: null, outcome: reject, expectedError: no string type}
+  - {name: clear wrong type, actionType: clear-selection, field: type, valueKind: literal, value: 7, outcome: reject, expectedError: no string type}
+  - {name: focus undefined id, actionType: focus, field: id, valueKind: undefined, outcome: reject, expectedError: not a nonempty string}
+  - {name: focus null id, actionType: focus, field: id, valueKind: literal, value: null, outcome: accept, expectedError: none}
+  - {name: focus wrong id, actionType: focus, field: id, valueKind: literal, value: 7, outcome: reject, expectedError: not a nonempty string}
+  - {name: filter undefined value, actionType: set-filter, field: filter, valueKind: undefined, outcome: reject, expectedError: required value is not a string}
+  - {name: filter null value, actionType: set-filter, field: filter, valueKind: literal, value: null, outcome: reject, expectedError: required value is not a string}
+  - {name: filter wrong value, actionType: set-filter, field: filter, valueKind: literal, value: 7, outcome: reject, expectedError: required value is not a string}
+  - {name: expanded undefined ids, actionType: set-expanded, field: ids, valueKind: undefined, outcome: reject, expectedError: required id iterable is undefined}
+  - {name: expanded null ids, actionType: set-expanded, field: ids, valueKind: literal, value: null, outcome: reject, expectedError: not an iterable of ids}
+  - {name: expanded string ids, actionType: set-expanded, field: ids, valueKind: literal, value: internal, outcome: reject, expectedError: not an iterable of ids}
+  - {name: toggle undefined id, actionType: toggle-expanded, field: id, valueKind: undefined, outcome: reject, expectedError: not a nonempty string}
+  - {name: toggle null id, actionType: toggle-expanded, field: id, valueKind: literal, value: null, outcome: reject, expectedError: not a nonempty string}
+  - {name: toggle wrong id, actionType: toggle-expanded, field: id, valueKind: literal, value: 7, outcome: reject, expectedError: not a nonempty string}
+  - {name: grain undefined value, actionType: set-grain, field: grain, valueKind: undefined, outcome: reject, expectedError: unsupported}
+  - {name: grain null value, actionType: set-grain, field: grain, valueKind: literal, value: null, outcome: reject, expectedError: unsupported}
+  - {name: grain wrong value, actionType: set-grain, field: grain, valueKind: literal, value: 7, outcome: reject, expectedError: unsupported}
+  - {name: viewport undefined value, actionType: set-viewport, field: viewport, valueKind: undefined, outcome: reject, expectedError: required viewport is undefined}
+  - {name: viewport null value, actionType: set-viewport, field: viewport, valueKind: literal, value: null, outcome: accept, expectedError: none}
+  - {name: viewport wrong value, actionType: set-viewport, field: viewport, valueKind: literal, value: 7, outcome: reject, expectedError: not an object or null}
+  - {name: open undefined id, actionType: open-in-map, field: id, valueKind: undefined, outcome: reject, expectedError: not a nonempty string}
+  - {name: open null id, actionType: open-in-map, field: id, valueKind: literal, value: null, outcome: reject, expectedError: not a nonempty string}
+  - {name: open wrong id, actionType: open-in-map, field: id, valueKind: literal, value: 7, outcome: reject, expectedError: not a nonempty string}
+  - {name: reveal undefined ids, actionType: reveal, field: expandedIds, valueKind: undefined, outcome: reject, expectedError: required id iterable is undefined}
+  - {name: reveal null ids, actionType: reveal, field: expandedIds, valueKind: literal, value: null, outcome: reject, expectedError: not an iterable of ids}
+  - {name: reveal string ids, actionType: reveal, field: expandedIds, valueKind: literal, value: internal, outcome: reject, expectedError: not an iterable of ids}
+
+mutationCases:
+  - {name: manifest trailing document, target: manifestSource, mutation: trailing-document, expectedError: exactly one YAML document}
+  - {name: manifest duplicate key, target: manifestSource, mutation: duplicate-key, expectedError: duplicate key}
+  - {name: manifest unknown field, target: manifest, mutation: unknown-field, expectedError: manifest has unknown field}
+  - {name: manifest count drift, target: manifest, mutation: expected-count-drift, expectedError: declare exactly 12 case names}
+  - {name: manifest duplicate name, target: manifest, mutation: duplicate-name, expectedError: unique nonempty strings}
+  - {name: manifest empty name, target: manifest, mutation: empty-name, expectedError: unique nonempty strings}
+  - {name: manifest rename against fixture, target: manifest, mutation: renamed-name, expectedError: independent required set}
+  - {name: manifest deletion against fixture, target: manifest, mutation: deleted-name, expectedError: declare exactly 12 case names}
+  - {name: fixture trailing document, target: fixtureSource, mutation: trailing-document, expectedError: exactly one YAML document}
+  - {name: fixture duplicate key, target: fixtureSource, mutation: duplicate-key, expectedError: duplicate key}
+  - {name: fixture unknown field, target: fixture, mutation: unknown-field, expectedError: fixture has unknown field}
+  - {name: fixture case unknown field, target: fixture, mutation: case-unknown-field, expectedError: 'cases[0] has unknown field'}
+  - {name: fixture action unknown field, target: fixture, mutation: action-unknown-field, expectedError: 'sequence[0] has unknown field'}
+  - {name: fixture derived unknown field, target: fixture, mutation: derived-unknown-field, expectedError: deriveExpected has unknown field}
+  - {name: fixture expected count drift, target: fixture, mutation: expected-count-drift, expectedError: expectedCaseCount must equal 12}
+  - {name: fixture deleted case, target: fixture, mutation: deleted-case, expectedError: exactly 12 cases}
+  - {name: fixture duplicate name, target: fixture, mutation: duplicate-name, expectedError: duplicate or empty name}
+  - {name: fixture empty name, target: fixture, mutation: empty-name, expectedError: duplicate or empty name}

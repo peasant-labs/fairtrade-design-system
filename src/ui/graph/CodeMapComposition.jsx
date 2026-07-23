@@ -1,5 +1,8 @@
+import { useMemo, useState } from 'react'
 import RailShell from '../RailShell.jsx'
 import CodeMap from './CodeMap.jsx'
+import CodeMapNavigator from './CodeMapNavigator.jsx'
+import { codeMapStatesEqual, createCodeMapState, reduceCodeMapState } from './codeMapState.js'
 
 /**
  * CodeMapComposition — the FULL map surface (full-lift): the
@@ -48,6 +51,14 @@ import CodeMap from './CodeMap.jsx'
  * @param {React.CSSProperties} [props.canvasWrapperStyle]     inline style on the canvas region wrapper
  *   (e.g. a host's own responsive height clamp)
  * @param {string} [props.className]                           extra class on the root
+ * @param {'canvas'|'navigator'} [props.presentation='canvas'] additive presentation switch; omitted preserves the historical canvas DOM
+ * @param {React.ReactNode} [props.navigatorSlot]              host-controlled navigator content
+ * @param {(presentation:'canvas'|'navigator')=>void} [props.onPresentationChange] when present, renders the canonical browse/map switch
+ * @param {{scale:number, panX:number, panY:number}} [props.viewport]
+ * @param {(viewport:{scale:number, panX:number, panY:number})=>void} [props.onViewportChange]
+ * @param {import('./codeMapState.js').CodeMapState} [props.state] canonical controlled state
+ * @param {Partial<import('./codeMapState.js').CodeMapState>} [props.defaultState] initial canonical uncontrolled state
+ * @param {(state:import('./codeMapState.js').CodeMapState)=>void} [props.onStateChange]
  */
 export default function CodeMapComposition({
   payload,
@@ -71,11 +82,109 @@ export default function CodeMapComposition({
   canvasWrapperClassName = '',
   canvasWrapperStyle,
   className = '',
+  presentation = 'canvas',
+  navigatorSlot,
+  onPresentationChange,
+  viewport,
+  onViewportChange,
+  state,
+  defaultState,
+  onStateChange,
 }) {
+  const canonicalMode = state !== undefined || defaultState !== undefined
+  const [internalState, setInternalState] = useState(() => createCodeMapState(defaultState))
+  const canonicalState = useMemo(
+    () => canonicalMode ? createCodeMapState(state ?? internalState) : null,
+    [canonicalMode, state, internalState],
+  )
+  const activePresentation = canonicalState?.presentation ?? presentation
+
+  function publish(next, notify) {
+    if (state === undefined) setInternalState(next)
+    onStateChange?.(next)
+    notify?.(next)
+  }
+
+  function apply(action, notify) {
+    if (!canonicalState) return
+    const next = reduceCodeMapState(canonicalState, action)
+    if (!codeMapStatesEqual(canonicalState, next)) publish(next, notify)
+  }
+
+  const showPresentationSwitch = canonicalMode || onPresentationChange
+  const composedToolbar = showPresentationSwitch ? (
+    <>
+      <div className="gmp-presentation-switch" role="group" aria-label="code map view">
+        <button
+          type="button"
+          aria-pressed={activePresentation === 'navigator'}
+          onClick={() => canonicalMode
+            ? apply({ type: 'set-presentation', presentation: 'navigator' }, () => onPresentationChange?.('navigator'))
+            : onPresentationChange?.('navigator')}
+        >
+          {activePresentation === 'canvas' ? 'back to browse' : 'browse'}
+        </button>
+        <button
+          type="button"
+          aria-pressed={activePresentation === 'canvas'}
+          onClick={() => canonicalMode
+            ? apply({ type: 'set-presentation', presentation: 'canvas' }, () => onPresentationChange?.('canvas'))
+            : onPresentationChange?.('canvas')}
+        >
+          spatial map
+        </button>
+      </div>
+      {toolbar}
+    </>
+  ) : toolbar
+  const canvasContent = canvasSlot ?? (
+    <CodeMap
+      payload={payload}
+      zoom={canonicalState ? { level: canonicalState.grain, expanded: canonicalState.expandedIds } : zoom}
+      onZoomChange={onZoomChange}
+      selectedId={canonicalState ? canonicalState.selectedId : selectedId}
+      onSelect={onSelect}
+      onExpand={onExpand}
+      highlightedIds={highlightedIds}
+      nodeDeltas={nodeDeltas}
+      structureEdgeDeltas={structureEdgeDeltas}
+      height={height}
+      ariaLabel={ariaLabel}
+      viewport={canonicalState ? canonicalState.viewport ?? undefined : viewport}
+      onViewportChange={onViewportChange}
+      state={canonicalState ?? undefined}
+      onStateChange={canonicalState ? (next) => publish(next) : undefined}
+    />
+  )
+  const navigatorContent = navigatorSlot ?? (canonicalState && payload ? (
+    <CodeMapNavigator
+      payload={payload}
+      grain={canonicalState.grain}
+      expandedIds={canonicalState.expandedIds}
+      selectedId={canonicalState.selectedId}
+      focusedId={canonicalState.navigatorFocusedId}
+      filter={canonicalState.navigatorFilter}
+      onStateAction={(action) => apply(action, () => {
+        if (action.type === 'select') {
+          onSelect?.(action.id, payload.nodes.find((node) => node.id === action.id) ?? null)
+        } else if (action.type === 'clear-selection') {
+          onSelect?.(null, null)
+        } else if (action.type === 'set-expanded') {
+          onZoomChange?.({ level: canonicalState.grain, expanded: Array.from(action.ids) })
+        } else if (action.type === 'open-in-map') {
+          onSelect?.(action.id, payload.nodes.find((node) => node.id === action.id) ?? null)
+          onPresentationChange?.('canvas')
+        }
+      })}
+      ariaLabel={`browse ${ariaLabel}`}
+    />
+  ) : null)
+  const showingNavigator = activePresentation === 'navigator' && navigatorContent !== null
+
   return (
     <div className={['gmp-root', className].filter(Boolean).join(' ')}>
       <RailShell
-        toolbar={toolbar}
+        toolbar={composedToolbar}
         rail={rail}
         sheetTitle={sheetTitle}
         sheetMeta={sheetMeta}
@@ -100,23 +209,9 @@ export default function CodeMapComposition({
           style={canvasWrapperStyle}
           data-testid="gmp-map-canvas-region"
         >
-          {canvasSlot ?? (
-            <CodeMap
-              payload={payload}
-              zoom={zoom}
-              onZoomChange={onZoomChange}
-              selectedId={selectedId}
-              onSelect={onSelect}
-              onExpand={onExpand}
-              highlightedIds={highlightedIds}
-              nodeDeltas={nodeDeltas}
-              structureEdgeDeltas={structureEdgeDeltas}
-              height={height}
-              ariaLabel={ariaLabel}
-            />
-          )}
+          {showingNavigator ? navigatorContent : canvasContent}
         </div>
-        {legend !== false && (legend ?? <DefaultMapLegend />)}
+        {!showingNavigator && legend !== false && (legend ?? <DefaultMapLegend />)}
       </RailShell>
     </div>
   )

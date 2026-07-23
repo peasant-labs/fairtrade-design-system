@@ -15,7 +15,7 @@
      ReviewListPayload / ChangeSummary / ChangeDetailPayload / FileChange /
      MapSlice / ChangeSession / TaskSummary / UnusualSignal / FrictionCluster /
      ChangeDiffPayload / DiffHunk / DiffLine / MapGraphPayload / MapNode /
-     MapEdge / EdgeViolation — all in pkg/schema/map_api.go.
+     MapEdge / EdgeViolation — all in github.com/peasant-labs/schema.
 
    ── Fixture↔API delta tables ─────────────────────────────────────────────────
 
@@ -121,134 +121,77 @@
    anchors). See transcript/wire-types.js for the full pattern.
    ─────────────────────────────────────────────────────────────────────────── */
 
+import {
+  AllChangeBindings,
+  AllDiffLineKinds,
+  AllEdgeViolationKinds,
+  AllFileChangeStatuses,
+  AllMapNodeKinds,
+  isChangeBinding,
+  isDiffLineKind,
+  isEdgeViolationKind,
+  isFileChangeStatus,
+  isMapNodeKind,
+} from '@peasant-labs/schema'
+
 /* ── Shared enums ───────────────────────────────────────────────────────────── */
 
 /**
  * Classification of a map node within the path-derived tree.
- * pkg/schema/map_api.go — MapNodeKind constants.
- * @typedef {'module' | 'package' | 'file'} MapNodeKind
+ * @typedef {import('@peasant-labs/schema').MapNodeKind} MapNodeKind
  */
 
 /** Canonical MapNodeKind values, in schema order. @type {readonly MapNodeKind[]} */
-export const MAP_NODE_KINDS = Object.freeze(['module', 'package', 'file'])
+export const MAP_NODE_KINDS = AllMapNodeKinds
 
 /**
  * How strongly a recorded session is bound to a change.
- * pkg/schema/map_api.go — ChangeBinding constants.
- * @typedef {'bound' | 'candidate'} ChangeBinding
+ * @typedef {import('@peasant-labs/schema').ChangeBinding} ChangeBinding
  */
 
 /** Canonical ChangeBinding values. @type {readonly ChangeBinding[]} */
-export const CHANGE_BINDINGS = Object.freeze(['bound', 'candidate'])
+export const CHANGE_BINDINGS = AllChangeBindings
 
 /**
  * Kind of structural violation on the map.
- * pkg/schema/map_api.go — EdgeViolationKind constants.
- * @typedef {'cycle' | 'wrong_way'} EdgeViolationKind
+ * @typedef {import('@peasant-labs/schema').EdgeViolationKind} EdgeViolationKind
  */
 
 /** Canonical EdgeViolationKind values. @type {readonly EdgeViolationKind[]} */
-export const EDGE_VIOLATION_KINDS = Object.freeze(['cycle', 'wrong_way'])
+export const EDGE_VIOLATION_KINDS = AllEdgeViolationKinds
 
 /**
  * Per-file change status (branch vs merge-base). Git rename detection strips the
  * similarity score, so "R100"/"R087" normalize to "R".
- * Grounded in internal/gitops/repo.go — FileStatus{Modified,Added,Deleted,Renamed}
- * ("M"/"A"/"D"/"R"); carried verbatim onto FileChange.Status / ChangeDiffPayload.Status
- * in pkg/schema/map_api.go.
- * @typedef {'M' | 'A' | 'D' | 'R'} FileChangeStatus
+ * @typedef {import('@peasant-labs/schema').FileChangeStatus} FileChangeStatus
  */
 
 /** Canonical FileChangeStatus values, in schema order. @type {readonly FileChangeStatus[]} */
-export const FILE_CHANGE_STATUSES = Object.freeze(['M', 'A', 'D', 'R'])
+export const FILE_CHANGE_STATUSES = AllFileChangeStatuses
 
 /**
  * Classification of one line within a unified-diff hunk.
- * Grounded in internal/gitops/repo.go — DiffLine{Context,Added,Removed}
- * ("context"/"add"/"del"); carried onto DiffLine.Kind in pkg/schema/map_api.go.
- * @typedef {'context' | 'add' | 'del'} DiffLineKind
+ * @typedef {import('@peasant-labs/schema').DiffLineKind} DiffLineKind
  */
 
 /** Canonical DiffLineKind values, in schema order. @type {readonly DiffLineKind[]} */
-export const DIFF_LINE_KINDS = Object.freeze(['context', 'add', 'del'])
+export const DIFF_LINE_KINDS = AllDiffLineKinds
 
 /* ── Shared sub-types ────────────────────────────────────────────────────────── */
 
-/**
- * Lightweight commit reference used in the time strip and unrecorded commits.
- * Mirrors CommitRef from pkg/schema/map_api.go.
- *
- * @typedef {object} CommitRefPayload
- * @property {string} hash        commit SHA
- * @property {string} subject     first line of the commit message
- * @property {number | null} [timeMs]   committer date, Unix millis; absent when unknown
- * @property {boolean} hasSession true when a recorded session is bound to this commit
- */
+/** Lightweight commit reference used in the timeline. @typedef {import('@peasant-labs/schema').CommitRef} CommitRefPayload */
 
-/**
- * A structure (import) dependency edge between two map nodes.
- * Mirrors MapEdge from pkg/schema/map_api.go.
- *
- * @typedef {object} MapEdgePayload
- * @property {string} from  source node ID (repo-relative path)
- * @property {string} to    target node ID
- * @property {number} count underlying import count (aggregated)
- */
+/** A recorded session available to annotate the Git timeline. @typedef {import('@peasant-labs/schema').TimelineSessionRef} TimelineSessionPayload */
 
-/**
- * A co-edit (activity) observation edge: two nodes repeatedly edited by the
- * same tasks. DISTINCT from MapEdgePayload — the count channel is `taskCount`
- * (distinct tasks that edited both endpoints), NOT the import `count`.
- * Mirrors ActivityEdge from pkg/schema/map_api.go.
- *
- * @typedef {object} ActivityEdgePayload
- * @property {string} from      source node ID
- * @property {string} to        target node ID
- * @property {number} taskCount distinct tasks that edited both endpoints
- */
+/** A structure dependency edge. @typedef {import('@peasant-labs/schema').MapEdge} MapEdgePayload */
 
-/**
- * A structural violation — a cycle or wrong-way import — on the map.
- * Mirrors EdgeViolation from pkg/schema/map_api.go.
- *
- * @typedef {object} EdgeViolationPayload
- * @property {EdgeViolationKind} kind
- * @property {string} from  source node ID
- * @property {string} to    target node ID
- */
+/** A co-edit observation edge. @typedef {import('@peasant-labs/schema').ActivityEdge} ActivityEdgePayload */
 
-/**
- * One node on the code map (module, package, or file). Topology-only: the
- * lifted <CodeMap> component derives pixel positions from layer/order using
- * layout.ts internally; consumers supply raw topology.
- * Mirrors MapNode from pkg/schema/map_api.go (field-for-field).
- *
- * @typedef {object} MapNodePayload
- * @property {string} id               repo-relative path, e.g. "internal/ingest" or "web/src/lib/api.ts"
- * @property {string} [parent]         ID of parent node; absent for top-level modules
- * @property {MapNodeKind} kind
- * @property {string} name             display leaf, e.g. "ingest"
- * @property {string} [language]       e.g. "go" or "typescript"; absent for activity-only nodes
- * @property {number} layer            0 = top row; deterministic, server-assigned
- * @property {number} order            stable sort within layer; server-assigned
- * @property {number} loc              size metric (lines of code)
- * @property {number} fileCount        1 for file nodes
- * @property {number} recordedFiles    files whose last edit traces to a recorded session
- * @property {number} totalFiles
- * @property {number} touchCount       recorded edits in the activity window (activity size metric)
- * @property {number} effortDensity    0..1 per-file re-edit/error density rollup (0 when unknown)
- */
+/** The generated wire currently widens kind; the cooked boundary narrows it. @typedef {Omit<import('@peasant-labs/schema').EdgeViolation, 'kind'> & {kind: EdgeViolationKind}} EdgeViolationPayload */
 
-/**
- * A scoped sub-map: the touched nodes plus their one-hop neighborhood, with
- * layer/order preserved from the full map. Used inside ChangeDetailPayload.
- * Mirrors MapSlice from pkg/schema/map_api.go.
- *
- * @typedef {object} MapSlicePayload
- * @property {MapNodePayload[]} nodes               topology-only; layer/order from the full map
- * @property {MapEdgePayload[]} structureEdges      parsed import edges within the slice (count = import count)
- * @property {ActivityEdgePayload[]} activityEdges  co-edit observations within the slice (taskCount, NOT count)
- */
+/** Topology-only map node with the generated kind narrowed canonically. @typedef {Omit<import('@peasant-labs/schema').MapNode, 'kind'> & {kind: MapNodeKind}} MapNodePayload */
+
+/** Cooked sub-map with normalized non-null arrays. @typedef {Omit<import('@peasant-labs/schema').MapSlice, 'nodes'|'structureEdges'|'activityEdges'> & {nodes: MapNodePayload[], structureEdges: MapEdgePayload[], activityEdges: ActivityEdgePayload[]}} MapSlicePayload */
 
 /* ── Changes surface ─────────────────────────────────────────────────────────── */
 
@@ -256,103 +199,54 @@ export const DIFF_LINE_KINDS = Object.freeze(['context', 'add', 'del'])
  * One row in the Changes list: a local branch measured against the default
  * branch. Graph anchors (baseHash/tipCommitMs/mergeCommitHash) tie this row
  * to the time strip lane.
- * Mirrors ChangeSummary from pkg/schema/map_api.go.
+ * Mirrors ChangeSummary from github.com/peasant-labs/schema.
  *
- * @typedef {object} ChangeSummaryPayload
- * @property {string} branch
- * @property {number} aheadCount        commits ahead of the default branch
- * @property {number} behindCount
- * @property {number} filesChanged
- * @property {number} sessionCount      recorded sessions bound to this change
- * @property {number} taskCount         distinct tasks across bound sessions
- * @property {number} newEdges          new import edges introduced
- * @property {number} removedEdges
- * @property {number} violations        count of structural violations introduced
- * @property {number | null} [lastWorkMs]   most-recent recorded-session activity, Unix millis
- * @property {boolean} merged
- * @property {number | null} [mergedAtMs]
- * @property {boolean} [reverted]       true when this merged change was later git-reverted
- * @property {string} [baseHash]        graph anchor: merge-base commit hash (fork point; open branches)
- * @property {number | null} [tipCommitMs]  graph anchor: branch tip committer time (row position; open branches)
- * @property {string} [mergeCommitHash] graph anchor: merge commit hash (join point; merged rows)
+ * @typedef {import('@peasant-labs/schema').ChangeSummary} ChangeSummaryPayload
  */
 
 /**
  * The Changes surface prop payload. The adapter maps ReviewListPayload (CLEAN)
  * onto this shape — field-for-field, no reshaping required.
  *
- * @typedef {object} ChangesPayload
- * @property {boolean} repoFound               false when the project root is not a git repo
- * @property {string} [defaultBranch]
- * @property {ChangeSummaryPayload[]} changes  open branches first, then merged (reverse-chron within each)
- * @property {CommitRefPayload[]} recentCommits default-branch commits for the time strip, cap 200
+ * @typedef {Omit<import('@peasant-labs/schema').ReviewListPayload, 'projectHash'>} ChangesPayload
  */
 
 /* ── ChangeDetail surface ────────────────────────────────────────────────────── */
 
 /**
  * One task within a change's bound sessions.
- * Mirrors TaskSummary from pkg/schema/map_api.go.
+ * Mirrors TaskSummary from github.com/peasant-labs/schema.
  *
- * @typedef {object} TaskSummaryPayload
- * @property {string} sessionId
- * @property {number} entryIndex       depth-0 user-turn index (task identity)
- * @property {string} title            first ~80 chars of the user turn
- * @property {number | null} [startMs] task start, Unix millis
- * @property {string} [outcome]        session-level outcome string
- * @property {string[]} editedFiles    repo-relative paths touched by this task
- * @property {number} readCount        reads within this task's range
- * @property {boolean} retryLoop       true when an error streak ≥2 occurs inside this task
- * @property {string[]} labels         effective auto/manual annotation values
+ * @typedef {Omit<import('@peasant-labs/schema').TaskSummary, 'editedFiles'|'labels'> & {editedFiles: string[], labels: string[]}} TaskSummaryPayload
  */
 
 /**
  * One recorded session bound to a change, with its tasks.
- * Mirrors ChangeSession from pkg/schema/map_api.go.
+ * Mirrors ChangeSession from github.com/peasant-labs/schema.
  *
- * @typedef {object} ChangeSessionPayload
- * @property {string} sessionId
- * @property {string} title
- * @property {string} harness
- * @property {number | null} [startMs]
- * @property {ChangeBinding} binding  "bound" = commit-in-branch AND file overlap; "candidate" = one arm only
- * @property {TaskSummaryPayload[]} tasks
+ * @typedef {Omit<import('@peasant-labs/schema').ChangeSession, 'binding'|'harness'|'tasks'> & {binding: ChangeBinding, harness: import('@peasant-labs/schema').Harness, tasks: TaskSummaryPayload[]}} ChangeSessionPayload
  */
 
 /**
  * One neutral rate-elevation observation: a metric that runs above the project
  * baseline for this change. Factual, never a grade.
- * Mirrors UnusualSignal from pkg/schema/map_api.go.
+ * Mirrors UnusualSignal from github.com/peasant-labs/schema.
  *
- * @typedef {object} UnusualSignalPayload
- * @property {string} kind       stable slug, e.g. "retryLoops"
- * @property {string} label      plain, neutral description
- * @property {number} perChange  this change's per-conversation rate
- * @property {number} perProject project baseline rate
+ * @typedef {import('@peasant-labs/schema').UnusualSignal} UnusualSignalPayload
  */
 
 /**
  * A neutral count of a recurring friction signal keyed to a file.
- * Mirrors FrictionCluster from pkg/schema/map_api.go.
+ * Mirrors FrictionCluster from github.com/peasant-labs/schema.
  *
- * @typedef {object} FrictionClusterPayload
- * @property {string} kind     signal slug, e.g. "retryLoop"
- * @property {string} label    plain, neutral, e.g. "retry loops"
- * @property {string} file     repo-relative path
- * @property {number} count    occurrences (retry-loop tasks touching this file)
- * @property {number} sessions distinct conversations the occurrences span
+ * @typedef {import('@peasant-labs/schema').FrictionCluster} FrictionClusterPayload
  */
 
 /**
  * One changed file within a branch (branch vs its merge-base).
- * Mirrors FileChange from pkg/schema/map_api.go.
+ * Mirrors FileChange from github.com/peasant-labs/schema.
  *
- * @typedef {object} FileChangePayload
- * @property {string} path
- * @property {FileChangeStatus} status  modified / added / deleted / renamed
- * @property {string | null} [oldPath]  present for renames
- * @property {number} linesAdded        0 for binary files or when numstat is unavailable
- * @property {number} linesRemoved
+ * @typedef {Omit<import('@peasant-labs/schema').FileChange, 'status'> & {status: FileChangeStatus}} FileChangePayload
  */
 
 /**
@@ -361,53 +255,24 @@ export const DIFF_LINE_KINDS = Object.freeze(['context', 'add', 'del'])
  * The lazy per-file diff (ChangeDiffPayload) is fetched separately and wired
  * via a callback/slot on the ChangeDetail surface; it is NOT embedded here.
  *
- * @typedef {object} ChangeDetailPayload
- * @property {string} branch
- * @property {string} baseRef           merge-base commit hash
- * @property {string} defaultBranch
- * @property {FileChangePayload[]} files          changed files (branch vs merge-base)
- * @property {MapSlicePayload} slice              touched nodes + 1-hop neighborhood
- * @property {MapEdgePayload[]} newEdges          new import edges introduced
- * @property {MapEdgePayload[]} removedEdges
- * @property {string[]} newNodes                  new node IDs
- * @property {string[]} removedNodes
- * @property {EdgeViolationPayload[]} violations  structural violations INTRODUCED by this change
- * @property {ChangeSessionPayload[]} work        bound sessions, with tasks (each = one "conversation"; count = work.length)
- * @property {CommitRefPayload[]} unrecordedCommits  commits on the branch with no recorded session
- * @property {UnusualSignalPayload[]} unusual     neutral rate-elevation observations
- * @property {FrictionClusterPayload[]} frictions neutral recurring-friction counts
- * @property {number} filesChanged    authoritative changed-file count (from the matching ChangeSummary; files[] may be capped)
- * @property {number} linesAdded
- * @property {number} linesRemoved
- * @property {number} outputTokens    SUM of output_tokens over bound sessions (the "ai wrote ≈N tokens" stat)
- * @property {number | null} [costUsd]
+ * @typedef {Omit<import('@peasant-labs/schema').ChangeDetailPayload, 'files'|'slice'|'newEdges'|'removedEdges'|'newNodes'|'removedNodes'|'violations'|'work'|'unrecordedCommits'|'unusual'|'frictions'> & {files: FileChangePayload[], slice: MapSlicePayload, newEdges: MapEdgePayload[], removedEdges: MapEdgePayload[], newNodes: string[], removedNodes: string[], violations: EdgeViolationPayload[], work: ChangeSessionPayload[], unrecordedCommits: CommitRefPayload[], unusual: UnusualSignalPayload[], frictions: FrictionClusterPayload[], filesChanged: number}} ChangeDetailPayload
  */
 
 /* ── ChangeDiff surface (lazy per-file diff companion) ───────────────────────── */
 
 /**
  * One line within a diff hunk. `kind` uses the unified-diff convention.
- * Mirrors DiffLine from pkg/schema/map_api.go.
+ * Mirrors DiffLine from github.com/peasant-labs/schema.
  *
- * @typedef {object} DiffLinePayload
- * @property {DiffLineKind} kind  context / add / del
- * @property {string} text     line text, WITHOUT the leading +/-/space marker
+ * @typedef {Omit<import('@peasant-labs/schema').DiffLine, 'kind'> & {kind: DiffLineKind}} DiffLinePayload
  */
 
 /**
  * One unified-diff hunk (the `-old +new` range line). May carry conversation
  * attribution when the hunk's added lines trace to a recorded session via git blame.
- * Mirrors DiffHunk from pkg/schema/map_api.go.
+ * Mirrors DiffHunk from github.com/peasant-labs/schema.
  *
- * @typedef {object} DiffHunkPayload
- * @property {number} oldStart
- * @property {number} oldLines
- * @property {number} newStart
- * @property {number} newLines
- * @property {string} [header]         hunk range header line, when present
- * @property {DiffLinePayload[]} lines
- * @property {string} [sessionId]      conversation attribution: recorded session that wrote most of the hunk's new lines
- * @property {string} [sessionTitle]
+ * @typedef {Omit<import('@peasant-labs/schema').DiffHunk, 'lines'> & {lines: DiffLinePayload[]}} DiffHunkPayload
  */
 
 /**
@@ -415,18 +280,7 @@ export const DIFF_LINE_KINDS = Object.freeze(['context', 'add', 'del'])
  * file's diff inside the ChangeDetail surface. Adapter maps the wire
  * ChangeDiffPayload (CLEAN) onto this shape — field-for-field.
  *
- * @typedef {object} ChangeDiffPayload
- * @property {string} branch
- * @property {string} file         the new (or only) file path
- * @property {string | null} [oldPath]  present for renames
- * @property {FileChangeStatus} status  modified / added / deleted / renamed
- * @property {boolean} binary      true for binary files (no hunks)
- * @property {boolean} truncated   true when the file exceeds the size cap
- * @property {DiffHunkPayload[]} hunks
- * @property {string} [error]      HOST-SIDE error sentinel — NOT a wire field. The adapter
- *                                 must never map this from the REST payload; the host sets it
- *                                 (with empty `hunks`) when its lazy diff fetch FAILED, so the
- *                                 surface renders an error row instead of a perpetual spinner.
+ * @typedef {Omit<import('@peasant-labs/schema').ChangeDiffPayload, 'status'|'hunks'> & {status: FileChangeStatus, hunks: DiffHunkPayload[], error?: string}} ChangeDiffPayload
  */
 
 /* ── CodeMap surface ─────────────────────────────────────────────────────────── */
@@ -446,11 +300,63 @@ export const DIFF_LINE_KINDS = Object.freeze(['context', 'add', 'del'])
  * Review changed-slice overlays, effort overlay, keyboard) are component-level
  * props defined in the surface slice, not data fields in this payload.
  *
- * @typedef {object} CodeMapPayload
- * @property {boolean} repoFound             false when the project root is not a git repo; the component degrades to activity-only
- * @property {MapNodePayload[]} nodes        topology nodes for all zoom levels; parent links form the tree
- * @property {MapEdgePayload[]} structureEdges  parsed import edges (aggregated per node pair)
- * @property {EdgeViolationPayload[]} violations  structural violations (cycles + wrong-way imports)
+ * @typedef {Omit<import('@peasant-labs/schema').MapGraphPayload, 'projectHash'|'repoPath'|'parsedLanguages'|'generatedAtMs'|'atCommit'|'activityEdges'|'nodes'|'structureEdges'|'violations'> & {nodes: MapNodePayload[], structureEdges: MapEdgePayload[], violations: EdgeViolationPayload[]}} CodeMapPayload
  */
 
-export {}
+/**
+ * @param {(value: unknown) => boolean} predicate
+ * @param {unknown} value
+ * @param {string} path
+ * @param {string} operation
+ * @param {readonly string[]} allowed
+ */
+function assertCanonical(predicate, value, path, operation, allowed) {
+  if (predicate(value)) return
+  let rendered
+  try {
+    rendered = JSON.stringify(value)
+  } catch {
+    rendered = String(value)
+  }
+  throw new TypeError(
+    `Graph contract validation failed for ${rendered} at src/ui/graph/types.js during ${operation}: ` +
+    `${path} is outside the canonical @peasant-labs/schema value domain (${allowed.join(', ')}), so Fairtrade cannot safely render this graph payload; ` +
+    'the caller must validate and normalize the local API response before passing it to the cooked graph surface.',
+  )
+}
+
+/** @param {CodeMapPayload} payload */
+export function assertCodeMapPayloadEnums(payload) {
+  for (const [index, node] of payload.nodes.entries()) {
+    assertCanonical(isMapNodeKind, node.kind, `nodes[${index}].kind`, 'code-map payload rendering', AllMapNodeKinds)
+  }
+  for (const [index, violation] of payload.violations.entries()) {
+    assertCanonical(isEdgeViolationKind, violation.kind, `violations[${index}].kind`, 'code-map payload rendering', AllEdgeViolationKinds)
+  }
+}
+
+/** @param {ChangeDetailPayload} payload */
+export function assertChangeDetailPayloadEnums(payload) {
+  for (const [index, file] of payload.files.entries()) {
+    assertCanonical(isFileChangeStatus, file.status, `files[${index}].status`, 'change-detail payload rendering', AllFileChangeStatuses)
+  }
+  for (const [index, session] of payload.work.entries()) {
+    assertCanonical(isChangeBinding, session.binding, `work[${index}].binding`, 'change-detail payload rendering', AllChangeBindings)
+  }
+  for (const [index, node] of payload.slice.nodes.entries()) {
+    assertCanonical(isMapNodeKind, node.kind, `slice.nodes[${index}].kind`, 'change-detail payload rendering', AllMapNodeKinds)
+  }
+  for (const [index, violation] of payload.violations.entries()) {
+    assertCanonical(isEdgeViolationKind, violation.kind, `violations[${index}].kind`, 'change-detail payload rendering', AllEdgeViolationKinds)
+  }
+}
+
+/** @param {ChangeDiffPayload} payload */
+export function assertChangeDiffPayloadEnums(payload) {
+  assertCanonical(isFileChangeStatus, payload.status, 'status', 'change-diff payload rendering', AllFileChangeStatuses)
+  for (const [hunkIndex, hunk] of payload.hunks.entries()) {
+    for (const [lineIndex, line] of hunk.lines.entries()) {
+      assertCanonical(isDiffLineKind, line.kind, `hunks[${hunkIndex}].lines[${lineIndex}].kind`, 'change-diff payload rendering', AllDiffLineKinds)
+    }
+  }
+}

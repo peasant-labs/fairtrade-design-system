@@ -1,0 +1,49 @@
+hierarchyConflict:
+  nodes:
+    - {id: root, label: root, kind: folder, parent: other, layer: 4, order: 30, loc: 100, coverage: 1, violations: 0}
+    - {id: child, label: child, kind: file, parent: other, layer: 0, order: 90, loc: 80, coverage: 2, violations: 2}
+    - {id: sibling, label: sibling, kind: file, parent: other, layer: 0, order: -10, loc: 70, coverage: 1, violations: 0}
+    - {id: other, label: other, kind: folder, layer: 5, order: 0, loc: 60, coverage: 0, violations: 0}
+  edges:
+    - {from: child, to: other, kind: structure, weight: 1}
+  hierarchy:
+    orderedIds: [root, child, sibling, other]
+    rootIds: [root, other]
+    childIdsByParent: {root: [child, sibling]}
+    depthById: {root: 0, child: 1, sibling: 1, other: 0}
+  layoutVisibleIds: [child, sibling, other]
+  resolutionVisibleIds: [root, other]
+  highlightedIds: [child]
+  expected:
+    deeperNode: child
+    shallowerNode: other
+    orderedBefore: child
+    orderedAfter: sibling
+    highlightedAncestor: root
+    violationAncestor: root
+    violationCount: 2
+
+canonicalPrecedence:
+  payload:
+    repoFound: true
+    nodes:
+      - {id: root, name: root, kind: module, loc: 100, recordedFiles: 1, totalFiles: 1, order: 0}
+      - {id: child, name: child, kind: file, parent: root, loc: 80, recordedFiles: 1, totalFiles: 1, order: 0}
+    structureEdges: []
+    violations: []
+  canonicalState:
+    version: 1
+    presentation: canvas
+    selectedId: null
+    grain: file
+    expandedIds: []
+    navigatorFilter: ''
+    navigatorFocusedId: null
+    viewport: null
+  contradictoryLegacy:
+    selectedId: child
+    viewport: {scale: 1.4, panX: 18, panY: -9}
+  expected:
+    selectedMarkerAbsent: data-selected="true"
+    automaticTransform: translate(0px, 0px) scale(1)
+    legacyTransformAbsent: translate(18px, -9px) scale(1.4)

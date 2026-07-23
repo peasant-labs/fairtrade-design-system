@@ -3,15 +3,15 @@
    adapter — adaptTranscript(): the ONE fairtrade transcript projection
    ─────────────────────────────────────────────────────────────────────────
    `adaptTranscript` is the SOLE code that touches the canonical wire and the
-   SOLE drift-absorption boundary. It maps a `SessionDetailPayload` (folded turns)
+   SOLE legacy-compatibility boundary. It maps a `SessionDetailPayload` (folded turns)
    ONCE into the cooked `TranscriptViewModel` every dumb component renders. It:
 
      • parses each tool call's JSON-string `arguments` / `result` exactly once
        (via the leaf `adapter.parse.js`, the one JSON.parse site) into
        `toolCallsById`;
-     • normalises BOTH git wire shapes — the Go runtime flat `gitBranch` /
-       `gitRemote` (local_api.go:111-112) AND the drifted TS
-       `gitContext` (transcript.ts:73-82) — into the optional cooked
+     • normalises BOTH git wire shapes — the canonical flat `gitBranch` /
+       `gitRemote` / `workingDirectory` fields and the retired nested
+       `gitContext` shape — into the optional cooked
        `session.git`, so NO component ever references a git wire field;
      • cooks turns (labels, thinking, accents, per-turn annotations), diffs,
        files, tasks, highlights, and the filter index;
@@ -33,6 +33,9 @@ import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analyt
 /** @typedef {import('./wire-types.js').TurnDetail} TurnDetail */
 /** @typedef {import('./wire-types.js').ToolCallDetail} ToolCallDetail */
 /** @typedef {import('./wire-types.js').AnnotationSummary} AnnotationSummary */
+/** @typedef {import('./wire-types.js').CommitInfo} CommitInfo */
+/** @typedef {import('./wire-types.js').LegacyCommit} LegacyCommit */
+/** @typedef {import('./wire-types.js').LegacyGitContext} LegacyGitContext */
 /** @typedef {import('./view-model.js').TranscriptViewModel} TranscriptViewModel */
 /** @typedef {import('./view-model.js').TranscriptAnalyticsVM} TranscriptAnalyticsVM */
 /** @typedef {import('./view-model.js').SessionVM} SessionVM */
@@ -49,34 +52,6 @@ import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analyt
 /** @typedef {import('./view-model.js').HighlightVM} HighlightVM */
 /** @typedef {import('./view-model.js').FilterIndexVM} FilterIndexVM */
 /** @typedef {import('./view-model.js').PhaseVM} PhaseVM */
-
-/* ── Drift-tolerant nested-git typedefs (read only inside the adapter) ────────
-   The adapter is the single seam that tolerates BOTH git wire shapes, so it
-   reads fields neither the Go-grounded `GitContext` nor `CommitInfo` typedef
-   declares (the TS-drift `user` + per-commit churn). These widening typedefs
-   document exactly which drifted fields are absorbed; nothing past the adapter
-   sees them. */
-
-/**
- * @typedef {object} WireGitLike
- * @property {string | null} [branch]
- * @property {string | null} [remote]
- * @property {string} [user]                     TS-drift author (transcript.ts)
- * @property {unknown[]} [commits]
- */
-
-/**
- * @typedef {object} WireCommitLike
- * @property {string} [hash]
- * @property {string} [message]
- * @property {string} [authorName]               Go shape (metadata.go)
- * @property {number} [commitTime]               Go shape, Unix millis
- * @property {string} [timestamp]                TS-drift shape (transcript.ts)
- * @property {number} [filesChanged]             TS-drift per-commit churn
- * @property {number} [insertions]               TS-drift per-commit churn
- * @property {number} [deletions]                TS-drift per-commit churn
- * @property {boolean} [session]
- */
 
 /* ── Small pure string helpers (no wire parsing) ─────────────────────────────── */
 
@@ -329,24 +304,27 @@ function buildToolCallVM(call) {
   return vm
 }
 
-/* ── Git normalisation (the single drift-absorption point) ───────────────────── */
+/* ── Git normalisation (the single legacy-compatibility point) ──────────────── */
 
-/** @param {WireCommitLike} c @returns {CommitVM} */
+/** @param {CommitInfo | LegacyCommit} c @returns {CommitVM} */
 function cookCommit(c) {
-  const hash = typeof c.hash === 'string' ? c.hash : ''
-  const firstLine = typeof c.message === 'string' ? c.message.split('\n')[0] : ''
+  const hash = c.hash
+  const firstLine = c.message.split('\n')[0]
   /** @type {CommitVM} */
   const vm = { hash, shortHash: hash.slice(0, 7), message: firstLine }
-  if (typeof c.authorName === 'string') vm.author = c.authorName
-  const commitTime =
-    typeof c.commitTime === 'number' ? c.commitTime : typeof c.timestamp === 'string' ? Date.parse(c.timestamp) : NaN
+  if ('authorName' in c) vm.author = c.authorName
+  // CommitInfo.commitTime is the schema's wire int64 (bigint); Date.parse
+  // returns a plain number. Normalize to number here — vm.commitTime is
+  // matched against Date.parse-derived turn timestamps below, and commit
+  // times never approach Number.MAX_SAFE_INTEGER.
+  const commitTime = 'commitTime' in c ? Number(c.commitTime) : Date.parse(c.timestamp)
   if (Number.isFinite(commitTime)) vm.commitTime = commitTime
-  if (c.session === true) vm.session = true
-  // per-commit churn → display-ready CommitVM fields (render-when-present; the drifted TS shape
-  // carries filesChanged/insertions/deletions, the canonical Go CommitInfo does not yet).
-  if (typeof c.insertions === 'number') vm.adds = c.insertions
-  if (typeof c.deletions === 'number') vm.dels = c.deletions
-  if (typeof c.filesChanged === 'number') vm.files = c.filesChanged
+  if ('session' in c && c.session === true) vm.session = true
+  // Per-commit churn is available only on the retired nested shape. The
+  // canonical CommitInfo still contributes identity, author, and timestamps.
+  if ('insertions' in c) vm.adds = c.insertions
+  if ('deletions' in c) vm.dels = c.deletions
+  if ('filesChanged' in c) vm.files = c.filesChanged
   return vm
 }
 
@@ -378,13 +356,13 @@ function anchorCommitsToTurns(commits, turnVMs) {
 
 /**
  * Normalise whichever git wire shape is present into the optional cooked
- * `session.git`, summing per-commit churn from the drifted TS shape. Returns
+ * `session.git`, summing per-commit churn from the retired nested shape. Returns
  * undefined when no git signal exists at all (the chips degrade cleanly).
  * @param {TranscriptWireInput} payload
  * @returns {SessionGitVM | undefined}
  */
 function cookGit(payload) {
-  const gc = /** @type {WireGitLike | undefined} */ (payload.gitContext)
+  const gc = payload.gitContext
   const branch = payload.gitBranch ?? gc?.branch ?? undefined
   const remote = payload.gitRemote ?? gc?.remote ?? undefined
   const author = gc?.user
@@ -396,11 +374,10 @@ function cookGit(payload) {
   let insertions = 0
   let deletions = 0
   for (const raw of rawCommits) {
-    const c = /** @type {WireCommitLike} */ (raw)
-    commits.push(cookCommit(c))
-    if (typeof c.filesChanged === 'number') filesChanged += c.filesChanged
-    if (typeof c.insertions === 'number') insertions += c.insertions
-    if (typeof c.deletions === 'number') deletions += c.deletions
+    commits.push(cookCommit(raw))
+    if ('filesChanged' in raw) filesChanged += raw.filesChanged
+    if ('insertions' in raw) insertions += raw.insertions
+    if ('deletions' in raw) deletions += raw.deletions
   }
 
   /** @type {SessionGitVM} */
@@ -437,7 +414,8 @@ function cookSession(payload, git) {
   }
   if (payload.project) session.project = payload.project
   if (payload.model) session.model = payload.model
-  if (payload.workingDirectory) session.workingDirectory = payload.workingDirectory
+  const workingDirectory = payload.workingDirectory ?? payload.gitContext?.workingDirectory
+  if (workingDirectory) session.workingDirectory = workingDirectory
   if (payload.outcome) session.outcome = payload.outcome
   if (payload.scorecard !== undefined) session.scorecard = payload.scorecard
   if (git) session.git = git
@@ -456,7 +434,7 @@ function mapEntryAnnotations(annotations) {
   /** @type {AnnotationVM[]} */
   const out = []
   for (const a of annotations) {
-    if (a.targetEntryIndex === undefined) continue
+    if (a.targetEntryIndex == null) continue
     /** @type {AnnotationVM} */
     const vm = { id: a.id, kind: a.typeName, turn: a.targetEntryIndex, label: a.value || a.typeName }
     if (a.isPrimary) vm.isPrimary = true
@@ -634,9 +612,9 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
 /**
  * Project the canonical wire payload (folded turns) into the cooked
  * `TranscriptViewModel` every dumb transcript component renders. The SOLE
- * wire-parse + git-drift normalisation site.
+ * wire-parse + legacy-git normalisation site.
  *
- * @param {TranscriptWireInput} payload          canonical wire; tolerates both git shapes
+ * @param {TranscriptWireInput} payload          canonical wire plus legacy git compatibility
  * @param {AnnotationSummary[]} [annotations]     separately-fetched entry annotations
  * @param {TranscriptAnalyticsVM} [analytics]     precomputed analytics; else derived on demand
  * @returns {TranscriptViewModel}
@@ -644,7 +622,7 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
 export function adaptTranscript(payload, annotations, analytics) {
   const turns = prefilterTurns(payload.turns ?? [])
   const labels = computeTurnLabels(turns)
-  const provider = String(payload.harness)
+  const provider = payload.harness
 
   // Genuine analytics — accepted precomputed, else derived once and reused below.
   const an = analytics ?? computeAnalytics(turns, { scorecard: payload.scorecard ?? undefined })
@@ -683,7 +661,7 @@ export function adaptTranscript(payload, annotations, analytics) {
       // response as content. RENDER-WHEN-PRESENT, pending a backend follow-up: peasant does NOT currently
       // fold tool-sibling thinking into content this way — it suppresses the redundant tool-sibling
       // thinking entry (transcript.go:154,164) and the text lives in the parent's ContentPreview / a
-      // separate field, so this block is absent on today's wire (no regression — TB never rendered inline
+      // separate field, so this block is absent on today's wire (no regression; the transcript browser never rendered inline
       // thinking either). It lights up when peasant emits thinking in content (or the adapter is extended
       // to read ContentPreview) — same deferral pattern as the commit-churn binding.
       const m = content.match(/^\s*<thinking>([\s\S]*?)<\/thinking>\s*/)
@@ -698,8 +676,6 @@ export function adaptTranscript(payload, annotations, analytics) {
 
     const depth = t.depth ?? 0
     const isError = t.entryType === 'error' || toolCalls.some((c) => c.isError)
-    const accent = depth > 0 ? 'subagent' : t.role === 'user' ? 'user' : t.role === 'assistant' ? provider : t.role
-
     /** @type {TurnVM} */
     const turnVM = {
       index: t.index,
@@ -710,7 +686,7 @@ export function adaptTranscript(payload, annotations, analytics) {
       toolCalls,
       annotations: annotationsByTurn[t.index] ?? [],
     }
-    if (accent) turnVM.accent = accent
+    if (depth === 0 && t.role === 'assistant') turnVM.provider = provider
     if (t.agentName) turnVM.agentName = t.agentName
     if (thinking) turnVM.thinking = thinking
     if (t.entryType) turnVM.entryType = t.entryType

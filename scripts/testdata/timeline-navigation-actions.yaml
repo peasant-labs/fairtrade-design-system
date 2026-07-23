@@ -1,0 +1,81 @@
+expectedCaseCount: 6
+payload:
+  repoFound: true
+  defaultBranch: develop
+  changes: []
+  recentCommits:
+    - hash: commit-linked
+      subject: timeline commit
+      timeMs: 1770000000000
+      hasSession: true
+      sessionIds: [session-linked]
+  sessions:
+    - sessionId: session-linked
+      title: Linked session
+      harness: codex
+      startMs: 1769999000000
+      hasCommitBinding: true
+    - sessionId: session-unlinked
+      title: Unlinked session
+      harness: claude-code
+      startMs: 1769998000000
+      hasCommitBinding: false
+    - sessionId: session-outside
+      title: Outside window session
+      harness: gemini-cli
+      startMs: 1769997000000
+      hasCommitBinding: true
+cases:
+  - name: open_change
+    controlName: timeline commit
+    expectedAction:
+      type: open-change
+      change:
+        id: commit-linked
+        branch: develop
+    legacyCallback: select
+    legacyValue:
+      id: commit-linked
+      branch: develop
+  - name: open_linked_session
+    controlName: Linked session
+    expectedAction:
+      type: open-session
+      sessionId: session-linked
+      source:
+        kind: commit
+        commit:
+          id: commit-linked
+          branch: develop
+    legacyCallback: session
+    legacyValue: session-linked
+  - name: open_unlinked_session
+    controlName: Unlinked session
+    expectedAction:
+      type: open-session
+      sessionId: session-unlinked
+      source:
+        kind: unlinked
+    legacyCallback: session
+    legacyValue: session-unlinked
+  - name: open_outside_window_session
+    controlName: Outside window session
+    expectedAction:
+      type: open-session
+      sessionId: session-outside
+      source:
+        kind: outside-window
+    legacyCallback: session
+    legacyValue: session-outside
+  - name: open_map
+    controlName: open the map
+    expectedAction:
+      type: open-map
+    legacyCallback: map
+    legacyValue: null
+  - name: show_older
+    controlName: show older
+    expectedAction:
+      type: show-older
+    legacyCallback: older
+    legacyValue: null

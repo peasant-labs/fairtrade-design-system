@@ -13,20 +13,20 @@ const readTool = {
 }
 
 const userTurn = {
-  index: 0, role: 'user', label: '1', depth: 0, accent: 'user',
+  index: 0, role: 'user', label: '1', depth: 0,
   content: 'Port the transcript canvas into the shared package. Read the renderer first.',
   toolCalls: [], annotations: [], tokens: { in: 280, out: 0 }, timestamp: '8m ago',
 }
 
 const assistantTurn = {
-  index: 2, role: 'assistant', label: '2', depth: 0, accent: 'claude-code',
+  index: 2, role: 'assistant', label: '2', depth: 0, provider: 'claude-code',
   content: 'Reading the current renderer before extracting it.',
   thinking: { text: 'The renderer lives under canvas/. I should read TurnRow.tsx before moving anything.', words: 16 },
   toolCalls: [readTool], annotations: [], tokens: { in: 2100, out: 640 }, timestamp: '7m ago',
 }
 
 const subagentTurn = {
-  index: 7, role: 'assistant', label: '5a', depth: 1, accent: 'subagent', agentName: 'researcher',
+  index: 7, role: 'assistant', label: '5a', depth: 1, agentName: 'researcher',
   content: 'Verifying the exports across the workspace.',
   toolCalls: [], annotations: [], tokens: { in: 800, out: 300 }, timestamp: '4m ago',
 }
