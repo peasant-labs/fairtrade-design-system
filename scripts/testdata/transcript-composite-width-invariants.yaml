@@ -1,0 +1,36 @@
+# Regression guard for the real UAT-found "cramped transcript composite" defect
+# (peasant#166): the main content sat boxed into a ~615px column with wide empty
+# gutters on both sides at desktop widths (confirmed on 1440px captures).
+#
+# Root cause: .txn-center is rendered as a real <section> element
+# (src/ui/transcript/TranscriptViewer.jsx), so it inherits the presentation
+# page's global reset `section { max-width: var(--maxw); margin: 0 auto;
+# padding: 0 var(--gutter); }`. As a grid item inside .txn-body-grid's
+# `minmax(0, 1fr)` centre track, an `auto` horizontal margin takes priority
+# over grid stretch alignment: instead of filling the track, the box
+# shrink-to-fits its content width, then centres inside the track with
+# leftover space on BOTH sides — the exact "narrow column, wide gutters"
+# symptom. `.iu section` already neutralises this same reset for the in-use
+# demo shell (see the comment above `.iu section { max-width: none; ... }`),
+# but that scoped override only applies inside the fairtrade demo's `.iu`
+# wrapper — it does NOT reach `.txn-center` when TranscriptViewer is embedded
+# directly by a consuming app (peasant-web, village frontend) without an
+# `.iu` ancestor, which is exactly where the real cramped screenshots came
+# from. The fix neutralises the reset directly on `.txn-center` so every host
+# context (with or without `.iu`) gets full-width behaviour.
+invariants:
+  - id: txn-center-neutralizes-global-section-reset
+    file: src/index.css
+    description: >-
+      .txn-center is a real <section>, so it inherits the global
+      `section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }`
+      presentation-page reset. Left unneutralised, the auto horizontal margin
+      wins over grid stretch alignment and shrink-wraps + centres the main
+      transcript column inside its 1fr grid track, boxing it into a narrow
+      strip with wide empty gutters on both sides instead of filling the
+      available width.
+    mustContainAll:
+      - ".txn-center {"
+      - "max-width: none;"
+      - "margin-inline: 0;"
+      - "padding-inline: 0;"

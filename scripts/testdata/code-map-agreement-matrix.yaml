@@ -1,0 +1,35 @@
+# A modest grain x expansion-depth matrix (not exhaustive) proving the
+# NAVIGATOR and CANVAS surfaces stay in agreement for any state, not just the
+# specific file-grain/0-or-1-expansion case code-map-state.yaml already locks.
+# Three navigator/canvas divergences shipped this round because each fix only
+# closed the ONE case it was written against; this fixture generalizes the
+# invariant across every (grain, expansion-depth) combination instead.
+expectedCaseCount: 9
+cases:
+  - name: project grain, no expansion
+    grain: project
+    expandedIds: []
+  - name: project grain, shallow expansion
+    grain: project
+    expandedIds: [internal]
+  - name: project grain, deep expansion
+    grain: project
+    expandedIds: [internal, internal/ingest]
+  - name: package grain, no expansion
+    grain: package
+    expandedIds: []
+  - name: package grain, shallow expansion
+    grain: package
+    expandedIds: [internal]
+  - name: package grain, deep expansion
+    grain: package
+    expandedIds: [internal, internal/ingest]
+  - name: file grain, no expansion
+    grain: file
+    expandedIds: []
+  - name: file grain, shallow expansion
+    grain: file
+    expandedIds: [internal]
+  - name: file grain, deep expansion
+    grain: file
+    expandedIds: [internal, internal/ingest]

@@ -34,6 +34,7 @@
  * @property {string} message           the commit subject / branch label (USER CONTENT — case preserved)
  * @property {string} [branch]          branch name chip (USER CONTENT — case preserved)
  * @property {boolean} [session]        a recorded session sits behind this commit (→ filled dot + sparkle)
+ * @property {import('./types.js').TimelineSessionPayload[]} [sessionRefs] named sessions bound to this commit
  * @property {boolean} [merged]         this commit merged a branch back in (→ merged chip)
  * @property {boolean} [tip]            this row is an open branch tip (→ tip affordance)
  * @property {string} [time]            humanised relative time (e.g. "5h ago")
@@ -56,6 +57,8 @@
  * @property {RevertedChange[]} reverted  merged-then-reverted changes (listed under the graph)
  * @property {number} openCount           number of open changes
  * @property {number} mergedCount         number of merged changes
+ * @property {import('./types.js').TimelineSessionPayload[]} unlinkedSessions sessions not linked to a commit in this timeline window
+ * @property {import('./types.js').TimelineSessionPayload[]} outsideWindowSessions sessions linked to a commit outside the displayed default-branch window
  */
 
 const MIN = 60_000
@@ -99,6 +102,9 @@ export function buildChangesGraph(payload, { nowMs }) {
   const recent = payload.recentCommits ?? []
   const changes = payload.changes ?? []
   const defaultBranch = payload.defaultBranch
+  const sessions = payload.sessions ?? []
+  const sessionById = new Map(sessions.map((session) => [session.sessionId, session]))
+  const linkedSessionIds = new Set(recent.flatMap((commit) => commit.sessionIds ?? []))
 
   const open = changes
     .filter((c) => !c.merged)
@@ -166,6 +172,10 @@ export function buildChangesGraph(payload, { nowMs }) {
       message: rc.subject,
       branch: defaultBranch,
       session: rc.hasSession,
+      sessionRefs: (rc.sessionIds ?? []).flatMap((id) => {
+        const session = sessionById.get(id)
+        return session ? [session] : []
+      }),
       merged: mergedChange ? true : undefined,
       time: humanizeAge(rc.timeMs, nowMs),
     })
@@ -181,11 +191,16 @@ export function buildChangesGraph(payload, { nowMs }) {
     when: humanizeAge(r.mergedAtMs, nowMs),
   }))
 
+  const outsideWindowSessions = sessions.filter((session) => session.hasCommitBinding === true
+    && !linkedSessionIds.has(session.sessionId))
   return {
     commits,
     reverted: revertedRows,
     openCount: open.length,
     mergedCount: merged.length + reverted.length,
+    unlinkedSessions: sessions.filter((session) => session.hasCommitBinding === false
+      || (session.hasCommitBinding === undefined && !linkedSessionIds.has(session.sessionId))),
+    outsideWindowSessions,
   }
 }
 

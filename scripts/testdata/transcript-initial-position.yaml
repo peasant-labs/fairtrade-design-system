@@ -1,0 +1,108 @@
+cases:
+  - name: top applies once
+    family: top
+    steps:
+      - {session: session-a, kind: top, turn: -1, requestKey: none, result: applied, selection: 0, dataRevision: 1}
+      - {session: session-a, kind: top, turn: -1, requestKey: none, result: applied, selection: 0, dataRevision: 1}
+    expectedAttempts: [session-a|top|-1|none|applied]
+  - name: sparse turn identity applies once
+    family: sparse-turn
+    steps:
+      - {session: session-a, kind: turn, turn: 42, requestKey: none, result: applied, selection: 0, dataRevision: 1}
+      - {session: session-a, kind: turn, turn: 42, requestKey: none, result: applied, selection: 0, dataRevision: 1}
+    expectedAttempts: [session-a|turn|42|none|applied]
+  - name: session change rearms
+    family: session-change
+    steps:
+      - {session: session-a, kind: turn, turn: 42, requestKey: none, result: applied, selection: 0, dataRevision: 1}
+      - {session: session-b, kind: turn, turn: 42, requestKey: none, result: applied, selection: 0, dataRevision: 1}
+    expectedAttempts: [session-a|turn|42|none|applied, session-b|turn|42|none|applied]
+  - name: target change rearms
+    family: target-change
+    steps:
+      - {session: session-a, kind: turn, turn: 42, requestKey: none, result: applied, selection: 0, dataRevision: 1}
+      - {session: session-a, kind: turn, turn: 84, requestKey: none, result: applied, selection: 0, dataRevision: 1}
+    expectedAttempts: [session-a|turn|42|none|applied, session-a|turn|84|none|applied]
+  - name: lossy host request key rearms top
+    family: request-key
+    steps:
+      - {session: session-a, kind: top, turn: -1, requestKey: missing-turn:42, result: applied, selection: 0, dataRevision: 1}
+      - {session: session-a, kind: top, turn: -1, requestKey: missing-turn:84, result: applied, selection: 0, dataRevision: 1}
+    expectedAttempts: [session-a|top|-1|missing-turn:42|applied, session-a|top|-1|missing-turn:84|applied]
+  - name: data refresh does not rearm
+    family: data-refresh
+    steps:
+      - {session: session-a, kind: turn, turn: 42, requestKey: none, result: applied, selection: 0, dataRevision: 1}
+      - {session: session-a, kind: turn, turn: 42, requestKey: none, result: applied, selection: 0, dataRevision: 2}
+    expectedAttempts: [session-a|turn|42|none|applied]
+  - name: active selection does not rearm
+    family: active-turn
+    steps:
+      - {session: session-a, kind: top, turn: -1, requestKey: none, result: applied, selection: 0, dataRevision: 1}
+      - {session: session-a, kind: top, turn: -1, requestKey: none, result: applied, selection: 42, dataRevision: 1}
+    expectedAttempts: [session-a|top|-1|none|applied]
+  - name: explicit target removal and restore rearms
+    family: target-removal
+    steps:
+      - {session: session-a, kind: turn, turn: 42, requestKey: none, result: applied, selection: 0, dataRevision: 1}
+      - {session: session-a, kind: none, turn: -1, requestKey: none, result: pending, selection: 0, dataRevision: 1}
+      - {session: session-a, kind: turn, turn: 42, requestKey: none, result: applied, selection: 0, dataRevision: 1}
+    expectedAttempts: [session-a|turn|42|none|applied, session-a|turn|42|none|applied]
+  - name: late ref remains pending then applies
+    family: ref-late
+    steps:
+      - {session: session-a, kind: turn, turn: 42, requestKey: none, result: pending, selection: 0, dataRevision: 1}
+      - {session: session-a, kind: turn, turn: 42, requestKey: none, result: applied, selection: 0, dataRevision: 1}
+    expectedAttempts: [session-a|turn|42|none|pending, session-a|turn|42|none|applied]
+  - name: authoritative absence discards once
+    family: discarded
+    steps:
+      - {session: session-a, kind: turn, turn: 42, requestKey: none, result: discarded, selection: 0, dataRevision: 1}
+      - {session: session-a, kind: turn, turn: 42, requestKey: none, result: applied, selection: 0, dataRevision: 2}
+    expectedAttempts: [session-a|turn|42|none|discarded]
+
+normalizerCases:
+  - {name: exact top, kind: top, turn: -1, requestKey: none, extraKey: none, wantValid: true}
+  - {name: exact keyed top, kind: top, turn: -1, requestKey: missing-turn:42, extraKey: none, wantValid: true}
+  - {name: exact sparse turn, kind: turn, turn: 42, requestKey: none, extraKey: none, wantValid: true}
+  - {name: unknown kind rejected, kind: middle, turn: 42, requestKey: none, extraKey: none, wantValid: false}
+  - {name: extra key rejected, kind: top, turn: -1, requestKey: none, extraKey: surprise, wantValid: false}
+  - {name: negative turn rejected, kind: turn, turn: -2, requestKey: none, extraKey: none, wantValid: false}
+  - {name: fractional turn rejected, kind: turn, turn: 4.2, requestKey: none, extraKey: none, wantValid: false}
+  - {name: blank request key rejected, kind: top, turn: -1, requestKey: blank, extraKey: none, wantValid: false}
+untrustedCases:
+  - {name: bigint kind keeps actionable diagnostics, field: kind, valueType: bigint, expectedValue: 42n}
+  - {name: bigint turn identity keeps actionable diagnostics, field: turnIndex, valueType: bigint, expectedValue: 42n}
+  - {name: symbol kind keeps actionable diagnostics, field: kind, valueType: symbol, expectedValue: Symbol(hostile)}
+  - {name: function kind keeps actionable diagnostics, field: kind, valueType: function, expectedValue: "[function]"}
+  - {name: cyclic kind keeps actionable diagnostics, field: kind, valueType: cycle, expectedValue: "[object]"}
+  - {name: undefined kind keeps actionable diagnostics, field: kind, valueType: undefined, expectedValue: undefined}
+  - {name: hostile serializer kind keeps actionable diagnostics, field: kind, valueType: hostile-toJSON, expectedValue: "[object]"}
+untrustedContainerCases:
+  - {name: revoked proxy reflection stays actionable, containerType: revoked-proxy, expectedValue: array classification, expectedInvariant: revoked proxy reflection, expectedDescriptorCalls: []}
+  - {name: prototype trap reflection stays actionable, containerType: prototype-trap, expectedValue: prototype inspection, expectedInvariant: prototype trap reflection, expectedDescriptorCalls: []}
+  - {name: own-keys trap reflection stays actionable, containerType: ownKeys-trap, expectedValue: own-key inspection, expectedInvariant: own-keys trap reflection, expectedDescriptorCalls: []}
+  - {name: kind accessor stays uninvoked, containerType: kind-accessor, expectedValue: kind is an accessor, expectedInvariant: kind accessor isolation, expectedDescriptorCalls: ["kind:1"]}
+  - {name: turn identity accessor stays uninvoked, containerType: turnIndex-accessor, expectedValue: turnIndex is an accessor, expectedInvariant: turn identity accessor isolation, expectedDescriptorCalls: ["kind:1", "turnIndex:1"]}
+  - {name: request key accessor stays uninvoked, containerType: requestKey-accessor, expectedValue: requestKey is an accessor, expectedInvariant: request key accessor isolation, expectedDescriptorCalls: ["kind:1", "requestKey:1"]}
+  - {name: kind hidden from own keys is rejected, containerType: hidden-kind, expectedValue: kind is missing from the reported own keys, expectedInvariant: hidden kind descriptor map, expectedDescriptorCalls: []}
+  - {name: reported request key without descriptor is rejected, containerType: reported-requestKey-no-descriptor, expectedValue: requestKey was reported without an own descriptor, expectedInvariant: reported request key descriptor, expectedDescriptorCalls: ["kind:1", "requestKey:1"]}
+  - {name: descriptor trap reflection stays actionable, containerType: descriptor-trap, expectedValue: descriptor map construction, expectedInvariant: descriptor trap reflection, expectedDescriptorCalls: ["kind:1"]}
+readinessCases:
+  - {name: authoritative absence discards, kind: turn, turn: 42, authoritativeTurns: [0], renderedTurns: [0], viewReady: true, scrollerReady: true, targetReady: false, expectedResult: discarded}
+  - {name: rendered absence stays pending, kind: turn, turn: 42, authoritativeTurns: [0, 42], renderedTurns: [0], viewReady: true, scrollerReady: true, targetReady: false, expectedResult: pending}
+  - {name: alternate view stays pending, kind: turn, turn: 42, authoritativeTurns: [0, 42], renderedTurns: [0, 42], viewReady: false, scrollerReady: true, targetReady: true, expectedResult: pending}
+  - {name: late target ref stays pending, kind: turn, turn: 42, authoritativeTurns: [0, 42], renderedTurns: [0, 42], viewReady: true, scrollerReady: true, targetReady: false, expectedResult: pending}
+  - {name: ready sparse target applies, kind: turn, turn: 42, authoritativeTurns: [0, 42], renderedTurns: [0, 42], viewReady: true, scrollerReady: true, targetReady: true, expectedResult: applied}
+
+precedenceCases:
+  - name: explicit removal remains terminal
+    steps:
+      - {initial: turn, initialTurn: 42, fallback: top, fallbackTurn: -1, legacy: turn, legacyTurn: 84, expected: turn, expectedTurn: 42}
+      - {initial: none, initialTurn: -1, fallback: top, fallbackTurn: -1, legacy: turn, legacyTurn: 84, expected: none, expectedTurn: -1}
+      - {initial: unset, initialTurn: -1, fallback: top, fallbackTurn: -1, legacy: turn, legacyTurn: 84, expected: none, expectedTurn: -1}
+  - name: fallback removal remains terminal
+    steps:
+      - {initial: unset, initialTurn: -1, fallback: turn, fallbackTurn: 42, legacy: turn, legacyTurn: 84, expected: turn, expectedTurn: 42}
+      - {initial: unset, initialTurn: -1, fallback: none, fallbackTurn: -1, legacy: turn, legacyTurn: 84, expected: none, expectedTurn: -1}
+      - {initial: unset, initialTurn: -1, fallback: unset, fallbackTurn: -1, legacy: turn, legacyTurn: 84, expected: none, expectedTurn: -1}

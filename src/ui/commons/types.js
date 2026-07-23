@@ -228,7 +228,7 @@ export const COLLECTIVE_ROLES = Object.freeze([
  * @property {string} id
  * @property {string | null} title
  * @property {TranscriptVisibility} visibility
- * @property {string} modelProvider              e.g. "claude-code", "opencode"
+ * @property {import('@peasant-labs/schema').Harness} modelProvider
  * @property {string | null} modelName
  * @property {string | null} harnessVersion
  * @property {string | null} sessionStart        ISO-8601 datetime or null
@@ -315,7 +315,7 @@ export const COLLECTIVE_ROLES = Object.freeze([
  * @property {string} id
  * @property {string | null} title
  * @property {TranscriptVisibility} visibility
- * @property {string} modelProvider
+ * @property {import('@peasant-labs/schema').Harness} modelProvider
  * @property {string | null} modelName
  * @property {string | null} sessionStart   ISO-8601 datetime or null
  * @property {number | null} turnCount
@@ -341,7 +341,7 @@ export const COLLECTIVE_ROLES = Object.freeze([
  * Mirrors GroupModelBreakdown from frontend/src/lib/types.ts.
  *
  * @typedef {object} CollectiveModelBreakdownPayload
- * @property {string} modelProvider
+ * @property {import('@peasant-labs/schema').Harness} modelProvider
  * @property {number} transcriptCount
  */
 

@@ -34,6 +34,11 @@
   border-top: var(--bd);
 }
 
+.cg-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 /* --- Lane gutter: the SVG holds lines; the dot is an absolutely-placed HTML square -------- */
 
 .cg-gutter {
@@ -123,6 +128,14 @@
 .cg-row {
   flex: 1 1 auto;
   min-width: 0;
+  /* a <button>'s UA-default sizing is intrinsic/content-based (fit-content), not
+     "fill the containing block" like an ordinary block box — so on a narrow
+     viewport this row silently grew to its content's natural width (.cg-msg's
+     full, untruncated commit message) and overflowed .cg-content instead of
+     shrinking to it, defeating .cg-msg's own overflow:hidden/ellipsis rule
+     below. width:100% forces the button to the flex-item width the row/column
+     layout above already computed for it, same as any non-form-control box. */
+  width: 100%;
   display: flex;
   align-items: center;
   gap: var(--sp-3);
@@ -136,6 +149,33 @@
   font-family: inherit;
   cursor: pointer;
 }
+
+.cg-sessions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-4) var(--sp-2) var(--sp-3);
+}
+
+.cg-session {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--sp-6);
+  max-width: 100%;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border: var(--bd);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--fs-label);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cg-session:hover { background: var(--surface-hover); }
+.cg-session-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cg-session-time { color: var(--ink-4); white-space: nowrap; }
 
 @media (prefers-reduced-motion: no-preference) {
   .cg-row,
@@ -260,6 +300,10 @@
 
 .cg-older {
   flex: 1 1 auto;
+  min-width: 0;
+  /* same <button> intrinsic-sizing gotcha as .cg-row above — force it to the
+     flex-item width rather than its content's natural width. */
+  width: 100%;
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);

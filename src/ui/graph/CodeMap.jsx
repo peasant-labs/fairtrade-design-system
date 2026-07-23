@@ -1,5 +1,7 @@
 import { useMemo, useRef } from 'react'
 import MapCanvas from '../MapCanvas.jsx'
+import { codeMapStatesEqual, createCodeMapState, deriveCodeMapView, reduceCodeMapState } from './codeMapState.js'
+import { assertCodeMapPayloadEnums } from './types.js'
 
 const CODE_MAP_ZOOM_TO_GRAIN = Object.freeze({
   project: 'overview',
@@ -33,6 +35,10 @@ const CODE_MAP_GRAIN_TO_ZOOM = Object.freeze({
  * @param {number|string} [props.height]
  * @param {string} [props.ariaLabel]
  * @param {string} [props.className]
+ * @param {{scale:number, panX:number, panY:number}|null} [props.viewport]
+ * @param {(viewport:{scale:number, panX:number, panY:number})=>void} [props.onViewportChange]
+ * @param {import('./codeMapState.js').CodeMapState} [props.state]
+ * @param {(state:import('./codeMapState.js').CodeMapState)=>void} [props.onStateChange]
  */
 export default function CodeMap({
   payload,
@@ -47,6 +53,10 @@ export default function CodeMap({
   height = 520,
   ariaLabel = 'code map',
   className = '',
+  viewport,
+  onViewportChange,
+  state,
+  onStateChange,
 }) {
   const nodesById = useMemo(() => {
     const out = new Map()
@@ -54,23 +64,43 @@ export default function CodeMap({
     return out
   }, [payload?.nodes])
 
-  const data = useMemo(() => codeMapPayloadToMapData(payload), [payload])
-  const grain = CODE_MAP_ZOOM_TO_GRAIN[zoom?.level ?? 'package'] ?? 'folders'
-  const expanded = zoom?.expanded ?? []
-  const isZoomControlled = zoom?.level !== undefined
+  const canonicalState = useMemo(
+    () => state === undefined ? null : createCodeMapState(state),
+    [state],
+  )
+  const derived = useMemo(
+    () => canonicalState ? deriveCodeMapView(payload, canonicalState) : null,
+    [payload, canonicalState],
+  )
+  const data = useMemo(
+    () => codeMapPayloadToMapData(payload ? { ...payload, nodes: derived?.canvas.allNodes ?? payload.nodes } : payload),
+    [payload, derived?.canvas.allNodes],
+  )
+  const grain = derived ? CODE_MAP_ZOOM_TO_GRAIN[derived.canvas.grain] ?? 'folders' : CODE_MAP_ZOOM_TO_GRAIN[zoom?.level ?? 'package']
+  const expanded = derived?.canvas.expandedIds ?? zoom?.expanded
   const latestGrainRef = useRef(grain)
-  if (isZoomControlled) latestGrainRef.current = grain
+  latestGrainRef.current = grain
+
+  function publishAction(action) {
+    if (!canonicalState) return
+    const next = reduceCodeMapState(canonicalState, action)
+    if (!codeMapStatesEqual(canonicalState, next)) onStateChange?.(next)
+  }
 
   return (
     <MapCanvas
       data={data}
       grain={grain}
       expandedIds={expanded}
-      selectedId={selectedId}
+      visibleIds={derived?.canvas.visibleIds}
+      hierarchy={derived?.canvas.hierarchy}
+      selectedId={derived ? derived.canvas.selectedId : selectedId}
       highlightedIds={highlightedIds}
       nodeDeltas={nodeDeltas}
       edgeDeltas={structureEdgeDeltas}
-      onSelect={(id) => onSelect?.(id, id ? nodesById.get(id) ?? null : null)}
+      onSelect={(id) => {
+        onSelect?.(id, id ? nodesById.get(id) ?? null : null)
+      }}
       onExpand={onExpand}
       onGrainChange={(nextGrain) => {
         latestGrainRef.current = nextGrain
@@ -88,6 +118,12 @@ export default function CodeMap({
       height={height}
       ariaLabel={ariaLabel}
       className={className}
+      viewport={derived ? derived.canvas.viewport : viewport}
+      onViewportChange={(nextViewport) => {
+        onViewportChange?.(nextViewport)
+      }}
+      onStateAction={canonicalState ? publishAction : undefined}
+      canonicalControlled={canonicalState !== null}
     />
   )
 }
@@ -97,6 +133,7 @@ export default function CodeMap({
  * @returns {{nodes: Array<object>, edges: Array<object>}}
  */
 export function codeMapPayloadToMapData(payload) {
+  if (payload) assertCodeMapPayloadEnums(payload)
   const nodes = payload?.nodes ?? []
   const violationsByNode = countViolationsByEndpoint(payload?.violations ?? [])
   return {

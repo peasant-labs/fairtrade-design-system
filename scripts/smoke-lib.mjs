@@ -58,7 +58,7 @@ const txnReadTool = { id: 'r1', name: 'Read', kind: 'read', group: 'read', previ
 const txnBashTool = { id: 'b1', name: 'Bash', kind: 'execute', group: 'bash', preview: 'pnpm -r typecheck', exitCode: 0, durationMs: 820, args: { command: 'pnpm -r typecheck' }, output: 'ok' }
 const txnTaskTool = { id: 'k1', name: 'Task', kind: 'other', group: 'tasks', preview: 'verify exports', args: { subagent_type: 'researcher', description: 'verify exports', prompt: 'check exports resolve' }, output: 'done' }
 const txnDiffEntry = { path: 'src/lib/tasks.ts', leaf: 'tasks.ts', adds: 1, dels: 0, turn: 5, toolCallId: 't5a', hunks: [{ lines: [{ sign: 'ctx', oldNo: '1', newNo: '1', text: 'const a = 1' }, { sign: 'add', newNo: '2', text: 'const b = 2' }, { sign: 'add', text: '' }] }] }
-const txnTurn = { index: 2, role: 'assistant', label: '2', depth: 0, accent: 'claude-code', content: 'Reading **TurnRow** before extracting it.', thinking: { text: 'read first', words: 2 }, toolCalls: [txnReadTool], annotations: [], tokens: { in: 2100, out: 640 }, timestamp: '2026-06-17T09:13:00Z' }
+const txnTurn = { index: 2, role: 'assistant', label: '2', depth: 0, provider: 'claude-code', content: 'Reading **TurnRow** before extracting it.', thinking: { text: 'read first', words: 2 }, toolCalls: [txnReadTool], annotations: [], tokens: { in: 2100, out: 640 }, timestamp: '2026-06-17T09:13:00Z' }
 const txnUserTurn = { index: 0, role: 'user', label: '1', depth: 0, content: 'Port the transcript canvas into the shared package.', toolCalls: [], annotations: [], tokens: { in: 280, out: 0 } }
 
 // a fully-populated cooked TranscriptViewModel + a complete capability surface, so the composite
@@ -102,6 +102,9 @@ const sampleProps = {
     caption: 'sample table',
   },
   DiffView: { file: 'sample.diff', hunks: diffHunks },
+  ProviderIcon: { harness: 'antigravity', label: true },
+  ProviderName: { harness: 'antigravity' },
+  ProviderTag: { harness: 'antigravity' },
   Field: { label: 'field', children: ({ id }) => React.createElement('input', { id }) },
   StepIndicator: { steps, current: 'one' },
   StepWizard: { steps, children: ['first', 'second'] },
@@ -212,6 +215,9 @@ const surfaceChecks = [
   ['commons', commons, ['TRANSCRIPT_VISIBILITIES', 'ACCEPTANCE_MODES', 'DATA_ACCESS_POLICIES', 'TRANSCRIPT_DELETION_POLICIES', 'COLLECTIVE_ROLES']],
   ['analytics', analytics, ['ANALYTICS_SESSION_OUTCOMES', 'PROJECT_OVERVIEW_SECTION_KEYS']],
 ]
+for (const name of ['CODE_MAP_STATE_VERSION', 'createCodeMapState', 'reduceCodeMapState', 'deriveCodeMapView']) {
+  if (!(name in graph)) failures.push(`${name}: missing from dist/lib/graph.js (code-map state runtime export)`)
+}
 for (const [surface, mod, names] of surfaceChecks) {
   for (const name of names) {
     if (!(name in mod)) {

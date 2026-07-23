@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Star, GitMerge, ChevronDown } from 'lucide-react'
+import { ProviderName } from './ProviderIcon.jsx'
 import './CommitGraph.css'
 
 /* CommitGraph — a source-control history rendered as a commit graph, ported in intent from
@@ -34,6 +35,7 @@ const gutterWidth = (laneCount) => laneX(Math.max(laneCount - 1, 0)) + GUTTER_TA
  * @property {string} message - the commit subject (USER CONTENT — case preserved)
  * @property {string} [branch] - branch name for the chip (USER CONTENT — case preserved)
  * @property {boolean} [session] - a recorded AI session sits behind this commit (-> filled + sparkle)
+ * @property {import('./graph/types.js').TimelineSessionPayload[]} [sessionRefs] - named sessions bound to this commit
  * @property {boolean} [merged] - this commit merged a branch back in (-> merged chip)
  * @property {boolean} [tip] - this commit is a branch tip (-> small tip affordance)
  * @property {string} [time] - relative time label (e.g. "8m ago") — already humanised by the caller
@@ -45,16 +47,20 @@ const gutterWidth = (laneCount) => laneX(Math.max(laneCount - 1, 0)) + GUTTER_TA
  * @param {object} props
  * @param {Commit[]} props.commits - the history, newest first; lane 0 is the main line.
  * @param {string} [props.selectedId] - id of the active/selected row (the scarce amber treatment).
- * @param {(commit: Commit) => void} [props.onSelect] - called with the commit when a row is chosen.
+ * @param {(action: import('./graph/timelineNavigation.js').TimelineNavigationAction) => void} [props.onNavigate] - canonical semantic action callback; when present, legacy callbacks do not fire.
+ * @param {(commit: Commit) => void} [props.onSelect] - deprecated legacy row callback; use onNavigate.
+ * @param {(sessionId: string) => void} [props.onOpenSession] - deprecated legacy session callback; use onNavigate.
  * @param {boolean} [props.hasMore=false] - more history exists below the window -> show the "show older" ghost.
- * @param {() => void} [props.onShowOlder] - called when "show older" is pressed.
+ * @param {() => void} [props.onShowOlder] - deprecated legacy pagination callback; use onNavigate.
  * @param {string} [props.label='commit history'] - accessible name for the list (lowercase chrome).
  * @param {string} [props.className] - extra classes appended to the root.
  */
 export default function CommitGraph({
   commits = [],
   selectedId,
+  onNavigate,
   onSelect,
+  onOpenSession,
   hasMore = false,
   onShowOlder,
   label = 'commit history',
@@ -131,7 +137,9 @@ export default function CommitGraph({
           row={row}
           width={width}
           selected={row.commit.id === selectedId}
+          onNavigate={onNavigate}
           onSelect={onSelect}
+          onOpenSession={onOpenSession}
         />
       ))}
 
@@ -149,7 +157,14 @@ export default function CommitGraph({
               />
             </svg>
           </span>
-          <button type="button" className="cg-older" onClick={onShowOlder}>
+          <button
+            type="button"
+            className="cg-older"
+            onClick={() => {
+              if (onNavigate) onNavigate({ type: 'show-older' })
+              else onShowOlder?.()
+            }}
+          >
             <ChevronDown className="cg-older-ic" aria-hidden="true" />
             show older
           </button>
@@ -160,7 +175,7 @@ export default function CommitGraph({
 }
 
 /** One commit: the lane gutter (SVG strokes + the HTML square dot) and the button row. */
-function CommitRow({ row, width, selected, onSelect }) {
+function CommitRow({ row, width, selected, onNavigate, onSelect, onOpenSession }) {
   const { commit, lane, joins, passLanes, laneUp, laneDown } = row
   const hasSession = Boolean(commit.session)
 
@@ -240,24 +255,69 @@ function CommitRow({ row, width, selected, onSelect }) {
         )}
       </span>
 
-      <button type="button" className={rowCls} onClick={() => onSelect?.(commit)}>
-        <span className="cg-msg" title={commit.message}>
-          {commit.message}
-        </span>
+      <div className="cg-content">
+        <button
+          type="button"
+          className={rowCls}
+          onClick={() => {
+            if (onNavigate) {
+              onNavigate({
+                type: 'open-change',
+                change: { id: commit.id, branch: commit.branch ?? null },
+              })
+            } else onSelect?.(commit)
+          }}
+        >
+          <span className="cg-msg" title={commit.message}>
+            {commit.message}
+          </span>
 
-        <span className="cg-meta">
-          {commit.merged && (
-            <span className="cg-merged">
-              <GitMerge className="cg-merged-ic" aria-hidden="true" />
-              merged
-            </span>
-          )}
-          {commit.tip && <span className="cg-tip">tip</span>}
-          {commit.branch && <span className="cg-branch">{commit.branch}</span>}
-          {hasSession && <span className="cg-sr">session</span>}
-          {commit.time && <span className="cg-time tnum">{commit.time}</span>}
-        </span>
-      </button>
+          <span className="cg-meta">
+            {commit.merged && (
+              <span className="cg-merged">
+                <GitMerge className="cg-merged-ic" aria-hidden="true" />
+                merged
+              </span>
+            )}
+            {commit.tip && <span className="cg-tip">tip</span>}
+            {commit.branch && <span className="cg-branch">{commit.branch}</span>}
+            {hasSession && <span className="cg-sr">session</span>}
+            {commit.time && <span className="cg-time tnum">{commit.time}</span>}
+          </span>
+        </button>
+
+        {commit.sessionRefs?.length > 0 && (
+          <div className="cg-sessions" role="group" aria-label={`sessions linked to ${commit.message}`}>
+            {commit.sessionRefs.map((session) => (
+              <button
+                key={session.sessionId}
+                type="button"
+                className="cg-session"
+                onClick={() => {
+                  if (onNavigate) {
+                    onNavigate({
+                      type: 'open-session',
+                      sessionId: session.sessionId,
+                      source: {
+                        kind: 'commit',
+                        commit: { id: commit.id, branch: commit.branch ?? null },
+                      },
+                    })
+                  } else onOpenSession?.(session.sessionId)
+                }}
+              >
+                <ProviderName harness={session.harness} />
+                <span className="cg-session-title">{session.title || session.sessionId}</span>
+                {session.startMs != null && (
+                  <time className="cg-session-time tnum" dateTime={new Date(session.startMs).toISOString()}>
+                    {new Date(session.startMs).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toLowerCase()}
+                  </time>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

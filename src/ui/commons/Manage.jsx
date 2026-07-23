@@ -52,7 +52,7 @@ const EMPTY_DATA = {
    outranks the unauthenticated/non-member "guest" view). */
 const COLLECTIVE_VIEW_ROLES = ['owner', 'member', 'contributor', 'guest']
 
-/* PROVIDER_LABEL / formatProvider / providerLabel now live in ./providers.js (a dependency-free
+/* PROVIDER_LABEL / formatProvider / providerLabel now live in ./providers.js (a commons-cycle-free
    leaf module) so both this shipped component and the demo (mockups/inuse/CommonsManage.jsx) can
    import the same one without CommonsManage.jsx importing back from Manage.jsx -- Manage.jsx
    already re-exports the demo's views FROM CommonsManage.jsx below, so that reverse edge would
@@ -336,7 +336,7 @@ export function Manage({
                               passes the raw slug through both fields, so trusting `row.provider`
                               directly showed "claude-code"/"gemini-cli" verbatim in this table even
                               though the provider-share box above it was already humanized. */}
-                          <FolderGit2 size={12} aria-hidden="true" /> {row.providerId ? providerLabel(row.providerId) : (row.provider || formatProvider(row.providerId))}
+                          <FolderGit2 size={12} aria-hidden="true" /> {row.providerId ? providerLabel(row.providerId) : formatProvider(row.provider)}
                         </td>
                         <td className="cmg-num tnum">{row.turns || '0'}</td>
                         <td className="cmg-num tnum">{row.tokens || '0'}</td>

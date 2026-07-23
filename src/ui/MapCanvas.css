@@ -143,6 +143,41 @@
 .mc-result .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); flex: none; }
 .mc-result-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* ------------------------------------------------------------------ breadcrumb */
+/* "where am I" strip for the currently-drilled-into folder on the canvas. tokens
+   only, radius 0 (the DS invariant), lowercase chrome text. */
+.mc-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-4);
+  border-bottom: var(--bd);
+  font-size: var(--fs-label);
+  color: var(--ink-3);
+  overflow-x: auto;
+}
+.mc-breadcrumb-crumb {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: var(--sp-1) var(--sp-2);
+  color: var(--ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mc-breadcrumb-crumb:hover { background: var(--surface-hover); color: var(--ink); }
+.mc-breadcrumb-current {
+  color: var(--ink);
+  cursor: default;
+  font-weight: 600;
+}
+.mc-breadcrumb-sep {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  color: var(--ink-4);
+  flex: none;
+}
+
 /* ------------------------------------------------------------------ viewport */
 /* the pannable canvas surface: a square dot-grid drawn from two layered radial
    gradients on the page canvas. position:relative so the absolutely-placed stage,
@@ -286,6 +321,27 @@
   box-shadow: inset 0 0 0 2px var(--amber);
   z-index: 2;
 }
+.mc-node-disclosure {
+  position: absolute;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  transform: translate(-100%, -100%);
+  margin: 0;
+  padding: 0;
+  border: var(--bd-strong);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.mc-node-disclosure:hover { background: var(--surface-hover); }
+.mc-node-disclosure:focus-visible { outline: var(--sp-1) solid var(--focus-ring); outline-offset: var(--sp-1); }
+.mc-node-disclosure[aria-expanded='true'] svg { transform: rotate(90deg); }
+.mc-node-disclosure svg { width: var(--ic-sm); height: var(--ic-sm); transition: transform var(--dur-1) var(--ease-standard); }
+@media (prefers-reduced-motion: reduce) { .mc-node-disclosure svg { transition: none; } }
 /* the discrete selection marker: a small amber square pinned to the top-left corner
    (a SHAPE that appears — the orthogonal "selected" channel). */
 .mc-node-marker {
@@ -451,8 +507,11 @@
 
 /* ------------------------------------------------------------------ motion */
 /* transitions ONLY when motion is welcome; otherwise hover/selection edges snap. the
-   stage transform is deliberately NOT transitioned even here — pan/zoom must track the
-   pointer 1:1 with no lag (an eased transform fights a drag). */
+   stage transform is deliberately NOT transitioned by default — pan/zoom must track
+   the pointer/wheel 1:1 with no lag (an eased transform fights a drag). the ONE
+   exception is `.mc-stage--auto-fit`, applied only for the brief, discrete
+   programmatic re-frame after descending into a folder (never during an
+   interactive drag/zoom gesture) — see MapCanvas.jsx's autoFitAnimating. */
 @media (prefers-reduced-motion: no-preference) {
   .mc-seg-btn,
   .mc-result,
@@ -463,5 +522,8 @@
       background var(--dur-1) var(--ease-out),
       border-color var(--dur-1) var(--ease-out),
       box-shadow var(--dur-1) var(--ease-out);
+  }
+  .mc-stage--auto-fit {
+    transition: transform var(--dur-2) var(--ease-standard);
   }
 }

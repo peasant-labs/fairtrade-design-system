@@ -1,6 +1,5 @@
 import { useId, useMemo, useState } from 'react'
 import {
-  Terminal,
   Upload,
   Copy,
   Check,
@@ -42,6 +41,7 @@ import {
   DangerZone,
   ConfirmInline,
   Tag,
+  ProviderIcon,
 } from '../../ui'
 
 /* ============================================================================
@@ -53,27 +53,6 @@ import {
    .dl/.sidebar/.empty/.select/.input/.crumb/.tnum etc.
 ============================================================================ */
 
-/* provider brand marks (svg symbols live in the document-global defs partial).
-   only claude/gemini/opencode have brand symbols; codex falls back to a square
-   terminal glyph so we never render a misleading logo. */
-function ProviderMark({ id }) {
-  const cls = { 'claude-code': 'g-claude', 'gemini-cli': 'g-gemini', opencode: 'g-opencode', codex: 'g-codex' }[id]
-  const sym = { 'claude-code': '#b-claude', 'gemini-cli': '#b-gemini', opencode: '#b-opencode' }[id]
-  if (!sym) {
-    return (
-      <span className={cls}>
-        <Terminal className="lucide" size={14} aria-hidden="true" />
-      </span>
-    )
-  }
-  return (
-    <span className={cls}>
-      <svg className="brand" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
-        <use href={sym} />
-      </svg>
-    </span>
-  )
-}
 /* small copyable command block with $ prompt + Copy→Check (transient "copied"). */
 function CommandBlock({ cmd, note }) {
   const [copied, setCopied] = useState(false)
@@ -704,7 +683,7 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
                       <tr key={row.title}>
                         <td>{row.title}</td>
                         <td className="mono">{row.contributor}</td>
-                        <td><ProviderMark id={row.providerId || 'codex'} /> {row.provider}</td>
+                        <td><ProviderIcon harness={row.providerId} /> {providerLabel(row.providerId)}</td>
                         <td className="cmg-num tnum">{row.turns}</td>
                         <td className="cmg-num tnum">{row.tokens}</td>
                         <td className="mono tnum">{row.date}</td>

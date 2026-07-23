@@ -25,6 +25,8 @@
 
 import React from 'react'
 import { renderToStaticMarkup as render } from 'react-dom/server'
+import { readFileSync } from 'node:fs'
+import YAML from 'yaml'
 import * as ui from '../dist/lib/ui.js'
 
 const h = React.createElement
@@ -54,7 +56,7 @@ const grepTool = { id: 'g', name: 'Grep', kind: 'search', group: 'search', previ
 const webfetchTool = { id: 'w', name: 'WebFetch', kind: 'fetch', group: 'fetch', preview: 'url', args: { url: 'https://react.dev/useMemo', prompt: 'sum' }, output: 'cached body' }
 const taskTool = { id: 'k', name: 'Task', kind: 'other', group: 'tasks', preview: 'verify', args: { subagent_type: 'researcher', description: 'verify', prompt: 'go' }, output: 'done' }
 const otherTool = { id: 'o', name: 'Todo', kind: 'other', group: 'other', preview: 'todos', args: { a: 1 }, output: 'noop' }
-const assistantTurn = { index: 2, role: 'assistant', label: '2', depth: 0, accent: 'claude-code', content: 'Reading the **renderer** first.', thinking: { text: 'reason', words: 7 }, toolCalls: [readTool], annotations: [], tokens: { in: 2100, out: 640 }, timestamp: 'now' }
+const assistantTurn = { index: 2, role: 'assistant', label: '2', depth: 0, provider: 'claude-code', content: 'Reading the **renderer** first.', thinking: { text: 'reason', words: 7 }, toolCalls: [readTool], annotations: [], tokens: { in: 2100, out: 640 }, timestamp: 'now' }
 const diffEntry = { path: 'a/x.ts', leaf: 'x.ts', adds: 1, dels: 1, turn: 5, hunks: editTool.diff }
 // a hunk whose final line is the trailing empty LCS artifact (content ending in \n)
 const trimHunks = [{ lines: [{ sign: 'add', newNo: '1', text: 'a' }, { sign: 'add', newNo: '2', text: 'b' }, { sign: 'add', text: '' }] }]
@@ -74,18 +76,18 @@ const trimHunks = [{ lines: [{ sign: 'add', newNo: '1', text: 'a' }, { sign: 'ad
 
 /* ── ToolBody: the six renderers + catch-all (dispatch on cooked ToolCallVM.group) */
 {
-  assert('TB-read', 'read body emits the code path header', html(ui.TranscriptToolBody, { tool: readTool }).includes('txn-code-path'))
-  assert('TB-edit', 'edit body emits the diff head + churn', html(ui.TranscriptToolBody, { tool: editTool }).includes('txn-diff-head'))
+  assert('TOOLBODY-read', 'read body emits the code path header', html(ui.TranscriptToolBody, { tool: readTool }).includes('txn-code-path'))
+  assert('TOOLBODY-edit', 'edit body emits the diff head + churn', html(ui.TranscriptToolBody, { tool: editTool }).includes('txn-diff-head'))
   const bash = html(ui.TranscriptToolBody, { tool: bashTool })
-  assert('TB-bash', 'bash body emits the terminal block + exit code', bash.includes('txn-term') && bash.includes('exit 2'))
+  assert('TOOLBODY-bash', 'bash body emits the terminal block + exit code', bash.includes('txn-term') && bash.includes('exit 2'))
   const grep = html(ui.TranscriptToolBody, { tool: grepTool })
-  assert('TB-grep', 'grep body emits the grep meta + match count', grep.includes('txn-grep-meta') && grep.includes('2 matches'))
+  assert('TOOLBODY-grep', 'grep body emits the grep meta + match count', grep.includes('txn-grep-meta') && grep.includes('2 matches'))
   // MANDATED: webfetch has no mockup fixture; this is its render anchor.
   const wf = html(ui.TranscriptToolBody, { tool: webfetchTool })
-  assert('TB-webfetch', 'webfetch body emits the url as a txn-url link', wf.includes('txn-url') && wf.includes('react.dev/useMemo'))
+  assert('TOOLBODY-webfetch', 'webfetch body emits the url as a txn-url link', wf.includes('txn-url') && wf.includes('react.dev/useMemo'))
   const task = html(ui.TranscriptToolBody, { tool: taskTool })
-  assert('TB-task', 'task body emits the kv list + cooked agent', task.includes('txn-kv') && task.includes('researcher'))
-  assert('TB-default', 'catch-all body emits the arguments eyebrow', html(ui.TranscriptToolBody, { tool: otherTool }).includes('arguments'))
+  assert('TOOLBODY-task', 'task body emits the kv list + cooked agent', task.includes('txn-kv') && task.includes('researcher'))
+  assert('TOOLBODY-default', 'catch-all body emits the arguments eyebrow', html(ui.TranscriptToolBody, { tool: otherTool }).includes('arguments'))
 }
 
 /* ── DiffHunks: the trailing-empty trim (MANDATED) ───────────────────────────── */
@@ -170,11 +172,15 @@ const vm = {
 }
 const allCaps = { canEdit: true, canLabel: true, canContribute: true, canChangeVisibility: true, canExport: true }
 const composite = (props) => html(ui.TranscriptViewer, props)
+const streamPreludeFixture = YAML.parse(
+  readFileSync(new URL('./testdata/transcript-stream-prelude.yaml', import.meta.url), 'utf8'),
+)
 
 /* ── composite renders every surface from the single VM ──────────────────────────── */
 {
   const out = composite({ viewModel: vm, capabilities: allCaps })
   assert('VIEWER-default-trace', 'TranscriptViewer state-default tab is trace → renders the turn cards from vm.turns', out.includes('txn-turn') && out.includes('#1'))
+  assert('VIEWER-landmark-safe', 'TranscriptViewer uses a tabpanel section instead of nesting a second main landmark in its host', out.includes('<section class="txn-center" role="tabpanel"') && !out.includes('<main'))
   assert('VIEWER-rails', 'TranscriptViewer assembles the left outline + right filters rails', out.includes('txn-rail-left') && out.includes('txn-rail-right'))
   assert('VIEWER-checkpoint', 'composite draws a CheckpointMarker between turns from session.git.commits', out.includes('txn-checkpoint') && out.includes('9f3c1ad'))
   const hl = composite({ viewModel: vm, capabilities: allCaps, activeTab: 'highlights' })
@@ -182,6 +188,36 @@ const composite = (props) => html(ui.TranscriptViewer, props)
   assert('VIEWER-highlights', 'highlights tab renders the non-empty vm.highlights surface', hl.includes('txn-hl-card') && hl.includes('initial request'))
   const anno = composite({ viewModel: vm, capabilities: allCaps, activeTab: 'annotations' })
   assert('VIEWER-annotations', 'annotations tab renders the cooked pattern annotations', anno.includes('txn-anno-row') && anno.includes('typecheck'))
+}
+
+/* ── host controls live inside the list scroller, never in the graph branch ────── */
+{
+  const prelude = h(
+    streamPreludeFixture.element,
+    { 'data-testid': streamPreludeFixture.testId },
+    streamPreludeFixture.text,
+  )
+  const trace = composite({ viewModel: vm, capabilities: allCaps, streamPrelude: prelude })
+  const graph = composite({
+    viewModel: vm,
+    capabilities: allCaps,
+    viewMode: 'graph',
+    streamPrelude: prelude,
+    graphSlot: () => h('div', null, 'graph'),
+  })
+  const streamStart = trace.indexOf('class="txn-stream"')
+  const preludeAt = trace.indexOf(streamPreludeFixture.text)
+  const firstTurnAt = trace.indexOf('class="txn-turn')
+  assert(
+    'VIEWER-stream-prelude-order',
+    'host transcript controls render inside the stream before the first turn',
+    streamStart >= 0 && preludeAt > streamStart && firstTurnAt > preludeAt,
+  )
+  assert(
+    'VIEWER-stream-prelude-graph-omitted',
+    'host transcript controls are omitted from graph mode',
+    !graph.includes(streamPreludeFixture.text),
+  )
 }
 
 /* ── state defaults: theme defaults dark; graph mode needs a graphSlot ───────────── */

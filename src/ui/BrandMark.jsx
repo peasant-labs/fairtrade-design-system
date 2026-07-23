@@ -32,7 +32,7 @@ const PATHS = {
 
 /* aliases so callers can pass the company OR the product name and still resolve a mark.
    codex has no Simple Icons mark of its own; it is an OpenAI product, so it falls back to
-   the OpenAI blossom (documented fallback). */
+   the OpenAI blossom. Harness-specific brand identity lives in provider-policy.js. */
 const ALIAS = {
   anthropic: 'claude',
   'claude-code': 'claude',

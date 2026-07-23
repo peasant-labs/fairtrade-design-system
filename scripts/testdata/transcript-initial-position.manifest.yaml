@@ -1,0 +1,73 @@
+expectedCaseCount: 10
+requiredFamilies: [top, sparse-turn, session-change, target-change, request-key, data-refresh, active-turn, target-removal, ref-late, discarded]
+requiredNames:
+  - top applies once
+  - sparse turn identity applies once
+  - session change rearms
+  - target change rearms
+  - lossy host request key rearms top
+  - data refresh does not rearm
+  - active selection does not rearm
+  - explicit target removal and restore rearms
+  - late ref remains pending then applies
+  - authoritative absence discards once
+expectedNormalizerCount: 8
+requiredNormalizerNames:
+  - exact top
+  - exact keyed top
+  - exact sparse turn
+  - unknown kind rejected
+  - extra key rejected
+  - negative turn rejected
+  - fractional turn rejected
+  - blank request key rejected
+expectedUntrustedCount: 7
+requiredUntrustedNames:
+  - bigint kind keeps actionable diagnostics
+  - bigint turn identity keeps actionable diagnostics
+  - symbol kind keeps actionable diagnostics
+  - function kind keeps actionable diagnostics
+  - cyclic kind keeps actionable diagnostics
+  - undefined kind keeps actionable diagnostics
+  - hostile serializer kind keeps actionable diagnostics
+expectedUntrustedContainerCount: 9
+requiredUntrustedContainerNames:
+  - revoked proxy reflection stays actionable
+  - prototype trap reflection stays actionable
+  - own-keys trap reflection stays actionable
+  - descriptor trap reflection stays actionable
+  - kind accessor stays uninvoked
+  - turn identity accessor stays uninvoked
+  - request key accessor stays uninvoked
+  - kind hidden from own keys is rejected
+  - reported request key without descriptor is rejected
+expectedReadinessCount: 5
+requiredReadinessNames:
+  - authoritative absence discards
+  - rendered absence stays pending
+  - alternate view stays pending
+  - late target ref stays pending
+  - ready sparse target applies
+expectedPrecedenceCount: 2
+requiredPrecedenceNames:
+  - explicit removal remains terminal
+  - fallback removal remains terminal
+expectedMutationCount: 17
+mutations:
+  - {name: premature pending consumption, file: normalizer, find: "return result === 'applied' || result === 'discarded' ? nextToken : consumedToken", replace: "return nextToken", expectedError: terminal consumption}
+  - {name: omitted session token, file: normalizer, find: "sessionId ?? ''", replace: "''", expectedError: session token}
+  - {name: array offset target, file: normalizer, find: "!state.authoritativeTurnIndices.includes(position.turnIndex)", replace: "!state.authoritativeTurnIndices[position.turnIndex]", expectedError: readiness behavior}
+  - {name: explicit removal revives legacy, file: normalizer, find: "input.explicitUsed || input.initialPosition !== undefined", replace: "input.initialPosition !== undefined", expectedError: precedence behavior}
+  - {name: fallback removal revives legacy, file: normalizer, find: "input.fallbackUsed || (!explicitUsed && input.fallbackInitialPosition !== undefined)", replace: "!explicitUsed && input.fallbackInitialPosition !== undefined", expectedError: precedence behavior}
+  - {name: premature ref discard, file: normalizer, find: "position.kind === 'turn' && !state.targetReady) return 'pending'", replace: "position.kind === 'turn' && !state.targetReady) return 'discarded'", expectedError: readiness behavior}
+  - {name: rendered absence discards full-present target, file: normalizer, find: "position.kind === 'turn' && !state.renderedTurnIndices.includes(position.turnIndex)) return 'pending'", replace: "position.kind === 'turn' && !state.renderedTurnIndices.includes(position.turnIndex)) return 'discarded'", expectedError: readiness behavior}
+  - {name: bigint kind uses unsafe JSON serialization, file: normalizer, find: "safeDiagnosticValue(kind)", replace: "JSON.stringify(kind)", expectedError: bigint kind actionable invariant failed}
+  - {name: bigint turn identity uses unsafe JSON serialization, file: normalizer, find: "safeDiagnosticValue(turnIndex)", replace: "JSON.stringify(turnIndex)", expectedError: bigint turn identity actionable invariant failed}
+  - {name: revoked proxy bypasses array reflection guard, file: normalizer, find: "guardedInitialPositionReflection('array classification', () => Array.isArray(value))", replace: "Array.isArray(value)", expectedError: revoked proxy reflection invariant failed}
+  - {name: prototype trap bypasses reflection guard, file: normalizer, find: "guardedInitialPositionReflection('prototype inspection', () => Object.getPrototypeOf(value))", replace: "Object.getPrototypeOf(value)", expectedError: prototype trap reflection invariant failed}
+  - {name: own-keys trap bypasses reflection guard, file: normalizer, find: "guardedInitialPositionReflection('own-key inspection', () => Reflect.ownKeys(record))", replace: "Reflect.ownKeys(record)", expectedError: own-keys trap reflection invariant failed}
+  - {name: descriptor map bypasses reflection guard, file: normalizer, find: "return guardedInitialPositionReflection('descriptor map construction', inspect)", replace: "return inspect()", expectedError: descriptor trap reflection invariant failed}
+  - {name: descriptor map accepts accessors, file: normalizer, find: "if (!Object.prototype.hasOwnProperty.call(descriptor, 'value')) {", replace: "if (false) {", expectedError: kind accessor isolation invariant failed}
+  - {name: hidden kind uses independent descriptor lookup, file: normalizer, find: "const kind = initialPositionKind(dataFields)", replace: "const kind = dataFields.has('kind') ? dataFields.get('kind') : Object.getOwnPropertyDescriptor(record, 'kind')?.value", expectedError: hidden kind descriptor map invariant failed}
+  - {name: hidden kind uses direct property read, file: normalizer, find: "const kind = initialPositionKind(dataFields)", replace: "const kind = dataFields.has('kind') ? dataFields.get('kind') : record.kind", expectedError: hidden kind descriptor map invariant failed}
+  - {name: missing reported descriptor is accepted, file: normalizer, find: "if (descriptor === undefined) {", replace: "if (descriptor === undefined) continue\n      if (false) {", expectedError: reported request key descriptor invariant failed}

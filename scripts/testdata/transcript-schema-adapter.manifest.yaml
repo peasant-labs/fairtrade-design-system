@@ -1,0 +1,59 @@
+expectedAdapterCaseCount: 6
+expectedHarnessCount: 6
+expectedStopReasonCount: 5
+expectedInvalidStopReasonCount: 2
+expectedMutationCount: 6
+adapterCases:
+  - canonical-flat
+  - nullable-turns
+  - legacy-only
+  - flat-conflict
+  - canonical-commit
+  - legacy-churn-commit
+harnessValues:
+  - claude-code
+  - gemini-cli
+  - codex
+  - opencode
+  - cursor
+  - antigravity
+stopReasonValues:
+  - end_turn
+  - cancelled
+  - max_tokens
+  - max_turn_requests
+  - refusal
+invalidStopReasonValues:
+  - stop
+  - length
+mutations:
+  - name: nested-branch-must-not-win
+    file: adapter
+    find: payload.gitBranch ?? gc?.branch ?? undefined
+    replace: gc?.branch ?? payload.gitBranch ?? undefined
+    expectedError: "flat-conflict: branch"
+  - name: nested-working-directory-must-not-win
+    file: adapter
+    find: payload.workingDirectory ?? payload.gitContext?.workingDirectory
+    replace: payload.gitContext?.workingDirectory ?? payload.workingDirectory
+    expectedError: "flat-conflict: workingDirectory"
+  - name: nullable-turns-must-normalize
+    file: adapter
+    find: prefilterTurns(payload.turns ?? [])
+    replace: prefilterTurns(payload.turns)
+    expectedError: nullable-turns
+  - name: canonical-commit-time-must-survive
+    file: adapter
+    find: "'commitTime' in c ? Number(c.commitTime) : Date.parse(c.timestamp)"
+    replace: "'timestamp' in c ? Date.parse(c.timestamp) : NaN"
+    expectedError: "canonical-commit: commitTime"
+  - name: antigravity-must-remain-canonical
+    file: wireTypes
+    find: Object.values(SchemaHarness)
+    replace: Object.values(SchemaHarness).filter((value) => value !== 'antigravity')
+    expectedError: harness values
+  - name: refusal-must-remain-canonical
+    file: wireTypes
+    find: Object.values(SchemaStopReason)
+    replace: Object.values(SchemaStopReason).filter((value) => value !== 'refusal')
+    expectedError: stop reason values

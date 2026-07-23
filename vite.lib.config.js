@@ -28,6 +28,7 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [
+        '@peasant-labs/schema',
         '@tanstack/react-table',
         'lucide-react',
         'react',

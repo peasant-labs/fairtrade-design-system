@@ -1,0 +1,85 @@
+expectedCaseCount: 3
+cases:
+  - name: named_many_to_many_and_unlinked
+    payload:
+      repoFound: true
+      defaultBranch: develop
+      changes: []
+      recentCommits:
+        - hash: commit-a
+          subject: first commit
+          timeMs: 1770000000000
+          hasSession: true
+          sessionIds: [session-a, session-b]
+        - hash: commit-b
+          subject: second commit
+          timeMs: 1769990000000
+          hasSession: true
+          sessionIds: [session-a]
+      sessions:
+        - sessionId: session-a
+          title: Shared implementation session
+          harness: codex
+          startMs: 1769980000000
+          hasCommitBinding: true
+        - sessionId: session-b
+          title: Review the edge cases
+          harness: claude-code
+          startMs: 1769985000000
+          hasCommitBinding: true
+        - sessionId: session-c
+          title: Explore without committing
+          harness: gemini-cli
+          startMs: 1769970000000
+          hasCommitBinding: false
+    expect:
+      linkedActionCount: 3
+      linkedGroupLabels: [sessions linked to first commit, sessions linked to second commit]
+      unlinkedTitles: [Explore without committing]
+  - name: complete_relation_prevents_false_unlinked_rows
+    payload:
+      repoFound: true
+      defaultBranch: develop
+      changes: []
+      recentCommits:
+        - hash: commit-visible
+          subject: visible manual commit
+          hasSession: false
+          sessionIds: []
+      sessions:
+        - sessionId: session-old
+          title: Bound outside the 200 commit window
+          harness: codex
+          hasCommitBinding: true
+        - sessionId: session-branch
+          title: Bound on a non-default branch
+          harness: claude-code
+          hasCommitBinding: true
+        - sessionId: session-unbound
+          title: Truly unattached work
+          harness: gemini-cli
+          hasCommitBinding: false
+    expect:
+      linkedActionCount: 0
+      unlinkedTitles: [Truly unattached work]
+      absentUnlinkedTitles: [Bound outside the 200 commit window, Bound on a non-default branch]
+      outsideWindowTitles: [Bound outside the 200 commit window, Bound on a non-default branch]
+  - name: legacy_boolean_only
+    payload:
+      repoFound: true
+      defaultBranch: develop
+      changes: []
+      recentCommits:
+        - hash: commit-old
+          subject: legacy commit
+          timeMs: 1770000000000
+          hasSession: true
+          sessionIds: [session-legacy]
+      sessions:
+        - sessionId: session-legacy
+          title: Legacy linked session
+          harness: opencode
+    expect:
+      linkedActionCount: 1
+      linkedGroupLabels: [sessions linked to legacy commit]
+      unlinkedTitles: []

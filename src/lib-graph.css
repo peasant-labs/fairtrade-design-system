@@ -57,6 +57,155 @@
   .gmp-map-swatch--edge { width: 16px; height: 0; margin-top: -1px; border: 0; border-top: 1px solid var(--rule-strong); background: none; }
   .gmp-map-legend-danger { color: var(--danger); }
 
+  /* ── CodeMapNavigator (readable, task-first entry to the spatial map; the
+     tree and selection actions share the same canonical surface in every
+     host — hosts own only data and navigation state) ──────────────────── */
+  .gmp-navigator {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    background: var(--canvas);
+    color: var(--ink);
+  }
+  .gmp-navigator-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    padding: var(--sp-4);
+    border-bottom: var(--bd);
+    background: var(--surface-2);
+  }
+  .gmp-navigator-kicker {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    font-weight: 600;
+    text-transform: lowercase;
+    color: var(--ink-strong);
+  }
+  .gmp-navigator-note {
+    max-width: var(--measure-prose);
+    margin: var(--sp-1) 0 0;
+    font-size: var(--fs-sm);
+    line-height: var(--lh-body);
+    color: var(--ink-3);
+  }
+  .gmp-navigator-search {
+    display: flex;
+    align-items: center;
+    min-width: min(100%, var(--rail-w));
+    height: var(--control-h);
+    border: var(--bd-strong);
+    background: var(--surface);
+  }
+  .gmp-navigator-search:focus-within { border-color: var(--amber-dim); box-shadow: inset 0 0 0 var(--sp-1) var(--focus-ring); }
+  .gmp-navigator-search > .lucide { width: var(--ic-sm); height: var(--ic-sm); margin-inline: var(--sp-2); color: var(--ink-3); }
+  .gmp-navigator-search input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0 var(--sp-2) 0 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+  }
+  .gmp-navigator-search input::placeholder { color: var(--ink-4); text-transform: lowercase; }
+  .gmp-navigator-body { display: grid; grid-template-columns: minmax(0, 1fr) var(--rail-w); min-height: 0; }
+  .gmp-navigator-tree { min-height: calc(var(--control-h) * 8); padding: var(--sp-3) 0; border-right: var(--bd); }
+  .gmp-navigator-row-wrap {
+    display: grid;
+    grid-template-columns: var(--control-h-sm) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--sp-2);
+    min-height: var(--control-h);
+    padding: var(--sp-2) var(--sp-4) var(--sp-2) calc(var(--sp-4) + var(--gmp-tree-depth) * var(--sp-5));
+    border-left: var(--sp-1) solid transparent;
+  }
+  .gmp-navigator-row-wrap:hover { background: var(--surface-hover); }
+  .gmp-navigator-row-wrap:has(.gmp-navigator-row:focus-visible) { box-shadow: inset 0 0 0 var(--sp-1) var(--focus-ring); }
+  .gmp-navigator-row-wrap[data-selected='true'] { border-left-color: var(--amber); background: var(--surface-elev); }
+  .gmp-navigator-row {
+    display: grid;
+    grid-template-columns: var(--ic-sm) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--sp-2);
+    min-width: 0;
+    cursor: pointer;
+    outline: 0;
+  }
+  .gmp-navigator-row > .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); }
+  .gmp-navigator-disclosure, .gmp-navigator-disclosure-placeholder { width: var(--control-h-sm); height: var(--control-h-sm); }
+  .gmp-navigator-disclosure {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ink-3);
+    cursor: pointer;
+  }
+  .gmp-navigator-disclosure:hover { background: var(--surface-hover); color: var(--ink); }
+  .gmp-navigator-disclosure:focus-visible { outline: var(--sp-1) solid var(--focus-ring); outline-offset: var(--sp-1); }
+  .gmp-navigator-disclosure[aria-disabled='true'] { cursor: default; opacity: 0.6; }
+  .gmp-navigator-chevron { visibility: hidden; transition: transform var(--dur-1) var(--ease-standard); }
+  .gmp-navigator-disclosure[aria-expanded] .gmp-navigator-chevron { visibility: visible; }
+  .gmp-navigator-disclosure[aria-expanded='true'] .gmp-navigator-chevron { transform: rotate(90deg); }
+  .gmp-navigator-path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); color: var(--ink); }
+  .gmp-navigator-meta {
+    display: flex;
+    gap: var(--sp-3);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-4);
+  }
+  .gmp-navigator-actions { padding: var(--sp-4); background: var(--surface); }
+  .gmp-navigator-selected { margin: 0; color: var(--ink-strong); font-weight: 600; overflow-wrap: anywhere; }
+  .gmp-navigator-selected-path {
+    margin: var(--sp-1) 0 var(--sp-4);
+    color: var(--ink-4);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    overflow-wrap: anywhere;
+  }
+  .gmp-navigator-action {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    width: 100%;
+    min-height: var(--control-h);
+    padding: var(--sp-2) var(--sp-3);
+    border: var(--bd-strong);
+    background: transparent;
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    text-transform: lowercase;
+    cursor: pointer;
+  }
+  .gmp-navigator-action + .gmp-navigator-action { margin-top: var(--sp-2); }
+  .gmp-navigator-action:hover { background: var(--surface-hover); color: var(--ink); }
+  .gmp-navigator-action:focus-visible { outline: var(--sp-1) solid var(--focus-ring); outline-offset: var(--sp-1); }
+  .gmp-navigator-action > .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+  .gmp-navigator-action--primary { border-color: var(--amber-dim); color: var(--amber); }
+  .gmp-navigator-empty { margin: 0; padding: var(--sp-4); color: var(--ink-4); font-size: var(--fs-sm); line-height: var(--lh-body); }
+  .gmp-navigator-missing { margin: 0; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); color: var(--clay); font-size: var(--fs-sm); }
+  .gmp-navigator-missing button { border: 0; background: transparent; color: var(--ink); text-decoration: underline; cursor: pointer; }
+  @media (max-width: 720px) {
+    .gmp-navigator-head { flex-direction: column; }
+    .gmp-navigator-search { width: 100%; }
+    .gmp-navigator-body { grid-template-columns: 1fr; }
+    .gmp-navigator-tree { border-right: 0; border-bottom: var(--bd); }
+    .gmp-navigator-meta { flex-direction: column; gap: 0; align-items: flex-end; }
+  }
+  @media (prefers-reduced-motion: reduce) { .gmp-navigator-chevron { transition: none; } }
+
   /* ── Changes view (lane-based git graph over the kit CommitGraph) ─────────── */
   .gmp-changes-root {
     overflow: auto;
@@ -77,6 +226,27 @@
   .gmp-changes-sub { font-size: 11px; color: var(--ink-4); margin-top: var(--sp-1); }
   .gmp-changes-body { padding: var(--sp-4) var(--gmp-pad-x); min-width: 0; }
 
+  .gmp-unlinked-sessions { margin-top: var(--sp-5); border-top: var(--bd); padding-top: var(--sp-4); }
+  .gmp-unlinked-sessions-head { border: 0; padding: 0 0 var(--sp-2); }
+  .gmp-unlinked-sessions-list { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .gmp-unlinked-session {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--sp-6);
+    max-width: 100%;
+    gap: var(--sp-2);
+    padding: var(--sp-1) var(--sp-2);
+    border: var(--bd);
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    text-align: left;
+    cursor: pointer;
+  }
+  .gmp-unlinked-session:hover { background: var(--surface-hover); }
+  .gmp-unlinked-session:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
   /* merged / reverted chips listed under the graph */
   .gmp-merged-chip {
     position: absolute;
@@ -87,13 +257,14 @@
     background: var(--surface-2);
     border: 1px dashed var(--ink-5);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: var(--fs-label);
     text-transform: lowercase;
     color: var(--ink-4);
     cursor: pointer;
     z-index: 3;
   }
   .gmp-merged-chip:hover { color: var(--ink-2); border-color: var(--rule-strong); }
+  .gmp-merged-chip:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
   .gmp-merged-chip .lucide { width: 13px; height: 13px; flex: none; }
   .gmp-merged-sec { margin-top: var(--sp-5); border-top: var(--bd); padding-top: var(--sp-4); }
   .gmp-merged-head { border: 0; padding: 0 0 var(--sp-2); }
@@ -106,7 +277,7 @@
     align-items: center;
     gap: var(--sp-2);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: var(--fs-label);
     text-transform: lowercase;
     color: var(--ink-3);
   }

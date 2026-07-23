@@ -1,0 +1,51 @@
+# Regression guards for two real UAT-found mobile layout defects:
+# (1) commit-row <button>s silently overflowing their narrow
+# container instead of shrinking to it, and (2) the mounted transcript's
+# non-scrolling chrome (title/meta chips/turns-toolbar) consuming almost the
+# entire mobile viewport before any transcript content is visible.
+# Each row names the SOURCE file the fix lives in (never the built dist,
+# which may minify/reorder declarations) and a literal substring that must be
+# present — a future edit that reverts the fix (e.g. drops width:100% from a
+# <button> row, or removes the mobile compaction rules) fails this test.
+invariants:
+  - id: cg-row-fills-container
+    file: src/ui/CommitGraph.css
+    description: >-
+      .cg-row is a <button> — its UA-default intrinsic sizing ignores
+      flex:1 1 auto on a non-flex parent, so without an explicit width it
+      silently grows to its content's natural width and overflows .cg-content
+      on a narrow viewport instead of shrinking to it (defeating .cg-msg's
+      own overflow:hidden/ellipsis truncation).
+    mustContainAll:
+      - ".cg-row {"
+      - "width: 100%;"
+  - id: cg-older-fills-container
+    file: src/ui/CommitGraph.css
+    description: the "N older commits" ghost row button has the same <button> intrinsic-sizing gotcha as .cg-row.
+    mustContainAll:
+      - ".cg-older {"
+      - "width: 100%;"
+  - id: txn-title-clamps-on-mobile
+    file: src/index.css
+    description: >-
+      the session title (often a full command/prompt line) must clamp to one
+      line with an ellipsis below 720px, not wrap to 2-3 lines and inflate
+      the persistent (non-scrolling) transcript header.
+    mustContainAll:
+      - "-webkit-line-clamp: 1;"
+  - id: txn-meta-scrolls-not-wraps-on-mobile
+    file: src/index.css
+    description: >-
+      the meta chip row (outcome/harness/model/duration/turns/tools/tokens)
+      must become a horizontally-scrollable single row below 720px instead of
+      wrapping to 3+ rows — the single biggest contributor to the mobile
+      chrome crowding out the transcript stream.
+    mustContainAll:
+      - ".txn-meta {"
+      - "flex-wrap: nowrap;"
+      - "overflow-x: auto;"
+  - id: txn-trace-head-compact-on-mobile
+    file: src/index.css
+    description: the "N turns / list·graph toggle" bar gets reduced padding below 720px, matching .txn-header's own mobile treatment.
+    mustContainAll:
+      - ".txn-trace-head { padding: var(--sp-2) var(--sp-3); }"

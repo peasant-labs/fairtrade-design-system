@@ -129,7 +129,8 @@ check((thinkingTurn?.thinking?.words ?? 0) > 0, 'A: thinking must carry a word c
 
 // subagent nesting via depth.
 const sub = vm.turns.find((t) => t.index === 7)
-check(sub?.depth === 1 && sub?.agentName === 'researcher' && sub?.accent === 'subagent', 'A: subagent turn must keep depth/agentName/accent')
+check(sub?.depth === 1 && sub?.agentName === 'researcher' && sub?.provider === undefined, 'A: subagent turn must keep depth/agentName without fabricating a provider accent')
+check(vm.turns.find((turn) => turn.role === 'assistant' && turn.depth === 0)?.provider === gitPresent.harness, 'A: top-level assistant must preserve the canonical payload harness')
 
 // labels: "1", "1a"… "2", "2a"… (two user prompts → two tasks)
 check(vm.turns[0].label === '1' && vm.turns[3].label === '2', `A: task labels wrong (${vm.turns[0].label}/${vm.turns[3].label})`)
@@ -204,7 +205,7 @@ const empty = adaptTranscript({ id: 'e', harness: 'codex', startTime: 't', endTi
 check(empty.turns.length === 0 && empty.tasks.length === 0 && empty.diffs.length === 0, 'C: empty payload yields empty-but-present arrays')
 
 /* ════════════════════════════════════════════════════════════════════════════
-   (D) back-compat analytics helpers (re-exported verbatim by the TB migration)
+   (D) back-compat analytics helpers (re-exported verbatim by the transcript-browser migration)
    ════════════════════════════════════════════════════════════════════════════ */
 const rawTasks = computeTasks(TURNS)
 check(rawTasks.length === 2 && rawTasks[0].prompt.startsWith('Port the transcript'), 'D: computeTasks must split on top-level user prompts')

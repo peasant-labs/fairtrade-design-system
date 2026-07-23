@@ -4,14 +4,14 @@
    ─────────────────────────────────────────────────────────────────────────
    The adapter's OUTPUT is, field-for-field, EVERY presentational component's
    prop contract. The one transcript adapter (`adaptTranscript`) maps the
-   canonical wire (wire-types.js) ONCE into this cooked model; every
+   schema-backed wire (wire-types.js) ONCE into this cooked model; every
    primitive + the composite read from it and NEVER touch wire.
 
    Three invariants this model enforces (the whole reason it exists):
      1. ZERO JSON.parse downstream — the adapter parses `ToolCallDetail.arguments`
         / `.result` once into `ToolCallVM` (parsed payload + preview + diff hunks).
-     2. ZERO git wire fields downstream — flat `gitBranch`/`gitRemote` and nested
-        `gitContext` are normalized into the optional, cooked `SessionVM.git`
+     2. ZERO git wire fields downstream — canonical flat git fields and the
+        retired nested `gitContext` are normalized into cooked `SessionVM.git`
         (render-when-present). No component sees a git wire field.
      3. ANALYTICS are render-when-present — `phases`, `scorecardBands`,
         `patternAnnotations`, `taskGroups` are optional; absent ⇒ the consuming
@@ -29,16 +29,16 @@
 
 /**
  * Cooked git chrome for the session header. Produced by the adapter from
- * whichever wire shape is present — flat `gitBranch`/`gitRemote` OR nested
+ * whichever wire shape is present — canonical flat git fields OR retired nested
  * `gitContext` (see TranscriptWireInput in wire-types.js). Absent on the model
  * ⇒ the git chips are omitted entirely (clean degrade). Every field is optional
- * because the real Go wire carries only branch + remote today; the rest arrive
- * only via metadata.json fixtures.
+ * because the canonical session-detail wire carries only branch + remote today;
+ * the rest arrive only via legacy inputs and fixtures.
  *
  * @typedef {object} SessionGitVM
  * @property {string} [branch]
  * @property {string} [remote]
- * @property {string} [author]              cooked from the drifted gitContext.user (TS shape); absent on the Go-flat wire (render-when-present)
+ * @property {string} [author]              cooked from legacy gitContext.user; absent on the canonical flat wire
  * @property {CommitVM[]} [commits]
  * @property {number} [filesChanged]
  * @property {number} [insertions]
@@ -48,10 +48,10 @@
 /**
  * A cooked commit for the git chrome / commit chips. Mirrors CommitInfo
  * (wire-types.js) with display-ready fields. The churn (`adds`/`dels`/`files`)
- * and `turn` anchor are render-when-present: the canonical Go CommitInfo carries
+ * and `turn` anchor are render-when-present: canonical CommitInfo carries
  * no churn and commits are not on the session_detail payload (the deferred
- * backend follow-up), so these light up from fixtures / the drifted TS shape now
- * and from the wire when that follow-up lands.
+ * backend follow-up), so these light up from fixtures / the retired nested shape now
+ * and from the canonical wire when that follow-up lands.
  *
  * @typedef {object} CommitVM
  * @property {string} hash
@@ -173,7 +173,7 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {string} label                 display label, e.g. "1a" / "2"
  * @property {string} content               markdown body (thinking already extracted)
  * @property {number} depth                 subagent nesting depth (0 = top level)
- * @property {string} [accent]              provider/role accent token name (decoration)
+ * @property {import('@peasant-labs/schema').Harness} [provider] canonical provider identity for a top-level assistant turn
  * @property {string} [agentName]           subagent name when depth > 0
  * @property {ThinkingVM} [thinking]
  * @property {ToolCallVM[]} toolCalls

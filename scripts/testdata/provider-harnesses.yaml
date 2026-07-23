@@ -1,0 +1,38 @@
+expectedHarnessCount: 6
+expectedInvalidHarnessCount: 3
+expectedSurfaceCount: 3
+absentProviderAccent: amber
+mountedHarness: antigravity
+surfaces:
+  - turn-card
+  - graph-turn-node
+  - graph-legend
+harnesses:
+  - slug: claude-code
+    accessibleName: Claude Code
+    brand: claude
+    accent: amber
+  - slug: gemini-cli
+    accessibleName: Gemini CLI
+    brand: gemini
+    accent: teal
+  - slug: codex
+    accessibleName: Codex
+    brand: openai
+    accent: olive
+  - slug: opencode
+    accessibleName: opencode
+    brand: opencode
+    accent: mauve
+  - slug: cursor
+    accessibleName: Cursor
+    brand: cursor
+    accent: clay
+  - slug: antigravity
+    accessibleName: Google Antigravity
+    brand: gemini
+    accent: teal
+invalidHarnesses:
+  - google
+  - unknown-provider
+  - ""

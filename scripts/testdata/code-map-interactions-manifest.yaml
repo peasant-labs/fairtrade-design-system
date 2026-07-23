@@ -1,0 +1,58 @@
+expectedCaseCount: 30
+expectedMutationCount: 22
+
+cases:
+  - {name: navigator parent single click is immediate, surface: navigator, action: {type: click, targets: [internal], keys: []}, cardinality: {states: 1, select: 1, zoom: 0, expand: 0, presentation: 0, aria: 0, structure: 0}}
+  - {name: navigator leaf single click is immediate, surface: navigator, action: {type: click, targets: [internal/ingest/pipeline.go], keys: []}, cardinality: {states: 1, select: 1, zoom: 0, expand: 0, presentation: 0, aria: 1, structure: 0}}
+  - {name: navigator disclosure expands without selecting, surface: navigator, action: {type: disclosure, targets: [internal], keys: []}, cardinality: {states: 1, select: 0, zoom: 1, expand: 0, presentation: 0, aria: 1, structure: 0}}
+  - {name: navigator disclosure enter expands focused elsewhere, surface: navigator, action: {type: disclosure-key, targets: [internal], keys: [Enter]}, cardinality: {states: 1, select: 0, zoom: 1, expand: 0, presentation: 0, aria: 1, structure: 3}}
+  - {name: navigator disclosure space expands focused elsewhere, surface: navigator, action: {type: disclosure-key, targets: [internal], keys: [Space]}, cardinality: {states: 1, select: 0, zoom: 1, expand: 0, presentation: 0, aria: 1, structure: 3}}
+  - {name: navigator parent double click selects then expands, surface: navigator, action: {type: double-click, targets: [internal], keys: []}, cardinality: {states: 2, select: 1, zoom: 1, expand: 0, presentation: 0, aria: 1, structure: 0}}
+  - {name: navigator leaf double click selects once without expansion, surface: navigator, action: {type: double-click, targets: [internal/ingest/pipeline.go], keys: []}, cardinality: {states: 1, select: 1, zoom: 0, expand: 0, presentation: 0, aria: 1, structure: 0}}
+  - {name: navigator enter selects immediately, surface: navigator, action: {type: key-sequence, targets: [internal], keys: [Enter]}, cardinality: {states: 1, select: 1, zoom: 0, expand: 0, presentation: 0, aria: 0, structure: 0}}
+  - {name: navigator space selects a leaf immediately, surface: navigator, action: {type: key-sequence, targets: [internal/ingest/pipeline.go], keys: [Space]}, cardinality: {states: 1, select: 1, zoom: 0, expand: 0, presentation: 0, aria: 0, structure: 0}}
+  - {name: navigator unfiltered arrows expand focus parent and collapse, surface: navigator, action: {type: key-sequence, targets: [internal, internal, internal/ingest, internal], keys: [ArrowRight, ArrowRight, ArrowLeft, ArrowLeft]}, cardinality: {states: 4, select: 0, zoom: 2, expand: 0, presentation: 0, aria: 1, structure: 0}}
+  - {name: navigator deep filter forces open without persisted expansion, surface: navigator, action: {type: key-sequence, targets: [internal, internal/ingest], keys: [ArrowRight, ArrowLeft]}, cardinality: {states: 2, select: 0, zoom: 0, expand: 0, presentation: 0, aria: 2, structure: 0}}
+  - {name: navigator parent only filter is not forced open, surface: navigator, action: {type: assert-only, targets: [solo], keys: []}, cardinality: {states: 0, select: 0, zoom: 0, expand: 0, presentation: 0, aria: 1, structure: 0}}
+  - {name: navigator forced disclosure is a no op, surface: navigator, action: {type: disclosure, targets: [internal], keys: []}, cardinality: {states: 0, select: 0, zoom: 0, expand: 0, presentation: 0, aria: 1, structure: 0}}
+  - {name: navigator rapid cross node clicks publish in order, surface: navigator, action: {type: rapid-click, targets: [internal, web], keys: []}, cardinality: {states: 2, select: 2, zoom: 0, expand: 0, presentation: 0, aria: 0, structure: 0}}
+  - {name: canvas parent single click is immediate, surface: canvas, action: {type: click, targets: [internal], keys: []}, cardinality: {states: 1, select: 1, zoom: 0, expand: 0, presentation: 0, aria: 0, structure: 0}}
+  - {name: canvas leaf single click is immediate, surface: canvas, action: {type: click, targets: [internal/ingest/pipeline.go], keys: []}, cardinality: {states: 1, select: 1, zoom: 0, expand: 0, presentation: 0, aria: 1, structure: 0}}
+  - {name: canvas disclosure expands without selecting, surface: canvas, action: {type: disclosure, targets: [internal], keys: []}, cardinality: {states: 1, select: 0, zoom: 1, expand: 1, presentation: 0, aria: 0, structure: 0}}
+  - {name: canvas disclosure enter expands focused elsewhere, surface: canvas, assertionsAt: before, action: {type: disclosure-key, targets: [internal/ingest], keys: [Enter]}, cardinality: {states: 1, select: 0, zoom: 1, expand: 1, presentation: 0, aria: 1, structure: 2}}
+  - {name: canvas disclosure space expands focused elsewhere, surface: canvas, assertionsAt: before, action: {type: disclosure-key, targets: [internal/ingest], keys: [Space]}, cardinality: {states: 1, select: 0, zoom: 1, expand: 1, presentation: 0, aria: 1, structure: 2}}
+  - {name: canvas parent double click selects then expands, surface: canvas, action: {type: double-click, targets: [internal], keys: []}, cardinality: {states: 2, select: 1, zoom: 1, expand: 1, presentation: 0, aria: 0, structure: 0}}
+  - {name: canvas leaf double click selects once without expansion, surface: canvas, action: {type: double-click, targets: [internal/ingest/pipeline.go], keys: []}, cardinality: {states: 1, select: 1, zoom: 0, expand: 0, presentation: 0, aria: 1, structure: 0}}
+  - {name: canvas enter selects immediately, surface: canvas, action: {type: key-sequence, targets: [internal], keys: [Enter]}, cardinality: {states: 1, select: 1, zoom: 0, expand: 0, presentation: 0, aria: 0, structure: 0}}
+  - {name: canvas rejecting owner proposes selection without rendering it, surface: canvas, owner: reject, action: {type: click, targets: [internal], keys: []}, cardinality: {states: 1, select: 1, zoom: 0, expand: 0, presentation: 0, aria: 0, structure: 0, before: 1, after: 1, ownerStates: 2, semanticStates: 0, announcements: 2, transforms: 2}}
+  - {name: canvas rejecting owner proposes disclosure without rendering it, surface: canvas, owner: reject, action: {type: disclosure, targets: [internal], keys: []}, cardinality: {states: 1, select: 0, zoom: 1, expand: 1, presentation: 0, aria: 0, structure: 0, before: 1, after: 1, ownerStates: 2, semanticStates: 0, announcements: 2, transforms: 2}}
+  - {name: canvas rejecting owner proposes grain without rendering it, surface: canvas, owner: reject, action: {type: grain-control, targets: [files], keys: []}, cardinality: {states: 1, select: 0, zoom: 1, expand: 0, presentation: 0, aria: 0, structure: 0, before: 1, after: 1, ownerStates: 2, semanticStates: 0, announcements: 2, transforms: 2}}
+  - {name: canvas rejecting owner proposes zoom without rendering it, surface: canvas, owner: reject, action: {type: zoom-control, targets: [zoom in], keys: ['800', '400']}, cardinality: {states: 1, select: 0, zoom: 0, expand: 0, presentation: 0, aria: 0, structure: 0, before: 1, after: 1, ownerStates: 2, semanticStates: 0, announcements: 2, transforms: 2}}
+  - {name: canvas rejecting owner proposes pan without rendering it, surface: canvas, owner: reject, action: {type: pan, targets: [viewport], keys: ['10', '20', '30', '50']}, cardinality: {states: 1, select: 0, zoom: 0, expand: 0, presentation: 0, aria: 0, structure: 0, before: 1, after: 1, ownerStates: 2, semanticStates: 0, announcements: 2, transforms: 2}}
+  - {name: canvas rejecting owner ignores repeated selection, surface: canvas, owner: reject, action: {type: click, targets: [internal], keys: []}, cardinality: {states: 0, select: 0, zoom: 0, expand: 0, presentation: 0, aria: 0, structure: 0, before: 1, after: 1, ownerStates: 2, semanticStates: 0, announcements: 2, transforms: 2}}
+  - {name: canvas legacy selected click clears selection, surface: canvas, owner: legacy, action: {type: click, targets: [internal], keys: []}, cardinality: {states: 0, select: 1, zoom: 0, expand: 0, presentation: 0, aria: 0, structure: 0, before: 1, after: 1, ownerStates: 0, semanticStates: 2, announcements: 2, transforms: 2}}
+  - {name: canvas legacy double click other node selects once then expands, surface: canvas, owner: legacy, action: {type: double-click, targets: [internal], keys: []}, cardinality: {states: 0, select: 1, zoom: 1, expand: 1, presentation: 0, aria: 0, structure: 0, before: 1, after: 1, ownerStates: 0, semanticStates: 2, announcements: 2, transforms: 2}}
+
+mutations:
+  - {name: trailing document, mutation: trailing-document, expectedError: exactly one YAML document}
+  - {name: duplicate root key, mutation: duplicate-root-key, expectedError: duplicate key}
+  - {name: unknown root field, mutation: unknown-root-field, expectedError: unknown field}
+  - {name: declared count drift, mutation: count-drift, expectedError: exactly 30 cases}
+  - {name: duplicate case name, mutation: duplicate-case-name, expectedError: unique nonempty names}
+  - {name: empty case name, mutation: empty-case-name, expectedError: unique nonempty names}
+  - {name: renamed required case, mutation: rename-case, expectedError: manifest case pairing mismatch}
+  - {name: deleted required case, mutation: delete-case, expectedError: exactly 30 cases}
+  - {name: unknown case field, mutation: unknown-case-field, expectedError: unknown field}
+  - {name: incomplete state sequence, mutation: incomplete-state, expectedError: missing viewport}
+  - {name: emptied active case, mutation: empty-active-case, expectedError: 'cases[0] must not be vacuous'}
+  - {name: controlled owner missing before state, mutation: controlled-owner-missing-before, expectedError: stateful owner is missing expectedBefore}
+  - {name: controlled owner missing after state, mutation: controlled-owner-missing-after, expectedError: stateful owner is missing expectedAfter}
+  - {name: legacy owner missing before state, mutation: legacy-owner-missing-before, expectedError: stateful owner is missing expectedBefore}
+  - {name: legacy owner incomplete before state, mutation: legacy-owner-incomplete-before, expectedError: missing selectedId}
+  - {name: legacy owner missing after state, mutation: legacy-owner-missing-after, expectedError: stateful owner is missing expectedAfter}
+  - {name: legacy owner incomplete after state, mutation: legacy-owner-incomplete-after, expectedError: missing pressedIds}
+  - {name: mounted announcement missing text, mutation: missing-announcement, expectedError: missing text}
+  - {name: mounted announcement has wrong text, mutation: wrong-announcement, expectedError: exactly match the mounted semantic announcement}
+  - {name: legacy semantic selection mismatch, mutation: semantic-selection-mismatch, expectedError: legacy after semantic state must match callback reduction}
+  - {name: legacy semantic expansion mismatch, mutation: semantic-expansion-mismatch, expectedError: legacy after semantic state must match callback reduction}
+  - {name: null viewport missing exact transform, mutation: null-viewport-missing-transform, expectedError: missing transform}

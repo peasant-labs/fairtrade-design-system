@@ -17,6 +17,7 @@ import {
   FileText,
 } from 'lucide-react'
 import DiffView from '../DiffView.jsx'
+import { assertChangeDetailPayloadEnums, assertChangeDiffPayloadEnums } from './types.js'
 
 /* ChangeDetail — the lifted "one line of work, told in full" surface, lifted from the demo
    GraphMap.jsx ChangeDetailView and parameterised onto the cooked ChangeDetailPayload: a
@@ -66,6 +67,7 @@ function toKitHunk(h) {
 
 /** One file's lazy diff: closed by default; opens to fetch + render hunks with per-hunk attribution. */
 function DiffFile({ file, diff, open, onToggle }) {
+  if (diff) assertChangeDiffPayloadEnums(diff)
   const status = file.status
   const convos = diff ? new Set(diff.hunks.map((h) => h.sessionId).filter(Boolean)).size : null
   return (
@@ -142,6 +144,7 @@ export default function ChangeDetail({
   onCopyRecap,
   initialOpenFiles = {},
 }) {
+  assertChangeDetailPayloadEnums(payload)
   const [openFiles, setOpenFiles] = useState(initialOpenFiles)
   const [jumpTarget, setJumpTarget] = useState(/** @type {string | null} */ (null))
   const [annotOpen, setAnnotOpen] = useState(false)
@@ -233,7 +236,10 @@ export default function ChangeDetail({
           <span className="gmp-add">+{newConn}</span>/<span className="gmp-del">−{removedConn}</span> connections
         </span>
         <span className="metaitem tnum">
-          <Hash size={14} aria-hidden="true" /> ai wrote {fmtTokens(payload.outputTokens)} tokens
+          {/* outputTokens is the schema's wire int64 (bigint); token counts never
+              approach Number.MAX_SAFE_INTEGER, so Number() is a safe conversion —
+              fmtTokens does real division/toFixed arithmetic bigint doesn't support. */}
+          <Hash size={14} aria-hidden="true" /> ai wrote {fmtTokens(Number(payload.outputTokens))} tokens
         </span>
         {payload.costUsd != null && (
           <span className="metaitem tnum">

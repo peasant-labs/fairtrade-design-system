@@ -1,0 +1,84 @@
+expectedCaseCount: 6
+expectedNodeCount: 11
+expectedEdgeCount: 7
+cases:
+  - name: package grain is progressively disclosed
+    grain: package
+    expandedIds: [internal]
+    expectedVisible: [internal, internal/ingest, web]
+    expectedHidden: [internal/ingest/pipeline.go]
+    focusedId: internal/ingest/pipeline.go
+    selectedId: internal
+    expectedTabbable: internal
+    expectShowChildren: true
+    expectMissingStatus: false
+  - name: file grain reaches a selected file
+    grain: file
+    expandedIds: [internal, internal/ingest]
+    selectedId: internal/ingest/pipeline.go
+    expectedVisible: [internal, internal/ingest, internal/ingest/pipeline.go, web]
+    expectedHidden: []
+    focusedId: internal/ingest/pipeline.go
+    expectedTabbable: internal/ingest/pipeline.go
+    expectShowChildren: true
+    expectMissingStatus: false
+  - name: filter retains the matching path and its ancestors
+    grain: file
+    filter: pipeline
+    expectedVisible: [internal, internal/ingest, internal/ingest/pipeline.go]
+    expectedHidden: [web]
+    focusedId: web
+    selectedId: internal
+    expectedTabbable: internal
+    expectShowChildren: true
+    expectMissingStatus: false
+  - name: disconnected node remains a discoverable root
+    grain: package
+    filter: orphan
+    selectedId: orphan
+    focusedId: orphan
+    expectedVisible: [orphan]
+    expectedHidden: [internal, web]
+    expectedTabbable: orphan
+    expectShowChildren: false
+    expectMissingStatus: false
+  - name: stale URL selection offers explicit recovery
+    grain: project
+    selectedId: deleted/path
+    focusedId: deleted/path
+    expectedVisible: [internal, web, orphan]
+    expectedHidden: [internal/ingest, web/src]
+    expectedTabbable: internal
+    expectShowChildren: false
+    expectMissingStatus: true
+  - name: dense file filter retains a deep matching ancestry
+    grain: file
+    filter: handler
+    selectedId: web/src/app/handler.ts
+    focusedId: web/src/app/handler.ts
+    expectedVisible: [web, web/src, web/src/app, web/src/app/handler.ts]
+    expectedHidden: [internal, orphan, web/src/app/page.tsx]
+    expectedTabbable: web/src/app/handler.ts
+    expectShowChildren: true
+    expectMissingStatus: false
+nodes:
+  - {id: internal, name: internal, kind: module, loc: 800, recordedFiles: 4, totalFiles: 8, order: 0}
+  - {id: internal/ingest, name: ingest, kind: package, parent: internal, loc: 500, recordedFiles: 3, totalFiles: 5, order: 0}
+  - {id: internal/ingest/pipeline.go, name: pipeline.go, kind: file, parent: internal/ingest, loc: 220, recordedFiles: 1, totalFiles: 1, order: 0}
+  - {id: web, name: web, kind: module, loc: 400, recordedFiles: 1, totalFiles: 4, order: 1}
+  - {id: web/src, name: src, kind: package, parent: web, loc: 360, recordedFiles: 3, totalFiles: 5, order: 0}
+  - {id: web/src/app, name: app, kind: package, parent: web/src, loc: 300, recordedFiles: 3, totalFiles: 4, order: 0}
+  - {id: web/src/app/handler.ts, name: handler.ts, kind: file, parent: web/src/app, loc: 120, recordedFiles: 1, totalFiles: 1, order: 0}
+  - {id: web/src/app/page.tsx, name: page.tsx, kind: file, parent: web/src/app, loc: 180, recordedFiles: 1, totalFiles: 1, order: 1}
+  - {id: cmd, name: cmd, kind: module, loc: 140, recordedFiles: 1, totalFiles: 2, order: 2}
+  - {id: cmd/peasant, name: peasant, kind: package, parent: cmd, loc: 140, recordedFiles: 1, totalFiles: 2, order: 0}
+  - {id: orphan, name: orphan, kind: package, loc: 40, recordedFiles: 0, totalFiles: 1, order: 3}
+structureEdges:
+  - {from: internal, to: web, count: 4}
+  - {from: internal, to: cmd, count: 2}
+  - {from: internal/ingest, to: web/src, count: 7}
+  - {from: internal/ingest/pipeline.go, to: web/src/app/handler.ts, count: 5}
+  - {from: web/src/app/handler.ts, to: internal/ingest/pipeline.go, count: 3}
+  - {from: web/src/app/page.tsx, to: web/src/app/handler.ts, count: 2}
+  - {from: cmd/peasant, to: internal/ingest, count: 6}
+viewport: {scale: 1.25, panX: 32, panY: -18}

@@ -15,6 +15,7 @@ export { default as Menu } from './Menu.jsx'
 export { default as Tooltip, Popover } from './Tooltip.jsx'
 export { Avatar, AvatarGroup, Kbd, KbdChord, Tag } from './Avatar.jsx'
 export { default as BrandMark, resolveBrand } from './BrandMark.jsx'
+export { providerAccent, providerDisplayName } from './provider-policy.js'
 export { default as EmptyState } from './EmptyState.jsx'
 export { Skeleton, Progress, Spinner, Toast, FeedbackPanel } from './Feedback.jsx'
 export { default as DataTable } from './DataTable.jsx'
@@ -33,6 +34,7 @@ export { default as CommandPalette } from './CommandPalette.jsx'
 export { default as MapNode, IntensitySwatch, RampLegend, Heatmap, IntensityScope, coverageLevel, effortLevel, locSize } from './Intensity.jsx'
 export { default as Treemap, squarify } from './Treemap.jsx'
 export { default as CommitGraph } from './CommitGraph.jsx'
+/** @typedef {import('./graph/timelineNavigation.js').TimelineNavigationAction} TimelineNavigationAction */
 export { default as DiffView } from './DiffView.jsx'
 export { default as StepWizard, StepIndicator } from './StepWizard.jsx'
 export { default as TimeStrip } from './TimeStrip.jsx'
@@ -60,7 +62,7 @@ export { default as FacetRail } from './FacetRail.jsx'
 export { StatTile, StatGrid, GovTile, ProviderBars } from './StatTiles.jsx'
 export { default as VisibilitySegmented, VisibilityEye, ScopeChip, FocusedModeToggle } from './VisibilityControl.jsx'
 export { default as InUseShell, GraphAppShell, GraphSectionNav, IN_USE_APPS, GRAPH_APP_SECTIONS } from './inuse/InUseShell.jsx'
-/* transcript family: the canonical wire contract + cooked TranscriptViewModel, plus the lifted
+/* transcript family: the schema-backed wire contract + cooked TranscriptViewModel, plus the lifted
    single-transcript components (composite + primitives) and the graph node visuals. The two
    sub-barrels carry the actual surface, so additions land in those files rather than on this
    hand-maintained barrel. */

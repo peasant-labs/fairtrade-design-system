@@ -1,13 +1,13 @@
 /* transcript sub-barrel — the single import surface for the lifted transcript
-   components, the canonical wire types, and the cooked TranscriptViewModel.
+   components, schema-backed wire types, and the cooked TranscriptViewModel.
    Re-exported from the top-level src/ui/index.js as `@peasant-labs/fairtrade/ui`.
 
    The component primitives + the composite TranscriptViewer are appended here as
    they are built. Graph node visuals live in the ./graph sub-barrel, NOT here.
 
    What ships today (the integration spine):
-     • the canonical wire contract (wire-types.js) — the adapter's input shapes +
-       the enum-value arrays consumers iterate;
+     • the schema-backed wire contract (wire-types.js) — canonical generated
+       types plus the adapter's one legacy compatibility shape;
      • the cooked TranscriptViewModel contract (view-model.js) — every
        component's prop contract.
    Both files emit their types into the published .d.ts because the runtime
@@ -16,7 +16,7 @@
    The wire->view-model binding contract (per-field provenance + the parse-enforcement
    stack) is documented in ./DATA-BINDING.md. */
 
-/* ── canonical wire enum-value arrays (runtime) ──────────────────────────────── */
+/* ── canonical schema enum-value arrays (runtime) ───────────────────────────── */
 export {
   ROLES,
   ENTRY_TYPES,
@@ -31,7 +31,7 @@ export { TOOL_GROUPS } from './view-model.js'
 
 /* ── transcript adapter + shared analytics util (runtime) ─────────────────────────
    The ONE wire→view-model projection (`adaptTranscript`) — the sole JSON.parse +
-   git-drift normalisation site — plus the single-session analytics util. The
+   legacy-git normalisation site — plus the single-session analytics util. The
    analytics helpers keep their canonical wire-shaped signatures so the
    transcript-browser migration can re-export them for peasant's back-compat
    imports without change. Pure-render derivations live in the adapter. ─────────── */
@@ -81,6 +81,15 @@ export { default as TranscriptViewSwitch } from './ViewSwitch.jsx'
 export { default as TranscriptScrubber } from './Scrubber.jsx'
 export { default as TranscriptScorecard } from './Scorecard.jsx'
 export { default as TranscriptLabelPopover } from './LabelPopover.jsx'
+export {
+  advanceTranscriptInitialPositionConsumption,
+  normalizeTranscriptInitialPosition,
+  resolveTranscriptInitialPosition,
+  shouldApplyTranscriptInitialPosition,
+  transcriptInitialPositionReadiness,
+  transcriptInitialPositionToken,
+} from './initial-position.js'
+export { default as useTranscriptInitialPosition } from './useTranscriptInitialPosition.jsx'
 
 /* ── adapter + analytics types (JSDoc re-exports; erased at build) ────────────── */
 /** @typedef {import('./analytics.js').TaskGroup} TaskGroup */
@@ -90,11 +99,7 @@ export { default as TranscriptLabelPopover } from './LabelPopover.jsx'
 /** @typedef {import('./analytics.js').PersonalMedianSession} PersonalMedianSession */
 /** @typedef {import('./analytics.js').PhaseType} PhaseType */
 
-/* ── canonical wire types (JSDoc re-exports; erased at build) ─────────────────────
-   These @typedef re-exports are hand-maintained by design: the checkJs typedef-re-export
-   pattern has no `export type` syntax in .js files, so each type that downstream
-   consumers can import from the sub-barrel must be listed here explicitly. This is
-   inherent to the fairtrade JS+JSDoc toolchain (not a defect). ──────────────────── */
+/* ── schema-backed wire types (JSDoc re-exports; erased at build) ─────────────── */
 /** @typedef {import('./wire-types.js').Role} Role */
 /** @typedef {import('./wire-types.js').EntryType} EntryType */
 /** @typedef {import('./wire-types.js').ToolCallKind} ToolCallKind */
@@ -106,7 +111,6 @@ export { default as TranscriptLabelPopover } from './LabelPopover.jsx'
 /** @typedef {import('./wire-types.js').ChildSessionRef} ChildSessionRef */
 /** @typedef {import('./wire-types.js').SessionScorecard} SessionScorecard */
 /** @typedef {import('./wire-types.js').CommitInfo} CommitInfo */
-/** @typedef {import('./wire-types.js').GitContext} GitContext */
 /** @typedef {import('./wire-types.js').AnnotationSummary} AnnotationSummary */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
@@ -117,6 +121,7 @@ export { default as TranscriptLabelPopover } from './LabelPopover.jsx'
    `export {}`); listed here so consumers import the contract from the sub-barrel
    and so it lands in the published `.d.ts`. ───────────────────────────────────── */
 /** @typedef {import('./state-capabilities.js').TranscriptViewerProps} TranscriptViewerProps */
+/** @typedef {import('./state-capabilities.js').TranscriptInitialPosition} TranscriptInitialPosition */
 /** @typedef {import('./state-capabilities.js').BreadcrumbItem} BreadcrumbItem */
 /** @typedef {import('./state-capabilities.js').ViewerCapabilities} ViewerCapabilities */
 /** @typedef {import('./state-capabilities.js').ViewerCallbacks} ViewerCallbacks */

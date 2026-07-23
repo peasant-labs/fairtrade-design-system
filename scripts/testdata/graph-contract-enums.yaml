@@ -1,0 +1,139 @@
+expectedDomainCount: 5
+expectedInvalidCaseCount: 5
+domains:
+  - name: map-node-kind
+    objectExport: MapNodeKind
+    allExport: AllMapNodeKinds
+    predicateExport: isMapNodeKind
+    compatibilityExport: MAP_NODE_KINDS
+    values: [module, package, file]
+    invalid: directory
+  - name: change-binding
+    objectExport: ChangeBinding
+    allExport: AllChangeBindings
+    predicateExport: isChangeBinding
+    compatibilityExport: CHANGE_BINDINGS
+    values: [bound, candidate]
+    invalid: inferred
+  - name: edge-violation-kind
+    objectExport: EdgeViolationKind
+    allExport: AllEdgeViolationKinds
+    predicateExport: isEdgeViolationKind
+    compatibilityExport: EDGE_VIOLATION_KINDS
+    values: [cycle, wrong_way]
+    invalid: crossing
+  - name: file-change-status
+    objectExport: FileChangeStatus
+    allExport: AllFileChangeStatuses
+    predicateExport: isFileChangeStatus
+    compatibilityExport: FILE_CHANGE_STATUSES
+    values: [M, A, D, R]
+    invalid: X
+  - name: diff-line-kind
+    objectExport: DiffLineKind
+    allExport: AllDiffLineKinds
+    predicateExport: isDiffLineKind
+    compatibilityExport: DIFF_LINE_KINDS
+    values: [context, add, del]
+    invalid: changed
+invalidCases:
+  - name: invalid-map-node-kind
+    assertionExport: assertCodeMapPayloadEnums
+    expectedPath: nodes[0].kind
+    payload:
+      repoFound: true
+      nodes:
+        - id: source
+          kind: directory
+          name: source
+          layer: 0
+          order: 0
+          loc: 1
+          fileCount: 1
+          recordedFiles: 0
+          totalFiles: 1
+          touchCount: 0
+          effortDensity: 0
+      structureEdges: []
+      violations: []
+  - name: invalid-edge-violation-kind
+    assertionExport: assertCodeMapPayloadEnums
+    expectedPath: violations[0].kind
+    payload:
+      repoFound: true
+      nodes: []
+      structureEdges: []
+      violations:
+        - kind: crossing
+          from: source
+          to: target
+  - name: invalid-file-change-status
+    assertionExport: assertChangeDetailPayloadEnums
+    expectedPath: files[0].status
+    payload:
+      baseRef: base
+      branch: feature
+      defaultBranch: develop
+      files:
+        - path: source.js
+          status: X
+          linesAdded: 1
+          linesRemoved: 0
+      slice: {nodes: [], structureEdges: [], activityEdges: []}
+      newEdges: []
+      removedEdges: []
+      newNodes: []
+      removedNodes: []
+      violations: []
+      work: []
+      unrecordedCommits: []
+      unusual: []
+      frictions: []
+      filesChanged: 1
+      linesAdded: 1
+      linesRemoved: 0
+      outputTokens: 0
+  - name: invalid-change-binding
+    assertionExport: assertChangeDetailPayloadEnums
+    expectedPath: work[0].binding
+    payload:
+      baseRef: base
+      branch: feature
+      defaultBranch: develop
+      files: []
+      slice: {nodes: [], structureEdges: [], activityEdges: []}
+      newEdges: []
+      removedEdges: []
+      newNodes: []
+      removedNodes: []
+      violations: []
+      work:
+        - sessionId: session
+          title: work
+          harness: codex
+          binding: inferred
+          tasks: []
+      unrecordedCommits: []
+      unusual: []
+      frictions: []
+      filesChanged: 0
+      linesAdded: 0
+      linesRemoved: 0
+      outputTokens: 0
+  - name: invalid-diff-line-kind
+    assertionExport: assertChangeDiffPayloadEnums
+    expectedPath: hunks[0].lines[0].kind
+    payload:
+      branch: feature
+      file: source.js
+      status: M
+      binary: false
+      truncated: false
+      hunks:
+        - oldStart: 1
+          oldLines: 1
+          newStart: 1
+          newLines: 1
+          lines:
+            - kind: changed
+              text: line
