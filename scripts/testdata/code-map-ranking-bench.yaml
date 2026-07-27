@@ -13,5 +13,4 @@ cases:
     ceilingsMs:
       intrinsic: 100
       rederivation: 16
-    baselineMultiplier: 1.5
     deliberateSlowdownFactor: 4

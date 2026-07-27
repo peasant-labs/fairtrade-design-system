@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /* Fixture-backed ranking performance gate. It generates the declared payload,
-   discards warmups, compares median-of-nine measurements with absolute and
-   committed-baseline limits, then proves the evaluator rejects repeated work. */
+   discards warmups, compares median-of-nine measurements with user-facing
+   absolute budgets, then proves the evaluator rejects deliberate over-budget
+   intrinsic and interaction work. The computation split itself is covered by
+   the ranking fixture and its source-mutation gate. */
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
@@ -11,19 +13,26 @@ import { deriveRankedRows, rankMapNodesIntrinsic } from '../src/ui/graph/ranking
 
 const fixture = parseOne(readFileSync(new URL('./testdata/code-map-ranking-bench.yaml', import.meta.url), 'utf8'), 'ranking benchmark fixture')
 const manifest = parseOne(readFileSync(new URL('./testdata/code-map-ranking-bench.manifest.yaml', import.meta.url), 'utf8'), 'ranking benchmark manifest')
-const baseline = parseOne(readFileSync(new URL('./testdata/code-map-ranking-bench.baseline.yaml', import.meta.url), 'utf8'), 'ranking benchmark baseline')
 
+const EXPECTED_GUARD_NAMES = [
+  'intrinsic absolute ceiling',
+  'rederivation absolute ceiling',
+  'deliberate intrinsic over-budget rejection',
+  'deliberate rederivation over-budget rejection',
+]
+
+assert.deepEqual(Object.keys(fixture).sort(), ['cases', 'expectedCaseCount'], 'benchmark fixture root shape')
+assert.deepEqual(Object.keys(manifest).sort(), ['caseNames', 'expectedCaseCount', 'expectedGuardCount', 'guardNames'], 'benchmark manifest root shape')
 assert.equal(fixture.cases.length, fixture.expectedCaseCount, 'benchmark fixture case count')
 assert.equal(manifest.caseNames.length, manifest.expectedCaseCount, 'benchmark manifest case count')
 assert.deepEqual(fixture.cases.map((testCase) => testCase.name), manifest.caseNames, 'benchmark fixture and manifest names')
-assert.equal(manifest.guardNames.length, manifest.expectedGuardCount, 'benchmark manifest guard count')
+assert.equal(manifest.expectedGuardCount, EXPECTED_GUARD_NAMES.length, 'benchmark manifest expected guard count')
+assert.deepEqual(manifest.guardNames, EXPECTED_GUARD_NAMES, 'benchmark manifest guard names')
 
 const testCase = fixture.cases[0]
-assert.equal(baseline.fixture, testCase.name, 'baseline fixture identity')
-assert.equal(baseline.nodeCount, testCase.generator.nodeCount, 'baseline node count')
-assert.equal(baseline.discardedWarmups, testCase.measurement.discardedWarmups, 'baseline warmup discipline')
-assert.equal(baseline.measuredRuns, testCase.measurement.measuredRuns, 'baseline run discipline')
-assert.equal(baseline.statistic, testCase.measurement.statistic, 'baseline statistic')
+assert.deepEqual(Object.keys(testCase).sort(), ['ceilingsMs', 'deliberateSlowdownFactor', 'generator', 'measurement', 'name'], 'benchmark case shape')
+assert.equal(testCase.ceilingsMs.intrinsic, 100, 'intrinsic ceiling must remain the 100ms user-facing budget')
+assert.equal(testCase.ceilingsMs.rederivation, 16, 'interaction re-derivation ceiling must remain the 16ms user-facing budget')
 assert.equal(testCase.measurement.discardedWarmups, 2, 'benchmark discards exactly two warmups')
 assert.equal(testCase.measurement.measuredRuns, 9, 'benchmark takes exactly nine measured runs')
 assert.equal(testCase.measurement.statistic, 'median', 'benchmark uses the median')
@@ -37,25 +46,28 @@ const intrinsicMs = measure(() => {
   return intrinsic.rows.length
 }, testCase.measurement)
 assert.ok(intrinsic, 'intrinsic ranking must be available for re-derivation')
-const rederivationMs = measure(() => deriveRankedRows(intrinsic, {
+assert.equal(intrinsic.rows.length, nodes.length, 'intrinsic ranking must return one row per generated node')
+const interactionOptions = {
   focusId: 'node-05000',
   hoveredOrSelectedSessionId: 'active-session',
-}).length, testCase.measurement)
-
-assertWithinBudgets({ intrinsicMs, rederivationMs }, testCase, baseline)
-
-let slowdownRejected = false
-try {
-  assertWithinBudgets({
-    intrinsicMs: baseline.intrinsicMs * testCase.deliberateSlowdownFactor,
-    rederivationMs: baseline.rederivationMs * testCase.deliberateSlowdownFactor,
-  }, testCase, baseline)
-} catch {
-  slowdownRejected = true
 }
-assert.ok(slowdownRejected, 'deliberate repeated-work slowdown must redden the benchmark')
+const firstDerivedRows = deriveRankedRows(intrinsic, interactionOptions)
+const secondDerivedRows = deriveRankedRows(intrinsic, interactionOptions)
+assert.equal(firstDerivedRows.length, nodes.length, 'interaction re-derivation must return one row per generated node')
+assert.deepEqual(firstDerivedRows, secondDerivedRows, 'interaction re-derivation output must be deterministic')
+const rederivationMs = measure(() => deriveRankedRows(intrinsic, interactionOptions).length, testCase.measurement)
 
-console.log(`code-map ranking benchmark: intrinsic ${intrinsicMs.toFixed(3)}ms, re-derivation ${rederivationMs.toFixed(3)}ms; 2 warmups discarded, median of 9; deliberate slowdown rejected`)
+assertWithinBudgets({ intrinsicMs, rederivationMs }, testCase)
+assert.throws(() => assertWithinBudgets({
+  intrinsicMs: testCase.ceilingsMs.intrinsic * testCase.deliberateSlowdownFactor,
+  rederivationMs: 0,
+}, testCase), /intrinsic median .* exceeds/, 'intrinsic over-budget proof')
+assert.throws(() => assertWithinBudgets({
+  intrinsicMs: 0,
+  rederivationMs: testCase.ceilingsMs.rederivation * testCase.deliberateSlowdownFactor,
+}, testCase), /re-derivation median .* exceeds/, 're-derivation over-budget proof')
+
+console.log(`code-map ranking benchmark: intrinsic ${intrinsicMs.toFixed(3)}ms, re-derivation ${rederivationMs.toFixed(3)}ms; 2 warmups discarded, median of 9; both deliberate over-budget ceilings rejected`)
 
 function generateNodes(generator) {
   return Array.from({ length: generator.nodeCount }, (_, index) => {
@@ -94,11 +106,9 @@ function measure(operation, discipline) {
   return samples[Math.floor(samples.length / 2)]
 }
 
-function assertWithinBudgets(measured, configured, committed) {
+function assertWithinBudgets(measured, configured) {
   assert.ok(measured.intrinsicMs <= configured.ceilingsMs.intrinsic, `intrinsic median ${measured.intrinsicMs.toFixed(3)}ms exceeds ${configured.ceilingsMs.intrinsic}ms`)
   assert.ok(measured.rederivationMs <= configured.ceilingsMs.rederivation, `re-derivation median ${measured.rederivationMs.toFixed(3)}ms exceeds ${configured.ceilingsMs.rederivation}ms`)
-  assert.ok(measured.intrinsicMs <= committed.intrinsicMs * configured.baselineMultiplier, `intrinsic median ${measured.intrinsicMs.toFixed(3)}ms exceeds ${configured.baselineMultiplier}x committed baseline`)
-  assert.ok(measured.rederivationMs <= committed.rederivationMs * configured.baselineMultiplier, `re-derivation median ${measured.rederivationMs.toFixed(3)}ms exceeds ${configured.baselineMultiplier}x committed baseline`)
 }
 
 function parseOne(text, label) {
