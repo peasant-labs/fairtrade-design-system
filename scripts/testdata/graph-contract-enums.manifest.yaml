@@ -1,4 +1,4 @@
-expectedDomainCount: 5
+expectedDomainCount: 9
 expectedInvalidCaseCount: 5
 domains:
   - {name: map-node-kind, objectExport: MapNodeKind, allExport: AllMapNodeKinds, predicateExport: isMapNodeKind, compatibilityExport: MAP_NODE_KINDS, values: [module, package, file], invalid: directory}
@@ -6,6 +6,10 @@ domains:
   - {name: edge-violation-kind, objectExport: EdgeViolationKind, allExport: AllEdgeViolationKinds, predicateExport: isEdgeViolationKind, compatibilityExport: EDGE_VIOLATION_KINDS, values: [cycle, wrong_way], invalid: crossing}
   - {name: file-change-status, objectExport: FileChangeStatus, allExport: AllFileChangeStatuses, predicateExport: isFileChangeStatus, compatibilityExport: FILE_CHANGE_STATUSES, values: [M, A, D, R], invalid: X}
   - {name: diff-line-kind, objectExport: DiffLineKind, allExport: AllDiffLineKinds, predicateExport: isDiffLineKind, compatibilityExport: DIFF_LINE_KINDS, values: [context, add, del], invalid: changed}
+  - {name: insight-kind, objectExport: InsightKind, allExport: AllInsightKinds, predicateExport: isInsightKind, compatibilityExport: null, values: [decision, friction, unusual, retry_loop], invalid: made_up_kind}
+  - {name: insight-provenance, objectExport: InsightProvenance, allExport: AllInsightProvenances, predicateExport: isInsightProvenance, compatibilityExport: null, values: [mechanical, mined], invalid: made_up_provenance}
+  - {name: read-attribution-state, objectExport: ReadAttributionState, allExport: AllReadAttributionStates, predicateExport: isReadAttributionState, compatibilityExport: null, values: [complete, partial, unavailable], invalid: made_up_attribution}
+  - {name: read-state-grade, objectExport: ReadStateGrade, allExport: AllReadStateGrades, predicateExport: isReadStateGrade, compatibilityExport: null, values: [none, viewed, reviewed, reviewed_in_detail], invalid: made_up_grade}
 invalidCases:
   - {name: invalid-map-node-kind, assertionExport: assertCodeMapPayloadEnums, expectedPath: 'nodes[0].kind'}
   - {name: invalid-edge-violation-kind, assertionExport: assertCodeMapPayloadEnums, expectedPath: 'violations[0].kind'}

@@ -14,12 +14,11 @@ validateFixture(fixture, manifest)
 for (const domain of fixture.domains) {
   const schemaValues = schema[domain.allExport]
   const graphValues = graph[domain.allExport]
-  const compatibilityValues = graph[domain.compatibilityExport]
   const runtimeObject = graph[domain.objectExport]
   const predicate = graph[domain.predicateExport]
   compare(`${domain.name}: schema inventory`, schemaValues, domain.values)
   compare(`${domain.name}: graph inventory`, graphValues, domain.values)
-  compare(`${domain.name}: compatibility alias`, compatibilityValues, domain.values)
+  if (domain.compatibilityExport) compare(`${domain.name}: compatibility alias`, graph[domain.compatibilityExport], domain.values)
   compare(`${domain.name}: runtime object`, Object.values(runtimeObject ?? {}), domain.values)
   if (typeof predicate !== 'function' || domain.values.some((value) => !predicate(value)) || predicate(domain.invalid)) {
     failures.push(`${domain.name}: predicate did not accept the exact canonical inventory and reject ${domain.invalid}`)
@@ -62,7 +61,8 @@ function validateManifest(value) {
   const names = new Set()
   for (const [index, domain] of (value.domains ?? []).entries()) {
     requireExact(domain, ['name', 'objectExport', 'allExport', 'predicateExport', 'compatibilityExport', 'values', 'invalid'], `manifest.domains[${index}]`)
-    validateStrings(domain, ['name', 'objectExport', 'allExport', 'predicateExport', 'compatibilityExport', 'invalid'], `manifest.domains[${index}]`)
+    validateStrings(domain, ['name', 'objectExport', 'allExport', 'predicateExport', 'invalid'], `manifest.domains[${index}]`)
+    if (domain.compatibilityExport !== null && (typeof domain.compatibilityExport !== 'string' || domain.compatibilityExport.length === 0)) failures.push(`manifest.domains[${index}]: compatibilityExport must be a non-empty string or null`)
     if (!uniqueStrings(domain.values) || names.has(domain.name)) failures.push(`manifest.domains[${index}]: values and name must be unique`)
     names.add(domain.name)
   }

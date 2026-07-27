@@ -1,0 +1,70 @@
+expectedCaseCount: 5
+caseNames:
+  - session lane has an accessible name, native activation and an announcement on selection
+  - ghost-group toggle exposes aria-expanded, an accessible name, and an expand/collapse announcement
+  - session overflow disclosure exposes aria-expanded and an expand announcement
+  - rank-mode control exposes aria-checked per option and announces the active mode
+  - scent-filter tag exposes aria-pressed and announces the active filter
+expectedEventCaseCount: 6
+eventCaseNames:
+  - ArrowRight moves focus and activates the next rank mode
+  - ArrowDown moves focus and activates the next rank mode
+  - ArrowLeft wraps focus and activation to the last rank mode
+  - ArrowUp wraps focus and activation to the last rank mode
+  - Home moves focus and activation to the first rank mode
+  - End moves focus and activation to the last rank mode
+expectedDemoCaseCount: 7
+demoCaseNames:
+  - mounted GraphMap rank control activates debt mode with ArrowRight
+  - mounted GraphMap selected session filters to files edited in that session
+  - mounted GraphMap hovered session filters to files edited in that session
+  - mounted GraphMap renders selected session-to-commit highlight edges
+  - mounted GraphMap touched-file cluster preserves order, cap, and disclosure
+  - mounted GraphMap show-all control expands and collapses gated rows
+  - mounted GraphMap pins honesty tooltips on every debt state
+mutationCases:
+  - name: dropping aria-pressed from the selected SessionLane reddens the accessible-name/activation case
+    case: session lane has an accessible name, native activation and an announcement on selection
+    file: SessionLane.jsx
+    find: 'aria-pressed={selected}'
+    replace: ''
+  - name: dropping aria-expanded from GhostGroup's toggle reddens the ghost-group case
+    case: ghost-group toggle exposes aria-expanded, an accessible name, and an expand/collapse announcement
+    file: GhostGroup.jsx
+    find: 'aria-expanded={expanded}'
+    replace: ''
+  - name: dropping the announcement text from SessionOverflowDisclosure reddens the overflow-disclosure case
+    case: session overflow disclosure exposes aria-expanded and an expand announcement
+    file: SessionOverflowDisclosure.jsx
+    find: "{expanded ? `${overflow.length} more ${itemLabel} expanded` : ''}"
+    replace: "''"
+  - name: dropping aria-checked from RankModeControl reddens the rank-mode case
+    case: rank-mode control exposes aria-checked per option and announces the active mode
+    file: RankModeControl.jsx
+    find: 'aria-checked={rankMode === mode}'
+    replace: ''
+  - name: dropping aria-pressed from the interactive ScentTag reddens the scent-filter case
+    case: scent-filter tag exposes aria-pressed and announces the active filter
+    file: ScentTag.jsx
+    find: 'aria-pressed={active}'
+    replace: ''
+  - name: dropping the provider label from SessionLane reddens compact provider identity
+    case: session lane has an accessible name, native activation and an announcement on selection
+    file: SessionLane.jsx
+    find: '<ProviderIcon harness={harness} label />'
+    replace: '<ProviderIcon harness={harness} />'
+  - name: dropping provider labels from overflow items reddens compact provider identity
+    case: session overflow disclosure exposes aria-expanded and an expand announcement
+    file: SessionOverflowDisclosure.jsx
+    find: '<ProviderIcon harness={item.harness} label />'
+    replace: '<ProviderIcon harness={item.harness} />'
+  - name: dropping roving tabindex from RankModeControl reddens the ArrowRight event case
+    eventCase: ArrowRight moves focus and activates the next rank mode
+    file: RankModeControl.jsx
+    find: 'tabIndex={rankMode === mode ? 0 : -1}'
+    replace: 'tabIndex={0}'
+  - name: dropping key handling from RankModeControl reddens the ArrowRight event case
+    eventCase: ArrowRight moves focus and activates the next rank mode
+    file: RankModeControl.jsx
+    find: 'onKeyDown={(event) => handleKeyDown(event, index)}'
+    replace: ''

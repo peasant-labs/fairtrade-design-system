@@ -1,0 +1,17 @@
+expectedCaseCount: 1
+cases:
+  - name: generated ten-thousand-node ranking stays within interaction budgets
+    generator:
+      nodeCount: 10000
+      branchFactor: 8
+      activeSessionEvery: 17
+      nowMs: 1784980800000
+    measurement:
+      discardedWarmups: 2
+      measuredRuns: 9
+      statistic: median
+    ceilingsMs:
+      intrinsic: 100
+      rederivation: 16
+    baselineMultiplier: 1.5
+    deliberateSlowdownFactor: 4

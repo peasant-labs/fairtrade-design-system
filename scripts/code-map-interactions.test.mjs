@@ -4,7 +4,10 @@ import { readFileSync } from 'node:fs'
 import YAML from 'yaml'
 import { createCodeMapState, deriveCodeMapView } from '../src/ui/graph/codeMapState.js'
 
-const STATE_KEYS = ['expandedIds', 'grain', 'navigatorFilter', 'navigatorFocusedId', 'presentation', 'selectedId', 'version', 'viewport']
+const STATE_KEYS = [
+  'expandedIds', 'grain', 'navigatorFilter', 'navigatorFocusedId', 'presentation', 'selectedId', 'version', 'viewport',
+  'hoveredSessionId', 'selectedSessionId', 'expandedCommitSessions', 'expandedGhostGroups', 'rankMode', 'scentFilter',
+]
 const LEGACY_KEYS = ['select', 'zoom', 'expand', 'presentation']
 const CARDINALITY_KEYS = ['states', ...LEGACY_KEYS, 'aria', 'structure']
 const DOM_EVIDENCE_KEYS = ['visibleIds', 'pressedIds', 'grain', 'disclosures', 'disclosureExpandedIds', 'transform', 'status', 'structure']

@@ -13,12 +13,18 @@ const interactionFixture = parseStrictFixture(interactionFixtureSource, 'code-ma
 const payload = interactionFixture.payload
 
 const STATE_KEYS = [
+  'expandedCommitSessions',
+  'expandedGhostGroups',
   'expandedIds',
   'grain',
+  'hoveredSessionId',
   'navigatorFilter',
   'navigatorFocusedId',
   'presentation',
+  'rankMode',
+  'scentFilter',
   'selectedId',
+  'selectedSessionId',
   'version',
   'viewport',
 ]
@@ -214,7 +220,7 @@ export const LateControlledHydration = {
     // rehydrates to grain 'file' with NO per-node expansions, so the file-grain
     // aggregation cap (CODE_MAP_GRAIN_DEPTH.file === 1 in codeMapState.js: a
     // folder stays a single aggregate box until explicitly expanded) frames the
-    // aggregated top level — internal/ingest + web + solo's child — NOT every
+    // aggregated top level: internal/ingest + web + solo's child, NOT every
     // file in the repo. This transform is that whole-graph fit at 900×420; it
     // differs from the pre-aggregation-cap value because the cap changed which
     // nodes are visible at file grain. The fit stays LOCAL (unpublished), so no

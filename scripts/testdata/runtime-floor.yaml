@@ -1,0 +1,49 @@
+workflows:
+  - path: .github/workflows/ci.yml
+    setupNodeCount: 2
+  - path: .github/workflows/deploy.yml
+    setupNodeCount: 1
+  - path: .github/workflows/npm-publish.yml
+    setupNodeCount: 1
+expectedMutationCount: 9
+mutations:
+  - name: package-engine-floor
+    operation: below-floor
+    path: package.json
+    expectedError: package.json engines.node must match
+  - name: package-engine-unsupported-range
+    operation: unsupported-range
+    path: package.json
+    expectedError: exact >=major Node engine
+  - name: checked-in-node-version-floor
+    operation: below-floor
+    path: .node-version
+    expectedError: below schema minimum
+  - name: workflow-ci-first-node-floor
+    operation: below-floor
+    path: .github/workflows/ci.yml
+    occurrence: 1
+    expectedError: below schema minimum
+  - name: workflow-ci-second-node-floor
+    operation: below-floor
+    path: .github/workflows/ci.yml
+    occurrence: 2
+    expectedError: below schema minimum
+  - name: workflow-deploy-node-floor
+    operation: below-floor
+    path: .github/workflows/deploy.yml
+    occurrence: 1
+    expectedError: below schema minimum
+  - name: workflow-npm-publish-node-floor
+    operation: below-floor
+    path: .github/workflows/npm-publish.yml
+    occurrence: 1
+    expectedError: below schema minimum
+  - name: schema-lock-floor
+    operation: below-floor
+    path: pnpm-lock.yaml
+    expectedError: package.json engines.node must match
+  - name: missing-workflow
+    operation: remove
+    path: .github/workflows/deploy.yml
+    expectedError: runtime floor fixture must inventory every workflow

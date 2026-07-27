@@ -30,7 +30,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - name: Install (frozen lockfile)
@@ -63,7 +63,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - name: Install (frozen lockfile)
@@ -111,6 +111,11 @@ jobs:
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
         run: node scripts/validate.mjs "http://localhost:5180/?fb=off"
+
+      - name: Timeline route gate (production build + source mutation)
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
 
       # gate 3: storybook builds (the type/parse gate for src/ui/*).
       - name: Build Storybook

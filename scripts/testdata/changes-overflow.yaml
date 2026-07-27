@@ -1,0 +1,63 @@
+expectedCaseCount: 1
+cases:
+  - name: linked-session overflow expands collapses navigates and prunes after commit change
+    payload:
+      repoFound: true
+      defaultBranch: develop
+      changes: []
+      recentCommits:
+        - hash: commit-overflow
+          subject: overflowing linked sessions
+          timeMs: 1770000000000
+          hasSession: true
+          sessionIds: [session-first, session-second, session-third]
+      sessions:
+        - sessionId: session-first
+          title: First linked session
+          harness: codex
+          startMs: 1769999000000
+          hasCommitBinding: true
+        - sessionId: session-second
+          title: Second linked session
+          harness: claude-code
+          startMs: 1769998000000
+          hasCommitBinding: true
+        - sessionId: session-third
+          title: Third linked session
+          harness: gemini-cli
+          startMs: 1769997000000
+          hasCommitBinding: true
+    afterPayload:
+      repoFound: true
+      defaultBranch: develop
+      changes: []
+      recentCommits:
+        - hash: commit-overflow
+          subject: overflowing linked sessions
+          timeMs: 1770000000000
+          hasSession: true
+          sessionIds: [session-first, session-second]
+      sessions:
+        - sessionId: session-first
+          title: First linked session
+          harness: codex
+          startMs: 1769999000000
+          hasCommitBinding: true
+        - sessionId: session-second
+          title: Second linked session
+          harness: claude-code
+          startMs: 1769998000000
+          hasCommitBinding: true
+    expect:
+      commitHash: commit-overflow
+      toggleLabel: 1 more sessions
+      inlineTitles: [First linked session, Second linked session]
+      thirdSessionTitle: Third linked session
+      expectedNavigation:
+        type: open-session
+        sessionId: session-third
+        source:
+          kind: commit
+          commit:
+            id: commit-overflow
+            branch: develop

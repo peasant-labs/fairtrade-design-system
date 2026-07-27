@@ -1,0 +1,84 @@
+expectedCaseCount: 36
+caseNames:
+  - none state when agent edited count is zero
+  - unavailable attribution with zero agent edits stays none and has no agent-wrote tag
+  - unread scores full debt
+  - partial-read mechanical fallback below floor
+  - reviewed state clears via whole-file read state
+  - unknown state when read attribution is unavailable
+  - unattributable hunk excluded blocks hunk clear
+  - all attributable hunks reviewed clears via hunkClears
+  - partial hunk coverage maps to partial-read
+  - viewed-only softened state scores DEBT_VIEWED
+  - hover hunk-linked fully attributed
+  - hover hunk-linked with unattributed gap
+  - hover mechanical fallback has no region count
+  - no-recorded-read tooltip is an evidence prompt
+  - viewed tooltip distinguishes a view from explicit review
+  - partial tooltip keeps path evidence and prompt framing
+  - unknown tooltip explains missing recorded read events
+  - doi ordering ranks higher debt above lower debt at equal other terms
+  - doi degenerate all-equal payload yields zero for every row
+  - doi ties break by nodeId ascending
+  - debt rank mode boosts the debt term
+  - debt rank mode partitions known debt before unknown before clear regardless of residual terms
+  - debt rank mode ties within a state partition break by node id
+  - rankMapNodes derives edited-this-session through active session context
+  - each DOI weight contributes its pinned intrinsic value
+  - churn rank mode boosts touch without debt partitioning
+  - threshold gating floors at five rows
+  - threshold gating caps at twenty-five rows
+  - show-all bypasses threshold and cap then reports no overflow
+  - debt gating keeps low-scoring known debt ahead of thresholded unknown rows
+  - threshold uses half of max DOI before applying the floor
+  - interaction context re-derives from one intrinsic result
+  - unknown read-attribution state fails closed at the ranking adapter
+  - unknown read-state grade fails closed at the ranking adapter
+  - scent tag exhaustiveness covers all seven members
+  - unattributable hunk literal debt is pinned independent of COVERAGE_CAP
+expectedMutationCount: 44
+mutationNames:
+  - removing the unattributable hunk exercises the hunk-clears state gate
+  - changing coverage cap reddens the literal debt magnitude
+  - checking unavailable before zero edits reddens zero-edit priority
+  - dropping no-recorded-read state branch reddens unread state
+  - weakening full unread debt reddens unread magnitude
+  - dropping mechanical partial fallback reddens mechanical state
+  - changing mechanical debt ratio reddens mechanical magnitude
+  - dropping whole-file reviewed clear reddens reviewed state
+  - dropping unavailable state reddens unknown debt
+  - dropping hunk partial branch reddens partial hunk coverage
+  - dropping hunk clear branch reddens fully reviewed hunks
+  - dropping viewed state reddens viewed-only debt
+  - changing fully-attributed path copy reddens its hover guard
+  - changing unattributed-gap path copy reddens its hover guard
+  - adding a fabricated count reddens mechanical path copy
+  - changing no-recorded-read honesty copy reddens its tooltip
+  - changing viewed honesty copy reddens its tooltip
+  - dropping partial prompt framing reddens its tooltip
+  - changing unknown evidence copy reddens its tooltip
+  - dropping no-recorded-read scent derivation reddens that scent
+  - dropping viewed scent derivation reddens that scent
+  - dropping unknown scent derivation reddens that scent
+  - raising churn threshold reddens heavy-churn scent
+  - dropping active-session comparison reddens edited-session scent
+  - raising effort threshold reddens high-effort scent
+  - dropping near-focus distance reddens focus scent
+  - changing touch DOI weight reddens exact intrinsic terms
+  - changing effort DOI weight reddens exact intrinsic terms
+  - changing debt DOI weight reddens exact intrinsic terms
+  - changing recency DOI weight reddens exact intrinsic terms
+  - changing degenerate normalization reddens all-equal DOI
+  - reversing node-id tie break reddens DOI ties
+  - dropping debt-mode boost reddens debt ordering
+  - dropping debt category partition reddens known-before-unknown ordering
+  - changing churn-mode boost reddens churn ordering
+  - dropping active session from re-derivation reddens session filtering
+  - dropping contract validation accepts unknown read-attribution state
+  - dropping contract validation accepts unknown read-state grade
+  - changing rank floor reddens floor gating
+  - changing rank cap reddens cap gating
+  - dropping expanded bypass reddens show-all gating
+  - dropping debt priority from gate hides known debt
+  - changing threshold multiplier reddens threshold gating
+  - adding interaction state to intrinsic memo dependencies reddens computation split

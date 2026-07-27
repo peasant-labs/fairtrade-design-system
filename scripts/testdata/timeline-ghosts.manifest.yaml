@@ -1,0 +1,29 @@
+expectedCaseCount: 6
+caseNames:
+  - collapsed ghost group renders the stack diamond and count, not individual nodes
+  - expanded ghost group renders one GhostCommitNode per ghost with its subject
+  - high confidence renders the filled tether terminal
+  - medium confidence renders the half tether terminal
+  - low confidence renders the open tether terminal
+  - an unresolved ghost hangs off its session lane, not any commit group
+mutationCases:
+  - name: dropping the expanded-only guard reddens the collapsed-renders-no-individual-nodes case
+    case: collapsed ghost group renders the stack diamond and count, not individual nodes
+    file: GhostGroup.jsx
+    find: '{expanded && ('
+    replace: '{true && ('
+  - name: hardcoding the terminal class to medium reddens the confidence-terminal cases
+    case: high confidence renders the filled tether terminal
+    file: GhostCommitNode.jsx
+    find: "className={`tlp-ghost-node tlp-terminal-${confidence}${className ? ` ${className}` : ''}`}"
+    replace: "className={`tlp-ghost-node tlp-terminal-medium${className ? ` ${className}` : ''}`}"
+  - name: dropping unresolvedGhosts rendering reddens the session-lane ghost case
+    case: an unresolved ghost hangs off its session lane, not any commit group
+    file: SessionLane.jsx
+    find: 'unresolvedGhosts.length > 0'
+    replace: 'false'
+  - name: restoring an em dash reddens the unresolved ghost copy case
+    case: low confidence renders the open tether terminal
+    file: GhostCommitNode.jsx
+    find: 'session-era commit, no longer in history; not enough recorded metadata to map it'
+    replace: "session-era commit, no longer in history \u2014 not enough recorded metadata to map it"

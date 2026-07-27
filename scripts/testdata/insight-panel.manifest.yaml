@@ -1,0 +1,34 @@
+expectedCaseCount: 6
+caseNames:
+  - insights group by kind under a labelled section per kind
+  - provenance presentation maps every schema value to its marker class
+  - evidence renders as clickable links naming the file or session
+  - empty insights render the no-insights-recorded empty state
+  - an unknown kind or provenance fails closed with an actionable error
+  - an unknown provenance fails closed with an actionable error
+mutationCases:
+  - name: collapsing every insight into one group reddens the grouping-by-kind case
+    case: insights group by kind under a labelled section per kind
+    file: InsightPanel.jsx
+    find: "const list = groups.get(insight.kind) ?? []\n    list.push(insight)\n    groups.set(insight.kind, list)"
+    replace: "const list = groups.get('decision') ?? []\n    list.push(insight)\n    groups.set('decision', list)"
+  - name: dropping the provenance presentation map reddens the marker case
+    case: provenance presentation maps every schema value to its marker class
+    file: InsightPanel.jsx
+    find: 'className={`tlp-insight-provenance ${INSIGHT_PROVENANCE_PRESENTATIONS[insight.provenance].markerClass}`}'
+    replace: 'className="tlp-insight-provenance"'
+  - name: removing the kind/provenance validation reddens the fail-closed case
+    case: an unknown kind or provenance fails closed with an actionable error
+    file: graphContractPolicy.js
+    find: 'const invalidIndex = insights.findIndex((insight) => !isInsightKind(insight.kind) || !isInsightProvenance(insight.provenance))'
+    replace: 'const invalidIndex = -1'
+  - name: removing a schema insight kind label reddens the exhaustive label guard
+    case: insights group by kind under a labelled section per kind
+    file: graphContractPolicy.js
+    find: "  retry_loop: 'retry loops',\n"
+    replace: ''
+  - name: removing a schema insight provenance presentation reddens the widening guard
+    case: provenance presentation maps every schema value to its marker class
+    file: graphContractPolicy.js
+    find: "  mined: Object.freeze({ markerClass: 'tlp-insight-provenance-mined' }),\n"
+    replace: ''

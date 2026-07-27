@@ -1,0 +1,131 @@
+expectedCaseCount: 5
+expectedEventCaseCount: 6
+expectedDemoCaseCount: 7
+
+# Each case is asserted against renderToStaticMarkup output of the REAL
+# production component (dist/lib/graph.js), rendered twice at two different
+# controlled-prop states (mirrors this repo's existing controlled-prop
+# testing convention, e.g. smoke-map.mjs) so the "on state change" half of
+# the requirement is a real before/after comparison, not a single snapshot.
+
+cases:
+  - name: session lane has an accessible name, native activation and an announcement on selection
+    control: session-lane
+    unselected:
+      mustContain: ['<button', 'aria-pressed="false"', 'aria-label="Claude Code"', 'Add DOI ranking to the code map']
+      mustNotContain: ['Add DOI ranking to the code map selected']
+    selected:
+      mustContain: ['<button', 'aria-pressed="true"', 'Add DOI ranking to the code map selected']
+
+  - name: ghost-group toggle exposes aria-expanded, an accessible name, and an expand/collapse announcement
+    control: ghost-group
+    collapsed:
+      mustContain: ['<button', 'aria-expanded="false"', 'aria-label="2 session-era commits, mapped to a1b2c3d4"']
+      mustNotContain: ['2 session-era commits expanded']
+    expanded:
+      mustContain: ['<button', 'aria-expanded="true"', '2 session-era commits expanded']
+
+  - name: session overflow disclosure exposes aria-expanded and an expand announcement
+    control: session-overflow-disclosure
+    collapsed:
+      mustContain: ['<button', 'aria-expanded="false"', 'aria-label="2 more sessions"']
+      mustNotContain: ['2 more sessions expanded']
+    expanded:
+      mustContain: ['<button', 'aria-expanded="true"', 'aria-label="Gemini CLI"', 'aria-label="Codex"', '2 more sessions expanded']
+
+  - name: rank-mode control exposes aria-checked per option and announces the active mode
+    control: rank-mode-control
+    relevance:
+      mustContain: ['role="radiogroup"', 'role="radio"', 'aria-checked="true"', 'tabindex="0"', 'tabindex="-1"', 'rank mode: relevance']
+    debt:
+      mustContain: ['aria-checked="true"', 'rank mode: debt']
+
+  - name: scent-filter tag exposes aria-pressed and announces the active filter
+    control: scent-tag-filter
+    inactive:
+      mustContain: ['<button', 'aria-pressed="false"']
+      mustNotContain: ['filtering by']
+    active:
+      mustContain: ['<button', 'aria-pressed="true"', 'filtering by heavy churn']
+
+eventCases:
+  - name: ArrowRight moves focus and activates the next rank mode
+    initialMode: relevance
+    key: ArrowRight
+    expectMode: debt
+    expectFocus: debt
+  - name: ArrowDown moves focus and activates the next rank mode
+    initialMode: debt
+    key: ArrowDown
+    expectMode: churn
+    expectFocus: churn
+  - name: ArrowLeft wraps focus and activation to the last rank mode
+    initialMode: relevance
+    key: ArrowLeft
+    expectMode: churn
+    expectFocus: churn
+  - name: ArrowUp wraps focus and activation to the last rank mode
+    initialMode: relevance
+    key: ArrowUp
+    expectMode: churn
+    expectFocus: churn
+  - name: Home moves focus and activation to the first rank mode
+    initialMode: churn
+    key: Home
+    expectMode: relevance
+    expectFocus: relevance
+  - name: End moves focus and activation to the last rank mode
+    initialMode: relevance
+    key: End
+    expectMode: churn
+    expectFocus: churn
+
+demoCases:
+  - name: mounted GraphMap rank control activates debt mode with ArrowRight
+    interaction: rank-mode-key
+    key: ArrowRight
+    expectMode: debt
+    expectFocus: debt
+  - name: mounted GraphMap selected session filters to files edited in that session
+    interaction: session-filter
+    sessionGesture: select
+    sessionTitle: Add DOI ranking to the code map
+    expectRows: [src/ui/graph/ranking.js]
+    expectAbsentRows: [src/ui/graph/codeMapState.js, internal/gitrewrite/resolver.go, internal/codemap/review.go]
+  - name: mounted GraphMap hovered session filters to files edited in that session
+    interaction: session-filter
+    sessionGesture: hover
+    sessionTitle: Wire the read-state debt tag
+    expectRows: [src/ui/graph/codeMapState.js]
+    expectAbsentRows: [src/ui/graph/ranking.js, internal/gitrewrite/resolver.go, internal/codemap/review.go]
+  - name: mounted GraphMap renders selected session-to-commit highlight edges
+    interaction: highlight-edges
+    sessionTitle: Add DOI ranking to the code map
+    expectWeight: primary
+    expectCommitHashes: [c5, c6]
+  - name: mounted GraphMap touched-file cluster preserves order, cap, and disclosure
+    interaction: touched-files
+    commitMessage: 'feat: read-state debt tag + comprehension scent tags'
+    expectInline:
+      - src/ui/graph/codeMapState.js
+      - src/ui/graph/RankedRow.jsx
+      - src/ui/graph/ScentTag.jsx
+      - src/ui/CommitGraph.jsx
+      - src/ui/CommitGraph.css
+      - src/ui/graph/timelinePrimitives.css
+      - scripts/timeline-a11y.test.mjs
+      - scripts/timeline-highlight.test.mjs
+    expectOverflow:
+      - scripts/testdata/timeline-a11y.yaml
+      - scripts/testdata/timeline-highlight.yaml
+  - name: mounted GraphMap show-all control expands and collapses gated rows
+    interaction: ranked-show-all
+    expectCollapsedCount: 5
+    expectExpandedCount: 10
+  - name: mounted GraphMap pins honesty tooltips on every debt state
+    interaction: honesty-tooltips
+    expectations:
+      src/ui/graph/ranking.js: "No read evidence was recorded for sessions that edited this file. Use this as a prompt to inspect recorded evidence, not as a verdict about the reader."
+      src/ui/graph/codeMapState.js: "2 of 3 attributed regions reviewed; 1 regions could not be attributed. Use this as a prompt to inspect recorded evidence, not as a verdict about the reader."
+      internal/gitrewrite/resolver.go: "A view was recorded, but no explicit review was recorded. Use this as a prompt to inspect recorded evidence, not as a verdict about the reader."
+      internal/codemap/review.go: "No read events were recorded for the sessions that edited this file, so its read state is unknown. Use this as a prompt to inspect recorded evidence, not as a verdict about the reader."

@@ -15,20 +15,20 @@ payload:
 cases:
   - name: navigator parent single click is immediate
     surface: navigator
-    initialState: &nav_parent {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    initialState: &nav_parent {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     action: {type: click, targets: [internal], keys: []}
     expectedStates:
-      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [[internal, *node_internal]], zoom: [], expand: [], presentation: []}
     expectedAria: []
     expectedStructure: []
 
   - name: navigator leaf single click is immediate
     surface: navigator
-    initialState: &nav_leaf {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+    initialState: &nav_leaf {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     action: {type: click, targets: [internal/ingest/pipeline.go], keys: []}
     expectedStates:
-      - {version: 1, presentation: navigator, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [[internal/ingest/pipeline.go, *node_pipeline]], zoom: [], expand: [], presentation: []}
     expectedAria:
       - {targetId: internal/ingest/pipeline.go, expanded: null, disclosurePresent: false, disclosureDisabled: false}
@@ -39,7 +39,7 @@ cases:
     initialState: *nav_parent
     action: {type: disclosure, targets: [internal], keys: []}
     expectedStates:
-      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [], zoom: [[{level: file, expanded: [internal]}]], expand: [], presentation: []}
     expectedAria:
       - {targetId: internal, expanded: true, disclosurePresent: true, disclosureDisabled: false}
@@ -47,10 +47,10 @@ cases:
 
   - name: navigator disclosure enter expands focused elsewhere
     surface: navigator
-    initialState: &nav_disclosure_key {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: web, viewport: null}
+    initialState: &nav_disclosure_key {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: web, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     action: {type: disclosure-key, targets: [internal], keys: [Enter]}
     expectedStates:
-      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: web, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: web, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [], zoom: [[{level: file, expanded: [internal]}]], expand: [], presentation: []}
     expectedAria:
       - {targetId: internal, expanded: true, disclosurePresent: true, disclosureDisabled: false}
@@ -61,7 +61,7 @@ cases:
     initialState: *nav_disclosure_key
     action: {type: disclosure-key, targets: [internal], keys: [Space]}
     expectedStates:
-      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: web, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: web, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [], zoom: [[{level: file, expanded: [internal]}]], expand: [], presentation: []}
     expectedAria:
       - {targetId: internal, expanded: true, disclosurePresent: true, disclosureDisabled: false}
@@ -72,8 +72,8 @@ cases:
     initialState: *nav_parent
     action: {type: double-click, targets: [internal], keys: []}
     expectedStates:
-      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
-      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
+      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [[internal, *node_internal]], zoom: [[{level: file, expanded: [internal]}]], expand: [], presentation: []}
     expectedAria:
       - {targetId: internal, expanded: true, disclosurePresent: true, disclosureDisabled: false}
@@ -84,7 +84,7 @@ cases:
     initialState: *nav_leaf
     action: {type: double-click, targets: [internal/ingest/pipeline.go], keys: []}
     expectedStates:
-      - {version: 1, presentation: navigator, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [[internal/ingest/pipeline.go, *node_pipeline]], zoom: [], expand: [], presentation: []}
     expectedAria:
       - {targetId: internal/ingest/pipeline.go, expanded: null, disclosurePresent: false, disclosureDisabled: false}
@@ -95,7 +95,7 @@ cases:
     initialState: *nav_parent
     action: {type: key-sequence, targets: [internal], keys: [Enter]}
     expectedStates:
-      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [[internal, *node_internal]], zoom: [], expand: [], presentation: []}
     expectedAria: []
     expectedStructure: []
@@ -105,7 +105,7 @@ cases:
     initialState: *nav_leaf
     action: {type: key-sequence, targets: [internal/ingest/pipeline.go], keys: [Space]}
     expectedStates:
-      - {version: 1, presentation: navigator, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [[internal/ingest/pipeline.go, *node_pipeline]], zoom: [], expand: [], presentation: []}
     expectedAria: []
     expectedStructure: []
@@ -115,10 +115,10 @@ cases:
     initialState: *nav_parent
     action: {type: key-sequence, targets: [internal, internal, internal/ingest, internal], keys: [ArrowRight, ArrowRight, ArrowLeft, ArrowLeft]}
     expectedStates:
-      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
-      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal/ingest, viewport: null}
-      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
-      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal/ingest, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [], zoom: [[{level: file, expanded: [internal]}], [{level: file, expanded: []}]], expand: [], presentation: []}
     expectedAria:
       - {targetId: internal, expanded: false, disclosurePresent: true, disclosureDisabled: false}
@@ -126,11 +126,11 @@ cases:
 
   - name: navigator deep filter forces open without persisted expansion
     surface: navigator
-    initialState: &nav_deep_filter {version: 1, presentation: navigator, selectedId: web, grain: project, expandedIds: [], navigatorFilter: pipeline, navigatorFocusedId: internal, viewport: null}
+    initialState: &nav_deep_filter {version: 1, presentation: navigator, selectedId: web, grain: project, expandedIds: [], navigatorFilter: pipeline, navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     action: {type: key-sequence, targets: [internal, internal/ingest], keys: [ArrowRight, ArrowLeft]}
     expectedStates:
-      - {version: 1, presentation: navigator, selectedId: web, grain: project, expandedIds: [], navigatorFilter: pipeline, navigatorFocusedId: internal/ingest, viewport: null}
-      - {version: 1, presentation: navigator, selectedId: web, grain: project, expandedIds: [], navigatorFilter: pipeline, navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: project, expandedIds: [], navigatorFilter: pipeline, navigatorFocusedId: internal/ingest, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: project, expandedIds: [], navigatorFilter: pipeline, navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [], zoom: [], expand: [], presentation: []}
     expectedAria:
       - {targetId: internal, expanded: true, disclosurePresent: true, disclosureDisabled: true}
@@ -139,7 +139,7 @@ cases:
 
   - name: navigator parent only filter is not forced open
     surface: navigator
-    initialState: {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: solo, navigatorFocusedId: solo, viewport: null}
+    initialState: {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: solo, navigatorFocusedId: solo, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     action: {type: assert-only, targets: [solo], keys: []}
     expectedStates: []
     expectedLegacy: {select: [], zoom: [], expand: [], presentation: []}
@@ -162,28 +162,28 @@ cases:
     initialState: *nav_parent
     action: {type: rapid-click, targets: [internal, web], keys: []}
     expectedStates:
-      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
-      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: web, viewport: null}
+      - {version: 1, presentation: navigator, selectedId: internal, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
+      - {version: 1, presentation: navigator, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: web, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [[internal, *node_internal], [web, *node_web]], zoom: [], expand: [], presentation: []}
     expectedAria: []
     expectedStructure: []
 
   - name: canvas parent single click is immediate
     surface: canvas
-    initialState: &canvas_parent {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    initialState: &canvas_parent {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     action: {type: click, targets: [internal], keys: []}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [[internal, *node_internal]], zoom: [], expand: [], presentation: []}
     expectedAria: []
     expectedStructure: []
 
   - name: canvas leaf single click is immediate
     surface: canvas
-    initialState: &canvas_leaf {version: 1, presentation: canvas, selectedId: web, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+    initialState: &canvas_leaf {version: 1, presentation: canvas, selectedId: web, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     action: {type: click, targets: [internal/ingest/pipeline.go], keys: []}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+      - {version: 1, presentation: canvas, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [[internal/ingest/pipeline.go, *node_pipeline]], zoom: [], expand: [], presentation: []}
     expectedAria:
       - {targetId: internal/ingest/pipeline.go, expanded: null, disclosurePresent: false, disclosureDisabled: false}
@@ -194,7 +194,7 @@ cases:
     initialState: *canvas_parent
     action: {type: disclosure, targets: [internal], keys: []}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [], zoom: [[{level: project, expanded: [internal]}]], expand: [[internal]], presentation: []}
     expectedAria: []
     expectedStructure: []
@@ -202,10 +202,10 @@ cases:
   - name: canvas disclosure enter expands focused elsewhere
     surface: canvas
     assertionsAt: before
-    initialState: &canvas_disclosure_key {version: 1, presentation: canvas, selectedId: web, grain: package, expandedIds: [], navigatorFilter: '', navigatorFocusedId: web, viewport: null}
+    initialState: &canvas_disclosure_key {version: 1, presentation: canvas, selectedId: web, grain: package, expandedIds: [], navigatorFilter: '', navigatorFocusedId: web, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     action: {type: disclosure-key, targets: [internal/ingest], keys: [Enter]}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: web, grain: package, expandedIds: [internal/ingest], navigatorFilter: '', navigatorFocusedId: web, viewport: null}
+      - {version: 1, presentation: canvas, selectedId: web, grain: package, expandedIds: [internal/ingest], navigatorFilter: '', navigatorFocusedId: web, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [], zoom: [[{level: package, expanded: [internal/ingest]}]], expand: [[internal/ingest]], presentation: []}
     expectedAria:
       - {targetId: internal/ingest, expanded: false, disclosurePresent: true, disclosureDisabled: false}
@@ -217,7 +217,7 @@ cases:
     initialState: *canvas_disclosure_key
     action: {type: disclosure-key, targets: [internal/ingest], keys: [Space]}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: web, grain: package, expandedIds: [internal/ingest], navigatorFilter: '', navigatorFocusedId: web, viewport: null}
+      - {version: 1, presentation: canvas, selectedId: web, grain: package, expandedIds: [internal/ingest], navigatorFilter: '', navigatorFocusedId: web, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [], zoom: [[{level: package, expanded: [internal/ingest]}]], expand: [[internal/ingest]], presentation: []}
     expectedAria:
       - {targetId: internal/ingest, expanded: false, disclosurePresent: true, disclosureDisabled: false}
@@ -228,8 +228,8 @@ cases:
     initialState: *canvas_parent
     action: {type: double-click, targets: [internal], keys: []}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
-      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
+      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [[internal, *node_internal]], zoom: [[{level: project, expanded: [internal]}]], expand: [[internal]], presentation: []}
     expectedAria: []
     expectedStructure: []
@@ -239,7 +239,7 @@ cases:
     initialState: *canvas_leaf
     action: {type: double-click, targets: [internal/ingest/pipeline.go], keys: []}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null}
+      - {version: 1, presentation: canvas, selectedId: internal/ingest/pipeline.go, grain: file, expandedIds: [internal, internal/ingest], navigatorFilter: '', navigatorFocusedId: internal/ingest/pipeline.go, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [[internal/ingest/pipeline.go, *node_pipeline]], zoom: [], expand: [], presentation: []}
     expectedAria:
       - {targetId: internal/ingest/pipeline.go, expanded: null, disclosurePresent: false, disclosureDisabled: false}
@@ -250,7 +250,7 @@ cases:
     initialState: *canvas_parent
     action: {type: key-sequence, targets: [internal], keys: [Enter]}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [[internal, *node_internal]], zoom: [], expand: [], presentation: []}
     expectedAria: []
     expectedStructure: []
@@ -258,7 +258,7 @@ cases:
   - name: canvas rejecting owner proposes selection without rendering it
     surface: canvas
     owner: reject
-    initialState: &reject_base {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}}
+    initialState: &reject_base {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedBefore: &reject_before
       ownerState: *reject_base
       dom: &reject_dom_empty
@@ -275,7 +275,7 @@ cases:
         structure: &canvas_structure {applicationRole: application, applicationLabel: code map, roleDescription: code structure map, statusCount: 2}
     action: {type: click, targets: [internal], keys: []}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}}
+      - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [[internal, *node_internal]], zoom: [], expand: [], presentation: []}
     expectedAria: []
     expectedStructure: []
@@ -299,7 +299,7 @@ cases:
     expectedBefore: *reject_before
     action: {type: disclosure, targets: [internal], keys: []}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}}
+      - {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [internal], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [], zoom: [[{level: project, expanded: [internal]}]], expand: [[internal]], presentation: []}
     expectedAria: []
     expectedStructure: []
@@ -313,7 +313,7 @@ cases:
     expectedBefore: *reject_before
     action: {type: grain-control, targets: [files], keys: []}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}}
+      - {version: 1, presentation: canvas, selectedId: web, grain: file, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [], zoom: [[{level: file, expanded: []}]], expand: [], presentation: []}
     expectedAria: []
     expectedStructure: []
@@ -327,7 +327,7 @@ cases:
     expectedBefore: *reject_before
     action: {type: zoom-control, targets: [zoom in], keys: ['800', '400']}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1.25, panX: -87.5, panY: -25}}
+      - {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1.25, panX: -87.5, panY: -25}, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [], zoom: [], expand: [], presentation: []}
     expectedAria: []
     expectedStructure: []
@@ -341,7 +341,7 @@ cases:
     expectedBefore: *reject_before
     action: {type: pan, targets: [viewport], keys: ['10', '20', '30', '50']}
     expectedStates:
-      - {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 30, panY: 50}}
+      - {version: 1, presentation: canvas, selectedId: web, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 30, panY: 50}, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [], zoom: [], expand: [], presentation: []}
     expectedAria: []
     expectedStructure: []
@@ -351,7 +351,7 @@ cases:
   - name: canvas rejecting owner ignores repeated selection
     surface: canvas
     owner: reject
-    initialState: &reject_selected {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}}
+    initialState: &reject_selected {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedBefore:
       ownerState: *reject_selected
       dom: &reject_selected_dom
@@ -384,7 +384,7 @@ cases:
   - name: canvas legacy selected click clears selection
     surface: canvas
     owner: legacy
-    initialState: {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null}
+    initialState: {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedBefore:
       semanticState: {selectedId: internal, grain: project, expandedIds: []}
       dom:

@@ -1,0 +1,7 @@
+fixture: generated ten-thousand-node ranking stays within interaction budgets
+nodeCount: 10000
+discardedWarmups: 2
+measuredRuns: 9
+statistic: median
+intrinsicMs: 4.104
+rederivationMs: 8.204

@@ -1,4 +1,4 @@
-expectedCaseCount: 12
+expectedCaseCount: 13
 cases:
   - name: defaults survive json roundtrip
     initial: &defaultState
@@ -10,6 +10,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: null
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
     sequence:
       - {type: hydrate, state: *defaultState}
     expected: *defaultState
@@ -26,6 +32,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: internal/ingest
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
   - name: keyboard semantic selection uses the reducer
     initial: *defaultState
     sequence:
@@ -40,6 +52,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: web
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
   - name: expansion ids are normalized
     initial:
       version: 1
@@ -50,6 +68,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: null
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
     sequence: []
     expected:
       version: 1
@@ -60,6 +84,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: null
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
 
   - name: filter retains deep matching context
     initial: *defaultState
@@ -74,6 +104,12 @@ cases:
       navigatorFilter: HANDLER
       navigatorFocusedId: null
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
     deriveExpected:
       rowIds: [web, web/src, web/src/app, web/src/app/handler.ts]
       focusedId: web
@@ -91,6 +127,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: internal/ingest
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
   - name: grain change clears expansion
     initial:
       version: 1
@@ -101,6 +143,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: null
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
     sequence:
       - {type: set-grain, grain: file}
     expected:
@@ -112,6 +160,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: null
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
   - name: canvas and navigator share selection
     initial:
       version: 1
@@ -122,6 +176,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: null
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
     sequence:
       - {type: select, id: internal/ingest/pipeline.go}
     expected:
@@ -133,6 +193,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: internal/ingest/pipeline.go
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
     deriveExpected:
       selectedId: internal/ingest/pipeline.go
       canvasSelectedId: internal/ingest/pipeline.go
@@ -156,6 +222,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: null
       viewport: {scale: 2.4, panX: -12, panY: 9}
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
   - name: replace never carries stale fields
     initial: *defaultState
     sequence:
@@ -189,6 +261,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: internal
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
 
   - name: file grain stays aggregate until explicit expansion
     initial:
@@ -200,6 +278,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: null
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
     sequence: []
     expected:
       version: 1
@@ -210,6 +294,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: null
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
     deriveExpected:
       # Unexpanded file grain must stay bounded — identical to package grain —
       # never auto-descend the whole tree (the "one very long row of every
@@ -229,6 +319,12 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: null
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
     sequence:
       - {type: set-expanded, ids: [internal/ingest]}
     expected:
@@ -240,12 +336,47 @@ cases:
       navigatorFilter: ''
       navigatorFocusedId: null
       viewport: null
+      hoveredSessionId: null
+      selectedSessionId: null
+      expandedCommitSessions: []
+      expandedGhostGroups: []
+      rankMode: relevance
+      scentFilter: null
     deriveExpected:
       # Only the explicitly-expanded folder reveals its file; every other
       # sibling folder stays a collapsed aggregate box. rowIds locks the
       # navigator side agreeing with the canvas (see the case above).
       canvasVisibleIds: [internal/ingest/pipeline.go, web/src, cmd/peasant, orphan]
       rowIds: [internal, internal/ingest, internal/ingest/pipeline.go, web, web/src, cmd, cmd/peasant, orphan]
+
+  - name: timeline actions round-trip the frozen contract
+    initial: *defaultState
+    sequence:
+      - {type: hover-session, sessionId: sess-a}
+      - {type: select-session, sessionId: sess-b}
+      - {type: hover-session, sessionId: null}
+      - {type: toggle-commit-sessions, commitHash: abc123}
+      - {type: toggle-commit-sessions, commitHash: def456}
+      - {type: toggle-commit-sessions, commitHash: def456}
+      - {type: toggle-ghost-group, successorHash: succ1}
+      - {type: set-rank-mode, rankMode: debt}
+      - {type: set-scent-filter, scentFilter: 'heavy churn'}
+      - {type: set-rank-expanded, expanded: true}
+    expected:
+      version: 1
+      presentation: navigator
+      selectedId: null
+      grain: package
+      expandedIds: []
+      navigatorFilter: ''
+      navigatorFocusedId: null
+      viewport: null
+      hoveredSessionId: null
+      selectedSessionId: sess-b
+      expandedCommitSessions: [abc123, 'ranked:all']
+      expandedGhostGroups: [succ1]
+      rankMode: debt
+      scentFilter: 'heavy churn'
 
 opaqueIdCase:
   state:
@@ -257,6 +388,12 @@ opaqueIdCase:
     navigatorFilter: ''
     navigatorFocusedId: ' internal '
     viewport: null
+    hoveredSessionId: null
+    selectedSessionId: null
+    expandedCommitSessions: []
+    expandedGhostGroups: []
+    rankMode: relevance
+    scentFilter: null
   payload:
     repoFound: true
     nodes:

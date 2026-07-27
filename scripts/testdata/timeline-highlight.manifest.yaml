@@ -1,0 +1,36 @@
+expectedCaseCount: 6
+caseNames:
+  - hover-only highlights only the hovered session
+  - select-only highlights only the selected session
+  - hover-over-selection returns both independently and never clears the selection
+  - escape sequence clears hover then selection
+  - keyboard focus drives the same hover action as pointer hover
+  - deep-link hydration of a selected session
+mutationCases:
+  - name: swapping the escape-order check reddens the escape-sequence case
+    case: escape sequence clears hover then selection
+    find: |
+      export function resolveEscapeAction(state) {
+        const canonical = createCodeMapState(state)
+        if (canonical.hoveredSessionId !== null) return { type: 'hover-session', sessionId: null }
+        if (canonical.selectedSessionId !== null) return { type: 'select-session', sessionId: null }
+        return null
+      }
+    replace: |
+      export function resolveEscapeAction(state) {
+        const canonical = createCodeMapState(state)
+        if (canonical.selectedSessionId !== null) return { type: 'select-session', sessionId: null }
+        if (canonical.hoveredSessionId !== null) return { type: 'hover-session', sessionId: null }
+        return null
+      }
+  - name: collapsing hover and selection onto one build call reddens the hover-over-selection independence case
+    case: hover-over-selection returns both independently and never clears the selection
+    find: |
+      return { selected: build(canonical.selectedSessionId), hovered: build(canonical.hoveredSessionId) }
+    replace: |
+      return { selected: build(canonical.hoveredSessionId), hovered: build(canonical.hoveredSessionId) }
+  - name: dropping onFocus from SessionLane reddens the keyboard-focus case
+    case: keyboard focus drives the same hover action as pointer hover
+    file: SessionLane.jsx
+    find: 'onFocus={() => onHover?.(sessionId)}'
+    replace: ''

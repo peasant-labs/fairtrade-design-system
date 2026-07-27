@@ -2,6 +2,7 @@ import React from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import YAML from 'yaml'
 import fixtureSource from '../../../scripts/testdata/timeline-navigation-actions.yaml?raw'
+import overflowFixtureSource from '../../../scripts/testdata/changes-overflow.yaml?raw'
 import Changes from './Changes.jsx'
 
 const fixtureDocument = YAML.parseDocument(fixtureSource, { strict: true, uniqueKeys: true })
@@ -9,6 +10,11 @@ if (fixtureDocument.errors.length > 0 || (fixtureSource.match(/^---\s*$/gm) ?? [
   throw new Error('timeline-navigation-actions.yaml must be one strict YAML document with unique keys')
 }
 const fixture = fixtureDocument.toJS()
+const overflowFixtureDocument = YAML.parseDocument(overflowFixtureSource, { strict: true, uniqueKeys: true })
+if (overflowFixtureDocument.errors.length > 0 || (overflowFixtureSource.match(/^---\s*$/gm) ?? []).length > 0) {
+  throw new Error('changes-overflow.yaml must be one strict YAML document with unique keys')
+}
+const overflowFixture = overflowFixtureDocument.toJS()
 
 export default {
   title: 'in use/Changes',
@@ -44,6 +50,31 @@ export const SemanticNavigationActions = {
     await expect(args.onOpenSession).not.toHaveBeenCalled()
     await expect(args.onOpenMap).not.toHaveBeenCalled()
     await expect(args.onShowOlder).not.toHaveBeenCalled()
+  },
+}
+
+export const LinkedSessionOverflow = {
+  args: { onNavigate: fn() },
+  render: (args) => {
+    const testCase = overflowFixture.cases[0]
+    return <Changes {...args} payload={testCase.payload} nowMs={1770001000000} />
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const testCase = overflowFixture.cases[0]
+    const { expect: expectation } = testCase
+    const disclosure = canvas.getByRole('button', { name: expectation.toggleLabel })
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
+    await expect(canvas.queryByText(expectation.thirdSessionTitle)).not.toBeInTheDocument()
+    await userEvent.click(disclosure)
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
+    const thirdSession = canvas.getByText(expectation.thirdSessionTitle).closest('button')
+    if (!thirdSession) throw new Error('linked-session overflow fixture third session is not a button')
+    await userEvent.click(thirdSession)
+    await expect(args.onNavigate).toHaveBeenLastCalledWith(expectation.expectedNavigation)
+    await userEvent.click(disclosure)
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
+    await expect(canvas.queryByText(expectation.thirdSessionTitle)).not.toBeInTheDocument()
   },
 }
 

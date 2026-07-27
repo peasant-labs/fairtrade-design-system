@@ -1,0 +1,79 @@
+expectedCaseCount: 8
+requiredNames:
+  - desktop dark theme with normal motion
+  - desktop dark theme with reduced motion
+  - desktop light theme with normal motion
+  - desktop light theme with reduced motion
+  - mobile dark theme with normal motion
+  - mobile dark theme with reduced motion
+  - mobile light theme with normal motion
+  - mobile light theme with reduced motion
+cases:
+  - name: desktop dark theme with normal motion
+    viewport: desktop
+    theme: dark
+    motion: no-preference
+    expectedThemeAttribute: null
+    expectedAnimationName: tlp-glow
+  - name: desktop dark theme with reduced motion
+    viewport: desktop
+    theme: dark
+    motion: reduce
+    expectedThemeAttribute: null
+    expectedAnimationName: none
+  - name: desktop light theme with normal motion
+    viewport: desktop
+    theme: light
+    motion: no-preference
+    expectedThemeAttribute: light
+    expectedAnimationName: tlp-glow
+  - name: desktop light theme with reduced motion
+    viewport: desktop
+    theme: light
+    motion: reduce
+    expectedThemeAttribute: light
+    expectedAnimationName: none
+  - name: mobile dark theme with normal motion
+    viewport: mobile
+    theme: dark
+    motion: no-preference
+    expectedThemeAttribute: null
+    expectedAnimationName: tlp-glow
+  - name: mobile dark theme with reduced motion
+    viewport: mobile
+    theme: dark
+    motion: reduce
+    expectedThemeAttribute: null
+    expectedAnimationName: none
+  - name: mobile light theme with normal motion
+    viewport: mobile
+    theme: light
+    motion: no-preference
+    expectedThemeAttribute: light
+    expectedAnimationName: tlp-glow
+  - name: mobile light theme with reduced motion
+    viewport: mobile
+    theme: light
+    motion: reduce
+    expectedThemeAttribute: light
+    expectedAnimationName: none
+expectedCommitHashes: [c5, c6]
+expectedSessionId: sess-doi
+expectedAnimationIterationCount: '1'
+changesOverflow:
+  commitHash: c1d4a3
+  toggleLabel: 1 more sessions
+  thirdSessionTitle: Verify map session links
+  sessionId: session-map-links
+  sourceText: commit c1d4a3
+  providerHarness: cursor
+  expectedHistoryHashes:
+    - tip:feat/map-review-contribute
+    - c1d4a3
+    - d14c0a
+    - b7e220
+    - a3f9c1
+    - 8c0e41
+    - f1a920
+  returnedExpanded: true
+buildMarker: data-session-provider

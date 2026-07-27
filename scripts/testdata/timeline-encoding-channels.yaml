@@ -1,0 +1,85 @@
+expectedCaseCount: 11
+
+# Every case asserts against SOURCE (not the built/minified dist) so the
+# fixture is a durable contract per this repo's mobile-layout.test.mjs
+# convention. `mustContain`/`mustNotContain` are plain substrings (not
+# regex), which is simplest to reason about and mutate for the mutation guards.
+# Double-quoted strings are used wherever a literal "\n" must be a real
+# newline (YAML single-quoted strings do not interpret backslash escapes).
+
+cases:
+  - name: lane identity rides ink weight
+    file: CommitGraph.css
+    mustContain:
+      - ".cg-stroke-self,\n.cg-stroke-lane0 {\n  stroke: var(--rule-strong);"
+      - ".cg-stroke-branch {\n  stroke: var(--rule);"
+
+  - name: forked/merged-out-of-view rides stroke dash
+    file: CommitGraph.jsx
+    mustContain:
+      - 'strokeDasharray={DASH}'
+
+  - name: dash is not used for ghost identity
+    file: timelinePrimitives.css
+    mustNotContain:
+      - 'dasharray'
+    crossFile:
+      - file: CommitGraph.css
+        mustNotContain: ['dasharray']
+
+  - name: commit-has-session rides node fill
+    file: CommitGraph.css
+    mustContain:
+      - ".cg-dot-hollow {\n  background: var(--surface);"
+      - ".cg-dot-filled {\n  background: var(--ink);"
+
+  - name: selection rides amber fill
+    file: CommitGraph.css
+    mustContain:
+      - ".cg-dot-sel.cg-dot-filled {\n  background: var(--amber-fill);"
+
+  - name: ghost identity rides node shape not dash
+    file: GhostCommitNode.jsx
+    mustContain:
+      - 'rotate(45'
+    mustNotContain:
+      - 'dasharray'
+
+  - name: ghost group collapsed count is tabular
+    file: timelinePrimitives.css
+    mustContain:
+      - '.tlp-ghost-group-count { color: var(--ink-2); }'
+    crossFile:
+      - file: GhostGroup.jsx
+        mustContain: ['className="tnum tlp-ghost-group-count"']
+
+  - name: confidence rides the tether terminal glyph in three grades
+    file: timelinePrimitives.css
+    mustContain:
+      - '.tlp-terminal-high .tlp-ghost-diamond rect { fill: var(--ink-3); }'
+      - '.tlp-terminal-medium .tlp-ghost-diamond rect { fill: var(--ink-4); }'
+      - '.tlp-terminal-low .tlp-ghost-diamond rect { fill: var(--surface); stroke: var(--ink-4); stroke-width: var(--stroke-hairline); }'
+
+  - name: hover width-step floor is present in both motion states
+    file: CommitGraph.css
+    mustContain:
+      # the unconditional (both motion states) box-shadow rule:
+      - ".cg-dot-highlight-primary,\n.cg-dot-highlight-secondary {\n  box-shadow: 0 0 0 var(--stroke-emphasis) var(--rule-strong);\n}"
+    mustNotContainWithin:
+      # the unconditional rule must NOT live inside the reduced-motion-only media query
+      - marker: ".cg-dot-highlight-primary,\n.cg-dot-highlight-secondary {\n  box-shadow: 0 0 0 var(--stroke-emphasis) var(--rule-strong);"
+        forbiddenAncestor: "@media (prefers-reduced-motion: no-preference) {"
+
+  - name: hover glow is additive and normal-motion only
+    file: CommitGraph.css
+    mustContainWithin:
+      - marker: 'animation: cg-highlight-glow var(--dur-3) var(--ease-out) 1 both;'
+        requiredAncestor: "@media (prefers-reduced-motion: no-preference) {"
+      - marker: 'animation: cg-highlight-glow-amber var(--dur-3) var(--ease-out) 1 both;'
+        requiredAncestor: "@media (prefers-reduced-motion: no-preference) {"
+
+  - name: insight provenance rides a distinct glyph per source
+    file: timelinePrimitives.css
+    mustContain:
+      - '.tlp-insight-provenance-mechanical { background: var(--surface); }'
+      - '.tlp-insight-provenance-mined { background: var(--ink-3); }'
