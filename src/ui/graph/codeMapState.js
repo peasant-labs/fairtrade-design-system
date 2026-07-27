@@ -3,10 +3,16 @@
 /** @typedef {'navigator'|'canvas'} CodeMapPresentation */
 /** @typedef {'project'|'package'|'file'} CodeMapGrain */
 /** @typedef {{scale:number, panX:number, panY:number}} CodeMapViewport */
+/** @typedef {'relevance'|'debt'|'churn'} CodeMapRankMode */
 import { assertCodeMapPayloadEnums } from './types.js'
+import { SCENT_TAGS } from './ranking.js'
 
 /** @typedef {import('./types.js').MapNodePayload} MapNodePayload */
-/** @typedef {{type:'replace'|'hydrate', state:Partial<CodeMapState>} | {type:'set-presentation', presentation:CodeMapPresentation} | {type:'select'|'toggle-expanded'|'open-in-map', id:string} | {type:'focus', id:string|null} | {type:'clear-selection'} | {type:'set-filter', filter:string} | {type:'set-expanded', ids:Iterable<string>} | {type:'set-grain', grain:CodeMapGrain} | {type:'set-viewport', viewport:CodeMapViewport|null} | {type:'reveal', id:string, grain:CodeMapGrain, expandedIds:Iterable<string>}} CodeMapAction */
+/**
+ * The COMPLETE public timeline/ranking action surface. Frozen here: names are
+ * consumed downstream (the timeline surface, the ranked entry list) and are never renamed.
+ * @typedef {{type:'replace'|'hydrate', state:Partial<CodeMapState>} | {type:'set-presentation', presentation:CodeMapPresentation} | {type:'select'|'toggle-expanded'|'open-in-map', id:string} | {type:'focus', id:string|null} | {type:'clear-selection'} | {type:'set-filter', filter:string} | {type:'set-expanded', ids:Iterable<string>} | {type:'set-grain', grain:CodeMapGrain} | {type:'set-viewport', viewport:CodeMapViewport|null} | {type:'reveal', id:string, grain:CodeMapGrain, expandedIds:Iterable<string>} | {type:'hover-session', sessionId:string|null} | {type:'select-session', sessionId:string|null} | {type:'toggle-commit-sessions', commitHash:string} | {type:'toggle-ghost-group', successorHash:string} | {type:'set-rank-mode', rankMode:CodeMapRankMode} | {type:'set-scent-filter', scentFilter:string|null} | {type:'set-rank-expanded', expanded:boolean}} CodeMapAction
+ */
 /**
  * @typedef {object} CodeMapState
  * @property {1} version
@@ -17,6 +23,12 @@ import { assertCodeMapPayloadEnums } from './types.js'
  * @property {string} navigatorFilter
  * @property {string|null} navigatorFocusedId
  * @property {CodeMapViewport|null} viewport
+ * @property {string|null} hoveredSessionId - transient; set/cleared by `hover-session`, never persisted to the route.
+ * @property {string|null} selectedSessionId - lingers after the pointer leaves; route-persisted (shareable deep link).
+ * @property {string[]} expandedCommitSessions - disclosure keys: commit hashes for sessions, `files:<hash>` for touched files, and `ranked:all` for the ranked-list cap.
+ * @property {string[]} expandedGhostGroups - successor commit hashes with their ghost group expanded.
+ * @property {CodeMapRankMode} rankMode - ranked-entry-list scoring mode.
+ * @property {string|null} scentFilter - one `SCENT_TAGS` member, or null for no filter.
  */
 /** @typedef {{node:import('./types.js').MapNodePayload, depth:number, parentId:string|null, childIds:string[], hasChildren:boolean, canExpand:boolean, forcedOpen:boolean, expanded:boolean}} CodeMapNavigatorRow */
 /** @typedef {{orderedIds:string[], rootIds:string[], childIdsByParent:Record<string,string[]>, depthById:Record<string,number>}} CodeMapHierarchy */
@@ -43,12 +55,22 @@ const DEFAULT_STATE = Object.freeze({
   navigatorFilter: '',
   navigatorFocusedId: null,
   viewport: null,
+  hoveredSessionId: null,
+  selectedSessionId: null,
+  expandedCommitSessions: Object.freeze([]),
+  expandedGhostGroups: Object.freeze([]),
+  rankMode: 'relevance',
+  scentFilter: null,
 })
 
 /** @type {ReadonlySet<CodeMapPresentation>} */
 const PRESENTATIONS = new Set(['navigator', 'canvas'])
 /** @type {ReadonlySet<CodeMapGrain>} */
 const GRAINS = new Set(['project', 'package', 'file'])
+/** @type {ReadonlySet<CodeMapRankMode>} */
+const RANK_MODES = new Set(['relevance', 'debt', 'churn'])
+/** @type {ReadonlySet<string>} */
+const SCENT_FILTERS = new Set(SCENT_TAGS)
 // `file` ALSO bases at depth 1 — file grain is reached only through explicit
 // per-node expansion (`expandedIds`), never by auto-descending the whole tree.
 // The canvas must never lay out every file in the repo at once: a large real
@@ -65,7 +87,10 @@ const GRAINS = new Set(['project', 'package', 'file'])
 // CODE_MAP_GRAIN_DEPTH's consumer in MapCanvas.jsx for the derivation.
 const GRAIN_DEPTH = Object.freeze({ project: 0, package: 1, file: 1 })
 export const CODE_MAP_GRAIN_DEPTH = GRAIN_DEPTH
-const STATE_FIELDS = Object.freeze(['version', 'presentation', 'selectedId', 'grain', 'expandedIds', 'navigatorFilter', 'navigatorFocusedId', 'viewport'])
+const STATE_FIELDS = Object.freeze([
+  'version', 'presentation', 'selectedId', 'grain', 'expandedIds', 'navigatorFilter', 'navigatorFocusedId', 'viewport',
+  'hoveredSessionId', 'selectedSessionId', 'expandedCommitSessions', 'expandedGhostGroups', 'rankMode', 'scentFilter',
+])
 /** @type {Readonly<Record<string, readonly string[]>>} */
 const ACTION_FIELDS = Object.freeze({
   replace: ['type', 'state'],
@@ -81,6 +106,13 @@ const ACTION_FIELDS = Object.freeze({
   'set-viewport': ['type', 'viewport'],
   'open-in-map': ['type', 'id'],
   reveal: ['type', 'id', 'grain', 'expandedIds'],
+  'hover-session': ['type', 'sessionId'],
+  'select-session': ['type', 'sessionId'],
+  'toggle-commit-sessions': ['type', 'commitHash'],
+  'toggle-ghost-group': ['type', 'successorHash'],
+  'set-rank-mode': ['type', 'rankMode'],
+  'set-scent-filter': ['type', 'scentFilter'],
+  'set-rank-expanded': ['type', 'expanded'],
 })
 
 /**
@@ -106,6 +138,12 @@ export function createCodeMapState(seed = null) {
     navigatorFilter: stringValue(source.navigatorFilter, '', 'navigatorFilter'),
     navigatorFocusedId: optionalId(source.navigatorFocusedId, 'navigatorFocusedId'),
     viewport: viewportValue(source.viewport),
+    hoveredSessionId: optionalId(source.hoveredSessionId, 'hoveredSessionId'),
+    selectedSessionId: optionalId(source.selectedSessionId, 'selectedSessionId'),
+    expandedCommitSessions: idList(source.expandedCommitSessions, 'expandedCommitSessions'),
+    expandedGhostGroups: idList(source.expandedGhostGroups, 'expandedGhostGroups'),
+    rankMode: enumValue(source.rankMode, RANK_MODES, DEFAULT_STATE.rankMode, 'rankMode'),
+    scentFilter: scentFilterValue(source.scentFilter),
   }
 }
 
@@ -122,6 +160,17 @@ export function codeMapStatesEqual(left, right) {
     && a.navigatorFilter === b.navigatorFilter
     && a.navigatorFocusedId === b.navigatorFocusedId
     && viewportEquals(a.viewport, b.viewport)
+    && a.hoveredSessionId === b.hoveredSessionId
+    && a.selectedSessionId === b.selectedSessionId
+    && idListEquals(a.expandedCommitSessions, b.expandedCommitSessions)
+    && idListEquals(a.expandedGhostGroups, b.expandedGhostGroups)
+    && a.rankMode === b.rankMode
+    && a.scentFilter === b.scentFilter
+}
+
+/** @param {string[]} left @param {string[]} right */
+function idListEquals(left, right) {
+  return left.length === right.length && left.every((id, index) => id === right[index])
 }
 
 /**
@@ -174,9 +223,99 @@ export function reduceCodeMapState(state, action) {
         navigatorFocusedId: id,
       })
     }
+    // Timeline and ranked-list action surface. Existing action names are stable;
+    // additive actions keep new disclosure state on the same canonical reducer.
+    case 'hover-session':
+      // Transient by design: hover never touches selectedSessionId, and is the
+      // ONLY field never persisted to route state (see deriveTimelineHighlight).
+      return createCodeMapState({ ...current, hoveredSessionId: nullableId(action.sessionId, 'sessionId') })
+    case 'select-session':
+      // Lingers after the pointer leaves; caller is responsible for persisting
+      // selectedSessionId to route state so the highlight is a shareable deep link.
+      return createCodeMapState({ ...current, selectedSessionId: nullableId(action.sessionId, 'sessionId') })
+    case 'toggle-commit-sessions': {
+      const hash = requiredId(action.commitHash, 'commitHash')
+      const set = new Set(current.expandedCommitSessions)
+      if (set.has(hash)) set.delete(hash)
+      else set.add(hash)
+      return createCodeMapState({ ...current, expandedCommitSessions: [...set] })
+    }
+    case 'toggle-ghost-group': {
+      const hash = requiredId(action.successorHash, 'successorHash')
+      const set = new Set(current.expandedGhostGroups)
+      if (set.has(hash)) set.delete(hash)
+      else set.add(hash)
+      return createCodeMapState({ ...current, expandedGhostGroups: [...set] })
+    }
+    case 'set-rank-mode':
+      return createCodeMapState({ ...current, rankMode: requiredEnum(action.rankMode, RANK_MODES, 'rankMode') })
+    case 'set-scent-filter':
+      return createCodeMapState({ ...current, scentFilter: nullableScentFilter(action.scentFilter, 'scentFilter') })
+    case 'set-rank-expanded': {
+      const expanded = requiredBoolean(action.expanded, 'expanded')
+      const set = new Set(current.expandedCommitSessions)
+      if (expanded) set.add('ranked:all')
+      else set.delete('ranked:all')
+      return createCodeMapState({ ...current, expandedCommitSessions: [...set] })
+    }
     default:
       throw actionable('reduce state', 'action.type', 'the action is unsupported', 'use a documented CodeMapAction')
   }
+}
+
+/**
+ * Pure derivation of the timeline's highlight state. Hover is
+ * subordinate to selection: both are returned independently so a caller can render
+ * selection at primary weight (amber fill) and hover as a secondary/additive
+ * layer (stroke width-step + glow) without one clearing the other. Escape
+ * clears hover, then selection; see `resolveEscapeAction`.
+ * @param {{edges: Array<{sessionId:string, commitHash:string, ghost?:boolean}>}|undefined|null} payload
+ * @param {CodeMapState} state
+ * @returns {{selected: TimelineHighlight, hovered: TimelineHighlight}}
+ */
+export function deriveTimelineHighlight(payload, state) {
+  const canonical = createCodeMapState(state)
+  const edges = normalizeHighlightEdges(payload)
+  const build = (/** @type {string|null} */ sessionId) => {
+    if (!sessionId) return { sessionId: null, commitHashes: [], ghostHashes: [], edges: [] }
+    const matched = edges.filter((edge) => edge.sessionId === sessionId)
+    const commitHashes = [...new Set(matched.filter((edge) => !edge.ghost).map((edge) => edge.commitHash))].sort(codePointCompare)
+    const ghostHashes = [...new Set(matched.filter((edge) => edge.ghost).map((edge) => edge.commitHash))].sort(codePointCompare)
+    return { sessionId, commitHashes, ghostHashes, edges: matched.map((edge) => ({ ...edge })) }
+  }
+  return { selected: build(canonical.selectedSessionId), hovered: build(canonical.hoveredSessionId) }
+}
+
+/**
+ * The Escape-key contract: "Escape clears hover then selection."
+ * Pure and reusable by every primitive that captures the key, so the two-step
+ * behavior lives in exactly one place. Returns null when there is nothing to clear.
+ * @param {CodeMapState} state
+ * @returns {{type:'hover-session', sessionId:null} | {type:'select-session', sessionId:null} | null}
+ */
+export function resolveEscapeAction(state) {
+  const canonical = createCodeMapState(state)
+  if (canonical.hoveredSessionId !== null) return { type: 'hover-session', sessionId: null }
+  if (canonical.selectedSessionId !== null) return { type: 'select-session', sessionId: null }
+  return null
+}
+
+/** @typedef {{sessionId:string|null, commitHashes:string[], ghostHashes:string[], edges:Array<{sessionId:string, commitHash:string, ghost?:boolean}>}} TimelineHighlight */
+
+/** @param {{edges: Array<{sessionId:string, commitHash:string, ghost?:boolean}>}|undefined|null} payload */
+function normalizeHighlightEdges(payload) {
+  const rawEdges = payload?.edges ?? []
+  if (!Array.isArray(rawEdges)) {
+    throw actionable('derive timeline highlight', 'payload.edges', 'edges is not an array', 'provide a payload with an edges array')
+  }
+  return rawEdges.map((raw, index) => {
+    if (!isRecord(raw)) throw actionable('derive timeline highlight', `payload.edges[${index}]`, 'the edge is not an object', 'provide an edge object')
+    return {
+      sessionId: requiredId(raw.sessionId, `payload.edges[${index}].sessionId`),
+      commitHash: requiredId(raw.commitHash, `payload.edges[${index}].commitHash`),
+      ghost: raw.ghost === true,
+    }
+  })
 }
 
 /**
@@ -397,6 +536,25 @@ function requireAction(action) {
       break
     case 'clear-selection':
       break
+    case 'hover-session':
+    case 'select-session':
+      nullableId(action.sessionId, 'sessionId')
+      break
+    case 'toggle-commit-sessions':
+      requiredId(action.commitHash, 'commitHash')
+      break
+    case 'toggle-ghost-group':
+      requiredId(action.successorHash, 'successorHash')
+      break
+    case 'set-rank-mode':
+      requiredEnum(action.rankMode, RANK_MODES, 'rankMode')
+      break
+    case 'set-scent-filter':
+      nullableScentFilter(action.scentFilter, 'scentFilter')
+      break
+    case 'set-rank-expanded':
+      requiredBoolean(action.expanded, 'expanded')
+      break
   }
 }
 
@@ -482,6 +640,12 @@ function stringValue(value, fallback, field) {
   return value
 }
 
+/** @param {unknown} value @param {string} field @returns {boolean} */
+function requiredBoolean(value, field) {
+  if (typeof value !== 'boolean') throw actionable('normalize state', field, 'the value is not a boolean', 'provide true or false')
+  return value
+}
+
 /** @template {string} T @param {unknown} value @param {ReadonlySet<T>} allowed @param {T} fallback @param {string} field @returns {T} */
 function enumValue(value, allowed, fallback, field) {
   if (value === undefined) return fallback
@@ -517,4 +681,19 @@ function nullableViewport(value, field) {
 function viewportEquals(left, right) {
   if (left === null || right === null) return left === right
   return left.scale === right.scale && left.panX === right.panX && left.panY === right.panY
+}
+
+/** @param {unknown} value @returns {string|null} */
+function scentFilterValue(value) {
+  if (value === undefined || value === null) return null
+  if (typeof value !== 'string' || !SCENT_FILTERS.has(value)) {
+    throw actionable('normalize state', 'scentFilter', `value ${JSON.stringify(value)} is unsupported`, `use null or one of ${[...SCENT_FILTERS].join(', ')}`)
+  }
+  return value
+}
+
+/** @param {unknown} value @param {string} field @returns {string|null} */
+function nullableScentFilter(value, field) {
+  if (value === undefined) throw actionable('normalize action', field, 'the required scent filter is undefined', 'provide null or a SCENT_TAGS member')
+  return scentFilterValue(value)
 }

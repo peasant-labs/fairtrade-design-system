@@ -20,6 +20,10 @@
   --ic-lg: 18px;
   --bd: 1px solid var(--rule);
   --bd-strong: 1px solid var(--rule-strong);
+  --stroke-hairline: 1px;
+  --stroke-emphasis: 2px;
+  --focus-ring-width: 3px;
+  --ghost-node-size: 9px;
   --control-h: 36px;
   --control-h-sm: 28px;
   --nav-h: 56px;

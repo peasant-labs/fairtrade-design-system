@@ -32,8 +32,10 @@
        changes[].baseHash    — graph anchor: merge-base hash (fork point, open branches)
        changes[].tipCommitMs — graph anchor: branch tip time (row Y-position, open branches)
        changes[].mergeCommitHash — graph anchor: merge commit (join point, merged rows)
-     PRESENT (time strip):
-       recentCommits[].hash, subject, timeMs, hasSession
+      PRESENT (time strip):
+        recentCommits[].hash, subject, timeMs, hasSession, sessionIds, associations
+        rewrittenCommits[].ghostHash, successorHash, resolution, method, confidence,
+          authorTimeMs, subject, sessionIds, associations
      ABSENT:
        projectHash — routing metadata; not needed as a prop inside the component
 
@@ -88,8 +90,10 @@
    to produce the topology datums.
 
      PRESENT (topology nodes — field-for-field from MapNode):
-       nodes[].id, parent, kind, name, language, layer, order, loc, fileCount,
-       recordedFiles, totalFiles, touchCount, effortDensity
+      nodes[].id, parent, kind, name, language, layer, order, loc, fileCount,
+        recordedFiles, totalFiles, touchCount, effortDensity, agentEditedCount,
+        readCount, readAttribution, readState, changedRegionCount,
+        attributedRegionCount, reviewedRegionCount
      PRESENT (structure edges — field-for-field):
        structureEdges[].from, to, count
      PRESENT (violations — field-for-field):

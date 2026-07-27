@@ -24,6 +24,7 @@ const providerModule = process.env.FAIRTRADE_PROVIDER_MODULE
   : new URL('../dist/lib/ui.js', import.meta.url).href
 const ui = await import(`${providerModule}?provider-contract=${Date.now()}`)
 const failures = []
+const PROVIDER_MUTATION_STRATEGIES = new Set(['graph-turn-invalid-fallback', 'omit-antigravity-inventory', 'accept-arbitrary-string'])
 
 // Every observable assertion in this file goes through `check()`, which both
 // records the pass/fail outcome AND increments a total inventory counter.
@@ -182,11 +183,16 @@ function validateManifest(value) {
   check(uniqueStrings(value.invalidHarnesses, true) && value.invalidHarnesses.length === value.expectedInvalidHarnessCount, 'manifest: invalidHarnesses must be unique strings matching expectedInvalidHarnessCount')
   check(Array.isArray(value.mutations) && value.mutations.length === value.expectedMutationCount, 'manifest: mutations must match expectedMutationCount')
   for (const [index, mutation] of (value.mutations ?? []).entries()) {
-    check(exactFieldsBool(mutation, ['name', 'target', 'find', 'replace', 'expectedFailedCheckCount', 'expectedError']), `manifest.mutations[${index}]: fields must be exact`)
+    const semantic = typeof mutation?.strategy === 'string'
+    const fields = semantic
+      ? ['name', 'target', 'strategy', 'expectedFailedCheckCount', 'expectedError']
+      : ['name', 'target', 'find', 'replace', 'expectedFailedCheckCount', 'expectedError']
+    check(exactFieldsBool(mutation, fields), `manifest.mutations[${index}]: fields must be exact`)
     check(['provider-policy', 'ui'].includes(mutation?.target), `manifest.mutations[${index}]: target is unsupported`)
-    for (const field of ['name', 'target', 'find', 'replace', 'expectedError']) {
+    for (const field of semantic ? ['name', 'target', 'strategy', 'expectedError'] : ['name', 'target', 'find', 'replace', 'expectedError']) {
       check(typeof mutation?.[field] === 'string' && mutation[field].length > 0, `manifest.mutations[${index}]: ${field} must be non-empty`)
     }
+    if (semantic) check(PROVIDER_MUTATION_STRATEGIES.has(mutation.strategy), `manifest.mutations[${index}]: strategy is unsupported`)
     check(Number.isInteger(mutation?.expectedFailedCheckCount) && mutation.expectedFailedCheckCount >= 1, `manifest.mutations[${index}]: expectedFailedCheckCount must be a positive integer`)
   }
   check(uniqueStrings((value.mutations ?? []).map((mutation) => mutation?.name), false), 'manifest: mutation names must be unique')

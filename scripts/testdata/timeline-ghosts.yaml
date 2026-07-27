@@ -1,0 +1,44 @@
+expectedCaseCount: 6
+
+ghosts:
+  - { ghostHash: g1a2b3c4d5e6, subject: 'wip: draft the ghost resolver', resolution: rewritten, method: patch_id, confidence: high }
+  - { ghostHash: g4d5e6f7a8b9, subject: 'wip: fix the resolver test fixture', resolution: rewritten, method: author_identity, confidence: medium }
+
+cases:
+  - name: collapsed ghost group renders the stack diamond and count, not individual nodes
+    control: ghost-group
+    props: { successorHash: succ12345678, expanded: false }
+    mustContain: ['tlp-ghost-group-stack', 'tnum tlp-ghost-group-count">2<', '2 session-era commits']
+    mustNotContain: ['wip: draft the ghost resolver', 'wip: fix the resolver test fixture', 'tlp-ghost-group-list']
+
+  - name: expanded ghost group renders one GhostCommitNode per ghost with its subject
+    control: ghost-group
+    props: { successorHash: succ12345678, expanded: true }
+    mustContain: ['wip: draft the ghost resolver', 'wip: fix the resolver test fixture', 'tlp-ghost-group-list']
+
+  - name: high confidence renders the filled tether terminal
+    control: ghost-commit-node
+    props: { ghostHash: g1a2b3c4d5e6, subject: 'wip: draft the ghost resolver', resolution: rewritten, method: patch_id, confidence: high }
+    mustContain: ['tlp-terminal-high']
+    mustNotContain: ['tlp-terminal-medium', 'tlp-terminal-low']
+
+  - name: medium confidence renders the half tether terminal
+    control: ghost-commit-node
+    props: { ghostHash: g4d5e6f7a8b9, subject: 'wip: fix the resolver test fixture', resolution: rewritten, method: author_identity, confidence: medium }
+    mustContain: ['tlp-terminal-medium']
+    mustNotContain: ['tlp-terminal-high', 'tlp-terminal-low']
+
+  - name: low confidence renders the open tether terminal
+    control: ghost-commit-node
+    props: { ghostHash: g7g8h9i0j1k2, subject: '', resolution: unresolved, method: none, confidence: low }
+    mustContain: ['tlp-terminal-low', 'not enough recorded metadata to map it']
+    mustNotContain: ['tlp-terminal-high', 'tlp-terminal-medium', "\u2014"]
+
+  - name: an unresolved ghost hangs off its session lane, not any commit group
+    control: session-lane
+    props:
+      sessionId: sess-ghost
+      title: Squash the ghost-resolution commits
+      unresolvedGhosts:
+        - { ghostHash: g7g8h9i0j1k2, subject: '', resolution: unresolved, method: none, confidence: low }
+    mustContain: ['tlp-session-lane-ghosts', 'tlp-terminal-low']

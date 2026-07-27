@@ -1,0 +1,12 @@
+expectedMutationCount: 1
+routeCase:
+  commitHash: c1d4a3
+  toggleLabel: 1 more sessions
+  thirdSessionTitle: Verify map session links
+  sessionDestinationSelector: .gmp-session-destination
+  backSelector: .iu-subnav-back
+mutations:
+  - name: removing the session destination back mapping fails the mounted return route
+    find: "'session-detail': 'changes'"
+    replace: ''
+    expectedFailure: session destination provides a Changes back control

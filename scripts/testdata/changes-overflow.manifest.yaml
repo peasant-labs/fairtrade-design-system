@@ -1,0 +1,3 @@
+expectedCaseCount: 1
+caseNames:
+  - linked-session overflow expands collapses navigates and prunes after commit change

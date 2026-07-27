@@ -1,0 +1,56 @@
+expectedCaseCount: 6
+
+cases:
+  - name: insights group by kind under a labelled section per kind
+    insights:
+      - { kind: decision, provenance: mechanical, title: 'chose client-side ranking', evidence: [{ sessionId: sess-a, file: ranking.js }] }
+      - { kind: friction, provenance: mechanical, title: 'ghost resolution retried', evidence: [{ sessionId: sess-b, file: resolver.go }] }
+      - { kind: unusual, provenance: mined, title: 'unusual dependency cycle', evidence: [{ sessionId: sess-c, file: graph.go }] }
+      - { kind: retry_loop, provenance: mechanical, title: 'repeated resolver retry', evidence: [{ sessionId: sess-d, file: retry.go }] }
+    expectThrows: false
+    mustContain: ['aria-label="decisions"', 'aria-label="friction"', 'aria-label="unusual signals"', 'aria-label="retry loops"', 'chose client-side ranking', 'ghost resolution retried', 'unusual dependency cycle', 'repeated resolver retry']
+
+  - name: provenance presentation maps every schema value to its marker class
+    insights:
+      - { kind: decision, provenance: mechanical, title: 'mechanical decision', evidence: [{ sessionId: sess-a }] }
+      - { kind: decision, provenance: mined, title: 'mined decision', evidence: [{ sessionId: sess-b }] }
+    expectThrows: false
+    mustContain: ['tlp-insight-provenance-mechanical', 'tlp-insight-provenance-mined']
+
+  - name: evidence renders as clickable links naming the file or session
+    insights:
+      - { kind: friction, provenance: mechanical, title: 'friction', evidence: [{ sessionId: sess-a, file: pipeline.go }, { sessionId: sess-b }] }
+    expectThrows: false
+    mustContain: ['tlp-insight-evidence-link', 'pipeline.go', 'sess-b']
+
+  - name: empty insights render the no-insights-recorded empty state
+    insights: []
+    expectThrows: false
+    mustContain: ['no insights recorded for this node yet']
+    mustNotContain: ['tlp-insight-group']
+
+  - name: an unknown kind or provenance fails closed with an actionable error
+    insights:
+      - { kind: made_up_kind, provenance: mechanical, title: 'bad', evidence: [{ sessionId: sess-a }] }
+    expectThrows: true
+    expectErrorContains:
+      - 'what went wrong'
+      - 'why:'
+      - 'where:'
+      - 'when:'
+      - 'what it means:'
+      - 'how to fix:'
+      - 'canonical @peasant-labs/schema value domain'
+
+  - name: an unknown provenance fails closed with an actionable error
+    insights:
+      - { kind: decision, provenance: made_up_provenance, title: 'bad', evidence: [{ sessionId: sess-a }] }
+    expectThrows: true
+    expectErrorContains:
+      - 'what went wrong'
+      - 'why:'
+      - 'where:'
+      - 'when:'
+      - 'what it means:'
+      - 'how to fix:'
+      - 'canonical @peasant-labs/schema value domain'

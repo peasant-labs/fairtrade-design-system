@@ -14,6 +14,18 @@
   font-family: var(--font-mono);
 }
 
+.cg-history { position: relative; }
+.cg-history-row { position: relative; z-index: 1; }
+.cg-highlight-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
 .cg-empty {
   margin: 0;
   padding: var(--sp-5);
@@ -174,7 +186,9 @@
 }
 
 .cg-session:hover { background: var(--surface-hover); }
-.cg-session-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cg-session .pv-name { flex: 0 0 auto; white-space: nowrap; }
+.cg-session .pv-name-label { white-space: nowrap; }
+.cg-session-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cg-session-time { color: var(--ink-4); white-space: nowrap; }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -283,6 +297,58 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* --- session spine gutter (SessionLane) + ghost rows (GhostGroup) --------------------------- */
+
+.cg-session-spine {
+  display: grid;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: var(--bd);
+  background: var(--surface-2);
+}
+.cg-session-spine .tlp-session-lane-group,
+.cg-session-spine .tlp-session-lane { min-width: 0; }
+.cg-session-spine .tlp-session-lane { flex: 1 1 auto; }
+
+.cg-ghost-row {
+  padding: var(--sp-1) var(--sp-4) var(--sp-1) var(--sp-3);
+  border-top: var(--bd);
+}
+
+/* --- hover/select highlight: stroke width-step FLOOR in BOTH motion states, with an
+   animated glow layered on top ONLY under normal motion. Additive to the dot's own
+   filled/hollow + amber-selection encoding above -- never a replacement for either. --------- */
+
+.cg-dot-highlight-primary,
+.cg-dot-highlight-secondary {
+  box-shadow: 0 0 0 var(--stroke-emphasis) var(--rule-strong);
+}
+
+.cg-dot-highlight-primary {
+  box-shadow: 0 0 0 var(--stroke-emphasis) var(--amber);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cg-dot-highlight-secondary {
+    animation: cg-highlight-glow var(--dur-3) var(--ease-out) 1 both;
+  }
+  .cg-dot-highlight-primary {
+    animation: cg-highlight-glow-amber var(--dur-3) var(--ease-out) 1 both;
+  }
+}
+
+@keyframes cg-highlight-glow {
+  from { box-shadow: 0 0 0 var(--stroke-emphasis) var(--rule-strong); }
+  to { box-shadow: 0 0 var(--sp-1) var(--stroke-emphasis) var(--rule-strong); }
+}
+
+@keyframes cg-highlight-glow-amber {
+  from { box-shadow: 0 0 0 var(--stroke-emphasis) var(--amber); }
+  to { box-shadow: 0 0 var(--sp-1) var(--stroke-emphasis) var(--amber); }
+}
+
+.cg-touched-files { padding: 0 var(--sp-4) var(--sp-2) var(--sp-3); }
 
 /* --- "show older" ghost row --------------------------------------------------------------- */
 

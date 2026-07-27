@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Box, GitMerge } from 'lucide-react'
 import CommitGraph from '../CommitGraph.jsx'
 import { ProviderName } from '../ProviderIcon.jsx'
@@ -43,6 +43,28 @@ export default function Changes({
   const graph = useMemo(() => buildChangesGraph(payload, { nowMs: now }), [payload, now])
   const { commits, reverted, unlinkedSessions, outsideWindowSessions, openCount, mergedCount } = graph
   const defaultBranch = payload.defaultBranch
+  const expandableSessionCommitIds = useMemo(
+    () => new Set(commits.filter((commit) => (commit.sessionRefs?.length ?? 0) > 2).map((commit) => commit.id)),
+    [commits],
+  )
+  const [expandedCommitSessions, setExpandedCommitSessions] = useState([])
+
+  useEffect(() => {
+    setExpandedCommitSessions((current) => {
+      const next = current.filter((commitHash) => expandableSessionCommitIds.has(commitHash))
+      return next.length === current.length ? current : next
+    })
+  }, [expandableSessionCommitIds])
+
+  const onToggleCommitSessions = useCallback((commitHash) => {
+    if (!expandableSessionCommitIds.has(commitHash)) return
+    setExpandedCommitSessions((current) => {
+      const next = new Set(current)
+      if (next.has(commitHash)) next.delete(commitHash)
+      else next.add(commitHash)
+      return [...next]
+    })
+  }, [expandableSessionCommitIds])
 
   return (
     <div className="gmp-root gmp-changes-root">
@@ -79,6 +101,8 @@ export default function Changes({
           onOpenSession={onOpenSession}
           hasMore={hasMore}
           onShowOlder={onShowOlder}
+          expandedCommitSessions={expandedCommitSessions}
+          onToggleCommitSessions={onToggleCommitSessions}
         />
 
         {unlinkedSessions.length > 0 && (

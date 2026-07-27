@@ -1,8 +1,8 @@
-/* graph sub-barrel — the single import surface for the peasant code-graph
+/* graph sub-barrel: the single import surface for the peasant code-graph
    surfaces (Changes, ChangeDetail, CodeMap): their cooked prop-payload contracts
    plus (as they land) the lifted surface components.
 
-   Consumed as `@peasant-labs/fairtrade/graph` — a per-surface entry point kept
+   Consumed as `@peasant-labs/fairtrade/graph`, a per-surface entry point kept
    separate from `./commons` so a peasant app importing the graph surfaces never
    bundles the village commons surfaces (intra-package bundle isolation). The
    matching stylesheet ships as `@peasant-labs/fairtrade/graph.css`.
@@ -20,12 +20,46 @@ export { default as ChangeDetail } from './ChangeDetail.jsx'
 export { default as CodeMap, codeMapPayloadToMapData } from './CodeMap.jsx'
 export { default as CodeMapComposition, DefaultMapLegend } from './CodeMapComposition.jsx'
 export { default as CodeMapNavigator } from './CodeMapNavigator.jsx'
-export { CODE_MAP_STATE_VERSION, CODE_MAP_VIEWPORT_SCALE, isCodeMapViewportScale, codeMapStatesEqual, createCodeMapState, reduceCodeMapState, deriveCodeMapView } from './codeMapState.js'
+export { CODE_MAP_STATE_VERSION, CODE_MAP_VIEWPORT_SCALE, isCodeMapViewportScale, codeMapStatesEqual, createCodeMapState, reduceCodeMapState, deriveCodeMapView, deriveTimelineHighlight, resolveEscapeAction } from './codeMapState.js'
 export { assertTimelineNavigationAction } from './timelineNavigation.js'
 export { GraphAppShell, GraphSectionNav, GRAPH_APP_SECTIONS } from '../inuse/InUseShell.jsx'
 
 /* ── derivation helper (runtime) — ChangesPayload → kit CommitGraph dataset ────── */
 export { buildChangesGraph, humanizeAge } from './changeGraph.js'
+
+/* timeline and ranked-list primitives */
+export { default as SessionLane } from './SessionLane.jsx'
+export { default as GhostCommitNode } from './GhostCommitNode.jsx'
+export { default as GhostGroup } from './GhostGroup.jsx'
+export { default as HighlightEdge } from './HighlightEdge.jsx'
+export { default as SessionOverflowDisclosure } from './SessionOverflowDisclosure.jsx'
+export { default as RankedRow } from './RankedRow.jsx'
+export { default as ScentTag } from './ScentTag.jsx'
+export { default as RankModeControl } from './RankModeControl.jsx'
+export { default as InsightPanel } from './InsightPanel.jsx'
+export { default as TouchedFileCluster } from './TouchedFileCluster.jsx'
+
+/* ── ranking + comprehension-debt module ───────────────────── */
+export {
+  DOI_WEIGHTS,
+  DEBT_VIEWED,
+  COVERAGE_CAP,
+  RECENCY_HALF_LIFE_DAYS,
+  RANK_FLOOR,
+  RANK_CAP,
+  SCENT_TAGS,
+  debtState,
+  debt,
+  coverage,
+  hunkClears,
+  partialReadHoverText,
+  debtHoverText,
+  scentTagsFor,
+  rankMapNodesIntrinsic,
+  deriveRankedRows,
+  rankMapNodes,
+  gateRankedRows,
+} from './ranking.js'
 
 /* ── canonical enum-value arrays (runtime) ───────────────────────────────────── */
 export {
@@ -56,6 +90,18 @@ export {
   DiffLineKind,
   AllDiffLineKinds,
   isDiffLineKind,
+  InsightKind,
+  AllInsightKinds,
+  isInsightKind,
+  InsightProvenance,
+  AllInsightProvenances,
+  isInsightProvenance,
+  ReadAttributionState,
+  AllReadAttributionStates,
+  isReadAttributionState,
+  ReadStateGrade,
+  AllReadStateGrades,
+  isReadStateGrade,
 } from '@peasant-labs/schema'
 
 /* ── enum types (JSDoc re-exports; erased at build) ──────────────────────────────
@@ -67,6 +113,10 @@ export {
 /** @typedef {import('./types.js').EdgeViolationKind} EdgeViolationKind */
 /** @typedef {import('./types.js').FileChangeStatus} FileChangeStatus */
 /** @typedef {import('./types.js').DiffLineKind} DiffLineKind */
+/** @typedef {import('@peasant-labs/schema').InsightKind} InsightKind */
+/** @typedef {import('@peasant-labs/schema').InsightProvenance} InsightProvenance */
+/** @typedef {import('@peasant-labs/schema').ReadAttributionState} ReadAttributionState */
+/** @typedef {import('@peasant-labs/schema').ReadStateGrade} ReadStateGrade */
 
 /* ── shared sub-type payloads (JSDoc re-exports; erased at build) ─────────────── */
 /** @typedef {import('./types.js').CommitRefPayload} CommitRefPayload */
@@ -105,3 +155,8 @@ export {
 /** @typedef {import('./codeMapState.js').CodeMapCanvasView} CodeMapCanvasView */
 /** @typedef {import('./codeMapState.js').CodeMapView} CodeMapView */
 /** @typedef {import('./timelineNavigation.js').TimelineNavigationAction} TimelineNavigationAction */
+/** @typedef {import('./codeMapState.js').CodeMapRankMode} CodeMapRankMode */
+/** @typedef {import('./codeMapState.js').TimelineHighlight} TimelineHighlight */
+/** @typedef {import('./ranking.js').RankInputNode} RankInputNode */
+/** @typedef {import('./ranking.js').RankedRow} RankedRowData */
+/** @typedef {import('./ranking.js').DebtState} DebtState */

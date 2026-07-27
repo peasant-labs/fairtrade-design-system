@@ -1,4 +1,4 @@
-import { useMemo, useReducer, useState } from 'react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 import {
   Search,
   X,
@@ -16,8 +16,12 @@ import {
   FileDiff,
   Layers,
 } from 'lucide-react'
-import { RailSection, TimeStrip, ConnectionPill, DataState, TeachingEmptyState } from '../../ui'
-import { Changes, ChangeDetail, CodeMap, CodeMapComposition, CodeMapNavigator, createCodeMapState, reduceCodeMapState } from '../../ui/graph/index.js'
+import { RailSection, TimeStrip, ConnectionPill, DataState, TeachingEmptyState, CommitGraph, ProviderName } from '../../ui'
+import {
+  Changes, ChangeDetail, CodeMap, CodeMapComposition, CodeMapNavigator, createCodeMapState, reduceCodeMapState,
+  deriveTimelineHighlight, resolveEscapeAction, rankMapNodesIntrinsic, deriveRankedRows, gateRankedRows, RankedRow, InsightPanel,
+  RankModeControl, ScentTag, SCENT_TAGS,
+} from '../../ui/graph/index.js'
 
 /* ============================================================================
    GraphMap.jsx — peasant's code-MAP + changes git-graph, hand-rolled in the
@@ -429,6 +433,259 @@ export function MapView({ theme }) {
   )
 }
 
+/* ====================================================================== */
+/* === TIMELINE + RANKED LIST DEMO (the fidelity oracle for these primitives) === */
+/* ====================================================================== */
+
+/* Mock git+session history: sessions as first-class lane objects (SessionLane),
+   commits carrying sessionRefs (>2 exercises the overflow disclosure), a ghost
+   group under one successor commit, and highlight edges driven by the frozen
+   reducer (hover-session/select-session). Demo-owned fixture data has no wire,
+   proving the SAME primitives peasant will later compose against real data. */
+// An unresolved ghost (no successor could be matched) hangs off its SESSION
+// LANE, not off any commit -- there is no commit to group it under.
+const UNRESOLVED_GHOST = { ghostHash: 'g7g8h9i', subject: '', resolution: 'unresolved', method: 'none', confidence: 'low' }
+const TIMELINE_SESSIONS = [
+  { sessionId: 'sess-doi', title: 'Add DOI ranking to the code map', harness: 'claude-code' },
+  { sessionId: 'sess-ghost', title: 'Squash the ghost-resolution commits', harness: 'gemini-cli', unresolvedGhosts: [UNRESOLVED_GHOST] },
+  { sessionId: 'sess-debt', title: 'Wire the read-state debt tag', harness: 'codex' },
+]
+const TIMELINE_COMMITS = [
+  {
+    id: 'c6', lane: 0, parents: ['c5'], message: 'feat: rank map nodes by degree of interest', session: true,
+    time: '4m ago', tip: true,
+    sessionRefs: [
+      { sessionId: 'sess-doi', title: 'Add DOI ranking to the code map', harness: 'claude-code', startMs: Date.now() - 4 * 60_000 },
+    ],
+  },
+  {
+    id: 'c5', lane: 0, parents: ['c4'], message: 'feat: read-state debt tag + comprehension scent tags', session: true,
+    time: '22m ago',
+    sessionRefs: [
+      { sessionId: 'sess-debt', title: 'Wire the read-state debt tag', harness: 'codex', startMs: Date.now() - 22 * 60_000 },
+      { sessionId: 'sess-doi', title: 'Add DOI ranking to the code map', harness: 'claude-code', startMs: Date.now() - 25 * 60_000 },
+      { sessionId: 'sess-ghost', title: 'Squash the ghost-resolution commits', harness: 'gemini-cli', startMs: Date.now() - 40 * 60_000 },
+    ],
+  },
+  {
+    id: 'c4', lane: 0, parents: ['c1'], message: 'refactor: collapse session-era commits into one squash', session: true,
+    time: '1h ago',
+    sessionRefs: [
+      { sessionId: 'sess-ghost', title: 'Squash the ghost-resolution commits', harness: 'gemini-cli', startMs: Date.now() - 60 * 60_000 },
+    ],
+  },
+]
+// The three commits `c4` replaced (session-era history rewritten by the squash
+// above), collapsed by default under their successor.
+const TIMELINE_GHOSTS = {
+  c4: [
+    { ghostHash: 'g1a2b3c', subject: 'wip: draft the ghost resolver', resolution: 'rewritten', method: 'patch_id', confidence: 'high' },
+    { ghostHash: 'g4d5e6f', subject: 'wip: fix the resolver test fixture', resolution: 'rewritten', method: 'author_identity', confidence: 'medium' },
+  ],
+}
+
+const TIMELINE_RANK_NODES = [
+  {
+    id: 'src/ui/graph/ranking.js', name: 'src/ui/graph/ranking.js', touchCount: 9, effortDensity: 0.72,
+    agentEditedCount: 4, readCount: 0, readAttribution: 'complete', readState: 'none',
+    changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0, recentSessionId: 'sess-doi',
+  },
+  {
+    id: 'src/ui/graph/codeMapState.js', name: 'src/ui/graph/codeMapState.js', touchCount: 5, effortDensity: 0.4,
+    agentEditedCount: 3, readCount: 2, readAttribution: 'complete', readState: 'none',
+    changedRegionCount: 4, attributedRegionCount: 3, reviewedRegionCount: 2, recentSessionId: 'sess-debt',
+  },
+  {
+    id: 'internal/gitrewrite/resolver.go', name: 'internal/gitrewrite/resolver.go', touchCount: 2, effortDensity: 0.2,
+    agentEditedCount: 2, readCount: 2, readAttribution: 'complete', readState: 'viewed',
+    changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0, recentSessionId: 'sess-ghost',
+  },
+  {
+    id: 'internal/codemap/review.go', name: 'internal/codemap/review.go', touchCount: 12, effortDensity: 0.55,
+    agentEditedCount: 3, readCount: 0, readAttribution: 'unavailable', readState: 'none',
+    changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0, recentSessionId: null,
+  },
+  ...['src/ui/graph/RankedRow.jsx', 'src/ui/graph/ScentTag.jsx', 'src/ui/CommitGraph.jsx', 'scripts/code-map-ranking.test.mjs', 'scripts/timeline-a11y.test.mjs', 'src/index.css'].map((id, index) => ({
+    id,
+    name: id,
+    touchCount: index,
+    effortDensity: index / 20,
+    agentEditedCount: 0,
+    readCount: 0,
+    readAttribution: 'complete',
+    readState: 'none',
+    changedRegionCount: 0,
+    attributedRegionCount: 0,
+    reviewedRegionCount: 0,
+    recentSessionId: null,
+  })),
+]
+
+const TIMELINE_TOUCHED_FILES = {
+  c6: [
+    { path: 'src/ui/graph/ranking.js', intrinsic: 0.98, visits: { 'sess-doi': 0 } },
+    { path: 'scripts/code-map-ranking.test.mjs', intrinsic: 0.8, visits: { 'sess-doi': 1 } },
+    { path: 'scripts/testdata/code-map-ranking.yaml', intrinsic: 0.72, visits: { 'sess-doi': 2 } },
+  ],
+  c5: [
+    { path: 'src/ui/graph/codeMapState.js', intrinsic: 0.97, visits: { 'sess-debt': 0 } },
+    { path: 'src/ui/graph/RankedRow.jsx', intrinsic: 0.9, visits: { 'sess-debt': 1 } },
+    { path: 'src/ui/graph/ScentTag.jsx', intrinsic: 0.88, visits: { 'sess-debt': 2 } },
+    { path: 'src/ui/CommitGraph.jsx', intrinsic: 0.82, visits: { 'sess-doi': 0 } },
+    { path: 'src/ui/CommitGraph.css', intrinsic: 0.76, visits: { 'sess-doi': 1 } },
+    { path: 'src/ui/graph/timelinePrimitives.css', intrinsic: 0.7, visits: { 'sess-debt': 3 } },
+    { path: 'scripts/timeline-a11y.test.mjs', intrinsic: 0.62, visits: { 'sess-debt': 4 } },
+    { path: 'scripts/timeline-highlight.test.mjs', intrinsic: 0.58, visits: { 'sess-doi': 2 } },
+    { path: 'scripts/testdata/timeline-a11y.yaml', intrinsic: 0.5, visits: { 'sess-debt': 5 } },
+    { path: 'scripts/testdata/timeline-highlight.yaml', intrinsic: 0.45, visits: { 'sess-doi': 3 } },
+  ],
+  c4: [
+    { path: 'internal/gitrewrite/resolver.go', intrinsic: 0.86, visits: { 'sess-ghost': 0 } },
+    { path: 'internal/gitrewrite/resolver_test.go', intrinsic: 0.71, visits: { 'sess-ghost': 1 } },
+  ],
+}
+
+const TIMELINE_NOW_MS = Date.UTC(2026, 6, 25, 12, 0, 0)
+
+const TIMELINE_INSIGHTS = [
+  {
+    kind: 'decision', provenance: 'mechanical', title: 'Chose client-side DOI ranking over a backend endpoint', summary: 'keeps the demo and peasant on the same ranking, no round-trip.',
+    evidence: [{ sessionId: 'sess-doi', file: 'src/ui/graph/ranking.js' }],
+  },
+  {
+    kind: 'friction', provenance: 'mechanical', title: 'ghost resolution retried on a conflicted rebase', summary: 'patch-id drifted; fell through to author-identity matching.',
+    evidence: [{ sessionId: 'sess-ghost', file: 'internal/gitrewrite/resolver.go' }],
+  },
+]
+
+export function TimelineView({ theme }) {
+  void theme
+  const [state, dispatch] = useReducer(reduceCodeMapState, null, () => createCodeMapState())
+  const highlight = useMemo(() => deriveTimelineHighlight({
+    edges: [
+      ...TIMELINE_COMMITS.flatMap((commit) => (commit.sessionRefs ?? []).map((session) => ({ sessionId: session.sessionId, commitHash: commit.id }))),
+      ...Object.entries(TIMELINE_GHOSTS).flatMap(([, ghosts]) => ghosts.map((ghost) => ({ sessionId: 'sess-ghost', commitHash: ghost.ghostHash, ghost: true }))),
+      { sessionId: 'sess-ghost', commitHash: UNRESOLVED_GHOST.ghostHash, ghost: true },
+    ],
+  }, state), [state])
+
+  const intrinsicRanking = useMemo(() => rankMapNodesIntrinsic(TIMELINE_RANK_NODES, {
+    rankMode: state.rankMode,
+    nowMs: TIMELINE_NOW_MS,
+  }), [state.rankMode])
+  const debouncedScentFilter = useDebouncedValue(state.scentFilter, 50)
+  const rankExpanded = state.expandedCommitSessions.includes('ranked:all')
+  const rankedRows = useMemo(() => deriveRankedRows(intrinsicRanking, {
+    focusId: state.selectedId,
+    scentFilter: debouncedScentFilter,
+    hoveredOrSelectedSessionId: state.hoveredSessionId ?? state.selectedSessionId,
+  }), [intrinsicRanking, state.selectedId, debouncedScentFilter, state.hoveredSessionId, state.selectedSessionId])
+  const gated = useMemo(() => gateRankedRows(rankedRows, {
+    expanded: rankExpanded,
+    rankMode: state.rankMode,
+  }), [rankedRows, rankExpanded, state.rankMode])
+  const orderedTouchedFiles = useMemo(() => Object.fromEntries(
+    Object.entries(TIMELINE_TOUCHED_FILES).map(([commitHash, files]) => [commitHash, [...files]
+      .sort((left, right) => {
+        const sessionId = state.selectedSessionId
+        const leftVisit = sessionId ? left.visits[sessionId] : undefined
+        const rightVisit = sessionId ? right.visits[sessionId] : undefined
+        if (leftVisit !== undefined || rightVisit !== undefined) {
+          if (leftVisit === undefined) return 1
+          if (rightVisit === undefined) return -1
+          if (leftVisit !== rightVisit) return leftVisit - rightVisit
+        }
+        return right.intrinsic - left.intrinsic || left.path.localeCompare(right.path)
+      })
+      .map((file) => file.path)]),
+  ), [state.selectedSessionId])
+
+  return (
+    <div className="gmp-root" onKeyDown={(event) => {
+      if (event.key !== 'Escape') return
+      const next = resolveEscapeAction(state)
+      if (next) dispatch(next)
+    }}
+    >
+      <RailSection title="git + session timeline" icon={GitCommitHorizontal}>
+        <CommitGraph
+          commits={TIMELINE_COMMITS}
+          label="peasant timeline demo"
+          sessionLanes={TIMELINE_SESSIONS}
+          hoveredSessionId={state.hoveredSessionId}
+          selectedSessionId={state.selectedSessionId}
+          onHoverSession={(sessionId) => dispatch({ type: 'hover-session', sessionId })}
+          onSelectSession={(sessionId) => dispatch({ type: 'select-session', sessionId })}
+          highlightSelected={highlight.selected}
+          highlightHovered={highlight.hovered}
+          ghostGroupsByCommit={TIMELINE_GHOSTS}
+          expandedGhostGroups={state.expandedGhostGroups}
+          onToggleGhostGroup={(successorHash) => dispatch({ type: 'toggle-ghost-group', successorHash })}
+          expandedCommitSessions={state.expandedCommitSessions}
+          onToggleCommitSessions={(commitHash) => dispatch({ type: 'toggle-commit-sessions', commitHash })}
+          touchedFilesByCommit={orderedTouchedFiles}
+          onOpenTouchedFile={(id) => dispatch({ type: 'select', id })}
+        />
+      </RailSection>
+
+      <RailSection title="ranked entry list" icon={Layers}>
+        <div className="gmp-rank-toolbar">
+          <RankModeControl rankMode={state.rankMode} onChange={(rankMode) => dispatch({ type: 'set-rank-mode', rankMode })} />
+          <span className="gmp-scent-filter" role="group" aria-label="filter by scent tag">
+            {SCENT_TAGS.map((tag) => (
+              <ScentTag
+                key={tag}
+                tag={tag}
+                active={state.scentFilter === tag}
+                onToggle={(scentFilter) => dispatch({ type: 'set-scent-filter', scentFilter })}
+              />
+            ))}
+          </span>
+        </div>
+        <div id="timeline-ranked-files" role="list" aria-label="ranked files">
+          {gated.visible.map((row) => (
+            <RankedRow
+              key={row.id}
+              row={row}
+              loc={200}
+              selected={state.selectedId === row.id}
+              onSelect={(id) => dispatch({ type: 'select', id })}
+            />
+          ))}
+        </div>
+        {(gated.overflowCount > 0 || rankExpanded) && (
+          <button
+            type="button"
+            className="gmp-rank-overflow tnum"
+            aria-expanded={rankExpanded}
+            aria-controls="timeline-ranked-files"
+            onClick={() => dispatch({ type: 'set-rank-expanded', expanded: !rankExpanded })}
+          >
+            {rankExpanded ? 'collapse ranked files' : `show all ${gated.total} files (+${gated.overflowCount})`}
+            <span className="tlp-sr" role="status" aria-live="polite">{rankExpanded ? `all ${gated.total} ranked files shown` : ''}</span>
+          </button>
+        )}
+      </RailSection>
+
+      <RailSection title="node insights" icon={Box}>
+        <InsightPanel
+          insights={TIMELINE_INSIGHTS}
+          onOpenEvidence={(sessionId) => dispatch({ type: 'select-session', sessionId })}
+        />
+      </RailSection>
+    </div>
+  )
+}
+
+function useDebouncedValue(value, delayMs) {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebounced(value), delayMs)
+    return () => window.clearTimeout(timer)
+  }, [value, delayMs])
+  return debounced
+}
+
 /* project (unselected) rail: coverage line, recent + all conversations. */
 function ProjectRail({ tasks, total, showAll, onShowAll, filter, onFilter }) {
   const recordedPct = 35
@@ -671,7 +928,7 @@ const CHANGES_FIXTURE = {
   repoFound: true,
   defaultBranch: 'develop',
   recentCommits: [
-    { hash: 'c1d4a3', subject: 'squarify treemap', timeMs: CHANGES_NOW - 5 * H, hasSession: true, sessionIds: ['session-map'] },
+    { hash: 'c1d4a3', subject: 'squarify treemap', timeMs: CHANGES_NOW - 5 * H, hasSession: true, sessionIds: ['session-map', 'session-map-layout', 'session-map-links'] },
     { hash: 'd14c0a', subject: 'Merge fix--kickstart-config', timeMs: CHANGES_NOW - 3 * D, hasSession: false },
     { hash: 'b7e220', subject: 'stream replay path', timeMs: CHANGES_NOW - 1 * D, hasSession: true },
     { hash: 'a3f9c1', subject: 'Fix pipeline bug', timeMs: CHANGES_NOW - 2 * D, hasSession: true, sessionIds: ['session-pipeline', 'session-debug'] },
@@ -685,6 +942,8 @@ const CHANGES_FIXTURE = {
   ],
   sessions: [
     { sessionId: 'session-map', title: 'Make the code map easier to read', harness: 'claude-code', startMs: CHANGES_NOW - 6 * H },
+    { sessionId: 'session-map-layout', title: 'Align the map layout', harness: 'codex', startMs: CHANGES_NOW - 6 * H },
+    { sessionId: 'session-map-links', title: 'Verify map session links', harness: 'cursor', startMs: CHANGES_NOW - 5 * H },
     { sessionId: 'session-pipeline', title: 'Repair the ingest pipeline', harness: 'codex', startMs: CHANGES_NOW - 2 * D },
     { sessionId: 'session-debug', title: 'Trace the failed replay', harness: 'gemini-cli', startMs: CHANGES_NOW - 2 * D },
     { sessionId: 'session-not-committed', title: 'Explore a safer cache design', harness: 'opencode', startMs: CHANGES_NOW - D },
@@ -700,9 +959,59 @@ export function ChangesView({ theme, onNavigate }) {
       projectLabel="peasant-labs/peasant"
       nowMs={CHANGES_NOW}
       selectedId={selectedId}
-      onSelectChange={(c) => { setSelectedId(c.id); onNavigate?.('change-detail') }}
-      onOpenMap={() => onNavigate?.('map')}
+      onNavigate={(action) => {
+        if (action.type === 'open-change') setSelectedId(action.change.id)
+        onNavigate?.(action)
+      }}
     />
+  )
+}
+
+export function SessionDestinationView({ sessionAction }) {
+  const session = CHANGES_FIXTURE.sessions.find((candidate) => candidate.sessionId === sessionAction.sessionId)
+  const source = sessionAction.source.kind === 'commit'
+    ? `commit ${sessionAction.source.commit.id}`
+    : sessionAction.source.kind === 'outside-window'
+      ? 'a commit outside this visible window'
+      : 'the unlinked sessions list'
+  const details = [
+    ['session id', sessionAction.sessionId],
+    ['provider', session?.harness ?? null],
+    ['project', 'peasant-labs/peasant'],
+    ['opened from', source],
+  ]
+
+  return (
+    <section
+      className="gmp-root gmp-changes-root gmp-session-destination"
+      aria-labelledby="gmp-session-destination-title"
+      data-session-id={sessionAction.sessionId}
+    >
+      <div className="gmp-changes-head">
+        <div>
+          <span className="label">recorded session</span>
+          <div className="gmp-changes-sub mono">session id {sessionAction.sessionId}</div>
+        </div>
+      </div>
+      <div className="gmp-changes-body">
+        <h1 id="gmp-session-destination-title" className="gmp-session-destination-title">{session?.title ?? sessionAction.sessionId}</h1>
+        <p className="gmp-session-destination-context mono">this session is linked to the project history.</p>
+        <dl className="gmp-session-destination-summary">
+          {details.map(([label, value]) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd data-session-source={label === 'opened from' || undefined}>
+                {label === 'provider'
+                  ? value
+                    ? <ProviderName harness={value} data-session-provider />
+                    : <span data-session-provider-unknown>unknown provider</span>
+                  : value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
   )
 }
 

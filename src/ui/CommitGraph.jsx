@@ -1,6 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Star, GitMerge, ChevronDown } from 'lucide-react'
 import { ProviderName } from './ProviderIcon.jsx'
+import SessionLane from './graph/SessionLane.jsx'
+import GhostGroup from './graph/GhostGroup.jsx'
+import SessionOverflowDisclosure from './graph/SessionOverflowDisclosure.jsx'
+import HighlightEdge from './graph/HighlightEdge.jsx'
+import TouchedFileCluster from './graph/TouchedFileCluster.jsx'
 import './CommitGraph.css'
 
 /* CommitGraph — a source-control history rendered as a commit graph, ported in intent from
@@ -54,6 +59,20 @@ const gutterWidth = (laneCount) => laneX(Math.max(laneCount - 1, 0)) + GUTTER_TA
  * @param {() => void} [props.onShowOlder] - deprecated legacy pagination callback; use onNavigate.
  * @param {string} [props.label='commit history'] - accessible name for the list (lowercase chrome).
  * @param {string} [props.className] - extra classes appended to the root.
+ * @param {Array<{sessionId:string, title:string, harness?:import('@peasant-labs/schema').Harness}>} [props.sessionLanes] - the timeline's session spine gutter (the session spine gutter). Omit to keep the pre-timeline layout unchanged.
+ * @param {string|null} [props.hoveredSessionId] - drives the SessionLane hover state + secondary highlight weight.
+ * @param {string|null} [props.selectedSessionId] - drives the SessionLane selected state + primary highlight weight.
+ * @param {(sessionId: string|null) => void} [props.onHoverSession]
+ * @param {(sessionId: string) => void} [props.onSelectSession]
+ * @param {import('./graph/codeMapState.js').TimelineHighlight} [props.highlightSelected] - `deriveTimelineHighlight(...).selected` commit ids to render at primary (amber) weight.
+ * @param {import('./graph/codeMapState.js').TimelineHighlight} [props.highlightHovered] - `deriveTimelineHighlight(...).hovered` commit ids to render at secondary weight.
+ * @param {Record<string, Array<{ghostHash:string, subject?:string, resolution:string, method:string, confidence:string}>>} [props.ghostGroupsByCommit] - keyed by the successor commit id; each renders a `GhostGroup` row directly beneath it.
+ * @param {string[]|Set<string>} [props.expandedGhostGroups] - successor hashes with their ghost group open; controlled by the caller's `toggle-ghost-group` reducer state.
+ * @param {(successorHash: string) => void} [props.onToggleGhostGroup]
+ * @param {string[]|Set<string>} [props.expandedCommitSessions] - commit hashes with the `+N more` session disclosure open; controlled by the caller's `toggle-commit-sessions` reducer state.
+ * @param {(commitHash: string) => void} [props.onToggleCommitSessions]
+ * @param {Record<string, string[]>} [props.touchedFilesByCommit] - deterministically ordered file paths keyed by commit id.
+ * @param {(file: string) => void} [props.onOpenTouchedFile]
  */
 export default function CommitGraph({
   commits = [],
@@ -65,8 +84,26 @@ export default function CommitGraph({
   onShowOlder,
   label = 'commit history',
   className = '',
+  sessionLanes,
+  hoveredSessionId = null,
+  selectedSessionId = null,
+  onHoverSession,
+  onSelectSession,
+  highlightSelected,
+  highlightHovered,
+  ghostGroupsByCommit,
+  expandedGhostGroups,
+  onToggleGhostGroup,
+  expandedCommitSessions,
+  onToggleCommitSessions,
+  touchedFilesByCommit,
+  onOpenTouchedFile,
   ...rest
 }) {
+  const expandedGhostSet = useMemo(() => new Set(expandedGhostGroups ?? []), [expandedGhostGroups])
+  const expandedSessionSet = useMemo(() => new Set(expandedCommitSessions ?? []), [expandedCommitSessions])
+  const primaryHighlighted = useMemo(() => new Set([...(highlightSelected?.commitHashes ?? []), ...(highlightSelected?.ghostHashes ?? [])]), [highlightSelected])
+  const secondaryHighlighted = useMemo(() => new Set([...(highlightHovered?.commitHashes ?? []), ...(highlightHovered?.ghostHashes ?? [])]), [highlightHovered])
   // Lane count drives the gutter width; one extra lane of room past the highest index.
   const laneCount = useMemo(
     () => commits.reduce((max, c) => Math.max(max, (c.lane ?? 0) + 1), 1),
@@ -118,6 +155,64 @@ export default function CommitGraph({
     })
   }, [commits])
 
+  const highlightCandidates = useMemo(() => {
+    const commitIds = new Set(rows.map((row) => row.commit.id))
+    const sessionIds = new Set((sessionLanes ?? []).map((session) => session.sessionId))
+    const candidates = [
+      ...(highlightSelected?.edges ?? []).map((edge) => ({ ...edge, weight: 'primary' })),
+      ...(highlightHovered?.edges ?? []).map((edge) => ({ ...edge, weight: 'secondary' })),
+    ]
+    const seen = new Set()
+    return candidates.flatMap((edge) => {
+      if (edge.ghost) return []
+      const key = `${edge.sessionId}:${edge.commitHash}`
+      if (!commitIds.has(edge.commitHash) || !sessionIds.has(edge.sessionId) || seen.has(key)) return []
+      seen.add(key)
+      return [{
+        ...edge,
+        key,
+        weight: /** @type {'primary'|'secondary'} */ (edge.weight),
+      }]
+    })
+  }, [rows, sessionLanes, highlightSelected, highlightHovered])
+  const rootRef = useRef(null)
+  const [mountedHighlightEdges, setMountedHighlightEdges] = useState([])
+
+  useLayoutEffect(() => {
+    const root = rootRef.current
+    if (!root || highlightCandidates.length === 0) {
+      setMountedHighlightEdges([])
+      return
+    }
+    const measure = () => {
+      const history = root.querySelector('.cg-history')
+      if (!history) return
+      const historyBox = history.getBoundingClientRect()
+      const sessions = new Map([...root.querySelectorAll('[data-timeline-session-id]')].map((element) => [element.getAttribute('data-timeline-session-id'), element]))
+      const commits = new Map([...root.querySelectorAll('.cg-history-row[data-commit-hash]')].map((element) => [element.getAttribute('data-commit-hash'), element]))
+      const measured = highlightCandidates.flatMap((edge) => {
+        const sourceBox = sessions.get(edge.sessionId)?.getBoundingClientRect()
+        const targetBox = commits.get(edge.commitHash)?.querySelector('.cg-dot')?.getBoundingClientRect()
+        if (!sourceBox || !targetBox) return []
+        return [{
+          ...edge,
+          geometry: {
+            x1: sourceBox.left + sourceBox.width / 2 - historyBox.left,
+            y1: sourceBox.bottom - historyBox.top,
+            x2: targetBox.left + targetBox.width / 2 - historyBox.left,
+            y2: targetBox.top + targetBox.height / 2 - historyBox.top,
+          },
+        }]
+      })
+      setMountedHighlightEdges(measured)
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(root)
+    return () => observer.disconnect()
+  }, [highlightCandidates])
+
   const width = gutterWidth(laneCount)
   const cls = ['cg', className].filter(Boolean).join(' ')
 
@@ -130,18 +225,71 @@ export default function CommitGraph({
   }
 
   return (
-    <div className={cls} role="list" aria-label={label} {...rest}>
-      {rows.map((row) => (
-        <CommitRow
-          key={row.commit.id}
-          row={row}
-          width={width}
-          selected={row.commit.id === selectedId}
-          onNavigate={onNavigate}
-          onSelect={onSelect}
-          onOpenSession={onOpenSession}
-        />
-      ))}
+    <div ref={rootRef} className={cls} role="list" aria-label={label} {...rest}>
+      {sessionLanes && sessionLanes.length > 0 && (
+        <div className="cg-session-spine" role="group" aria-label="recorded sessions" style={{ gridTemplateColumns: `repeat(${sessionLanes.length}, minmax(0, 1fr))` }}>
+          {sessionLanes.map((session) => (
+            <SessionLane
+              key={session.sessionId}
+              sessionId={session.sessionId}
+              title={session.title}
+              harness={session.harness}
+              hovered={hoveredSessionId === session.sessionId}
+              selected={selectedSessionId === session.sessionId}
+              onHover={onHoverSession}
+              onSelect={onSelectSession}
+              unresolvedGhosts={session.unresolvedGhosts}
+              data-timeline-session-id={session.sessionId}
+            />
+          ))}
+        </div>
+      )}
+      <div className="cg-history">
+        {mountedHighlightEdges.length > 0 && (
+          <svg
+            className="cg-highlight-layer"
+            aria-hidden="true"
+          >
+            {mountedHighlightEdges.map((edge) => (
+              <HighlightEdge
+                key={edge.key}
+                weight={edge.weight}
+                geometry={edge.geometry}
+                data-session-id={edge.sessionId}
+                data-commit-hash={edge.commitHash}
+              />
+            ))}
+          </svg>
+        )}
+        {rows.map((row) => (
+          <div key={row.commit.id} className="cg-history-row" data-commit-hash={row.commit.id}>
+            <CommitRow
+              row={row}
+              width={width}
+              selected={row.commit.id === selectedId}
+              onNavigate={onNavigate}
+              onSelect={onSelect}
+              onOpenSession={onOpenSession}
+              highlightWeight={primaryHighlighted.has(row.commit.id) ? 'primary' : secondaryHighlighted.has(row.commit.id) ? 'secondary' : null}
+              expandedSessions={expandedSessionSet.has(row.commit.id)}
+              onToggleSessions={onToggleCommitSessions}
+              touchedFiles={touchedFilesByCommit?.[row.commit.id] ?? []}
+              expandedFiles={expandedSessionSet.has(`files:${row.commit.id}`)}
+              onOpenTouchedFile={onOpenTouchedFile}
+            />
+            {ghostGroupsByCommit?.[row.commit.id] && (
+              <div className="cg-ghost-row" style={{ marginLeft: width }}>
+                <GhostGroup
+                  successorHash={row.commit.id}
+                  ghosts={ghostGroupsByCommit[row.commit.id]}
+                  expanded={expandedGhostSet.has(row.commit.id)}
+                  onToggle={onToggleGhostGroup}
+                />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
       {hasMore && (
         <div className="cg-older-band">
@@ -175,7 +323,7 @@ export default function CommitGraph({
 }
 
 /** One commit: the lane gutter (SVG strokes + the HTML square dot) and the button row. */
-function CommitRow({ row, width, selected, onNavigate, onSelect, onOpenSession }) {
+function CommitRow({ row, width, selected, onNavigate, onSelect, onOpenSession, highlightWeight = null, expandedSessions = false, onToggleSessions, touchedFiles = [], expandedFiles = false, onOpenTouchedFile }) {
   const { commit, lane, joins, passLanes, laneUp, laneDown } = row
   const hasSession = Boolean(commit.session)
 
@@ -183,9 +331,16 @@ function CommitRow({ row, width, selected, onNavigate, onSelect, onOpenSession }
     'cg-dot',
     hasSession ? 'cg-dot-filled' : 'cg-dot-hollow',
     selected && 'cg-dot-sel',
+    // Hover/select highlight: stroke width-step floor (both motion
+    // states) + an additive normal-motion-only glow, layered ON TOP of the
+    // session/selection encoding above, never replacing it.
+    highlightWeight && `cg-dot-highlight-${highlightWeight}`,
   ]
     .filter(Boolean)
     .join(' ')
+
+  const inlineSessions = commit.sessionRefs?.slice(0, 2) ?? []
+  const overflowSessions = commit.sessionRefs?.slice(2) ?? []
 
   const rowCls = ['cg-row', selected && 'cg-row-sel'].filter(Boolean).join(' ')
 
@@ -221,7 +376,7 @@ function CommitRow({ row, width, selected, onNavigate, onSelect, onOpenSession }
           ))}
 
           {/* Elbows to parents on other lanes: down the parent lane to mid-band, then across
-              to this dot. 90° square joins only — no curves. */}
+              to this dot. 90° square joins only, with no curves. */}
           {joins.map((j, k) => (
             <g key={k} className="cg-elbow">
               <line
@@ -288,7 +443,7 @@ function CommitRow({ row, width, selected, onNavigate, onSelect, onOpenSession }
 
         {commit.sessionRefs?.length > 0 && (
           <div className="cg-sessions" role="group" aria-label={`sessions linked to ${commit.message}`}>
-            {commit.sessionRefs.map((session) => (
+            {inlineSessions.map((session) => (
               <button
                 key={session.sessionId}
                 type="button"
@@ -315,6 +470,32 @@ function CommitRow({ row, width, selected, onNavigate, onSelect, onOpenSession }
                 )}
               </button>
             ))}
+            {/* Inline up to 2 session chips, then a "+N more" disclosure, never a
+                rolled-up count alone with no inline identity. */}
+            {overflowSessions.length > 0 && (
+              <SessionOverflowDisclosure
+                commitHash={commit.id}
+                overflow={overflowSessions}
+                expanded={expandedSessions}
+                onToggle={onToggleSessions ?? (() => {})}
+                onSelect={(sessionId) => {
+                  if (onNavigate) {
+                    onNavigate({ type: 'open-session', sessionId, source: { kind: 'commit', commit: { id: commit.id, branch: commit.branch ?? null } } })
+                  } else onOpenSession?.(sessionId)
+                }}
+              />
+            )}
+          </div>
+        )}
+        {touchedFiles.length > 0 && (
+          <div className="cg-touched-files">
+            <TouchedFileCluster
+              commitHash={`files:${commit.id}`}
+              files={touchedFiles}
+              expanded={expandedFiles}
+              onToggle={onToggleSessions ?? (() => {})}
+              onOpenDiff={onOpenTouchedFile}
+            />
           </div>
         )}
       </div>

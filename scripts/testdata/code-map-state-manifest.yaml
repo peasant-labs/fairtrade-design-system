@@ -1,4 +1,4 @@
-expectedCaseCount: 12
+expectedCaseCount: 13
 caseNames:
   - defaults survive json roundtrip
   - selection also focuses the navigator
@@ -12,6 +12,7 @@ caseNames:
   - replace never carries stale fields
   - file grain stays aggregate until explicit expansion
   - explicit expansion reaches file grain within one folder
+  - timeline actions round-trip the frozen contract
 
 actionSamples:
   - {name: replace, action: {type: replace, state: {}}}
@@ -27,6 +28,13 @@ actionSamples:
   - {name: set viewport, action: {type: set-viewport, viewport: {scale: 1, panX: 0, panY: 0}}}
   - {name: open in map, action: {type: open-in-map, id: internal}}
   - {name: reveal, action: {type: reveal, id: internal, grain: file, expandedIds: [internal]}}
+  - {name: hover session, action: {type: hover-session, sessionId: sess-a}}
+  - {name: select session, action: {type: select-session, sessionId: sess-a}}
+  - {name: toggle commit sessions, action: {type: toggle-commit-sessions, commitHash: abc123}}
+  - {name: toggle ghost group, action: {type: toggle-ghost-group, successorHash: def456}}
+  - {name: set rank mode, action: {type: set-rank-mode, rankMode: debt}}
+  - {name: set scent filter, action: {type: set-scent-filter, scentFilter: 'heavy churn'}}
+  - {name: set rank expanded, action: {type: set-rank-expanded, expanded: true}}
 
 actionValueProbes:
   - {name: replace undefined state, actionType: replace, field: state, valueKind: undefined, outcome: reject, expectedError: required value is not an object}
@@ -68,23 +76,44 @@ actionValueProbes:
   - {name: reveal undefined ids, actionType: reveal, field: expandedIds, valueKind: undefined, outcome: reject, expectedError: required id iterable is undefined}
   - {name: reveal null ids, actionType: reveal, field: expandedIds, valueKind: literal, value: null, outcome: reject, expectedError: not an iterable of ids}
   - {name: reveal string ids, actionType: reveal, field: expandedIds, valueKind: literal, value: internal, outcome: reject, expectedError: not an iterable of ids}
+  - {name: hover undefined sessionId, actionType: hover-session, field: sessionId, valueKind: undefined, outcome: reject, expectedError: not a nonempty string}
+  - {name: hover null sessionId, actionType: hover-session, field: sessionId, valueKind: literal, value: null, outcome: accept, expectedError: none}
+  - {name: hover wrong sessionId, actionType: hover-session, field: sessionId, valueKind: literal, value: 7, outcome: reject, expectedError: not a nonempty string}
+  - {name: select-session undefined sessionId, actionType: select-session, field: sessionId, valueKind: undefined, outcome: reject, expectedError: not a nonempty string}
+  - {name: select-session null sessionId, actionType: select-session, field: sessionId, valueKind: literal, value: null, outcome: accept, expectedError: none}
+  - {name: select-session wrong sessionId, actionType: select-session, field: sessionId, valueKind: literal, value: 7, outcome: reject, expectedError: not a nonempty string}
+  - {name: toggle-commit-sessions undefined hash, actionType: toggle-commit-sessions, field: commitHash, valueKind: undefined, outcome: reject, expectedError: not a nonempty string}
+  - {name: toggle-commit-sessions null hash, actionType: toggle-commit-sessions, field: commitHash, valueKind: literal, value: null, outcome: reject, expectedError: not a nonempty string}
+  - {name: toggle-commit-sessions wrong hash, actionType: toggle-commit-sessions, field: commitHash, valueKind: literal, value: 7, outcome: reject, expectedError: not a nonempty string}
+  - {name: toggle-ghost-group undefined hash, actionType: toggle-ghost-group, field: successorHash, valueKind: undefined, outcome: reject, expectedError: not a nonempty string}
+  - {name: toggle-ghost-group null hash, actionType: toggle-ghost-group, field: successorHash, valueKind: literal, value: null, outcome: reject, expectedError: not a nonempty string}
+  - {name: toggle-ghost-group wrong hash, actionType: toggle-ghost-group, field: successorHash, valueKind: literal, value: 7, outcome: reject, expectedError: not a nonempty string}
+  - {name: rank mode undefined value, actionType: set-rank-mode, field: rankMode, valueKind: undefined, outcome: reject, expectedError: unsupported}
+  - {name: rank mode null value, actionType: set-rank-mode, field: rankMode, valueKind: literal, value: null, outcome: reject, expectedError: unsupported}
+  - {name: rank mode wrong value, actionType: set-rank-mode, field: rankMode, valueKind: literal, value: 7, outcome: reject, expectedError: unsupported}
+  - {name: scent filter undefined value, actionType: set-scent-filter, field: scentFilter, valueKind: undefined, outcome: reject, expectedError: required scent filter is undefined}
+  - {name: scent filter null value, actionType: set-scent-filter, field: scentFilter, valueKind: literal, value: null, outcome: accept, expectedError: none}
+  - {name: scent filter wrong value, actionType: set-scent-filter, field: scentFilter, valueKind: literal, value: 7, outcome: reject, expectedError: unsupported}
+  - {name: rank expanded undefined value, actionType: set-rank-expanded, field: expanded, valueKind: undefined, outcome: reject, expectedError: not a boolean}
+  - {name: rank expanded null value, actionType: set-rank-expanded, field: expanded, valueKind: literal, value: null, outcome: reject, expectedError: not a boolean}
+  - {name: rank expanded wrong value, actionType: set-rank-expanded, field: expanded, valueKind: literal, value: 7, outcome: reject, expectedError: not a boolean}
 
 mutationCases:
   - {name: manifest trailing document, target: manifestSource, mutation: trailing-document, expectedError: exactly one YAML document}
   - {name: manifest duplicate key, target: manifestSource, mutation: duplicate-key, expectedError: duplicate key}
   - {name: manifest unknown field, target: manifest, mutation: unknown-field, expectedError: manifest has unknown field}
-  - {name: manifest count drift, target: manifest, mutation: expected-count-drift, expectedError: declare exactly 12 case names}
+  - {name: manifest count drift, target: manifest, mutation: expected-count-drift, expectedError: declare exactly 13 case names}
   - {name: manifest duplicate name, target: manifest, mutation: duplicate-name, expectedError: unique nonempty strings}
   - {name: manifest empty name, target: manifest, mutation: empty-name, expectedError: unique nonempty strings}
   - {name: manifest rename against fixture, target: manifest, mutation: renamed-name, expectedError: independent required set}
-  - {name: manifest deletion against fixture, target: manifest, mutation: deleted-name, expectedError: declare exactly 12 case names}
+  - {name: manifest deletion against fixture, target: manifest, mutation: deleted-name, expectedError: declare exactly 13 case names}
   - {name: fixture trailing document, target: fixtureSource, mutation: trailing-document, expectedError: exactly one YAML document}
   - {name: fixture duplicate key, target: fixtureSource, mutation: duplicate-key, expectedError: duplicate key}
   - {name: fixture unknown field, target: fixture, mutation: unknown-field, expectedError: fixture has unknown field}
   - {name: fixture case unknown field, target: fixture, mutation: case-unknown-field, expectedError: 'cases[0] has unknown field'}
   - {name: fixture action unknown field, target: fixture, mutation: action-unknown-field, expectedError: 'sequence[0] has unknown field'}
   - {name: fixture derived unknown field, target: fixture, mutation: derived-unknown-field, expectedError: deriveExpected has unknown field}
-  - {name: fixture expected count drift, target: fixture, mutation: expected-count-drift, expectedError: expectedCaseCount must equal 12}
-  - {name: fixture deleted case, target: fixture, mutation: deleted-case, expectedError: exactly 12 cases}
+  - {name: fixture expected count drift, target: fixture, mutation: expected-count-drift, expectedError: expectedCaseCount must equal 13}
+  - {name: fixture deleted case, target: fixture, mutation: deleted-case, expectedError: exactly 13 cases}
   - {name: fixture duplicate name, target: fixture, mutation: duplicate-name, expectedError: duplicate or empty name}
   - {name: fixture empty name, target: fixture, mutation: empty-name, expectedError: duplicate or empty name}

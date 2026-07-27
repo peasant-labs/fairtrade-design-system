@@ -1,0 +1,251 @@
+expectedCaseCount: 36
+
+# Every case node is written out in full (no YAML merge keys; this repo's
+# fixture convention keeps cases self-contained and diff-legible without
+# relying on `<<:` merge-key support, which this repo's strict YAML loaders
+# do not enable).
+
+debtCases:
+  - name: none state when agent edited count is zero
+    node: {id: n1, name: n1.go, touchCount: 3, effortDensity: 0.4, agentEditedCount: 0, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 2, attributedRegionCount: 2, reviewedRegionCount: 1}
+    expectDebtState: none
+    expectDebt: 0
+    expectCoverage: 0.5
+    expectHunkClears: false
+  - name: unavailable attribution with zero agent edits stays none and has no agent-wrote tag
+    node: {id: n1, name: n1.go, touchCount: 3, effortDensity: 0.4, agentEditedCount: 0, readCount: 0, readAttribution: unavailable, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    expectDebtState: none
+    expectDebt: 0
+    expectCoverage: 0
+    expectHunkClears: false
+    expectScentTags: []
+  - name: unread scores full debt
+    node: {id: n1, name: n1.go, touchCount: 3, effortDensity: 0.4, agentEditedCount: 2, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    expectDebtState: no-recorded-read
+    expectDebt: 1
+    expectCoverage: 0
+    expectHunkClears: false
+  - name: partial-read mechanical fallback below floor
+    node: {id: n1, name: n1.go, touchCount: 3, effortDensity: 0.4, agentEditedCount: 4, readCount: 1, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    expectDebtState: partial-read
+    expectDebt: 0.75
+    expectCoverage: 0
+    expectHunkClears: false
+  - name: reviewed state clears via whole-file read state
+    node: {id: n1, name: n1.go, touchCount: 3, effortDensity: 0.4, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: reviewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    expectDebtState: reviewed
+    expectDebt: 0
+    expectCoverage: 0
+    expectHunkClears: false
+  - name: unknown state when read attribution is unavailable
+    node: {id: n1, name: n1.go, touchCount: 3, effortDensity: 0.4, agentEditedCount: 2, readCount: 1, readAttribution: unavailable, readState: none, changedRegionCount: 2, attributedRegionCount: 2, reviewedRegionCount: 1}
+    expectDebtState: unknown
+    expectDebt: 0
+    expectCoverage: 0.5
+    expectHunkClears: false
+  - name: unattributable hunk excluded blocks hunk clear
+    node: {id: n1, name: n1.go, touchCount: 3, effortDensity: 0.4, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: none, changedRegionCount: 2, attributedRegionCount: 1, reviewedRegionCount: 1}
+    expectDebtState: partial-read
+    expectDebt: 0.1
+    expectCoverage: 0.9
+    expectHunkClears: false
+  - name: all attributable hunks reviewed clears via hunkClears
+    node: {id: n1, name: n1.go, touchCount: 3, effortDensity: 0.4, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: none, changedRegionCount: 2, attributedRegionCount: 2, reviewedRegionCount: 2}
+    expectDebtState: reviewed
+    expectDebt: 0
+    expectCoverage: 1
+    expectHunkClears: true
+  - name: partial hunk coverage maps to partial-read
+    node: {id: n1, name: n1.go, touchCount: 3, effortDensity: 0.4, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: none, changedRegionCount: 4, attributedRegionCount: 4, reviewedRegionCount: 1}
+    expectDebtState: partial-read
+    expectDebt: 0.5
+    expectCoverage: 0.25
+    expectHunkClears: false
+  - name: viewed-only softened state scores DEBT_VIEWED
+    node: {id: n1, name: n1.go, touchCount: 3, effortDensity: 0.4, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: viewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    expectDebtState: viewed
+    expectDebt: 0.5
+    expectCoverage: 0
+    expectHunkClears: false
+
+hoverCases:
+  - name: hover hunk-linked fully attributed
+    node: {id: n1, name: n1.go, touchCount: 3, effortDensity: 0.4, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: none, changedRegionCount: 3, attributedRegionCount: 3, reviewedRegionCount: 2}
+    expectHover: "2 of 3 changed regions reviewed"
+  - name: hover hunk-linked with unattributed gap
+    node: {id: n1, name: n1.go, touchCount: 3, effortDensity: 0.4, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: none, changedRegionCount: 2, attributedRegionCount: 1, reviewedRegionCount: 1}
+    expectHover: "1 of 1 attributed regions reviewed; 1 regions could not be attributed"
+  - name: hover mechanical fallback has no region count
+    node: {id: n1, name: n1.go, touchCount: 3, effortDensity: 0.4, agentEditedCount: 3, readCount: 1, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    expectHover: "some sessions that edited this file were read; per-region coverage is not available"
+
+tooltipCases:
+  - name: no-recorded-read tooltip is an evidence prompt
+    node: {id: n1, name: n1.go, touchCount: 1, effortDensity: 0.1, agentEditedCount: 2, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    expectDebtState: no-recorded-read
+    expectTooltip: "No read evidence was recorded for sessions that edited this file. Use this as a prompt to inspect recorded evidence, not as a verdict about the reader."
+  - name: viewed tooltip distinguishes a view from explicit review
+    node: {id: n1, name: n1.go, touchCount: 1, effortDensity: 0.1, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: viewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    expectDebtState: viewed
+    expectTooltip: "A view was recorded, but no explicit review was recorded. Use this as a prompt to inspect recorded evidence, not as a verdict about the reader."
+  - name: partial tooltip keeps path evidence and prompt framing
+    node: {id: n1, name: n1.go, touchCount: 1, effortDensity: 0.1, agentEditedCount: 3, readCount: 1, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    expectDebtState: partial-read
+    expectTooltip: "some sessions that edited this file were read; per-region coverage is not available. Use this as a prompt to inspect recorded evidence, not as a verdict about the reader."
+  - name: unknown tooltip explains missing recorded read events
+    node: {id: n1, name: n1.go, touchCount: 1, effortDensity: 0.1, agentEditedCount: 2, readCount: 0, readAttribution: unavailable, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    expectDebtState: unknown
+    expectTooltip: "No read events were recorded for the sessions that edited this file, so its read state is unknown. Use this as a prompt to inspect recorded evidence, not as a verdict about the reader."
+
+rankingCases:
+  - name: doi ordering ranks higher debt above lower debt at equal other terms
+    nodes:
+      - {id: low-debt, name: low-debt, touchCount: 3, effortDensity: 0.4, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: none, changedRegionCount: 2, attributedRegionCount: 2, reviewedRegionCount: 2}
+      - {id: high-debt, name: high-debt, touchCount: 3, effortDensity: 0.4, agentEditedCount: 2, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    options: {rankMode: relevance}
+    expectOrder: [high-debt, low-debt]
+  - name: doi degenerate all-equal payload yields zero for every row
+    nodes:
+      - {id: a, name: a, touchCount: 3, effortDensity: 0, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: reviewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+      - {id: b, name: b, touchCount: 3, effortDensity: 0, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: reviewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    options: {rankMode: relevance}
+    expectAllDOIZero: true
+  - name: doi ties break by nodeId ascending
+    nodes:
+      - {id: zeta, name: zeta, touchCount: 3, effortDensity: 0, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: reviewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+      - {id: alpha, name: alpha, touchCount: 3, effortDensity: 0, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: reviewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    options: {rankMode: relevance}
+    expectOrder: [alpha, zeta]
+  - name: debt rank mode boosts the debt term
+    nodes:
+      - {id: high-touch, name: high-touch, touchCount: 500, effortDensity: 0.4, agentEditedCount: 4, readCount: 1, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+      - {id: high-debt, name: high-debt, touchCount: 1, effortDensity: 0.4, agentEditedCount: 2, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    options: {rankMode: debt}
+    expectOrder: [high-debt, high-touch]
+  - name: debt rank mode partitions known debt before unknown before clear regardless of residual terms
+    nodes:
+      - {id: known-low-debt, name: known-low-debt, touchCount: 0, effortDensity: 0, agentEditedCount: 10, readCount: 9, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+      - {id: unknown-high-touch, name: unknown-high-touch, touchCount: 1000, effortDensity: 1, agentEditedCount: 2, readCount: 0, readAttribution: unavailable, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+      - {id: clear-highest-touch, name: clear-highest-touch, touchCount: 2000, effortDensity: 1, agentEditedCount: 2, readCount: 2, readAttribution: complete, readState: reviewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    options: {rankMode: debt, nowMs: 0}
+    expectOrder: [known-low-debt, unknown-high-touch, clear-highest-touch]
+  - name: debt rank mode ties within a state partition break by node id
+    nodes:
+      - {id: zeta, name: zeta, touchCount: 2, effortDensity: 0.1, agentEditedCount: 2, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+      - {id: alpha, name: alpha, touchCount: 2, effortDensity: 0.1, agentEditedCount: 2, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    options: {rankMode: debt, nowMs: 0}
+    expectOrder: [alpha, zeta]
+  - name: rankMapNodes derives edited-this-session through active session context
+    nodes:
+      - {id: session-match, name: session-match, touchCount: 2, effortDensity: 0.1, agentEditedCount: 1, readCount: 1, readAttribution: complete, readState: reviewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0, recentSessionId: sess-focus}
+      - {id: other-session, name: other-session, touchCount: 2, effortDensity: 0.1, agentEditedCount: 1, readCount: 1, readAttribution: complete, readState: reviewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0, recentSessionId: sess-other}
+    options: {rankMode: relevance, scentFilter: edited this session, hoveredOrSelectedSessionId: sess-focus, nowMs: 0}
+    expectOrder: [session-match]
+  - name: each DOI weight contributes its pinned intrinsic value
+    nodes:
+      - {id: base, name: base, touchCount: 0, effortDensity: 0, agentEditedCount: 0, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+      - {id: touch-term, name: touch-term, touchCount: 10, effortDensity: 0, agentEditedCount: 0, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+      - {id: effort-term, name: effort-term, touchCount: 0, effortDensity: 1, agentEditedCount: 0, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+      - {id: debt-term, name: debt-term, touchCount: 0, effortDensity: 0, agentEditedCount: 1, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+      - {id: recency-term, name: recency-term, touchCount: 0, effortDensity: 0, agentEditedCount: 0, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0, lastTouchMs: 1000}
+    options: {rankMode: relevance, nowMs: 1000}
+    expectOrder: [touch-term, debt-term, effort-term, recency-term, base]
+    expectDOI: {touch-term: 0.35, effort-term: 0.25, debt-term: 0.25, recency-term: 0.15, base: 0}
+  - name: churn rank mode boosts touch without debt partitioning
+    nodes:
+      - {id: high-touch, name: high-touch, touchCount: 500, effortDensity: 0, agentEditedCount: 0, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+      - {id: high-debt, name: high-debt, touchCount: 0, effortDensity: 0, agentEditedCount: 2, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    options: {rankMode: churn, nowMs: 0}
+    expectOrder: [high-touch, high-debt]
+
+gatingCases:
+  - name: threshold gating floors at five rows
+    count: 10
+    doi: low
+    expectVisibleCount: 5
+    expectOverflowCount: 5
+  - name: threshold gating caps at twenty-five rows
+    count: 40
+    doi: uniform-high
+    expectVisibleCount: 25
+    expectOverflowCount: 15
+  - name: show-all bypasses threshold and cap then reports no overflow
+    count: 40
+    doi: uniform-high
+    options: {expanded: true}
+    expectVisibleCount: 40
+    expectOverflowCount: 0
+  - name: debt gating keeps low-scoring known debt ahead of thresholded unknown rows
+    nodes:
+      - {id: known-debt, name: known-debt, touchCount: 0, effortDensity: 0, agentEditedCount: 10, readCount: 9, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+      - {id: unknown-1, name: unknown-1, touchCount: 100, effortDensity: 1, agentEditedCount: 1, readCount: 0, readAttribution: unavailable, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0, lastTouchMs: 0}
+      - {id: unknown-2, name: unknown-2, touchCount: 100, effortDensity: 1, agentEditedCount: 1, readCount: 0, readAttribution: unavailable, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0, lastTouchMs: 0}
+      - {id: unknown-3, name: unknown-3, touchCount: 100, effortDensity: 1, agentEditedCount: 1, readCount: 0, readAttribution: unavailable, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0, lastTouchMs: 0}
+      - {id: unknown-4, name: unknown-4, touchCount: 100, effortDensity: 1, agentEditedCount: 1, readCount: 0, readAttribution: unavailable, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0, lastTouchMs: 0}
+      - {id: unknown-5, name: unknown-5, touchCount: 100, effortDensity: 1, agentEditedCount: 1, readCount: 0, readAttribution: unavailable, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0, lastTouchMs: 0}
+    rankOptions: {rankMode: debt, nowMs: 0}
+    options: {rankMode: debt}
+    expectVisibleIds: [known-debt, unknown-1, unknown-2, unknown-3, unknown-4, unknown-5]
+  - name: threshold uses half of max DOI before applying the floor
+    rows:
+      - {id: high-1, name: high-1, doi: 1, debtState: none, debt: 0, coverage: 0, hunkClears: false, scentTags: [], hoverText: null}
+      - {id: high-2, name: high-2, doi: 0.9, debtState: none, debt: 0, coverage: 0, hunkClears: false, scentTags: [], hoverText: null}
+      - {id: high-3, name: high-3, doi: 0.8, debtState: none, debt: 0, coverage: 0, hunkClears: false, scentTags: [], hoverText: null}
+      - {id: high-4, name: high-4, doi: 0.7, debtState: none, debt: 0, coverage: 0, hunkClears: false, scentTags: [], hoverText: null}
+      - {id: high-5, name: high-5, doi: 0.6, debtState: none, debt: 0, coverage: 0, hunkClears: false, scentTags: [], hoverText: null}
+      - {id: low-1, name: low-1, doi: 0.45, debtState: none, debt: 0, coverage: 0, hunkClears: false, scentTags: [], hoverText: null}
+      - {id: low-2, name: low-2, doi: 0.44, debtState: none, debt: 0, coverage: 0, hunkClears: false, scentTags: [], hoverText: null}
+      - {id: low-3, name: low-3, doi: 0.43, debtState: none, debt: 0, coverage: 0, hunkClears: false, scentTags: [], hoverText: null}
+      - {id: low-4, name: low-4, doi: 0.42, debtState: none, debt: 0, coverage: 0, hunkClears: false, scentTags: [], hoverText: null}
+      - {id: low-5, name: low-5, doi: 0.41, debtState: none, debt: 0, coverage: 0, hunkClears: false, scentTags: [], hoverText: null}
+    expectVisibleIds: [high-1, high-2, high-3, high-4, high-5]
+
+splitCases:
+  - name: interaction context re-derives from one intrinsic result
+    nodes:
+      - {id: root, name: root, touchCount: 10, effortDensity: 0, agentEditedCount: 0, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+      - {id: child, name: child, parent: root, touchCount: 2, effortDensity: 0, agentEditedCount: 0, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0, recentSessionId: sess-a}
+    intrinsicOptions: {rankMode: relevance, nowMs: 0}
+    firstOptions: {focusId: root, hoveredOrSelectedSessionId: sess-a}
+    secondOptions: {focusId: null, hoveredOrSelectedSessionId: null}
+    expectFirstTags: {child: [edited this session, near your focus]}
+    expectSecondTags: {child: []}
+    sourceMustContain:
+      - 'rankMapNodesIntrinsic(TIMELINE_RANK_NODES'
+      - '}), [state.rankMode])'
+      - 'useDebouncedValue(state.scentFilter, 50)'
+      - 'deriveRankedRows(intrinsicRanking'
+
+adapterCases:
+  - name: unknown read-attribution state fails closed at the ranking adapter
+    node: {id: n1, name: n1, touchCount: 1, effortDensity: 0, agentEditedCount: 1, readCount: 0, readAttribution: invented, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    expectErrorContains: ['what went wrong', 'why:', 'where:', 'when:', 'what it means:', 'how to fix:', 'canonical @peasant-labs/schema value domain']
+  - name: unknown read-state grade fails closed at the ranking adapter
+    node: {id: n1, name: n1, touchCount: 1, effortDensity: 0, agentEditedCount: 1, readCount: 0, readAttribution: complete, readState: invented, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    expectErrorContains: ['what went wrong', 'why:', 'where:', 'when:', 'what it means:', 'how to fix:', 'canonical @peasant-labs/schema value domain']
+
+scentExhaustiveness:
+  name: scent tag exhaustiveness covers all seven members
+  derivations:
+    - tag: 'agent wrote: no recorded read'
+      node: {id: n1, name: n1, touchCount: 1, effortDensity: 0.1, agentEditedCount: 2, readCount: 0, readAttribution: complete, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    - tag: 'agent wrote: viewed, not reviewed'
+      node: {id: n1, name: n1, touchCount: 1, effortDensity: 0.1, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: viewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    - tag: 'agent wrote: read state unknown'
+      node: {id: n1, name: n1, touchCount: 1, effortDensity: 0.1, agentEditedCount: 2, readCount: 1, readAttribution: unavailable, readState: none, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    - tag: 'heavy churn'
+      node: {id: n1, name: n1, touchCount: 100, effortDensity: 0.1, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: reviewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+      context: {maxTouch: 100}
+    - tag: 'edited this session'
+      node: {id: n1, name: n1, touchCount: 1, effortDensity: 0.1, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: reviewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0, recentSessionId: sess-focus}
+      context: {hoveredOrSelectedSessionId: sess-focus}
+    - tag: 'high effort density'
+      node: {id: n1, name: n1, touchCount: 1, effortDensity: 0.9, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: reviewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0}
+    - tag: 'near your focus'
+      node: {id: near, name: near, touchCount: 1, effortDensity: 0.1, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: reviewed, changedRegionCount: 0, attributedRegionCount: 0, reviewedRegionCount: 0, parent: root}
+      context: {focusId: root, parentOf: {near: root, root: null}}
+
+literalPin:
+  name: unattributable hunk literal debt is pinned independent of COVERAGE_CAP
+  node: {id: n1, name: n1.go, touchCount: 3, effortDensity: 0.4, agentEditedCount: 2, readCount: 1, readAttribution: complete, readState: none, changedRegionCount: 2, attributedRegionCount: 1, reviewedRegionCount: 1}
+  expectDebtLiteral: 0.1

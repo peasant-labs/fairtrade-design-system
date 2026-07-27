@@ -13,6 +13,10 @@
 /** @typedef {import('./index.js').FileChangeStatus} FileChangeStatus */
 /** @typedef {import('./index.js').DiffLineKind} DiffLineKind */
 /** @typedef {import('./index.js').ChangeBinding} ChangeBinding */
+/** @typedef {import('./index.js').InsightKind} InsightKind */
+/** @typedef {import('./index.js').InsightProvenance} InsightProvenance */
+/** @typedef {import('./index.js').ReadAttributionState} ReadAttributionState */
+/** @typedef {import('./index.js').ReadStateGrade} ReadStateGrade */
 /** @typedef {import('./index.js').MapEdgePayload} MapEdgePayload */
 /** @typedef {import('./index.js').ActivityEdgePayload} ActivityEdgePayload */
 /** @typedef {import('./index.js').MapSlicePayload} MapSlicePayload */
@@ -29,6 +33,10 @@ import {
   EDGE_VIOLATION_KINDS,
   FILE_CHANGE_STATUSES,
   DIFF_LINE_KINDS,
+  AllInsightKinds,
+  AllInsightProvenances,
+  AllReadAttributionStates,
+  AllReadStateGrades,
   CODE_MAP_STATE_VERSION,
   createCodeMapState,
   reduceCodeMapState,
@@ -66,6 +74,18 @@ void firstLineKind
 const firstBinding = CHANGE_BINDINGS[0]
 void firstBinding
 void EDGE_VIOLATION_KINDS
+/** @type {InsightKind} */
+const firstInsightKind = AllInsightKinds[0]
+void firstInsightKind
+/** @type {InsightProvenance} */
+const firstInsightProvenance = AllInsightProvenances[0]
+void firstInsightProvenance
+/** @type {ReadAttributionState} */
+const firstReadAttributionState = AllReadAttributionStates[0]
+void firstReadAttributionState
+/** @type {ReadStateGrade} */
+const firstReadStateGrade = AllReadStateGrades[0]
+void firstReadStateGrade
 
 /* ── (2) POSITIVE: a valid ChangesPayload (CLEAN wire pass-through) ───────────── */
 /** @type {ChangesPayload} */
@@ -88,7 +108,8 @@ const changes = {
       tipCommitMs: 1_700_000_000_000,
     },
   ],
-  recentCommits: [{ hash: 'def456', subject: 'init', timeMs: 1, hasSession: true, sessionIds: ['session-1'] }],
+  recentCommits: [{ hash: 'def456', subject: 'init', timeMs: 1, hasSession: true, sessionIds: ['session-1'], associations: [] }],
+  rewrittenCommits: [],
   sessions: [{ sessionId: 'session-1', title: 'Build the feature', harness: 'codex', startMs: 1, hasCommitBinding: true }],
 }
 void changes
@@ -110,6 +131,13 @@ const codeMap = {
       totalFiles: 8,
       touchCount: 12,
       effortDensity: 0.3,
+      agentEditedCount: 3,
+      readCount: 1,
+      readAttribution: 'complete',
+      readState: 'viewed',
+      changedRegionCount: 4,
+      attributedRegionCount: 4,
+      reviewedRegionCount: 2,
     },
   ],
   structureEdges: [{ from: 'a', to: 'b', count: 2 }],
@@ -147,7 +175,25 @@ function _takesStatus(_s) {}
 // @ts-expect-error — "X" is not one of "M"|"A"|"D"|"R"
 _takesStatus('X')
 
-/* ── (7) NEGATIVE: a ChangeDiffPayload line kind is constrained ─────────────────
+/* ── (7) NEGATIVE: insight and read-state domains are schema-owned closed sets ── */
+/** @param {InsightKind} _kind */
+function _takesInsightKind(_kind) {}
+// @ts-expect-error — an unknown insight kind cannot cross the graph boundary
+_takesInsightKind('made_up_kind')
+/** @param {InsightProvenance} _provenance */
+function _takesInsightProvenance(_provenance) {}
+// @ts-expect-error — an unknown insight provenance cannot cross the graph boundary
+_takesInsightProvenance('made_up_provenance')
+/** @param {ReadAttributionState} _attribution */
+function _takesReadAttributionState(_attribution) {}
+// @ts-expect-error — an unknown attribution state cannot cross the graph boundary
+_takesReadAttributionState('made_up_attribution')
+/** @param {ReadStateGrade} _grade */
+function _takesReadStateGrade(_grade) {}
+// @ts-expect-error — an unknown read-state grade cannot cross the graph boundary
+_takesReadStateGrade('made_up_grade')
+
+/* ── (8) NEGATIVE: a ChangeDiffPayload line kind is constrained ─────────────────
    DiffLinePayload.kind is "context"|"add"|"del"; a free string must not satisfy it. */
 {
   /** @type {ChangeDiffPayload} */
@@ -173,7 +219,7 @@ _takesStatus('X')
   void diff
 }
 
-/* ── (8) POSITIVE: ChangeDetail carries the lifted-surface display stats ─────────
+/* ── (9) POSITIVE: ChangeDetail carries the lifted-surface display stats ─────────
    outputTokens + filesChanged were un-carved (they back the demo's "ai wrote ≈N
    tokens" + "N files touched"); both are present and non-optional — outputTokens
    is the schema's wire int64 (bigint), filesChanged a plain number. */
@@ -188,7 +234,7 @@ _takesStatus('X')
   void files
 }
 
-/* ── (9) NEGATIVE: ChangeDetail must not accept an unknown top-level field ─────── */
+/* ── (10) NEGATIVE: ChangeDetail must not accept an unknown top-level field ────── */
 {
   /** @type {ChangeDetailPayload} */
   const detail = /** @type {any} */ ({})
@@ -196,7 +242,7 @@ _takesStatus('X')
   void detail.requests
 }
 
-/* ── (10) POSITIVE: ChangeDiffPayload carries the optional HOST-SIDE error sentinel ─
+/* ── (11) POSITIVE: ChangeDiffPayload carries the optional HOST-SIDE error sentinel ─
    The host sets `error` (with empty hunks) when its lazy diff fetch fails, so the surface
    renders an error row instead of a perpetual spinner. It is NOT a wire field — the adapter
    must never map it from the REST payload — but the typedef must DECLARE it so a strict

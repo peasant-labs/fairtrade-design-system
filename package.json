@@ -1,10 +1,13 @@
 {
   "name": "@peasant-labs/fairtrade",
   "private": false,
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Private fairtrade design-system library: canonical tokens, base styles, component CSS, and React UI exports.",
   "type": "module",
   "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"
@@ -65,7 +68,18 @@
     "gen:check": "node scripts/gen-llm-artifacts.mjs && git diff --exit-code public/tokens.json public/components.json packages/tokens/tokens.css packages/tokens/tokens.json packages/tokens/base.css packages/tokens/fonts.css",
     "build:app": "node scripts/gen-llm-artifacts.mjs && node scripts/contrast.mjs && vite build",
     "test:contract": "tsc -p tsconfig.contract.json",
+    "test:runtime-floor": "node scripts/runtime-floor.test.mjs",
     "test:code-map-state": "node scripts/code-map-state.test.mjs",
+    "test:code-map-ranking": "node scripts/code-map-ranking.test.mjs",
+    "test:code-map-ranking:mutations": "node scripts/code-map-ranking.mutations.mjs",
+    "test:code-map-ranking:bench": "node scripts/code-map-ranking-bench.mjs",
+    "test:timeline-encoding-channels": "node scripts/timeline-encoding-channels.test.mjs",
+    "test:timeline-highlight": "node scripts/timeline-highlight.test.mjs",
+    "test:timeline-a11y": "node scripts/timeline-a11y.test.mjs",
+    "test:timeline-rendered": "node scripts/timeline-rendered-probe.mjs",
+    "test:timeline-session-route:mutations": "node scripts/timeline-session-route.mutations.mjs",
+    "test:timeline-ghosts": "node scripts/timeline-ghosts.test.mjs",
+    "test:insight-panel": "node scripts/insight-panel.test.mjs",
     "test:code-map-interactions": "node scripts/code-map-interactions.test.mjs",
     "test:code-map-drag-smoothness": "node scripts/code-map-drag-smoothness.test.mjs",
     "test:code-map-wheel-zoom": "node scripts/code-map-wheel-zoom.test.mjs",
@@ -88,8 +102,9 @@
     "smoke:transcript-ui": "node scripts/smoke-transcript-ui.mjs",
     "smoke:map": "node scripts/smoke-map.mjs",
     "smoke:changes": "node scripts/smoke-changes.mjs",
+    "test:changes-overflow": "node scripts/changes-overflow.test.mjs",
     "shoot:manage": "node scripts/shootmanage.mjs",
-    "build:lib": "pnpm test:contract && pnpm test:code-map-state && pnpm test:code-map-interactions && pnpm test:code-map-drag-smoothness && pnpm test:code-map-wheel-zoom && pnpm test:code-map-descent-feedback && pnpm test:timeline-navigation && pnpm test:transcript-initial-position && pnpm test:transcript-initial-position:render && pnpm test:transcript-initial-position:mutations && node scripts/gates.test.mjs && node src/ui/analytics/metrics.test.mjs && node scripts/mobile-layout.test.mjs && node scripts/transcript-composite-width.test.mjs && node scripts/css-token-lint.mjs && node scripts/gen-llm-artifacts.mjs && node scripts/contrast.mjs && vite build --config vite.lib.config.js && vite build --config vite.lib-css.config.js && node scripts/finalize-lib-build.mjs && tsc -p tsconfig.lib.json && node scripts/smoke-lib.mjs && node scripts/smoke-transcript.mjs && node scripts/smoke-transcript-ui.mjs && pnpm test:graph-contract-enums && pnpm test:transcript-schema-adapter && pnpm test:transcript-schema-adapter:mutations && pnpm test:provider-harnesses && pnpm test:provider-harnesses:mutations && node scripts/smoke-map.mjs && node scripts/smoke-changes.mjs && node scripts/contrast.mjs --css dist/lib/tokens.css && node scripts/assert-pack-contents.mjs",
+    "build:lib": "pnpm test:contract && pnpm test:runtime-floor && pnpm test:code-map-state && pnpm test:code-map-ranking && pnpm test:code-map-ranking:mutations && pnpm test:code-map-ranking:bench && pnpm test:timeline-encoding-channels && pnpm test:timeline-highlight && pnpm test:code-map-interactions && pnpm test:code-map-drag-smoothness && pnpm test:code-map-wheel-zoom && pnpm test:code-map-descent-feedback && pnpm test:timeline-navigation && pnpm test:transcript-initial-position && pnpm test:transcript-initial-position:render && pnpm test:transcript-initial-position:mutations && node scripts/gates.test.mjs && node src/ui/analytics/metrics.test.mjs && node scripts/mobile-layout.test.mjs && node scripts/transcript-composite-width.test.mjs && node scripts/css-token-lint.mjs && node scripts/gen-llm-artifacts.mjs && node scripts/contrast.mjs && vite build --config vite.lib.config.js && vite build --config vite.lib-css.config.js && node scripts/finalize-lib-build.mjs && tsc -p tsconfig.lib.json && node scripts/smoke-lib.mjs && node scripts/smoke-transcript.mjs && node scripts/smoke-transcript-ui.mjs && pnpm test:graph-contract-enums && pnpm test:transcript-schema-adapter && pnpm test:transcript-schema-adapter:mutations && pnpm test:provider-harnesses && pnpm test:provider-harnesses:mutations && node scripts/smoke-map.mjs && node scripts/smoke-changes.mjs && pnpm test:changes-overflow && pnpm test:timeline-a11y && pnpm test:timeline-ghosts && pnpm test:insight-panel && node scripts/contrast.mjs --css dist/lib/tokens.css && node scripts/assert-pack-contents.mjs",
     "pack:check": "node scripts/assert-pack-contents.mjs",
     "smoke:tarball": "node scripts/smoke-tarball.mjs",
     "oracle:graph": "node scripts/graph-oracle.mjs",
@@ -103,7 +118,7 @@
     "start": "http-server dist -p ${PORT:-3000} -a 0.0.0.0 --silent"
   },
   "dependencies": {
-    "@peasant-labs/schema": "0.1.0-rc6",
+    "@peasant-labs/schema": "0.1.0-rc8",
     "@tanstack/react-table": "^8.21.3",
     "lucide": "^1.20.0",
     "lucide-react": "^1.18.0",

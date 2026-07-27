@@ -47,23 +47,20 @@ mutations:
     target: provider-policy
     find: 'antigravity: "teal"'
     replace: 'antigravity: "olive"'
-    expectedFailedCheckCount: 2
+    expectedFailedCheckCount: 5
     expectedError: "antigravity: accent"
   - name: invalid-present-cannot-fall-back-to-amber
     target: ui
-    find: 'n === void 0 ? "amber" : e(n)'
-    replace: 'n === void 0 || n === "google" ? "amber" : e(n)'
+    strategy: graph-turn-invalid-fallback
     expectedFailedCheckCount: 1
-    expectedError: "did not fail loudly through graph-legend"
+    expectedError: "did not fail loudly through graph-turn-node"
   - name: five-provider-inventory-cannot-omit-antigravity
     target: provider-policy
-    find: Object.freeze(Object.values(fe))
-    replace: 'Object.freeze(Object.values(fe).filter((value) => value !== "antigravity"))'
+    strategy: omit-antigravity-inventory
     expectedFailedCheckCount: 2
     expectedError: "mounted legend: expected 6 rows, received 5"
   - name: arbitrary-string-provider-cannot-pass-validation
     target: provider-policy
-    find: 'if (C(e)) return;'
-    replace: 'if (typeof e === "string") return;'
-    expectedFailedCheckCount: 9
+    strategy: accept-arbitrary-string
+    expectedFailedCheckCount: 18
     expectedError: "did not fail loudly through public accent helper"

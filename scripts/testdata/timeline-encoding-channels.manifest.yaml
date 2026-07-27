@@ -1,0 +1,72 @@
+expectedCaseCount: 11
+caseNames:
+  - lane identity rides ink weight
+  - forked/merged-out-of-view rides stroke dash
+  - dash is not used for ghost identity
+  - commit-has-session rides node fill
+  - selection rides amber fill
+  - ghost identity rides node shape not dash
+  - ghost group collapsed count is tabular
+  - confidence rides the tether terminal glyph in three grades
+  - hover width-step floor is present in both motion states
+  - hover glow is additive and normal-motion only
+  - insight provenance rides a distinct glyph per source
+mutationCases:
+  - name: removing the dash-both-states rule reddens the forked/merged case
+    case: forked/merged-out-of-view rides stroke dash
+    file: CommitGraph.jsx
+    find: 'strokeDasharray={DASH}'
+    replace: ''
+  - name: adding dasharray to the ghost diamond reddens the no-dash-on-ghosts case
+    case: dash is not used for ghost identity
+    file: timelinePrimitives.css
+    find: '.tlp-ghost-diamond rect { fill: var(--ink-3); stroke: none; }'
+    replace: '.tlp-ghost-diamond rect { fill: var(--ink-3); stroke-dasharray: 3 3; }'
+  - name: removing the unconditional width-step rule reddens the both-motion-states case
+    case: hover width-step floor is present in both motion states
+    file: CommitGraph.css
+    find: |
+      .cg-dot-highlight-primary,
+      .cg-dot-highlight-secondary {
+        box-shadow: 0 0 0 var(--stroke-emphasis) var(--rule-strong);
+      }
+    replace: ''
+  - name: wrapping the width-step rule in the normal-motion-only media query reddens the both-motion-states case
+    case: hover width-step floor is present in both motion states
+    file: CommitGraph.css
+    find: |
+      .cg-dot-highlight-primary,
+      .cg-dot-highlight-secondary {
+        box-shadow: 0 0 0 var(--stroke-emphasis) var(--rule-strong);
+      }
+    replace: |
+      @media (prefers-reduced-motion: no-preference) {
+      .cg-dot-highlight-primary,
+      .cg-dot-highlight-secondary {
+        box-shadow: 0 0 0 var(--stroke-emphasis) var(--rule-strong);
+      }
+      }
+  - name: removing the glow animation reddens the glow-is-additive case
+    case: hover glow is additive and normal-motion only
+    file: CommitGraph.css
+    find: 'animation: cg-highlight-glow var(--dur-3) var(--ease-out) 1 both;'
+    replace: ''
+  - name: moving the glow animation OUTSIDE the reduced-motion media guard reddens the glow-is-additive case (glow must never run under reduced motion)
+    case: hover glow is additive and normal-motion only
+    file: CommitGraph.css
+    find: |
+      @media (prefers-reduced-motion: no-preference) {
+        .cg-dot-highlight-secondary {
+          animation: cg-highlight-glow var(--dur-3) var(--ease-out) 1 both;
+        }
+        .cg-dot-highlight-primary {
+          animation: cg-highlight-glow-amber var(--dur-3) var(--ease-out) 1 both;
+        }
+      }
+    replace: |
+      .cg-dot-highlight-secondary {
+        animation: cg-highlight-glow var(--dur-3) var(--ease-out) 1 both;
+      }
+      .cg-dot-highlight-primary {
+        animation: cg-highlight-glow-amber var(--dur-3) var(--ease-out) 1 both;
+      }

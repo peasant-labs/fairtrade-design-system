@@ -1,0 +1,10 @@
+expectedCaseCount: 1
+caseNames:
+  - generated ten-thousand-node ranking stays within interaction budgets
+expectedGuardCount: 5
+guardNames:
+  - intrinsic absolute ceiling
+  - rederivation absolute ceiling
+  - intrinsic committed-baseline ceiling
+  - rederivation committed-baseline ceiling
+  - deliberate slowdown reddens the benchmark

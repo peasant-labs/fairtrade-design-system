@@ -10,11 +10,14 @@ const REQUIRED_CASE_NAMES = new Set([
   'grain change clears expansion', 'canvas and navigator share selection',
   'viewport accepts finite values and rejects invalid scale', 'replace never carries stale fields',
   'file grain stays aggregate until explicit expansion', 'explicit expansion reaches file grain within one folder',
+  'timeline actions round-trip the frozen contract',
 ])
 const REQUIRED_ACTION_TYPES = new Set([
   'replace', 'hydrate', 'set-presentation', 'select', 'clear-selection', 'focus',
   'set-filter', 'set-expanded', 'toggle-expanded', 'set-grain', 'set-viewport',
   'open-in-map', 'reveal',
+  'hover-session', 'select-session', 'toggle-commit-sessions', 'toggle-ghost-group',
+  'set-rank-mode', 'set-scent-filter', 'set-rank-expanded',
 ])
 const REQUIRED_MUTATION_NAMES = new Set([
   'manifest trailing document', 'manifest duplicate key', 'manifest unknown field',
@@ -149,7 +152,7 @@ function runMutation(testCase, sources) {
 function mutateSource(source, mutation) {
   if (mutation === 'trailing-document') return `${source}\n---\nextra: true\n`
   if (mutation === 'duplicate-key') {
-    return source.replace('expectedCaseCount: 12\n', 'expectedCaseCount: 12\nexpectedCaseCount: 12\n')
+    return source.replace('expectedCaseCount: 13\n', 'expectedCaseCount: 13\nexpectedCaseCount: 13\n')
   }
   throw new Error(`source mutation ${mutation} is unsupported`)
 }
@@ -195,11 +198,11 @@ function parseOne(text, label) {
 function validateManifest(value) {
   requireObject(value, 'manifest')
   requireExactKeys(value, ['expectedCaseCount', 'caseNames', 'actionSamples', 'actionValueProbes', 'mutationCases'], 'manifest')
-  if (value.expectedCaseCount !== 12 || !Array.isArray(value.caseNames) || value.caseNames.length !== 12) throw new Error('manifest must declare exactly 12 case names')
+  if (value.expectedCaseCount !== 13 || !Array.isArray(value.caseNames) || value.caseNames.length !== 13) throw new Error('manifest must declare exactly 13 case names')
   const names = new Set(value.caseNames)
-  if (names.size !== 12 || value.caseNames.some((name) => typeof name !== 'string' || name.trim() === '')) throw new Error('manifest case names must be unique nonempty strings')
+  if (names.size !== 13 || value.caseNames.some((name) => typeof name !== 'string' || name.trim() === '')) throw new Error('manifest case names must be unique nonempty strings')
   requireExactSet(names, REQUIRED_CASE_NAMES, 'manifest case names')
-  if (!Array.isArray(value.actionSamples) || value.actionSamples.length !== 13) throw new Error('manifest actionSamples must contain exactly 13 actions')
+  if (!Array.isArray(value.actionSamples) || value.actionSamples.length !== 20) throw new Error('manifest actionSamples must contain exactly 20 actions')
   const sampleNames = new Set()
   const actionTypes = new Set()
   for (const [index, sample] of value.actionSamples.entries()) {
@@ -212,7 +215,7 @@ function validateManifest(value) {
     actionTypes.add(sample.action.type)
   }
   requireExactSet(actionTypes, REQUIRED_ACTION_TYPES, 'manifest action types')
-  if (!Array.isArray(value.actionValueProbes) || value.actionValueProbes.length !== 39) throw new Error('manifest actionValueProbes must contain exactly 39 probes')
+  if (!Array.isArray(value.actionValueProbes) || value.actionValueProbes.length !== 60) throw new Error('manifest actionValueProbes must contain exactly 60 probes')
   const probeNames = new Set()
   const probeKeys = new Set()
   for (const [index, probe] of value.actionValueProbes.entries()) {
@@ -249,8 +252,8 @@ function validateManifest(value) {
 function validateFixture(value, manifest) {
   requireObject(value, 'fixture')
   requireExactKeys(value, ['expectedCaseCount', 'cases', 'opaqueIdCase'], 'fixture')
-  if (value.expectedCaseCount !== 12) throw new Error('fixture expectedCaseCount must equal 12')
-  if (!Array.isArray(value.cases) || value.cases.length !== 12) throw new Error('fixture must contain exactly 12 cases')
+  if (value.expectedCaseCount !== 13) throw new Error('fixture expectedCaseCount must equal 13')
+  if (!Array.isArray(value.cases) || value.cases.length !== 13) throw new Error('fixture must contain exactly 13 cases')
   const names = new Set()
   for (const [index, testCase] of value.cases.entries()) {
     requireObject(testCase, `cases[${index}]`)
@@ -299,7 +302,10 @@ function validateAgreementMatrix(value) {
 
 function requireStateShape(value, label) {
   requireObject(value, label)
-  requireExactKeys(value, ['version', 'presentation', 'selectedId', 'grain', 'expandedIds', 'navigatorFilter', 'navigatorFocusedId', 'viewport'], label)
+  requireExactKeys(value, [
+    'version', 'presentation', 'selectedId', 'grain', 'expandedIds', 'navigatorFilter', 'navigatorFocusedId', 'viewport',
+    'hoveredSessionId', 'selectedSessionId', 'expandedCommitSessions', 'expandedGhostGroups', 'rankMode', 'scentFilter',
+  ], label)
 }
 
 function requireAction(value, label) {
@@ -319,6 +325,13 @@ function requireAction(value, label) {
     'set-viewport': ['type', 'viewport'],
     'open-in-map': ['type', 'id'],
     reveal: ['type', 'id', 'grain', 'expandedIds'],
+    'hover-session': ['type', 'sessionId'],
+    'select-session': ['type', 'sessionId'],
+    'toggle-commit-sessions': ['type', 'commitHash'],
+    'toggle-ghost-group': ['type', 'successorHash'],
+    'set-rank-mode': ['type', 'rankMode'],
+    'set-scent-filter': ['type', 'scentFilter'],
+    'set-rank-expanded': ['type', 'expanded'],
   }
   const fields = fieldsByType[value.type]
   if (!fields) throw new Error(`${label}.type is unknown`)

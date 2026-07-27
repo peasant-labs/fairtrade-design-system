@@ -1,0 +1,50 @@
+expectedCaseCount: 6
+
+payload:
+  edges:
+    - { sessionId: sess-a, commitHash: c1 }
+    - { sessionId: sess-a, commitHash: c2 }
+    - { sessionId: sess-b, commitHash: c3 }
+    - { sessionId: sess-b, commitHash: g1, ghost: true }
+
+cases:
+  - name: hover-only highlights only the hovered session
+    state: { hoveredSessionId: sess-a, selectedSessionId: null }
+    expect:
+      selected: { sessionId: null, commitHashes: [], ghostHashes: [] }
+      hovered: { sessionId: sess-a, commitHashes: [c1, c2], ghostHashes: [] }
+
+  - name: select-only highlights only the selected session
+    state: { hoveredSessionId: null, selectedSessionId: sess-a }
+    expect:
+      selected: { sessionId: sess-a, commitHashes: [c1, c2], ghostHashes: [] }
+      hovered: { sessionId: null, commitHashes: [], ghostHashes: [] }
+
+  - name: hover-over-selection returns both independently and never clears the selection
+    state: { hoveredSessionId: sess-b, selectedSessionId: sess-a }
+    expect:
+      selected: { sessionId: sess-a, commitHashes: [c1, c2], ghostHashes: [] }
+      hovered: { sessionId: sess-b, commitHashes: [c3], ghostHashes: [g1] }
+
+  - name: escape sequence clears hover then selection
+    initial: { hoveredSessionId: sess-a, selectedSessionId: sess-b }
+    steps:
+      - expectAction: { type: hover-session, sessionId: null }
+        expectAfter: { hoveredSessionId: null, selectedSessionId: sess-b }
+      - expectAction: { type: select-session, sessionId: null }
+        expectAfter: { hoveredSessionId: null, selectedSessionId: null }
+      - expectAction: null
+        expectAfter: { hoveredSessionId: null, selectedSessionId: null }
+
+  - name: keyboard focus drives the same hover action as pointer hover
+    sourceCheck:
+      file: SessionLane.jsx
+      mustContainAll:
+        - 'onMouseEnter={() => onHover?.(sessionId)}'
+        - 'onFocus={() => onHover?.(sessionId)}'
+        - 'onMouseLeave={() => onHover?.(null)}'
+        - 'onBlur={() => onHover?.(null)}'
+
+  - name: deep-link hydration of a selected session
+    hydrateState: { selectedSessionId: sess-a }
+    expectSelectedSessionId: sess-a
