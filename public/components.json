@@ -102,10 +102,8 @@
         "name": {
           "control": "select",
           "options": [
-            "...ALL",
-            "anthropic",
-            "google",
-            "codex"
+            "...fixture.brands.map((entry) => entry.key)",
+            "...fixture.aliases.map((entry) => entry.name)"
           ]
         },
         "size": {
@@ -1168,7 +1166,8 @@
         "Marks",
         "Tags",
         "Names",
-        "AccentLegendStory"
+        "AccentLegendStory",
+        "StrikeMountedSurfaces"
       ]
     },
     {

@@ -1,5 +1,5 @@
 expectedAdapterCaseCount: 6
-expectedHarnessCount: 6
+expectedHarnessCount: 7
 expectedStopReasonCount: 5
 expectedInvalidStopReasonCount: 2
 mountedViewerCase: canonical-flat
@@ -10,6 +10,7 @@ harnessValues:
   - opencode
   - cursor
   - antigravity
+  - strike
 stopReasonValues:
   - end_turn
   - cancelled
@@ -23,7 +24,7 @@ adapterCases:
   - name: canonical-flat
     payload:
       id: canonical-flat
-      harness: claude-code
+      harness: strike
       startTime: 2026-07-16T08:00:00Z
       endTime: 2026-07-16T08:01:00Z
       durationMins: 1

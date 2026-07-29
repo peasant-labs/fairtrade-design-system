@@ -37,7 +37,7 @@ manager: **pnpm**. Source is **JS/JSX only - no TypeScript**. Icons: `lucide-rea
 - **Neuroinclusive by default**: 1.5 line-height, >=24px hit targets, global focus ring,
   static-first motion (guard transitions with `prefers-reduced-motion`). See `llm/NEUROINCLUSIVE.md`.
 - **Semantic meaning is never carried by colour alone** - always pair an icon or text label.
-- **Real brand logos**: when naming a company/provider (claude, gemini, openai, cursor, opencode),
+- **Real brand logos**: when naming a company/provider (claude, gemini, openai, cursor, opencode, strike),
   lead with `<BrandMark name="..." />` (or `<Tag brand="...">`), never a generic glyph.
 - **No AI-slop** in copy or UI: no em dashes, no buzzwords, no `//` markers, no eyebrow labels,
   no `>` prefixes (except the nav active marker). Namespaced classes; no generic collisions.

@@ -88,19 +88,22 @@ controlled centerpiece on a handful of low-traffic display surfaces. The two nev
 - **brand marks (the brand-logo rule):** when the UI names a company or provider, it **leads with
   that company's real brand mark, never a generic stand-in glyph** (a robot, a git fork, an eye). A
   real mark identifies the provider at a glance; a generic glyph identifies nothing. Marks are
-  claude / gemini / openai / cursor / opencode, single-color via `currentColor` (so they re-theme
+  claude / gemini / openai / cursor / opencode / strike, single-color via `currentColor` (so they re-theme
   on `[data-theme]`), sized off the icon tokens.
   - In the **component library** (`src/ui`), use the self-contained `<BrandMark name="claude" />`
     (aliases resolve: `anthropic`->claude, `google`->gemini, `codex`->openai). It inlines the paths
     so it needs no document-global symbol sheet. `<Tag brand="claude">claude-code</Tag>` is the tag
     shorthand. A mark beside its visible name is decorative; a mark that stands alone as the identity
     passes `label`.
-  - In the **presentation page** the same paths are inlined once as `<symbol id="b-claude" | b-gemini
+  - In the **presentation page** the marks used there are inlined once as `<symbol id="b-claude" | b-gemini
     | b-opencode | b-cursor>` in `src/sections-react/00-defs.jsx` and referenced via `<use href="#...">`.
-  - **provenance + trademark:** path geometry **originates from [Simple Icons](https://simpleicons.org)**
-    (CC0; not a package dependency, inlined). CC0 covers the geometry, not the marks' trademarks - keep
-    marks small, single-color, undistorted, paired with the provider's name, never implying endorsement
-    (nominative fair use). `opencode`'s mark is provisional upstream; be ready to swap or drop it.
+  - **provenance + trademark:** Claude, Gemini, OpenAI, Cursor, and opencode path geometry **originates
+    from [Simple Icons](https://simpleicons.org)** (CC0; not a package dependency, inlined). Strike's
+    geometry is copied unchanged from its [official favicon](https://github.com/jonathanung/strike-cli-web/blob/9e9550487b0306958baeff83a8ddfe483c42aa7d/public/favicon.svg).
+    The Strike website repository declares no asset license; rights in the geometry remain with its author,
+    Jonathan Ung. Every mark stays small, single-color, undistorted, and paired with its provider name
+    for nominative identification, never implying endorsement. `opencode`'s mark is provisional upstream;
+    be ready to swap or drop it.
 
 ### procedural + filtered ascii imagery (display surfaces only)
 Procedurally generated and image-filtered ascii is a deliberate centerpiece, restricted to a few

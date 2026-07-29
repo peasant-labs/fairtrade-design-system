@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { basename, join, relative, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import YAML from 'yaml'
+import { applyProviderMutationStrategy } from './provider-harnesses.mutation-strategies.mjs'
 
 const manifestPath = resolve('scripts/testdata/provider-harnesses.manifest.yaml')
 const document = YAML.parseDocument(readFileSync(manifestPath, 'utf8'), { strict: true, uniqueKeys: true })
@@ -32,7 +33,6 @@ const uiCandidates = entryImports
 if (uiCandidates.length !== 1) throw new Error(`provider harness mutations require one production UI chunk, received ${uiCandidates.length}`)
 const sourcePaths = { 'provider-policy': providerCandidates[0], ui: uiCandidates[0] }
 const librarySnapshot = snapshotLibrary(libraryPath)
-const STRATEGIES = new Set(['graph-turn-invalid-fallback', 'omit-antigravity-inventory', 'accept-arbitrary-string'])
 
 const REPORT_LINE = /^PROVIDER_HARNESS_REPORT=(.+)$/m
 
@@ -121,14 +121,7 @@ function applyMutation(source, mutation) {
     if (occurrences !== 1) throw new Error(`${mutation.name}: literal mutation target must occur exactly once in the production bundle, received ${occurrences}`)
     return source.replace(mutation.find, mutation.replace)
   }
-  if (!STRATEGIES.has(mutation.strategy)) throw new Error(`${mutation.name}: unsupported production mutation strategy ${JSON.stringify(mutation.strategy)}`)
-  if (mutation.strategy === 'graph-turn-invalid-fallback') {
-    return mutateRegion(source, mutation, 'src/ui/transcript/graph/GraphTurnNode.jsx', /([A-Za-z_$][\w$]*) === void 0 \? "amber" : ([A-Za-z_$][\w$]*)\(\1\)/, (_match, provider, accent) => `${provider} === void 0 || ${provider} === "google" ? "amber" : ${accent}(${provider})`)
-  }
-  if (mutation.strategy === 'omit-antigravity-inventory') {
-    return mutateRegion(source, mutation, 'src/ui/provider-policy.js', /Object\.freeze\(Object\.values\(([A-Za-z_$][\w$]*)\)\)/, (_match, inventory) => `Object.freeze(Object.values(${inventory}).filter((value) => value !== "antigravity"))`)
-  }
-  return mutateRegion(source, mutation, 'src/ui/provider-policy.js', /if \(([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*)\)\) return;/, (_match, _predicate, value) => `if (typeof ${value} === "string") return;`)
+  return applyProviderMutationStrategy(source, mutation, mutateRegion)
 }
 
 function createIsolatedBundle() {

@@ -1,41 +1,30 @@
-expectedHarnessCount: 6
-expectedInvalidHarnessCount: 3
-expectedSurfaceCount: 3
-expectedMutationCount: 5
-absentProviderAccent: amber
-surfaces:
+expectedMutationCount: 9
+requiredSurfaceCases:
   - turn-card
   - graph-turn-node
   - graph-legend
-harnesses:
-  - slug: claude-code
-    accessibleName: Claude Code
-    brand: claude
-    accent: amber
-  - slug: gemini-cli
-    accessibleName: Gemini CLI
-    brand: gemini
-    accent: teal
-  - slug: codex
-    accessibleName: Codex
-    brand: openai
-    accent: olive
-  - slug: opencode
-    accessibleName: opencode
-    brand: opencode
-    accent: mauve
-  - slug: cursor
-    accessibleName: Cursor
-    brand: cursor
-    accent: clay
-  - slug: antigravity
-    accessibleName: Google Antigravity
-    brand: gemini
-    accent: teal
-invalidHarnesses:
+  - changes
+requiredBrandCases:
+  - claude
+  - gemini
+  - openai
+  - cursor
+  - opencode
+  - strike
+requiredAliasCases:
+  - anthropic
+  - claude-code
   - google
+  - googlegemini
+  - gemini-cli
+  - codex
+  - codex-cli
+  - chatgpt
+  - gpt
+requiredInvalidHarnessCases:
+  - company-name
   - unknown-provider
-  - ""
+  - empty
 mutations:
   - name: antigravity-accessible-name-is-observable
     target: provider-policy
@@ -47,20 +36,40 @@ mutations:
     target: provider-policy
     find: 'antigravity: "teal"'
     replace: 'antigravity: "olive"'
-    expectedFailedCheckCount: 5
+    expectedFailedCheckCount: 4
     expectedError: "antigravity: accent"
+  - name: strike-accessible-name-is-observable
+    target: provider-policy
+    strategy: mutate-strike-display-name
+    expectedFailedCheckCount: 3
+    expectedError: "strike: accessible name"
+  - name: strike-brand-is-observable
+    target: provider-policy
+    strategy: mutate-strike-brand
+    expectedFailedCheckCount: 5
+    expectedError: "strike: brand"
+  - name: strike-accent-is-observable
+    target: provider-policy
+    strategy: mutate-strike-accent
+    expectedFailedCheckCount: 5
+    expectedError: "strike: accent"
+  - name: strike-mark-geometry-is-observable
+    target: provider-policy
+    strategy: mutate-strike-mark
+    expectedFailedCheckCount: 4
+    expectedError: "authoritative Strike mark"
   - name: invalid-present-cannot-fall-back-to-amber
     target: ui
     strategy: graph-turn-invalid-fallback
     expectedFailedCheckCount: 1
     expectedError: "did not fail loudly through graph-turn-node"
-  - name: five-provider-inventory-cannot-omit-antigravity
+  - name: seven-provider-inventory-cannot-omit-strike
     target: provider-policy
-    strategy: omit-antigravity-inventory
-    expectedFailedCheckCount: 2
-    expectedError: "mounted legend: expected 6 rows, received 5"
+    strategy: omit-strike-inventory
+    expectedFailedCheckCount: 3
+    expectedError: "mounted legend: expected 7 rows, received 6"
   - name: arbitrary-string-provider-cannot-pass-validation
     target: provider-policy
     strategy: accept-arbitrary-string
-    expectedFailedCheckCount: 18
+    expectedFailedCheckCount: 21
     expectedError: "did not fail loudly through public accent helper"

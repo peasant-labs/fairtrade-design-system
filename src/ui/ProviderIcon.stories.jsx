@@ -1,4 +1,6 @@
 import { expect, within } from 'storybook/test'
+import YAML from 'yaml'
+import fixtureSource from '../../scripts/testdata/provider-harnesses.yaml?raw'
 import {
   ProviderIcon,
   ProviderTag,
@@ -7,9 +9,20 @@ import {
   HARNESSES,
   PROVIDER_ACCENT,
 } from './ProviderIcon.jsx'
+import Changes from './graph/Changes.jsx'
 import { frame } from './story-frame.jsx'
+import TranscriptTurnCard from './transcript/TurnCard.jsx'
+import { GraphLegend, GraphTurnNode } from './transcript/graph/index.js'
 
-/* ProviderIcon stories. CSF3. the six coding-agent HARNESSES (canonical schema wire
+const fixtureDocument = YAML.parseDocument(fixtureSource, { strict: true, uniqueKeys: true })
+if (fixtureDocument.errors.length > 0 || (fixtureSource.match(/^---\s*$/gm) ?? []).length > 0) {
+  throw new Error('provider-harnesses.yaml must be one strict YAML document with unique keys')
+}
+const fixture = fixtureDocument.toJS()
+const mountedProvider = fixture.harnesses.find((entry) => entry.slug === fixture.mountedHarness)
+if (!mountedProvider) throw new Error('provider-harnesses.yaml mountedHarness must identify a canonical provider')
+
+/* ProviderIcon stories. CSF3. the seven coding-agent HARNESSES (canonical schema wire
    values) → their REAL brand marks, never a generic glyph; the mark is always
    paired with the provider name (nominative fair use). the per-provider accent
    (PROVIDER_ACCENT) is the documented divergence from the system's fixed
@@ -44,7 +57,7 @@ function Demo({ label, children }) {
   )
 }
 
-/* ── Marks — all six real brand marks, single-color ─────────────────────────
+/* ── Marks — all seven real brand marks, single-color ───────────────────────
    the headline rule made visible: claude-code wears Claude, codex wears OpenAI
    (its parent — a documented fallback, not a stand-in glyph), cursor wears
    Cursor. every mark is paired with its name. */
@@ -70,10 +83,11 @@ export const Marks = {
     await expect(canvas.getByLabelText('Cursor')).toBeInTheDocument()
     await expect(canvas.getByLabelText('Claude Code')).toBeInTheDocument()
     await expect(canvas.getByLabelText('Google Antigravity')).toBeInTheDocument()
+    await expect(canvas.getByLabelText('Strike')).toBeInTheDocument()
   },
 }
 
-/* ── Tags — all six chips: mark + lowercase harness slug ─────────────────────
+/* ── Tags — all seven chips: mark + lowercase harness slug ───────────────────
    the system chip look (hairline, mono, radius 0). never color-only — the slug
    names the provider even fully monochrome; `accent` only tints the mark. */
 export const Tags = {
@@ -135,5 +149,79 @@ export const AccentLegendStory = {
       expect(row).not.toBeNull()
       await expect(within(row).getByText(PROVIDER_ACCENT[harness])).toBeInTheDocument()
     }
+  },
+}
+
+export const StrikeMountedSurfaces = {
+  decorators: frame('full'),
+  render: () => (
+    <div style={{ display: 'grid', gap: 'var(--sp-5)' }}>
+      <section aria-label="transcript provider surface">
+        <h2 className="sb-head">transcript</h2>
+        <TranscriptTurnCard
+          turn={{
+            index: 1,
+            role: 'assistant',
+            label: '1',
+            content: 'Strike session output renders with its canonical identity.',
+            depth: 0,
+            provider: mountedProvider.slug,
+            toolCalls: [],
+            annotations: [],
+          }}
+        />
+      </section>
+      <section aria-label="graph provider surfaces">
+        <h2 className="sb-head">graph</h2>
+        <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
+          <GraphTurnNode
+            role="assistant"
+            provider={mountedProvider.slug}
+            turnNumber="1"
+            contentPreview="Strike session graph node"
+            toolCount={0}
+            totalTokens={0}
+          />
+          <GraphLegend items={[{ kind: 'assistant', label: mountedProvider.slug, provider: mountedProvider.slug }]} />
+        </div>
+      </section>
+      <section aria-label="changes provider surface">
+        <h2 className="sb-head">changes</h2>
+        <Changes
+          payload={{
+            repoFound: true,
+            defaultBranch: 'main',
+            changes: [],
+            recentCommits: [],
+            sessions: [{
+              sessionId: 'strike-provider-story',
+              title: 'Strike session without a commit',
+              harness: mountedProvider.slug,
+              startMs: 1,
+              hasCommitBinding: false,
+            }],
+          }}
+          nowMs={1}
+        />
+      </section>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(mountedProvider.accessibleName, { exact: true })).toBeInTheDocument()
+    await expect(canvas.getAllByText(mountedProvider.slug, { exact: true }).length).toBeGreaterThan(0)
+    const marks = canvasElement.querySelectorAll(`svg.brand[data-brand="${mountedProvider.brand}"]`)
+    await expect(marks.length).toBeGreaterThanOrEqual(2)
+    for (const mark of marks) {
+      await expect(mark).toHaveAttribute('viewBox', fixture.mountedMark.viewBox)
+      await expect(mark.querySelector('path')).toHaveAttribute('d', fixture.mountedMark.path)
+    }
+    const graphNode = canvasElement.querySelector('.ft-gnode-turn')
+    const graphLegend = canvasElement.querySelector('.ft-graph-legend-glyph')
+    expect(graphNode).not.toBeNull()
+    expect(graphLegend).not.toBeNull()
+    await expect(graphNode.style.getPropertyValue('--ft-gnode-accent')).toBe(`var(--${mountedProvider.accent})`)
+    await expect(graphLegend.style.background).toBe(`var(--${mountedProvider.accent})`)
+    await expect(canvasElement.querySelector('.gmp-unlinked-session .pv-name-label')).toHaveTextContent(mountedProvider.slug)
   },
 }

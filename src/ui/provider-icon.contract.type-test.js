@@ -28,6 +28,9 @@ AccentLegend({})
 providerDisplayName(Harness.Antigravity)
 providerAccent(Harness.Antigravity)
 providerLabel(Harness.Antigravity)
+providerDisplayName(Harness.Strike)
+providerAccent(Harness.Strike)
+providerLabel(Harness.Strike)
 
 // @ts-expect-error arbitrary strings must be validated before entering display APIs
 ProviderIcon({ harness: 'unknown-provider' })
