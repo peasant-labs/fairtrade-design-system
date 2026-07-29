@@ -58,8 +58,9 @@ export const HARNESSES = PROVIDER_HARNESSES
 
 /* ── the per-provider accent map (the documented divergence) ──────────────────
    each harness → ONE earth token. amber (the scarce emphasis color) goes to the
-   primary/default agent. Google harnesses deliberately share teal; their mark
-   and written harness name remain the identity, never color alone. consumers
+   primary/default agent. Google harnesses deliberately share teal; Strike uses
+   warm clay to echo its official gold bolt without spending amber. The mark and
+   written harness name remain the identity, never color alone. consumers
    call providerAccent(h) to tint the assistant side of a turn, a session row's
    rail, a breakdown bar, etc. the VALUES are token names (not hex) so the
    mapping re-themes with the rest of the system. */

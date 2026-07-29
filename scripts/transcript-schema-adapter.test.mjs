@@ -96,18 +96,17 @@ function observe(viewModel) {
 
 function validateManifest(value) {
   const rootFields = [
-    'expectedAdapterCaseCount', 'expectedHarnessCount', 'expectedStopReasonCount',
+    'expectedAdapterCaseCount', 'expectedStopReasonCount',
     'expectedInvalidStopReasonCount', 'expectedMutationCount', 'adapterCases',
-    'harnessValues', 'stopReasonValues', 'invalidStopReasonValues', 'mutations',
+    'stopReasonValues', 'invalidStopReasonValues', 'mutations',
   ]
   if (!exactFields(value, rootFields)) failures.push('manifest: root fields must be exact')
-  const lists = ['adapterCases', 'harnessValues', 'stopReasonValues', 'invalidStopReasonValues']
+  const lists = ['adapterCases', 'stopReasonValues', 'invalidStopReasonValues']
   for (const field of lists) {
     if (!uniqueNonEmptyStrings(value[field])) failures.push(`manifest: ${field} must contain unique non-empty strings`)
   }
   const counts = [
     ['expectedAdapterCaseCount', 'adapterCases'],
-    ['expectedHarnessCount', 'harnessValues'],
     ['expectedStopReasonCount', 'stopReasonValues'],
     ['expectedInvalidStopReasonCount', 'invalidStopReasonValues'],
     ['expectedMutationCount', 'mutations'],
@@ -133,10 +132,11 @@ function validateFixture(value, manifestValue) {
     'stopReasonValues', 'invalidStopReasonValues', 'adapterCases',
   ]
   if (!exactFields(value, rootFields)) failures.push('fixture: root fields must be exact')
-  for (const field of ['expectedAdapterCaseCount', 'expectedHarnessCount', 'expectedStopReasonCount', 'expectedInvalidStopReasonCount']) {
+  for (const field of ['expectedAdapterCaseCount', 'expectedStopReasonCount', 'expectedInvalidStopReasonCount']) {
     if (value[field] !== manifestValue[field]) failures.push(`fixture: ${field} must match the independent manifest`)
   }
-  for (const field of ['harnessValues', 'stopReasonValues', 'invalidStopReasonValues']) compareValues(`fixture ${field}`, value[field], manifestValue[field])
+  if (!uniqueNonEmptyStrings(value.harnessValues) || value.harnessValues.length !== value.expectedHarnessCount) failures.push('fixture: harnessValues must contain the expected unique Harness inventory')
+  for (const field of ['stopReasonValues', 'invalidStopReasonValues']) compareValues(`fixture ${field}`, value[field], manifestValue[field])
   if (!Array.isArray(value.adapterCases) || value.adapterCases.length !== value.expectedAdapterCaseCount) failures.push('fixture: adapter case count mismatch')
   const names = []
   for (const [index, testCase] of (value.adapterCases ?? []).entries()) {

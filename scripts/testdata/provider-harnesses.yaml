@@ -1,12 +1,54 @@
-expectedHarnessCount: 6
+expectedHarnessCount: 7
+expectedBrandCount: 6
+expectedAliasCount: 9
 expectedInvalidHarnessCount: 3
-expectedSurfaceCount: 3
+expectedSurfaceCount: 4
+expectedMountedBrandCount: 4
 absentProviderAccent: amber
-mountedHarness: antigravity
+mountedHarness: strike
+mountedMark:
+  brand: strike
+  viewBox: 6 6 20 20
+  path: M18.5 6L11 17.5h5.2L13.5 26 21 14.5h-5.2L18.5 6z
+  source: https://github.com/jonathanung/strike-cli-web/blob/9e9550487b0306958baeff83a8ddfe483c42aa7d/public/favicon.svg
+  sourceLicense: no license declared by the source repository
 surfaces:
   - turn-card
   - graph-turn-node
   - graph-legend
+  - changes
+brands:
+  - key: claude
+    accessibleName: Claude
+  - key: gemini
+    accessibleName: Gemini
+  - key: openai
+    accessibleName: OpenAI
+  - key: cursor
+    accessibleName: Cursor
+  - key: opencode
+    accessibleName: opencode
+  - key: strike
+    accessibleName: Strike
+aliases:
+  - name: anthropic
+    brand: claude
+  - name: claude-code
+    brand: claude
+  - name: google
+    brand: gemini
+  - name: googlegemini
+    brand: gemini
+  - name: gemini-cli
+    brand: gemini
+  - name: codex
+    brand: openai
+  - name: codex-cli
+    brand: openai
+  - name: chatgpt
+    brand: openai
+  - name: gpt
+    brand: openai
 harnesses:
   - slug: claude-code
     accessibleName: Claude Code
@@ -32,7 +74,14 @@ harnesses:
     accessibleName: Google Antigravity
     brand: gemini
     accent: teal
+  - slug: strike
+    accessibleName: Strike
+    brand: strike
+    accent: clay
 invalidHarnesses:
-  - google
-  - unknown-provider
-  - ""
+  - id: company-name
+    value: google
+  - id: unknown-provider
+    value: unknown-provider
+  - id: empty
+    value: ""

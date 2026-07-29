@@ -4,6 +4,36 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.10 — 2026-07-29
+
+Strike becomes a first-class provider: it now carries a real brand mark and a
+canonical identity everywhere a provider is named.
+
+### Added
+
+- **Strike provider identity.** `strike` joins the canonical provider policy
+  with the display name `Strike`, its own brand mark, and the `clay` accent
+  (shared with `cursor` — the mark and written name remain the identity, never
+  colour alone). `providerDisplayName`, `providerBrand`, and `providerAccent`
+  resolve it like any other harness, and unknown values still fail closed.
+- **`<BrandMark name="strike">`.** The path is Strike's official favicon
+  geometry, copied byte-for-byte. Because that geometry occupies only a 10x20
+  area of its source 32x32 canvas, the mark is shown through a crop window
+  centred on the glyph so it matches its peers' optical weight rather than
+  rendering at roughly half their size. The source repository declares no
+  licence; rights in the geometry remain with its author, and the mark is used
+  only for nominative provider identification.
+- **`data-brand` on every brand mark**, so consumers and gates can assert which
+  mark mounted rather than merely that one did.
+
+### Changed
+
+- Provider gates now derive their inventory from the canonical schema enum
+  instead of a duplicated manifest list, so a schema bump alone turns the
+  fixture red until the display policy is completed for the new provider.
+- Pinned `@peasant-labs/schema` to `0.1.0-rc10`, which carries the Strike
+  harness in the wire contract.
+
 ## 0.0.6 — 2026-07-04
 
 The transcript composite becomes the one viewer every consumer renders, and

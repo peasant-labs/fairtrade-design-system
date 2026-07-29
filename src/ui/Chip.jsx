@@ -18,7 +18,7 @@ import BrandMark from './BrandMark.jsx'
  * @param {object} props
  * @param {ChipTone} [props.tone] - semantic tone -> .chip-ok / .chip-warn / .chip-err (default: none)
  * @param {ChipSize} [props.size] - 'sm' -> .chip-sm dense box (default: none)
- * @param {string} [props.brand] - a provider/company name (claude, gemini, openai, cursor, opencode, or an alias).
+ * @param {string} [props.brand] - a provider/company name (claude, gemini, openai, cursor, opencode, strike, or an alias).
  *        When the chip names a company, pass this instead of `icon`: it leads with the real brand mark, never a generic glyph. (ignored when not resolvable)
  * @param {React.ElementType} [props.icon] - leading lucide icon component ref (e.g. icon={Hash}) (ignored when `brand` is set)
  * @param {boolean} [props.chrome=false] - mark this as a ui-chrome chip -> lowercases the label. Leave off for user content (ids, names, data values).

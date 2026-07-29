@@ -1,8 +1,7 @@
 expectedAdapterCaseCount: 6
-expectedHarnessCount: 6
 expectedStopReasonCount: 5
 expectedInvalidStopReasonCount: 2
-expectedMutationCount: 6
+expectedMutationCount: 7
 adapterCases:
   - canonical-flat
   - nullable-turns
@@ -10,13 +9,6 @@ adapterCases:
   - flat-conflict
   - canonical-commit
   - legacy-churn-commit
-harnessValues:
-  - claude-code
-  - gemini-cli
-  - codex
-  - opencode
-  - cursor
-  - antigravity
 stopReasonValues:
   - end_turn
   - cancelled
@@ -51,6 +43,11 @@ mutations:
     file: wireTypes
     find: Object.values(SchemaHarness)
     replace: Object.values(SchemaHarness).filter((value) => value !== 'antigravity')
+    expectedError: harness values
+  - name: strike-must-remain-canonical
+    file: wireTypes
+    find: Object.values(SchemaHarness)
+    replace: Object.values(SchemaHarness).filter((value) => value !== 'strike')
     expectedError: harness values
   - name: refusal-must-remain-canonical
     file: wireTypes

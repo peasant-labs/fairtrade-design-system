@@ -127,7 +127,7 @@ export function KbdChord({ label, children, className = '', ...rest }) {
  *
  * @param {object} props
  * @param {React.ReactNode} props.children - the tag label (sentence/case passed in is preserved; chrome is lowercased by CSS).
- * @param {string} [props.brand] - a provider/company name (claude, gemini, openai, cursor, opencode, or an alias).
+ * @param {string} [props.brand] - a provider/company name (claude, gemini, openai, cursor, opencode, strike, or an alias).
  *        When the tag names a company, pass this instead of `icon`: it leads with the real brand mark, never a generic glyph.
  * @param {React.ComponentType} [props.icon] - a lucide icon component reference rendered before the label (ignored when `brand` is set).
  * @param {string} [props.dot] - a color value for the leading swatch dot (set as --tag-c).

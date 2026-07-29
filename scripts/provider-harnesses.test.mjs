@@ -6,6 +6,7 @@ import { JSDOM } from 'jsdom'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import YAML from 'yaml'
+import { PROVIDER_MUTATION_STRATEGY_NAMES } from './provider-harnesses.mutation-strategies.mjs'
 import {
   PROVIDER_ACCENTS,
   PROVIDER_BRANDS,
@@ -23,8 +24,8 @@ const providerModule = process.env.FAIRTRADE_PROVIDER_MODULE
   ? pathToFileURL(process.env.FAIRTRADE_PROVIDER_MODULE).href
   : new URL('../dist/lib/ui.js', import.meta.url).href
 const ui = await import(`${providerModule}?provider-contract=${Date.now()}`)
+const graph = await import(`${new URL('./graph.js', providerModule).href}?provider-contract=${Date.now()}`)
 const failures = []
-const PROVIDER_MUTATION_STRATEGIES = new Set(['graph-turn-invalid-fallback', 'omit-antigravity-inventory', 'accept-arbitrary-string'])
 
 // Every observable assertion in this file goes through `check()`, which both
 // records the pass/fail outcome AND increments a total inventory counter.
@@ -45,14 +46,14 @@ function check(passed, message) {
 validateManifest(manifest)
 validateFixture(fixture, manifest)
 
-const expectedSlugs = manifest.harnesses.map((entry) => entry.slug)
+const expectedSlugs = fixture.harnesses.map((entry) => entry.slug)
 compareValues('schema Harness values', Object.values(SchemaHarness), expectedSlugs)
 compareValues('provider policy inventory', PROVIDER_HARNESSES, expectedSlugs)
 compareValues('provider display-name keys', Object.keys(PROVIDER_DISPLAY_NAMES), expectedSlugs)
 compareValues('provider brand keys', Object.keys(PROVIDER_BRANDS), expectedSlugs)
 compareValues('provider accent keys', Object.keys(PROVIDER_ACCENTS), expectedSlugs)
 compareValues('Fairtrade provider policy keys', Object.keys(ui.PROVIDER_ACCENT), expectedSlugs)
-compareValues('provider rendering surfaces', fixture.surfaces, manifest.surfaces)
+compareValues('provider rendering surfaces', fixture.surfaces, manifest.requiredSurfaceCases)
 
 for (const entry of fixture.harnesses) {
   const policyAccent = providerAccent(entry.slug)
@@ -81,10 +82,83 @@ for (const entry of fixture.harnesses) {
     'graph-legend': renderToStaticMarkup(React.createElement(ui.GraphLegend, {
       items: [{ kind: 'assistant', label: entry.slug, provider: entry.slug }],
     })),
+    changes: renderToStaticMarkup(React.createElement(graph.Changes, {
+      payload: {
+        repoFound: true,
+        defaultBranch: 'main',
+        changes: [],
+        recentCommits: [],
+        sessions: [{
+          sessionId: `provider-${entry.slug}`,
+          title: `${entry.accessibleName} session`,
+          harness: entry.slug,
+          startMs: 1,
+          hasCommitBinding: false,
+        }],
+      },
+      nowMs: 1,
+    })),
   }
   for (const surface of fixture.surfaces) {
-    check(!!rendered[surface]?.includes(`var(--${entry.accent})`), `${entry.slug}: ${surface} did not render canonical accent ${entry.accent}`)
+    const markup = rendered[surface]
+    check(typeof markup === 'string' && markup.length > 0, `${entry.slug}: ${surface} did not render`)
+    if (surface !== 'changes') {
+      check(markup?.includes(`var(--${entry.accent})`), `${entry.slug}: ${surface} did not render canonical accent ${entry.accent}`)
+    }
+    if (surface === 'turn-card' || surface === 'changes') {
+      const document = new JSDOM(markup).window.document
+      check(
+        !!document.querySelector(`svg.brand[data-brand="${entry.brand}"]`),
+        `${entry.slug}: brand expected ${entry.brand} on mounted ${surface}`,
+      )
+      if (entry.slug === fixture.mountedHarness) {
+        check(
+          document.querySelector(`svg.brand[data-brand="${entry.brand}"]`)?.getAttribute('viewBox') === fixture.mountedMark.viewBox
+            && document.querySelector(`svg.brand[data-brand="${entry.brand}"] path`)?.getAttribute('d') === fixture.mountedMark.path,
+          `${entry.slug}: ${surface} did not render the authoritative Strike mark`,
+        )
+      }
+      if (surface === 'turn-card') {
+        check(
+          document.querySelector('.txn-rolelabel')?.textContent?.includes(entry.accessibleName),
+          `${entry.slug}: accessible name ${entry.accessibleName} was not mounted on turn-card`,
+        )
+      } else {
+        check(
+          document.querySelector('.pv-name-label')?.textContent === entry.slug,
+          `${entry.slug}: Changes did not mount the canonical harness slug`,
+        )
+      }
+    }
   }
+}
+
+for (const entry of fixture.brands) {
+  const markup = renderToStaticMarkup(React.createElement(ui.BrandMark, { name: entry.key, label: true }))
+  const document = new JSDOM(markup).window.document
+  const mark = document.querySelector(`svg.brand[data-brand="${entry.key}"]`)
+  check(ui.resolveBrand(entry.key) === entry.key, `${entry.key}: canonical brand key did not resolve to itself`)
+  check(
+    mark?.getAttribute('aria-label') === entry.accessibleName,
+    `${entry.key}: informative brand mark expected accessible name ${entry.accessibleName}`,
+  )
+  if (entry.key === fixture.mountedMark.brand) {
+    check(
+      mark?.getAttribute('viewBox') === fixture.mountedMark.viewBox
+        && mark.querySelector('path')?.getAttribute('d') === fixture.mountedMark.path,
+      `${entry.key}: BrandMark did not render the authoritative Strike mark`,
+    )
+  }
+}
+
+for (const entry of fixture.aliases) {
+  const markup = renderToStaticMarkup(React.createElement(ui.BrandMark, { name: entry.name }))
+  const document = new JSDOM(markup).window.document
+  check(ui.resolveBrand(entry.name) === entry.brand, `${entry.name}: alias expected brand ${entry.brand}`)
+  check(
+    !!document.querySelector(`svg.brand[data-brand="${entry.brand}"]`),
+    `${entry.name}: alias did not mount canonical brand ${entry.brand}`,
+  )
 }
 
 const absentProviderMarkup = [
@@ -110,6 +184,16 @@ if (check(!!mounted, 'mountedHarness must identify a fixture harness')) {
     !!document.querySelector(`svg[aria-label="${mounted.accessibleName}"]`),
     `${mounted.slug}: accessible name ${mounted.accessibleName} was not mounted`,
   )
+  const mountedBrandMarks = [...document.querySelectorAll(`svg.brand[data-brand="${mounted.brand}"]`)]
+  check(
+    mountedBrandMarks.length === fixture.expectedMountedBrandCount,
+    `${mounted.slug}: expected ${fixture.expectedMountedBrandCount} mounted ${mounted.brand} marks, received ${mountedBrandMarks.length}`,
+  )
+  check(
+    mountedBrandMarks.every((mark) => mark.getAttribute('viewBox') === fixture.mountedMark.viewBox
+      && mark.querySelector('path')?.getAttribute('d') === fixture.mountedMark.path),
+    `${mounted.slug}: mounted primitives did not render the authoritative Strike mark`,
+  )
   const mountedLabels = [...document.querySelectorAll('.pv-tag, .pv-name')].filter((node) => node.textContent?.trim() === mounted.slug)
   check(mountedLabels.length === 2, `${mounted.slug}: tag and name did not both mount the canonical slug`)
   const legendRows = [...document.querySelectorAll('.pv-legend-row')]
@@ -124,13 +208,24 @@ if (check(!!mounted, 'mountedHarness must identify a fixture harness')) {
   )
 }
 
-for (const invalid of fixture.invalidHarnesses) {
+for (const invalidCase of fixture.invalidHarnesses) {
+  const invalid = invalidCase.value
   const calls = [
     ['ProviderIcon', () => renderToStaticMarkup(React.createElement(ui.ProviderIcon, { harness: invalid }))],
     ['public accent helper', () => ui.providerAccent(invalid)],
     ['turn-card', () => renderToStaticMarkup(React.createElement(ui.TranscriptTurnCard, { turn: { index: 1, role: 'assistant', label: '1', content: '', depth: 0, provider: invalid, toolCalls: [], annotations: [] } }))],
     ['graph-turn-node', () => renderToStaticMarkup(React.createElement(ui.GraphTurnNode, { role: 'assistant', provider: invalid, turnNumber: 1, contentPreview: '', toolCount: 0, totalTokens: 0 }))],
     ['graph-legend', () => renderToStaticMarkup(React.createElement(ui.GraphLegend, { items: [{ kind: 'assistant', label: 'invalid', provider: invalid }] }))],
+    ['changes', () => renderToStaticMarkup(React.createElement(graph.Changes, {
+      payload: {
+        repoFound: true,
+        defaultBranch: 'main',
+        changes: [],
+        recentCommits: [],
+        sessions: [{ sessionId: 'invalid-provider', title: 'Invalid provider', harness: invalid, startMs: 1, hasCommitBinding: false }],
+      },
+      nowMs: 1,
+    }))],
     ['public display helper', () => ui.providerDisplayName(invalid)],
     ['commons provider label', () => providerLabel(invalid)],
   ]
@@ -146,7 +241,7 @@ for (const invalid of fixture.invalidHarnesses) {
       message.includes('outside the canonical @peasant-labs/schema Harness')
         && message.includes('src/ui/provider-policy.js')
         && message.includes('the caller must validate its wire boundary'),
-      `invalid harness ${JSON.stringify(invalid)} did not fail loudly through ${surface}`,
+      `invalid harness case ${invalidCase.id} (${JSON.stringify(invalid)}) did not fail loudly through ${surface}`,
     )
   }
 }
@@ -161,7 +256,7 @@ console.log(`PROVIDER_HARNESS_REPORT=${JSON.stringify({ totalChecks, failedCheck
 if (failures.length > 0) {
   console.error([
     'provider harness verification failed.',
-    'What went wrong: the canonical harness inventory, provider display policy, or mounted Antigravity rendering diverged.',
+    'What went wrong: the canonical harness inventory, provider display policy, or mounted provider rendering diverged.',
     'Why it happened: a schema harness was omitted, relabeled, recolored, or widened to an arbitrary string without an explicit display decision.',
     'Where: src/ui/ProviderIcon.jsx, src/ui/BrandMark.jsx, and scripts/testdata/provider-harnesses*.yaml.',
     `When: focused provider harness verification (${failures.join('; ')}).`,
@@ -174,13 +269,10 @@ if (failures.length > 0) {
 console.log(`provider harnesses: ${fixture.harnesses.length} canonical providers, mounted ${fixture.mountedHarness}, and ${fixture.invalidHarnesses.length} fail-loud values passed.`)
 
 function validateManifest(value) {
-  check(exactFieldsBool(value, ['expectedHarnessCount', 'expectedInvalidHarnessCount', 'expectedSurfaceCount', 'expectedMutationCount', 'absentProviderAccent', 'surfaces', 'harnesses', 'invalidHarnesses', 'mutations']), 'manifest: root fields must be exact')
-  check(value.absentProviderAccent === 'amber', 'manifest: absentProviderAccent must be amber')
-  check(uniqueStrings(value.surfaces, false) && value.surfaces.length === value.expectedSurfaceCount, 'manifest: surfaces must match expectedSurfaceCount')
-  check(Array.isArray(value.harnesses) && value.harnesses.length === value.expectedHarnessCount, 'manifest: harnesses must match expectedHarnessCount')
-  for (const [index, entry] of (value.harnesses ?? []).entries()) validateHarnessEntry(entry, `manifest.harnesses[${index}]`)
-  check(uniqueStrings((value.harnesses ?? []).map((entry) => entry?.slug), false), 'manifest: harness slugs must be unique')
-  check(uniqueStrings(value.invalidHarnesses, true) && value.invalidHarnesses.length === value.expectedInvalidHarnessCount, 'manifest: invalidHarnesses must be unique strings matching expectedInvalidHarnessCount')
+  check(exactFieldsBool(value, ['expectedMutationCount', 'requiredSurfaceCases', 'requiredBrandCases', 'requiredAliasCases', 'requiredInvalidHarnessCases', 'mutations']), 'manifest: root fields must be exact')
+  for (const field of ['requiredSurfaceCases', 'requiredBrandCases', 'requiredAliasCases', 'requiredInvalidHarnessCases']) {
+    check(uniqueStrings(value[field], false), `manifest: ${field} must contain unique non-empty case identities`)
+  }
   check(Array.isArray(value.mutations) && value.mutations.length === value.expectedMutationCount, 'manifest: mutations must match expectedMutationCount')
   for (const [index, mutation] of (value.mutations ?? []).entries()) {
     const semantic = typeof mutation?.strategy === 'string'
@@ -192,19 +284,27 @@ function validateManifest(value) {
     for (const field of semantic ? ['name', 'target', 'strategy', 'expectedError'] : ['name', 'target', 'find', 'replace', 'expectedError']) {
       check(typeof mutation?.[field] === 'string' && mutation[field].length > 0, `manifest.mutations[${index}]: ${field} must be non-empty`)
     }
-    if (semantic) check(PROVIDER_MUTATION_STRATEGIES.has(mutation.strategy), `manifest.mutations[${index}]: strategy is unsupported`)
+    if (semantic) check(PROVIDER_MUTATION_STRATEGY_NAMES.includes(mutation.strategy), `manifest.mutations[${index}]: strategy is unsupported`)
     check(Number.isInteger(mutation?.expectedFailedCheckCount) && mutation.expectedFailedCheckCount >= 1, `manifest.mutations[${index}]: expectedFailedCheckCount must be a positive integer`)
   }
   check(uniqueStrings((value.mutations ?? []).map((mutation) => mutation?.name), false), 'manifest: mutation names must be unique')
 }
 
 function validateFixture(value, manifestValue) {
-  check(exactFieldsBool(value, ['expectedHarnessCount', 'expectedInvalidHarnessCount', 'expectedSurfaceCount', 'absentProviderAccent', 'mountedHarness', 'surfaces', 'harnesses', 'invalidHarnesses']), 'fixture: root fields must be exact')
-  check(value.expectedHarnessCount === manifestValue.expectedHarnessCount, 'fixture: expectedHarnessCount must match manifest')
-  check(value.expectedInvalidHarnessCount === manifestValue.expectedInvalidHarnessCount, 'fixture: expectedInvalidHarnessCount must match manifest')
-  check(value.expectedSurfaceCount === manifestValue.expectedSurfaceCount, 'fixture: expectedSurfaceCount must match manifest')
-  check(value.absentProviderAccent === manifestValue.absentProviderAccent, 'fixture: absentProviderAccent must match manifest')
-  compareValues('fixture surfaces', value.surfaces, manifestValue.surfaces)
+  check(exactFieldsBool(value, ['expectedHarnessCount', 'expectedBrandCount', 'expectedAliasCount', 'expectedInvalidHarnessCount', 'expectedSurfaceCount', 'expectedMountedBrandCount', 'absentProviderAccent', 'mountedHarness', 'mountedMark', 'surfaces', 'brands', 'aliases', 'harnesses', 'invalidHarnesses']), 'fixture: root fields must be exact')
+  for (const [count, list] of [
+    ['expectedHarnessCount', 'harnesses'],
+    ['expectedBrandCount', 'brands'],
+    ['expectedAliasCount', 'aliases'],
+    ['expectedInvalidHarnessCount', 'invalidHarnesses'],
+    ['expectedSurfaceCount', 'surfaces'],
+  ]) {
+    check(Number.isInteger(value[count]) && value[count] === value[list]?.length, `fixture: ${count} must match ${list}`)
+  }
+  check(Number.isInteger(value.expectedMountedBrandCount) && value.expectedMountedBrandCount > 0, 'fixture: expectedMountedBrandCount must be a positive integer')
+  check(value.absentProviderAccent === 'amber', 'fixture: absentProviderAccent must be amber')
+  validateMountedMark(value.mountedMark, 'fixture.mountedMark')
+  compareValues('fixture surface case identities', value.surfaces, manifestValue.requiredSurfaceCases)
   check(Array.isArray(value.harnesses) && value.harnesses.length === value.expectedHarnessCount, 'fixture: harnesses must match expectedHarnessCount')
   const slugs = []
   for (const [index, entry] of (value.harnesses ?? []).entries()) {
@@ -214,15 +314,55 @@ function validateFixture(value, manifestValue) {
     }
     slugs.push(entry?.slug)
   }
-  compareValues('fixture harness slugs', slugs, manifestValue.harnesses.map((entry) => entry.slug))
-  check(JSON.stringify(value.harnesses) === JSON.stringify(manifestValue.harnesses), 'fixture: exact label, brand, and accent rows must match the independent manifest')
-  compareValues('fixture invalid harnesses', value.invalidHarnesses, manifestValue.invalidHarnesses)
+  compareValues('fixture harness slugs', slugs, Object.values(SchemaHarness))
+  check(value.expectedHarnessCount === Object.values(SchemaHarness).length, 'fixture: expectedHarnessCount must match the schema Harness inventory')
+
+  const brandKeys = []
+  for (const [index, entry] of (value.brands ?? []).entries()) {
+    check(exactFieldsBool(entry, ['key', 'accessibleName']), `fixture.brands[${index}]: fields must be exact`)
+    for (const field of ['key', 'accessibleName']) {
+      check(typeof entry?.[field] === 'string' && entry[field].length > 0, `fixture.brands[${index}]: ${field} must be non-empty`)
+    }
+    brandKeys.push(entry?.key)
+  }
+  check(uniqueStrings(brandKeys, false), 'fixture: brand keys must be unique')
+  compareValues('fixture brand case identities', brandKeys, manifestValue.requiredBrandCases)
+  check(brandKeys.includes(value.mountedMark?.brand), 'fixture: mountedMark must identify a canonical brand case')
+  for (const entry of value.harnesses ?? []) {
+    check(brandKeys.includes(entry?.brand), `fixture: harness ${entry?.slug ?? 'unknown'} must reference a canonical brand case`)
+  }
+
+  const aliasNames = []
+  for (const [index, entry] of (value.aliases ?? []).entries()) {
+    check(exactFieldsBool(entry, ['name', 'brand']), `fixture.aliases[${index}]: fields must be exact`)
+    for (const field of ['name', 'brand']) {
+      check(typeof entry?.[field] === 'string' && entry[field].length > 0, `fixture.aliases[${index}]: ${field} must be non-empty`)
+    }
+    check(brandKeys.includes(entry?.brand), `fixture.aliases[${index}]: brand must reference a canonical brand case`)
+    aliasNames.push(entry?.name)
+  }
+  check(uniqueStrings(aliasNames, false), 'fixture: alias names must be unique')
+  compareValues('fixture alias case identities', aliasNames, manifestValue.requiredAliasCases)
+
+  const invalidIds = []
+  const invalidValues = []
+  for (const [index, entry] of (value.invalidHarnesses ?? []).entries()) {
+    check(exactFieldsBool(entry, ['id', 'value']), `fixture.invalidHarnesses[${index}]: fields must be exact`)
+    check(typeof entry?.id === 'string' && entry.id.length > 0, `fixture.invalidHarnesses[${index}]: id must be non-empty`)
+    check(typeof entry?.value === 'string', `fixture.invalidHarnesses[${index}]: value must be a string`)
+    invalidIds.push(entry?.id)
+    invalidValues.push(entry?.value)
+  }
+  check(uniqueStrings(invalidIds, false), 'fixture: invalid harness case identities must be unique')
+  check(uniqueStrings(invalidValues, true), 'fixture: invalid harness values must be unique strings')
+  compareValues('fixture invalid harness case identities', invalidIds, manifestValue.requiredInvalidHarnessCases)
+  check((value.harnesses ?? []).some((entry) => entry?.slug === value.mountedHarness), 'fixture: mountedHarness must identify a canonical harness')
 }
 
-function validateHarnessEntry(entry, label) {
-  check(exactFieldsBool(entry, ['slug', 'accessibleName', 'brand', 'accent']), `${label}: fields must be exact`)
-  for (const field of ['slug', 'accessibleName', 'brand', 'accent']) {
-    check(typeof entry?.[field] === 'string' && entry[field].length > 0, `${label}: ${field} must be non-empty`)
+function validateMountedMark(value, label) {
+  check(exactFieldsBool(value, ['brand', 'viewBox', 'path', 'source', 'sourceLicense']), `${label}: fields must be exact`)
+  for (const field of ['brand', 'viewBox', 'path', 'source', 'sourceLicense']) {
+    check(typeof value?.[field] === 'string' && value[field].length > 0, `${label}: ${field} must be non-empty`)
   }
 }
 

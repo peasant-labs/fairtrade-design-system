@@ -1,7 +1,7 @@
 {
   "name": "@peasant-labs/fairtrade",
   "private": false,
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Private fairtrade design-system library: canonical tokens, base styles, component CSS, and React UI exports.",
   "type": "module",
   "license": "Apache-2.0",
@@ -118,7 +118,7 @@
     "start": "http-server dist -p ${PORT:-3000} -a 0.0.0.0 --silent"
   },
   "dependencies": {
-    "@peasant-labs/schema": "0.1.0-rc8",
+    "@peasant-labs/schema": "0.1.0-rc10",
     "@tanstack/react-table": "^8.21.3",
     "lucide": "^1.20.0",
     "lucide-react": "^1.18.0",

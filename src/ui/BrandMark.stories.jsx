@@ -1,4 +1,6 @@
 import { expect, within } from 'storybook/test'
+import YAML from 'yaml'
+import fixtureSource from '../../scripts/testdata/provider-harnesses.yaml?raw'
 import BrandMark from './BrandMark.jsx'
 import { Tag } from './Avatar.jsx'
 
@@ -6,14 +8,24 @@ import { Tag } from './Avatar.jsx'
    generic glyph. Marks recolor via currentColor (so they re-theme on the dark/light toggle)
    and size off the icon token in context. classes + tokens come from src/index.css. */
 
-const ALL = ['claude', 'gemini', 'openai', 'cursor', 'opencode']
+const fixtureDocument = YAML.parseDocument(fixtureSource, { strict: true, uniqueKeys: true })
+if (fixtureDocument.errors.length > 0 || (fixtureSource.match(/^---\s*$/gm) ?? []).length > 0) {
+  throw new Error('provider-harnesses.yaml must be one strict YAML document with unique keys')
+}
+const fixture = fixtureDocument.toJS()
+if (!Array.isArray(fixture.brands) || fixture.brands.length !== fixture.expectedBrandCount) {
+  throw new Error('BrandMark story fixture validation failed at scripts/testdata/provider-harnesses.yaml during Storybook load: brands does not match expectedBrandCount, so the gallery cannot prove the canonical brand inventory; restore every required brand row and its fixed count.')
+}
+if (!Array.isArray(fixture.aliases) || fixture.aliases.length !== fixture.expectedAliasCount) {
+  throw new Error('BrandMark story fixture validation failed at scripts/testdata/provider-harnesses.yaml during Storybook load: aliases does not match expectedAliasCount, so alias resolution coverage is incomplete; restore every required alias row and its fixed count.')
+}
 
 const meta = {
   title: 'components/BrandMark',
   component: BrandMark,
   tags: ['autodocs'],
   argTypes: {
-    name: { control: 'select', options: [...ALL, 'anthropic', 'google', 'codex'] },
+    name: { control: 'select', options: [...fixture.brands.map((entry) => entry.key), ...fixture.aliases.map((entry) => entry.name)] },
     size: { control: { type: 'number', min: 12, max: 64, step: 2 } },
     label: { control: 'text' },
   },
@@ -28,40 +40,51 @@ export const Playground = {}
 export const Gallery = {
   render: () => (
     <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', color: 'var(--ink)' }}>
-      {ALL.map((name) => (
+      {fixture.brands.map((entry) => (
         <span
-          key={name}
+          key={entry.key}
+          data-brand-case={entry.key}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-sm)' }}
         >
-          <BrandMark name={name} />
-          {name}
+          <BrandMark name={entry.key} />
+          {entry.key}
         </span>
       ))}
     </div>
   ),
   play: async ({ canvasElement }) => {
-    // every mark resolves to a real <svg class="brand">, none fall back to nothing.
     const svgs = canvasElement.querySelectorAll('svg.brand')
-    expect(svgs.length).toBe(ALL.length)
+    expect(svgs.length).toBe(fixture.expectedBrandCount)
+    for (const entry of fixture.brands) {
+      const row = canvasElement.querySelector(`[data-brand-case="${entry.key}"]`)
+      expect(row).not.toBeNull()
+      expect(within(row).getByText(entry.key)).toBeInTheDocument()
+      expect(row.querySelector(`svg.brand[data-brand="${entry.key}"]`)).not.toBeNull()
+    }
   },
 }
 
-/* aliases resolve to the right mark: anthropic->claude, google->gemini, codex->openai. */
+/* every accepted product/company alias resolves through the shared behavior corpus. */
 export const Aliases = {
   render: () => (
     <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', color: 'var(--ink)' }}>
-      {[
-        ['anthropic', 'claude'],
-        ['google', 'gemini'],
-        ['codex', 'openai (fallback)'],
-      ].map(([alias, resolves]) => (
-        <span key={alias} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-sm)' }}>
-          <BrandMark name={alias} />
-          {alias} {String.fromCharCode(8594)} {resolves}
+      {fixture.aliases.map((entry) => (
+        <span key={entry.name} data-alias-case={entry.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-sm)' }}>
+          <BrandMark name={entry.name} />
+          {entry.name} {String.fromCharCode(8594)} {entry.brand}
         </span>
       ))}
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const svgs = canvasElement.querySelectorAll('svg.brand')
+    expect(svgs.length).toBe(fixture.expectedAliasCount)
+    for (const entry of fixture.aliases) {
+      const row = canvasElement.querySelector(`[data-alias-case="${entry.name}"]`)
+      expect(row).not.toBeNull()
+      expect(row.querySelector(`svg.brand[data-brand="${entry.brand}"]`)).not.toBeNull()
+    }
+  },
 }
 
 /* sizes scale crisply (vector). standalone use can override the contextual icon-token size. */
