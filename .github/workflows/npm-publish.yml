@@ -12,14 +12,17 @@
 # no publish. The version-consistency guard below additionally refuses a tag
 # whose version does not byte-match package.json's committed version.
 #
-# Authentication: npm Trusted Publishing (OIDC) — NOT a long-lived NPM_TOKEN
+# Authentication: npm Trusted Publishing (OIDC) - NOT a long-lived NPM_TOKEN
 # secret. GitHub mints a short-lived OIDC token for this job, scoped to the
 # `npm-publish` GitHub Actions environment that the npm Trusted Publisher
-# registration is bound to; the npm CLI (>= 11.5, bundled with Node 26)
+# registration is bound to; the npm CLI (>= 11.5.1, bundled with Node 26)
 # exchanges it with the registry when no auth token is configured, so there is
-# no secret to provision, rotate, or leak, and provenance attestation is
-# automatic. Install/build stay on the repo's pinned pnpm (10.x, which lacks
-# native OIDC publish support — the npm CLI is used for the one publish step
+# no secret to provision, rotate, or leak. Trusted publishing automatically
+# adds provenance once the source repository is public; npm does not support
+# provenance for private source repositories. package.json carries the exact
+# canonical repository URL and the prepack gate rejects drift. Install/build
+# stay on the repo's pinned pnpm (10.x, which lacks
+# native OIDC publish support - the npm CLI is used for the one publish step
 # only). One-time, maintainer-side registrations (the `npm-publish` GitHub
 # environment; this repo + workflow + environment as the package's Trusted
 # Publisher on npmjs.com) are documented in AGENTS.md, "npm publication".
@@ -90,3 +93,48 @@ jobs:
           set -euo pipefail
           npm publish --access public --tag "${{ steps.disttag.outputs.tag }}"
           echo "::notice::published @peasant-labs/fairtrade@${TAG#fairtrade-v} under dist-tag ${{ steps.disttag.outputs.tag }} via OIDC trusted publishing"
+
+      - name: Verify the published provenance result
+        env:
+          PROVENANCE_ERROR_FILE: ${{ runner.temp }}/fairtrade-provenance-npm-view-error
+          REPOSITORY_VISIBILITY: ${{ github.repository_visibility }}
+        run: |
+          set -euo pipefail
+          package="@peasant-labs/fairtrade@${TAG#fairtrade-v}"
+          case "${REPOSITORY_VISIBILITY}" in
+            public) attempts=12 ;;
+            private|internal) attempts=1 ;;
+            *) echo "::error::cannot verify ${package} provenance because GitHub reported unknown repository visibility ${REPOSITORY_VISIBILITY}"; exit 1 ;;
+          esac
+
+          : > "${PROVENANCE_ERROR_FILE}"
+          npm_view_failed=0
+          for attempt in $(seq 1 "${attempts}"); do
+            if predicate="$(npm view "${package}" dist.attestations.provenance.predicateType --json 2>"${PROVENANCE_ERROR_FILE}")"; then
+              npm_view_failed=0
+            else
+              npm_view_failed=1
+              predicate=""
+            fi
+            if [ "${predicate}" = '"https://slsa.dev/provenance/v1"' ]; then
+              echo "::notice::verified SLSA provenance attestation for ${package}"
+              exit 0
+            fi
+            if [ "${attempt}" -lt "${attempts}" ]; then sleep 5; fi
+          done
+
+          if [ "${REPOSITORY_VISIBILITY}" = "public" ]; then
+            if [ "${npm_view_failed}" -eq 1 ]; then
+              npm_view_error="$(tr '\n' ' ' < "${PROVENANCE_ERROR_FILE}")"
+              echo "::error::${package} was published, but its SLSA provenance attestation could not be verified because npm view failed: ${npm_view_error}"
+            else
+              echo "::error::${package} published without the required SLSA provenance attestation; verify package.json repository metadata and the npm Trusted Publisher registration before cutting another version"
+            fi
+            exit 1
+          fi
+          if [ "${npm_view_failed}" -eq 1 ]; then
+            npm_view_error="$(tr '\n' ' ' < "${PROVENANCE_ERROR_FILE}")"
+            echo "::warning::${package} was published, but npm view could not check its provenance result: ${npm_view_error}"
+            exit 0
+          fi
+          echo "::warning::${package} published without an npm provenance attestation, as expected while the source repository is ${REPOSITORY_VISIBILITY}; make the audited source public before the first attested release"

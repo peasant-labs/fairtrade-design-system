@@ -67,9 +67,14 @@ The release ceremony: squash the epoch branch to one `release(vX.Y.Z): <summary>
 tag the merge `fairtrade-vX.Y.Z` (lightweight), push `main` + the tag. **Pushing the tag
 publishes**: `.github/workflows/npm-publish.yml` re-runs the full gate chain (`prepack` =
 `build:lib`) against the exact tarball and publishes `@peasant-labs/fairtrade` via **npm
-Trusted Publishing (OIDC)** — no `NPM_TOKEN` secret exists, provenance attestation is
-automatic. A prerelease version (`-rcN` etc.) lands under dist-tag `next`; a final under
-`latest`. The workflow refuses a tag whose version does not match `package.json`.
+Trusted Publishing (OIDC)** - no `NPM_TOKEN` secret exists. `pnpm
+test:package-provenance` keeps the package's canonical repository metadata exact. npm
+generates provenance automatically only when this source repository is public; private
+source repositories remain unattested even though OIDC authentication succeeds. A
+prerelease version (`-rcN` etc.) lands under dist-tag `next`; a final under `latest`. The
+workflow refuses a tag whose version does not match `package.json`, reports the expected
+missing attestation while this repository is private, and hard-fails after publication if
+a public-source release lacks the SLSA provenance predicate.
 
 One-time maintainer registrations (already-registered state lives on npmjs.com/GitHub, not
 in-repo): (1) a `npm-publish` GitHub Actions **environment** on this repo; (2) on npmjs.com,

@@ -1,0 +1,32 @@
+cases:
+  - name: canonical GitHub URL is accepted
+    manifest:
+      repository: {type: git, url: https://github.com/peasant-labs/fairtrade-design-system}
+    valid: true
+  - name: npm canonical git URL is accepted
+    manifest:
+      repository: {type: git, url: git+https://github.com/peasant-labs/fairtrade-design-system.git}
+    valid: true
+  - name: missing repository is rejected
+    manifest: {}
+    valid: false
+  - name: repository without a URL is rejected
+    manifest:
+      repository: {type: git}
+    valid: false
+  - name: non-string repository URL is rejected
+    manifest:
+      repository: {type: git, url: 42}
+    valid: false
+  - name: wrong repository owner is rejected
+    manifest:
+      repository: {type: git, url: https://github.com/other-labs/fairtrade-design-system}
+    valid: false
+  - name: wrong repository name is rejected
+    manifest:
+      repository: {type: git, url: https://github.com/peasant-labs/other-design-system}
+    valid: false
+  - name: non-git repository type is rejected
+    manifest:
+      repository: {type: svn, url: https://github.com/peasant-labs/fairtrade-design-system}
+    valid: false
