@@ -77,9 +77,9 @@ their sources.
 copy-token labels, decorative icons `aria-hidden`, scroll-spy, zone header gating, command palette, dialog
 focus-trap, theme toggle, 0 overflow at 360/390/768/1024/1440, reduced-motion, no console errors).
 `build-storybook` + `scripts/sbsmoke.mjs` load every story (incl. `play()`). all run in ci
-([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)); `deploy.yml` publishes to github pages with
-storybook nested under `dist/storybook/`.
+([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)); railway builds and serves the site, including
+storybook nested under `/storybook/`.
 
 ## license
 
-open source under the [MIT license](./LICENSE).
+open source under the [Apache License 2.0](./LICENSE).
