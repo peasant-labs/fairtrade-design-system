@@ -1,11 +1,9 @@
 workflows:
   - path: .github/workflows/ci.yml
     setupNodeCount: 2
-  - path: .github/workflows/deploy.yml
-    setupNodeCount: 1
   - path: .github/workflows/npm-publish.yml
     setupNodeCount: 1
-expectedMutationCount: 9
+expectedMutationCount: 8
 mutations:
   - name: package-engine-floor
     operation: below-floor
@@ -29,11 +27,6 @@ mutations:
     path: .github/workflows/ci.yml
     occurrence: 2
     expectedError: below schema minimum
-  - name: workflow-deploy-node-floor
-    operation: below-floor
-    path: .github/workflows/deploy.yml
-    occurrence: 1
-    expectedError: below schema minimum
   - name: workflow-npm-publish-node-floor
     operation: below-floor
     path: .github/workflows/npm-publish.yml
@@ -45,5 +38,5 @@ mutations:
     expectedError: package.json engines.node must match
   - name: missing-workflow
     operation: remove
-    path: .github/workflows/deploy.yml
+    path: .github/workflows/npm-publish.yml
     expectedError: runtime floor fixture must inventory every workflow

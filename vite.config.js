@@ -38,8 +38,8 @@ function feedbackWriter() {
 }
 
 export default defineConfig({
-  // root for dev/preview and most hosts; GitHub Pages project sites set
-  // VITE_BASE=/peasant-design-system/ at build time (see .github/workflows/deploy.yml)
+  // root for dev/preview and the deployed site; a host serving the app under a
+  // subpath can set VITE_BASE at build time instead.
   base: process.env.VITE_BASE || '/',
   // dev defaults to 5180 (falls through to the next free port if taken) so it matches the docs and the
   // qa/screenshot scripts, which all target http://localhost:5180.
