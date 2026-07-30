@@ -1,6 +1,6 @@
-# Regression guard for the real UAT-found "cramped transcript composite" defect
-# (peasant#166): the main content sat boxed into a ~615px column with wide empty
-# gutters on both sides at desktop widths (confirmed on 1440px captures).
+# Regression guard for the real UAT-found "cramped transcript composite" defect: the main
+# content sat boxed into a ~615px column with wide empty gutters on both sides at desktop
+# widths (confirmed on 1440px captures).
 #
 # Root cause: .txn-center is rendered as a real <section> element
 # (src/ui/transcript/TranscriptViewer.jsx), so it inherits the presentation

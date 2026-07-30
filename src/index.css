@@ -2290,11 +2290,12 @@
      grid item in .txn-body-grid's `minmax(0, 1fr)` centre track, an auto horizontal margin wins
      over grid stretch alignment: the box shrink-wraps to its content width, then centres inside
      the track with leftover space on BOTH sides — boxing the transcript into a narrow column with
-     wide empty gutters (the peasant#166 UAT "cramped composite" finding). `.iu section` already
-     neutralises this same reset, but only inside the fairtrade demo's own `.iu` wrapper - it never
-     reaches TranscriptViewer when a consuming app (peasant-web, village) embeds it WITHOUT that
-     wrapper, which is exactly where the cramped captures came from. Neutralise it directly here so
-     every host context gets full-width behaviour. */
+     wide empty gutters. This was a real user-reported defect: the transcript composite rendered
+     boxed into a cramped column whenever a consuming app embedded it outside the demo wrapper.
+     `.iu section` already neutralises this same reset, but only inside the fairtrade demo's own
+     `.iu` wrapper - it never reaches TranscriptViewer when a consuming app (peasant-web, village)
+     embeds it WITHOUT that wrapper, which is exactly where the cramped captures came from.
+     Neutralise it directly here so every host context gets full-width behaviour. */
   .txn-center { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border-right: var(--bd); max-width: none; margin-inline: 0; padding-inline: 0; }
 
   /* ---- trace ---- */
