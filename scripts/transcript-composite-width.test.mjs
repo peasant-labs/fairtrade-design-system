@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /* ───────────────────────────────────────────────────────────────────────────
-   transcript-composite-width — source-text regression guard for the real
-   UAT-found "cramped transcript composite" defect (peasant#166): the main
-   content sat boxed into a narrow column with wide empty gutters on both
-   sides at desktop widths, because `.txn-center` (a real <section>) inherits
+   transcript-composite-width — source-text regression guard for the real UAT-found "cramped
+   transcript composite" defect: the main content sat boxed into a narrow column with wide empty
+   gutters on both sides at desktop widths, because `.txn-center` (a real <section>) inherits
    the presentation page's global `section { max-width; margin: 0 auto;
    padding: 0 var(--gutter); }` reset — an auto horizontal margin wins over
    grid stretch alignment, so the box shrink-wraps and centres inside its 1fr
@@ -105,7 +104,7 @@ if (fails.length) {
       'padding: 0 var(--gutter) }` reset was reverted or weakened.',
       'Why it matters: without it, `.txn-center` (a real <section>) shrink-wraps and centres inside its 1fr',
       'grid track again, boxing the transcript composite into a narrow column with wide empty gutters on both',
-      'sides at desktop widths (the exact defect a real user flagged in UAT, peasant#166).',
+      'sides at desktop widths (the exact defect a real user flagged in UAT).',
       'Where: ' + fails.map((f) => f.id).join(', '),
       'How to fix: restore the named declaration(s) in the file the failing invariant names.',
     ].join('\n'),

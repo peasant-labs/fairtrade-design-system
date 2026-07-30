@@ -80,7 +80,7 @@ stack, strongest first:
    cannot express ("exactly one parse site"), since `JSON.parse` returns `any` and JSX here is not
    strictly checked.
 
-This epoch relies on the static analysis already in place: no new bespoke parse gate and no ESLint
+This design relies on the static analysis already in place: no new bespoke parse gate and no ESLint
 (neither repo runs it). Layers 1–3 are the enforcement; the `// @ts-check` hardening is the
 complement to layer 1, not a replacement for it.
 
@@ -89,7 +89,7 @@ complement to layer 1, not a replacement for it.
 These are intentionally **not** in scope here; the cooked view model already tolerates them via
 render-when-present, so they land with no frontend change:
 
-- **git-cluster wire surfacing** (tracked in peasant#143) — surface `Commits []CommitInfo` onto the
+- **git-cluster wire surfacing** (a tracked backend follow-up) — surface `Commits []CommitInfo` onto the
   `session_detail` payload from the existing `session_commits` table / metadata, plus the small
   per-commit churn ingest extension (reusing `gitops.DiffStats`) + columns + migration. When it lands,
   `cookCommit` / `cookGit` bind it unchanged — the source flips fixture → wire.

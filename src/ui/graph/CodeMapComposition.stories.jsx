@@ -224,7 +224,7 @@ export const LateControlledHydration = {
     // file in the repo. This transform is that whole-graph fit at 900×420; it
     // differs from the pre-aggregation-cap value because the cap changed which
     // nodes are visible at file grain. The fit stays LOCAL (unpublished), so no
-    // onStateChange fires (asserted below), matching the epoch rule that the
+    // onStateChange fires (asserted below), matching the rule that the
     // first fit before any canonical viewport exists is local-only.
     await waitFor(() => expect(stageTransform(canvasElement)).toBe('translate(0px, 32.3952px) scale(1.11694)'))
     expect(args.onStateChange).toHaveBeenCalledTimes(0)
@@ -322,9 +322,9 @@ async function expectOneFullState(spy, expected) {
   // gesture ALSO changes the visible set (e.g. the search "reveal" expands
   // pipeline.go's ancestors to descend to file grain), the canvas auto-fit then
   // frames the revealed content and publishes that framing as a follow-on
-  // viewport-only state change — the epoch's auto-fit-records-its-framing
-  // behavior (MapCanvas.jsx `fit`/`fitToIds` publish on a visible-set change →
-  // a `set-viewport` reduction; see codeMapState.js). So assert the semantic
+  // viewport-only state change — the auto-fit-records-its-framing behavior
+  // (MapCanvas.jsx `fit`/`fitToIds` publish on a visible-set change → a
+  // `set-viewport` reduction; see codeMapState.js). So assert the semantic
   // proposal precisely, then require every extra emission to be a pure
   // viewport-framing delta (nothing but `viewport` changes). A select/focus/
   // filter/presentation gesture leaves the visible set untouched and emits
@@ -369,9 +369,9 @@ async function runInteractionCases(surface, args, canvasElement) {
       await waitFor(() => {
         // A gesture that changes the VISIBLE SET (an expand/reveal that adds to
         // expandedIds) makes the canvas re-fit and PUBLISH that framing as a
-        // follow-on viewport-only state change — the epoch's auto-fit-records-
-        // its-framing behavior (MapCanvas.jsx `fitToIds(..., publish=true)` in
-        // the newly-opened descent-fit branch → CodeMap `publishAction` → a
+        // follow-on viewport-only state change — the auto-fit-records-its-framing
+        // behavior (MapCanvas.jsx `fitToIds(..., publish=true)` in the
+        // newly-opened descent-fit branch → CodeMap `publishAction` → a
         // `set-viewport` reduction). The fixtures describe the SEMANTIC
         // proposals of each gesture; strip any auto-fit framing follow-on (a
         // state that differs from its predecessor in `viewport` alone) before
