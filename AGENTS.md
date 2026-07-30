@@ -48,21 +48,19 @@ themes (`scripts/sbshot.mjs`) and look at them. Keep every gate green.
 
 ## visual / screenshot harness
 
-`scripts/` — the DS's OWN capture + fidelity tooling (the source of truth the consumer
-harnesses mirror; the shared cross-repo model lives in the poly-repo root `AGENTS.md` →
-"Visual / screenshot UI harness"). Puppeteer capture: `shoot.mjs` / `shootdemo.mjs` /
-`shootmanage.mjs`. Storybook: `sbshot.mjs` / `sbsmoke.mjs`. Regression: `imgdiff.mjs` /
-`png-diff.mjs`. Gates: `surface-gate.mjs` / `check-surface-gate.mjs`. Graph SxS oracle:
-`graph-oracle.mjs` / `check-graph-oracle.mjs`. WCAG contrast gate: `contrast.mjs`.
-Smokes: `smoke-{lib,map,transcript,transcript-ui,tarball}.mjs`. The in-use **demo**
-(`#inuse` at fairtrade.peasantlabs.org) is the fidelity oracle consumers gate against —
-when a DS component changes, consumers re-shoot their surfaces SxS against it. Consumers
-(peasant/village) each carry a PARALLEL harness mirroring these primitives;
-consolidation into one shared parameterized toolkit is a tracked followup (beads IDs in the polyrepo-root `.agents.local/`).
+`scripts/` — the DS's OWN capture + fidelity tooling (the source of truth the consumer harnesses
+mirror). Puppeteer capture: `shoot.mjs` / `shootdemo.mjs` / `shootmanage.mjs`. Storybook:
+`sbshot.mjs` / `sbsmoke.mjs`. Regression: `imgdiff.mjs` / `png-diff.mjs`. Gates: `surface-gate.mjs`
+/ `check-surface-gate.mjs`. Graph SxS oracle: `graph-oracle.mjs` / `check-graph-oracle.mjs`. WCAG
+contrast gate: `contrast.mjs`. Smokes: `smoke-{lib,map,transcript,transcript-ui,tarball}.mjs`. The
+in-use **demo** (`#inuse` at fairtrade.peasantlabs.org) is the fidelity oracle consumers gate
+against — when a DS component changes, consumers re-shoot their surfaces SxS against it. Consumers
+(peasant/village) each carry a PARALLEL harness mirroring these primitives; consolidating them into
+one shared parameterized toolkit is a tracked follow-up.
 
 ## release & npm publication
 
-The release ceremony: squash the epoch branch to one `release(vX.Y.Z): <summary>` commit,
+The release ceremony: squash the release branch to one `release(vX.Y.Z): <summary>` commit,
 `merge --no-ff` into `main`, bump `package.json` to the same version in that release commit,
 tag the merge `fairtrade-vX.Y.Z` (lightweight), push `main` + the tag. **Pushing the tag
 publishes**: `.github/workflows/npm-publish.yml` re-runs the full gate chain (`prepack` =
