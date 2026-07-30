@@ -1,7 +1,7 @@
 # Publish @peasant-labs/fairtrade to npm when a release tag is pushed.
 #
 # Trigger: a `fairtrade-vX.Y.Z` tag (the manual release ceremony's tag form —
-# squash the epoch branch to one release(vX.Y.Z) commit, merge --no-ff into
+# squash the release branch to one release(vX.Y.Z) commit, merge --no-ff into
 # main, tag, push). Pushing the tag replaces the old interactive
 # `pnpm publish` + OTP step; nothing else about the ceremony changes.
 #
@@ -47,15 +47,17 @@ jobs:
     env:
       TAG: ${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
       # Node 26 (maintainer-pinned; fall back to 24 only if 26 is ever
       # unavailable). Its bundled npm supports OIDC trusted publishing
       # (>= 11.5). The library build itself is version-agnostic within
       # active LTS/current.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 26
           cache: pnpm
