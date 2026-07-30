@@ -2,7 +2,7 @@
   "name": "@peasant-labs/fairtrade",
   "private": false,
   "version": "0.0.10",
-  "description": "Private fairtrade design-system library: canonical tokens, base styles, component CSS, and React UI exports.",
+  "description": "Fairtrade design-system library: canonical tokens, base styles, component CSS, and React UI exports.",
   "type": "module",
   "license": "Apache-2.0",
   "repository": {
