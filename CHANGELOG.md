@@ -4,6 +4,13 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.11 — 2026-08-03
+
+### Changed
+
+- Pinned `@peasant-labs/schema` to the final `0.1.0` contract release. This is
+  a dependency-only update with no UI or behavioral changes.
+
 ## 0.0.10 — 2026-07-29
 
 Strike becomes a first-class provider: it now carries a real brand mark and a
