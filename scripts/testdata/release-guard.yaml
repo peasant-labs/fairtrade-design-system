@@ -1,0 +1,101 @@
+titles:
+  valid:
+    - {name: final, input: "release(v1.2.3): final release", version: "1.2.3", tag: "fairtrade-v1.2.3"}
+    - {name: candidate, input: "release(v1.2.3-rc4): release candidate", version: "1.2.3-rc4", tag: "fairtrade-v1.2.3-rc4"}
+    - {name: zero core, input: "release(v0.0.0): zero core", version: "0.0.0", tag: "fairtrade-v0.0.0"}
+  invalid:
+    - {name: missing v, input: "release(1.2.3): missing v"}
+    - {name: short core, input: "release(v1.2): short version"}
+    - {name: empty subject, input: "release(v1.2.3):"}
+    - {name: extra separator, input: "release(v1.2.3):  double separator"}
+    - {name: prefix, input: "prefix release(v1.2.3): subject"}
+    - {name: beta, input: "release(v1.2.3-beta1): unsupported prerelease"}
+    - {name: leading zero major, input: "release(v01.2.3): bad major"}
+    - {name: leading zero minor, input: "release(v1.02.3): bad minor"}
+    - {name: leading zero patch, input: "release(v1.2.03): bad patch"}
+    - {name: rc zero, input: "release(v1.2.3-rc0): bad rc"}
+    - {name: rc padded, input: "release(v1.2.3-rc01): bad rc"}
+tags:
+  valid:
+    - {name: final, input: "fairtrade-v1.2.3"}
+    - {name: candidate, input: "fairtrade-v1.2.3-rc4"}
+    - {name: zero core, input: "fairtrade-v0.0.0"}
+  invalid:
+    - {name: missing namespace, input: "v1.2.3"}
+    - {name: missing v, input: "fairtrade-1.2.3"}
+    - {name: beta, input: "fairtrade-v1.2.3-beta1"}
+    - {name: leading zero major, input: "fairtrade-v01.2.3"}
+    - {name: leading zero minor, input: "fairtrade-v1.02.3"}
+    - {name: leading zero patch, input: "fairtrade-v1.2.03"}
+    - {name: rc zero, input: "fairtrade-v1.2.3-rc0"}
+    - {name: rc padded, input: "fairtrade-v1.2.3-rc01"}
+permissions:
+  allowed: [admin, maintain]
+  denied: [write, triage, read, none]
+reviews:
+  - name: latest approval wins
+    maintainers: [alice]
+    reviews: [{user: alice, state: CHANGES_REQUESTED}, {user: alice, state: APPROVED}]
+    approved: true
+  - name: approval revoked
+    maintainers: [alice]
+    reviews: [{user: alice, state: APPROVED}, {user: alice, state: CHANGES_REQUESTED}]
+    approved: false
+  - name: non-maintainer ignored
+    maintainers: [alice]
+    reviews: [{user: bob, state: APPROVED}]
+    approved: false
+metadata:
+  valid: {number: 16, state: closed, merged: true, title: "release(v0.0.11): publish final schema support", user: {login: alice}, base: {ref: main}, merge_commit_sha: abc123}
+  invalid:
+    - {name: unmerged, patch: {merged: false}}
+    - {name: wrong base, patch: {base: {ref: develop}}}
+    - {name: empty SHA, patch: {merge_commit_sha: ""}}
+    - {name: malformed payload, payload: []}
+github:
+  resolve:
+    responses:
+      - {body: {number: 16, state: closed, merged: true, title: "release(v0.0.11): publish final schema support", user: {login: alice}, base: {ref: main}, merge_commit_sha: abc123}}
+      - {body: {permission: admin}}
+    expected_merge_sha: abc123
+  malformed_response: {body: {}}
+  pagination:
+    - name: page two revokes approval
+      responses:
+        - body: [{user: {login: alice}, state: APPROVED}]
+          link: '<https://api.github.com/repos/peasant-labs/fairtrade-design-system/pulls/16/reviews?per_page=100&page=2>; rel="next"'
+        - body: [{user: {login: alice}, state: CHANGES_REQUESTED}]
+        - body: {permission: maintain}
+      approved: false
+      expected_paths: ["/pulls/16/reviews?per_page=100", "/pulls/16/reviews?per_page=100&page=2", "/collaborators/alice/permission"]
+    - name: page two grants approval
+      responses:
+        - body: [{user: {login: alice}, state: CHANGES_REQUESTED}]
+          link: '<https://api.github.com/repos/peasant-labs/fairtrade-design-system/pulls/16/reviews?per_page=100&page=2>; rel="next"'
+        - body: [{user: {login: alice}, state: APPROVED}]
+        - body: {permission: maintain}
+      approved: true
+      expected_paths: ["/pulls/16/reviews?per_page=100", "/pulls/16/reviews?per_page=100&page=2", "/collaborators/alice/permission"]
+workflow:
+  validate_if: "github.event_name == 'pull_request' && github.event.action != 'closed' && startsWith(github.event.pull_request.title, 'release(')"
+  tag_if: "github.event_name == 'workflow_dispatch' || (github.event.action == 'closed' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.title, 'release('))"
+  release_needles:
+    - "PEASANT_RELEASER_APP_ID"
+    - "PEASANT_RELEASER_APP_PRIVATE_KEY"
+    - "actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1"
+    - "owner: peasant-labs"
+    - "repositories: fairtrade-design-system"
+    - 'ref: ${{ steps.release.outputs.mergeSha }}'
+    - 'git merge-base --is-ancestor "$MERGE_SHA" origin/main'
+    - "node scripts/release-guard.mjs check-package package.json"
+    - 'git tag -a "$TAG" "$MERGE_SHA" -m "$PR_TITLE"'
+    - "git rev-parse -q --verify"
+    - "git ls-remote --exit-code --tags"
+  publish_needles:
+    - 'node scripts/release-guard.mjs parse-tag "$TAG"'
+    - "npm publish --access public"
+  mutations:
+    - {name: unconditional prefix, target: tag_if, replacement: "true || github.event_name == 'workflow_dispatch'"}
+    - {name: missing merged condition, target: tag_if, replacement: "github.event_name == 'workflow_dispatch' || github.event.action == 'closed'"}
+    - {name: weakened validate condition, target: validate_if, replacement: "true || github.event_name == 'pull_request'"}
+git: {tag: fairtrade-v1.2.3, first_message: first release, second_message: attempted replacement}
