@@ -66,6 +66,9 @@ jobs:
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
+      - name: Guard canonical Fairtrade release tag grammar
+        run: node scripts/release-guard.mjs parse-tag "$TAG"
+
       - name: Guard tag <-> package.json version consistency
         run: |
           set -euo pipefail

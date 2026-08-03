@@ -1,8 +1,11 @@
 import fs from 'node:fs'
 
-const TITLE = /^release\((v\d+\.\d+\.\d+(?:-rc\d+)?)\): (\S.*)$/
-const TAG = /^fairtrade-(v\d+\.\d+\.\d+(?:-rc\d+)?)$/
+const CORE_NUMBER = '(?:0|[1-9][0-9]*)'
+const VERSION_GRAMMAR = `v${CORE_NUMBER}\\.${CORE_NUMBER}\\.${CORE_NUMBER}(?:-rc[1-9][0-9]*)?`
+const TITLE = new RegExp(`^release\\((${VERSION_GRAMMAR})\\): (\\S.*)$`)
+const TAG = new RegExp(`^fairtrade-(${VERSION_GRAMMAR})$`)
 const ALLOWED_PERMISSIONS = new Set(['admin', 'maintain'])
+const MAX_REVIEW_PAGES = 10
 
 export function parseReleaseTitle(title) {
   if (typeof title !== 'string') throw new Error('Release title validation failed: the title was not a string. Use release(vX.Y.Z[-rcN]): subject.')
@@ -65,23 +68,35 @@ export class GitHubReleaseClient {
     if (!/^[-\w]+\/[-.\w]+$/.test(repository ?? '')) throw new Error('GitHub client setup failed: GITHUB_REPOSITORY must be owner/repository. Run this command in GitHub Actions or provide a valid repository.')
     this.token = token; this.repository = repository; this.fetchImpl = fetchImpl
   }
-  async get(path) {
+  async getResponse(path) {
     const response = await this.fetchImpl(`https://api.github.com/repos/${this.repository}${path}`, { headers: { accept: 'application/vnd.github+json', authorization: `Bearer ${this.token}`, 'x-github-api-version': '2022-11-28' } })
     if (!response?.ok) throw new Error(`GitHub API request failed for ${path} with status ${response?.status ?? 'unknown'}. Check token permissions and GitHub availability, then retry.`)
-    try { return await response.json() } catch (error) { throw new Error(`GitHub API response parsing failed for ${path}: ${error.message}. Retry after GitHub API returns valid JSON.`) }
+    try { return { payload: await response.json(), link: response.headers?.get?.('link') ?? null } } catch (error) { throw new Error(`GitHub API response parsing failed for ${path}: ${error.message}. Retry after GitHub API returns valid JSON.`) }
   }
+  async get(path) { return (await this.getResponse(path)).payload }
   async permission(login) {
     const payload = await this.get(`/collaborators/${encodeURIComponent(login)}/permission`)
     return nonEmptyString(payload?.permission, 'permission')
   }
   async pullRequest(number) { return this.get(`/pulls/${number}`) }
   async reviews(number) {
-    const payload = await this.get(`/pulls/${number}/reviews?per_page=100`)
-    if (!Array.isArray(payload)) throw new Error('GitHub API response validation failed: pull request reviews must be an array. Approval cannot be established; inspect the API response and retry.')
-    return payload.map((review, index) => ({
-      user: nonEmptyString(review?.user?.login, `reviews[${index}].user.login`),
-      state: nonEmptyString(review?.state, `reviews[${index}].state`),
-    }))
+    let path = `/pulls/${number}/reviews?per_page=100`
+    const seen = new Set(); const reviews = []
+    for (let page = 1; page <= MAX_REVIEW_PAGES; page += 1) {
+      if (seen.has(path)) throw new Error(`GitHub review pagination failed for PR #${number}: next link forms a cycle at ${path}. Approval cannot be trusted; inspect GitHub's Link header and retry.`)
+      seen.add(path)
+      const { payload, link } = await this.getResponse(path)
+      if (!Array.isArray(payload)) throw new Error(`GitHub API response validation failed: pull request reviews page ${page} must be an array. Approval cannot be established; inspect the API response and retry.`)
+      reviews.push(...payload.map((review, index) => ({ user: nonEmptyString(review?.user?.login, `reviews page ${page}[${index}].user.login`), state: nonEmptyString(review?.state, `reviews page ${page}[${index}].state`) })))
+      if (!link) return reviews
+      const nextMatches = [...link.matchAll(/<([^>]+)>;\s*rel="next"/g)]
+      if (nextMatches.length !== 1) throw new Error(`GitHub review pagination failed for PR #${number}: Link header must contain exactly one valid rel="next" URL. Approval cannot be trusted; retry after GitHub returns valid pagination.`)
+      const next = new URL(nextMatches[0][1])
+      const prefix = `/repos/${this.repository}`
+      if (next.origin !== 'https://api.github.com' || !next.pathname.startsWith(`${prefix}/pulls/${number}/reviews`)) throw new Error(`GitHub review pagination failed for PR #${number}: next link points outside the expected reviews endpoint. Approval cannot be trusted; inspect the Link header.`)
+      path = `${next.pathname.slice(prefix.length)}${next.search}`
+    }
+    throw new Error(`GitHub review pagination failed for PR #${number}: exceeded the ${MAX_REVIEW_PAGES}-page safety bound. Reduce review history or raise the audited bound before enabling approval enforcement.`)
   }
   async hasMaintainerApproval(number) {
     const reviews = await this.reviews(number)
@@ -105,6 +120,7 @@ function output(values) {
 async function cli(argv) {
   const [command, ...args] = argv
   if (command === 'parse-title') return output(parseReleaseTitle(args.join(' ')))
+  if (command === 'parse-tag') return output(parseFairtradeTag(args[0] ?? process.env.TAG ?? ''))
   if (command === 'check-package') {
     const parsed = parseReleaseTitle(process.env.PR_TITLE ?? '')
     const pkg = JSON.parse(fs.readFileSync(args[0] ?? 'package.json', 'utf8'))
@@ -124,7 +140,7 @@ async function cli(argv) {
     if (!await client.hasMaintainerApproval(number)) throw new Error(`Release approval validation failed for PR #${number}: no maintainer's latest review is APPROVED. Obtain a current approval from an admin or maintainer and retry.`)
     return output({ approved: true })
   }
-  throw new Error('Release guard command failed: expected parse-title, check-package, check-open, resolve-pr, or check-approval. Use a supported workflow command.')
+  throw new Error('Release guard command failed: expected parse-title, parse-tag, check-package, check-open, resolve-pr, or check-approval. Use a supported workflow command.')
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) cli(process.argv.slice(2)).catch((error) => { console.error(`::error::${error.message}`); process.exitCode = 1 })
