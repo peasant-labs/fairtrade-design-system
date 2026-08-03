@@ -70,6 +70,8 @@
     "contrast": "node scripts/contrast.mjs",
     "llm": "node scripts/gen-llm-artifacts.mjs",
     "test:package-provenance": "node scripts/assert-package-provenance.mjs && node scripts/package-provenance.test.mjs",
+    "test:release-guard": "node --test scripts/release-guard.test.mjs",
+    "prebuild:lib": "pnpm test:release-guard",
     "gen:check": "node scripts/gen-llm-artifacts.mjs && git diff --exit-code public/tokens.json public/components.json packages/tokens/tokens.css packages/tokens/tokens.json packages/tokens/base.css packages/tokens/fonts.css",
     "build:app": "node scripts/gen-llm-artifacts.mjs && node scripts/contrast.mjs && vite build",
     "test:contract": "tsc -p tsconfig.contract.json",

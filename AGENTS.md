@@ -60,10 +60,14 @@ one shared parameterized toolkit is a tracked follow-up.
 
 ## release & npm publication
 
-The release ceremony: squash the release branch to one `release(vX.Y.Z): <summary>` commit,
-`merge --no-ff` into `main`, bump `package.json` to the same version in that release commit,
-tag the merge `fairtrade-vX.Y.Z` (lightweight), push `main` + the tag. **Pushing the tag
-publishes**: `.github/workflows/npm-publish.yml` re-runs the full gate chain (`prepack` =
+The release PR title is the cut interface: `release(vX.Y.Z[-rcN]): <summary>`. The PR must
+target `main`, its author must have `admin` or `maintain` permission, and `package.json` must
+carry the title's version without `v`. After merge, `.github/workflows/release-pr.yml` resolves
+canonical PR metadata and uses the releaser GitHub App to mint the annotated tag
+`fairtrade-vX.Y.Z[-rcN]` on the merge SHA. Do not create manual tags for future releases and
+never move or delete a release tag. A failed run can be retried with `workflow_dispatch`, whose
+only input is the number of an already-merged PR; it does not accept a SHA, version, or tag.
+**Pushing the App-authenticated tag publishes**: `.github/workflows/npm-publish.yml` re-runs the full gate chain (`prepack` =
 `build:lib`) against the exact tarball and publishes `@peasant-labs/fairtrade` via **npm
 Trusted Publishing (OIDC)** - no `NPM_TOKEN` secret exists. `pnpm
 test:package-provenance` keeps the package's canonical repository metadata exact. npm
@@ -74,8 +78,16 @@ workflow refuses a tag whose version does not match `package.json`, reports the 
 missing attestation while this repository is private, and hard-fails after publication if
 a public-source release lacks the SLSA provenance predicate.
 
-One-time maintainer registrations (already-registered state lives on npmjs.com/GitHub, not
-in-repo): (1) a `npm-publish` GitHub Actions **environment** on this repo; (2) on npmjs.com,
+One-time maintainer registrations (registered state lives on npmjs.com/GitHub, not in-repo):
+(1) install the releaser GitHub App on `peasant-labs/fairtrade-design-system` with Contents write
+permission and configure Actions secrets `PEASANT_RELEASER_APP_ID` and
+`PEASANT_RELEASER_APP_PRIVATE_KEY`; (2) a `npm-publish` GitHub Actions **environment** on this
+repo; (3) on npmjs.com,
 this repo + `npm-publish.yml` + that environment registered as the package's **Trusted
 Publisher**. Never add a token secret as a fallback; if OIDC exchange fails, fix the
 registration.
+
+The latest-review approval reduction is implemented and tested in `scripts/release-guard.mjs`,
+but merge-time approval enforcement remains disabled. With one active maintainer and GitHub's
+no-self-approval rule, it is unsatisfiable. Enable the documented workflow guard only when
+multi-maintainer branch protection can require an independent approval.

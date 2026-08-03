@@ -1,0 +1,66 @@
+titles:
+  valid:
+    - input: "release(v1.2.3): final release"
+      version: "1.2.3"
+      tag: "fairtrade-v1.2.3"
+    - input: "release(v1.2.3-rc4): release candidate"
+      version: "1.2.3-rc4"
+      tag: "fairtrade-v1.2.3-rc4"
+  invalid:
+    - "release(1.2.3): missing v"
+    - "release(v1.2): short version"
+    - "release(v1.2.3):"
+    - "release(v1.2.3):  double separator"
+    - "prefix release(v1.2.3): subject"
+    - "release(v1.2.3-beta1): unsupported prerelease"
+tags:
+  valid:
+    - "fairtrade-v1.2.3"
+    - "fairtrade-v1.2.3-rc4"
+  invalid:
+    - "v1.2.3"
+    - "fairtrade-1.2.3"
+    - "fairtrade-v1.2.3-beta1"
+permissions:
+  allowed: [admin, maintain]
+  denied: [write, triage, read, none]
+reviews:
+  - name: latest approval wins
+    maintainers: [alice]
+    reviews:
+      - { user: alice, state: CHANGES_REQUESTED }
+      - { user: alice, state: APPROVED }
+    approved: true
+  - name: approval revoked
+    maintainers: [alice]
+    reviews:
+      - { user: alice, state: APPROVED }
+      - { user: alice, state: CHANGES_REQUESTED }
+    approved: false
+  - name: non-maintainer approval ignored
+    maintainers: [alice]
+    reviews:
+      - { user: bob, state: APPROVED }
+    approved: false
+metadata:
+  valid:
+    number: 16
+    state: closed
+    merged: true
+    title: "release(v0.0.11): publish final schema support"
+    user: { login: alice }
+    base: { ref: main }
+    merge_commit_sha: abc123
+  invalid:
+    - name: unmerged
+      patch: { merged: false }
+    - name: wrong base
+      patch: { base: { ref: develop } }
+    - name: empty SHA
+      patch: { merge_commit_sha: "" }
+    - name: malformed payload
+      payload: []
+git:
+  tag: fairtrade-v1.2.3
+  first_message: first release
+  second_message: attempted replacement

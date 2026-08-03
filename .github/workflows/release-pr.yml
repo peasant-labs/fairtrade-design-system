@@ -1,0 +1,101 @@
+name: Release PR
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, closed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Already-merged release PR number to retry
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: release-pr-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed' && startsWith(github.event.pull_request.title, 'release(')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Validate release title, package version, and maintainer authority
+        run: node scripts/release-guard.mjs check-open package.json
+
+  tag:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.action == 'closed' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.title, 'release('))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/release-guard.mjs
+      - name: Resolve and validate canonical merged PR metadata
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+        run: node scripts/release-guard.mjs resolve-pr "$PR_NUMBER"
+
+      # Approval enforcement is deliberately disabled while one active maintainer
+      # cannot approve their own PR. The tested latest-review reduction remains in
+      # release-guard.mjs. Enable this guard with multi-maintainer branch protection.
+      # - name: Require a current maintainer approval
+      #   env:
+      #     GH_TOKEN: ${{ github.token }}
+      #     PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+      #   run: node scripts/release-guard.mjs check-approval "$PR_NUMBER"
+
+      - name: Mint App token for tag push
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.PEASANT_RELEASER_APP_ID }}
+          private-key: ${{ secrets.PEASANT_RELEASER_APP_PRIVATE_KEY }}
+          owner: peasant-labs
+          repositories: fairtrade-design-system
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ steps.release.outputs.mergeSha }}
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ steps.app-token.outputs.token }}
+      - name: Verify merge commit and package version
+        env:
+          PR_TITLE: ${{ steps.release.outputs.title }}
+          MERGE_SHA: ${{ steps.release.outputs.mergeSha }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git merge-base --is-ancestor "$MERGE_SHA" origin/main || { echo "::error::merge SHA is not an ancestor of origin/main; refuse to tag an untrusted commit"; exit 1; }
+          test "$(git rev-parse HEAD)" = "$MERGE_SHA" || { echo "::error::checkout does not match the canonical PR merge SHA"; exit 1; }
+          node scripts/release-guard.mjs check-package package.json
+      - name: Push annotated Fairtrade release tag
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          MERGE_SHA: ${{ steps.release.outputs.mergeSha }}
+          PR_TITLE: ${{ steps.release.outputs.title }}
+        run: |
+          set -euo pipefail
+          git rev-parse -q --verify "refs/tags/$TAG" >/dev/null && { echo "::error::tag $TAG already exists locally; refusing to move it"; exit 1; }
+          git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1 && { echo "::error::tag $TAG already exists on origin; refusing to overwrite it"; exit 1; }
+          git config user.name peasant-release-bot
+          git config user.email bots@peasant-labs.invalid
+          git tag -a "$TAG" "$MERGE_SHA" -m "$PR_TITLE"
+          git push origin "refs/tags/$TAG"

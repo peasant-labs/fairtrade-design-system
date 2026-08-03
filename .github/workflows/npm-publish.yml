@@ -1,9 +1,10 @@
 # Publish @peasant-labs/fairtrade to npm when a release tag is pushed.
 #
-# Trigger: a `fairtrade-vX.Y.Z` tag (the manual release ceremony's tag form —
-# squash the release branch to one release(vX.Y.Z) commit, merge --no-ff into
-# main, tag, push). Pushing the tag replaces the old interactive
-# `pnpm publish` + OTP step; nothing else about the ceremony changes.
+# Trigger: a `fairtrade-vX.Y.Z[-rcN]` annotated tag minted by release-pr.yml
+# after a valid maintainer-authored release PR merges to main. The releaser App
+# pushes the tag so this OIDC consumer runs; the default workflow token would
+# not trigger this workflow. Pushing the tag replaces the old interactive
+# `pnpm publish` + OTP step.
 #
 # Gates: `npm publish` runs this package's `prepack` = `pnpm build:lib`, the
 # full library gate chain (contract type-tests, code-map/timeline/transcript
