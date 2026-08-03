@@ -212,7 +212,8 @@ export const SkipWithEsc = {
 
     await step('esc dismisses the tour and restores focus', async () => {
       await userEvent.click(trigger)
-      await canvas.findByRole('dialog')
+      const dialog = await canvas.findByRole('dialog')
+      await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true))
       await userEvent.keyboard('{Escape}')
       await waitFor(() => expect(canvas.queryByRole('dialog')).not.toBeInTheDocument())
       await expect(canvas.getByText(/tour skipped/i)).toBeInTheDocument()
