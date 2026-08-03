@@ -27,9 +27,9 @@ canonical identity everywhere a provider is named.
   geometry, copied byte-for-byte. Because that geometry occupies only a 10x20
   area of its source 32x32 canvas, the mark is shown through a crop window
   centred on the glyph so it matches its peers' optical weight rather than
-  rendering at roughly half their size. The source repository declares no
-  licence; rights in the geometry remain with its author, and the mark is used
-  only for nominative provider identification.
+  rendering at roughly half their size. The canonical Strike project is
+  Apache-2.0 licensed and has granted permission for this use of its brand mark;
+  the mark is used only for nominative provider identification.
 - **`data-brand` on every brand mark**, so consumers and gates can assert which
   mark mounted rather than merely that one did.
 

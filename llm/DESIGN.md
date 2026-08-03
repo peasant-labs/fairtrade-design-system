@@ -99,9 +99,10 @@ controlled centerpiece on a handful of low-traffic display surfaces. The two nev
     | b-opencode | b-cursor>` in `src/sections-react/00-defs.jsx` and referenced via `<use href="#...">`.
   - **provenance + trademark:** Claude, Gemini, OpenAI, Cursor, and opencode path geometry **originates
     from [Simple Icons](https://simpleicons.org)** (CC0; not a package dependency, inlined). Strike's
-    geometry is copied unchanged from its [official favicon](https://github.com/jonathanung/strike-cli-web/blob/9e9550487b0306958baeff83a8ddfe483c42aa7d/public/favicon.svg).
-    The Strike website repository declares no asset license; rights in the geometry remain with its author,
-    Jonathan Ung. Every mark stays small, single-color, undistorted, and paired with its provider name
+    geometry is copied unchanged from its [official project favicon](https://github.com/jonathanung/strike-cli-web/blob/9e9550487b0306958baeff83a8ddfe483c42aa7d/public/favicon.svg).
+    The [canonical Strike project](https://github.com/jonathanung/strike) is Apache-2.0 licensed, and the
+    project has granted permission for this use of its brand mark. Every mark stays small, single-color,
+    undistorted, and paired with its provider name
     for nominative identification, never implying endorsement. `opencode`'s mark is provisional upstream;
     be ready to swap or drop it.
 

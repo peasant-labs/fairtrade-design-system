@@ -5,10 +5,11 @@
    identifies nothing.
 
    Claude, Gemini, OpenAI, opencode, and Cursor path geometry originates from Simple Icons
-   (https://simpleicons.org, CC0). Strike's path is copied unchanged from its official favicon at
+   (https://simpleicons.org, CC0). Strike's path is copied unchanged from the official project favicon at
    https://github.com/jonathanung/strike-cli-web/blob/9e9550487b0306958baeff83a8ddfe483c42aa7d/public/favicon.svg.
-   That source repository declares no license; rights in the geometry remain with its author,
-   Jonathan Ung. The mark is used only for nominative provider identification. Geometry is INLINED
+   The canonical Strike project is Apache-2.0 licensed at https://github.com/jonathanung/strike,
+   and the project has granted permission for this use of its brand mark. The mark is used only for
+   nominative provider identification. Geometry is INLINED
    here (not referenced via <use href="#b-*">) so the component is self-contained and renders in
    Storybook and in any app without the document-global <symbol> sheet. Marks recolor via currentColor
    (single-color theming only) and re-theme for free under [data-theme]. They are kept small,
