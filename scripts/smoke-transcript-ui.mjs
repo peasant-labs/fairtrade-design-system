@@ -26,17 +26,8 @@
 import React from 'react'
 import { renderToStaticMarkup as render } from 'react-dom/server'
 import { readFileSync } from 'node:fs'
-import { JSDOM } from 'jsdom'
 import YAML from 'yaml'
-
-/* react-markdown's browser build decodes character references through a tiny DOM helper at module
-   evaluation time. This smoke imports the built browser-facing export in Node, so provide the same
-   minimal DOM before loading it. */
-const importDom = new JSDOM('<!doctype html><html><body></body></html>')
-for (const [key, value] of Object.entries({ window: importDom.window, document: importDom.window.document, navigator: importDom.window.navigator })) {
-  Object.defineProperty(globalThis, key, { configurable: true, writable: true, value })
-}
-const ui = await import('../dist/lib/ui.js')
+import * as ui from '../dist/lib/ui.js'
 
 const h = React.createElement
 /** Render a primitive to static markup; a missing/undefined export or a render throw yields ''

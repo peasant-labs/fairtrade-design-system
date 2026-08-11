@@ -4,22 +4,11 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { JSDOM } from 'jsdom'
-
-/* react-markdown's browser build decodes character references through a tiny DOM helper at module
-   evaluation time. These package smokes import the built browser-facing exports in Node, so provide
-   the same minimal DOM before loading them. */
-const importDom = new JSDOM('<!doctype html><html><body></body></html>')
-for (const [key, value] of Object.entries({ window: importDom.window, document: importDom.window.document, navigator: importDom.window.navigator })) {
-  Object.defineProperty(globalThis, key, { configurable: true, writable: true, value })
-}
-const [ui, icons, graph, commons, analytics] = await Promise.all([
-  import('../dist/lib/ui.js'),
-  import('../dist/lib/icons.js'),
-  import('../dist/lib/graph.js'),
-  import('../dist/lib/commons.js'),
-  import('../dist/lib/analytics.js'),
-])
+import * as ui from '../dist/lib/ui.js'
+import * as icons from '../dist/lib/icons.js'
+import * as graph from '../dist/lib/graph.js'
+import * as commons from '../dist/lib/commons.js'
+import * as analytics from '../dist/lib/analytics.js'
 
 // Types-emit assertion (runs after `tsc -p tsconfig.lib.json`). tsconfig.lib has
 // noEmitOnError:false, so a silent declaration-emit failure (bad include glob,
