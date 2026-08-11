@@ -43,6 +43,7 @@
 import React from 'react'
 import { renderToStaticMarkup as render } from 'react-dom/server'
 import { readFileSync } from 'node:fs'
+import { JSDOM } from 'jsdom'
 import YAML from 'yaml'
 import {
   CODE_MAP_STATE_VERSION,
@@ -54,7 +55,14 @@ import {
   deriveCodeMapView,
   reduceCodeMapState,
 } from '../dist/lib/graph.js'
-import { MapCanvas } from '../dist/lib/ui.js'
+
+/* The built UI export includes the browser-side character-reference decoder used by
+   react-markdown. Install its minimal DOM before importing MapCanvas from that export. */
+const importDom = new JSDOM('<!doctype html><html><body></body></html>')
+for (const [key, value] of Object.entries({ window: importDom.window, document: importDom.window.document, navigator: importDom.window.navigator })) {
+  Object.defineProperty(globalThis, key, { configurable: true, writable: true, value })
+}
+const { MapCanvas } = await import('../dist/lib/ui.js')
 
 const h = React.createElement
 const canonicalFixtureSource = readFileSync(new URL('./testdata/code-map-canonical.yaml', import.meta.url), 'utf8')

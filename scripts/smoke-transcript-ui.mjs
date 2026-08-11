@@ -26,8 +26,17 @@
 import React from 'react'
 import { renderToStaticMarkup as render } from 'react-dom/server'
 import { readFileSync } from 'node:fs'
+import { JSDOM } from 'jsdom'
 import YAML from 'yaml'
-import * as ui from '../dist/lib/ui.js'
+
+/* react-markdown's browser build decodes character references through a tiny DOM helper at module
+   evaluation time. This smoke imports the built browser-facing export in Node, so provide the same
+   minimal DOM before loading it. */
+const importDom = new JSDOM('<!doctype html><html><body></body></html>')
+for (const [key, value] of Object.entries({ window: importDom.window, document: importDom.window.document, navigator: importDom.window.navigator })) {
+  Object.defineProperty(globalThis, key, { configurable: true, writable: true, value })
+}
+const ui = await import('../dist/lib/ui.js')
 
 const h = React.createElement
 /** Render a primitive to static markup; a missing/undefined export or a render throw yields ''
@@ -64,7 +73,7 @@ const trimHunks = [{ lines: [{ sign: 'add', newNo: '1', text: 'a' }, { sign: 'ad
 /* ── Markdown ────────────────────────────────────────────────────────────────── */
 {
   const out = html(ui.TranscriptMarkdown, { text: 'a **bold** and `code` here' })
-  assert('MD-bold', 'Markdown renders **bold** as <b>', /<b>bold<\/b>/.test(out))
+  assert('MD-bold', 'Markdown renders **bold** as semantic <strong>', /<strong>bold<\/strong>/.test(out))
   assert('MD-code', 'Markdown renders `code` as txn-inlinecode', /<code[^>]*txn-inlinecode[^>]*>code<\/code>/.test(out))
 }
 
@@ -108,7 +117,7 @@ const trimHunks = [{ lines: [{ sign: 'add', newNo: '1', text: 'a' }, { sign: 'ad
 {
   const out = html(ui.TranscriptTurnCard, { turn: assistantTurn, expandAll: true })
   assert('TURN-num', 'TurnCard renders the turn number', out.includes('#2'))
-  assert('TURN-md', 'TurnCard renders the cooked content via Markdown', /<b>renderer<\/b>/.test(out))
+  assert('TURN-md', 'TurnCard renders the cooked content via Markdown', /<strong>renderer<\/strong>/.test(out))
   assert('TURN-thinking', 'TurnCard renders thinking from the cooked turn', out.includes('txn-thinking') && out.includes('7w'))
   assert('TURN-tool', 'TurnCard composes the tool call (open via expandAll)', out.includes('txn-toolcall') && out.includes('txn-tcbody'))
 }

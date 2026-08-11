@@ -1,0 +1,13 @@
+expectedCaseCount: 4
+requiredNames:
+  - rich-gfm-structures
+  - preserves-every-prose-newline
+  - hostile-content-stays-inert
+  - wide-blocks-own-overflow-context
+expectedMutationCount: 1
+mutations:
+  - name: markdown-parser-disabled
+    file: src/ui/transcript/Markdown.jsx
+    find: 'remarkPlugins={[remarkGfm, remarkBreaks]}'
+    replace: 'remarkPlugins={[]}'
+    expectedError: rich-gfm-structures

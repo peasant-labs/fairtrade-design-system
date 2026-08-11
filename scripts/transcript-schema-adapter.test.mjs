@@ -3,7 +3,15 @@ import { readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { JSDOM } from 'jsdom'
 import YAML from 'yaml'
+
+/* The built UI export includes the browser-side character-reference decoder used by
+   react-markdown. Install its minimal DOM before the mounted production import below. */
+const importDom = new JSDOM('<!doctype html><html><body></body></html>')
+for (const [key, value] of Object.entries({ window: importDom.window, document: importDom.window.document, navigator: importDom.window.navigator })) {
+  Object.defineProperty(globalThis, key, { configurable: true, writable: true, value })
+}
 
 const fixture = loadStrictYaml('testdata/transcript-schema-adapter.yaml')
 const manifest = loadStrictYaml('testdata/transcript-schema-adapter.manifest.yaml')

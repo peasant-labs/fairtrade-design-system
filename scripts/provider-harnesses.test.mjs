@@ -18,6 +18,13 @@ import {
 } from '../src/ui/provider-policy.js'
 import { providerLabel } from '../src/ui/commons/providers.js'
 
+/* The built UI export includes the browser-side character-reference decoder used by
+   react-markdown. Install its minimal DOM before the mounted production import below. */
+const importDom = new JSDOM('<!doctype html><html><body></body></html>')
+for (const [key, value] of Object.entries({ window: importDom.window, document: importDom.window.document, navigator: importDom.window.navigator })) {
+  Object.defineProperty(globalThis, key, { configurable: true, writable: true, value })
+}
+
 const fixture = loadStrictYaml('testdata/provider-harnesses.yaml')
 const manifest = loadStrictYaml('testdata/provider-harnesses.manifest.yaml')
 const providerModule = process.env.FAIRTRADE_PROVIDER_MODULE
