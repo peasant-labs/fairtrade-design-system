@@ -2645,6 +2645,7 @@
   /* ---- diffs tab ---- */
   .txn-diffs { overflow: auto; padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); min-height: 0; }
   .txn-diffs-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+  .txn-diffs-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--sp-3); flex-wrap: wrap; }
   .txn-diffs-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .txn-filegroup { border: var(--bd); }
   .txn-fg-head { display: flex; align-items: center; gap: var(--sp-2); width: 100%; text-align: left; background: var(--surface-2); border: 0; cursor: pointer; padding: var(--sp-2) var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); }
@@ -2665,11 +2666,16 @@
 
   /* ---- files tab ---- */
   .txn-files { overflow: auto; padding: var(--sp-4); min-height: 0; }
+  .txn-files-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+  .txn-files-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
+  .txn-return { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: var(--control-h); padding: 0 var(--sp-2); background: transparent; border: var(--bd); cursor: pointer; font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--amber); }
+  .txn-return:hover { color: var(--amber-bright); border-color: var(--amber-dim); }
   .txn-filetable { margin-top: 0; }
   .txn-sort { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: 0; cursor: pointer; font-family: var(--font-mono); font-size: var(--fs-sm); text-transform: lowercase; color: var(--ink-3); padding: 0; }
   .txn-sort:hover { color: var(--ink); }
   .txn-files-churn-col { width: 1%; white-space: nowrap; text-align: right; }
   .txn-filerow { cursor: pointer; }
+  .txn-filerow:focus-visible { outline: var(--sp-1) solid var(--focus-ring); outline-offset: calc(var(--sp-1) * -1); }
   .txn-file-cell { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; }
   .txn-file-cell .lucide { color: var(--ink-3); flex: none; }
   .txn-file-path { color: var(--ink); }

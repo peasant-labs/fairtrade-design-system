@@ -1,4 +1,4 @@
-import { expect, within } from 'storybook/test'
+import { expect, userEvent, within } from 'storybook/test'
 import TranscriptViewer from './TranscriptViewer.jsx'
 import { frame } from '../story-frame.jsx'
 
@@ -111,6 +111,15 @@ export const Diffs = { args: { viewModel, capabilities: fullCaps, activeTab: 'di
 export const Files = { args: { viewModel, capabilities: fullCaps, activeTab: 'files' } }
 export const Annotations = { args: { viewModel, capabilities: fullCaps, activeTab: 'annotations' } }
 export const LightTheme = { args: { viewModel, capabilities: fullCaps, theme: 'light' } }
+
+export const ReadingPositionReturn = {
+  args: { viewModel, capabilities: fullCaps },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('tab', { name: /files/ }))
+    await expect(canvas.getByRole('button', { name: 'return to trace' })).toBeVisible()
+  },
+}
 
 export const HostControlsScrollWithTranscript = {
   args: {

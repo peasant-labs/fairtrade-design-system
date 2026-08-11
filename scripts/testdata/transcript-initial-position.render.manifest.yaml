@@ -1,14 +1,23 @@
 expectedCaseCount: 1
 requiredNames:
   - source viewer mounts and positions without selecting or writing history
-expectedLoaderMutationCount: 4
+expectedReturnCaseCount: 3
+requiredReturnNames:
+  - files and diffs return to the exact trace offset and focus
+  - direct diffs selection keeps an exact trace return target
+  - direct files selection has no legacy return target
+expectedLoaderMutationCount: 5
 loaderMutations:
   - {name: render manifest count drift is rejected, target: manifest, find: "expectedCaseCount: 1\nrequiredNames:", replace: "expectedCaseCount: 2\nrequiredNames:", expectedError: do not match}
   - {name: render manifest duplicate names are rejected, target: manifest, find: "requiredNames:\n  - source viewer mounts and positions without selecting or writing history", replace: "requiredNames:\n  - source viewer mounts and positions without selecting or writing history\n  - source viewer mounts and positions without selecting or writing history", expectedError: unique}
-  - {name: render case unknown fields are rejected, target: cases, find: "    initialKind: turn", replace: "    unknown: true\n    initialKind: turn", expectedError: fields}
+  - {name: render case unknown fields are rejected, target: cases, find: "    expectedContains: txn-app", replace: "    unknown: true\n    expectedContains: txn-app", expectedError: fields}
+  - {name: render return case unknown fields are rejected, target: cases, find: "    sourceOffset: 137", replace: "    unknown: true\n    sourceOffset: 137", expectedError: fields}
   - {name: render multiple YAML documents are rejected, target: cases, find: "cases:", replace: "---\ncases:", expectedError: exactly one YAML document}
-expectedMutationCount: 3
+expectedMutationCount: 6
 mutations:
   - {name: mounted source hook drops normalizer import, file: hook, find: "  normalizeTranscriptInitialPosition,\n", replace: "", expectedError: mounted source module invariant failed}
   - {name: mounted source positioning selects the target, file: viewer, find: "    el.scrollIntoView({ block: 'start', behavior: 'auto' })\n    return 'applied'", replace: "    el.scrollIntoView({ block: 'start', behavior: 'auto' })\n    setActiveTurn(position.turnIndex)\n    return 'applied'", expectedError: positioning selection invariant failed}
   - {name: mounted source positioning writes browser history, file: viewer, find: "    el.scrollIntoView({ block: 'start', behavior: 'auto' })\n    return 'applied'", replace: "    el.scrollIntoView({ block: 'start', behavior: 'auto' })\n    window.history.replaceState({}, '', '/mutated')\n    return 'applied'", expectedError: positioning history invariant failed}
+  - {name: trace file action forgets return target, file: viewer, find: "    setReturnTarget({\n", replace: "    setReturnTarget(null)\n    return\n    setReturnTarget({\n", expectedError: return action invariant failed}
+  - {name: return restoration loses the exact scroll offset, file: viewer, find: "    sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })", replace: "    sc.scrollTo({ top: 0, behavior: 'auto' })", expectedError: return position invariant failed}
+  - {name: return restoration loses the source focus, file: viewer, find: "    if (target.focusOrigin.kind === 'scroller') sc.focus({ preventScroll: true })", replace: "    if (false) sc.focus({ preventScroll: true })", expectedError: focus invariant failed}

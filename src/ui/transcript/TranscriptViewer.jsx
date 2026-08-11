@@ -49,6 +49,7 @@ import { transcriptInitialPositionReadiness } from './initial-position.js'
 
 /** @typedef {import('./state-capabilities.js').TranscriptViewerProps} TranscriptViewerProps */
 /** @typedef {import('./state-capabilities.js').TranscriptFilters} TranscriptFilters */
+/** @typedef {{sourceView: 'trace', sourceMode: 'list', scrollTop: number, focusOrigin: {kind: 'tab', tab: 'trace'} | {kind: 'scroller'}, requestKey: string}} TranscriptReturnTarget */
 
 const fmtTokens = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n))
 
@@ -212,12 +213,15 @@ export default function TranscriptViewer({
   const [diffMode, setDiffMode] = useState('file')
   const [diffGroupsOpen, setDiffGroupsOpen] = useState({}) // path -> open? (default open)
   const [fileSort, setFileSort] = useState({ key: 'path', dir: 'asc' })
+  /** @type {[TranscriptReturnTarget | null, (value: TranscriptReturnTarget | null) => void]} */
+  const [returnTarget, setReturnTarget] = useState(null)
 
   const turnRefs = useRef({})
   const scrollRef = useRef(null)
   const searchInputRef = useRef(null)
   const draggingRef = useRef(false)
   const tabRefs = useRef({})
+  const returnTargetIdRef = useRef(0)
 
   const registerRef = useCallback((id, el) => {
     if (el) turnRefs.current[id] = el
@@ -264,6 +268,29 @@ export default function TranscriptViewer({
     })
   }, [turns, filters, commits])
 
+  const captureTraceReturnTarget = useCallback(() => {
+    if (tab !== 'trace' || viewMode !== 'list') return
+    const sc = scrollRef.current
+    if (!sc) return
+    const activeElement = typeof document !== 'undefined' ? document.activeElement : null
+    const focusOrigin = activeElement && sc.contains(activeElement)
+      ? { kind: 'scroller' }
+      : { kind: 'tab', tab: 'trace' }
+    returnTargetIdRef.current += 1
+    setReturnTarget({
+      sourceView: 'trace',
+      sourceMode: 'list',
+      scrollTop: sc.scrollTop,
+      focusOrigin,
+      requestKey: `trace-return-${returnTargetIdRef.current}`,
+    })
+  }, [tab, viewMode])
+
+  const selectTab = useCallback((nextTab) => {
+    if (nextTab === 'files' || nextTab === 'diffs') captureTraceReturnTarget()
+    setTab(nextTab)
+  }, [captureTraceReturnTarget, setTab])
+
   const applyInitialPosition = useCallback((position) => {
     const sc = scrollRef.current
     const el = position.kind === 'turn' ? turnRefs.current[position.turnIndex] : null
@@ -285,12 +312,38 @@ export default function TranscriptViewer({
     return 'applied'
   }, [tab, turns, viewMode, visibleTurns])
 
+  const applyReturnPosition = useCallback((position) => {
+    const target = returnTarget
+    if (!target || position.requestKey !== target.requestKey) return 'discarded'
+    const sc = scrollRef.current
+    const result = transcriptInitialPositionReadiness(position, {
+      authoritativeTurnIndices: turns.map((turn) => turn.index),
+      renderedTurnIndices: visibleTurns.map((turn) => turn.index),
+      viewReady: tab === target.sourceView && viewMode === target.sourceMode,
+      scrollerReady: sc != null,
+      targetReady: true,
+    })
+    if (result !== 'applied') return result
+
+    sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })
+    if (target.focusOrigin.kind === 'scroller') sc.focus({ preventScroll: true })
+    else tabRefs.current[target.focusOrigin.tab]?.focus({ preventScroll: true })
+    return 'applied'
+  }, [returnTarget, tab, turns, viewMode, visibleTurns])
+
   useTranscriptInitialPosition({
     sessionId: session?.id,
     initialPosition: initialPositionProp,
     legacyInitialPosition: activeTurnProp == null ? null : { kind: 'turn', turnIndex: activeTurnProp },
     readiness: [tab, viewMode, turns, visibleTurns],
     apply: applyInitialPosition,
+  })
+
+  useTranscriptInitialPosition({
+    sessionId: session?.id,
+    initialPosition: returnTarget ? { kind: 'top', requestKey: returnTarget.requestKey } : null,
+    readiness: [returnTarget?.requestKey, tab, viewMode, turns, visibleTurns],
+    apply: applyReturnPosition,
   })
 
   /* category + tool-group counts the FiltersRail shows. */
@@ -398,6 +451,23 @@ export default function TranscriptViewer({
     }
     setActiveTurn(best)
   }
+
+  function openFile(file) {
+    if (file.edited) selectTab('diffs')
+    else jumpTo(file.turn ?? 0)
+  }
+
+  function onFileKeyDown(event, file) {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    openFile(file)
+  }
+
+  function returnToSource() {
+    if (!returnTarget) return
+    setTab(returnTarget.sourceView)
+    setViewMode(returnTarget.sourceMode)
+  }
   function seekScrub(clientX, track) {
     const rect = track.getBoundingClientRect()
     const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
@@ -419,7 +489,7 @@ export default function TranscriptViewer({
     else if (e.key === 'End') j = TAB_ORDER.length - 1
     else return
     e.preventDefault()
-    setTab(TAB_ORDER[j])
+    selectTab(TAB_ORDER[j])
     tabRefs.current[TAB_ORDER[j]]?.focus()
   }
 
@@ -621,7 +691,7 @@ export default function TranscriptViewer({
               aria-selected={on}
               tabIndex={on ? 0 : -1}
               className={'tab txn-tab' + (on ? ' active' : '')}
-              onClick={() => setTab(id)}
+              onClick={() => selectTab(id)}
             >
               {TAB_LABEL[id]} <span className="cnt tnum">{count}</span>
             </button>
@@ -762,9 +832,16 @@ export default function TranscriptViewer({
             <div className="txn-diffs">
               <div className="txn-diffs-head">
                 <span className="txn-diffs-count tnum">{diffs.length} {diffs.length === 1 ? 'edit' : 'edits'} across {diffsByPath.length} {diffsByPath.length === 1 ? 'file' : 'files'}</span>
-                <div className="bs-seg" role="group" aria-label="group diffs by">
-                  <button type="button" className="bs-seg-opt" aria-pressed={diffMode === 'file'} onClick={() => setDiffMode('file')}>by file</button>
-                  <button type="button" className="bs-seg-opt" aria-pressed={diffMode === 'turn'} onClick={() => setDiffMode('turn')}>by turn</button>
+                <div className="txn-diffs-actions">
+                  <div className="bs-seg" role="group" aria-label="group diffs by">
+                    <button type="button" className="bs-seg-opt" aria-pressed={diffMode === 'file'} onClick={() => setDiffMode('file')}>by file</button>
+                    <button type="button" className="bs-seg-opt" aria-pressed={diffMode === 'turn'} onClick={() => setDiffMode('turn')}>by turn</button>
+                  </div>
+                  {returnTarget && (
+                    <button type="button" className="txn-return" aria-label="return to trace" onClick={returnToSource}>
+                      <RotateCcw size={13} aria-hidden="true" /> return to trace
+                    </button>
+                  )}
                 </div>
               </div>
               {diffMode === 'file' ? (
@@ -795,6 +872,14 @@ export default function TranscriptViewer({
 
           {tab === 'files' && (
             <div className="txn-files">
+              <div className="txn-files-head">
+                <span className="txn-files-count tnum">{files.length} {files.length === 1 ? 'file' : 'files'}</span>
+                {returnTarget && (
+                  <button type="button" className="txn-return" aria-label="return to trace" onClick={returnToSource}>
+                    <RotateCcw size={13} aria-hidden="true" /> return to trace
+                  </button>
+                )}
+              </div>
               <table className="dtable txn-filetable">
                 <thead>
                   <tr>
@@ -804,7 +889,15 @@ export default function TranscriptViewer({
                 </thead>
                 <tbody>
                   {sortedFiles.map((f) => (
-                    <tr key={f.path} className="txn-filerow" onClick={() => (f.edited ? setTab('diffs') : jumpTo(f.turn ?? 0))} title={f.edited ? 'jump to diffs' : 'jump to last read'}>
+                    <tr
+                      key={f.path}
+                      className="txn-filerow"
+                      tabIndex={0}
+                      onClick={() => openFile(f)}
+                      onKeyDown={(event) => onFileKeyDown(event, f)}
+                      aria-label={f.edited ? `${f.path}, jump to diffs` : `${f.path}, jump to last read`}
+                      title={f.edited ? 'jump to diffs' : 'jump to last read'}
+                    >
                       <td>
                         <span className="txn-file-cell">
                           {f.edited ? <Pencil size={13} aria-hidden="true" /> : <FileText size={13} aria-hidden="true" />}

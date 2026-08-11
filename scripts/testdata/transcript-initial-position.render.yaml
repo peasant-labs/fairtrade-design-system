@@ -7,3 +7,43 @@ cases:
     expectedCallbacks: []
     expectedHistory: []
     expectedContains: txn-app
+returnCases:
+  - name: files and diffs return to the exact trace offset and focus
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    turns: [0, 1, 2]
+    sourceOffset: 137
+    focusOrigin: scroller
+    action: files-edited-diffs-return
+    expectedTabs: [trace, files, diffs, trace]
+    expectedReturnLabels: [files:1, diffs:1]
+    expectedScrollTop: 137
+    expectedFocus: scroller
+    expectedContains: txn-stream
+  - name: direct diffs selection keeps an exact trace return target
+    initialKind: turn
+    initialTurn: 1
+    initialTab: trace
+    turns: [0, 1, 2]
+    sourceOffset: 211
+    focusOrigin: tab
+    action: diffs-return
+    expectedTabs: [trace, diffs, trace]
+    expectedReturnLabels: [diffs:1]
+    expectedScrollTop: 211
+    expectedFocus: tab
+    expectedContains: txn-stream
+  - name: direct files selection has no legacy return target
+    initialKind: top
+    initialTurn: -1
+    initialTab: files
+    turns: [0, 1]
+    sourceOffset: 0
+    focusOrigin: tab
+    action: no-return
+    expectedTabs: [files]
+    expectedReturnLabels: []
+    expectedScrollTop: 0
+    expectedFocus: none
+    expectedContains: txn-files
