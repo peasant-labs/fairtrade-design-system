@@ -58,9 +58,7 @@ try {
         assert.ok(turnDocument.body.textContent.includes(content), `${testCase.name}: content ${content}`)
       }
 
-      if (testCase.name === 'mounted-production-path') {
-        await assertMountedContract(TranscriptApp)
-      }
+      if (testCase.expect.mounted) await assertMountedContract(TranscriptApp, testCase.name, testCase.expect.mounted)
     } catch (error) {
       failures.push(`${testCase.name}: ${error instanceof Error ? error.message : String(error)}`)
     }
@@ -83,7 +81,7 @@ if (failures.length) {
 }
 console.log(`sticky turn-model verification: complete baseline passed for ${corpus.cases.length} strict production-path cases.`)
 
-async function assertMountedContract(TranscriptApp) {
+async function assertMountedContract(TranscriptApp, caseName, expected) {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'https://fairtrade.invalid/transcript' })
   const mountedGlobals = {
     window: dom.window,
@@ -107,29 +105,29 @@ async function assertMountedContract(TranscriptApp) {
     await act(async () => { root.render(React.createElement(TranscriptApp, { theme: 'dark' })) })
     const document = dom.window.document
     const stream = dom.window.document.querySelector('.txn-stream')
-    Object.defineProperty(stream, 'clientHeight', { configurable: true, value: 400 })
-    const turnOffsets = new Map([[0, 0], [1, 100], [2, 200], [3, 300], [4, 400], [5, 500], [6, 600], [7, 700], [8, 800]])
+    Object.defineProperty(stream, 'clientHeight', { configurable: true, value: expected.viewportHeight })
+    const turnOffsets = new Map(expected.turnOffsets.map((offset, index) => [index, offset]))
     for (const turn of document.querySelectorAll('[data-turn]')) {
       const index = Number(turn.getAttribute('data-turn'))
       Object.defineProperty(turn, 'offsetTop', { configurable: true, value: turnOffsets.get(index) })
     }
-    stream.scrollTop = 100
+    stream.scrollTop = expected.beforeBoundaryScrollTop
     await act(async () => { stream.dispatchEvent(new dom.window.Event('scroll', { bubbles: true })) })
-    assert.equal(dom.window.document.querySelector('.txn-sticky-model')?.textContent, 'anthropic/claude-fable-5', 'mounted-production-path: sticky seed before boundary')
-    stream.scrollTop = 450
+    assert.equal(dom.window.document.querySelector('.txn-sticky-model')?.textContent, expected.stickyModels[0], `${caseName}: sticky seed before boundary`)
+    stream.scrollTop = expected.afterBoundaryScrollTop
     await act(async () => { stream.dispatchEvent(new dom.window.Event('scroll', { bubbles: true })); await new Promise((resolve) => setTimeout(resolve, 0)) })
-    assert.equal(dom.window.document.querySelector('.txn-sticky-model')?.textContent, 'anthropic/claude-opus-4-8', 'mounted-production-path: active sticky model')
+    assert.equal(dom.window.document.querySelector('.txn-sticky-model')?.textContent, expected.stickyModels[1], `${caseName}: active sticky model`)
     const topLevelAssistants = [...document.querySelectorAll('.txn-turn.asst .txn-rolelabel')]
-    assert.equal(topLevelAssistants.length, 6, 'mounted-production-path: top-level assistant inventory')
-    assert.ok(topLevelAssistants.every((node) => node.textContent.trim() === 'assistant'), 'mounted-production-path: exact assistant speaker')
-    assert.ok(topLevelAssistants.every((node) => node.querySelector('[role="img"][aria-label="Claude Code"]')), 'mounted-production-path: accessible provider mark')
+    assert.equal(topLevelAssistants.length, expected.topLevelAssistantCount, `${caseName}: top-level assistant inventory`)
+    assert.ok(topLevelAssistants.every((node) => node.textContent.trim() === expected.speaker), `${caseName}: exact assistant speaker`)
+    assert.ok(topLevelAssistants.every((node) => node.querySelector(`[role="img"][aria-label="${expected.providerLabel}"]`)), `${caseName}: accessible provider mark`)
     const modelText = [...document.querySelectorAll('.txn-turnmodel')].map((node) => node.textContent)
-    assert.deepEqual(modelText, ['anthropic/claude-fable-5', 'anthropic/claude-fable-5', 'anthropic/claude-opus-4-8', 'anthropic/claude-opus-4-8', 'anthropic/claude-opus-4-8', 'anthropic/claude-opus-4-8', 'anthropic/claude-opus-4-8'], 'mounted-production-path: exact model nodes')
-    assert.equal(document.querySelectorAll('.txn-turn.user .txn-turnmodel').length, 0, 'mounted-production-path: absent attribution has no model node')
-    assert.equal(document.querySelectorAll('.txn-modelchange').length, 1, 'mounted-production-path: exact marker inventory')
-    assert.equal(document.querySelector('.txn-modelchange')?.textContent.trim(), 'model changed: anthropic/claude-fable-5 -> anthropic/claude-opus-4-8', 'mounted-production-path: exact marker text')
-    assert.ok(document.querySelector('.txn-meta')?.textContent.includes('claude code'), 'mounted-production-path: session harness text retained')
-    assert.ok(!/Session\/Default|Turn\/Explicit/.test(document.body.textContent), 'mounted-production-path: no synthetic model sentinel')
+    assert.deepEqual(modelText, expected.modelNodes, `${caseName}: exact model nodes`)
+    assert.equal(document.querySelectorAll(`.txn-turn.${expected.unattributedRole} .txn-turnmodel`).length, 0, `${caseName}: absent attribution has no model node`)
+    assert.equal(document.querySelectorAll('.txn-modelchange').length, expected.markerCount, `${caseName}: exact marker inventory`)
+    assert.equal(document.querySelector('.txn-modelchange')?.textContent.trim(), expected.markerText, `${caseName}: exact marker text`)
+    assert.ok(document.querySelector('.txn-meta')?.textContent.includes(expected.harnessText), `${caseName}: session harness text retained`)
+    for (const sentinel of expected.forbiddenModelSentinels) assert.ok(!document.body.textContent.includes(sentinel), `${caseName}: forbidden model sentinel ${sentinel}`)
   } finally {
     await act(async () => { root.unmount() })
   }
@@ -150,9 +148,18 @@ function validateFixtures(manifestValue, corpusValue) {
   requiredInventory(manifestValue.mutations.map((item) => item.name), manifestValue.requiredMutationNames, 'turn-model mutations')
   for (const [index, testCase] of corpusValue.cases.entries()) {
     exactFields(testCase, ['name', 'payload', 'options', 'expect'], `turn-model case ${index}`)
-    exactFields(testCase.expect, ['indices', 'effectiveModels', 'changedFrom', 'markerCount'], `turn-model case ${index}.expect`)
+    const expectedFields = ['indices', 'effectiveModels', 'changedFrom', 'markerCount']
+    if ('mounted' in testCase.expect) expectedFields.push('mounted')
+    exactFields(testCase.expect, expectedFields, `turn-model case ${index}.expect`)
     assert.equal(testCase.expect.indices.length, testCase.expect.effectiveModels.length, `${testCase.name}: expected model count`)
     assert.equal(testCase.expect.indices.length, testCase.expect.changedFrom.length, `${testCase.name}: expected change count`)
+    if (testCase.expect.mounted) {
+      exactFields(testCase.expect.mounted, ['turnOffsets', 'viewportHeight', 'beforeBoundaryScrollTop', 'afterBoundaryScrollTop', 'stickyModels', 'topLevelAssistantCount', 'speaker', 'providerLabel', 'modelNodes', 'unattributedRole', 'markerCount', 'markerText', 'harnessText', 'forbiddenModelSentinels'], `${testCase.name}.expect.mounted`)
+      assert.equal(testCase.expect.mounted.turnOffsets.length, 9, `${testCase.name}: mounted turn offset inventory`)
+      assert.equal(testCase.expect.mounted.stickyModels.length, 2, `${testCase.name}: mounted sticky model boundary inventory`)
+      assert.equal(testCase.expect.mounted.modelNodes.length, 7, `${testCase.name}: mounted model-node inventory`)
+      assert.equal(testCase.expect.mounted.forbiddenModelSentinels.length, 2, `${testCase.name}: mounted sentinel inventory`)
+    }
   }
   for (const [index, item] of manifestValue.mutations.entries()) {
     const fields = ['name', 'file', 'find', 'replace', 'expectedDiagnostic']

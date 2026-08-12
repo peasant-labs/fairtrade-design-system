@@ -234,3 +234,18 @@ cases:
       effectiveModels: [null, anthropic/claude-fable-5, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8]
       changedFrom: [null, null, anthropic/claude-fable-5, null, null]
       markerCount: 1
+      mounted:
+        turnOffsets: [0, 100, 200, 300, 400, 500, 600, 700, 800]
+        viewportHeight: 400
+        beforeBoundaryScrollTop: 100
+        afterBoundaryScrollTop: 450
+        stickyModels: [anthropic/claude-fable-5, anthropic/claude-opus-4-8]
+        topLevelAssistantCount: 6
+        speaker: assistant
+        providerLabel: Claude Code
+        modelNodes: [anthropic/claude-fable-5, anthropic/claude-fable-5, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8]
+        unattributedRole: user
+        markerCount: 1
+        markerText: 'model changed: anthropic/claude-fable-5 -> anthropic/claude-opus-4-8'
+        harnessText: claude code
+        forbiddenModelSentinels: [Session/Default, Turn/Explicit]
