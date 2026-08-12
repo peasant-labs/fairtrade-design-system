@@ -329,6 +329,7 @@ export default function TranscriptViewer({
     readingPositionSessionRef.current = sessionId
     latestTraceReadingSnapshotRef.current = null
     traceReadingPositionRef.current = null
+    traceReadingPositionIdRef.current = 0
     skipTraceRestoreRef.current = false
     previousTabRef.current = tab
     setTraceReadingPosition(null)

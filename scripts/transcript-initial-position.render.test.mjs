@@ -189,7 +189,7 @@ try {
   const assertPermittedReadingPositionActions = (container, fixtureName) => {
     const controls = [...container.querySelectorAll('button,a,[role="button"],[role="link"]')]
     const permitted = new Set([...container.querySelectorAll('[role="tab"]')])
-    const restoreTagged = controls.filter((element) => element.hasAttribute('data-reading-position-action'))
+    const restoreTagged = controls.filter((element) => element.matches('.txn-return,[data-reading-position-action]'))
     if (restoreTagged.length !== 0) throw new Error(`${fixtureName}: permitted action inventory invariant failed; dedicated restore controls are forbidden`)
     const traceTab = tabButton(container, 'trace')
     if (!traceTab || !permitted.has(traceTab)) throw new Error(`${fixtureName}: permitted action inventory invariant failed; full trace must be the sole explicit restore action`)
