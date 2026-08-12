@@ -73,6 +73,7 @@ export default function TurnCard({
   // accent. Curated turns may omit provider and use the neutral assistant
   // fallback; a present invalid value fails through providerAccent.
   const provider = turn.provider
+  const providerLabel = provider === undefined ? undefined : providerDisplayName(provider)
   const roleLabel = isSub ? 'subagent' : turn.role
   const accentName = provider === undefined ? 'amber' : providerAccent(provider)
   const asstAccent = `var(--${accentName})`
@@ -87,7 +88,7 @@ export default function TurnCard({
           <ProviderIcon
             harness={provider}
             accent
-            label={providerDisplayName(provider)}
+            label={providerLabel}
           />
         ) : isSub ? (
           <CornerDownRight size={14} aria-hidden="true" />
