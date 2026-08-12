@@ -34,3 +34,44 @@ invariants:
       - "max-width: none;"
       - "margin-inline: 0;"
       - "padding-inline: 0;"
+  - id: txn-markdown-body-stretches
+    file: src/index.css
+    description: >-
+      The Markdown body owns the available turn width so its structured children can make their own
+      layout decisions instead of inheriting the running-prose measure from the global body reset.
+    mustContainAll:
+      - ".txn-body {"
+      - "inline-size: 100%;"
+      - "max-inline-size: none;"
+      - "min-width: 0;"
+  - id: txn-markdown-prose-keeps-reading-measure
+    file: src/index.css
+    description: >-
+      Paragraphs, headings, lists, and blockquotes retain the canonical reading measure even though
+      the enclosing Markdown body fills the turn.
+    mustContainAll:
+      - ".txn-body > .txn-md-prose,"
+      - "max-inline-size: var(--measure-prose);"
+  - id: txn-markdown-wide-blocks-scroll-locally
+    file: src/index.css
+    description: >-
+      Tables and fenced code receive their own horizontal overflow context, keeping wide transcript
+      content inside the available turn width rather than widening the page.
+    mustContainAll:
+      - ".txn-body .txn-md-table-wrap,"
+      - "inline-size: 100%;"
+      - "max-inline-size: 100%;"
+      - "overflow-x: auto;"
+      - "overscroll-behavior-inline: contain;"
+  - id: txn-markdown-content-typography-stays-readable
+    file: src/index.css
+    description: >-
+      Structured table and code content keeps the readable body-size floor and uses the canonical
+      proportional or mono family rather than a browser default.
+    mustContainAll:
+      - ".txn-body .txn-md-table {"
+      - "font-family: var(--font-mono);"
+      - "font-size: var(--fs-body);"
+      - ".txn-body .txn-md-code {"
+      - "font-family: var(--font-mono);"
+      - "font-size: var(--fs-body);"

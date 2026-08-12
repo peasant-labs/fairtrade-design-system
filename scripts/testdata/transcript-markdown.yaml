@@ -1,0 +1,156 @@
+cases:
+  - name: rich-gfm-structures
+    prop: text
+    source: |-
+      ## CamelCase Summary
+
+      First LINE
+      second LINE with **BoldCase** and `InlineCode`.
+
+      - unorderedCase
+      - [x] completedTask
+      - [ ] pendingTask
+
+      1. orderedCase
+      2. orderedAgain
+
+      | HeaderCase | ValueCase |
+      | --- | --- |
+      | RowCase | 42 |
+
+      ```js
+      const CodeCase = "UPPER"
+      return CodeCase
+      ```
+    expect:
+      requiredTags:
+        - h2
+        - p
+        - br
+        - ul
+        - ol
+        - table
+        - thead
+        - tbody
+        - pre
+        - strong
+        - code
+        - input
+      textIncludes:
+        - CamelCase
+        - BoldCase
+        - InlineCode
+        - completedTask
+        - pendingTask
+        - orderedCase
+        - HeaderCase
+        - CodeCase
+        - UPPER
+      brCount: 1
+      tableWrapCount: 1
+      codeWrapCount: 1
+      safeHrefCount: 0
+      safeLinkRel: ''
+      blockedLinkCount: 0
+      languageClass: language-js
+      unsafeHrefAbsent: true
+      rawHtmlAbsent: true
+  - name: preserves-every-prose-newline
+    prop: text
+    source: |-
+      First source line
+      Second source line
+      Third source line
+    expect:
+      requiredTags:
+        - p
+        - br
+      textIncludes:
+        - First source line
+        - Second source line
+        - Third source line
+      brCount: 2
+      tableWrapCount: 0
+      codeWrapCount: 0
+      safeHrefCount: 0
+      safeLinkRel: ''
+      blockedLinkCount: 0
+      languageClass: ''
+      unsafeHrefAbsent: true
+      rawHtmlAbsent: true
+  - name: hostile-content-stays-inert
+    prop: text
+    source: |-
+      Raw HTML: <span data-executable="false">should stay text</span>
+
+      <script>alert("blocked")</script>
+
+      [safeLink](https://example.com/path) [unsafeLink](javascript:alert(1))
+    expect:
+      requiredTags:
+        - p
+        - a
+        - span
+      textIncludes:
+        - Raw HTML
+        - '<span data-executable="false">'
+        - alert("blocked")
+        - safeLink
+        - unsafeLink
+      brCount: 0
+      tableWrapCount: 0
+      codeWrapCount: 0
+      safeHrefCount: 1
+      safeLinkRel: noreferrer
+      blockedLinkCount: 1
+      languageClass: ''
+      unsafeHrefAbsent: true
+      rawHtmlAbsent: true
+  - name: control-character-url-stays-inert
+    prop: text
+    source: '[obfuscatedUnsafeLink](java&#x0A;script:alert(1))'
+    expect:
+      requiredTags:
+        - p
+        - span
+      textIncludes:
+        - obfuscatedUnsafeLink
+      brCount: 0
+      tableWrapCount: 0
+      codeWrapCount: 0
+      safeHrefCount: 0
+      safeLinkRel: ''
+      blockedLinkCount: 1
+      languageClass: ''
+      unsafeHrefAbsent: true
+      rawHtmlAbsent: true
+  - name: wide-blocks-own-overflow-context
+    prop: source
+    source: |-
+      | HeaderCase | A very wide value | Another wide value |
+      | --- | --- | --- |
+      | RowCase | Keep this table local | Keep the page stable |
+
+      ```text
+      a line that stays in the local code scroller without changing the page width
+      another code line
+      ```
+    expect:
+      requiredTags:
+        - table
+        - pre
+        - code
+      textIncludes:
+        - HeaderCase
+        - RowCase
+        - Keep the page stable
+        - local code scroller
+      brCount: 0
+      tableWrapCount: 1
+      codeWrapCount: 1
+      safeHrefCount: 0
+      safeLinkRel: ''
+      blockedLinkCount: 0
+      languageClass: language-text
+      unsafeHrefAbsent: true
+      rawHtmlAbsent: true

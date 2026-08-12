@@ -64,7 +64,7 @@ const trimHunks = [{ lines: [{ sign: 'add', newNo: '1', text: 'a' }, { sign: 'ad
 /* ── Markdown ────────────────────────────────────────────────────────────────── */
 {
   const out = html(ui.TranscriptMarkdown, { text: 'a **bold** and `code` here' })
-  assert('MD-bold', 'Markdown renders **bold** as <b>', /<b>bold<\/b>/.test(out))
+  assert('MD-bold', 'Markdown renders **bold** as semantic <strong>', /<strong>bold<\/strong>/.test(out))
   assert('MD-code', 'Markdown renders `code` as txn-inlinecode', /<code[^>]*txn-inlinecode[^>]*>code<\/code>/.test(out))
 }
 
@@ -108,7 +108,7 @@ const trimHunks = [{ lines: [{ sign: 'add', newNo: '1', text: 'a' }, { sign: 'ad
 {
   const out = html(ui.TranscriptTurnCard, { turn: assistantTurn, expandAll: true })
   assert('TURN-num', 'TurnCard renders the turn number', out.includes('#2'))
-  assert('TURN-md', 'TurnCard renders the cooked content via Markdown', /<b>renderer<\/b>/.test(out))
+  assert('TURN-md', 'TurnCard renders the cooked content via Markdown', /<strong>renderer<\/strong>/.test(out))
   assert('TURN-thinking', 'TurnCard renders thinking from the cooked turn', out.includes('txn-thinking') && out.includes('7w'))
   assert('TURN-tool', 'TurnCard composes the tool call (open via expandAll)', out.includes('txn-toolcall') && out.includes('txn-tcbody'))
 }

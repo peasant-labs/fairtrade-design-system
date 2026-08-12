@@ -53,8 +53,21 @@ const TURNS = [
       text:
         'The renderer lives under web/src/components/session-detail/v2/canvas. I should read TurnRow.tsx first to understand how role glyphs + tool calls compose, then trace rendererFor to see the per-tool dispatch before I move anything into packages/browser.',
     },
-    body:
-      'Let me look at the current renderer before extracting it. I will read **TurnRow.tsx** and find where `rendererFor` is wired so the move preserves the per-tool dispatch.',
+    body: `Let me look at the current renderer before extracting it. I will read **TurnRow.tsx** and find where \`rendererFor\` is wired so the move preserves the per-tool dispatch.
+The shared renderer keeps this structured handoff intact.
+
+- Read the existing component
+- Preserve tool dispatch
+
+| Surface | Status |
+| --- | --- |
+| Markdown | Ready |
+| Transcript viewer | Reviewed |
+
+\`\`\`js
+const renderer = rendererFor(tool.kind)
+return renderer(tool)
+\`\`\``,
     tools: [
       {
         id: 't1a',
@@ -459,7 +472,7 @@ function toolToWire(tool) {
       // reconstruct the pre/post text from the editorial hunk so the wire carries REAL edit content
       // and the adapter's LCS diff path runs on it. (The demo still overlays the editorial hunk for
       // display — see buildMockupVM — because its rewritten-line-as-del+add is an editorial
-      // representation an LCS would render as context; transcript-browser shows the LCS hunk.)
+      // representation an LCS would render as context; the shared transcript renderer shows the LCS hunk.)
       const hunk = Array.isArray(tool.hunk) ? tool.hunk : []
       const oldText = hunk.filter((d) => d.sign === 'ctx' || d.sign === 'del').map((d) => d.t).join('\n')
       const newText = hunk.filter((d) => d.sign === 'ctx' || d.sign === 'add').map((d) => d.t).join('\n')
@@ -501,7 +514,7 @@ function turnToWire(t) {
   // entry (transcript.go:154,164) and keeps its text in the parent's ContentPreview, so the adapter's
   // inline-thinking path does not fire in production — it is render-when-present pending a backend
   // follow-up. (STANDALONE thinking — a separate entryType=thinking turn — IS production-grounded, so a
-  // real consumer renders that today.) No current regression either way: transcript-browser never rendered inline thinking.
+  // real consumer renders that today.) No current regression either way: the previous renderer never rendered inline thinking.
   const content = t.thinking ? `<thinking>${t.thinking.text}</thinking>\n${t.body ?? ''}` : (t.body ?? '')
   const wire = {
     index: t.id,
@@ -633,7 +646,7 @@ function mkDiffLine(d) {
                        reconstructed args) renders it as context, so a real app shows the LCS hunk.
      • files         — the demo's index includes grep-result + attributed files NO tool call carries a
                        path for; buildFiles derives only the tool-path-touched files, so a real app
-                       shows FEWER files (a real, documented "leaner transcript-browser" gap, not a masked one).
+                       shows FEWER files (a real, documented "leaner transcript" gap, not a masked one).
      • highlights    — a curated key-moment set + copy; buildHighlights derives a FULLER set for a real app. */
 function buildMockupVM() {
   const base = adaptTranscript(buildWire(), [], buildAnalytics())
