@@ -2303,6 +2303,7 @@
      top strip; --txn-sticky-h is shared by that header and the turns-bar reservation. */
   .txn-trace { --txn-sticky-h: calc(var(--control-h) + var(--sp-1)); position: relative; display: flex; flex-direction: column; min-height: 0; flex: 1; }
   .txn-trace-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); background: var(--surface-2); }
+  .txn-trace-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--sp-3); flex-wrap: wrap; }
   /* when the scrubber header is revealed, drop the turns bar (tier 2) by the header
      height so it sits flush BENEATH the scrubber instead of being covered by it. */
   .txn-trace-pinned .txn-trace-head { margin-top: var(--txn-sticky-h); }

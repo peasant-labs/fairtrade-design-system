@@ -121,6 +121,16 @@ export const ReadingPositionReturn = {
   },
 }
 
+export const ReadOnlyFileReturn = {
+  args: { viewModel, capabilities: fullCaps },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('tab', { name: /files/ }))
+    await userEvent.click(canvas.getByRole('row', { name: /TurnRow\.tsx/ }))
+    await expect(canvas.getByRole('button', { name: 'return to trace' })).toBeVisible()
+  },
+}
+
 export const HostControlsScrollWithTranscript = {
   args: {
     viewModel,

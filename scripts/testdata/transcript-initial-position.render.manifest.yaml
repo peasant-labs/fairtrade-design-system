@@ -1,11 +1,12 @@
 expectedCaseCount: 1
 requiredNames:
   - source viewer mounts and positions without selecting or writing history
-expectedReturnCaseCount: 3
+expectedReturnCaseCount: 4
 requiredReturnNames:
   - files and diffs return to the exact trace offset and focus
   - direct diffs selection keeps an exact trace return target
   - direct files selection has no legacy return target
+  - read-only file returns from its last-read turn without automatic restoration
 expectedLoaderMutationCount: 5
 loaderMutations:
   - {name: render manifest count drift is rejected, target: manifest, find: "expectedCaseCount: 1\nrequiredNames:", replace: "expectedCaseCount: 2\nrequiredNames:", expectedError: do not match}
@@ -13,7 +14,7 @@ loaderMutations:
   - {name: render case unknown fields are rejected, target: cases, find: "    expectedContains: txn-app", replace: "    unknown: true\n    expectedContains: txn-app", expectedError: fields}
   - {name: render return case unknown fields are rejected, target: cases, find: "    sourceOffset: 137", replace: "    unknown: true\n    sourceOffset: 137", expectedError: fields}
   - {name: render multiple YAML documents are rejected, target: cases, find: "cases:", replace: "---\ncases:", expectedError: exactly one YAML document}
-expectedMutationCount: 6
+expectedMutationCount: 7
 mutations:
   - {name: mounted source hook drops normalizer import, file: hook, find: "  normalizeTranscriptInitialPosition,\n", replace: "", expectedError: mounted source module invariant failed}
   - {name: mounted source positioning selects the target, file: viewer, find: "    el.scrollIntoView({ block: 'start', behavior: 'auto' })\n    return 'applied'", replace: "    el.scrollIntoView({ block: 'start', behavior: 'auto' })\n    setActiveTurn(position.turnIndex)\n    return 'applied'", expectedError: positioning selection invariant failed}
@@ -21,3 +22,4 @@ mutations:
   - {name: trace file action forgets return target, file: viewer, find: "    setReturnTarget({\n", replace: "    setReturnTarget(null)\n    return\n    setReturnTarget({\n", expectedError: return action invariant failed}
   - {name: return restoration loses the exact scroll offset, file: viewer, find: "    sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })", replace: "    sc.scrollTo({ top: 0, behavior: 'auto' })", expectedError: return position invariant failed}
   - {name: return restoration loses the source focus, file: viewer, find: "    if (target.focusOrigin.kind === 'scroller') sc.focus({ preventScroll: true })", replace: "    if (false) sc.focus({ preventScroll: true })", expectedError: focus invariant failed}
+  - {name: return restoration arms before an explicit action, file: viewer, find: "    initialPosition: returnTarget?.requested ? { kind: 'top', requestKey: returnTarget.requestKey } : null,", replace: "    initialPosition: returnTarget ? { kind: 'top', requestKey: returnTarget.requestKey } : null,", expectedError: read-only destination invariant failed}

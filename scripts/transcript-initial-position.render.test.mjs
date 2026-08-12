@@ -10,7 +10,7 @@ import YAML from 'yaml'
 const manifestSource = readFileSync(resolve('scripts/testdata/transcript-initial-position.render.manifest.yaml'), 'utf8')
 const casesSource = readFileSync(resolve('scripts/testdata/transcript-initial-position.render.yaml'), 'utf8')
 const caseFields = ['name', 'initialKind', 'initialTurn', 'turns', 'expectedScrolls', 'expectedCallbacks', 'expectedHistory', 'expectedContains']
-const returnCaseFields = ['name', 'initialKind', 'initialTurn', 'initialTab', 'turns', 'sourceOffset', 'focusOrigin', 'action', 'expectedTabs', 'expectedReturnLabels', 'expectedScrollTop', 'expectedFocus', 'expectedContains']
+const returnCaseFields = ['name', 'initialKind', 'initialTurn', 'initialTab', 'turns', 'sourceOffset', 'focusOrigin', 'action', 'destinationTurn', 'expectedTabs', 'expectedReturnLabels', 'expectedScrollTop', 'expectedFocus', 'expectedContains']
 const loaderMutationFields = ['name', 'target', 'find', 'replace', 'expectedError']
 const productionMutationFields = ['name', 'file', 'find', 'replace', 'expectedError']
 
@@ -73,11 +73,11 @@ function loadRenderFixtures(manifestText = manifestSource, casesText = casesSour
   const returnCases = root.returnCases.map((row, index) => {
     if (!row || typeof row !== 'object' || Array.isArray(row)) throw new Error(`source render return case ${index} must be an object`)
     exactFields(row, returnCaseFields, `source render return case ${index}`)
-    if (typeof row.name !== 'string' || row.name.length === 0 || !['top', 'turn'].includes(row.initialKind) || !Number.isSafeInteger(row.initialTurn) || !['trace', 'files', 'diffs'].includes(row.initialTab) || !Number.isSafeInteger(row.sourceOffset) || row.sourceOffset < 0 || !['scroller', 'tab'].includes(row.focusOrigin) || !['files-edited-diffs-return', 'diffs-return', 'no-return'].includes(row.action) || !Number.isSafeInteger(row.expectedScrollTop) || row.expectedScrollTop < 0 || !['scroller', 'tab', 'none'].includes(row.expectedFocus) || typeof row.expectedContains !== 'string' || row.expectedContains.length === 0) throw new Error(`source render return case ${index} scalars are invalid`)
+    if (typeof row.name !== 'string' || row.name.length === 0 || !['top', 'turn'].includes(row.initialKind) || !Number.isSafeInteger(row.initialTurn) || !['trace', 'files', 'diffs'].includes(row.initialTab) || !Number.isSafeInteger(row.sourceOffset) || row.sourceOffset < 0 || !['scroller', 'tab'].includes(row.focusOrigin) || !['files-edited-diffs-return', 'files-readonly-trace-return', 'diffs-return', 'no-return'].includes(row.action) || !Number.isSafeInteger(row.destinationTurn) || row.destinationTurn < -1 || (row.action === 'files-readonly-trace-return' ? row.destinationTurn < 0 : row.destinationTurn !== -1) || !Number.isSafeInteger(row.expectedScrollTop) || row.expectedScrollTop < 0 || !['scroller', 'tab', 'none'].includes(row.expectedFocus) || typeof row.expectedContains !== 'string' || row.expectedContains.length === 0) throw new Error(`source render return case ${index} scalars are invalid`)
     if ((row.initialKind === 'turn') !== (row.initialTurn >= 0)) throw new Error(`source render return case ${index} has an invalid turn sentinel`)
     if (!Array.isArray(row.turns) || row.turns.some((turn) => !Number.isSafeInteger(turn) || turn < 0) || new Set(row.turns).size !== row.turns.length) throw new Error(`source render return case ${index} turns must be unique safe nonnegative integers`)
     if (!Array.isArray(row.expectedTabs) || row.expectedTabs.some((tab) => !['trace', 'files', 'diffs'].includes(tab))) throw new Error(`source render return case ${index}.expectedTabs has invalid values`)
-    if (!Array.isArray(row.expectedReturnLabels) || row.expectedReturnLabels.some((label) => typeof label !== 'string' || !/^(?:files|diffs):\d+$/.test(label))) throw new Error(`source render return case ${index}.expectedReturnLabels has invalid values`)
+    if (!Array.isArray(row.expectedReturnLabels) || row.expectedReturnLabels.some((label) => typeof label !== 'string' || !/^(?:trace|files|diffs):\d+$/.test(label))) throw new Error(`source render return case ${index}.expectedReturnLabels has invalid values`)
     return row
   })
   const names = cases.map((row) => row.name)
@@ -185,6 +185,13 @@ try {
       await Promise.resolve()
     })
   }
+  const activate = async (element, label) => {
+    if (!element) throw new Error(`read-only destination invariant failed: missing ${label}`)
+    await act(async () => {
+      element.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+      await Promise.resolve()
+    })
+  }
 
   for (const fixture of fixtures.returnCases) {
     const callbacks = []
@@ -254,6 +261,18 @@ try {
         observeReturn('diffs')
         await click(returnButtons(container)[0], 'diffs return action')
         observedTabs.push(activeTab(container))
+      } else if (fixture.action === 'files-readonly-trace-return') {
+        await click(tabButton(container, 'files'), 'files tab')
+        observedTabs.push(activeTab(container))
+        observeReturn('files')
+        const callbacksBeforeDestination = callbacks.length
+        await activate([...container.querySelectorAll('.txn-filerow')].find((row) => row.textContent.includes('read-only.ts')), 'read-only file row')
+        observedTabs.push(activeTab(container))
+        observeReturn('trace')
+        if (!callbacks.slice(callbacksBeforeDestination).includes(`active:${fixture.destinationTurn}`)) throw new Error(`${fixture.name}: read-only destination invariant failed; expected active turn ${fixture.destinationTurn}, received ${JSON.stringify(callbacks.slice(callbacksBeforeDestination))}`)
+        if (scrolls.includes(`top:${fixture.sourceOffset}`)) throw new Error(`${fixture.name}: read-only destination invariant failed; return restoration ran before the explicit action`)
+        await click(returnButtons(container)[0], 'trace return action')
+        observedTabs.push(activeTab(container))
       } else if (fixture.action === 'diffs-return') {
         await click(tabButton(container, 'diffs'), 'diffs tab')
         observedTabs.push(activeTab(container))
@@ -291,4 +310,4 @@ try {
   }
 }
 
-console.log(`transcript initial-position mounted source: ${fixtures.cases.length} StrictMode client case passed with exact scroll and empty selection/history matrices`)
+console.log(`transcript initial-position mounted source: ${fixtures.cases.length} positioning case(s) and ${fixtures.returnCases.length} return case(s) passed with exact scroll, selection, action, and focus matrices`)

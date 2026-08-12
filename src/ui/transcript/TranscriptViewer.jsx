@@ -49,7 +49,7 @@ import { transcriptInitialPositionReadiness } from './initial-position.js'
 
 /** @typedef {import('./state-capabilities.js').TranscriptViewerProps} TranscriptViewerProps */
 /** @typedef {import('./state-capabilities.js').TranscriptFilters} TranscriptFilters */
-/** @typedef {{sourceView: 'trace', sourceMode: 'list', scrollTop: number, focusOrigin: {kind: 'tab', tab: 'trace'} | {kind: 'scroller'}, requestKey: string}} TranscriptReturnTarget */
+/** @typedef {{sourceView: 'trace', sourceMode: 'list', scrollTop: number, focusOrigin: {kind: 'tab', tab: 'trace'} | {kind: 'scroller'}, requestKey: string, destination: 'trace' | 'files' | 'diffs', requested: boolean}} TranscriptReturnTarget */
 
 const fmtTokens = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n))
 
@@ -268,7 +268,7 @@ export default function TranscriptViewer({
     })
   }, [turns, filters, commits])
 
-  const captureTraceReturnTarget = useCallback(() => {
+  const captureTraceReturnTarget = useCallback((destination) => {
     if (tab !== 'trace' || viewMode !== 'list') return
     const sc = scrollRef.current
     if (!sc) return
@@ -283,13 +283,20 @@ export default function TranscriptViewer({
       scrollTop: sc.scrollTop,
       focusOrigin,
       requestKey: `trace-return-${returnTargetIdRef.current}`,
+      destination,
+      requested: false,
     })
   }, [tab, viewMode])
 
   const selectTab = useCallback((nextTab) => {
-    if (nextTab === 'files' || nextTab === 'diffs') captureTraceReturnTarget()
+    if (nextTab === 'files' || nextTab === 'diffs') {
+      if (tab === 'trace') captureTraceReturnTarget(nextTab)
+      else if (returnTarget) {
+        setReturnTarget({ ...returnTarget, destination: nextTab, requested: false })
+      }
+    }
     setTab(nextTab)
-  }, [captureTraceReturnTarget, setTab])
+  }, [captureTraceReturnTarget, returnTarget, setTab, tab])
 
   const applyInitialPosition = useCallback((position) => {
     const sc = scrollRef.current
@@ -328,6 +335,7 @@ export default function TranscriptViewer({
     sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })
     if (target.focusOrigin.kind === 'scroller') sc.focus({ preventScroll: true })
     else tabRefs.current[target.focusOrigin.tab]?.focus({ preventScroll: true })
+    setReturnTarget(null)
     return 'applied'
   }, [returnTarget, tab, turns, viewMode, visibleTurns])
 
@@ -341,8 +349,8 @@ export default function TranscriptViewer({
 
   useTranscriptInitialPosition({
     sessionId: session?.id,
-    initialPosition: returnTarget ? { kind: 'top', requestKey: returnTarget.requestKey } : null,
-    readiness: [returnTarget?.requestKey, tab, viewMode, turns, visibleTurns],
+    initialPosition: returnTarget?.requested ? { kind: 'top', requestKey: returnTarget.requestKey } : null,
+    readiness: [returnTarget?.requested, returnTarget?.requestKey, tab, viewMode, turns, visibleTurns],
     apply: applyReturnPosition,
   })
 
@@ -390,7 +398,12 @@ export default function TranscriptViewer({
 
   /* ── navigation + interactions (effects/handlers only; safe under static render) ── */
   function jumpTo(idx, { switchTab = true } = {}) {
-    if (switchTab && tab !== 'trace') setTab('trace')
+    if (switchTab && tab !== 'trace') {
+      if (returnTarget) {
+        setReturnTarget({ ...returnTarget, destination: 'trace', requested: false })
+      }
+      setTab('trace')
+    }
     setViewMode('list')
     setActiveTurn(idx)
     if (typeof requestAnimationFrame === 'function') {
@@ -465,6 +478,7 @@ export default function TranscriptViewer({
 
   function returnToSource() {
     if (!returnTarget) return
+    setReturnTarget({ ...returnTarget, requested: true })
     setTab(returnTarget.sourceView)
     setViewMode(returnTarget.sourceMode)
   }
@@ -738,9 +752,16 @@ export default function TranscriptViewer({
                 <span className="txn-trace-count tnum">
                   {visibleTurns.length === turns.length ? `${turns.length} turns` : `${visibleTurns.length} of ${turns.length} turns`}
                 </span>
-                <div className="bs-seg txn-viewtoggle" role="group" aria-label="view mode">
-                  <button type="button" className="bs-seg-opt" aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}><List size={14} aria-hidden="true" /> list</button>
-                  <button type="button" className="bs-seg-opt" aria-pressed={viewMode === 'graph'} onClick={() => setViewMode('graph')}><Network size={14} aria-hidden="true" /> graph</button>
+                <div className="txn-trace-actions">
+                  {returnTarget?.destination === 'trace' && (
+                    <button type="button" className="txn-return" aria-label="return to trace" onClick={returnToSource}>
+                      <RotateCcw size={13} aria-hidden="true" /> return to trace
+                    </button>
+                  )}
+                  <div className="bs-seg txn-viewtoggle" role="group" aria-label="view mode">
+                    <button type="button" className="bs-seg-opt" aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}><List size={14} aria-hidden="true" /> list</button>
+                    <button type="button" className="bs-seg-opt" aria-pressed={viewMode === 'graph'} onClick={() => setViewMode('graph')}><Network size={14} aria-hidden="true" /> graph</button>
+                  </div>
                 </div>
               </div>
 

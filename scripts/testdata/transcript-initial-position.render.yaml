@@ -16,6 +16,7 @@ returnCases:
     sourceOffset: 137
     focusOrigin: scroller
     action: files-edited-diffs-return
+    destinationTurn: -1
     expectedTabs: [trace, files, diffs, trace]
     expectedReturnLabels: [files:1, diffs:1]
     expectedScrollTop: 137
@@ -29,6 +30,7 @@ returnCases:
     sourceOffset: 211
     focusOrigin: tab
     action: diffs-return
+    destinationTurn: -1
     expectedTabs: [trace, diffs, trace]
     expectedReturnLabels: [diffs:1]
     expectedScrollTop: 211
@@ -42,8 +44,23 @@ returnCases:
     sourceOffset: 0
     focusOrigin: tab
     action: no-return
+    destinationTurn: -1
     expectedTabs: [files]
     expectedReturnLabels: []
     expectedScrollTop: 0
     expectedFocus: none
     expectedContains: txn-files
+  - name: read-only file returns from its last-read turn without automatic restoration
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    turns: [0, 1, 2]
+    sourceOffset: 173
+    focusOrigin: scroller
+    action: files-readonly-trace-return
+    destinationTurn: 0
+    expectedTabs: [trace, files, trace, trace]
+    expectedReturnLabels: [files:1, trace:1]
+    expectedScrollTop: 173
+    expectedFocus: scroller
+    expectedContains: txn-stream
