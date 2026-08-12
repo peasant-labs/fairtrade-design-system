@@ -111,6 +111,7 @@ export default function TurnCard({
       <button
         type="button"
         className="txn-anchor"
+        data-turn-control={turn.index}
         aria-label={'copy link to turn ' + turn.label}
         title="copy link to this turn"
         onClick={() => onCopyAnchor(turn.index)}

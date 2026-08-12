@@ -18,7 +18,9 @@ const mutations = manifestPaths.flatMap((manifestPath) => {
   const document = YAML.parseDocument(readFileSync(manifestPath, 'utf8'), { strict: true, uniqueKeys: true })
   if (document.errors.length) throw new Error(`${manifestPath} is invalid: ${document.errors.map((error) => error.message).join('; ')}`)
   const manifest = document.toJS()
-  if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest) || !Array.isArray(manifest.mutations) || !Number.isSafeInteger(manifest.expectedMutationCount) || manifest.expectedMutationCount !== manifest.mutations.length) throw new Error(`${manifestPath} must contain its exact production mutation inventory`)
+  if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest) || !Array.isArray(manifest.requiredMutationNames) || !Array.isArray(manifest.mutations) || !Number.isSafeInteger(manifest.expectedMutationCount) || manifest.expectedMutationCount !== manifest.mutations.length || manifest.requiredMutationNames.length !== manifest.expectedMutationCount) throw new Error(`${manifestPath} must contain its exact production mutation inventory`)
+  const names = manifest.mutations.map((row) => row?.name)
+  if (new Set(manifest.requiredMutationNames).size !== manifest.requiredMutationNames.length || manifest.requiredMutationNames.some((name) => !names.includes(name)) || names.some((name) => !manifest.requiredMutationNames.includes(name))) throw new Error(`${manifestPath} required production mutation names do not match its inventory`)
   return manifest.mutations
 })
 if (new Set(mutations.map((row) => row?.name)).size !== mutations.length) throw new Error('Fairtrade production mutation names must be globally unique')

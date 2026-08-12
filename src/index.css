@@ -2303,6 +2303,7 @@
      top strip; --txn-sticky-h is shared by that header and the turns-bar reservation. */
   .txn-trace { --txn-sticky-h: calc(var(--control-h) + var(--sp-1)); position: relative; display: flex; flex-direction: column; min-height: 0; flex: 1; }
   .txn-trace-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); background: var(--surface-2); }
+  .txn-trace-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--sp-3); flex-wrap: wrap; }
   /* when the scrubber header is revealed, drop the turns bar (tier 2) by the header
      height so it sits flush BENEATH the scrubber instead of being covered by it. */
   .txn-trace-pinned .txn-trace-head { margin-top: var(--txn-sticky-h); }
@@ -2682,6 +2683,7 @@
   /* ---- diffs tab ---- */
   .txn-diffs { overflow: auto; padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); min-height: 0; }
   .txn-diffs-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+  .txn-diffs-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--sp-3); flex-wrap: wrap; }
   .txn-diffs-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .txn-filegroup { border: var(--bd); }
   .txn-fg-head { display: flex; align-items: center; gap: var(--sp-2); width: 100%; text-align: left; background: var(--surface-2); border: 0; cursor: pointer; padding: var(--sp-2) var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); }
@@ -2702,12 +2704,13 @@
 
   /* ---- files tab ---- */
   .txn-files { overflow: auto; padding: var(--sp-4); min-height: 0; }
+  .txn-files-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+  .txn-files-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .txn-filetable { margin-top: 0; }
   .txn-sort { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: 0; cursor: pointer; font-family: var(--font-mono); font-size: var(--fs-sm); text-transform: lowercase; color: var(--ink-3); padding: 0; }
   .txn-sort:hover { color: var(--ink); }
   .txn-files-churn-col { width: 1%; white-space: nowrap; text-align: right; }
-  .txn-filerow { cursor: pointer; }
-  .txn-file-cell { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+  .txn-file-cell { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; width: 100%; min-height: var(--target-min); padding: 0; background: transparent; border: 0; color: inherit; cursor: pointer; text-align: left; }
   .txn-file-cell .lucide { color: var(--ink-3); flex: none; }
   .txn-file-path { color: var(--ink); }
   .txn-file-counts { color: var(--ink-4); font-size: 11px; }
