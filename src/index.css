@@ -2359,9 +2359,46 @@
   .txn-labelbtn:hover { color: var(--amber-bright); border-color: var(--amber-dim); }
 
   .txn-savedchips { margin-bottom: var(--sp-2); }
-  .txn-body { line-height: 1.5; color: var(--ink); }
+  /* Markdown turns are full-width containers. Only running prose is measured; structured blocks
+     get an independent overflow context so a wide table or fence cannot widen the page. Content
+     selectors explicitly restore case because the presentation page's heading reset is chrome-only. */
+  .txn-body { inline-size: 100%; max-inline-size: none; min-width: 0; line-height: var(--lh-body); color: var(--ink); text-transform: none; }
+  .txn-body > .txn-md-prose,
+  .txn-body > .txn-md-list,
+  .txn-body > .txn-md-heading,
+  .txn-body > .txn-md-blockquote { max-inline-size: var(--measure-prose); }
+  .txn-body > :first-child { margin-block-start: 0; }
+  .txn-body > :last-child { margin-block-end: 0; }
+  .txn-body .txn-md-prose { margin-block: var(--sp-3) 0; }
+  .txn-body .txn-md-heading { font-family: var(--font-body); text-transform: none; letter-spacing: var(--tracking-prose); word-spacing: var(--word-spacing-prose); margin-block: var(--sp-5) var(--sp-2); }
+  .txn-body .txn-md-heading-1 { font-size: var(--fs-lg); }
+  .txn-body .txn-md-heading-2 { font-size: var(--fs-md); }
+  .txn-body .txn-md-heading-3 { font-size: var(--fs-body); }
+  .txn-body strong,
   .txn-body b { color: var(--amber-bright); font-weight: 700; text-shadow: var(--glow-soft); }
-  .txn-inlinecode { font-family: var(--font-mono); font-size: .92em; background: var(--canvas); border: var(--bd); padding: 0 4px; color: var(--ink-2); }
+  .txn-body .txn-md-list { margin-block: var(--sp-3) 0; padding-inline-start: var(--sp-5); }
+  .txn-body .txn-md-list-item { padding-inline-start: var(--sp-1); }
+  .txn-body .txn-md-list-item + .txn-md-list-item { margin-block-start: var(--sp-1); }
+  .txn-body .txn-md-list-item > .txn-md-list { margin-block-start: var(--sp-1); }
+  .txn-body .txn-md-list input[type='checkbox'] { accent-color: var(--amber); inline-size: var(--ic-md); block-size: var(--ic-md); margin-inline-end: var(--sp-2); vertical-align: -0.12em; }
+  .txn-body .txn-md-blockquote { margin-block: var(--sp-3) 0; padding-inline: var(--sp-3); border-inline-start: var(--stroke-emphasis) solid var(--mauve); color: var(--ink-2); }
+  .txn-body .txn-md-table-wrap,
+  .txn-body .txn-md-code-wrap { inline-size: 100%; max-inline-size: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-inline: contain; margin-block: var(--sp-4) 0; }
+  .txn-body .txn-md-table { min-inline-size: max-content; width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: var(--fs-body); line-height: var(--lh-mono); letter-spacing: 0; word-spacing: normal; }
+  .txn-body .txn-md-table th,
+  .txn-body .txn-md-table td { padding: var(--sp-2) var(--sp-3); border: var(--bd); text-align: start; white-space: nowrap; }
+  .txn-body .txn-md-table th { color: var(--ink-strong); background: var(--surface-2); font-weight: 700; }
+  .txn-body .txn-md-table td { color: var(--ink-2); }
+  .txn-body .txn-md-code-wrap { background: var(--canvas); border: var(--bd); }
+  .txn-body .txn-md-code { min-inline-size: max-content; margin: 0; padding: var(--sp-3); background: transparent; border: 0; color: var(--ink-2); font-family: var(--font-mono); font-size: var(--fs-body); line-height: var(--lh-mono); letter-spacing: 0; word-spacing: normal; white-space: pre; }
+  .txn-body .txn-md-code-wrap code { display: block; padding: 0; background: transparent; border: 0; font: inherit; color: inherit; }
+  .txn-inlinecode { font-family: var(--font-mono); font-size: var(--fs-body); line-height: var(--lh-mono); background: var(--canvas); border: var(--bd); padding-inline: var(--sp-1); color: var(--ink-2); }
+  .txn-body .txn-md-link { text-decoration: underline dotted; text-underline-offset: var(--sp-1); }
+  .txn-body .txn-md-link:hover,
+  .txn-body .txn-md-link:focus-visible { text-decoration-style: solid; }
+  .txn-body .txn-md-link-blocked { color: var(--ink-2); text-decoration: underline dotted; text-decoration-color: var(--ink-4); text-underline-offset: var(--sp-1); }
+  .txn-body .txn-md-rule { max-inline-size: var(--measure-prose); margin-block: var(--sp-4) 0; border: 0; border-block-start: var(--bd); }
+  .txn-body .txn-md-del { color: var(--ink-3); text-decoration-color: var(--clay); }
 
   /* subagent nested thread (reuse .subtask language) */
   .txn-subtask { margin-top: var(--sp-3); margin-left: var(--sp-4); }
