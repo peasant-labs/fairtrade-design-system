@@ -42,6 +42,7 @@ const EXPECT_FIELDS = [
   'rawHtmlAbsent',
 ]
 const MUTATION_FIELDS = ['name', 'file', 'find', 'replace', 'expectedError']
+const MOUNTED_FIELDS = ['fixtureMarker', 'expectedTurnCount', 'requiredTags']
 
 function parseDocument(source, label) {
   const document = YAML.parseDocument(source, { strict: true, uniqueKeys: true })
@@ -67,10 +68,15 @@ function uniqueStrings(value, label) {
 
 function loadFixtures() {
   const manifest = parseDocument(manifestSource, 'Markdown manifest')
-  exactFields(manifest, ['expectedCaseCount', 'requiredNames', 'expectedMutationCount', 'mutations'], 'Markdown manifest')
+  exactFields(manifest, ['expectedCaseCount', 'requiredNames', 'expectedMutationCount', 'mounted', 'mutations'], 'Markdown manifest')
   if (!Number.isSafeInteger(manifest.expectedCaseCount) || manifest.expectedCaseCount < 1) throw new Error('Markdown manifest expectedCaseCount must be a positive safe integer')
   if (!Number.isSafeInteger(manifest.expectedMutationCount) || manifest.expectedMutationCount < 1) throw new Error('Markdown manifest expectedMutationCount must be a positive safe integer')
   const requiredNames = uniqueStrings(manifest.requiredNames, 'Markdown manifest requiredNames')
+  exactFields(manifest.mounted, MOUNTED_FIELDS, 'Markdown manifest mounted')
+  if (typeof manifest.mounted.fixtureMarker !== 'string' || !manifest.mounted.fixtureMarker) throw new Error('Markdown manifest mounted.fixtureMarker must be a nonempty string')
+  if (!Number.isSafeInteger(manifest.mounted.expectedTurnCount) || manifest.mounted.expectedTurnCount < 1) throw new Error('Markdown manifest mounted.expectedTurnCount must be a positive safe integer')
+  const mountedRequiredTags = uniqueStrings(manifest.mounted.requiredTags, 'Markdown manifest mounted.requiredTags')
+  if (!mountedRequiredTags.includes('br') || !mountedRequiredTags.includes('table') || !mountedRequiredTags.includes('ul') || !mountedRequiredTags.includes('pre')) throw new Error('Markdown manifest mounted.requiredTags must cover br, table, ul, and pre')
   if (!Array.isArray(manifest.mutations) || manifest.mutations.length !== manifest.expectedMutationCount) throw new Error('Markdown manifest mutation inventory count is stale')
   const mutations = manifest.mutations.map((mutation, index) => {
     exactFields(mutation, MUTATION_FIELDS, `Markdown manifest mutation ${index}`)
@@ -106,7 +112,7 @@ function loadFixtures() {
   }
   const allNames = [...names, ...mutations.map((mutation) => mutation.name)]
   if (new Set(allNames).size !== allNames.length) throw new Error('Markdown corpus and mutation names must be globally unique')
-  return { cases, mutations }
+  return { cases, mutations, mounted: manifest.mounted }
 }
 
 const fixtures = loadFixtures()
@@ -177,6 +183,35 @@ for (const testCase of fixtures.cases) {
   if (testCase.expect.rawHtmlAbsent) {
     assert(`${testCase.name}-raw-html`, `${testCase.name}: raw HTML cannot create executable elements`, root.querySelector('script,[data-executable]') === null)
   }
+}
+
+/* Mount the canonical in-use demo, not a hand-built view model, so the shipped fixture is checked
+   through TranscriptApp -> buildWire -> adaptTranscript -> TranscriptViewer -> TurnCard ->
+   TranscriptMarkdown. The marker locates the existing turn that owns the structured body; all
+   required semantic tags must be inside that turn rather than coming from a rail or tool output. */
+if (!viteServer) {
+  viteServer = await createServer({
+    appType: 'custom',
+    configFile: false,
+    logLevel: 'silent',
+    root: ROOT,
+    server: { middlewareMode: true },
+  })
+}
+try {
+  const mounted = await viteServer.ssrLoadModule('/src/mockups/inuse/TranscriptApp.jsx')
+  const markup = renderToStaticMarkup(React.createElement(mounted.default, { theme: 'dark' }))
+  const { window } = new JSDOM(`<!doctype html><main>${markup}</main>`)
+  const mountedTurn = [...window.document.querySelectorAll('.txn-turn')].find((turn) => turn.querySelector('.txn-body')?.textContent.includes(fixtures.mounted.fixtureMarker))
+  const mountedBody = mountedTurn?.querySelector('.txn-body')
+  assert('mounted-inuse-turn-count', 'in-use TranscriptApp preserves the canonical turn count while changing only one body fixture', window.document.querySelectorAll('.txn-turn').length === fixtures.mounted.expectedTurnCount)
+  assert('mounted-inuse-turn', 'in-use TranscriptApp sends the structured fixture through the production viewer into one turn', mountedTurn !== undefined)
+  assert('mounted-inuse-markdown-body', 'in-use fixture reaches the TranscriptMarkdown body inside that turn', mountedBody !== null && mountedBody !== undefined)
+  for (const tag of fixtures.mounted.requiredTags) {
+    assert(`mounted-inuse-tag-${tag}`, `in-use fixture reaches semantic ${tag} DOM inside its rendered Markdown body`, mountedBody ? mountedBody.querySelector(tag) !== null : false)
+  }
+} catch (error) {
+  assert('mounted-inuse-render', `in-use TranscriptApp must render its production path without throwing (${error instanceof Error ? error.message : String(error)})`, false)
 }
 
 if (viteServer) await viteServer.close()

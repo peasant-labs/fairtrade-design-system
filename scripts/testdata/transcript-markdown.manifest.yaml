@@ -6,6 +6,14 @@ requiredNames:
   - control-character-url-stays-inert
   - wide-blocks-own-overflow-context
 expectedMutationCount: 2
+mounted:
+  fixtureMarker: The shared renderer keeps this structured handoff intact.
+  expectedTurnCount: 9
+  requiredTags:
+    - br
+    - table
+    - ul
+    - pre
 mutations:
   - name: markdown-parser-disabled
     file: src/ui/transcript/Markdown.jsx
