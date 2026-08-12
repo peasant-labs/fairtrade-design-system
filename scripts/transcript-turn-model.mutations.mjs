@@ -11,7 +11,7 @@ const source = readFileSync(manifestPath, 'utf8')
 const document = YAML.parseDocument(source, { strict: true, uniqueKeys: true })
 if (document.errors.length) throw new Error(`turn-model mutation manifest is invalid: ${document.errors.map((error) => error.message).join('; ')}`)
 const manifest = document.toJS()
-assert.equal(manifest.expectedMutationCount, 10, 'turn-model mutation manifest exact count guard')
+assert.equal(manifest.expectedMutationCount, 12, 'turn-model mutation manifest exact count guard')
 assert.equal(manifest.mutations.length, manifest.expectedMutationCount, 'turn-model mutation inventory count')
 assert.deepEqual([...manifest.mutations.map((item) => item.name)].sort(), [...manifest.requiredMutationNames].sort(), 'turn-model mutation exact required-name inventory')
 

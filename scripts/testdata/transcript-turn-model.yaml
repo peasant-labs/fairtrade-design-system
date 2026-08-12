@@ -185,6 +185,30 @@ cases:
       effectiveModels: [Anthropic/Claude-Opus-4-8]
       changedFrom: [Anthropic/Claude-Fable-5]
       markerCount: 1
+  - name: canonical-unicode-edges
+    payload:
+      id: canonical-unicode-edges
+      harness: claude-code
+      startTime: '2026-08-12T15:10:00Z'
+      endTime: '2026-08-12T15:14:00Z'
+      durationMins: 4
+      totalTokens: 40
+      tokensIn: 20
+      tokensOut: 20
+      turnCount: 4
+      toolCallCount: 0
+      model: anthropic/claude-fable-5
+      turns:
+        - { index: 0, role: assistant, content: invalid NEL edge remains mounted, timestamp: '2026-08-12T15:10:00Z', depth: 0, observedModel: "\u0085anthropic/claude-opus-4-8\u0085" }
+        - { index: 1, role: assistant, content: inherited root after invalid NEL, timestamp: '2026-08-12T15:11:00Z', depth: 0 }
+        - { index: 2, role: assistant, content: valid BOM edge exact bytes, timestamp: '2026-08-12T15:12:00Z', depth: 0, observedModel: "\uFEFFanthropic/claude-opus-4-8\uFEFF" }
+        - { index: 3, role: assistant, content: inherited exact BOM edge bytes, timestamp: '2026-08-12T15:13:00Z', depth: 0 }
+    options: null
+    expect:
+      indices: [0, 1, 2, 3]
+      effectiveModels: [anthropic/claude-fable-5, anthropic/claude-fable-5, "\uFEFFanthropic/claude-opus-4-8\uFEFF", "\uFEFFanthropic/claude-opus-4-8\uFEFF"]
+      changedFrom: [null, null, anthropic/claude-fable-5, null]
+      markerCount: 1
   - name: mounted-production-path
     payload:
       id: mounted-production-path

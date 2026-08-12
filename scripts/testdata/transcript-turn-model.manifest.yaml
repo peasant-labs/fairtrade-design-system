@@ -1,4 +1,4 @@
-expectedCaseCount: 9
+expectedCaseCount: 10
 requiredNames:
   - sticky-carry-forward
   - repeated-observation
@@ -8,8 +8,9 @@ requiredNames:
   - legacy-all-missing
   - invalid-observations
   - exact-model-bytes
+  - canonical-unicode-edges
   - mounted-production-path
-expectedMutationCount: 10
+expectedMutationCount: 12
 requiredMutationNames:
   - missing-resets-to-seed
   - repeat-emits-transition
@@ -18,14 +19,16 @@ requiredMutationNames:
   - nested-mutates-root
   - resolve-after-projection
   - normalizes-model-id
+  - canonical-validator-bypassed
   - provider-as-speaker
   - brand-mark-dropped
   - sticky-chrome-uses-seed
+  - transcript-app-drops-observations
 mutations:
   - name: missing-resets-to-seed
     file: src/ui/transcript/adapter.js
     find: "const model = stickyModels.get(t.index)"
-    replace: "const model = t.role === 'assistant' && (t.depth ?? 0) === 0 && t.observedModel === undefined && options?.visibleTurnIndices === undefined ? { effectiveModel: payload.model } : stickyModels.get(t.index)"
+    replace: "const model = payload.id === 'sticky-carry-forward' && t.role === 'assistant' && (t.depth ?? 0) === 0 && t.observedModel === undefined ? { effectiveModel: payload.model } : stickyModels.get(t.index)"
     expectedDiagnostic: sticky-carry-forward
   - name: repeat-emits-transition
     file: src/ui/transcript/adapter.js
@@ -35,7 +38,7 @@ mutations:
   - name: change-marker-suppressed
     file: src/ui/transcript/adapter.js
     find: "model.modelChangedFrom = before"
-    replace: "if (!(turns.length === 4 && turn.index === 2)) model.modelChangedFrom = before"
+    replace: "if (!(turns[0]?.content === 'first A' && turn.index === 2)) model.modelChangedFrom = before"
     expectedDiagnostic: sticky-carry-forward
   - name: switchback-suppressed
     file: src/ui/transcript/adapter.js
@@ -56,9 +59,14 @@ mutations:
     expectedDiagnostic: hidden-boundary-projection
   - name: normalizes-model-id
     file: src/ui/transcript/adapter.js
-    find: "return turn.observedModel"
-    replace: "return turn.observedModel.trim().toLowerCase()"
+    find: "return parsed.success ? parsed.data : undefined"
+    replace: "return parsed.success ? (turn.observedModel === 'Anthropic/Claude-Opus-4-8' ? parsed.data.toLowerCase() : parsed.data) : undefined"
     expectedDiagnostic: exact-model-bytes
+  - name: canonical-validator-bypassed
+    file: src/ui/transcript/adapter.js
+    find: "const parsed = zObservedModelID.safeParse(turn.observedModel)"
+    replace: "const parsed = { success: typeof turn.observedModel === 'string' && turn.observedModel.length > 0 && turn.observedModel.trim() === turn.observedModel, data: turn.observedModel }"
+    expectedDiagnostic: canonical-unicode-edges
   - name: provider-as-speaker
     file: src/ui/transcript/TurnCard.jsx
     find: "const roleLabel = isSub ? 'subagent' : turn.role"
@@ -73,4 +81,9 @@ mutations:
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "const activeModel = turns.find((turn) => turn.index === activeTurn)?.effectiveModel"
     replace: "const activeModel = session.model"
+    expectedDiagnostic: mounted-production-path
+  - name: transcript-app-drops-observations
+    file: src/mockups/inuse/TranscriptApp.jsx
+    find: "if (t.observedModel) wire.observedModel = t.observedModel"
+    replace: "if (false && t.observedModel) wire.observedModel = t.observedModel"
     expectedDiagnostic: mounted-production-path

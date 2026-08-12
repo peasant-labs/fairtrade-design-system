@@ -41,7 +41,7 @@ const failures = []
 try {
   const { adaptTranscript } = await server.ssrLoadModule('/src/ui/transcript/adapter.js')
   const { default: TurnCard } = await server.ssrLoadModule('/src/ui/transcript/TurnCard.jsx')
-  const { default: TranscriptViewer } = await server.ssrLoadModule('/src/ui/transcript/TranscriptViewer.jsx')
+  const { default: TranscriptApp } = await server.ssrLoadModule('/src/mockups/inuse/TranscriptApp.jsx')
 
   for (const testCase of corpus.cases) {
     try {
@@ -59,7 +59,7 @@ try {
       }
 
       if (testCase.name === 'mounted-production-path') {
-        await assertMountedContract(viewModel, TranscriptViewer)
+        await assertMountedContract(TranscriptApp)
       }
     } catch (error) {
       failures.push(`${testCase.name}: ${error instanceof Error ? error.message : String(error)}`)
@@ -83,10 +83,9 @@ if (failures.length) {
 }
 console.log(`sticky turn-model verification: complete baseline passed for ${corpus.cases.length} strict production-path cases.`)
 
-async function assertMountedContract(viewModel, TranscriptViewer) {
+async function assertMountedContract(TranscriptApp) {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'https://fairtrade.invalid/transcript' })
-  const previous = { window: globalThis.window, document: globalThis.document, navigator: globalThis.navigator, HTMLElement: globalThis.HTMLElement, Element: globalThis.Element, Event: globalThis.Event, requestAnimationFrame: globalThis.requestAnimationFrame, IS_REACT_ACT_ENVIRONMENT: globalThis.IS_REACT_ACT_ENVIRONMENT }
-  for (const [key, value] of Object.entries({
+  const mountedGlobals = {
     window: dom.window,
     document: dom.window.document,
     navigator: dom.window.navigator,
@@ -95,45 +94,56 @@ async function assertMountedContract(viewModel, TranscriptViewer) {
     Event: dom.window.Event,
     requestAnimationFrame: (callback) => setTimeout(callback, 0),
     IS_REACT_ACT_ENVIRONMENT: true,
-  })) Object.defineProperty(globalThis, key, { configurable: true, writable: true, value })
+  }
+  const previous = new Map(Object.keys(mountedGlobals).map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]))
+  for (const [key, value] of Object.entries(mountedGlobals)) Object.defineProperty(globalThis, key, { configurable: true, writable: true, value })
   dom.window.HTMLElement.prototype.scrollIntoView = function scrollIntoView() {}
   dom.window.HTMLElement.prototype.scrollTo = function scrollTo(options) {
     if (options && typeof options.top === 'number') this.scrollTop = options.top
   }
   const container = dom.window.document.getElementById('root')
   const root = createRoot(container)
-  const render = (activeTurn) => React.createElement(TranscriptViewer, { viewModel, capabilities: {}, activeTurn })
   try {
-    await act(async () => { root.render(render(1)) })
+    await act(async () => { root.render(React.createElement(TranscriptApp, { theme: 'dark' })) })
+    const document = dom.window.document
     const stream = dom.window.document.querySelector('.txn-stream')
     Object.defineProperty(stream, 'clientHeight', { configurable: true, value: 400 })
+    const turnOffsets = new Map([[0, 0], [1, 100], [2, 200], [3, 300], [4, 400], [5, 500], [6, 600], [7, 700], [8, 800]])
+    for (const turn of document.querySelectorAll('[data-turn]')) {
+      const index = Number(turn.getAttribute('data-turn'))
+      Object.defineProperty(turn, 'offsetTop', { configurable: true, value: turnOffsets.get(index) })
+    }
     stream.scrollTop = 100
     await act(async () => { stream.dispatchEvent(new dom.window.Event('scroll', { bubbles: true })) })
     assert.equal(dom.window.document.querySelector('.txn-sticky-model')?.textContent, 'anthropic/claude-fable-5', 'mounted-production-path: sticky seed before boundary')
-    await act(async () => { root.render(render(2)); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    stream.scrollTop = 450
+    await act(async () => { stream.dispatchEvent(new dom.window.Event('scroll', { bubbles: true })); await new Promise((resolve) => setTimeout(resolve, 0)) })
     assert.equal(dom.window.document.querySelector('.txn-sticky-model')?.textContent, 'anthropic/claude-opus-4-8', 'mounted-production-path: active sticky model')
-    const document = dom.window.document
     const topLevelAssistants = [...document.querySelectorAll('.txn-turn.asst .txn-rolelabel')]
-    assert.ok(topLevelAssistants.length >= 3, 'mounted-production-path: top-level assistant inventory')
+    assert.equal(topLevelAssistants.length, 6, 'mounted-production-path: top-level assistant inventory')
     assert.ok(topLevelAssistants.every((node) => node.textContent.trim() === 'assistant'), 'mounted-production-path: exact assistant speaker')
     assert.ok(topLevelAssistants.every((node) => node.querySelector('[role="img"][aria-label="Claude Code"]')), 'mounted-production-path: accessible provider mark')
     const modelText = [...document.querySelectorAll('.txn-turnmodel')].map((node) => node.textContent)
-    assert.deepEqual(modelText, ['anthropic/claude-fable-5', 'anthropic/claude-opus-4-8', 'anthropic/claude-opus-4-8', 'anthropic/claude-opus-4-8'], 'mounted-production-path: exact model nodes')
-    assert.equal(document.querySelector('.txn-turn.user .txn-turnmodel'), null, 'mounted-production-path: absent attribution has no model node')
+    assert.deepEqual(modelText, ['anthropic/claude-fable-5', 'anthropic/claude-fable-5', 'anthropic/claude-opus-4-8', 'anthropic/claude-opus-4-8', 'anthropic/claude-opus-4-8', 'anthropic/claude-opus-4-8', 'anthropic/claude-opus-4-8'], 'mounted-production-path: exact model nodes')
+    assert.equal(document.querySelectorAll('.txn-turn.user .txn-turnmodel').length, 0, 'mounted-production-path: absent attribution has no model node')
+    assert.equal(document.querySelectorAll('.txn-modelchange').length, 1, 'mounted-production-path: exact marker inventory')
     assert.equal(document.querySelector('.txn-modelchange')?.textContent.trim(), 'model changed: anthropic/claude-fable-5 -> anthropic/claude-opus-4-8', 'mounted-production-path: exact marker text')
     assert.ok(document.querySelector('.txn-meta')?.textContent.includes('claude code'), 'mounted-production-path: session harness text retained')
     assert.ok(!/Session\/Default|Turn\/Explicit/.test(document.body.textContent), 'mounted-production-path: no synthetic model sentinel')
   } finally {
     await act(async () => { root.unmount() })
   }
-  for (const [key, value] of Object.entries(previous)) Object.defineProperty(globalThis, key, { configurable: true, writable: true, value })
+  for (const [key, descriptor] of previous) {
+    if (descriptor) Object.defineProperty(globalThis, key, descriptor)
+    else delete globalThis[key]
+  }
 }
 
 function validateFixtures(manifestValue, corpusValue) {
   exactFields(manifestValue, ['expectedCaseCount', 'requiredNames', 'expectedMutationCount', 'requiredMutationNames', 'mutations'], 'turn-model manifest')
   exactFields(corpusValue, ['cases'], 'turn-model corpus')
-  assert.equal(manifestValue.expectedCaseCount, 9, 'turn-model manifest exact case guard')
-  assert.equal(manifestValue.expectedMutationCount, 10, 'turn-model manifest exact mutation guard')
+  assert.equal(manifestValue.expectedCaseCount, 10, 'turn-model manifest exact case guard')
+  assert.equal(manifestValue.expectedMutationCount, 12, 'turn-model manifest exact mutation guard')
   assert.equal(corpusValue.cases.length, manifestValue.expectedCaseCount, 'turn-model corpus count')
   assert.equal(manifestValue.mutations.length, manifestValue.expectedMutationCount, 'turn-model mutation count')
   requiredInventory(corpusValue.cases.map((item) => item.name), manifestValue.requiredNames, 'turn-model cases')

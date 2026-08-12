@@ -27,6 +27,7 @@
 
 import { parseArgs, parseResult, extractPath, editPairs, writeContent, countDiff } from './adapter.parse.js'
 import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analytics.js'
+import { zObservedModelID } from '@peasant-labs/schema'
 
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
@@ -133,9 +134,9 @@ export function prefilterTurns(turns) {
  * @returns {string | undefined}
  */
 function validObservedModel(turn) {
-  if (turn.role !== 'assistant' || typeof turn.observedModel !== 'string') return undefined
-  if (turn.observedModel.length === 0 || turn.observedModel.trim() !== turn.observedModel) return undefined
-  return turn.observedModel
+  if (turn.role !== 'assistant') return undefined
+  const parsed = zObservedModelID.safeParse(turn.observedModel)
+  return parsed.success ? parsed.data : undefined
 }
 
 /**
