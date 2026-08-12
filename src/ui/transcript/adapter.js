@@ -695,6 +695,8 @@ export function adaptTranscript(payload, annotations, analytics) {
     if (p === finalPos) turnVM.isFinal = true
     if (t.tokensIn != null || t.tokensOut != null) turnVM.tokens = { in: t.tokensIn ?? 0, out: t.tokensOut ?? 0 }
     if (t.timestamp) turnVM.timestamp = t.timestamp
+    const effectiveModel = t.model ?? payload.model
+    if (effectiveModel) turnVM.model = effectiveModel
     turnVMs.push(turnVM)
   }
 

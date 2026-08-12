@@ -101,6 +101,7 @@ export default function TurnCard({
         )}
         {roleLabel}
       </span>
+      {turn.model && <span className="txn-turnmodel mono">{turn.model}</span>}
       {isSub && <span className="txn-depth tnum">depth {turn.depth}</span>}
       <span className="txn-turnnum tnum">#{turn.label}</span>
       {(turn.time || turn.timestamp) && (

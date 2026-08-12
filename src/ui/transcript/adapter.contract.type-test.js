@@ -56,6 +56,7 @@ const wire = {
       index: 1,
       role: 'assistant',
       content: 'editing',
+      model: 'Claude Opus 4.7',
       timestamp: '2026-06-24T00:01:00Z',
       depth: 0,
       entryType: 'tool_use',
@@ -75,9 +76,21 @@ const wire = {
 }
 void wire
 
+/* The optional model is a canonical generated-schema field, not a Fairtrade-local
+   wire extension. The released package must expose this same field before the
+   consumer contract can pass in continuous integration. */
+/** @param {TurnDetail} turn */
+function readCanonicalTurnModel(turn) {
+  return turn.model
+}
+void readCanonicalTurnModel
+
 /* ── (1) adaptTranscript(payload) → TranscriptViewModel ─────────────────────── */
 /** @type {TranscriptViewModel} */
 const vm1 = adaptTranscript(wire)
+/** @type {string | undefined} */
+const effectiveModel = vm1.turns[1].model
+void effectiveModel
 // toolCallsById is a Map (parsed once)
 /** @type {ToolCallVM | undefined} */
 const tc = vm1.toolCallsById.get('t1')

@@ -173,6 +173,7 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {string} label                 display label, e.g. "1a" / "2"
  * @property {string} content               markdown body (thinking already extracted)
  * @property {number} depth                 subagent nesting depth (0 = top level)
+ * @property {string} [model]                effective display model: turn value, then session fallback
  * @property {import('@peasant-labs/schema').Harness} [provider] canonical provider identity for a top-level assistant turn
  * @property {string} [agentName]           subagent name when depth > 0
  * @property {ThinkingVM} [thinking]
