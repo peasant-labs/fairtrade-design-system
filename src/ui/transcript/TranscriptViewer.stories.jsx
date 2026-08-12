@@ -33,10 +33,10 @@ const editTool = {
 
 const turns = [
   { index: 0, role: 'user', label: '1', depth: 0, content: 'Port the transcript canvas into the shared package. Read the renderer first.', toolCalls: [], annotations: [], tokens: { in: 280, out: 0 }, timestamp: '8m ago' },
-  { index: 1, role: 'assistant', label: '1a', depth: 0, provider: 'claude-code', content: 'Reading **TurnRow.tsx** before extracting it.', thinking: { text: 'The renderer lives under canvas/. Read TurnRow.tsx first.', words: 16 }, toolCalls: [readTool], annotations: [], tokens: { in: 1840, out: 920 }, timestamp: '8m ago' },
-  { index: 2, role: 'assistant', label: '2a', depth: 0, provider: 'claude-code', isError: true, content: 'Running the workspace typecheck first.', toolCalls: [bashFail], annotations: [{ id: 'a1', kind: 'error', turn: 2, label: 'typecheck failed', preview: 'TS2532' }], tokens: { in: 2400, out: 1180 }, timestamp: '6m ago' },
-  { index: 3, role: 'assistant', label: '2b', depth: 0, provider: 'claude-code', content: 'The index access is unguarded; adding a null-guard.', toolCalls: [editTool], annotations: [], tokens: { in: 2600, out: 1320 }, timestamp: '5m ago' },
-  { index: 4, role: 'assistant', label: '2c', depth: 1, agentName: 'docs-writer', content: 'Documenting the props/callback/capability contract.', toolCalls: [], annotations: [], tokens: { in: 1700, out: 1140 }, timestamp: '3m ago' },
+  { index: 1, role: 'assistant', label: '1a', depth: 0, provider: 'claude-code', model: 'Claude Opus 4.7', content: 'Reading **TurnRow.tsx** before extracting it.', thinking: { text: 'The renderer lives under canvas/. Read TurnRow.tsx first.', words: 16 }, toolCalls: [readTool], annotations: [], tokens: { in: 1840, out: 920 }, timestamp: '8m ago' },
+  { index: 2, role: 'assistant', label: '2a', depth: 0, provider: 'claude-code', model: 'Session/Default-V3', isError: true, content: 'Running the workspace typecheck first.', toolCalls: [bashFail], annotations: [{ id: 'a1', kind: 'error', turn: 2, label: 'typecheck failed', preview: 'TS2532' }], tokens: { in: 2400, out: 1180 }, timestamp: '6m ago' },
+  { index: 3, role: 'assistant', label: '2b', depth: 0, provider: 'claude-code', model: 'Turn/Explicit-V6', content: 'The index access is unguarded; adding a null-guard.', toolCalls: [editTool], annotations: [], tokens: { in: 2600, out: 1320 }, timestamp: '5m ago' },
+  { index: 4, role: 'assistant', label: '2c', depth: 1, agentName: 'docs-writer', model: 'Subagent/Research-V1', content: 'Documenting the props/callback/capability contract.', toolCalls: [], annotations: [], tokens: { in: 1700, out: 1140 }, timestamp: '3m ago' },
 ]
 
 const viewModel = {

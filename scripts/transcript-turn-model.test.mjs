@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url'
 import assert from 'node:assert/strict'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { JSDOM } from 'jsdom'
 import YAML from 'yaml'
 
 const fixture = loadStrictYaml('testdata/transcript-turn-model.yaml')
@@ -36,7 +37,8 @@ for (const testCase of fixture.cases) {
 try {
   const ui = await import(new URL(`../dist/lib/ui.js?turn-model=${Date.now()}`, import.meta.url).href)
   const TurnCard = ui.TranscriptTurnCard
-  if (typeof TurnCard !== 'function') throw new Error('TranscriptTurnCard is not a production export')
+  const TranscriptViewer = ui.TranscriptViewer
+  if (typeof TurnCard !== 'function' || typeof TranscriptViewer !== 'function') throw new Error('transcript turn production exports are unavailable')
   for (const testCase of fixture.cases) {
     const viewModel = viewModels.get(testCase.name)
     if (!viewModel) continue
@@ -51,6 +53,10 @@ try {
         if (!markup.includes(model)) failures.push(`${testCase.name} turn ${index}: model value lost its original case in the production turn header`)
       }
     }
+    const mountedMarkup = renderToStaticMarkup(React.createElement(TranscriptViewer, { viewModel, capabilities: {} }))
+    const mountedModels = [...new JSDOM(mountedMarkup).window.document.querySelectorAll('.txn-turnmodel')]
+      .map((node) => node.textContent)
+    assert.deepEqual(mountedModels, testCase.expected.models.filter((model) => model !== null), `${testCase.name}: mounted viewer model headers`)
   }
 } catch (error) {
   failures.push(`production component export: ${error instanceof Error ? error.message : String(error)}`)
