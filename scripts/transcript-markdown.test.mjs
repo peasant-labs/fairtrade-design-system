@@ -176,12 +176,12 @@ for (const testCase of fixtures.cases) {
   assert(`${testCase.name}-table-wrap`, `${testCase.name}: table blocks own local overflow`, root.querySelectorAll('.txn-md-table-wrap').length === testCase.expect.tableWrapCount)
   assert(`${testCase.name}-code-wrap`, `${testCase.name}: fenced code blocks own local overflow`, root.querySelectorAll('.txn-md-code-wrap').length === testCase.expect.codeWrapCount)
   assert(`${testCase.name}-safe-links`, `${testCase.name}: safe links remain anchors`, root.querySelectorAll('a.txn-md-link').length === testCase.expect.safeHrefCount)
-    assert(`${testCase.name}-blocked-links`, `${testCase.name}: unsafe links become inert text`, root.querySelectorAll('[data-txn-link-blocked="true"]').length === testCase.expect.blockedLinkCount)
-    if (testCase.expect.safeLinkRel) {
-      const safeAnchors = [...root.querySelectorAll('a.txn-md-link')]
-      const rels = safeAnchors.map((anchor) => (anchor.getAttribute('rel') || '').split(/\s+/))
-      assert(`${testCase.name}-safe-rel`, `${testCase.name}: safe links carry rel ${JSON.stringify(testCase.expect.safeLinkRel)} as untrusted-content defense in depth`, safeAnchors.length === testCase.expect.safeHrefCount && rels.every((rel) => rel.includes(testCase.expect.safeLinkRel)))
-    }
+  assert(`${testCase.name}-blocked-links`, `${testCase.name}: unsafe links become inert text`, root.querySelectorAll('[data-txn-link-blocked="true"]').length === testCase.expect.blockedLinkCount)
+  if (testCase.expect.safeLinkRel) {
+    const safeAnchors = [...root.querySelectorAll('a.txn-md-link')]
+    const rels = safeAnchors.map((anchor) => (anchor.getAttribute('rel') || '').split(/\s+/))
+    assert(`${testCase.name}-safe-rel`, `${testCase.name}: safe links carry rel ${JSON.stringify(testCase.expect.safeLinkRel)} as untrusted-content defense in depth`, safeAnchors.length === testCase.expect.safeHrefCount && rels.every((rel) => rel.includes(testCase.expect.safeLinkRel)))
+  }
   if (testCase.expect.languageClass) {
     assert(`${testCase.name}-language`, `${testCase.name}: fenced code preserves its language class`, root.querySelector(`code.${testCase.expect.languageClass}`) !== null)
   }
