@@ -2710,9 +2710,7 @@
   .txn-sort { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: 0; cursor: pointer; font-family: var(--font-mono); font-size: var(--fs-sm); text-transform: lowercase; color: var(--ink-3); padding: 0; }
   .txn-sort:hover { color: var(--ink); }
   .txn-files-churn-col { width: 1%; white-space: nowrap; text-align: right; }
-  .txn-filerow { cursor: pointer; }
-  .txn-filerow:focus-visible { outline: var(--sp-1) solid var(--focus-ring); outline-offset: calc(var(--sp-1) * -1); }
-  .txn-file-cell { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+  .txn-file-cell { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; width: 100%; min-height: var(--target-min); padding: 0; background: transparent; border: 0; color: inherit; cursor: pointer; text-align: left; }
   .txn-file-cell .lucide { color: var(--ink-3); flex: none; }
   .txn-file-path { color: var(--ink); }
   .txn-file-counts { color: var(--ink-4); font-size: 11px; }

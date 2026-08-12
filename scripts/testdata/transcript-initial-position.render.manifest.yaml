@@ -1,39 +1,89 @@
 expectedCaseCount: 1
 requiredNames:
   - source viewer mounts and positions without selecting or writing history
-expectedReturnCaseCount: 8
+expectedReturnCaseCount: 12
 requiredReturnNames:
-  - edited file reaches diffs and full trace restores exact offset and focus
+  - edited file pointer reaches diffs and full trace restores exact offset
+  - edited file keyboard reaches diffs and full trace restores descendant focus
   - direct diffs departure and full trace restore tab focus
   - direct initial files mount fabricates no trace position
-  - read-only file jumps before active full trace re-click restores original position
+  - read-only file pointer jumps before active full trace re-click restores position
+  - read-only file keyboard jumps before active full trace re-click restores position
   - highlights departure always saves and full trace restores exact position
-  - transient read-only inspection cannot overwrite the original trace position
-  - keyboard tab navigation saves and restores the exact trace position
-  - search shortcut returns to trace and preserves the exact position
-expectedLoaderMutationCount: 5
+  - transient read-only inspection cannot overwrite original trace position
+  - keyboard tab navigation saves and restores exact trace position
+  - search shortcut returns to trace and preserves exact position
+  - external controlled parent rerender captures and restores exact trace position
+  - session change discards saved trace position
+expectedLoaderMutationCount: 9
+requiredLoaderMutationNames:
+  - render manifest count drift is rejected
+  - render manifest required name deletion is rejected
+  - render manifest required name substitution is rejected
+  - render manifest duplicate names are rejected
+  - render manifest count-preserving required name rename is rejected
+  - render loader mutation inventory rename is rejected
+  - render case unknown fields are rejected
+  - render return case unknown fields are rejected
+  - render multiple YAML documents are rejected
 loaderMutations:
   - {name: render manifest count drift is rejected, target: manifest, find: "expectedCaseCount: 1\nrequiredNames:", replace: "expectedCaseCount: 2\nrequiredNames:", expectedError: do not match}
+  - {name: render manifest required name deletion is rejected, target: manifest, find: "requiredNames:\n  - source viewer mounts and positions without selecting or writing history", replace: "requiredNames: []", expectedError: do not match}
+  - {name: render manifest required name substitution is rejected, target: manifest, find: "requiredNames:\n  - source viewer mounts and positions without selecting or writing history\nexpectedReturnCaseCount:", replace: "requiredNames:\n  - substituted source viewer name\nexpectedReturnCaseCount:", expectedError: do not match}
   - {name: render manifest duplicate names are rejected, target: manifest, find: "requiredNames:\n  - source viewer mounts and positions without selecting or writing history", replace: "requiredNames:\n  - source viewer mounts and positions without selecting or writing history\n  - source viewer mounts and positions without selecting or writing history", expectedError: unique}
+  - {name: render manifest count-preserving required name rename is rejected, target: manifest, find: "  - session change discards saved trace position\nexpectedLoaderMutationCount:", replace: "  - renamed session-change case\nexpectedLoaderMutationCount:", expectedError: do not match}
+  - {name: render loader mutation inventory rename is rejected, target: manifest, find: "requiredLoaderMutationNames:\n  - render manifest count drift is rejected\n  - render manifest required name deletion is rejected", replace: "requiredLoaderMutationNames:\n  - renamed loader mutation\n  - render manifest required name deletion is rejected", expectedError: loader mutation inventory}
   - {name: render case unknown fields are rejected, target: cases, find: "    expectedContains: txn-app", replace: "    unknown: true\n    expectedContains: txn-app", expectedError: fields}
   - {name: render return case unknown fields are rejected, target: cases, find: "    sourceOffset: 137", replace: "    unknown: true\n    sourceOffset: 137", expectedError: fields}
   - {name: render multiple YAML documents are rejected, target: cases, find: "cases:", replace: "---\ncases:", expectedError: exactly one YAML document}
-expectedMutationCount: 17
+requiredMutationNames:
+  - mounted source hook drops normalizer import
+  - mounted source positioning selects the target
+  - mounted source positioning writes browser history
+  - trace tab departure forgets reading position
+  - pointer tab departure loses pre-focus origin
+  - full trace tab fails to request restoration
+  - trace restoration loses exact scroll offset
+  - trace restoration adds wrong offset before correct offset
+  - trace restoration is repeated
+  - trace restoration loses source scroller focus
+  - trace restoration loses source descendant focus
+  - trace restoration loses tab focus origin
+  - trace restoration uses unrelated focus target
+  - trace restoration arms before full trace selection
+  - read-only file loses last-read destination
+  - transient inspection overwrites original reading position
+  - keyboard tab navigation bypasses reading-position capture
+  - dedicated return affordance is reintroduced
+  - search shortcut bypasses reading-position capture
+  - session boundary does not clear saved position
+  - file activation target loses native button semantics
+  - edited file pointer path bypasses activation handler
+  - external controlled departure fallback is disabled
+  - external controlled return fallback is disabled
+expectedMutationCount: 24
 mutations:
   - {name: mounted source hook drops normalizer import, file: hook, find: "  normalizeTranscriptInitialPosition,\n", replace: "", expectedError: mounted source module invariant failed}
   - {name: mounted source positioning selects the target, file: viewer, find: "    el.scrollIntoView({ block: 'start', behavior: 'auto' })\n    latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()\n    return 'applied'", replace: "    el.scrollIntoView({ block: 'start', behavior: 'auto' })\n    latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()\n    setActiveTurn(position.turnIndex)\n    return 'applied'", expectedError: positioning selection invariant failed}
   - {name: mounted source positioning writes browser history, file: viewer, find: "    el.scrollIntoView({ block: 'start', behavior: 'auto' })\n    latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()\n    return 'applied'", replace: "    el.scrollIntoView({ block: 'start', behavior: 'auto' })\n    latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()\n    window.history.replaceState({}, '', '/mutated')\n    return 'applied'", expectedError: positioning history invariant failed}
   - {name: trace tab departure forgets reading position, file: viewer, find: "    traceReadingPositionRef.current = nextPosition\n", replace: "    traceReadingPositionRef.current = null\n    return\n    traceReadingPositionRef.current = nextPosition\n", expectedError: focus invariant failed}
-  - {name: pointer tab departure loses the pre-focus scroller origin, file: viewer, find: "                if (event.button === 0 && id !== 'trace') captureTraceReadingPosition()", replace: "                if (false) captureTraceReadingPosition()", expectedError: focus invariant failed}
+  - {name: pointer tab departure loses pre-focus origin, file: viewer, find: "                if (event.button === 0 && id !== 'trace') captureTraceReadingPosition()", replace: "                if (false) captureTraceReadingPosition()", expectedError: focus invariant failed}
   - {name: full trace tab fails to request restoration, file: viewer, find: "    setTraceReadingPosition(requestedPosition)\n    setViewMode('list')", replace: "    setTraceReadingPosition({ ...requestedPosition, restoreRequested: false })\n    setViewMode('list')", expectedError: focus invariant failed}
-  - {name: trace restoration loses the exact scroll offset, file: viewer, find: "    sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })", replace: "    sc.scrollTo({ top: 0, behavior: 'auto' })", expectedError: trace position invariant failed}
-  - {name: trace restoration is repeated, file: viewer, find: "    sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })\n    if (target.focusOrigin.kind === 'scroller')", replace: "    sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })\n    sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })\n    if (target.focusOrigin.kind === 'scroller')", expectedError: expected 1 restoration call}
-  - {name: trace restoration loses the source focus, file: viewer, find: "    if (target.focusOrigin.kind === 'scroller') sc.focus({ preventScroll: true })", replace: "    if (false) sc.focus({ preventScroll: true })", expectedError: focus invariant failed}
-  - {name: trace restoration loses the tab focus origin, file: viewer, find: "    else tabRefs.current.trace?.focus({ preventScroll: true })", replace: "    else if (false) tabRefs.current.trace?.focus({ preventScroll: true })", expectedError: focus invariant failed}
-  - {name: trace restoration uses an unrelated focus target, file: viewer, find: "    else tabRefs.current.trace?.focus({ preventScroll: true })", replace: "    else tabRefs.current.highlights?.focus({ preventScroll: true })", expectedError: focus invariant failed}
+  - {name: trace restoration loses exact scroll offset, file: viewer, find: "    sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })", replace: "    sc.scrollTo({ top: 0, behavior: 'auto' })", expectedError: scroll call inventory invariant failed}
+  - {name: trace restoration adds wrong offset before correct offset, file: viewer, find: "    sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })", replace: "    sc.scrollTo({ top: target.scrollTop + 1, behavior: 'auto' })\n    sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })", expectedError: scroll call inventory invariant failed}
+  - {name: trace restoration is repeated, file: viewer, find: "    sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })", replace: "    sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })\n    sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })", expectedError: scroll call inventory invariant failed}
+  - {name: trace restoration loses source scroller focus, file: viewer, find: "    if (target.focusOrigin.kind === 'scroller') sc.focus({ preventScroll: true })", replace: "    if (false) sc.focus({ preventScroll: true })", expectedError: focus invariant failed}
+  - {name: trace restoration loses source descendant focus, file: viewer, find: "      ;(control ?? tabRefs.current.trace)?.focus({ preventScroll: true })", replace: "      ;tabRefs.current.trace?.focus({ preventScroll: true })", expectedError: focus invariant failed}
+  - {name: trace restoration loses tab focus origin, file: viewer, find: "    } else tabRefs.current.trace?.focus({ preventScroll: true })", replace: "    } else if (false) tabRefs.current.trace?.focus({ preventScroll: true })", expectedError: focus invariant failed}
+  - {name: trace restoration uses unrelated focus target, file: viewer, find: "    } else tabRefs.current.trace?.focus({ preventScroll: true })", replace: "    } else tabRefs.current.highlights?.focus({ preventScroll: true })", expectedError: focus invariant failed}
   - {name: trace restoration arms before full trace selection, file: viewer, find: "    initialPosition: traceReadingPosition?.restoreRequested ? { kind: 'top', requestKey: traceReadingPosition.requestKey } : null,", replace: "    initialPosition: traceReadingPosition ? { kind: 'top', requestKey: traceReadingPosition.requestKey } : null,", expectedError: premature restoration invariant failed}
-  - {name: read-only file loses its last-read destination, file: viewer, find: "    else jumpTo(file.turn ?? 0)", replace: "    else jumpTo(2)", expectedError: read-only destination invariant failed}
-  - {name: transient inspection overwrites original reading position, file: viewer, find: "    if (!snapshot || traceReadingPositionRef.current != null) return", replace: "    if (!snapshot || false) return", expectedError: focus invariant failed}
-  - {name: keyboard tab navigation bypasses reading-position capture, file: viewer, find: "    captureTraceReadingPosition()\n    selectTab(TAB_ORDER[j])\n    tabRefs.current[TAB_ORDER[j]]?.focus()", replace: "    setTab(TAB_ORDER[j])\n    tabRefs.current[TAB_ORDER[j]]?.focus()", expectedError: trace position invariant failed}
-  - {name: dedicated return affordance is reintroduced, file: viewer, find: "                <div className=\"txn-trace-actions\">", replace: "                <div className=\"txn-trace-actions\"><button type=\"button\">return to trace</button>", expectedError: dedicated return invariant failed}
-  - {name: search shortcut bypasses reading-position capture, file: viewer, find: "        e.preventDefault(); setSearchOpen(true); selectTab('trace')", replace: "        e.preventDefault(); setSearchOpen(true); setTab('trace'); traceReadingPositionRef.current = null; setTraceReadingPosition(null)", expectedError: trace position invariant failed}
+  - {name: read-only file loses last-read destination, file: viewer, find: "    else jumpTo(file.turn ?? 0)", replace: "    else jumpTo(2)", expectedError: read-only destination invariant failed}
+  - {name: transient inspection overwrites original reading position, file: viewer, find: "    if (!snapshot || snapshot.sessionId !== (session?.id ?? '') || traceReadingPositionRef.current != null) return", replace: "    if (!snapshot || snapshot.sessionId !== (session?.id ?? '') || false) return", expectedError: focus invariant failed}
+  - {name: keyboard tab navigation bypasses reading-position capture, file: viewer, find: "    captureTraceReadingPosition()\n    selectTab(TAB_ORDER[j])\n    tabRefs.current[TAB_ORDER[j]]?.focus()", replace: "    setTab(TAB_ORDER[j])\n    tabRefs.current[TAB_ORDER[j]]?.focus()", expectedError: scroll call inventory invariant failed}
+  - {name: dedicated return affordance is reintroduced, file: viewer, find: "                <div className=\"txn-trace-actions\">", replace: "                <div className=\"txn-trace-actions\"><button type=\"button\" data-reading-position-action=\"restore\">back to full trace</button>", expectedError: permitted action inventory invariant failed}
+  - {name: search shortcut bypasses reading-position capture, file: viewer, find: "        e.preventDefault(); setSearchOpen(true); selectTab('trace')", replace: "        e.preventDefault(); setSearchOpen(true); setTab('trace'); traceReadingPositionRef.current = null; setTraceReadingPosition(null)", expectedError: scroll call inventory invariant failed}
+  - {name: session boundary does not clear saved position, file: viewer, find: "    latestTraceReadingSnapshotRef.current = null\n    traceReadingPositionRef.current = null\n    skipTraceRestoreRef.current = false", replace: "    readingPositionSessionRef.current = sessionId\n    if (traceReadingPositionRef.current) traceReadingPositionRef.current = { ...traceReadingPositionRef.current, sessionId }\n    if (latestTraceReadingSnapshotRef.current) latestTraceReadingSnapshotRef.current = { ...latestTraceReadingSnapshotRef.current, sessionId }\n    skipTraceRestoreRef.current = false", expectedError: no-restore case unexpectedly restored}
+  - {name: file activation target loses native button semantics, file: viewer, find: "                          type=\"button\"\n                          className=\"txn-file-cell\"", replace: "                          role=\"button\"\n                          tabIndex={0}\n                          className=\"txn-file-cell\"", expectedError: file activation semantics invariant failed}
+  - {name: edited file pointer path bypasses activation handler, file: viewer, find: "                          onClick={() => openFile(f)}", replace: "                          onClick={() => {}}", expectedError: tab invariant failed}
+  - {name: external controlled departure fallback is disabled, file: viewer, find: "      armTraceReadingPosition(latestTraceReadingSnapshotRef.current)", replace: "      if (false) armTraceReadingPosition(latestTraceReadingSnapshotRef.current)", expectedError: focus invariant failed}
+  - {name: external controlled return fallback is disabled, file: viewer, find: "      else requestTraceReadingPosition()", replace: "      else if (false) requestTraceReadingPosition()", expectedError: focus invariant failed}

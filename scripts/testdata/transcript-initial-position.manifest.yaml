@@ -53,6 +53,24 @@ requiredPrecedenceNames:
   - explicit removal remains terminal
   - fallback removal remains terminal
 expectedMutationCount: 17
+requiredMutationNames:
+  - premature pending consumption
+  - omitted session token
+  - array offset target
+  - explicit removal revives legacy
+  - fallback removal revives legacy
+  - premature ref discard
+  - rendered absence discards full-present target
+  - bigint kind uses unsafe JSON serialization
+  - bigint turn identity uses unsafe JSON serialization
+  - revoked proxy bypasses array reflection guard
+  - prototype trap bypasses reflection guard
+  - own-keys trap bypasses reflection guard
+  - descriptor map bypasses reflection guard
+  - descriptor map accepts accessors
+  - hidden kind uses independent descriptor lookup
+  - hidden kind uses direct property read
+  - missing reported descriptor is accepted
 mutations:
   - {name: premature pending consumption, file: normalizer, find: "return result === 'applied' || result === 'discarded' ? nextToken : consumedToken", replace: "return nextToken", expectedError: terminal consumption}
   - {name: omitted session token, file: normalizer, find: "sessionId ?? ''", replace: "''", expectedError: session token}
