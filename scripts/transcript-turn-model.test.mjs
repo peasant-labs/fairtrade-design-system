@@ -66,7 +66,7 @@ if (failures.length > 0) {
   console.error([
     'turn model verification failed.',
     'What went wrong: the effective turn model or its production header rendering diverged from the strict fixture family.',
-    'Why it happened: per-turn metadata must override the session fallback while legacy payloads may omit both values.',
+    'Why it happened: an explicit per-turn model must attribute any role, the session model is inferred only for assistant turns, and legacy payloads may omit both values.',
     'Where: src/ui/transcript/adapter.js, src/ui/transcript/view-model.js, src/ui/transcript/TurnCard.jsx, and the packed-library output.',
     `When: focused turn-model verification (${failures.join('; ')}).`,
     'What it means: mixed-model transcripts can show the wrong attribution or fail to display a valid model.',
@@ -82,7 +82,7 @@ function validateFixture(value) {
   assert.equal(value.expectedCaseCount, value.cases.length, 'turn model fixture case count')
   assert.equal(value.expectedCaseCount, 4, 'turn model fixture must retain the four required cases')
   assert.equal(value.expectedMutationCount, value.mutations.length, 'turn model fixture mutation count')
-  assert.equal(value.expectedMutationCount, 2, 'turn model fixture must retain both fallback mutations')
+  assert.equal(value.expectedMutationCount, 3, 'turn model fixture must retain the explicit-win, assistant-fallback, and assistant-only mutations')
   assert.equal(new Set(value.cases.map((testCase) => testCase.name)).size, value.cases.length, 'turn model case names must be unique')
   assert.deepEqual(value.cases.map((testCase) => testCase.name), ['turn-override', 'session-fallback', 'mixed-turns', 'total-absence'], 'turn model fixture case order')
   assert.equal(value.componentCase, 'turn-override', 'turn model component case')

@@ -1,5 +1,5 @@
 expectedCaseCount: 4
-expectedMutationCount: 2
+expectedMutationCount: 3
 componentCase: turn-override
 cases:
   - name: turn-override
@@ -56,38 +56,46 @@ cases:
       id: mixed-turns
       harness: codex
       startTime: '2026-08-11T10:00:00Z'
-      endTime: '2026-08-11T10:03:00Z'
-      durationMins: 3
-      totalTokens: 60
-      tokensIn: 36
-      tokensOut: 24
-      turnCount: 3
+      endTime: '2026-08-11T10:04:00Z'
+      durationMins: 4
+      totalTokens: 80
+      tokensIn: 48
+      tokensOut: 32
+      turnCount: 4
       toolCallCount: 0
       model: Session/Fallback-V5
       turns:
         - index: 0
           role: user
-          content: mixed model request
+          content: explicit non-assistant model
           timestamp: '2026-08-11T10:00:00Z'
           depth: 0
+          model: Turn/User-V4
         - index: 1
-          role: assistant
-          content: explicit mixed response
+          role: user
+          content: unlabeled non-assistant request
           timestamp: '2026-08-11T10:01:00Z'
           depth: 0
-          model: Turn/Explicit-V6
         - index: 2
           role: assistant
-          content: fallback mixed response
+          content: explicit mixed response
           timestamp: '2026-08-11T10:02:00Z'
+          depth: 0
+          model: Turn/Explicit-V6
+        - index: 3
+          role: assistant
+          content: fallback mixed response
+          timestamp: '2026-08-11T10:03:00Z'
           depth: 0
     expected:
       models:
-        - Session/Fallback-V5
+        - Turn/User-V4
+        - null
         - Turn/Explicit-V6
         - Session/Fallback-V5
       modelProperties:
         - true
+        - false
         - true
         - true
   - name: total-absence
@@ -115,10 +123,14 @@ cases:
         - false
 mutations:
   - name: explicit-turn-model-must-win
-    find: const effectiveModel = t.model ?? payload.model
-    replace: const effectiveModel = payload.model
+    find: "const effectiveModel = t.model ?? (t.role === 'assistant' ? payload.model : undefined)"
+    replace: "const effectiveModel = (t.role === 'assistant' ? payload.model : undefined)"
     expectedError: 'turn-override: models'
   - name: session-model-must-fallback
-    find: const effectiveModel = t.model ?? payload.model
+    find: "const effectiveModel = t.model ?? (t.role === 'assistant' ? payload.model : undefined)"
     replace: const effectiveModel = t.model
     expectedError: 'session-fallback: models'
+  - name: session-fallback-must-be-assistant-only
+    find: "const effectiveModel = t.model ?? (t.role === 'assistant' ? payload.model : undefined)"
+    replace: const effectiveModel = t.model ?? payload.model
+    expectedError: 'mixed-turns: models'

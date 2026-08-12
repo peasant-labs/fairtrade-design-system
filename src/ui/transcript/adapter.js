@@ -695,7 +695,9 @@ export function adaptTranscript(payload, annotations, analytics) {
     if (p === finalPos) turnVM.isFinal = true
     if (t.tokensIn != null || t.tokensOut != null) turnVM.tokens = { in: t.tokensIn ?? 0, out: t.tokensOut ?? 0 }
     if (t.timestamp) turnVM.timestamp = t.timestamp
-    const effectiveModel = t.model ?? payload.model
+    // An explicit per-turn model attributes any role; the session model is inferred only for
+    // assistant turns, so user/system/tool turns without an explicit model stay unlabeled.
+    const effectiveModel = t.model ?? (t.role === 'assistant' ? payload.model : undefined)
     if (effectiveModel) turnVM.model = effectiveModel
     turnVMs.push(turnVM)
   }
