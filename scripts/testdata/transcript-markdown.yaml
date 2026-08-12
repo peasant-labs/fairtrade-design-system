@@ -103,6 +103,23 @@ cases:
       languageClass: ''
       unsafeHrefAbsent: true
       rawHtmlAbsent: true
+  - name: control-character-url-stays-inert
+    prop: text
+    source: '[obfuscatedUnsafeLink](java&#x0A;script:alert(1))'
+    expect:
+      requiredTags:
+        - p
+        - span
+      textIncludes:
+        - obfuscatedUnsafeLink
+      brCount: 0
+      tableWrapCount: 0
+      codeWrapCount: 0
+      safeHrefCount: 0
+      blockedLinkCount: 1
+      languageClass: ''
+      unsafeHrefAbsent: true
+      rawHtmlAbsent: true
   - name: wide-blocks-own-overflow-context
     prop: source
     source: |-

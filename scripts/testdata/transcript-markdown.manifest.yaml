@@ -1,13 +1,19 @@
-expectedCaseCount: 4
+expectedCaseCount: 5
 requiredNames:
   - rich-gfm-structures
   - preserves-every-prose-newline
   - hostile-content-stays-inert
+  - control-character-url-stays-inert
   - wide-blocks-own-overflow-context
-expectedMutationCount: 1
+expectedMutationCount: 2
 mutations:
   - name: markdown-parser-disabled
     file: src/ui/transcript/Markdown.jsx
     find: 'remarkPlugins={[remarkGfm, remarkBreaks]}'
     replace: 'remarkPlugins={[]}'
     expectedError: rich-gfm-structures
+  - name: markdown-safe-url-validation-disabled
+    file: src/ui/transcript/Markdown.jsx
+    find: "if (protocols.some((protocol) => !SAFE_PROTOCOLS.has(protocol))) return ''"
+    replace: "if (false) return ''"
+    expectedError: control-character-url-stays-inert

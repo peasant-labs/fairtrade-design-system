@@ -8,7 +8,8 @@ import remarkGfm from 'remark-gfm'
    newline visible without changing block parsing. */
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'mailto:'])
-const HAS_PROTOCOL = /^[a-z][a-z\d+.-]*:/i
+const URL_BASE = 'https://fairtrade.invalid'
+const ENCODED_CONTROL_CHARACTER = /%(?:0[0-9a-f]|1[0-9a-f]|7f)/i
 
 /**
  * Keep URL handling fail-closed at the renderer boundary. Relative links and fragments remain
@@ -24,8 +25,17 @@ function safeUrlTransform(value) {
   if (!url) return ''
 
   try {
-    const parsed = new URL(url, 'https://fairtrade.invalid')
-    if (HAS_PROTOCOL.test(url) && !SAFE_PROTOCOLS.has(parsed.protocol.toLowerCase())) return ''
+    const parsed = new URL(url, URL_BASE)
+    const protocols = [parsed.protocol.toLowerCase()]
+
+    /* micromark percent-encodes control characters in link destinations before this hook sees
+       them. Parse that decoded form too, so a hidden scheme cannot bypass this boundary if a later
+       URL consumer decodes the character before navigation. */
+    if (ENCODED_CONTROL_CHARACTER.test(url)) {
+      protocols.push(new URL(decodeURIComponent(url), URL_BASE).protocol.toLowerCase())
+    }
+
+    if (protocols.some((protocol) => !SAFE_PROTOCOLS.has(protocol))) return ''
     return url
   } catch {
     return ''
