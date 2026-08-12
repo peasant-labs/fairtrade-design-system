@@ -85,12 +85,13 @@ console.log(`sticky turn-model verification: complete baseline passed for ${corp
 
 async function assertMountedContract(viewModel, TranscriptViewer) {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'https://fairtrade.invalid/transcript' })
-  const previous = { window: globalThis.window, document: globalThis.document, navigator: globalThis.navigator, HTMLElement: globalThis.HTMLElement, Event: globalThis.Event, requestAnimationFrame: globalThis.requestAnimationFrame, IS_REACT_ACT_ENVIRONMENT: globalThis.IS_REACT_ACT_ENVIRONMENT }
+  const previous = { window: globalThis.window, document: globalThis.document, navigator: globalThis.navigator, HTMLElement: globalThis.HTMLElement, Element: globalThis.Element, Event: globalThis.Event, requestAnimationFrame: globalThis.requestAnimationFrame, IS_REACT_ACT_ENVIRONMENT: globalThis.IS_REACT_ACT_ENVIRONMENT }
   for (const [key, value] of Object.entries({
     window: dom.window,
     document: dom.window.document,
     navigator: dom.window.navigator,
     HTMLElement: dom.window.HTMLElement,
+    Element: dom.window.Element,
     Event: dom.window.Event,
     requestAnimationFrame: (callback) => setTimeout(callback, 0),
     IS_REACT_ACT_ENVIRONMENT: true,
