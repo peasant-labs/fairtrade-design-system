@@ -20,6 +20,21 @@ boundary. Canonical flat `gitBranch`, `gitRemote`, and `workingDirectory` win wh
 present; nullable canonical `turns` becomes an empty list. Both data modules carry `// @ts-check` and are pinned by `tsc -p tsconfig.contract.json`
 (`pnpm test:contract`).
 
+## observed model and sticky state
+
+`TurnDetail.observedModel` is source evidence from assistant output. The adapter resolves it over the
+complete ordered payload before noise filtering or an optional host projection. Root assistant
+observations update root state; omissions inherit that state. Inline subagent observations attribute
+only their own turn and never mutate root state. Child sessions are separate payloads and therefore
+separate resolver scopes.
+
+The cooked `TurnVM.effectiveModel` is the model attributable to that assistant turn.
+`TurnVM.modelChangedFrom` is present only on a visible observed transition and drives the normal-flow
+change marker. Legacy payloads without observations inherit the stable session seed without inventing
+transitions. Invalid or non-assistant observations are ignored defensively while their turn content
+remains renderable. Hosts that need a subset pass `visibleTurnIndices` as the fourth adapter argument;
+this is a post-resolution projection and cannot alter sticky state.
+
 ## provenance — a closed classification
 
 Each cooked field is classified once, statically, rather than ad hoc:

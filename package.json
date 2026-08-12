@@ -130,7 +130,7 @@
     "start": "http-server dist -p ${PORT:-3000} -a 0.0.0.0 --silent"
   },
   "dependencies": {
-    "@peasant-labs/schema": "0.1.0",
+    "@peasant-labs/schema": "0.1.1-rc1",
     "@tanstack/react-table": "^8.21.3",
     "lucide": "^1.20.0",
     "lucide-react": "^1.18.0",

@@ -56,7 +56,7 @@ const wire = {
       index: 1,
       role: 'assistant',
       content: 'editing',
-      model: 'Claude Opus 4.7',
+      observedModel: 'anthropic/claude-opus-4-8',
       timestamp: '2026-06-24T00:01:00Z',
       depth: 0,
       entryType: 'tool_use',
@@ -76,12 +76,12 @@ const wire = {
 }
 void wire
 
-/* The optional model is a canonical generated-schema field, not a Fairtrade-local
+/* The optional observed model is a canonical generated-schema field, not a Fairtrade-local
    wire extension. The released package must expose this same field before the
    consumer contract can pass in continuous integration. */
 /** @param {TurnDetail} turn */
 function readCanonicalTurnModel(turn) {
-  return turn.model
+  return turn.observedModel
 }
 void readCanonicalTurnModel
 
@@ -89,8 +89,11 @@ void readCanonicalTurnModel
 /** @type {TranscriptViewModel} */
 const vm1 = adaptTranscript(wire)
 /** @type {string | undefined} */
-const effectiveModel = vm1.turns[1].model
+const effectiveModel = vm1.turns[1].effectiveModel
 void effectiveModel
+/** @type {string | undefined} */
+const modelChangedFrom = vm1.turns[1].modelChangedFrom
+void modelChangedFrom
 // toolCallsById is a Map (parsed once)
 /** @type {ToolCallVM | undefined} */
 const tc = vm1.toolCallsById.get('t1')
@@ -144,6 +147,9 @@ const precomputed = computeAnalytics(prefilterTurns(wire.turns ?? []), { scoreca
 /** @type {TranscriptViewModel} */
 const vm3 = adaptTranscript(wire, annotations, precomputed)
 void vm3
+/** @type {TranscriptViewModel} */
+const projected = adaptTranscript(wire, annotations, precomputed, { visibleTurnIndices: [1] })
+void projected
 
 /* ── (4) back-compat analytics signatures (re-exported by the browser migration) ── */
 /** @type {TaskGroup[]} */
