@@ -2669,8 +2669,6 @@
   .txn-files { overflow: auto; padding: var(--sp-4); min-height: 0; }
   .txn-files-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-3); }
   .txn-files-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
-  .txn-return { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: var(--control-h); padding: 0 var(--sp-2); background: transparent; border: var(--bd); cursor: pointer; font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--amber); }
-  .txn-return:hover { color: var(--amber-bright); border-color: var(--amber-dim); }
   .txn-filetable { margin-top: 0; }
   .txn-sort { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: 0; cursor: pointer; font-family: var(--font-mono); font-size: var(--fs-sm); text-transform: lowercase; color: var(--ink-3); padding: 0; }
   .txn-sort:hover { color: var(--ink); }

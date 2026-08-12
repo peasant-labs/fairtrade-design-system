@@ -10,7 +10,7 @@ import YAML from 'yaml'
 const manifestSource = readFileSync(resolve('scripts/testdata/transcript-initial-position.render.manifest.yaml'), 'utf8')
 const casesSource = readFileSync(resolve('scripts/testdata/transcript-initial-position.render.yaml'), 'utf8')
 const caseFields = ['name', 'initialKind', 'initialTurn', 'turns', 'expectedScrolls', 'expectedCallbacks', 'expectedHistory', 'expectedContains']
-const returnCaseFields = ['name', 'initialKind', 'initialTurn', 'initialTab', 'turns', 'sourceOffset', 'focusOrigin', 'action', 'destinationTurn', 'expectedTabs', 'expectedReturnLabels', 'expectedScrollTop', 'expectedFocus', 'expectedContains']
+const returnCaseFields = ['name', 'initialKind', 'initialTurn', 'initialTab', 'controlledTab', 'turns', 'sourceOffset', 'focusOrigin', 'action', 'fileActivationKey', 'destinationTurn', 'expectedTabs', 'expectedTabChanges', 'expectedDedicatedReturnCount', 'expectedRestoreCount', 'expectedScrollTop', 'expectedFocus', 'expectedContains']
 const loaderMutationFields = ['name', 'target', 'find', 'replace', 'expectedError']
 const productionMutationFields = ['name', 'file', 'find', 'replace', 'expectedError']
 
@@ -73,11 +73,13 @@ function loadRenderFixtures(manifestText = manifestSource, casesText = casesSour
   const returnCases = root.returnCases.map((row, index) => {
     if (!row || typeof row !== 'object' || Array.isArray(row)) throw new Error(`source render return case ${index} must be an object`)
     exactFields(row, returnCaseFields, `source render return case ${index}`)
-    if (typeof row.name !== 'string' || row.name.length === 0 || !['top', 'turn'].includes(row.initialKind) || !Number.isSafeInteger(row.initialTurn) || !['trace', 'files', 'diffs'].includes(row.initialTab) || !Number.isSafeInteger(row.sourceOffset) || row.sourceOffset < 0 || !['scroller', 'tab'].includes(row.focusOrigin) || !['files-edited-diffs-return', 'files-readonly-trace-return', 'diffs-return', 'no-return'].includes(row.action) || !Number.isSafeInteger(row.destinationTurn) || row.destinationTurn < -1 || (row.action === 'files-readonly-trace-return' ? row.destinationTurn < 0 : row.destinationTurn !== -1) || !Number.isSafeInteger(row.expectedScrollTop) || row.expectedScrollTop < 0 || !['scroller', 'tab', 'none'].includes(row.expectedFocus) || typeof row.expectedContains !== 'string' || row.expectedContains.length === 0) throw new Error(`source render return case ${index} scalars are invalid`)
+    const actions = ['files-edited-diffs-trace-tab', 'files-readonly-active-trace-tab', 'files-readonly-highlights-active-trace-tab', 'diffs-trace-tab', 'highlights-trace-tab', 'initial-alternate-trace-tab', 'keyboard-highlights-trace-tab', 'search-trace-tab']
+    const readOnlyAction = row.action === 'files-readonly-active-trace-tab' || row.action === 'files-readonly-highlights-active-trace-tab'
+    if (typeof row.name !== 'string' || row.name.length === 0 || !['top', 'turn'].includes(row.initialKind) || !Number.isSafeInteger(row.initialTurn) || !['trace', 'files', 'diffs'].includes(row.initialTab) || typeof row.controlledTab !== 'boolean' || !Number.isSafeInteger(row.sourceOffset) || row.sourceOffset < 0 || !['scroller', 'tab'].includes(row.focusOrigin) || !actions.includes(row.action) || !['Enter', ' '].includes(row.fileActivationKey) || !Number.isSafeInteger(row.destinationTurn) || row.destinationTurn < -1 || (readOnlyAction ? row.destinationTurn < 0 : row.destinationTurn !== -1) || !Number.isSafeInteger(row.expectedDedicatedReturnCount) || row.expectedDedicatedReturnCount < 0 || !Number.isSafeInteger(row.expectedRestoreCount) || row.expectedRestoreCount < 0 || !Number.isSafeInteger(row.expectedScrollTop) || row.expectedScrollTop < 0 || !['scroller', 'tab', 'search', 'none'].includes(row.expectedFocus) || typeof row.expectedContains !== 'string' || row.expectedContains.length === 0) throw new Error(`source render return case ${index} scalars are invalid`)
     if ((row.initialKind === 'turn') !== (row.initialTurn >= 0)) throw new Error(`source render return case ${index} has an invalid turn sentinel`)
     if (!Array.isArray(row.turns) || row.turns.some((turn) => !Number.isSafeInteger(turn) || turn < 0) || new Set(row.turns).size !== row.turns.length) throw new Error(`source render return case ${index} turns must be unique safe nonnegative integers`)
-    if (!Array.isArray(row.expectedTabs) || row.expectedTabs.some((tab) => !['trace', 'files', 'diffs'].includes(tab))) throw new Error(`source render return case ${index}.expectedTabs has invalid values`)
-    if (!Array.isArray(row.expectedReturnLabels) || row.expectedReturnLabels.some((label) => typeof label !== 'string' || !/^(?:trace|files|diffs):\d+$/.test(label))) throw new Error(`source render return case ${index}.expectedReturnLabels has invalid values`)
+    if (!Array.isArray(row.expectedTabs) || row.expectedTabs.some((tab) => !['trace', 'files', 'diffs', 'highlights'].includes(tab))) throw new Error(`source render return case ${index}.expectedTabs has invalid values`)
+    if (!Array.isArray(row.expectedTabChanges) || row.expectedTabChanges.some((tab) => !['trace', 'files', 'diffs', 'highlights'].includes(tab))) throw new Error(`source render return case ${index}.expectedTabChanges has invalid values`)
     return row
   })
   const names = cases.map((row) => row.name)
@@ -113,6 +115,8 @@ const mutationPlugin = {
 }
 
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'https://fairtrade.invalid/transcript' })
+dom.window.HTMLElement.prototype.attachEvent = function () {}
+dom.window.HTMLElement.prototype.detachEvent = function () {}
 const previousGlobals = new Map()
 for (const [key, value] of Object.entries({
   window: dom.window, document: dom.window.document, navigator: dom.window.navigator,
@@ -177,18 +181,40 @@ try {
     const label = [...container.querySelectorAll('[role="tab"]')].find((button) => button.getAttribute('aria-selected') === 'true')?.textContent.trim().split(/\s+/)[0]
     return label === 'full' ? 'trace' : label
   }
-  const returnButtons = (container) => [...container.querySelectorAll('button')].filter((button) => button.textContent.trim() === 'return to trace')
-  const click = async (element, label) => {
-    if (!element) throw new Error(`return action invariant failed: missing ${label}`)
+  const dedicatedReturnSignals = (container) => {
+    const textPresent = /return to trace/i.test(container.textContent ?? '')
+    const labeledElements = [...container.querySelectorAll('*')].filter((element) => /return to trace/i.test(`${element.getAttribute('aria-label') ?? ''} ${element.getAttribute('title') ?? ''}`))
+    return textPresent || labeledElements.length > 0 ? 1 : 0
+  }
+  const click = async (element, label, afterMouseDown) => {
+    if (!element) throw new Error(`full trace tab invariant failed: missing ${label}`)
     await act(async () => {
+      element.dispatchEvent(new dom.window.MouseEvent('mousedown', { button: 0, bubbles: true }))
+      await Promise.resolve()
+    })
+    afterMouseDown?.()
+    // jsdom does not perform the browser's default mousedown focus transfer.
+    // Model it for departures, but leave the return tab unfocused so the
+    // restoration branch, rather than native focus, proves tab-origin return.
+    if (!/full trace/i.test(label)) element.focus()
+    await act(async () => {
+      element.dispatchEvent(new dom.window.MouseEvent('mouseup', { button: 0, bubbles: true }))
       element.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
       await Promise.resolve()
     })
   }
-  const activate = async (element, label) => {
+  const activate = async (element, key, label) => {
     if (!element) throw new Error(`read-only destination invariant failed: missing ${label}`)
+    element.focus()
     await act(async () => {
-      element.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+      element.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true }))
+      await Promise.resolve()
+    })
+  }
+  const keyDown = async (element, key, label) => {
+    if (!element) throw new Error(`keyboard tab invariant failed: missing ${label}`)
+    await act(async () => {
+      element.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true }))
       await Promise.resolve()
     })
   }
@@ -206,6 +232,7 @@ try {
     const turns = fixture.turns.map((index) => ({ index, role: index === 0 ? 'user' : 'assistant', label: String(index), content: `turn ${index}`, depth: 0, toolCalls: [], annotations: [] }))
     const container = dom.window.document.getElementById('root')
     const root = createRoot(container)
+    const tabChanges = []
     const viewModel = {
       session: { id: `return-${fixture.name}`, harness: 'codex', git: { commits: [] } },
       turns,
@@ -220,27 +247,38 @@ try {
       analytics: { phases: [], scorecardBands: [], patternAnnotations: [] },
       filterIndex: { toolGroupCounts: { edits: 0, bash: 0, read: 0, search: 0, fetch: 0, tasks: 0, other: 0 }, annotationsByTurn: {}, tags: [], tagCounts: {}, totalTurns: turns.length },
     }
+    function MountedReturnCase() {
+      const [controlledTab, setControlledTab] = React.useState(fixture.initialTab)
+      return React.createElement(TranscriptViewer, {
+        viewModel,
+        capabilities: {},
+        activeTab: fixture.controlledTab ? controlledTab : undefined,
+        onTabChange: fixture.controlledTab ? (nextTab) => {
+          tabChanges.push(nextTab)
+          setControlledTab(nextTab)
+        } : undefined,
+        initialPosition: fixture.initialTab === 'trace'
+          ? fixture.initialKind === 'top' ? { kind: 'top' } : { kind: 'turn', turnIndex: fixture.initialTurn }
+          : null,
+        onActiveTurnChange: (turn) => callbacks.push(`active:${turn}`),
+      })
+    }
     try {
       await act(async () => {
-        root.render(React.createElement(StrictMode, null, React.createElement(TranscriptViewer, {
-          viewModel,
-          capabilities: {},
-          activeTab: fixture.initialTab === 'trace' ? undefined : fixture.initialTab,
-          initialPosition: fixture.initialKind === 'top' ? { kind: 'top' } : { kind: 'turn', turnIndex: fixture.initialTurn },
-          onActiveTurnChange: (turn) => callbacks.push(`active:${turn}`),
-        })))
+        root.render(React.createElement(StrictMode, null, React.createElement(MountedReturnCase)))
         await Promise.resolve()
       })
 
       const observedTabs = [activeTab(container)]
-      const observedReturnLabels = []
-      const observeReturn = (tab) => {
-        const actions = returnButtons(container)
-        if (actions.length > 1) throw new Error(`${fixture.name}: expected one return action, received ${actions.length}`)
-        if (actions.length === 1) observedReturnLabels.push(`${tab}:${actions.length}`)
+      const assertNoDedicatedReturn = () => {
+        const signals = dedicatedReturnSignals(container)
+        if (signals !== fixture.expectedDedicatedReturnCount) throw new Error(`${fixture.name}: dedicated return invariant failed; expected ${fixture.expectedDedicatedReturnCount}, received ${signals}`)
+      }
+      const assertNoPrematureRestore = () => {
+        if (fixture.initialTab === 'trace' && scrolls.includes(`top:${fixture.sourceOffset}`)) throw new Error(`${fixture.name}: premature restoration invariant failed before full trace selection`)
       }
 
-      if (fixture.action !== 'no-return') {
+      if (fixture.initialTab === 'trace') {
         const stream = container.querySelector('.txn-stream')
         if (!stream) throw new Error(`${fixture.name}: source trace scroller is missing`)
         if (fixture.focusOrigin === 'scroller') stream.focus()
@@ -251,49 +289,94 @@ try {
           await Promise.resolve()
         })
       }
+      assertNoDedicatedReturn()
 
-      if (fixture.action === 'files-edited-diffs-return') {
-        await click(tabButton(container, 'files'), 'files tab')
+      if (fixture.action === 'files-edited-diffs-trace-tab') {
+        await click(tabButton(container, 'files'), 'files tab', assertNoPrematureRestore)
         observedTabs.push(activeTab(container))
-        observeReturn('files')
-        await click([...container.querySelectorAll('.txn-filerow')].find((row) => row.textContent.includes('edited.ts')), 'edited file row')
+        assertNoDedicatedReturn()
+        await activate([...container.querySelectorAll('.txn-filerow')].find((row) => row.textContent.includes('edited.ts')), fixture.fileActivationKey, 'edited file row')
         observedTabs.push(activeTab(container))
-        observeReturn('diffs')
-        await click(returnButtons(container)[0], 'diffs return action')
+        assertNoDedicatedReturn()
+        await click(tabButton(container, 'trace'), 'full trace tab')
         observedTabs.push(activeTab(container))
-      } else if (fixture.action === 'files-readonly-trace-return') {
-        await click(tabButton(container, 'files'), 'files tab')
+      } else if (fixture.action === 'files-readonly-active-trace-tab' || fixture.action === 'files-readonly-highlights-active-trace-tab') {
+        await click(tabButton(container, 'files'), 'files tab', assertNoPrematureRestore)
         observedTabs.push(activeTab(container))
-        observeReturn('files')
+        assertNoDedicatedReturn()
         const callbacksBeforeDestination = callbacks.length
-        await activate([...container.querySelectorAll('.txn-filerow')].find((row) => row.textContent.includes('read-only.ts')), 'read-only file row')
+        await activate([...container.querySelectorAll('.txn-filerow')].find((row) => row.textContent.includes('read-only.ts')), fixture.fileActivationKey, 'read-only file row')
         observedTabs.push(activeTab(container))
-        observeReturn('trace')
+        assertNoDedicatedReturn()
         if (!callbacks.slice(callbacksBeforeDestination).includes(`active:${fixture.destinationTurn}`)) throw new Error(`${fixture.name}: read-only destination invariant failed; expected active turn ${fixture.destinationTurn}, received ${JSON.stringify(callbacks.slice(callbacksBeforeDestination))}`)
         if (scrolls.includes(`top:${fixture.sourceOffset}`)) throw new Error(`${fixture.name}: read-only destination invariant failed; return restoration ran before the explicit action`)
-        await click(returnButtons(container)[0], 'trace return action')
+        if (fixture.action === 'files-readonly-highlights-active-trace-tab') {
+          await click(tabButton(container, 'highlights'), 'highlights tab after temporary inspection', assertNoPrematureRestore)
+          observedTabs.push(activeTab(container))
+          assertNoDedicatedReturn()
+          if (scrolls.includes(`top:${fixture.sourceOffset}`)) throw new Error(`${fixture.name}: read-only destination invariant failed; return restoration ran before the explicit full trace tab action`)
+        }
+        await click(tabButton(container, 'trace'), 'active full trace tab')
         observedTabs.push(activeTab(container))
-      } else if (fixture.action === 'diffs-return') {
-        await click(tabButton(container, 'diffs'), 'diffs tab')
+      } else if (fixture.action === 'diffs-trace-tab') {
+        await click(tabButton(container, 'diffs'), 'diffs tab', assertNoPrematureRestore)
         observedTabs.push(activeTab(container))
-        observeReturn('diffs')
-        await click(returnButtons(container)[0], 'diffs return action')
+        assertNoDedicatedReturn()
+        // The trace tab persists while the panel is unmounted. Remove its
+        // prior focus so only restoration can satisfy the focus-origin check.
+        dom.window.document.activeElement?.blur()
+        await click(tabButton(container, 'trace'), 'full trace tab')
+        observedTabs.push(activeTab(container))
+      } else if (fixture.action === 'highlights-trace-tab') {
+        await click(tabButton(container, 'highlights'), 'highlights tab', assertNoPrematureRestore)
+        observedTabs.push(activeTab(container))
+        assertNoDedicatedReturn()
+        await click(tabButton(container, 'trace'), 'full trace tab')
+        observedTabs.push(activeTab(container))
+      } else if (fixture.action === 'initial-alternate-trace-tab') {
+        await click(tabButton(container, 'trace'), 'full trace tab')
+        observedTabs.push(activeTab(container))
+      } else if (fixture.action === 'keyboard-highlights-trace-tab') {
+        await keyDown(tabButton(container, 'trace'), 'ArrowLeft', 'full trace tab')
+        observedTabs.push(activeTab(container))
+        assertNoDedicatedReturn()
+        await keyDown(tabButton(container, 'highlights'), 'ArrowRight', 'highlights tab')
+        observedTabs.push(activeTab(container))
+      } else if (fixture.action === 'search-trace-tab') {
+        await click(tabButton(container, 'files'), 'files tab', assertNoPrematureRestore)
+        observedTabs.push(activeTab(container))
+        assertNoDedicatedReturn()
+        await act(async () => {
+          dom.window.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'f', ctrlKey: true, bubbles: true }))
+          await Promise.resolve()
+        })
+        await act(async () => new Promise((resolve) => setTimeout(resolve, 0)))
         observedTabs.push(activeTab(container))
       }
 
       if (JSON.stringify(observedTabs) !== JSON.stringify(fixture.expectedTabs)) throw new Error(`${fixture.name}: tab invariant failed; expected ${JSON.stringify(fixture.expectedTabs)}, received ${JSON.stringify(observedTabs)}`)
-      if (JSON.stringify(observedReturnLabels) !== JSON.stringify(fixture.expectedReturnLabels)) throw new Error(`${fixture.name}: return action invariant failed; expected ${JSON.stringify(fixture.expectedReturnLabels)}, received ${JSON.stringify(observedReturnLabels)}`)
-      if (activeTab(container) === 'trace' && returnButtons(container).length !== 0) throw new Error(`${fixture.name}: return action invariant failed; trace view must not expose the files/diffs action`)
-      if (fixture.action === 'no-return' && returnButtons(container).length !== 0) throw new Error(`${fixture.name}: legacy no-return state unexpectedly exposed a return action`)
+      if (JSON.stringify(tabChanges) !== JSON.stringify(fixture.expectedTabChanges)) throw new Error(`${fixture.name}: controlled tab invariant failed; expected ${JSON.stringify(fixture.expectedTabChanges)}, received ${JSON.stringify(tabChanges)}`)
+      assertNoDedicatedReturn()
 
       const restoredScroller = container.querySelector('.txn-stream')
       if (fixture.expectedFocus !== 'none') {
         if (!restoredScroller) throw new Error(`${fixture.name}: restored trace scroller is missing`)
         const focused = dom.window.document.activeElement
-        const expectedFocused = fixture.expectedFocus === 'scroller' ? restoredScroller : tabButton(container, 'trace')
+        const expectedFocused = fixture.expectedFocus === 'scroller'
+          ? restoredScroller
+          : fixture.expectedFocus === 'search'
+            ? container.querySelector('.txn-search-input')
+            : tabButton(container, 'trace')
         if (focused !== expectedFocused) throw new Error(`${fixture.name}: focus invariant failed; expected ${fixture.expectedFocus}, received ${focused?.className ?? focused?.getAttribute?.('role') ?? 'none'}`)
       }
-      if (fixture.action !== 'no-return' && (!restoredScroller || restoredScroller.scrollTop !== fixture.expectedScrollTop)) throw new Error(`${fixture.name}: return position invariant failed; expected ${fixture.expectedScrollTop}, received ${restoredScroller?.scrollTop ?? 'missing'}`)
+      if (fixture.expectedFocus === 'none' && dom.window.document.activeElement === tabButton(container, 'trace')) {
+        throw new Error(`${fixture.name}: direct alternate mount unexpectedly restored a trace tab focus origin`)
+      }
+      if (fixture.initialTab === 'trace' && (!restoredScroller || restoredScroller.scrollTop !== fixture.expectedScrollTop)) throw new Error(`${fixture.name}: trace position invariant failed; expected ${fixture.expectedScrollTop}, received ${restoredScroller?.scrollTop ?? 'missing'}`)
+      if (fixture.initialTab !== 'trace' && (!restoredScroller || restoredScroller.scrollTop !== fixture.expectedScrollTop)) throw new Error(`${fixture.name}: fabricated trace position invariant failed; expected normal ${fixture.expectedScrollTop}, received ${restoredScroller?.scrollTop ?? 'missing'} with ${JSON.stringify(scrolls)}`)
+      const positionCallCount = scrolls.filter((entry) => entry === `top:${fixture.sourceOffset}`).length
+      if (fixture.initialTab === 'trace' && positionCallCount !== fixture.expectedRestoreCount) throw new Error(`${fixture.name}: trace position invariant failed; expected ${fixture.expectedRestoreCount} restoration call(s), received ${positionCallCount}`)
+      if (fixture.initialTab !== 'trace' && positionCallCount !== 0) throw new Error(`${fixture.name}: direct alternate mount unexpectedly changed trace position`)
       if (!container.querySelector(`.${fixture.expectedContains}`)) throw new Error(`${fixture.name}: final mounted DOM invariant failed; missing ${fixture.expectedContains}`)
     } catch (error) {
       throw new Error(`mounted return invariant failed: ${error instanceof Error ? error.message : String(error)}`)
@@ -310,4 +393,4 @@ try {
   }
 }
 
-console.log(`transcript initial-position mounted source: ${fixtures.cases.length} positioning case(s) and ${fixtures.returnCases.length} return case(s) passed with exact scroll, selection, action, and focus matrices`)
+console.log(`transcript initial-position mounted source: ${fixtures.cases.length} positioning case(s) and ${fixtures.returnCases.length} trace-tab case(s) passed with exact scroll, selection, affordance, and focus matrices`)

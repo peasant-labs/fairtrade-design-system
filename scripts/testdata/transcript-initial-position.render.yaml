@@ -8,59 +8,147 @@ cases:
     expectedHistory: []
     expectedContains: txn-app
 returnCases:
-  - name: files and diffs return to the exact trace offset and focus
+  - name: edited file reaches diffs and full trace restores exact offset and focus
     initialKind: top
     initialTurn: -1
     initialTab: trace
+    controlledTab: true
     turns: [0, 1, 2]
     sourceOffset: 137
     focusOrigin: scroller
-    action: files-edited-diffs-return
+    action: files-edited-diffs-trace-tab
+    fileActivationKey: Enter
     destinationTurn: -1
     expectedTabs: [trace, files, diffs, trace]
-    expectedReturnLabels: [files:1, diffs:1]
+    expectedTabChanges: [files, diffs, trace]
+    expectedDedicatedReturnCount: 0
+    expectedRestoreCount: 1
     expectedScrollTop: 137
     expectedFocus: scroller
     expectedContains: txn-stream
-  - name: direct diffs selection keeps an exact trace return target
+  - name: direct diffs departure and full trace restore tab focus
     initialKind: turn
     initialTurn: 1
     initialTab: trace
+    controlledTab: false
     turns: [0, 1, 2]
     sourceOffset: 211
     focusOrigin: tab
-    action: diffs-return
+    action: diffs-trace-tab
+    fileActivationKey: Enter
     destinationTurn: -1
     expectedTabs: [trace, diffs, trace]
-    expectedReturnLabels: [diffs:1]
+    expectedTabChanges: []
+    expectedDedicatedReturnCount: 0
+    expectedRestoreCount: 1
     expectedScrollTop: 211
     expectedFocus: tab
     expectedContains: txn-stream
-  - name: direct files selection has no legacy return target
+  - name: direct initial files mount fabricates no trace position
     initialKind: top
     initialTurn: -1
     initialTab: files
+    controlledTab: true
     turns: [0, 1]
     sourceOffset: 0
     focusOrigin: tab
-    action: no-return
+    action: initial-alternate-trace-tab
+    fileActivationKey: Enter
     destinationTurn: -1
-    expectedTabs: [files]
-    expectedReturnLabels: []
+    expectedTabs: [files, trace]
+    expectedTabChanges: [trace]
+    expectedDedicatedReturnCount: 0
+    expectedRestoreCount: 0
     expectedScrollTop: 0
     expectedFocus: none
-    expectedContains: txn-files
-  - name: read-only file returns from its last-read turn without automatic restoration
+    expectedContains: txn-stream
+  - name: read-only file jumps before active full trace re-click restores original position
     initialKind: top
     initialTurn: -1
     initialTab: trace
+    controlledTab: false
     turns: [0, 1, 2]
     sourceOffset: 173
     focusOrigin: scroller
-    action: files-readonly-trace-return
+    action: files-readonly-active-trace-tab
+    fileActivationKey: ' '
     destinationTurn: 0
     expectedTabs: [trace, files, trace, trace]
-    expectedReturnLabels: [files:1, trace:1]
+    expectedTabChanges: []
+    expectedDedicatedReturnCount: 0
+    expectedRestoreCount: 1
     expectedScrollTop: 173
     expectedFocus: scroller
+    expectedContains: txn-stream
+  - name: highlights departure always saves and full trace restores exact position
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    controlledTab: true
+    turns: [0, 1, 2]
+    sourceOffset: 89
+    focusOrigin: scroller
+    action: highlights-trace-tab
+    fileActivationKey: Enter
+    destinationTurn: -1
+    expectedTabs: [trace, highlights, trace]
+    expectedTabChanges: [highlights, trace]
+    expectedDedicatedReturnCount: 0
+    expectedRestoreCount: 1
+    expectedScrollTop: 89
+    expectedFocus: scroller
+    expectedContains: txn-stream
+  - name: transient read-only inspection cannot overwrite the original trace position
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    controlledTab: true
+    turns: [0, 1, 2]
+    sourceOffset: 257
+    focusOrigin: scroller
+    action: files-readonly-highlights-active-trace-tab
+    fileActivationKey: Enter
+    destinationTurn: 0
+    expectedTabs: [trace, files, trace, highlights, trace]
+    expectedTabChanges: [files, trace, highlights, trace]
+    expectedDedicatedReturnCount: 0
+    expectedRestoreCount: 1
+    expectedScrollTop: 257
+    expectedFocus: scroller
+    expectedContains: txn-stream
+  - name: keyboard tab navigation saves and restores the exact trace position
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    controlledTab: false
+    turns: [0, 1, 2]
+    sourceOffset: 144
+    focusOrigin: tab
+    action: keyboard-highlights-trace-tab
+    fileActivationKey: Enter
+    destinationTurn: -1
+    expectedTabs: [trace, highlights, trace]
+    expectedTabChanges: []
+    expectedDedicatedReturnCount: 0
+    expectedRestoreCount: 1
+    expectedScrollTop: 144
+    expectedFocus: tab
+    expectedContains: txn-stream
+  - name: search shortcut returns to trace and preserves the exact position
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    controlledTab: true
+    turns: [0, 1, 2]
+    sourceOffset: 198
+    focusOrigin: scroller
+    action: search-trace-tab
+    fileActivationKey: Enter
+    destinationTurn: -1
+    expectedTabs: [trace, files, trace]
+    expectedTabChanges: [files, trace]
+    expectedDedicatedReturnCount: 0
+    expectedRestoreCount: 1
+    expectedScrollTop: 198
+    expectedFocus: search
     expectedContains: txn-stream

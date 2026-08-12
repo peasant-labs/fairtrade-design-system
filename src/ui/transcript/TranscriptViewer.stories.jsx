@@ -112,22 +112,30 @@ export const Files = { args: { viewModel, capabilities: fullCaps, activeTab: 'fi
 export const Annotations = { args: { viewModel, capabilities: fullCaps, activeTab: 'annotations' } }
 export const LightTheme = { args: { viewModel, capabilities: fullCaps, theme: 'light' } }
 
-export const ReadingPositionReturn = {
+export const ReadingPositionTraceTab = {
   args: { viewModel, capabilities: fullCaps },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('tab', { name: /files/ }))
-    await expect(canvas.getByRole('button', { name: 'return to trace' })).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: /return to trace/i })).toBeNull()
+    await userEvent.click(canvas.getByRole('row', { name: /tasks\.ts/ }))
+    await expect(canvas.getByRole('tab', { name: /diffs/ })).toHaveAttribute('aria-selected', 'true')
+    await userEvent.click(canvas.getByRole('tab', { name: /full trace/ }))
+    await expect(canvas.getByRole('tab', { name: /full trace/ })).toHaveAttribute('aria-selected', 'true')
   },
 }
 
-export const ReadOnlyFileReturn = {
+export const ReadOnlyFileTraceTab = {
   args: { viewModel, capabilities: fullCaps },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('tab', { name: /files/ }))
     await userEvent.click(canvas.getByRole('row', { name: /TurnRow\.tsx/ }))
-    await expect(canvas.getByRole('button', { name: 'return to trace' })).toBeVisible()
+    const fullTrace = canvas.getByRole('tab', { name: /full trace/ })
+    await expect(fullTrace).toHaveAttribute('aria-selected', 'true')
+    await expect(canvas.queryByRole('button', { name: /return to trace/i })).toBeNull()
+    await userEvent.click(fullTrace)
+    await expect(fullTrace).toHaveAttribute('aria-selected', 'true')
   },
 }
 
