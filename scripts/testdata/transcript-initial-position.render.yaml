@@ -7,3 +7,208 @@ cases:
     expectedCallbacks: []
     expectedHistory: []
     expectedContains: txn-app
+returnCases:
+  - name: edited file pointer reaches diffs and full trace restores exact offset
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    controlMode: internal-controlled
+    turns: [0, 1, 2]
+    sourceOffset: 137
+    focusOrigin: scroller
+    action: files-edited-diffs-trace-tab
+    fileActivation: pointer
+    destinationTurn: -1
+    expectedTabs: [trace, files, diffs, trace]
+    expectedTabChanges: [files, diffs, trace]
+    expectedScrollCalls: [top:0, top:137]
+    expectedScrollTop: 137
+    expectedFocus: scroller
+    expectedContains: txn-stream
+  - name: edited file keyboard reaches diffs and full trace restores descendant focus
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    controlMode: internal-controlled
+    turns: [0, 1, 2]
+    sourceOffset: 163
+    focusOrigin: turn-anchor
+    action: files-edited-diffs-trace-tab
+    fileActivation: keyboard-enter
+    destinationTurn: -1
+    expectedTabs: [trace, files, diffs, trace]
+    expectedTabChanges: [files, diffs, trace]
+    expectedScrollCalls: [top:0, top:163]
+    expectedScrollTop: 163
+    expectedFocus: turn-anchor
+    expectedContains: txn-stream
+  - name: direct diffs departure and full trace restore tab focus
+    initialKind: turn
+    initialTurn: 1
+    initialTab: trace
+    controlMode: unmanaged
+    turns: [0, 1, 2]
+    sourceOffset: 211
+    focusOrigin: tab
+    action: diffs-trace-tab
+    fileActivation: keyboard-enter
+    destinationTurn: -1
+    expectedTabs: [trace, diffs, trace]
+    expectedTabChanges: []
+    expectedScrollCalls: [turn:1, top:211]
+    expectedScrollTop: 211
+    expectedFocus: tab
+    expectedContains: txn-stream
+  - name: direct initial files mount fabricates no trace position
+    initialKind: top
+    initialTurn: -1
+    initialTab: files
+    controlMode: internal-controlled
+    turns: [0, 1]
+    sourceOffset: 0
+    focusOrigin: tab
+    action: initial-alternate-trace-tab
+    fileActivation: keyboard-enter
+    destinationTurn: -1
+    expectedTabs: [files, trace]
+    expectedTabChanges: [trace]
+    expectedScrollCalls: []
+    expectedScrollTop: 0
+    expectedFocus: none
+    expectedContains: txn-stream
+  - name: read-only file pointer jumps before active full trace re-click restores position
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    controlMode: unmanaged
+    turns: [0, 1, 2]
+    sourceOffset: 173
+    focusOrigin: scroller
+    action: files-readonly-active-trace-tab
+    fileActivation: pointer
+    destinationTurn: 0
+    expectedTabs: [trace, files, trace, trace]
+    expectedTabChanges: []
+    expectedScrollCalls: [top:0, top:173]
+    expectedScrollTop: 173
+    expectedFocus: scroller
+    expectedContains: txn-stream
+  - name: read-only file keyboard jumps before active full trace re-click restores position
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    controlMode: unmanaged
+    turns: [0, 1, 2]
+    sourceOffset: 181
+    focusOrigin: turn-anchor
+    action: files-readonly-active-trace-tab
+    fileActivation: keyboard-space
+    destinationTurn: 0
+    expectedTabs: [trace, files, trace, trace]
+    expectedTabChanges: []
+    expectedScrollCalls: [top:0, top:181]
+    expectedScrollTop: 181
+    expectedFocus: turn-anchor
+    expectedContains: txn-stream
+  - name: highlights departure always saves and full trace restores exact position
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    controlMode: internal-controlled
+    turns: [0, 1, 2]
+    sourceOffset: 89
+    focusOrigin: scroller
+    action: highlights-trace-tab
+    fileActivation: keyboard-enter
+    destinationTurn: -1
+    expectedTabs: [trace, highlights, trace]
+    expectedTabChanges: [highlights, trace]
+    expectedScrollCalls: [top:0, top:89]
+    expectedScrollTop: 89
+    expectedFocus: scroller
+    expectedContains: txn-stream
+  - name: transient read-only inspection cannot overwrite original trace position
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    controlMode: internal-controlled
+    turns: [0, 1, 2]
+    sourceOffset: 257
+    focusOrigin: scroller
+    action: files-readonly-highlights-active-trace-tab
+    fileActivation: keyboard-enter
+    destinationTurn: 0
+    expectedTabs: [trace, files, trace, highlights, trace]
+    expectedTabChanges: [files, trace, highlights, trace]
+    expectedScrollCalls: [top:0, top:257]
+    expectedScrollTop: 257
+    expectedFocus: scroller
+    expectedContains: txn-stream
+  - name: keyboard tab navigation saves and restores exact trace position
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    controlMode: unmanaged
+    turns: [0, 1, 2]
+    sourceOffset: 144
+    focusOrigin: tab
+    action: keyboard-highlights-trace-tab
+    fileActivation: keyboard-enter
+    destinationTurn: -1
+    expectedTabs: [trace, highlights, trace]
+    expectedTabChanges: []
+    expectedScrollCalls: [top:0, top:144]
+    expectedScrollTop: 144
+    expectedFocus: tab
+    expectedContains: txn-stream
+  - name: search shortcut returns to trace and preserves exact position
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    controlMode: internal-controlled
+    turns: [0, 1, 2]
+    sourceOffset: 198
+    focusOrigin: scroller
+    action: search-trace-tab
+    fileActivation: keyboard-enter
+    destinationTurn: -1
+    expectedTabs: [trace, files, trace]
+    expectedTabChanges: [files, trace]
+    expectedScrollCalls: [top:0, top:198]
+    expectedScrollTop: 198
+    expectedFocus: search
+    expectedContains: txn-stream
+  - name: external controlled parent rerender captures and restores exact trace position
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    controlMode: external-controlled
+    turns: [0, 1, 2]
+    sourceOffset: 233
+    focusOrigin: turn-anchor
+    action: external-controlled-rerender
+    fileActivation: keyboard-enter
+    destinationTurn: -1
+    expectedTabs: [trace, files, trace]
+    expectedTabChanges: []
+    expectedScrollCalls: [top:0, top:233]
+    expectedScrollTop: 233
+    expectedFocus: turn-anchor
+    expectedContains: txn-stream
+  - name: session change discards saved trace position
+    initialKind: top
+    initialTurn: -1
+    initialTab: trace
+    controlMode: external-controlled
+    turns: [0, 1, 2]
+    sourceOffset: 307
+    focusOrigin: turn-anchor
+    action: session-change-discard
+    fileActivation: keyboard-enter
+    destinationTurn: -1
+    expectedTabs: [trace, files, trace]
+    expectedTabChanges: []
+    expectedScrollCalls: [top:0, top:0]
+    expectedScrollTop: 0
+    expectedFocus: none
+    expectedContains: txn-stream
