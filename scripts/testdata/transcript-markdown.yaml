@@ -50,6 +50,7 @@ cases:
       tableWrapCount: 1
       codeWrapCount: 1
       safeHrefCount: 0
+      safeLinkRel: ''
       blockedLinkCount: 0
       languageClass: language-js
       unsafeHrefAbsent: true
@@ -72,6 +73,7 @@ cases:
       tableWrapCount: 0
       codeWrapCount: 0
       safeHrefCount: 0
+      safeLinkRel: ''
       blockedLinkCount: 0
       languageClass: ''
       unsafeHrefAbsent: true
@@ -99,6 +101,7 @@ cases:
       tableWrapCount: 0
       codeWrapCount: 0
       safeHrefCount: 1
+      safeLinkRel: noreferrer
       blockedLinkCount: 1
       languageClass: ''
       unsafeHrefAbsent: true
@@ -116,6 +119,7 @@ cases:
       tableWrapCount: 0
       codeWrapCount: 0
       safeHrefCount: 0
+      safeLinkRel: ''
       blockedLinkCount: 1
       languageClass: ''
       unsafeHrefAbsent: true
@@ -145,6 +149,7 @@ cases:
       tableWrapCount: 1
       codeWrapCount: 1
       safeHrefCount: 0
+      safeLinkRel: ''
       blockedLinkCount: 0
       languageClass: language-text
       unsafeHrefAbsent: true

@@ -100,7 +100,11 @@ const markdownComponents = {
     if (!safeHref) {
       return <span className="txn-md-link-blocked" data-txn-link-blocked="true">{children}</span>
     }
-    return <a className="txn-md-link" href={safeHref} {...props}>{children}</a>
+    /* Untrusted transcript links stay same-tab, but always carry rel="noreferrer" as defense in
+       depth: even a safe-protocol destination must not leak the transcript URL through Referer or
+       expose window.opener to author-controlled content. Applied after spread props so a parsed
+       attribute cannot weaken it. */
+    return <a className="txn-md-link" href={safeHref} {...props} rel="noreferrer">{children}</a>
   },
   /** @param {object} props */
   hr: ({ node: _node, ...props }) => <hr className="txn-md-rule" {...props} />,

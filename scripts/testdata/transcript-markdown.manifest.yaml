@@ -5,7 +5,7 @@ requiredNames:
   - hostile-content-stays-inert
   - control-character-url-stays-inert
   - wide-blocks-own-overflow-context
-expectedMutationCount: 2
+expectedMutationCount: 3
 mounted:
   fixtureMarker: The shared renderer keeps this structured handoff intact.
   expectedTurnCount: 9
@@ -25,3 +25,8 @@ mutations:
     find: "if (protocols.some((protocol) => !SAFE_PROTOCOLS.has(protocol))) return ''"
     replace: "if (false) return ''"
     expectedError: control-character-url-stays-inert
+  - name: markdown-safe-link-noreferrer-removed
+    file: src/ui/transcript/Markdown.jsx
+    find: '{...props} rel="noreferrer"'
+    replace: '{...props}'
+    expectedError: hostile-content-stays-inert
