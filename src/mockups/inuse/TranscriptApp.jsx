@@ -44,6 +44,7 @@ const TURNS = [
     id: 1,
     role: 'assistant',
     label: '1a',
+    model: 'Turn/Explicit-V2',
     time: '8m ago',
     longTime: 'jun 17, 2026 · 09:12',
     tokens: { in: 1840, out: 920 },
@@ -103,6 +104,7 @@ const TURNS = [
     id: 4,
     role: 'assistant',
     label: '2a',
+    model: 'Turn/Explicit-V4',
     time: '6m ago',
     longTime: 'jun 17, 2026 · 09:15',
     error: true,
@@ -127,6 +129,7 @@ const TURNS = [
     id: 5,
     role: 'assistant',
     label: '2b',
+    model: 'Turn/Explicit-V5',
     time: '5m ago',
     longTime: 'jun 17, 2026 · 09:16',
     tokens: { in: 2600, out: 1320 },
@@ -190,6 +193,7 @@ const TURNS = [
     role: 'assistant',
     label: '2d',
     depth: 1,
+    model: 'Subagent/Research-V1',
     subagent: 'docs-writer',
     time: '3m ago',
     longTime: 'jun 17, 2026 · 09:18',
@@ -506,6 +510,7 @@ function turnToWire(t) {
     timestamp: turnTimestamp(t.id),
     depth: t.depth ?? 0,
   }
+  if (t.model) wire.model = t.model
   if (t.thinking) wire.hasThinking = true
   if (t.tools) wire.toolCalls = t.tools.map(toolToWire)
   if (t.subagent) wire.agentName = t.subagent
@@ -528,7 +533,7 @@ function buildWire() {
     turnCount: 8,
     toolCallCount: 5,
     project: 'transcript-browser',
-    model: 'claude-opus-4-7',
+    model: 'Session/Default-V3',
     outcome: 'resolved',
     turns: TURNS.map(turnToWire),
     scorecard: { outcome: 'resolved' },
