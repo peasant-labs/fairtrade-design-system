@@ -1,0 +1,89 @@
+expectedCaseCount: 10
+requiredNames:
+  - sticky-carry-forward
+  - repeated-observation
+  - switchback
+  - inline-isolation
+  - hidden-boundary-projection
+  - legacy-all-missing
+  - invalid-observations
+  - exact-model-bytes
+  - canonical-unicode-edges
+  - mounted-production-path
+expectedMutationCount: 12
+requiredMutationNames:
+  - missing-resets-to-seed
+  - repeat-emits-transition
+  - change-marker-suppressed
+  - switchback-suppressed
+  - nested-mutates-root
+  - resolve-after-projection
+  - normalizes-model-id
+  - canonical-validator-bypassed
+  - provider-as-speaker
+  - brand-mark-dropped
+  - sticky-chrome-uses-seed
+  - transcript-app-drops-observations
+mutations:
+  - name: missing-resets-to-seed
+    file: src/ui/transcript/adapter.js
+    find: "const model = stickyModels.get(t.index)"
+    replace: "const model = payload.id === 'sticky-carry-forward' && t.role === 'assistant' && (t.depth ?? 0) === 0 && t.observedModel === undefined ? { effectiveModel: payload.model } : stickyModels.get(t.index)"
+    expectedDiagnostic: sticky-carry-forward
+  - name: repeat-emits-transition
+    file: src/ui/transcript/adapter.js
+    find: "observed !== before"
+    replace: "(observed !== before || (turns.length === 3 && turn.index === 1 && observed === before))"
+    expectedDiagnostic: repeated-observation
+  - name: change-marker-suppressed
+    file: src/ui/transcript/adapter.js
+    find: "model.modelChangedFrom = before"
+    replace: "if (!(turns[0]?.content === 'first A' && turn.index === 2)) model.modelChangedFrom = before"
+    expectedDiagnostic: sticky-carry-forward
+  - name: switchback-suppressed
+    file: src/ui/transcript/adapter.js
+    find: "if (observed !== undefined && before !== undefined && observed !== before) model.modelChangedFrom = before"
+    replace: "if (observed !== undefined && before !== undefined && observed !== before && observed !== seed) model.modelChangedFrom = before"
+    expectedDiagnostic: switchback
+  - name: nested-mutates-root
+    file: src/ui/transcript/adapter.js
+    find: "resolved.set(turn.index, observed === undefined ? {} : { effectiveModel: observed })"
+    replace: "if (observed !== undefined) activeRoot = observed; resolved.set(turn.index, observed === undefined ? {} : { effectiveModel: observed })"
+    expectedDiagnostic: inline-isolation
+  - name: resolve-after-projection
+    file: src/ui/transcript/adapter.js
+    find: "const stickyModels = resolveStickyModels(completeTurns, payload.model)"
+    replace: "let stickyModels"
+    secondaryFind: "const turns = visibleTurnIndices === null ? filteredTurns : filteredTurns.filter((turn) => visibleTurnIndices.has(turn.index))"
+    secondaryReplace: "const turns = visibleTurnIndices === null ? filteredTurns : filteredTurns.filter((turn) => visibleTurnIndices.has(turn.index)); stickyModels = resolveStickyModels(turns, payload.model)"
+    expectedDiagnostic: hidden-boundary-projection
+  - name: normalizes-model-id
+    file: src/ui/transcript/adapter.js
+    find: "return parsed.success ? parsed.data : undefined"
+    replace: "return parsed.success ? (turn.observedModel === 'Anthropic/Claude-Opus-4-8' ? parsed.data.toLowerCase() : parsed.data) : undefined"
+    expectedDiagnostic: exact-model-bytes
+  - name: canonical-validator-bypassed
+    file: src/ui/transcript/adapter.js
+    find: "const parsed = zObservedModelID.safeParse(turn.observedModel)"
+    replace: "const parsed = { success: typeof turn.observedModel === 'string' && turn.observedModel.length > 0 && turn.observedModel.trim() === turn.observedModel, data: turn.observedModel }"
+    expectedDiagnostic: canonical-unicode-edges
+  - name: provider-as-speaker
+    file: src/ui/transcript/TurnCard.jsx
+    find: "const roleLabel = isSub ? 'subagent' : turn.role"
+    replace: "const roleLabel = isSub ? 'subagent' : turn.role === 'assistant' && provider !== undefined ? providerDisplayName(provider) : turn.role"
+    expectedDiagnostic: mounted-production-path
+  - name: brand-mark-dropped
+    file: src/ui/transcript/TurnCard.jsx
+    find: "label={providerLabel}"
+    replace: "label={undefined}"
+    expectedDiagnostic: mounted-production-path
+  - name: sticky-chrome-uses-seed
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "const activeModel = turns.find((turn) => turn.index === activeTurn)?.effectiveModel"
+    replace: "const activeModel = session.model"
+    expectedDiagnostic: mounted-production-path
+  - name: transcript-app-drops-observations
+    file: src/mockups/inuse/TranscriptApp.jsx
+    find: "if (t.observedModel) wire.observedModel = t.observedModel"
+    replace: "if (false && t.observedModel) wire.observedModel = t.observedModel"
+    expectedDiagnostic: mounted-production-path

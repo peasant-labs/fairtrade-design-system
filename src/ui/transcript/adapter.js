@@ -27,6 +27,7 @@
 
 import { parseArgs, parseResult, extractPath, editPairs, writeContent, countDiff } from './adapter.parse.js'
 import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analytics.js'
+import { zObservedModelID } from '@peasant-labs/schema'
 
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
@@ -122,6 +123,61 @@ export function prefilterTurns(turns) {
   }
   return deduped
 }
+
+/* ── Sticky model resolution (complete wire, before projection/filtering) ────── */
+
+/**
+ * A canonical observation is exact source evidence: accepted bytes are preserved,
+ * while empty/edge-whitespace values and observations on non-assistant output are
+ * ignored defensively. Producer validation remains the primary enforcement seam.
+ * @param {TurnDetail} turn
+ * @returns {string | undefined}
+ */
+function validObservedModel(turn) {
+  if (turn.role !== 'assistant') return undefined
+  const parsed = zObservedModelID.safeParse(turn.observedModel)
+  return parsed.success ? parsed.data : undefined
+}
+
+/**
+ * Resolve effective sticky model state over the COMPLETE canonical turn order.
+ * Root assistant observations update root state. Inline subagent observations
+ * attribute their own turn only and never carry into the root session.
+ * @param {TurnDetail[]} turns
+ * @param {string | undefined} seed
+ * @returns {Map<number, { effectiveModel?: string, modelChangedFrom?: string }>}
+ */
+function resolveStickyModels(turns, seed) {
+  /** @type {Map<number, { effectiveModel?: string, modelChangedFrom?: string }>} */
+  const resolved = new Map()
+  let activeRoot = typeof seed === 'string' && seed.length > 0 ? seed : undefined
+
+  for (const turn of turns) {
+    const depth = turn.depth ?? 0
+    const observed = validObservedModel(turn)
+    if (turn.role !== 'assistant') {
+      resolved.set(turn.index, {})
+      continue
+    }
+    if (depth > 0) {
+      resolved.set(turn.index, observed === undefined ? {} : { effectiveModel: observed })
+      continue
+    }
+
+    const before = activeRoot
+    if (observed !== undefined) activeRoot = observed
+    /** @type {{ effectiveModel?: string, modelChangedFrom?: string }} */
+    const model = activeRoot === undefined ? {} : { effectiveModel: activeRoot }
+    if (observed !== undefined && before !== undefined && observed !== before) model.modelChangedFrom = before
+    resolved.set(turn.index, model)
+  }
+  return resolved
+}
+
+/**
+ * @typedef {object} AdaptTranscriptOptions
+ * @property {readonly number[]} [visibleTurnIndices] post-resolution projection by canonical turn index
+ */
 
 /* ── Tool-call cooking ───────────────────────────────────────────────────────── */
 
@@ -617,10 +673,15 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
  * @param {TranscriptWireInput} payload          canonical wire plus legacy git compatibility
  * @param {AnnotationSummary[]} [annotations]     separately-fetched entry annotations
  * @param {TranscriptAnalyticsVM} [analytics]     precomputed analytics; else derived on demand
+ * @param {AdaptTranscriptOptions} [options]      optional post-resolution visible-turn projection
  * @returns {TranscriptViewModel}
  */
-export function adaptTranscript(payload, annotations, analytics) {
-  const turns = prefilterTurns(payload.turns ?? [])
+export function adaptTranscript(payload, annotations, analytics, options) {
+  const completeTurns = payload.turns ?? []
+  const stickyModels = resolveStickyModels(completeTurns, payload.model)
+  const filteredTurns = prefilterTurns(completeTurns)
+  const visibleTurnIndices = options?.visibleTurnIndices === undefined ? null : new Set(options.visibleTurnIndices)
+  const turns = visibleTurnIndices === null ? filteredTurns : filteredTurns.filter((turn) => visibleTurnIndices.has(turn.index))
   const labels = computeTurnLabels(turns)
   const provider = payload.harness
 
@@ -695,6 +756,9 @@ export function adaptTranscript(payload, annotations, analytics) {
     if (p === finalPos) turnVM.isFinal = true
     if (t.tokensIn != null || t.tokensOut != null) turnVM.tokens = { in: t.tokensIn ?? 0, out: t.tokensOut ?? 0 }
     if (t.timestamp) turnVM.timestamp = t.timestamp
+    const model = stickyModels.get(t.index)
+    if (model?.effectiveModel !== undefined) turnVM.effectiveModel = model.effectiveModel
+    if (model?.modelChangedFrom !== undefined) turnVM.modelChangedFrom = model.modelChangedFrom
     turnVMs.push(turnVM)
   }
 

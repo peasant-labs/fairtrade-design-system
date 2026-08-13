@@ -26,6 +26,8 @@ import {
    session looks identical — switch this to gemini-cli / codex / opencode / cursor and the assistant
    re-accents (teal / olive / mauve / clay) for free. */
 const HARNESS = 'claude-code'
+const ROOT_MODEL = 'anthropic/claude-fable-5'
+const CHANGED_MODEL = 'anthropic/claude-opus-4-8'
 
 /* ---- the recorded session, baked in (sess_demo_0001 / transcript-browser) ---- */
 const TURNS = [
@@ -44,6 +46,7 @@ const TURNS = [
     id: 1,
     role: 'assistant',
     label: '1a',
+    observedModel: ROOT_MODEL,
     time: '8m ago',
     longTime: 'jun 17, 2026 · 09:12',
     tokens: { in: 1840, out: 920 },
@@ -116,6 +119,7 @@ return renderer(tool)
     id: 4,
     role: 'assistant',
     label: '2a',
+    observedModel: CHANGED_MODEL,
     time: '6m ago',
     longTime: 'jun 17, 2026 · 09:15',
     error: true,
@@ -140,6 +144,7 @@ return renderer(tool)
     id: 5,
     role: 'assistant',
     label: '2b',
+    observedModel: CHANGED_MODEL,
     time: '5m ago',
     longTime: 'jun 17, 2026 · 09:16',
     tokens: { in: 2600, out: 1320 },
@@ -203,6 +208,7 @@ return renderer(tool)
     role: 'assistant',
     label: '2d',
     depth: 1,
+    observedModel: CHANGED_MODEL,
     subagent: 'docs-writer',
     time: '3m ago',
     longTime: 'jun 17, 2026 · 09:18',
@@ -519,6 +525,7 @@ function turnToWire(t) {
     timestamp: turnTimestamp(t.id),
     depth: t.depth ?? 0,
   }
+  if (t.observedModel) wire.observedModel = t.observedModel
   if (t.thinking) wire.hasThinking = true
   if (t.tools) wire.toolCalls = t.tools.map(toolToWire)
   if (t.subagent) wire.agentName = t.subagent
@@ -541,7 +548,7 @@ function buildWire() {
     turnCount: 8,
     toolCallCount: 5,
     project: 'transcript-browser',
-    model: 'claude-opus-4-7',
+    model: ROOT_MODEL,
     outcome: 'resolved',
     turns: TURNS.map(turnToWire),
     scorecard: { outcome: 'resolved' },

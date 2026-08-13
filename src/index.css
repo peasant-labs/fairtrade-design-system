@@ -2347,6 +2347,8 @@
      .pv-icon wrapper from ProviderIcon is sized to match the user/subagent lucide glyphs beside it. */
   .txn-rolelabel .lucide, .txn-rolelabel .brand, .txn-rolelabel .pv-icon { width: var(--ic-sm); height: var(--ic-sm); }
   .txn-depth { color: var(--ink-4); border: var(--bd); padding: 0 var(--sp-1); }
+  .txn-turnmodel { color: var(--ink-2); text-transform: none; overflow-wrap: anywhere; }
+  .txn-modelchange { margin-block: var(--sp-3); padding: var(--sp-2) var(--sp-3); border-inline-start: var(--stroke-emphasis) solid var(--mauve); color: var(--ink-2); font-size: var(--fs-label); overflow-wrap: anywhere; }
   .txn-turnnum { color: var(--ink-2); font-weight: 600; }
   .txn-turntime { color: var(--ink-4); }
   .txn-tokbadge { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--ink-3); border: var(--bd); padding: 1px var(--sp-2); margin-left: auto; }

@@ -208,7 +208,7 @@ export const StrikeMountedSurfaces = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(mountedProvider.accessibleName, { exact: true })).toBeInTheDocument()
+    await expect(canvas.getAllByLabelText(mountedProvider.accessibleName).length).toBeGreaterThan(0)
     await expect(canvas.getAllByText(mountedProvider.slug, { exact: true }).length).toBeGreaterThan(0)
     const marks = canvasElement.querySelectorAll(`svg.brand[data-brand="${mountedProvider.brand}"]`)
     await expect(marks.length).toBeGreaterThanOrEqual(2)

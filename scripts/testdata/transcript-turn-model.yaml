@@ -1,0 +1,251 @@
+cases:
+  - name: sticky-carry-forward
+    payload:
+      id: sticky-carry-forward
+      harness: claude-code
+      startTime: '2026-08-12T08:00:00Z'
+      endTime: '2026-08-12T08:04:00Z'
+      durationMins: 4
+      totalTokens: 40
+      tokensIn: 20
+      tokensOut: 20
+      turnCount: 4
+      toolCallCount: 0
+      model: anthropic/claude-fable-5
+      turns:
+        - { index: 0, role: assistant, content: first A, timestamp: '2026-08-12T08:00:00Z', depth: 0, observedModel: anthropic/claude-fable-5 }
+        - { index: 1, role: assistant, content: missing after A, timestamp: '2026-08-12T08:01:00Z', depth: 0 }
+        - { index: 2, role: assistant, content: first B, timestamp: '2026-08-12T08:02:00Z', depth: 0, observedModel: anthropic/claude-opus-4-8 }
+        - { index: 3, role: assistant, content: missing after B, timestamp: '2026-08-12T08:03:00Z', depth: 0 }
+    options: null
+    expect:
+      indices: [0, 1, 2, 3]
+      effectiveModels: [anthropic/claude-fable-5, anthropic/claude-fable-5, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8]
+      changedFrom: [null, null, anthropic/claude-fable-5, null]
+      markerCount: 1
+  - name: repeated-observation
+    payload:
+      id: repeated-observation
+      harness: claude-code
+      startTime: '2026-08-12T09:00:00Z'
+      endTime: '2026-08-12T09:03:00Z'
+      durationMins: 3
+      totalTokens: 30
+      tokensIn: 15
+      tokensOut: 15
+      turnCount: 3
+      toolCallCount: 0
+      model: anthropic/claude-opus-4-8
+      turns:
+        - { index: 0, role: assistant, content: B observed, timestamp: '2026-08-12T09:00:00Z', depth: 0, observedModel: anthropic/claude-opus-4-8 }
+        - { index: 1, role: assistant, content: B repeated, timestamp: '2026-08-12T09:01:00Z', depth: 0, observedModel: anthropic/claude-opus-4-8 }
+        - { index: 2, role: assistant, content: B inherited, timestamp: '2026-08-12T09:02:00Z', depth: 0 }
+    options: null
+    expect:
+      indices: [0, 1, 2]
+      effectiveModels: [anthropic/claude-opus-4-8, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8]
+      changedFrom: [null, null, null]
+      markerCount: 0
+  - name: switchback
+    payload:
+      id: switchback
+      harness: claude-code
+      startTime: '2026-08-12T10:00:00Z'
+      endTime: '2026-08-12T10:03:00Z'
+      durationMins: 3
+      totalTokens: 30
+      tokensIn: 15
+      tokensOut: 15
+      turnCount: 3
+      toolCallCount: 0
+      model: anthropic/claude-fable-5
+      turns:
+        - { index: 0, role: assistant, content: A, timestamp: '2026-08-12T10:00:00Z', depth: 0, observedModel: anthropic/claude-fable-5 }
+        - { index: 1, role: assistant, content: B, timestamp: '2026-08-12T10:01:00Z', depth: 0, observedModel: anthropic/claude-opus-4-8 }
+        - { index: 2, role: assistant, content: A again, timestamp: '2026-08-12T10:02:00Z', depth: 0, observedModel: anthropic/claude-fable-5 }
+    options: null
+    expect:
+      indices: [0, 1, 2]
+      effectiveModels: [anthropic/claude-fable-5, anthropic/claude-opus-4-8, anthropic/claude-fable-5]
+      changedFrom: [null, anthropic/claude-fable-5, anthropic/claude-opus-4-8]
+      markerCount: 2
+  - name: inline-isolation
+    payload:
+      id: inline-isolation
+      harness: claude-code
+      startTime: '2026-08-12T11:00:00Z'
+      endTime: '2026-08-12T11:04:00Z'
+      durationMins: 4
+      totalTokens: 40
+      tokensIn: 20
+      tokensOut: 20
+      turnCount: 4
+      toolCallCount: 0
+      model: anthropic/claude-fable-5
+      turns:
+        - { index: 0, role: assistant, content: root A, timestamp: '2026-08-12T11:00:00Z', depth: 0, observedModel: anthropic/claude-fable-5 }
+        - { index: 1, role: assistant, content: inline B, timestamp: '2026-08-12T11:01:00Z', depth: 1, agentName: researcher, observedModel: anthropic/claude-opus-4-8 }
+        - { index: 2, role: assistant, content: root missing, timestamp: '2026-08-12T11:02:00Z', depth: 0 }
+        - { index: 3, role: assistant, content: inline missing, timestamp: '2026-08-12T11:03:00Z', depth: 1, agentName: reviewer }
+    options: null
+    expect:
+      indices: [0, 1, 2, 3]
+      effectiveModels: [anthropic/claude-fable-5, anthropic/claude-opus-4-8, anthropic/claude-fable-5, null]
+      changedFrom: [null, null, null, null]
+      markerCount: 0
+  - name: hidden-boundary-projection
+    payload:
+      id: hidden-boundary-projection
+      harness: claude-code
+      startTime: '2026-08-12T12:00:00Z'
+      endTime: '2026-08-12T12:04:00Z'
+      durationMins: 4
+      totalTokens: 40
+      tokensIn: 20
+      tokensOut: 20
+      turnCount: 4
+      toolCallCount: 0
+      model: anthropic/claude-fable-5
+      turns:
+        - { index: 0, role: assistant, content: visible A, timestamp: '2026-08-12T12:00:00Z', depth: 0, observedModel: anthropic/claude-fable-5 }
+        - { index: 1, role: assistant, content: hidden actual B boundary, timestamp: '2026-08-12T12:01:00Z', depth: 0, observedModel: anthropic/claude-opus-4-8 }
+        - { index: 2, role: assistant, content: visible after B, timestamp: '2026-08-12T12:02:00Z', depth: 0 }
+        - { index: 3, role: user, content: visible user, timestamp: '2026-08-12T12:03:00Z', depth: 0 }
+    options:
+      visibleTurnIndices: [0, 2, 3]
+    expect:
+      indices: [0, 2, 3]
+      effectiveModels: [anthropic/claude-fable-5, anthropic/claude-opus-4-8, null]
+      changedFrom: [null, null, null]
+      markerCount: 0
+  - name: legacy-all-missing
+    payload:
+      id: legacy-all-missing
+      harness: claude-code
+      startTime: '2026-08-12T13:00:00Z'
+      endTime: '2026-08-12T13:02:00Z'
+      durationMins: 2
+      totalTokens: 20
+      tokensIn: 10
+      tokensOut: 10
+      turnCount: 2
+      toolCallCount: 0
+      model: anthropic/claude-fable-5
+      turns:
+        - { index: 0, role: assistant, content: legacy first, timestamp: '2026-08-12T13:00:00Z', depth: 0 }
+        - { index: 1, role: assistant, content: legacy second, timestamp: '2026-08-12T13:01:00Z', depth: 0 }
+    options: null
+    expect:
+      indices: [0, 1]
+      effectiveModels: [anthropic/claude-fable-5, anthropic/claude-fable-5]
+      changedFrom: [null, null]
+      markerCount: 0
+  - name: invalid-observations
+    payload:
+      id: invalid-observations
+      harness: claude-code
+      startTime: '2026-08-12T14:00:00Z'
+      endTime: '2026-08-12T14:04:00Z'
+      durationMins: 4
+      totalTokens: 40
+      tokensIn: 20
+      tokensOut: 20
+      turnCount: 4
+      toolCallCount: 0
+      model: anthropic/claude-fable-5
+      turns:
+        - { index: 0, role: user, content: user content remains, timestamp: '2026-08-12T14:00:00Z', depth: 0, observedModel: anthropic/claude-opus-4-8 }
+        - { index: 1, role: system, content: system content remains, timestamp: '2026-08-12T14:01:00Z', depth: 0, observedModel: anthropic/claude-opus-4-8 }
+        - { index: 2, role: assistant, content: invalid edge whitespace remains, timestamp: '2026-08-12T14:02:00Z', depth: 0, observedModel: ' anthropic/claude-opus-4-8 ' }
+        - { index: 3, role: assistant, content: root still A, timestamp: '2026-08-12T14:03:00Z', depth: 0 }
+    options: null
+    expect:
+      indices: [0, 1, 2, 3]
+      effectiveModels: [null, null, anthropic/claude-fable-5, anthropic/claude-fable-5]
+      changedFrom: [null, null, null, null]
+      markerCount: 0
+  - name: exact-model-bytes
+    payload:
+      id: exact-model-bytes
+      harness: claude-code
+      startTime: '2026-08-12T15:00:00Z'
+      endTime: '2026-08-12T15:01:00Z'
+      durationMins: 1
+      totalTokens: 10
+      tokensIn: 5
+      tokensOut: 5
+      turnCount: 1
+      toolCallCount: 0
+      model: Anthropic/Claude-Fable-5
+      turns:
+        - { index: 0, role: assistant, content: exact bytes, timestamp: '2026-08-12T15:00:00Z', depth: 0, observedModel: Anthropic/Claude-Opus-4-8 }
+    options: null
+    expect:
+      indices: [0]
+      effectiveModels: [Anthropic/Claude-Opus-4-8]
+      changedFrom: [Anthropic/Claude-Fable-5]
+      markerCount: 1
+  - name: canonical-unicode-edges
+    payload:
+      id: canonical-unicode-edges
+      harness: claude-code
+      startTime: '2026-08-12T15:10:00Z'
+      endTime: '2026-08-12T15:14:00Z'
+      durationMins: 4
+      totalTokens: 40
+      tokensIn: 20
+      tokensOut: 20
+      turnCount: 4
+      toolCallCount: 0
+      model: anthropic/claude-fable-5
+      turns:
+        - { index: 0, role: assistant, content: invalid NEL edge remains mounted, timestamp: '2026-08-12T15:10:00Z', depth: 0, observedModel: "\u0085anthropic/claude-opus-4-8\u0085" }
+        - { index: 1, role: assistant, content: inherited root after invalid NEL, timestamp: '2026-08-12T15:11:00Z', depth: 0 }
+        - { index: 2, role: assistant, content: valid BOM edge exact bytes, timestamp: '2026-08-12T15:12:00Z', depth: 0, observedModel: "\uFEFFanthropic/claude-opus-4-8\uFEFF" }
+        - { index: 3, role: assistant, content: inherited exact BOM edge bytes, timestamp: '2026-08-12T15:13:00Z', depth: 0 }
+    options: null
+    expect:
+      indices: [0, 1, 2, 3]
+      effectiveModels: [anthropic/claude-fable-5, anthropic/claude-fable-5, "\uFEFFanthropic/claude-opus-4-8\uFEFF", "\uFEFFanthropic/claude-opus-4-8\uFEFF"]
+      changedFrom: [null, null, anthropic/claude-fable-5, null]
+      markerCount: 1
+  - name: mounted-production-path
+    payload:
+      id: mounted-production-path
+      harness: claude-code
+      startTime: '2026-08-12T16:00:00Z'
+      endTime: '2026-08-12T16:05:00Z'
+      durationMins: 5
+      totalTokens: 50
+      tokensIn: 25
+      tokensOut: 25
+      turnCount: 5
+      toolCallCount: 0
+      model: anthropic/claude-fable-5
+      turns:
+        - { index: 0, role: user, content: mounted user without model, timestamp: '2026-08-12T16:00:00Z', depth: 0 }
+        - { index: 1, role: assistant, content: mounted A, timestamp: '2026-08-12T16:01:00Z', depth: 0, observedModel: anthropic/claude-fable-5 }
+        - { index: 2, role: assistant, content: mounted B, timestamp: '2026-08-12T16:02:00Z', depth: 0, observedModel: anthropic/claude-opus-4-8 }
+        - { index: 3, role: assistant, content: mounted B repeated, timestamp: '2026-08-12T16:03:00Z', depth: 0, observedModel: anthropic/claude-opus-4-8 }
+        - { index: 4, role: assistant, content: mounted inline B, timestamp: '2026-08-12T16:04:00Z', depth: 1, agentName: researcher, observedModel: anthropic/claude-opus-4-8 }
+    options: null
+    expect:
+      indices: [0, 1, 2, 3, 4]
+      effectiveModels: [null, anthropic/claude-fable-5, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8]
+      changedFrom: [null, null, anthropic/claude-fable-5, null, null]
+      markerCount: 1
+      mounted:
+        turnOffsets: [0, 100, 200, 300, 400, 500, 600, 700, 800]
+        viewportHeight: 400
+        beforeBoundaryScrollTop: 100
+        afterBoundaryScrollTop: 450
+        stickyModels: [anthropic/claude-fable-5, anthropic/claude-opus-4-8]
+        topLevelAssistantCount: 6
+        speaker: assistant
+        providerLabel: Claude Code
+        modelNodes: [anthropic/claude-fable-5, anthropic/claude-fable-5, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8]
+        unattributedRole: user
+        markerCount: 1
+        markerText: 'model changed: anthropic/claude-fable-5 -> anthropic/claude-opus-4-8'
+        harnessText: claude code
+        forbiddenModelSentinels: [Session/Default, Turn/Explicit]

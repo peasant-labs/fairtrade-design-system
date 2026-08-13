@@ -250,6 +250,7 @@ export default function TranscriptViewer({
   const commits = session?.git?.commits ?? []
   const annotations = vm?.analytics?.patternAnnotations ?? turns.flatMap((t) => t.annotations ?? [])
   const toolGroupCounts = vm?.filterIndex?.toolGroupCounts ?? {}
+  const activeModel = turns.find((turn) => turn.index === activeTurn)?.effectiveModel
 
   /* user-prompt → its task (a task's first turn is its user prompt). */
   const taskByFirstTurn = useMemo(() => {
@@ -816,7 +817,7 @@ export default function TranscriptViewer({
               {sticky && viewMode === 'list' && (
                 <div className="txn-sticky">
                   {session.harness && <ProviderIcon harness={session.harness} accent />}
-                  {session.model && <span className="txn-sticky-model mono">{session.model}</span>}
+                  {activeModel && <span className="txn-sticky-model mono">{activeModel}</span>}
                   <Scrubber turns={turns} active={activeTurn} onSeek={seekScrub} draggingRef={draggingRef} />
                 </div>
               )}
