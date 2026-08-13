@@ -120,7 +120,8 @@ for (const entry of fixture.harnesses) {
       }
       if (surface === 'turn-card') {
         check(
-          document.querySelector('.txn-rolelabel')?.textContent?.includes(entry.accessibleName),
+          document.querySelector('.txn-rolelabel')?.textContent?.trim() === 'assistant'
+            && document.querySelector('.txn-rolelabel svg.brand')?.getAttribute('aria-label') === entry.accessibleName,
           `${entry.slug}: accessible name ${entry.accessibleName} was not mounted on turn-card`,
         )
       } else {

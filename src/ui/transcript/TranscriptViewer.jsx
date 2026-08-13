@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   ChevronRight, ChevronDown, ChevronUp, Clock, Coins, ShieldCheck, FileText,
   Search, Pencil, ListTree, LayoutList, SlidersHorizontal, Share2, Users, User, Wrench,
@@ -49,6 +49,8 @@ import { transcriptInitialPositionReadiness } from './initial-position.js'
 
 /** @typedef {import('./state-capabilities.js').TranscriptViewerProps} TranscriptViewerProps */
 /** @typedef {import('./state-capabilities.js').TranscriptFilters} TranscriptFilters */
+/** @typedef {{sessionId: string, scrollTop: number, focusOrigin: {kind: 'tab'} | {kind: 'scroller'} | {kind: 'descendant', turnIndex: number, control: 'anchor'}}} TraceReadingSnapshot */
+/** @typedef {{sessionId: string, scrollTop: number, focusOrigin: {kind: 'tab'} | {kind: 'scroller'} | {kind: 'descendant', turnIndex: number, control: 'anchor'}, requestKey: string, restoreRequested: boolean}} TraceReadingPosition */
 
 const fmtTokens = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n))
 
@@ -212,12 +214,24 @@ export default function TranscriptViewer({
   const [diffMode, setDiffMode] = useState('file')
   const [diffGroupsOpen, setDiffGroupsOpen] = useState({}) // path -> open? (default open)
   const [fileSort, setFileSort] = useState({ key: 'path', dir: 'asc' })
+  /** @type {[TraceReadingPosition | null, (value: TraceReadingPosition | null) => void]} */
+  const [traceReadingPosition, setTraceReadingPosition] = useState(null)
+
+  const session = vm?.session ?? {}
+  const turns = vm?.turns ?? []
 
   const turnRefs = useRef({})
   const scrollRef = useRef(null)
   const searchInputRef = useRef(null)
   const draggingRef = useRef(false)
   const tabRefs = useRef({})
+  const traceReadingPositionIdRef = useRef(0)
+  /** @type {import('react').MutableRefObject<TraceReadingSnapshot | null>} */
+  const latestTraceReadingSnapshotRef = useRef(null)
+  const traceReadingPositionRef = useRef(null)
+  const skipTraceRestoreRef = useRef(false)
+  const previousTabRef = useRef(tab)
+  const readingPositionSessionRef = useRef(session?.id ?? '')
 
   const registerRef = useCallback((id, el) => {
     if (el) turnRefs.current[id] = el
@@ -227,8 +241,6 @@ export default function TranscriptViewer({
   const toggleTool = (id) => setOpenTools({ ...openTools, [id]: !openTools[id] })
 
   /* ── cooked slices off the VM ───────────────────────────────────────────────── */
-  const session = vm?.session ?? {}
-  const turns = vm?.turns ?? []
   const phases = vm?.analytics?.phases ?? []
   const tasks = vm?.tasks ?? []
   const files = vm?.files ?? []
@@ -238,6 +250,7 @@ export default function TranscriptViewer({
   const commits = session?.git?.commits ?? []
   const annotations = vm?.analytics?.patternAnnotations ?? turns.flatMap((t) => t.annotations ?? [])
   const toolGroupCounts = vm?.filterIndex?.toolGroupCounts ?? {}
+  const activeModel = turns.find((turn) => turn.index === activeTurn)?.effectiveModel
 
   /* user-prompt → its task (a task's first turn is its user prompt). */
   const taskByFirstTurn = useMemo(() => {
@@ -264,6 +277,95 @@ export default function TranscriptViewer({
     })
   }, [turns, filters, commits])
 
+  const readTraceReadingSnapshot = useCallback(() => {
+    const sc = scrollRef.current
+    if (!sc) return null
+    const activeElement = typeof document !== 'undefined' ? document.activeElement : null
+    const focusedAnchor = activeElement instanceof Element ? activeElement.closest('.txn-anchor[data-turn-control]') : null
+    return {
+      sessionId: session?.id ?? '',
+      scrollTop: sc.scrollTop,
+      focusOrigin: focusedAnchor && sc.contains(focusedAnchor)
+        ? { kind: 'descendant', turnIndex: Number(focusedAnchor.getAttribute('data-turn-control')), control: 'anchor' }
+        : activeElement === sc
+          ? { kind: 'scroller' }
+          : { kind: 'tab' },
+    }
+  }, [session?.id])
+
+  const armTraceReadingPosition = useCallback((snapshot) => {
+    if (!snapshot || snapshot.sessionId !== (session?.id ?? '') || traceReadingPositionRef.current != null) return
+    traceReadingPositionIdRef.current += 1
+    const nextPosition = {
+      ...snapshot,
+      requestKey: `trace-reading-position-${traceReadingPositionIdRef.current}`,
+      restoreRequested: false,
+    }
+    traceReadingPositionRef.current = nextPosition
+    setTraceReadingPosition(nextPosition)
+  }, [session?.id])
+
+  const captureTraceReadingPosition = useCallback(() => {
+    if (tab !== 'trace' || viewMode !== 'list') return
+    // A deliberate turn jump may temporarily remount the trace at another
+    // location. Keep the original reading position until the user explicitly
+    // selects full trace; an intermediate tab departure must not replace it.
+    armTraceReadingPosition(readTraceReadingSnapshot())
+  }, [armTraceReadingPosition, readTraceReadingSnapshot, tab, viewMode])
+
+  const requestTraceReadingPosition = useCallback(() => {
+    const savedPosition = traceReadingPositionRef.current
+    if (!savedPosition || savedPosition.sessionId !== (session?.id ?? '') || savedPosition.restoreRequested) return
+    const requestedPosition = { ...savedPosition, restoreRequested: true }
+    traceReadingPositionRef.current = requestedPosition
+    setTraceReadingPosition(requestedPosition)
+    setViewMode('list')
+  }, [session?.id, setViewMode])
+
+  // Reading position is ephemeral to one transcript. Clear every mutable copy
+  // before a newly supplied session can arm or request restoration.
+  useLayoutEffect(() => {
+    const sessionId = session?.id ?? ''
+    if (readingPositionSessionRef.current === sessionId) return
+    readingPositionSessionRef.current = sessionId
+    latestTraceReadingSnapshotRef.current = null
+    traceReadingPositionRef.current = null
+    traceReadingPositionIdRef.current = 0
+    skipTraceRestoreRef.current = false
+    previousTabRef.current = tab
+    setTraceReadingPosition(null)
+  }, [session?.id, tab])
+
+  // Keep a last-known trace snapshot so a controlled parent can change tabs
+  // without giving this component a pointer or keyboard event to intercept.
+  useLayoutEffect(() => {
+    if (tab !== 'trace' || viewMode !== 'list') return
+    const snapshot = readTraceReadingSnapshot()
+    if (snapshot) latestTraceReadingSnapshotRef.current = snapshot
+  }, [readTraceReadingSnapshot, tab, viewMode, visibleTurns])
+
+  // Internal activation captures before the tab unmounts the trace. This
+  // layout fallback covers the public controlled-tab path, where a parent can
+  // replace activeTab without an event originating inside this component.
+  useLayoutEffect(() => {
+    if (previousTabRef.current === 'trace' && tab !== 'trace') {
+      armTraceReadingPosition(latestTraceReadingSnapshotRef.current)
+    } else if (previousTabRef.current !== 'trace' && tab === 'trace' && activeTabProp !== undefined) {
+      if (skipTraceRestoreRef.current) skipTraceRestoreRef.current = false
+      else requestTraceReadingPosition()
+    }
+    previousTabRef.current = tab
+  }, [activeTabProp, armTraceReadingPosition, requestTraceReadingPosition, tab])
+
+  const selectTab = useCallback((nextTab) => {
+    if (nextTab === 'trace') {
+      requestTraceReadingPosition()
+    } else {
+      captureTraceReadingPosition()
+    }
+    setTab(nextTab)
+  }, [captureTraceReadingPosition, requestTraceReadingPosition, setTab])
+
   const applyInitialPosition = useCallback((position) => {
     const sc = scrollRef.current
     const el = position.kind === 'turn' ? turnRefs.current[position.turnIndex] : null
@@ -278,12 +380,43 @@ export default function TranscriptViewer({
 
     if (position.kind === 'top') {
       sc.scrollTo({ top: 0, behavior: 'auto' })
+      latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
       return 'applied'
     }
 
     el.scrollIntoView({ block: 'start', behavior: 'auto' })
+    latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     return 'applied'
-  }, [tab, turns, viewMode, visibleTurns])
+  }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns])
+
+  const applyTraceReadingPosition = useCallback((position) => {
+    const target = traceReadingPositionRef.current ?? traceReadingPosition
+    if (!target || target.sessionId !== (session?.id ?? '') || position.requestKey !== target.requestKey) return 'discarded'
+    const sc = scrollRef.current
+    const result = transcriptInitialPositionReadiness(position, {
+      authoritativeTurnIndices: turns.map((turn) => turn.index),
+      renderedTurnIndices: visibleTurns.map((turn) => turn.index),
+      viewReady: tab === 'trace' && viewMode === 'list',
+      scrollerReady: sc != null,
+      targetReady: true,
+    })
+    if (result !== 'applied') return result
+
+    sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })
+    if (target.focusOrigin.kind === 'scroller') sc.focus({ preventScroll: true })
+    else if (target.focusOrigin.kind === 'descendant') {
+      const turn = turnRefs.current[target.focusOrigin.turnIndex]
+      const control = turn?.querySelector?.(`.txn-anchor[data-turn-control="${target.focusOrigin.turnIndex}"]`)
+      ;(control ?? tabRefs.current.trace)?.focus({ preventScroll: true })
+    } else tabRefs.current.trace?.focus({ preventScroll: true })
+    latestTraceReadingSnapshotRef.current = {
+      scrollTop: target.scrollTop,
+      focusOrigin: target.focusOrigin,
+    }
+    traceReadingPositionRef.current = null
+    setTraceReadingPosition(null)
+    return 'applied'
+  }, [session?.id, tab, traceReadingPosition, turns, viewMode, visibleTurns])
 
   useTranscriptInitialPosition({
     sessionId: session?.id,
@@ -291,6 +424,13 @@ export default function TranscriptViewer({
     legacyInitialPosition: activeTurnProp == null ? null : { kind: 'turn', turnIndex: activeTurnProp },
     readiness: [tab, viewMode, turns, visibleTurns],
     apply: applyInitialPosition,
+  })
+
+  useTranscriptInitialPosition({
+    sessionId: session?.id,
+    initialPosition: traceReadingPosition?.restoreRequested ? { kind: 'top', requestKey: traceReadingPosition.requestKey } : null,
+    readiness: [traceReadingPosition?.restoreRequested, traceReadingPosition?.requestKey, tab, viewMode, turns, visibleTurns],
+    apply: applyTraceReadingPosition,
   })
 
   /* category + tool-group counts the FiltersRail shows. */
@@ -337,7 +477,10 @@ export default function TranscriptViewer({
 
   /* ── navigation + interactions (effects/handlers only; safe under static render) ── */
   function jumpTo(idx, { switchTab = true } = {}) {
-    if (switchTab && tab !== 'trace') setTab('trace')
+    if (switchTab && tab !== 'trace') {
+      skipTraceRestoreRef.current = true
+      setTab('trace')
+    }
     setViewMode('list')
     setActiveTurn(idx)
     if (typeof requestAnimationFrame === 'function') {
@@ -390,6 +533,7 @@ export default function TranscriptViewer({
   function onScroll() {
     const sc = scrollRef.current
     if (!sc) return
+    latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     setSticky(sc.scrollTop > 56)
     let best = visibleTurns[0]?.index ?? 0
     for (const t of visibleTurns) {
@@ -398,6 +542,12 @@ export default function TranscriptViewer({
     }
     setActiveTurn(best)
   }
+
+  function openFile(file) {
+    if (file.edited) selectTab('diffs')
+    else jumpTo(file.turn ?? 0)
+  }
+
   function seekScrub(clientX, track) {
     const rect = track.getBoundingClientRect()
     const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
@@ -419,7 +569,8 @@ export default function TranscriptViewer({
     else if (e.key === 'End') j = TAB_ORDER.length - 1
     else return
     e.preventDefault()
-    setTab(TAB_ORDER[j])
+    captureTraceReadingPosition()
+    selectTab(TAB_ORDER[j])
     tabRefs.current[TAB_ORDER[j]]?.focus()
   }
 
@@ -428,7 +579,7 @@ export default function TranscriptViewer({
     function onKey(e) {
       const mod = e.metaKey || e.ctrlKey
       if (mod && (e.key === 'f' || e.key === 'F')) {
-        e.preventDefault(); setSearchOpen(true); setTab('trace')
+        e.preventDefault(); setSearchOpen(true); selectTab('trace')
         setTimeout(() => searchInputRef.current?.focus(), 0); return
       }
       if (e.key === 'Escape' && searchOpen) { setSearchOpen(false); return }
@@ -442,7 +593,7 @@ export default function TranscriptViewer({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchOpen, tab, viewMode, activeTurn, visibleTurns])
+  }, [searchOpen, tab, viewMode, activeTurn, visibleTurns, selectTab])
 
   /* scroll the active match into view (browser only). */
   useEffect(() => {
@@ -621,7 +772,13 @@ export default function TranscriptViewer({
               aria-selected={on}
               tabIndex={on ? 0 : -1}
               className={'tab txn-tab' + (on ? ' active' : '')}
-              onClick={() => setTab(id)}
+              onMouseDown={(event) => {
+                // Capture before the browser moves focus from the stream to a
+                // clicked alternate tab. The click handler remains the
+                // fallback for programmatic activation and keyboard clicks.
+                if (event.button === 0 && id !== 'trace') captureTraceReadingPosition()
+              }}
+              onClick={() => selectTab(id)}
             >
               {TAB_LABEL[id]} <span className="cnt tnum">{count}</span>
             </button>
@@ -660,7 +817,7 @@ export default function TranscriptViewer({
               {sticky && viewMode === 'list' && (
                 <div className="txn-sticky">
                   {session.harness && <ProviderIcon harness={session.harness} accent />}
-                  {session.model && <span className="txn-sticky-model mono">{session.model}</span>}
+                  {activeModel && <span className="txn-sticky-model mono">{activeModel}</span>}
                   <Scrubber turns={turns} active={activeTurn} onSeek={seekScrub} draggingRef={draggingRef} />
                 </div>
               )}
@@ -668,9 +825,11 @@ export default function TranscriptViewer({
                 <span className="txn-trace-count tnum">
                   {visibleTurns.length === turns.length ? `${turns.length} turns` : `${visibleTurns.length} of ${turns.length} turns`}
                 </span>
-                <div className="bs-seg txn-viewtoggle" role="group" aria-label="view mode">
-                  <button type="button" className="bs-seg-opt" aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}><List size={14} aria-hidden="true" /> list</button>
-                  <button type="button" className="bs-seg-opt" aria-pressed={viewMode === 'graph'} onClick={() => setViewMode('graph')}><Network size={14} aria-hidden="true" /> graph</button>
+                <div className="txn-trace-actions">
+                  <div className="bs-seg txn-viewtoggle" role="group" aria-label="view mode">
+                    <button type="button" className="bs-seg-opt" aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}><List size={14} aria-hidden="true" /> list</button>
+                    <button type="button" className="bs-seg-opt" aria-pressed={viewMode === 'graph'} onClick={() => setViewMode('graph')}><Network size={14} aria-hidden="true" /> graph</button>
+                  </div>
                 </div>
               </div>
 
@@ -682,7 +841,10 @@ export default function TranscriptViewer({
                 </div>
               ) : (
                 <div className="txn-streamwrap">
-                  <div className="txn-stream" ref={scrollRef} onScroll={onScroll} tabIndex={-1}>
+                  <div className="txn-stream" ref={scrollRef} role="region" aria-label="full trace turns" onFocusCapture={() => {
+                    const snapshot = readTraceReadingSnapshot()
+                    if (snapshot) latestTraceReadingSnapshotRef.current = snapshot
+                  }} onScroll={onScroll} tabIndex={-1}>
                     {streamPrelude != null && (
                       <div className="txn-stream-prelude">{streamPrelude}</div>
                     )}
@@ -762,9 +924,11 @@ export default function TranscriptViewer({
             <div className="txn-diffs">
               <div className="txn-diffs-head">
                 <span className="txn-diffs-count tnum">{diffs.length} {diffs.length === 1 ? 'edit' : 'edits'} across {diffsByPath.length} {diffsByPath.length === 1 ? 'file' : 'files'}</span>
-                <div className="bs-seg" role="group" aria-label="group diffs by">
-                  <button type="button" className="bs-seg-opt" aria-pressed={diffMode === 'file'} onClick={() => setDiffMode('file')}>by file</button>
-                  <button type="button" className="bs-seg-opt" aria-pressed={diffMode === 'turn'} onClick={() => setDiffMode('turn')}>by turn</button>
+                <div className="txn-diffs-actions">
+                  <div className="bs-seg" role="group" aria-label="group diffs by">
+                    <button type="button" className="bs-seg-opt" aria-pressed={diffMode === 'file'} onClick={() => setDiffMode('file')}>by file</button>
+                    <button type="button" className="bs-seg-opt" aria-pressed={diffMode === 'turn'} onClick={() => setDiffMode('turn')}>by turn</button>
+                  </div>
                 </div>
               </div>
               {diffMode === 'file' ? (
@@ -795,6 +959,9 @@ export default function TranscriptViewer({
 
           {tab === 'files' && (
             <div className="txn-files">
+              <div className="txn-files-head">
+                <span className="txn-files-count tnum">{files.length} {files.length === 1 ? 'file' : 'files'}</span>
+              </div>
               <table className="dtable txn-filetable">
                 <thead>
                   <tr>
@@ -804,13 +971,19 @@ export default function TranscriptViewer({
                 </thead>
                 <tbody>
                   {sortedFiles.map((f) => (
-                    <tr key={f.path} className="txn-filerow" onClick={() => (f.edited ? setTab('diffs') : jumpTo(f.turn ?? 0))} title={f.edited ? 'jump to diffs' : 'jump to last read'}>
+                    <tr key={f.path} className="txn-filerow">
                       <td>
-                        <span className="txn-file-cell">
+                        <button
+                          type="button"
+                          className="txn-file-cell"
+                          onClick={() => openFile(f)}
+                          aria-label={f.edited ? `${f.path}, jump to diffs` : `${f.path}, jump to last read`}
+                          title={f.edited ? 'jump to diffs' : 'jump to last read'}
+                        >
                           {f.edited ? <Pencil size={13} aria-hidden="true" /> : <FileText size={13} aria-hidden="true" />}
                           <span className="mono txn-file-path">…/{f.leaf}</span>
                           <span className="txn-file-counts tnum">{f.reads ? `${f.reads}r ` : ''}{f.edits ? `${f.edits}e ` : ''}{f.writes ? `${f.writes}w` : ''}</span>
-                        </span>
+                        </button>
                       </td>
                       <td className="txn-files-churn-col">
                         {f.adds || f.dels ? (

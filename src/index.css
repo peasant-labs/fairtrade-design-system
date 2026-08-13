@@ -2303,6 +2303,7 @@
      top strip; --txn-sticky-h is shared by that header and the turns-bar reservation. */
   .txn-trace { --txn-sticky-h: calc(var(--control-h) + var(--sp-1)); position: relative; display: flex; flex-direction: column; min-height: 0; flex: 1; }
   .txn-trace-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); background: var(--surface-2); }
+  .txn-trace-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--sp-3); flex-wrap: wrap; }
   /* when the scrubber header is revealed, drop the turns bar (tier 2) by the header
      height so it sits flush BENEATH the scrubber instead of being covered by it. */
   .txn-trace-pinned .txn-trace-head { margin-top: var(--txn-sticky-h); }
@@ -2346,6 +2347,8 @@
      .pv-icon wrapper from ProviderIcon is sized to match the user/subagent lucide glyphs beside it. */
   .txn-rolelabel .lucide, .txn-rolelabel .brand, .txn-rolelabel .pv-icon { width: var(--ic-sm); height: var(--ic-sm); }
   .txn-depth { color: var(--ink-4); border: var(--bd); padding: 0 var(--sp-1); }
+  .txn-turnmodel { color: var(--ink-2); text-transform: none; overflow-wrap: anywhere; }
+  .txn-modelchange { margin-block: var(--sp-3); padding: var(--sp-2) var(--sp-3); border-inline-start: var(--stroke-emphasis) solid var(--mauve); color: var(--ink-2); font-size: var(--fs-label); overflow-wrap: anywhere; }
   .txn-turnnum { color: var(--ink-2); font-weight: 600; }
   .txn-turntime { color: var(--ink-4); }
   .txn-tokbadge { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--ink-3); border: var(--bd); padding: 1px var(--sp-2); margin-left: auto; }
@@ -2359,9 +2362,46 @@
   .txn-labelbtn:hover { color: var(--amber-bright); border-color: var(--amber-dim); }
 
   .txn-savedchips { margin-bottom: var(--sp-2); }
-  .txn-body { line-height: 1.5; color: var(--ink); }
+  /* Markdown turns are full-width containers. Only running prose is measured; structured blocks
+     get an independent overflow context so a wide table or fence cannot widen the page. Content
+     selectors explicitly restore case because the presentation page's heading reset is chrome-only. */
+  .txn-body { inline-size: 100%; max-inline-size: none; min-width: 0; line-height: var(--lh-body); color: var(--ink); text-transform: none; }
+  .txn-body > .txn-md-prose,
+  .txn-body > .txn-md-list,
+  .txn-body > .txn-md-heading,
+  .txn-body > .txn-md-blockquote { max-inline-size: var(--measure-prose); }
+  .txn-body > :first-child { margin-block-start: 0; }
+  .txn-body > :last-child { margin-block-end: 0; }
+  .txn-body .txn-md-prose { margin-block: var(--sp-3) 0; }
+  .txn-body .txn-md-heading { font-family: var(--font-body); text-transform: none; letter-spacing: var(--tracking-prose); word-spacing: var(--word-spacing-prose); margin-block: var(--sp-5) var(--sp-2); }
+  .txn-body .txn-md-heading-1 { font-size: var(--fs-lg); }
+  .txn-body .txn-md-heading-2 { font-size: var(--fs-md); }
+  .txn-body .txn-md-heading-3 { font-size: var(--fs-body); }
+  .txn-body strong,
   .txn-body b { color: var(--amber-bright); font-weight: 700; text-shadow: var(--glow-soft); }
-  .txn-inlinecode { font-family: var(--font-mono); font-size: .92em; background: var(--canvas); border: var(--bd); padding: 0 4px; color: var(--ink-2); }
+  .txn-body .txn-md-list { margin-block: var(--sp-3) 0; padding-inline-start: var(--sp-5); }
+  .txn-body .txn-md-list-item { padding-inline-start: var(--sp-1); }
+  .txn-body .txn-md-list-item + .txn-md-list-item { margin-block-start: var(--sp-1); }
+  .txn-body .txn-md-list-item > .txn-md-list { margin-block-start: var(--sp-1); }
+  .txn-body .txn-md-list input[type='checkbox'] { accent-color: var(--amber); inline-size: var(--ic-md); block-size: var(--ic-md); margin-inline-end: var(--sp-2); vertical-align: -0.12em; }
+  .txn-body .txn-md-blockquote { margin-block: var(--sp-3) 0; padding-inline: var(--sp-3); border-inline-start: var(--stroke-emphasis) solid var(--mauve); color: var(--ink-2); }
+  .txn-body .txn-md-table-wrap,
+  .txn-body .txn-md-code-wrap { inline-size: 100%; max-inline-size: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-inline: contain; margin-block: var(--sp-4) 0; }
+  .txn-body .txn-md-table { min-inline-size: max-content; width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: var(--fs-body); line-height: var(--lh-mono); letter-spacing: 0; word-spacing: normal; }
+  .txn-body .txn-md-table th,
+  .txn-body .txn-md-table td { padding: var(--sp-2) var(--sp-3); border: var(--bd); text-align: start; white-space: nowrap; }
+  .txn-body .txn-md-table th { color: var(--ink-strong); background: var(--surface-2); font-weight: 700; }
+  .txn-body .txn-md-table td { color: var(--ink-2); }
+  .txn-body .txn-md-code-wrap { background: var(--canvas); border: var(--bd); }
+  .txn-body .txn-md-code { min-inline-size: max-content; margin: 0; padding: var(--sp-3); background: transparent; border: 0; color: var(--ink-2); font-family: var(--font-mono); font-size: var(--fs-body); line-height: var(--lh-mono); letter-spacing: 0; word-spacing: normal; white-space: pre; }
+  .txn-body .txn-md-code-wrap code { display: block; padding: 0; background: transparent; border: 0; font: inherit; color: inherit; }
+  .txn-inlinecode { font-family: var(--font-mono); font-size: var(--fs-body); line-height: var(--lh-mono); background: var(--canvas); border: var(--bd); padding-inline: var(--sp-1); color: var(--ink-2); }
+  .txn-body .txn-md-link { text-decoration: underline dotted; text-underline-offset: var(--sp-1); }
+  .txn-body .txn-md-link:hover,
+  .txn-body .txn-md-link:focus-visible { text-decoration-style: solid; }
+  .txn-body .txn-md-link-blocked { color: var(--ink-2); text-decoration: underline dotted; text-decoration-color: var(--ink-4); text-underline-offset: var(--sp-1); }
+  .txn-body .txn-md-rule { max-inline-size: var(--measure-prose); margin-block: var(--sp-4) 0; border: 0; border-block-start: var(--bd); }
+  .txn-body .txn-md-del { color: var(--ink-3); text-decoration-color: var(--clay); }
 
   /* subagent nested thread (reuse .subtask language) */
   .txn-subtask { margin-top: var(--sp-3); margin-left: var(--sp-4); }
@@ -2645,6 +2685,7 @@
   /* ---- diffs tab ---- */
   .txn-diffs { overflow: auto; padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); min-height: 0; }
   .txn-diffs-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+  .txn-diffs-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--sp-3); flex-wrap: wrap; }
   .txn-diffs-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .txn-filegroup { border: var(--bd); }
   .txn-fg-head { display: flex; align-items: center; gap: var(--sp-2); width: 100%; text-align: left; background: var(--surface-2); border: 0; cursor: pointer; padding: var(--sp-2) var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); }
@@ -2665,12 +2706,13 @@
 
   /* ---- files tab ---- */
   .txn-files { overflow: auto; padding: var(--sp-4); min-height: 0; }
+  .txn-files-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+  .txn-files-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .txn-filetable { margin-top: 0; }
   .txn-sort { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: 0; cursor: pointer; font-family: var(--font-mono); font-size: var(--fs-sm); text-transform: lowercase; color: var(--ink-3); padding: 0; }
   .txn-sort:hover { color: var(--ink); }
   .txn-files-churn-col { width: 1%; white-space: nowrap; text-align: right; }
-  .txn-filerow { cursor: pointer; }
-  .txn-file-cell { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+  .txn-file-cell { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; width: 100%; min-height: var(--target-min); padding: 0; background: transparent; border: 0; color: inherit; cursor: pointer; text-align: left; }
   .txn-file-cell .lucide { color: var(--ink-3); flex: none; }
   .txn-file-path { color: var(--ink); }
   .txn-file-counts { color: var(--ink-4); font-size: 11px; }

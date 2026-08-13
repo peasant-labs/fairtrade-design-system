@@ -73,11 +73,8 @@ export default function TurnCard({
   // accent. Curated turns may omit provider and use the neutral assistant
   // fallback; a present invalid value fails through providerAccent.
   const provider = turn.provider
-  const roleLabel = isSub
-    ? 'subagent · ' + (turn.agentName ?? '')
-    : turn.role === 'assistant'
-      ? provider === undefined ? turn.role : providerDisplayName(provider)
-      : turn.role
+  const providerLabel = provider === undefined ? undefined : providerDisplayName(provider)
+  const roleLabel = isSub ? 'subagent' : turn.role
   const accentName = provider === undefined ? 'amber' : providerAccent(provider)
   const asstAccent = `var(--${accentName})`
 
@@ -91,6 +88,7 @@ export default function TurnCard({
           <ProviderIcon
             harness={provider}
             accent
+            label={providerLabel}
           />
         ) : isSub ? (
           <CornerDownRight size={14} aria-hidden="true" />
@@ -101,6 +99,7 @@ export default function TurnCard({
         )}
         {roleLabel}
       </span>
+      {turn.effectiveModel && <span className="txn-turnmodel mono">{turn.effectiveModel}</span>}
       {isSub && <span className="txn-depth tnum">depth {turn.depth}</span>}
       <span className="txn-turnnum tnum">#{turn.label}</span>
       {(turn.time || turn.timestamp) && (
@@ -111,6 +110,7 @@ export default function TurnCard({
       <button
         type="button"
         className="txn-anchor"
+        data-turn-control={turn.index}
         aria-label={'copy link to turn ' + turn.label}
         title="copy link to this turn"
         onClick={() => onCopyAnchor(turn.index)}
@@ -183,6 +183,11 @@ export default function TurnCard({
       data-turn={turn.index}
       id={'turn-' + turn.index}
     >
+      {turn.modelChangedFrom && turn.effectiveModel && (
+        <div className="txn-modelchange mono" role="status">
+          model changed: {turn.modelChangedFrom} -&gt; {turn.effectiveModel}
+        </div>
+      )}
       {isSub ? (
         <div className="subtask txn-subtask">
           <div className="subtask-head">

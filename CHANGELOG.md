@@ -4,6 +4,39 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.12 — 2026-08-12
+
+This release restores transcript content fidelity across the shared viewer. It
+depends on `@peasant-labs/schema@0.1.1-rc1` for the canonical
+`observedModel` contract and runtime validation.
+
+### Added
+
+- **Safe structured transcript content.** Transcript bodies now render GFM
+  tables and lists, fenced code, bold text, inline code, and every source
+  newline through structured React nodes. Wide tables and code blocks scroll
+  independently while prose keeps its readable measure. Raw HTML and unsafe
+  links remain inert, syntax highlighting remains structured, and the enforced
+  `codeToHtml()` ban is preserved.
+- **Sticky observed-model attribution.** The adapter consumes the canonical
+  `observedModel` contract over the complete ordered transcript before
+  filtering or projection. `effectiveModel` carries the latest root-assistant
+  observation across omitted values, and `modelChangedFrom` marks only real
+  observed transitions. Repeats do not create markers, switchbacks do, and
+  inline subagent observations do not mutate root state.
+
+### Changed
+
+- **Full-trace reading restoration.** Leaving full trace through file or diff
+  navigation now preserves the internal reading position and meaningful focus,
+  then restores both when full trace is selected again. The existing full-trace
+  tab is the return action; no dedicated return button is added.
+- **Exact assistant model chrome.** Turn headers use the semantic `assistant`
+  role while provider branding stays separate and accessible. Every
+  attributable assistant turn renders its exact effective model, observed
+  changes render one in-flow `model changed` marker, and sticky active-turn
+  chrome follows the current effective model rather than the session seed.
+
 ## 0.0.11 — 2026-08-03
 
 ### Changed

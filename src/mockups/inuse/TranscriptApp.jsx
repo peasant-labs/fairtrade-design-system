@@ -26,6 +26,8 @@ import {
    session looks identical — switch this to gemini-cli / codex / opencode / cursor and the assistant
    re-accents (teal / olive / mauve / clay) for free. */
 const HARNESS = 'claude-code'
+const ROOT_MODEL = 'anthropic/claude-fable-5'
+const CHANGED_MODEL = 'anthropic/claude-opus-4-8'
 
 /* ---- the recorded session, baked in (sess_demo_0001 / transcript-browser) ---- */
 const TURNS = [
@@ -44,6 +46,7 @@ const TURNS = [
     id: 1,
     role: 'assistant',
     label: '1a',
+    observedModel: ROOT_MODEL,
     time: '8m ago',
     longTime: 'jun 17, 2026 · 09:12',
     tokens: { in: 1840, out: 920 },
@@ -52,8 +55,21 @@ const TURNS = [
       text:
         'The renderer lives under web/src/components/session-detail/v2/canvas. I should read TurnRow.tsx first to understand how role glyphs + tool calls compose, then trace rendererFor to see the per-tool dispatch before I move anything into packages/browser.',
     },
-    body:
-      'Let me look at the current renderer before extracting it. I will read **TurnRow.tsx** and find where `rendererFor` is wired so the move preserves the per-tool dispatch.',
+    body: `Let me look at the current renderer before extracting it. I will read **TurnRow.tsx** and find where \`rendererFor\` is wired so the move preserves the per-tool dispatch.
+The shared renderer keeps this structured handoff intact.
+
+- Read the existing component
+- Preserve tool dispatch
+
+| Surface | Status |
+| --- | --- |
+| Markdown | Ready |
+| Transcript viewer | Reviewed |
+
+\`\`\`js
+const renderer = rendererFor(tool.kind)
+return renderer(tool)
+\`\`\``,
     tools: [
       {
         id: 't1a',
@@ -103,6 +119,7 @@ const TURNS = [
     id: 4,
     role: 'assistant',
     label: '2a',
+    observedModel: CHANGED_MODEL,
     time: '6m ago',
     longTime: 'jun 17, 2026 · 09:15',
     error: true,
@@ -127,6 +144,7 @@ const TURNS = [
     id: 5,
     role: 'assistant',
     label: '2b',
+    observedModel: CHANGED_MODEL,
     time: '5m ago',
     longTime: 'jun 17, 2026 · 09:16',
     tokens: { in: 2600, out: 1320 },
@@ -190,6 +208,7 @@ const TURNS = [
     role: 'assistant',
     label: '2d',
     depth: 1,
+    observedModel: CHANGED_MODEL,
     subagent: 'docs-writer',
     time: '3m ago',
     longTime: 'jun 17, 2026 · 09:18',
@@ -455,7 +474,7 @@ function toolToWire(tool) {
       // reconstruct the pre/post text from the editorial hunk so the wire carries REAL edit content
       // and the adapter's LCS diff path runs on it. (The demo still overlays the editorial hunk for
       // display — see buildMockupVM — because its rewritten-line-as-del+add is an editorial
-      // representation an LCS would render as context; TB shows the LCS hunk.)
+      // representation an LCS would render as context; the shared transcript renderer shows the LCS hunk.)
       const hunk = Array.isArray(tool.hunk) ? tool.hunk : []
       const oldText = hunk.filter((d) => d.sign === 'ctx' || d.sign === 'del').map((d) => d.t).join('\n')
       const newText = hunk.filter((d) => d.sign === 'ctx' || d.sign === 'add').map((d) => d.t).join('\n')
@@ -497,7 +516,7 @@ function turnToWire(t) {
   // entry (transcript.go:154,164) and keeps its text in the parent's ContentPreview, so the adapter's
   // inline-thinking path does not fire in production — it is render-when-present pending a backend
   // follow-up. (STANDALONE thinking — a separate entryType=thinking turn — IS production-grounded, so a
-  // real consumer renders that today.) No current regression either way: TB never rendered inline thinking.
+  // real consumer renders that today.) No current regression either way: the previous renderer never rendered inline thinking.
   const content = t.thinking ? `<thinking>${t.thinking.text}</thinking>\n${t.body ?? ''}` : (t.body ?? '')
   const wire = {
     index: t.id,
@@ -506,6 +525,7 @@ function turnToWire(t) {
     timestamp: turnTimestamp(t.id),
     depth: t.depth ?? 0,
   }
+  if (t.observedModel) wire.observedModel = t.observedModel
   if (t.thinking) wire.hasThinking = true
   if (t.tools) wire.toolCalls = t.tools.map(toolToWire)
   if (t.subagent) wire.agentName = t.subagent
@@ -528,7 +548,7 @@ function buildWire() {
     turnCount: 8,
     toolCallCount: 5,
     project: 'transcript-browser',
-    model: 'claude-opus-4-7',
+    model: ROOT_MODEL,
     outcome: 'resolved',
     turns: TURNS.map(turnToWire),
     scorecard: { outcome: 'resolved' },
@@ -628,7 +648,7 @@ function mkDiffLine(d) {
                        reconstructed args) renders it as context, so a real app shows the LCS hunk.
      • files         — the demo's index includes grep-result + attributed files NO tool call carries a
                        path for; buildFiles derives only the tool-path-touched files, so a real app
-                       shows FEWER files (a real, documented "leaner TB" gap, not a masked one).
+                       shows FEWER files (a real, documented "leaner transcript" gap, not a masked one).
      • highlights    — a curated key-moment set + copy; buildHighlights derives a FULLER set for a real app. */
 function buildMockupVM() {
   const base = adaptTranscript(buildWire(), [], buildAnalytics())

@@ -31,8 +31,8 @@ mutations:
     expectedError: "flat-conflict: workingDirectory"
   - name: nullable-turns-must-normalize
     file: adapter
-    find: prefilterTurns(payload.turns ?? [])
-    replace: prefilterTurns(payload.turns)
+    find: "const completeTurns = payload.turns ?? []"
+    replace: "const completeTurns = payload.turns"
     expectedError: nullable-turns
   - name: canonical-commit-time-must-survive
     file: adapter

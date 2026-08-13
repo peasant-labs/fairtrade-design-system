@@ -52,7 +52,7 @@ function stringArray(value, label, unique = true) {
 
 function loadFixtures(manifestText = manifestSource, casesText = casesSource) {
   const manifest = parseDocument(manifestText, 'transcript initial-position manifest')
-  exactFields(manifest, ['expectedCaseCount', 'requiredFamilies', 'requiredNames', 'expectedNormalizerCount', 'requiredNormalizerNames', 'expectedUntrustedCount', 'requiredUntrustedNames', 'expectedUntrustedContainerCount', 'requiredUntrustedContainerNames', 'expectedReadinessCount', 'requiredReadinessNames', 'expectedPrecedenceCount', 'requiredPrecedenceNames', 'expectedMutationCount', 'mutations'], 'transcript initial-position manifest')
+  exactFields(manifest, ['expectedCaseCount', 'requiredFamilies', 'requiredNames', 'expectedNormalizerCount', 'requiredNormalizerNames', 'expectedUntrustedCount', 'requiredUntrustedNames', 'expectedUntrustedContainerCount', 'requiredUntrustedContainerNames', 'expectedReadinessCount', 'requiredReadinessNames', 'expectedPrecedenceCount', 'requiredPrecedenceNames', 'expectedMutationCount', 'requiredMutationNames', 'mutations'], 'transcript initial-position manifest')
   const requiredFamilies = stringArray(manifest.requiredFamilies, 'requiredFamilies')
   const requiredNames = stringArray(manifest.requiredNames, 'requiredNames')
   const requiredNormalizerNames = stringArray(manifest.requiredNormalizerNames, 'requiredNormalizerNames')
@@ -60,6 +60,7 @@ function loadFixtures(manifestText = manifestSource, casesText = casesSource) {
   const requiredUntrustedContainerNames = stringArray(manifest.requiredUntrustedContainerNames, 'requiredUntrustedContainerNames')
   const requiredReadinessNames = stringArray(manifest.requiredReadinessNames, 'requiredReadinessNames')
   const requiredPrecedenceNames = stringArray(manifest.requiredPrecedenceNames, 'requiredPrecedenceNames')
+  const requiredMutationNames = stringArray(manifest.requiredMutationNames, 'requiredMutationNames')
   if (![manifest.expectedCaseCount, manifest.expectedNormalizerCount, manifest.expectedUntrustedCount, manifest.expectedUntrustedContainerCount, manifest.expectedReadinessCount, manifest.expectedPrecedenceCount, manifest.expectedMutationCount].every((value) => Number.isSafeInteger(value) && value >= 0)) throw new Error('manifest counts must be safe nonnegative integers')
   if (!Array.isArray(manifest.mutations)) throw new Error('manifest mutations must be an array')
   const mutations = manifest.mutations.map((value, index) => {
@@ -68,7 +69,8 @@ function loadFixtures(manifestText = manifestSource, casesText = casesSource) {
     if (!['hook', 'normalizer'].includes(value.file) || ['name', 'find', 'expectedError'].some((field) => typeof value[field] !== 'string' || value[field].length === 0) || typeof value.replace !== 'string') throw new Error(`mutation ${index} has invalid typed values`)
     return value
   })
-  if (mutations.length !== manifest.expectedMutationCount || new Set(mutations.map((row) => row.name)).size !== mutations.length) throw new Error('mutation inventory count or names are invalid')
+  const mutationNames = mutations.map((row) => row.name)
+  if (mutations.length !== manifest.expectedMutationCount || mutationNames.length !== requiredMutationNames.length || mutationNames.some((name) => !requiredMutationNames.includes(name)) || requiredMutationNames.some((name) => !mutationNames.includes(name)) || new Set(mutationNames).size !== mutations.length) throw new Error('mutation inventory count or names are invalid')
 
   const root = parseDocument(casesText, 'transcript initial-position cases')
   exactFields(root, ['cases', 'normalizerCases', 'untrustedCases', 'untrustedContainerCases', 'readinessCases', 'precedenceCases'], 'transcript initial-position cases')
