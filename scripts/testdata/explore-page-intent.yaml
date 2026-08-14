@@ -1,0 +1,56 @@
+# Named permutations for the mounted commons Explore pagination-intent contract.
+# Each case builds a payload (rowProviders -> transcript rows, total, limit,
+# seedPage) and drives the real surface through steps. A step is one of:
+#   seedCheck : assert the mounted seed without interacting (always the first step)
+#   page      : click the pager control for `arg`
+#   stale     : the host rerenders with response metadata page = `arg` (rows kept)
+#   provider  : toggle the FacetRail provider named `arg`
+# Every step asserts the pager's current-page marker (expectCurrent), the last
+# emitted navigation intent (expectLastEmitted), and whether the step emitted a
+# new intent (expectNewEmission).
+cases:
+  - name: stale response page cannot rewrite a newer user page
+    rowProviders: [claude-code, gemini-cli, opencode, claude-code]
+    total: 12
+    limit: 4
+    seedPage: 1
+    steps:
+      - {action: seedCheck, arg: none, expectCurrent: 1, expectLastEmitted: 1, expectNewEmission: true}
+      - {action: page, arg: 2, expectCurrent: 2, expectLastEmitted: 2, expectNewEmission: true}
+      - {action: stale, arg: 1, expectCurrent: 2, expectLastEmitted: 2, expectNewEmission: false}
+  - name: late out-of-order responses never supersede the latest intent
+    rowProviders: [claude-code, gemini-cli, opencode, claude-code]
+    total: 12
+    limit: 4
+    seedPage: 1
+    steps:
+      - {action: seedCheck, arg: none, expectCurrent: 1, expectLastEmitted: 1, expectNewEmission: true}
+      - {action: page, arg: 2, expectCurrent: 2, expectLastEmitted: 2, expectNewEmission: true}
+      - {action: page, arg: 3, expectCurrent: 3, expectLastEmitted: 3, expectNewEmission: true}
+      - {action: stale, arg: 2, expectCurrent: 3, expectLastEmitted: 3, expectNewEmission: false}
+      - {action: stale, arg: 1, expectCurrent: 3, expectLastEmitted: 3, expectNewEmission: false}
+  - name: payload seeds a non-first starting page exactly once
+    rowProviders: [claude-code, gemini-cli, opencode, claude-code]
+    total: 20
+    limit: 4
+    seedPage: 3
+    steps:
+      - {action: seedCheck, arg: none, expectCurrent: 3, expectLastEmitted: 3, expectNewEmission: true}
+      - {action: stale, arg: 1, expectCurrent: 3, expectLastEmitted: 3, expectNewEmission: false}
+      - {action: page, arg: 4, expectCurrent: 4, expectLastEmitted: 4, expectNewEmission: true}
+  - name: absent payload page defaults to the first page
+    rowProviders: [claude-code, gemini-cli, opencode, claude-code]
+    total: 8
+    limit: 4
+    seedPage: 0
+    steps:
+      - {action: seedCheck, arg: none, expectCurrent: 1, expectLastEmitted: 1, expectNewEmission: true}
+  - name: a filter change returns to the first page once
+    rowProviders: [claude-code, gemini-cli, opencode, gemini-cli]
+    total: 12
+    limit: 4
+    seedPage: 1
+    steps:
+      - {action: seedCheck, arg: none, expectCurrent: 1, expectLastEmitted: 1, expectNewEmission: true}
+      - {action: page, arg: 3, expectCurrent: 3, expectLastEmitted: 3, expectNewEmission: true}
+      - {action: provider, arg: gemini-cli, expectCurrent: 1, expectLastEmitted: 1, expectNewEmission: true}
