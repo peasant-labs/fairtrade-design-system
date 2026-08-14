@@ -4,6 +4,29 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.13 — 2026-08-14
+
+### Added
+
+- **Constrained redaction levels.** `RedactionReview` accepts `availableLevels`
+  to limit which redaction levels render. Subsets render in canonical order; a
+  single available level removes the level selector, its label, and its
+  description entirely, so absent levels never reach the DOM. Validation fails
+  closed: an empty or unknown set, or a controlled `level` outside the set,
+  throws an actionable error, and `onLevel` only ever receives a rendered
+  available level.
+
+### Fixed
+
+- **Neutral kept originals.** Keeping a match un-redacted now neutralizes the
+  original row (neutral surface and rail, no strike-through, an eye cue instead
+  of the deletion minus) while the unused replacement stays phased out, in both
+  themes, with matching screen-reader labels.
+- **Narrow review composition.** The review surface reflows from 320px up via a
+  component container query: the level selector stacks, card heads wrap, and
+  content stays contained without page-level horizontal overflow. Desktop
+  layout is unchanged.
+
 ## 0.0.12 — 2026-08-12
 
 This release restores transcript content fidelity across the shared viewer. It
