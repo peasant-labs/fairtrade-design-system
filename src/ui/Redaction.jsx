@@ -51,10 +51,9 @@ function normalizeAvailableLevels(availableLevels) {
     && availableLevels.length > 0
     && availableLevels.every((value) => LEVEL_VALUES.includes(value))
   if (!valid) {
-    console.error(
-      'RedactionReview availableLevels could not be applied. RedactionReview received an empty, unknown, or non-array value while preparing the level selector, so the requested choices cannot be rendered safely. Pass a non-empty array containing only "minimal", "standard", and/or "maximum". All three levels will be shown instead.',
+    throw new TypeError(
+      'RedactionReview availableLevels is invalid. RedactionReview cannot render the level selector because availableLevels is empty, is not an array, or contains an unknown level. Rendering would expose unsupported redaction choices. Pass a non-empty array containing only "minimal", "standard", and/or "maximum".',
     )
-    return LEVELS
   }
 
   const requested = new Set(availableLevels)
@@ -191,7 +190,9 @@ function MatchCard({ match, onToggle }) {
       <div className="rdx-pair" role="group" aria-label="before and after redaction">
         <div className={`rdx-row rdx-row-del${kept ? ' rdx-row-muted' : ''}`}>
           <span className="rdx-rail" aria-hidden="true" />
-          <span className="rdx-glyph" aria-hidden="true"><Minus aria-hidden="true" /></span>
+          <span className="rdx-glyph" aria-hidden="true">
+            {kept ? <Eye aria-hidden="true" /> : <Minus aria-hidden="true" />}
+          </span>
           <span className="rdx-code">
             <span className="rdx-sr">
               {kept ? 'original secret (kept, will be sent): ' : 'original secret (removed): '}
@@ -221,7 +222,7 @@ function MatchCard({ match, onToggle }) {
  * @param {'minimal'|'standard'|'maximum'} [props.level='standard'] - the selected redaction level
  * @param {readonly ('minimal'|'standard'|'maximum')[]} [props.availableLevels]
  *        - supported levels. choices use canonical order. one choice hides the selector; invalid or
- *          empty input reports an actionable error and safely restores all levels.
+ *          empty input throws an actionable TypeError before the review renders.
  * @param {(level: 'minimal'|'standard'|'maximum') => void} [props.onLevel]
  *        - called only with an available level on select
  * @param {Array<{id, category, confidence:number, before?:string, secret?:string, after:string, kept?:boolean}>} [props.matches]
@@ -247,7 +248,11 @@ export function RedactionReview({
   ...rest
 }) {
   const levels = normalizeAvailableLevels(availableLevels)
-  const activeLevel = levels.some((option) => option.value === level) ? level : levels[0].value
+  if (!levels.some((option) => option.value === level)) {
+    throw new TypeError(
+      `RedactionReview availableLevels does not include the controlled level ${JSON.stringify(level)}. RedactionReview cannot display one active level while its owner controls another. Include the controlled level in availableLevels or update level to one of: ${levels.map(({ value }) => value).join(', ')}.`,
+    )
+  }
   const scannedN = scanned ?? total
   const keptCount = matches.filter((m) => m.kept).length
   const cls = ['rdx', 'rdx-review', className].filter(Boolean).join(' ')
@@ -257,7 +262,7 @@ export function RedactionReview({
       {/* control bar — level selector + scan progress are directly visible (no disclosure):
           redaction is safe-by-default and the opt-out controls must never hide behind a click. */}
       <div className="rdx-bar">
-        {levels.length > 1 && <LevelSelect levels={levels} level={activeLevel} onLevel={onLevel} />}
+        {levels.length > 1 && <LevelSelect levels={levels} level={level} onLevel={onLevel} />}
         <ScanProgress scanned={scannedN} total={total} />
       </div>
 

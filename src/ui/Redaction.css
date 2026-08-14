@@ -16,6 +16,7 @@
   font-family: var(--font-mono);
   font-size: var(--fs-sm);
   min-width: 0;
+  container-type: inline-size;
 }
 
 /* shared eyebrow — a small lowercased section label. */
@@ -359,15 +360,15 @@
    row stays fully legible because it is what will actually be shared. */
 .rdx-card-kept .rdx-row-add.rdx-row-muted { opacity: 0.45; }
 
-/* kept means the original will be sent, so it is no longer a deletion. retain the minus glyph and
-   assistive label as non-color state cues while removing the deletion treatment and strike. */
+/* kept means the original will be sent, so it is no longer a deletion. the visible eye cue and
+   assistive label carry that state without color while the deletion treatment and strike are removed. */
 .rdx-card-kept .rdx-row-del.rdx-row-muted { background: var(--surface-2); }
 .rdx-card-kept .rdx-row-del.rdx-row-muted .rdx-rail { background: var(--rule); }
 .rdx-card-kept .rdx-row-del.rdx-row-muted .rdx-glyph { color: var(--ink-4); }
 .rdx-card-kept .rdx-row-del.rdx-row-muted .rdx-code { color: var(--ink); }
 .rdx-card-kept .rdx-row-del.rdx-row-muted .rdx-strike { text-decoration: none; }
 
-@media (max-width: 479px) {
+@container (max-width: 479px) {
   .rdx-seg {
     display: flex;
     flex-direction: column;
