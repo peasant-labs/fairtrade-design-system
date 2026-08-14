@@ -18,13 +18,13 @@ import './Redaction.css'
    RedactionStep / RedactionDiffView + the PushStep transparency panel. two composites,
    one philosophy — "safe by default, transparent before action, never color-only":
 
-     <RedactionReview />   an availableLevels-constrained selector (segmented, aria-pressed), a scan
-                           progress bar (role=progressbar), and a list of match cards. each card reads
-                           a before→after pair on the same chassis as DiffView, with redundant glyphs
-                           + an icon+word state (not color alone), a category·confidence badge, and an
-                           individual keep/revert toggle. "kept" means UN-redacted — the secret would
-                           leave as-is — so it is flagged with a warning state and an eye on the kept
-                           original rather than a deletion cue.
+     <RedactionReview />   an availableLevels-constrained selector (segmented, aria-pressed) that is
+                           omitted when exactly one level is available, a scan progress bar
+                           (role=progressbar), and a list of match cards. each card reads a before→after
+                           pair on the same chassis as DiffView, with redundant glyphs + an icon+word
+                           state (not color alone), a category·confidence badge, and an individual
+                           keep/revert toggle. "kept" means UN-redacted — the secret would leave as-is
+                           — so it is flagged with a warning state and an eye on the kept original.
 
      <WhereDoesThisGo />   the transparency panel shown before an outbound action: the
                            destination url + a two-column "what gets sent / what stays
@@ -44,6 +44,32 @@ const LEVELS = [
 
 const LEVEL_VALUES = LEVELS.map(({ value }) => value)
 
+function formatReceived(value) {
+  const seen = new WeakSet()
+  let serialized
+  try {
+    serialized = JSON.stringify(value, (_, item) => {
+      if (typeof item === 'bigint') return `${item}n`
+      if (typeof item !== 'object' || item === null) return item
+      if (seen.has(item)) return '[Circular]'
+      seen.add(item)
+      return item
+    })
+  } catch {
+    serialized = undefined
+  }
+
+  if (serialized === undefined) {
+    try {
+      serialized = JSON.stringify(String(value))
+    } catch {
+      serialized = '"[Unformattable]"'
+    }
+  }
+  if (serialized.length <= 160) return serialized
+  return JSON.stringify({ preview: serialized.slice(0, 120), truncated: true })
+}
+
 function normalizeAvailableLevels(availableLevels) {
   if (availableLevels === undefined) return LEVELS
 
@@ -52,7 +78,7 @@ function normalizeAvailableLevels(availableLevels) {
     && availableLevels.every((value) => LEVEL_VALUES.includes(value))
   if (!valid) {
     throw new TypeError(
-      'What went wrong: availableLevels is invalid. Why: it is empty, is not an array, or contains an unknown level. Where: RedactionReview availableLevels prop. When: render validation before the level selector is created. What it means: the review cannot render safely because it could expose unsupported redaction choices. How to fix: pass a non-empty array containing only "minimal", "standard", and/or "maximum".',
+      `What went wrong: availableLevels is invalid. Received: ${formatReceived(availableLevels)}. Why: it is empty, is not an array, or contains an unknown level. Where: RedactionReview availableLevels prop. When: render validation before the level selector is created. What it means: the review cannot render safely because it could expose unsupported redaction choices. How to fix: pass a non-empty array containing only "minimal", "standard", and/or "maximum".`,
     )
   }
 
@@ -250,7 +276,7 @@ export function RedactionReview({
   const levels = normalizeAvailableLevels(availableLevels)
   if (!levels.some((option) => option.value === level)) {
     throw new TypeError(
-      `What went wrong: controlled level ${JSON.stringify(level)} is absent from availableLevels. Why: the owner supplied conflicting level state and supported choices. Where: RedactionReview level and availableLevels props. When: render validation before the active level is displayed. What it means: the review cannot render because it would show a different level from the controlled value. How to fix: include the controlled level in availableLevels or update level to one of: ${levels.map(({ value }) => value).join(', ')}.`,
+      `What went wrong: the controlled level is absent from availableLevels. Received: level=${formatReceived(level)}, availableLevels=${formatReceived(availableLevels)}. Why: the owner supplied conflicting level state and supported choices. Where: RedactionReview level and availableLevels props. When: render validation before the active level is displayed. What it means: the review cannot render because it would show a different level from the controlled value. How to fix: include the controlled level in availableLevels or update level to one of: ${levels.map(({ value }) => value).join(', ')}.`,
     )
   }
   const scannedN = scanned ?? total

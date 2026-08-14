@@ -186,9 +186,9 @@ export const AvailableLevelSubset = {
     expect(availableLevelSelection).toHaveBeenCalledTimes(1)
     expect(['standard', 'maximum']).toContain(availableLevelSelection.mock.calls[0][0])
 
-    expect(() => RedactionReview({ availableLevels: [], level: 'standard' })).toThrow(/availableLevels is invalid/)
-    expect(() => RedactionReview({ availableLevels: ['unknown'], level: 'standard' })).toThrow(/availableLevels is invalid/)
-    expect(() => RedactionReview({ availableLevels: ['standard'], level: 'maximum' })).toThrow(/controlled level.*is absent from availableLevels/)
+    expect(() => RedactionReview({ availableLevels: [], level: 'standard' })).toThrow(/Received: \[\]/)
+    expect(() => RedactionReview({ availableLevels: ['unknown'], level: 'standard' })).toThrow(/Received: \["unknown"\]/)
+    expect(() => RedactionReview({ availableLevels: ['standard'], level: 'maximum' })).toThrow(/Received: level="maximum", availableLevels=\["standard"\]/)
   },
 }
 
