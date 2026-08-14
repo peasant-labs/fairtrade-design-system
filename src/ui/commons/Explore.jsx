@@ -175,6 +175,17 @@ function pickFallbackData(data) {
   return data ?? FALLBACK_EXPLORE_DATA
 }
 
+/* The server payload's page is descriptive metadata about the response the host
+   currently holds, not a navigation instruction. It may seed the pager's
+   starting page exactly once, when the component first mounts. A valid seed is a
+   positive integer; anything else (0, missing, non-integer) starts at page 1.
+   After mount the pager's own `page` state is the sole navigation intent, so a
+   later (possibly stale) response page can never rewrite a newer user/filter
+   page. */
+function seedInitialPage(payloadPage) {
+  return Number.isInteger(payloadPage) && payloadPage >= 1 ? payloadPage : 1
+}
+
 function TranscriptPreviewCard({ transcript, href, onOpen }) {
   const card = (
     <>
@@ -296,10 +307,11 @@ export default function Explore({
   const [provider, setProvider] = useState('all')
   const [topics, setTopics] = useState(() => new Set())
   const [layout, setLayout] = useState('grid')
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState(() => seedInitialPage(payload.transcripts.page))
   const [selectedId, setSelectedId] = useState(null)
   const [mode, setMode] = useState('browse')
   const firstRun = useRef(true)
+  const lastFilterKey = useRef(null)
 
   useEffect(() => {
     if (firstRun.current) {
@@ -311,7 +323,19 @@ export default function Explore({
     return () => clearTimeout(id)
   }, [firstRun, rawQuery])
 
+  // A filter change (search, order, provider, topics) returns to the first page,
+  // but only after mount: the initial render keeps the page seeded from the
+  // payload (see seedInitialPage) instead of forcing page 1. Comparing the
+  // resolved filter values (rather than tripping a first-run flag) keeps this
+  // idempotent, so a re-invoked effect with unchanged filters never discards the
+  // seed or a user's current page.
   useEffect(() => {
+    const filterKey = JSON.stringify([query, order, provider, [...topics].sort()])
+    if (lastFilterKey.current === null || lastFilterKey.current === filterKey) {
+      lastFilterKey.current = filterKey
+      return
+    }
+    lastFilterKey.current = filterKey
     setPage(1)
   }, [query, order, provider, topics])
 
@@ -324,12 +348,6 @@ export default function Explore({
       page,
     })
   }, [order, onFiltersChange, page, provider, query, topics])
-
-  useEffect(() => {
-    if (payload.transcripts.page && payload.transcripts.page !== page) {
-      setPage(payload.transcripts.page)
-    }
-  }, [page, payload.transcripts.page])
 
   const selectedTranscript = transcriptRows.find((t) => t.id === selectedId) ?? transcriptRows[0] ?? null
   const selectedOwner = selectedTranscript?.owner ?? null
@@ -367,7 +385,10 @@ export default function Explore({
   const pageRows = transcriptRows
   const activeTopics = topics.size
   const totalItems = payload.transcripts.total ?? transcriptRows.length
-  const currentPage = payload.transcripts.page || page
+  // The pager reflects the user's requested page (navigation intent). The
+  // response payload's page is descriptive metadata only — it seeds the initial
+  // page once (see seedInitialPage) but never overrides a newer intent here.
+  const currentPage = page
   const currentLimit = payload.transcripts.limit || transcriptRows.length || 1
 
   const openTranscript = (transcript) => {

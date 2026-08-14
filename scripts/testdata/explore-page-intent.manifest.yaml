@@ -1,0 +1,35 @@
+expectedCaseCount: 5
+requiredNames:
+  - stale response page cannot rewrite a newer user page
+  - late out-of-order responses never supersede the latest intent
+  - payload seeds a non-first starting page exactly once
+  - absent payload page defaults to the first page
+  - a filter change returns to the first page once
+expectedLoaderMutationCount: 6
+requiredLoaderMutationNames:
+  - case count drift is rejected
+  - required case name deletion is rejected
+  - duplicate required case names are rejected
+  - unknown case field is rejected
+  - unknown step field is rejected
+  - multiple YAML documents are rejected
+loaderMutations:
+  - {name: case count drift is rejected, target: manifest, find: "expectedCaseCount: 5\nrequiredNames:", replace: "expectedCaseCount: 6\nrequiredNames:", expectedError: do not match}
+  - {name: required case name deletion is rejected, target: manifest, find: "  - a filter change returns to the first page once\n", replace: "", expectedError: do not match}
+  - {name: duplicate required case names are rejected, target: manifest, find: "requiredNames:\n  - stale response page cannot rewrite a newer user page", replace: "requiredNames:\n  - stale response page cannot rewrite a newer user page\n  - stale response page cannot rewrite a newer user page", expectedError: unique}
+  - {name: unknown case field is rejected, target: cases, find: "  - name: stale response page cannot rewrite a newer user page\n", replace: "  - name: stale response page cannot rewrite a newer user page\n    unknown: true\n", expectedError: fields}
+  - {name: unknown step field is rejected, target: cases, find: "      - {action: seedCheck, arg: none, expectCurrent: 3, expectLastEmitted: 3, expectNewEmission: true}", replace: "      - {action: seedCheck, arg: none, expectCurrent: 3, expectLastEmitted: 3, expectNewEmission: true, unknown: true}", expectedError: fields}
+  - {name: multiple YAML documents are rejected, target: cases, find: "cases:", replace: "---\ncases:", expectedError: exactly one YAML document}
+requiredMutationNames:
+  - response page is copied back into a newer intent
+  - pager reflects response metadata instead of intent
+  - seed rejects a valid non-first page
+  - mount discards the payload seed
+  - filter change no longer returns to the first page
+expectedMutationCount: 5
+mutations:
+  - {name: response page is copied back into a newer intent, find: "  }, [order, onFiltersChange, page, provider, query, topics])\n", replace: "  }, [order, onFiltersChange, page, provider, query, topics])\n\n  useEffect(() => {\n    if (payload.transcripts.page && payload.transcripts.page !== page) setPage(payload.transcripts.page)\n  }, [page, payload.transcripts.page])\n", expectedError: page intent invariant failed}
+  - {name: pager reflects response metadata instead of intent, find: "  const currentPage = page\n", replace: "  const currentPage = payload.transcripts.page || page\n", expectedError: page intent invariant failed}
+  - {name: seed rejects a valid non-first page, find: "  return Number.isInteger(payloadPage) && payloadPage >= 1 ? payloadPage : 1", replace: "  return Number.isInteger(payloadPage) && payloadPage >= 100 ? payloadPage : 1", expectedError: page intent invariant failed}
+  - {name: mount discards the payload seed, find: "    if (lastFilterKey.current === null || lastFilterKey.current === filterKey) {", replace: "    if (false) {", expectedError: page intent invariant failed}
+  - {name: filter change no longer returns to the first page, find: "    lastFilterKey.current = filterKey\n    setPage(1)", replace: "    lastFilterKey.current = filterKey\n    setPage(page)", expectedError: page intent invariant failed}
