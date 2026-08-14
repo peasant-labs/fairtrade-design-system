@@ -4,6 +4,16 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.14 — 2026-08-14
+
+### Fixed
+
+- **Stable Explore pagination intent.** The commons `Explore` pager now treats
+  response page metadata as descriptive after using the initial payload to seed
+  its starting page. Stale or out-of-order payloads can no longer overwrite a
+  newer user or filter page choice, and filter changes reset to page 1 exactly
+  once while preserving the existing public props and pagination accessibility.
+
 ## 0.0.13 — 2026-08-14
 
 ### Added
