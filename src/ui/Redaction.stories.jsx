@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { expect, within, userEvent, waitFor } from 'storybook/test'
+import { expect, fn, within, userEvent, waitFor } from 'storybook/test'
 import { RedactionReview, WhereDoesThisGo } from './Redaction.jsx'
 import { frame } from './story-frame.jsx'
 
@@ -49,12 +49,12 @@ const meta = {
   title: 'in use/Redaction',
   component: RedactionReview,
   tags: ['autodocs'],
-  decorators: frame('wide'),
   argTypes: {
     level: { control: 'inline-radio', options: ['minimal', 'standard', 'maximum'] },
     total: { control: 'number' },
     scanned: { control: 'number' },
     matches: { control: false },
+    availableLevels: { control: false },
     onToggle: { control: false },
     onLevel: { control: false },
   },
@@ -81,6 +81,7 @@ function ReviewHarness({ level: initialLevel = 'standard', matches: initialMatch
 
 export const Default = {
   render: (args) => <ReviewHarness {...args} />,
+  decorators: frame('wide'),
   args: {
     level: 'standard',
     scanned: 12,
@@ -104,7 +105,7 @@ export const Default = {
     expect(canvas.getByText('bearer-token')).toBeInTheDocument()
 
     // the email starts kept (un-redacted) → flagged "will be sent" + counted in the summary.
-    expect(canvas.getByText(/will be sent/i)).toBeInTheDocument()
+    expect(canvas.getAllByText(/will be sent/i).length).toBeGreaterThan(0)
     expect(canvas.getByText(/kept un-redacted/i)).toBeInTheDocument()
 
     // keep/revert: reverting the email re-redacts it; the "will be sent" flag clears.
@@ -122,6 +123,7 @@ export const Default = {
 // result is not mistaken for "all clear".
 export const WithScanFailure = {
   render: (args) => <ReviewHarness {...args} />,
+  decorators: frame('wide'),
   args: {
     level: 'maximum',
     scanned: 10,
@@ -136,6 +138,7 @@ export const WithScanFailure = {
 
 export const Empty = {
   render: (args) => <ReviewHarness {...args} />,
+  decorators: frame('wide'),
   args: {
     level: 'standard',
     scanned: 6,
@@ -144,9 +147,124 @@ export const Empty = {
   },
 }
 
+export const SingleLevel = {
+  render: (args) => <ReviewHarness {...args} />,
+  decorators: frame('wide'),
+  args: {
+    level: 'standard',
+    availableLevels: ['standard'],
+    scanned: 12,
+    total: 12,
+  },
+  play: async ({ canvasElement }) => {
+    const review = canvasElement.querySelector('.rdx-review')
+    expect(review).not.toHaveTextContent(/\bminimal\b/i)
+    expect(review).not.toHaveTextContent(/\bmaximum\b/i)
+    expect(review.querySelector('.rdx-level')).toBeNull()
+  },
+}
+
+const availableLevelSelection = fn()
+
+export const AvailableLevelSubset = {
+  render: (args) => <RedactionReview {...args} />,
+  decorators: frame('wide'),
+  args: {
+    level: 'standard',
+    availableLevels: ['maximum', 'standard'],
+    onLevel: availableLevelSelection,
+    scanned: 0,
+    total: 0,
+    matches: [],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const choices = canvas.getAllByRole('button').map((button) => button.textContent.trim())
+    expect(choices).toEqual(['standard', 'maximum'])
+    availableLevelSelection.mockClear()
+    await userEvent.click(canvas.getByRole('button', { name: /maximum/i }))
+    expect(availableLevelSelection).toHaveBeenCalledTimes(1)
+    expect(['standard', 'maximum']).toContain(availableLevelSelection.mock.calls[0][0])
+
+    expect(() => RedactionReview({ availableLevels: [], level: 'standard' })).toThrow(/availableLevels is invalid/)
+    expect(() => RedactionReview({ availableLevels: ['unknown'], level: 'standard' })).toThrow(/availableLevels is invalid/)
+    expect(() => RedactionReview({ availableLevels: ['standard'], level: 'maximum' })).toThrow(/controlled level.*is absent from availableLevels/)
+  },
+}
+
+async function assertKeptStyles({ canvasElement }) {
+  const original = canvasElement.querySelector('.rdx-row-del.rdx-row-muted')
+  const replacement = canvasElement.querySelector('.rdx-row-add.rdx-row-muted')
+  const originalCode = original.querySelector('.rdx-code')
+  const originalText = original.querySelector('.rdx-strike')
+  const originalRail = original.querySelector('.rdx-rail')
+  const deletedRail = canvasElement.querySelector('.rdx-row-del:not(.rdx-row-muted) .rdx-rail')
+  const neutralSurface = canvasElement.querySelector('.rdx-bar')
+  const pairRule = getComputedStyle(original.closest('.rdx-pair')).borderTopColor
+
+  expect(getComputedStyle(original).backgroundColor).toBe(getComputedStyle(neutralSurface).backgroundColor)
+  expect(getComputedStyle(originalCode).color).toBe(getComputedStyle(canvasElement.querySelector('.rdx-review')).color)
+  expect(getComputedStyle(originalText).textDecorationLine).toBe('none')
+  expect(getComputedStyle(originalRail).backgroundColor).toBe(pairRule)
+  expect(getComputedStyle(originalRail).backgroundColor).not.toBe(getComputedStyle(deletedRail).backgroundColor)
+  expect(getComputedStyle(replacement).opacity).toBe('0.45')
+  expect(original.querySelector('.rdx-glyph svg')).toHaveClass('lucide-eye')
+}
+
+export const KeptOriginal = {
+  render: (args) => <ReviewHarness {...args} />,
+  decorators: frame('wide'),
+  args: {
+    level: 'standard',
+    matches: [MATCHES[0], MATCHES[1]],
+    scanned: 2,
+    total: 2,
+  },
+  play: async (context) => {
+    const { canvasElement } = context
+    const canvas = within(canvasElement)
+    expect(canvas.getByText(/original secret \(kept, will be sent\)/i)).toBeInTheDocument()
+    expect(canvas.getByText(/redacted form \(not used\)/i)).toBeInTheDocument()
+    await assertKeptStyles(context)
+  },
+}
+
+export const KeptOriginalLight = {
+  ...KeptOriginal,
+  globals: { theme: 'light', backgrounds: { value: 'light' } },
+}
+
+export const NarrowReview = {
+  render: (args) => <ReviewHarness {...args} />,
+  decorators: frame(320),
+  parameters: {
+    viewport: {
+      defaultViewport: 'review320',
+      options: { review320: { name: 'review · 320', styles: { width: '320px', height: '780px' } } },
+    },
+  },
+  args: {
+    level: 'standard',
+    scanned: 12,
+    total: 12,
+  },
+  play: async ({ canvasElement }) => {
+    const review = canvasElement.querySelector('.rdx-review')
+    const selector = review.querySelector('.rdx-seg')
+    const choices = [...selector.querySelectorAll('.rdx-seg-opt')]
+    const cards = [...review.querySelectorAll('.rdx-card')]
+
+    expect(review.scrollWidth).toBeLessThanOrEqual(review.clientWidth)
+    expect(selector.scrollWidth).toBeLessThanOrEqual(selector.clientWidth)
+    expect(choices[1].offsetTop).toBeGreaterThan(choices[0].offsetTop)
+    expect(cards.every((card) => card.getBoundingClientRect().right <= review.getBoundingClientRect().right)).toBe(true)
+  },
+}
+
 // ── Transparency: the WhereDoesThisGo panel ──────────────────────────────────
 export const Transparency = {
   render: (args) => <WhereDoesThisGo {...args} />,
+  decorators: frame('wide'),
   parameters: { controls: { include: ['destination', 'sent', 'private'] } },
   args: {
     destination: 'https://commons.fairtrade.dev/share',
@@ -169,6 +287,7 @@ export const Transparency = {
 
 export const LightTheme = {
   render: (args) => <ReviewHarness {...args} />,
+  decorators: frame('wide'),
   args: {
     level: 'standard',
     scanned: 12,

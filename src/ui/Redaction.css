@@ -15,6 +15,8 @@
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: var(--fs-sm);
+  min-width: 0;
+  container-type: inline-size;
 }
 
 /* shared eyebrow — a small lowercased section label. */
@@ -55,6 +57,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
+  min-width: 0;
 }
 
 .rdx-seg {
@@ -63,6 +66,7 @@
   max-width: 100%;
   border: var(--bd-strong);
   background: var(--surface);
+  min-width: 0;
 }
 
 .rdx-seg-opt {
@@ -104,6 +108,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
+  min-width: 0;
 }
 
 .rdx-scan-head {
@@ -230,6 +235,7 @@
   gap: var(--sp-2);
   flex-wrap: wrap;
   margin-bottom: var(--sp-3);
+  min-width: 0;
 }
 
 /* category · confidence badge — square, hairline, mono, tabular confidence. */
@@ -243,6 +249,7 @@
   background: var(--surface-2);
   color: var(--ink-2);
   font-size: var(--fs-micro);
+  min-width: 0;
 }
 .rdx-badge-cat { color: var(--ink-2); }
 .rdx-badge-dot { color: var(--ink-4); }
@@ -352,6 +359,33 @@
 /* when a match is kept, the redacted (add) row no longer applies → dim it; the original (del)
    row stays fully legible because it is what will actually be shared. */
 .rdx-card-kept .rdx-row-add.rdx-row-muted { opacity: 0.45; }
+
+/* kept means the original will be sent, so it is no longer a deletion. the visible eye cue and
+   assistive label carry that state without color while the deletion treatment and strike are removed. */
+.rdx-card-kept .rdx-row-del.rdx-row-muted { background: var(--surface-2); }
+.rdx-card-kept .rdx-row-del.rdx-row-muted .rdx-rail { background: var(--rule); }
+.rdx-card-kept .rdx-row-del.rdx-row-muted .rdx-glyph { color: var(--ink-4); }
+.rdx-card-kept .rdx-row-del.rdx-row-muted .rdx-code { color: var(--ink); }
+.rdx-card-kept .rdx-row-del.rdx-row-muted .rdx-strike { text-decoration: none; }
+
+@container (width < 30rem) {
+  .rdx-seg {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+  }
+
+  .rdx-seg-opt {
+    width: 100%;
+    border-left: 0;
+    border-top: var(--bd);
+  }
+
+  .rdx-seg-opt:first-child { border-top: 0; }
+
+  .rdx-card-head { align-items: flex-start; }
+  .rdx-toggle { margin-left: 0; }
+}
 
 /* ── transparency panel: where does this go ────────────────────────────────── */
 /* width:100% pins the panel to its wrapper instead of letting the flex column shrink-wrap to its

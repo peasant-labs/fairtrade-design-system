@@ -18,13 +18,13 @@ import './Redaction.css'
    RedactionStep / RedactionDiffView + the PushStep transparency panel. two composites,
    one philosophy — "safe by default, transparent before action, never color-only":
 
-     <RedactionReview />   a level selector (segmented, aria-pressed), a scan progress bar
-                           (role=progressbar), and a list of match cards. each card reads a
-                           before→after as a del→add pair on the same chassis as DiffView,
-                           with a redundant −/+ glyph + an icon+word state (not color alone),
-                           a category·confidence badge, and an individual keep/revert toggle.
-                           "kept" means UN-redacted — the secret would leave as-is — so it is
-                           flagged loudly with a warning icon + word.
+     <RedactionReview />   an availableLevels-constrained selector (segmented, aria-pressed), a scan
+                           progress bar (role=progressbar), and a list of match cards. each card reads
+                           a before→after pair on the same chassis as DiffView, with redundant glyphs
+                           + an icon+word state (not color alone), a category·confidence badge, and an
+                           individual keep/revert toggle. "kept" means UN-redacted — the secret would
+                           leave as-is — so it is flagged with a warning state and an eye on the kept
+                           original rather than a deletion cue.
 
      <WhereDoesThisGo />   the transparency panel shown before an outbound action: the
                            destination url + a two-column "what gets sent / what stays
@@ -42,25 +42,43 @@ const LEVELS = [
   { value: 'maximum', label: 'maximum', icon: ShieldAlert, desc: 'every detected pattern, incl. paths' },
 ]
 
+const LEVEL_VALUES = LEVELS.map(({ value }) => value)
+
+function normalizeAvailableLevels(availableLevels) {
+  if (availableLevels === undefined) return LEVELS
+
+  const valid = Array.isArray(availableLevels)
+    && availableLevels.length > 0
+    && availableLevels.every((value) => LEVEL_VALUES.includes(value))
+  if (!valid) {
+    throw new TypeError(
+      'What went wrong: availableLevels is invalid. Why: it is empty, is not an array, or contains an unknown level. Where: RedactionReview availableLevels prop. When: render validation before the level selector is created. What it means: the review cannot render safely because it could expose unsupported redaction choices. How to fix: pass a non-empty array containing only "minimal", "standard", and/or "maximum".',
+    )
+  }
+
+  const requested = new Set(availableLevels)
+  return LEVELS.filter(({ value }) => requested.has(value))
+}
+
 /**
  * the level selector — a segmented control of mutually-exclusive options. the selected option
  * carries aria-pressed="true" + the amber fill + a leading icon, so the choice never rides on
  * color alone. its description sits below as guidance prose.
  */
-function LevelSelect({ level, onLevel }) {
-  const active = LEVELS.find((l) => l.value === level) ?? LEVELS[1]
+function LevelSelect({ levels, level, onLevel }) {
+  const active = levels.find((option) => option.value === level) ?? levels[0]
   return (
     <div className="rdx-level">
       <span className="rdx-eyebrow" id="rdx-level-label">level</span>
       <div className="rdx-seg" role="group" aria-labelledby="rdx-level-label">
-        {LEVELS.map((opt) => {
+        {levels.map((opt) => {
           const Icon = opt.icon
           return (
             <button
               key={opt.value}
               type="button"
               className="rdx-seg-opt"
-              aria-pressed={level === opt.value}
+              aria-pressed={active.value === opt.value}
               onClick={() => onLevel?.(opt.value)}
             >
               <Icon aria-hidden="true" />
@@ -106,9 +124,9 @@ function ScanProgress({ scanned, total }) {
 }
 
 /**
- * a single match card. the before→after is a del→add pair on the DiffView chassis: the original
- * secret (del, struck) is what WOULD leave the machine; the redacted form (add) is the safe
- * replacement. each carries a redundant −/+ glyph so the pair never reads on color alone.
+ * a single match card. the before→after uses the DiffView chassis: while redacted, the original is
+ * a struck deletion and the replacement is an addition. when kept, the original becomes neutral
+ * with an eye cue and the unused replacement fades. glyphs keep every state legible without color.
  *
  * the per-match toggle opts OUT of redaction. "kept" = the secret leaves un-redacted, so the
  * whole card flips to a loud warning treatment (clay rail + wash + a "will be sent" icon+word).
@@ -166,15 +184,19 @@ function MatchCard({ match, onToggle }) {
         </button>
       </div>
 
-      {/* before -> after as a del -> add pair. the secret + its redacted form are CODE: mono,
-          never lowercased. the −/+ glyph + the sr-only "removed/added" label carry the meaning
-          for AT and for color-blind readers alike. */}
+      {/* before -> after on the diff chassis. the secret + its redacted form are CODE: mono, never
+          lowercased. removed originals use −; kept originals use an eye. the + glyph and state-aware
+          sr labels carry the same meaning for AT and for color-blind readers. */}
       <div className="rdx-pair" role="group" aria-label="before and after redaction">
         <div className={`rdx-row rdx-row-del${kept ? ' rdx-row-muted' : ''}`}>
           <span className="rdx-rail" aria-hidden="true" />
-          <span className="rdx-glyph" aria-hidden="true"><Minus aria-hidden="true" /></span>
+          <span className="rdx-glyph" aria-hidden="true">
+            {kept ? <Eye aria-hidden="true" /> : <Minus aria-hidden="true" />}
+          </span>
           <span className="rdx-code">
-            <span className="rdx-sr">original secret (removed): </span>
+            <span className="rdx-sr">
+              {kept ? 'original secret (kept, will be sent): ' : 'original secret (removed): '}
+            </span>
             <span className="rdx-strike">{before ?? secret}</span>
           </span>
         </div>
@@ -182,7 +204,9 @@ function MatchCard({ match, onToggle }) {
           <span className="rdx-rail" aria-hidden="true" />
           <span className="rdx-glyph" aria-hidden="true"><Plus aria-hidden="true" /></span>
           <span className="rdx-code">
-            <span className="rdx-sr">redacted form (added): </span>
+            <span className="rdx-sr">
+              {kept ? 'redacted form (not used): ' : 'redacted form (added): '}
+            </span>
             {after}
           </span>
         </div>
@@ -196,7 +220,11 @@ function MatchCard({ match, onToggle }) {
  *
  * @param {object} props
  * @param {'minimal'|'standard'|'maximum'} [props.level='standard'] - the selected redaction level
- * @param {(level: string) => void} [props.onLevel] - called with the next level on select
+ * @param {readonly ('minimal'|'standard'|'maximum')[]} [props.availableLevels]
+ *        - supported levels. choices use canonical order. one choice hides the selector; invalid or
+ *          empty input throws an actionable TypeError before the review renders.
+ * @param {(level: 'minimal'|'standard'|'maximum') => void} [props.onLevel]
+ *        - called only with an available level on select
  * @param {Array<{id, category, confidence:number, before?:string, secret?:string, after:string, kept?:boolean}>} [props.matches]
  *        - the flagged matches. `before`/`secret` is the original (one or the other), `after` the
  *          redacted form. `kept` (controlled mode) = the user opted OUT, secret leaves as-is.
@@ -209,6 +237,7 @@ function MatchCard({ match, onToggle }) {
  */
 export function RedactionReview({
   level = 'standard',
+  availableLevels,
   onLevel,
   matches = [],
   onToggle,
@@ -218,16 +247,22 @@ export function RedactionReview({
   className = '',
   ...rest
 }) {
+  const levels = normalizeAvailableLevels(availableLevels)
+  if (!levels.some((option) => option.value === level)) {
+    throw new TypeError(
+      `What went wrong: controlled level ${JSON.stringify(level)} is absent from availableLevels. Why: the owner supplied conflicting level state and supported choices. Where: RedactionReview level and availableLevels props. When: render validation before the active level is displayed. What it means: the review cannot render because it would show a different level from the controlled value. How to fix: include the controlled level in availableLevels or update level to one of: ${levels.map(({ value }) => value).join(', ')}.`,
+    )
+  }
   const scannedN = scanned ?? total
   const keptCount = matches.filter((m) => m.kept).length
   const cls = ['rdx', 'rdx-review', className].filter(Boolean).join(' ')
 
   return (
     <section className={cls} aria-label="redaction review" {...rest}>
-      {/* control bar — level selector + scan progress are directly visible (no disclosure):
-          redaction is safe-by-default and the opt-out controls must never hide behind a click. */}
+      {/* control bar — the constrained selector appears only when multiple levels are available;
+          scan progress stays visible. safe-by-default opt-out controls never hide behind a click. */}
       <div className="rdx-bar">
-        <LevelSelect level={level} onLevel={onLevel} />
+        {levels.length > 1 && <LevelSelect levels={levels} level={level} onLevel={onLevel} />}
         <ScanProgress scanned={scannedN} total={total} />
       </div>
 

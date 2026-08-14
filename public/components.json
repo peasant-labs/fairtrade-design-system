@@ -1218,6 +1218,9 @@
         "matches": {
           "control": "false"
         },
+        "availableLevels": {
+          "control": "false"
+        },
         "onToggle": {
           "control": "false"
         },
@@ -1229,6 +1232,11 @@
         "Default",
         "WithScanFailure",
         "Empty",
+        "SingleLevel",
+        "AvailableLevelSubset",
+        "KeptOriginal",
+        "KeptOriginalLight",
+        "NarrowReview",
         "Transparency",
         "LightTheme"
       ]
