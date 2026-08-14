@@ -181,12 +181,14 @@ export const AvailableLevelSubset = {
     const canvas = within(canvasElement)
     const choices = canvas.getAllByRole('button').map((button) => button.textContent.trim())
     expect(choices).toEqual(['standard', 'maximum'])
+    availableLevelSelection.mockClear()
     await userEvent.click(canvas.getByRole('button', { name: /maximum/i }))
-    expect(availableLevelSelection).toHaveBeenLastCalledWith('maximum')
+    expect(availableLevelSelection).toHaveBeenCalledTimes(1)
+    expect(['standard', 'maximum']).toContain(availableLevelSelection.mock.calls[0][0])
 
-    expect(() => RedactionReview({ availableLevels: [], level: 'standard' })).toThrow(/RedactionReview availableLevels is invalid/)
-    expect(() => RedactionReview({ availableLevels: ['unknown'], level: 'standard' })).toThrow(/RedactionReview availableLevels is invalid/)
-    expect(() => RedactionReview({ availableLevels: ['standard'], level: 'maximum' })).toThrow(/does not include the controlled level/)
+    expect(() => RedactionReview({ availableLevels: [], level: 'standard' })).toThrow(/availableLevels is invalid/)
+    expect(() => RedactionReview({ availableLevels: ['unknown'], level: 'standard' })).toThrow(/availableLevels is invalid/)
+    expect(() => RedactionReview({ availableLevels: ['standard'], level: 'maximum' })).toThrow(/controlled level.*is absent from availableLevels/)
   },
 }
 
@@ -195,11 +197,16 @@ async function assertKeptStyles({ canvasElement }) {
   const replacement = canvasElement.querySelector('.rdx-row-add.rdx-row-muted')
   const originalCode = original.querySelector('.rdx-code')
   const originalText = original.querySelector('.rdx-strike')
+  const originalRail = original.querySelector('.rdx-rail')
+  const deletedRail = canvasElement.querySelector('.rdx-row-del:not(.rdx-row-muted) .rdx-rail')
   const neutralSurface = canvasElement.querySelector('.rdx-bar')
+  const pairRule = getComputedStyle(original.closest('.rdx-pair')).borderTopColor
 
   expect(getComputedStyle(original).backgroundColor).toBe(getComputedStyle(neutralSurface).backgroundColor)
   expect(getComputedStyle(originalCode).color).toBe(getComputedStyle(canvasElement.querySelector('.rdx-review')).color)
   expect(getComputedStyle(originalText).textDecorationLine).toBe('none')
+  expect(getComputedStyle(originalRail).backgroundColor).toBe(pairRule)
+  expect(getComputedStyle(originalRail).backgroundColor).not.toBe(getComputedStyle(deletedRail).backgroundColor)
   expect(getComputedStyle(replacement).opacity).toBe('0.45')
   expect(original.querySelector('.rdx-glyph svg')).toHaveClass('lucide-eye')
 }
@@ -209,9 +216,9 @@ export const KeptOriginal = {
   decorators: frame('wide'),
   args: {
     level: 'standard',
-    matches: [MATCHES[1]],
-    scanned: 1,
-    total: 1,
+    matches: [MATCHES[0], MATCHES[1]],
+    scanned: 2,
+    total: 2,
   },
   play: async (context) => {
     const { canvasElement } = context

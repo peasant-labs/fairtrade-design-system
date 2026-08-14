@@ -18,13 +18,13 @@ import './Redaction.css'
    RedactionStep / RedactionDiffView + the PushStep transparency panel. two composites,
    one philosophy — "safe by default, transparent before action, never color-only":
 
-     <RedactionReview />   a level selector (segmented, aria-pressed), a scan progress bar
-                           (role=progressbar), and a list of match cards. each card reads a
-                           before→after as a del→add pair on the same chassis as DiffView,
-                           with a redundant −/+ glyph + an icon+word state (not color alone),
-                           a category·confidence badge, and an individual keep/revert toggle.
-                           "kept" means UN-redacted — the secret would leave as-is — so it is
-                           flagged loudly with a warning icon + word.
+     <RedactionReview />   an availableLevels-constrained selector (segmented, aria-pressed), a scan
+                           progress bar (role=progressbar), and a list of match cards. each card reads
+                           a before→after pair on the same chassis as DiffView, with redundant glyphs
+                           + an icon+word state (not color alone), a category·confidence badge, and an
+                           individual keep/revert toggle. "kept" means UN-redacted — the secret would
+                           leave as-is — so it is flagged with a warning state and an eye on the kept
+                           original rather than a deletion cue.
 
      <WhereDoesThisGo />   the transparency panel shown before an outbound action: the
                            destination url + a two-column "what gets sent / what stays
@@ -52,7 +52,7 @@ function normalizeAvailableLevels(availableLevels) {
     && availableLevels.every((value) => LEVEL_VALUES.includes(value))
   if (!valid) {
     throw new TypeError(
-      'RedactionReview availableLevels is invalid. RedactionReview cannot render the level selector because availableLevels is empty, is not an array, or contains an unknown level. Rendering would expose unsupported redaction choices. Pass a non-empty array containing only "minimal", "standard", and/or "maximum".',
+      'What went wrong: availableLevels is invalid. Why: it is empty, is not an array, or contains an unknown level. Where: RedactionReview availableLevels prop. When: render validation before the level selector is created. What it means: the review cannot render safely because it could expose unsupported redaction choices. How to fix: pass a non-empty array containing only "minimal", "standard", and/or "maximum".',
     )
   }
 
@@ -124,9 +124,9 @@ function ScanProgress({ scanned, total }) {
 }
 
 /**
- * a single match card. the before→after is a del→add pair on the DiffView chassis: the original
- * secret (del, struck) is what WOULD leave the machine; the redacted form (add) is the safe
- * replacement. each carries a redundant −/+ glyph so the pair never reads on color alone.
+ * a single match card. the before→after uses the DiffView chassis: while redacted, the original is
+ * a struck deletion and the replacement is an addition. when kept, the original becomes neutral
+ * with an eye cue and the unused replacement fades. glyphs keep every state legible without color.
  *
  * the per-match toggle opts OUT of redaction. "kept" = the secret leaves un-redacted, so the
  * whole card flips to a loud warning treatment (clay rail + wash + a "will be sent" icon+word).
@@ -184,9 +184,9 @@ function MatchCard({ match, onToggle }) {
         </button>
       </div>
 
-      {/* before -> after as a del -> add pair. the secret + its redacted form are CODE: mono,
-          never lowercased. the −/+ glyph + the sr-only "removed/added" label carry the meaning
-          for AT and for color-blind readers alike. */}
+      {/* before -> after on the diff chassis. the secret + its redacted form are CODE: mono, never
+          lowercased. removed originals use −; kept originals use an eye. the + glyph and state-aware
+          sr labels carry the same meaning for AT and for color-blind readers. */}
       <div className="rdx-pair" role="group" aria-label="before and after redaction">
         <div className={`rdx-row rdx-row-del${kept ? ' rdx-row-muted' : ''}`}>
           <span className="rdx-rail" aria-hidden="true" />
@@ -250,7 +250,7 @@ export function RedactionReview({
   const levels = normalizeAvailableLevels(availableLevels)
   if (!levels.some((option) => option.value === level)) {
     throw new TypeError(
-      `RedactionReview availableLevels does not include the controlled level ${JSON.stringify(level)}. RedactionReview cannot display one active level while its owner controls another. Include the controlled level in availableLevels or update level to one of: ${levels.map(({ value }) => value).join(', ')}.`,
+      `What went wrong: controlled level ${JSON.stringify(level)} is absent from availableLevels. Why: the owner supplied conflicting level state and supported choices. Where: RedactionReview level and availableLevels props. When: render validation before the active level is displayed. What it means: the review cannot render because it would show a different level from the controlled value. How to fix: include the controlled level in availableLevels or update level to one of: ${levels.map(({ value }) => value).join(', ')}.`,
     )
   }
   const scannedN = scanned ?? total
@@ -259,8 +259,8 @@ export function RedactionReview({
 
   return (
     <section className={cls} aria-label="redaction review" {...rest}>
-      {/* control bar — level selector + scan progress are directly visible (no disclosure):
-          redaction is safe-by-default and the opt-out controls must never hide behind a click. */}
+      {/* control bar — the constrained selector appears only when multiple levels are available;
+          scan progress stays visible. safe-by-default opt-out controls never hide behind a click. */}
       <div className="rdx-bar">
         {levels.length > 1 && <LevelSelect levels={levels} level={level} onLevel={onLevel} />}
         <ScanProgress scanned={scannedN} total={total} />

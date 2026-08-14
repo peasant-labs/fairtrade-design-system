@@ -368,7 +368,7 @@
 .rdx-card-kept .rdx-row-del.rdx-row-muted .rdx-code { color: var(--ink); }
 .rdx-card-kept .rdx-row-del.rdx-row-muted .rdx-strike { text-decoration: none; }
 
-@container (max-width: 479px) {
+@container (width < 30rem) {
   .rdx-seg {
     display: flex;
     flex-direction: column;
