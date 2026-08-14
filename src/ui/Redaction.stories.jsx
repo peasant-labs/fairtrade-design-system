@@ -178,6 +178,7 @@ export const KeptOriginal = {
 
 export const NarrowReview = {
   render: (args) => <ReviewHarness {...args} />,
+  decorators: frame('full'),
   parameters: { viewport: { defaultViewport: 'mobile1' } },
   args: {
     level: 'standard',
