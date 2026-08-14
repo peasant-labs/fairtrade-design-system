@@ -55,6 +55,7 @@ const meta = {
     total: { control: 'number' },
     scanned: { control: 'number' },
     matches: { control: false },
+    availableLevels: { control: false },
     onToggle: { control: false },
     onLevel: { control: false },
   },
@@ -104,7 +105,7 @@ export const Default = {
     expect(canvas.getByText('bearer-token')).toBeInTheDocument()
 
     // the email starts kept (un-redacted) → flagged "will be sent" + counted in the summary.
-    expect(canvas.getByText(/will be sent/i)).toBeInTheDocument()
+    expect(canvas.getAllByText(/will be sent/i).length).toBeGreaterThan(0)
     expect(canvas.getByText(/kept un-redacted/i)).toBeInTheDocument()
 
     // keep/revert: reverting the email re-redacts it; the "will be sent" flag clears.
@@ -141,6 +142,47 @@ export const Empty = {
     scanned: 6,
     total: 6,
     matches: [],
+  },
+}
+
+export const SingleLevel = {
+  render: (args) => <ReviewHarness {...args} />,
+  args: {
+    level: 'maximum',
+    availableLevels: ['standard'],
+    scanned: 12,
+    total: 12,
+  },
+  play: async ({ canvasElement }) => {
+    const review = canvasElement.querySelector('.rdx-review')
+    expect(review).not.toHaveTextContent(/\bminimal\b/i)
+    expect(review).not.toHaveTextContent(/\bmaximum\b/i)
+    expect(review.querySelector('.rdx-level')).toBeNull()
+  },
+}
+
+export const KeptOriginal = {
+  render: (args) => <ReviewHarness {...args} />,
+  args: {
+    level: 'standard',
+    matches: [MATCHES[1]],
+    scanned: 1,
+    total: 1,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    expect(canvas.getByText(/original secret \(kept, will be sent\)/i)).toBeInTheDocument()
+    expect(canvas.getByText(/redacted form \(not used\)/i)).toBeInTheDocument()
+  },
+}
+
+export const NarrowReview = {
+  render: (args) => <ReviewHarness {...args} />,
+  parameters: { viewport: { defaultViewport: 'mobile1' } },
+  args: {
+    level: 'standard',
+    scanned: 12,
+    total: 12,
   },
 }
 

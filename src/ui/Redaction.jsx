@@ -42,25 +42,44 @@ const LEVELS = [
   { value: 'maximum', label: 'maximum', icon: ShieldAlert, desc: 'every detected pattern, incl. paths' },
 ]
 
+const LEVEL_VALUES = LEVELS.map(({ value }) => value)
+
+function normalizeAvailableLevels(availableLevels) {
+  if (availableLevels === undefined) return LEVELS
+
+  const valid = Array.isArray(availableLevels)
+    && availableLevels.length > 0
+    && availableLevels.every((value) => LEVEL_VALUES.includes(value))
+  if (!valid) {
+    console.error(
+      'RedactionReview availableLevels could not be applied. RedactionReview received an empty, unknown, or non-array value while preparing the level selector, so the requested choices cannot be rendered safely. Pass a non-empty array containing only "minimal", "standard", and/or "maximum". All three levels will be shown instead.',
+    )
+    return LEVELS
+  }
+
+  const requested = new Set(availableLevels)
+  return LEVELS.filter(({ value }) => requested.has(value))
+}
+
 /**
  * the level selector — a segmented control of mutually-exclusive options. the selected option
  * carries aria-pressed="true" + the amber fill + a leading icon, so the choice never rides on
  * color alone. its description sits below as guidance prose.
  */
-function LevelSelect({ level, onLevel }) {
-  const active = LEVELS.find((l) => l.value === level) ?? LEVELS[1]
+function LevelSelect({ levels, level, onLevel }) {
+  const active = levels.find((option) => option.value === level) ?? levels[0]
   return (
     <div className="rdx-level">
       <span className="rdx-eyebrow" id="rdx-level-label">level</span>
       <div className="rdx-seg" role="group" aria-labelledby="rdx-level-label">
-        {LEVELS.map((opt) => {
+        {levels.map((opt) => {
           const Icon = opt.icon
           return (
             <button
               key={opt.value}
               type="button"
               className="rdx-seg-opt"
-              aria-pressed={level === opt.value}
+              aria-pressed={active.value === opt.value}
               onClick={() => onLevel?.(opt.value)}
             >
               <Icon aria-hidden="true" />
@@ -174,7 +193,9 @@ function MatchCard({ match, onToggle }) {
           <span className="rdx-rail" aria-hidden="true" />
           <span className="rdx-glyph" aria-hidden="true"><Minus aria-hidden="true" /></span>
           <span className="rdx-code">
-            <span className="rdx-sr">original secret (removed): </span>
+            <span className="rdx-sr">
+              {kept ? 'original secret (kept, will be sent): ' : 'original secret (removed): '}
+            </span>
             <span className="rdx-strike">{before ?? secret}</span>
           </span>
         </div>
@@ -182,7 +203,9 @@ function MatchCard({ match, onToggle }) {
           <span className="rdx-rail" aria-hidden="true" />
           <span className="rdx-glyph" aria-hidden="true"><Plus aria-hidden="true" /></span>
           <span className="rdx-code">
-            <span className="rdx-sr">redacted form (added): </span>
+            <span className="rdx-sr">
+              {kept ? 'redacted form (not used): ' : 'redacted form (added): '}
+            </span>
             {after}
           </span>
         </div>
@@ -196,7 +219,11 @@ function MatchCard({ match, onToggle }) {
  *
  * @param {object} props
  * @param {'minimal'|'standard'|'maximum'} [props.level='standard'] - the selected redaction level
- * @param {(level: string) => void} [props.onLevel] - called with the next level on select
+ * @param {readonly ('minimal'|'standard'|'maximum')[]} [props.availableLevels]
+ *        - supported levels. choices use canonical order. one choice hides the selector; invalid or
+ *          empty input reports an actionable error and safely restores all levels.
+ * @param {(level: 'minimal'|'standard'|'maximum') => void} [props.onLevel]
+ *        - called only with an available level on select
  * @param {Array<{id, category, confidence:number, before?:string, secret?:string, after:string, kept?:boolean}>} [props.matches]
  *        - the flagged matches. `before`/`secret` is the original (one or the other), `after` the
  *          redacted form. `kept` (controlled mode) = the user opted OUT, secret leaves as-is.
@@ -209,6 +236,7 @@ function MatchCard({ match, onToggle }) {
  */
 export function RedactionReview({
   level = 'standard',
+  availableLevels,
   onLevel,
   matches = [],
   onToggle,
@@ -218,6 +246,8 @@ export function RedactionReview({
   className = '',
   ...rest
 }) {
+  const levels = normalizeAvailableLevels(availableLevels)
+  const activeLevel = levels.some((option) => option.value === level) ? level : levels[0].value
   const scannedN = scanned ?? total
   const keptCount = matches.filter((m) => m.kept).length
   const cls = ['rdx', 'rdx-review', className].filter(Boolean).join(' ')
@@ -227,7 +257,7 @@ export function RedactionReview({
       {/* control bar — level selector + scan progress are directly visible (no disclosure):
           redaction is safe-by-default and the opt-out controls must never hide behind a click. */}
       <div className="rdx-bar">
-        <LevelSelect level={level} onLevel={onLevel} />
+        {levels.length > 1 && <LevelSelect levels={levels} level={activeLevel} onLevel={onLevel} />}
         <ScanProgress scanned={scannedN} total={total} />
       </div>
 
