@@ -2220,6 +2220,12 @@
 
   /* ---- header ---- */
   .txn-header { padding: var(--sp-4); border-bottom: var(--bd); background: var(--surface); flex: none; }
+  /* once the full trace is scrolled past the sticky threshold the session header leaves the
+     viewport and the condensed scrubber header (.txn-sticky) takes its place: the tab strip,
+     the scrubber and the turns bar are the only persistent navigation while reading. the
+     viewer toggles .txn-app-condensed from the stream's own scroll position and restores the
+     header at the top of the trace, so the column does not stack two headers. */
+  .txn-app-condensed > .txn-header { display: none; }
   .txn-header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); }
   .txn-crumb { flex-wrap: wrap; min-width: 0; }
   .txn-crumb .cur { font-variant-numeric: tabular-nums; }
