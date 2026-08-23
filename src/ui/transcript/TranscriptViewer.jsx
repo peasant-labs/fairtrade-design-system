@@ -71,6 +71,12 @@ function useControllable(value, onChange, defaultValue) {
   return [current, set]
 }
 
+/* trace scroll offset past which the condensed scrubber header pins and the session
+   header leaves; the slack is the extra stream overflow required before the header's
+   height is released so the scroller cannot clamp back under the threshold. */
+const STICKY_SCROLL_THRESHOLD = 56
+const HERO_RELEASE_SLACK = 24
+
 /* the five session views (count badges come off the cooked VM). */
 const TAB_ORDER = /** @type {const} */ (['highlights', 'trace', 'diffs', 'files', 'annotations'])
 const TAB_LABEL = { highlights: 'highlights', trace: 'full trace', diffs: 'diffs', files: 'files', annotations: 'annotations' }
@@ -209,6 +215,13 @@ export default function TranscriptViewer({
   const [copiedLink, setCopiedLink] = useState(false)
   const [labelFor, setLabelFor] = useState(null)
   const [sticky, setSticky] = useState(false)
+  // The session header (breadcrumb, title, chips, actions) leaves once the trace is
+  // scrolled past the sticky threshold, so the condensed scrubber header replaces it
+  // instead of stacking beneath it. The hero only hides when the stream keeps enough
+  // overflow after the header's height is released to the scroller; otherwise the
+  // browser would clamp scrollTop back under the threshold and the hero would flicker.
+  const [heroHidden, setHeroHidden] = useState(false)
+  const heroCondensed = heroHidden && tab === 'trace' && viewMode === 'list'
   const [searchOpen, setSearchOpen] = useState(false)
   const [matchIdx, setMatchIdx] = useState(0)
   const [diffMode, setDiffMode] = useState('file')
@@ -222,6 +235,8 @@ export default function TranscriptViewer({
 
   const turnRefs = useRef({})
   const scrollRef = useRef(null)
+  const headerRef = useRef(null)
+  const heroHeightRef = useRef(0)
   const searchInputRef = useRef(null)
   const draggingRef = useRef(false)
   const tabRefs = useRef({})
@@ -530,11 +545,20 @@ export default function TranscriptViewer({
     callbacks.onLabel && callbacks.onLabel(labelFor, label)
     setLabelFor(null)
   }
+  function syncScrollChrome(sc) {
+    const pinned = sc.scrollTop > STICKY_SCROLL_THRESHOLD
+    setSticky(pinned)
+    const header = headerRef.current
+    if (header && header.offsetHeight > 0) heroHeightRef.current = header.offsetHeight
+    const overflowAfterRelease = sc.scrollHeight - sc.clientHeight - heroHeightRef.current
+    const focusInHeader = !!header && typeof document !== 'undefined' && header.contains(document.activeElement)
+    setHeroHidden(pinned && !focusInHeader && overflowAfterRelease > STICKY_SCROLL_THRESHOLD + HERO_RELEASE_SLACK)
+  }
   function onScroll() {
     const sc = scrollRef.current
     if (!sc) return
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
-    setSticky(sc.scrollTop > 56)
+    syncScrollChrome(sc)
     let best = visibleTurns[0]?.index ?? 0
     for (const t of visibleTurns) {
       const el = turnRefs.current[t.index]
@@ -639,9 +663,9 @@ export default function TranscriptViewer({
   const title = rawTitle.length > 160 ? rawTitle.slice(0, cut).trimEnd() + '…' : rawTitle
 
   return (
-    <div className={'txn-app' + (theme === 'light' ? ' txn-light' : '')} data-theme={theme}>
+    <div className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (heroCondensed ? ' txn-app-condensed' : '')} data-theme={theme}>
       {/* ===================== HEADER ===================== */}
-      <header className="txn-header">
+      <header className="txn-header" ref={headerRef}>
         <div className="txn-header-top">
           {/* Host-routable trail: pass `breadcrumb` (+ a router LinkComponent) to
               replace the demo's static sessions/{project}/{id} crumb — hosts have

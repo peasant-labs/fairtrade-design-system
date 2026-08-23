@@ -1,0 +1,44 @@
+expectedCaseCount: 12
+requiredNames:
+  - scrolling the trace past the threshold hides the session header
+  - scrolling under the threshold keeps the session header
+  - exactly the threshold keeps the session header
+  - short overflow pins the scrubber but keeps the session header
+  - overflow just past the release slack hides the session header
+  - overflow exactly at the release slack keeps the session header
+  - scrolling back to the top restores the session header
+  - focus inside the session header keeps it visible while scrolling
+  - leaving the full trace tab restores the session header
+  - returning to the full trace re-derives the header from the fresh scroller
+  - graph view restores the session header
+  - returning to list view from graph restores the reading position and the condensed header
+expectedStylesheetRules:
+  - ".txn-app-condensed > .txn-header { display: none; }"
+expectedLoaderMutationCount: 5
+requiredLoaderMutationNames:
+  - condense manifest count drift is rejected
+  - condense manifest required name deletion is rejected
+  - condense case unknown fields are rejected
+  - condense trail length mismatch is rejected
+  - condense multiple YAML documents are rejected
+loaderMutations:
+  - {name: condense manifest count drift is rejected, target: manifest, find: "expectedCaseCount: 12\n", replace: "expectedCaseCount: 13\n", expectedError: do not match}
+  - {name: condense manifest required name deletion is rejected, target: manifest, find: "  - graph view restores the session header\n", replace: "", expectedError: do not match}
+  - {name: condense case unknown fields are rejected, target: cases, find: "    steps: [scroll:40]\n", replace: "    steps: [scroll:40]\n    extra: 1\n", expectedError: fields are invalid}
+  - {name: condense trail length mismatch is rejected, target: cases, find: "    steps: [scroll:120, scroll:0]\n    expectedCondensedTrail: [true, false]\n", replace: "    steps: [scroll:120, scroll:0]\n    expectedCondensedTrail: [true]\n", expectedError: trail length}
+  - {name: condense multiple YAML documents are rejected, target: cases, find: "cases:\n", replace: "---\ncases:\n", expectedError: exactly one YAML document}
+expectedMutationCount: 6
+requiredMutationNames:
+  - condensed class is never applied
+  - release slack guard is dropped
+  - threshold comparison is loosened
+  - header focus guard is dropped
+  - condensed state ignores the active tab
+  - condensed state ignores the view mode
+mutations:
+  - {name: condensed class is never applied, file: viewer, find: "(heroCondensed ? ' txn-app-condensed' : '')", replace: "''", expectedError: condensed invariant failed}
+  - {name: release slack guard is dropped, file: viewer, find: "overflowAfterRelease > STICKY_SCROLL_THRESHOLD + HERO_RELEASE_SLACK", replace: "true", expectedError: condensed invariant failed}
+  - {name: threshold comparison is loosened, file: viewer, find: "const pinned = sc.scrollTop > STICKY_SCROLL_THRESHOLD", replace: "const pinned = sc.scrollTop >= STICKY_SCROLL_THRESHOLD", expectedError: condensed invariant failed}
+  - {name: header focus guard is dropped, file: viewer, find: "pinned && !focusInHeader && overflowAfterRelease", replace: "pinned && overflowAfterRelease", expectedError: condensed invariant failed}
+  - {name: condensed state ignores the active tab, file: viewer, find: "const heroCondensed = heroHidden && tab === 'trace' && viewMode === 'list'", replace: "const heroCondensed = heroHidden && viewMode === 'list'", expectedError: condensed invariant failed}
+  - {name: condensed state ignores the view mode, file: viewer, find: "const heroCondensed = heroHidden && tab === 'trace' && viewMode === 'list'", replace: "const heroCondensed = heroHidden && tab === 'trace'", expectedError: condensed invariant failed}
