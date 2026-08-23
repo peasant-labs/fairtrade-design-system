@@ -4,6 +4,20 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.15 — 2026-08-22
+
+### Changed
+
+- **The transcript session header leaves on scroll.** Once the full trace is
+  scrolled past the sticky threshold, `TranscriptViewer` hides the session
+  header (breadcrumb, title, chips, actions) and the condensed scrubber header
+  takes its place; the tab strip, the scrubber header, and the turns bar stay
+  as the persistent navigation, and scrolling back to the top restores the
+  header. The header only hides while the stream keeps enough overflow after
+  its height is released, never while focus is inside it, on other tabs, or in
+  graph view. Consumers need no code change; the root gains `txn-app-condensed`
+  while condensed.
+
 ## 0.0.14 — 2026-08-14
 
 ### Fixed
