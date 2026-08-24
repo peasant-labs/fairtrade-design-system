@@ -13,7 +13,9 @@ requiredNames:
   - graph view restores the session header
   - returning to list view from graph restores the reading position and the condensed header
 expectedStylesheetRules:
-  - ".txn-app-condensed > .txn-header { display: none; }"
+  - ".txn-app-condensed > .txn-header { padding-block: var(--sp-2); }"
+  - ".txn-app-condensed > .txn-header .txn-title,\n  .txn-app-condensed > .txn-header .txn-meta { display: none; }"
+  - ".txn-app-condensed > .txn-header .txn-title, .txn-app-condensed > .txn-header .txn-meta { display: none; }"
 expectedLoaderMutationCount: 5
 requiredLoaderMutationNames:
   - condense manifest count drift is rejected

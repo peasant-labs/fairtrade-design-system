@@ -2,6 +2,7 @@
 # trace is scrolled. Geometry fields stand in for the live scroller's box so jsdom can
 # reproduce the release guard: the header hides only while the stream keeps more than
 # threshold + slack of overflow after the header's own height is released to it.
+# condensedHeaderHeight is the breadcrumb + actions row the condensed header keeps.
 # steps: scroll:<offset> | tab:<id> | view:<list|graph> | focus:header | blur
 # expectedCondensedTrail / expectedStickyTrail record the root state after EVERY step;
 # the sticky trail is the rendered pinned scrubber, so it is false whenever the trace
@@ -12,6 +13,7 @@ cases:
     scrollHeight: 3000
     clientHeight: 600
     headerHeight: 130
+    condensedHeaderHeight: 45
     steps: [scroll:120]
     expectedCondensedTrail: [true]
     expectedStickyTrail: [true]
@@ -20,6 +22,7 @@ cases:
     scrollHeight: 3000
     clientHeight: 600
     headerHeight: 130
+    condensedHeaderHeight: 45
     steps: [scroll:40]
     expectedCondensedTrail: [false]
     expectedStickyTrail: [false]
@@ -28,6 +31,7 @@ cases:
     scrollHeight: 3000
     clientHeight: 600
     headerHeight: 130
+    condensedHeaderHeight: 45
     steps: [scroll:56]
     expectedCondensedTrail: [false]
     expectedStickyTrail: [false]
@@ -36,6 +40,7 @@ cases:
     scrollHeight: 800
     clientHeight: 600
     headerHeight: 130
+    condensedHeaderHeight: 45
     steps: [scroll:120]
     expectedCondensedTrail: [false]
     expectedStickyTrail: [true]
@@ -44,6 +49,7 @@ cases:
     scrollHeight: 811
     clientHeight: 600
     headerHeight: 130
+    condensedHeaderHeight: 45
     steps: [scroll:120]
     expectedCondensedTrail: [true]
     expectedStickyTrail: [true]
@@ -52,6 +58,7 @@ cases:
     scrollHeight: 810
     clientHeight: 600
     headerHeight: 130
+    condensedHeaderHeight: 45
     steps: [scroll:120]
     expectedCondensedTrail: [false]
     expectedStickyTrail: [true]
@@ -60,6 +67,7 @@ cases:
     scrollHeight: 3000
     clientHeight: 600
     headerHeight: 130
+    condensedHeaderHeight: 45
     steps: [scroll:120, scroll:0]
     expectedCondensedTrail: [true, false]
     expectedStickyTrail: [true, false]
@@ -68,6 +76,7 @@ cases:
     scrollHeight: 3000
     clientHeight: 600
     headerHeight: 130
+    condensedHeaderHeight: 45
     steps: [focus:header, scroll:120, blur, scroll:130]
     expectedCondensedTrail: [false, false, false, true]
     expectedStickyTrail: [false, true, true, true]
@@ -76,6 +85,7 @@ cases:
     scrollHeight: 3000
     clientHeight: 600
     headerHeight: 130
+    condensedHeaderHeight: 45
     steps: [scroll:120, tab:files]
     expectedCondensedTrail: [true, false]
     expectedStickyTrail: [true, false]
@@ -84,6 +94,7 @@ cases:
     scrollHeight: 3000
     clientHeight: 600
     headerHeight: 130
+    condensedHeaderHeight: 45
     steps: [scroll:120, tab:files, tab:trace, scroll:130]
     expectedCondensedTrail: [true, false, true, true]
     expectedStickyTrail: [true, false, true, true]
@@ -92,6 +103,7 @@ cases:
     scrollHeight: 3000
     clientHeight: 600
     headerHeight: 130
+    condensedHeaderHeight: 45
     steps: [scroll:120, view:graph]
     expectedCondensedTrail: [true, false]
     expectedStickyTrail: [true, false]
@@ -100,6 +112,7 @@ cases:
     scrollHeight: 3000
     clientHeight: 600
     headerHeight: 130
+    condensedHeaderHeight: 45
     steps: [scroll:120, view:graph, view:list]
     expectedCondensedTrail: [true, false, true]
     expectedStickyTrail: [true, false, true]

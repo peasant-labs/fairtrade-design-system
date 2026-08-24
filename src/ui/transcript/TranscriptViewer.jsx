@@ -215,11 +215,12 @@ export default function TranscriptViewer({
   const [copiedLink, setCopiedLink] = useState(false)
   const [labelFor, setLabelFor] = useState(null)
   const [sticky, setSticky] = useState(false)
-  // The session header (breadcrumb, title, chips, actions) leaves once the trace is
-  // scrolled past the sticky threshold, so the condensed scrubber header replaces it
-  // instead of stacking beneath it. The hero only hides when the stream keeps enough
-  // overflow after the header's height is released to the scroller; otherwise the
-  // browser would clamp scrollTop back under the threshold and the hero would flicker.
+  // The session header condenses to its breadcrumb + actions row once the trace is
+  // scrolled past the sticky threshold: the title and meta chips leave, so the
+  // condensed scrubber header does not stack under the full hero. It only condenses
+  // when the stream keeps enough overflow after the released height reaches the
+  // scroller; otherwise the browser would clamp scrollTop back under the threshold
+  // and the hero would flicker.
   const [heroHidden, setHeroHidden] = useState(false)
   const heroCondensed = heroHidden && tab === 'trace' && viewMode === 'list'
   const [searchOpen, setSearchOpen] = useState(false)
@@ -549,7 +550,14 @@ export default function TranscriptViewer({
     const pinned = sc.scrollTop > STICKY_SCROLL_THRESHOLD
     setSticky(pinned)
     const header = headerRef.current
-    if (header && header.offsetHeight > 0) heroHeightRef.current = header.offsetHeight
+    // Measure the EXPANDED hero only: while condensed the header still has the
+    // breadcrumb row's height, and adopting that smaller figure would loosen the
+    // release guard mid-flight. Using the full expanded height is deliberately
+    // conservative (only the title + chips actually leave), which can never
+    // reintroduce the clamp-flicker.
+    if (header && header.offsetHeight > 0 && !header.closest('.txn-app-condensed')) {
+      heroHeightRef.current = header.offsetHeight
+    }
     const overflowAfterRelease = sc.scrollHeight - sc.clientHeight - heroHeightRef.current
     const focusInHeader = !!header && typeof document !== 'undefined' && header.contains(document.activeElement)
     setHeroHidden(pinned && !focusInHeader && overflowAfterRelease > STICKY_SCROLL_THRESHOLD + HERO_RELEASE_SLACK)
