@@ -4,6 +4,18 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.16 — 2026-08-24
+
+### Changed
+
+- **The condensed transcript header keeps its breadcrumb + actions row.**
+  User-ratified refinement of 0.0.15's condense-on-scroll: only the session
+  title and the meta chips leave once the full trace is scrolled; the
+  breadcrumb trail and the session actions stay as one slim pinned row (a
+  single truncating line on narrow viewports), so orientation and
+  share/details remain reachable while reading. Scrolling back to the top
+  still restores the full header, and consumers still need no code change.
+
 ## 0.0.15 — 2026-08-22
 
 ### Changed
