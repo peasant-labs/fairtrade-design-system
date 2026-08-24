@@ -2220,12 +2220,22 @@
 
   /* ---- header ---- */
   .txn-header { padding: var(--sp-4); border-bottom: var(--bd); background: var(--surface); flex: none; }
-  /* once the full trace is scrolled past the sticky threshold the session header leaves the
-     viewport and the condensed scrubber header (.txn-sticky) takes its place: the tab strip,
-     the scrubber and the turns bar are the only persistent navigation while reading. the
-     viewer toggles .txn-app-condensed from the stream's own scroll position and restores the
-     header at the top of the trace, so the column does not stack two headers. */
-  .txn-app-condensed > .txn-header { display: none; }
+  /* once the full trace is scrolled past the sticky threshold the session header condenses
+     to its breadcrumb + actions row: the title and the meta chips leave, while orientation
+     (the trail) and the session actions stay reachable, joined by the pinned tab strip, the
+     condensed scrubber header (.txn-sticky) and the turns bar. the viewer toggles
+     .txn-app-condensed from the stream's own scroll position and restores the full header at
+     the top of the trace. (user-ratified: the row stays; a full hide was rejected.) */
+  .txn-app-condensed > .txn-header { padding-block: var(--sp-2); }
+  .txn-app-condensed > .txn-header .txn-title,
+  .txn-app-condensed > .txn-header .txn-meta { display: none; }
+  /* the condensed row must stay ONE line even on a phone: unwrapped, the breadcrumb and
+     the actions stack to ~3 rows at 390px and give back almost all of the reclaimed
+     space. the trail truncates from the middle segments (min-width:0 + hidden overflow);
+     the actions keep their hit targets. */
+  .txn-app-condensed > .txn-header .txn-header-top { flex-wrap: nowrap; align-items: center; }
+  .txn-app-condensed > .txn-header .txn-crumb { flex-wrap: nowrap; overflow: hidden; white-space: nowrap; }
+  .txn-app-condensed > .txn-header .txn-actions { flex-wrap: nowrap; }
   .txn-header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); }
   .txn-crumb { flex-wrap: wrap; min-width: 0; }
   .txn-crumb .cur { font-variant-numeric: tabular-nums; }
@@ -2821,6 +2831,10 @@
     padding-bottom: var(--sp-1);
     margin-top: var(--sp-2);
   }
+  /* the narrow-width title clamp and meta scroll-row above re-declare display, so the
+     condensed hide must restate itself inside this media block or the phone keeps the
+     title while condensed. */
+  .txn-app-condensed > .txn-header .txn-title, .txn-app-condensed > .txn-header .txn-meta { display: none; }
   .txn-meta > * { flex: none; }
   .txn-tabs { gap: var(--sp-4); overflow-x: auto; }
   .txn-tab { padding: var(--sp-2) 2px; }

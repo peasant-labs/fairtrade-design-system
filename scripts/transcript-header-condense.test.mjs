@@ -17,7 +17,7 @@ import YAML from 'yaml'
 const manifestSource = readFileSync(resolve('scripts/testdata/transcript-header-condense.manifest.yaml'), 'utf8')
 const casesSource = readFileSync(resolve('scripts/testdata/transcript-header-condense.yaml'), 'utf8')
 const stylesheetSource = readFileSync(resolve('src/index.css'), 'utf8')
-const caseFields = ['name', 'turns', 'scrollHeight', 'clientHeight', 'headerHeight', 'steps', 'expectedCondensedTrail', 'expectedStickyTrail']
+const caseFields = ['name', 'turns', 'scrollHeight', 'clientHeight', 'headerHeight', 'condensedHeaderHeight', 'steps', 'expectedCondensedTrail', 'expectedStickyTrail']
 const loaderMutationFields = ['name', 'target', 'find', 'replace', 'expectedError']
 const productionMutationFields = ['name', 'file', 'find', 'replace', 'expectedError']
 const STEP = /^(?:scroll:\d+|tab:(?:trace|files|diffs|highlights|annotations)|view:(?:list|graph)|focus:header|blur)$/
@@ -78,7 +78,7 @@ export function loadCondenseFixtures(manifestText = manifestSource, casesText = 
   const cases = root.cases.map((row, index) => {
     if (!row || typeof row !== 'object' || Array.isArray(row)) throw new Error(`condense case ${index} must be an object`)
     exactFields(row, caseFields, `condense case ${index}`)
-    if (typeof row.name !== 'string' || row.name.length === 0 || !positiveInt(row.turns) || !positiveInt(row.scrollHeight) || !positiveInt(row.clientHeight) || !positiveInt(row.headerHeight)) throw new Error(`condense case ${index} scalars are invalid`)
+    if (typeof row.name !== 'string' || row.name.length === 0 || !positiveInt(row.turns) || !positiveInt(row.scrollHeight) || !positiveInt(row.clientHeight) || !positiveInt(row.headerHeight) || !positiveInt(row.condensedHeaderHeight) || row.condensedHeaderHeight >= row.headerHeight) throw new Error(`condense case ${index} scalars are invalid`)
     if (!Array.isArray(row.steps) || row.steps.length === 0 || row.steps.some((step) => typeof step !== 'string' || !STEP.test(step))) throw new Error(`condense case ${index}.steps has invalid values`)
     if (!boolArray(row.expectedCondensedTrail) || !boolArray(row.expectedStickyTrail)) throw new Error(`condense case ${index} trails must be boolean arrays`)
     if (row.expectedCondensedTrail.length !== row.steps.length || row.expectedStickyTrail.length !== row.steps.length) throw new Error(`condense case ${index} trail length must equal the step count`)
@@ -154,7 +154,12 @@ try {
     const proto = dom.window.HTMLElement.prototype
     Object.defineProperty(proto, 'scrollHeight', { configurable: true, get() { return this.classList.contains('txn-stream') ? fixture.scrollHeight : 0 } })
     Object.defineProperty(proto, 'clientHeight', { configurable: true, get() { return this.classList.contains('txn-stream') ? fixture.clientHeight : 0 } })
-    Object.defineProperty(proto, 'offsetHeight', { configurable: true, get() { return this.classList.contains('txn-header') && !this.parentElement?.classList.contains('txn-app-condensed') ? fixture.headerHeight : 0 } })
+    Object.defineProperty(proto, 'offsetHeight', { configurable: true, get() {
+      if (!this.classList.contains('txn-header')) return 0
+      // The condensed header keeps its breadcrumb + actions row, so it still
+      // reports a (smaller) height - the measurement guard must not adopt it.
+      return this.parentElement?.classList.contains('txn-app-condensed') ? fixture.condensedHeaderHeight : fixture.headerHeight
+    } })
     proto.scrollTo = function (options) {
       const top = options?.top ?? 0
       if (this.scrollTop === top) return
@@ -210,7 +215,8 @@ try {
         const condensedHeader = container.querySelector('.txn-app-condensed > .txn-header')
         const header = container.querySelector('.txn-header')
         if (!header) throw new Error(`${fixture.name}: session header must stay mounted after ${step}`)
-        if (condensedTrail.at(-1) && !condensedHeader) throw new Error(`${fixture.name}: condensed invariant failed after ${step}; the hidden header must be the root's direct child`)
+        if (condensedTrail.at(-1) && !condensedHeader) throw new Error(`${fixture.name}: condensed invariant failed after ${step}; the condensed header must be the root's direct child`)
+        if (condensedTrail.at(-1) && !container.querySelector('.txn-app-condensed > .txn-header .txn-header-top')) throw new Error(`${fixture.name}: condensed invariant failed after ${step}; the breadcrumb + actions row must stay mounted in the condensed header`)
       }
       if (JSON.stringify(condensedTrail) !== JSON.stringify(fixture.expectedCondensedTrail)) throw new Error(`${fixture.name}: condensed invariant failed; expected ${JSON.stringify(fixture.expectedCondensedTrail)}, received ${JSON.stringify(condensedTrail)}`)
       if (JSON.stringify(stickyTrail) !== JSON.stringify(fixture.expectedStickyTrail)) throw new Error(`${fixture.name}: sticky invariant failed; expected ${JSON.stringify(fixture.expectedStickyTrail)}, received ${JSON.stringify(stickyTrail)}`)
