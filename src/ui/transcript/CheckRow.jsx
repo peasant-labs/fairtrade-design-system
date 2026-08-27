@@ -24,7 +24,7 @@ export default function CheckRow({ checked = false, indeterminate = false, onCha
   const markIndeterminate = (node) => { if (node) node.indeterminate = indeterminate }
   return (
     <label className="txn-checkrow">
-      <input ref={markIndeterminate} type="checkbox" className="check-box" checked={checked} onChange={onChange} disabled={disabled} aria-checked={indeterminate ? 'mixed' : checked} />
+      <input ref={markIndeterminate} type="checkbox" className="check-box" checked={checked} onChange={onChange} disabled={disabled} />
       <span className="txn-cr-label">{children}</span>
       {count != null && <span className="txn-cr-count tnum">{count}</span>}
     </label>

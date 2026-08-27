@@ -9,41 +9,52 @@
    the trace provably reading the same rules, and makes them testable without a
    DOM.
 
-   CATEGORIES ARE DISJOINT. The adapter emits one kind per cooked turn — a turn
-   is a prompt, a text response, a thinking block, or a tool call, never two — so
-   each category owns a partition of the trace and unchecking one cannot silently
-   take another's turns with it. `responses` therefore means TEXT responses; tool
-   calls belong to `toolcalls` alone. (Before this module, `responses` matched
-   `role === 'assistant'`, which swallowed tool and thinking turns and made the
-   `toolcalls` checkbox unobservable even once it was wired.)
+   CATEGORIES ARE NOT DISJOINT. Peasant's wire today emits mostly one kind per
+   cooked turn, but some harnesses and editor extensions fold several into one
+   compound turn: an assistant reply that opens with a thinking block, or text
+   that accompanies a tool call. The adapter keeps those together (it extracts a
+   leading <thinking> into `turn.thinking` and leaves the rest in `content`), so a
+   turn carries a SET of kinds. A turn stays visible while ANY kind it carries is
+   still wanted: unchecking `thinking` hides standalone thinking turns, not the
+   text reply that happened to think first. `responses` means turns with TEXT
+   content; before this module it matched `role === 'assistant'`, which swallowed
+   tool and thinking turns and made the `toolcalls` checkbox unobservable.
 
    System turns are deliberately unfiltered: the rail offers no control for them,
    and silently dropping them would hide session-level notices with no way back. */
 
 import { TOOL_GROUPS } from './view-model.js'
 
-/** Filter-state tag key → the `FilterIndexVM` tag id the adapter emits. */
-const TAG_IDS = { errors: 'errors', retries: 'retries', revert: 're-edit' }
+/** Filter-state tag key → the `AnnotationVM.kind` the adapter emits for it. */
+const TAG_KIND = { errors: 'error', retries: 'retry', revert: 'revert' }
 
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
 /** @typedef {import('./view-model.js').ToolGroup} ToolGroup */
 /** @typedef {import('./state-capabilities.js').TranscriptFilters} TranscriptFilters */
 
+/** @typedef {'prompts' | 'responses' | 'thinking' | 'toolcalls'} Category */
+
 /**
- * Which category a cooked turn belongs to, or `undefined` for turns no category
- * governs (system notices). Order matters only in that the checks are mutually
- * exclusive for adapter output; tool calls are tested first because a turn
- * carrying them is a tool turn regardless of any incidental content.
+ * Every category a cooked turn belongs to, in rail order. Empty for turns no
+ * category governs (system notices). Compound turns return more than one: an
+ * assistant reply with a thinking preamble is both `thinking` and `responses`;
+ * text alongside a tool call is both `responses` and `toolcalls`.
  *
  * @param {TurnVM} turn
- * @returns {'prompts' | 'responses' | 'thinking' | 'toolcalls' | undefined}
+ * @returns {Category[]}
  */
-export function categoryOf(turn) {
-  if (turn.role === 'user') return 'prompts'
-  if (turn.toolCalls && turn.toolCalls.length > 0) return 'toolcalls'
-  if (turn.thinking) return 'thinking'
-  if (turn.role === 'assistant') return 'responses'
-  return undefined
+export function kindsOf(turn) {
+  if (turn.role === 'user') return ['prompts']
+  if (turn.role !== 'assistant') return []
+  /** @type {Category[]} */
+  const kinds = []
+  if ((turn.content ?? '').trim() !== '') kinds.push('responses')
+  if (turn.thinking) kinds.push('thinking')
+  if (turn.toolCalls && turn.toolCalls.length > 0) kinds.push('toolcalls')
+  // An assistant turn with none of the three (empty content, no thinking, no
+  // calls) is still a response slot; keep it under `responses` so it cannot
+  // become unfilterable.
+  return kinds.length ? kinds : ['responses']
 }
 
 /**
@@ -70,7 +81,7 @@ export function passesToolGroups(turn, toolGroups) {
  * @param {Record<number, {kind?: string}[]>} annotationsByTurn
  */
 export function passesTags(turn, tags, annotationsByTurn) {
-  const wanted = Object.keys(TAG_IDS).filter((k) => tags[k])
+  const wanted = Object.keys(TAG_KIND).filter((k) => tags[k]).map((k) => TAG_KIND[k])
   if (wanted.length === 0) return true
 
   // `errors` keeps its pre-existing turn-level source (a turn or one of its
@@ -79,20 +90,15 @@ export function passesTags(turn, tags, annotationsByTurn) {
   if (tags.errors && (turn.isError || (turn.toolCalls ?? []).some((x) => x.isError))) return true
 
   const anns = annotationsByTurn?.[turn.index] ?? []
-  return anns.some((a) => wanted.some((k) => tagKindMatches(a.kind, k)))
-}
-
-/** @param {string | undefined} kind @param {string} tagKey */
-function tagKindMatches(kind, tagKey) {
-  if (tagKey === 'errors') return kind === 'error'
-  if (tagKey === 'retries') return kind === 'retry'
-  if (tagKey === 'revert') return kind === 'revert'
-  return false
+  return anns.some((a) => a.kind != null && wanted.includes(a.kind))
 }
 
 /**
- * The full per-turn decision. Categories gate by kind, tool groups narrow tool
- * turns, tags narrow everything, and the checkpoint anchor scopes to a prefix.
+ * The full per-turn decision. A governed turn survives while at least one of
+ * the kinds it carries is still wanted; for its `toolcalls` kind that also means
+ * at least one call sits in an enabled tool group. Tags narrow everything, and
+ * the checkpoint anchor scopes to a prefix. System turns (no kinds) always pass
+ * the category stage.
  *
  * @param {TurnVM} turn
  * @param {TranscriptFilters} filters
@@ -107,28 +113,28 @@ export function matchesFilters(turn, filters, ctx = {}) {
 
   if (checkpointTurn != null && turn.index > checkpointTurn) return false
 
-  const category = categoryOf(turn)
-  if (category && !categories[category]) return false
-  if (category === 'toolcalls' && !passesToolGroups(turn, toolGroups)) return false
+  const kinds = kindsOf(turn)
+  const wanted = kinds.some((k) => categories[k] && (k !== 'toolcalls' || passesToolGroups(turn, toolGroups)))
+  if (kinds.length > 0 && !wanted) return false
 
   return passesTags(turn, tags, annotationsByTurn)
 }
 
 /**
- * Turn-based, disjoint category counts for the rail badges — each badge counts
- * the turns ITS checkbox controls, so the four sum to the governed turns rather
- * than overlapping. (The previous `toolcalls` badge counted tool CALLS, which
- * only coincidentally matches the turn count when every turn carries exactly
- * one.)
+ * Turn-based category counts for the rail badges: each badge counts the turns
+ * that carry its kind. A compound turn is counted under every kind it carries,
+ * so the four badges can sum to more than the governed turn count; what each
+ * badge promises is "this many turns contain this", not "this many will hide".
+ * (The previous `toolcalls` badge counted tool CALLS, which only coincidentally
+ * matches the turn count when every turn carries exactly one.)
  *
  * @param {TurnVM[]} turns
- * @returns {{prompts: number, responses: number, thinking: number, toolcalls: number}}
+ * @returns {Record<Category, number>}
  */
 export function categoryCounts(turns) {
   const counts = { prompts: 0, responses: 0, thinking: 0, toolcalls: 0 }
   for (const turn of turns) {
-    const category = categoryOf(turn)
-    if (category) counts[category] += 1
+    for (const kind of kindsOf(turn)) counts[kind] += 1
   }
   return counts
 }
@@ -172,13 +178,20 @@ export function cascadeToolGroups(next) {
  * (all seven off while `tool calls` still reads checked). Unchecking the last
  * live group turns the umbrella off; checking any group turns it back on.
  *
+ * A state whose umbrella is already off is normalised first: every group is
+ * treated as off, whatever the map says. That covers filter state persisted by
+ * a consumer before the cascade existed (`toolcalls: false` over an all-true
+ * map), where the rail shows every child unchecked and the user's click on ONE
+ * child must enable that one, not the other six.
+ *
  * @param {TranscriptFilters} filters
  * @param {ToolGroup} id
  * @param {Partial<Record<ToolGroup, number>>} [counts]
  * @returns {TranscriptFilters}
  */
 export function toggleToolGroup(filters, id, counts = {}) {
-  const toolGroups = { ...filters.toolGroups, [id]: filters.toolGroups?.[id] === false }
+  const base = filters.categories?.toolcalls === false ? cascadeToolGroups(false) : { ...filters.toolGroups }
+  const toolGroups = { ...base, [id]: base[id] === false }
   return {
     ...filters,
     toolGroups,
