@@ -5,6 +5,7 @@ import {
   ArrowUpToLine, ArrowDownToLine,
 } from 'lucide-react'
 import { TOOL_GROUPS } from './view-model.js'
+import { setToolCalls, toggleToolGroup, toolGroupsState } from './filters.js'
 import FilterSection from './FilterSection.jsx'
 import CheckRow from './CheckRow.jsx'
 import ViewSwitch from './ViewSwitch.jsx'
@@ -75,7 +76,14 @@ export default function FiltersRail({
   const patchCategories = (patch) => onFiltersChange({ ...filters, categories: { ...categories, ...patch } })
   const patchTags = (patch) => onFiltersChange({ ...filters, tags: { ...tags, ...patch } })
   const patchViews = (patch) => onFiltersChange({ ...filters, views: { ...views, ...patch } })
-  const toggleToolGroup = (id) => onFiltersChange({ ...filters, toolGroups: { ...toolGroups, [id]: !toolGroups[id] } })
+  /* The umbrella and its groups are ONE decision, not two pieces of state that
+     happen to sit together: setting `tool calls` cascades to every group, and
+     toggling a group re-derives the umbrella. Both transitions live in
+     filters.js so the rail cannot render a checked child under an unchecked
+     parent (the state it used to reach on the very first umbrella click). */
+  const patchToolCalls = (next) => onFiltersChange(setToolCalls(filters, next))
+  const patchToolGroup = (id) => onFiltersChange(toggleToolGroup(filters, id, counts.toolGroups))
+  const umbrella = toolGroupsState(toolGroups, counts.toolGroups)
   const setCheckpoint = (cp) => onFiltersChange({ ...filters, checkpoint: cp })
 
   if (tab !== 'trace' && tab !== 'highlights') {
@@ -108,7 +116,7 @@ export default function FiltersRail({
         <CheckRow checked={categories.responses} onChange={() => patchCategories({ responses: !categories.responses })} count={counts.categories.responses}>responses</CheckRow>
         <CheckRow checked={categories.thinking} onChange={() => patchCategories({ thinking: !categories.thinking })} count={counts.categories.thinking}>thinking</CheckRow>
         <div className="txn-toolcat">
-          <CheckRow checked={categories.toolcalls} onChange={() => patchCategories({ toolcalls: !categories.toolcalls })} count={counts.categories.toolcalls}>
+          <CheckRow checked={categories.toolcalls} indeterminate={categories.toolcalls && umbrella === 'mixed'} onChange={() => patchToolCalls(!categories.toolcalls)} count={counts.categories.toolcalls}>
             <button type="button" className="txn-toolcat-toggle" aria-expanded={toolGroupsOpen} onClick={(e) => { e.preventDefault(); setToolGroupsOpen((o) => !o) }}>
               tool calls {toolGroupsOpen ? <ChevronDown size={12} aria-hidden="true" /> : <ChevronRight size={12} aria-hidden="true" />}
             </button>
@@ -121,7 +129,7 @@ export default function FiltersRail({
                 const count = counts.toolGroups[id] ?? 0
                 return (
                   <label key={id} className="txn-checkrow txn-subcheck">
-                    <input type="checkbox" className="check-box" checked={toolGroups[id] ?? true} disabled={count === 0} onChange={() => toggleToolGroup(id)} />
+                    <input type="checkbox" className="check-box" checked={categories.toolcalls && toolGroups[id] !== false} disabled={count === 0} onChange={() => patchToolGroup(id)} />
                     <span className="txn-cr-label"><Icon size={13} aria-hidden="true" /> {meta.label}</span>
                     <span className="txn-cr-count tnum">{count}</span>
                   </label>

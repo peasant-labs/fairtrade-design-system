@@ -11,6 +11,7 @@ import {
 import ProviderIcon from '../ProviderIcon.jsx'
 import { formatDuration } from '../StepsWaterfall.jsx'
 import { TOOL_GROUPS } from './view-model.js'
+import { categoryCounts, matchesFilters } from './filters.js'
 import TurnCard from './TurnCard.jsx'
 import DiffEntryCard from './DiffEntryCard.jsx'
 import OutlineRail from './OutlineRail.jsx'
@@ -279,19 +280,19 @@ export default function TranscriptViewer({
   const canLabel = !!caps.canLabel
   const labelTurn = canLabel ? (idx) => setLabelFor(idx) : undefined
 
-  /* ── filtered turn set (categories gate kinds; tags AND; checkpoint scopes) ──── */
+  /* ── filtered turn set (categories gate kinds; tool groups narrow; tags AND;
+        checkpoint scopes). The rules live in filters.js so the rail's controls
+        and the trace cannot drift apart — see that module for why categories are
+        disjoint. ─────────────────────────────────────────────────────────────── */
   const visibleTurns = useMemo(() => {
-    const { categories, tags, checkpoint } = filters
+    const { checkpoint } = filters
     const selCommit = checkpoint !== 'all' ? commits.find((c) => c.shortHash === checkpoint || c.hash === checkpoint) : null
-    const cpTurn = selCommit?.turn // the adapter-joined turn anchor (optional); scopes only when present
-    return turns.filter((t) => {
-      if (t.role === 'user' && !categories.prompts) return false
-      if (t.role === 'assistant' && !categories.responses) return false
-      if (tags.errors && !t.isError && !(t.toolCalls && t.toolCalls.some((x) => x.isError))) return false
-      if (cpTurn != null && t.index > cpTurn) return false
-      return true
-    })
-  }, [turns, filters, commits])
+    const ctx = {
+      annotationsByTurn: vm?.filterIndex?.annotationsByTurn ?? {},
+      checkpointTurn: selCommit?.turn ?? null, // adapter-joined anchor; scopes only when present
+    }
+    return turns.filter((t) => matchesFilters(t, filters, ctx))
+  }, [turns, filters, commits, vm])
 
   const readTraceReadingSnapshot = useCallback(() => {
     const sc = scrollRef.current
@@ -449,17 +450,18 @@ export default function TranscriptViewer({
     apply: applyTraceReadingPosition,
   })
 
-  /* category + tool-group counts the FiltersRail shows. */
+  /* Category + tool-group counts the FiltersRail shows. Category counts are
+     turn-based and disjoint (see filters.js) so each badge counts exactly the
+     turns its own checkbox hides. */
   const counts = useMemo(() => ({
-    categories: {
-      prompts: turns.filter((t) => t.role === 'user').length,
-      responses: turns.filter((t) => t.role === 'assistant').length,
-      thinking: turns.filter((t) => t.thinking).length,
-      toolcalls: turns.reduce((n, t) => n + (t.toolCalls ? t.toolCalls.length : 0), 0),
-    },
+    categories: categoryCounts(turns),
     toolGroups: toolGroupCounts,
   }), [turns, toolGroupCounts])
 
+  /* The "clear (N)" badge counts filters the user can still undo. Tool groups
+     count only while `tool calls` is on: once the umbrella is off it has already
+     cascaded every group to false, and counting those would report 8 active
+     filters for one click. */
   const filtersActive =
     (filters.categories.prompts ? 0 : 1) +
     (filters.categories.responses ? 0 : 1) +
@@ -468,7 +470,7 @@ export default function TranscriptViewer({
     (filters.tags.errors ? 1 : 0) +
     (filters.tags.retries ? 1 : 0) +
     (filters.tags.revert ? 1 : 0) +
-    Object.values(filters.toolGroups).filter((v) => !v).length
+    (filters.categories.toolcalls ? Object.values(filters.toolGroups).filter((v) => !v).length : 0)
 
   /* search matches: substring across turn content + tool previews/output. */
   const matches = useMemo(() => {
