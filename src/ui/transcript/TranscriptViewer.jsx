@@ -11,7 +11,7 @@ import {
 import ProviderIcon from '../ProviderIcon.jsx'
 import { formatDuration } from '../StepsWaterfall.jsx'
 import { TOOL_GROUPS } from './view-model.js'
-import { categoryCounts, matchesFilters } from './filters.js'
+import { categoryCounts, projectTurn } from './filters.js'
 import TurnCard from './TurnCard.jsx'
 import DiffEntryCard from './DiffEntryCard.jsx'
 import OutlineRail from './OutlineRail.jsx'
@@ -280,10 +280,11 @@ export default function TranscriptViewer({
   const canLabel = !!caps.canLabel
   const labelTurn = canLabel ? (idx) => setLabelFor(idx) : undefined
 
-  /* ── filtered turn set (categories gate kinds; tool groups narrow; tags AND;
-        checkpoint scopes). The rules live in filters.js so the rail's controls
-        and the trace cannot drift apart — see that module for why categories are
-        disjoint. ─────────────────────────────────────────────────────────────── */
+  /* ── filtered turn set. Each entry is the turn PROJECTED through the filters:
+        a category hides its part kind inside the turn (tool cards, the thinking
+        block, the text) and the turn leaves only when no part survives; tags and
+        the checkpoint anchor act on the whole turn. The rules live in filters.js
+        so the rail's controls and the trace cannot drift apart. ──────────────── */
   const visibleTurns = useMemo(() => {
     const { checkpoint } = filters
     const selCommit = checkpoint !== 'all' ? commits.find((c) => c.shortHash === checkpoint || c.hash === checkpoint) : null
@@ -291,7 +292,7 @@ export default function TranscriptViewer({
       annotationsByTurn: vm?.filterIndex?.annotationsByTurn ?? {},
       checkpointTurn: selCommit?.turn ?? null, // adapter-joined anchor; scopes only when present
     }
-    return turns.filter((t) => matchesFilters(t, filters, ctx))
+    return turns.map((t) => projectTurn(t, filters, ctx)).filter((t) => t != null)
   }, [turns, filters, commits, vm])
 
   const readTraceReadingSnapshot = useCallback(() => {

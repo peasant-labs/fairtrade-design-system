@@ -9,16 +9,16 @@
    the trace provably reading the same rules, and makes them testable without a
    DOM.
 
-   CATEGORIES ARE NOT DISJOINT. Peasant's wire today emits mostly one kind per
-   cooked turn, but some harnesses and editor extensions fold several into one
-   compound turn: an assistant reply that opens with a thinking block, or text
-   that accompanies a tool call. The adapter keeps those together (it extracts a
-   leading <thinking> into `turn.thinking` and leaves the rest in `content`), so a
-   turn carries a SET of kinds. A turn stays visible while ANY kind it carries is
-   still wanted: unchecking `thinking` hides standalone thinking turns, not the
-   text reply that happened to think first. `responses` means turns with TEXT
-   content; before this module it matched `role === 'assistant'`, which swallowed
-   tool and thinking turns and made the `toolcalls` checkbox unobservable.
+   THE UNIT IS THE PART, NOT THE TURN. A turn is the folded assistant message:
+   its text, an optional thinking block, and zero or more tool calls, which the
+   harness recorded as separate entries (OpenCode literally calls them parts).
+   Each category names a PART kind, so unchecking it removes that part wherever
+   it lives: `tool calls` off drops the tool cards from inside a text turn and
+   the turn keeps its text; a group off drops only that group's calls; a turn
+   leaves the trace only when none of its parts survive. Deciding at the turn
+   level instead (keep or drop whole) cannot honour the label on the ordinary
+   Claude Code shape, where nearly every assistant turn is text plus tool calls:
+   `tool calls` off would either delete the text too or do nothing.
 
    System turns are deliberately unfiltered: the rail offers no control for them,
    and silently dropping them would hide session-level notices with no way back. */
@@ -35,10 +35,9 @@ const TAG_KIND = { errors: 'error', retries: 'retry', revert: 'revert' }
 /** @typedef {'prompts' | 'responses' | 'thinking' | 'toolcalls'} Category */
 
 /**
- * Every category a cooked turn belongs to, in rail order. Empty for turns no
- * category governs (system notices). Compound turns return more than one: an
- * assistant reply with a thinking preamble is both `thinking` and `responses`;
- * text alongside a tool call is both `responses` and `toolcalls`.
+ * Every part kind a cooked turn carries, in rail order. Empty for turns no
+ * category governs (system notices). A turn with text and tool calls reports
+ * both; the rail badges count turns per kind from this.
  *
  * @param {TurnVM} turn
  * @returns {Category[]}
@@ -55,20 +54,6 @@ export function kindsOf(turn) {
   // calls) is still a response slot; keep it under `responses` so it cannot
   // become unfilterable.
   return kinds.length ? kinds : ['responses']
-}
-
-/**
- * True when a tool turn survives the tool-group narrowing: at least one of its
- * calls is in a group that is still enabled. An absent entry counts as enabled,
- * matching the rail's `toolGroups[id] ?? true` default for a fresh filter state.
- *
- * @param {TurnVM} turn
- * @param {Partial<Record<ToolGroup, boolean>>} toolGroups
- */
-export function passesToolGroups(turn, toolGroups) {
-  const calls = turn.toolCalls ?? []
-  if (calls.length === 0) return true
-  return calls.some((tc) => toolGroups[tc.group] !== false)
 }
 
 /**
@@ -94,37 +79,74 @@ export function passesTags(turn, tags, annotationsByTurn) {
 }
 
 /**
- * The full per-turn decision. A governed turn survives while at least one of
- * the kinds it carries is still wanted; for its `toolcalls` kind that also means
- * at least one call sits in an enabled tool group. Tags narrow everything, and
- * the checkpoint anchor scopes to a prefix. System turns (no kinds) always pass
- * the category stage.
+ * The per-turn projection: the turn with every hidden part removed, or `null`
+ * when nothing would be left to render. Tags narrow at the turn level, the
+ * checkpoint anchor scopes to a prefix, and then each part is kept or dropped
+ * by its own category (tool calls also by their group). System turns carry no
+ * governed parts and pass the category stage untouched.
+ *
+ * The returned object keeps `index`, `role`, labels and annotations, so
+ * anchors, jumps and the outline resolve against it exactly as against the
+ * original; only `content`, `thinking` and `toolCalls` change.
  *
  * @param {TurnVM} turn
  * @param {TranscriptFilters} filters
  * @param {object} [ctx]
  * @param {Record<number, {kind?: string}[]>} [ctx.annotationsByTurn]
  * @param {number | null} [ctx.checkpointTurn]  inclusive upper turn index, or null
- * @returns {boolean}
+ * @returns {TurnVM | null}
  */
-export function matchesFilters(turn, filters, ctx = {}) {
+export function projectTurn(turn, filters, ctx = {}) {
   const { categories, toolGroups = {}, tags = {} } = filters
   const { annotationsByTurn = {}, checkpointTurn = null } = ctx
 
-  if (checkpointTurn != null && turn.index > checkpointTurn) return false
+  if (checkpointTurn != null && turn.index > checkpointTurn) return null
+  if (!passesTags(turn, tags, annotationsByTurn)) return null
 
-  const kinds = kindsOf(turn)
-  const wanted = kinds.some((k) => categories[k] && (k !== 'toolcalls' || passesToolGroups(turn, toolGroups)))
-  if (kinds.length > 0 && !wanted) return false
+  if (turn.role === 'user') return categories.prompts ? turn : null
+  if (turn.role !== 'assistant') return turn
 
-  return passesTags(turn, tags, annotationsByTurn)
+  const hasText = (turn.content ?? '').trim() !== ''
+  const hasThinking = !!turn.thinking
+  const calls = turn.toolCalls ?? []
+
+  const keepText = hasText && categories.responses
+  const keepThinking = hasThinking && categories.thinking
+  const keptCalls = categories.toolcalls ? calls.filter((tc) => toolGroups[tc.group] !== false) : []
+
+  // A bare assistant slot (no text, thinking or calls) is governed by `responses`.
+  if (!hasText && !hasThinking && calls.length === 0) return categories.responses ? turn : null
+  if (!keepText && !keepThinking && keptCalls.length === 0) return null
+
+  const unchanged = keepText === hasText && keepThinking === hasThinking && keptCalls.length === calls.length
+  if (unchanged) return turn
+  return {
+    ...turn,
+    content: keepText ? turn.content : '',
+    thinking: keepThinking ? turn.thinking : undefined,
+    toolCalls: keptCalls,
+  }
+}
+
+/**
+ * Whether any part of the turn survives the filters. Equivalent to
+ * `projectTurn(...) !== null`; kept as the yes/no form for callers that only
+ * need membership.
+ *
+ * @param {TurnVM} turn
+ * @param {TranscriptFilters} filters
+ * @param {Parameters<typeof projectTurn>[2]} [ctx]
+ * @returns {boolean}
+ */
+export function matchesFilters(turn, filters, ctx = {}) {
+  return projectTurn(turn, filters, ctx) !== null
 }
 
 /**
  * Turn-based category counts for the rail badges: each badge counts the turns
- * that carry its kind. A compound turn is counted under every kind it carries,
- * so the four badges can sum to more than the governed turn count; what each
- * badge promises is "this many turns contain this", not "this many will hide".
+ * that carry its part kind. A turn with text and tool calls is counted under
+ * both, so the badges can sum to more than the turn count; each promises
+ * "this many turns contain this".
  * (The previous `toolcalls` badge counted tool CALLS, which only coincidentally
  * matches the turn count when every turn carries exactly one.)
  *

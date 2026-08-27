@@ -20,6 +20,7 @@ import {
   kindsOf,
   cascadeToolGroups,
   matchesFilters,
+  projectTurn,
   setToolCalls,
   toggleToolGroup,
   toolGroupsState,
@@ -37,10 +38,10 @@ const OPEN = Object.freeze({
   checkpoint: 'all',
 })
 
-/* One turn of each kind the adapter emits, plus two COMPOUND turns (7, 8): some
-   harnesses fold a thinking preamble or a tool call into the same turn as text,
-   and the adapter keeps them together. A compound turn stays visible while any
-   kind it carries is still wanted. */
+/* One turn per part kind, plus turns that hold several parts (7, 8, 9), which
+   is the ordinary Claude Code shape: text, then tool calls, in one folded turn.
+   Categories act on PARTS: a turn keeps whatever the filters still want and
+   leaves the trace only when nothing survives. */
 const TURNS = [
   { index: 0, role: 'user', content: 'do the thing', toolCalls: [] },
   { index: 1, role: 'assistant', content: 'on it', toolCalls: [] },
@@ -51,6 +52,7 @@ const TURNS = [
   { index: 6, role: 'system', content: 'session notice', toolCalls: [] },
   { index: 7, role: 'assistant', content: 'after some thought', thinking: 'hmm', toolCalls: [] },
   { index: 8, role: 'assistant', content: 'let me edit', toolCalls: [{ id: 'd', group: 'edits', isError: false }] },
+  { index: 9, role: 'assistant', content: 'two tools', toolCalls: [{ id: 'e', group: 'bash', isError: false }, { id: 'f', group: 'edits', isError: false }] },
 ]
 
 const ANNOTATIONS = { 3: [{ kind: 'retry' }], 4: [{ kind: 'revert' }], 5: [{ kind: 'error' }] }
@@ -75,30 +77,30 @@ const check = (name, fn) => {
 check('each turn reports every kind it carries', () => {
   assert.deepEqual(TURNS.map((t) => kindsOf(t)), [
     ['prompts'], ['responses'], ['thinking'], ['toolcalls'], ['toolcalls'], ['toolcalls'], [],
-    ['responses', 'thinking'], ['responses', 'toolcalls'],
+    ['responses', 'thinking'], ['responses', 'toolcalls'], ['responses', 'toolcalls'],
   ])
 })
 
 check('an open filter shows every turn', () => {
-  assert.deepEqual(visible(OPEN), [0, 1, 2, 3, 4, 5, 6, 7, 8])
+  assert.deepEqual(visible(OPEN), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 })
 
 check('unchecking prompts hides only user turns', () => {
-  assert.deepEqual(visible(withCategories({ prompts: false })), [1, 2, 3, 4, 5, 6, 7, 8])
+  assert.deepEqual(visible(withCategories({ prompts: false })), [1, 2, 3, 4, 5, 6, 7, 8, 9])
 })
 
 check('unchecking responses hides text responses but KEEPS tool + thinking turns', () => {
   // The pre-fix predicate matched `role === 'assistant'`, which took 3, 4 and 5
   // with it and made the tool-call checkbox unobservable.
-  assert.deepEqual(visible(withCategories({ responses: false })), [0, 2, 3, 4, 5, 6, 7, 8])
+  assert.deepEqual(visible(withCategories({ responses: false })), [0, 2, 3, 4, 5, 6, 7, 8, 9])
 })
 
-check('unchecking thinking hides standalone thinking turns, not a reply that thought first', () => {
-  assert.deepEqual(visible(withCategories({ thinking: false })), [0, 1, 3, 4, 5, 6, 7, 8])
+check('unchecking thinking drops thinking-only turns, not a reply that thought first', () => {
+  assert.deepEqual(visible(withCategories({ thinking: false })), [0, 1, 3, 4, 5, 6, 7, 8, 9])
 })
 
-check('unchecking tool calls hides tool-only turns, not text that accompanies a call', () => {
-  assert.deepEqual(visible(withCategories({ toolcalls: false })), [0, 1, 2, 6, 7, 8])
+check('unchecking tool calls drops tool-only turns, not the text beside a call', () => {
+  assert.deepEqual(visible(withCategories({ toolcalls: false })), [0, 1, 2, 6, 7, 8, 9])
 })
 
 check('system turns survive every category being off', () => {
@@ -106,35 +108,71 @@ check('system turns survive every category being off', () => {
   assert.deepEqual(visible(none), [6])
 })
 
-check('a compound turn hides only when every kind it carries is unwanted', () => {
-  assert.deepEqual(visible(withCategories({ responses: false, thinking: false })), [0, 3, 4, 5, 6, 8])
+check('a multi-part turn leaves only when every part it carries is unwanted', () => {
+  assert.deepEqual(visible(withCategories({ responses: false, thinking: false })), [0, 3, 4, 5, 6, 8, 9])
   assert.deepEqual(visible(withCategories({ responses: false, toolcalls: false })), [0, 2, 6, 7])
 })
 
 check('category counts are turn-based; a compound turn counts under each kind it carries', () => {
   const counts = categoryCounts(TURNS)
-  assert.deepEqual(counts, { prompts: 1, responses: 3, thinking: 2, toolcalls: 4 })
+  assert.deepEqual(counts, { prompts: 1, responses: 4, thinking: 2, toolcalls: 5 })
+})
+
+/* ── categories act on parts inside a turn ───────────────────────────────────── */
+
+check('tool calls off strips the tool cards from a text turn and keeps its text', () => {
+  const t = projectTurn(TURNS[8], withCategories({ toolcalls: false }))
+  assert.equal(t.content, 'let me edit')
+  assert.deepEqual(t.toolCalls, [])
+})
+
+check('responses off strips the text and keeps the tool cards', () => {
+  const t = projectTurn(TURNS[8], withCategories({ responses: false }))
+  assert.equal(t.content, '')
+  assert.deepEqual(t.toolCalls.map((c) => c.id), ['d'])
+})
+
+check('thinking off strips the block and keeps the text', () => {
+  const t = projectTurn(TURNS[7], withCategories({ thinking: false }))
+  assert.equal(t.thinking, undefined)
+  assert.equal(t.content, 'after some thought')
+})
+
+check('a group off drops only that group\'s calls inside a turn', () => {
+  const t = projectTurn(TURNS[9], { ...OPEN, toolGroups: { ...allGroups(true), edits: false } })
+  assert.deepEqual(t.toolCalls.map((c) => c.id), ['e'])
+  assert.equal(t.content, 'two tools')
+})
+
+check('a projection keeps the turn identity fields', () => {
+  const t = projectTurn(TURNS[9], withCategories({ toolcalls: false }))
+  assert.equal(t.index, 9)
+  assert.equal(t.role, 'assistant')
+})
+
+check('an untouched turn is returned as the same object', () => {
+  assert.equal(projectTurn(TURNS[9], OPEN), TURNS[9])
 })
 
 /* ── tool groups narrow tool turns ───────────────────────────────────────────── */
 
 check('a single tool group narrows to its own turns', () => {
-  assert.deepEqual(visible({ ...OPEN, toolGroups: { ...allGroups(false), bash: true } }), [0, 1, 2, 3, 6, 7, 8])
+  assert.deepEqual(visible({ ...OPEN, toolGroups: { ...allGroups(false), bash: true } }), [0, 1, 2, 3, 6, 7, 8, 9])
 })
 
 check('tool groups do not affect non-tool turns', () => {
   const noGroups = { ...OPEN, toolGroups: allGroups(false) }
-  assert.deepEqual(visible(noGroups), [0, 1, 2, 6, 7, 8])
+  assert.deepEqual(visible(noGroups), [0, 1, 2, 6, 7, 8, 9])
 })
 
 check('a group absent from the map counts as enabled', () => {
-  assert.deepEqual(visible({ ...OPEN, toolGroups: {} }), [0, 1, 2, 3, 4, 5, 6, 7, 8])
+  assert.deepEqual(visible({ ...OPEN, toolGroups: {} }), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 })
 
 /* ── semantic tags narrow everything ─────────────────────────────────────────── */
 
 check('no tag checked keeps every turn', () => {
-  assert.deepEqual(visible(OPEN), [0, 1, 2, 3, 4, 5, 6, 7, 8])
+  assert.deepEqual(visible(OPEN), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 })
 
 check('retries narrows to retry-annotated turns', () => {
@@ -224,7 +262,7 @@ check('umbrella off hides exactly the tool-only turns its badge counted', () => 
   const hidden = TURNS.filter((t) => !matchesFilters(t, off, { annotationsByTurn: ANNOTATIONS }))
   const toolOnly = TURNS.filter((t) => kindsOf(t).length === 1 && kindsOf(t)[0] === 'toolcalls')
   assert.equal(hidden.length, toolOnly.length)
-  assert.equal(categoryCounts(TURNS).toolcalls, toolOnly.length + 1) // + the compound text+tool turn
+  assert.equal(categoryCounts(TURNS).toolcalls, toolOnly.length + 2) // + the two text+tool turns
 })
 
 if (failures.length) {
