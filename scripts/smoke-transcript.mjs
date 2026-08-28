@@ -236,7 +236,7 @@ if (failures.length) {
     [
       'fairtrade transcript smoke FAILED in scripts/smoke-transcript.mjs.',
       'What went wrong: the production adapter/analytics produced an unexpected projection for one or more fixtures.',
-      'Why it matters: every lifted transcript component renders the cooked TranscriptViewModel; a wrong projection breaks all consumers (mockup, transcript-browser, peasant).',
+      'Why it matters: every lifted transcript component renders the cooked TranscriptViewModel; a wrong projection breaks all consumers (mockup, peasant, village).',
       'Where: adaptTranscript / computeAnalytics in src/ui/transcript/{adapter,analytics}.js, exercised over the git-present/flat/absent fixtures here.',
       'How to fix: reconcile the failing assertion below against the view-model contract (src/ui/transcript/view-model.js) and the schema/develop Go wire.',
       '',

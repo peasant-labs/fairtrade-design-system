@@ -39,8 +39,8 @@ pnpm build-storybook # compile every component + story
 4. **documentation** - foundations, components and "using the system", in three groups, with a sticky
    on-this-page rail and scroll-spy. the header is gated by zone (hidden over the splash, shown across
    the docs).
-5. **in use** (`#inuse`) - a full-screen workspace whose sticky app-switcher flips between live demos of
-   the three apps (transcript viewer, village commons, peasant code-map + analytics).
+5. **in use** (`#inuse`) - a full-screen workspace whose sticky app-switcher flips between the three
+   in-use demo panels (transcript viewer, village commons, peasant code-map + analytics).
 
 ## at a glance
 

@@ -126,7 +126,7 @@ export function TokensSection() {
         </div>
       </div>
 
-      <div className="callout" style={{ marginTop: 'var(--sp-5)' }}><ShieldCheck aria-hidden="true" /><div>token names are stable across the three apps. only values and fonts change; rename nothing, fork nothing.</div></div>
+      <div className="callout" style={{ marginTop: 'var(--sp-5)' }}><ShieldCheck aria-hidden="true" /><div>token names are stable across both apps. only values and fonts change; rename nothing, fork nothing.</div></div>
     </section>
   )
 }
