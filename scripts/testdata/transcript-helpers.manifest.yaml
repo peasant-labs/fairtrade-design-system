@@ -1,0 +1,105 @@
+# Required-NAME manifest for transcript-helpers.yaml — deletion protection.
+# The loader (scripts/transcript-helpers.test.mjs) asserts every group's case
+# names are EXACTLY this list (as a set): no silent case deletion, no drift.
+# No bare integer count guards (peasant-labs/peasant-labs ruling 2026-08-24) —
+# membership is asserted, never a count alone.
+
+requiredTurnNavNames:
+  - moves forward one step
+  - moves backward one step
+  - clamps at the last turn with no wrap
+  - clamps at the first turn with no wrap
+  - no current anchor snaps to the first turn going down
+  - no current anchor snaps to the last turn going up
+  - current not in the visible list snaps to the first turn going down
+  - current not in the visible list snaps to the last turn going up
+  - empty turn list resolves to undefined
+
+requiredFormatRelativeNames:
+  - empty iso returns an empty string
+  - an unparseable iso returns an empty string
+  - under 45 seconds reads as just now
+  - 45 to 90 seconds reads as 1m ago
+  - minutes under 45 read as Nm ago
+  - 45 minutes rounds up to 1h ago
+  - hours under 24 read as Nh ago
+  - 35 hours still reads as 1d ago
+  - days under 14 read as Nd ago
+  - 20 days reads as 3w ago
+  - 100 days reads as 3mo ago
+  - 400 days reads as 1y ago
+
+requiredFormatDurationMinsNames:
+  - null minutes returns an empty string
+  - a negative minute count returns an empty string
+  - exactly zero minutes reads as under 1 second
+  - sub-minute durations read in seconds
+  - sub-hour durations round to whole minutes
+  - hour-plus durations show hours and minutes
+  - an exact multiple of an hour omits the minutes
+
+requiredFormatDateLongNames:
+  - empty iso returns an empty string
+  - an unparseable iso returns the input unchanged
+  - a valid iso renders month, day, hour, and minute
+
+requiredSummarizePromptNames:
+  - undefined raw returns an empty string
+  - a plain sentence drops the trailing period
+  - a question mark is kept
+  - an exclamation mark is kept
+  - a newline terminates the first sentence
+  - a leading fenced code block is stripped
+  - a leading system-reminder block is stripped
+  - a slash command with no message falls back to the command
+  - a slash command with a message uses the message
+  - a slash command with args and a message prefers the message
+  - a long input is truncated with an ellipsis at 80 characters
+
+requiredProjectLabelNames:
+  - a posix path takes the last segment
+  - a windows path takes the last segment
+  - an empty string returns an empty string
+  - undefined returns an empty string
+  - a string with no separators returns the whole string
+  - a trailing slash is ignored
+
+requiredComposeSessionTitleNames:
+  - project and summary compose the project colon summary form
+  - a project with no usable prompt uses the middot short-id form
+  - a prompt with no project uses the short-id emdash form
+  - neither project nor prompt falls back to Session short-id
+
+# One production-point mutation per ported module (turnNav / time / title),
+# proving the fixture suite above actually exercises each. Each mutation
+# patches ONE exact string in its source file, re-runs the fixture test with
+# the mutated copy substituted in via its FAIRTRADE_*_MODULE override, and
+# asserts the run fails with the designated case's failure line. See
+# scripts/transcript-helpers.mutations.mjs.
+expectedMutationCount: 3
+requiredMutationNames:
+  - 'turnNav: no-anchor direction always snaps to the first turn'
+  - 'time: hour-plus minute remainder is miscalculated'
+  - 'title: sentence capitalization is inverted'
+mutations:
+  - name: 'turnNav: no-anchor direction always snaps to the first turn'
+    file: src/ui/transcript/turnNav.js
+    find: "const firstLast = dir > 0 ? turnIndices[0] : turnIndices[turnIndices.length - 1]"
+    replace: "const firstLast = turnIndices[0]"
+    envVar: FAIRTRADE_TURNNAV_MODULE
+    outFile: turnNav.mutated.js
+    expectedDiagnostic: "no current anchor snaps to the last turn going up"
+  - name: 'time: hour-plus minute remainder is miscalculated'
+    file: src/ui/transcript/time.js
+    find: "const m = Math.round(mins - h * 60)"
+    replace: "const m = Math.round(mins - h * 61)"
+    envVar: FAIRTRADE_TIME_MODULE
+    outFile: time.mutated.js
+    expectedDiagnostic: "hour-plus durations show hours and minutes"
+  - name: 'title: sentence capitalization is inverted'
+    file: src/ui/transcript/title.js
+    find: "if (first >= 'a' && first <= 'z') return first.toUpperCase() + s.slice(1)"
+    replace: "if (first >= 'A' && first <= 'Z') return first.toUpperCase() + s.slice(1)"
+    envVar: FAIRTRADE_TITLE_MODULE
+    outFile: title.mutated.js
+    expectedDiagnostic: "a plain sentence drops the trailing period"

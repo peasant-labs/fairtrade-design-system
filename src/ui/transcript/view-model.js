@@ -204,6 +204,22 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {boolean} [isPrimary]
  */
 
+/**
+ * A manual label applied to a single turn (entry), in the general host-defined
+ * taxonomy shape (arbitrary `typeId`/`typeName`/`value`) — distinct from the
+ * composite viewer's own `SavedLabel` (state-capabilities.js), which is the
+ * narrower fixed outcome/flag shape `LabelPopover` writes into `savedLabels`.
+ * `TurnLabel` is the framework-agnostic wire shape a host app's own annotation
+ * model maps to/from when it manages labelling outside the composite viewer.
+ * `id` is empty for an optimistic, not-yet-persisted label.
+ * @typedef {object} TurnLabel
+ * @property {number} entryIndex             the entry index this label targets (`turn.index`)
+ * @property {string} typeId
+ * @property {string} typeName
+ * @property {string} value
+ * @property {string} id                     host-assigned id; empty string for an optimistic pre-save
+ */
+
 /* ── Files & diffs ──────────────────────────────────────────────────────────── */
 
 /**

@@ -1,0 +1,208 @@
+# Fixture cases for the standalone transcript helpers ported from
+# transcript-browser (src/ui/transcript/{turnNav,time,title}.js). Pure,
+# framework-agnostic functions; every case below is asserted directly against
+# the production module (never a test-only reimplementation). Paired with
+# transcript-helpers.manifest.yaml (required-name deletion protection) —
+# see scripts/transcript-helpers.test.mjs.
+
+turnNavCases:
+  - name: moves forward one step
+    turnIndices: [0, 1, 2, 3]
+    current: 1
+    dir: 1
+    expected: 2
+  - name: moves backward one step
+    turnIndices: [0, 1, 2, 3]
+    current: 2
+    dir: -1
+    expected: 1
+  - name: clamps at the last turn with no wrap
+    turnIndices: [0, 2, 5, 9]
+    current: 9
+    dir: 1
+    expected: 9
+  - name: clamps at the first turn with no wrap
+    turnIndices: [0, 2, 5, 9]
+    current: 0
+    dir: -1
+    expected: 0
+  - name: no current anchor snaps to the first turn going down
+    turnIndices: [1, 4, 7]
+    current: null
+    dir: 1
+    expected: 1
+  - name: no current anchor snaps to the last turn going up
+    turnIndices: [1, 4, 7]
+    current: null
+    dir: -1
+    expected: 7
+  - name: current not in the visible list snaps to the first turn going down
+    turnIndices: [2, 4, 6]
+    current: 99
+    dir: 1
+    expected: 2
+  - name: current not in the visible list snaps to the last turn going up
+    turnIndices: [2, 4, 6]
+    current: 99
+    dir: -1
+    expected: 6
+  - name: empty turn list resolves to undefined
+    turnIndices: []
+    current: 3
+    dir: 1
+    expected: null
+
+formatRelativeCases:
+  nowIso: '2026-08-27T12:00:00.000Z'
+  cases:
+    - name: empty iso returns an empty string
+      iso: ''
+      expected: ''
+    - name: an unparseable iso returns an empty string
+      iso: not-a-date
+      expected: ''
+    - name: under 45 seconds reads as just now
+      deltaSeconds: 30
+      expected: just now
+    - name: 45 to 90 seconds reads as 1m ago
+      deltaSeconds: 60
+      expected: 1m ago
+    - name: minutes under 45 read as Nm ago
+      deltaSeconds: 600
+      expected: 10m ago
+    - name: 45 minutes rounds up to 1h ago
+      deltaSeconds: 2700
+      expected: 1h ago
+    - name: hours under 24 read as Nh ago
+      deltaSeconds: 75600
+      expected: 21h ago
+    - name: 35 hours still reads as 1d ago
+      deltaSeconds: 126000
+      expected: 1d ago
+    - name: days under 14 read as Nd ago
+      deltaSeconds: 864000
+      expected: 10d ago
+    - name: 20 days reads as 3w ago
+      deltaSeconds: 1728000
+      expected: 3w ago
+    - name: 100 days reads as 3mo ago
+      deltaSeconds: 8640000
+      expected: 3mo ago
+    - name: 400 days reads as 1y ago
+      deltaSeconds: 34560000
+      expected: 1y ago
+
+formatDurationMinsCases:
+  - name: null minutes returns an empty string
+    mins: null
+    expected: ''
+  - name: a negative minute count returns an empty string
+    mins: -1
+    expected: ''
+  - name: exactly zero minutes reads as under 1 second
+    mins: 0
+    expected: <1s
+  - name: sub-minute durations read in seconds
+    mins: 0.5
+    expected: 30s
+  - name: sub-hour durations round to whole minutes
+    mins: 9.4
+    expected: 9m
+  - name: hour-plus durations show hours and minutes
+    mins: 76
+    expected: 1h 16m
+  - name: an exact multiple of an hour omits the minutes
+    mins: 120
+    expected: 2h
+
+formatDateLongCases:
+  - name: empty iso returns an empty string
+    iso: ''
+    expected: ''
+  - name: an unparseable iso returns the input unchanged
+    iso: not-a-date
+    expected: not-a-date
+  - name: a valid iso renders month, day, hour, and minute
+    iso: '2026-01-12T16:23:00.000Z'
+    expectedPattern: '^[A-Za-z]{3}\.? \d{1,2}, \d{1,2}:\d{2}\s*[AaPp]\.?[Mm]\.?$'
+
+summarizePromptCases:
+  - name: undefined raw returns an empty string
+    raw: null
+    expected: ''
+  - name: a plain sentence drops the trailing period
+    raw: 'hello world. more stuff'
+    expected: 'Hello world'
+  - name: a question mark is kept
+    raw: 'are you sure? yes'
+    expected: 'Are you sure?'
+  - name: an exclamation mark is kept
+    raw: 'watch out! ok'
+    expected: 'Watch out!'
+  - name: a newline terminates the first sentence
+    raw: "line one\nline two"
+    expected: 'Line one'
+  - name: a leading fenced code block is stripped
+    raw: "```js\nconsole.log(1)\n```\nActual message here."
+    expected: 'Actual message here'
+  - name: a leading system-reminder block is stripped
+    raw: '<system-reminder>ignore this</system-reminder>Real content.'
+    expected: 'Real content'
+  - name: a slash command with no message falls back to the command
+    raw: '<command-name>/mcp</command-name>'
+    expected: '/mcp'
+  - name: a slash command with a message uses the message
+    raw: '<command-name>/compact</command-name><command-message>please compact this</command-message>'
+    expected: 'Please compact this'
+  - name: a slash command with args and a message prefers the message
+    raw: '<command-name>/mcp</command-name><command-args>server list</command-args><command-message>show me</command-message>'
+    expected: 'Show me'
+  - name: a long input is truncated with an ellipsis at 80 characters
+    raw: '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
+    expected: '0123456789012345678901234567890123456789012345678901234567890123456789012345678…'
+
+projectLabelCases:
+  - name: a posix path takes the last segment
+    project: /Users/x/Projects/phaze
+    expected: phaze
+  - name: a windows path takes the last segment
+    project: 'C:\Users\x\proj\'
+    expected: proj
+  - name: an empty string returns an empty string
+    project: ''
+    expected: ''
+  - name: undefined returns an empty string
+    project: null
+    expected: ''
+  - name: a string with no separators returns the whole string
+    project: noslashes
+    expected: noslashes
+  - name: a trailing slash is ignored
+    project: a/b/
+    expected: b
+
+composeSessionTitleCases:
+  - name: project and summary compose the project colon summary form
+    id: abcdef1234
+    project: /repo/phaze
+    promptContent: fix the bug please
+    expectedTitle: 'phaze: Fix the bug please'
+    expectedTooltip: fix the bug please
+  - name: a project with no usable prompt uses the middot short-id form
+    id: abcdef1234
+    project: /repo/phaze
+    promptContent: null
+    expectedTitle: 'phaze · abcdef12'
+    expectedTooltip: 'phaze · abcdef12'
+  - name: a prompt with no project uses the short-id emdash form
+    id: abcdef1234
+    project: null
+    promptContent: fix the bug please
+    expectedTitle: 'abcdef12 — Fix the bug please'
+    expectedTooltip: fix the bug please
+  - name: neither project nor prompt falls back to Session short-id
+    id: abcdef1234
+    project: null
+    promptContent: null
+    expectedTitle: 'Session abcdef12'
+    expectedTooltip: 'Session abcdef12'

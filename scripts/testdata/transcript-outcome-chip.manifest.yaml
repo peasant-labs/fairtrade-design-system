@@ -1,0 +1,27 @@
+# Required-NAME manifest for transcript-outcome-chip.yaml — deletion
+# protection. The loader (scripts/transcript-outcome-chip.test.mjs) asserts
+# both groups' case names are EXACTLY this list (as a set).
+
+requiredCaseNames:
+  - a canonical resolved outcome renders the ok tone
+  - the legacy positive label normalizes to the same ok tone
+  - a canonical partial outcome renders the warn tone
+  - a canonical failed outcome renders the err tone
+  - the annotation not_resolved value normalizes to the same err tone
+  - the legacy negative label normalizes to the same err tone
+
+requiredRenderNothingNames:
+  - an unrecognized outcome string renders nothing
+  - an undefined outcome renders nothing
+
+expectedMutationCount: 1
+requiredMutationNames:
+  - resolved outcome tone is flipped from ok to err
+mutations:
+  - name: resolved outcome tone is flipped from ok to err
+    file: src/ui/transcript/OutcomeChip.jsx
+    find: "resolved: { icon: ShieldCheck, chipTone: 'ok', label: 'resolved' },"
+    replace: "resolved: { icon: ShieldCheck, chipTone: 'err', label: 'resolved' },"
+    probeOutcome: resolved
+    expectedAbsentFragment: chip-ok
+

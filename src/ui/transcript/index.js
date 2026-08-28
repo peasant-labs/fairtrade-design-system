@@ -49,6 +49,14 @@ export {
   phaseLabel,
 } from './analytics.js'
 
+/* ── standalone transcript helpers (runtime) ───────────────────────────────────
+   Lifted from transcript-browser (turnNav / time / title): keyboard-nav index
+   math and the session-detail header's time + title formatters. Pure,
+   framework-agnostic functions — no fairtrade equivalent existed. ──────────── */
+export { nextNavTurn } from './turnNav.js'
+export { formatRelative, formatDurationMins, formatDateLong } from './time.js'
+export { summarizePrompt, composeSessionTitle, projectLabel } from './title.js'
+
 /* ── lifted transcript rendering primitives + composite (runtime) ─────────────────
    The dumb single-transcript components, lifted verbatim from the canonical mockup.
    Each renders the cooked TranscriptViewModel (TurnVM / ToolCallVM / ThinkingVM /
@@ -68,6 +76,7 @@ export { default as TranscriptToolCall } from './ToolCall.jsx'
 export { default as TranscriptToolBody } from './ToolBody.jsx'
 export { default as TranscriptTaskBody } from './TaskBody.jsx'
 export { default as TranscriptDiffEntryCard, DiffHunks as TranscriptDiffHunks } from './DiffEntryCard.jsx'
+export { default as TranscriptOutcomeChip } from './OutcomeChip.jsx'
 
 /* the composite single-transcript surface + the view chrome it assembles (rails,
    scrubber, scorecard, label popover). The composite is the drop-in `TranscriptViewer`;
@@ -148,6 +157,7 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
 /** @typedef {import('./view-model.js').TaskGroupVM} TaskGroupVM */
 /** @typedef {import('./view-model.js').HighlightVM} HighlightVM */
 /** @typedef {import('./view-model.js').AnnotationVM} AnnotationVM */
+/** @typedef {import('./view-model.js').TurnLabel} TurnLabel */
 /** @typedef {import('./view-model.js').FilterIndexVM} FilterIndexVM */
 /** @typedef {import('./view-model.js').PhaseVM} PhaseVM */
 /** @typedef {import('./view-model.js').ScorecardBandVM} ScorecardBandVM */
