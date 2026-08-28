@@ -10,7 +10,7 @@
     "url": "https://github.com/peasant-labs/fairtrade-design-system"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=26"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
