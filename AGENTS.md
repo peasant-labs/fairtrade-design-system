@@ -78,6 +78,15 @@ workflow refuses a tag whose version does not match `package.json`, reports the 
 missing attestation while this repository is private, and hard-fails after publication if
 a public-source release lacks the SLSA provenance predicate.
 
+**The same App-authenticated tag also runs `.github/workflows/release.yml`**, independently of
+`npm-publish.yml`: a `guard` job classifies the tag with `release-guard.mjs parse-tag` (version +
+`kind`, `rc` or `final`), then a `release` job extracts the matching `## X.Y.Z[-rcN]` CHANGELOG.md
+section with `scripts/release-notes.mjs`, appends a line naming the published npm package version,
+and runs `gh release create --verify-tag --notes-file` (or `gh release edit` if the Release already
+exists, so a retried run is idempotent), `--prerelease` for an rc and `--latest` for a final. A
+release PR that ships without a matching CHANGELOG section fails this job with an actionable error;
+add the section before the tag is cut.
+
 One-time maintainer registrations (registered state lives on npmjs.com/GitHub, not in-repo):
 (1) install the releaser GitHub App on `peasant-labs/fairtrade-design-system` with Contents write
 permission and configure Actions secrets `PEASANT_RELEASER_APP_ID` and

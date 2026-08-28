@@ -1,0 +1,33 @@
+# Required-NAME manifest for release-notes.yaml - deletion protection. The
+# loader (scripts/release-notes.test.mjs / release-notes.mutations.mjs)
+# asserts every case group's names are EXACTLY this list (as a set). See
+# scripts/testdata/transcript-outcome-chip.manifest.yaml for the same idiom.
+
+requiredValidNames:
+  - the first section in the file extracts cleanly
+  - a section in the middle of the file extracts cleanly
+  - the last section in the file extracts cleanly
+  - a version whose digits are a prefix of another version's digits does not cross-match (0.0.1 vs 0.0.10)
+  - the longer version does not cross-match back onto the shorter one (0.0.10 vs 0.0.1)
+  - an rc version header extracts cleanly
+
+requiredInvalidNames:
+  - a version with no matching section fails closed
+  - a section header present but with an empty body fails closed
+  - a section header present but with only blank lines in its body fails closed
+
+requiredMutationNames:
+  - exact version equality weakened to a prefix/substring match
+  - the empty-section-body check is dropped
+
+mutations:
+  - name: exact version equality weakened to a prefix/substring match
+    find: "header.version === version"
+    replace: "header.version.startsWith(version)"
+    probeGroup: valid
+    probeCaseName: a version whose digits are a prefix of another version's digits does not cross-match (0.0.1 vs 0.0.10)
+  - name: the empty-section-body check is dropped
+    find: "if (body.length === 0) {"
+    replace: "if (false) {"
+    probeGroup: invalid
+    probeCaseName: a section header present but with an empty body fails closed

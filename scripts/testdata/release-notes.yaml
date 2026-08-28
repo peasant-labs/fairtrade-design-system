@@ -1,0 +1,207 @@
+# Fixture cases for extractChangelogSection (scripts/release-notes.mjs) - the
+# CHANGELOG.md -> GitHub Release notes body extraction release.yml runs on
+# every release tag. Paired with release-notes.manifest.yaml (required-name
+# deletion protection + mutation definitions). See
+# scripts/testdata/transcript-outcome-chip.yaml for the same idiom.
+
+validCases:
+  - name: the first section in the file extracts cleanly
+    version: "0.2.0"
+    changelog: |
+      # Changelog
+
+      ## 0.2.0
+
+      ### Added
+
+      - first-section body line one.
+      - first-section body line two.
+
+      ## 0.1.0
+
+      ### Added
+
+      - middle-section body.
+
+      ## 0.0.1
+
+      ### Added
+
+      - last-section body.
+    expected: |-
+      ### Added
+
+      - first-section body line one.
+      - first-section body line two.
+
+  - name: a section in the middle of the file extracts cleanly
+    version: "0.1.0"
+    changelog: |
+      # Changelog
+
+      ## 0.2.0
+
+      ### Added
+
+      - first-section body line one.
+      - first-section body line two.
+
+      ## 0.1.0
+
+      ### Added
+
+      - middle-section body.
+
+      ## 0.0.1
+
+      ### Added
+
+      - last-section body.
+    expected: |-
+      ### Added
+
+      - middle-section body.
+
+  - name: the last section in the file extracts cleanly
+    version: "0.0.1"
+    changelog: |
+      # Changelog
+
+      ## 0.2.0
+
+      ### Added
+
+      - first-section body line one.
+      - first-section body line two.
+
+      ## 0.1.0
+
+      ### Added
+
+      - middle-section body.
+
+      ## 0.0.1
+
+      ### Added
+
+      - last-section body.
+    expected: |-
+      ### Added
+
+      - last-section body.
+
+  - name: a version whose digits are a prefix of another version's digits does not cross-match (0.0.1 vs 0.0.10)
+    version: "0.0.1"
+    changelog: |
+      # Changelog
+
+      ## 0.0.10 - 2026-08-01
+
+      ### Fixed
+
+      - the 0.0.10 fix, not the one we want.
+
+      ## 0.0.2 - 2026-07-15
+
+      ### Changed
+
+      - an unrelated middle entry.
+
+      ## 0.0.1 - 2026-07-01
+
+      ### Added
+
+      - the true 0.0.1 entry we must extract.
+    expected: |-
+      ### Added
+
+      - the true 0.0.1 entry we must extract.
+
+  - name: the longer version does not cross-match back onto the shorter one (0.0.10 vs 0.0.1)
+    version: "0.0.10"
+    changelog: |
+      # Changelog
+
+      ## 0.0.10 - 2026-08-01
+
+      ### Fixed
+
+      - the 0.0.10 fix, not the one we want.
+
+      ## 0.0.2 - 2026-07-15
+
+      ### Changed
+
+      - an unrelated middle entry.
+
+      ## 0.0.1 - 2026-07-01
+
+      ### Added
+
+      - the true 0.0.1 entry we must extract.
+    expected: |-
+      ### Fixed
+
+      - the 0.0.10 fix, not the one we want.
+
+  - name: an rc version header extracts cleanly
+    version: "0.3.0-rc1"
+    changelog: |
+      # Changelog
+
+      ## 0.3.0-rc1 - 2026-08-10
+
+      ### Added
+
+      - the rc1 candidate entry.
+
+      ## 0.2.0 - 2026-08-01
+
+      ### Added
+
+      - the prior final entry.
+    expected: |-
+      ### Added
+
+      - the rc1 candidate entry.
+
+invalidCases:
+  - name: a version with no matching section fails closed
+    version: "9.9.9"
+    changelog: |
+      # Changelog
+
+      ## 0.2.0
+
+      ### Added
+
+      - some entry.
+    errorMatch: 'no "## 9\.9\.9" section found'
+
+  - name: a section header present but with an empty body fails closed
+    version: "0.2.0"
+    changelog: |
+      # Changelog
+
+      ## 0.2.0
+      ## 0.1.0
+
+      ### Added
+
+      - the prior entry.
+    errorMatch: 'the "## 0\.2\.0" section in CHANGELOG\.md is empty'
+
+  - name: a section header present but with only blank lines in its body fails closed
+    version: "0.2.0"
+    changelog: |
+      # Changelog
+
+      ## 0.2.0
+
+
+      ## 0.1.0
+
+      ### Added
+
+      - the prior entry.
+    errorMatch: 'the "## 0\.2\.0" section in CHANGELOG\.md is empty'
