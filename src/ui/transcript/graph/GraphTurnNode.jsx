@@ -1,10 +1,10 @@
 /* GraphTurnNode — the trajectory-graph turn card VISUAL (presentation-only).
 
-   This is the aesthetic half of the graph split: fairtrade owns every graph
-   AESTHETIC, transcript-browser owns the @xyflow ENGINE. The component renders a
-   single turn as a compact card; it knows NOTHING about @xyflow, topology,
-   layout, handles, pan/zoom or selection wiring — the transcript-browser engine host
-   node) wraps this card with its own <Handle>s and feeds it cooked props.
+   Fairtrade owns the full trajectory graph: every AESTHETIC here, and the
+   `@xyflow` ENGINE that ships separately from `/graph`. This component knows
+   NOTHING about @xyflow, topology, layout, handles, pan/zoom or selection wiring;
+   the engine host (fairtrade's own custom @xyflow node) wraps this card with its
+   own <Handle>s and feeds it cooked props.
 
    Props are a flat, engine-agnostic projection of the cooked TurnVM plus
    the engine's per-node display state (search/filter/selection + annotation
@@ -59,7 +59,7 @@ import { providerAccent } from '../../provider-policy.js'
  */
 
 /** Compact token label, matched to the mockup's `fmtTokens` so the graph footer
- *  reads identically wherever a turn card renders (mockup SVG and transcript-browser @xyflow). */
+ *  reads identically wherever a turn card renders (mockup SVG and fairtrade's own @xyflow engine). */
 function fmtTokens(n) {
   return n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n)
 }

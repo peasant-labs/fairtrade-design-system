@@ -1,6 +1,7 @@
 # fairtrade design system
 
-> One design system for peasant, village, and transcript-browser: square, token-driven, two
+> One design system for peasant and village (the transcript viewer and trajectory graph ship from
+> this package too): square, token-driven, two
 > themes (deep dark + truly-white light), neuroinclusive by default, calm desaturated earthy
 > palette with amber as a scarce accent. Built with React 19 + Tailwind v4; documented in a
 > single-page site and a Storybook component library. Paths below are repo-relative; read

@@ -163,8 +163,8 @@ export const ReadOnly = {
   },
 }
 
-/* Graph mode plugs a consumer render-prop (transcript-browser's @xyflow engine in production); the composite has
-   no graph engine of its own. */
+/* Graph mode plugs a consumer render-prop (fairtrade's own `/graph` @xyflow engine in production);
+   the composite has no graph engine of its own. */
 export const GraphSlot = {
   args: {
     viewModel,

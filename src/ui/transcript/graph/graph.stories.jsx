@@ -9,13 +9,14 @@ import {
    half of the lift (the graph oracle screenshots these, both themes, via
    the theme toolbar). LAYOUT IS CARVED OUT on purpose: these render the node
    visuals at their natural engine widths in a static column, NOT the @xyflow
-   topology/positions (that logic lives in transcript-browser). So the oracle pins
-   the AESTHETIC (the only thing fairtrade owns), free of engine layout drift.
+   topology/positions (that logic lives in this package's `/graph` engine entry,
+   deliberately kept out of this snapshot so `@xyflow/react` never loads here).
+   So the oracle pins the AESTHETIC, the part every consumer shares byte-for-byte.
 
-   Every component is imported from the production sub-barrel (./index.js) — the
-   exact surface transcript-browser + the mockup consume — so the stories cannot
-   drift from the shipped contract. The nodes fill their container width, so each
-   is wrapped at the width the engine assigns (turn 320, tool pill 200). */
+   Every component is imported from the production sub-barrel (./index.js), the
+   exact surface a consuming app (peasant, village) + the mockup consume, so the
+   stories cannot drift from the shipped contract. The nodes fill their container
+   width, so each is wrapped at the width the engine assigns (turn 320, tool pill 200). */
 
 /** Render a node at a fixed width, the way the engine host sizes it. */
 function Slot({ w = 320, children }) {

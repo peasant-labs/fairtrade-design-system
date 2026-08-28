@@ -4,8 +4,9 @@ This is the stable system reference: tokens, principles, typography, iconography
 component families. It is the design source of truth; the code (`src/index.css`, `src/ui/*`) implements
 it and the generated `public/tokens.json` / `public/components.json` mirror it for machine consumers.
 
-One design system, called **fairtrade**, for **peasant** (local web), **village** (the commons), and
-**transcript-browser** (the shared viewer). The live reference is the single-page presentation site:
+One design system, called **fairtrade**, for **peasant** (local web) and **village** (the commons),
+including the transcript viewer and trajectory graph both apps embed straight from this package. The
+live reference is the single-page presentation site:
 `pnpm install && pnpm dev` (Vite + React + Tailwind v4), then use the dark/light toggle.
 
 > **Read [`NEUROINCLUSIVE.md`](./NEUROINCLUSIVE.md) alongside this.** Because this is a data-heavy
@@ -180,6 +181,6 @@ Functional labels are not eyebrows: form-field labels (`name`, `acceptance mode`
 The system currently lives in this single repo, where it is both documented (the presentation page) and
 implemented (`src/ui/*`). Its shared token package now ships as
 `@peasant-labs/fairtrade-tokens`, exporting the canonical `tokens.css`, `tokens.json`, `fonts.css`,
-and `preset.css` artifacts generated from this repo. Consumers in peasant / village /
-transcript-browser should build against that package for tokens, fonts, and Tailwind aliases while
-this repo remains the source of truth for token values and components.
+and `preset.css` artifacts generated from this repo. Consumers in peasant / village should build
+against that package for tokens, fonts, and Tailwind aliases while this repo remains the source of
+truth for token values and components.
