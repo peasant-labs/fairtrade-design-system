@@ -76,7 +76,6 @@ requiredComposeSessionTitleNames:
 # the mutated copy substituted in via its FAIRTRADE_*_MODULE override, and
 # asserts the run fails with the designated case's failure line. See
 # scripts/transcript-helpers.mutations.mjs.
-expectedMutationCount: 3
 requiredMutationNames:
   - 'turnNav: no-anchor direction always snaps to the first turn'
   - 'time: hour-plus minute remainder is miscalculated'

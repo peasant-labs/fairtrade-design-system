@@ -1,0 +1,22 @@
+# Mounted-viewer fixture cases for the session-outcome chip: renders the REAL
+# TranscriptViewer (via adaptTranscript -> TranscriptViewer, the production
+# wiring point TranscriptViewer.jsx:773 used to hard-code) with each canonical
+# SessionOutcome and asserts the rendered header chip's tone class and label.
+# This is the end-to-end proof that TranscriptOutcomeChip is actually wired
+# into the mounted header for outcomes other than the "resolved" case the old
+# inline span (chip chip-ok, unconditionally) happened to coincide with.
+# See scripts/transcript-viewer-outcome.test.mjs.
+
+cases:
+  - name: a resolved session mounts the ok tone chip in the header
+    outcome: resolved
+    expectedClass: chip chip-ok
+    expectedLabel: resolved
+  - name: a partial session mounts the warn tone chip in the header
+    outcome: partial
+    expectedClass: chip chip-warn
+    expectedLabel: partial
+  - name: a failed session mounts the err tone chip in the header
+    outcome: failed
+    expectedClass: chip chip-err
+    expectedLabel: not resolved

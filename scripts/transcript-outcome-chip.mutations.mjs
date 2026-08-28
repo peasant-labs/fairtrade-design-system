@@ -54,20 +54,23 @@ function loadStrictYaml(relativePath) {
   return document.toJS()
 }
 
+function assertNameSet(actualNames, requiredNames, label) {
+  const actualSet = new Set(actualNames)
+  const requiredSet = new Set(requiredNames)
+  if (actualSet.size !== actualNames.length) throw new Error(`${label}: duplicate mutation names`)
+  if (actualSet.size !== requiredSet.size || [...requiredSet].some((name) => !actualSet.has(name))) {
+    throw new Error(`${label}: mutation names do not match the required-name manifest exactly`)
+  }
+}
+
 function validateMutationManifest(value) {
-  if (!Number.isSafeInteger(value.expectedMutationCount) || value.expectedMutationCount < 1) {
-    throw new Error('transcript-outcome-chip manifest expectedMutationCount must be a positive safe integer')
+  if (!Array.isArray(value.mutations) || value.mutations.length === 0) {
+    throw new Error('transcript-outcome-chip manifest mutations must be a non-empty array')
   }
-  if (!Array.isArray(value.mutations) || value.mutations.length !== value.expectedMutationCount) {
-    throw new Error('transcript-outcome-chip manifest mutations do not match expectedMutationCount')
+  if (!Array.isArray(value.requiredMutationNames) || value.requiredMutationNames.some((name) => typeof name !== 'string' || name.length === 0)) {
+    throw new Error('transcript-outcome-chip manifest requiredMutationNames must be a non-empty string array')
   }
-  if (!Array.isArray(value.requiredMutationNames) || value.requiredMutationNames.length !== value.mutations.length) {
-    throw new Error('transcript-outcome-chip manifest requiredMutationNames does not match the mutation inventory')
-  }
-  const names = value.mutations.map((m) => m.name)
-  if (new Set(names).size !== names.length || value.requiredMutationNames.some((name) => !names.includes(name))) {
-    throw new Error('transcript-outcome-chip manifest mutations do not match their required-name inventory')
-  }
+  assertNameSet(value.mutations.map((m) => m.name), value.requiredMutationNames, 'transcript-outcome-chip mutations')
   for (const mutation of value.mutations) {
     for (const field of ['name', 'file', 'find', 'replace', 'probeOutcome', 'expectedAbsentFragment']) {
       if (typeof mutation[field] !== 'string' || mutation[field].length === 0) {

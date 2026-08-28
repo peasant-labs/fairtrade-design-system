@@ -14,7 +14,6 @@ requiredRenderNothingNames:
   - an unrecognized outcome string renders nothing
   - an undefined outcome renders nothing
 
-expectedMutationCount: 1
 requiredMutationNames:
   - resolved outcome tone is flipped from ok to err
 mutations:
