@@ -4,6 +4,22 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.17 — 2026-08-28
+
+### Fixed
+
+- **Every transcript filter control now changes the trace, and filters act on
+  parts inside a turn.** Eleven of the rail's fourteen controls (thinking,
+  tool calls, the seven tool groups, retries, re-edit) rendered and counted
+  but changed nothing. The rules now live in one module (`filters.js`), and
+  the unit is the part: unchecking `tool calls` removes the tool cards from
+  inside each turn and keeps the text, a group off removes only that group's
+  calls, `thinking` off removes the thinking block, and a turn leaves the
+  trace only when none of its parts survive. The tool-calls umbrella cascades
+  to its groups and shows a tri-state when only some are on. Badges count the
+  turns that contain each part kind, so the `responses` badge no longer counts
+  every assistant turn. (#51, #53)
+
 ## 0.0.16 — 2026-08-24
 
 ### Changed
