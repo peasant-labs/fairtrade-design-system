@@ -218,6 +218,30 @@ const surfaceChecks = [
 for (const name of ['CODE_MAP_STATE_VERSION', 'createCodeMapState', 'reduceCodeMapState', 'deriveCodeMapView']) {
   if (!(name in graph)) failures.push(`${name}: missing from dist/lib/graph.js (code-map state runtime export)`)
 }
+// Trajectory-graph engine: the ./graph entry must resolve the @xyflow engine and
+// the node visuals it wraps. Importing this module at all proves the built bundle
+// can resolve its optional peer; TrajectoryGraph is deliberately NOT server-rendered
+// here because the engine measures a live viewport.
+for (const name of ['TrajectoryGraph', 'GraphControls', 'TrajectoryGraphLegend', 'TurnCardNode', 'ToolPillNode', 'SubagentBranchNode', 'useCanvasSync', 'GraphTurnNode', 'GraphToolNode', 'GraphSubagentBranch', 'GraphLegend']) {
+  if (typeof graph[name] !== 'function' && typeof graph[name] !== 'object') {
+    failures.push(`${name}: missing from dist/lib/graph.js (trajectory-graph engine export)`)
+  }
+}
+for (const name of ['turnsToFlow', 'computeLaneHeaders']) {
+  if (typeof graph[name] !== 'function') failures.push(`${name}: missing from dist/lib/graph.js (trajectory-graph mapper export)`)
+}
+for (const name of ['NODE_DIMENSIONS', 'EDGE_DEFAULTS']) {
+  if (!graph[name] || typeof graph[name] !== 'object') failures.push(`${name}: missing from dist/lib/graph.js (trajectory-graph constants export)`)
+}
+// Exercise the built mapper end to end: two turns must produce two nodes and the
+// one sequential edge between them, so a broken bundle cannot pass on exports alone.
+{
+  const turn = (index, role) => ({ index, depth: 0, role, content: `built bundle smoke turn ${index}`, timestamp: '2024-01-01T00:00:00.000Z' })
+  const built = graph.turnsToFlow({ turns: [turn(0, 'user'), turn(1, 'assistant')], phases: [], annotations: [], searchMatches: [], filteredIndices: new Set() })
+  if (built.nodes.length !== 2 || built.edges.length !== 1 || built.edges[0].id !== 'e-turn-0-turn-1') {
+    failures.push(`turnsToFlow from dist/lib/graph.js produced ${built.nodes.length} node(s)/${built.edges.length} edge(s); expected 2 nodes and the edge e-turn-0-turn-1`)
+  }
+}
 for (const [surface, mod, names] of surfaceChecks) {
   for (const name of names) {
     if (!(name in mod)) {

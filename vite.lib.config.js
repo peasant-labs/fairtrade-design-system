@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { globSync } from 'node:fs'
+import { LIB_EXTERNALS } from './scripts/lib-externals.mjs'
 
 /* react-markdown's character-reference helper publishes a browser-only DOM entry. Keep the
    published library importable in SSR/package smokes by selecting its environment-neutral entry;
@@ -43,15 +44,7 @@ export default defineConfig({
       cssFileName: 'ui-imports',
     },
     rollupOptions: {
-      external: [
-        '@peasant-labs/schema',
-        '@tanstack/react-table',
-        'lucide-react',
-        'react',
-        'react-dom',
-        'react/jsx-runtime',
-        'recharts',
-      ],
+      external: [...LIB_EXTERNALS],
     },
   },
 })

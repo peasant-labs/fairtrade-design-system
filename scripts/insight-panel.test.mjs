@@ -16,6 +16,7 @@ import { dirname, join, normalize, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import YAML from 'yaml'
 import { InsightPanel } from '../dist/lib/graph.js'
+import { LIB_EXTERNALS } from './lib-externals.mjs'
 
 const h = React.createElement
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -83,7 +84,7 @@ try {
           outDir,
           emptyOutDir: true,
           lib: { entry: resolve(GRAPH_DIR, 'index.js'), formats: ['es'], fileName: () => 'mutant.mjs' },
-          rollupOptions: { external: ['@peasant-labs/schema', '@tanstack/react-table', 'lucide-react', 'react', 'react-dom', 'react/jsx-runtime', 'recharts'] },
+          rollupOptions: { external: [...LIB_EXTERNALS] },
           minify: false,
         },
       })

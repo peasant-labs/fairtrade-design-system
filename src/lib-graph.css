@@ -9,6 +9,7 @@
 
    Namespaces collected by this bundle:
      .gmp-   code-map / changes surface selectors
+     .tb-    the trajectory-graph engine surface (the @xyflow skin + node handles)
      .iu-    shared in-use shell chrome (also collected by commons.css)
    It must NEVER carry the village commons namespaces (.cex-, .cmg-) or the
    analytics dashboard namespace (.gan-, shipped as analytics.css) — the
@@ -376,4 +377,92 @@
   .gmp-exits { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); padding-top: var(--sp-4); border-top: var(--bd); }
   .gmp-gitdiff { padding: 0 var(--sp-3); height: var(--control-h); display: inline-flex; align-items: center; background: var(--canvas); border: var(--bd); font-size: 12px; color: var(--ink-2); }
   .gmp-boundary { margin-top: var(--sp-4); font-size: 11px; text-transform: lowercase; color: var(--ink-4); border-left: 2px solid var(--rule-strong); padding-left: var(--sp-3); line-height: 1.5; }
+}
+
+/* The trajectory graph: the @xyflow engine surface exported from `./graph`.
+   A host mounting <TrajectoryGraph> imports THIS sheet plus the engine's own
+   `@xyflow/react/dist/style.css` (the peer dependency owns its base styles; the
+   rules below are the design-system skin over them).
+
+   `.tb-graph` also declares the two edge stroke ROLES the engine constants
+   reference (`var(--edge)` / `var(--edge-error)` in EDGE_DEFAULTS), so edge
+   colour flips with the theme like every other token. */
+@layer graph {
+  .tb-graph {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--canvas);
+    --edge: var(--rule-strong);
+    --edge-error: var(--danger);
+  }
+  .tb-graph-flow { position: relative; flex: 1; min-height: 0; }
+  /* the engine renders its own controls + legend, so the vendor attribution
+     overlay is redundant chrome. */
+  .tb-graph .react-flow__attribution { display: none; }
+
+  /* overlays: the minimap, the viewport controls, and the legend all sit above
+     the canvas. `left`/`bottom`/`width`/`height` are canvas-overlay geometry,
+     not spacing-scale values. */
+  .tb-graph-minimap {
+    left: 3rem !important;
+    bottom: 0.75rem !important;
+    width: 160px !important;
+    height: 100px !important;
+    border: var(--bd) !important;
+    background: var(--surface) !important;
+  }
+  .tb-graph-controls {
+    position: absolute;
+    z-index: var(--z-sticky);
+    bottom: 0.75rem;
+    left: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    border: var(--bd);
+    background: var(--surface);
+  }
+  .tb-graph-controls-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--control-h-sm);
+    height: var(--control-h-sm);
+    border: 0;
+    border-bottom: var(--bd);
+    background: none;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .tb-graph-controls-btn:last-child { border-bottom: 0; }
+  .tb-graph-controls-btn:hover { background: var(--surface-hover); color: var(--ink); }
+  .tb-graph-controls-btn:focus-visible { outline: var(--sp-1) solid var(--focus-ring); outline-offset: calc(var(--sp-1) * -1); }
+
+  /* Overlay POSITIONING only — the legend's swatch layout and typography come
+     from the .ft-graph-legend visual this class is passed through to. */
+  .tb-graph-legend {
+    position: absolute;
+    z-index: var(--z-sticky);
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: var(--sp-2) var(--sp-3);
+    border: var(--bd);
+    background: var(--surface);
+  }
+
+  /* Graph node handles (engine only). The node VISUALS are the .ft-gnode-* /
+     .ft-graph-* rules in components.css; only the @xyflow connection handles are
+     styled here, because the handles live in the engine wrappers around those
+     visuals. The px values are handle geometry that must match the mapper's
+     node dimensions, so they stay raw. */
+  .tb-gnode-handle { width: 6px !important; height: 6px !important; border: 0 !important; background: var(--rule-strong) !important; }
+  .tb-gnode-handle-top { top: -3px !important; }
+  .tb-gnode-handle-bottom { bottom: -3px !important; }
+  .tb-gnode-handle-right { right: -3px !important; top: 50% !important; transform: translateY(-50%) !important; }
+  .tb-gnode-handle-left { left: -3px !important; top: 50% !important; transform: translateY(-50%) !important; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .tb-graph-controls-btn { transition: background var(--dur-1) var(--ease-standard), color var(--dur-1) var(--ease-standard); }
+  }
 }

@@ -106,6 +106,56 @@ for (const file of ['ui.js', 'graph.js', 'commons.js', 'analytics.js']) {
   const marker = bundledReactMarkers.find((candidate) => text.includes(candidate))
   if (marker) isoProblems.push(`${file} contains bundled React marker ${marker}; React must remain host-owned and external`)
 }
+// The @xyflow/react optional-peer boundary. The trajectory-graph engine is the
+// ONLY code in the package that reaches @xyflow/react, and it ships behind the
+// ./graph entry alone. An app importing ./ui (or ./commons, or ./analytics) must
+// therefore never be asked to resolve the optional peer — so nothing those entries
+// LOAD may name it. ./graph is the one entry allowed to.
+//
+// Asserted over each entry's TRANSITIVE chunk closure, never the entry file alone.
+// Rollup hoists code shared by two entries into a separate chunk, so an entry-only
+// check is vacuous: a leak simply lands one hop away in a chunk the entry imports.
+const XYFLOW_MARKER = '@xyflow'
+
+/**
+ * Every packed chunk an entry loads, including the entry itself, followed transitively.
+ * @param {string} entryFile  a file name inside dist/lib (e.g. 'ui.js')
+ * @returns {string[]} file names in the closure, in discovery order
+ */
+function entryChunkClosure(entryFile) {
+  const seen = new Set()
+  const queue = [entryFile]
+  while (queue.length) {
+    const name = queue.shift()
+    if (seen.has(name)) continue
+    const path = join(DIST, name)
+    if (!existsSync(path)) continue
+    seen.add(name)
+    const text = readFileSync(path, 'utf8')
+    for (const match of text.matchAll(/from\s*["']\.\/([^"']+\.js)["']/g)) queue.push(match[1])
+    for (const match of text.matchAll(/import\s*["']\.\/([^"']+\.js)["']/g)) queue.push(match[1])
+  }
+  return [...seen]
+}
+
+for (const entry of ['ui.js', 'commons.js', 'analytics.js']) {
+  if (!existsSync(join(DIST, entry))) continue
+  const leaked = entryChunkClosure(entry).filter((name) => readFileSync(join(DIST, name), 'utf8').includes(XYFLOW_MARKER))
+  if (leaked.length) {
+    isoProblems.push(
+      `the ./${entry.replace(/\.js$/, '')} entry loads ${XYFLOW_MARKER} via ${leaked.join(', ')} — only the ./graph entry may, because @xyflow/react is an OPTIONAL peer dependency and a consumer of this entry is not required to install it`,
+    )
+  }
+}
+if (existsSync(join(DIST, 'graph.js'))) {
+  const carriers = entryChunkClosure('graph.js').filter((name) => readFileSync(join(DIST, name), 'utf8').includes(XYFLOW_MARKER))
+  if (carriers.length === 0) {
+    isoProblems.push(
+      `the ./graph entry does not load ${XYFLOW_MARKER} anywhere in its chunk closure — the trajectory-graph engine did not reach the ./graph bundle, so the boundary check above proves nothing`,
+    )
+  }
+}
+
 for (const { surface, js, forbidden } of SURFACE_BUNDLES) {
   const path = join(DIST, js)
   if (!existsSync(path)) {
@@ -129,7 +179,9 @@ if (isoProblems.length) {
       'Why it matters: the HYBRID package boundary promises an app importing one surface entry (./graph or',
       './commons) never ships the other app\'s surfaces; a leaked namespace breaks that intra-package isolation.',
       'How to fix: keep src/ui/graph/index.js and src/ui/commons/index.js importing ONLY their own surface',
-      'modules — never cross-import the other sub-barrel.',
+      'modules — never cross-import the other sub-barrel. For an @xyflow leak, keep the trajectory-graph',
+      'engine (src/ui/transcript/graph/engine/) reachable ONLY from src/ui/graph/index.js — never from',
+      'src/ui/index.js or the transcript sub-barrels.',
     ].join('\n'),
   )
 }

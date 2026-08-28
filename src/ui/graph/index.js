@@ -160,3 +160,41 @@ export {
 /** @typedef {import('./ranking.js').RankInputNode} RankInputNode */
 /** @typedef {import('./ranking.js').RankedRow} RankedRowData */
 /** @typedef {import('./ranking.js').DebtState} DebtState */
+
+/* ── trajectory graph (the @xyflow engine + the node visuals it wraps) ────────────
+   The engine renders a transcript as a node-link trajectory. It reaches
+   `@xyflow/react`, an OPTIONAL peer dependency, so it ships behind THIS per-surface
+   entry only — never from `./ui`. The presentation-only node visuals it wraps are
+   re-exported alongside it, so one `./graph` import gives a host the full set.
+   Stylesheet: `@peasant-labs/fairtrade/graph.css` plus the host's one-time
+   `@xyflow/react/dist/style.css` import. ──────────────────────────────────────── */
+export {
+  TrajectoryGraph,
+  GraphControls,
+  TrajectoryGraphLegend,
+  TurnCardNode,
+  ToolPillNode,
+  SubagentBranchNode,
+  useCanvasSync,
+  turnsToFlow,
+  computeLaneHeaders,
+  NODE_DIMENSIONS,
+  EDGE_DEFAULTS,
+} from '../transcript/graph/engine/index.js'
+export { GraphTurnNode, GraphToolNode, GraphSubagentBranch, GraphLegend, GRAPH_LEGEND_ITEMS } from '../transcript/graph/index.js'
+
+/* ── trajectory-graph contracts (JSDoc re-exports; erased at build) ───────────── */
+/** @typedef {import('../transcript/graph/engine/index.js').TrajectoryGraphProps} TrajectoryGraphProps */
+/** @typedef {import('../transcript/graph/engine/index.js').GraphControlsProps} GraphControlsProps */
+/** @typedef {import('../transcript/graph/engine/index.js').TrajectoryGraphLegendProps} TrajectoryGraphLegendProps */
+/** @typedef {import('../transcript/graph/engine/index.js').TurnsToFlowOptions} TurnsToFlowOptions */
+/** @typedef {import('../transcript/graph/engine/index.js').TrajectoryCanvasProps} TrajectoryCanvasProps */
+/** @typedef {import('../transcript/graph/engine/index.js').TurnNodeData} TurnNodeData */
+/** @typedef {import('../transcript/graph/engine/index.js').ToolCallNodeData} ToolCallNodeData */
+/** @typedef {import('../transcript/graph/engine/index.js').SubagentLaneData} SubagentLaneData */
+/** @typedef {import('../transcript/graph/engine/index.js').NavCommand} NavCommand */
+/** @typedef {import('../transcript/graph/engine/index.js').EdgeType} EdgeType */
+/** @typedef {import('../transcript/graph/engine/index.js').CanvasEdgeData} CanvasEdgeData */
+/** @typedef {import('../transcript/graph/engine/index.js').FlowNode} FlowNode */
+/** @typedef {import('../transcript/graph/engine/index.js').FlowEdge} FlowEdge */
+/** @typedef {import('../transcript/graph/engine/index.js').FlowGraph} FlowGraph */
