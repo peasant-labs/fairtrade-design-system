@@ -14,11 +14,17 @@ export function parseReleaseTitle(title) {
   return { version: match[1].slice(1), versionWithV: match[1], subject: match[2], tag: `fairtrade-${match[1]}` }
 }
 
+// kind classifies the tag for the release.yml GitHub Release job: "rc" gets
+// --prerelease, "final" gets --latest. Derived once here (the tested source),
+// never re-derived by a shell substring match in the workflow.
+export function releaseKind(version) { return version.includes('-rc') ? 'rc' : 'final' }
+
 export function parseFairtradeTag(tag) {
   if (typeof tag !== 'string') throw new Error('Release tag validation failed: the tag was not a string. Use fairtrade-vX.Y.Z[-rcN].')
   const match = TAG.exec(tag)
   if (!match) throw new Error(`Release tag validation failed for ${JSON.stringify(tag)}: expected exactly fairtrade-vX.Y.Z[-rcN]. Use the tag derived from the release PR title.`)
-  return { version: match[1].slice(1), versionWithV: match[1], tag }
+  const version = match[1].slice(1)
+  return { version, versionWithV: match[1], tag, kind: releaseKind(version) }
 }
 
 export function titleToFairtradeTag(title) { return parseReleaseTitle(title).tag }

@@ -3,7 +3,9 @@ workflows:
     setupNodeCount: 2
   - path: .github/workflows/npm-publish.yml
     setupNodeCount: 1
-expectedMutationCount: 8
+  - path: .github/workflows/release.yml
+    setupNodeCount: 2
+expectedMutationCount: 10
 mutations:
   - name: package-engine-floor
     operation: below-floor
@@ -36,6 +38,16 @@ mutations:
     operation: below-floor
     path: pnpm-lock.yaml
     expectedError: package.json engines.node must match
+  - name: workflow-release-guard-node-floor
+    operation: below-floor
+    path: .github/workflows/release.yml
+    occurrence: 1
+    expectedError: below schema minimum
+  - name: workflow-release-publish-node-floor
+    operation: below-floor
+    path: .github/workflows/release.yml
+    occurrence: 2
+    expectedError: below schema minimum
   - name: missing-workflow
     operation: remove
     path: .github/workflows/npm-publish.yml

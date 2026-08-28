@@ -1,0 +1,121 @@
+# Create a GitHub Release from the CHANGELOG on every release tag.
+#
+# Trigger: a `fairtrade-vX.Y.Z[-rcN]` annotated tag minted by release-pr.yml
+# after a valid maintainer-authored release PR merges to main (see AGENTS.md,
+# "release & npm publication"). Runs independently of npm-publish.yml: an npm
+# publish failure never blocks this Release, and this Release failing never
+# blocks npm publication.
+#
+# Job graph, asserted by scripts/release-notes.test.mjs's workflow-shape
+# check: `release` sits behind `guard` via `needs`, so the publish step can
+# never run against an unparsed/misclassified tag.
+#
+#   push fairtrade-vX.Y.Z[-rcN]
+#           |
+#           v
+#         guard  (scripts/release-guard.mjs parse-tag; fails closed on a
+#           |     non-matching tag)
+#           v
+#        release  (CHANGELOG.md section -> notes.md -> gh release create/edit)
+#
+# Mirrors peasant-labs/schema's release.yml guard -> publish shape, without
+# the CLI/contract-gate stages this repo does not have.
+name: Release
+
+on:
+  push:
+    tags: ['fairtrade-v*']
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write # create/update the GitHub Release
+
+jobs:
+  guard:
+    name: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TAG: ${{ github.ref_name }}
+    # The tag's parsed version and release kind ("rc" | "final"), derived
+    # once here by the tested `release-guard parse-tag` (parseFairtradeTag ->
+    # releaseKind over the anchored tag grammar). Downstream steps consume
+    # these outputs rather than re-deriving them with an untested shell
+    # substring match.
+    outputs:
+      version: ${{ steps.parse.outputs.version }}
+      kind: ${{ steps.parse.outputs.kind }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/release-guard.mjs
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 26
+
+      - name: Parse + classify the tag
+        id: parse
+        run: node scripts/release-guard.mjs parse-tag "$TAG"
+
+  release:
+    name: publish GitHub Release
+    needs: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TAG: ${{ github.ref_name }}
+      VERSION: ${{ needs.guard.outputs.version }}
+      KIND: ${{ needs.guard.outputs.kind }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 26
+
+      - name: Extract the CHANGELOG section for this version
+        run: node scripts/release-notes.mjs "$VERSION" CHANGELOG.md > notes.md
+
+      - name: Append the npm publication line
+        run: |
+          set -euo pipefail
+          {
+            echo ""
+            echo "Published as \`@peasant-labs/fairtrade@${VERSION}\` on npm."
+          } >> notes.md
+
+      - name: Create the GitHub Release, or update its notes if it already exists (idempotent re-run)
+        run: |
+          set -euo pipefail
+          prerelease_flag="false"
+          latest_flag="false"
+          if [ "$KIND" = "rc" ]; then prerelease_flag="true"; fi
+          if [ "$KIND" = "final" ]; then latest_flag="true"; fi
+
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --notes-file notes.md \
+              --prerelease="$prerelease_flag" \
+              --latest="$latest_flag"
+            echo "::notice::updated the existing GitHub Release $TAG (idempotent re-run)"
+          else
+            create_flags=()
+            if [ "$prerelease_flag" = "true" ]; then create_flags+=(--prerelease); fi
+            if [ "$latest_flag" = "true" ]; then create_flags+=(--latest); fi
+            gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --verify-tag \
+              --title "$TAG" \
+              --notes-file notes.md \
+              "${create_flags[@]}"
+            echo "::notice::published GitHub Release $TAG"
+          fi
