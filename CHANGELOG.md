@@ -4,6 +4,25 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.18 — 2026-08-28
+
+### Added
+
+- **The trajectory-graph engine ships from the `/graph` entry.** `TrajectoryGraph`,
+  `GraphControls`, `TrajectoryGraphLegend`, `turnsToFlow`, `useCanvasSync`, and
+  the three node wrappers now live in this package next to the node visuals
+  they wrap, so an app renders a transcript as a node-link graph from one
+  package. `@xyflow/react` is an optional peer dependency scoped to `/graph`;
+  the packed `ui`, `commons`, and `analytics` bundles are guarded against
+  loading it, and the CSS isolation guard now enforces the graph namespace.
+  (#54, #61)
+- **The remaining transcript helpers ship from `/ui`.** `nextNavTurn`,
+  `formatRelative`, `formatDurationMins`, `formatDateLong`, `summarizePrompt`,
+  `composeSessionTitle`, `projectLabel`, the `TranscriptOutcomeChip` component,
+  and the `TurnLabel` type. The viewer header renders its outcome chip through
+  `TranscriptOutcomeChip`, which gives partial and failed outcomes their own
+  tone instead of always showing the ok chip. (#55, #60)
+
 ## 0.0.17 — 2026-08-28
 
 ### Fixed
