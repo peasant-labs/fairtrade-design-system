@@ -1,3 +1,4 @@
+// @ts-check
 /* Graph node + canvas prop types for the trajectory graph.
 
    Pure data shapes. Deliberately NO `@xyflow/react` import here, so the mapper

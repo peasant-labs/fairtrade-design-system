@@ -52,6 +52,41 @@ check('isolation: the analytics namespace leaked into the graph bundle IS caught
   assert.ok(leaked.includes('gan-'), 'expected gan- to be flagged as foreign in the graph bundle')
 })
 
+check('isolation: the trajectory-graph namespace leaked into the commons bundle IS caught', () => {
+  const leaked = findForeignNamespaces('.cex-card{} .tb-graph{}', GRAPH_NAMESPACES)
+  assert.ok(leaked.includes('tb-'), 'expected tb- to be flagged as foreign in the commons bundle')
+})
+
+check('isolation: the trajectory-graph namespace leaked into the analytics bundle IS caught', () => {
+  const leaked = findForeignNamespaces('.gan-chart{} .tb-gnode-handle{}', GRAPH_NAMESPACES)
+  assert.ok(leaked.includes('tb-'), 'expected tb- to be flagged as foreign in the analytics bundle')
+})
+
+check('isolation: a namespace is matched in a JS class string, not only a CSS selector', () => {
+  const leaked = findForeignNamespaces('const c = "tb-root tb-graph"', GRAPH_NAMESPACES)
+  assert.ok(leaked.includes('tb-'), 'expected tb- to be flagged inside a bundled className string')
+})
+
+// The false-positive guard. This library ships `.txn-tb-chip` / `.txn-tb-meta`
+// (transcript `txn-` selectors that merely CONTAIN the letters "tb-"). A plain
+// substring test would report a tb- leak in every bundle carrying the transcript
+// surface, so the guard must match only where a class NAME can begin.
+check('isolation: a class name that merely EMBEDS a namespace is NOT flagged', () => {
+  assert.deepEqual(
+    findForeignNamespaces('.cex-card{} .txn-tb-chip{} .txn-tb-meta{}', GRAPH_NAMESPACES),
+    [],
+    '.txn-tb-chip embeds "tb-" mid-identifier and must not be read as the tb- namespace',
+  )
+})
+
+check('isolation: a clean graph bundle (own .gmp- + .tb- + shared .iu-) PASSES', () => {
+  assert.deepEqual(
+    findForeignNamespaces('.gmp-node{} .tb-graph{} .iu-shell{}', [...COMMONS_NAMESPACES, ...ANALYTICS_NAMESPACES]),
+    [],
+    'a graph bundle carrying both of its own namespaces plus the shared iu- must not be flagged',
+  )
+})
+
 check('isolation: a clean graph bundle (own .gmp- + shared .iu-) PASSES', () => {
   assert.deepEqual(
     findForeignNamespaces('.gmp-node{} .iu-shell{}', [...COMMONS_NAMESPACES, ...ANALYTICS_NAMESPACES]),

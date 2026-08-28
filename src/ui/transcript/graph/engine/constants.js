@@ -1,3 +1,4 @@
+// @ts-check
 /* Node dimensions, spacing, and edge style constants for the trajectory graph.
 
    Ported from the transcript viewer's graph engine. The engine positions nodes in

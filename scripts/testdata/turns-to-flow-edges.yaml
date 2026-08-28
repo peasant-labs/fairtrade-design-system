@@ -103,3 +103,125 @@ cases:
     expectedEdgeTypes:
       e-turn-0-turn-1: spawn
       e-turn-1-turn-2: return
+
+  - name: phase_transition_produces_phase_transition_edge
+    description: >-
+      Crossing a phase boundary must classify the edge as "phase-transition",
+      not "sequential". Phases are keyed by DISPLAY POSITION (the index into
+      turns), so this also pins that the mapper reads phases positionally.
+    turns:
+      - index: 0
+        depth: 0
+        role: user
+        content: "plan the extraction before touching anything"
+      - index: 1
+        depth: 0
+        role: assistant
+        content: "starting the extraction now"
+    phases:
+      - type: planning
+        startTurn: 0
+        endTurn: 0
+      - type: implementation
+        startTurn: 1
+        endTurn: 1
+    expectedNodeCount: 2
+    expectedEdgeCount: 1
+    expectedSequentialEdgeCount: 0
+    expectedToolEdgeCount: 0
+    expectedEdgeIds:
+      - e-turn-0-turn-1
+    expectedEdgeTypes:
+      e-turn-0-turn-1: phase-transition
+
+  - name: error_annotation_outranks_phase_transition
+    description: >-
+      An error annotation on the arriving turn must win over every other edge
+      classification, including a phase transition that would otherwise apply.
+      Annotations are keyed by DISPLAY POSITION, like phases.
+    turns:
+      - index: 0
+        depth: 0
+        role: user
+        content: "run the test suite"
+      - index: 1
+        depth: 0
+        role: assistant
+        content: "the suite failed on the first case"
+    phases:
+      - type: testing
+        startTurn: 0
+        endTurn: 0
+      - type: error
+        startTurn: 1
+        endTurn: 1
+    annotations:
+      - turnIndex: 1
+        type: error
+    expectedNodeCount: 2
+    expectedEdgeCount: 1
+    expectedSequentialEdgeCount: 0
+    expectedToolEdgeCount: 0
+    expectedEdgeIds:
+      - e-turn-0-turn-1
+    expectedEdgeTypes:
+      e-turn-0-turn-1: error
+
+  - name: blank_and_stub_system_turns_are_skipped
+    description: >-
+      Two INDEPENDENT skip rules, one turn each, so neither can mask the other.
+      Turn 1 is a blank ASSISTANT turn (no content, no tools) that would render
+      as an empty card; only the any-role blank rule can drop it. Turn 2 is a
+      SYSTEM turn under the content floor; only the system-stub rule can drop it.
+      The surviving turns must chain to each other, not to the skipped ones.
+    turns:
+      - index: 0
+        depth: 0
+        role: user
+        content: "a real opening prompt"
+      - index: 1
+        depth: 0
+        role: assistant
+        content: ""
+      - index: 2
+        depth: 0
+        role: system
+        content: "short"
+      - index: 3
+        depth: 0
+        role: assistant
+        content: "a real reply that survives the skip"
+    expectedNodeCount: 2
+    expectedEdgeCount: 1
+    expectedSequentialEdgeCount: 1
+    expectedToolEdgeCount: 0
+    expectedEdgeIds:
+      - e-turn-0-turn-3
+
+  - name: node_ids_use_entry_index_not_display_position
+    description: >-
+      Node and edge ids are built from turn.index (the entry index), never from
+      the loop's display position. Non-contiguous indices prove the two spaces
+      are not conflated, which is what lets a filtered or sliced turn list still
+      address the same nodes.
+    turns:
+      - index: 5
+        depth: 0
+        role: assistant
+        content: "reading the renderer before extracting it"
+        toolCalls:
+          - id: tc-5
+            name: Read
+            arguments: '{"path":"src/renderer.tsx"}'
+            result: "ok"
+      - index: 9
+        depth: 0
+        role: user
+        content: "looks right, ship it"
+    expectedNodeCount: 3
+    expectedEdgeCount: 2
+    expectedSequentialEdgeCount: 1
+    expectedToolEdgeCount: 1
+    expectedEdgeIds:
+      - e-turn-5-tools-5
+      - e-turn-5-turn-9

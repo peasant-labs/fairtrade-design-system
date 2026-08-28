@@ -34,6 +34,8 @@ const CASE_FIELDS = [
   'name',
   'description',
   'turns',
+  'phases',
+  'annotations',
   'expectedNodeCount',
   'expectedEdgeCount',
   'expectedSequentialEdgeCount',
@@ -41,7 +43,11 @@ const CASE_FIELDS = [
   'expectedEdgeIds',
   'expectedEdgeTypes',
 ]
-const OPTIONAL_CASE_FIELDS = new Set(['expectedEdgeTypes'])
+const OPTIONAL_CASE_FIELDS = new Set(['expectedEdgeTypes', 'phases', 'annotations'])
+const CANONICAL_PHASE_TYPES = new Set([
+  'planning', 'exploration', 'implementation', 'testing', 'error',
+  'debug', 'retry-loop', 'user-correction', 'recovery', 'abandonment',
+])
 
 /** @type {string[]} */
 const failures = []
@@ -141,10 +147,27 @@ function loadCases() {
     for (const [ti, turn] of row.turns.entries()) {
       requireNonNegativeInteger(turn?.index, `${label}.turns[${ti}].index`)
       requireNonNegativeInteger(turn?.depth, `${label}.turns[${ti}].depth`)
-      requireNonEmptyString(turn?.content, `${label}.turns[${ti}].content`)
+      // Content may be EMPTY: a blank turn is exactly what the mapper must skip,
+      // so the field must be present and a string, but not necessarily filled.
+      if (typeof turn?.content !== 'string') failures.push(`${label}.turns[${ti}].content must be a string (may be empty)`)
       if (!CANONICAL_ROLES.has(turn?.role)) {
         failures.push(`${label}.turns[${ti}].role must be one of ${[...CANONICAL_ROLES].join(', ')}`)
       }
+    }
+    // Phases and annotations are keyed by DISPLAY POSITION (the index into
+    // `turns`), never by `turn.index`. Validating them here keeps that
+    // distinction explicit in the fixture instead of buried in the mapper.
+    for (const [pi, phase] of (row.phases ?? []).entries()) {
+      if (!CANONICAL_PHASE_TYPES.has(phase?.type)) failures.push(`${label}.phases[${pi}].type must be a canonical phase type`)
+      requireNonNegativeInteger(phase?.startTurn, `${label}.phases[${pi}].startTurn`)
+      requireNonNegativeInteger(phase?.endTurn, `${label}.phases[${pi}].endTurn`)
+      if (Number.isSafeInteger(phase?.startTurn) && Number.isSafeInteger(phase?.endTurn) && phase.endTurn < phase.startTurn) {
+        failures.push(`${label}.phases[${pi}] endTurn must not precede startTurn`)
+      }
+    }
+    for (const [ai, annotation] of (row.annotations ?? []).entries()) {
+      requireNonNegativeInteger(annotation?.turnIndex, `${label}.annotations[${ai}].turnIndex`)
+      requireNonEmptyString(annotation?.type, `${label}.annotations[${ai}].type`)
     }
   }
 
@@ -199,8 +222,8 @@ for (const testCase of cases) {
   const turns = (testCase.turns ?? []).map(toTurnDetail)
   const { nodes, edges } = turnsToFlow({
     turns,
-    phases: [],
-    annotations: [],
+    phases: (testCase.phases ?? []).map((p) => ({ ...p, badges: [] })),
+    annotations: testCase.annotations ?? [],
     searchMatches: [],
     filteredIndices: new Set(),
   })

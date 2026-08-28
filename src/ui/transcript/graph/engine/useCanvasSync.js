@@ -1,3 +1,4 @@
+// @ts-check
 /* Bidirectional sync between the trajectory-graph viewport and external controls.
 
    Phase startTurn/endTurn are DISPLAY POSITIONS (indices into `turns`); graph

@@ -7,13 +7,18 @@
    pays for the shared layers once). Token-driven only — NO hardcoded colour or
    spacing literals are permitted here (enforced by scripts/css-token-lint.mjs).
 
-   Namespaces collected by this bundle:
+   Namespaces collected by this bundle, both registered as graph-owned in
+   scripts/surface-namespaces.mjs:
      .gmp-   code-map / changes surface selectors
      .tb-    the trajectory-graph engine surface (the @xyflow skin + node handles)
-     .iu-    shared in-use shell chrome (also collected by commons.css)
-   It must NEVER carry the village commons namespaces (.cex-, .cmg-) or the
-   analytics dashboard namespace (.gan-, shipped as analytics.css) — the
-   intra-package bundle-isolation guard asserts this.
+   plus the shared in-use shell chrome:
+     .iu-    exclusive to no bundle (also collected by commons.css)
+   Because .gmp- and .tb- are registered as graph-owned, commons.css and
+   analytics.css may not carry EITHER, and this bundle may not carry the village
+   commons namespaces (.cex-, .cmg-) or the analytics dashboard namespace (.gan-).
+   The intra-package bundle-isolation guard asserts all of that on the shipped
+   bytes (scripts/finalize-lib-build.mjs for CSS, scripts/assert-pack-contents.mjs
+   for JS).
 
    Surface selectors are added under `@layer graph` as each surface lands. */
 @layer graph {

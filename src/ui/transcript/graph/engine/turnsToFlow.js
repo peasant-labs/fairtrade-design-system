@@ -1,3 +1,4 @@
+// @ts-check
 /* Transform a turn list into a `{ nodes, edges }` graph for the trajectory graph.
 
    A PURE data transform: no DOM, no CSS, and no `@xyflow/react` import, so the

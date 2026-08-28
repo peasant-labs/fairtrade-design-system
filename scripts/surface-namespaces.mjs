@@ -12,8 +12,11 @@
 // `iu-` is the shared in-use shell chrome (app-switcher / subnav / stage),
 // imported by multiple bundles, so it is exclusive to none.
 
-/** Namespaces that belong ONLY to the graph (./graph) surface bundle. */
-export const GRAPH_NAMESPACES = Object.freeze(['gmp-'])
+/** Namespaces that belong ONLY to the graph (./graph) surface bundle.
+ *  `gmp-` is the code-map / changes surface; `tb-` is the trajectory-graph
+ *  engine surface (the @xyflow skin + its node handles), which ships behind the
+ *  ./graph entry alongside the optional @xyflow/react peer. */
+export const GRAPH_NAMESPACES = Object.freeze(['gmp-', 'tb-'])
 
 /** Namespaces that belong ONLY to the commons (./commons) surface bundle. */
 export const COMMONS_NAMESPACES = Object.freeze(['cex-', 'cmg-'])
@@ -76,5 +79,23 @@ export const SURFACE_BUNDLES = Object.freeze([
  * @returns {string[]} the forbidden namespaces present in `content`
  */
 export function findForeignNamespaces(content, forbidden) {
-  return forbidden.filter((ns) => content.includes(ns))
+  return forbidden.filter((ns) => namespacePattern(ns).test(content))
+}
+
+/**
+ * Match a namespace only where a class NAME can begin — never mid-identifier.
+ *
+ * A plain substring test is wrong: this library ships `.txn-tb-chip` and
+ * `.txn-tb-meta` (transcript `txn-` selectors that merely CONTAIN the letters
+ * "tb-"), so a substring check would report a `tb-` leak in any bundle carrying
+ * the transcript surface. The same trap exists for every namespace the moment a
+ * class name embeds one. So a namespace matches only when the preceding
+ * character cannot be part of an identifier — `.tb-graph`, `"tb-root"`, or
+ * `tb-root tb-graph` all match; `txn-tb-chip` does not.
+ *
+ * @param {string} ns a namespace prefix, e.g. 'gmp-'
+ * @returns {RegExp}
+ */
+function namespacePattern(ns) {
+  return new RegExp(`(?<![A-Za-z0-9_-])${ns.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
 }

@@ -10,3 +10,7 @@ requiredNames:
   - turn_with_tool_calls_adds_tool_edge
   - single_turn_has_no_edges
   - subagent_depth_change_produces_spawn_and_return_edges
+  - phase_transition_produces_phase_transition_edge
+  - error_annotation_outranks_phase_transition
+  - blank_and_stub_system_turns_are_skipped
+  - node_ids_use_entry_index_not_display_position
