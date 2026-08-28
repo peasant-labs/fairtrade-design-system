@@ -75,7 +75,7 @@ export function TokensSection() {
     <section className="band" id="tokens">
       <h2 className="label">tokens</h2>
       <div className="sub">the canonical reference; one layer is the source of truth</div>
-      <p className="prose">one token layer drives peasant, village and the transcript-browser. the <span className="mono">names</span> are preserved across all three apps, so only the values and fonts change between them and a component reflavors in place without a rewrite.</p>
+      <p className="prose">one token layer drives peasant and village. the <span className="mono">names</span> are preserved across both apps, so only the values and fonts change between them and a component reflavors in place without a rewrite.</p>
 
       <div style={{ marginTop: 'var(--sp-7)' }}>
         <span className="label">spacing</span>
@@ -126,7 +126,7 @@ export function TokensSection() {
         </div>
       </div>
 
-      <div className="callout" style={{ marginTop: 'var(--sp-5)' }}><ShieldCheck aria-hidden="true" /><div>token names are stable across the three apps. only values and fonts change; rename nothing, fork nothing.</div></div>
+      <div className="callout" style={{ marginTop: 'var(--sp-5)' }}><ShieldCheck aria-hidden="true" /><div>token names are stable across both apps. only values and fonts change; rename nothing, fork nothing.</div></div>
     </section>
   )
 }

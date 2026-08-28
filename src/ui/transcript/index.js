@@ -63,8 +63,8 @@ export { summarizePrompt, composeSessionTitle, projectLabel } from './title.js'
    DiffEntryVM …) and NEVER parses wire.
 
    Every PUBLIC export carries the consistent `Transcript*` convention so the surface
-   is collision-safe before downstream consumers (transcript-browser, peasant, village)
-   import it — `TranscriptToolCall` stays distinct from the top-level barrel's Timeline
+   is collision-safe before downstream consumers (peasant, village) import it:
+   `TranscriptToolCall` stays distinct from the top-level barrel's Timeline
    `ToolCall`, `TranscriptMarkdown` from any host markdown, etc. (Internal file +
    component names are unchanged; it is the exported identifiers that are namespaced.)
    `TranscriptDiffHunks` is the shared `.txn-diff` hunk renderer the edit body +

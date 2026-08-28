@@ -100,9 +100,9 @@
 /**
  * What the `graphSlot` render-prop receives. The composite owns NO graph engine
  * (no `@xyflow` dependency); in `viewMode: 'graph'` it hands the consumer this
- * cooked context and renders whatever the consumer returns (transcript-browser plugs its @xyflow
- * engine; the mockup plugs its SVG graph). `onSelectTurn` keeps the graph's
- * selection in lockstep with the rest of the viewer.
+ * cooked context and renders whatever the consumer returns (a consuming app plugs
+ * fairtrade's own `/graph` @xyflow engine; the mockup plugs its SVG graph).
+ * `onSelectTurn` keeps the graph's selection in lockstep with the rest of the viewer.
  *
  * @typedef {object} GraphSlotContext
  * @property {import('./view-model.js').TranscriptViewModel} viewModel

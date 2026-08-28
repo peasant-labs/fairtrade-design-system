@@ -2,8 +2,9 @@
    Self-contained, token-only, square + hairline + mono, radius 0. Namespaced
    `ft-gnode-*` (node cards) and `ft-graph-*` (legend + edge/lane palette) so
    nothing here collides with — or depends on — the canonical mockup SVG
-   `.txn-graph-*` rules (which stay SVG-only and untouched) or transcript-browser's
-   `tb-gnode-*` engine wrappers.
+   `.txn-graph-*` rules (which stay SVG-only and untouched) or this same
+   `/graph` engine's own `tb-*` wrapper classes (structural layout, applied
+   in src/ui/transcript/graph/engine).
 
    The ONLY hue on a node is its role accent (a scarce left rule): you = teal,
    subagent = mauve, assistant = its provider accent, error = clay. Everything
@@ -199,7 +200,7 @@
 
 /* ── edge / lane STYLE tokens (the graph's connective aesthetic) ───────────────────
    fairtrade owns the graph palette so every engine host draws the same edges. A
-   host (e.g. transcript-browser's @xyflow mapper) reads these custom properties
+   host (fairtrade's own /graph engine, src/ui/transcript/graph/engine) reads these custom properties
    for stroke colours and the dashed lane divider; the dash patterns below name
    each edge class (sequential / spawn / return / phase / error / turn-to-tool).
    Scope a graph container with `.ft-graph` to pick up the palette. */

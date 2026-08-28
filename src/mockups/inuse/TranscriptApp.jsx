@@ -17,7 +17,8 @@ import {
    baked-in session fixtures, projects them into the canonical wire payload, feeds
    them through the ONE adapter (adaptTranscript) → TranscriptViewModel, and renders
    the composite <TranscriptViewer> + the rewired trajectory graph. The demo proves
-   the lift by construction: the SAME components transcript-browser consumes render it.
+   the lift by construction: the SAME components a consuming app (peasant, village)
+   imports from fairtrade render it.
 ============================================================================ */
 
 /* the session's coding-agent harness (peasant bestiary wire value). the ASSISTANT side IS the
@@ -311,10 +312,11 @@ const HIGHLIGHTS = [
    / GraphLegend) instead of its old hand-rolled <rect>/<text> SVG nodes.
 
    This is the canonical ANCHOR for the graph node-visual snapshot oracle: the demo
-   renders the SAME node-visual components transcript-browser plugs into its @xyflow
-   engine, so the aesthetic is shared by construction. Graph LAYOUT is explicitly
-   carved out of pixel-parity (the engine topology lives in transcript-browser, not
-   fairtrade) — only the node VISUALS are graded, via the GraphNodes storybook story.
+   renders the SAME node-visual components fairtrade's own `@xyflow` engine
+   (`/graph`) plugs into, so the aesthetic is shared by construction. Graph LAYOUT is
+   explicitly carved out of pixel-parity here (the demo deliberately avoids the
+   `@xyflow/react` peer dependency, not because the engine lives elsewhere); only the
+   node VISUALS are graded, via the GraphNodes storybook story.
 
    Rendered through the composite TranscriptViewer's `graphSlot` render-prop: the
    composite owns no graph engine, so it hands this a cooked context
@@ -422,8 +424,8 @@ const SCORECARD = [
    fairtrade /ui components. It projects its editorial fixtures into the
    canonical wire payload, feeds them through the ONE adapter (adaptTranscript) ->
    TranscriptViewModel, and renders the composite <TranscriptViewer> + the rewired
-   trajectory graph (graphSlot). Parity by construction: the SAME lifted components
-   transcript-browser will consume render this demo.
+   trajectory graph (graphSlot). Parity by construction: the SAME lifted components a
+   consuming app (peasant, village) imports from fairtrade render this demo.
 
    Editorial overlay: a curated demo carries DISPLAY values a real wire payload
    cannot (relative times, the short title, per-tool one-line previews, the

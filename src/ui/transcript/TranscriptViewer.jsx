@@ -42,7 +42,8 @@ import { transcriptInitialPositionReadiness } from './initial-position.js'
 
    GRAPH: the composite owns NO graph engine. In `viewMode:'graph'` it hands
    the `graphSlot` render-prop a cooked context and renders whatever it returns
-   (transcript-browser plugs @xyflow; the mockup plugs SVG) — no `@xyflow` dependency here.
+   (a consuming app plugs fairtrade's own `/graph` @xyflow engine; the mockup
+   plugs SVG); no `@xyflow` dependency here.
 
    CHECKPOINTS: S3 relocated commits off the per-turn card; the composite draws
    them between turns from the cooked `session.git.commits` (render-when-present),

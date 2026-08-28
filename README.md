@@ -39,8 +39,8 @@ pnpm build-storybook # compile every component + story
 4. **documentation** - foundations, components and "using the system", in three groups, with a sticky
    on-this-page rail and scroll-spy. the header is gated by zone (hidden over the splash, shown across
    the docs).
-5. **in use** (`#inuse`) - a full-screen workspace whose sticky app-switcher flips between live demos of
-   the three apps (transcript viewer, village commons, peasant code-map + analytics).
+5. **in use** (`#inuse`) - a full-screen workspace whose sticky app-switcher flips between the three
+   in-use demo panels (transcript viewer, village commons, peasant code-map + analytics).
 
 ## at a glance
 
@@ -60,6 +60,15 @@ pnpm build-storybook # compile every component + story
 - `src/ui/*` - the typed component library; storybook is the source of truth (`pnpm storybook`). tables
   are tanstack-table-backed (`DataTable`), charts are recharts-backed (`ChartBar` / `ChartLine` /
   `Sparkline`), and provider logos use `BrandMark` - all wrapped so the engines match the system.
+- `src/ui/transcript/*` - the transcript viewer: the composite `TranscriptViewer`, the presentation-only
+  parts it renders, the one adapter (`adaptTranscript`), and analytics. `src/ui/transcript/graph/*` adds
+  the trajectory-graph node visuals; the `@xyflow` engine that lays them out ships from the separate
+  `/graph` package entry (below), so importing only the transcript viewer never pulls in `@xyflow/react`.
+  consuming apps (peasant, village) import all of it from this one published package - there is no
+  separate transcript package.
+- `/graph` (`@peasant-labs/fairtrade/graph`) - a package entry, not a folder: the trajectory-graph
+  `@xyflow` engine plus its node visuals, and the peasant code-graph surfaces. `@xyflow/react` is an
+  optional peer dependency scoped to this entry only.
 - `src/mockups/inuse/*` - the in-use app demos (hand-rolled svg visualizations).
 - `src/index.css` - the single source of truth for design tokens and styling.
 - `src/effects.jsx` - the ascii filters (wheat video, soil, roots, portrait thumbnails).

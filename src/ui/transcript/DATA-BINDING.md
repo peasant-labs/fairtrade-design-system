@@ -1,10 +1,9 @@
 # transcript data-binding contract
 
 The canonical reference for how the transcript **wire** maps to the cooked **view model** that every
-presentational component renders. It tells each consumer — the lifted fairtrade components, the
-transcript-browser host, and future peasant / village consumers — per field: what the backend
-provides, what the one adapter cooks, what is fixture-fed today pending a backend surface, and what
-is already shipped.
+presentational component renders. It tells each consumer (the lifted fairtrade components, and
+peasant / village) per field: what the backend provides, what the one adapter cooks, what is
+fixture-fed today pending a backend surface, and what is already shipped.
 
 Two seams own this contract end to end:
 

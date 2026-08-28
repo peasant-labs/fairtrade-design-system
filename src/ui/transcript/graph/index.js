@@ -1,15 +1,20 @@
-/* transcript graph sub-barrel — fairtrade owns the graph NODE VISUALS only
-   (the aesthetic projection); the @xyflow engine, topology, layout and
-   pan/zoom stay in transcript-browser. Re-exported from the top-level
-   src/ui/index.js as part of `@peasant-labs/fairtrade/ui`.
+/* transcript graph sub-barrel: the graph NODE VISUALS (the aesthetic
+   projection). Fairtrade owns the full trajectory graph: this sub-barrel's
+   node visuals AND the `@xyflow` engine (topology, layout, pan/zoom) that
+   wraps them. Re-exported from the top-level src/ui/index.js as part of
+   `@peasant-labs/fairtrade/ui`.
 
    These four components are PRESENTATION-ONLY. They have NO `@xyflow` dependency
-   and never parse wire JSON — each takes a flat, engine-agnostic projection of
+   and never parse wire JSON; each takes a flat, engine-agnostic projection of
    the cooked view model (TurnVM / ToolCallVM) plus the engine's per-node display
-   state. An engine host (TB's custom @xyflow nodes) wraps each with its own
-   <Handle>s and feeds it cooked props; the mockup's SVG graph feeds the same
-   props — so both render identical node visuals (aesthetic parity by shared
-   component) even though their topology engines differ.
+   state. The engine (`./engine`, published only via the separate `@peasant-labs/
+   fairtrade/graph` entry, never `./ui`, so an app that imports only `./ui` never
+   pulls in `@xyflow/react`) wraps each with its own <Handle>s and feeds it cooked
+   props; the mockup's SVG graph feeds the same props, so both render identical
+   node visuals (aesthetic parity by shared component) even though their
+   topology engines differ. A consuming app (peasant, village) imports the
+   engine + node visuals together from `@peasant-labs/fairtrade/graph`;
+   `@xyflow/react` is that entry's optional peer dependency.
 
    The accompanying aesthetics ship via `graph-visuals.css`, colocated into the
    lib CSS bundle through `src/lib-components.css`. */

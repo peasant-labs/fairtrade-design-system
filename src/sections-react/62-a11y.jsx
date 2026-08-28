@@ -81,7 +81,7 @@ export function A11ySection() {
           <div className="cmp-note">halation and justified rivers disrupt tracking; color-only fails 1.4.1</div>
         </div>
       </div>
-      <div className="callout" style={{ marginTop: 'var(--sp-6)' }}><ShieldCheck aria-hidden="true" /><div>these defaults live in the token layer and flow to peasant, village, and the transcript-browser through one shared set of rules.</div></div>
+      <div className="callout" style={{ marginTop: 'var(--sp-6)' }}><ShieldCheck aria-hidden="true" /><div>these defaults live in the token layer and flow to peasant and village through one shared set of rules.</div></div>
     </section>
   )
 }
