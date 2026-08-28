@@ -4,7 +4,7 @@ thanks for helping improve fairtrade.
 
 ## setup
 
-use Node.js 24 or newer and pnpm 10.33.2.
+use Node.js 26 or newer and pnpm 10.33.2.
 
 ```bash
 pnpm install --frozen-lockfile
