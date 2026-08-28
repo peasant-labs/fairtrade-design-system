@@ -1,0 +1,19 @@
+# Required-NAME manifest for transcript-viewer-outcome.yaml — deletion
+# protection. The loader (scripts/transcript-viewer-outcome.test.mjs) asserts
+# the case names are EXACTLY this list (as a set). No bare integer count
+# guards (peasant-labs ruling 2026-08-24) — membership is asserted, never a
+# count alone.
+
+requiredCaseNames:
+  - a resolved session mounts the ok tone chip in the header
+  - a partial session mounts the warn tone chip in the header
+  - a failed session mounts the err tone chip in the header
+
+requiredMutationNames:
+  - the outcome tone map is flipped so partial renders the ok tone
+mutations:
+  - name: the outcome tone map is flipped so partial renders the ok tone
+    file: src/ui/transcript/OutcomeChip.jsx
+    find: "partial: { icon: CircleDot, chipTone: 'warn', label: 'partial' },"
+    replace: "partial: { icon: CircleDot, chipTone: 'ok', label: 'partial' },"
+    expectedDiagnostic: "a partial session mounts the warn tone chip in the header"

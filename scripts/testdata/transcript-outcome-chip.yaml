@@ -1,0 +1,49 @@
+# Fixture cases for TranscriptOutcomeChip (src/ui/transcript/OutcomeChip.jsx) —
+# the reusable component form of the inline outcome chip TranscriptViewer
+# renders in its header. Rendered via renderToStaticMarkup against the built
+# production bundle; see scripts/transcript-outcome-chip.test.mjs. Paired with
+# transcript-outcome-chip.manifest.yaml (required-name deletion protection).
+
+cases:
+  - name: a canonical resolved outcome renders the ok tone
+    outcome: resolved
+    expectedClass: chip chip-ok
+    expectedTitle: outcome · resolved
+    expectedLabel: resolved
+    expectedIconClass: lucide-shield-check
+  - name: the legacy positive label normalizes to the same ok tone
+    outcome: positive
+    expectedClass: chip chip-ok
+    expectedTitle: outcome · resolved
+    expectedLabel: resolved
+    expectedIconClass: lucide-shield-check
+  - name: a canonical partial outcome renders the warn tone
+    outcome: partial
+    expectedClass: chip chip-warn
+    expectedTitle: outcome · partial
+    expectedLabel: partial
+    expectedIconClass: lucide-circle-dot
+  - name: a canonical failed outcome renders the err tone
+    outcome: failed
+    expectedClass: chip chip-err
+    expectedTitle: outcome · not resolved
+    expectedLabel: not resolved
+    expectedIconClass: lucide-triangle-alert
+  - name: the annotation not_resolved value normalizes to the same err tone
+    outcome: not_resolved
+    expectedClass: chip chip-err
+    expectedTitle: outcome · not resolved
+    expectedLabel: not resolved
+    expectedIconClass: lucide-triangle-alert
+  - name: the legacy negative label normalizes to the same err tone
+    outcome: negative
+    expectedClass: chip chip-err
+    expectedTitle: outcome · not resolved
+    expectedLabel: not resolved
+    expectedIconClass: lucide-triangle-alert
+
+renderNothingCases:
+  - name: an unrecognized outcome string renders nothing
+    outcome: unknown-value
+  - name: an undefined outcome renders nothing
+    outcome: null

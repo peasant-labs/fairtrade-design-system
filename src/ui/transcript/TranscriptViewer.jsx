@@ -19,6 +19,7 @@ import FiltersRail from './FiltersRail.jsx'
 import Scrubber from './Scrubber.jsx'
 import Scorecard from './Scorecard.jsx'
 import LabelPopover from './LabelPopover.jsx'
+import TranscriptOutcomeChip from './OutcomeChip.jsx'
 import useTranscriptInitialPosition from './useTranscriptInitialPosition.jsx'
 import { transcriptInitialPositionReadiness } from './initial-position.js'
 
@@ -773,7 +774,7 @@ export default function TranscriptViewer({
         <h2 className="txn-title" title={title}>{title}</h2>
 
         <div className="txn-meta chips">
-          {session.outcome && <span className="chip chip-ok" title={'outcome · ' + session.outcome}><ShieldCheck size={14} aria-hidden="true" /> {session.outcome}</span>}
+          {session.outcome && <TranscriptOutcomeChip outcome={session.outcome} />}
           {session.harness && <span className="chip"><ProviderIcon harness={session.harness} accent /> {String(session.harness).replace(/-/g, ' ')}</span>}
           {session.model && <span className="chip mono">{session.model}</span>}
           {session.git?.author && <span className="metaitem" title="author"><User size={14} aria-hidden="true" /> {session.git.author}</span>}
