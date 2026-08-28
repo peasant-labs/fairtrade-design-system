@@ -59,7 +59,7 @@ mutations:
     expectedFailedCheckCount: 4
     expectedError: "authoritative Strike mark"
   - name: invalid-present-cannot-fall-back-to-amber
-    target: ui
+    target: graph-visuals
     strategy: graph-turn-invalid-fallback
     expectedFailedCheckCount: 1
     expectedError: "did not fail loudly through graph-turn-node"

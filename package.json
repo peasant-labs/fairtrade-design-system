@@ -114,7 +114,7 @@
     "test:transcript-outcome-chip:mutations": "node scripts/transcript-outcome-chip.mutations.mjs",
     "test:transcript-viewer-outcome": "node scripts/transcript-viewer-outcome.test.mjs",
     "test:transcript-viewer-outcome:mutations": "node scripts/transcript-viewer-outcome.mutations.mjs",
-    "test:gates": "pnpm test:structured-shiki && node scripts/gates.test.mjs && pnpm test:transcript-helpers && pnpm test:transcript-outcome-chip && pnpm test:transcript-viewer-outcome",
+    "test:gates": "pnpm test:structured-shiki && node scripts/gates.test.mjs && node scripts/turns-to-flow-edges.test.mjs && pnpm test:transcript-helpers && pnpm test:transcript-outcome-chip && pnpm test:transcript-viewer-outcome",
     "test:analytics": "node src/ui/analytics/metrics.test.mjs",
     "test:mobile-layout": "node scripts/mobile-layout.test.mjs",
     "test:transcript-composite-width": "node scripts/transcript-composite-width.test.mjs",
@@ -138,7 +138,8 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "build:all": "pnpm build && pnpm build-storybook && rm -rf dist/storybook && cp -r storybook-static dist/storybook",
-    "start": "http-server dist -p ${PORT:-3000} -a 0.0.0.0 --silent"
+    "start": "http-server dist -p ${PORT:-3000} -a 0.0.0.0 --silent",
+    "test:turns-to-flow-edges": "node scripts/turns-to-flow-edges.test.mjs"
   },
   "dependencies": {
     "@peasant-labs/schema": "0.1.1-rc1",
@@ -152,7 +153,8 @@
   },
   "peerDependencies": {
     "react": ">=19.0.0 <20",
-    "react-dom": ">=19.0.0 <20"
+    "react-dom": ">=19.0.0 <20",
+    "@xyflow/react": "^12.0.0"
   },
   "devDependencies": {
     "@storybook/addon-a11y": "^10.4.6",
@@ -161,6 +163,7 @@
     "@tailwindcss/vite": "^4.3.1",
     "@types/react": "19.2.18",
     "@vitejs/plugin-react": "^6.0.2",
+    "@xyflow/react": "12.10.2",
     "http-server": "^14.1.1",
     "jsdom": "^29.1.1",
     "puppeteer-core": "^25.1.0",
@@ -171,5 +174,10 @@
     "typescript": "^6.0.3",
     "vite": "^8.0.16",
     "yaml": "2.9.0"
+  },
+  "peerDependenciesMeta": {
+    "@xyflow/react": {
+      "optional": true
+    }
   }
 }

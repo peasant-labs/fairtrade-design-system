@@ -17,6 +17,7 @@ import { readFileSync } from 'node:fs'
 import { JSDOM } from 'jsdom'
 import YAML from 'yaml'
 import { SessionLane, GhostGroup, SessionOverflowDisclosure, RankModeControl, ScentTag } from '../dist/lib/graph.js'
+import { LIB_EXTERNALS } from './lib-externals.mjs'
 
 const h = React.createElement
 
@@ -154,7 +155,7 @@ for (const mutation of manifest.mutationCases) {
         outDir,
         emptyOutDir: true,
         lib: { entry: resolve(GRAPH_DIR, 'index.js'), formats: ['es'], fileName: () => 'mutant.mjs' },
-        rollupOptions: { external: ['@peasant-labs/schema', '@tanstack/react-table', 'lucide-react', 'react', 'react-dom', 'react/jsx-runtime', 'recharts'] },
+        rollupOptions: { external: [...LIB_EXTERNALS] },
         minify: false,
       },
     })

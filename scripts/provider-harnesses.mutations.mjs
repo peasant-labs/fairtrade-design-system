@@ -27,11 +27,34 @@ const providerCandidates = readdirSync(libraryPath)
   .filter((path) => readFileSync(path, 'utf8').includes('Google Antigravity'))
 if (providerCandidates.length !== 1) throw new Error(`provider harness mutations require one production provider chunk, received ${providerCandidates.length}`)
 const entryImports = [...entrySource.matchAll(/from "\.\/([^"]+\.js)"/g)].map((match) => match[1])
-const uiCandidates = entryImports
-  .map((name) => resolve(libraryPath, name))
-  .filter((path) => readFileSync(path, 'utf8').includes('src/ui/transcript/TurnCard.jsx'))
-if (uiCandidates.length !== 1) throw new Error(`provider harness mutations require one production UI chunk, received ${uiCandidates.length}`)
-const sourcePaths = { 'provider-policy': providerCandidates[0], ui: uiCandidates[0] }
+/**
+ * Resolve the single entry-reachable chunk that carries a source region. Rollup
+ * decides chunking, and a module imported by more than one library entry (the
+ * graph node visuals are reachable from BOTH ./ui and ./graph) gets split into
+ * its own shared chunk. So each mutation target is located by the region marker
+ * it needs rather than assumed to sit in one big UI chunk.
+ *
+ * @param {string} label      the target name used in the manifest
+ * @param {string} sourceName the `//#region <sourceName>` marker to locate
+ * @returns {string} absolute path to the chunk holding that region
+ */
+function resolveChunkForRegion(label, sourceName) {
+  const candidates = entryImports
+    .map((name) => resolve(libraryPath, name))
+    .filter((path) => readFileSync(path, 'utf8').includes(`//#region ${sourceName}`))
+  if (candidates.length !== 1) {
+    throw new Error(
+      `provider harness mutations require exactly one production chunk carrying ${sourceName} for target "${label}", received ${candidates.length}; ` +
+        'rollup chunking changed — update the target resolution in scripts/provider-harnesses.mutations.mjs.',
+    )
+  }
+  return candidates[0]
+}
+const sourcePaths = {
+  'provider-policy': providerCandidates[0],
+  ui: resolveChunkForRegion('ui', 'src/ui/transcript/TurnCard.jsx'),
+  'graph-visuals': resolveChunkForRegion('graph-visuals', 'src/ui/transcript/graph/GraphTurnNode.jsx'),
+}
 const librarySnapshot = snapshotLibrary(libraryPath)
 
 const REPORT_LINE = /^PROVIDER_HARNESS_REPORT=(.+)$/m

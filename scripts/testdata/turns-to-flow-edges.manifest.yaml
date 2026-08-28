@@ -1,0 +1,16 @@
+# Deletion-protection manifest for scripts/testdata/turns-to-flow-edges.yaml.
+#
+# Every name listed here MUST be present in the fixture. This is a required-NAME
+# manifest on purpose: it protects each scenario by identity, so adding a case
+# never has to touch this file and parallel additions never conflict. It carries
+# NO case count — a bare count churns on every addition and says nothing about
+# WHICH scenario went missing.
+requiredNames:
+  - sequential_turns_produce_n_minus_1_edges
+  - turn_with_tool_calls_adds_tool_edge
+  - single_turn_has_no_edges
+  - subagent_depth_change_produces_spawn_and_return_edges
+  - phase_transition_produces_phase_transition_edge
+  - error_annotation_outranks_phase_transition
+  - blank_and_stub_system_turns_are_skipped
+  - node_ids_use_entry_index_not_display_position

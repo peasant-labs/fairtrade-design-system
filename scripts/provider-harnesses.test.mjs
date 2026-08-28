@@ -281,7 +281,7 @@ function validateManifest(value) {
       ? ['name', 'target', 'strategy', 'expectedFailedCheckCount', 'expectedError']
       : ['name', 'target', 'find', 'replace', 'expectedFailedCheckCount', 'expectedError']
     check(exactFieldsBool(mutation, fields), `manifest.mutations[${index}]: fields must be exact`)
-    check(['provider-policy', 'ui'].includes(mutation?.target), `manifest.mutations[${index}]: target is unsupported`)
+    check(['provider-policy', 'ui', 'graph-visuals'].includes(mutation?.target), `manifest.mutations[${index}]: target is unsupported`)
     for (const field of semantic ? ['name', 'target', 'strategy', 'expectedError'] : ['name', 'target', 'find', 'replace', 'expectedError']) {
       check(typeof mutation?.[field] === 'string' && mutation[field].length > 0, `manifest.mutations[${index}]: ${field} must be non-empty`)
     }
