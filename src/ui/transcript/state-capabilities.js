@@ -2,8 +2,8 @@
    state-capabilities — the TranscriptViewer state + capabilities contract
    ─────────────────────────────────────────────────────────────────────────
    The required-capabilities + callback contract the composite TranscriptViewer
-   binds to, mirroring transcript-browser's existing `ViewerCapabilities` /
-   `ViewerCallbacks` opt-in pattern.
+   binds to, following the `ViewerCapabilities` / `ViewerCallbacks` opt-in
+   pattern established in transcript-browser.
 
    The single rule that makes this contract load-bearing:
 
