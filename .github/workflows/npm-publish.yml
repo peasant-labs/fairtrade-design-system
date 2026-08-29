@@ -22,11 +22,12 @@
 # adds provenance once the source repository is public; npm does not support
 # provenance for private source repositories. package.json carries the exact
 # canonical repository URL and the prepack gate rejects drift. Install/build
-# stay on the repo's pinned pnpm (10.x, which lacks
-# native OIDC publish support - the npm CLI is used for the one publish step
-# only). One-time, maintainer-side registrations (the `npm-publish` GitHub
-# environment; this repo + workflow + environment as the package's Trusted
-# Publisher on npmjs.com) are documented in AGENTS.md, "npm publication".
+# stay on the repo's pinned pnpm (11.24.0, which also supports OIDC publish -
+# the npm CLI is used for the one publish step only, to match the registry
+# trust binding). One-time, maintainer-side registrations (the `npm-publish`
+# GitHub environment; this repo + workflow + environment as the package's
+# Trusted Publisher on npmjs.com) are documented in AGENTS.md, "npm
+# publication".
 name: npm-publish
 
 on:
