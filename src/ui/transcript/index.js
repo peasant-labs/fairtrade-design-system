@@ -32,9 +32,8 @@ export { TOOL_GROUPS } from './view-model.js'
 /* ── transcript adapter + shared analytics util (runtime) ─────────────────────────
    The ONE wire→view-model projection (`adaptTranscript`) — the sole JSON.parse +
    legacy-git normalisation site — plus the single-session analytics util. The
-   analytics helpers keep their canonical wire-shaped signatures so the
-   transcript-browser migration can re-export them for peasant's back-compat
-   imports without change. Pure-render derivations live in the adapter. ─────────── */
+   analytics helpers keep their canonical wire-shaped signatures so consumers
+   import one stable contract. Pure-render derivations live in the adapter. ─────────── */
 export { adaptTranscript, prefilterTurns, diffLines } from './adapter.js'
 export {
   computeTasks,
