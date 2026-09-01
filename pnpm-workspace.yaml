@@ -16,10 +16,10 @@ allowBuilds:
   esbuild: false
 
 # Supply-chain age gate: block a package until it has been published
-# for at least 7 days. First-party packages are exempt so a same-day
+# for at least 3 days. First-party packages are exempt so a same-day
 # fairtrade/schema release is not blocked by its own policy.
 # https://pnpm.io/settings/dependency-resolution#minimumreleaseage
 # https://pnpm.io/settings/dependency-resolution#minimumreleaseageexclude
-minimumReleaseAge: 10080
+minimumReleaseAge: 4320
 minimumReleaseAgeExclude:
   - '@peasant-labs/*'
