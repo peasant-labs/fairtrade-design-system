@@ -4,3 +4,22 @@
 packages:
   - '.'
   - 'packages/*'
+
+# pnpm 11 install policy.
+# Build scripts: pnpm 11 makes ignored build scripts a hard error
+# (ERR_PNPM_IGNORED_BUILDS) unless each package is reviewed here.
+# Policy: no build script runs. Every package pnpm reports is marked
+# false (explicitly denied, not silently skipped). Their binaries come
+# from optional prebuilt platform packages, not from the build script.
+# https://pnpm.io/settings/build#allowbuilds
+allowBuilds:
+  esbuild: false
+
+# Supply-chain age gate: block a package until it has been published
+# for at least 3 days. First-party packages are exempt so a same-day
+# fairtrade/schema release is not blocked by its own policy.
+# https://pnpm.io/settings/dependency-resolution#minimumreleaseage
+# https://pnpm.io/settings/dependency-resolution#minimumreleaseageexclude
+minimumReleaseAge: 4320
+minimumReleaseAgeExclude:
+  - '@peasant-labs/*'
