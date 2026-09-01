@@ -7,7 +7,7 @@
    (error / retry / revert / subagent), and task / waterfall grouping. These were
    re-derived per consumer (peasant `web/src/lib/insights/*`, transcript-browser
    `lib/{tasks,pattern-detection,scorecard,waterfall}.ts`); this module is the
-   single home so all three consumers share ONE implementation, rendered when
+   single home so every consumer shares ONE implementation, rendered when
    present.
 
    Two surfaces:
@@ -16,8 +16,7 @@
      • the standalone helpers `computeTasks` / `computeTurnLabels` /
        `buildTaskWaterfall` / `annotateTranscript` / `computePersonalMedians`
        (+ `detectPhases` / `assessScorecard`), kept on their canonical
-       wire-shaped signatures so the transcript-browser migration can re-export
-       them verbatim for peasant's back-compat imports.
+       wire-shaped signatures so consumers import one stable contract.
 
    Pure-render derivations (preview one-liners, diff hunks) live in the adapter,
    NOT here. This module imports only the leaf wire-parse primitives
@@ -43,8 +42,7 @@ import { extractPath, countDiff } from './adapter.parse.js'
 /**
  * A "task" is the span from a top-level user prompt up to (but not including)
  * the next one — one turn of human↔agent collaboration. The shape is the
- * canonical `TaskGroup` the transcript-browser already exports, kept stable for
- * back-compat re-export.
+ * canonical `TaskGroup` shape, kept stable for consumer back-compat.
  * @typedef {object} TaskGroup
  * @property {number} startIndex          display position of the starting prompt
  * @property {number} endIndex            display position of the last turn (inclusive)
@@ -576,8 +574,7 @@ export function detectPhases(turns) {
 
 /**
  * A session sample for personal-median computation — the QualitySession subset
- * the medians read. Kept structural so the transcript-browser `QualitySession`
- * is assignable for back-compat.
+ * the medians read. Kept structural for consumer back-compat.
  * @typedef {object} PersonalMedianSession
  * @property {number} totalTokens
  * @property {number} retryTokensWasted
