@@ -4,6 +4,7 @@ import { providerAccent, providerDisplayName } from '../provider-policy.js'
 import Markdown from './Markdown.jsx'
 import Thinking from './Thinking.jsx'
 import ToolCall from './ToolCall.jsx'
+import UsageDisclosure from './UsageDisclosure.jsx'
 
 /* TurnCard — one transcript turn, lifted verbatim from the canonical mockup
    (src/mockups/inuse/TranscriptApp.jsx:541). DUMB: it renders a cooked `TurnVM`
@@ -158,6 +159,7 @@ export default function TurnCard({
       )}
       <Markdown text={turn.content} />
       {turn.thinking && <Thinking block={turn.thinking} />}
+      <UsageDisclosure usage={turn.usage} />
       {turn.toolCalls &&
         turn.toolCalls.map((t) => (
           <ToolCall

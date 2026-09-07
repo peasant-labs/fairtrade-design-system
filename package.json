@@ -10,7 +10,7 @@
     "url": "https://github.com/peasant-labs/fairtrade-design-system"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=26"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
@@ -59,6 +59,7 @@
   "files": [
     "dist/lib",
     "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
     "README.md"
   ],
   "sideEffects": [
@@ -102,6 +103,9 @@
     "test:explore-page-intent": "node scripts/explore-page-intent.render.test.mjs",
     "test:explore-page-intent:mutations": "node scripts/explore-page-intent.mutations.mjs",
     "test:transcript-schema-adapter": "node scripts/transcript-schema-adapter.test.mjs",
+    "test:pi-transcript": "node scripts/pi-transcript.test.mjs",
+    "test:pi-transcript:mounted": "PI_MOUNTED_TEST=1 node scripts/pi-transcript.test.mjs",
+    "test:pi-transcript:visual": "node scripts/pi-transcript.probe.mjs",
     "test:transcript-schema-adapter:mutations": "node scripts/transcript-schema-adapter.mutations.mjs",
     "test:transcript-filters": "node scripts/transcript-filters.test.mjs",
     "test:transcript-turn-model": "node scripts/transcript-turn-model.test.mjs",
@@ -116,7 +120,7 @@
     "test:transcript-outcome-chip:mutations": "node scripts/transcript-outcome-chip.mutations.mjs",
     "test:transcript-viewer-outcome": "node scripts/transcript-viewer-outcome.test.mjs",
     "test:transcript-viewer-outcome:mutations": "node scripts/transcript-viewer-outcome.mutations.mjs",
-    "test:gates": "pnpm test:structured-shiki && node scripts/gates.test.mjs && node scripts/turns-to-flow-edges.test.mjs && pnpm test:transcript-helpers && pnpm test:transcript-outcome-chip && pnpm test:transcript-viewer-outcome && pnpm test:release-notes",
+    "test:gates": "pnpm test:structured-shiki && pnpm test:pi-transcript && node scripts/gates.test.mjs && node scripts/turns-to-flow-edges.test.mjs && pnpm test:transcript-helpers && pnpm test:transcript-outcome-chip && pnpm test:transcript-viewer-outcome && pnpm test:release-notes",
     "test:analytics": "node src/ui/analytics/metrics.test.mjs",
     "test:mobile-layout": "node scripts/mobile-layout.test.mjs",
     "test:transcript-composite-width": "node scripts/transcript-composite-width.test.mjs",
@@ -134,7 +138,7 @@
     "smoke:tarball": "node scripts/smoke-tarball.mjs",
     "oracle:graph": "node scripts/graph-oracle.mjs",
     "oracle:graph:check": "node scripts/check-graph-oracle.mjs",
-    "prepack": "pnpm build:lib",
+    "prepack": "pnpm build:lib && pnpm test:pi-transcript:mounted",
     "build": "pnpm build:app",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
@@ -144,7 +148,7 @@
     "test:turns-to-flow-edges": "node scripts/turns-to-flow-edges.test.mjs"
   },
   "dependencies": {
-    "@peasant-labs/schema": "0.1.1-rc1",
+    "@peasant-labs/schema": "0.16.0",
     "@tanstack/react-table": "^8.21.3",
     "lucide": "^1.20.0",
     "lucide-react": "^1.18.0",
@@ -154,9 +158,9 @@
     "remark-gfm": "4.0.1"
   },
   "peerDependencies": {
+    "@xyflow/react": "^12.0.0",
     "react": ">=19.0.0 <20",
-    "react-dom": ">=19.0.0 <20",
-    "@xyflow/react": "^12.0.0"
+    "react-dom": ">=19.0.0 <20"
   },
   "devDependencies": {
     "@storybook/addon-a11y": "^10.4.6",

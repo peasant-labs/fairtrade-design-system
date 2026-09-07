@@ -12,6 +12,7 @@ import {
   Wrench,
 } from 'lucide-react'
 import ToolBody from './ToolBody.jsx'
+import UsageDisclosure from './UsageDisclosure.jsx'
 
 /* ToolCall — the collapsible tool-call disclosure row, lifted verbatim from the canonical
    mockup (src/mockups/inuse/TranscriptApp.jsx:514). Controlled: `open` / `onToggle` are owned
@@ -49,7 +50,7 @@ export default function ToolCall({ tool, open = false, onToggle }) {
   // a write keeps the new-file glyph even though it cooks to the `edits` group (like the mockup).
   const isWrite = tool.group === 'edits' && /^write$/i.test(tool.name)
   const Icon = isWrite ? FilePlus2 : GROUP_ICON[tool.group] || Wrench
-  const failed = tool.group === 'bash' && tool.exitCode != null && tool.exitCode !== 0
+  const failed = tool.isError || (tool.group === 'bash' && tool.exitCode != null && tool.exitCode !== 0)
   const duration = fmtDuration(tool.durationMs)
   return (
     <div className="toolcall txn-toolcall">
@@ -64,15 +65,16 @@ export default function ToolCall({ tool, open = false, onToggle }) {
         </span>
         <span className="path mono">{tool.preview}</span>
         <span className="right">
+          {tool.pending && <span className="txn-tc-dur">pending</span>}
           {duration && <span className="tnum txn-tc-dur">{duration}</span>}
           {failed && (
             <span className="chip chip-err txn-pill">
-              <AlertTriangle size={12} aria-hidden="true" /> exit {tool.exitCode}
+              <AlertTriangle size={12} aria-hidden="true" /> {tool.exitCode != null ? `exit ${tool.exitCode}` : 'error'}
             </span>
           )}
         </span>
       </button>
-      {open && <ToolBody tool={tool} />}
+      {open && <><ToolBody tool={tool} /><UsageDisclosure usage={tool.usage} /></>}
     </div>
   )
 }

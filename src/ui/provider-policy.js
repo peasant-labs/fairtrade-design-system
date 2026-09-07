@@ -3,7 +3,7 @@
 import { Harness as SchemaHarness, isHarness } from '@peasant-labs/schema'
 
 /** @typedef {import('@peasant-labs/schema').Harness} Harness */
-/** @typedef {'claude'|'gemini'|'openai'|'opencode'|'cursor'|'strike'} ProviderBrand */
+/** @typedef {'claude'|'gemini'|'openai'|'opencode'|'cursor'|'strike'|'pi'} ProviderBrand */
 /** @typedef {'amber'|'teal'|'olive'|'mauve'|'clay'} ProviderAccent */
 
 /** @type {readonly Harness[]} */
@@ -18,6 +18,7 @@ export const PROVIDER_DISPLAY_NAMES = Object.freeze({
   cursor: 'Cursor',
   antigravity: 'Google Antigravity',
   strike: 'Strike',
+  pi: 'Pi',
 })
 
 /** @type {Readonly<Record<Harness, ProviderBrand>>} */
@@ -29,6 +30,7 @@ export const PROVIDER_BRANDS = Object.freeze({
   cursor: 'cursor',
   antigravity: 'gemini',
   strike: 'strike',
+  pi: 'pi',
 })
 
 /** @type {Readonly<Record<Harness, ProviderAccent>>} */
@@ -40,6 +42,7 @@ export const PROVIDER_ACCENTS = Object.freeze({
   cursor: 'clay',
   antigravity: 'teal',
   strike: 'clay',
+  pi: 'mauve',
 })
 
 /**

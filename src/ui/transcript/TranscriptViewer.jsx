@@ -13,6 +13,7 @@ import { formatDuration } from '../StepsWaterfall.jsx'
 import { TOOL_GROUPS } from './view-model.js'
 import { categoryCounts, projectTurn } from './filters.js'
 import TurnCard from './TurnCard.jsx'
+import { UsageScopes } from './UsageDisclosure.jsx'
 import DiffEntryCard from './DiffEntryCard.jsx'
 import OutlineRail from './OutlineRail.jsx'
 import FiltersRail from './FiltersRail.jsx'
@@ -782,13 +783,14 @@ export default function TranscriptViewer({
           {session.durationMins != null && <span className="metaitem" title="session duration"><Clock size={14} aria-hidden="true" /> <b className="tnum">{session.durationMins}m</b></span>}
           {session.turnCount != null && <span className="metaitem"><ListTree size={14} aria-hidden="true" /> <b className="tnum">{session.turnCount}</b> turns</span>}
           {session.toolCallCount != null && <span className="metaitem"><Wrench size={14} aria-hidden="true" /> <b className="tnum">{session.toolCallCount}</b> tools</span>}
-          {session.totalTokens != null && <span className="metaitem" title={fmtTokens(session.tokensIn ?? 0) + ' in · ' + fmtTokens(session.tokensOut ?? 0) + ' out'}><Coins size={14} aria-hidden="true" /> <b className="tnum">{fmtTokens(session.totalTokens)}</b> tokens</span>}
+          {!vm.usageScopes?.length && session.totalTokens != null && <span className="metaitem" title={fmtTokens(session.tokensIn ?? 0) + ' in · ' + fmtTokens(session.tokensOut ?? 0) + ' out'}><Coins size={14} aria-hidden="true" /> <b className="tnum">{fmtTokens(session.totalTokens)}</b> tokens</span>}
           {commits.length > 0 && <span className="metaitem"><GitCommitHorizontal size={14} aria-hidden="true" /> <b className="tnum">{commits.length}</b> {commits.length === 1 ? 'commit' : 'commits'}</span>}
           {session.git?.filesChanged != null && <span className="metaitem"><FileText size={14} aria-hidden="true" /> <b className="tnum">{session.git.filesChanged}</b> {session.git.filesChanged === 1 ? 'file' : 'files'}</span>}
           {session.git && (session.git.insertions != null || session.git.deletions != null) && (
             <span className="metaitem txn-churn-meta tnum"><span className="txn-churn-add">+{session.git.insertions ?? 0}</span> <span className="txn-churn-del">−{session.git.deletions ?? 0}</span></span>
           )}
         </div>
+        <UsageScopes scopes={vm.usageScopes} />
       </header>
 
       {/* ===================== TAB STRIP ===================== */}

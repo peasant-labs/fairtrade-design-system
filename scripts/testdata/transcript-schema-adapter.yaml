@@ -1,5 +1,5 @@
 expectedAdapterCaseCount: 6
-expectedHarnessCount: 7
+expectedHarnessCount: 8
 expectedStopReasonCount: 5
 expectedInvalidStopReasonCount: 2
 mountedViewerCase: canonical-flat
@@ -11,6 +11,7 @@ harnessValues:
   - cursor
   - antigravity
   - strike
+  - pi
 stopReasonValues:
   - end_turn
   - cancelled

@@ -1,5 +1,5 @@
-expectedHarnessCount: 7
-expectedBrandCount: 6
+expectedHarnessCount: 8
+expectedBrandCount: 7
 expectedAliasCount: 9
 expectedInvalidHarnessCount: 3
 expectedSurfaceCount: 4
@@ -30,6 +30,8 @@ brands:
     accessibleName: opencode
   - key: strike
     accessibleName: Strike
+  - key: pi
+    accessibleName: Pi
 aliases:
   - name: anthropic
     brand: claude
@@ -78,6 +80,10 @@ harnesses:
     accessibleName: Strike
     brand: strike
     accent: clay
+  - slug: pi
+    accessibleName: Pi
+    brand: pi
+    accent: mauve
 invalidHarnesses:
   - id: company-name
     value: google

@@ -11,6 +11,7 @@ requiredBrandCases:
   - cursor
   - opencode
   - strike
+  - pi
 requiredAliasCases:
   - anthropic
   - claude-code
@@ -63,11 +64,11 @@ mutations:
     strategy: graph-turn-invalid-fallback
     expectedFailedCheckCount: 1
     expectedError: "did not fail loudly through graph-turn-node"
-  - name: seven-provider-inventory-cannot-omit-strike
+  - name: provider-inventory-cannot-omit-strike
     target: provider-policy
     strategy: omit-strike-inventory
     expectedFailedCheckCount: 3
-    expectedError: "mounted legend: expected 7 rows, received 6"
+    expectedError: "mounted legend: expected 8 rows, received 7"
   - name: arbitrary-string-provider-cannot-pass-validation
     target: provider-policy
     strategy: accept-arbitrary-string

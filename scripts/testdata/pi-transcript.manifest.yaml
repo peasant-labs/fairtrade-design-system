@@ -1,0 +1,12 @@
+requiredCases:
+  - active-history-context-thinking-tools-images
+  - zero-partial-unknown-cost-independent
+  - equal-valued-distinct-owners
+  - complete-tool-summary-subsets-not-added
+  - short-context-preserved
+  - metadata-only-no-conversation
+  - token-aggregate-overflow
+  - duplicate-owner-rejected
+  - invalid-token-rejected
+  - metadata-target-rejected
+  - raw-duplicate-rejected

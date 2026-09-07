@@ -733,6 +733,8 @@ function buildMockupVM() {
   }
 }
 
+import { piPayload } from './pi-fixture.js'
+
 /* the permission surface the demo grants (REQUIRED by the composite, no default). */
 const CAPABILITIES = {
   canEdit: true,
@@ -743,7 +745,8 @@ const CAPABILITIES = {
 }
 
 export default function TranscriptApp({ theme = 'dark' }) {
-  const vm = useMemo(buildMockupVM, [])
+  const vm = useMemo(() => new URLSearchParams(window.location.search).get('transcript') === 'pi'
+    ? adaptTranscript(piPayload) : buildMockupVM(), [])
   // seed the same three tool calls expanded as the canonical demo (the rest default closed).
   const [openTools, setOpenTools] = useState({ t1a: true, t4a: true, t5a: true })
   return (

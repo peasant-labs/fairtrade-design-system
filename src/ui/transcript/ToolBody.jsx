@@ -161,15 +161,19 @@ function WebFetchBody({ tool }) {
 function DefaultBody({ tool }) {
   const result = str(tool.output) ?? (tool.output != null ? JSON.stringify(tool.output, null, 2) : '')
   return (
-    <div className="txn-tcbody">
+    <div className="txn-tcbody txn-generic">
       <div className="txn-out-eyebrow">
         <span>arguments</span>
       </div>
       <pre className="txn-code">{JSON.stringify(tool.args ?? {}, null, 2)}</pre>
       <div className="txn-out-eyebrow">
-        <span>result</span>
+        <span>{tool.pending ? 'result pending' : tool.isError ? 'error result' : 'result'}</span>
       </div>
-      <pre className="txn-code">{result || '—'}</pre>
+      <pre className="txn-code">{tool.pending ? 'no result recorded' : result}</pre>
+      {tool.nativeMetadata?.map(record => <details className="txn-native-details" key={record.id}>
+        <summary>recorded tool details</summary>
+        <pre className="txn-code">{JSON.stringify(record.data, null, 2)}</pre>
+      </details>)}
     </div>
   )
 }
@@ -180,6 +184,7 @@ function DefaultBody({ tool }) {
  */
 export default function ToolBody({ tool }) {
   if (!tool) return null
+  if (tool.pending) return <DefaultBody tool={tool} />
   switch (tool.group) {
     case 'read':
       return <ReadBody tool={tool} />

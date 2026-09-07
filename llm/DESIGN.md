@@ -107,6 +107,14 @@ controlled centerpiece on a handful of low-traffic display surfaces. The two nev
     for nominative identification, never implying endorsement. `opencode`'s mark is provisional upstream;
     be ready to swap or drop it.
 
+Pi uses the official OAuth mark from
+[`earendil-works/pi`](https://github.com/earendil-works/pi/blob/da840b6216578c2a571d0374ac6a2091a83f9d91/packages/ai/src/auth/oauth/oauth-page.ts)
+(MIT). Its geometry and even-odd fill are retained, with the existing mauve token for
+provider identification. The mounted transcript demo is available at
+`?app=transcript&transcript=pi#inuse`. Detailed token evidence is disclosed by owner and
+scope; recorded costs remain strings and are labeled as harness estimates, not billing.
+Structured native details remain outside conversation counts and search.
+
 ### procedural + filtered ascii imagery (display surfaces only)
 Procedurally generated and image-filtered ascii is a deliberate centerpiece, restricted to a few
 low-traffic, full-screen or thumbnail display surfaces. It is rendered at runtime by `src/effects.jsx`:

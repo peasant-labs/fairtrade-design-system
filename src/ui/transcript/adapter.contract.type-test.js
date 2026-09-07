@@ -88,6 +88,15 @@ void readCanonicalTurnModel
 /* ── (1) adaptTranscript(payload) → TranscriptViewModel ─────────────────────── */
 /** @type {TranscriptViewModel} */
 const vm1 = adaptTranscript(wire)
+/** @type {import('@peasant-labs/schema').UsageDetail | undefined} */
+const detailedUsage = vm1.turns[0]?.usage
+/** @type {string | undefined} */
+const recordedEstimate = detailedUsage?.cost?.total ?? undefined
+/** @type {import('@peasant-labs/schema').NativeMetadataRecord[] | undefined} */
+const nativeMetadata = vm1.nativeMetadata
+/** @type {string | undefined} */
+const knownScopeSum = vm1.usageScopes?.[0]?.tokens[0]?.value
+void [recordedEstimate, nativeMetadata, knownScopeSum]
 /** @type {string | undefined} */
 const effectiveModel = vm1.turns[1].effectiveModel
 void effectiveModel
