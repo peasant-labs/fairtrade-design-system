@@ -22,7 +22,7 @@ export function UsageScopes({ scopes }) {
     <summary>session usage by scope</summary>
     <p className="txn-usage-note">known sums across all recorded owners; partial means some owners did not report the field. costs are recorded harness estimates, not verified billing.</p>
     {scopes.map(scope => <section key={scope.scope}>
-      <h3>{scope.scope} <span className="tnum">{scope.ownerCount}</span> owners</h3>
+      <h3>{scope.scope} <span className="tnum">{scope.ownerCount}</span> {scope.ownerCount === 1 ? 'owner' : 'owners'}</h3>
       <dl className="txn-usage-fields">{scope.tokens.map(field => <div key={field.label}><dt>{field.label}</dt><dd className="tnum">{field.value} ({field.completeness})</dd></div>)}</dl>
       <dl className="txn-usage-fields">{scope.cost.map(field => <div key={field.label}><dt>{field.label} cost</dt><dd className="tnum">{field.value} ({field.completeness})</dd></div>)}</dl>
     </section>)}

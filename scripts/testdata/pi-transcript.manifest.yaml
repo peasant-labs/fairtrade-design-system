@@ -10,3 +10,11 @@ requiredCases:
   - invalid-token-rejected
   - metadata-target-rejected
   - raw-duplicate-rejected
+requiredNamespaceCases:
+  - namespace-absent-accepted
+  - namespace-empty-rejected
+  - namespace-null-rejected
+  - namespace-nonempty-rejected
+  - namespace-non-pi-no-evidence-rejected
+  - namespace-pending-tool-rejected
+  - namespace-in-opaque-arguments-accepted

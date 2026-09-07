@@ -670,6 +670,27 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
 
 /* ── The adapter ─────────────────────────────────────────────────────────────── */
 
+/** Refuse unsupported identity before the published schema can discard it.
+ * Inspect only canonical tool paths, never opaque arguments/results or metadata.
+ * @param {unknown} value */
+function rejectUnsupportedToolNamespaces(value) {
+  const turns = recordOf(value)?.turns
+  if (!Array.isArray(turns)) return
+  for (const [turnPosition, turn] of turns.entries()) {
+    const tools = recordOf(turn)?.toolCalls
+    if (!Array.isArray(tools)) continue
+    for (const [toolPosition, tool] of tools.entries()) {
+      const record = recordOf(tool)
+      if (record && Object.prototype.hasOwnProperty.call(record, 'namespace')) {
+        throw new TypeError(
+          `Transcript adaptation refused at src/ui/transcript/adapter.js during adaptTranscript input validation: turns[${turnPosition}].toolCalls[${toolPosition}].namespace is present, but the pinned @peasant-labs/schema 0.16.0 contract cannot preserve this separate tool identity. ` +
+          'No view model was produced. Retain the original payload and retry after a released namespace-capable schema and Fairtrade update; do not strip or concatenate the namespace.',
+        )
+      }
+    }
+  }
+}
+
 /**
  * Project the canonical wire payload (folded turns) into the cooked
  * `TranscriptViewModel` every dumb transcript component renders. The SOLE
@@ -682,6 +703,7 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
  * @returns {TranscriptViewModel}
  */
 export function adaptTranscript(payload, annotations, analytics, options) {
+  rejectUnsupportedToolNamespaces(payload)
   // New evidence uses the published validator. Preserve the existing legacy
   // git/observation compatibility boundary. Callers scan raw network text with
   // schema's root-specific parser before supplying a value here.

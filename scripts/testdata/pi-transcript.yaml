@@ -1,4 +1,5 @@
 probe:
+  ownerHeadings: [assistant 2 owners, tool 1 owner, summary 2 owners]
   themes: [dark, light]
   viewport: {width: 1440, height: 1000}
   maxReducedMotionSeconds: 0.00001
@@ -149,3 +150,26 @@ cases:
   - name: raw-duplicate-rejected
     rawDuplicate: true
     error: duplicate
+namespaceCases:
+  - name: namespace-absent-accepted
+    toolMembers: {}
+  - name: namespace-empty-rejected
+    toolMembers: {namespace: ''}
+    error: turns\[2\].toolCalls\[0\].namespace
+  - name: namespace-null-rejected
+    toolMembers: {namespace: null}
+    error: turns\[2\].toolCalls\[0\].namespace
+  - name: namespace-nonempty-rejected
+    toolMembers: {namespace: Custom.Extension}
+    error: turns\[2\].toolCalls\[0\].namespace
+  - name: namespace-non-pi-no-evidence-rejected
+    legacyHarness: claude-code
+    toolMembers: {namespace: ''}
+    error: turns\[2\].toolCalls\[0\].namespace
+  - name: namespace-pending-tool-rejected
+    toolPosition: 1
+    toolMembers: {namespace: Pending.Extension}
+    error: turns\[2\].toolCalls\[1\].namespace
+  - name: namespace-in-opaque-arguments-accepted
+    toolMembers: {}
+    arguments: {namespace: '', nested: {namespace: null, toolCalls: [{namespace: Opaque.Extension}]}}
