@@ -4,6 +4,43 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.19 — 2026-09-07
+
+### Added
+
+- **Pi transcript presentation.** Pi joins the canonical harness policy with
+  its official mauve OAuth mark and the upstream MIT license notice. The
+  transcript adapter preserves full active history and context, renders each
+  thinking block once, and carries generic tool arguments, results, errors,
+  pending state, and recorded details through the shared `TurnCard` →
+  `ToolCall` → `ToolBody` path.
+- **Detailed usage disclosure.** Assistant, tool, and summary usage stays
+  attributed to separate recorded owners. Token fields and recorded harness
+  cost estimates are aggregated independently, retain exact decimal strings,
+  distinguish a recorded zero from missing evidence, and label partial sums
+  without presenting estimates as verified billing.
+
+### Changed
+
+- Pinned `@peasant-labs/schema` to published version `0.16.0`, the current
+  detailed-usage and native-metadata contract. Native metadata remains
+  non-conversational transcript detail rather than a generated message or
+  model observation.
+- The package and release workflows now require Node.js 26 or newer. Release
+  tags also produce GitHub Releases from exact matching changelog sections,
+  alongside the existing npm publication flow.
+- Transcript documentation now identifies Fairtrade as the canonical owner of
+  the viewer, adapter, and graph engine and removes stale transcript-browser
+  provenance wording.
+
+### Known limitation
+
+- Separate tool namespaces are not yet supported by the pinned Schema 0.16.0
+  contract. The adapter refuses any transcript whose tool call contains a
+  `namespace` member instead of silently dropping tool identity. Namespace
+  rendering requires a published Schema contract followed by explicit
+  Fairtrade adoption; this release does not claim that work.
+
 ## 0.0.18 — 2026-08-28
 
 ### Added
