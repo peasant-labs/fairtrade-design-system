@@ -21,6 +21,8 @@
 .txn-generic .txn-code { font-size: var(--fs-body); }
 .txn-generic .txn-out-eyebrow { font-size: var(--fs-sm); }
 .txn-tc-head .kind, .txn-tc-head .path, .txn-title, .txn-crumb { text-transform: none; }
+.txn-tool-namespace { display: inline-flex; gap: var(--sp-1); color: var(--mauve); }
+.txn-tool-namespace-label { color: var(--ink-3); font-weight: 400; }
 .txn-thinking-body em, .txn-thinking-toggle i { font-style: normal; }
 
 /* ----------------------------------------------------------------------

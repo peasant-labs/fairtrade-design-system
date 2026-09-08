@@ -4,6 +4,7 @@ probe:
   viewport: {width: 1440, height: 1000}
   maxReducedMotionSeconds: 0.00001
   toolName: Orchard.CheckPlan
+  toolNamespace: Orchard.Extension
   thinking: Consider Orchard constraints exactly once.
   hidden: MetadataOnlyNeedle
   args: Careful
@@ -52,6 +53,7 @@ payload:
         cost: {source: recorded_harness_estimate, input: '1e-7', output: '0.30000000000000004', total: '0.4'}
       toolCalls:
         - id: tool-orchard
+          namespace: Orchard.Extension
           name: Orchard.CheckPlan
           toolKind: other
           callEntryRef: entry-answer
@@ -152,24 +154,38 @@ cases:
     error: duplicate
 namespaceCases:
   - name: namespace-absent-accepted
+    omitNamespace: true
     toolMembers: {}
-  - name: namespace-empty-rejected
+  - name: namespace-empty-preserved
     toolMembers: {namespace: ''}
-    error: turns\[2\].toolCalls\[0\].namespace
+    expectedNamespace: ''
+  - name: namespace-unicode-preserved
+    toolMembers: {namespace: 'Orchard.工具.ÉCLAIR'}
+    expectedNamespace: 'Orchard.工具.ÉCLAIR'
   - name: namespace-null-rejected
     toolMembers: {namespace: null}
-    error: turns\[2\].toolCalls\[0\].namespace
-  - name: namespace-nonempty-rejected
-    toolMembers: {namespace: Custom.Extension}
-    error: turns\[2\].toolCalls\[0\].namespace
-  - name: namespace-non-pi-no-evidence-rejected
-    legacyHarness: claude-code
-    toolMembers: {namespace: ''}
-    error: turns\[2\].toolCalls\[0\].namespace
-  - name: namespace-pending-tool-rejected
+    error: namespace
+  - name: namespace-nonstring-rejected
+    toolMembers: {namespace: 12}
+    error: namespace
+  - name: namespace-duplicate-rejected
+    toolMembers: {namespace: Orchard.Extension}
+    duplicateNamespace: true
+    error: duplicate
+  - name: namespace-pending-error-results-preserved
     toolPosition: 1
-    toolMembers: {namespace: Pending.Extension}
-    error: turns\[2\].toolCalls\[1\].namespace
+    toolMembers: {namespace: Pending.Extension, isError: true}
+    expectedNamespace: Pending.Extension
+  - name: namespace-all-capabilities-preserved
+    toolMembers: {namespace: Capability.Extension}
+    observedModel: pi-model-v1
+    expectedNamespace: Capability.Extension
   - name: namespace-in-opaque-arguments-accepted
     toolMembers: {}
+    expectedNamespace: Orchard.Extension
     arguments: {namespace: '', nested: {namespace: null, toolCalls: [{namespace: Opaque.Extension}]}}
+  - name: namespace-large-opaque-metadata-preserved
+    toolMembers: {namespace: Metadata.Extension}
+    metadataStringBytes: 51175
+    expectedRecordBytes: 52620
+    expectedNamespace: Metadata.Extension

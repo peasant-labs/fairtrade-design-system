@@ -12,9 +12,12 @@ requiredCases:
   - raw-duplicate-rejected
 requiredNamespaceCases:
   - namespace-absent-accepted
-  - namespace-empty-rejected
+  - namespace-empty-preserved
+  - namespace-unicode-preserved
   - namespace-null-rejected
-  - namespace-nonempty-rejected
-  - namespace-non-pi-no-evidence-rejected
-  - namespace-pending-tool-rejected
+  - namespace-nonstring-rejected
+  - namespace-duplicate-rejected
+  - namespace-pending-error-results-preserved
+  - namespace-all-capabilities-preserved
   - namespace-in-opaque-arguments-accepted
+  - namespace-large-opaque-metadata-preserved

@@ -114,6 +114,7 @@ try {
         focus: summaryStyle.outlineStyle, target: summary.getBoundingClientRect().height,
         radius: summaryStyle.borderRadius, motion: summaryStyle.transitionDuration,
         toolCase: getComputedStyle(turn.querySelector('.txn-tc-head .kind')).textTransform,
+        toolNamespace: turn.querySelector('.txn-tool-namespace .mono')?.textContent,
         expectedTurns: payload.turns.length,
       }
     }, { probe, payload })
@@ -132,6 +133,7 @@ try {
     assert.notEqual(observed.focus, 'none')
     assert.ok(observed.target >= 24)
     assert.equal(observed.radius, '0px')
+    assert.equal(observed.toolNamespace, probe.toolNamespace)
     assert.equal(observed.toolCase, 'none')
     assert.ok(parseFloat(observed.motion) <= probe.maxReducedMotionSeconds)
     await shot('usage')
