@@ -31,7 +31,7 @@ const casesSource = readFileSync(resolve('scripts/testdata/explore-page-intent.y
 const caseFields = ['name', 'rowProviders', 'total', 'limit', 'seedPage', 'steps']
 const stepFields = ['action', 'arg', 'expectCurrent', 'expectLastEmitted', 'expectNewEmission']
 const stepActions = ['seedCheck', 'page', 'stale', 'provider']
-const facetCaseFields = ['name', 'rowProviders', 'harnessFacets', 'action', 'arg', 'expectedProviders', 'expectedProvider', 'expectedPage', 'expectTags']
+const facetCaseFields = ['name', 'rowProviders', 'harnessFacets', 'action', 'arg', 'response', 'expectedProviders', 'expectedProvider', 'expectedPage', 'expectedQuery', 'expectedOrder', 'expectedTopics', 'expectTags']
 const facetActions = ['mount', 'page', 'order', 'search', 'provider', 'topic']
 const loaderMutationFields = ['name', 'target', 'find', 'replace', 'expectedError']
 const productionMutationFields = ['name', 'find', 'replace', 'expectedError']
@@ -123,8 +123,11 @@ function loadFixtures(manifestText = manifestSource, casesText = casesSource) {
     exactFields(row, facetCaseFields, `explore facet case ${index}`)
     if (typeof row.name !== 'string' || !row.name || !Array.isArray(row.rowProviders) || row.rowProviders.some((value) => typeof value !== 'string')) throw new Error(`explore facet case ${index} identity is invalid`)
     if (row.harnessFacets !== 'absent' && (!Array.isArray(row.harnessFacets) || row.harnessFacets.some((value) => typeof value !== 'string' || !/^[^:]+:\d+$/.test(value)))) throw new Error(`explore facet case ${index} harnessFacets are invalid`)
+    if (!row.response || typeof row.response !== 'object' || Array.isArray(row.response)) throw new Error(`explore facet case ${index} response is invalid`)
+    exactFields(row.response, ['rowProviders', 'total'], `explore facet case ${index} response`)
+    if (!Array.isArray(row.response.rowProviders) || row.response.rowProviders.some((value) => typeof value !== 'string') || !Number.isSafeInteger(row.response.total) || row.response.total < 0) throw new Error(`explore facet case ${index} response values are invalid`)
     if (!facetActions.includes(row.action) || !['string', 'number'].includes(typeof row.arg) || !Array.isArray(row.expectedProviders) || row.expectedProviders.some((value) => typeof value !== 'string' || !/^[^:]+:\d+$/.test(value))) throw new Error(`explore facet case ${index} expectations are invalid`)
-    if (typeof row.expectedProvider !== 'string' || !positiveInt(row.expectedPage) || typeof row.expectTags !== 'boolean') throw new Error(`explore facet case ${index} output expectations are invalid`)
+    if (typeof row.expectedProvider !== 'string' || !positiveInt(row.expectedPage) || typeof row.expectedQuery !== 'string' || typeof row.expectedOrder !== 'string' || !Array.isArray(row.expectedTopics) || row.expectedTopics.some((value) => typeof value !== 'string') || typeof row.expectTags !== 'boolean') throw new Error(`explore facet case ${index} output expectations are invalid`)
     return row
   })
   const facetNames = facetCases.map((row) => row.name)
@@ -205,9 +208,9 @@ function parseCountEntries(entries) {
   })
 }
 
-function buildFacetPayload(fixture) {
+function buildFacetPayload(fixture, rowProviders = fixture.rowProviders, total = 12) {
   const payload = {
-    transcripts: { transcripts: fixture.rowProviders.map((provider, index) => makeTranscript(`f${index}`, provider)), total: 12, page: 2, limit: 4 },
+    transcripts: { transcripts: rowProviders.map((provider, index) => makeTranscript(`f${index}`, provider)), total, page: 2, limit: 4 },
     collectives: [],
     popularTags: [{ id: 'discovery', name: 'discovery', usageCount: 8 }],
   }
@@ -297,12 +300,18 @@ try {
     const emitted = []
     const container = dom.window.document.getElementById('root')
     const root = createRoot(container)
+    let setPayload
+    function MountedFacetExplore() {
+      const [payload, updatePayload] = React.useState(() => buildFacetPayload(fixture))
+      setPayload = updatePayload
+      return React.createElement(Explore, { data: payload, onFiltersChange: (filters) => emitted.push(filters) })
+    }
     const click = async (element, label) => {
       if (!element) throw new Error(`${fixture.name}: missing ${label}`)
       await act(async () => { element.dispatchEvent(new dom.window.MouseEvent('click', { button: 0, bubbles: true })); await Promise.resolve() })
     }
     try {
-      await act(async () => { root.render(React.createElement(Explore, { data: buildFacetPayload(fixture), onFiltersChange: (filters) => emitted.push(filters) })); await Promise.resolve() })
+      await act(async () => { root.render(React.createElement(MountedFacetExplore)); await Promise.resolve() })
       if (fixture.action === 'page') await click(container.querySelector(`button[aria-label="page ${fixture.arg}"]`), 'page control')
       if (fixture.action === 'order') await click(container.querySelector(`input[value="${fixture.arg}"]`), 'order control')
       if (fixture.action === 'provider') await click([...container.querySelectorAll('.fr-provider')].find((button) => button.querySelector('.fr-provider-name')?.textContent === fixture.arg), 'provider control')
@@ -316,10 +325,21 @@ try {
         })
         await act(async () => { await new Promise((resolveDelay) => setTimeout(resolveDelay, 300)) })
       }
+      await act(async () => {
+        setPayload((previous) => ({
+          ...buildFacetPayload(fixture, fixture.response.rowProviders, fixture.response.total),
+          transcripts: { ...buildFacetPayload(fixture, fixture.response.rowProviders, fixture.response.total).transcripts, page: previous.transcripts.page },
+        }))
+        await Promise.resolve()
+      })
       const observedProviders = [...container.querySelectorAll('.fr-provider')].map((button) => `${button.querySelector('.fr-provider-name')?.textContent}:${button.querySelector('.fr-count')?.textContent}`)
       if (JSON.stringify(observedProviders) !== JSON.stringify(fixture.expectedProviders)) throw new Error(`${fixture.name}: provider options expected ${JSON.stringify(fixture.expectedProviders)}, observed ${JSON.stringify(observedProviders)}`)
       const last = emitted[emitted.length - 1]
-      if (!last || last.provider !== fixture.expectedProvider || last.page !== fixture.expectedPage) throw new Error(`${fixture.name}: filter intent expected provider=${fixture.expectedProvider} page=${fixture.expectedPage}, observed ${JSON.stringify(last)}`)
+      if (!last || last.provider !== fixture.expectedProvider || last.page !== fixture.expectedPage || last.query !== fixture.expectedQuery || last.order !== fixture.expectedOrder || JSON.stringify(last.topics) !== JSON.stringify(fixture.expectedTopics)) throw new Error(`${fixture.name}: complete filter intent mismatch; observed ${JSON.stringify(last)}`)
+      const renderedRows = [...container.querySelectorAll('.cex-tcard, .cex-trow')]
+      if (renderedRows.length !== fixture.response.rowProviders.length) throw new Error(`${fixture.name}: host response rows expected ${fixture.response.rowProviders.length}, observed ${renderedRows.length}`)
+      const resultTotal = Number(container.querySelector('.cex-results-head .cex-count')?.textContent)
+      if (resultTotal !== fixture.response.total) throw new Error(`${fixture.name}: host response total expected ${fixture.response.total}, observed ${resultTotal}`)
       if (Boolean(container.querySelector('.fr-topic')) !== fixture.expectTags) throw new Error(`${fixture.name}: popular tags preservation failed`)
     } finally {
       await act(async () => root.unmount())

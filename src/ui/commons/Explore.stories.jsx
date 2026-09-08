@@ -53,6 +53,8 @@ const pagedPayload = {
 
 const suppliedFacetPayload = {
   ...pagedPayload,
+  // The current result set is filtered to 24 Codex transcripts. Corpus facets
+  // remain authoritative and include three Claude Code transcripts outside it.
   transcripts: {
     ...pagedPayload.transcripts,
     transcripts: pagedRows.slice(0, 2).map((row) => ({ ...row, modelProvider: 'codex', modelName: 'Codex' })),
