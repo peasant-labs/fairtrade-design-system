@@ -12,8 +12,8 @@ base:
   inputSubmissionCount: 1
   toolCallCount: 1
   relationships:
-    - {kind: context_from, targetState: target_known, targetLocalId: context-source, evidence: native_typed, anchor: {kind: through_redacted_entry, sourceEntryRef: branch-entry, sourceRevisionRef: public-revision}}
-    - {kind: started_by, targetState: target_known, targetLocalId: starter-source, evidence: native_typed}
+    - {kind: context_from, targetState: target_known, targetLocalId: ses_contextsource, evidence: native_typed, anchor: {kind: through_redacted_entry, sourceEntryRef: branch-entry, sourceRevisionRef: public-revision}}
+    - {kind: started_by, targetState: target_known, targetLocalId: ses_startersource, evidence: native_typed}
   turns: &layout
     - index: 0
       role: user
@@ -55,11 +55,22 @@ base:
           resultProvenance: *tool
           usage: {ownerId: usage-result, sourceEntryRef: e_result1, scope: tool, completeness: partial, tokens: {output: 2}}
     - {index: 4, role: assistant, entryType: thinking, depth: 0, content: I will inspect., sourceEntryRef: e_reason1, provenance: *output}
+turnDefaults: {timestamp: '2026-09-01T10:00:00Z'}
 navigation:
-  - {kind: context_from, status: resolved, localId: context-source, anchor: {kind: through_redacted_entry, sourceEntryRef: branch-entry, sourceRevisionRef: public-revision}}
-  - {kind: started_by, status: resolved, localId: starter-source}
+  - {kind: context_from, status: resolved, localId: ses_contextsource, anchor: {kind: through_redacted_entry, sourceEntryRef: branch-entry, sourceRevisionRef: public-revision}}
+  - {kind: started_by, status: resolved, localId: ses_startersource}
 partitions: [main, earlier, both]
 themes: [dark, light]
+captures: [native-text-thinking-pair, short-native-system-context, unknown-literal-wrapper]
+viewport: {width: 1440, height: 1100}
+navigationSearch: parser
+longResult:
+  turnIndex: 3
+  toolId: parser-tool
+  chunk: "parser.go:12 plus fixture long output\n"
+  repetitions: 128
+  suffix: "exact trailing newline\n"
+  minimumBytes: 4096
 cases:
   - name: native-text-thinking-pair
     detail: {}
@@ -113,14 +124,14 @@ cases:
   - name: invalid-evidence-not-legacy
     detail: {}
     invalid:
-      - {name: empty-provenance, path: [turns, 1, provenance], value: {}}
-      - {name: null-provenance, path: [turns, 1, provenance], value: null}
-      - {name: null-reference, path: [turns, 1, sourceEntryRef], value: null}
-      - {name: malformed-utf8, path: [turns, 1, sourceEntryRef], surrogate: true}
-      - {name: oversized-reference, path: [turns, 1, sourceEntryRef], value: '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901'}
-      - {name: duplicate-owner-reference, path: [turns, 1, sourceEntryRef], value: e_u1}
-      - {name: wrong-folded-usage-target, path: [turns, 3, toolCalls, 0, usage, sourceEntryRef], value: e_u1}
-      - {name: malformed-folded-provenance, path: [turns, 3, toolCalls, 0, callProvenance], value: {}}
+      - {name: empty-provenance, path: [turns, 1, provenance], value: {}, arrayReject: true}
+      - {name: null-provenance, path: [turns, 1, provenance], value: null, arrayReject: true}
+      - {name: null-reference, path: [turns, 1, sourceEntryRef], value: null, arrayReject: true}
+      - {name: malformed-utf8, path: [turns, 1, sourceEntryRef], surrogate: true, arrayReject: true}
+      - {name: oversized-reference, path: [turns, 1, sourceEntryRef], value: '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901', arrayReject: true}
+      - {name: duplicate-owner-reference, path: [turns, 1, sourceEntryRef], value: e_u1, scopedReference: true}
+      - {name: wrong-folded-usage-target, path: [turns, 3, toolCalls, 0, usage, sourceEntryRef], value: e_u1, scopedReference: true}
+      - {name: malformed-folded-provenance, path: [turns, 3, toolCalls, 0, callProvenance], value: {}, arrayReject: true}
   - name: legacy-filter-control
     legacy: true
     detail:
@@ -134,20 +145,62 @@ cases:
         - {index: 4, role: assistant, entryType: text, depth: 0, content: same}
         - {index: 5, role: assistant, entryType: text, depth: 0, content: '<thinking>legacy thought</thinking>legacy response'}
     expectedIndices: [3, 5]
+  - name: pi-native-attachments
+    detail:
+      harness: pi
+      turns:
+        - index: 0
+          role: assistant
+          depth: 0
+          entryType: text
+          content: Native details remain attached.
+          sourceEntryRef: e_pi_carrier
+          provenance: *output
+          toolCalls:
+            - id: pi-tool
+              name: Parser.NativeCheck
+              toolKind: other
+              arguments: '{}'
+              result: 'Exact native result'
+              callEntryRef: e_pi_call
+              resultEntryRef: e_pi_result
+              callProvenance: *tool
+              resultProvenance: *tool
+              usage: {ownerId: pi-result-owner, sourceEntryRef: e_pi_result, scope: tool, completeness: partial, tokens: {output: 2}}
+      nativeMetadata:
+        - id: pi-record
+          kind: pi.toolresult.details
+          source: {entryRef: e_pi_result, sourceType: pi.message, messageRole: toolResult}
+          attachment: {turnIndex: 0, toolCallId: pi-tool}
+          data: {Status: NativeAttachmentRetained}
+      turnCount: 1
+      toolCallCount: 1
+      inputSubmissionCount: 0
+    expectedIndices: [0]
+  - name: empty-optional-reference-control
+    legacy: true
+    detail:
+      turnCount: 3
+      toolCallCount: 0
+      turns:
+        - {index: 0, role: system, entryType: text, depth: 0, content: ok, sourceEntryRef: ''}
+        - {index: 1, role: user, entryType: text, depth: 0, content: same input, sourceEntryRef: ''}
+        - {index: 2, role: user, entryType: text, depth: 0, content: same input}
+    expectedIndices: [1]
 navigationCases:
   - name: different-source-and-starter
     expectedLabels: [context inherited from, started by]
-    expectedTargets: [context-source, starter-source]
+    expectedTargets: [ses_contextsource, ses_startersource]
     exact: true
   - name: same-source-and-starter
     sameTarget: true
     expectedLabels: [context inherited from and started by]
-    expectedTargets: [context-source]
+    expectedTargets: [ses_contextsource]
     exact: true
   - name: changed-public-revision
     revision: changed-revision
     expectedLabels: [context inherited from, started by]
-    expectedTargets: [context-source, starter-source]
+    expectedTargets: [ses_contextsource, ses_startersource]
     exact: false
   - name: unavailable-source
     status: known_unavailable
@@ -169,3 +222,12 @@ countCases:
   - {name: unmeasured, absent: true, expected: unknown}
   - {name: measured-zero, value: 0, expected: '0'}
   - {name: one-submission-five-records, value: 1, expected: '1'}
+invalidCounts:
+  - {name: null-count, value: null}
+  - {name: string-count, value: '1'}
+  - {name: negative-count, value: -1}
+  - {name: fractional-count, value: 0.5}
+  - {name: unsafe-count, value: 9007199254740992}
+sources:
+  ses_contextsource: {title: Current context source, content: 'Current source additions remain separate from the child.', boundary: 'Earlier source boundary.', entryRef: branch-entry, revisionRef: public-revision}
+  ses_startersource: {title: Current starter source, content: 'Current starter additions remain separate from the child.'}

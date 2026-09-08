@@ -69,7 +69,7 @@ try {
     const turn = await page.$('[data-turn="2"]')
     const heads = await turn.$$('.txn-tc-head')
     for (const head of heads) if (await head.evaluate(node => node.getAttribute('aria-expanded') === 'false')) await head.click()
-    const thinking = await turn.$('.txn-thinking-toggle')
+    const thinking = await page.$('[data-turn="6"] .txn-thinking-toggle')
     if (thinking) await thinking.click()
     // Activate the real native disclosure controls, never inject substitute DOM.
     for (const summary of await turn.$$('.txn-native-details > summary')) await summary.click()

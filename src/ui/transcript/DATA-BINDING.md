@@ -62,6 +62,15 @@ and helper-thread counts remain the independent saved-identity metric. Normalize
 disables the viewer's legacy first-prompt title guess; hosts may supply their already-authoritative
 title through `vm.session.title` without lowercasing it.
 
+The mounted canonical example is `?app=transcript&transcript=context#inuse`.
+`contextCase`, `contextPartition`, `contextNavigation` and `contextCount` select named synthetic
+YAML fixture states. They exercise the same production adapter and composite as consumers.
+Run `pnpm test:transcript-provenance` for all retention/invalid/count/navigation cases, then
+build the production app and run `pnpm test:transcript-provenance:mounted` for keyboard
+disclosures, current-target callbacks, Back restoration, both-theme style probes and captures.
+The mounted gate refuses a build without this renderer and fixture; it records exact served
+asset hashes and the source revision. These fixtures are not native harness decoders.
+
 ## observed model resolution
 
 `TurnDetail.observedModel` is source evidence from assistant output. The adapter resolves it over the

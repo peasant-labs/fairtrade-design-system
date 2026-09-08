@@ -30,7 +30,7 @@ import { transcriptInitialPositionReadiness } from './initial-position.js'
    ─────────────────────────────────────────────────────────────────────────
    Lifted from the canonical mockup's `TranscriptApp` (src/mockups/inuse/
    TranscriptApp.jsx:880) into an EXPORTED, DUMB composite. It assembles the
-   chrome + the canvas (the S3 turn cards, or the consumer's `graphSlot` in graph
+   chrome + the canvas (the turn cards, or the consumer's `graphSlot` in graph
    mode) + the rails + scrubber + scorecard + the between-turn markers, ALL from a
    single cooked `TranscriptViewModel`. It never parses wire and never reads a git
    wire field — only `vm`.
@@ -47,7 +47,7 @@ import { transcriptInitialPositionReadiness } from './initial-position.js'
    (a consuming app plugs fairtrade's own `/graph` @xyflow engine; the mockup
    plugs SVG); no `@xyflow` dependency here.
 
-   CHECKPOINTS: S3 relocated commits off the per-turn card; the composite draws
+   CHECKPOINTS: commits live outside the per-turn card; the composite draws
    them between turns from the cooked `session.git.commits` (render-when-present),
    anchored to a turn when the cooked commit carries one, else clustered at the end.
    ─────────────────────────────────────────────────────────────────────────── */
@@ -217,6 +217,12 @@ export default function TranscriptViewer({
   // the action-menu disclosures are view-state too (controllable; default CLOSED).
   const [shareOpen, setShareOpen] = useControllable(shareOpenProp, onShareOpenChange, false)
   const [moreOpen, setMoreOpen] = useControllable(moreOpenProp, onMoreOpenChange, false)
+
+  // Unmanaged disclosure state is session-local. Controlled hosts restore their
+  // own saved map on Back and are not reset by this default behavior.
+  useEffect(() => {
+    if (earlierHistoryOpenProp === undefined) setEarlierHistoryOpen({})
+  }, [vm?.session?.id])
 
   /* ── local (non-exposed) UI state ───────────────────────────────────────────── */
   const [copiedTurn, setCopiedTurn] = useState(null)

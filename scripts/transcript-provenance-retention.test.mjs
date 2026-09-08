@@ -19,6 +19,7 @@ function names(cases, required) {
 names(fixture.cases, manifest.requiredCases)
 names(fixture.navigationCases, manifest.requiredNavigationCases)
 names(fixture.countCases, manifest.requiredCountCases)
+names(fixture.invalidCounts, manifest.requiredInvalidCounts)
 names(fixture.cases.find(item => item.invalid).invalid, manifest.requiredInvalidCases)
 
 function assertPartition(cooked, raw, expectedIndices, partition, legacy) {
@@ -27,7 +28,7 @@ function assertPartition(cooked, raw, expectedIndices, partition, legacy) {
     const source = raw.find(item => item.index === turn.index)
     assert.equal(turn.partition, partition)
     assert.equal(turn.identity, `${partition}:${source.sourceEntryRef || source.index}`)
-    assert.equal(turn.sourceEntryRef, source.sourceEntryRef)
+    assert.equal(turn.sourceEntryRef, source.sourceEntryRef || undefined)
     assert.deepEqual(turn.provenance, source.provenance)
     assert.equal(turn.role, source.role)
     assert.equal(turn.entryType, source.entryType)
@@ -51,11 +52,13 @@ function assertPartition(cooked, raw, expectedIndices, partition, legacy) {
       assert.deepEqual(tool.resultProvenance, sourceTool.resultProvenance)
       assert.deepEqual(tool.usage, sourceTool.usage)
       if (sourceTool.result) assert.equal(tool.output, sourceTool.result)
+      if (sourceTool.id.endsWith(fixture.longResult.toolId)) assert.ok(Buffer.byteLength(tool.output) >= fixture.longResult.minimumBytes, 'long result fixture must exercise full-content retention')
     }
   }
 }
 
 for (const testCase of fixture.cases) {
+  assert.ok(testCase.invalid?.length || testCase.expectedIndices?.length, `${testCase.name}: non-vacuous evidence expectations required`)
   for (const partition of fixture.partitions) {
     const input = buildContextFixture(fixture, testCase.name, partition)
     if (testCase.invalid) {
@@ -65,7 +68,9 @@ for (const testCase of fixture.cases) {
         let owner = target
         for (const key of invalid.path.slice(0, -1)) owner = owner[key]
         owner[invalid.path.at(-1)] = invalid.surrogate ? String.fromCharCode(0xd800) : structuredClone(invalid.value)
+        if (invalid.scopedReference && partition === 'earlier') owner[invalid.path.at(-1)] = `old-${invalid.value}`
         assert.throws(() => adaptTranscript(candidate), /adaptTranscript refused/, `${testCase.name}/${partition}/${invalid.name}`)
+        if (invalid.arrayReject) assert.throws(() => prefilterTurns(target.turns), /prefilterTurns refused/, `${testCase.name}/${partition}/${invalid.name}: public array helper`)
       }
       continue
     }
@@ -77,6 +82,11 @@ for (const testCase of fixture.cases) {
     assertPartition(vm.turns, input.turns, mainIndices, 'main', testCase.legacy)
     if (partition !== 'main') {
       assertPartition(vm.earlierHistory[0].turns, input.earlierHistory[0].turns, testCase.expectedIndices, 'earlier-0', testCase.legacy)
+      assert.deepEqual(vm.earlierHistory[0].nativeMetadata, input.earlierHistory[0].nativeMetadata)
+      for (const record of input.earlierHistory[0].nativeMetadata ?? []) {
+        const owner = vm.earlierHistory[0].turns.find(turn => turn.index === record.attachment.turnIndex)
+        assert.deepEqual(owner.toolCalls.find(tool => tool.id === record.attachment.toolCallId).nativeMetadata, [record])
+      }
     }
     assert.equal(vm.session.inputSubmissionCount, input.inputSubmissionCount)
     assert.equal(vm.session.turnCount, input.turnCount)
@@ -110,4 +120,9 @@ for (const testCase of fixture.countCases) {
   const vm = adaptTranscript(input)
   assert.equal(String(vm.session.inputSubmissionCount ?? 'unknown'), testCase.expected)
   assert.equal(vm.session.turnCount, 5)
+}
+for (const testCase of fixture.invalidCounts) {
+  const input = buildContextFixture(fixture, 'native-text-thinking-pair')
+  input.inputSubmissionCount = testCase.value
+  assert.throws(() => adaptTranscript(input), /adaptTranscript refused/, testCase.name)
 }

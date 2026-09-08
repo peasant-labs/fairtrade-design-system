@@ -105,8 +105,19 @@ function protectedTurn(turn) {
 
 /** Detect malformed PRESENT evidence too, before any destructive legacy filtering. @param {TurnDetail} turn */
 function hasTurnEvidence(turn) {
-  return present(turn, 'sourceEntryRef') || present(turn, 'provenance') || present(turn, 'usage') ||
-    !!turn.toolCalls?.some(tool => ['callEntryRef', 'resultEntryRef', 'callProvenance', 'resultProvenance', 'usage', 'namespace'].some(key => present(tool, key)))
+  return (present(turn, 'sourceEntryRef') && turn.sourceEntryRef !== '') || present(turn, 'provenance') || present(turn, 'usage') ||
+    !!turn.toolCalls?.some(tool => (present(tool, 'callEntryRef') && tool.callEntryRef !== '') ||
+      (present(tool, 'resultEntryRef') && tool.resultEntryRef !== '') ||
+      ['callProvenance', 'resultProvenance', 'usage', 'namespace'].some(key => present(tool, key)))
+}
+
+/** Empty optional submission refs have canonical absence semantics. @param {unknown} value */
+function validateProvenanceEvidence(value) {
+  const record = recordOf(value)
+  if (record?.submissionRef === '') {
+    const { submissionRef: _absent, ...withoutEmptyRef } = record
+    zContentProvenance.parse(withoutEmptyRef)
+  } else zContentProvenance.parse(value)
 }
 
 /** The public array helper validates relevant fields using canonical schemas, not a replacement wire model.
@@ -117,12 +128,12 @@ function validateTurnEvidence(turns) {
   turns.forEach((turn, position) => {
     try {
       if (present(turn, 'sourceEntryRef') && turn.sourceEntryRef !== '') zSourceEntryRef.parse(turn.sourceEntryRef)
-      if (present(turn, 'provenance')) zContentProvenance.parse(turn.provenance)
+      if (present(turn, 'provenance')) validateProvenanceEvidence(turn.provenance)
       for (const tool of turn.toolCalls ?? []) {
         if (present(tool, 'callEntryRef') && tool.callEntryRef !== '') zSourceEntryRef.parse(tool.callEntryRef)
         if (present(tool, 'resultEntryRef') && tool.resultEntryRef !== '') zSourceEntryRef.parse(tool.resultEntryRef)
-        if (present(tool, 'callProvenance')) zContentProvenance.parse(tool.callProvenance)
-        if (present(tool, 'resultProvenance')) zContentProvenance.parse(tool.resultProvenance)
+        if (present(tool, 'callProvenance')) validateProvenanceEvidence(tool.callProvenance)
+        if (present(tool, 'resultProvenance')) validateProvenanceEvidence(tool.resultProvenance)
       }
     } catch (cause) {
       throw Object.assign(new TypeError(`Fairtrade prefilterTurns refused turn at position ${position} during evidence validation: a source reference or provenance field is malformed. No turns were filtered. Correct the producer using the canonical schema and retry.`), { cause })
@@ -131,10 +142,10 @@ function validateTurnEvidence(turns) {
 }
 
 /**
- * Default turn prefilter the adapter applies to `payload.turns`: drop turns with
- * neither content nor tool calls (and short tool-less system banners), then
- * collapse adjacent same-role turns with identical content (a streaming
- * artifact), preferring the tool-bearing copy. Pure, order-preserving. Exported
+ * Default turn prefilter the adapter applies independently per partition:
+ * preserve normalized evidence, including unknown provenance and folded refs.
+ * Only truly legacy rows lose empty/short banners or collapse equal adjacent
+ * content, preferring the tool-bearing copy. Pure, order-preserving. Exported
  * so a host that pre-scopes turns can run the SAME filter.
  * @param {TurnDetail[]} turns
  * @returns {TurnDetail[]}
@@ -737,10 +748,11 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     try {
       parseSessionDetailPayloadValue(payload)
     } catch (cause) {
-      throw Object.assign(new TypeError('Fairtrade adaptTranscript refused the durable payload during main/earlier evidence validation. A partition, turn, reference, count, or attachment violates the canonical schema; no transcript was cooked. Correct the producer and retry. See the schema error cause for the failing field.'), { cause })
+      throw Object.assign(new TypeError(`Fairtrade adaptTranscript refused the durable payload during main/earlier evidence validation: ${cause instanceof Error ? cause.message : 'canonical validation failed'}. No transcript was cooked. Correct the producer using the canonical schema and retry.`), { cause })
     }
   }
-  const main = cookPartition(payload, payload.turns ?? [], payload.nativeMetadata, 'main', annotations, analytics, options?.visibleTurnIndices)
+  const completeTurns = payload.turns ?? []
+  const main = cookPartition(payload, completeTurns, payload.nativeMetadata, 'main', annotations, analytics, options?.visibleTurnIndices)
   const { turns: turnVMs, toolCallsById, analytics: an, annotationsByTurn, filteredTurns: turns } = main
   const git = cookGit(payload)
   if (git?.commits) anchorCommitsToTurns(git.commits, turnVMs)
@@ -758,7 +770,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     analytics: an,
   }
   if (payload.nativeMetadata) vm.nativeMetadata = payload.nativeMetadata
-  if (hasEvidence) vm.usageScopes = aggregateUsage(payload.turns ?? [])
+  if (hasEvidence) vm.usageScopes = aggregateUsage(completeTurns)
   vm.relationships = cookRelationships(payload.relationships ?? [], options?.relationshipNavigation)
   vm.earlierHistory = (payload.earlierHistory ?? []).map((section, index) => {
     const id = `earlier-${index}`
@@ -789,13 +801,19 @@ function hasNormalizedEvidence(payload) {
  * @returns {import('./view-model.js').RelationshipVM[]}
  */
 function cookRelationships(relationships, navigation) {
-  const nav = zSessionRelationshipNavigation.array().parse(navigation ?? [])
+  /** @type {import('@peasant-labs/schema').SessionRelationshipNavigation[]} */
+  let nav
+  try {
+    nav = zSessionRelationshipNavigation.array().parse(navigation === undefined ? [] : navigation)
+  } catch (cause) {
+    throw Object.assign(new TypeError(`Fairtrade adaptTranscript refused relationshipNavigation during read-metadata validation: ${cause instanceof Error ? cause.message : 'canonical validation failed'}. No source links were cooked. Return schema-valid authorized read metadata separately from the durable payload and retry.`), { cause })
+  }
   if (new Set(nav.map(item => item.kind)).size !== nav.length) {
     throw new TypeError('Fairtrade adaptTranscript refused relationship navigation during cooking: duplicate relationship kinds make the authorized target ambiguous. No links were produced. Return one schema-valid read result per relationship kind and retry.')
   }
   const context = relationships.find(item => item.kind === 'context_from')
   const starter = relationships.find(item => item.kind === 'started_by')
-  const rows = [context, starter].filter(item => item && item.targetState !== 'explicit_none').map(relation => {
+  const rows = [context, starter].filter(item => item !== undefined).filter(item => item.targetState !== 'explicit_none').map(relation => {
     const item = nav.find(candidate => candidate.kind === relation.kind)
     const known = relation.targetState === 'target_known' || relation.targetState === 'target_known_retained'
     const resolved = item && (item.status === 'resolved' || item.status === 'general_link_only')
@@ -805,12 +823,12 @@ function cookRelationships(relationships, navigation) {
     const row = {
       kind: relation.kind,
       label: relation.kind === 'context_from' ? 'context inherited from' : 'started by',
-      statusLabel: relation.targetState === 'conflicting_current_native_evidence' ? 'conflicting source evidence'
-        : !known ? 'unknown source'
+      statusLabel: relation.targetState === 'conflicting_current_native_evidence' || item?.status === 'conflicting' ? 'conflicting source evidence'
+        : !known || item?.status === 'unknown' ? 'unknown source'
           : item?.status === 'inaccessible' ? 'source inaccessible'
             : 'source unavailable',
     }
-    if (usable) {
+    if (usable && item) {
       row.statusLabel = 'current session'
       const saved = relation.anchor
       const verified = item.anchor

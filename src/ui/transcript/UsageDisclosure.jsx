@@ -15,11 +15,11 @@ export default function UsageDisclosure({ usage }) {
   </details>
 }
 
-/** @param {{scopes?: import('./view-model.js').UsageScopeVM[]}} props */
-export function UsageScopes({ scopes }) {
+/** @param {{scopes?: import('./view-model.js').UsageScopeVM[], label?: string}} props */
+export function UsageScopes({ scopes, label = 'session usage by scope' }) {
   if (!scopes?.length) return null
   return <details className="txn-usage txn-usage-scopes">
-    <summary>session usage by scope</summary>
+    <summary>{label}</summary>
     <p className="txn-usage-note">known sums across all recorded owners; partial means some owners did not report the field. costs are recorded harness estimates, not verified billing.</p>
     {scopes.map(scope => <section key={scope.scope}>
       <h3>{scope.scope} <span className="tnum">{scope.ownerCount}</span> {scope.ownerCount === 1 ? 'owner' : 'owners'}</h3>

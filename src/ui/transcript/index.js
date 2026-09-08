@@ -142,6 +142,9 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
 
 /* ── cooked view-model types (JSDoc re-exports; erased at build) ──────────────── */
 /** @typedef {import('./view-model.js').TranscriptViewModel} TranscriptViewModel */
+/** @typedef {import('./view-model.js').RelationshipVM} RelationshipVM */
+/** @typedef {import('./view-model.js').EarlierHistoryVM} EarlierHistoryVM */
+/** @typedef {import('./adapter.js').AdaptTranscriptOptions} AdaptTranscriptOptions */
 /** @typedef {import('./view-model.js').SessionVM} SessionVM */
 /** @typedef {import('./view-model.js').SessionGitVM} SessionGitVM */
 /** @typedef {import('./view-model.js').CommitVM} CommitVM */

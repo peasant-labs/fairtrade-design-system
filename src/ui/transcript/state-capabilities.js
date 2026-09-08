@@ -85,6 +85,8 @@
  * capability is true (see ViewerCapabilities). `onLabel` carries the popover's
  * cooked result; `onExport` carries the requested format. The viewer never
  * mutates the host's data — it reports intent through these.
+ * Relationship navigation is gated by authorized read evidence rather than a
+ * mutation capability; no usable target or no callback means no active control.
  *
  * @typedef {object} ViewerCallbacks
  * @property {() => void} [onEdit]

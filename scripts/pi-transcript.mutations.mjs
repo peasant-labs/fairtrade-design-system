@@ -8,7 +8,7 @@ import YAML from 'yaml'
 const manifest = YAML.parse(readFileSync('scripts/testdata/pi-transcript.manifest.yaml', 'utf8'), { strict: true, uniqueKeys: true })
 if (manifest.mutations?.length !== 1 || manifest.mutations[0] !== 'namespace-presence-dispatch') throw new Error('Pi transcript mutation inventory is incomplete')
 const source = readFileSync('src/ui/transcript/adapter.js', 'utf8')
-const find = ' || hasToolNamespace ||'
+const find = ", 'namespace'"
 if (source.split(find).length !== 2) throw new Error('namespace presence mutation target must occur exactly once')
 const temp = mkdtempSync(join(tmpdir(), 'fairtrade-pi-transcript-'))
 try {
@@ -18,7 +18,7 @@ try {
     .replaceAll("from './analytics.js'", `from '${new URL('../src/ui/transcript/analytics.js', import.meta.url).href}'`)
     .replaceAll("from './usage.js'", `from '${new URL('../src/ui/transcript/usage.js', import.meta.url).href}'`)
     .replace("from '@peasant-labs/schema'", `from '${pathToFileURL(resolve('node_modules/@peasant-labs/schema/dist/index.js')).href}'`)
-    .replace(find, ' ||')
+    .replace(find, '')
   writeFileSync(artifact, rewritten)
   const result = spawnSync(process.execPath, ['scripts/pi-transcript.test.mjs'], {
     cwd: process.cwd(), encoding: 'utf8', env: { ...process.env, FAIRTRADE_PI_ADAPTER_MODULE: artifact },

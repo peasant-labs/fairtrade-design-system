@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { ChevronDown, ChevronRight, Link as LinkIcon, History } from 'lucide-react'
 import TurnCard from './TurnCard.jsx'
 import { UsageScopes } from './UsageDisclosure.jsx'
@@ -15,6 +16,7 @@ import { UsageScopes } from './UsageDisclosure.jsx'
  * @param {(id: string) => void} props.toggleTool
  */
 export default function TranscriptContext({ relationships = [], earlierHistory = [], onNavigate, open, toggle, openTools, toggleTool }) {
+  const prefix = useId()
   if (!relationships.length && !earlierHistory.length) return null
   return <section className="txn-context" aria-label="session context">
     {relationships.map(relation => <div className="txn-context-source" key={relation.kind}>
@@ -28,14 +30,14 @@ export default function TranscriptContext({ relationships = [], earlierHistory =
       {relation.note && <p className="txn-context-note">{relation.note}</p>}
     </div>)}
     {earlierHistory.map(section => <section className="txn-earlier" key={section.id} data-earlier-section={section.id}>
-      <button type="button" className="txn-earlier-toggle" aria-expanded={!!open[section.id]} aria-controls={`history-${section.id}`} onClick={() => toggle(section.id)}>
+      <button type="button" className="txn-earlier-toggle" aria-expanded={!!open[section.id]} aria-controls={`${prefix}-history-${section.id}`} onClick={() => toggle(section.id)}>
         {open[section.id] ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
         <History aria-hidden="true" /> earlier history <span className="tnum">{section.turns.length}</span>
         <span className="txn-context-status">uncertain ownership</span>
       </button>
-      <div id={`history-${section.id}`} hidden={!open[section.id]}>
+      <div id={`${prefix}-history-${section.id}`} hidden={!open[section.id]}>
         <p className="txn-context-note">{section.explanation}</p>
-        <UsageScopes scopes={section.usageScopes} />
+        <UsageScopes scopes={section.usageScopes} label="earlier history usage by scope" />
         {open[section.id] && section.turns.map(turn => <TurnCard key={turn.identity} turn={turn} openTools={openTools} toggleTool={toggleTool} />)}
       </div>
     </section>)}

@@ -24,7 +24,7 @@ payload:
   totalTokens: 0
   tokensIn: 0
   tokensOut: 0
-  turnCount: 6
+  turnCount: 7
   toolCallCount: 2
   turns:
     - index: 0
@@ -43,7 +43,7 @@ payload:
       depth: 0
       timestamp: '2026-09-01T10:00:02Z'
       sourceEntryRef: entry-answer
-      content: '<thinking>Consider Orchard constraints exactly once.</thinking>Checking the plan. [image omitted]'
+      content: 'Checking the plan. [image omitted]'
       usage:
         ownerId: owner-answer
         sourceEntryRef: entry-answer
@@ -56,7 +56,7 @@ payload:
           namespace: Orchard.Extension
           name: Orchard.CheckPlan
           toolKind: other
-          callEntryRef: entry-answer
+          callEntryRef: entry-call
           resultEntryRef: entry-result
           arguments: '{"Plan":{"Name":"Orchard","Options":[true,{"Mode":"Careful"}]}}'
           result: 'Check failed: revise the plan. [image omitted]'
@@ -70,7 +70,7 @@ payload:
         - id: tool-pending
           name: Orchard.AwaitReview
           toolKind: other
-          callEntryRef: entry-answer
+          callEntryRef: entry-pending-call
           arguments: '{"Queue":"Review"}'
           result: ''
     - index: 3
@@ -99,6 +99,13 @@ payload:
       sourceEntryRef: entry-branch
       content: 'Earlier Orchard history stays visible.'
       usage: {ownerId: owner-branch, sourceEntryRef: entry-branch, scope: summary, completeness: unknown}
+    - index: 6
+      role: assistant
+      entryType: thinking
+      depth: 0
+      timestamp: '2026-09-01T10:00:06Z'
+      sourceEntryRef: entry-reasoning
+      content: Consider Orchard constraints exactly once.
   nativeMetadata:
     - id: meta-state
       kind: pi.custom.data

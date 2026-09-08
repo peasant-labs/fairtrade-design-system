@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 /* Current session context and independently scoped retained history. */
+@layer components {
 .txn-context { padding: var(--sp-4); border-bottom: var(--bd); background: var(--surface); color: var(--ink); }
 .txn-context-source + .txn-context-source { margin-top: var(--sp-3); }
 .txn-context-row, .txn-earlier-toggle { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2); font: var(--fs-sm)/var(--lh-body) var(--font-mono); }
@@ -13,6 +14,7 @@
 .txn-earlier { margin-top: var(--sp-3); }
 .txn-earlier-toggle { width: 100%; }
 .txn-earlier [hidden] { display: none; }
+}
 /* graph node-visual aesthetics (.ft-gnode / .ft-graph). Colocated in the graph sub-barrel and
    also pulled into the lib CSS bundle (lib-components.css) for npm consumers; importing it here
    loads the SAME node-visual styling into the fairtrade app + mockup + storybook, which render the
