@@ -59,6 +59,26 @@ github:
       - {body: {permission: admin}}
     expected_merge_sha: abc123
   malformed_response: {body: {}}
+  native_stack:
+    valid:
+      name: merged member on main trunk
+      responses:
+        - body: {number: 78, state: closed, merged: true, title: "release(v0.0.19): render Pi transcripts", user: {login: alice}, base: {ref: feature, repo: {id: 42, full_name: peasant-labs/fairtrade-design-system}}, head: {repo: {id: 42}}, stack: {number: 79, base: {ref: main}}, merge_commit_sha: null}
+        - {body: {permission: admin}}
+        - body: {number: 79, open: false, base: {ref: main}, pull_requests: [{number: 77, state: closed, merged_at: "2026-09-08T06:37:10Z", head: {repo: {id: 42}}, base: {repo: {id: 42}}}, {number: 78, state: closed, merged_at: "2026-09-08T06:37:11Z", head: {repo: {id: 42}}, base: {repo: {id: 42}}}]}
+        - body: [{event: merged, commit_id: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, commit_url: "https://api.github.com/repos/peasant-labs/fairtrade-design-system/commits/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]
+        - body: {status: identical, merge_base_commit: {sha: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}}
+      expected_paths: ["/pulls/78", "/collaborators/alice/permission", "/stacks/79", "/issues/78/timeline?per_page=100", "/compare/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...main"]
+      expected_merge_sha: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    invalid:
+      - {name: non-main stack trunk, mutation: stack_trunk}
+      - {name: requested PR is not a member, mutation: wrong_member}
+      - {name: member repository differs, mutation: wrong_repository}
+      - {name: member is unmerged, mutation: unmerged_member}
+      - {name: merged timeline SHA is missing, mutation: missing_sha}
+      - {name: merged timeline repository differs, mutation: timeline_repository}
+      - {name: merged commit is disconnected from main, mutation: disconnected_commit}
+      - {name: ordinary non-main PR is rejected, mutation: direct_non_main}
   pagination:
     - name: page two revokes approval
       responses:

@@ -61,9 +61,12 @@ one shared parameterized toolkit is a tracked follow-up.
 ## release & npm publication
 
 The release PR title is the cut interface: `release(vX.Y.Z[-rcN]): <summary>`. The PR must
-target `main`, its author must have `admin` or `maintain` permission, and `package.json` must
-carry the title's version without `v`. After merge, `.github/workflows/release-pr.yml` resolves
-canonical PR metadata and uses the releaser GitHub App to mint the annotated tag
+target `main`, or be an exact member of a native GitHub stack whose trunk is `main`. Its author
+must have `admin` or `maintain` permission, and `package.json` must carry the title's version
+without `v`. After merge, `.github/workflows/release-pr.yml` resolves canonical PR metadata. For
+a stacked PR, it also verifies the canonical stack membership, repository, merged timeline
+commit, and reachability from `main`. The workflow then uses the releaser GitHub App to mint the
+annotated tag
 `fairtrade-vX.Y.Z[-rcN]` on the merge SHA. Do not create manual tags for future releases and
 never move or delete a release tag. A failed run can be retried with `workflow_dispatch`, whose
 only input is the number of an already-merged PR; it does not accept a SHA, version, or tag.
