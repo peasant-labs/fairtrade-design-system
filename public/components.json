@@ -1,7 +1,7 @@
 {
   "$description": "fairtrade component manifest, generated from src/ui. import from the barrel: import { Button } from \"src/ui\". every component is token-styled (classes in src/index.css) and works in both themes. props shows the Storybook-controllable props; full prop docs are the JSDoc in each file.",
   "import": "src/ui (barrel: src/ui/index.js)",
-  "count": 51,
+  "count": 52,
   "components": [
     {
       "name": "Accordion",
@@ -817,6 +817,30 @@
         "Default",
         "Collapsed",
         "TogglesCascade"
+      ]
+    },
+    {
+      "name": "HelperGroup",
+      "category": "lists",
+      "title": "lists/helper groups",
+      "file": "src/ui/HelperGroup.jsx",
+      "exports": [
+        "HelperGroup",
+        "HelperGroupListItem",
+        "HelperThreadRow"
+      ],
+      "doc": "HelperGroup - collapsed saved-thread disclosure with exact scoped member paging.",
+      "props": {},
+      "stories": [
+        "OwnerRetained",
+        "HelperOnlySearch",
+        "UnknownOwners",
+        "UnavailableOwner",
+        "ExpiredQuery",
+        "FailedMembers",
+        "MemberPaging",
+        "UnknownInputs",
+        "LoadingMembers"
       ]
     },
     {

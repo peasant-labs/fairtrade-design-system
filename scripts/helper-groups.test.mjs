@@ -8,7 +8,7 @@ import react from '@vitejs/plugin-react'
 import YAML from 'yaml'
 
 /** @typedef {{id: string, scope: string, count: number, pages: string[][]}} GroupFixture */
-/** @typedef {{name: string, owner?: string, ownerStatus?: string, groups: GroupFixture[], expectedRows: string[], expectedText: string[], select?: string, expectedSelected?: string[], status?: string, paginate?: boolean}} GroupCase */
+/** @typedef {{name: string, owner?: string, ownerStatus?: string, ordinaryChild?: string, groups: GroupFixture[], expectedRows: string[], expectedText: string[], select?: string, expectedSelected?: string[], status?: string, paginate?: boolean, update?: {id: string, turnCount: number}}} GroupCase */
 /** @returns {{rows: Record<string, object>, cases: GroupCase[]}} */
 function loadFixtures() {
   const doc = YAML.parseDocument(readFileSync('scripts/testdata/helper_group_listing.yaml', 'utf8'), { uniqueKeys: true })
@@ -46,13 +46,19 @@ try {
     const container = document.getElementById('root')
     const root = createRoot(container)
     let settle
+    let updateRow
     function Host() {
       const [pages, setPages] = React.useState({})
+      const [rowUpdates, setRowUpdates] = React.useState({})
+      updateRow = (update) => setRowUpdates((previous) => ({ ...previous, [update.id]: update }))
       settle = (request) => setPages((previous) => ({ ...previous, [request.groupId]: { page: request.page, status: fixture.status || 'ready' } }))
-      const row = (id) => React.createElement(HelperThreadRow, { ...fixtures.rows[id],
+      const row = (id) => React.createElement(HelperThreadRow, { ...fixtures.rows[id], ...rowUpdates[id],
         href: `/transcripts/${id}`, onOpen: (identity, event) => { event.preventDefault(); opened.push(identity) },
         onSelect: (identity, checked) => { if (checked) selected.push(identity); else selected.splice(selected.indexOf(identity), 1) },
-      }, React.createElement('span', { className: 'route-status' }, `status for ${id}`))
+      }, React.createElement('span', { className: 'route-status' }, `status for ${id}`),
+      fixture.ordinaryChild && id === fixture.owner ? React.createElement('button', {
+        type: 'button', className: 'ordinary-child-exit', onClick: () => opened.push(fixture.ordinaryChild),
+      }, 'open ordinary child') : null)
       return React.createElement(React.Fragment, null, fixture.groups.map((group) => {
         const state = pages[group.id] || { page: 1, status: 'idle' }
         return React.createElement(HelperGroupListItem, { key: group.id, owner: fixture.owner ? row(fixture.owner) : undefined, ownerStatus: fixture.ownerStatus },
@@ -75,6 +81,8 @@ try {
     await act(async () => root.render(React.createElement(Host)))
     try {
       assert.equal(requests.length, 0, 'mount must not fetch or select')
+      if (!fixture.owner) assert.equal(container.querySelector('[data-thread-id]'), null, 'context cannot fabricate a hidden owner row')
+      else assert.equal(container.querySelector('[data-thread-id]').dataset.threadId, fixture.owner, 'ordinary owner stays above its group')
       for (const trigger of container.querySelectorAll('.helper-group-trigger')) {
         assert.equal(trigger.getAttribute('aria-expanded'), 'false')
         assert.equal(document.getElementById(trigger.getAttribute('aria-controls')).hidden, true)
@@ -97,6 +105,7 @@ try {
         await act(async () => settle(request))
         assert.ok(document.activeElement.classList.contains('helper-group-page-heading'), 'completed requested page receives focus')
       }
+      if (fixture.update) await act(async () => updateRow(fixture.update))
       assert.deepEqual([...container.querySelectorAll('.helper-group-members [data-thread-id]')].map((row) => row.dataset.threadId), fixture.expectedRows, fixture.name)
       for (const text of fixture.expectedText) assert.ok(container.textContent.includes(text), `${fixture.name}: ${text}`)
       assert.equal(container.querySelectorAll('.helper-group-trigger input,.helper-group-context input').length, 0, 'no aggregate or context selection')
@@ -107,6 +116,10 @@ try {
         await click(member.querySelector('a'))
       }
       assert.deepEqual(opened, fixture.expectedRows, 'individual open identity')
+      if (fixture.ordinaryChild) {
+        await click(container.querySelector('.ordinary-child-exit'))
+        assert.equal(opened.at(-1), fixture.ordinaryChild, 'retained ordinary child exit invokes its original callback')
+      }
       if (fixture.select) {
         await click(container.querySelector(`.helper-group-members [data-thread-id="${fixture.select}"] input`))
         assert.deepEqual(selected, fixture.expectedSelected, 'explicit individual selection only')

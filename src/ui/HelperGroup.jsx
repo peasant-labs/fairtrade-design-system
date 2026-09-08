@@ -4,6 +4,8 @@ import BrandMark from './BrandMark.jsx'
 import Checkbox from './Checkbox.jsx'
 
 /**
+ * HelperGroup - collapsed saved-thread disclosure with exact scoped member paging.
+ *
  * Presentation only: pass the exact authorized member page from the host. No
  * wire decoding, membership inference, fetching, or selection aggregation occurs
  * here. renderMember receives the original row, including its route-specific data.
@@ -77,6 +79,8 @@ function HelperGroupDisclosure({
             {busy && 'loading saved helper threads'}
             {status === 'idle' && 'expand to load saved helper threads'}
             {ready && `${total} saved helper threads in this result`}
+            {status === 'scope_expired' && 'helper query expired; refresh the originating list'}
+            {status === 'error' && 'helper members could not be loaded; retry this page'}
           </div>
           {status === 'scope_expired' ? (
             <div className="helper-group-notice">

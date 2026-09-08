@@ -4188,6 +4188,7 @@
 a.helper-thread-open { text-decoration: underline; }
 .helper-thread-meta { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-2); }
 .helper-thread-provider { display: inline-flex; gap: var(--sp-2); align-items: center; }
-.helper-demo { padding: var(--sp-5); max-width: 100%; }
+.helper-demo { max-width: 100%; }
 .helper-demo h2 { font-family: var(--font-display); font-size: var(--fs-lg); margin-bottom: var(--sp-3); }
+.helper-demo-description { font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); max-width: var(--measure-prose); margin-bottom: var(--sp-4); }
 .helper-demo-summary { font-family: var(--font-mono); font-size: var(--fs-label); font-variant-numeric: tabular-nums; margin-bottom: var(--sp-4); }

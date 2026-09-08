@@ -11,12 +11,19 @@ requiredNames:
   - focus-pagination
   - measured-zero
   - unknown-input-count
+  - loading-members
+  - ordinary-child-exit
+smoke:
+  group: { groupId: hg_parent, memberScope: exact-query, helperThreadCount: 2, members: [G1, G2], page: 1, limit: 2, total: 2, status: ready, expanded: true }
+  context: { ownerStatus: known_unavailable }
+  thread: G2
 rows:
   P1: { id: P1, title: Fix Parser, provider: codex, inputSubmissionCount: 1, turnCount: 5 }
   G1: { id: G1, title: Review Parser, provider: codex, inputSubmissionCount: 0, turnCount: 4 }
   G2: { id: G2, title: Review Parser, provider: codex, inputSubmissionCount: 0, turnCount: 9 }
   G4: { id: G4, title: Replacement Review, provider: codex, inputSubmissionCount: 0, turnCount: 2 }
   OLD: { id: OLD, title: Historical Input, provider: opencode, turnCount: 5 }
+  O1: { id: O1, title: Ordinary Child, provider: opencode, turnCount: 3 }
 cases:
   - name: three-independent-counts
     owner: P1
@@ -48,7 +55,8 @@ cases:
     owner: P1
     groups: [{ id: hg_parent, scope: appended-query, count: 2, pages: [[G1, G2]] }]
     expectedRows: [G1, G2]
-    expectedText: [2 saved helper threads, 9 turns]
+    update: { id: G1, turnCount: 20 }
+    expectedText: [2 saved helper threads, 20 turns]
   - name: trunk-replacement
     owner: P1
     groups: [{ id: hg_parent, scope: replacement-query, count: 3, pages: [[G1, G2, G4]] }]
@@ -89,3 +97,15 @@ cases:
     groups: [{ id: hg_old, scope: historical-query, count: 1, pages: [[G2]] }]
     expectedRows: [G2]
     expectedText: [unknown input submissions, 5 turns]
+  - name: loading-members
+    owner: P1
+    groups: [{ id: hg_parent, scope: pending-query, count: 1, pages: [[G2]] }]
+    status: loading
+    expectedRows: []
+    expectedText: [loading saved helper threads]
+  - name: ordinary-child-exit
+    owner: P1
+    ordinaryChild: O1
+    groups: [{ id: hg_parent, scope: child-query, count: 1, pages: [[G2]] }]
+    expectedRows: [G2]
+    expectedText: [ordinary child]
