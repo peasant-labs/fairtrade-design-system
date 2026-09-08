@@ -1,4 +1,18 @@
 @import "tailwindcss";
+
+/* Current session context and independently scoped retained history. */
+.txn-context { padding: var(--sp-4); border-bottom: var(--bd); background: var(--surface); color: var(--ink); }
+.txn-context-source + .txn-context-source { margin-top: var(--sp-3); }
+.txn-context-row, .txn-earlier-toggle { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2); font: var(--fs-sm)/var(--lh-body) var(--font-mono); }
+.txn-context-row > svg, .txn-earlier-toggle > svg { width: var(--ic-md); height: var(--ic-md); flex-shrink: 0; }
+.txn-context-link, .txn-earlier-toggle { min-height: var(--control-h); color: var(--ink); background: var(--surface); border: var(--bd-strong); border-radius: 0; padding: var(--sp-2) var(--sp-3); cursor: pointer; text-align: left; }
+.txn-context-link { font: var(--fs-sm)/var(--lh-body) var(--font-mono); text-decoration: underline; }
+.txn-context-link:hover, .txn-earlier-toggle:hover { background: var(--surface-hover); }
+.txn-context-note { font: var(--fs-body)/var(--lh-body) var(--font-body); max-width: var(--measure-prose); margin: var(--sp-3) 0; }
+.txn-context-status { color: var(--ink-3); }
+.txn-earlier { margin-top: var(--sp-3); }
+.txn-earlier-toggle { width: 100%; }
+.txn-earlier [hidden] { display: none; }
 /* graph node-visual aesthetics (.ft-gnode / .ft-graph). Colocated in the graph sub-barrel and
    also pulled into the lib CSS bundle (lib-components.css) for npm consumers; importing it here
    loads the SAME node-visual styling into the fairtrade app + mockup + storybook, which render the

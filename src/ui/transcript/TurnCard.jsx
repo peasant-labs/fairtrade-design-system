@@ -69,6 +69,7 @@ export default function TurnCard({
 }) {
   if (!turn) return null
   const isUser = turn.role === 'user'
+  const isEarlier = !!turn.partition && turn.partition !== 'main'
   const isSub = !!turn.depth && turn.depth > 0
   // The assistant is the agent, so a present canonical provider selects its
   // accent. Curated turns may omit provider and use the neutral assistant
@@ -108,7 +109,7 @@ export default function TurnCard({
           {turn.time ?? formatRelative(turn.timestamp)}
         </span>
       )}
-      <button
+      {!isEarlier && <button
         type="button"
         className="txn-anchor"
         data-turn-control={turn.index}
@@ -117,7 +118,7 @@ export default function TurnCard({
         onClick={() => onCopyAnchor(turn.index)}
       >
         {copied ? <Check size={13} aria-hidden="true" /> : <LinkIcon size={13} aria-hidden="true" />}
-      </button>
+      </button>}
       {renderActions ? (
         renderActions(turn)
       ) : onLabel && (
@@ -182,8 +183,10 @@ export default function TurnCard({
     <div
       className="txn-turnwrap"
       ref={(el) => registerRef(turn.index, el)}
-      data-turn={turn.index}
-      id={'turn-' + turn.index}
+      data-turn={isEarlier ? undefined : turn.index}
+      data-source-entry-ref={turn.sourceEntryRef}
+      data-partition={turn.partition ?? 'main'}
+      id={isEarlier ? `${turn.partition}-turn-${turn.index}` : 'turn-' + turn.index}
     >
       {turn.modelChangedFrom && turn.effectiveModel && (
         <div className="txn-modelchange mono" role="status">

@@ -1,0 +1,171 @@
+base:
+  id: context-retention-demo
+  harness: codex
+  project: Parser
+  startTime: '2026-09-01T10:00:00Z'
+  endTime: '2026-09-01T10:01:00Z'
+  durationMins: 1
+  totalTokens: 0
+  tokensIn: 0
+  tokensOut: 0
+  turnCount: 5
+  inputSubmissionCount: 1
+  toolCallCount: 1
+  relationships:
+    - {kind: context_from, targetState: target_known, targetLocalId: context-source, evidence: native_typed, anchor: {kind: through_redacted_entry, sourceEntryRef: branch-entry, sourceRevisionRef: public-revision}}
+    - {kind: started_by, targetState: target_known, targetLocalId: starter-source, evidence: native_typed}
+  turns: &layout
+    - index: 0
+      role: user
+      entryType: text
+      depth: 0
+      content: fix parser
+      sourceEntryRef: e_u1
+      provenance: &input {origin: submitted_input, actor: unknown, delivery: session_admission, ownership: local, evidence: native_typed, inputModality: text, submissionRef: s_u1}
+    - index: 1
+      role: system
+      entryType: text
+      depth: 0
+      content: injected AGENTS content
+      sourceEntryRef: e_ctx1
+      provenance: &context {origin: harness_context, actor: harness, delivery: system_lifecycle, ownership: local, evidence: native_typed, inputModality: none}
+    - index: 2
+      role: user
+      entryType: text
+      depth: 0
+      content: canonical media display content
+      sourceEntryRef: e_media1
+      provenance: {origin: submitted_input, actor: unknown, delivery: session_admission, ownership: local, evidence: native_typed, inputModality: media, submissionRef: s_u1}
+    - index: 3
+      role: assistant
+      entryType: text
+      depth: 0
+      content: I will inspect.
+      sourceEntryRef: e_a1
+      provenance: &output {origin: agent_output, actor: agent_delegate, delivery: unknown, ownership: local, evidence: native_typed, inputModality: none}
+      toolCalls:
+        - id: parser-tool
+          name: Bash
+          toolKind: execute
+          arguments: '{"command":"rg parser"}'
+          result: "parser.go:12 plus fixture long output\nexact trailing newline\n"
+          callEntryRef: e_call1
+          resultEntryRef: e_result1
+          callProvenance: &tool {origin: tool_activity, actor: agent_delegate, delivery: tool_delivery, ownership: local, evidence: native_typed, inputModality: none}
+          resultProvenance: *tool
+          usage: {ownerId: usage-result, sourceEntryRef: e_result1, scope: tool, completeness: partial, tokens: {output: 2}}
+    - {index: 4, role: assistant, entryType: thinking, depth: 0, content: I will inspect., sourceEntryRef: e_reason1, provenance: *output}
+navigation:
+  - {kind: context_from, status: resolved, localId: context-source, anchor: {kind: through_redacted_entry, sourceEntryRef: branch-entry, sourceRevisionRef: public-revision}}
+  - {kind: started_by, status: resolved, localId: starter-source}
+partitions: [main, earlier, both]
+themes: [dark, light]
+cases:
+  - name: native-text-thinking-pair
+    detail: {}
+    expectedIndices: [0, 1, 2, 3, 4]
+  - name: short-native-system-context
+    detail:
+      turnCount: 2
+      inputSubmissionCount: 0
+      toolCallCount: 0
+      turns:
+        - {index: 0, role: system, entryType: text, depth: 0, content: ok, sourceEntryRef: e_short, provenance: *context}
+        - {index: 1, role: system, entryType: text, depth: 0, content: ok, sourceEntryRef: e_unknown, provenance: &unknown {origin: unknown, actor: unknown, delivery: unknown, ownership: uncertain, evidence: unknown, inputModality: unknown}}
+    expectedIndices: [0, 1]
+  - name: equal-text-distinct-submissions
+    detail:
+      turnCount: 2
+      inputSubmissionCount: 2
+      toolCallCount: 0
+      turns:
+        - {index: 0, role: user, entryType: text, depth: 0, content: same input, sourceEntryRef: e_input_a, provenance: {origin: submitted_input, actor: unknown, delivery: session_admission, ownership: local, evidence: native_typed, inputModality: text, submissionRef: s_a}}
+        - {index: 1, role: user, entryType: text, depth: 0, content: same input, sourceEntryRef: e_input_b, provenance: {origin: submitted_input, actor: unknown, delivery: session_admission, ownership: local, evidence: native_typed, inputModality: text, submissionRef: s_b}}
+    expectedIndices: [0, 1]
+  - name: equal-text-distinct-partitions
+    detail:
+      turnCount: 1
+      inputSubmissionCount: 0
+      toolCallCount: 0
+      turns:
+        - {index: 0, role: user, entryType: text, depth: 0, content: Same retained text, sourceEntryRef: e_main, provenance: *unknown}
+    expectedIndices: [0]
+  - name: reference-only-and-mixed-boundary
+    detail:
+      turnCount: 6
+      toolCallCount: 0
+      turns:
+        - {index: 0, role: user, entryType: text, depth: 0, content: same input}
+        - {index: 1, role: user, entryType: text, depth: 0, content: same input, sourceEntryRef: e_reference}
+        - {index: 2, role: user, entryType: text, depth: 0, content: same input}
+        - {index: 3, role: system, entryType: text, depth: 0, content: '', sourceEntryRef: e_empty}
+        - {index: 4, role: assistant, entryType: text, depth: 0, content: '', provenance: *unknown}
+        - {index: 5, role: assistant, entryType: text, depth: 0, content: same input, toolCalls: [{id: folded-only, name: Bash, arguments: '{}', result: '', callProvenance: *tool}]}
+    expectedIndices: [0, 1, 2, 3, 4, 5]
+  - name: unknown-literal-wrapper
+    detail:
+      turnCount: 1
+      inputSubmissionCount: 0
+      toolCallCount: 0
+      turns:
+        - {index: 0, role: user, entryType: text, depth: 0, content: '<thinking>literal excerpt</thinking>', sourceEntryRef: e_literal, provenance: *unknown}
+    expectedIndices: [0]
+  - name: invalid-evidence-not-legacy
+    detail: {}
+    invalid:
+      - {name: empty-provenance, path: [turns, 1, provenance], value: {}}
+      - {name: null-provenance, path: [turns, 1, provenance], value: null}
+      - {name: null-reference, path: [turns, 1, sourceEntryRef], value: null}
+      - {name: malformed-utf8, path: [turns, 1, sourceEntryRef], surrogate: true}
+      - {name: oversized-reference, path: [turns, 1, sourceEntryRef], value: '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901'}
+      - {name: duplicate-owner-reference, path: [turns, 1, sourceEntryRef], value: e_u1}
+      - {name: wrong-folded-usage-target, path: [turns, 3, toolCalls, 0, usage, sourceEntryRef], value: e_u1}
+      - {name: malformed-folded-provenance, path: [turns, 3, toolCalls, 0, callProvenance], value: {}}
+  - name: legacy-filter-control
+    legacy: true
+    detail:
+      turnCount: 6
+      toolCallCount: 1
+      turns:
+        - {index: 0, role: system, entryType: text, depth: 0, content: ok}
+        - {index: 1, role: assistant, entryType: text, depth: 0, content: ''}
+        - {index: 2, role: assistant, entryType: text, depth: 0, content: same}
+        - {index: 3, role: assistant, entryType: text, depth: 0, content: same, toolCalls: [{id: legacy-tool, name: Bash, arguments: '{}', result: ok}]}
+        - {index: 4, role: assistant, entryType: text, depth: 0, content: same}
+        - {index: 5, role: assistant, entryType: text, depth: 0, content: '<thinking>legacy thought</thinking>legacy response'}
+    expectedIndices: [3, 5]
+navigationCases:
+  - name: different-source-and-starter
+    expectedLabels: [context inherited from, started by]
+    expectedTargets: [context-source, starter-source]
+    exact: true
+  - name: same-source-and-starter
+    sameTarget: true
+    expectedLabels: [context inherited from and started by]
+    expectedTargets: [context-source]
+    exact: true
+  - name: changed-public-revision
+    revision: changed-revision
+    expectedLabels: [context inherited from, started by]
+    expectedTargets: [context-source, starter-source]
+    exact: false
+  - name: unavailable-source
+    status: known_unavailable
+    expectedLabels: [context inherited from, started by]
+    expectedTargets: []
+  - name: inaccessible-source
+    status: inaccessible
+    expectedLabels: [context inherited from, started by]
+    expectedTargets: []
+  - name: conflicting-evidence
+    conflict: true
+    expectedLabels: [context inherited from, started by]
+    expectedTargets: []
+  - name: missing-host-navigation
+    omit: true
+    expectedLabels: [context inherited from, started by]
+    expectedTargets: []
+countCases:
+  - {name: unmeasured, absent: true, expected: unknown}
+  - {name: measured-zero, value: 0, expected: '0'}
+  - {name: one-submission-five-records, value: 1, expected: '1'}

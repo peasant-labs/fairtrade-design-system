@@ -93,6 +93,7 @@
  * @property {() => void} [onCopyLink]
  * @property {() => void} [onChangeVisibility]
  * @property {(format: 'json' | 'jsonl' | 'markdown') => void} [onExport]
+ * @property {(navigation: import('@peasant-labs/schema').SessionRelationshipNavigation) => void} [onNavigateRelationship] authorized read target only; host owns current route and Back restoration
  */
 
 /* ── graph slot (render-prop; the graph-engine seam) ─────────────────────────── */
@@ -144,6 +145,8 @@
  * @property {(open: boolean) => void} [onRightRailOpenChange]
  * @property {Record<string, boolean>} [openTools]                     tool id → open?
  * @property {(openTools: Record<string, boolean>) => void} [onOpenToolsChange]
+ * @property {Record<string, boolean>} [earlierHistoryOpen] section id to disclosure state, default closed
+ * @property {(open: Record<string, boolean>) => void} [onEarlierHistoryOpenChange] persist with host route state for Back
  * @property {TranscriptInitialPosition | null} [initialPosition]     one-time position; null clears, and session/target/requestKey changes rearm
  * @property {number} [activeTurn]
  * @property {(turnIndex: number) => void} [onActiveTurnChange]
