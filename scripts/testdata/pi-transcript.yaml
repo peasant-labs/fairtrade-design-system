@@ -1,0 +1,223 @@
+probe:
+  ownerHeadings: [assistant 2 owners, tool 1 owner, summary 2 owners]
+  themes: [dark, light]
+  viewport: {width: 1440, height: 1000}
+  maxReducedMotionSeconds: 0.00001
+  toolName: Orchard.CheckPlan
+  toolNamespace: Orchard.Extension
+  thinking: Consider Orchard constraints exactly once.
+  hidden: MetadataOnlyNeedle
+  args: Careful
+  result: 'Check failed: revise the plan. [image omitted]'
+  details: NeedsReview
+  cost: '0.30000000000000004'
+  mark:
+    viewBox: 0 0 800 800
+    path: M165.29 165.29 H517.36 V400 H400 V517.36 H282.65 V634.72 H165.29 Z M282.65 282.65 V400 H400 V282.65 Z M517.36 400 H634.72 V634.72 H517.36 Z
+payload:
+  id: pi-public-demo
+  harness: pi
+  project: Orchard
+  startTime: '2026-09-01T10:00:00Z'
+  endTime: '2026-09-01T10:01:00Z'
+  durationMins: 1
+  totalTokens: 0
+  tokensIn: 0
+  tokensOut: 0
+  turnCount: 6
+  toolCallCount: 2
+  turns:
+    - index: 0
+      role: user
+      depth: 0
+      timestamp: '2026-09-01T10:00:00Z'
+      content: 'Review the Orchard plan. [image omitted]'
+    - index: 1
+      role: system
+      depth: 0
+      timestamp: '2026-09-01T10:00:01Z'
+      sourceEntryRef: entry-context
+      content: 'OK [image omitted]'
+    - index: 2
+      role: assistant
+      depth: 0
+      timestamp: '2026-09-01T10:00:02Z'
+      sourceEntryRef: entry-answer
+      content: '<thinking>Consider Orchard constraints exactly once.</thinking>Checking the plan. [image omitted]'
+      usage:
+        ownerId: owner-answer
+        sourceEntryRef: entry-answer
+        scope: assistant
+        completeness: complete
+        tokens: {input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0}
+        cost: {source: recorded_harness_estimate, input: '1e-7', output: '0.30000000000000004', total: '0.4'}
+      toolCalls:
+        - id: tool-orchard
+          namespace: Orchard.Extension
+          name: Orchard.CheckPlan
+          toolKind: other
+          callEntryRef: entry-answer
+          resultEntryRef: entry-result
+          arguments: '{"Plan":{"Name":"Orchard","Options":[true,{"Mode":"Careful"}]}}'
+          result: 'Check failed: revise the plan. [image omitted]'
+          isError: true
+          usage:
+            ownerId: owner-result
+            sourceEntryRef: entry-result
+            scope: tool
+            completeness: partial
+            tokens: {output: 2, reasoning: 1}
+        - id: tool-pending
+          name: Orchard.AwaitReview
+          toolKind: other
+          callEntryRef: entry-answer
+          arguments: '{"Queue":"Review"}'
+          result: ''
+    - index: 3
+      role: assistant
+      depth: 0
+      timestamp: '2026-09-01T10:00:03Z'
+      sourceEntryRef: entry-empty
+      content: ''
+      usage: {ownerId: owner-empty, sourceEntryRef: entry-empty, scope: assistant, completeness: unknown}
+    - index: 4
+      role: system
+      depth: 0
+      timestamp: '2026-09-01T10:00:04Z'
+      sourceEntryRef: entry-summary
+      content: 'Earlier Orchard history stays visible.'
+      usage:
+        ownerId: owner-summary
+        sourceEntryRef: entry-summary
+        scope: summary
+        completeness: unknown
+        cost: {source: recorded_harness_estimate, total: '1e-7'}
+    - index: 5
+      role: system
+      depth: 0
+      timestamp: '2026-09-01T10:00:05Z'
+      sourceEntryRef: entry-branch
+      content: 'Earlier Orchard history stays visible.'
+      usage: {ownerId: owner-branch, sourceEntryRef: entry-branch, scope: summary, completeness: unknown}
+  nativeMetadata:
+    - id: meta-state
+      kind: pi.custom.data
+      source: {entryRef: entry-state, sourceType: pi.custom}
+      customType: OrchardState
+      data: {HiddenState: 'MetadataOnlyNeedle', deferred: true, responseId: ExtensionLocal}
+    - id: meta-context
+      kind: pi.custommessage.details
+      source: {entryRef: entry-context, sourceType: pi.custom_message}
+      attachment: {turnIndex: 1}
+      customType: OrchardContext
+      data: {display: false}
+    - id: meta-result
+      kind: pi.toolresult.details
+      source: {entryRef: entry-result, sourceType: pi.message, messageRole: toolResult}
+      attachment: {turnIndex: 2, toolCallId: tool-orchard}
+      data: {Report: {State: NeedsReview}}
+    - id: meta-summary
+      kind: pi.compaction.details
+      source: {entryRef: entry-summary, sourceType: pi.compaction}
+      attachment: {turnIndex: 4}
+      data: {Phase: Planning}
+    - id: meta-branch
+      kind: pi.branchsummary.details
+      source: {entryRef: entry-branch, sourceType: pi.branch_summary}
+      attachment: {turnIndex: 5}
+      data: {Phase: Review}
+cases:
+  - name: active-history-context-thinking-tools-images
+  - name: zero-partial-unknown-cost-independent
+  - name: equal-valued-distinct-owners
+    equalOwners: true
+  - name: complete-tool-summary-subsets-not-added
+    completeScopes: {input: 1, output: 2, cacheRead: 3, cacheWrite: 4, totalTokens: 10, reasoning: 1, cacheWrite1h: 2}
+  - name: short-context-preserved
+    shortContext: true
+  - name: metadata-only-no-conversation
+    metadataOnly: true
+  - name: token-aggregate-overflow
+    overflow: true
+    error: JS-safe
+  - name: duplicate-owner-rejected
+    duplicateOwner: true
+    error: owner
+  - name: invalid-token-rejected
+    invalidToken: true
+    error: token
+  - name: metadata-target-rejected
+    invalidTarget: true
+    error: metadata matrix
+  - name: raw-duplicate-rejected
+    rawDuplicate: true
+    error: duplicate
+namespaceCases:
+  - name: namespace-absent-accepted
+    omitNamespace: true
+    toolMembers: {}
+  - name: namespace-empty-preserved
+    toolMembers: {namespace: ''}
+    expectedNamespace: ''
+  - name: namespace-unicode-preserved
+    toolMembers: {namespace: 'Orchard.工具.ÉCLAIR'}
+    expectedNamespace: 'Orchard.工具.ÉCLAIR'
+  - name: namespace-null-rejected
+    toolMembers: {namespace: null}
+    error: namespace
+  - name: namespace-nonstring-rejected
+    toolMembers: {namespace: 12}
+    error: namespace
+  - name: namespace-duplicate-rejected
+    toolMembers: {namespace: Orchard.Extension}
+    duplicateNamespace: true
+    error: duplicate
+  - name: namespace-pending-error-results-preserved
+    toolPosition: 1
+    toolMembers: {namespace: Pending.Extension, isError: true}
+    expectedNamespace: Pending.Extension
+  - name: namespace-all-capabilities-preserved
+    toolMembers: {namespace: Capability.Extension}
+    observedModel: pi-model-v1
+    expectedNamespace: Capability.Extension
+  - name: namespace-in-opaque-arguments-accepted
+    toolMembers: {}
+    expectedNamespace: Orchard.Extension
+    arguments: {namespace: '', nested: {namespace: null, toolCalls: [{namespace: Opaque.Extension}]}}
+  - name: namespace-large-opaque-metadata-preserved
+    toolMembers: {namespace: Metadata.Extension}
+    metadataStringBytes: 51175
+    expectedRecordBytes: 52620
+    expectedNamespace: Metadata.Extension
+  - name: namespace-non-pi-absent-accepted
+    legacyHarness: claude-code
+    omitNamespace: true
+    toolMembers: {}
+  - name: namespace-non-pi-empty-accepted
+    legacyHarness: claude-code
+    toolMembers: {namespace: ''}
+    expectedNamespace: ''
+  - name: namespace-non-pi-unicode-accepted
+    legacyHarness: claude-code
+    toolMembers: {namespace: 'Mixed.工具.Éclair'}
+    expectedNamespace: 'Mixed.工具.Éclair'
+  - name: namespace-non-pi-null-rejected
+    legacyHarness: claude-code
+    toolMembers: {namespace: null}
+    error: namespace
+  - name: namespace-non-pi-number-rejected
+    legacyHarness: claude-code
+    toolMembers: {namespace: 12}
+    error: namespace
+  - name: namespace-non-pi-object-rejected
+    legacyHarness: claude-code
+    toolMembers: {namespace: {wrong: type}}
+    error: namespace
+  - name: namespace-non-pi-array-rejected
+    legacyHarness: claude-code
+    toolMembers: {namespace: [wrong]}
+    error: namespace
+  - name: namespace-non-pi-boolean-rejected
+    legacyHarness: claude-code
+    toolMembers: {namespace: false}
+    error: namespace

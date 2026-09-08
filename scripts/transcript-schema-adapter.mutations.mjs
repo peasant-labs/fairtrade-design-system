@@ -29,6 +29,7 @@ try {
     const rewritten = source
       .replaceAll("from './adapter.parse.js'", `from '${new URL('../src/ui/transcript/adapter.parse.js', import.meta.url).href}'`)
       .replaceAll("from './analytics.js'", `from '${new URL('../src/ui/transcript/analytics.js', import.meta.url).href}'`)
+      .replaceAll("from './usage.js'", `from '${new URL('../src/ui/transcript/usage.js', import.meta.url).href}'`)
       .replace("from '@peasant-labs/schema'", `from '${pathToFileURL(resolve('node_modules/@peasant-labs/schema/dist/index.js')).href}'`)
       .replace(mutation.find, mutation.replace)
     writeFileSync(artifact, rewritten)

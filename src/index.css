@@ -9,6 +9,22 @@
 @source "./sections-react";
 @source "./App.jsx";
 
+.txn-usage, .txn-native-details { margin-block: var(--sp-3); color: var(--ink-2); }
+.txn-usage summary, .txn-native-details summary { cursor: pointer; min-height: var(--target-min); font-family: var(--font-mono); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.txn-usage-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--measure-read)), 1fr)); gap: var(--sp-2); padding: var(--sp-3); border: var(--bd); }
+.txn-usage-fields > div { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: space-between; }
+.txn-usage-fields dt, .txn-usage-fields dd { font-family: var(--font-mono); font-size: var(--fs-body); margin: 0; overflow-wrap: anywhere; }
+.txn-usage-note { font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); max-width: var(--measure-prose); margin-block: var(--sp-3); }
+.txn-usage-scopes { margin-inline: var(--sp-4); }
+.txn-usage-scopes[open] { max-height: var(--measure-read); overflow: auto; }
+.txn-usage-scopes h3 { font-size: var(--fs-md); margin-block: var(--sp-3); }
+.txn-generic .txn-code { font-size: var(--fs-body); }
+.txn-generic .txn-out-eyebrow { font-size: var(--fs-sm); }
+.txn-tc-head .kind, .txn-tc-head .path, .txn-title, .txn-crumb { text-transform: none; }
+.txn-tool-namespace { display: inline-flex; gap: var(--sp-1); color: var(--mauve); }
+.txn-tool-namespace-label { color: var(--ink-3); font-weight: 400; }
+.txn-thinking-body em, .txn-thinking-toggle i { font-style: normal; }
+
 /* ----------------------------------------------------------------------
    design tokens (single source of truth). dark is the default; the
    [data-theme="light"] block overrides the same vars, and because the

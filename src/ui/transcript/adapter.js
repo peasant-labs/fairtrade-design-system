@@ -27,7 +27,8 @@
 
 import { parseArgs, parseResult, extractPath, editPairs, writeContent, countDiff } from './adapter.parse.js'
 import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analytics.js'
-import { zObservedModelID } from '@peasant-labs/schema'
+import { zObservedModelID, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
+import { aggregateUsage } from './usage.js'
 
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
@@ -103,6 +104,7 @@ function recordOf(v) {
  */
 export function prefilterTurns(turns) {
   const filtered = turns.filter((t) => {
+    if (t.sourceEntryRef || t.usage) return true
     const hasContent = !!t.content?.trim()
     const hasTools = (t.toolCalls?.length ?? 0) > 0
     if (!hasContent && !hasTools) return false
@@ -113,7 +115,7 @@ export function prefilterTurns(turns) {
   const deduped = []
   for (const curr of filtered) {
     const prev = deduped[deduped.length - 1]
-    if (prev && prev.role === curr.role && prev.content === curr.content && prev.content.trim() !== '') {
+    if (prev && !prev.sourceEntryRef && !curr.sourceEntryRef && !prev.usage && !curr.usage && prev.role === curr.role && prev.content === curr.content && prev.content.trim() !== '') {
       const prevHasTools = (prev.toolCalls?.length ?? 0) > 0
       const currHasTools = (curr.toolCalls?.length ?? 0) > 0
       if (currHasTools && !prevHasTools) deduped[deduped.length - 1] = curr
@@ -342,15 +344,19 @@ function buildDiffHunks(call) {
 function buildToolCallVM(call) {
   /** @type {ToolCallVM} */
   const vm = { id: call.id, name: call.name, kind: classifyKind(call), group: groupFor(call), preview: makePreview(call) }
+  if (call.namespace !== undefined) vm.namespace = call.namespace
   const args = parseArgs(call.arguments)
   if (args !== undefined) vm.args = args
-  const output = parseResult(call.result)
+  const parsedOutput = parseResult(call.result)
+  const output = parsedOutput === undefined && call.result !== '' ? call.result : parsedOutput
   if (output !== undefined) vm.output = output
   const filePath = extractPath(call)
   if (filePath) vm.filePath = filePath
   if (call.durationMs != null) vm.durationMs = call.durationMs
   if (call.exitCode != null) vm.exitCode = call.exitCode
   if (call.isError) vm.isError = true
+  if (call.usage) vm.usage = call.usage
+  if (call.callEntryRef && !call.resultEntryRef) vm.pending = true
   const diff = buildDiffHunks(call)
   if (diff) {
     vm.diff = diff.hunks
@@ -677,9 +683,15 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
  * @returns {TranscriptViewModel}
  */
 export function adaptTranscript(payload, annotations, analytics, options) {
+  // New evidence uses the published validator. Preserve the existing legacy
+  // git/observation compatibility boundary. Callers scan raw network text with
+  // schema's root-specific parser before supplying a value here.
+  const hasToolNamespace = payload.turns?.some(turn => turn.toolCalls?.some(tool => recordOf(tool) && Object.prototype.hasOwnProperty.call(tool, 'namespace')))
+  const hasEvidence = payload.harness === 'pi' || payload.nativeMetadata !== undefined || hasToolNamespace || payload.turns?.some(t => t.usage || t.toolCalls?.some(tool => tool.usage))
+  if (hasEvidence) parseSessionDetailPayloadValue(payload)
   const completeTurns = payload.turns ?? []
   const stickyModels = resolveStickyModels(completeTurns, payload.model)
-  const filteredTurns = prefilterTurns(completeTurns)
+  const filteredTurns = payload.harness === 'pi' ? completeTurns : prefilterTurns(completeTurns)
   const visibleTurnIndices = options?.visibleTurnIndices === undefined ? null : new Set(options.visibleTurnIndices)
   const turns = visibleTurnIndices === null ? filteredTurns : filteredTurns.filter((turn) => visibleTurnIndices.has(turn.index))
   const labels = computeTurnLabels(turns)
@@ -706,6 +718,10 @@ export function adaptTranscript(payload, annotations, analytics, options) {
   for (let p = 0; p < turns.length; p++) {
     const t = turns[p]
     const toolCalls = (t.toolCalls ?? []).map(buildToolCallVM)
+    for (const tc of toolCalls) {
+      const records = payload.nativeMetadata?.filter(record => record.attachment?.turnIndex === t.index && record.attachment?.toolCallId === tc.id)
+      if (records?.length) tc.nativeMetadata = records
+    }
     for (const tc of toolCalls) toolCallsById.set(tc.id, tc)
 
     let content = t.content ?? ''
@@ -750,11 +766,12 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     if (depth === 0 && t.role === 'assistant') turnVM.provider = provider
     if (t.agentName) turnVM.agentName = t.agentName
     if (thinking) turnVM.thinking = thinking
+    if (t.usage) turnVM.usage = t.usage
     if (t.entryType) turnVM.entryType = t.entryType
     if (t.stopReason !== undefined && t.stopReason !== null) turnVM.stopReason = t.stopReason
     if (isError) turnVM.isError = true
     if (p === finalPos) turnVM.isFinal = true
-    if (t.tokensIn != null || t.tokensOut != null) turnVM.tokens = { in: t.tokensIn ?? 0, out: t.tokensOut ?? 0 }
+    if (!t.usage && (t.tokensIn != null || t.tokensOut != null)) turnVM.tokens = { in: t.tokensIn ?? 0, out: t.tokensOut ?? 0 }
     if (t.timestamp) turnVM.timestamp = t.timestamp
     const model = stickyModels.get(t.index)
     if (model?.effectiveModel !== undefined) turnVM.effectiveModel = model.effectiveModel
@@ -778,5 +795,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     filterIndex: buildFilterIndex(turnVMs, annotationsByTurn),
     analytics: an,
   }
+  if (payload.nativeMetadata) vm.nativeMetadata = payload.nativeMetadata
+  if (hasEvidence) vm.usageScopes = aggregateUsage(completeTurns)
   return vm
 }

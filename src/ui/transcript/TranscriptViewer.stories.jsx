@@ -1,6 +1,20 @@
 import { expect, userEvent, within } from 'storybook/test'
 import TranscriptViewer from './TranscriptViewer.jsx'
 import { frame } from '../story-frame.jsx'
+import { piPayload } from '../../mockups/inuse/pi-fixture.js'
+import { adaptTranscript } from './adapter.js'
+
+export const Pi = {
+  args: { viewModel: adaptTranscript(piPayload) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const tool = canvas.getByRole('button', { name: /Orchard.CheckPlan/ })
+    await userEvent.click(tool)
+    await expect(canvas.getByText('error result')).toBeVisible()
+    await expect(canvas.getByText('recorded tool details')).toBeVisible()
+    await expect(canvas.queryByText('MetadataOnlyNeedle')).toBeNull()
+  },
+}
 
 /* TranscriptViewer story — the composite single-transcript surface. CSF3, title
    'in use/transcript/TranscriptViewer'. It renders EVERY surface from one cooked

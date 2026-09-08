@@ -139,6 +139,7 @@ export const TOOL_GROUPS = Object.freeze([
  * @typedef {object} ToolCallVM
  * @property {string} id
  * @property {string} name                  display name (e.g. "Read", "Bash")
+ * @property {string} [namespace]           separately recorded namespace; empty string remains present evidence
  * @property {import('./wire-types.js').ToolCallKind} kind
  * @property {ToolGroup} group              filters-rail grouping
  * @property {string} preview               the one-line summary shown collapsed
@@ -148,6 +149,9 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {number} [durationMs]
  * @property {number} [exitCode]
  * @property {boolean} [isError]
+ * @property {import('@peasant-labs/schema').UsageDetail} [usage] validated owner evidence; cost strings remain verbatim
+ * @property {import('@peasant-labs/schema').NativeMetadataRecord[]} [nativeMetadata] attached structured details, excluded from conversation/search
+ * @property {boolean} [pending] no recorded result; never a fabricated success
  * @property {DiffHunkVM[]} [diff]          present for edit/write kinds
  * @property {number} [adds]                churn for edit/write
  * @property {number} [dels]
@@ -178,6 +182,7 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {import('@peasant-labs/schema').Harness} [provider] canonical provider identity for a top-level assistant turn
  * @property {string} [agentName]           subagent name when depth > 0
  * @property {ThinkingVM} [thinking]
+ * @property {import('@peasant-labs/schema').UsageDetail} [usage]
  * @property {ToolCallVM[]} toolCalls
  * @property {import('./wire-types.js').EntryType} [entryType]
  * @property {import('./wire-types.js').StopReason | null} [stopReason]
@@ -360,6 +365,23 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {HighlightVM[]} highlights                BACKS the HIGHLIGHTS tab (non-empty when present)
  * @property {FilterIndexVM} filterIndex
  * @property {TranscriptAnalyticsVM} [analytics]       render-when-present
+ * @property {import('@peasant-labs/schema').NativeMetadataRecord[]} [nativeMetadata] non-conversational, including unattached records
+ * @property {UsageScopeVM[]} [usageScopes] complete owner universe, before visible-turn filtering
+ */
+
+/**
+ * @typedef {object} UsageFieldVM
+ * @property {string} label
+ * @property {string} value exact known sum or unknown
+ * @property {import('@peasant-labs/schema').UsageCompleteness} completeness
+ */
+
+/**
+ * @typedef {object} UsageScopeVM
+ * @property {import('@peasant-labs/schema').UsageScope} scope
+ * @property {number} ownerCount
+ * @property {UsageFieldVM[]} tokens
+ * @property {UsageFieldVM[]} cost
  */
 
 export {}

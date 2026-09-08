@@ -1,0 +1,33 @@
+requiredCases:
+  - active-history-context-thinking-tools-images
+  - zero-partial-unknown-cost-independent
+  - equal-valued-distinct-owners
+  - complete-tool-summary-subsets-not-added
+  - short-context-preserved
+  - metadata-only-no-conversation
+  - token-aggregate-overflow
+  - duplicate-owner-rejected
+  - invalid-token-rejected
+  - metadata-target-rejected
+  - raw-duplicate-rejected
+requiredNamespaceCases:
+  - namespace-absent-accepted
+  - namespace-empty-preserved
+  - namespace-unicode-preserved
+  - namespace-null-rejected
+  - namespace-nonstring-rejected
+  - namespace-duplicate-rejected
+  - namespace-pending-error-results-preserved
+  - namespace-all-capabilities-preserved
+  - namespace-in-opaque-arguments-accepted
+  - namespace-large-opaque-metadata-preserved
+  - namespace-non-pi-absent-accepted
+  - namespace-non-pi-empty-accepted
+  - namespace-non-pi-unicode-accepted
+  - namespace-non-pi-null-rejected
+  - namespace-non-pi-number-rejected
+  - namespace-non-pi-object-rejected
+  - namespace-non-pi-array-rejected
+  - namespace-non-pi-boolean-rejected
+mutations:
+  - namespace-presence-dispatch

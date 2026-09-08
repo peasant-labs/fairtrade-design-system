@@ -37,9 +37,12 @@ const PATHS = {
   cursor:
     'M11.503.131 1.891 5.678a.84.84 0 0 0-.42.726v11.188c0 .3.162.575.42.724l9.609 5.55a1 1 0 0 0 .998 0l9.61-5.55a.84.84 0 0 0 .42-.724V6.404a.84.84 0 0 0-.42-.726L12.497.131a1.01 1.01 0 0 0-.996 0M2.657 6.338h18.55c.263 0 .43.287.297.515L12.23 22.918c-.062.107-.229.064-.229-.06V12.335a.59.59 0 0 0-.295-.51l-9.11-5.257c-.109-.063-.064-.23.061-.23',
   strike: 'M18.5 6L11 17.5h5.2L13.5 26 21 14.5h-5.2L18.5 6z',
+  // Official Pi OAuth mark, unchanged geometry, MIT licensed:
+  // https://github.com/earendil-works/pi/blob/da840b6216578c2a571d0374ac6a2091a83f9d91/packages/ai/src/auth/oauth/oauth-page.ts
+  pi: 'M165.29 165.29 H517.36 V400 H400 V517.36 H282.65 V634.72 H165.29 Z M282.65 282.65 V400 H400 V282.65 Z M517.36 400 H634.72 V634.72 H517.36 Z',
 }
 
-const VIEW_BOX = { strike: '6 6 20 20' }
+const VIEW_BOX = { strike: '6 6 20 20', pi: '0 0 800 800' }
 
 /* aliases so callers can pass the company OR the product name and still resolve a mark.
    codex has no Simple Icons mark of its own; it is an OpenAI product, so it falls back to
@@ -65,12 +68,13 @@ const BRAND_NAME = {
   cursor: 'Cursor',
   opencode: 'opencode',
   strike: 'Strike',
+  pi: 'Pi',
 }
 
 /**
  * resolve any accepted name/alias to a canonical mark key, or null when unknown.
  * @param {string} name
- * @returns {('claude'|'gemini'|'openai'|'cursor'|'opencode'|'strike')|null}
+ * @returns {('claude'|'gemini'|'openai'|'cursor'|'opencode'|'strike'|'pi')|null}
  */
 export function resolveBrand(name) {
   if (!name) return null
@@ -102,7 +106,7 @@ export default function BrandMark({ name, size, label, className = '', ...rest }
     : { 'aria-hidden': 'true', focusable: 'false' }
   return (
     <svg className={classes} viewBox={VIEW_BOX[key] ?? '0 0 24 24'} {...sizeProps} {...a11y} {...rest} data-brand={key}>
-      <path d={PATHS[key]} />
+      <path d={PATHS[key]} fillRule={key === 'pi' ? 'evenodd' : undefined} />
     </svg>
   )
 }
