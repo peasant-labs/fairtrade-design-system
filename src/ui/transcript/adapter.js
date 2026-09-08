@@ -686,7 +686,8 @@ export function adaptTranscript(payload, annotations, analytics, options) {
   // New evidence uses the published validator. Preserve the existing legacy
   // git/observation compatibility boundary. Callers scan raw network text with
   // schema's root-specific parser before supplying a value here.
-  const hasEvidence = payload.harness === 'pi' || payload.nativeMetadata !== undefined || payload.turns?.some(t => t.usage || t.toolCalls?.some(tool => tool.usage))
+  const hasToolNamespace = payload.turns?.some(turn => turn.toolCalls?.some(tool => recordOf(tool) && Object.prototype.hasOwnProperty.call(tool, 'namespace')))
+  const hasEvidence = payload.harness === 'pi' || payload.nativeMetadata !== undefined || hasToolNamespace || payload.turns?.some(t => t.usage || t.toolCalls?.some(tool => tool.usage))
   if (hasEvidence) parseSessionDetailPayloadValue(payload)
   const completeTurns = payload.turns ?? []
   const stickyModels = resolveStickyModels(completeTurns, payload.model)
