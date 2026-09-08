@@ -6,6 +6,8 @@ const TITLE = new RegExp(`^release\\((${VERSION_GRAMMAR})\\): (\\S.*)$`)
 const TAG = new RegExp(`^fairtrade-(${VERSION_GRAMMAR})$`)
 const ALLOWED_PERMISSIONS = new Set(['admin', 'maintain'])
 const MAX_REVIEW_PAGES = 10
+const GITHUB_API_VERSION = '2026-03-10'
+const SHA = /^[0-9a-f]{40}$/
 
 export function parseReleaseTitle(title) {
   if (typeof title !== 'string') throw new Error('Release title validation failed: the title was not a string. Use release(vX.Y.Z[-rcN]): subject.')
@@ -68,6 +70,43 @@ export function validateMergedPullRequest(payload, permission) {
   return { number, title, login, mergeSha, ...parseReleaseTitle(title) }
 }
 
+function requireRepository(payload, repository) {
+  const fullName = nonEmptyString(payload?.base?.repo?.full_name, 'base.repo.full_name')
+  if (fullName.toLowerCase() !== repository.toLowerCase() || payload?.head?.repo?.id !== payload?.base?.repo?.id) throw new Error(`Native stack release validation failed for PR #${payload?.number}: the pull request repositories do not match ${repository}. Move the release into a native stack in the release repository and retry.`)
+  return payload.base.repo.id
+}
+
+export function validateNativeStack(payload, stack, repository) {
+  const number = payload?.number
+  if (!Number.isSafeInteger(payload?.stack?.number) || payload.stack.number <= 0) throw new Error(`Native stack release validation failed for PR #${number}: stack.number must identify a canonical GitHub stack. Recreate the native stack and retry.`)
+  if (!stack || typeof stack !== 'object' || Array.isArray(stack) || stack.number !== payload.stack.number) throw new Error(`Native stack release validation failed for PR #${number}: GitHub returned mismatched stack metadata. Inspect the stack and retry.`)
+  if (stack.base?.ref !== 'main' || payload.stack.base?.ref !== 'main') throw new Error(`Native stack release validation failed for PR #${number}: the stack trunk is not main. Only a native stack targeting main may cut a release.`)
+  if (stack.open !== false) throw new Error(`Native stack release validation failed for PR #${number}: the stack is still open. Merge the stack into main before retrying.`)
+  const repositoryId = requireRepository(payload, repository)
+  if (!Array.isArray(stack.pull_requests)) throw new Error(`Native stack release validation failed for PR #${number}: pull_requests must be an array. The release cannot be tagged; inspect GitHub's stack response and retry.`)
+  const members = stack.pull_requests.filter((member) => member?.number === number)
+  if (members.length !== 1) throw new Error(`Native stack release validation failed for PR #${number}: the requested pull request is not exactly one member of stack #${stack.number}. Repair the stack membership and retry.`)
+  const member = members[0]
+  if (member.state !== 'closed' || typeof member.merged_at !== 'string' || member.merged_at.length === 0) throw new Error(`Native stack release validation failed for PR #${number}: the stack member is not recorded as merged. Wait for the asynchronous stack merge to finish and retry.`)
+  if (member.head?.repo?.id !== repositoryId || member.base?.repo?.id !== repositoryId) throw new Error(`Native stack release validation failed for PR #${number}: the stack member belongs to a different repository. Recreate the stack in ${repository} and retry.`)
+  return stack.number
+}
+
+export function resolveMergedTimelineSha(number, timeline, repository) {
+  if (!Array.isArray(timeline)) throw new Error(`Native stack release validation failed for PR #${number}: the issue timeline must be an array. The release cannot be tagged; retry after GitHub API recovers.`)
+  const merged = timeline.filter((event) => event?.event === 'merged')
+  if (merged.length !== 1) throw new Error(`Native stack release validation failed for PR #${number}: expected exactly one canonical merged timeline event, found ${merged.length}. Inspect the pull request timeline and retry.`)
+  const mergeSha = nonEmptyString(merged[0].commit_id, 'merged timeline commit_id')
+  const expectedURL = `https://api.github.com/repos/${repository}/commits/${mergeSha}`
+  if (!SHA.test(mergeSha) || merged[0].commit_url !== expectedURL) throw new Error(`Native stack release validation failed for PR #${number}: the merged timeline commit is not a canonical commit in ${repository}. Inspect the pull request timeline and retry.`)
+  return mergeSha
+}
+
+export function validateMainReachability(number, mergeSha, comparison) {
+  if (!comparison || typeof comparison !== 'object' || Array.isArray(comparison) || !['ahead', 'identical'].includes(comparison.status) || comparison.merge_base_commit?.sha !== mergeSha) throw new Error(`Merged release validation failed for PR #${number}: merge SHA ${mergeSha} is not proven reachable from main. Wait for the asynchronous merge to land on main, then retry.`)
+  return mergeSha
+}
+
 export class GitHubReleaseClient {
   constructor({ token, repository = process.env.GITHUB_REPOSITORY, fetchImpl = globalThis.fetch } = {}) {
     if (!token) throw new Error('GitHub client setup failed: no token was provided. Set GH_TOKEN to the read-only workflow token and retry.')
@@ -75,7 +114,7 @@ export class GitHubReleaseClient {
     this.token = token; this.repository = repository; this.fetchImpl = fetchImpl
   }
   async getResponse(path) {
-    const response = await this.fetchImpl(`https://api.github.com/repos/${this.repository}${path}`, { headers: { accept: 'application/vnd.github+json', authorization: `Bearer ${this.token}`, 'x-github-api-version': '2022-11-28' } })
+    const response = await this.fetchImpl(`https://api.github.com/repos/${this.repository}${path}`, { headers: { accept: 'application/vnd.github+json', authorization: `Bearer ${this.token}`, 'x-github-api-version': GITHUB_API_VERSION } })
     if (!response?.ok) throw new Error(`GitHub API request failed for ${path} with status ${response?.status ?? 'unknown'}. Check token permissions and GitHub availability, then retry.`)
     try { return { payload: await response.json(), link: response.headers?.get?.('link') ?? null } } catch (error) { throw new Error(`GitHub API response parsing failed for ${path}: ${error.message}. Retry after GitHub API returns valid JSON.`) }
   }
@@ -85,6 +124,9 @@ export class GitHubReleaseClient {
     return nonEmptyString(payload?.permission, 'permission')
   }
   async pullRequest(number) { return this.get(`/pulls/${number}`) }
+  async stack(number) { return this.get(`/stacks/${number}`) }
+  async timeline(number) { return this.get(`/issues/${number}/timeline?per_page=100`) }
+  async comparison(mergeSha) { return this.get(`/compare/${mergeSha}...main`) }
   async reviews(number) {
     let path = `/pulls/${number}/reviews?per_page=100`
     const seen = new Set(); const reviews = []
@@ -114,7 +156,13 @@ export class GitHubReleaseClient {
     if (!Number.isSafeInteger(number) || number <= 0) throw new Error('Dispatch input validation failed: pr_number must be a positive integer identifying an already-merged PR.')
     const payload = await this.pullRequest(number)
     const login = nonEmptyString(payload?.user?.login, 'user.login')
-    return validateMergedPullRequest(payload, await this.permission(login))
+    const permission = await this.permission(login)
+    if (payload?.base?.ref === 'main') return validateMergedPullRequest(payload, permission)
+    if (!payload?.stack) return validateMergedPullRequest(payload, permission)
+    validateNativeStack(payload, await this.stack(payload.stack.number), this.repository)
+    const mergeSha = resolveMergedTimelineSha(number, await this.timeline(number), this.repository)
+    validateMainReachability(number, mergeSha, await this.comparison(mergeSha))
+    return validateMergedPullRequest({ ...payload, base: { ...payload.base, ref: 'main' }, merge_commit_sha: mergeSha }, permission)
   }
 }
 

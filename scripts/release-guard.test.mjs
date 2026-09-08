@@ -26,7 +26,9 @@ function validateFixtures(f) {
   keys(f.permissions, ['allowed', 'denied'], 'permissions'); array(f.permissions.allowed, 'permissions.allowed', 2); array(f.permissions.denied, 'permissions.denied', 4)
   named(array(f.reviews, 'reviews', 3), 'reviews'); for (const row of f.reviews) { keys(row, ['name', 'maintainers', 'reviews', 'approved'], 'reviews row'); array(row.maintainers, 'maintainers', 1); array(row.reviews, 'reviews', 1); assert.equal(typeof row.approved, 'boolean'); for (const review of row.reviews) keys(review, ['user', 'state'], 'review') }
   keys(f.metadata, ['valid', 'invalid'], 'metadata'); keys(f.metadata.valid, ['number', 'state', 'merged', 'title', 'user', 'base', 'merge_commit_sha'], 'metadata.valid'); named(array(f.metadata.invalid, 'metadata.invalid', 4), 'metadata.invalid'); for (const row of f.metadata.invalid) { const allowed = row.payload === undefined ? ['name', 'patch'] : ['name', 'payload']; keys(row, allowed, 'metadata.invalid row') }
-  keys(f.github, ['resolve', 'malformed_response', 'pagination'], 'github'); keys(f.github.resolve, ['responses', 'expected_merge_sha'], 'github.resolve'); array(f.github.resolve.responses, 'github.resolve.responses', 2); keys(f.github.malformed_response, ['body'], 'github.malformed_response'); named(array(f.github.pagination, 'github.pagination', 2), 'github.pagination')
+  keys(f.github, ['resolve', 'malformed_response', 'native_stack', 'pagination'], 'github'); keys(f.github.resolve, ['responses', 'expected_merge_sha'], 'github.resolve'); array(f.github.resolve.responses, 'github.resolve.responses', 2); keys(f.github.malformed_response, ['body'], 'github.malformed_response')
+  keys(f.github.native_stack, ['valid', 'invalid'], 'github.native_stack'); keys(f.github.native_stack.valid, ['name', 'responses', 'expected_paths', 'expected_merge_sha'], 'github.native_stack.valid'); array(f.github.native_stack.valid.responses, 'github.native_stack.valid.responses', 5); array(f.github.native_stack.valid.expected_paths, 'github.native_stack.valid.expected_paths', 5); named(array(f.github.native_stack.invalid, 'github.native_stack.invalid', 8), 'github.native_stack.invalid'); for (const row of f.github.native_stack.invalid) keys(row, ['name', 'mutation'], 'github.native_stack.invalid row')
+  named(array(f.github.pagination, 'github.pagination', 2), 'github.pagination')
   for (const row of f.github.pagination) { keys(row, ['name', 'responses', 'approved', 'expected_paths'], 'pagination row'); array(row.responses, 'pagination responses', 3); array(row.expected_paths, 'pagination expected_paths', 3); for (const response of row.responses) keys(response, response.link === undefined ? ['body'] : ['body', 'link'], 'response') }
   keys(f.workflow, ['validate_if', 'tag_if', 'release_needles', 'publish_needles', 'mutations'], 'workflow'); string(f.workflow.validate_if, 'workflow.validate_if'); string(f.workflow.tag_if, 'workflow.tag_if'); array(f.workflow.release_needles, 'workflow.release_needles', 10); array(f.workflow.publish_needles, 'workflow.publish_needles', 2); named(array(f.workflow.mutations, 'workflow.mutations', 3), 'workflow.mutations'); for (const row of f.workflow.mutations) keys(row, ['name', 'target', 'replacement'], 'workflow mutation')
   keys(f.git, ['tag', 'first_message', 'second_message'], 'git')
@@ -66,6 +68,32 @@ test('merged pull request API metadata is validated', async () => {
   assert.equal((await client.resolveMergedPullRequest(16)).mergeSha, fixtures.github.resolve.expected_merge_sha)
   const malformed = new GitHubReleaseClient({ token: 'test', repository: 'peasant-labs/fairtrade-design-system', fetchImpl: async () => response(fixtures.github.malformed_response) })
   await assert.rejects(() => malformed.resolveMergedPullRequest(16), /user.login/); await assert.rejects(() => malformed.reviews(16), /reviews page 1 must be an array/)
+})
+
+function nativeStackResponses(mutation) {
+  const responses = structuredClone(fixtures.github.native_stack.valid.responses)
+  if (mutation === 'stack_trunk') { responses[0].body.stack.base.ref = 'develop'; responses[2].body.base.ref = 'develop' }
+  if (mutation === 'wrong_member') responses[2].body.pull_requests[1].number = 80
+  if (mutation === 'wrong_repository') responses[2].body.pull_requests[1].head.repo.id = 99
+  if (mutation === 'unmerged_member') { responses[2].body.pull_requests[1].state = 'open'; responses[2].body.pull_requests[1].merged_at = null }
+  if (mutation === 'missing_sha') responses[3].body[0].commit_id = ''
+  if (mutation === 'timeline_repository') responses[3].body[0].commit_url = 'https://api.github.com/repos/other/project/commits/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  if (mutation === 'disconnected_commit') { responses[4].body.status = 'diverged'; responses[4].body.merge_base_commit.sha = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' }
+  if (mutation === 'direct_non_main') { delete responses[0].body.stack; responses.length = 2 }
+  return responses
+}
+
+test('canonical native stack metadata resolves the merged release commit and fails closed', async () => {
+  const repository = 'peasant-labs/fairtrade-design-system'
+  const run = async (responses, paths = []) => {
+    const queue = [...responses]
+    const client = new GitHubReleaseClient({ token: 'test', repository, fetchImpl: async (url, options) => { assert.equal(options.headers['x-github-api-version'], '2026-03-10'); paths.push(new URL(url).pathname.replace(`/repos/${repository}`, '') + new URL(url).search); return response(queue.shift()) } })
+    return client.resolveMergedPullRequest(78)
+  }
+  const paths = []
+  assert.equal((await run(fixtures.github.native_stack.valid.responses, paths)).mergeSha, fixtures.github.native_stack.valid.expected_merge_sha)
+  assert.deepEqual(paths, fixtures.github.native_stack.valid.expected_paths)
+  for (const row of fixtures.github.native_stack.invalid) await assert.rejects(() => run(nativeStackResponses(row.mutation)), Error, row.name)
 })
 
 test('paginated latest review state wins in API order', async () => {
