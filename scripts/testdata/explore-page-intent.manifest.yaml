@@ -5,6 +5,17 @@ requiredNames:
   - payload seeds a non-first starting page exactly once
   - absent payload page defaults to the first page
   - a filter change returns to the first page once
+expectedFacetCaseCount: 9
+requiredFacetNames:
+  - explicit-harness-facets-later-page
+  - explicit-harness-facets-pagination
+  - explicit-harness-facets-sort
+  - explicit-harness-facets-zero-results
+  - explicit-empty-harness-facets
+  - missing-harness-facets-compatibility
+  - explicit-harness-facets-all-count
+  - explicit-harness-facet-selection
+  - explicit-harness-facets-preserve-tags
 expectedLoaderMutationCount: 6
 requiredLoaderMutationNames:
   - case count drift is rejected
@@ -26,10 +37,12 @@ requiredMutationNames:
   - seed rejects a valid non-first page
   - mount discards the payload seed
   - filter change no longer returns to the first page
-expectedMutationCount: 5
+  - supplied harness facets are ignored
+expectedMutationCount: 6
 mutations:
   - {name: response page is copied back into a newer intent, find: "  }, [order, onFiltersChange, page, provider, query, topics])\n", replace: "  }, [order, onFiltersChange, page, provider, query, topics])\n\n  useEffect(() => {\n    if (payload.transcripts.page && payload.transcripts.page !== page) setPage(payload.transcripts.page)\n  }, [page, payload.transcripts.page])\n", expectedError: page intent invariant failed}
   - {name: pager reflects response metadata instead of intent, find: "  const currentPage = page\n", replace: "  const currentPage = payload.transcripts.page || page\n", expectedError: page intent invariant failed}
   - {name: seed rejects a valid non-first page, find: "  return Number.isInteger(payloadPage) && payloadPage >= 1 ? payloadPage : 1", replace: "  return Number.isInteger(payloadPage) && payloadPage >= 100 ? payloadPage : 1", expectedError: page intent invariant failed}
   - {name: mount discards the payload seed, find: "    if (lastFilterKey.current === null || lastFilterKey.current === filterKey) {", replace: "    if (false) {", expectedError: page intent invariant failed}
   - {name: filter change no longer returns to the first page, find: "    lastFilterKey.current = filterKey\n    setPage(1)", replace: "    lastFilterKey.current = filterKey\n    setPage(page)", expectedError: page intent invariant failed}
+  - {name: supplied harness facets are ignored, find: "    if (Object.prototype.hasOwnProperty.call(payload, 'harnessFacets')) {", replace: "    if (false) {", expectedError: provider options expected}
