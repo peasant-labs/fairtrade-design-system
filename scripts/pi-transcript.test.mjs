@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { pathToFileURL } from 'node:url'
 import YAML from 'yaml'
 import { parseSessionDetailPayloadText } from '@peasant-labs/schema'
-import { adaptTranscript } from '../src/ui/transcript/adapter.js'
+const adapterModule = process.env.FAIRTRADE_PI_ADAPTER_MODULE
+  ? pathToFileURL(process.env.FAIRTRADE_PI_ADAPTER_MODULE).href
+  : new URL('../src/ui/transcript/adapter.js', import.meta.url).href
+const { adaptTranscript } = await import(`${adapterModule}?pi=${Date.now()}`)
 
 function load(name) {
   const docs = YAML.parseAllDocuments(readFileSync(new URL(`testdata/${name}.yaml`, import.meta.url), 'utf8'), { strict: true, uniqueKeys: true })
@@ -11,7 +15,8 @@ function load(name) {
   return docs[0].toJS()
 }
 const { payload, cases, namespaceCases, probe } = load('pi-transcript')
-assert.deepEqual(cases.map(c => c.name).sort(), load('pi-transcript.manifest').requiredCases.sort())
+const piManifest = load('pi-transcript.manifest')
+assert.deepEqual(cases.map(c => c.name).sort(), piManifest.requiredCases.sort())
 assert.equal(new Set(cases.map(c => c.name)).size, cases.length)
 for (const c of cases) {
   assert.ok(Object.keys(c).every(key => ['name', 'equalOwners', 'completeScopes', 'shortContext', 'metadataOnly', 'overflow', 'duplicateOwner', 'invalidToken', 'invalidTarget', 'rawDuplicate', 'error'].includes(key)), `${c.name}: unrecognized fixture field`)
@@ -90,11 +95,26 @@ for (const c of cases) {
   console.log(`PASS ${c.name}`)
 }
 
-assert.deepEqual(namespaceCases.map(c => c.name).sort(), load('pi-transcript.manifest').requiredNamespaceCases.sort())
+assert.deepEqual(namespaceCases.map(c => c.name).sort(), piManifest.requiredNamespaceCases.sort())
 assert.equal(new Set(namespaceCases.map(c => c.name)).size, namespaceCases.length)
 for (const c of namespaceCases) {
-  assert.ok(Object.keys(c).every(key => ['name', 'toolMembers', 'toolPosition', 'arguments', 'error', 'expectedNamespace', 'duplicateNamespace', 'observedModel', 'metadataStringBytes', 'expectedRecordBytes', 'omitNamespace'].includes(key)), `${c.name}: unrecognized fixture field`)
+  assert.ok(Object.keys(c).every(key => ['name', 'toolMembers', 'toolPosition', 'arguments', 'error', 'expectedNamespace', 'duplicateNamespace', 'observedModel', 'metadataStringBytes', 'expectedRecordBytes', 'omitNamespace', 'legacyHarness'].includes(key)), `${c.name}: unrecognized fixture field`)
   const input = structuredClone(payload)
+  if (c.legacyHarness) {
+    input.harness = c.legacyHarness
+    delete input.nativeMetadata
+    for (const turn of input.turns) {
+      delete turn.usage
+      delete turn.sourceEntryRef
+      delete turn.observedModel
+      for (const candidate of turn.toolCalls ?? []) {
+        delete candidate.usage
+        delete candidate.callEntryRef
+        delete candidate.resultEntryRef
+        delete candidate.namespace
+      }
+    }
+  }
   const tool = input.turns[2].toolCalls[c.toolPosition ?? 0]
   if (c.omitNamespace) delete tool.namespace
   Object.assign(tool, c.toolMembers)
@@ -118,18 +138,21 @@ for (const c of namespaceCases) {
     }
   } else {
     const canonical = parseSessionDetailPayloadText(raw)
-    const vm = adaptTranscript(canonical)
+    const vm = adaptTranscript(input)
     assert.equal(vm.toolCallsById.get(tool.id).name, tool.name)
     assert.equal(vm.toolCallsById.get(tool.id).namespace, c.expectedNamespace)
+    assert.equal(adaptTranscript(canonical).toolCallsById.get(tool.id).namespace, c.expectedNamespace)
     if (c.observedModel) assert.equal(vm.turns[2].effectiveModel, c.observedModel)
     if (c.arguments) assert.deepEqual(vm.toolCallsById.get(tool.id).args, c.arguments)
-    if (process.env.PI_MOUNTED_TEST && c.expectedNamespace !== undefined) {
+    if (process.env.PI_MOUNTED_TEST) {
       const React = await import('react')
       const { renderToStaticMarkup } = await import('react-dom/server')
-      const { TranscriptViewer } = await import('../dist/lib/ui.js')
-      const html = renderToStaticMarkup(React.createElement(TranscriptViewer, { viewModel: vm, initialExpandedTools: [tool.id] }))
-      assert.ok(html.includes('txn-tool-namespace'))
-      assert.ok(html.includes(c.expectedNamespace || '(empty)'))
+      const { TranscriptViewer, adaptTranscript: packagedAdapter } = await import('../dist/lib/ui.js')
+      const packagedVM = packagedAdapter(input)
+      assert.equal(packagedVM.toolCallsById.get(tool.id).namespace, c.expectedNamespace)
+      const html = renderToStaticMarkup(React.createElement(TranscriptViewer, { viewModel: packagedVM, initialExpandedTools: [tool.id] }))
+      assert.equal(html.includes('txn-tool-namespace'), c.expectedNamespace !== undefined)
+      if (c.expectedNamespace !== undefined) assert.ok(html.includes(c.expectedNamespace || '(empty)'))
       assert.ok(html.includes(tool.name))
     }
   }

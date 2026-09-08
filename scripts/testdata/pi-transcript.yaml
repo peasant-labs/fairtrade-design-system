@@ -189,3 +189,35 @@ namespaceCases:
     metadataStringBytes: 51175
     expectedRecordBytes: 52620
     expectedNamespace: Metadata.Extension
+  - name: namespace-non-pi-absent-accepted
+    legacyHarness: claude-code
+    omitNamespace: true
+    toolMembers: {}
+  - name: namespace-non-pi-empty-accepted
+    legacyHarness: claude-code
+    toolMembers: {namespace: ''}
+    expectedNamespace: ''
+  - name: namespace-non-pi-unicode-accepted
+    legacyHarness: claude-code
+    toolMembers: {namespace: 'Mixed.工具.Éclair'}
+    expectedNamespace: 'Mixed.工具.Éclair'
+  - name: namespace-non-pi-null-rejected
+    legacyHarness: claude-code
+    toolMembers: {namespace: null}
+    error: namespace
+  - name: namespace-non-pi-number-rejected
+    legacyHarness: claude-code
+    toolMembers: {namespace: 12}
+    error: namespace
+  - name: namespace-non-pi-object-rejected
+    legacyHarness: claude-code
+    toolMembers: {namespace: {wrong: type}}
+    error: namespace
+  - name: namespace-non-pi-array-rejected
+    legacyHarness: claude-code
+    toolMembers: {namespace: [wrong]}
+    error: namespace
+  - name: namespace-non-pi-boolean-rejected
+    legacyHarness: claude-code
+    toolMembers: {namespace: false}
+    error: namespace
