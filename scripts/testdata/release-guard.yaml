@@ -79,6 +79,11 @@ github:
       - {name: merged timeline repository differs, mutation: timeline_repository}
       - {name: merged commit is disconnected from main, mutation: disconnected_commit}
       - {name: ordinary non-main PR is rejected, mutation: direct_non_main}
+    loader_invalid:
+      - {name: deleting required trunk scenario is rejected, operation: delete, scenario: non-main stack trunk, replacement: null}
+      - {name: replacing trunk scenario with duplicate mutation is rejected, operation: replace, scenario: non-main stack trunk, replacement: missing_sha}
+      - {name: replacing trunk scenario with unknown mutation is rejected, operation: replace, scenario: non-main stack trunk, replacement: misspelled_mutation}
+      - {name: mutation dispatcher rejects unknown discriminator, operation: unknown_dispatch, scenario: non-main stack trunk, replacement: misspelled_mutation}
   pagination:
     - name: page two revokes approval
       responses:

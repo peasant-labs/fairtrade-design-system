@@ -9,6 +9,16 @@ import { GitHubReleaseClient, isMaintainerPermission, parseFairtradeTag, parseRe
 
 const root = path.resolve(import.meta.dirname, '..')
 const fixturePath = path.join(import.meta.dirname, 'testdata/release-guard.yaml')
+const requiredNativeStackMutations = new Map([
+  ['non-main stack trunk', 'stack_trunk'],
+  ['requested PR is not a member', 'wrong_member'],
+  ['member repository differs', 'wrong_repository'],
+  ['member is unmerged', 'unmerged_member'],
+  ['merged timeline SHA is missing', 'missing_sha'],
+  ['merged timeline repository differs', 'timeline_repository'],
+  ['merged commit is disconnected from main', 'disconnected_commit'],
+  ['ordinary non-main PR is rejected', 'direct_non_main'],
+])
 
 function object(value, where) { assert.ok(value && typeof value === 'object' && !Array.isArray(value), `${where} must be an object`); return value }
 function array(value, where, min) { assert.ok(Array.isArray(value) && value.length >= min, `${where} must contain at least ${min} rows`); return value }
@@ -27,7 +37,13 @@ function validateFixtures(f) {
   named(array(f.reviews, 'reviews', 3), 'reviews'); for (const row of f.reviews) { keys(row, ['name', 'maintainers', 'reviews', 'approved'], 'reviews row'); array(row.maintainers, 'maintainers', 1); array(row.reviews, 'reviews', 1); assert.equal(typeof row.approved, 'boolean'); for (const review of row.reviews) keys(review, ['user', 'state'], 'review') }
   keys(f.metadata, ['valid', 'invalid'], 'metadata'); keys(f.metadata.valid, ['number', 'state', 'merged', 'title', 'user', 'base', 'merge_commit_sha'], 'metadata.valid'); named(array(f.metadata.invalid, 'metadata.invalid', 4), 'metadata.invalid'); for (const row of f.metadata.invalid) { const allowed = row.payload === undefined ? ['name', 'patch'] : ['name', 'payload']; keys(row, allowed, 'metadata.invalid row') }
   keys(f.github, ['resolve', 'malformed_response', 'native_stack', 'pagination'], 'github'); keys(f.github.resolve, ['responses', 'expected_merge_sha'], 'github.resolve'); array(f.github.resolve.responses, 'github.resolve.responses', 2); keys(f.github.malformed_response, ['body'], 'github.malformed_response')
-  keys(f.github.native_stack, ['valid', 'invalid'], 'github.native_stack'); keys(f.github.native_stack.valid, ['name', 'responses', 'expected_paths', 'expected_merge_sha'], 'github.native_stack.valid'); array(f.github.native_stack.valid.responses, 'github.native_stack.valid.responses', 5); array(f.github.native_stack.valid.expected_paths, 'github.native_stack.valid.expected_paths', 5); named(array(f.github.native_stack.invalid, 'github.native_stack.invalid', 8), 'github.native_stack.invalid'); for (const row of f.github.native_stack.invalid) keys(row, ['name', 'mutation'], 'github.native_stack.invalid row')
+  keys(f.github.native_stack, ['valid', 'invalid', 'loader_invalid'], 'github.native_stack'); keys(f.github.native_stack.valid, ['name', 'responses', 'expected_paths', 'expected_merge_sha'], 'github.native_stack.valid'); array(f.github.native_stack.valid.responses, 'github.native_stack.valid.responses', 5); array(f.github.native_stack.valid.expected_paths, 'github.native_stack.valid.expected_paths', 5)
+  named(array(f.github.native_stack.invalid, 'github.native_stack.invalid', 1), 'github.native_stack.invalid')
+  const nativeStackCases = new Map()
+  for (const row of f.github.native_stack.invalid) { keys(row, ['name', 'mutation'], 'github.native_stack.invalid row'); string(row.mutation, `github.native_stack.invalid.${row.name}.mutation`); assert.ok([...requiredNativeStackMutations.values()].includes(row.mutation), `github.native_stack.invalid.${row.name} has unknown mutation ${row.mutation}`); nativeStackCases.set(row.name, row.mutation) }
+  for (const [name, mutation] of requiredNativeStackMutations) assert.equal(nativeStackCases.get(name), mutation, `github.native_stack.invalid must retain required scenario ${name} with mutation ${mutation}`)
+  named(array(f.github.native_stack.loader_invalid, 'github.native_stack.loader_invalid', 4), 'github.native_stack.loader_invalid')
+  for (const row of f.github.native_stack.loader_invalid) { keys(row, ['name', 'operation', 'scenario', 'replacement'], 'github.native_stack.loader_invalid row'); string(row.operation, `github.native_stack.loader_invalid.${row.name}.operation`); string(row.scenario, `github.native_stack.loader_invalid.${row.name}.scenario`); assert.ok(requiredNativeStackMutations.has(row.scenario), `github.native_stack.loader_invalid.${row.name} scenario must name a required case`); assert.ok(['delete', 'replace', 'unknown_dispatch'].includes(row.operation), `github.native_stack.loader_invalid.${row.name} operation is unknown`); if (row.operation === 'delete') assert.equal(row.replacement, null, `github.native_stack.loader_invalid.${row.name}.replacement must be null`); else string(row.replacement, `github.native_stack.loader_invalid.${row.name}.replacement`) }
   named(array(f.github.pagination, 'github.pagination', 2), 'github.pagination')
   for (const row of f.github.pagination) { keys(row, ['name', 'responses', 'approved', 'expected_paths'], 'pagination row'); array(row.responses, 'pagination responses', 3); array(row.expected_paths, 'pagination expected_paths', 3); for (const response of row.responses) keys(response, response.link === undefined ? ['body'] : ['body', 'link'], 'response') }
   keys(f.workflow, ['validate_if', 'tag_if', 'release_needles', 'publish_needles', 'mutations'], 'workflow'); string(f.workflow.validate_if, 'workflow.validate_if'); string(f.workflow.tag_if, 'workflow.tag_if'); array(f.workflow.release_needles, 'workflow.release_needles', 10); array(f.workflow.publish_needles, 'workflow.publish_needles', 2); named(array(f.workflow.mutations, 'workflow.mutations', 3), 'workflow.mutations'); for (const row of f.workflow.mutations) keys(row, ['name', 'target', 'replacement'], 'workflow mutation')
@@ -80,8 +96,24 @@ function nativeStackResponses(mutation) {
   if (mutation === 'timeline_repository') responses[3].body[0].commit_url = 'https://api.github.com/repos/other/project/commits/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
   if (mutation === 'disconnected_commit') { responses[4].body.status = 'diverged'; responses[4].body.merge_base_commit.sha = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' }
   if (mutation === 'direct_non_main') { delete responses[0].body.stack; responses.length = 2 }
+  if (![...requiredNativeStackMutations.values()].includes(mutation)) throw new Error(`native stack fixture mutation ${mutation} is unknown; add it to the required mutation inventory before using it`)
   return responses
 }
+
+test('native stack fixture loader rejects required-case deletion, replacement, and unknown mutations', () => {
+  for (const row of fixtures.github.native_stack.loader_invalid) {
+    if (row.operation === 'unknown_dispatch') {
+      assert.throws(() => nativeStackResponses(row.replacement), /fixture mutation .* is unknown/, row.name)
+      continue
+    }
+    const changed = structuredClone(fixtures)
+    const index = changed.github.native_stack.invalid.findIndex((scenario) => scenario.name === row.scenario)
+    assert.notEqual(index, -1, row.name)
+    if (row.operation === 'delete') changed.github.native_stack.invalid.splice(index, 1)
+    else changed.github.native_stack.invalid[index].mutation = row.replacement
+    assert.throws(() => loadFixtures(YAML.stringify(changed)), /must retain required scenario|unknown mutation/, row.name)
+  }
+})
 
 test('canonical native stack metadata resolves the merged release commit and fails closed', async () => {
   const repository = 'peasant-labs/fairtrade-design-system'
