@@ -746,7 +746,12 @@ export function adaptTranscript(payload, annotations, analytics, options) {
   // before filtering. Never project away an invalid duplicate owner or attachment.
   if (hasEvidence) {
     try {
-      parseSessionDetailPayloadValue(payload)
+      // Cook the canonical normalized value, not the original evidence object.
+      // Only the explicitly supported legacy git extension stays outside schema.
+      payload = {
+        ...parseSessionDetailPayloadValue(payload),
+        ...(payload.gitContext === undefined ? {} : { gitContext: payload.gitContext }),
+      }
     } catch (cause) {
       throw Object.assign(new TypeError(`Fairtrade adaptTranscript refused the durable payload during main/earlier evidence validation: ${cause instanceof Error ? cause.message : 'canonical validation failed'}. No transcript was cooked. Correct the producer using the canonical schema and retry.`), { cause })
     }

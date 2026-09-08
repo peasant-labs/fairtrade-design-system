@@ -33,6 +33,9 @@ and leading `<thinking>` inference. Only normalized `entryType: thinking` cooks 
 `ThinkingVM`. Truly legacy rows retain their old filter and wrapper behavior. The exported
 `prefilterTurns` uses canonical field validators; full cross-partition identity/attachment checks
 belong to the complete-payload adapter boundary, never a synthetic partial payload.
+The adapter cooks the canonical parser's returned value, including its optional-empty-ref
+normalization, while retaining the explicitly supported legacy `gitContext` extension.
+Optional empty refs do not weaken required usage-owner/source or attachment validation.
 
 Cooked `TurnVM.identity` is scoped by `partition` (`main` or `earlier-N`) plus source ref, falling
 back to the index only for legacy rows. Refs/provenance and folded refs/provenance are retained.

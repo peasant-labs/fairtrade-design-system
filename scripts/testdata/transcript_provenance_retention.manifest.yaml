@@ -9,6 +9,8 @@ requiredCases:
   - legacy-filter-control
   - pi-native-attachments
   - empty-optional-reference-control
+  - empty-optional-submission-refs
+  - empty-optional-folded-refs
 requiredNavigationCases:
   - different-source-and-starter
   - same-source-and-starter
@@ -19,4 +21,4 @@ requiredNavigationCases:
   - missing-host-navigation
 requiredCountCases: [unmeasured, measured-zero, one-submission-five-records]
 requiredInvalidCounts: [null-count, string-count, negative-count, fractional-count, unsafe-count]
-requiredInvalidCases: [empty-provenance, null-provenance, null-reference, malformed-utf8, oversized-reference, duplicate-owner-reference, wrong-folded-usage-target, malformed-folded-provenance]
+requiredInvalidCases: [empty-provenance, null-provenance, null-reference, malformed-utf8, oversized-reference, duplicate-owner-reference, wrong-folded-usage-target, malformed-folded-provenance, empty-required-usage-source, empty-required-usage-owner, empty-required-result-attachment]

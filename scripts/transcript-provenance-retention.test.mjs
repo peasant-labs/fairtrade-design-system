@@ -22,6 +22,14 @@ names(fixture.countCases, manifest.requiredCountCases)
 names(fixture.invalidCounts, manifest.requiredInvalidCounts)
 names(fixture.cases.find(item => item.invalid).invalid, manifest.requiredInvalidCases)
 
+function assertProvenance(cooked, raw) {
+  if (raw?.submissionRef === '') {
+    const { submissionRef, ...expected } = raw
+    assert.deepEqual(cooked, expected, 'canonical parser removes only the empty optional submission ref')
+    assert.equal(Object.hasOwn(cooked, 'submissionRef'), false)
+  } else assert.deepEqual(cooked, raw)
+}
+
 function assertPartition(cooked, raw, expectedIndices, partition, legacy) {
   assert.deepEqual(cooked.map(turn => turn.index), expectedIndices)
   for (const turn of cooked) {
@@ -29,7 +37,7 @@ function assertPartition(cooked, raw, expectedIndices, partition, legacy) {
     assert.equal(turn.partition, partition)
     assert.equal(turn.identity, `${partition}:${source.sourceEntryRef || source.index}`)
     assert.equal(turn.sourceEntryRef, source.sourceEntryRef || undefined)
-    assert.deepEqual(turn.provenance, source.provenance)
+    assertProvenance(turn.provenance, source.provenance)
     assert.equal(turn.role, source.role)
     assert.equal(turn.entryType, source.entryType)
     if (source.entryType === 'thinking') {
@@ -46,10 +54,10 @@ function assertPartition(cooked, raw, expectedIndices, partition, legacy) {
     for (const tool of turn.toolCalls) {
       const sourceTool = source.toolCalls.find(item => item.id === tool.id)
       assert.equal(tool.partition, partition)
-      assert.equal(tool.callEntryRef, sourceTool.callEntryRef)
-      assert.equal(tool.resultEntryRef, sourceTool.resultEntryRef)
-      assert.deepEqual(tool.callProvenance, sourceTool.callProvenance)
-      assert.deepEqual(tool.resultProvenance, sourceTool.resultProvenance)
+      assert.equal(tool.callEntryRef, sourceTool.callEntryRef || undefined)
+      assert.equal(tool.resultEntryRef, sourceTool.resultEntryRef || undefined)
+      assertProvenance(tool.callProvenance, sourceTool.callProvenance)
+      assertProvenance(tool.resultProvenance, sourceTool.resultProvenance)
       assert.deepEqual(tool.usage, sourceTool.usage)
       if (sourceTool.result) assert.equal(tool.output, sourceTool.result)
       if (sourceTool.id.endsWith(fixture.longResult.toolId)) assert.ok(Buffer.byteLength(tool.output) >= fixture.longResult.minimumBytes, 'long result fixture must exercise full-content retention')

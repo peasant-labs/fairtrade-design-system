@@ -132,6 +132,9 @@ cases:
       - {name: duplicate-owner-reference, path: [turns, 1, sourceEntryRef], value: e_u1, scopedReference: true}
       - {name: wrong-folded-usage-target, path: [turns, 3, toolCalls, 0, usage, sourceEntryRef], value: e_u1, scopedReference: true}
       - {name: malformed-folded-provenance, path: [turns, 3, toolCalls, 0, callProvenance], value: {}, arrayReject: true}
+      - {name: empty-required-usage-source, path: [turns, 3, toolCalls, 0, usage, sourceEntryRef], value: ''}
+      - {name: empty-required-usage-owner, path: [turns, 3, toolCalls, 0, usage, ownerId], value: ''}
+      - {name: empty-required-result-attachment, path: [turns, 3, toolCalls, 0, resultEntryRef], value: ''}
   - name: legacy-filter-control
     legacy: true
     detail:
@@ -187,6 +190,37 @@ cases:
         - {index: 1, role: user, entryType: text, depth: 0, content: same input, sourceEntryRef: ''}
         - {index: 2, role: user, entryType: text, depth: 0, content: same input}
     expectedIndices: [1]
+  - name: empty-optional-submission-refs
+    detail:
+      turnCount: 1
+      inputSubmissionCount: 0
+      toolCallCount: 1
+      turns:
+        - index: 0
+          role: assistant
+          entryType: text
+          depth: 0
+          content: '<thinking>literal excerpt</thinking>'
+          sourceEntryRef: e_empty_submission
+          provenance: &emptySubmission {origin: unknown, actor: unknown, delivery: unknown, ownership: uncertain, evidence: unknown, inputModality: unknown, submissionRef: ''}
+          toolCalls:
+            - {id: empty-submission-tool, name: Check, arguments: '{}', result: retained result, callEntryRef: e_empty_call, resultEntryRef: e_empty_result, callProvenance: *emptySubmission, resultProvenance: *emptySubmission}
+    expectedIndices: [0]
+  - name: empty-optional-folded-refs
+    detail:
+      turnCount: 1
+      inputSubmissionCount: 0
+      toolCallCount: 1
+      turns:
+        - index: 0
+          role: assistant
+          entryType: text
+          depth: 0
+          content: retained response
+          sourceEntryRef: ''
+          toolCalls:
+            - {id: empty-folded-refs, name: Check, arguments: '{}', result: retained result, callEntryRef: '', resultEntryRef: ''}
+    expectedIndices: [0]
 navigationCases:
   - name: different-source-and-starter
     expectedLabels: [context inherited from, started by]
