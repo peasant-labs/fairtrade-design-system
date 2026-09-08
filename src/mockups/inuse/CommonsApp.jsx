@@ -3,6 +3,7 @@ import { ChevronLeft } from 'lucide-react'
 import { TranscriptDetailView, ProfileView, getExploreFixture } from './CommonsExplore.jsx'
 import { Explore } from '../../ui/commons/index.js'
 import { PublishView, CollectivesView, CollectiveDetailView, CollectiveSettingsView, ContributeView } from './CommonsManage.jsx'
+import HelperGroupsDemo from './HelperGroupsDemo.jsx'
 
 /* village (commons) demo parent: an internal nav over the browse + governance views built by the team.
    primary tabs reach the top-level surfaces; detail/contribute views open via onNavigate from clicks and
@@ -23,6 +24,7 @@ const BACK_TO = {
 }
 
 export default function CommonsApp({ theme }) {
+  const helperExample = new URLSearchParams(window.location.search).get('helpers')
   const [view, setView] = useState(() => {
     const initial = new URLSearchParams(window.location.search).get('commons')
     if (initial === 'collectives') return 'collectives'
@@ -53,7 +55,9 @@ export default function CommonsApp({ theme }) {
         ))}
       </nav>
       <div className="iu-view">
-        {view === 'explore' && <Explore data={getExploreFixture()} />}
+        {view === 'explore' && (helperExample
+          ? <HelperGroupsDemo scenario={helperExample} />
+          : <Explore data={getExploreFixture()} />)}
         {view === 'transcript-detail' && <TranscriptDetailView theme={theme} onNavigate={onNavigate} />}
         {view === 'profile' && <ProfileView theme={theme} onNavigate={onNavigate} />}
         {view === 'publish' && <PublishView theme={theme} onNavigate={onNavigate} />}

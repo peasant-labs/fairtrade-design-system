@@ -1,0 +1,111 @@
+requiredNames:
+  - three-independent-counts
+  - helper-only-search
+  - unresolved-independent
+  - identical-independent-helpers
+  - trunk-append
+  - trunk-replacement
+  - scope-expired
+  - member-error
+  - unavailable-owner
+  - focus-pagination
+  - measured-zero
+  - unknown-input-count
+  - loading-members
+  - ordinary-child-exit
+smoke:
+  group: { groupId: hg_parent, memberScope: exact-query, helperThreadCount: 2, members: [G1, G2], page: 1, limit: 2, total: 2, status: ready, expanded: true }
+  context: { ownerStatus: known_unavailable }
+  thread: G2
+rows:
+  P1: { id: P1, title: Fix Parser, provider: codex, inputSubmissionCount: 1, turnCount: 5 }
+  G1: { id: G1, title: Review Parser, provider: codex, inputSubmissionCount: 0, turnCount: 4 }
+  G2: { id: G2, title: Review Parser, provider: codex, inputSubmissionCount: 0, turnCount: 9 }
+  G4: { id: G4, title: Replacement Review, provider: codex, inputSubmissionCount: 0, turnCount: 2 }
+  OLD: { id: OLD, title: Historical Input, provider: opencode, turnCount: 5 }
+  O1: { id: O1, title: Ordinary Child, provider: opencode, turnCount: 3 }
+cases:
+  - name: three-independent-counts
+    owner: P1
+    groups: [{ id: hg_parent, scope: exact-query, count: 2, pages: [[G1, G2]] }]
+    expectedRows: [G1, G2]
+    select: G2
+    expectedSelected: [G2]
+    expectedText: [1 input submissions, 5 turns, 2 saved helper threads]
+  - name: helper-only-search
+    ownerStatus: resolved
+    groups: [{ id: hg_parent, scope: search-G2-only, count: 1, pages: [[G2]] }]
+    expectedRows: [G2]
+    select: G2
+    expectedSelected: [G2]
+    expectedText: [owner is outside this result]
+  - name: unresolved-independent
+    ownerStatus: unknown
+    groups:
+      - { id: hg_unknown_G1, scope: unknown-G1, count: 1, pages: [[G1]] }
+      - { id: hg_unknown_G2, scope: unknown-G2, count: 1, pages: [[G2]] }
+    expectedRows: [G1, G2]
+    expectedText: [owner is unknown]
+  - name: identical-independent-helpers
+    owner: P1
+    groups: [{ id: hg_parent, scope: identity-query, count: 2, pages: [[G1, G2]] }]
+    expectedRows: [G1, G2]
+    expectedText: [2 saved helper threads]
+  - name: trunk-append
+    owner: P1
+    groups: [{ id: hg_parent, scope: appended-query, count: 2, pages: [[G1, G2]] }]
+    expectedRows: [G1, G2]
+    update: { id: G1, turnCount: 20 }
+    expectedText: [2 saved helper threads, 20 turns]
+  - name: trunk-replacement
+    owner: P1
+    groups: [{ id: hg_parent, scope: replacement-query, count: 3, pages: [[G1, G2, G4]] }]
+    expectedRows: [G1, G2, G4]
+    expectedText: [3 saved helper threads]
+  - name: scope-expired
+    ownerStatus: resolved
+    groups: [{ id: hg_parent, scope: expired-G2-only, count: 1, pages: [[G2]] }]
+    status: scope_expired
+    expectedRows: []
+    expectedText: [query expired, no broader results were loaded, refresh list]
+  - name: member-error
+    ownerStatus: resolved
+    groups: [{ id: hg_parent, scope: failed-G2-only, count: 1, pages: [[G2]] }]
+    status: error
+    expectedRows: []
+    expectedText: [no selection changed, retry page]
+  - name: unavailable-owner
+    ownerStatus: known_unavailable
+    groups: [{ id: hg_missing, scope: missing-owner-query, count: 1, pages: [[G2]] }]
+    expectedRows: [G2]
+    expectedText: [owner is unavailable]
+  - name: focus-pagination
+    owner: P1
+    groups: [{ id: hg_parent, scope: paged-query, count: 2, pages: [[G1], [G2]] }]
+    paginate: true
+    expectedRows: [G2]
+    select: G2
+    expectedSelected: [G2]
+    expectedText: [page 2 of 2]
+  - name: measured-zero
+    owner: G1
+    groups: [{ id: hg_nested, scope: nested-query, count: 1, pages: [[G2]] }]
+    expectedRows: [G2]
+    expectedText: [0 input submissions]
+  - name: unknown-input-count
+    owner: OLD
+    groups: [{ id: hg_old, scope: historical-query, count: 1, pages: [[G2]] }]
+    expectedRows: [G2]
+    expectedText: [unknown input submissions, 5 turns]
+  - name: loading-members
+    owner: P1
+    groups: [{ id: hg_parent, scope: pending-query, count: 1, pages: [[G2]] }]
+    status: loading
+    expectedRows: []
+    expectedText: [loading saved helper threads]
+  - name: ordinary-child-exit
+    owner: P1
+    ordinaryChild: O1
+    groups: [{ id: hg_parent, scope: child-query, count: 1, pages: [[G2]] }]
+    expectedRows: [G2]
+    expectedText: [ordinary child]
