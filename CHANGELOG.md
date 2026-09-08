@@ -22,24 +22,18 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 
 ### Changed
 
-- Pinned `@peasant-labs/schema` to published version `0.16.0`, the current
-  detailed-usage and native-metadata contract. Native metadata remains
-  non-conversational transcript detail rather than a generated message or
-  model observation.
+- Pinned `@peasant-labs/schema` to published version `0.18.0`. The adapter now
+  preserves a tool namespace separately from its name, including a recorded
+  empty namespace, and renders both identity fields without concatenating
+  them. The updated contract also accepts metadata strings up to its 64 KiB
+  per-string limit. Native metadata remains non-conversational transcript
+  detail rather than a generated message or model observation.
 - The package and release workflows now require Node.js 26 or newer. Release
   tags also produce GitHub Releases from exact matching changelog sections,
   alongside the existing npm publication flow.
 - Transcript documentation now identifies Fairtrade as the canonical owner of
   the viewer, adapter, and graph engine and removes stale transcript-browser
   provenance wording.
-
-### Known limitation
-
-- Separate tool namespaces are not yet supported by the pinned Schema 0.16.0
-  contract. The adapter refuses any transcript whose tool call contains a
-  `namespace` member instead of silently dropping tool identity. Namespace
-  rendering requires a published Schema contract followed by explicit
-  Fairtrade adoption; this release does not claim that work.
 
 ## 0.0.18 — 2026-08-28
 
