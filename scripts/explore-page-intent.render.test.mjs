@@ -31,6 +31,8 @@ const casesSource = readFileSync(resolve('scripts/testdata/explore-page-intent.y
 const caseFields = ['name', 'rowProviders', 'total', 'limit', 'seedPage', 'steps']
 const stepFields = ['action', 'arg', 'expectCurrent', 'expectLastEmitted', 'expectNewEmission']
 const stepActions = ['seedCheck', 'page', 'stale', 'provider']
+const facetCaseFields = ['name', 'rowProviders', 'harnessFacets', 'action', 'arg', 'expectedProviders', 'expectedProvider', 'expectedPage', 'expectTags']
+const facetActions = ['mount', 'page', 'order', 'search', 'provider', 'topic']
 const loaderMutationFields = ['name', 'target', 'find', 'replace', 'expectedError']
 const productionMutationFields = ['name', 'find', 'replace', 'expectedError']
 
@@ -60,9 +62,10 @@ function positiveInt(value) {
 
 function loadFixtures(manifestText = manifestSource, casesText = casesSource) {
   const manifest = parseDocument(manifestText, 'explore manifest')
-  exactFields(manifest, ['expectedCaseCount', 'requiredNames', 'expectedLoaderMutationCount', 'requiredLoaderMutationNames', 'loaderMutations', 'expectedMutationCount', 'requiredMutationNames', 'mutations'], 'explore manifest')
-  if (![manifest.expectedCaseCount, manifest.expectedLoaderMutationCount, manifest.expectedMutationCount].every((value) => Number.isSafeInteger(value) && value >= 0)) throw new Error('explore manifest counts must be safe nonnegative integers')
+  exactFields(manifest, ['expectedCaseCount', 'requiredNames', 'expectedFacetCaseCount', 'requiredFacetNames', 'expectedLoaderMutationCount', 'requiredLoaderMutationNames', 'loaderMutations', 'expectedMutationCount', 'requiredMutationNames', 'mutations'], 'explore manifest')
+  if (![manifest.expectedCaseCount, manifest.expectedFacetCaseCount, manifest.expectedLoaderMutationCount, manifest.expectedMutationCount].every((value) => Number.isSafeInteger(value) && value >= 0)) throw new Error('explore manifest counts must be safe nonnegative integers')
   const requiredNames = uniqueStrings(manifest.requiredNames, 'explore requiredNames')
+  const requiredFacetNames = uniqueStrings(manifest.requiredFacetNames, 'explore requiredFacetNames')
   const requiredLoaderMutationNames = uniqueStrings(manifest.requiredLoaderMutationNames, 'explore requiredLoaderMutationNames')
   const requiredMutationNames = uniqueStrings(manifest.requiredMutationNames, 'explore requiredMutationNames')
   if (!Array.isArray(manifest.loaderMutations) || !Array.isArray(manifest.mutations)) throw new Error('explore manifest mutation families must be arrays')
@@ -85,7 +88,7 @@ function loadFixtures(manifestText = manifestSource, casesText = casesSource) {
   if (mutations.length !== manifest.expectedMutationCount || requiredMutationNames.length !== manifest.expectedMutationCount || new Set(mutationNames).size !== mutations.length || requiredMutationNames.some((name) => !mutationNames.includes(name)) || mutationNames.some((name) => !requiredMutationNames.includes(name))) throw new Error('explore source mutation inventory does not match its manifest')
 
   const root = parseDocument(casesText, 'explore cases')
-  exactFields(root, ['cases'], 'explore cases')
+  exactFields(root, ['cases', 'facetCases'], 'explore cases')
   if (!Array.isArray(root.cases)) throw new Error('explore cases must be an array')
   const cases = root.cases.map((row, index) => {
     if (!row || typeof row !== 'object' || Array.isArray(row)) throw new Error(`explore case ${index} must be an object`)
@@ -114,9 +117,21 @@ function loadFixtures(manifestText = manifestSource, casesText = casesSource) {
   })
   const names = cases.map((row) => row.name)
   if (cases.length !== manifest.expectedCaseCount || requiredNames.length !== manifest.expectedCaseCount || names.length !== new Set(names).size || requiredNames.some((name) => !names.includes(name)) || names.some((name) => !requiredNames.includes(name))) throw new Error('explore cases do not match their independent manifest')
-  const globalNames = [...names, ...loaderMutationNames, ...mutationNames]
+  if (!Array.isArray(root.facetCases)) throw new Error('explore facetCases must be an array')
+  const facetCases = root.facetCases.map((row, index) => {
+    if (!row || typeof row !== 'object' || Array.isArray(row)) throw new Error(`explore facet case ${index} must be an object`)
+    exactFields(row, facetCaseFields, `explore facet case ${index}`)
+    if (typeof row.name !== 'string' || !row.name || !Array.isArray(row.rowProviders) || row.rowProviders.some((value) => typeof value !== 'string')) throw new Error(`explore facet case ${index} identity is invalid`)
+    if (row.harnessFacets !== 'absent' && (!Array.isArray(row.harnessFacets) || row.harnessFacets.some((value) => typeof value !== 'string' || !/^[^:]+:\d+$/.test(value)))) throw new Error(`explore facet case ${index} harnessFacets are invalid`)
+    if (!facetActions.includes(row.action) || !['string', 'number'].includes(typeof row.arg) || !Array.isArray(row.expectedProviders) || row.expectedProviders.some((value) => typeof value !== 'string' || !/^[^:]+:\d+$/.test(value))) throw new Error(`explore facet case ${index} expectations are invalid`)
+    if (typeof row.expectedProvider !== 'string' || !positiveInt(row.expectedPage) || typeof row.expectTags !== 'boolean') throw new Error(`explore facet case ${index} output expectations are invalid`)
+    return row
+  })
+  const facetNames = facetCases.map((row) => row.name)
+  if (facetCases.length !== manifest.expectedFacetCaseCount || requiredFacetNames.length !== manifest.expectedFacetCaseCount || facetNames.length !== new Set(facetNames).size || requiredFacetNames.some((name) => !facetNames.includes(name)) || facetNames.some((name) => !requiredFacetNames.includes(name))) throw new Error('explore facet cases do not match their independent manifest')
+  const globalNames = [...names, ...facetNames, ...loaderMutationNames, ...mutationNames]
   if (new Set(globalNames).size !== globalNames.length) throw new Error('explore case and mutation names must be globally unique')
-  return { cases, loaderMutations, mutations }
+  return { cases, facetCases, loaderMutations, mutations }
 }
 
 const fixtures = loadFixtures()
@@ -181,6 +196,23 @@ function buildPayload(fixture, seedPage) {
     collectives: [],
     popularTags: [],
   }
+}
+
+function parseCountEntries(entries) {
+  return entries.map((entry) => {
+    const split = entry.lastIndexOf(':')
+    return [entry.slice(0, split), Number(entry.slice(split + 1))]
+  })
+}
+
+function buildFacetPayload(fixture) {
+  const payload = {
+    transcripts: { transcripts: fixture.rowProviders.map((provider, index) => makeTranscript(`f${index}`, provider)), total: 12, page: 2, limit: 4 },
+    collectives: [],
+    popularTags: [{ id: 'discovery', name: 'discovery', usageCount: 8 }],
+  }
+  if (fixture.harnessFacets !== 'absent') payload.harnessFacets = parseCountEntries(fixture.harnessFacets).map(([harness, count]) => ({ harness, count }))
+  return payload
 }
 
 const server = await createServer({
@@ -260,6 +292,39 @@ try {
       await act(async () => root.unmount())
     }
   }
+
+  for (const fixture of fixtures.facetCases) {
+    const emitted = []
+    const container = dom.window.document.getElementById('root')
+    const root = createRoot(container)
+    const click = async (element, label) => {
+      if (!element) throw new Error(`${fixture.name}: missing ${label}`)
+      await act(async () => { element.dispatchEvent(new dom.window.MouseEvent('click', { button: 0, bubbles: true })); await Promise.resolve() })
+    }
+    try {
+      await act(async () => { root.render(React.createElement(Explore, { data: buildFacetPayload(fixture), onFiltersChange: (filters) => emitted.push(filters) })); await Promise.resolve() })
+      if (fixture.action === 'page') await click(container.querySelector(`button[aria-label="page ${fixture.arg}"]`), 'page control')
+      if (fixture.action === 'order') await click(container.querySelector(`input[value="${fixture.arg}"]`), 'order control')
+      if (fixture.action === 'provider') await click([...container.querySelectorAll('.fr-provider')].find((button) => button.querySelector('.fr-provider-name')?.textContent === fixture.arg), 'provider control')
+      if (fixture.action === 'topic') await click([...container.querySelectorAll('.fr-topic')].find((button) => button.querySelector('.fr-topic-tag')?.textContent === fixture.arg), 'topic control')
+      if (fixture.action === 'search') {
+        await act(async () => {
+        const input = container.querySelector('.cex-searchbar input')
+        const reactPropsKey = Object.keys(input).find((key) => key.startsWith('__reactProps$'))
+        input[reactPropsKey].onChange({ target: { value: fixture.arg } })
+        await Promise.resolve()
+        })
+        await act(async () => { await new Promise((resolveDelay) => setTimeout(resolveDelay, 300)) })
+      }
+      const observedProviders = [...container.querySelectorAll('.fr-provider')].map((button) => `${button.querySelector('.fr-provider-name')?.textContent}:${button.querySelector('.fr-count')?.textContent}`)
+      if (JSON.stringify(observedProviders) !== JSON.stringify(fixture.expectedProviders)) throw new Error(`${fixture.name}: provider options expected ${JSON.stringify(fixture.expectedProviders)}, observed ${JSON.stringify(observedProviders)}`)
+      const last = emitted[emitted.length - 1]
+      if (!last || last.provider !== fixture.expectedProvider || last.page !== fixture.expectedPage) throw new Error(`${fixture.name}: filter intent expected provider=${fixture.expectedProvider} page=${fixture.expectedPage}, observed ${JSON.stringify(last)}`)
+      if (Boolean(container.querySelector('.fr-topic')) !== fixture.expectTags) throw new Error(`${fixture.name}: popular tags preservation failed`)
+    } finally {
+      await act(async () => root.unmount())
+    }
+  }
 } finally {
   await server.close()
   dom.window.close()
@@ -269,4 +334,4 @@ try {
   }
 }
 
-console.log(`explore page intent mounted source: ${fixtures.cases.length} case(s) passed with exact seed, stale-suppression, filter-reset, and emitted-intent matrices`)
+console.log(`explore page intent mounted source: ${fixtures.cases.length} page case(s) and ${fixtures.facetCases.length} facet case(s) passed`)

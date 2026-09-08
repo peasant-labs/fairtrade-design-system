@@ -78,8 +78,17 @@ const explore = {
     { id: 'c1', name: 'collective', description: null, linkedGithubOrg: null, memberCount: 3, transcriptCount: 10 },
   ],
   popularTags: [{ id: 'g1', name: 'go', usageCount: 12 }],
+  harnessFacets: [
+    { harness: 'codex', count: 24 },
+    { harness: 'claude-code', count: 3 },
+  ],
 }
 void explore
+
+/** @type {ExplorePayload} */
+const exploreWithoutHarnessFacets = { ...explore }
+delete exploreWithoutHarnessFacets.harnessFacets
+void exploreWithoutHarnessFacets
 
 /* ── (3) POSITIVE: members carry a concrete CollectiveRole; pending IS a role ────
    The pendingMembers list shares CollectiveMemberPayload, and the backend
