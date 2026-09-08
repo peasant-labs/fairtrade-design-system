@@ -61,7 +61,11 @@ export default function ToolCall({ tool, open = false, onToggle }) {
           <ChevronRight size={13} aria-hidden="true" className="txn-tc-chev" />
         )}
         <span className="kind">
-          <Icon size={14} aria-hidden="true" /> {tool.name}
+          <Icon size={14} aria-hidden="true" />
+          {tool.namespace !== undefined && (
+            <span className="txn-tool-namespace"><span className="txn-tool-namespace-label">namespace</span> <span className="mono">{tool.namespace || '(empty)'}</span></span>
+          )}
+          <span>{tool.name}</span>
         </span>
         <span className="path mono">{tool.preview}</span>
         <span className="right">

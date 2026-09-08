@@ -139,6 +139,7 @@ export const TOOL_GROUPS = Object.freeze([
  * @typedef {object} ToolCallVM
  * @property {string} id
  * @property {string} name                  display name (e.g. "Read", "Bash")
+ * @property {string} [namespace]           separately recorded namespace; empty string remains present evidence
  * @property {import('./wire-types.js').ToolCallKind} kind
  * @property {ToolGroup} group              filters-rail grouping
  * @property {string} preview               the one-line summary shown collapsed
