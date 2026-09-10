@@ -176,7 +176,11 @@ try {
     assert.ok(styles.height >= 24)
     assert.ok(styles.numberVariant.includes('tabular-nums'))
     assert.ok(styles.fontLinks)
-    assert.equal(parseFloat(styles.transition), 0)
+    // The reduced-motion guard in src/index.css forces transition-duration to
+    // .01ms; current Chrome serializes that computed value as "1e-05s", so an
+    // exact-zero comparison rejects the guard itself. Anything at or below a
+    // 100-microsecond ceiling is still static-first; real motion stays a failure.
+    assert.ok(parseFloat(styles.transition) <= 0.0001, `expected static-first transition, got ${styles.transition}`)
     assert.deepEqual(errors, [])
     evidence.checks.push({ theme, styles, navigation: fixture.navigationCases.map(item => item.name), counts: fixture.countCases.map(item => item.name) })
     await page.close()
