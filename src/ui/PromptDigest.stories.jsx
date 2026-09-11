@@ -2,9 +2,10 @@ import { expect, within } from 'storybook/test'
 import PromptDigest from './PromptDigest.jsx'
 
 /* PromptDigest stories. CSF3: a Playground driven by meta.args plus one named story per
-   meaningful state — the short chain, the collapsed-boundary chain, each item kind on its own,
-   and the chain with no link builder. classes + tokens come from src/index.css and the colocated
-   PromptDigest.css via .storybook/preview.jsx; the theme toolbar flips data-theme.
+   meaningful state — the short chain, the collapsed-boundary chain, a chain with no commits yet,
+   each item kind on its own, and the chain with no link builder. classes + tokens come from
+   src/index.css and the colocated PromptDigest.css via .storybook/preview.jsx; the theme toolbar
+   flips data-theme.
 
    the fixtures are shaped the way Village sends them: chronological, with the header counting the
    complete chain, prompt ordinals running in chain order, and every chain skill named by a header
@@ -89,6 +90,31 @@ const collapsedChain = {
     { kind: 'session', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-07T09:14:00Z', text: 'session 2', promptCount: 9, commitCount: 3 },
     { kind: 'session', transcriptId: TRANSCRIPT_C, timestamp: '2026-09-08T11:05:00Z', text: 'session 3', promptCount: 6, commitCount: 2 },
     { kind: 'commit', transcriptId: TRANSCRIPT_C, timestamp: '2026-09-08T12:30:00Z', text: '', commitSha: SHA_TWO },
+  ],
+}
+
+/* no commits at all: a session whose prompts have not yet produced a commit the harness could
+   match to this pull request. the header's commit field stays a matched-of-total pair even when
+   matched is zero — "0 of 3" — rather than folding the empty state into a dash; the session
+   boundary states its own zero the same way. */
+const noCommitsChain = {
+  header: {
+    sessionCount: 1,
+    promptCount: 4,
+    commitsCovered: 0,
+    commitsTotal: 3,
+    harness: 'claude-code',
+    redactionLevel: 'standard',
+    villageUrl: 'https://village.example/pulls/peasant-labs/village/116',
+  },
+  skills: [{ name: '/toolkit:brainstorm', invocationCount: 1 }],
+  items: [
+    { kind: 'session', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-09T10:00:00Z', text: 'session 1', promptCount: 4, commitCount: 0 },
+    { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-09T10:02:00Z', text: 'Sketch the approach before touching any code.', turnIndex: 2, ordinal: 1 },
+    { kind: 'skill', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-09T10:02:30Z', text: '/toolkit:brainstorm', turnIndex: 3 },
+    { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-09T10:20:00Z', text: 'Talk through the tradeoffs before committing to one.', turnIndex: 9, ordinal: 2 },
+    { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-09T10:41:00Z', text: 'Write up the plan so it is ready for review.', turnIndex: 14, ordinal: 3 },
+    { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-09T11:02:00Z', text: 'Hold off on any commit until the plan is approved.', turnIndex: 19, ordinal: 4 },
   ],
 }
 
@@ -185,6 +211,24 @@ export const CollapsedBoundaries = {
 
     // and those sessions contribute no prompt rows: only session 1's two prompts are in the chain
     await expect(canvasElement.querySelectorAll('.pd-row-prompt')).toHaveLength(2)
+  },
+}
+
+export const WithoutCommits = {
+  name: 'without commits',
+  args: { digest: noCommitsChain },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    // a session need not have produced a commit yet: no commit rows render, and the header states
+    // its commit field as matched of the PR's total rather than folding the empty state into a dash
+    await expect(canvasElement.querySelectorAll('.pd-row-commit')).toHaveLength(0)
+    const commitsCount = within(canvasElement.querySelector('.pd-head')).getByText('commits').closest('.pd-count')
+    await expect(commitsCount).toHaveTextContent('0 of 3')
+
+    // the session boundary states the same zero, on its own row
+    const boundary = canvas.getByText('session 1').closest('.pd-row')
+    await expect(boundary).toHaveTextContent('0 commits')
   },
 }
 
