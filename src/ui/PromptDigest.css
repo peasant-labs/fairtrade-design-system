@@ -3,14 +3,18 @@
    surfaces. radius 0 everywhere.
 
    type carries the chrome/content split: the component's own words are chrome -> var(--font-mono)
-   at var(--fs-label) with letter-spacing 0 so the tabular columns stay aligned; a prompt's first
-   line is reading text -> var(--font-body) at var(--fs-body), the 16px floor. no text-transform
-   ever touches recorded text.
+   at var(--fs-label) with letter-spacing 0 so the tabular columns stay aligned; a prompt's text
+   is reading text -> var(--font-body) at var(--fs-body), the 16px floor. no text-transform ever
+   touches recorded text.
 
    amber is scarce. the base `a` rule in index.css paints every anchor amber, so every chain row
    resets its colour to the ink ramp and carries a dotted underline as the non-colour link
    affordance (WCAG 1.4.1); amber arrives only on hover/focus. the single amber-at-rest link is
-   the header link out to village. transitions live under prefers-reduced-motion: no-preference. */
+   the header link out to village. transitions live under prefers-reduced-motion: no-preference.
+
+   a prompt row's disclosure chevron is chrome-coloured only, at rest and open alike (never
+   amber): its rotated OPEN state is a state, not motion, so it applies unconditionally; only the
+   rotation's transition is guarded behind prefers-reduced-motion: no-preference. */
 
 .pd {
   display: flex;
@@ -123,11 +127,15 @@
 }
 
 /* one row body. the >=24px hit box (WCAG 2.5.8) comes from min-height plus the padding; every row
-   shares the same left axis so the glyph column, the ordinal column and the text line up. */
+   shares the same left axis so the glyph column, the ordinal column and the text line up. flex:1
+   only takes effect on a prompt row, where this sits beside the chevron button in .pd-prompt-row;
+   a plain chain row's <li> is not a flex container, so it is a no-op there. */
 .pd-row-link {
   display: flex;
+  flex: 1 1 auto;
   align-items: baseline;
   gap: var(--sp-2);
+  min-width: 0;
   min-height: var(--target-min);
   padding: var(--sp-2);
   /* reset the global amber anchor colour: an ordinary chain row never spends the scarce accent. */
@@ -221,8 +229,8 @@ a.pd-row-link:focus-visible {
   gap: var(--sp-1);
 }
 
-/* prompt: the numbered first line. the ordinal is a tabular mono column so the numbers align down
-   the whole chain; the line itself is reading text at the 16px floor, in the author's own case. */
+/* prompt: the numbered prompt. the ordinal is a tabular mono column so the numbers align down the
+   whole chain; the text itself is reading text at the 16px floor, in the author's own case. */
 .pd-ordinal {
   flex: none;
   min-width: var(--sp-5);
@@ -241,6 +249,93 @@ a.pd-row-link:focus-visible {
   font-size: var(--fs-body);
   line-height: var(--lh-body);
   color: var(--ink);
+}
+
+/* the collapsed row's text: wrapped and clamped to two lines by CSS alone. no JavaScript
+   truncation, no character cut — the full text is always in the DOM; a reader's own
+   text-spacing stylesheet still has everything to work with, and the unclamped copy in
+   .pd-details-text is one keyboard-operable toggle away. */
+.pd-prompt-clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* ── prompt row: the link/text pair beside the disclosure chevron ──────────────────────────── */
+.pd-prompt-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+/* the disclosure toggle. chrome colour only, at rest, hover, and open alike — it never spends
+   the amber accent. the >=24px hit box is the button's own box, matching .pd-row-link's rows. */
+.pd-chevron {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--target-min);
+  height: var(--target-min);
+  margin: var(--sp-2) var(--sp-2) var(--sp-2) 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.pd-chevron:hover {
+  background: var(--surface-hover);
+  color: var(--ink-2);
+}
+
+.pd-chevron:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.pd-chevron-icon {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+}
+
+/* open points the same glyph up. this is a STATE, not motion, so it applies unconditionally;
+   only the rotation's transition is guarded behind prefers-reduced-motion: no-preference. */
+.pd-row-open .pd-chevron-icon {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pd-chevron-icon {
+    transition: transform var(--dur-2) var(--ease-standard);
+  }
+}
+
+/* the details block: the full unclamped text, then (when Village attached any) the skills
+   invoked and commits that followed this prompt, reusing the same row markup .pd-row-skill and
+   .pd-row-commit render at the chain's top level — "today's marker", unchanged. */
+.pd-details {
+  border-top: var(--bd);
+}
+
+.pd-details[hidden] {
+  display: none;
+}
+
+.pd-details-text {
+  margin: 0;
+  padding: var(--sp-2);
+}
+
+.pd-details-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 /* skill marker: indented under the prompt it followed, the slash-prefixed invocation exactly as

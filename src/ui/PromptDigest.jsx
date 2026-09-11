@@ -1,4 +1,5 @@
-import { CornerDownRight, GitCommitHorizontal, Layers, User } from 'lucide-react'
+import { useId, useState } from 'react'
+import { ChevronDown, CornerDownRight, GitCommitHorizontal, Layers, User } from 'lucide-react'
 import BrandMark from './BrandMark.jsx'
 import Chip, { CountBadge } from './Chip.jsx'
 import './PromptDigest.css'
@@ -10,52 +11,75 @@ import './PromptDigest.css'
    run of prompts. Village's pull request page is the first consumer; it must not re-implement
    this, and this must not re-implement transcript rendering — every item links out instead.
 
-   The four DigestItemKind values read distinctly through a real lucide glyph plus their own
-   layout, never colour alone. Amber stays scarce: the global `a` rule paints every anchor amber,
-   so each chain row resets its colour back to the ink ramp and carries a dotted underline as its
+   The default chain shows session boundaries as separators and, under each, prompt rows only: a
+   skill or commit item never gets its own top-level row. Instead it attaches to the nearest
+   preceding prompt (grouped by groupChainItems below, crossing a session boundary when the
+   current session has not produced a prompt yet) and surfaces inside that prompt's own disclosure
+   — a real toggle button that reveals the full unclamped text plus the skills invoked and commits
+   that followed. An item with no preceding prompt at all falls back to a plain row, rendered
+   exactly as the chain has always rendered one, so nothing Village sent is ever dropped from view.
+
+   Session, skill, and commit rows read distinctly through a real lucide glyph plus their own
+   layout, never colour alone. A prompt row leads with the same generic glyph as before. Amber
+   stays scarce: the global `a` rule paints every anchor amber, so
+   each chain row resets its colour back to the ink ramp and carries a dotted underline as its
    non-colour link affordance; amber arrives only on hover/focus. The one amber-at-rest link is
-   the single header link out to Village.
+   the single header link out to Village. The disclosure chevron is chrome-coloured only, at rest
+   and open alike — it never spends the amber accent.
 
    Case: the component's own words are lowercase chrome. Nothing off the wire is ever lowercased —
-   a prompt's first line, a skill invocation, a session label, and the harness slug all render
-   exactly as recorded. */
+   a prompt's text, a skill invocation, a session label, and the harness slug all render exactly
+   as recorded. */
 
 /** @typedef {import('@peasant-labs/schema').PromptDigest} PromptDigestPayload */
 /** @typedef {import('@peasant-labs/schema').PromptDigestItem} PromptDigestItemPayload */
-
-/* A prompt shows its first line, cut at 120 characters. The cut is on the TEXT, never a css clip,
-   so a reader's own text-spacing stylesheet cannot hide something that is on screen. */
-const PROMPT_LINE_MAX = 120
 
 /* A commit anchor shows the abbreviated SHA. The wire carries either the full SHA or an already
    abbreviated one (7 to 40 lowercase hex); seven characters is the abbreviation every tier shows. */
 const SHA_ABBREV = 7
 
-/* One glyph per kind, so the four kinds separate without leaning on colour. */
+/* One glyph per kind rendered at the chain's top level: a prompt row leads with its own generic
+   glyph instead, so it carries no entry here. */
 const KIND_ICON = {
   session: Layers,
-  prompt: User,
   skill: CornerDownRight,
   commit: GitCommitHorizontal,
 }
 
 /**
- * the first line of a prompt, cut at PROMPT_LINE_MAX characters. the outer trim runs FIRST so a
- * prompt pasted with a leading blank line still shows its first real line, and the cut counts code
- * points rather than UTF-16 units so it can never split a surrogate pair into a replacement glyph.
+ * groups the flat wire chain into what the default view renders: a prompt starts an entry that
+ * will carry the skill/commit items following it; a skill or commit attaches to the nearest
+ * preceding prompt entry in chain order, crossing a session boundary when the current session has
+ * not produced a prompt of its own yet (Village orders anchors on the last prompt before the
+ * commit, so this is the common case, not the fallback). everything else — a session boundary, or
+ * a skill/commit with no preceding prompt at all — becomes its own plain entry, rendered exactly
+ * as the chain renders one today, so nothing recorded is ever dropped from view.
  */
-function promptLine(text) {
-  const first = String(text ?? '').trim().split('\n', 1)[0].trim()
-  const characters = Array.from(first)
-  return characters.length > PROMPT_LINE_MAX
-    ? `${characters.slice(0, PROMPT_LINE_MAX).join('')}…`
-    : first
+function groupChainItems(items) {
+  const groups = []
+  let openPrompt = null
+
+  for (const item of items) {
+    if (item.kind === 'prompt') {
+      openPrompt = { type: 'prompt', item, skills: [], commits: [] }
+      groups.push(openPrompt)
+    } else if (item.kind === 'skill' && openPrompt) {
+      openPrompt.skills.push(item)
+    } else if (item.kind === 'commit' && openPrompt) {
+      openPrompt.commits.push(item)
+    } else {
+      groups.push({ type: 'plain', item })
+    }
+  }
+  return groups
 }
 
 /**
- * the body of one chain row, by kind. everything recorded upstream renders verbatim; the only
- * words this function writes itself are the two lowercase count labels on a session boundary.
- * an unrecognised kind renders nothing rather than guessing a layout for it.
+ * the body of one plain chain row, by kind: a session boundary, or a skill/commit item rendered
+ * on its own (either the rare no-preceding-prompt fallback at the chain's top level, or reused
+ * unchanged inside a prompt's own details). everything recorded upstream renders verbatim; the
+ * only words this function writes itself are the two lowercase count labels on a session
+ * boundary. an unrecognised kind renders nothing rather than guessing a layout for it.
  */
 function RowBody({ item }) {
   if (item.kind === 'session') {
@@ -73,32 +97,31 @@ function RowBody({ item }) {
       </>
     )
   }
-  if (item.kind === 'prompt') {
-    return (
-      <>
-        <span className="pd-ordinal tnum">{item.ordinal}</span>
-        <span className="pd-prompt-text">{promptLine(item.text)}</span>
-      </>
-    )
-  }
   if (item.kind === 'skill') {
     return <span className="pd-skill-text">{item.text}</span>
   }
   if (item.kind === 'commit') {
-    return <code className="pd-sha">{String(item.commitSha ?? '').slice(0, SHA_ABBREV)}</code>
+    return (
+      <>
+        <code className="pd-sha">{String(item.commitSha ?? '').slice(0, SHA_ABBREV)}</code>
+        {/* additions, deletions, and files-changed render here once PromptDigestItem carries those fields */}
+      </>
+    )
   }
   return null
 }
 
 /**
- * one row of the chain. with a resolved href the row is a real link to its target; without one it
+ * one plain row of the chain: a session boundary, or a skill/commit item that is not shown inside
+ * a prompt's details. with a resolved href the row is a real link to its target; without one it
  * is plain text, so a consumer that has no route yet still gets a readable chain. a commit anchor
  * leaves the product (it points at GitHub), so it carries the external-link attributes.
  */
 function ChainRow({ item, href }) {
-  /* an own-property lookup, so a kind outside the closed set drops the row entirely rather than
-     emitting an empty focusable link — and so a name like "constructor" cannot reach through to
-     Object.prototype and be rendered as a component. */
+  /* an own-property lookup, so a kind outside the closed set (or a prompt, which never reaches
+     this component) drops the row entirely rather than emitting an empty focusable link — and so
+     a name like "constructor" cannot reach through to Object.prototype and be rendered as a
+     component. */
   if (!Object.hasOwn(KIND_ICON, item.kind)) return null
   const Icon = KIND_ICON[item.kind]
   const body = (
@@ -127,6 +150,67 @@ function ChainRow({ item, href }) {
 }
 
 /**
+ * one prompt entry in the default chain: the generic glyph, the ordinal, and the prompt
+ * text wrapped and clamped to two lines by CSS alone — no JavaScript truncation, no character
+ * cut, so the full text is always in the DOM. a real disclosure button at the row's right end
+ * opens the unclamped text plus the skills invoked and commits that followed this prompt (Village
+ * attaches them via groupChainItems above). collapsed by default; open state is local to this
+ * row, never lifted.
+ */
+function PromptRow({ entry, href, itemHref }) {
+  const { item, skills, commits } = entry
+  const [open, setOpen] = useState(false)
+  const detailsId = useId()
+  const text = String(item.text ?? '').trim()
+  const hasDetails = skills.length > 0 || commits.length > 0
+
+  const linkBody = (
+    <>
+      <User className="pd-row-icon" aria-hidden="true" />
+      <span className="pd-ordinal tnum">{item.ordinal}</span>
+      <span className="pd-prompt-text pd-prompt-clamp">{text}</span>
+    </>
+  )
+
+  return (
+    <li className={open ? 'pd-row pd-row-prompt pd-row-open' : 'pd-row pd-row-prompt'}>
+      <div className="pd-prompt-row">
+        {href ? (
+          <a className="pd-row-link" href={href}>
+            {linkBody}
+          </a>
+        ) : (
+          <span className="pd-row-link">{linkBody}</span>
+        )}
+        <button
+          type="button"
+          className="pd-chevron"
+          aria-expanded={open}
+          aria-controls={detailsId}
+          aria-label={`details for prompt ${item.ordinal}`}
+          onClick={() => setOpen((value) => !value)}
+        >
+          <ChevronDown className="pd-chevron-icon" aria-hidden="true" />
+        </button>
+      </div>
+      <div id={detailsId} className="pd-details" hidden={!open}>
+        <p className="pd-prompt-text pd-details-text">{text}</p>
+        {hasDetails && (
+          <ul className="pd-details-list">
+            {skills.map((skill, i) => (
+              <ChainRow key={`skill-${i}`} item={skill} href={itemHref?.(skill)} />
+            ))}
+            {commits.map((commit, i) => (
+              <ChainRow key={`commit-${i}`} item={commit} href={itemHref?.(commit)} />
+            ))}
+          </ul>
+        )}
+      </div>
+    </li>
+  )
+}
+
+/**
  * PromptDigest — the prompts behind a pull request, rendered read-only from the schema type.
  *
  * @param {object} props
@@ -143,6 +227,7 @@ function ChainRow({ item, href }) {
 export default function PromptDigest({ digest, itemHref, className = '', ...rest }) {
   const { header, skills, items } = digest
   const cls = ['pd', className].filter(Boolean).join(' ')
+  const groups = groupChainItems(items)
 
   return (
     <section className={cls} aria-label="prompts behind this pull request" {...rest}>
@@ -196,9 +281,18 @@ export default function PromptDigest({ digest, itemHref, className = '', ...rest
       )}
 
       <ul className="pd-chain">
-        {items.map((item, index) => (
-          <ChainRow key={`${item.kind}-${index}`} item={item} href={itemHref?.(item)} />
-        ))}
+        {groups.map((entry, index) =>
+          entry.type === 'prompt' ? (
+            <PromptRow
+              key={`prompt-${index}`}
+              entry={entry}
+              href={itemHref?.(entry.item)}
+              itemHref={itemHref}
+            />
+          ) : (
+            <ChainRow key={`${entry.item.kind}-${index}`} item={entry.item} href={itemHref?.(entry.item)} />
+          ),
+        )}
       </ul>
     </section>
   )
