@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { ChevronDown, CornerDownRight, GitCommitHorizontal, Layers, User } from 'lucide-react'
+import Avatar from './Avatar.jsx'
 import BrandMark from './BrandMark.jsx'
 import Chip, { CountBadge } from './Chip.jsx'
 import './PromptDigest.css'
@@ -20,8 +21,9 @@ import './PromptDigest.css'
    exactly as the chain has always rendered one, so nothing Village sent is ever dropped from view.
 
    Session, skill, and commit rows read distinctly through a real lucide glyph plus their own
-   layout, never colour alone. A prompt row leads with the same generic glyph as before. Amber
-   stays scarce: the global `a` rule paints every anchor amber, so
+   layout, never colour alone. A prompt row leads with the author's avatar when the page supplies
+   one, or the same generic glyph as before when it does not — the avatar is a component prop, not
+   part of the wire payload. Amber stays scarce: the global `a` rule paints every anchor amber, so
    each chain row resets its colour back to the ink ramp and carries a dotted underline as its
    non-colour link affordance; amber arrives only on hover/focus. The one amber-at-rest link is
    the single header link out to Village. The disclosure chevron is chrome-coloured only, at rest
@@ -33,6 +35,12 @@ import './PromptDigest.css'
 
 /** @typedef {import('@peasant-labs/schema').PromptDigest} PromptDigestPayload */
 /** @typedef {import('@peasant-labs/schema').PromptDigestItem} PromptDigestItemPayload */
+
+/**
+ * @typedef {object} PromptAuthor
+ * @property {string} login - the GitHub login; also the avatar's accessible name.
+ * @property {string} avatarUrl - the GitHub profile photo url.
+ */
 
 /* A commit anchor shows the abbreviated SHA. The wire carries either the full SHA or an already
    abbreviated one (7 to 40 lowercase hex); seven characters is the abbreviation every tier shows. */
@@ -150,23 +158,29 @@ function ChainRow({ item, href }) {
 }
 
 /**
- * one prompt entry in the default chain: the generic glyph, the ordinal, and the prompt
- * text wrapped and clamped to two lines by CSS alone — no JavaScript truncation, no character
- * cut, so the full text is always in the DOM. a real disclosure button at the row's right end
- * opens the unclamped text plus the skills invoked and commits that followed this prompt (Village
- * attaches them via groupChainItems above). collapsed by default; open state is local to this
- * row, never lifted.
+ * one prompt entry in the default chain: the author's avatar (or the generic glyph fallback), the
+ * ordinal, and the prompt text wrapped and clamped to two lines by CSS alone — no JavaScript
+ * truncation, no character cut, so the full text is always in the DOM. a real disclosure button
+ * at the row's right end opens the unclamped text plus the skills invoked and commits that
+ * followed this prompt (Village attaches them via groupChainItems above). collapsed by default;
+ * open state is local to this row, never lifted.
  */
-function PromptRow({ entry, href, itemHref }) {
+function PromptRow({ entry, href, itemHref, author }) {
   const { item, skills, commits } = entry
   const [open, setOpen] = useState(false)
   const detailsId = useId()
   const text = String(item.text ?? '').trim()
   const hasDetails = skills.length > 0 || commits.length > 0
 
+  const glyph = author ? (
+    <Avatar name={author.login} src={author.avatarUrl} className="pd-row-avatar" />
+  ) : (
+    <User className="pd-row-icon" aria-hidden="true" />
+  )
+
   const linkBody = (
     <>
-      <User className="pd-row-icon" aria-hidden="true" />
+      {glyph}
       <span className="pd-ordinal tnum">{item.ordinal}</span>
       <span className="pd-prompt-text pd-prompt-clamp">{text}</span>
     </>
@@ -222,9 +236,13 @@ function PromptRow({ entry, href, itemHref }) {
  *        its link target; the item's `kind` selects the destination (`session` -> the transcript on
  *        Village, `prompt` and `skill` -> that turn in the shared transcript viewer, `commit` -> the
  *        commit on GitHub). omit it and the chain renders as plain rows; the component owns no routes.
+ * @param {PromptAuthor} [props.author] - the writer of these prompts, supplied by the page (not
+ *        wire data). when given, every prompt row's avatar renders the writer's GitHub profile
+ *        photo via the existing `Avatar` family; when omitted, prompt rows keep today's generic
+ *        glyph.
  * @param {string} [props.className] - extra classes appended after `.pd`
  */
-export default function PromptDigest({ digest, itemHref, className = '', ...rest }) {
+export default function PromptDigest({ digest, itemHref, author, className = '', ...rest }) {
   const { header, skills, items } = digest
   const cls = ['pd', className].filter(Boolean).join(' ')
   const groups = groupChainItems(items)
@@ -288,6 +306,7 @@ export default function PromptDigest({ digest, itemHref, className = '', ...rest
               entry={entry}
               href={itemHref?.(entry.item)}
               itemHref={itemHref}
+              author={author}
             />
           ) : (
             <ChainRow key={`${entry.item.kind}-${index}`} item={entry.item} href={itemHref?.(entry.item)} />

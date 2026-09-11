@@ -73,6 +73,13 @@ PromptDigest({
 const itemHref = (item) => item.transcriptId
 PromptDigest({ digest, itemHref })
 
+/* `author` is a component prop supplied by the page, not part of the wire payload: it is not
+   read from `PromptDigestPayload` above, only declared locally by the component. */
+PromptDigest({ digest, author: { login: 'octocat', avatarUrl: 'https://example.test/octocat.png' } })
+
+// @ts-expect-error author is { login, avatarUrl }, not an arbitrary object
+PromptDigest({ digest, author: { login: 'octocat' } })
+
 /* every negative below is a SINGLE-LINE call on purpose: `@ts-expect-error` suppresses only a
    diagnostic reported on the very next line, and tsc reports a bad item kind deep inside the
    object literal, not on the line the call opens. */

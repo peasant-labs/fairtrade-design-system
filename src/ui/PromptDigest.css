@@ -192,6 +192,13 @@ a.pd-row-link:focus-visible {
   color: var(--ink-4);
 }
 
+/* the author's avatar, in a prompt row that has one: layout only, sized by the Avatar family's
+   own bare (18px, var(--ic-lg)) inline-meta tier — never overridden to the smaller icon token. */
+.pd-row-avatar {
+  flex: none;
+  align-self: center;
+}
+
 /* session boundary: chrome type, its two counts tabular and pushed to the right edge. separated
    by space, never by a middot. a boundary that follows other items gets extra air and a stronger
    rule above it, so the break between sessions reads at a glance; the shared :first-child reset
