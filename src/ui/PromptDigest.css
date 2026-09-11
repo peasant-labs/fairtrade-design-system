@@ -1,0 +1,263 @@
+/* PromptDigest (.pd-*) — the prompts behind a pull request, read-only. tokens only: no hex, no
+   raw px; spacing var(--sp-*), hairlines var(--bd), icons var(--ic-*), the ink ramp and the
+   surfaces. radius 0 everywhere.
+
+   type carries the chrome/content split: the component's own words are chrome -> var(--font-mono)
+   at var(--fs-label) with letter-spacing 0 so the tabular columns stay aligned; a prompt's first
+   line is reading text -> var(--font-body) at var(--fs-body), the 16px floor. no text-transform
+   ever touches recorded text.
+
+   amber is scarce. the base `a` rule in index.css paints every anchor amber, so every chain row
+   resets its colour to the ink ramp and carries a dotted underline as the non-colour link
+   affordance (WCAG 1.4.1); amber arrives only on hover/focus. the single amber-at-rest link is
+   the header link out to village. transitions live under prefers-reduced-motion: no-preference. */
+
+.pd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  border: var(--bd);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+/* ── header: the counts, the harness, the redaction level ────────────────────── */
+.pd-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-3);
+  border-bottom: var(--bd);
+}
+
+.pd-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-5);
+  margin: 0;
+}
+
+.pd-count {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+/* a chrome label. only ever wraps words this component writes itself, never recorded text. */
+.pd-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  text-transform: lowercase;
+  color: var(--ink-3);
+}
+
+/* a recorded value: the harness slug and the redaction level land here, so NO text-transform. */
+.pd-value {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-body);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+.pd-harness {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+/* the one scarce-amber link at rest: out to the whole digest on village. .link supplies the
+   dotted underline from index.css. */
+.pd-village {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+}
+
+/* ── skills row ──────────────────────────────────────────────────────────────── */
+.pd-skills {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.pd-skill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* the chip carries the recorded name verbatim: the leading slash is what tells a skill or user
+   command apart from a bare plugin identifier, so nothing may reshape it. */
+.pd-skill {
+  text-transform: none;
+}
+
+/* ── the chain ───────────────────────────────────────────────────────────────── */
+.pd-chain {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pd-row {
+  display: block;
+  border-top: var(--bd);
+}
+
+.pd-row:first-child {
+  border-top: 0;
+}
+
+/* one row body. the >=24px hit box (WCAG 2.5.8) comes from min-height plus the padding; every row
+   shares the same left axis so the glyph column, the ordinal column and the text line up. */
+.pd-row-link {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-height: var(--target-min);
+  padding: var(--sp-2);
+  /* reset the global amber anchor colour: an ordinary chain row never spends the scarce accent. */
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* the non-colour link affordance sits on the row's TEXT, not on the flex container: a decoration
+   declared on a flex box does not reliably reach its flex items, and an underline belongs under
+   the words anyway, never under the glyph. --ink-5 is the decoration-only token, which is exactly
+   what an underline is; the text above it keeps a text-safe ink. */
+a.pd-row-link .pd-session-label,
+a.pd-row-link .pd-prompt-text,
+a.pd-row-link .pd-skill-text,
+a.pd-row-link .pd-sha {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--ink-5);
+  text-underline-offset: 3px;
+}
+
+a.pd-row-link:hover,
+a.pd-row-link:focus-visible {
+  color: var(--ink-strong);
+  background: var(--surface-hover);
+}
+
+a.pd-row-link:hover .pd-session-label,
+a.pd-row-link:hover .pd-prompt-text,
+a.pd-row-link:hover .pd-skill-text,
+a.pd-row-link:hover .pd-sha,
+a.pd-row-link:focus-visible .pd-session-label,
+a.pd-row-link:focus-visible .pd-prompt-text,
+a.pd-row-link:focus-visible .pd-skill-text,
+a.pd-row-link:focus-visible .pd-sha {
+  text-decoration-style: solid;
+  text-decoration-color: var(--amber);
+}
+
+a.pd-row-link:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a.pd-row-link {
+    transition: color 120ms ease, background-color 120ms ease, text-decoration-color 120ms ease;
+  }
+}
+
+.pd-row-icon {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: none;
+  align-self: center;
+  color: var(--ink-4);
+}
+
+/* session boundary: chrome type, its two counts tabular and pushed to the right edge. separated
+   by space, never by a middot. */
+.pd-row-session .pd-row-link {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  color: var(--ink-2);
+}
+
+.pd-session-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink-2);
+}
+
+.pd-session-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-left: auto;
+  color: var(--ink-3);
+}
+
+.pd-count-pair {
+  display: inline-flex;
+  gap: var(--sp-1);
+}
+
+/* prompt: the numbered first line. the ordinal is a tabular mono column so the numbers align down
+   the whole chain; the line itself is reading text at the 16px floor, in the author's own case. */
+.pd-ordinal {
+  flex: none;
+  min-width: var(--sp-5);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  text-align: right;
+  color: var(--ink-4);
+}
+
+.pd-prompt-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink);
+}
+
+/* skill marker: indented under the prompt it followed, the slash-prefixed invocation exactly as
+   recorded. */
+.pd-row-skill .pd-row-link {
+  padding-left: var(--sp-6);
+}
+
+.pd-skill-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  color: var(--ink-3);
+}
+
+/* commit anchor: the abbreviated sha in mono. */
+.pd-sha {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  color: var(--ink-2);
+  background: none;
+}
