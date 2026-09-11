@@ -98,11 +98,11 @@ const promptDigest = {
     redactionLevel: 'standard',
     villageUrl: 'https://village.example/pulls/peasant-labs/village/116',
   },
-  skills: [{ name: '/superpowers:writing-plans', invocationCount: 1 }],
+  skills: [{ name: '/toolkit:write-plan', invocationCount: 1 }],
   items: [
     { kind: 'session', transcriptId: '7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13', timestamp: '2026-09-06T14:00:00Z', text: 'session 1', promptCount: 1, commitCount: 1 },
     { kind: 'prompt', transcriptId: '7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13', timestamp: '2026-09-06T14:02:00Z', text: 'Add a GitHub check that posts the prompts behind a pull request.', turnIndex: 4, ordinal: 1 },
-    { kind: 'skill', transcriptId: '7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13', timestamp: '2026-09-06T14:02:30Z', text: '/superpowers:writing-plans', turnIndex: 5 },
+    { kind: 'skill', transcriptId: '7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13', timestamp: '2026-09-06T14:02:30Z', text: '/toolkit:write-plan', turnIndex: 5 },
     { kind: 'commit', transcriptId: '7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13', timestamp: '2026-09-06T14:41:00Z', text: '', commitSha: 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678' },
   ],
 }

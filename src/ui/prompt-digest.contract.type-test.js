@@ -21,7 +21,7 @@ const digest = {
     redactionLevel: 'standard',
     villageUrl: 'https://village.example/pulls/peasant-labs/village/116',
   },
-  skills: [{ name: '/superpowers:writing-plans', invocationCount: 1 }],
+  skills: [{ name: '/toolkit:write-plan', invocationCount: 1 }],
   items: [
     {
       kind: 'session',
@@ -43,7 +43,7 @@ const digest = {
       kind: 'skill',
       transcriptId: TRANSCRIPT_ID,
       timestamp: '2026-09-06T14:02:30Z',
-      text: '/superpowers:writing-plans',
+      text: '/toolkit:write-plan',
       turnIndex: 5,
     },
     {

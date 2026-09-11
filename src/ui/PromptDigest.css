@@ -137,20 +137,19 @@
 
 /* the non-colour link affordance sits on the row's TEXT, not on the flex container: a decoration
    declared on a flex box does not reliably reach its flex items, and an underline belongs under
-   the words anyway, never under the glyph. --ink-5 is the decoration-only token, which is exactly
-   what an underline is; the text above it keeps a text-safe ink. */
+   the words anyway, never under the glyph. the underline is the only non-colour link cue at rest,
+   so it clears the 3:1 non-text floor on its own rather than sitting in the faintest decoration ink. */
 a.pd-row-link .pd-session-label,
 a.pd-row-link .pd-prompt-text,
 a.pd-row-link .pd-skill-text,
 a.pd-row-link .pd-sha {
   text-decoration: underline dotted;
-  text-decoration-color: var(--ink-5);
+  text-decoration-color: var(--ink-4);
   text-underline-offset: 3px;
 }
 
 a.pd-row-link:hover,
 a.pd-row-link:focus-visible {
-  color: var(--ink-strong);
   background: var(--surface-hover);
 }
 

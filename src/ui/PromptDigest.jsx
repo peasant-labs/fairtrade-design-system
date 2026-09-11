@@ -39,10 +39,17 @@ const KIND_ICON = {
   commit: GitCommitHorizontal,
 }
 
-/** the first line of a prompt, cut at PROMPT_LINE_MAX characters. */
+/**
+ * the first line of a prompt, cut at PROMPT_LINE_MAX characters. the outer trim runs FIRST so a
+ * prompt pasted with a leading blank line still shows its first real line, and the cut counts code
+ * points rather than UTF-16 units so it can never split a surrogate pair into a replacement glyph.
+ */
 function promptLine(text) {
-  const first = String(text ?? '').split('\n', 1)[0].trim()
-  return first.length > PROMPT_LINE_MAX ? `${first.slice(0, PROMPT_LINE_MAX)}…` : first
+  const first = String(text ?? '').trim().split('\n', 1)[0].trim()
+  const characters = Array.from(first)
+  return characters.length > PROMPT_LINE_MAX
+    ? `${characters.slice(0, PROMPT_LINE_MAX).join('')}…`
+    : first
 }
 
 /**
@@ -57,10 +64,10 @@ function RowBody({ item }) {
         <span className="pd-session-label">{item.text}</span>
         <span className="pd-session-counts">
           <span className="pd-count-pair">
-            <span className="tnum">{item.promptCount}</span> prompts
+            <span className="tnum">{item.promptCount}</span> {item.promptCount === 1 ? 'prompt' : 'prompts'}
           </span>
           <span className="pd-count-pair">
-            <span className="tnum">{item.commitCount}</span> commits
+            <span className="tnum">{item.commitCount}</span> {item.commitCount === 1 ? 'commit' : 'commits'}
           </span>
         </span>
       </>
@@ -89,6 +96,10 @@ function RowBody({ item }) {
  * leaves the product (it points at GitHub), so it carries the external-link attributes.
  */
 function ChainRow({ item, href }) {
+  /* an own-property lookup, so a kind outside the closed set drops the row entirely rather than
+     emitting an empty focusable link — and so a name like "constructor" cannot reach through to
+     Object.prototype and be rendered as a component. */
+  if (!Object.hasOwn(KIND_ICON, item.kind)) return null
   const Icon = KIND_ICON[item.kind]
   const body = (
     <>
