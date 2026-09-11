@@ -196,29 +196,45 @@ a.pd-row-link:focus-visible {
    bare (unset `size`) inline-meta box at 18px (var(--ic-lg)) — larger than every other glyph in
    this row, which is var(--ic-sm) (14px). Avatar exposes no tier that resolves to --ic-sm, so the
    row overrides the box here rather than adding a new Avatar tier: this is the same box the User
-   fallback glyph occupies, so rows with and without an author line up on the same left edge. it
-   aligns to the top of the row, level with the ordinal, rather than centring against a two-line
-   clamped block. */
+   fallback glyph occupies, so rows with and without an author line up on the same left edge.
+   align-self stays flex-start so the box keeps its own natural height instead of stretching to
+   match a two-line clamped block; the fixed margin-top below (not the stretch/centre the parent
+   would otherwise apply) is what centres it against the ordinal's line, so a two-line clamp or an
+   unclamped multi-line expansion never pulls it down. */
 .pd-row-avatar {
   flex: none;
   align-self: flex-start;
   width: var(--ic-sm);
   height: var(--ic-sm);
+  margin-top: var(--pd-glyph-offset);
 }
 
 /* a prompt row's own top alignment: the avatar (or the User fallback glyph above) lines up with
-   the first line of the row's text, level with the ordinal — not centred against the whole
-   two-line clamped block the way .pd-row-link's shared baseline default reads for a single line
-   of chrome text. scoped to .pd-prompt-row (the link+chevron wrapper), not the broader
-   .pd-row-prompt <li>, so a skill/commit row nested in this prompt's own details block keeps the
-   baseline default every other chain row uses; only the prompt's own top-level link pairs a
-   fixed-size glyph with text that can wrap to more than one line. */
+   the ordinal's line, not the top of the row — not centred against the whole two-line clamped
+   block the way .pd-row-link's shared baseline default reads for a single line of chrome text.
+   scoped to .pd-prompt-row (the link+chevron wrapper), not the broader .pd-row-prompt <li>, so a
+   skill/commit row nested in this prompt's own details block keeps the baseline default every
+   other chain row uses; only the prompt's own top-level link pairs a fixed-size glyph with text
+   that can wrap to more than one line. */
 .pd-prompt-row .pd-row-link {
   align-items: flex-start;
 }
 
+/* the ordinal, the avatar, and the User fallback glyph are three independent flex items sharing
+   this flex-start row, so each one's own top edge — not its ink — lands on the row's top. The
+   ordinal's line box (fs-label at lh-mono) is taller than the 14px glyph box, so its digit sits
+   centred lower within that box than the glyph's content sits within its own. --pd-glyph-offset
+   is exactly that gap, halved: nudging the glyph down by it puts the glyph's visual centre on the
+   ordinal's, the number the finding names, not the prose line (fs-body/lh-body) beside it, which
+   uses a different line-height and would centre differently. Defined once and shared by the
+   avatar and the icon fallback below so both glyphs read at the same vertical centre. */
+.pd-prompt-row {
+  --pd-glyph-offset: calc((var(--fs-label) * var(--lh-mono) - var(--ic-sm)) / 2);
+}
+
 .pd-prompt-row .pd-row-icon {
   align-self: flex-start;
+  margin-top: var(--pd-glyph-offset);
 }
 
 /* session boundary: chrome type, its two counts tabular and pushed to the right edge. separated
