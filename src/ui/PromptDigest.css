@@ -192,11 +192,16 @@ a.pd-row-link:focus-visible {
   color: var(--ink-4);
 }
 
-/* the author's avatar, in a prompt row that has one: layout only, sized by the Avatar family's
-   own bare (18px, var(--ic-lg)) inline-meta tier — never overridden to the smaller icon token. */
+/* the author's avatar, in a prompt row that has one: the Avatar family's smallest tier is its
+   bare (unset `size`) inline-meta box at 18px (var(--ic-lg)) — larger than every other glyph in
+   this row, which is var(--ic-sm) (14px). Avatar exposes no tier that resolves to --ic-sm, so the
+   row overrides the box here rather than adding a new Avatar tier: this is the same box the User
+   fallback glyph occupies, so rows with and without an author line up on the same left edge. */
 .pd-row-avatar {
   flex: none;
   align-self: center;
+  width: var(--ic-sm);
+  height: var(--ic-sm);
 }
 
 /* session boundary: chrome type, its two counts tabular and pushed to the right edge. separated
@@ -332,9 +337,15 @@ a.pd-row-link:focus-visible {
   display: none;
 }
 
+/* the full unclamped text is user content, same as the collapsed row's clamped line: body face,
+   not the chrome mono, at the same size and ink. the skill markers and commit anchors that follow
+   it in .pd-details-list keep their own chrome styling (.pd-skill-text, .pd-sha), untouched. */
 .pd-details-text {
   margin: 0;
   padding: var(--sp-2);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--ink);
 }
 
 .pd-details-list {

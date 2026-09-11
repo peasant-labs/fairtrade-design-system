@@ -33,11 +33,15 @@ const SHA_THREE = 'c3d4e5f60718293a4b5c6d7e8f90123456789012'
 const LONG_PROMPT =
   'Add a GitHub check that posts the prompts behind a pull request, so a reviewer can see the intent as well as the diff, and keep it one sticky comment'
 
-/* the writer of these prompts, supplied by the page — never part of the digest itself. */
+/* the writer of these prompts, supplied by the page — never part of the digest itself. the
+   placeholder stands in for a photograph, so it stays neutral grey (the dark theme's --ink-3
+   `#9a9488` on the silhouette's `#fdfcfa`, both plain literals inside the data uri, since a data
+   uri cannot reference a CSS custom property) — never amber or gold, which is this system's
+   scarce accent. */
 const AUTHOR = {
   login: 'councilmember',
   avatarUrl:
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23c9a35a'/%3E%3Ccircle cx='16' cy='13' r='6' fill='%23fdfcfa'/%3E%3Cpath d='M4 30c0-8 5-12 12-12s12 4 12 12' fill='%23fdfcfa'/%3E%3C/svg%3E",
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%239a9488'/%3E%3Ccircle cx='16' cy='13' r='6' fill='%23fdfcfa'/%3E%3Cpath d='M4 30c0-8 5-12 12-12s12 4 12 12' fill='%23fdfcfa'/%3E%3C/svg%3E",
 }
 
 /* the consumer owns the routes. Village would build these from the attachment's owner/name and
@@ -342,7 +346,7 @@ export const ExpandedWithCommit = {
 
 export const Expanded = {
   name: 'expanded',
-  args: { digest: shortChain },
+  args: { digest: shortChain, author: AUTHOR },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const toggle = canvas.getByRole('button', { name: 'details for prompt 1' })
