@@ -65,9 +65,9 @@ const shortChain = {
   ],
 }
 
-/* the collapsed state: the first session still shows its prompts, the later two are represented
-   only by their boundary rows, each stating the run of prompts it stands in for. the header counts
-   the chain as sent, which is what makes a boundary row the reviewer's way back to the rest. */
+/* the collapsed state: the first session still shows its prompts, while the later two stand on
+   their boundary rows, each stating the run of prompts it holds. the header counts the chain as
+   sent, which is what makes a boundary row the reviewer's way back to the rest. */
 const collapsedChain = {
   header: {
     sessionCount: 3,

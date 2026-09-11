@@ -14,7 +14,7 @@ import './PromptDigest.css'
    layout, never colour alone. Amber stays scarce: the global `a` rule paints every anchor amber,
    so each chain row resets its colour back to the ink ramp and carries a dotted underline as its
    non-colour link affordance; amber arrives only on hover/focus. The one amber-at-rest link is
-   the header link out to Village.
+   the single header link out to Village.
 
    Case: the component's own words are lowercase chrome. Nothing off the wire is ever lowercased —
    a prompt's first line, a skill invocation, a session label, the harness slug and the redaction
