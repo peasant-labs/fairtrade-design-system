@@ -86,6 +86,27 @@ const txnViewModel = {
 const txnCaps = { canEdit: true, canLabel: true, canContribute: true, canChangeVisibility: true, canExport: true }
 const txnFilters = { categories: { prompts: true, responses: true, thinking: true, toolcalls: true }, toolGroups: { edits: true, bash: true, read: true, search: true, fetch: true, tasks: true, other: true }, tags: { errors: false, retries: false, revert: false }, views: { hidden: true, expandAll: false, compact: false }, checkpoint: 'all' }
 
+/* the digest the prompt-digest family renders: one item of each chain kind, with the header counts
+   describing exactly that chain, so the smoke exercises all four rendering branches. */
+const promptDigest = {
+  header: {
+    sessionCount: 1,
+    promptCount: 1,
+    commitsCovered: 1,
+    commitsTotal: 1,
+    harness: 'claude-code',
+    redactionLevel: 'standard',
+    villageUrl: 'https://village.example/pulls/peasant-labs/village/116',
+  },
+  skills: [{ name: '/superpowers:writing-plans', invocationCount: 1 }],
+  items: [
+    { kind: 'session', transcriptId: '7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13', timestamp: '2026-09-06T14:00:00Z', text: 'session 1', promptCount: 1, commitCount: 1 },
+    { kind: 'prompt', transcriptId: '7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13', timestamp: '2026-09-06T14:02:00Z', text: 'Add a GitHub check that posts the prompts behind a pull request.', turnIndex: 4, ordinal: 1 },
+    { kind: 'skill', transcriptId: '7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13', timestamp: '2026-09-06T14:02:30Z', text: '/superpowers:writing-plans', turnIndex: 5 },
+    { kind: 'commit', transcriptId: '7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13', timestamp: '2026-09-06T14:41:00Z', text: '', commitSha: 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678' },
+  ],
+}
+
 const sampleProps = {
   ChartBar: { data: chartData, xKey: 'label', series: [{ key: 'count', name: 'count' }], title: 'bars' },
   ChartLine: { data: chartData, xKey: 'label', series: [{ key: 'count', name: 'count' }], title: 'line' },
@@ -102,6 +123,7 @@ const sampleProps = {
     caption: 'sample table',
   },
   DiffView: { file: 'sample.diff', hunks: diffHunks },
+  PromptDigest: { digest: promptDigest, itemHref: (item) => `https://village.example/items/${item.transcriptId}` },
   ProviderIcon: { harness: 'antigravity', label: true },
   ProviderName: { harness: 'antigravity' },
   ProviderTag: { harness: 'antigravity' },
