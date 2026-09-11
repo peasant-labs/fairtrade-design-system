@@ -16,8 +16,9 @@ import './PromptDigest.css'
    skill or commit item never gets its own top-level row. Instead it attaches to the nearest
    preceding prompt (grouped by groupChainItems below, crossing a session boundary when the
    current session has not produced a prompt yet) and surfaces inside that prompt's own disclosure
-   — a real toggle button that reveals the full unclamped text plus the skills invoked and commits
-   that followed. An item with no preceding prompt at all falls back to a plain row, rendered
+   — a real toggle button that unclamps the prompt's own text in place and reveals the skills
+   invoked and commits that followed, rather than repeating the text a second time. An item with
+   no preceding prompt at all falls back to a plain row, rendered
    exactly as the chain has always rendered one, so nothing Village sent is ever dropped from view.
 
    Session, skill, and commit rows read distinctly through a real lucide glyph plus their own
@@ -161,9 +162,10 @@ function ChainRow({ item, href }) {
  * one prompt entry in the default chain: the author's avatar (or the generic glyph fallback), the
  * ordinal, and the prompt text wrapped and clamped to two lines by CSS alone — no JavaScript
  * truncation, no character cut, so the full text is always in the DOM. a real disclosure button
- * at the row's right end opens the unclamped text plus the skills invoked and commits that
- * followed this prompt (Village attaches them via groupChainItems above). collapsed by default;
- * open state is local to this row, never lifted.
+ * at the row's right end unclamps that same text in place and reveals the skills invoked and
+ * commits that followed this prompt (Village attaches them via groupChainItems above); the text is
+ * never repeated a second time below. collapsed by default; open state is local to this row, never
+ * lifted.
  */
 function PromptRow({ entry, href, itemHref, author }) {
   const { item, skills, commits } = entry
@@ -182,7 +184,7 @@ function PromptRow({ entry, href, itemHref, author }) {
     <>
       {glyph}
       <span className="pd-ordinal tnum">{item.ordinal}</span>
-      <span className="pd-prompt-text pd-prompt-clamp">{text}</span>
+      <span className={open ? 'pd-prompt-text' : 'pd-prompt-text pd-prompt-clamp'}>{text}</span>
     </>
   )
 
@@ -208,7 +210,6 @@ function PromptRow({ entry, href, itemHref, author }) {
         </button>
       </div>
       <div id={detailsId} className="pd-details" hidden={!open}>
-        <p className="pd-prompt-text pd-details-text">{text}</p>
         {hasDetails && (
           <ul className="pd-details-list">
             {skills.map((skill, i) => (

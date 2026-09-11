@@ -176,12 +176,12 @@ export const Chain = {
     // gets a top-level row of its own any more
     await expect(canvasElement.querySelectorAll('.pd-chain > .pd-row-skill, .pd-chain > .pd-row-commit')).toHaveLength(0)
 
-    // a prompt's full text is in the DOM twice — the clamped preview and the (closed) unclamped
-    // details copy — with no character cut on either: "we can show more characters" means all of
-    // them, CSS clamp only, never a JS truncation
+    // a prompt's full text is in the DOM once, in the row itself, clamped to two lines by CSS
+    // alone with no character cut: opening the row's disclosure unclamps this same node in place
+    // rather than repeating the text a second time below
     const promptNodes = canvas.getAllByText(LONG_PROMPT)
-    await expect(promptNodes).toHaveLength(2)
-    const preview = promptNodes.find((node) => node.classList.contains('pd-prompt-clamp'))
+    await expect(promptNodes).toHaveLength(1)
+    const preview = promptNodes[0]
     await expect(preview).toHaveClass('pd-prompt-clamp')
     await expect(preview.closest('a')).toHaveAttribute(
       'href',
@@ -355,9 +355,13 @@ export const Expanded = {
 
     await waitFor(() => expect(toggle).toHaveAttribute('aria-expanded', 'true'))
     const row = toggle.closest('.pd-row-prompt')
+
+    // the prompt's text unclamps in place — same node, no second copy below it
+    const preview = within(row).getByText(LONG_PROMPT)
+    await expect(preview).not.toHaveClass('pd-prompt-clamp')
+
     const details = row.querySelector('.pd-details')
     await expect(details).toBeVisible()
-    await expect(within(details).getByText(LONG_PROMPT)).toBeInTheDocument()
     await expect(within(details).getByText('/toolkit:brainstorm')).toBeInTheDocument()
 
     // opening one row leaves the rest closed

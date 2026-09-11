@@ -196,12 +196,29 @@ a.pd-row-link:focus-visible {
    bare (unset `size`) inline-meta box at 18px (var(--ic-lg)) — larger than every other glyph in
    this row, which is var(--ic-sm) (14px). Avatar exposes no tier that resolves to --ic-sm, so the
    row overrides the box here rather than adding a new Avatar tier: this is the same box the User
-   fallback glyph occupies, so rows with and without an author line up on the same left edge. */
+   fallback glyph occupies, so rows with and without an author line up on the same left edge. it
+   aligns to the top of the row, level with the ordinal, rather than centring against a two-line
+   clamped block. */
 .pd-row-avatar {
   flex: none;
-  align-self: center;
+  align-self: flex-start;
   width: var(--ic-sm);
   height: var(--ic-sm);
+}
+
+/* a prompt row's own top alignment: the avatar (or the User fallback glyph above) lines up with
+   the first line of the row's text, level with the ordinal — not centred against the whole
+   two-line clamped block the way .pd-row-link's shared baseline default reads for a single line
+   of chrome text. scoped to .pd-prompt-row (the link+chevron wrapper), not the broader
+   .pd-row-prompt <li>, so a skill/commit row nested in this prompt's own details block keeps the
+   baseline default every other chain row uses; only the prompt's own top-level link pairs a
+   fixed-size glyph with text that can wrap to more than one line. */
+.pd-prompt-row .pd-row-link {
+  align-items: flex-start;
+}
+
+.pd-prompt-row .pd-row-icon {
+  align-self: flex-start;
 }
 
 /* session boundary: chrome type, its two counts tabular and pushed to the right edge. separated
@@ -265,8 +282,8 @@ a.pd-row-link:focus-visible {
 
 /* the collapsed row's text: wrapped and clamped to two lines by CSS alone. no JavaScript
    truncation, no character cut — the full text is always in the DOM; a reader's own
-   text-spacing stylesheet still has everything to work with, and the unclamped copy in
-   .pd-details-text is one keyboard-operable toggle away. */
+   text-spacing stylesheet still has everything to work with, and opening the row's own disclosure
+   toggle removes this class in place, unclamping the same text rather than repeating it below. */
 .pd-prompt-clamp {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -326,26 +343,17 @@ a.pd-row-link:focus-visible {
   }
 }
 
-/* the details block: the full unclamped text, then (when Village attached any) the skills
-   invoked and commits that followed this prompt, reusing the same row markup .pd-row-skill and
-   .pd-row-commit render at the chain's top level — "today's marker", unchanged. */
+/* the details block: when Village attached any, the skills invoked and commits that followed this
+   prompt, reusing the same row markup .pd-row-skill and .pd-row-commit render at the chain's top
+   level — "today's marker", unchanged. the prompt's own text is never repeated here: opening a row
+   unclamps .pd-prompt-text in place instead (see .pd-prompt-clamp above). a prompt with neither
+   skills nor commits still gets a working disclosure — the block is simply empty. */
 .pd-details {
   border-top: var(--bd);
 }
 
 .pd-details[hidden] {
   display: none;
-}
-
-/* the full unclamped text is user content, same as the collapsed row's clamped line: body face,
-   not the chrome mono, at the same size and ink. the skill markers and commit anchors that follow
-   it in .pd-details-list keep their own chrome styling (.pd-skill-text, .pd-sha), untouched. */
-.pd-details-text {
-  margin: 0;
-  padding: var(--sp-2);
-  font-family: var(--font-body);
-  font-size: var(--fs-body);
-  color: var(--ink);
 }
 
 .pd-details-list {
