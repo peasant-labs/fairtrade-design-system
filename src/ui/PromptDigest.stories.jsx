@@ -26,12 +26,27 @@ const SHA_ONE = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678'
 const SHA_TWO = 'b2c3d4e5f60718293a4b5c6d7e8f901234567890'
 const SHA_THREE = 'c3d4e5f60718293a4b5c6d7e8f90123456789012'
 
+/* six commits for ManyCommitsAndSkills, below — a distinct set so its fixture reads independently
+   of the other stories' shas rather than reusing them out of context. reuses TRANSCRIPT_A /
+   TRANSCRIPT_B for its two sessions, same as shortChain above. */
+const SHA_M1 = '397fd614368965258146de26d14204237c8c7b97'
+const SHA_M2 = '34f8440f0485ceed3ac019a835258e6c3f91a4d4'
+const SHA_M3 = 'fddc8bebd574de8abba2a59dc5d12ddf1de092c4'
+const SHA_M4 = 'bb98285f5dfbe5a9350450278e4900b7cba02613'
+const SHA_M5 = '2d3f27762263abbc6acb87e7fd5e44efcacd2c33'
+const SHA_M6 = 'f48008406775436a58df3fb191c4a9e93f9186b1'
+
 /* a prompt long enough to show real wrapping under the two-line clamp, written in ordinary
    sentence case so a reviewer can see the author's own capitalisation survive the render. no
    character cut applies to it any more: the clamp is CSS-only, so this exact string is always the
    full text in the DOM, whether the row is collapsed or open. */
 const LONG_PROMPT =
   'Add a GitHub check that posts the prompts behind a pull request, so a reviewer can see the intent as well as the diff, and keep it one sticky comment'
+
+/* longer still, for ManyCommitsAndSkills below: three-plus lines at the story's rendered width, so
+   the two-line clamp visibly truncates it rather than merely wrapping once. */
+const MANY_LINE_PROMPT =
+  'Refactor the ingest pipeline so the commit detector no longer polls the git log on a timer, and instead reacts to the same file-system watch events the session recorder already subscribes to, then update every call site that assumed the old polling cadence and add a regression test for the race between a fast commit and a slow flush.'
 
 /* the writer of these prompts, supplied by the page — never part of the digest itself. the
    placeholder stands in for a photograph, so it stays neutral grey (the dark theme's --ink-3
@@ -132,6 +147,50 @@ const noCommitsChain = {
     { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-09T10:20:00Z', text: 'Talk through the tradeoffs before committing to one.', turnIndex: 9, ordinal: 2 },
     { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-09T10:41:00Z', text: 'Write up the plan so it is ready for review.', turnIndex: 14, ordinal: 3 },
     { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-09T11:02:00Z', text: 'Hold off on any commit until the plan is approved.', turnIndex: 19, ordinal: 4 },
+  ],
+}
+
+/* a richer chain for ManyCommitsAndSkills, below: two sessions, several distinct skill
+   invocations, and prompts with more than one commit apiece, so a reviewer can see how the
+   grouped disclosure reads once a prompt did real, multi-step work. session 1: prompt 1 (two
+   different skills, two commits), prompt 2 (three-plus lines of text so the clamp visibly
+   truncates, one skill, no commit), prompt 3 (three commits). session 2: prompt 4 (one skill, one
+   commit), prompt 5 (nothing). the header counts the full chain, matching the items below:
+   commitsCovered is exactly the six commit items; commitsTotal is a few more, standing in for
+   commits the harness could not match to a session. */
+const manyCommitsAndSkillsChain = {
+  header: {
+    sessionCount: 2,
+    promptCount: 5,
+    commitsCovered: 6,
+    commitsTotal: 9,
+    harness: 'claude-code',
+    redactionLevel: 'standard',
+    villageUrl: 'https://village.example/pulls/peasant-labs/village/116',
+  },
+  skills: [
+    { name: '/toolkit:brainstorm', invocationCount: 2 },
+    { name: 'context7', invocationCount: 1 },
+    { name: '/toolkit:write-plan', invocationCount: 1 },
+  ],
+  items: [
+    { kind: 'session', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:00:00Z', text: 'session 1', promptCount: 3, commitCount: 5 },
+    { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:02:00Z', text: 'Wire the redaction settings into the prompt digest before landing the review UI.', turnIndex: 4, ordinal: 1 },
+    { kind: 'skill', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:02:20Z', text: '/toolkit:brainstorm', turnIndex: 5 },
+    { kind: 'skill', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:04:00Z', text: 'context7', turnIndex: 6 },
+    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:20:00Z', text: '', commitSha: SHA_M1 },
+    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:24:00Z', text: '', commitSha: SHA_M2 },
+    { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:40:00Z', text: MANY_LINE_PROMPT, turnIndex: 19, ordinal: 2 },
+    { kind: 'skill', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:40:30Z', text: '/toolkit:write-plan', turnIndex: 20 },
+    { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T10:10:00Z', text: 'Land the three follow-up commits for the ingest refactor in small reviewable steps.', turnIndex: 34, ordinal: 3 },
+    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T10:22:00Z', text: '', commitSha: SHA_M3 },
+    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T10:31:00Z', text: '', commitSha: SHA_M4 },
+    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T10:47:00Z', text: '', commitSha: SHA_M5 },
+    { kind: 'session', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-11T08:30:00Z', text: 'session 2', promptCount: 2, commitCount: 1 },
+    { kind: 'prompt', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-11T08:32:00Z', text: 'Add the regression test for the race between a fast commit and a slow flush.', turnIndex: 6, ordinal: 4 },
+    { kind: 'skill', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-11T08:32:20Z', text: '/toolkit:brainstorm', turnIndex: 7 },
+    { kind: 'commit', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-11T08:55:00Z', text: '', commitSha: SHA_M6 },
+    { kind: 'prompt', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-11T09:10:00Z', text: 'Nothing else changed here.', turnIndex: 15, ordinal: 5 },
   ],
 }
 
@@ -379,5 +438,46 @@ export const WithoutLinks = {
     const canvas = within(canvasElement)
     const preview = canvas.getAllByText(LONG_PROMPT).find((node) => node.classList.contains('pd-prompt-clamp'))
     await expect(preview.closest('a')).toBeNull()
+  },
+}
+
+/* the richer walkthrough: two sessions, several distinct skill invocations, and prompts carrying
+   more than one commit, opened on load so the grouped disclosure is visible without an extra
+   click. see manyCommitsAndSkillsChain above for the exact shape. */
+export const ManyCommitsAndSkills = {
+  name: 'many commits and skills',
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "per-commit added/deleted line counts will render here once the schema's PromptDigestItem type carries them (peasant-labs/schema#117).",
+      },
+    },
+  },
+  args: { digest: manyCommitsAndSkillsChain, author: AUTHOR },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const toggleOne = canvas.getByRole('button', { name: 'details for prompt 1' })
+    const toggleThree = canvas.getByRole('button', { name: 'details for prompt 3' })
+
+    await userEvent.click(toggleOne)
+    await userEvent.click(toggleThree)
+
+    await waitFor(() => expect(toggleOne).toHaveAttribute('aria-expanded', 'true'))
+    await waitFor(() => expect(toggleThree).toHaveAttribute('aria-expanded', 'true'))
+
+    // prompt 1's two commits and two skills are visible under its open disclosure
+    const rowOne = toggleOne.closest('.pd-row-prompt')
+    await expect(within(rowOne).getAllByText(/^[0-9a-f]{7}$/)).toHaveLength(2)
+    await expect(within(rowOne).getByText('/toolkit:brainstorm')).toBeInTheDocument()
+    await expect(within(rowOne).getByText('context7')).toBeInTheDocument()
+
+    // prompt 3's three commits are visible under its open disclosure
+    const rowThree = toggleThree.closest('.pd-row-prompt')
+    await expect(within(rowThree).getAllByText(/^[0-9a-f]{7}$/)).toHaveLength(3)
+
+    // prompt 2 stays closed and its long text is still clamped to two lines
+    const promptTwoPreview = canvas.getByText(MANY_LINE_PROMPT)
+    await expect(promptTwoPreview).toHaveClass('pd-prompt-clamp')
   },
 }

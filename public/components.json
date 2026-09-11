@@ -1175,7 +1175,8 @@
         "ExpandedWithSkill",
         "ExpandedWithCommit",
         "Expanded",
-        "WithoutLinks"
+        "WithoutLinks",
+        "ManyCommitsAndSkills"
       ]
     },
     {
