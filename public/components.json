@@ -1172,8 +1172,9 @@
         "WithoutCommits",
         "SessionBoundary",
         "Prompt",
-        "SkillMarker",
-        "CommitAnchor",
+        "ExpandedWithSkill",
+        "ExpandedWithCommit",
+        "Expanded",
         "WithoutLinks"
       ]
     },

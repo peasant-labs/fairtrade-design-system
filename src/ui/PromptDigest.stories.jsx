@@ -1,16 +1,22 @@
-import { expect, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import PromptDigest from './PromptDigest.jsx'
 
 /* PromptDigest stories. CSF3: a Playground driven by meta.args plus one named story per
-   meaningful state — the short chain, the collapsed-boundary chain, a chain with no commits yet,
-   each item kind on its own, and the chain with no link builder. classes + tokens come from
-   src/index.css and the colocated PromptDigest.css via .storybook/preview.jsx; the theme toolbar
-   flips data-theme.
+   meaningful state — the collapsed default chain, the collapsed-boundary chain, a chain with no
+   commits yet, each remaining item kind on its own, a chain with no link builder, and the
+   expanded states. classes + tokens come from src/index.css and the colocated PromptDigest.css
+   via .storybook/preview.jsx; the theme toolbar flips data-theme.
 
    the fixtures are shaped the way Village sends them: chronological, with the header counting the
    complete chain, prompt ordinals running in chain order, and every chain skill named by a header
    entry. COLLAPSE IS DATA — CollapsedBoundaries is a chain whose later sessions are represented
-   only by their boundary rows, each carrying the promptCount it stands in for. */
+   only by their boundary rows, each carrying the promptCount it stands in for.
+
+   the default chain now shows session boundaries and prompt rows only: a skill or commit item is
+   always present in the DOM (grouped under the prompt it followed) but stays inside that prompt's
+   `hidden` details until its chevron opens it — Chain's play() asserts none of them are direct
+   .pd-chain children. AUTHOR's avatarUrl is an inline SVG data uri so Storybook fetches nothing
+   from the network. */
 
 const TRANSCRIPT_A = '7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13'
 const TRANSCRIPT_B = 'c4e51f08-6a2b-4d97-8f30-1b7de254a9c6'
@@ -20,12 +26,19 @@ const SHA_ONE = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678'
 const SHA_TWO = 'b2c3d4e5f60718293a4b5c6d7e8f901234567890'
 const SHA_THREE = 'c3d4e5f60718293a4b5c6d7e8f90123456789012'
 
-/* a prompt long enough to exercise the 120-character cut, written in ordinary sentence case so a
-   reviewer can see the author's own capitalisation survive the render. */
+/* a prompt long enough to show real wrapping under the two-line clamp, written in ordinary
+   sentence case so a reviewer can see the author's own capitalisation survive the render. no
+   character cut applies to it any more: the clamp is CSS-only, so this exact string is always the
+   full text in the DOM, whether the row is collapsed or open. */
 const LONG_PROMPT =
   'Add a GitHub check that posts the prompts behind a pull request, so a reviewer can see the intent as well as the diff, and keep it one sticky comment'
 
-const CUT_PROMPT = `${LONG_PROMPT.slice(0, 120)}…`
+/* the writer of these prompts, supplied by the page — never part of the digest itself. */
+const AUTHOR = {
+  login: 'councilmember',
+  avatarUrl:
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23c9a35a'/%3E%3Ccircle cx='16' cy='13' r='6' fill='%23fdfcfa'/%3E%3Cpath d='M4 30c0-8 5-12 12-12s12 4 12 12' fill='%23fdfcfa'/%3E%3C/svg%3E",
+}
 
 /* the consumer owns the routes. Village would build these from the attachment's owner/name and
    its own viewer paths; the stories stand in for that. */
@@ -151,16 +164,36 @@ export const Playground = {}
 
 export const Chain = {
   name: 'chain',
-  args: { digest: shortChain },
+  args: { digest: shortChain, author: AUTHOR },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    // a prompt shows its first line cut at 120 characters, in the author's own case
-    await expect(canvas.getByText(CUT_PROMPT)).toBeInTheDocument()
+    // the default chain shows session boundaries and prompt rows only: no skill or commit item
+    // gets a top-level row of its own any more
+    await expect(canvasElement.querySelectorAll('.pd-chain > .pd-row-skill, .pd-chain > .pd-row-commit')).toHaveLength(0)
 
-    // the slash-prefixed invocation survives exactly as recorded, in the skills row AND in the
-    // chain (so the name is queried as a pair, never as a unique node), and the chain marker
-    // links to the same turn as the prompt it followed
+    // a prompt's full text is in the DOM twice — the clamped preview and the (closed) unclamped
+    // details copy — with no character cut on either: "we can show more characters" means all of
+    // them, CSS clamp only, never a JS truncation
+    const promptNodes = canvas.getAllByText(LONG_PROMPT)
+    await expect(promptNodes).toHaveLength(2)
+    const preview = promptNodes.find((node) => node.classList.contains('pd-prompt-clamp'))
+    await expect(preview).toHaveClass('pd-prompt-clamp')
+    await expect(preview.closest('a')).toHaveAttribute(
+      'href',
+      `https://village.example/transcripts/${TRANSCRIPT_A}?turn=4`,
+    )
+
+    // every prompt row leads with the author's avatar, not the generic glyph, and carries a
+    // collapsed disclosure chevron
+    await expect(canvas.getAllByRole('img', { name: AUTHOR.login })).toHaveLength(5)
+    const toggles = canvas.getAllByRole('button', { name: /^details for prompt \d$/ })
+    await expect(toggles).toHaveLength(5)
+    for (const toggle of toggles) await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+    // the slash-prefixed invocation survives exactly as recorded, in the header skills row AND in
+    // the chain (so the name is queried as a pair, never as a unique node); it is grouped under
+    // the prompt it followed, not rendered as its own chain row
     const invocations = canvas.getAllByText('/toolkit:brainstorm')
     await expect(invocations).toHaveLength(2)
     const marker = invocations.find((node) => node.closest('.pd-row-skill'))
@@ -176,13 +209,6 @@ export const Chain = {
     await expect(shas[0].closest('a')).toHaveAttribute(
       'href',
       `https://github.com/peasant-labs/village/commit/${SHA_ONE}`,
-    )
-
-    // a prompt links into the shared viewer at its turn
-    const prompt = canvas.getByText(CUT_PROMPT)
-    await expect(prompt.closest('a')).toHaveAttribute(
-      'href',
-      `https://village.example/transcripts/${TRANSCRIPT_A}?turn=4`,
     )
 
     // a session boundary links to its transcript on Village
@@ -220,8 +246,9 @@ export const WithoutCommits = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    // a session need not have produced a commit yet: no commit rows render, and the header states
-    // its commit field as matched of the PR's total rather than folding the empty state into a dash
+    // a session need not have produced a commit yet: no commit rows render (open or closed), and
+    // the header states its commit field as matched of the PR's total rather than folding the
+    // empty state into a dash
     await expect(canvasElement.querySelectorAll('.pd-row-commit')).toHaveLength(0)
     const commitsCount = within(canvasElement.querySelector('.pd-head')).getByText('commits').closest('.pd-count')
     await expect(commitsCount).toHaveTextContent('0 of 3')
@@ -248,25 +275,89 @@ export const Prompt = {
       { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T14:02:00Z', text: LONG_PROMPT, turnIndex: 4, ordinal: 1 },
     ]),
   },
-}
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
 
-export const SkillMarker = {
-  name: 'skill marker',
-  args: {
-    digest: single(
-      {},
-      [{ kind: 'skill', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T14:02:30Z', text: '/toolkit:brainstorm', turnIndex: 5 }],
-      [{ name: '/toolkit:brainstorm', invocationCount: 1 }],
-    ),
+    // one collapsed row: no skills, no commits, no author — the generic glyph and a closed chevron
+    await expect(canvas.getByRole('button', { name: 'details for prompt 1' })).toHaveAttribute('aria-expanded', 'false')
+    await expect(canvasElement.querySelector('.pd-details')).not.toBeVisible()
   },
 }
 
-export const CommitAnchor = {
-  name: 'commit anchor',
+export const ExpandedWithSkill = {
+  name: 'expanded with skill',
+  args: {
+    digest: single(
+      {},
+      [
+        { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T14:02:00Z', text: 'Wire the brainstorm skill into the plan before writing any code.', turnIndex: 4, ordinal: 1 },
+        { kind: 'skill', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T14:02:30Z', text: '/toolkit:brainstorm', turnIndex: 5 },
+      ],
+      [{ name: '/toolkit:brainstorm', invocationCount: 1 }],
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const toggle = canvas.getByRole('button', { name: 'details for prompt 1' })
+    const details = canvasElement.querySelector('.pd-details')
+    await expect(details).not.toBeVisible()
+
+    await userEvent.click(toggle)
+
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-expanded', 'true'))
+    await expect(details).toBeVisible()
+    const marker = within(details).getByText('/toolkit:brainstorm')
+    await expect(marker.closest('a')).toHaveAttribute(
+      'href',
+      `https://village.example/transcripts/${TRANSCRIPT_A}?turn=5`,
+    )
+  },
+}
+
+export const ExpandedWithCommit = {
+  name: 'expanded with commit',
   args: {
     digest: single({ commitsCovered: 1, commitsTotal: 1 }, [
+      { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T14:02:00Z', text: 'Land the fix and keep the commit small.', turnIndex: 4, ordinal: 1 },
       { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T14:41:00Z', text: '', commitSha: SHA_ONE },
     ]),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const toggle = canvas.getByRole('button', { name: 'details for prompt 1' })
+    const details = canvasElement.querySelector('.pd-details')
+    await expect(details).not.toBeVisible()
+
+    await userEvent.click(toggle)
+
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-expanded', 'true'))
+    await expect(details).toBeVisible()
+    const sha = within(details).getByText(SHA_ONE.slice(0, 7))
+    await expect(sha.closest('a')).toHaveAttribute(
+      'href',
+      `https://github.com/peasant-labs/village/commit/${SHA_ONE}`,
+    )
+  },
+}
+
+export const Expanded = {
+  name: 'expanded',
+  args: { digest: shortChain },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const toggle = canvas.getByRole('button', { name: 'details for prompt 1' })
+
+    await userEvent.click(toggle)
+
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-expanded', 'true'))
+    const row = toggle.closest('.pd-row-prompt')
+    const details = row.querySelector('.pd-details')
+    await expect(details).toBeVisible()
+    await expect(within(details).getByText(LONG_PROMPT)).toBeInTheDocument()
+    await expect(within(details).getByText('/toolkit:brainstorm')).toBeInTheDocument()
+
+    // opening one row leaves the rest closed
+    await expect(canvasElement.querySelectorAll('.pd-row-open')).toHaveLength(1)
   },
 }
 
@@ -278,6 +369,7 @@ export const WithoutLinks = {
   render: () => <PromptDigest digest={shortChain} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(CUT_PROMPT).closest('a')).toBeNull()
+    const preview = canvas.getAllByText(LONG_PROMPT).find((node) => node.classList.contains('pd-prompt-clamp'))
+    await expect(preview.closest('a')).toBeNull()
   },
 }
