@@ -23,7 +23,7 @@
   color: var(--ink);
 }
 
-/* ── header: the counts, the harness, the redaction level ────────────────────── */
+/* ── header: the counts and the harness ─────────────────────────────────────── */
 .pd-head {
   display: flex;
   flex-wrap: wrap;
@@ -57,7 +57,7 @@
   color: var(--ink-3);
 }
 
-/* a recorded value: the harness slug and the redaction level land here, so NO text-transform. */
+/* a recorded value: the harness slug lands here, so NO text-transform. */
 .pd-value {
   margin: 0;
   font-family: var(--font-mono);
@@ -185,7 +185,9 @@ a.pd-row-link:focus-visible {
 }
 
 /* session boundary: chrome type, its two counts tabular and pushed to the right edge. separated
-   by space, never by a middot. */
+   by space, never by a middot. a boundary that follows other items gets extra air and a stronger
+   rule above it, so the break between sessions reads at a glance; the shared :first-child reset
+   above keeps the very first boundary flush with the skills row. */
 .pd-row-session .pd-row-link {
   font-family: var(--font-mono);
   font-size: var(--fs-label);
@@ -194,9 +196,15 @@ a.pd-row-link:focus-visible {
   color: var(--ink-2);
 }
 
+.pd-row-session:not(:first-child) {
+  margin-top: var(--sp-3);
+  border-top: var(--bd-strong);
+}
+
 .pd-session-label {
   min-width: 0;
   overflow-wrap: anywhere;
+  font-weight: 600;
   color: var(--ink-2);
 }
 

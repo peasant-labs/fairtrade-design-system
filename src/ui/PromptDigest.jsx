@@ -17,8 +17,8 @@ import './PromptDigest.css'
    the single header link out to Village.
 
    Case: the component's own words are lowercase chrome. Nothing off the wire is ever lowercased —
-   a prompt's first line, a skill invocation, a session label, the harness slug and the redaction
-   level all render exactly as recorded. */
+   a prompt's first line, a skill invocation, a session label, and the harness slug all render
+   exactly as recorded. */
 
 /** @typedef {import('@peasant-labs/schema').PromptDigest} PromptDigestPayload */
 /** @typedef {import('@peasant-labs/schema').PromptDigestItem} PromptDigestItemPayload */
@@ -168,10 +168,6 @@ export default function PromptDigest({ digest, itemHref, className = '', ...rest
               <BrandMark name={header.harness} />
               {header.harness}
             </dd>
-          </div>
-          <div className="pd-count">
-            <dt className="pd-label">redaction</dt>
-            <dd className="pd-value">{header.redactionLevel}</dd>
           </div>
         </dl>
         <a className="link pd-village" href={header.villageUrl}>
