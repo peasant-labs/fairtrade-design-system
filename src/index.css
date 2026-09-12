@@ -4215,7 +4215,8 @@
   letter-spacing: var(--tracking-prose); word-spacing: var(--word-spacing-prose);
 }
 .helper-thread-open { cursor: pointer; border: 0; border-radius: 0; background: transparent; padding: 0; }
-a.helper-thread-open { text-decoration: underline; }
+a.helper-thread-open { text-decoration: none; }
+a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration: underline; }
 .helper-thread-facts {
   display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; color: var(--ink-3);
 }
