@@ -28,6 +28,7 @@ cases:
     expectedRows: [G1, G2]
     expectedLabels: [2 helper threads]
     expectedText: [1 input submission, 5 turns]
+    expectedAnchorCounts: { collapsed: 1, expanded: 3 }
     select: G2
     expectedSelected: [G2]
     expectedSelectedLabel: 2 helper threads, 1 selected
@@ -37,6 +38,7 @@ cases:
     expectedRows: [G2]
     expectedLabels: [1 helper thread]
     expectedText: [owner is outside this result, 0 input submissions]
+    expectedAnchorCounts: { collapsed: 0, expanded: 1 }
     select: G2
     expectedSelected: [G2]
     expectedSelectedLabel: 1 helper thread, 1 selected
@@ -48,12 +50,14 @@ cases:
     expectedRows: [G1, G2]
     expectedLabels: [1 helper thread, 1 helper thread]
     expectedText: [owner is unknown]
+    expectedAnchorCounts: { collapsed: 0, expanded: 2 }
   - name: identical-independent-helpers
     owner: P1
     groups: [{ id: hg_parent, scope: identity-query, count: 2, members: [G1, G2] }]
     expectedRows: [G1, G2]
     expectedLabels: [2 helper threads]
     expectedText: [2 helper threads]
+    expectedAnchorCounts: { collapsed: 1, expanded: 3 }
   - name: trunk-append
     owner: P1
     groups: [{ id: hg_parent, scope: appended-query, count: 2, members: [G1, G2] }]
@@ -61,12 +65,14 @@ cases:
     expectedLabels: [2 helper threads]
     update: { id: G1, turnCount: 20 }
     expectedText: [2 helper threads, 20 turns]
+    expectedAnchorCounts: { collapsed: 1, expanded: 3 }
   - name: trunk-replacement
     owner: P1
     groups: [{ id: hg_parent, scope: replacement-query, count: 3, members: [G1, G2, G4] }]
     expectedRows: [G1, G2, G4]
     expectedLabels: [3 helper threads]
     expectedText: [3 helper threads, 1 turn]
+    expectedAnchorCounts: { collapsed: 1, expanded: 4 }
   - name: scope-expired
     ownerStatus: resolved
     groups: [{ id: hg_parent, scope: expired-G2-only, count: 1, members: [G2] }]
@@ -74,24 +80,28 @@ cases:
     scopeExpired: true
     expectedRows: []
     expectedText: [query expired, no broader results were loaded, refresh list]
+    expectedAnchorCounts: { collapsed: 0, expanded: 0 }
   - name: unavailable-owner
     ownerStatus: known_unavailable
     groups: [{ id: hg_missing, scope: missing-owner-query, count: 1, members: [G2] }]
     expectedRows: [G2]
     expectedLabels: [1 helper thread]
     expectedText: [owner is unavailable]
+    expectedAnchorCounts: { collapsed: 0, expanded: 1 }
   - name: measured-zero
     owner: G1
     groups: [{ id: hg_nested, scope: nested-query, count: 1, members: [G2] }]
     expectedRows: [G2]
     expectedLabels: [1 helper thread]
     expectedText: [0 input submissions]
+    expectedAnchorCounts: { collapsed: 1, expanded: 2 }
   - name: unknown-input-count
     owner: OLD
     groups: [{ id: hg_old, scope: historical-query, count: 1, members: [G2] }]
     expectedRows: [G2]
     expectedLabels: [1 helper thread]
     expectedText: [unknown input submissions, 5 turns]
+    expectedAnchorCounts: { collapsed: 1, expanded: 2 }
   - name: ordinary-child-exit
     owner: P1
     ordinaryChild: O1
@@ -99,3 +109,4 @@ cases:
     expectedRows: [G2]
     expectedLabels: [1 helper thread]
     expectedText: [ordinary child]
+    expectedAnchorCounts: { collapsed: 1, expanded: 2 }

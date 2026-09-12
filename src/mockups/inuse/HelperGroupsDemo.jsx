@@ -37,7 +37,7 @@ export default function HelperGroupsDemo({ scenario = 'three-independent-counts'
   return <div className="helper-demo" data-helper-demo={scenario}>
     <div hidden={opened !== null}>
       <h2>saved sessions</h2>
-      <p className="helper-demo-description">saved threads are grouped under their immediate owner. the control states how many threads it holds and how many are selected.</p>
+      <p className="helper-demo-description">saved threads hang in one tree under their immediate owner. the connector traces every row the tree holds, and the control between the owner and its members states how many threads it holds and how many are selected.</p>
       {fixture.groups.map((group) => (
         <HelperGroupListItem key={group.id}
           owner={fixture.owner ? renderRow(fixture.owner) : undefined} ownerStatus={fixture.ownerStatus}>

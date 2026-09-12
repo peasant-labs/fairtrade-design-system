@@ -1,24 +1,30 @@
-import { Fragment, useId, useState } from 'react'
+import { createContext, Fragment, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronRight, RefreshCw, Unlink } from 'lucide-react'
 import BrandMark from './BrandMark.jsx'
 import Checkbox from './Checkbox.jsx'
 
 /**
- * HelperGroup - a collapsed count of saved threads whose members read as
- * ordinary list rows.
+ * HelperGroup - a count chip inside one owner-anchored tree of saved threads.
  *
  * Presentation only: the host passes the complete authorized member set for the
  * exact scope. No wire decoding, membership inference, fetching, paging, or
  * selection storage occurs here. renderMember receives the original row,
  * including its route-specific data.
  *
- * The control is the session-group disclosure the product already uses for
- * grouped rows: a full-width button with a leading chevron, the count in
- * tabular mono, and show/hide on the trailing edge. It is indented under the
- * owner row it hangs from, and its member rows appear ONLY while it is open,
- * separated from the control by a top rule. Each member uses the same row
- * anatomy as the row it hangs under, so a folded member and a visible one are
- * recognizably the same thing.
+ * A helper tree is the ordinary row a host retained (`HelperGroupListItem`'s
+ * `owner`), the immediate groups that hang off it (`HelperGroup`), and the
+ * member rows those groups hold. The count chip sits ONE indent step inside the
+ * tree, between the owner row and the members it discloses, and carries no
+ * checkbox of its own. Members render only while the chip is open, each as a
+ * row like the owner's: title, middot facts, an individual checkbox, and
+ * host-authorized navigation.
+ *
+ * One continuous connector traces the centre of every MOUNTED row checkbox:
+ * verticals run in the parent's column, one square step lands on the deeper
+ * row's line, and one column is kept per depth, so a row the host never mounted
+ * is never traced. The connector is measured, never authored: mount,
+ * expand/collapse, a row that gains or loses its checkbox, and a resize all
+ * re-measure it.
  *
  * @param {object} props
  * @param {string} props.groupId
@@ -41,6 +47,50 @@ import Checkbox from './Checkbox.jsx'
 export default function HelperGroup(props) {
   // A changed query token cannot inherit an uncontrolled disclosure from an old query.
   return <HelperGroupDisclosure key={`${props.groupId}:${props.memberScope}`} {...props} />
+}
+
+/**
+ * Depth and rail hooks shared by every row and group inside ONE helper tree.
+ *
+ * `depth` is the row's indent column (the owner row is 0, its members 1, a
+ * member's own members 2, and so on). `register`/`unregister` hand the tree the
+ * mounted rows it traces; `scheduleMeasure` coalesces a re-measure into the
+ * next frame. A row outside any tree sees no context and renders exactly as an
+ * ordinary row.
+ */
+const HelperTreeContext = createContext(null)
+
+/** How far the connector reaches past its first and last anchor, in measured px. */
+const RAIL_CAP = 6
+
+/**
+ * Composes ONE continuous path through the ordered checkbox anchors. Between
+ * adjacent rows the lone horizontal step sits at the DEEPER row's y (always an
+ * indentation gutter, never across a row's title), and the vertical changes
+ * column exactly once, so at any y there is exactly one vertical segment. The
+ * path opens and closes with a single cap collinear with the first/last
+ * segment.
+ */
+function buildRailPath(anchors) {
+  if (anchors.length === 0) return ''
+  const first = anchors[0]
+  const parts = [`M ${first.x} ${first.y - RAIL_CAP}`, `L ${first.x} ${first.y}`]
+  for (let i = 1; i < anchors.length; i++) {
+    const prev = anchors[i - 1]
+    const cur = anchors[i]
+    if (cur.x === prev.x) {
+      parts.push(`L ${cur.x} ${cur.y}`)
+    } else if (cur.depth > prev.depth) {
+      // Descending: fall at the parent column to the child row, then step in.
+      parts.push(`L ${prev.x} ${cur.y}`, `L ${cur.x} ${cur.y}`)
+    } else {
+      // Ascending: step out at the deeper (previous) row, then fall to the row.
+      parts.push(`L ${cur.x} ${prev.y}`, `L ${cur.x} ${cur.y}`)
+    }
+  }
+  const last = anchors[anchors.length - 1]
+  parts.push(`L ${last.x} ${last.y + RAIL_CAP}`)
+  return parts.join(' ')
 }
 
 /**
@@ -72,6 +122,7 @@ function HelperGroupDisclosure({
   groupId, memberScope, helperThreadCount, members = [], renderMember, getMemberKey,
   expanded, onExpandedChange, scopeExpired = false, onRefreshList, isMemberSelected,
 }) {
+  const tree = useContext(HelperTreeContext)
   const id = useId()
   const [localExpanded, setLocalExpanded] = useState(false)
   const open = expanded ?? localExpanded
@@ -88,8 +139,23 @@ function HelperGroupDisclosure({
     onExpandedChange?.(next)
   }
 
+  // Revealing or hiding rows changes which anchors the tree traces, so every
+  // render schedules a re-measure. The group knows nothing about the rail; it
+  // only tells the tree that its anchors may have moved.
+  useEffect(() => { tree?.scheduleMeasure() })
+
+  // Members sit one indent column deeper than the row this group hangs under.
+  // A member that itself owns helpers renders those groups in its own children,
+  // where that group reads THIS depth and deepens again.
+  const deeper = useMemo(() => tree === null ? null : {
+    depth: tree.depth + 1,
+    register: tree.register,
+    unregister: tree.unregister,
+    scheduleMeasure: tree.scheduleMeasure,
+  }, [tree])
+
   return (
-    <div className="helper-group" data-group-id={groupId}>
+    <div className="helper-group helper-tree-children" data-group-id={groupId}>
       <button type="button" className="helper-group-trigger" id={`${id}-trigger`}
         aria-expanded={open} aria-controls={`${id}-body`} onClick={toggle}>
         {open
@@ -105,18 +171,20 @@ function HelperGroupDisclosure({
           session-group rows below a list: a folded row cannot be mistaken for a
           visible one, and nothing hidden holds the page's height. */}
       {open && (
-        <div id={`${id}-body`} className="helper-group-body">
-          {scopeExpired ? (
-            <div className="helper-group-notice">
-              <p>the saved helper query expired. no broader results were loaded. refresh the originating list to restore its filters.</p>
-              {onRefreshList && <button type="button" className="helper-group-action" onClick={onRefreshList}>
-                <RefreshCw aria-hidden="true" /> refresh list
-              </button>}
-            </div>
-          ) : members.length ? <ul className="helper-group-members">
-            {members.map((row) => <li key={getMemberKey(row)}>{renderMember(row)}</li>)}
-          </ul> : <p className="helper-group-notice">no saved helpers match the current query and access.</p>}
-        </div>
+        <HelperTreeContext.Provider value={deeper}>
+          <div id={`${id}-body`} className="helper-group-body">
+            {scopeExpired ? (
+              <div className="helper-group-notice">
+                <p>the saved helper query expired. no broader results were loaded. refresh the originating list to restore its filters.</p>
+                {onRefreshList && <button type="button" className="helper-group-action" onClick={onRefreshList}>
+                  <RefreshCw aria-hidden="true" /> refresh list
+                </button>}
+              </div>
+            ) : members.length ? <ul className="helper-group-members">
+              {members.map((row) => <li key={getMemberKey(row)} className="helper-tree-row">{renderMember(row)}</li>)}
+            </ul> : <p className="helper-group-notice">no saved helpers match the current query and access.</p>}
+          </div>
+        </HelperTreeContext.Provider>
       )}
     </div>
   )
@@ -132,9 +200,18 @@ const OWNER_COPY = {
 }
 
 /**
- * Retains an ordinary row unchanged above its immediate helper groups. For a
- * helper-only result supply ownerStatus instead of owner; no fake title or owner
- * action is rendered. Keep distinct unresolved containers keyed by backend group ID.
+ * One owner-anchored helper tree: an ordinary row (or an explicit unavailable
+ * context) above its immediate helper groups, traced by ONE measured connector.
+ *
+ * The tree owns the connector, not the rows: every mounted row registers its
+ * element here, the tree measures the centre of each mounted row checkbox after
+ * each change and on resize, and the single path is drawn behind the rows. The
+ * connector is a selection aid only - it carries no meaning that the rows and
+ * their checkboxes do not already carry.
+ *
+ * For a helper-only result supply ownerStatus instead of owner; no fake title
+ * or owner action is rendered. Keep distinct unresolved containers keyed by
+ * backend group ID.
  * @param {object} props
  * @param {import('react').ReactNode} [props.owner]
  * @param {string} [props.ownerStatus]
@@ -144,10 +221,100 @@ export function HelperGroupListItem({ owner, ownerStatus, children }) {
   if (owner == null && !Object.hasOwn(OWNER_COPY, ownerStatus)) {
     throw new Error('HelperGroupListItem render failed: owner context has no supported status; no owner can be safely displayed. Pass the authorized context ownerStatus from the grouped list.')
   }
-  return <div className="helper-group-item">
-    {owner ?? <p className="helper-group-context"><Unlink aria-hidden="true" />{OWNER_COPY[ownerStatus]}</p>}
-    <div className="helper-group-nested">{children}</div>
-  </div>
+  const treeRef = useRef(null)
+  const rowsRef = useRef(new Map())
+  const frameRef = useRef(0)
+  const [railPath, setRailPath] = useState('')
+  const [anchorCount, setAnchorCount] = useState(0)
+
+  const register = useCallback((element, depth) => { rowsRef.current.set(element, depth) }, [])
+  const unregister = useCallback((element) => { rowsRef.current.delete(element) }, [])
+
+  const measure = useCallback(() => {
+    const container = treeRef.current
+    if (!container) return
+    const containerRect = container.getBoundingClientRect()
+    const anchors = []
+    for (const [element, depth] of rowsRef.current) {
+      // A row that unmounted left its registration behind; drop it rather than
+      // trace a node that is no longer on the page.
+      if (!element.isConnected || !container.contains(element)) {
+        rowsRef.current.delete(element)
+        continue
+      }
+      const input = element.querySelector('input[type="checkbox"]')
+      if (!input) continue // no checkbox, no anchor
+      const rect = input.getBoundingClientRect()
+      anchors.push({
+        x: rect.left + rect.width / 2 - containerRect.left,
+        y: rect.top + rect.height / 2 - containerRect.top,
+        depth,
+      })
+    }
+    if (anchors.length === 0) {
+      setRailPath('')
+      setAnchorCount(0)
+      return
+    }
+    // Anchors arrive in registration order, which is mount order; the path is
+    // traced top to bottom, so order them by where they actually sit.
+    anchors.sort((a, b) => a.y - b.y)
+    // Snap each depth to ONE column (its median x) so every vertical at a
+    // given depth is exactly aligned - provably a single line per column.
+    const byDepth = new Map()
+    for (const anchor of anchors) {
+      const xs = byDepth.get(anchor.depth) ?? []
+      xs.push(anchor.x)
+      byDepth.set(anchor.depth, xs)
+    }
+    for (const [depth, xs] of byDepth) {
+      const sorted = xs.slice().sort((a, b) => a - b)
+      const column = sorted[Math.floor(sorted.length / 2)]
+      for (const anchor of anchors) if (anchor.depth === depth) anchor.x = column
+    }
+    setRailPath(buildRailPath(anchors))
+    setAnchorCount(anchors.length)
+  }, [])
+
+  const scheduleMeasure = useCallback(() => {
+    if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frameRef.current)
+    frameRef.current = typeof requestAnimationFrame === 'function' ? requestAnimationFrame(measure) : (measure(), 0)
+  }, [measure])
+
+  const tree = useMemo(() => ({ depth: 0, register, unregister, scheduleMeasure }),
+    [register, unregister, scheduleMeasure])
+
+  useEffect(() => {
+    scheduleMeasure()
+    const container = treeRef.current
+    const observer = typeof ResizeObserver !== 'undefined' && container ? new ResizeObserver(scheduleMeasure) : null
+    observer?.observe(container)
+    window.addEventListener('resize', scheduleMeasure)
+    return () => {
+      if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frameRef.current)
+      observer?.disconnect()
+      window.removeEventListener('resize', scheduleMeasure)
+    }
+  }, [scheduleMeasure])
+
+  return (
+    <div className="helper-group-item helper-tree" ref={treeRef} data-helper-tree>
+      <HelperTreeContext.Provider value={tree}>
+        {/* The connector layer only paints; the rows sit above it, so every
+            control sits on the rail. */}
+        <svg className="helper-tree-rail" aria-hidden="true" data-anchor-count={anchorCount}>
+          {railPath && <path className="helper-tree-rail__path" d={railPath}
+            shapeRendering="crispEdges" strokeLinecap="square" />}
+        </svg>
+        <div className="helper-tree-rows">
+          <div className="helper-tree-row">
+            {owner ?? <p className="helper-group-context"><Unlink aria-hidden="true" />{OWNER_COPY[ownerStatus]}</p>}
+          </div>
+          {children}
+        </div>
+      </HelperTreeContext.Provider>
+    </div>
+  )
 }
 
 /**
@@ -159,6 +326,11 @@ export function HelperGroupListItem({ owner, ownerStatus, children }) {
  * no per-row disclosure. Hosts map scalar display props from their typed row and
  * preserve route-specific status/usage/ordinary-child exits in children. These
  * are UI props, not another wire DTO.
+ *
+ * Inside a helper tree the row registers itself so the tree can trace its
+ * checkbox; outside one it renders exactly as before. Because a host can turn
+ * selection off after mount, every render schedules a re-measure - the checkbox
+ * may have appeared or gone.
  *
  * Facts that have no measured value state that honestly ("unknown input
  * submissions"), and a count of one singularizes: a row never claims "1 input
@@ -179,6 +351,13 @@ export function HelperGroupListItem({ owner, ownerStatus, children }) {
  */
 export function HelperThreadRow({ id, title, provider, inputSubmissionCount, turnCount,
   href, onOpen, selected = false, selectionDisabled = false, onSelect, children }) {
+  const tree = useContext(HelperTreeContext)
+  const setRowElement = useCallback((element) => {
+    if (!tree || !element) return
+    tree.register(element, tree.depth)
+    return () => tree.unregister(element)
+  }, [tree])
+  useEffect(() => { tree?.scheduleMeasure() })
   const facts = []
   if (provider) facts.push({ key: 'provider', node: <span className="helper-thread-provider"><BrandMark name={provider} />{provider}</span> })
   facts.push({ key: 'inputs', node: <span>{inputSubmissionCount === undefined
@@ -187,7 +366,7 @@ export function HelperThreadRow({ id, title, provider, inputSubmissionCount, tur
   facts.push({ key: 'turns', node: <span>{turnCount === undefined
     ? 'unknown turns'
     : `${turnCount} turn${turnCount === 1 ? '' : 's'}`}</span> })
-  return <div className="helper-thread-row" data-thread-id={id}>
+  return <div ref={setRowElement} className="helper-thread-row" data-thread-id={id}>
     <div className="helper-thread-main">
       {onSelect && <Checkbox checked={selected} disabled={selectionDisabled}
         aria-label={`select ${title} (${id})`} onChange={(checked) => onSelect(id, checked)} />}

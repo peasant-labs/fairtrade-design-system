@@ -4158,10 +4158,36 @@
   .tuiw-keys { color: var(--ink-4); font-style: italic; }
 }
 
-/* saved helper groups: a collapsed session-group count above ordinary rows */
+/* saved helper groups: one owner-anchored tree above ordinary rows */
 .helper-group-item { border-bottom: var(--bd); }
-.helper-group-nested { padding-inline-start: var(--sp-4); }
-.helper-group { color: var(--ink); background: var(--surface); }
+/* The tree root hosts the single connector overlay; the rows sit above it so
+   every control sits on the rail. */
+.helper-tree { position: relative; }
+/* Single-line hierarchy connector for the helper tree.
+
+   The whole MOUNTED tree is traced by ONE continuous connector: a single SVG
+   <path> behind the rows whose geometry is measured from the mounted checkbox
+   anchors, so a row the host never mounted is never traced and a re-measure
+   after expansion, collapse, a checkbox appearing, or a resize keeps the line
+   on its anchors. At any y there is exactly one vertical segment - the path
+   falls in the parent's column and takes ONE square step in (deeper) or out
+   (shallower) at the deeper of two adjacent rows, so the vertical always runs
+   in an indentation gutter, never across a row's title or facts. The connector
+   layer only paints; the rows sit above it. */
+.helper-tree-rail {
+  position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible;
+  pointer-events: none; z-index: 0;
+}
+.helper-tree-rail__path { fill: none; stroke: var(--rule); stroke-width: 1px; }
+.helper-tree-rows { position: relative; z-index: 1; min-width: 0; }
+/* One constant indentation step per nested list keeps the depth columns the
+   single rail traces uniform. The count chip and the member rows it holds both
+   sit inside this step, between the owner row and its members. */
+.helper-tree-children { padding-left: var(--sp-5); min-width: 0; }
+.helper-tree-row { min-width: 0; }
+/* The group paints no background: it spans the indent gutter the connector
+   runs in, and a surface fill would paint over the rail. */
+.helper-group { color: var(--ink); }
 .helper-group-trigger, .helper-group-action {
   display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--control-h);
   padding: 0 var(--sp-3); border: var(--bd-strong); border-radius: 0;
@@ -4209,9 +4235,10 @@
 .helper-thread-column { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; flex: 1; }
 .helper-thread-head { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
 .helper-thread-open, .helper-thread-title {
-  display: flex; align-items: center; gap: var(--sp-2); min-height: var(--control-h);
+  display: block; flex: 1; min-width: 0; min-height: var(--control-h);
   font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body);
-  color: var(--ink); text-transform: none; text-align: left; overflow-wrap: anywhere;
+  color: var(--ink); text-transform: none; text-align: left;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   letter-spacing: var(--tracking-prose); word-spacing: var(--word-spacing-prose);
 }
 .helper-thread-open { cursor: pointer; border: 0; border-radius: 0; background: transparent; padding: 0; }
