@@ -829,7 +829,7 @@
         "HelperGroupListItem",
         "HelperThreadRow"
       ],
-      "doc": "HelperGroup - collapsed saved-thread disclosure rendering its members as",
+      "doc": "HelperGroup - a collapsed count of saved threads whose members read as",
       "props": {},
       "stories": [
         "OwnerRetained",

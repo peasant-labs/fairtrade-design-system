@@ -27,7 +27,7 @@ export default function HelperGroupsDemo({ scenario = 'three-independent-counts'
     const selection = plain ? {} : { selected: selected.includes(id), onSelect }
     return <HelperThreadRow {...fixtures.rows[id]} {...(fixture.update?.id === id ? fixture.update : {})}
       {...navigation} {...selection}>
-      <div className="helper-thread-meta">saved transcript <span>{id}</span></div>
+      <div className="helper-thread-route">saved transcript <span>{id}</span></div>
       {fixture.ordinaryChild && id === fixture.owner && <button type="button" className="helper-group-action"
         onClick={() => setOpened(fixture.ordinaryChild)}>open ordinary child</button>}
     </HelperThreadRow>
@@ -37,13 +37,14 @@ export default function HelperGroupsDemo({ scenario = 'three-independent-counts'
   return <div className="helper-demo" data-helper-demo={scenario}>
     <div hidden={opened !== null}>
       <h2>saved sessions</h2>
-      <p className="helper-demo-description">guardian reviews are grouped by their immediate owner. each count represents saved threads.</p>
+      <p className="helper-demo-description">saved threads are grouped under their immediate owner. the control states how many threads it holds and how many are selected.</p>
       {fixture.groups.map((group) => (
         <HelperGroupListItem key={group.id}
           owner={fixture.owner ? renderRow(fixture.owner) : undefined} ownerStatus={fixture.ownerStatus}>
           <HelperGroup groupId={group.id} memberScope={refreshed ? `${group.scope}-refreshed` : group.scope}
             helperThreadCount={group.count} members={group.members}
             renderMember={renderRow} getMemberKey={(id) => id}
+            isMemberSelected={plain ? undefined : (id) => selected.includes(id)}
             scopeExpired={scopeExpired} onRefreshList={() => setRefreshed(true)} />
         </HelperGroupListItem>
       ))}

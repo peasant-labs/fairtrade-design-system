@@ -20,25 +20,36 @@ fetching, routing, authorization, eligibility, and explicit selection callbacks.
   The displayed quantity is saved helper threads, never messages or review attempts.
 - Pass the complete authorized member set for the exact scope as `members`.
   `getMemberKey(row)` returns the stable individual transcript ID.
-  `renderMember(row)` renders one `HelperThreadRow` per member as a subagent-inset
-  row (indented, `CornerDownRight` marker, inline), composing the original row's
-  status, usage, and existing actions as children. No universal row conversion
-  discards collective, pending, share, sync, or search fields. If a helper itself
-  owns helpers, render those immediate groups in that member's children, not
-  under the root ancestor.
+  `renderMember(row)` renders one `HelperThreadRow` per member. The control
+  mirrors the session-group disclosure the product already uses: full-width,
+  a comfortable target, a leading chevron, the count in tabular mono, and
+  `show`/`hide` on the trailing edge, indented under the row it hangs from.
+  Member rows render only while the control is open, separated from it by a top
+  rule, and use the same row anatomy as the owner row: title, a facts line with
+  middot separators, an individual checkbox, host-authorized navigation.
+  Compose the original row's status, usage, and existing actions as children.
+  No universal row conversion discards collective, pending, share, sync, or
+  search fields. If a helper itself owns helpers, render those immediate groups
+  in that member's children, not under the root ancestor.
 
 ## host state and callbacks
 
 The host owns fetching, paging, and error/loading presentation for its own list;
 the group never fetches. Pass the members already resolved for `memberScope`
-and keep `helperThreadCount` as the saved-thread total, not a page length. A new
-scope token resets uncontrolled disclosure; it never inherits the old query's
-open state.
+and keep `helperThreadCount` as the saved-thread total, not a page length. The
+control states the count with the noun singularized ("1 helper thread"), and a
+changed scope token resets uncontrolled disclosure; it never inherits the old
+query's open state.
+
+A group starts closed, so supply `isMemberSelected(row)` whenever
+`renderMember` draws per-member checkboxes. The predicate lets the CLOSED
+control append `, N selected` so a selection the viewer cannot see is never
+silent. The group only counts the rows it holds; it never stores selection.
 
 On a scope-expiry response, pass `scopeExpired` and keep `members` untouched.
-The group hides members fail-closed and offers only `onRefreshList()`, which
-must refresh the originating list with its original filters. Do not fetch all
-group members as a fallback. Selection remains exclusively in host state and
+The group renders no member rows fail-closed and offers only `onRefreshList()`,
+which must refresh the originating list with its original filters. Do not fetch
+all group members as a fallback. Selection remains exclusively in host state and
 must be rechecked by the mutation path; never add the parent or siblings when
 a helper is selected.
 
@@ -47,12 +58,14 @@ and `onExpandedChange(boolean)`; the host restores disclosure from route state.
 Opening retains trigger focus. Unrelated background updates do not move focus.
 
 `HelperThreadRow` accepts individual display props `id`, `title`, `provider`,
-`inputSubmissionCount`, and `turnCount`. Titles remain verbatim. Absent input count
-shows `unknown input submissions`; measured zero stays zero. No count is inferred.
-An authorized `href` renders a real link. `onOpen(id, event)` can prevent its default
-navigation for an SPA. Without an href, an `onOpen` callback renders a button;
-without either, the title is noninteractive. `onSelect(id, checked)` is optional;
-when present, `selected` and `selectionDisabled` control only that individual row.
+`inputSubmissionCount`, and `turnCount`. Titles remain verbatim. Absent input
+count shows `unknown input submissions`; measured zero stays zero; a count of
+one singularizes (`1 input submission`, `1 turn`). No count is inferred.
+An authorized `href` renders a real link. `onOpen(id, event)` can prevent its
+default navigation for an SPA. Without an href, an `onOpen` callback renders a
+button; without either, the title is noninteractive. `onSelect(id, checked)` is
+optional; when present, `selected` and `selectionDisabled` control only that
+individual row.
 
 ## examples and verification
 

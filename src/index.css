@@ -4158,43 +4158,56 @@
   .tuiw-keys { color: var(--ink-4); font-style: italic; }
 }
 
-/* saved helper groups: shared list disclosure and individual transcript actions */
+/* saved helper groups: a collapsed session-group count above ordinary rows */
 .helper-group-item { border-bottom: var(--bd); }
 .helper-group-nested { padding-inline-start: var(--sp-4); }
-.helper-group { color: var(--ink); background: var(--surface); border-left: var(--bd-strong); }
+.helper-group { color: var(--ink); background: var(--surface); }
 .helper-group-trigger, .helper-group-action {
-  display: flex; align-items: center; gap: var(--sp-2); min-height: var(--control-h);
-  padding: var(--sp-2) var(--sp-3); border: var(--bd-strong); border-radius: 0;
+  display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--control-h);
+  padding: 0 var(--sp-3); border: var(--bd-strong); border-radius: 0;
   color: var(--ink); background: var(--surface); font-family: var(--font-mono);
   font-size: var(--fs-label); line-height: var(--lh-mono); letter-spacing: 0;
-  text-align: left; cursor: pointer;
+  text-align: left; text-transform: lowercase; cursor: pointer;
 }
-.helper-group-trigger { width: 100%; flex-wrap: wrap; border: 0; }
-.helper-group-trigger:hover, .helper-group-action:hover, .helper-thread-open:hover { background: var(--surface-hover); }
+/* The group control mirrors the session-group disclosure: full-width, a
+   comfortable target, chrome-weight ink, leading chevron, count, spacer, and
+   show/hide on the trailing edge. */
+.helper-group-trigger {
+  width: 100%; min-height: var(--target-comfortable); padding: var(--sp-3) var(--sp-4);
+  border: 0; color: var(--ink-3); background: transparent;
+}
+.helper-group-trigger:hover, .helper-group-action:hover, .helper-thread-open:hover {
+  background: var(--surface-hover); color: var(--ink);
+}
 .helper-group-trigger svg, .helper-group-action svg, .helper-group-context svg {
   width: var(--ic-md); height: var(--ic-md); flex-shrink: 0;
 }
-.helper-group-chevron { margin-left: auto; }
-.helper-group-trigger[aria-expanded="true"] .helper-group-chevron { transform: rotate(180deg); }
-.helper-group-count, .helper-thread-meta {
+.helper-group-spacer { flex: 1; }
+.helper-group-show { color: var(--ink-4); }
+.helper-group-count, .helper-thread-facts {
   font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
-  font-variant-numeric: tabular-nums; letter-spacing: 0; color: var(--ink-2);
+  font-variant-numeric: tabular-nums; letter-spacing: 0;
 }
-.helper-group-body { padding: var(--sp-3); display: grid; gap: var(--sp-3); }
+/* The count reads in the control's own chrome ink (mirroring the session
+   groups); "show"/"hide" is the muted trailing hint. */
+.helper-group-count { color: inherit; }
+.helper-group-body { border-top: var(--bd); }
 .helper-group-context { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-4); }
 .helper-group-context, .helper-group-notice {
   font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body);
   color: var(--ink-2); letter-spacing: var(--tracking-prose); word-spacing: var(--word-spacing-prose);
 }
+.helper-group-notice { padding: var(--sp-3) var(--sp-4); }
 .helper-group-notice p { max-width: var(--measure-prose); margin-bottom: var(--sp-3); }
-.helper-group-members {
-  list-style: none; padding: 0; margin: 0 0 0 var(--sp-4); padding-inline-start: var(--sp-4);
-  border-left: 2px solid color-mix(in srgb, var(--mauve) 55%, var(--rule));
-}
+/* Revealed members are a plain list of ordinary rows: no inset rule, no corner
+   marker, the control's top rule is the only separation from it. */
+.helper-group-members { list-style: none; padding: 0; margin: 0; }
 .helper-group-members > li + li { border-top: var(--bd); }
 .helper-thread-row { padding: var(--sp-3) 0; min-width: 0; }
+.helper-group-members .helper-thread-row { padding-inline: var(--sp-4); }
 .helper-thread-main { display: flex; gap: var(--sp-2); align-items: center; }
-.helper-thread-marker { width: var(--ic-sm); height: var(--ic-sm); flex-shrink: 0; color: var(--mauve); }
+.helper-thread-column { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; flex: 1; }
+.helper-thread-head { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
 .helper-thread-open, .helper-thread-title {
   display: flex; align-items: center; gap: var(--sp-2); min-height: var(--control-h);
   font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body);
@@ -4203,8 +4216,15 @@
 }
 .helper-thread-open { cursor: pointer; border: 0; border-radius: 0; background: transparent; padding: 0; }
 a.helper-thread-open { text-decoration: underline; }
-.helper-thread-meta { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-2); }
+.helper-thread-facts {
+  display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; color: var(--ink-3);
+}
+.helper-thread-sep { color: var(--ink-4); }
 .helper-thread-provider { display: inline-flex; gap: var(--sp-2); align-items: center; }
+.helper-thread-route {
+  font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
+  font-variant-numeric: tabular-nums; color: var(--ink-4); margin-top: var(--sp-2);
+}
 .helper-demo { max-width: 100%; }
 .helper-demo h2 { font-family: var(--font-display); font-size: var(--fs-lg); margin-bottom: var(--sp-3); }
 .helper-demo-description { font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); max-width: var(--measure-prose); margin-bottom: var(--sp-4); }
