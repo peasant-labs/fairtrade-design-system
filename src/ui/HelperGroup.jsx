@@ -224,6 +224,7 @@ export function HelperGroupListItem({ owner, ownerStatus, children }) {
   const treeRef = useRef(null)
   const rowsRef = useRef(new Map())
   const frameRef = useRef(0)
+  const timerRef = useRef(0)
   const [railPath, setRailPath] = useState('')
   const [anchorCount, setAnchorCount] = useState(0)
 
@@ -278,7 +279,17 @@ export function HelperGroupListItem({ owner, ownerStatus, children }) {
 
   const scheduleMeasure = useCallback(() => {
     if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frameRef.current)
-    frameRef.current = typeof requestAnimationFrame === 'function' ? requestAnimationFrame(measure) : (measure(), 0)
+    if (typeof clearTimeout === 'function') clearTimeout(timerRef.current)
+    if (typeof requestAnimationFrame === 'function') {
+      frameRef.current = requestAnimationFrame(measure)
+      // A throttled tab (backgrounded, or one of several stories polled at once)
+      // can starve rAF, which would leave the rail unmeasured; one bounded
+      // timeout guarantees the connector is drawn either way. Measuring twice is
+      // harmless: the path is derived from where the rows actually sit.
+      timerRef.current = setTimeout(measure, 250)
+    } else {
+      measure()
+    }
   }, [measure])
 
   const tree = useMemo(() => ({ depth: 0, register, unregister, scheduleMeasure }),
@@ -292,6 +303,7 @@ export function HelperGroupListItem({ owner, ownerStatus, children }) {
     window.addEventListener('resize', scheduleMeasure)
     return () => {
       if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frameRef.current)
+      if (typeof clearTimeout === 'function') clearTimeout(timerRef.current)
       observer?.disconnect()
       window.removeEventListener('resize', scheduleMeasure)
     }
