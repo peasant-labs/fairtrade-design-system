@@ -4267,7 +4267,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .helper-thread-provider { display: inline-flex; gap: var(--sp-2); align-items: center; }
 .helper-thread-route {
   font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
-  font-variant-numeric: tabular-nums; color: var(--ink-4); margin-top: var(--sp-2);
+  font-variant-numeric: tabular-nums; color: var(--ink-4);
 }
 .helper-demo { max-width: 100%; }
 .helper-demo h2 { font-family: var(--font-display); font-size: var(--fs-lg); margin-bottom: var(--sp-3); }
