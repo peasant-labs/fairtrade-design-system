@@ -286,11 +286,14 @@ export const Chain = {
     )
 
     // prompt 2's attached commit carries counts: the row shows the at-a-glance sum before the
-    // chevron even while the row is still collapsed (not inside the hidden details block)
+    // chevron even while the row is still collapsed (not inside the hidden details block). the
+    // same +42 −7 text also sits in the collapsed .pd-details per-commit line, which stays in the
+    // DOM while hidden, so the sum cell is queried directly rather than by a global text match.
     const promptTwoRow = canvas.getByRole('button', { name: 'details for prompt 2' }).closest('.pd-row-prompt')
-    await expect(within(promptTwoRow).getByText('+42')).toBeInTheDocument()
-    await expect(within(promptTwoRow).getByText('−7')).toBeInTheDocument()
-    await expect(within(promptTwoRow).queryByText('+42').closest('.pd-details')).toBeNull()
+    const promptTwoSum = promptTwoRow.querySelector('.pd-prompt-row .pd-change-counts')
+    await expect(promptTwoSum).not.toBeNull()
+    await expect(within(promptTwoSum).getByText('+42')).toBeInTheDocument()
+    await expect(within(promptTwoSum).getByText('−7')).toBeInTheDocument()
 
     // prompt 3's attached commit carries no counts: no sum cell renders at all
     const promptThreeRow = canvas.getByRole('button', { name: 'details for prompt 3' }).closest('.pd-row-prompt')
@@ -514,9 +517,12 @@ export const ManyCommitsAndSkills = {
     await expect(uncountedRow.querySelector('.pd-commit-files')).toBeNull()
 
     // prompt 3 carries the largest at-a-glance sum (the omitted third commit is left out of it,
-    // not treated as a zero), visible on the collapsed row itself
-    await expect(within(rowThree).getByText('+165')).toBeInTheDocument()
-    await expect(within(rowThree).getByText('−40')).toBeInTheDocument()
+    // not treated as a zero), visible on the collapsed row itself. scoped to the sum cell itself,
+    // not a global text match, since the open .pd-details holds its own per-commit +A −D text.
+    const rowThreeSum = rowThree.querySelector('.pd-prompt-row .pd-change-counts')
+    await expect(rowThreeSum).not.toBeNull()
+    await expect(within(rowThreeSum).getByText('+165')).toBeInTheDocument()
+    await expect(within(rowThreeSum).getByText('−40')).toBeInTheDocument()
 
     // prompt 2 stays closed and its long text is still clamped to two lines
     const promptTwoPreview = canvas.getByText(MANY_LINE_PROMPT)
