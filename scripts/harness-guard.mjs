@@ -14,7 +14,11 @@
      HARNESS_DEADLINE_MS   wall-clock deadline
      HARNESS_RSS_CEILING_MB resident-memory ceiling */
 
-const DEFAULTS = { deadlineMs: 180_000, rssCeilingMb: 1536, intervalMs: 100 }
+// The runtime suite runs a Vite SSR server plus jsdom and peaks around 1.5 GB
+// once the whole gate chain runs it; the ceiling is a runaway backstop (the
+// failure it guards against reached tens of GB), not a memory budget, so it
+// carries headroom over the suite's steady state. Override per environment.
+const DEFAULTS = { deadlineMs: 180_000, rssCeilingMb: 3072, intervalMs: 100 }
 
 /**
  * Install the guard. Returns a disposer; the timer is unref'd so a passing run

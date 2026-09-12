@@ -17,7 +17,7 @@ fetching, routing, authorization, eligibility, and explicit selection callbacks.
 - The owner row anchors the tree: its checkbox, its verbatim title, and its mono
   facts line with middot separators. Ticking it selects that session's own turns
   only; it never widens to the rows below it.
-- Each `HelperGroup` steps ONE indent (`--sp-5`) inside the tree, and its count
+- Each `HelperGroup` steps ONE indent (`--sp-7`) inside the tree, and its count
   chip sits inside that step, between the owner row and the members it discloses.
   The chip carries no checkbox of its own and reads like the session-group
   disclosure the product already uses: full-width, a comfortable target, a leading

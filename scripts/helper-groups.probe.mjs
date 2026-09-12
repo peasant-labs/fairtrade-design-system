@@ -269,7 +269,7 @@ try {
       assert.equal(styles.rail.zIndex, '0', 'the connector paints behind the rows')
       assert.equal(styles.rows.zIndex, '1', 'the rows sit above the connector')
       assert.equal(styles.children.paddingLeft, '40px', 'one indent step per nested list')
-      // One step: the chip and the member rows sit one --sp-5 in from the owner.
+      // One step: the chip and the member rows sit one --sp-7 in from the owner.
       assert.ok(Math.abs(styles.indent.control - styles.indent.owner - 40) < 0.5, 'chip is indented one step under its owner row')
       assert.ok(Math.abs(styles.indent.member - styles.indent.owner - 40) < 0.5, 'member rows sit one step in from the owner row')
       if (geometry.anchors.length > 0) {
