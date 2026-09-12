@@ -4184,7 +4184,7 @@
    single rail traces uniform. The count chip and the member rows it holds both
    sit inside this step, between the owner row and its members. The step places
    a member checkbox under the owner's title text, one full level deeper. */
-.helper-tree-children { padding-left: calc(var(--sp-5) * 2); min-width: 0; }
+.helper-tree-children { padding-left: var(--sp-7); min-width: 0; }
 .helper-tree-row { min-width: 0; }
 /* The group paints no background: it spans the indent gutter the connector
    runs in, and a surface fill would paint over the rail. */

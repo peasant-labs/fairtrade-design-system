@@ -268,15 +268,15 @@ try {
       assert.equal(styles.rail.pointerEvents, 'none', 'the connector never intercepts a click')
       assert.equal(styles.rail.zIndex, '0', 'the connector paints behind the rows')
       assert.equal(styles.rows.zIndex, '1', 'the rows sit above the connector')
-      assert.equal(styles.children.paddingLeft, '48px', 'one indent step per nested list')
+      assert.equal(styles.children.paddingLeft, '40px', 'one indent step per nested list')
       // One step: the chip and the member rows sit one --sp-5 in from the owner.
-      assert.ok(Math.abs(styles.indent.control - styles.indent.owner - 48) < 0.5, 'chip is indented one step under its owner row')
-      assert.ok(Math.abs(styles.indent.member - styles.indent.owner - 48) < 0.5, 'member rows sit one step in from the owner row')
+      assert.ok(Math.abs(styles.indent.control - styles.indent.owner - 40) < 0.5, 'chip is indented one step under its owner row')
+      assert.ok(Math.abs(styles.indent.member - styles.indent.owner - 40) < 0.5, 'member rows sit one step in from the owner row')
       if (geometry.anchors.length > 0) {
         assert.equal(geometry.stroke, styles.rule, 'the connector uses the rule colour token')
       }
       if (styles.indent.ownerInput !== null) {
-        assert.ok(Math.abs(styles.indent.memberInput - styles.indent.ownerInput - 48) < 0.5,
+        assert.ok(Math.abs(styles.indent.memberInput - styles.indent.ownerInput - 40) < 0.5,
           'member checkbox column is exactly one indent step from the owner checkbox, which shares the same row pad')
       }
       assert.ok(styles.fonts, 'Atkinson fonts loaded')
