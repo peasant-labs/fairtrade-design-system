@@ -829,7 +829,7 @@
         "HelperGroupListItem",
         "HelperThreadRow"
       ],
-      "doc": "HelperGroup - a collapsed count of saved threads whose members read as",
+      "doc": "HelperGroup - a count chip inside one owner-anchored tree of saved threads.",
       "props": {},
       "stories": [
         "OwnerRetained",
