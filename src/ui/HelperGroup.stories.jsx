@@ -78,7 +78,9 @@ export const NestedOwner = {
     await userEvent.click(canvas.getByRole('button', { name: /1 helper thread/ }))
     // G1 is an ordinary row that itself owns this group; G2 sits one level in.
     const owner = canvas.getByRole('checkbox', { name: /\(G1\)/ })
-    await expect(canvas.getByText('0 input submissions')).toBeVisible()
+    // Both rows state 0 input submissions, so scope the fact to its own row.
+    const member = canvasElement.querySelector('[data-thread-id="G2"]')
+    await expect(within(member).getByText('0 input submissions')).toBeVisible()
     await waitFor(() => expect(canvasElement.querySelector('.helper-tree-rail')).toHaveAttribute('data-anchor-count', '2'))
     // The owner checkbox selects G1's own turns only; G2 is not widened in.
     await userEvent.click(owner)
