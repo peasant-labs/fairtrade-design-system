@@ -829,18 +829,21 @@
         "HelperGroupListItem",
         "HelperThreadRow"
       ],
-      "doc": "HelperGroup - collapsed saved-thread disclosure with exact scoped member paging.",
+      "doc": "HelperGroup - collapsed saved-thread disclosure rendering its members as",
       "props": {},
       "stories": [
         "OwnerRetained",
         "HelperOnlySearch",
         "UnknownOwners",
+        "IdenticalHelpers",
+        "TrunkAppend",
+        "TrunkReplacement",
         "UnavailableOwner",
         "ExpiredQuery",
-        "FailedMembers",
-        "MemberPaging",
+        "NestedOwner",
         "UnknownInputs",
-        "LoadingMembers"
+        "OrdinaryChildExit",
+        "DisplayOnly"
       ]
     },
     {
