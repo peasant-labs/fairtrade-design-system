@@ -382,8 +382,11 @@ export function HelperThreadRow({ id, title, provider, inputSubmissionCount, tur
             {node}
           </Fragment>)}
         </div>
+        {/* Host-supplied row content lives INSIDE the content column, not across
+            the row: anything that started at the row's left edge would run under
+            the connector's column and outdent from the title it belongs to. */}
+        {children}
       </div>
     </div>
-    {children}
   </div>
 }

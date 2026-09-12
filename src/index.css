@@ -4229,8 +4229,7 @@
    marker, the control's top rule is the only separation from it. */
 .helper-group-members { list-style: none; padding: 0; margin: 0; }
 .helper-group-members > li + li { border-top: var(--bd); }
-.helper-thread-row { padding: var(--sp-3) 0; min-width: 0; }
-.helper-group-members .helper-thread-row { padding-inline: var(--sp-4); }
+.helper-thread-row { padding: var(--sp-3) var(--sp-4); min-width: 0; }
 .helper-thread-main { display: flex; gap: var(--sp-2); align-items: center; }
 .helper-thread-column { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; flex: 1; }
 .helper-thread-head { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }

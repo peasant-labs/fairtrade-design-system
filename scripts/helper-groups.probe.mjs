@@ -249,8 +249,8 @@ try {
         assert.equal(geometry.stroke, styles.rule, 'the connector uses the rule colour token')
       }
       if (styles.indent.ownerInput !== null) {
-        assert.ok(Math.abs(styles.indent.memberInput - styles.indent.ownerInput - 40) < 0.5,
-          'member checkbox column is one indent step plus the row pad from the owner checkbox')
+        assert.ok(Math.abs(styles.indent.memberInput - styles.indent.ownerInput - 24) < 0.5,
+          'member checkbox column is exactly one indent step from the owner checkbox, which shares the same row pad')
       }
       assert.ok(styles.fonts, 'Atkinson fonts loaded')
       assert.equal(styles.overflow, false)
