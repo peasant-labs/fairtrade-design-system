@@ -7,8 +7,8 @@ import { createServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import YAML from 'yaml'
 
-/** @typedef {{id: string, scope: string, count: number, pages: string[][]}} GroupFixture */
-/** @typedef {{name: string, owner?: string, ownerStatus?: string, ordinaryChild?: string, groups: GroupFixture[], expectedRows: string[], expectedText: string[], select?: string, expectedSelected?: string[], status?: string, paginate?: boolean, update?: {id: string, turnCount: number}}} GroupCase */
+/** @typedef {{id: string, scope: string, count: number, members: string[]}} GroupFixture */
+/** @typedef {{name: string, owner?: string, ownerStatus?: string, ordinaryChild?: string, groups: GroupFixture[], expectedRows: string[], expectedText: string[], select?: string, expectedSelected?: string[], scopeExpired?: boolean, update?: {id: string, turnCount: number}}} GroupCase */
 /** @returns {{rows: Record<string, object>, cases: GroupCase[]}} */
 function loadFixtures() {
   const doc = YAML.parseDocument(readFileSync('scripts/testdata/helper_group_listing.yaml', 'utf8'), { uniqueKeys: true })
@@ -23,8 +23,8 @@ function loadFixtures() {
     assert.equal(new Set(item.groups.map((group) => group.id)).size, item.groups.length)
     for (const group of item.groups) {
       assert.ok(group.id && group.scope && Number.isSafeInteger(group.count))
-      assert.equal(group.pages.flat().length, group.count, 'fixture count is saved identity total')
-      for (const id of group.pages.flat()) assert.equal(data.rows[id]?.id, id)
+      assert.equal(group.members.length, group.count, 'fixture count is saved identity total')
+      for (const id of group.members) assert.equal(data.rows[id]?.id, id)
     }
   }
   return data
@@ -42,16 +42,14 @@ try {
   const { HelperGroup, HelperGroupListItem, HelperThreadRow } = await server.ssrLoadModule('/src/ui/index.js')
   assert.equal(typeof HelperGroup, 'function', 'production public barrel export')
   for (const fixture of fixtures.cases) {
-    const requests = [], opened = [], selected = [], refreshed = []
+    const opened = [], selected = [], refreshed = []
     const container = document.getElementById('root')
     const root = createRoot(container)
-    let settle
     let updateRow
     function Host() {
-      const [pages, setPages] = React.useState({})
       const [rowUpdates, setRowUpdates] = React.useState({})
+      const [liveExpired, setLiveExpired] = React.useState(!!fixture.scopeExpired)
       updateRow = (update) => setRowUpdates((previous) => ({ ...previous, [update.id]: update }))
-      settle = (request) => setPages((previous) => ({ ...previous, [request.groupId]: { page: request.page, status: fixture.status || 'ready' } }))
       const row = (id) => React.createElement(HelperThreadRow, { ...fixtures.rows[id], ...rowUpdates[id],
         href: `/transcripts/${id}`, onOpen: (identity, event) => { event.preventDefault(); opened.push(identity) },
         onSelect: (identity, checked) => { if (checked) selected.push(identity); else selected.splice(selected.indexOf(identity), 1) },
@@ -59,51 +57,42 @@ try {
       fixture.ordinaryChild && id === fixture.owner ? React.createElement('button', {
         type: 'button', className: 'ordinary-child-exit', onClick: () => opened.push(fixture.ordinaryChild),
       }, 'open ordinary child') : null)
-      return React.createElement(React.Fragment, null, fixture.groups.map((group) => {
-        const state = pages[group.id] || { page: 1, status: 'idle' }
-        return React.createElement(HelperGroupListItem, { key: group.id, owner: fixture.owner ? row(fixture.owner) : undefined, ownerStatus: fixture.ownerStatus },
+      return React.createElement(React.Fragment, null, fixture.groups.map((group) =>
+        React.createElement(HelperGroupListItem, { key: group.id, owner: fixture.owner ? row(fixture.owner) : undefined, ownerStatus: fixture.ownerStatus },
           React.createElement(HelperGroup, {
             groupId: group.id, memberScope: group.scope, helperThreadCount: group.count,
-            page: state.page, limit: group.pages[0].length, total: group.count, status: state.status,
-            members: group.pages[state.page - 1], getMemberKey: (id) => id, renderMember: row,
-            onRefreshList: () => refreshed.push(group.id),
-            onRequestPage: (request) => {
-              requests.push(request)
-              setPages((previous) => ({ ...previous, [group.id]: { ...state, status: 'loading' } }))
-            },
-          }))
-      }))
+            members: group.members, getMemberKey: (id) => id, renderMember: row,
+            scopeExpired: liveExpired, onRefreshList: () => { refreshed.push(group.id); setLiveExpired(false) },
+          }))))
     }
     const click = async (element) => {
       assert.ok(element, `${fixture.name}: mounted action exists`)
       await act(async () => element.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true })))
     }
+    const press = async (element, key) => {
+      element.focus()
+      assert.equal(document.activeElement, element, `${fixture.name}: keyboard target receives focus`)
+      await act(async () => element.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })))
+      await act(async () => element.dispatchEvent(new dom.window.KeyboardEvent('keyup', { key, bubbles: true, cancelable: true })))
+      await click(element)
+    }
     await act(async () => root.render(React.createElement(Host)))
+    let settled = false
     try {
-      assert.equal(requests.length, 0, 'mount must not fetch or select')
+      assert.deepEqual(opened, [], 'mount must not navigate')
+      assert.deepEqual(selected, [], 'mount must not select')
       if (!fixture.owner) assert.equal(container.querySelector('[data-thread-id]'), null, 'context cannot fabricate a hidden owner row')
       else assert.equal(container.querySelector('[data-thread-id]').dataset.threadId, fixture.owner, 'ordinary owner stays above its group')
-      for (const trigger of container.querySelectorAll('.helper-group-trigger')) {
+      const triggers = [...container.querySelectorAll('.helper-group-trigger')]
+      assert.equal(triggers.length, fixture.groups.length, 'one collapsed disclosure per group')
+      for (const [index, trigger] of triggers.entries()) {
         assert.equal(trigger.getAttribute('aria-expanded'), 'false')
         assert.equal(document.getElementById(trigger.getAttribute('aria-controls')).hidden, true)
-        trigger.focus()
-        await click(trigger)
+        // Alternate keyboard entry across groups so both Enter and Space paths are exercised.
+        if (index % 2) await press(trigger, 'Enter')
+        else await click(trigger)
+        assert.equal(trigger.getAttribute('aria-expanded'), 'true')
         assert.equal(document.activeElement, trigger, 'expansion preserves keyboard focus')
-        const request = requests.at(-1)
-        const group = fixture.groups.find((item) => item.id === request.groupId)
-        assert.deepEqual(request, { groupId: group.id, memberScope: group.scope, page: 1, limit: group.pages[0].length })
-        assert.ok(container.textContent.includes('loading saved helper threads'))
-        await act(async () => settle(request))
-      }
-      if (fixture.paginate) {
-        const next = [...container.querySelectorAll('.helper-group-action')].find((button) => button.textContent.includes('next helpers'))
-        next.focus()
-        await click(next)
-        assert.equal(document.activeElement, next, 'loading does not drop pager focus')
-        const request = requests.at(-1)
-        assert.equal(request.page, 2)
-        await act(async () => settle(request))
-        assert.ok(document.activeElement.classList.contains('helper-group-page-heading'), 'completed requested page receives focus')
       }
       if (fixture.update) await act(async () => updateRow(fixture.update))
       assert.deepEqual([...container.querySelectorAll('.helper-group-members [data-thread-id]')].map((row) => row.dataset.threadId), fixture.expectedRows, fixture.name)
@@ -111,6 +100,7 @@ try {
       assert.equal(container.querySelectorAll('.helper-group-trigger input,.helper-group-context input').length, 0, 'no aggregate or context selection')
       for (const id of fixture.expectedRows) {
         const member = [...container.querySelectorAll('.helper-group-members [data-thread-id]')].find((row) => row.dataset.threadId === id)
+        assert.ok(member.querySelector('.helper-thread-marker'), 'inset marker language on every member row')
         assert.ok(member.textContent.includes(`status for ${id}`), 'route data retained')
         assert.equal(member.querySelector('a').getAttribute('href'), `/transcripts/${id}`)
         await click(member.querySelector('a'))
@@ -124,17 +114,65 @@ try {
         await click(container.querySelector(`.helper-group-members [data-thread-id="${fixture.select}"] input`))
         assert.deepEqual(selected, fixture.expectedSelected, 'explicit individual selection only')
       }
-      if (fixture.status === 'scope_expired') {
-        await click(container.querySelector('.helper-group-action'))
-        assert.deepEqual(refreshed, fixture.groups.map((group) => group.id))
-        assert.equal(requests.length, fixture.groups.length, 'expiry cannot fetch broader members')
-      }
-      if (fixture.status === 'error') {
-        const original = requests.at(-1)
-        await click(container.querySelector('.helper-group-action'))
-        assert.deepEqual(requests.at(-1), original, 'retry preserves exact request scope')
+      if (fixture.scopeExpired) {
+        // Fail-closed honesty is asserted on a fresh mount: expired scope hides
+        // members until the host refreshes the originating list.
+        await act(async () => root.unmount())
+        settled = true
+        const fresh = createRoot(container)
+        const reopened = [], reselected = [], rerequested = []
+        function ExpiredHost() {
+          const [liveExpired, setLiveExpired] = React.useState(true)
+          return React.createElement(React.Fragment, null, fixture.groups.map((group) =>
+            React.createElement(HelperGroupListItem, { key: group.id, ownerStatus: fixture.ownerStatus },
+              React.createElement(HelperGroup, {
+                groupId: group.id, memberScope: group.scope, helperThreadCount: group.count,
+                members: group.members, getMemberKey: (id) => id,
+                renderMember: (id) => React.createElement(HelperThreadRow, { ...fixtures.rows[id],
+                  href: `/transcripts/${id}`,
+                  onOpen: (identity, event) => { event.preventDefault(); reopened.push(identity) },
+                  onSelect: (identity, checked) => { if (checked) reselected.push(identity) },
+                }),
+                scopeExpired: liveExpired,
+                onRefreshList: () => { rerequested.push(group.id); setLiveExpired(false) },
+              }))))
+        }
+        await act(async () => fresh.render(React.createElement(ExpiredHost)))
+        try {
+          for (const trigger of container.querySelectorAll('.helper-group-trigger')) await click(trigger)
+          assert.equal(container.querySelector('.helper-group-members'), null, 'expired scope hides stale member actions')
+          assert.deepEqual(reopened, [], 'expired scope opens nothing')
+          assert.deepEqual(reselected, [], 'expired scope selects nothing')
+          for (const action of container.querySelectorAll('.helper-group-action')) await click(action)
+          assert.deepEqual(rerequested, fixture.groups.map((group) => group.id), 'refresh stays scoped to the originating list')
+          assert.deepEqual([...container.querySelectorAll('.helper-group-members [data-thread-id]')].map((row) => row.dataset.threadId), fixture.expectedRows, 'refresh restores the exact scope')
+        } finally { await act(async () => fresh.unmount()) }
+        console.log(`PASS ${fixture.name}`)
+        continue
       }
       console.log(`PASS ${fixture.name}`)
+    } finally { if (!settled) await act(async () => root.unmount()) }
+  }
+
+  // Display-only parity: with selection and navigation both absent, member rows
+  // render the inset marker, verbatim title, and counts with no interactive chrome.
+  for (const fixture of fixtures.cases) {
+    if (fixture.scopeExpired) continue
+    const container = document.getElementById('root')
+    const root = createRoot(container)
+    await act(async () => root.render(React.createElement(React.Fragment, null,
+      fixture.groups.flatMap((group) => group.members.map((id) =>
+        React.createElement(HelperThreadRow, { key: id, ...fixtures.rows[id] }))))))
+    try {
+      for (const id of new Set(fixture.groups.flatMap((group) => group.members))) {
+        const member = container.querySelector(`[data-thread-id="${id}"]`)
+        assert.ok(member, `${fixture.name}: display-only row renders for ${id}`)
+        assert.ok(member.querySelector('.helper-thread-marker'), 'inset marker without interactive props')
+        assert.equal(member.querySelector('input'), null, 'no checkbox without onSelect')
+        assert.equal(member.querySelector('a,button'), null, 'no navigation without href/onOpen')
+        assert.ok(member.querySelector('.helper-thread-title').textContent.includes(fixtures.rows[id].title), 'verbatim title without navigation')
+      }
+      console.log(`PASS ${fixture.name} display-only`)
     } finally { await act(async () => root.unmount()) }
   }
 } finally { await server.close(); dom.window.close() }

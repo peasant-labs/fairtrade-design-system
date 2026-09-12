@@ -4171,12 +4171,12 @@
 }
 .helper-group-trigger { width: 100%; flex-wrap: wrap; border: 0; }
 .helper-group-trigger:hover, .helper-group-action:hover, .helper-thread-open:hover { background: var(--surface-hover); }
-.helper-group-trigger svg, .helper-group-action svg, .helper-group-context svg, .helper-thread-open svg {
+.helper-group-trigger svg, .helper-group-action svg, .helper-group-context svg {
   width: var(--ic-md); height: var(--ic-md); flex-shrink: 0;
 }
 .helper-group-chevron { margin-left: auto; }
 .helper-group-trigger[aria-expanded="true"] .helper-group-chevron { transform: rotate(180deg); }
-.helper-group-count, .helper-thread-meta, .helper-group-status, .helper-group-page-heading {
+.helper-group-count, .helper-thread-meta {
   font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
   font-variant-numeric: tabular-nums; letter-spacing: 0; color: var(--ink-2);
 }
@@ -4187,13 +4187,14 @@
   color: var(--ink-2); letter-spacing: var(--tracking-prose); word-spacing: var(--word-spacing-prose);
 }
 .helper-group-notice p { max-width: var(--measure-prose); margin-bottom: var(--sp-3); }
-.helper-group-page-heading { margin: 0; }
-.helper-group-members { list-style: none; padding: 0; margin: 0; }
+.helper-group-members {
+  list-style: none; padding: 0; margin: 0 0 0 var(--sp-4); padding-inline-start: var(--sp-4);
+  border-left: 2px solid color-mix(in srgb, var(--mauve) 55%, var(--rule));
+}
 .helper-group-members > li + li { border-top: var(--bd); }
-.helper-group-pagination { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.helper-group-action[aria-disabled="true"] { cursor: default; color: var(--ink-4); }
-.helper-thread-row { padding: var(--sp-3); min-width: 0; }
-.helper-thread-main { display: flex; gap: var(--sp-3); align-items: center; }
+.helper-thread-row { padding: var(--sp-3) 0; min-width: 0; }
+.helper-thread-main { display: flex; gap: var(--sp-2); align-items: center; }
+.helper-thread-marker { width: var(--ic-sm); height: var(--ic-sm); flex-shrink: 0; color: var(--mauve); }
 .helper-thread-open, .helper-thread-title {
   display: flex; align-items: center; gap: var(--sp-2); min-height: var(--control-h);
   font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body);

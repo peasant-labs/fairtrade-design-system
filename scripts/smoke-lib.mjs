@@ -92,7 +92,7 @@ const txnFilters = { categories: { prompts: true, responses: true, thinking: tru
 const sampleProps = {
   HelperGroup: { ...helperFixtures.smoke.group, getMemberKey: (id) => id,
     renderMember: (id) => React.createElement(ui.HelperThreadRow, helperFixtures.rows[id]),
-    onRequestPage: () => {}, onRefreshList: () => {} },
+    onRefreshList: () => {} },
   HelperGroupListItem: helperFixtures.smoke.context,
   HelperThreadRow: helperFixtures.rows[helperFixtures.smoke.thread],
   ChartBar: { data: chartData, xKey: 'label', series: [{ key: 'count', name: 'count' }], title: 'bars' },

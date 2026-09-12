@@ -1,30 +1,31 @@
-import { useEffect, useId, useRef, useState } from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight, ExternalLink, RefreshCw, ShieldCheck, Unlink } from 'lucide-react'
+import { useId, useState } from 'react'
+import { ChevronDown, CornerDownRight, RefreshCw, ShieldCheck, Unlink } from 'lucide-react'
 import BrandMark from './BrandMark.jsx'
 import Checkbox from './Checkbox.jsx'
 
 /**
- * HelperGroup - collapsed saved-thread disclosure with exact scoped member paging.
+ * HelperGroup - collapsed saved-thread disclosure rendering its members as
+ * subagent-inset rows.
  *
- * Presentation only: pass the exact authorized member page from the host. No
- * wire decoding, membership inference, fetching, or selection aggregation occurs
- * here. renderMember receives the original row, including its route-specific data.
+ * Presentation only: the host passes the complete authorized member set for the
+ * exact scope. No wire decoding, membership inference, fetching, paging, or
+ * selection aggregation occurs here. renderMember receives the original row,
+ * including its route-specific data.
  *
  * @param {object} props
  * @param {string} props.groupId
- * @param {string} props.memberScope
+ * @param {string} props.memberScope - exact scope token the members belong to;
+ *   a changed scope resets uncontrolled disclosure, never inherits it
  * @param {number} props.helperThreadCount - saved threads, never review/message totals
  * @param {unknown[]} [props.members]
  * @param {(row: any) => import('react').ReactNode} props.renderMember
  * @param {(row: any) => string} props.getMemberKey - stable local/public transcript ID
- * @param {number} [props.page]
- * @param {number} [props.limit]
- * @param {number} [props.total] - current authorized member total, not loaded page length
- * @param {'idle'|'loading'|'ready'|'error'|'scope_expired'} [props.status]
  * @param {boolean} [props.expanded] - controlled disclosure for host Back restoration
  * @param {(expanded: boolean) => void} [props.onExpandedChange]
- * @param {(request: {groupId: string, memberScope: string, page: number, limit: number}) => void} props.onRequestPage
- * @param {() => void} props.onRefreshList - refresh the originating query, never an all-members fallback
+ * @param {boolean} [props.scopeExpired] - fail-closed: hides members, offers only
+ *   an originating-list refresh, never loads anything broader
+ * @param {() => void} [props.onRefreshList] - refresh the originating query,
+ *   never an all-members fallback
  */
 export default function HelperGroup(props) {
   // A changed query token cannot inherit an uncontrolled disclosure from an old query.
@@ -33,35 +34,16 @@ export default function HelperGroup(props) {
 
 function HelperGroupDisclosure({
   groupId, memberScope, helperThreadCount, members = [], renderMember, getMemberKey,
-  page = 1, limit = 20, total = helperThreadCount, status = 'idle',
-  expanded, onExpandedChange, onRequestPage, onRefreshList,
+  expanded, onExpandedChange, scopeExpired = false, onRefreshList,
 }) {
   const id = useId()
   const [localExpanded, setLocalExpanded] = useState(false)
   const open = expanded ?? localExpanded
-  const pageHeading = useRef(null)
-  const requestedPage = useRef(null)
-  const busy = status === 'loading'
-  const ready = status === 'ready'
-  const pages = Math.max(1, Math.ceil(total / limit))
 
-  useEffect(() => {
-    if (open && ready && requestedPage.current === page) {
-      pageHeading.current?.focus()
-      requestedPage.current = null
-    }
-  }, [open, ready, page])
-
-  const request = (next, focus = false) => {
-    if (focus) requestedPage.current = next
-    onRequestPage({ groupId, memberScope, page: next, limit })
-  }
   const toggle = () => {
     const next = !open
     if (expanded === undefined) setLocalExpanded(next)
     onExpandedChange?.(next)
-    if (next && status === 'idle') request(page)
-    if (!next) requestedPage.current = null
   }
 
   return (
@@ -74,47 +56,17 @@ function HelperGroupDisclosure({
         <ChevronDown className="helper-group-chevron" aria-hidden="true" />
       </button>
       <div id={`${id}-body`} role="region" aria-labelledby={`${id}-trigger`} hidden={!open}>
-        <div className="helper-group-body" aria-busy={busy}>
-          <div className="helper-group-status" role="status">
-            {busy && 'loading saved helper threads'}
-            {status === 'idle' && 'expand to load saved helper threads'}
-            {ready && `${total} saved helper threads in this result`}
-            {status === 'scope_expired' && 'helper query expired; refresh the originating list'}
-            {status === 'error' && 'helper members could not be loaded; retry this page'}
-          </div>
-          {status === 'scope_expired' ? (
+        <div className="helper-group-body">
+          {scopeExpired ? (
             <div className="helper-group-notice">
-              <p>the saved helper query expired during member loading. no broader results were loaded. refresh the originating list to restore its filters.</p>
-              <button type="button" className="helper-group-action" onClick={onRefreshList}>
+              <p>the saved helper query expired. no broader results were loaded. refresh the originating list to restore its filters.</p>
+              {onRefreshList && <button type="button" className="helper-group-action" onClick={onRefreshList}>
                 <RefreshCw aria-hidden="true" /> refresh list
-              </button>
+              </button>}
             </div>
-          ) : status === 'error' ? (
-            <div className="helper-group-notice">
-              <p>helper members could not be loaded for this query. no selection changed. retry this page, or refresh the list if access has changed.</p>
-              <button type="button" className="helper-group-action" onClick={() => request(page)}>
-                <RefreshCw aria-hidden="true" /> retry page
-              </button>
-            </div>
-          ) : null}
-          {ready && <>
-            <p className="helper-group-page-heading" ref={pageHeading} tabIndex={-1}>
-              helper threads, page {page} of {pages}
-            </p>
-            {members.length ? <ul className="helper-group-members">
-              {members.map((row) => <li key={getMemberKey(row)}>{renderMember(row)}</li>)}
-            </ul> : <p className="helper-group-notice">no saved helpers match the current query and access.</p>}
-          </>}
-          {(ready || busy) && <nav className="helper-group-pagination" aria-label="helper thread pages">
-            <button type="button" className="helper-group-action" aria-disabled={busy || page <= 1}
-              onClick={() => { if (!busy && page > 1) request(page - 1, true) }}>
-              <ChevronLeft aria-hidden="true" /> previous helpers
-            </button>
-            <button type="button" className="helper-group-action" aria-disabled={busy || page >= pages}
-              onClick={() => { if (!busy && page < pages) request(page + 1, true) }}>
-              next helpers <ChevronRight aria-hidden="true" />
-            </button>
-          </nav>}
+          ) : members.length ? <ul className="helper-group-members">
+            {members.map((row) => <li key={getMemberKey(row)}>{renderMember(row)}</li>)}
+          </ul> : <p className="helper-group-notice">no saved helpers match the current query and access.</p>}
         </div>
       </div>
     </section>
@@ -150,9 +102,13 @@ export function HelperGroupListItem({ owner, ownerStatus, children }) {
 }
 
 /**
- * Individual presentation row. Hosts map scalar display props from their typed row,
- * preserve route-specific status/usage/ordinary-child exits in children, and supply
- * authorized navigation/eligibility. These are UI props, not another wire DTO.
+ * One helper member as a subagent-inset row: indented with the CornerDownRight
+ * marker, inline in the group. Display-only when selection and navigation are
+ * both absent. The two optional behaviors are individual-only: a per-thread
+ * checkbox and host-authorized open navigation. No aggregate selection, no
+ * self-built links, no per-row disclosure. Hosts map scalar display props from
+ * their typed row and preserve route-specific status/usage/ordinary-child exits
+ * in children. These are UI props, not another wire DTO.
  * @param {object} props
  * @param {string} props.id - individual transcript identity, never a group ID
  * @param {string} props.title - verbatim user content
@@ -168,13 +124,13 @@ export function HelperGroupListItem({ owner, ownerStatus, children }) {
  */
 export function HelperThreadRow({ id, title, provider, inputSubmissionCount, turnCount,
   href, onOpen, selected = false, selectionDisabled = false, onSelect, children }) {
-  const content = <><ExternalLink aria-hidden="true" /><span>{title}</span></>
   return <div className="helper-thread-row" data-thread-id={id}>
     <div className="helper-thread-main">
       {onSelect && <Checkbox checked={selected} disabled={selectionDisabled}
         aria-label={`select ${title} (${id})`} onChange={(checked) => onSelect(id, checked)} />}
-      {href ? <a className="helper-thread-open" href={href} onClick={(event) => onOpen?.(id, event)}>{content}</a>
-        : onOpen ? <button type="button" className="helper-thread-open" onClick={(event) => onOpen(id, event)}>{content}</button>
+      <CornerDownRight className="helper-thread-marker" aria-hidden="true" />
+      {href ? <a className="helper-thread-open" href={href} onClick={(event) => onOpen?.(id, event)}>{title}</a>
+        : onOpen ? <button type="button" className="helper-thread-open" onClick={(event) => onOpen(id, event)}>{title}</button>
           : <span className="helper-thread-title">{title}</span>}
     </div>
     <div className="helper-thread-meta">

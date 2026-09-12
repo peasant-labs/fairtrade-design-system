@@ -42,13 +42,9 @@ try {
         assert.equal(await trigger.evaluate((el) => el.getAttribute('aria-expanded')), 'true')
         assert.ok(await trigger.evaluate((el) => document.activeElement === el), 'keyboard expansion retains focus')
       }
-      if (fixture.paginate) {
-        const next = await page.$('.helper-group-pagination button:last-child')
-        await next.focus()
-        await page.keyboard.press('Enter')
-        await page.waitForFunction(() => document.activeElement?.classList.contains('helper-group-page-heading'))
-      }
       assert.deepEqual(await page.$$eval('.helper-group-members [data-thread-id]', (rows) => rows.map((el) => el.dataset.threadId)), fixture.expectedRows)
+      assert.deepEqual(await page.$$eval('.helper-group-members [data-thread-id]', (rows) => rows.map((el) => !!el.querySelector('.helper-thread-marker'))),
+        fixture.expectedRows.map(() => true), 'subagent-inset marker on every member row')
       const renderedText = await page.$eval('.helper-demo', (el) => el.textContent)
       for (const text of fixture.expectedText) assert.ok(renderedText.includes(text), `${fixture.name}: ${text}`)
       if (fixture.select) {
@@ -62,7 +58,7 @@ try {
         assert.equal(await page.$eval('.helper-group-trigger', (el) => el.getAttribute('aria-expanded')), 'true', 'return retains disclosure')
         assert.ok(await page.$eval('.helper-demo', (el) => el.textContent.includes('selected transcripts: G2')), 'return retains selection')
       }
-      if (fixture.status === 'scope_expired') {
+      if (fixture.scopeExpired) {
         assert.equal(await page.$('.helper-group-members'), null, 'expired scope hides stale member actions')
         await page.screenshot({ path: resolve(output, `${theme}-${fixture.name}.png`) })
         await page.click('.helper-group-action')
@@ -77,10 +73,12 @@ try {
           const s = getComputedStyle(el)
           return { font: s.fontFamily, size: s.fontSize, radius: s.borderRadius, transform: s.textTransform,
             numeric: s.fontVariantNumeric, color: s.color, background: s.backgroundColor,
+            borderLeftWidth: s.borderLeftWidth,
             animation: s.animationDuration, animationName: s.animationName, transition: s.transitionDuration }
         }
         return { trigger: read('.helper-group-trigger'), group: read('.helper-group'),
           title: read('.helper-thread-open'), meta: read('.helper-thread-meta'),
+          marker: read('.helper-thread-marker'), members: read('.helper-group-members'),
           fonts: document.fonts.check('16px "Atkinson Hyperlegible"') && document.fonts.check('14px "Atkinson Hyperlegible Mono"'),
           overflow: document.documentElement.scrollWidth > window.innerWidth }
       })
@@ -95,11 +93,13 @@ try {
         assert.equal(styles.title.transform, 'none')
         assert.ok(styles.meta.numeric.includes('tabular-nums'))
         assert.ok(ratio(styles.meta.color, styles.group.background) >= 4.5, 'actual secondary contrast AA')
+        assert.ok(styles.marker, 'inset marker renders beside every member row')
+        assert.equal(styles.members.borderLeftWidth, '2px', 'member list carries the inset rule')
       }
       assert.ok(styles.fonts, 'Atkinson fonts loaded')
       assert.equal(styles.overflow, false)
       evidence.probes.push({ theme, case: fixture.name, styles })
-      if (fixture.status !== 'scope_expired') await page.screenshot({ path: resolve(output, `${theme}-${fixture.name}.png`) })
+      if (!fixture.scopeExpired) await page.screenshot({ path: resolve(output, `${theme}-${fixture.name}.png`) })
     }
     assert.deepEqual(errors, [], 'mounted demo runtime errors')
     await page.close()

@@ -23,9 +23,22 @@ export const OwnerRetained = {
 }
 export const HelperOnlySearch = { args: { scenario: 'helper-only-search' } }
 export const UnknownOwners = { args: { scenario: 'unresolved-independent' } }
+export const IdenticalHelpers = { args: { scenario: 'identical-independent-helpers' } }
+export const TrunkAppend = { args: { scenario: 'trunk-append' } }
+export const TrunkReplacement = { args: { scenario: 'trunk-replacement' } }
 export const UnavailableOwner = { args: { scenario: 'unavailable-owner' } }
 export const ExpiredQuery = { args: { scenario: 'scope-expired' } }
-export const FailedMembers = { args: { scenario: 'member-error' } }
-export const MemberPaging = { args: { scenario: 'focus-pagination' } }
+export const NestedOwner = { args: { scenario: 'measured-zero' } }
 export const UnknownInputs = { args: { scenario: 'unknown-input-count' } }
-export const LoadingMembers = { args: { scenario: 'loading-members' } }
+export const OrdinaryChildExit = { args: { scenario: 'ordinary-child-exit' } }
+export const DisplayOnly = {
+  args: { scenario: 'three-independent-counts', plain: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: /guardian reviews/ })
+    await userEvent.click(trigger)
+    await expect(canvas.getByText('Review Parser')).toBeVisible()
+    await expect(canvas.queryByRole('checkbox')).toBeNull()
+    await expect(canvas.queryByRole('link')).toBeNull()
+  },
+}
