@@ -6,6 +6,7 @@ import { JSDOM } from 'jsdom'
 import { createServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import YAML from 'yaml'
+import { installHarnessGuard } from './harness-guard.mjs'
 
 /** @typedef {{id: string, scope: string, count: number, members: string[]}} GroupFixture */
 /** @typedef {{name: string, owner?: string, ownerStatus?: string, ordinaryChild?: string, groups: GroupFixture[], expectedRows: string[], expectedText: string[], select?: string, expectedSelected?: string[], scopeExpired?: boolean, update?: {id: string, turnCount: number}}} GroupCase */
@@ -29,6 +30,8 @@ function loadFixtures() {
   }
   return data
 }
+
+installHarnessGuard({ label: 'helper groups runtime suite' })
 
 const fixtures = loadFixtures()
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'https://fairtrade.invalid/' })
@@ -67,11 +70,14 @@ try {
     }
     const click = async (element) => {
       assert.ok(element, `${fixture.name}: mounted action exists`)
+      // A real browser focuses a button on mousedown; jsdom does not emulate
+      // that default action, so focus explicitly to keep the harness faithful.
+      element.focus()
       await act(async () => element.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true })))
     }
     const press = async (element, key) => {
       element.focus()
-      assert.equal(document.activeElement, element, `${fixture.name}: keyboard target receives focus`)
+      assert.ok(document.activeElement === element, `${fixture.name}: keyboard target receives focus`)
       await act(async () => element.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })))
       await act(async () => element.dispatchEvent(new dom.window.KeyboardEvent('keyup', { key, bubbles: true, cancelable: true })))
       await click(element)
@@ -81,8 +87,12 @@ try {
     try {
       assert.deepEqual(opened, [], 'mount must not navigate')
       assert.deepEqual(selected, [], 'mount must not select')
-      if (!fixture.owner) assert.equal(container.querySelector('[data-thread-id]'), null, 'context cannot fabricate a hidden owner row')
-      else assert.equal(container.querySelector('[data-thread-id]').dataset.threadId, fixture.owner, 'ordinary owner stays above its group')
+      // The owner slot is a direct child of .helper-group-item; member rows live
+      // inside .helper-group-nested and render even while collapsed, so an
+      // ownerless result must have no direct-child thread row, not merely none.
+      const ownerRow = container.querySelector('.helper-group-item > [data-thread-id]')
+      if (!fixture.owner) assert.ok(ownerRow === null, 'context cannot fabricate a hidden owner row')
+      else assert.equal(ownerRow.dataset.threadId, fixture.owner, 'ordinary owner stays above its group')
       const triggers = [...container.querySelectorAll('.helper-group-trigger')]
       assert.equal(triggers.length, fixture.groups.length, 'one collapsed disclosure per group')
       for (const [index, trigger] of triggers.entries()) {
@@ -92,7 +102,7 @@ try {
         if (index % 2) await press(trigger, 'Enter')
         else await click(trigger)
         assert.equal(trigger.getAttribute('aria-expanded'), 'true')
-        assert.equal(document.activeElement, trigger, 'expansion preserves keyboard focus')
+        assert.ok(document.activeElement === trigger, 'expansion preserves keyboard focus')
       }
       if (fixture.update) await act(async () => updateRow(fixture.update))
       assert.deepEqual([...container.querySelectorAll('.helper-group-members [data-thread-id]')].map((row) => row.dataset.threadId), fixture.expectedRows, fixture.name)
@@ -140,12 +150,13 @@ try {
         await act(async () => fresh.render(React.createElement(ExpiredHost)))
         try {
           for (const trigger of container.querySelectorAll('.helper-group-trigger')) await click(trigger)
-          assert.equal(container.querySelector('.helper-group-members'), null, 'expired scope hides stale member actions')
+          assert.ok(container.querySelector('.helper-group-members') === null, 'expired scope hides stale member actions')
           assert.deepEqual(reopened, [], 'expired scope opens nothing')
           assert.deepEqual(reselected, [], 'expired scope selects nothing')
           for (const action of container.querySelectorAll('.helper-group-action')) await click(action)
           assert.deepEqual(rerequested, fixture.groups.map((group) => group.id), 'refresh stays scoped to the originating list')
-          assert.deepEqual([...container.querySelectorAll('.helper-group-members [data-thread-id]')].map((row) => row.dataset.threadId), fixture.expectedRows, 'refresh restores the exact scope')
+          const restoredRows = fixture.groups.flatMap((group) => group.members)
+          assert.deepEqual([...container.querySelectorAll('.helper-group-members [data-thread-id]')].map((row) => row.dataset.threadId), restoredRows, 'refresh restores the exact scope')
         } finally { await act(async () => fresh.unmount()) }
         console.log(`PASS ${fixture.name}`)
         continue
@@ -168,8 +179,8 @@ try {
         const member = container.querySelector(`[data-thread-id="${id}"]`)
         assert.ok(member, `${fixture.name}: display-only row renders for ${id}`)
         assert.ok(member.querySelector('.helper-thread-marker'), 'inset marker without interactive props')
-        assert.equal(member.querySelector('input'), null, 'no checkbox without onSelect')
-        assert.equal(member.querySelector('a,button'), null, 'no navigation without href/onOpen')
+        assert.ok(member.querySelector('input') === null, 'no checkbox without onSelect')
+        assert.ok(member.querySelector('a,button') === null, 'no navigation without href/onOpen')
         assert.ok(member.querySelector('.helper-thread-title').textContent.includes(fixtures.rows[id].title), 'verbatim title without navigation')
       }
       console.log(`PASS ${fixture.name} display-only`)

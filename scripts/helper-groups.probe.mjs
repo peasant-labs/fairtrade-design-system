@@ -5,6 +5,7 @@ import { resolve } from 'node:path'
 import { preview } from 'vite'
 import puppeteer from 'puppeteer-core'
 import YAML from 'yaml'
+import { installHarnessGuard } from './harness-guard.mjs'
 
 const output = process.env.HELPER_CAPTURE_DIR || '/tmp/opencode/helper-worker/captures'
 const chrome = process.env.CHROME_PATH || '/home/minttea/.nix-profile/bin/google-chrome'
@@ -13,6 +14,7 @@ const fixtures = YAML.parse(readFileSync('scripts/testdata/helper_group_listing.
 const assets = readdirSync('dist/assets').filter((name) => name.endsWith('.js'))
 assert.ok(assets.some((name) => readFileSync(`dist/assets/${name}`, 'utf8').includes('data-helper-demo')), 'built artifact must contain the helper demo marker; rebuild this checkout')
 mkdirSync(output, { recursive: true })
+installHarnessGuard({ label: 'helper groups mounted probe' })
 const served = await preview({ configFile: false, preview: { port, strictPort: true, host: '127.0.0.1' } })
 const browser = await puppeteer.launch({ executablePath: chrome, headless: true, defaultViewport: { width: 1440, height: 1000 } })
 const evidence = { source: process.cwd(), commit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), assets, probes: [] }
@@ -59,7 +61,7 @@ try {
         assert.ok(await page.$eval('.helper-demo', (el) => el.textContent.includes('selected transcripts: G2')), 'return retains selection')
       }
       if (fixture.scopeExpired) {
-        assert.equal(await page.$('.helper-group-members'), null, 'expired scope hides stale member actions')
+        assert.ok(await page.$('.helper-group-members') === null, 'expired scope hides stale member actions')
         await page.screenshot({ path: resolve(output, `${theme}-${fixture.name}.png`) })
         await page.click('.helper-group-action')
         assert.equal(await page.$eval('.helper-group-trigger', (el) => el.getAttribute('aria-expanded')), 'false', 'refreshed scope resets disclosure')
