@@ -47,6 +47,46 @@ import './PromptDigest.css'
    abbreviated one (7 to 40 lowercase hex); seven characters is the abbreviation every tier shows. */
 const SHA_ABBREV = 7
 
+/* A commit's added/deleted line counts, once the wire carries them: real +/− glyphs (the minus is
+   U+2212, not a hyphen), coloured with the diff palette DiffView/TranscriptMarkers already pair
+   for the same "+A −D" churn-summary shape (`--add-rail` / `--del-rail`, not the `--add-text` /
+   `--del-text` pair, which is meant for text sitting on the tinted `--add-bg` / `--del-bg` wash —
+   this chip sits on the plain surface instead, same as DiffView's file-header churn). */
+function ChangeCounts({ additions, deletions }) {
+  return (
+    <span className="pd-change-counts tnum">
+      <span className="pd-change-add">+{additions}</span>
+      <span className="pd-change-del">−{deletions}</span>
+    </span>
+  )
+}
+
+/* a commit item carries additions/deletions/filesChanged together or not at all (the schema
+   field group is additive and optional); this is the one presence check both the per-prompt sum
+   and the per-commit detail line use. */
+function hasChangeCounts(item) {
+  return item.additions != null && item.deletions != null
+}
+
+/**
+ * sums additions/deletions across the commits attached to one prompt, counting only the commits
+ * that carry counts — a commit recorded before the schema field existed is omitted from the sum
+ * rather than treated as a zero. returns null when none of the commits carry counts, so the
+ * caller renders nothing rather than a "+0 −0" that implies a real answer.
+ */
+function sumChangeCounts(commits) {
+  let additions = 0
+  let deletions = 0
+  let counted = false
+  for (const commit of commits) {
+    if (!hasChangeCounts(commit)) continue
+    counted = true
+    additions += commit.additions
+    deletions += commit.deletions
+  }
+  return counted ? { additions, deletions } : null
+}
+
 /* One glyph per kind rendered at the chain's top level: a prompt row leads with its own generic
    glyph instead, so it carries no entry here. */
 const KIND_ICON = {
@@ -113,7 +153,14 @@ function RowBody({ item }) {
     return (
       <>
         <code className="pd-sha">{String(item.commitSha ?? '').slice(0, SHA_ABBREV)}</code>
-        {/* additions, deletions, and files-changed render here once PromptDigestItem carries those fields */}
+        {hasChangeCounts(item) && (
+          <>
+            <ChangeCounts additions={item.additions} deletions={item.deletions} />
+            <span className="pd-commit-files tnum">
+              {item.filesChanged} {item.filesChanged === 1 ? 'file' : 'files'}
+            </span>
+          </>
+        )}
       </>
     )
   }
@@ -173,6 +220,7 @@ function PromptRow({ entry, href, itemHref, author }) {
   const detailsId = useId()
   const text = String(item.text ?? '').trim()
   const hasDetails = skills.length > 0 || commits.length > 0
+  const sum = sumChangeCounts(commits)
 
   const glyph = author ? (
     <Avatar name={author.login} src={author.avatarUrl} className="pd-row-avatar" />
@@ -185,6 +233,10 @@ function PromptRow({ entry, href, itemHref, author }) {
       {glyph}
       <span className="pd-ordinal tnum">{item.ordinal}</span>
       <span className={open ? 'pd-prompt-text' : 'pd-prompt-text pd-prompt-clamp'}>{text}</span>
+      {/* the at-a-glance sum over this prompt's attached commits: present only when at least one
+          carries counts, so a row with nothing to show renders no cell and takes no width — the
+          prompt text (flex: 1) only narrows on rows that do have something to show. */}
+      {sum && <ChangeCounts additions={sum.additions} deletions={sum.deletions} />}
     </>
   )
 

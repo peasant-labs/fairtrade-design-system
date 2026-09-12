@@ -59,6 +59,28 @@ const digest = {
 PromptDigest({ digest })
 PromptDigest({ digest, className: 'pd-demo' })
 
+/* additive: 0.20.0's PromptDigestItem may also carry additions/deletions/filesChanged on a commit
+   item (together, never a subset) — confirming the published type accepts them, with no prop
+   changes on the component itself. */
+PromptDigest({
+  digest: {
+    ...digest,
+    items: [
+      ...digest.items,
+      {
+        kind: 'commit',
+        transcriptId: TRANSCRIPT_ID,
+        timestamp: '2026-09-06T14:12:00Z',
+        text: '',
+        commitSha: 'b2c3d4e5f60718293a4b5c6d7e8f901234567890',
+        additions: 12,
+        deletions: 4,
+        filesChanged: 2,
+      },
+    ],
+  },
+})
+
 /* the link builder receives the canonical item type, so the item's `kind` and its per-kind fields
    are what a consumer switches on to pick a destination. */
 PromptDigest({

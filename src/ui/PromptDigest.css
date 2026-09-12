@@ -288,6 +288,7 @@ a.pd-row-link:focus-visible {
 }
 
 .pd-prompt-text {
+  flex: 1;
   min-width: 0;
   overflow-wrap: anywhere;
   font-family: var(--font-body);
@@ -404,4 +405,35 @@ a.pd-row-link:focus-visible {
   letter-spacing: 0;
   color: var(--ink-2);
   background: none;
+}
+
+/* the "+A −D" change-count chip: reused verbatim on a prompt row's at-a-glance sum (right of the
+   prompt text, before the chevron) and on a per-commit detail line (right of the sha). flex: none
+   so it never grows past its own content — on a prompt row this is what lets .pd-prompt-text
+   (flex: 1) be the only column that narrows to make room. add/del reuse the same pairing
+   DiffView's own file-header churn (.dv-churn-add / .dv-churn-del) already uses for a plain-surface
+   "+N −N" summary: --add-rail / --del-rail, not --add-text / --del-text, which is paired instead
+   with the tinted --add-bg / --del-bg wash a full diff line sits on. */
+.pd-change-counts {
+  display: inline-flex;
+  flex: none;
+  gap: var(--sp-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+}
+
+.pd-change-add { color: var(--add-rail); }
+.pd-change-del { color: var(--del-rail); }
+
+/* the per-commit file count: chrome, same ink as this component's other meta text
+   (.pd-label / .pd-skill-text / .pd-session-counts). */
+.pd-commit-files {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  color: var(--ink-3);
 }

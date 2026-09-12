@@ -87,14 +87,16 @@ const shortChain = {
     { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T14:02:00Z', text: LONG_PROMPT, turnIndex: 4, ordinal: 1 },
     { kind: 'skill', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T14:02:30Z', text: '/toolkit:brainstorm', turnIndex: 5 },
     { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T14:19:00Z', text: 'It should reuse the share path rather than adding a second upload route.', turnIndex: 18, ordinal: 2 },
-    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T14:41:00Z', text: SHA_ONE.slice(0, 7), commitSha: SHA_ONE },
+    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T14:41:00Z', text: SHA_ONE.slice(0, 7), commitSha: SHA_ONE, additions: 42, deletions: 7, filesChanged: 3 },
     { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T15:02:00Z', text: 'Detach has to restore each transcript’s prior visibility exactly.', turnIndex: 31, ordinal: 3 },
+    // no counts on this commit: predates the schema field, so its detail line and the sum above
+    // both omit it rather than showing it as a zero.
     { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T15:28:00Z', text: '', commitSha: SHA_TWO },
     { kind: 'session', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-07T09:14:00Z', text: 'session 2', promptCount: 2, commitCount: 1 },
     { kind: 'prompt', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-07T09:16:00Z', text: 'Write the plan before touching any code.', turnIndex: 2, ordinal: 4 },
     { kind: 'skill', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-07T09:16:20Z', text: '/toolkit:write-plan', turnIndex: 3 },
     { kind: 'prompt', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-07T10:02:00Z', text: 'Now fold the review findings back into the fixtures.', turnIndex: 22, ordinal: 5 },
-    { kind: 'commit', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-07T10:44:00Z', text: '', commitSha: SHA_THREE },
+    { kind: 'commit', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-07T10:44:00Z', text: '', commitSha: SHA_THREE, additions: 15, deletions: 2, filesChanged: 1 },
   ],
 }
 
@@ -178,18 +180,20 @@ const manyCommitsAndSkillsChain = {
     { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:02:00Z', text: 'Wire the redaction settings into the prompt digest before landing the review UI.', turnIndex: 4, ordinal: 1 },
     { kind: 'skill', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:02:20Z', text: '/toolkit:brainstorm', turnIndex: 5 },
     { kind: 'skill', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:04:00Z', text: 'context7', turnIndex: 6 },
-    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:20:00Z', text: '', commitSha: SHA_M1 },
-    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:24:00Z', text: '', commitSha: SHA_M2 },
+    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:20:00Z', text: '', commitSha: SHA_M1, additions: 18, deletions: 4, filesChanged: 2 },
+    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:24:00Z', text: '', commitSha: SHA_M2, additions: 9, deletions: 1, filesChanged: 1 },
     { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:40:00Z', text: MANY_LINE_PROMPT, turnIndex: 19, ordinal: 2 },
     { kind: 'skill', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T09:40:30Z', text: '/toolkit:write-plan', turnIndex: 20 },
     { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T10:10:00Z', text: 'Land the three follow-up commits for the ingest refactor in small reviewable steps.', turnIndex: 34, ordinal: 3 },
-    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T10:22:00Z', text: '', commitSha: SHA_M3 },
-    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T10:31:00Z', text: '', commitSha: SHA_M4 },
+    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T10:22:00Z', text: '', commitSha: SHA_M3, additions: 120, deletions: 30, filesChanged: 6 },
+    { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T10:31:00Z', text: '', commitSha: SHA_M4, additions: 45, deletions: 10, filesChanged: 3 },
+    // no counts on this one: shows the per-commit suffix omission, and the sum above (prompt 3,
+    // the largest here) totals only the two commits that do carry counts.
     { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-10T10:47:00Z', text: '', commitSha: SHA_M5 },
     { kind: 'session', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-11T08:30:00Z', text: 'session 2', promptCount: 2, commitCount: 1 },
     { kind: 'prompt', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-11T08:32:00Z', text: 'Add the regression test for the race between a fast commit and a slow flush.', turnIndex: 6, ordinal: 4 },
     { kind: 'skill', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-11T08:32:20Z', text: '/toolkit:brainstorm', turnIndex: 7 },
-    { kind: 'commit', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-11T08:55:00Z', text: '', commitSha: SHA_M6 },
+    { kind: 'commit', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-11T08:55:00Z', text: '', commitSha: SHA_M6, additions: 6, deletions: 2, filesChanged: 1 },
     { kind: 'prompt', transcriptId: TRANSCRIPT_B, timestamp: '2026-09-11T09:10:00Z', text: 'Nothing else changed here.', turnIndex: 15, ordinal: 5 },
   ],
 }
@@ -280,6 +284,17 @@ export const Chain = {
       'href',
       `https://village.example/transcripts/${TRANSCRIPT_B}`,
     )
+
+    // prompt 2's attached commit carries counts: the row shows the at-a-glance sum before the
+    // chevron even while the row is still collapsed (not inside the hidden details block)
+    const promptTwoRow = canvas.getByRole('button', { name: 'details for prompt 2' }).closest('.pd-row-prompt')
+    await expect(within(promptTwoRow).getByText('+42')).toBeInTheDocument()
+    await expect(within(promptTwoRow).getByText('−7')).toBeInTheDocument()
+    await expect(within(promptTwoRow).queryByText('+42').closest('.pd-details')).toBeNull()
+
+    // prompt 3's attached commit carries no counts: no sum cell renders at all
+    const promptThreeRow = canvas.getByRole('button', { name: 'details for prompt 3' }).closest('.pd-row-prompt')
+    await expect(promptThreeRow.querySelector('.pd-change-counts')).toBeNull()
   },
 }
 
@@ -382,7 +397,7 @@ export const ExpandedWithCommit = {
   args: {
     digest: single({ commitsCovered: 1, commitsTotal: 1 }, [
       { kind: 'prompt', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T14:02:00Z', text: 'Land the fix and keep the commit small.', turnIndex: 4, ordinal: 1 },
-      { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T14:41:00Z', text: '', commitSha: SHA_ONE },
+      { kind: 'commit', transcriptId: TRANSCRIPT_A, timestamp: '2026-09-06T14:41:00Z', text: '', commitSha: SHA_ONE, additions: 24, deletions: 5, filesChanged: 2 },
     ]),
   },
   play: async ({ canvasElement }) => {
@@ -450,7 +465,7 @@ export const ManyCommitsAndSkills = {
     docs: {
       description: {
         story:
-          "per-commit added/deleted line counts will render here once the schema's PromptDigestItem type carries them (peasant-labs/schema#117).",
+          "prompt 3 carries the largest at-a-glance sum of the three counted prompts; its third commit carries no counts, so its detail line and the sum both omit it rather than showing a zero.",
       },
     },
   },
@@ -475,6 +490,33 @@ export const ManyCommitsAndSkills = {
     // prompt 3's three commits are visible under its open disclosure
     const rowThree = toggleThree.closest('.pd-row-prompt')
     await expect(within(rowThree).getAllByText(/^[0-9a-f]{7}$/)).toHaveLength(3)
+
+    // prompt 1's two commits each show their own +A −D and file count inside the open details
+    const detailsOne = rowOne.querySelector('.pd-details')
+    await expect(within(detailsOne).getByText('+18')).toBeInTheDocument()
+    await expect(within(detailsOne).getByText('−4')).toBeInTheDocument()
+    await expect(within(detailsOne).getByText('2 files')).toBeInTheDocument()
+    await expect(within(detailsOne).getByText('+9')).toBeInTheDocument()
+    await expect(within(detailsOne).getByText('−1')).toBeInTheDocument()
+    await expect(within(detailsOne).getByText('1 file')).toBeInTheDocument()
+
+    // prompt 3's first two commits show counts and file counts; the third carries none, so its
+    // detail line stays a bare sha with no +A −D or file-count suffix at all
+    const detailsThree = rowThree.querySelector('.pd-details')
+    await expect(within(detailsThree).getByText('+120')).toBeInTheDocument()
+    await expect(within(detailsThree).getByText('−30')).toBeInTheDocument()
+    await expect(within(detailsThree).getByText('6 files')).toBeInTheDocument()
+    await expect(within(detailsThree).getByText('+45')).toBeInTheDocument()
+    await expect(within(detailsThree).getByText('−10')).toBeInTheDocument()
+    await expect(within(detailsThree).getByText('3 files')).toBeInTheDocument()
+    const uncountedRow = within(detailsThree).getByText(SHA_M5.slice(0, 7)).closest('.pd-row')
+    await expect(uncountedRow.querySelector('.pd-change-counts')).toBeNull()
+    await expect(uncountedRow.querySelector('.pd-commit-files')).toBeNull()
+
+    // prompt 3 carries the largest at-a-glance sum (the omitted third commit is left out of it,
+    // not treated as a zero), visible on the collapsed row itself
+    await expect(within(rowThree).getByText('+165')).toBeInTheDocument()
+    await expect(within(rowThree).getByText('−40')).toBeInTheDocument()
 
     // prompt 2 stays closed and its long text is still clamped to two lines
     const promptTwoPreview = canvas.getByText(MANY_LINE_PROMPT)
