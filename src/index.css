@@ -4218,25 +4218,41 @@
 /* The count reads in the control's own chrome ink (mirroring the session
    groups); "show"/"hide" is the muted trailing hint. */
 .helper-group-count { color: inherit; }
-.helper-group-body { border-top: var(--bd); }
-.helper-group-context { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-4); }
+/* Revealed members are a plain list of ordinary rows: no inset rule, no corner
+   marker, the control's top rule is the only separation from it. Both rules
+   start at the row's content column so they never cross the connector that runs
+   in the checkbox gutter. */
+.helper-group { --helper-rule-inset: calc(var(--sp-4) + var(--ic-lg) + var(--sp-3)); }
+.helper-group-body { position: relative; }
+.helper-group-body::before {
+  content: ''; position: absolute; top: 0; right: 0; left: var(--helper-rule-inset);
+  border-top: var(--bd);
+}
+.helper-group-members { list-style: none; padding: 0; margin: 0; }
+.helper-group-members > li { position: relative; }
+.helper-group-members > li + li::before {
+  content: ''; position: absolute; top: 0; right: 0; left: var(--helper-rule-inset);
+  border-top: var(--bd);
+}
 .helper-group-context, .helper-group-notice {
   font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body);
   color: var(--ink-2); letter-spacing: var(--tracking-prose); word-spacing: var(--word-spacing-prose);
 }
 .helper-group-notice { padding: var(--sp-3) var(--sp-4); }
 .helper-group-notice p { max-width: var(--measure-prose); margin-bottom: var(--sp-3); }
-/* Revealed members are a plain list of ordinary rows: no inset rule, no corner
-   marker, the control's top rule is the only separation from it. */
-.helper-group-members { list-style: none; padding: 0; margin: 0; }
-.helper-group-members > li + li { border-top: var(--bd); }
+.helper-group-context { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-4); }
 .helper-thread-row { padding: var(--sp-3) var(--sp-4); min-width: 0; }
-.helper-thread-main { display: flex; gap: var(--sp-2); align-items: center; }
-.helper-thread-column { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; flex: 1; }
+.helper-thread-main { display: flex; gap: var(--sp-3); align-items: center; }
+/* Title and facts stack tightly, like the session-list rows these mirror: the
+   title is body-small medium and the facts line follows immediately. A title
+   box taller than its text (the generic control height) read as padding
+   between the two lines. */
+.helper-thread-column { display: flex; flex-direction: column; gap: 0; min-width: 0; flex: 1; }
 .helper-thread-head { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
 .helper-thread-open, .helper-thread-title {
-  display: block; flex: 1; min-width: 0; min-height: var(--control-h);
-  font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body);
+  display: block; flex: 1; min-width: 0; min-height: var(--target-min);
+  font-family: var(--font-body); font-size: var(--fs-sm); line-height: var(--lh-body);
+  font-weight: 500;
   color: var(--ink); text-transform: none; text-align: left;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   letter-spacing: var(--tracking-prose); word-spacing: var(--word-spacing-prose);

@@ -187,8 +187,25 @@ try {
           const el = document.querySelector(selector)
           return el ? el.getBoundingClientRect().left : null
         }
+        // The separators are drawn by ::before so their left edge can stop at the
+        // row's content column: measure the pseudo's border and its offset, plus
+        // where the checkbox ends and the title starts, to prove the rule never
+        // reaches the connector gutter.
+        const ruleInfo = (host, row) => {
+          const pseudo = getComputedStyle(host, '::before')
+          const info = { borderTopWidth: pseudo.borderTopWidth, left: parseFloat(pseudo.left),
+            boxRight: null, titleOffset: null }
+          if (row) {
+            const rowLeft = row.getBoundingClientRect().left
+            const box = row.querySelector('input[type="checkbox"]')
+            const title = row.querySelector('.helper-thread-open, .helper-thread-title')
+            if (box) info.boxRight = box.getBoundingClientRect().right - rowLeft
+            if (title) info.titleOffset = title.getBoundingClientRect().left - rowLeft
+          }
+          return info
+        }
         const memberSeparators = [...document.querySelectorAll('.helper-group-members')].flatMap((list) =>
-          [...list.children].slice(1).map((li) => getComputedStyle(li).borderTopWidth))
+          [...list.children].slice(1).map((li) => ruleInfo(li, li.querySelector('.helper-thread-row'))))
         // The tree paints no background of its own so the connector shows
         // through the indent gutter; contrast is measured against the first
         // painted ancestor instead.
@@ -204,6 +221,10 @@ try {
           count: read('.helper-group-count'), show: read('.helper-group-show'),
           body: read('.helper-group-body'), title: read('.helper-thread-open'), facts: read('.helper-thread-facts'),
           members: read('.helper-group-members'), memberSeparators,
+          bodyRule: (() => {
+            const body = document.querySelector('.helper-group-body')
+            return body ? ruleInfo(body, document.querySelector('.helper-group-members .helper-thread-row')) : null
+          })(),
           rail: read('.helper-tree-rail'), rows: read('.helper-tree-rows'), children: read('.helper-tree-children'),
           rule: getComputedStyle(document.querySelector('.helper-group-item')).borderBottomColor,
           indent: { tree: rect('.helper-tree'), owner: rect('.helper-tree-rows > .helper-tree-row'), control: rect('.helper-group-trigger'),
@@ -224,15 +245,21 @@ try {
       if (styles.show) assert.ok(ratio(styles.show.color, styles.group.background) >= 4.5, 'show/hide contrast AA')
       if (styles.title) {
         assert.ok(styles.title.font.includes('Atkinson Hyperlegible'))
-        assert.equal(styles.title.size, '16px')
+        assert.equal(styles.title.size, '14px')
         assert.equal(styles.title.transform, 'none')
         assert.equal(styles.title.whiteSpace, 'nowrap', 'the title truncates rather than wraps')
         assert.equal(styles.title.textOverflow, 'ellipsis')
         assert.ok(styles.facts.numeric.includes('tabular-nums'))
         assert.ok(ratio(styles.facts.color, styles.group.background) >= 4.5, 'actual secondary contrast AA')
         assert.equal(styles.members.borderLeftWidth, '0px', 'revealed members carry no inset rule')
-        assert.equal(styles.body.borderTopWidth, '1px', 'the control separates from its rows by a top rule')
-        assert.ok(styles.memberSeparators.every((width) => width === '1px'), 'revealed rows separate from each other')
+        assert.equal(styles.bodyRule?.borderTopWidth, '1px', 'the control separates from its rows by a top rule')
+        assert.ok(styles.memberSeparators.every((rule) => rule.borderTopWidth === '1px'), 'revealed rows separate from each other')
+        // A rule that reached the connector gutter would paint across the rail.
+        for (const rule of [styles.bodyRule, ...styles.memberSeparators]) {
+          if (!rule || rule.boxRight === null) continue
+          assert.ok(rule.left >= rule.boxRight - 0.5, 'the horizontal rule starts after the row checkbox, clear of the connector gutter')
+          if (rule.titleOffset !== null) assert.ok(Math.abs(rule.left - rule.titleOffset) < 0.5, 'the horizontal rule starts at the row content column')
+        }
       }
       // ONE rail: absolutely positioned behind the rows, pointer-inert, painted
       // in the same rule colour as the row borders, never a hardcoded ink.
