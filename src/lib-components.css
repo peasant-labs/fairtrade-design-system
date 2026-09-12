@@ -12,6 +12,7 @@
 @import "./ui/MapCanvas.css";
 @import "./ui/ModerationQueue.css";
 @import "./ui/PolicySelect.css";
+@import "./ui/PromptDigest.css";
 @import "./ui/ProviderIcon.css";
 @import "./ui/RailShell.css";
 @import "./ui/Redaction.css";

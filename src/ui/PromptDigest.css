@@ -1,0 +1,439 @@
+/* PromptDigest (.pd-*) — the prompts behind a pull request, read-only. tokens only: no hex, no
+   raw px; spacing var(--sp-*), hairlines var(--bd), icons var(--ic-*), the ink ramp and the
+   surfaces. radius 0 everywhere.
+
+   type carries the chrome/content split: the component's own words are chrome -> var(--font-mono)
+   at var(--fs-label) with letter-spacing 0 so the tabular columns stay aligned; a prompt's text
+   is reading text -> var(--font-body) at var(--fs-body), the 16px floor. no text-transform ever
+   touches recorded text.
+
+   amber is scarce. the base `a` rule in index.css paints every anchor amber, so every chain row
+   resets its colour to the ink ramp and carries a dotted underline as the non-colour link
+   affordance (WCAG 1.4.1); amber arrives only on hover/focus. the single amber-at-rest link is
+   the header link out to village. transitions live under prefers-reduced-motion: no-preference.
+
+   a prompt row's disclosure chevron is chrome-coloured only, at rest and open alike (never
+   amber): its rotated OPEN state is a state, not motion, so it applies unconditionally; only the
+   rotation's transition is guarded behind prefers-reduced-motion: no-preference. */
+
+.pd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  border: var(--bd);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+/* ── header: the counts and the harness ─────────────────────────────────────── */
+.pd-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-3);
+  border-bottom: var(--bd);
+}
+
+.pd-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-5);
+  margin: 0;
+}
+
+.pd-count {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+/* a chrome label. only ever wraps words this component writes itself, never recorded text. */
+.pd-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  text-transform: lowercase;
+  color: var(--ink-3);
+}
+
+/* a recorded value: the harness slug lands here, so NO text-transform. */
+.pd-value {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-body);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+.pd-harness {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+/* the one scarce-amber link at rest: out to the whole digest on village. .link supplies the
+   dotted underline from index.css. */
+.pd-village {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+}
+
+/* ── skills row ──────────────────────────────────────────────────────────────── */
+.pd-skills {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.pd-skill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* the chip carries the recorded name verbatim: the leading slash is what tells a skill or user
+   command apart from a bare plugin identifier, so nothing may reshape it. */
+.pd-skill {
+  text-transform: none;
+}
+
+/* ── the chain ───────────────────────────────────────────────────────────────── */
+.pd-chain {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pd-row {
+  display: block;
+  border-top: var(--bd);
+}
+
+.pd-row:first-child {
+  border-top: 0;
+}
+
+/* one row body. the >=24px hit box (WCAG 2.5.8) comes from min-height plus the padding; every row
+   shares the same left axis so the glyph column, the ordinal column and the text line up. flex:1
+   only takes effect on a prompt row, where this sits beside the chevron button in .pd-prompt-row;
+   a plain chain row's <li> is not a flex container, so it is a no-op there. */
+.pd-row-link {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 0;
+  min-height: var(--target-min);
+  padding: var(--sp-2);
+  /* reset the global amber anchor colour: an ordinary chain row never spends the scarce accent. */
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* the non-colour link affordance sits on the row's TEXT, not on the flex container: a decoration
+   declared on a flex box does not reliably reach its flex items, and an underline belongs under
+   the words anyway, never under the glyph. the underline is the only non-colour link cue at rest,
+   so it clears the 3:1 non-text floor on its own rather than sitting in the faintest decoration ink. */
+a.pd-row-link .pd-session-label,
+a.pd-row-link .pd-prompt-text,
+a.pd-row-link .pd-skill-text,
+a.pd-row-link .pd-sha {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--ink-4);
+  text-underline-offset: 3px;
+}
+
+a.pd-row-link:hover,
+a.pd-row-link:focus-visible {
+  background: var(--surface-hover);
+}
+
+a.pd-row-link:hover .pd-session-label,
+a.pd-row-link:hover .pd-prompt-text,
+a.pd-row-link:hover .pd-skill-text,
+a.pd-row-link:hover .pd-sha,
+a.pd-row-link:focus-visible .pd-session-label,
+a.pd-row-link:focus-visible .pd-prompt-text,
+a.pd-row-link:focus-visible .pd-skill-text,
+a.pd-row-link:focus-visible .pd-sha {
+  text-decoration-style: solid;
+  text-decoration-color: var(--amber);
+}
+
+a.pd-row-link:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a.pd-row-link {
+    transition: color 120ms ease, background-color 120ms ease, text-decoration-color 120ms ease;
+  }
+}
+
+.pd-row-icon {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  flex: none;
+  align-self: center;
+  color: var(--ink-4);
+}
+
+/* the author's avatar, in a prompt row that has one: the Avatar family's smallest tier is its
+   bare (unset `size`) inline-meta box at 18px (var(--ic-lg)) — larger than every other glyph in
+   this row, which is var(--ic-sm) (14px). Avatar exposes no tier that resolves to --ic-sm, so the
+   row overrides the box here rather than adding a new Avatar tier: this is the same box the User
+   fallback glyph occupies, so rows with and without an author line up on the same left edge.
+   align-self stays flex-start so the box keeps its own natural height instead of stretching to
+   match a two-line clamped block; the fixed margin-top below (not the stretch/centre the parent
+   would otherwise apply) is what centres it against the ordinal's line, so a two-line clamp or an
+   unclamped multi-line expansion never pulls it down. */
+.pd-row-avatar {
+  flex: none;
+  align-self: flex-start;
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  margin-top: var(--pd-glyph-offset);
+}
+
+/* a prompt row's own top alignment: the avatar (or the User fallback glyph above) lines up with
+   the ordinal's line, not the top of the row — not centred against the whole two-line clamped
+   block the way .pd-row-link's shared baseline default reads for a single line of chrome text.
+   scoped to .pd-prompt-row (the link+chevron wrapper), not the broader .pd-row-prompt <li>, so a
+   skill/commit row nested in this prompt's own details block keeps the baseline default every
+   other chain row uses; only the prompt's own top-level link pairs a fixed-size glyph with text
+   that can wrap to more than one line. */
+.pd-prompt-row .pd-row-link {
+  align-items: flex-start;
+}
+
+/* the ordinal, the avatar, and the User fallback glyph are three independent flex items sharing
+   this flex-start row, so each one's own top edge — not its ink — lands on the row's top. The
+   ordinal's line box (fs-label at lh-mono) is taller than the 14px glyph box, so its digit sits
+   centred lower within that box than the glyph's content sits within its own. --pd-glyph-offset
+   is exactly that gap, halved: nudging the glyph down by it puts the glyph's visual centre on the
+   ordinal's, the number the finding names, not the prose line (fs-body/lh-body) beside it, which
+   uses a different line-height and would centre differently. Defined once and shared by the
+   avatar and the icon fallback below so both glyphs read at the same vertical centre. */
+.pd-prompt-row {
+  --pd-glyph-offset: calc((var(--fs-label) * var(--lh-mono) - var(--ic-sm)) / 2);
+}
+
+.pd-prompt-row .pd-row-icon {
+  align-self: flex-start;
+  margin-top: var(--pd-glyph-offset);
+}
+
+/* session boundary: chrome type, its two counts tabular and pushed to the right edge. separated
+   by space, never by a middot. a boundary that follows other items gets extra air and a stronger
+   rule above it, so the break between sessions reads at a glance; the shared :first-child reset
+   above keeps the very first boundary flush with the skills row. */
+.pd-row-session .pd-row-link {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  color: var(--ink-2);
+}
+
+.pd-row-session:not(:first-child) {
+  margin-top: var(--sp-3);
+  border-top: var(--bd-strong);
+}
+
+.pd-session-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.pd-session-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-left: auto;
+  color: var(--ink-3);
+}
+
+.pd-count-pair {
+  display: inline-flex;
+  gap: var(--sp-1);
+}
+
+/* prompt: the numbered prompt. the ordinal is a tabular mono column so the numbers align down the
+   whole chain; the text itself is reading text at the 16px floor, in the author's own case. */
+.pd-ordinal {
+  flex: none;
+  min-width: var(--sp-5);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  text-align: right;
+  color: var(--ink-4);
+}
+
+.pd-prompt-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink);
+}
+
+/* the collapsed row's text: wrapped and clamped to two lines by CSS alone. no JavaScript
+   truncation, no character cut — the full text is always in the DOM; a reader's own
+   text-spacing stylesheet still has everything to work with, and opening the row's own disclosure
+   toggle removes this class in place, unclamping the same text rather than repeating it below. */
+.pd-prompt-clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* ── prompt row: the link/text pair beside the disclosure chevron ──────────────────────────── */
+.pd-prompt-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+/* the disclosure toggle. chrome colour only, at rest, hover, and open alike — it never spends
+   the amber accent. the >=24px hit box is the button's own box, matching .pd-row-link's rows. */
+.pd-chevron {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--target-min);
+  height: var(--target-min);
+  margin: var(--sp-2) var(--sp-2) var(--sp-2) 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.pd-chevron:hover {
+  background: var(--surface-hover);
+  color: var(--ink-2);
+}
+
+.pd-chevron:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.pd-chevron-icon {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+}
+
+/* open points the same glyph up. this is a STATE, not motion, so it applies unconditionally;
+   only the rotation's transition is guarded behind prefers-reduced-motion: no-preference. */
+.pd-row-open .pd-chevron-icon {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pd-chevron-icon {
+    transition: transform var(--dur-2) var(--ease-standard);
+  }
+}
+
+/* the details block: when Village attached any, the skills invoked and commits that followed this
+   prompt, reusing the same row markup .pd-row-skill and .pd-row-commit render at the chain's top
+   level — "today's marker", unchanged. the prompt's own text is never repeated here: opening a row
+   unclamps .pd-prompt-text in place instead (see .pd-prompt-clamp above). a prompt with neither
+   skills nor commits still gets a working disclosure — the block is simply empty. */
+.pd-details {
+  border-top: var(--bd);
+}
+
+.pd-details[hidden] {
+  display: none;
+}
+
+.pd-details-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* skill marker: indented under the prompt it followed, the slash-prefixed invocation exactly as
+   recorded. */
+.pd-row-skill .pd-row-link {
+  padding-left: var(--sp-6);
+}
+
+.pd-skill-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  color: var(--ink-3);
+}
+
+/* commit anchor: the abbreviated sha in mono. */
+.pd-sha {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  color: var(--ink-2);
+  background: none;
+}
+
+/* the "+A −D" change-count chip: reused verbatim on a prompt row's at-a-glance sum (right of the
+   prompt text, before the chevron) and on a per-commit detail line (right of the sha). flex: none
+   so it never grows past its own content — on a prompt row this is what lets .pd-prompt-text
+   (flex: 1) be the only column that narrows to make room. add/del reuse the same pairing
+   DiffView's own file-header churn (.dv-churn-add / .dv-churn-del) already uses for a plain-surface
+   "+N −N" summary: --add-rail / --del-rail, not --add-text / --del-text, which is paired instead
+   with the tinted --add-bg / --del-bg wash a full diff line sits on. */
+.pd-change-counts {
+  display: inline-flex;
+  flex: none;
+  gap: var(--sp-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+}
+
+.pd-change-add { color: var(--add-rail); }
+.pd-change-del { color: var(--del-rail); }
+
+/* the per-commit file count: chrome, same ink as this component's other meta text
+   (.pd-label / .pd-skill-text / .pd-session-counts). */
+.pd-commit-files {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  color: var(--ink-3);
+}

@@ -1,7 +1,7 @@
 {
   "$description": "fairtrade component manifest, generated from src/ui. import from the barrel: import { Button } from \"src/ui\". every component is token-styled (classes in src/index.css) and works in both themes. props shows the Storybook-controllable props; full prop docs are the JSDoc in each file.",
   "import": "src/ui (barrel: src/ui/index.js)",
-  "count": 51,
+  "count": 52,
   "components": [
     {
       "name": "Accordion",
@@ -1146,6 +1146,37 @@
         "Select",
         "WithDisabledOption",
         "Selects"
+      ]
+    },
+    {
+      "name": "PromptDigest",
+      "category": "components",
+      "title": "components/PromptDigest",
+      "file": "src/ui/PromptDigest.jsx",
+      "exports": [
+        "PromptDigest"
+      ],
+      "doc": "@typedef {import('@peasant-labs/schema').PromptDigest} PromptDigestPayload",
+      "props": {
+        "digest": {
+          "control": "object"
+        },
+        "className": {
+          "control": "text"
+        }
+      },
+      "stories": [
+        "Playground",
+        "Chain",
+        "CollapsedBoundaries",
+        "WithoutCommits",
+        "SessionBoundary",
+        "Prompt",
+        "ExpandedWithSkill",
+        "ExpandedWithCommit",
+        "Expanded",
+        "WithoutLinks",
+        "ManyCommitsAndSkills"
       ]
     },
     {
