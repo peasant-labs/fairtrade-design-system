@@ -157,12 +157,20 @@ export class GitHubReleaseClient {
     const payload = await this.pullRequest(number)
     const login = nonEmptyString(payload?.user?.login, 'user.login')
     const permission = await this.permission(login)
-    if (payload?.base?.ref === 'main') return validateMergedPullRequest(payload, permission)
+    if (payload?.base?.ref === 'main') return validateMergedPullRequest({ ...payload, merge_commit_sha: await this.resolveMergeSha(number) }, permission)
     if (!payload?.stack) return validateMergedPullRequest(payload, permission)
     validateNativeStack(payload, await this.stack(payload.stack.number), this.repository)
+    return validateMergedPullRequest({ ...payload, base: { ...payload.base, ref: 'main' }, merge_commit_sha: await this.resolveMergeSha(number) }, permission)
+  }
+
+  async resolveMergeSha(number) {
+    // The pinned API version does not return merge_commit_sha on the pull request
+    // payload, so the canonical merged timeline event is the authority for the
+    // release commit; the comparison against main then proves that commit is
+    // reachable from main. Both the direct-to-main and native stack paths use it.
     const mergeSha = resolveMergedTimelineSha(number, await this.timeline(number), this.repository)
     validateMainReachability(number, mergeSha, await this.comparison(mergeSha))
-    return validateMergedPullRequest({ ...payload, base: { ...payload.base, ref: 'main' }, merge_commit_sha: mergeSha }, permission)
+    return mergeSha
   }
 }
 

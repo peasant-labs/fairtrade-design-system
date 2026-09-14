@@ -55,9 +55,16 @@ metadata:
 github:
   resolve:
     responses:
-      - {body: {number: 16, state: closed, merged: true, title: "release(v0.0.11): publish final schema support", user: {login: alice}, base: {ref: main}, merge_commit_sha: abc123}}
+      - {body: {number: 16, state: closed, merged: true, title: "release(v0.0.11): publish final schema support", user: {login: alice}, base: {ref: main}}}
       - {body: {permission: admin}}
-    expected_merge_sha: abc123
+      - body: [{event: merged, commit_id: cccccccccccccccccccccccccccccccccccccccc, commit_url: "https://api.github.com/repos/peasant-labs/fairtrade-design-system/commits/cccccccccccccccccccccccccccccccccccccccc"}]
+      - {body: {status: identical, merge_base_commit: {sha: cccccccccccccccccccccccccccccccccccccccc}}}
+    expected_merge_sha: cccccccccccccccccccccccccccccccccccccccc
+    expected_paths: ["/pulls/16", "/collaborators/alice/permission", "/issues/16/timeline?per_page=100", "/compare/cccccccccccccccccccccccccccccccccccccccc...main"]
+    invalid:
+      - {name: missing merged timeline event, mutation: missing_merged}
+      - {name: merged timeline repository differs, mutation: resolve_timeline_repository}
+      - {name: merged commit is disconnected from main, mutation: resolve_disconnected_commit}
   malformed_response: {body: {}}
   native_stack:
     valid:
