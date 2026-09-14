@@ -43,6 +43,12 @@ import Checkbox from './Checkbox.jsx'
  * @param {(row: any) => boolean} [props.isMemberSelected] - host-owned selection
  *   predicate; supply it whenever renderMember draws per-member checkboxes, so
  *   the CLOSED control can state a selection the viewer cannot see
+ * @param {import('react').ReactNode} [props.memberFooter] - host-rendered slot
+ *   placed immediately after the member rows (or the empty notice) inside the
+ *   open body: THE canonical position for host paging controls ("page X of Y",
+ *   previous/next). Paging fetch, page/limit state, and the server counts stay
+ *   host-owned; the group never fetches, stores a page, or reads a scope token,
+ *   and renders the slot only while it is open and not scope-expired.
  */
 export default function HelperGroup(props) {
   // A changed query token cannot inherit an uncontrolled disclosure from an old query.
@@ -270,7 +276,7 @@ export function useHelperSelection({ ownerId, memberIds = [], initialSelectedIds
 
 function HelperGroupDisclosure({
   groupId, memberScope, helperThreadCount, members = [], renderMember, getMemberKey,
-  expanded, onExpandedChange, scopeExpired = false, onRefreshList, isMemberSelected,
+  expanded, onExpandedChange, scopeExpired = false, onRefreshList, isMemberSelected, memberFooter,
 }) {
   const tree = useContext(HelperTreeContext)
   const id = useId()
@@ -330,9 +336,18 @@ function HelperGroupDisclosure({
                   <RefreshCw aria-hidden="true" /> refresh list
                 </button>}
               </div>
-            ) : members.length ? <ul className="helper-group-members">
-              {members.map((row) => <li key={getMemberKey(row)} className="helper-tree-row">{renderMember(row)}</li>)}
-            </ul> : <p className="helper-group-notice">no saved helpers match the current query and access.</p>}
+            ) : <>
+              {members.length ? <ul className="helper-group-members">
+                {members.map((row) => <li key={getMemberKey(row)} className="helper-tree-row">{renderMember(row)}</li>)}
+              </ul> : <p className="helper-group-notice">no saved helpers match the current query and access.</p>}
+              {/* The canonical host slot for paging controls: immediately after
+                  the rows it pages (or the empty notice), inside the open body.
+                  A folded or scope-expired group shows it exactly as often as it
+                  shows rows, so controls never page a list the viewer cannot
+                  see. The group only places the host's content; page state,
+                  fetch, and the server total are the host's. */}
+              {memberFooter ? <div className="helper-group-footer" data-helper-group-footer>{memberFooter}</div> : null}
+            </>}
           </div>
         </HelperTreeContext.Provider>
       )}

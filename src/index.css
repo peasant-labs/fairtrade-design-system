@@ -4210,6 +4210,11 @@
 .helper-group-trigger:hover, .helper-group-action:hover, .helper-thread-open:hover {
   background: var(--surface-hover); color: var(--ink);
 }
+/* A paging bound control states where the host's page sits: muted and inert at
+   either end of the range, never a hidden control. */
+.helper-group-action:disabled, .helper-group-action:disabled:hover {
+  color: var(--ink-4); background: transparent; cursor: default;
+}
 .helper-group-trigger svg, .helper-group-action svg, .helper-group-context svg {
   width: var(--ic-md); height: var(--ic-md); flex-shrink: 0;
 }
@@ -4235,6 +4240,14 @@
 .helper-group-members { list-style: none; padding: 0; margin: 0; }
 .helper-group-members > li { position: relative; }
 .helper-group-members > li + li::before {
+  content: ''; position: absolute; top: 0; right: 0; left: var(--helper-rule-inset);
+  border-top: var(--bd);
+}
+/* The host paging slot: one canonical position for page controls, immediately
+   after the rows it pages (or the empty notice). The rule starts at the row
+   content column so it never crosses the connector in the checkbox gutter. */
+.helper-group-footer { position: relative; padding: var(--sp-3) var(--sp-4); }
+.helper-group-footer::before {
   content: ''; position: absolute; top: 0; right: 0; left: var(--helper-rule-inset);
   border-top: var(--bd);
 }
@@ -4277,3 +4290,12 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .helper-demo h2 { font-family: var(--font-display); font-size: var(--fs-lg); margin-bottom: var(--sp-3); }
 .helper-demo-description { font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); max-width: var(--measure-prose); margin-bottom: var(--sp-4); }
 .helper-demo-summary { font-family: var(--font-mono); font-size: var(--fs-label); font-variant-numeric: tabular-nums; margin-bottom: var(--sp-4); }
+/* Demo host paging controls: the example host owns page state and renders the
+   controls into the group's memberFooter slot. The components themselves carry
+   no paging state. Chrome stays lowercase, counts are tabular. */
+.helper-demo-paging { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
+.helper-demo-page, .helper-demo-loaded {
+  font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
+  font-variant-numeric: tabular-nums; color: var(--ink-3);
+}
+.helper-demo-loaded { color: var(--ink-4); }
