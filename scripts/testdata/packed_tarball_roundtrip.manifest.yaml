@@ -1,0 +1,17 @@
+# Required-NAME manifest for packed_tarball_roundtrip.yaml — deletion protection.
+# The loader (scripts/packed-tarball-roundtrip.test.mjs) asserts each family's
+# names are EXACTLY this list (as a set): no silent case, importable, or refusal
+# deletion, no drift. Membership is asserted, never a bare count alone.
+requiredCaseNames:
+  - native-text-thinking-pair
+requiredImportables:
+  - adaptTranscript
+  - prefilterTurns
+  - TranscriptViewer
+  - HelperGroup
+  - HelperGroupListItem
+  - HelperThreadRow
+requiredRefusalNames:
+  - relationship-carries-a-cooked-field
+  - durable-payload-embeds-read-metadata
+  - input-submission-count-is-not-an-integer
