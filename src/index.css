@@ -412,6 +412,10 @@
   .check-box::after { content: ""; width: 5px; height: 9px; border: solid var(--on-amber); border-width: 0 2px 2px 0; transform: rotate(45deg) translateY(-1px); opacity: 0; }
   .check-box:checked { background: var(--amber); border-color: var(--amber-dim); }
   .check-box:checked::after { opacity: 1; }
+  /* mixed: the same filled box with a dash instead of a tick. the state is also exposed to assistive
+     technology (aria-checked="mixed"), so it is never carried by this mark alone. */
+  .check-box:indeterminate { background: var(--amber); border-color: var(--amber-dim); }
+  .check-box:indeterminate::after { width: 9px; height: 0; border-width: 0 0 2px 0; transform: none; opacity: 1; }
   .check-box:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
   .check-box:disabled { opacity: .5; cursor: not-allowed; }
   .check:has(.check-box:disabled) { color: var(--ink-3); cursor: not-allowed; }

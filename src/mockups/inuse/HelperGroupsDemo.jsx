@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import YAML from 'yaml'
-import { HelperGroup, HelperGroupListItem, HelperThreadRow } from '../../ui/index.js'
+import { HelperGroup, HelperGroupListItem, HELPER_OWNER_STATE, HelperThreadRow, useHelperSelection } from '../../ui/index.js'
 import fixtureSource from '../../../scripts/testdata/helper_group_listing.yaml?raw'
 
 // The demo owns its fixture selection just as a host owns its API.
@@ -11,20 +11,27 @@ const fixtures = YAML.parse(fixtureSource)
 export default function HelperGroupsDemo({ scenario = 'three-independent-counts', plain = false }) {
   const fixture = fixtures.cases.find((item) => item.name === scenario)
   if (!fixture) throw new Error('HelperGroupsDemo could not render the requested example. Choose a named helper-list fixture in the helpers query parameter.')
-  const [selected, setSelected] = useState([])
+  // Every helper member the owner anchors across this result's groups. The DS
+  // owns the cascade policy; this host owns the selection state.
+  const memberIds = useMemo(() => fixture.owner
+    ? [...new Set(fixture.groups.flatMap((group) => group.members))] : [], [fixture])
+  const { selectedIds, isSelected, onSelect, ownerState } = useHelperSelection({ ownerId: fixture.owner, memberIds })
   const [opened, setOpened] = useState(() => {
     const id = new URLSearchParams(window.location.search).get('helper')
     return Object.hasOwn(fixtures.rows, id) ? id : null
   })
   const [refreshed, setRefreshed] = useState(false)
-  const onSelect = (id, checked) => setSelected((previous) => checked
-    ? [...new Set([...previous, id])] : previous.filter((value) => value !== id))
   const renderRow = (id) => {
     const navigation = plain ? {} : {
       href: `?app=commons&helpers=${encodeURIComponent(scenario)}&helper=${encodeURIComponent(id)}#inuse`,
       onOpen: (identity, event) => { event.preventDefault(); setOpened(identity) },
     }
-    const selection = plain ? {} : { selected: selected.includes(id), onSelect }
+    // The owner checkbox states the tree rollup (checked / mixed / unchecked);
+    // a member checkbox states only its own row.
+    const selection = plain ? {} : id === fixture.owner
+      ? { selected: ownerState === HELPER_OWNER_STATE.CHECKED,
+          indeterminate: ownerState === HELPER_OWNER_STATE.PARTIAL, onSelect }
+      : { selected: isSelected(id), onSelect }
     return <HelperThreadRow {...fixtures.rows[id]} {...(fixture.update?.id === id ? fixture.update : {})}
       {...navigation} {...selection}>
       <div className="helper-thread-route">saved transcript <span>{id}</span></div>
@@ -44,11 +51,11 @@ export default function HelperGroupsDemo({ scenario = 'three-independent-counts'
           <HelperGroup groupId={group.id} memberScope={refreshed ? `${group.scope}-refreshed` : group.scope}
             helperThreadCount={group.count} members={group.members}
             renderMember={renderRow} getMemberKey={(id) => id}
-            isMemberSelected={plain ? undefined : (id) => selected.includes(id)}
+            isMemberSelected={plain ? undefined : isSelected}
             scopeExpired={scopeExpired} onRefreshList={() => setRefreshed(true)} />
         </HelperGroupListItem>
       ))}
-      <p className="helper-demo-summary" role="status">selected transcripts: {selected.length ? selected.join(', ') : 'none'}</p>
+      <p className="helper-demo-summary" role="status">selected transcripts: {selectedIds.length ? selectedIds.join(', ') : 'none'}</p>
     </div>
     {opened !== null && <div>
       <button type="button" className="helper-group-action" onClick={() => setOpened(null)}>

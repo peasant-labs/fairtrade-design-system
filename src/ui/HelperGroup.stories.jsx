@@ -30,7 +30,12 @@ export const OwnerRetained = {
     await waitFor(() => expect(rail).toHaveAttribute('data-anchor-count', '3'))
     await userEvent.click(canvas.getByRole('checkbox', { name: /\(G2\)/ }))
     await expect(canvas.getByText('selected transcripts: G2')).toBeVisible()
-    await expect(canvas.getByRole('checkbox', { name: /\(P1\)/ })).not.toBeChecked()
+    // A member pick never widens up or across; the owner states the mixed
+    // rollup (checked is false, the accessible mixed state is set).
+    const owner = canvas.getByRole('checkbox', { name: /\(P1\)/ })
+    await expect(owner).not.toBeChecked()
+    await expect(owner).toHaveAttribute('aria-checked', 'mixed')
+    await expect(owner.indeterminate).toBe(true)
     await expect(canvas.getByRole('checkbox', { name: /\(G1\)/ })).not.toBeChecked()
     // Closing the control leaves the selection stated on it, never silent.
     await userEvent.click(trigger)
@@ -82,10 +87,55 @@ export const NestedOwner = {
     const member = canvasElement.querySelector('[data-thread-id="G2"]')
     await expect(within(member).getByText('0 input submissions')).toBeVisible()
     await waitFor(() => expect(canvasElement.querySelector('.helper-tree-rail')).toHaveAttribute('data-anchor-count', '2'))
-    // The owner checkbox selects G1's own turns only; G2 is not widened in.
+    // The owner cascades: ticking G1 selects G1 and the helper member under it.
     await userEvent.click(owner)
     await expect(owner).toBeChecked()
-    await expect(canvas.getByRole('checkbox', { name: /\(G2\)/ })).not.toBeChecked()
+    await expect(owner).not.toHaveAttribute('aria-checked', 'mixed')
+    await expect(canvas.getByRole('checkbox', { name: /\(G2\)/ })).toBeChecked()
+    await expect(canvas.getByText('selected transcripts: G1, G2')).toBeVisible()
+  },
+}
+export const OwnerCascade = {
+  args: { scenario: 'three-independent-counts' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: /2 helper threads/ }))
+    const owner = canvas.getByRole('checkbox', { name: /\(P1\)/ })
+    const g1 = canvas.getByRole('checkbox', { name: /\(G1\)/ })
+    const g2 = canvas.getByRole('checkbox', { name: /\(G2\)/ })
+    // The owner auto-selects the whole tree.
+    await userEvent.click(owner)
+    await expect(owner).toBeChecked()
+    await expect(g1).toBeChecked()
+    await expect(g2).toBeChecked()
+    await expect(canvas.getByText('selected transcripts: P1, G1, G2')).toBeVisible()
+    // A manual member edit touches only that member and rolls the owner up to
+    // the mixed state; no sibling is widened in and the owner is not checked.
+    await userEvent.click(g2)
+    await expect(g2).not.toBeChecked()
+    await expect(g1).toBeChecked()
+    await expect(owner).not.toBeChecked()
+    await expect(owner).toHaveAttribute('aria-checked', 'mixed')
+    await expect(owner.indeterminate).toBe(true)
+    await expect(canvas.getByText('selected transcripts: P1, G1')).toBeVisible()
+    // Ticking the mixed owner fills the whole tree again.
+    await userEvent.click(owner)
+    await expect(owner).toBeChecked()
+    await expect(g2).toBeChecked()
+    // A clean checked owner clears the whole tree.
+    await userEvent.click(owner)
+    await expect(owner).not.toBeChecked()
+    await expect(owner).not.toHaveAttribute('aria-checked', 'mixed')
+    await expect(g1).not.toBeChecked()
+    await expect(g2).not.toBeChecked()
+    await expect(canvas.getByText('selected transcripts: none')).toBeVisible()
+    // A member picked from empty stays local and rolls the owner up.
+    await userEvent.click(g1)
+    await expect(g1).toBeChecked()
+    await expect(g2).not.toBeChecked()
+    await expect(owner).not.toBeChecked()
+    await expect(owner).toHaveAttribute('aria-checked', 'mixed')
+    await expect(canvas.getByText('selected transcripts: G1')).toBeVisible()
   },
 }
 export const UnknownInputs = { args: { scenario: 'unknown-input-count' } }

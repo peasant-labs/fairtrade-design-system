@@ -15,8 +15,9 @@ fetching, routing, authorization, eligibility, and explicit selection callbacks.
   ordinary child exits stay intact. Keep distinct unresolved containers keyed by
   their distinct backend group IDs.
 - The owner row anchors the tree: its checkbox, its verbatim title, and its mono
-  facts line with middot separators. Ticking it selects that session's own turns
-  only; it never widens to the rows below it.
+  facts line with middot separators. Ticking the owner is the tree's default
+  auto-select: it selects the owner and every helper member disclosed under it;
+  unticking the owner clears the owner and those members.
 - Each `HelperGroup` steps ONE indent (`--sp-7`) inside the tree, and its count
   chip sits inside that step, between the owner row and the members it discloses.
   The chip carries no checkbox of its own and reads like the session-group
@@ -56,7 +57,35 @@ A group starts closed, so supply `isMemberSelected(row)` whenever
 `renderMember` draws per-member checkboxes. The predicate lets the CLOSED
 control append `, N selected` so a selection the viewer cannot see is never
 silent. The group only counts the rows it holds; it never stores selection.
-Selection is per row: ticking a member never selects its owner or a sibling.
+
+## selection policy
+
+`useHelperSelection` (exported from the same barrel) is the canonical policy for
+a helper tree. Selection state stays host-owned: call the hook in the component
+that owns the selection, then pass its `isSelected` and `onSelect` to the rows;
+the owner row also reads `ownerState`. `helperOwnerState` exposes the same rollup
+to a host that keeps its own state store.
+
+- Ticking the owner cascades: it selects the owner and every helper member under
+  it (the tree's default auto-select). Unticking the owner clears them.
+- Ticking a member edits only that member. It never widens to the owner or to a
+  sibling, and the owner's rolled-up state never writes back to a member, so a
+  manual member choice survives every later owner re-render.
+- The owner checkbox states the rollup: `checked` when the owner and every member
+  are selected, `unchecked` when none are, and `partial` when they are mixed.
+  Render `partial` through `HelperThreadRow`'s `indeterminate` prop, which draws
+  the mixed mark and reports `aria-checked="mixed"`, so the state is never carried
+  by the mark alone.
+
+This mirrors the tri-state selection tree's parent-propagates / child-rolls-up
+shape. It deliberately does NOT mirror the tree's keyboard select-all ring (select
+all, unselect all, restore the baseline captured before the ring started, with a
+manual edit invalidating the ring): the owner is one two-state checkbox with no
+third press to restore a baseline, and the helper tree carries one checkbox per
+row rather than a dedicated select-all key. The manual member edit still
+supersedes the auto-select for the display rollup, exactly as a manual tree edit
+invalidates the ring's baseline.
+
 Display-only contexts leave `onSelect`, `href`, and `onOpen` off; every row then
 renders as an ordinary row and, with no checkboxes mounted, no connector is drawn.
 
@@ -78,8 +107,9 @@ singularizes (`1 input submission`, `1 turn`). No count is inferred. An
 authorized `href` renders a real link. `onOpen(id, event)` can prevent its
 default navigation for an SPA. Without an href, an `onOpen` callback renders a
 button; without either, the title is noninteractive. `onSelect(id, checked)` is
-optional; when present, `selected` and `selectionDisabled` control only that
-individual row.
+optional; when present, `selected`, `indeterminate`, and `selectionDisabled`
+control only that individual row. A rolled-up owner passes `indeterminate` for
+its mixed state; an ordinary member leaves it off.
 
 ## examples and verification
 

@@ -118,6 +118,101 @@ function helperThreadGroupSelectionLabel(count, selectedCount) {
   return selectedCount > 0 ? `${label}, ${selectedCount} selected` : label
 }
 
+/**
+ * The canonical helper-tree selection policy.
+ *
+ * A helper tree is one owner row plus the helper member rows disclosed under it.
+ * The owner checkbox is the tree's DEFAULT AUTO-SELECT: ticking the owner selects
+ * the owner and every member under it, and unticking the owner clears them.
+ * A member's own checkbox edits only that member - it never widens to the owner
+ * or to a sibling - and the owner's rolled-up state never writes back to a
+ * member, so a manual member choice survives every later owner re-render.
+ *
+ * The owner checkbox states the ROLLUP of the whole tree: `checked` when the
+ * owner and every member are selected, `unchecked` when none of them are, and
+ * `partial` (indeterminate) when they are mixed.
+ *
+ * Selection STATE stays host-owned. Call useHelperSelection in the component
+ * that owns the selection, and pass its isSelected/onSelect to the rows (the
+ * owner row also reads ownerState); the components never store selection.
+ *
+ * This follows the tri-state selection tree's parent-propagates / child-rolls-up
+ * shape. The tree's keyboard `select all` ring (select all, unselect all,
+ * restore the baseline captured before the ring started, with a manual edit
+ * invalidating the ring) is deliberately NOT mirrored here: a two-state checkbox
+ * has no third press to restore a baseline, and the helper tree exposes one
+ * checkbox per row rather than a dedicated select-all key. See HELPER-GROUPS.md.
+ */
+
+/** The owner checkbox states a helper tree reports. */
+export const HELPER_OWNER_STATE = {
+  CHECKED: 'checked',
+  UNCHECKED: 'unchecked',
+  PARTIAL: 'partial',
+}
+
+/**
+ * Roll one owner row and its helper members up into the owner checkbox state.
+ * The owner's own row is part of the rollup, so a tree whose owner is selected
+ * but whose members are not states `partial`, never a clean `checked`.
+ * @param {string|undefined|null} ownerId
+ * @param {Array<string|undefined|null>} memberIds
+ * @param {(id: string) => boolean} isSelected
+ * @returns {'checked'|'unchecked'|'partial'}
+ */
+export function helperOwnerState(ownerId, memberIds, isSelected) {
+  const ids = [ownerId, ...memberIds].filter((id) => id !== undefined && id !== null)
+  if (ids.length === 0) return HELPER_OWNER_STATE.UNCHECKED
+  const selected = ids.filter((id) => isSelected(id)).length
+  if (selected === 0) return HELPER_OWNER_STATE.UNCHECKED
+  if (selected === ids.length) return HELPER_OWNER_STATE.CHECKED
+  return HELPER_OWNER_STATE.PARTIAL
+}
+
+/**
+ * Apply one row toggle under the policy. Toggling the OWNER sets the whole tree
+ * (the owner and every member) to `checked`, or clears all of them. Toggling a
+ * MEMBER edits only that member. Returns the next selected-id list.
+ * @param {string[]} selectedIds
+ * @param {string|undefined} ownerId
+ * @param {string[]} memberIds
+ * @param {string} toggledId
+ * @param {boolean} checked
+ * @returns {string[]}
+ */
+export function helperSelectionAfter(selectedIds, ownerId, memberIds, toggledId, checked) {
+  const next = new Set(selectedIds)
+  const targets = toggledId === ownerId ? [ownerId, ...memberIds] : [toggledId]
+  for (const id of targets) {
+    if (id === undefined || id === null) continue
+    if (checked) next.add(id)
+    else next.delete(id)
+  }
+  return [...next]
+}
+
+/**
+ * Hold the canonical helper-tree selection for one owner. The selection lives in
+ * the calling host, never in the components.
+ * @param {object} [config]
+ * @param {string} [config.ownerId] the tree's owner row id; omit for a
+ *   helper-only result, where every member selects on its own
+ * @param {string[]} [config.memberIds] every helper member under that owner
+ * @param {string[]} [config.initialSelectedIds]
+ * @returns {{selectedIds: string[], isSelected: (id: string) => boolean,
+ *   ownerState: 'checked'|'unchecked'|'partial',
+ *   onSelect: (id: string, checked: boolean) => void}}
+ */
+export function useHelperSelection({ ownerId, memberIds = [], initialSelectedIds = [] } = {}) {
+  const [selectedIds, setSelectedIds] = useState(() => [...new Set(initialSelectedIds)])
+  const isSelected = useCallback((id) => selectedIds.includes(id), [selectedIds])
+  const ownerState = helperOwnerState(ownerId, memberIds, isSelected)
+  const onSelect = useCallback((id, checked) => {
+    setSelectedIds((previous) => helperSelectionAfter(previous, ownerId, memberIds, id, checked))
+  }, [ownerId, memberIds])
+  return { selectedIds, isSelected, ownerState, onSelect }
+}
+
 function HelperGroupDisclosure({
   groupId, memberScope, helperThreadCount, members = [], renderMember, getMemberKey,
   expanded, onExpandedChange, scopeExpired = false, onRefreshList, isMemberSelected,
@@ -358,11 +453,13 @@ export function HelperGroupListItem({ owner, ownerStatus, children }) {
  * @param {(id: string, event: import('react').MouseEvent) => void} [props.onOpen]
  * @param {boolean} [props.selected]
  * @param {boolean} [props.selectionDisabled]
+ * @param {boolean} [props.indeterminate] - mixed state for a row that rolls
+ *   helper members up (the tree owner); ignored without `onSelect`
  * @param {(id: string, selected: boolean) => void} [props.onSelect]
  * @param {import('react').ReactNode} [props.children]
  */
 export function HelperThreadRow({ id, title, provider, inputSubmissionCount, turnCount,
-  href, onOpen, selected = false, selectionDisabled = false, onSelect, children }) {
+  href, onOpen, selected = false, selectionDisabled = false, indeterminate = false, onSelect, children }) {
   const tree = useContext(HelperTreeContext)
   const setRowElement = useCallback((element) => {
     if (!tree || !element) return
@@ -380,7 +477,7 @@ export function HelperThreadRow({ id, title, provider, inputSubmissionCount, tur
     : `${turnCount} turn${turnCount === 1 ? '' : 's'}`}</span> })
   return <div ref={setRowElement} className="helper-thread-row" data-thread-id={id}>
     <div className="helper-thread-main">
-      {onSelect && <Checkbox checked={selected} disabled={selectionDisabled}
+      {onSelect && <Checkbox checked={selected} indeterminate={indeterminate} disabled={selectionDisabled}
         aria-label={`select ${title} (${id})`} onChange={(checked) => onSelect(id, checked)} />}
       <div className="helper-thread-column">
         <div className="helper-thread-head">
