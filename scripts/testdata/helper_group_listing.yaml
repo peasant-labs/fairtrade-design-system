@@ -1,3 +1,5 @@
+# requiredNames is the deletion-protection manifest: every case below must be
+# present by NAME (never a bare count), and no case may be renamed away silently.
 requiredNames:
   - three-independent-counts
   - helper-only-search
@@ -32,6 +34,17 @@ cases:
     select: G2
     expectedSelected: [G2]
     expectedSelectedLabel: 2 helper threads, 1 selected
+    # The canonical cascade: the owner auto-selects the whole tree, a manual
+    # member edit stays local and rolls the owner up to partial, and the owner
+    # toggles the whole tree on and off.
+    selectionScript:
+      - { toggle: P1, expectedSelected: [P1, G1, G2], expectedOwnerState: checked }
+      - { toggle: G2, expectedSelected: [P1, G1], expectedOwnerState: partial }
+      - { toggle: G2, expectedSelected: [P1, G1, G2], expectedOwnerState: checked }
+      - { toggle: P1, expectedSelected: [], expectedOwnerState: unchecked }
+      - { toggle: G1, expectedSelected: [G1], expectedOwnerState: partial }
+      - { toggle: P1, expectedSelected: [P1, G1, G2], expectedOwnerState: checked }
+      - { toggle: P1, expectedSelected: [], expectedOwnerState: unchecked }
   - name: helper-only-search
     ownerStatus: resolved
     groups: [{ id: hg_parent, scope: search-G2-only, count: 1, members: [G2] }]
@@ -42,6 +55,11 @@ cases:
     select: G2
     expectedSelected: [G2]
     expectedSelectedLabel: 1 helper thread, 1 selected
+    # A helper-only result has no owner to cascade from: a member edit touches
+    # only that member.
+    selectionScript:
+      - { toggle: G2, expectedSelected: [G2] }
+      - { toggle: G2, expectedSelected: [] }
   - name: unresolved-independent
     ownerStatus: unknown
     groups:
@@ -51,6 +69,12 @@ cases:
     expectedLabels: [1 helper thread, 1 helper thread]
     expectedText: [owner is unknown]
     expectedAnchorCounts: { collapsed: 0, expanded: 2 }
+    # Independent groups have no shared owner: a member edit never widens to a
+    # member of another group.
+    selectionScript:
+      - { toggle: G1, expectedSelected: [G1] }
+      - { toggle: G2, expectedSelected: [G1, G2] }
+      - { toggle: G1, expectedSelected: [G2] }
   - name: identical-independent-helpers
     owner: P1
     groups: [{ id: hg_parent, scope: identity-query, count: 2, members: [G1, G2] }]
@@ -95,6 +119,12 @@ cases:
     expectedLabels: [1 helper thread]
     expectedText: [0 input submissions]
     expectedAnchorCounts: { collapsed: 1, expanded: 2 }
+    # The owner is itself a helper thread here, and the cascade still applies.
+    selectionScript:
+      - { toggle: G1, expectedSelected: [G1, G2], expectedOwnerState: checked }
+      - { toggle: G2, expectedSelected: [G1], expectedOwnerState: partial }
+      - { toggle: G2, expectedSelected: [G1, G2], expectedOwnerState: checked }
+      - { toggle: G1, expectedSelected: [], expectedOwnerState: unchecked }
   - name: unknown-input-count
     owner: OLD
     groups: [{ id: hg_old, scope: historical-query, count: 1, members: [G2] }]

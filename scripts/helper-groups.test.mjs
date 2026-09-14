@@ -10,7 +10,8 @@ import { installHarnessGuard } from './harness-guard.mjs'
 
 /** @typedef {{id: string, scope: string, count: number, members: string[]}} GroupFixture */
 /** @typedef {{collapsed: number, expanded: number}} AnchorCounts */
-/** @typedef {{name: string, owner?: string, ownerStatus?: string, ordinaryChild?: string, groups: GroupFixture[], expectedRows: string[], expectedLabels: string[], expectedText: string[], expectedAnchorCounts: AnchorCounts, select?: string, expectedSelected?: string[], expectedSelectedLabel?: string, scopeExpired?: boolean, update?: {id: string, turnCount: number}}} GroupCase */
+/** @typedef {{toggle: string, expectedSelected: string[], expectedOwnerState?: 'checked'|'unchecked'|'partial'}} SelectionStep */
+/** @typedef {{name: string, owner?: string, ownerStatus?: string, ordinaryChild?: string, groups: GroupFixture[], expectedRows: string[], expectedLabels: string[], expectedText: string[], expectedAnchorCounts: AnchorCounts, selectionScript?: SelectionStep[], select?: string, expectedSelected?: string[], expectedSelectedLabel?: string, scopeExpired?: boolean, update?: {id: string, turnCount: number}}} GroupCase */
 /** @returns {{rows: Record<string, object>, cases: GroupCase[]}} */
 function loadFixtures() {
   const doc = YAML.parseDocument(readFileSync('scripts/testdata/helper_group_listing.yaml', 'utf8'), { uniqueKeys: true })
@@ -31,6 +32,17 @@ function loadFixtures() {
     }
     if (item.scopeExpired) assert.deepEqual(item.expectedRows, [], `${item.name}: an expired scope reveals nothing`)
     else assert.deepEqual(item.expectedRows, item.groups.flatMap((group) => group.members), `${item.name}: revealed rows are the group members in order`)
+    // The selection oracle is a named ordered script, one step per toggle, each
+    // stating the exact selected set afterwards. An owner-anchored tree must
+    // state the rolled-up owner checkbox too; an ownerless tree has no rollup.
+    const selectable = new Set([item.owner, ...item.groups.flatMap((group) => group.members)].filter(Boolean))
+    for (const step of item.selectionScript || []) {
+      assert.ok(selectable.has(step.toggle), `${item.name}: selection step toggles a mounted row`)
+      assert.ok(Array.isArray(step.expectedSelected), `${item.name}: selection step states its selected set`)
+      for (const id of step.expectedSelected) assert.ok(selectable.has(id), `${item.name}: expected selection names a mounted row`)
+      if (item.owner) assert.ok(step.expectedOwnerState, `${item.name}: owner-anchored steps state the owner rollup`)
+      else assert.ok(!step.expectedOwnerState, `${item.name}: an ownerless tree has no owner rollup`)
+    }
     // The rail oracle: every MOUNTED checkbox is an anchor. The owner row has
     // one when the fixture has an owner; each group contributes its members
     // once expanded, and an expired scope reveals none.
@@ -57,44 +69,48 @@ for (const [key, value] of Object.entries({ window: dom.window, document: dom.wi
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 const server = await createServer({ configFile: false, plugins: [react()], server: { middlewareMode: true }, logLevel: 'silent' })
 try {
-  const { HelperGroup, HelperGroupListItem, HelperThreadRow } = await server.ssrLoadModule('/src/ui/index.js')
+  const { HelperGroup, HelperGroupListItem, HelperThreadRow, useHelperSelection, HELPER_OWNER_STATE } = await server.ssrLoadModule('/src/ui/index.js')
   assert.equal(typeof HelperGroup, 'function', 'production public barrel export')
+  assert.equal(typeof useHelperSelection, 'function', 'production selection policy hook export')
+  assert.equal(HELPER_OWNER_STATE.PARTIAL, 'partial', 'production owner-rollup vocabulary export')
   for (const fixture of fixtures.cases) {
-    const opened = [], selected = [], refreshed = []
+    const opened = [], refreshed = []
     const container = document.getElementById('root')
     const root = createRoot(container)
     let updateRow
     function Host() {
       const [rowUpdates, setRowUpdates] = React.useState({})
       // Selection is host state, exactly as a real share/review picker holds
-      // it: the group only counts it, the rows render it.
-      const [selectedIDs, setSelectedIDs] = React.useState([])
+      // it. The DS owns the cascade/rollup policy; the host owns the state and
+      // renders it back through the real rows.
+      const memberIds = React.useMemo(() => fixture.owner
+        ? [...new Set(fixture.groups.flatMap((group) => group.members))] : [], [])
+      const selection = useHelperSelection({ ownerId: fixture.owner, memberIds })
       const [liveExpired, setLiveExpired] = React.useState(!!fixture.scopeExpired)
       updateRow = (update) => setRowUpdates((previous) => ({ ...previous, [update.id]: update }))
-      const onSelect = (identity, checked) => {
-        if (checked) selected.push(identity)
-        else selected.splice(selected.indexOf(identity), 1)
-        setSelectedIDs((previous) => checked ? [...new Set([...previous, identity])] : previous.filter((value) => value !== identity))
-      }
       const row = (id) => React.createElement(HelperThreadRow, { ...fixtures.rows[id], ...rowUpdates[id],
-        selected: selectedIDs.includes(id),
+        // The owner row states the tree rollup; a member states only itself.
+        selected: id === fixture.owner ? selection.ownerState === HELPER_OWNER_STATE.CHECKED : selection.isSelected(id),
+        indeterminate: id === fixture.owner && selection.ownerState === HELPER_OWNER_STATE.PARTIAL,
         href: `/transcripts/${id}`, onOpen: (identity, event) => { event.preventDefault(); opened.push(identity) },
-        onSelect,
+        onSelect: selection.onSelect,
       }, React.createElement('span', { className: 'route-status' }, `status for ${id}`),
       fixture.ordinaryChild && id === fixture.owner ? React.createElement('button', {
         type: 'button', className: 'ordinary-child-exit', onClick: () => opened.push(fixture.ordinaryChild),
       }, 'open ordinary child') : null)
-      return React.createElement(React.Fragment, null, fixture.groups.map((group) =>
-        React.createElement(HelperGroupListItem, { key: group.id, owner: fixture.owner ? row(fixture.owner) : undefined, ownerStatus: fixture.ownerStatus },
-          React.createElement(HelperGroup, {
-            groupId: group.id,
-            // A refresh hands the group a new scope token, exactly as the demo does.
-            memberScope: liveExpired ? group.scope : `${group.scope}-refreshed`,
-            helperThreadCount: group.count,
-            members: group.members, getMemberKey: (id) => id, renderMember: row,
-            isMemberSelected: (id) => selectedIDs.includes(id),
-            scopeExpired: liveExpired, onRefreshList: () => { refreshed.push(group.id); setLiveExpired(false) },
-          }))))
+      return React.createElement(React.Fragment, null,
+        React.createElement('p', { className: 'selection-status', role: 'status' }, selection.selectedIds.join(',')),
+        fixture.groups.map((group) =>
+          React.createElement(HelperGroupListItem, { key: group.id, owner: fixture.owner ? row(fixture.owner) : undefined, ownerStatus: fixture.ownerStatus },
+            React.createElement(HelperGroup, {
+              groupId: group.id,
+              // A refresh hands the group a new scope token, exactly as the demo does.
+              memberScope: liveExpired ? group.scope : `${group.scope}-refreshed`,
+              helperThreadCount: group.count,
+              members: group.members, getMemberKey: (id) => id, renderMember: row,
+              isMemberSelected: (id) => selection.isSelected(id),
+              scopeExpired: liveExpired, onRefreshList: () => { refreshed.push(group.id); setLiveExpired(false) },
+            }))))
     }
     const click = async (element) => {
       assert.ok(element, `${fixture.name}: mounted action exists`)
@@ -113,10 +129,12 @@ try {
     const anchorCount = () => [...container.querySelectorAll('.helper-tree-rail')]
       .reduce((total, rail) => total + Number(rail.dataset.anchorCount), 0)
     const mountedRowIDs = () => [...container.querySelectorAll('.helper-tree [data-thread-id]')].map((row) => row.dataset.threadId)
+    // The host's own selection, read back exactly as the demo states it.
+    const selectionStatus = () => container.querySelector('.selection-status').textContent.split(',').filter(Boolean)
     await act(async () => root.render(React.createElement(Host)))
     try {
       assert.deepEqual(opened, [], 'mount must not navigate')
-      assert.deepEqual(selected, [], 'mount must not select')
+      assert.deepEqual(selectionStatus(), [], 'mount must not select')
       // ONE tree per rendered result item, tracing its mounted checkboxes with
       // ONE connector: the owner anchors the tree, and a collapsed group
       // reveals nothing, so only the owner checkbox is an anchor.
@@ -181,30 +199,42 @@ try {
         await click(container.querySelector('.ordinary-child-exit'))
         assert.equal(opened.at(-1), fixture.ordinaryChild, 'retained ordinary child exit invokes its original callback')
       }
-      // The owner checkbox governs the owner's OWN turns only: ticking it never
-      // widens to a member, and the chip does not claim a member selection.
-      if (fixture.owner && fixture.expectedRows.length) {
+      // The canonical cascade policy, exercised through the real mounted rows
+      // and the exported host hook: one named fixture step per toggle, each
+      // stating the exact selected set and the owner rollup afterwards.
+      if (fixture.selectionScript) assert.deepEqual(selectionStatus(), [], `${fixture.name}: clean selection before the script`)
+      for (const step of fixture.selectionScript || []) {
+        await click(container.querySelector(`.helper-tree [data-thread-id="${step.toggle}"] input[type="checkbox"]`))
+        // Selection is a set; insertion order is not part of the contract.
+        assert.deepEqual(selectionStatus().sort(), [...step.expectedSelected].sort(),
+          `${fixture.name}: selected set after toggling ${step.toggle}`)
+        if (!fixture.owner) continue
         const ownerInput = ownerRow.querySelector('input[type="checkbox"]')
-        await click(ownerInput)
-        assert.deepEqual(selected, [fixture.owner], 'owner checkbox selects only the owner row')
-        assert.equal(ownerInput.checked, true)
-        for (const memberInput of container.querySelectorAll('.helper-group-members input[type="checkbox"]')) {
-          assert.equal(memberInput.checked, false, 'owner selection never widens to a member')
-        }
-        await click(ownerInput)
-        assert.deepEqual(selected, [], 'owner checkbox toggles back off')
-        assert.equal(ownerInput.checked, false)
+        assert.equal(ownerInput.checked, step.expectedOwnerState === 'checked',
+          `${fixture.name}: owner checked after toggling ${step.toggle}`)
+        assert.equal(ownerInput.indeterminate, step.expectedOwnerState === 'partial',
+          `${fixture.name}: owner mixed after toggling ${step.toggle}`)
+        assert.equal(ownerInput.getAttribute('aria-checked'), step.expectedOwnerState === 'partial' ? 'mixed' : null,
+          `${fixture.name}: owner mixed state is exposed to assistive technology`)
       }
       if (fixture.select) {
         const groupIndex = fixture.groups.findIndex((group) => group.members.includes(fixture.select))
         const trigger = triggers[groupIndex]
         await click(container.querySelector(`.helper-group-members [data-thread-id="${fixture.select}"] input`))
-        assert.deepEqual(selected, fixture.expectedSelected, 'explicit individual selection only')
+        assert.deepEqual(selectionStatus().sort(), [...fixture.expectedSelected].sort(), 'explicit individual selection only')
         // Every checkbox matches the selected set: picking a member never
-        // checks the owner or a sibling.
+        // checks the owner or a sibling. The owner states the rollup, so it is
+        // cleanly checked only when the whole tree is selected.
+        const treeIDs = [fixture.owner, ...fixture.groups.flatMap((group) => group.members)].filter(Boolean)
         for (const input of container.querySelectorAll('.helper-tree input[type="checkbox"]')) {
           const rowID = input.closest('[data-thread-id]').dataset.threadId
-          assert.equal(input.checked, fixture.expectedSelected.includes(rowID), `checked state matches the selected set for ${rowID}`)
+          if (rowID === fixture.owner) {
+            const whole = treeIDs.every((id) => fixture.expectedSelected.includes(id))
+            assert.equal(input.checked, whole, `owner is cleanly checked only when the whole tree is selected`)
+            assert.equal(input.indeterminate, !whole && fixture.expectedSelected.length > 0, 'owner rolls the tree up to mixed')
+          } else {
+            assert.equal(input.checked, fixture.expectedSelected.includes(rowID), `checked state matches the selected set for ${rowID}`)
+          }
         }
         // Closing the control keeps the selection stated on it, and the members
         // it holds cease to exist until it is reopened.
@@ -224,7 +254,7 @@ try {
         assert.ok(container.querySelector('.helper-group-members') === null, 'expired scope hides stale member actions')
         assert.equal(anchorCount(), fixture.expectedAnchorCounts.expanded, 'expired scope holds the collapsed anchors')
         assert.deepEqual(opened, [], 'expired scope opens nothing')
-        assert.deepEqual(selected, [], 'expired scope selects nothing')
+        assert.deepEqual(selectionStatus(), [], 'expired scope selects nothing')
         for (const action of container.querySelectorAll('.helper-group-action')) await click(action)
         assert.deepEqual(refreshed, fixture.groups.map((group) => group.id), 'refresh stays scoped to the originating list')
         // The refreshed scope is a new token, so the disclosure remounts closed.

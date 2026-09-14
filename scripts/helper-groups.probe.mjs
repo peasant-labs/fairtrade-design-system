@@ -158,6 +158,39 @@ try {
         assert.equal(await page.$eval('.helper-group-trigger', (el) => el.getAttribute('aria-expanded')), 'true', 'return retains disclosure')
         assert.ok(await page.$eval('.helper-demo', (el, wanted) => el.textContent.includes(`selected transcripts: ${wanted}`), fixture.select), 'return retains selection')
       }
+      if (fixture.owner && fixture.selectionScript) {
+        // The owner cascades in the real browser too: ticking it selects the
+        // owner and every mounted member, a manual member untick changes only
+        // that member and rolls the owner up to the mixed state, and a clean
+        // checked owner clears the whole tree.
+        const ownerInput = '.helper-tree-rows > .helper-tree-row input[type="checkbox"]'
+        await page.click(ownerInput)
+        await page.waitForFunction((selector) => document.querySelector(selector)?.checked === true, { timeout: 10000 }, ownerInput)
+        const memberToggles = await page.$$eval('.helper-group-members input[type="checkbox"]', (inputs) => inputs.map((input) => input.checked))
+        assert.ok(memberToggles.length > 0 && memberToggles.every(Boolean), 'owner tick selects every mounted member')
+        const selectedText = await page.$eval('.helper-demo-summary', (el) => el.textContent)
+        for (const id of [fixture.owner, ...fixture.groups.flatMap((group) => group.members)]) {
+          assert.ok(selectedText.includes(id), `owner tick states ${id} in the selection`)
+        }
+        const firstMember = fixture.groups[0].members[0]
+        await page.click(`.helper-group-members [data-thread-id="${firstMember}"] input`)
+        assert.equal(await page.$eval(`.helper-group-members [data-thread-id="${firstMember}"] input`, (el) => el.checked), false,
+          'a manual member untick clears only that member')
+        assert.ok(await page.$eval(ownerInput, (el) => el.indeterminate), 'the owner rolls up to the mixed state')
+        assert.equal(await page.$eval(ownerInput, (el) => el.getAttribute('aria-checked')), 'mixed',
+          'the mixed owner state is exposed to assistive technology')
+        // A mixed owner fills on the next click, then a cleanly checked owner
+        // clears the whole tree on the click after that.
+        await page.click(ownerInput)
+        await page.waitForFunction((selector) => document.querySelector(selector)?.checked === true, { timeout: 10000 }, ownerInput)
+        await page.click(ownerInput)
+        await page.waitForFunction((selector) => {
+          const owner = document.querySelector(selector)
+          return owner?.checked === false && owner?.indeterminate === false
+        }, { timeout: 10000 }, ownerInput)
+        const cleared = await page.$$eval('.helper-tree input[type="checkbox"]', (inputs) => inputs.map((input) => input.checked))
+        assert.ok(cleared.every((checked) => checked === false), 'a cleanly checked owner clears the whole tree')
+      }
       if (fixture.scopeExpired) {
         assert.ok(await page.$('.helper-group-members') === null, 'expired scope hides stale member actions')
         assert.equal(await page.$$eval('.helper-tree-rail', (els) => els.reduce((total, el) => total + Number(el.dataset.anchorCount), 0)), 0, 'expired scope has nothing to trace')
