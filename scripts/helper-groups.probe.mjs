@@ -18,6 +18,7 @@ const bundle = assets.map((name) => readFileSync(`dist/assets/${name}`, 'utf8'))
 assert.ok(bundle.includes('data-helper-demo'), 'built artifact must contain the helper demo marker; rebuild this checkout')
 assert.ok(bundle.includes('helper-thread-facts'), 'built artifact must contain the ordinary-row fact line; rebuild this checkout')
 assert.ok(bundle.includes('helper-tree-rail__path'), 'built artifact must contain the traced connector; rebuild this checkout')
+assert.ok(bundle.includes('data-helper-paging'), 'built artifact must contain the host paging slot marker; rebuild this checkout')
 mkdirSync(output, { recursive: true })
 installHarnessGuard({ label: 'helper groups mounted probe' })
 const served = await preview({ configFile: false, preview: { port, strictPort: true, host: '127.0.0.1' } })
@@ -72,6 +73,109 @@ try {
       assert.deepEqual(await page.$$eval('.helper-group-trigger', (els) => els.map((el) => el.querySelector('.helper-group-show').textContent)),
         fixture.groups.map(() => 'show'), 'closed control offers show')
       if (fixture.name === 'three-independent-counts') await page.screenshot({ path: resolve(output, `${theme}-collapsed.png`) })
+      if (fixture.paging) {
+        // The two-deep paging oracle: the owner P1's group and the nested group
+        // inside the G1 member row each carry their own host-owned page state,
+        // page indicator, and previous/next in the canonical memberFooter slot.
+        const { limit } = fixture.paging
+        const parent = fixture.groups[0]
+        const nested = fixture.nested[0].group
+        const parentRoot = `.helper-group[data-group-id="${parent.id}"]`
+        const nestedRoot = `.helper-group[data-group-id="${nested.id}"]`
+        const ownRows = (root) => `${root} > .helper-group-body > .helper-group-members > li > [data-thread-id]`
+        const ownPaging = (root, id) => `${root} > .helper-group-body > .helper-group-footer > [data-helper-paging="${id}"]`
+        const parentPaging = ownPaging(parentRoot, parent.id)
+        const nestedPaging = ownPaging(nestedRoot, nested.id)
+        const rowsOf = (selector) => page.$$eval(selector, (rows) => rows.map((row) => row.dataset.threadId))
+        const indicator = (selector) => page.$eval(`${selector} .helper-demo-page`, (el) => el.textContent)
+        const pageMarker = (selector) => page.$eval(selector, (el) => Number(el.dataset.helperPage))
+        const pageCount = (group) => Math.ceil(group.count / limit)
+        const slice = (group, number) => group.members.slice((number - 1) * limit, number * limit)
+        const waitForPage = (selector, number) => page.waitForFunction(
+          (wanted, value) => document.querySelector(wanted)?.dataset.helperPage === String(value),
+          { timeout: 10000 }, selector, number)
+        const click = async (selector) => {
+          await page.waitForSelector(selector, { timeout: 10000 })
+          await page.click(selector)
+        }
+        assert.equal(await page.$('.helper-group-footer'), null, 'a folded group holds no paging slot')
+        // The owner's group opens on its first page. The slot is the body's last
+        // element, immediately after the rows it pages.
+        await triggers[0].click()
+        await page.waitForSelector(parentPaging, { timeout: 10000 })
+        assert.notEqual(await page.$(`${parentRoot} > .helper-group-body > .helper-group-members + .helper-group-footer`), null,
+          'the paging slot sits immediately after the member rows')
+        assert.equal(await indicator(parentPaging), `page 1 of ${pageCount(parent)}`)
+        assert.deepEqual(await rowsOf(ownRows(parentRoot)), slice(parent, 1))
+        assert.equal(await pageMarker(parentPaging), 1)
+        assert.equal(await page.$eval(`${parentPaging} [data-helper-prev]`, (el) => el.disabled), true, 'the first page disables previous')
+        assert.equal(await page.$eval(`${parentPaging} [data-helper-next]`, (el) => el.disabled), false, 'the first page enables next')
+        await waitForAnchors(1 + slice(parent, 1).length)
+        // G1 owns the nested group: opening it reveals the second live page state.
+        await click(`${nestedRoot} .helper-group-trigger`)
+        await page.waitForSelector(nestedPaging, { timeout: 10000 })
+        assert.equal(await indicator(nestedPaging), `page 1 of ${pageCount(nested)}`)
+        assert.deepEqual(await rowsOf(ownRows(nestedRoot)), slice(nested, 1))
+        await waitForAnchors(1 + slice(parent, 1).length + slice(nested, 1).length)
+        // Paging the nested group moves only the nested group: the parent page
+        // indicator and its mounted rows are untouched.
+        await click(`${nestedPaging} [data-helper-next]`)
+        await waitForPage(nestedPaging, 2)
+        assert.equal(await indicator(nestedPaging), `page 2 of ${pageCount(nested)}`)
+        assert.deepEqual(await rowsOf(ownRows(nestedRoot)), slice(nested, 2))
+        assert.equal(await page.$eval(`${nestedPaging} [data-helper-next]`, (el) => el.disabled), true, 'the last page disables next')
+        assert.equal(await page.$eval(`${nestedPaging} [data-helper-prev]`, (el) => el.disabled), false, 'the last page enables previous')
+        assert.equal(await pageMarker(parentPaging), 1, 'paging the nested group leaves the parent page')
+        assert.equal(await indicator(parentPaging), `page 1 of ${pageCount(parent)}`)
+        assert.deepEqual(await rowsOf(ownRows(parentRoot)), slice(parent, 1))
+        await waitForAnchors(1 + slice(parent, 1).length + slice(nested, 2).length)
+        // Paging the parent moves only the parent; the nested group's controlling
+        // row leaves the mounted page, so the group unmounts with it.
+        await click(`${parentPaging} [data-helper-next]`)
+        await waitForPage(parentPaging, 2)
+        assert.equal(await indicator(parentPaging), `page 2 of ${pageCount(parent)}`)
+        assert.deepEqual(await rowsOf(ownRows(parentRoot)), slice(parent, 2))
+        assert.equal(await page.$(nestedRoot), null, 'the nested group unmounts with its owning row')
+        await waitForAnchors(1 + slice(parent, 2).length)
+        // Returning remounts the nested group, and the host page state proves the
+        // parent's paging never touched it: still page 2.
+        await click(`${parentPaging} [data-helper-prev]`)
+        await waitForPage(parentPaging, 1)
+        assert.deepEqual(await rowsOf(ownRows(parentRoot)), slice(parent, 1))
+        await click(`${nestedRoot} .helper-group-trigger`)
+        await page.waitForSelector(nestedPaging, { timeout: 10000 })
+        assert.equal(await pageMarker(nestedPaging), 2, 'the parent page never reset the nested page')
+        assert.deepEqual(await rowsOf(ownRows(nestedRoot)), slice(nested, 2))
+        // Reset the nested group to its first page for the capture, then assert the
+        // rail traces exactly the mounted checkboxes on the settled pages.
+        await click(`${nestedPaging} [data-helper-prev]`)
+        await waitForPage(nestedPaging, 1)
+        await waitForAnchors(1 + slice(parent, 1).length + slice(nested, 1).length)
+        const mounted = await page.$$eval('.helper-tree input[type="checkbox"]', (els) => els.length)
+        assert.equal(mounted, 1 + slice(parent, 1).length + slice(nested, 1).length, 'the rail oracle counts exactly the mounted checkboxes')
+        // The slot obeys the same chrome invariants as the rest of the tree.
+        const slotStyles = await page.evaluate(() => {
+          const footer = document.querySelector('.helper-group-footer')
+          const read = (el) => { const s = getComputedStyle(el)
+            return { radius: s.borderRadius, font: s.fontFamily, numeric: s.fontVariantNumeric,
+              transform: s.textTransform, size: s.fontSize, minHeight: s.minHeight } }
+          return { button: read(footer.querySelector('button')), page: read(footer.querySelector('.helper-demo-page')),
+            rule: { width: getComputedStyle(footer, '::before').borderTopWidth,
+              left: getComputedStyle(footer, '::before').left } }
+        })
+        assert.equal(slotStyles.button.radius, '0px', 'paging controls stay square')
+        assert.equal(slotStyles.button.transform, 'lowercase', 'paging chrome stays lowercase')
+        assert.ok(parseFloat(slotStyles.button.minHeight) >= 24, 'paging controls keep a usable target')
+        assert.equal(slotStyles.page.transform, 'none', 'page indicators are data, never lowercased')
+        assert.ok(slotStyles.page.numeric.includes('tabular-nums'), 'page counts are tabular')
+        assert.equal(slotStyles.rule.width, '1px', 'the slot separates from its rows by a rule')
+        assert.ok(parseFloat(slotStyles.rule.left) >= 0, 'the slot rule clears the connector gutter')
+        await page.screenshot({ path: resolve(output, `${theme}-${fixture.name}.png`) })
+        evidence.probes.push({ theme, case: fixture.name, mounted,
+          pages: { [parent.id]: await pageMarker(parentPaging), [nested.id]: await pageMarker(nestedPaging) },
+          styles: slotStyles })
+        continue
+      }
       for (const trigger of triggers) {
         await trigger.focus()
         await page.keyboard.press('Enter')

@@ -43,6 +43,13 @@ fetching, routing, authorization, eligibility, and explicit selection callbacks.
 - If a helper itself owns helpers, render those immediate groups in that member's
   own children, not under the root ancestor. The nested chip steps in again and
   the same connector continues through it at the deeper column.
+- A host that pages a group passes its controls as `memberFooter`. That is THE
+  canonical position for paging: the slot renders inside the open body,
+  immediately after the member rows (or after the "no saved helpers" notice when
+  the page holds none). A group renders the slot only while it is open and not
+  scope-expired, so page controls never outlive the rows they page. It is
+  optional: a host that passes nothing keeps exactly the DOM it had before the
+  slot existed.
 
 ## host state and callbacks
 
@@ -52,6 +59,16 @@ and keep `helperThreadCount` as the saved-thread total, not a page length. The
 control states the count with the noun singularized ("1 helper thread"), and a
 changed scope token resets uncontrolled disclosure; it never inherits the old
 query's open state.
+
+Paging stays host-owned end to end. The host fetches the page it needs and passes
+only the LOADED page as `members`, with the server total as `helperThreadCount`;
+the group holds no page number, limit, or scope token, and never derives a total
+from the rows it was handed. State the server total and the loaded slice
+separately, so "how many saved threads exist" and "how many this page shows"
+never blur: the count chip carries the total, and the host's `memberFooter`
+carries the page indicator and previous/next. Two groups in one tree each keep
+their own page state, so paging one never moves the other; the nested example
+below proves it.
 
 A group starts closed, so supply `isMemberSelected(row)` whenever
 `renderMember` draws per-member checkboxes. The predicate lets the CLOSED
@@ -136,7 +153,9 @@ The mounted in-use demo is
 `?app=commons&helpers=three-independent-counts#inuse`. Other named examples include
 `helper-only-search`, `unresolved-independent`, `identical-independent-helpers`,
 `trunk-append`, `trunk-replacement`, `scope-expired`, `unavailable-owner`,
-`measured-zero`, `unknown-input-count`, and `ordinary-child-exit`. The same
+`measured-zero`, `unknown-input-count`, `ordinary-child-exit`, and
+`two-live-paging-states` (the two-deep tree with two independent live page
+states). The same
 examples are in Storybook under `lists/helper groups`, plus a `plain`
 display-only variant with selection and navigation both off. The demo's fixture
 selection is not a host backend integration test.

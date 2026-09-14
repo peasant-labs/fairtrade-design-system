@@ -50,6 +50,28 @@ function loadFixtures() {
     const mountedMembers = item.scopeExpired ? 0 : item.expectedRows.length
     assert.deepEqual(item.expectedAnchorCounts, { collapsed: ownerAnchors, expanded: ownerAnchors + mountedMembers },
       `${item.name}: rail anchors trace exactly the mounted row checkboxes`)
+    // A paging case carries the host page size and the nested group a member owns.
+    // The nested group holds its own full authorized set, hangs inside a first-page
+    // member of a top-level group, and pages on the same host limit.
+    if (item.paging) {
+      assert.ok(Number.isSafeInteger(item.paging.limit) && item.paging.limit >= 1,
+        `${item.name}: paging limit is a positive integer`)
+      assert.ok(item.groups.every((group) => group.count > item.paging.limit),
+        `${item.name}: every paged top-level group holds more than one page`)
+      assert.ok(Array.isArray(item.nested) && item.nested.length, `${item.name}: a paging case mounts the nested group`)
+    } else {
+      assert.equal(item.nested, undefined, `${item.name}: only a paging case nests a group`)
+    }
+    for (const entry of item.nested || []) {
+      const nested = entry.group
+      const host = item.groups.find((group) => group.members.includes(entry.owner))
+      assert.ok(host && host.members.slice(0, item.paging.limit).includes(entry.owner),
+        `${item.name}: nested owner ${entry.owner} is mounted on the first page of a top-level group`)
+      assert.ok(nested?.id && nested.scope && Number.isSafeInteger(nested.count), `${item.name}: nested group summary required`)
+      assert.equal(nested.members.length, nested.count, `${item.name}: nested count is the saved identity total`)
+      for (const id of nested.members) assert.equal(data.rows[id]?.id, id)
+      assert.ok(item.paging.limit < nested.count, `${item.name}: the nested group pages too`)
+    }
     if (item.select) {
       assert.ok(item.expectedSelected?.length && item.expectedSelected.includes(item.select), `${item.name}: selection oracle names the picked row`)
       assert.ok(item.expectedSelectedLabel?.includes('selected'), `${item.name}: closed control must state the hidden selection count`)
@@ -435,6 +457,140 @@ try {
       assert.deepEqual([...container.querySelectorAll('.helper-tree-rail')].map((rail) => rail.getAttribute('data-anchor-count')), fixture.groups.map(() => '0'),
         'expanded display-only tree still has nothing to trace')
       console.log(`PASS ${fixture.name} display-only tree`)
+    } finally { await act(async () => root.unmount()) }
+  }
+
+  // The canonical memberFooter slot: the host's paging controls render inside the
+  // OPEN body, immediately after the member rows (or the empty notice), and never
+  // while the group is folded or scope-expired. A host that passes nothing keeps
+  // exactly the DOM it had before the slot existed.
+  {
+    const container = document.getElementById('root')
+    const root = createRoot(container)
+    const click = async (element) => {
+      assert.ok(element, 'footer case action exists')
+      element.focus()
+      await act(async () => element.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true })))
+    }
+    const row = (id) => React.createElement(HelperThreadRow, fixtures.rows[id])
+    const slot = () => React.createElement('span', { className: 'slot-marker' }, 'page 1 of 2')
+    const group = (caseName, props) => React.createElement('div', { 'data-case': caseName },
+      React.createElement(HelperGroupListItem, { owner: row('P1') },
+        React.createElement(HelperGroup, {
+          groupId: `hg_footer_${caseName}`, memberScope: `footer-${caseName}`,
+          helperThreadCount: 2, members: ['G1', 'G2'], getMemberKey: (id) => id, renderMember: row, ...props,
+        })))
+    await act(async () => root.render(React.createElement(React.Fragment, null,
+      group('open', { memberFooter: slot() }),
+      group('absent', {}),
+      group('expired', { scopeExpired: true, onRefreshList: () => {}, memberFooter: slot() }),
+      group('empty', { helperThreadCount: 0, members: [], memberFooter: slot() }))))
+    try {
+      assert.equal(container.querySelectorAll('.slot-marker').length, 0, 'a folded group renders no paging slot')
+      for (const trigger of [...container.querySelectorAll('.helper-group-trigger')]) await click(trigger)
+      const caseOf = (name) => container.querySelector(`[data-case="${name}"]`)
+      const bodyOf = (name) => caseOf(name).querySelector('.helper-group-body')
+      // Open: the slot is the body's last element, right after the rows it pages.
+      const openBody = bodyOf('open')
+      assert.equal(openBody.children[0].className, 'helper-group-members', 'the open body leads with the member rows')
+      assert.equal(openBody.children[1].className, 'helper-group-footer', 'the paging slot follows the rows inside the body')
+      assert.ok(openBody.children[1].querySelector('.slot-marker'), 'the slot holds the host paging content')
+      assert.equal(openBody.lastElementChild.classList.contains('helper-group-footer'), true, 'the slot is the last thing in the open body')
+      // Absent: nothing is added when the host passes no slot.
+      assert.equal(caseOf('absent').querySelector('.helper-group-footer'), null, 'no slot prop adds no slot element')
+      // Expired: fail-closed keeps only the refresh control it already had.
+      assert.ok(bodyOf('expired').querySelector('.helper-group-action'), 'the expired body keeps its refresh control')
+      assert.equal(caseOf('expired').querySelector('.helper-group-footer'), null, 'a scope-expired group renders no paging slot')
+      // Empty: the slot follows the no-saved-helpers notice, so an out-of-range
+      // page still has somewhere canonical to land.
+      const emptyBody = bodyOf('empty')
+      assert.equal(emptyBody.children[0].className, 'helper-group-notice', 'the empty body leads with the no-saved-helpers notice')
+      assert.equal(emptyBody.children[1].className, 'helper-group-footer', 'the paging slot follows the empty notice')
+      assert.ok(emptyBody.children[1].querySelector('.slot-marker'), 'an empty page still has the canonical paging slot')
+      assert.equal(container.querySelectorAll('.slot-marker').length, 2, 'only the non-expired groups mount the slot')
+      console.log('PASS member footer slot placement and gating')
+    } finally { await act(async () => root.unmount()) }
+  }
+
+  // Two independent live paging states in ONE tree: the owner P1's group and the
+  // nested group G1 owns each keep their own host page state and render their own
+  // previous/next into the memberFooter slot. Paging one never moves the other, and
+  // the nested page survives its owning row leaving and returning to the parent page.
+  {
+    const pagingCase = fixtures.cases.find((item) => item.name === 'two-live-paging-states')
+    const { limit } = pagingCase.paging
+    const parent = pagingCase.groups[0]
+    const nested = pagingCase.nested[0].group
+    const container = document.getElementById('root')
+    const root = createRoot(container)
+    const click = async (element) => {
+      assert.ok(element, 'paging action exists')
+      element.focus()
+      await act(async () => element.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true })))
+    }
+    const pages = { [parent.id]: 1, [nested.id]: 1 }
+    const pageCount = (group) => Math.ceil(group.count / limit)
+    const footer = (group) => React.createElement('span', { className: 'paging-slot', 'data-footer': group.id },
+      React.createElement('span', { className: 'page-indicator' }, `page ${pages[group.id]} of ${pageCount(group)}`),
+      React.createElement('button', { type: 'button', className: 'page-prev',
+        onClick: () => { pages[group.id] = Math.max(1, pages[group.id] - 1); setVersion((n) => n + 1) } }, 'previous'),
+      React.createElement('button', { type: 'button', className: 'page-next',
+        onClick: () => { pages[group.id] = Math.min(pageCount(group), pages[group.id] + 1); setVersion((n) => n + 1) } }, 'next'))
+    let setVersion
+    function row(id) {
+      const owns = id === pagingCase.nested[0].owner ? nested : null
+      return React.createElement(HelperThreadRow, fixtures.rows[id], owns ? React.createElement(HelperGroup, {
+        groupId: owns.id, memberScope: owns.scope, helperThreadCount: owns.count,
+        members: owns.members.slice((pages[owns.id] - 1) * limit, pages[owns.id] * limit),
+        getMemberKey: (key) => key, renderMember: row, memberFooter: footer(owns),
+      }) : null)
+    }
+    function PagingHost() {
+      const [, bump] = React.useState(0)
+      setVersion = bump
+      return React.createElement(HelperGroupListItem, { owner: row(pagingCase.owner) },
+        React.createElement(HelperGroup, {
+          groupId: parent.id, memberScope: parent.scope, helperThreadCount: parent.count,
+          members: parent.members.slice((pages[parent.id] - 1) * limit, pages[parent.id] * limit),
+          getMemberKey: (id) => id, renderMember: row, memberFooter: footer(parent),
+        }))
+    }
+    const rootOf = (id) => `.helper-group[data-group-id="${id}"]`
+    const bodyOf = (id) => container.querySelector(`${rootOf(id)} > .helper-group-body`)
+    // Scope the controls to THIS group's own footer: a nested group's footer
+    // lives inside the parent's member list, so a body-wide query would find the
+    // deeper group's page indicator first.
+    const footerOf = (id) => container.querySelector(`${rootOf(id)} > .helper-group-body > .helper-group-footer`)
+    const rowsOf = (id) => [...container.querySelectorAll(
+      `${rootOf(id)} > .helper-group-body > .helper-group-members > li > [data-thread-id]`)].map((row) => row.dataset.threadId)
+    const indicator = (id) => footerOf(id).querySelector('.page-indicator').textContent
+    const slice = (group, page) => group.members.slice((page - 1) * limit, page * limit)
+    await act(async () => root.render(React.createElement(PagingHost)))
+    try {
+      await click(container.querySelector(`${rootOf(parent.id)} > .helper-group-trigger`))
+      assert.equal(indicator(parent.id), `page 1 of ${pageCount(parent)}`)
+      assert.deepEqual(rowsOf(parent.id), slice(parent, 1))
+      await click(container.querySelector(`${rootOf(nested.id)} .helper-group-trigger`))
+      assert.equal(indicator(nested.id), `page 1 of ${pageCount(nested)}`)
+      assert.deepEqual(rowsOf(nested.id), slice(nested, 1))
+      // Paging the nested group leaves the parent page and rows untouched.
+      await click(footerOf(nested.id).querySelector('.page-next'))
+      assert.equal(indicator(nested.id), `page 2 of ${pageCount(nested)}`)
+      assert.deepEqual(rowsOf(nested.id), slice(nested, 2))
+      assert.equal(indicator(parent.id), `page 1 of ${pageCount(parent)}`, 'nested paging leaves the parent page')
+      assert.deepEqual(rowsOf(parent.id), slice(parent, 1))
+      // Paging the parent moves only the parent; the nested group unmounts with G1.
+      await click(footerOf(parent.id).querySelector('.page-next'))
+      assert.equal(indicator(parent.id), `page 2 of ${pageCount(parent)}`)
+      assert.deepEqual(rowsOf(parent.id), slice(parent, 2))
+      assert.equal(container.querySelector(rootOf(nested.id)), null, 'nested group unmounts with its owning row')
+      // Returning remounts the nested group; its host page state was never reset.
+      await click(footerOf(parent.id).querySelector('.page-prev'))
+      assert.deepEqual(rowsOf(parent.id), slice(parent, 1))
+      await click(container.querySelector(`${rootOf(nested.id)} .helper-group-trigger`))
+      assert.equal(indicator(nested.id), `page 2 of ${pageCount(nested)}`, 'the parent page never reset the nested page')
+      assert.deepEqual(rowsOf(nested.id), slice(nested, 2))
+      console.log('PASS two independent live paging states')
     } finally { await act(async () => root.unmount()) }
   }
 } finally { await server.close(); dom.window.close() }

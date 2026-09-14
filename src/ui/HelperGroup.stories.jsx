@@ -144,6 +144,47 @@ export const OwnerCascade = {
 }
 export const UnknownInputs = { args: { scenario: 'unknown-input-count' } }
 export const OrdinaryChildExit = { args: { scenario: 'ordinary-child-exit' } }
+export const TwoLivePagingStates = {
+  args: { scenario: 'two-live-paging-states' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const body = (id) => canvasElement.querySelector(`[data-group-id="${id}"] > .helper-group-body`)
+    const ownRows = (id) => [...canvasElement.querySelectorAll(
+      `[data-group-id="${id}"] > .helper-group-body > .helper-group-members > li > [data-thread-id]`)]
+      .map((row) => row.dataset.threadId)
+    const paging = (id) => body(id).querySelector(`.helper-group-footer > [data-helper-paging="${id}"]`)
+    const indicator = (id) => paging(id).querySelector('.helper-demo-page').textContent
+    // The owner's group opens on its first page. The paging controls sit in the
+    // group's canonical footer slot, after the rows they page.
+    await userEvent.click(canvas.getByRole('button', { name: /4 helper threads/ }))
+    await expect(indicator('hg_paged_parent')).toBe('page 1 of 2')
+    await expect(ownRows('hg_paged_parent')).toEqual(['G1', 'G3'])
+    await expect(body('hg_paged_parent').lastElementChild.classList.contains('helper-group-footer')).toBe(true)
+    await expect(paging('hg_paged_parent').querySelector('[data-helper-prev]').disabled).toBe(true)
+    // G1 owns the nested group: opening it reveals the second independent page state.
+    await userEvent.click(canvasElement.querySelector('[data-group-id="hg_paged_nested"] .helper-group-trigger'))
+    await expect(indicator('hg_paged_nested')).toBe('page 1 of 2')
+    await expect(ownRows('hg_paged_nested')).toEqual(['G2', 'G5'])
+    // Paging the nested group leaves the parent exactly where it was.
+    await userEvent.click(paging('hg_paged_nested').querySelector('[data-helper-next]'))
+    await expect(indicator('hg_paged_nested')).toBe('page 2 of 2')
+    await expect(ownRows('hg_paged_nested')).toEqual(['G7'])
+    await expect(paging('hg_paged_nested').querySelector('[data-helper-next]').disabled).toBe(true)
+    await expect(indicator('hg_paged_parent')).toBe('page 1 of 2')
+    await expect(ownRows('hg_paged_parent')).toEqual(['G1', 'G3'])
+    // Paging the parent moves only the parent; the nested group's controlling row
+    // leaves the mounted page, and when it returns the host page is still page 2.
+    await userEvent.click(paging('hg_paged_parent').querySelector('[data-helper-next]'))
+    await expect(indicator('hg_paged_parent')).toBe('page 2 of 2')
+    await expect(ownRows('hg_paged_parent')).toEqual(['G4', 'G6'])
+    await expect(canvasElement.querySelector('[data-group-id="hg_paged_nested"]')).toBeNull()
+    await userEvent.click(paging('hg_paged_parent').querySelector('[data-helper-prev]'))
+    await expect(indicator('hg_paged_parent')).toBe('page 1 of 2')
+    await userEvent.click(canvasElement.querySelector('[data-group-id="hg_paged_nested"] .helper-group-trigger'))
+    await expect(indicator('hg_paged_nested')).toBe('page 2 of 2')
+    await expect(ownRows('hg_paged_nested')).toEqual(['G7'])
+  },
+}
 export const DisplayOnly = {
   args: { scenario: 'three-independent-counts', plain: true },
   play: async ({ canvasElement }) => {

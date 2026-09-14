@@ -12,6 +12,7 @@ requiredNames:
   - measured-zero
   - unknown-input-count
   - ordinary-child-exit
+  - two-live-paging-states
 smoke:
   group: { groupId: hg_parent, memberScope: exact-query, helperThreadCount: 2, members: [G1, G2] }
   context: { ownerStatus: known_unavailable }
@@ -23,6 +24,10 @@ rows:
   G4: { id: G4, title: Replacement Review, provider: codex, inputSubmissionCount: 0, turnCount: 1 }
   OLD: { id: OLD, title: Historical Input, provider: opencode, turnCount: 5 }
   O1: { id: O1, title: Ordinary Child, provider: opencode, turnCount: 3 }
+  G3: { id: G3, title: Audit Parser, provider: codex, inputSubmissionCount: 2, turnCount: 6 }
+  G5: { id: G5, title: Migrate Parser, provider: opencode, inputSubmissionCount: 0, turnCount: 2 }
+  G6: { id: G6, title: Document Parser, provider: codex, inputSubmissionCount: 1, turnCount: 3 }
+  G7: { id: G7, title: Backfill Parser, provider: opencode, inputSubmissionCount: 0, turnCount: 7 }
 cases:
   - name: three-independent-counts
     owner: P1
@@ -146,6 +151,24 @@ cases:
     expectedLabels: [1 helper thread]
     expectedText: [ordinary child]
     expectedAnchorCounts: { collapsed: 1, expanded: 2 }
+  # The two-deep paging oracle: the owner P1 expands to G1, and G1 itself owns a
+  # nested group. Each group carries its own host-owned page state, page indicator,
+  # and previous/next rendered into the memberFooter slot, so one tree proves two
+  # independent live paging states. The fixture holds each group's FULL authorized
+  # set (the server total); the demo host owns page state, slices the loaded page,
+  # and passes it as `members` while stating the total as `helperThreadCount`.
+  - name: two-live-paging-states
+    owner: P1
+    paging: { limit: 2 }
+    groups:
+      - { id: hg_paged_parent, scope: paged-parent-query, count: 4, members: [G1, G3, G4, G6] }
+    nested:
+      - owner: G1
+        group: { id: hg_paged_nested, scope: paged-nested-query, count: 3, members: [G2, G5, G7] }
+    expectedRows: [G1, G3, G4, G6]
+    expectedLabels: [4 helper threads]
+    expectedText: [4 helper threads]
+    expectedAnchorCounts: { collapsed: 1, expanded: 5 }
 # The configured-selection oracle: initialSelectedIds is the host's saved manual
 # pick, the owner cycle restores it, and switching to a different owner or member
 # set resets to that tree's configured selection instead of carrying the pick over.
