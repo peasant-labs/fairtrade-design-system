@@ -122,26 +122,33 @@ function helperThreadGroupSelectionLabel(count, selectedCount) {
  * The canonical helper-tree selection policy.
  *
  * A helper tree is one owner row plus the helper member rows disclosed under it.
- * The owner checkbox is the tree's DEFAULT AUTO-SELECT: ticking the owner selects
- * the owner and every member under it, and unticking the owner clears them.
- * A member's own checkbox edits only that member - it never widens to the owner
- * or to a sibling - and the owner's rolled-up state never writes back to a
- * member, so a manual member choice survives every later owner re-render.
+ * The owner checkbox is the tree's select-all control, and it cycles between the
+ * two states of the same tree:
  *
- * The owner checkbox states the ROLLUP of the whole tree: `checked` when the
- * owner and every member are selected, `unchecked` when none of them are, and
- * `partial` (indeterminate) when they are mixed.
+ *     manual (the host's configured and hand-picked rows)  <->  all (owner + every member)
  *
- * Selection STATE stays host-owned. Call useHelperSelection in the component
- * that owns the selection, and pass its isSelected/onSelect to the rows (the
- * owner row also reads ownerState); the components never store selection.
+ * The owner's untick position is the MANUAL state, not a third "none" step.
+ * Pressing a partial or cleanly checked owner selects the whole tree, and pressing
+ * it again restores exactly the manual selection the viewer built by hand instead
+ * of discarding it. That is why the tree's keyboard select-all ring is not mirrored
+ * here: the ring has a dedicated third press to clear the tree, while one checkbox
+ * per row has no such press, and the user's ruling is that an owner untick restores
+ * the manual picks rather than clearing a row the viewer chose.
  *
- * This follows the tri-state selection tree's parent-propagates / child-rolls-up
- * shape. The tree's keyboard `select all` ring (select all, unselect all,
- * restore the baseline captured before the ring started, with a manual edit
- * invalidating the ring) is deliberately NOT mirrored here: a two-state checkbox
- * has no third press to restore a baseline, and the helper tree exposes one
- * checkbox per row rather than a dedicated select-all key. See HELPER-GROUPS.md.
+ * A member checkbox edits only that member. It never widens to the owner or to a
+ * sibling, it writes the manual side, and it ends any all-selection, so the owner's
+ * rollup is derived from what is DISPLAYED and a manual member pick survives every
+ * later owner press.
+ *
+ * The owner checkbox states the ROLLUP of the whole tree: `checked` when the owner
+ * and every member are selected, `unchecked` when none of them are, and `partial`
+ * (indeterminate) when they are mixed.
+ *
+ * Selection STATE stays host-owned. Call useHelperSelection in the component that
+ * owns the selection, and pass its isSelected/onSelect to the rows (the owner row
+ * also reads ownerState); the components never store selection. The policy itself
+ * is pure: helperOwnerToggle and helperMemberToggle are reducers a host, a test, or
+ * a fixture can drive without a mounted component. See HELPER-GROUPS.md.
  */
 
 /** The owner checkbox states a helper tree reports. */
@@ -170,45 +177,93 @@ export function helperOwnerState(ownerId, memberIds, isSelected) {
 }
 
 /**
- * Apply one row toggle under the policy. Toggling the OWNER sets the whole tree
- * (the owner and every member) to `checked`, or clears all of them. Toggling a
- * MEMBER edits only that member. Returns the next selected-id list.
- * @param {string[]} selectedIds
- * @param {string|undefined} ownerId
- * @param {string[]} memberIds
- * @param {string} toggledId
- * @param {boolean} checked
+ * The selection state of one helper tree: the DISPLAYED selection is the whole
+ * tree while the select-all override is active, and the manual set otherwise.
+ * Selection STATE stays host-owned; this is the value useHelperSelection stores.
+ * @typedef {object} HelperSelectionState
+ * @property {boolean} allActive - true while the select-all override is engaged
+ * @property {Set<string>} manual - the configured and hand-picked selection
+ */
+
+/**
+ * The ids a tree currently DISPLAYS, owner first then members, or the manual set
+ * while the override is off. Ids are de-duplicated, and a missing owner (a
+ * helper-only result) is dropped.
+ * @param {HelperSelectionState} state
+ * @param {string|undefined|null} ownerId
+ * @param {Array<string|undefined|null>} memberIds
  * @returns {string[]}
  */
-export function helperSelectionAfter(selectedIds, ownerId, memberIds, toggledId, checked) {
-  const next = new Set(selectedIds)
-  const targets = toggledId === ownerId ? [ownerId, ...memberIds] : [toggledId]
-  for (const id of targets) {
-    if (id === undefined || id === null) continue
-    if (checked) next.add(id)
-    else next.delete(id)
-  }
-  return [...next]
+export function helperSelectionIds(state, ownerId, memberIds) {
+  const ids = state.allActive ? [ownerId, ...memberIds] : [...state.manual]
+  return [...new Set(ids)].filter((id) => id !== undefined && id !== null)
+}
+
+/**
+ * Toggle the owner checkbox: engage the all-selection from the manual side, or
+ * restore the manual selection from the all side. The manual set is never touched,
+ * so a manual member pick survives the cycle.
+ * @param {HelperSelectionState} state
+ * @returns {HelperSelectionState}
+ */
+export function helperOwnerToggle(state) {
+  return { allActive: !state.allActive, manual: state.manual }
+}
+
+/**
+ * Toggle one member checkbox. The write lands on the manual side and ends any
+ * all-selection: while the override is active the base is the DISPLAYED
+ * all-selection, so unticking one member keeps every other row selected and the
+ * next owner press restores all-but-that-member.
+ * @param {HelperSelectionState} state
+ * @param {string|undefined|null} ownerId
+ * @param {Array<string|undefined|null>} memberIds
+ * @param {string} memberId
+ * @param {boolean} checked
+ * @returns {HelperSelectionState}
+ */
+export function helperMemberToggle(state, ownerId, memberIds, memberId, checked) {
+  const base = state.allActive
+    ? new Set([ownerId, ...memberIds].filter((id) => id !== undefined && id !== null))
+    : new Set(state.manual)
+  if (checked) base.add(memberId)
+  else base.delete(memberId)
+  return { allActive: false, manual: base }
 }
 
 /**
  * Hold the canonical helper-tree selection for one owner. The selection lives in
  * the calling host, never in the components.
+ *
+ * A changed owner or member set is a different tree, so the hook resets to that
+ * tree's configured selection instead of carrying a pick across a scenario switch.
  * @param {object} [config]
  * @param {string} [config.ownerId] the tree's owner row id; omit for a
  *   helper-only result, where every member selects on its own
  * @param {string[]} [config.memberIds] every helper member under that owner
- * @param {string[]} [config.initialSelectedIds]
+ * @param {string[]} [config.initialSelectedIds] the configured manual selection
  * @returns {{selectedIds: string[], isSelected: (id: string) => boolean,
  *   ownerState: 'checked'|'unchecked'|'partial',
  *   onSelect: (id: string, checked: boolean) => void}}
  */
 export function useHelperSelection({ ownerId, memberIds = [], initialSelectedIds = [] } = {}) {
-  const [selectedIds, setSelectedIds] = useState(() => [...new Set(initialSelectedIds)])
+  const selectionKey = `${ownerId ?? ''}\u0000${memberIds.join('\u0000')}`
+  const [state, setState] = useState(() => ({ allActive: false, manual: new Set(initialSelectedIds) }))
+  const [key, setKey] = useState(selectionKey)
+  // Adjusting state during render when the tree changes is React's documented
+  // pattern: the reset commits with the same render as the new owner and members,
+  // so the previous tree's selection is never painted against the new one.
+  if (key !== selectionKey) {
+    setKey(selectionKey)
+    setState({ allActive: false, manual: new Set(initialSelectedIds) })
+  }
+  const selectedIds = helperSelectionIds(state, ownerId, memberIds)
   const isSelected = useCallback((id) => selectedIds.includes(id), [selectedIds])
   const ownerState = helperOwnerState(ownerId, memberIds, isSelected)
   const onSelect = useCallback((id, checked) => {
-    setSelectedIds((previous) => helperSelectionAfter(previous, ownerId, memberIds, id, checked))
+    setState((previous) => id === ownerId
+      ? helperOwnerToggle(previous)
+      : helperMemberToggle(previous, ownerId, memberIds, id, checked))
   }, [ownerId, memberIds])
   return { selectedIds, isSelected, ownerState, onSelect }
 }

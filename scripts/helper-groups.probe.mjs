@@ -159,39 +159,70 @@ try {
         assert.ok(await page.$eval('.helper-demo', (el, wanted) => el.textContent.includes(`selected transcripts: ${wanted}`), fixture.select), 'return retains selection')
       }
       if (fixture.owner && fixture.selectionScript) {
-        // The owner cascades in the real browser too: ticking it selects the
-        // owner and every mounted member, a manual member untick changes only
-        // that member and rolls the owner up to the mixed state, and a clean
-        // checked owner clears the whole tree.
+        // The owner is a two-state cycle in the real browser too. The user's
+        // sequence: pick a helper, check the owner (all), uncheck the owner, and
+        // the manual helper pick is RESTORED rather than cleared. A manual edit
+        // while the whole tree is in the all selection writes all-but-that-member,
+        // and the owner untick after that restores all-but-that-member.
         const ownerInput = '.helper-tree-rows > .helper-tree-row input[type="checkbox"]'
+        const memberInputs = '.helper-group-members input[type="checkbox"]'
+        const memberSelector = (id) => `.helper-group-members [data-thread-id="${id}"] input`
+        const summary = () => page.$eval('.helper-demo-summary', (el) => el.textContent)
+        const helper = fixture.groups[0].members[0]
+        // Start from nothing selected: clear the pick the individual-selection
+        // step left, so this is the exact sequence from an empty tree.
+        if (fixture.select && await page.$eval(memberSelector(fixture.select), (el) => el.checked)) {
+          await page.click(memberSelector(fixture.select))
+          await page.waitForFunction((selector) => document.querySelector(selector)?.checked === false, { timeout: 10000 }, memberSelector(fixture.select))
+        }
+        await page.click(memberSelector(helper))
+        assert.equal(await page.$eval(memberSelector(helper), (el) => el.checked), true, 'a member pick selects only that member')
+        assert.ok((await summary()).includes(`selected transcripts: ${helper}`), 'the manual pick is the whole selection')
+        assert.ok(await page.$eval(ownerInput, (el) => el.indeterminate), 'the owner rolls the manual pick up to mixed')
+        assert.equal(await page.$eval(ownerInput, (el) => el.getAttribute('aria-checked')), 'mixed',
+          'the mixed owner state is exposed to assistive technology')
+        await page.screenshot({ path: resolve(output, `${theme}-${fixture.name}-cascade-mixed.png`) })
         await page.click(ownerInput)
         await page.waitForFunction((selector) => document.querySelector(selector)?.checked === true, { timeout: 10000 }, ownerInput)
-        const memberToggles = await page.$$eval('.helper-group-members input[type="checkbox"]', (inputs) => inputs.map((input) => input.checked))
+        const memberToggles = await page.$$eval(memberInputs, (inputs) => inputs.map((input) => input.checked))
         assert.ok(memberToggles.length > 0 && memberToggles.every(Boolean), 'owner tick selects every mounted member')
-        const selectedText = await page.$eval('.helper-demo-summary', (el) => el.textContent)
+        const selectedText = await summary()
         for (const id of [fixture.owner, ...fixture.groups.flatMap((group) => group.members)]) {
           assert.ok(selectedText.includes(id), `owner tick states ${id} in the selection`)
         }
         await page.screenshot({ path: resolve(output, `${theme}-${fixture.name}-cascade-selected.png`) })
-        const firstMember = fixture.groups[0].members[0]
-        await page.click(`.helper-group-members [data-thread-id="${firstMember}"] input`)
-        await page.screenshot({ path: resolve(output, `${theme}-${fixture.name}-cascade-mixed.png`) })
-        assert.equal(await page.$eval(`.helper-group-members [data-thread-id="${firstMember}"] input`, (el) => el.checked), false,
-          'a manual member untick clears only that member')
-        assert.ok(await page.$eval(ownerInput, (el) => el.indeterminate), 'the owner rolls up to the mixed state')
-        assert.equal(await page.$eval(ownerInput, (el) => el.getAttribute('aria-checked')), 'mixed',
-          'the mixed owner state is exposed to assistive technology')
-        // A mixed owner fills on the next click, then a cleanly checked owner
-        // clears the whole tree on the click after that.
+        // The owner untick restores the manual pick: the helper stays selected and
+        // no other member is widened in.
+        await page.click(ownerInput)
+        await page.waitForFunction((selector) => {
+          const owner = document.querySelector(selector)
+          return owner?.checked === false && owner?.indeterminate === true
+        }, { timeout: 10000 }, ownerInput)
+        assert.equal(await page.$eval(memberSelector(helper), (el) => el.checked), true, 'the owner untick restores the manual helper pick')
+        for (const id of fixture.groups.flatMap((group) => group.members).filter((id) => id !== helper)) {
+          assert.equal(await page.$eval(memberSelector(id), (el) => el.checked), false, `the other member ${id} stays unselected`)
+        }
+        assert.ok((await summary()).includes(`selected transcripts: ${helper}`), 'the restored selection is the manual pick')
+        // A manual edit while the whole tree is in the all selection writes
+        // all-but-that-member; the owner untick after that restores that manual side.
+        await page.click(ownerInput)
+        await page.waitForFunction((selector) => document.querySelector(selector)?.checked === true, { timeout: 10000 }, ownerInput)
+        const otherMember = fixture.groups[0].members[1] || fixture.groups[0].members[0]
+        await page.click(memberSelector(otherMember))
+        await page.waitForFunction((selector) => document.querySelector(selector)?.checked === false, { timeout: 10000 }, memberSelector(otherMember))
+        assert.ok(await page.$eval(ownerInput, (el) => el.indeterminate), 'a manual member untick under all rolls the owner up to mixed')
         await page.click(ownerInput)
         await page.waitForFunction((selector) => document.querySelector(selector)?.checked === true, { timeout: 10000 }, ownerInput)
         await page.click(ownerInput)
         await page.waitForFunction((selector) => {
           const owner = document.querySelector(selector)
-          return owner?.checked === false && owner?.indeterminate === false
+          return owner?.checked === false && owner?.indeterminate === true
         }, { timeout: 10000 }, ownerInput)
-        const cleared = await page.$$eval('.helper-tree input[type="checkbox"]', (inputs) => inputs.map((input) => input.checked))
-        assert.ok(cleared.every((checked) => checked === false), 'a cleanly checked owner clears the whole tree')
+        assert.equal(await page.$eval(memberSelector(otherMember), (el) => el.checked), false,
+          'the owner untick restores the manual all-except-that-member selection')
+        for (const id of fixture.groups.flatMap((group) => group.members).filter((id) => id !== otherMember)) {
+          assert.equal(await page.$eval(memberSelector(id), (el) => el.checked), true, `the owner untick restores ${id}`)
+        }
       }
       if (fixture.scopeExpired) {
         assert.ok(await page.$('.helper-group-members') === null, 'expired scope hides stale member actions')

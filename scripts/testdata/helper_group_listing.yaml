@@ -34,17 +34,19 @@ cases:
     select: G2
     expectedSelected: [G2]
     expectedSelectedLabel: 2 helper threads, 1 selected
-    # The canonical cascade: the owner auto-selects the whole tree, a manual
-    # member edit stays local and rolls the owner up to partial, and the owner
-    # toggles the whole tree on and off.
+    # The canonical two-state cycle. A manual helper pick is followed by the owner
+    # selecting the whole tree; the owner untick RESTORES that manual pick instead
+    # of clearing it. A manual member edit while the whole tree is in the all
+    # selection writes all-but-that-member, and the owner untick after that
+    # restores all-but-that-member.
     selectionScript:
-      - { toggle: P1, expectedSelected: [P1, G1, G2], expectedOwnerState: checked }
-      - { toggle: G2, expectedSelected: [P1, G1], expectedOwnerState: partial }
-      - { toggle: G2, expectedSelected: [P1, G1, G2], expectedOwnerState: checked }
-      - { toggle: P1, expectedSelected: [], expectedOwnerState: unchecked }
       - { toggle: G1, expectedSelected: [G1], expectedOwnerState: partial }
       - { toggle: P1, expectedSelected: [P1, G1, G2], expectedOwnerState: checked }
-      - { toggle: P1, expectedSelected: [], expectedOwnerState: unchecked }
+      - { toggle: P1, expectedSelected: [G1], expectedOwnerState: partial }
+      - { toggle: P1, expectedSelected: [P1, G1, G2], expectedOwnerState: checked }
+      - { toggle: G2, expectedSelected: [P1, G1], expectedOwnerState: partial }
+      - { toggle: P1, expectedSelected: [P1, G1, G2], expectedOwnerState: checked }
+      - { toggle: P1, expectedSelected: [P1, G1], expectedOwnerState: partial }
   - name: helper-only-search
     ownerStatus: resolved
     groups: [{ id: hg_parent, scope: search-G2-only, count: 1, members: [G2] }]
@@ -119,12 +121,16 @@ cases:
     expectedLabels: [1 helper thread]
     expectedText: [0 input submissions]
     expectedAnchorCounts: { collapsed: 1, expanded: 2 }
-    # The owner is itself a helper thread here, and the cascade still applies.
+    # The owner is itself a helper thread here, and the cycle still applies: the
+    # owner engages the all selection, unticking it restores the manual selection,
+    # and a manual member edit under the all selection is restored by the next
+    # untick.
     selectionScript:
       - { toggle: G1, expectedSelected: [G1, G2], expectedOwnerState: checked }
-      - { toggle: G2, expectedSelected: [G1], expectedOwnerState: partial }
-      - { toggle: G2, expectedSelected: [G1, G2], expectedOwnerState: checked }
       - { toggle: G1, expectedSelected: [], expectedOwnerState: unchecked }
+      - { toggle: G2, expectedSelected: [G2], expectedOwnerState: partial }
+      - { toggle: G1, expectedSelected: [G1, G2], expectedOwnerState: checked }
+      - { toggle: G1, expectedSelected: [G2], expectedOwnerState: partial }
   - name: unknown-input-count
     owner: OLD
     groups: [{ id: hg_old, scope: historical-query, count: 1, members: [G2] }]
@@ -140,3 +146,17 @@ cases:
     expectedLabels: [1 helper thread]
     expectedText: [ordinary child]
     expectedAnchorCounts: { collapsed: 1, expanded: 2 }
+# The configured-selection oracle: initialSelectedIds is the host's saved manual
+# pick, the owner cycle restores it, and switching to a different owner or member
+# set resets to that tree's configured selection instead of carrying the pick over.
+configured:
+  seed:
+    owner: P1
+    groups: [{ id: hg_seed, scope: seed-query, count: 2, members: [G1, G2] }]
+    initialSelectedIds: [G2]
+  switch:
+    owner: G1
+    groups: [{ id: hg_switch, scope: switch-query, count: 1, members: [G2] }]
+  steps:
+    - { toggle: P1, expectedSelected: [P1, G1, G2], expectedOwnerState: checked }
+    - { toggle: P1, expectedSelected: [G2], expectedOwnerState: partial }

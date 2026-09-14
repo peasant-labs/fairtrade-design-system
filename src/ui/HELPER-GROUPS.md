@@ -64,27 +64,46 @@ silent. The group only counts the rows it holds; it never stores selection.
 a helper tree. Selection state stays host-owned: call the hook in the component
 that owns the selection, then pass its `isSelected` and `onSelect` to the rows;
 the owner row also reads `ownerState`. `helperOwnerState` exposes the same rollup
-to a host that keeps its own state store.
+to a host that keeps its own state store, and `helperOwnerToggle` and
+`helperMemberToggle` are the pure reducers the hook applies.
 
-- Ticking the owner cascades: it selects the owner and every helper member under
-  it (the tree's default auto-select). Unticking the owner clears them.
+The owner checkbox is a TWO-STATE CYCLE between the tree's manual selection and a
+select-all override:
+
+    manual (the configured and hand-picked rows)  <->  all (owner + every member)
+
+- Pressing the owner from the manual side (nothing selected, a partial tree, or a
+  tree the host configured) selects the owner and every helper member. Pressing it
+  again from the all side RESTORES the manual selection; it never clears a row the
+  viewer picked by hand. The checkbox's off position is that manual/restore state,
+  which is why the explicit "none" step of the tree's keyboard select-all ring is
+  not surfaced here.
 - Ticking a member edits only that member. It never widens to the owner or to a
-  sibling, and the owner's rolled-up state never writes back to a member, so a
-  manual member choice survives every later owner re-render.
-- The owner checkbox states the rollup: `checked` when the owner and every member
-  are selected, `unchecked` when none are, and `partial` when they are mixed.
-  Render `partial` through `HelperThreadRow`'s `indeterminate` prop, which draws
-  the mixed mark and reports `aria-checked="mixed"`, so the state is never carried
-  by the mark alone.
+  sibling, and it writes the manual side and ends any all-selection, so the manual
+  pick survives every later owner press.
+- The owner checkbox states the rollup of what is DISPLAYED: `checked` when the
+  whole tree is selected, `unchecked` when none of it is, and `partial` when it is
+  mixed. Render `partial` through `HelperThreadRow`'s `indeterminate` prop, which
+  draws the mixed mark and reports `aria-checked="mixed"`, so the state is never
+  carried by the mark alone.
+- `initialSelectedIds` seeds the manual side. A changed `ownerId` or member set is
+  a different tree and resets to that tree's configured selection.
 
-This mirrors the tri-state selection tree's parent-propagates / child-rolls-up
-shape. It deliberately does NOT mirror the tree's keyboard select-all ring (select
-all, unselect all, restore the baseline captured before the ring started, with a
-manual edit invalidating the ring): the owner is one two-state checkbox with no
-third press to restore a baseline, and the helper tree carries one checkbox per
-row rather than a dedicated select-all key. The manual member edit still
-supersedes the auto-select for the display rollup, exactly as a manual tree edit
-invalidates the ring's baseline.
+Worked example (owner P1, members G1 and G2), starting from nothing selected:
+
+| press | displayed | owner |
+|---|---|---|
+| G1 | G1 | partial |
+| P1 | P1, G1, G2 | checked |
+| P1 | G1 | partial |
+| P1 | P1, G1, G2 | checked |
+| G2 | P1, G1 | partial |
+| P1 | P1, G1, G2 | checked |
+| P1 | P1, G1 | partial |
+
+The row after the manual `G2` untick restores `P1, G1`, the manual selection,
+rather than clearing the tree. The mount, the fixtures, and the story exercise
+this exact sequence.
 
 Display-only contexts leave `onSelect`, `href`, and `onOpen` off; every row then
 renders as an ordinary row and, with no checkboxes mounted, no connector is drawn.

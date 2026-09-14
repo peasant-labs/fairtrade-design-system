@@ -103,39 +103,43 @@ export const OwnerCascade = {
     const owner = canvas.getByRole('checkbox', { name: /\(P1\)/ })
     const g1 = canvas.getByRole('checkbox', { name: /\(G1\)/ })
     const g2 = canvas.getByRole('checkbox', { name: /\(G2\)/ })
-    // The owner auto-selects the whole tree.
+    // The repro sequence: with nothing selected, pick a helper, then the owner.
+    // The owner press selects the whole tree; the next press RESTORES the manual
+    // pick instead of clearing it, so the helper the viewer chose first survives
+    // and the owner reads partial.
+    await userEvent.click(g1)
+    await expect(canvas.getByText('selected transcripts: G1')).toBeVisible()
+    await expect(owner).toHaveAttribute('aria-checked', 'mixed')
     await userEvent.click(owner)
     await expect(owner).toBeChecked()
     await expect(g1).toBeChecked()
     await expect(g2).toBeChecked()
     await expect(canvas.getByText('selected transcripts: P1, G1, G2')).toBeVisible()
-    // A manual member edit touches only that member and rolls the owner up to
-    // the mixed state; no sibling is widened in and the owner is not checked.
-    await userEvent.click(g2)
-    await expect(g2).not.toBeChecked()
-    await expect(g1).toBeChecked()
+    await userEvent.click(owner)
     await expect(owner).not.toBeChecked()
     await expect(owner).toHaveAttribute('aria-checked', 'mixed')
     await expect(owner.indeterminate).toBe(true)
-    await expect(canvas.getByText('selected transcripts: P1, G1')).toBeVisible()
-    // Ticking the mixed owner fills the whole tree again.
-    await userEvent.click(owner)
-    await expect(owner).toBeChecked()
-    await expect(g2).toBeChecked()
-    // A clean checked owner clears the whole tree.
-    await userEvent.click(owner)
-    await expect(owner).not.toBeChecked()
-    await expect(owner).not.toHaveAttribute('aria-checked', 'mixed')
-    await expect(g1).not.toBeChecked()
-    await expect(g2).not.toBeChecked()
-    await expect(canvas.getByText('selected transcripts: none')).toBeVisible()
-    // A member picked from empty stays local and rolls the owner up.
-    await userEvent.click(g1)
     await expect(g1).toBeChecked()
     await expect(g2).not.toBeChecked()
-    await expect(owner).not.toBeChecked()
-    await expect(owner).toHaveAttribute('aria-checked', 'mixed')
     await expect(canvas.getByText('selected transcripts: G1')).toBeVisible()
+    // Check the owner again, then edit a member while the whole tree is in the
+    // all-selection. Unticking G2 writes the manual side to all-but-G2, so the
+    // owner press after that restores all-but-G2 rather than a bare clear.
+    await userEvent.click(owner)
+    await expect(g2).toBeChecked()
+    await userEvent.click(g2)
+    await expect(g2).not.toBeChecked()
+    await expect(g1).toBeChecked()
+    await expect(owner).toHaveAttribute('aria-checked', 'mixed')
+    await expect(canvas.getByText('selected transcripts: P1, G1')).toBeVisible()
+    await userEvent.click(owner)
+    await expect(g2).toBeChecked()
+    await expect(canvas.getByText('selected transcripts: P1, G1, G2')).toBeVisible()
+    await userEvent.click(owner)
+    await expect(g2).not.toBeChecked()
+    await expect(g1).toBeChecked()
+    await expect(owner).toHaveAttribute('aria-checked', 'mixed')
+    await expect(canvas.getByText('selected transcripts: P1, G1')).toBeVisible()
   },
 }
 export const UnknownInputs = { args: { scenario: 'unknown-input-count' } }

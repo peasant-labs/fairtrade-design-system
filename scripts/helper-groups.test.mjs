@@ -55,6 +55,25 @@ function loadFixtures() {
       assert.ok(item.expectedSelectedLabel?.includes('selected'), `${item.name}: closed control must state the hidden selection count`)
     }
   }
+  // The configured-selection oracle: the saved manual pick seeds the tree, the
+  // owner cycle restores it, and a switch to a different tree resets to that
+  // tree's configured selection.
+  const configured = data.configured
+  assert.ok(configured?.seed && configured?.switch, 'configured-selection oracle required')
+  assert.notEqual(configured.seed.owner, configured.switch.owner, 'the configured switch is a different tree')
+  for (const tree of [configured.seed, configured.switch]) {
+    assert.ok(tree.groups?.length, 'a configured tree holds at least one group')
+    for (const group of tree.groups) {
+      assert.equal(group.members.length, group.count, 'configured count is saved identity total')
+      for (const id of group.members) assert.equal(data.rows[id]?.id, id)
+    }
+  }
+  const seedIDs = new Set([configured.seed.owner, ...configured.seed.groups.flatMap((group) => group.members)])
+  assert.ok(configured.seed.initialSelectedIds?.length, 'the configured seed states its saved pick')
+  for (const id of configured.seed.initialSelectedIds) assert.ok(seedIDs.has(id), 'the configured seed picks a mounted row')
+  for (const step of configured.steps) {
+    assert.ok(step.expectedSelected?.length && step.expectedOwnerState, 'configured steps state the selected set and owner rollup')
+  }
   return data
 }
 
@@ -69,9 +88,14 @@ for (const [key, value] of Object.entries({ window: dom.window, document: dom.wi
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 const server = await createServer({ configFile: false, plugins: [react()], server: { middlewareMode: true }, logLevel: 'silent' })
 try {
-  const { HelperGroup, HelperGroupListItem, HelperThreadRow, useHelperSelection, HELPER_OWNER_STATE } = await server.ssrLoadModule('/src/ui/index.js')
+  const { HelperGroup, HelperGroupListItem, HelperThreadRow, useHelperSelection,
+    helperOwnerState, helperSelectionIds, helperOwnerToggle, helperMemberToggle, HELPER_OWNER_STATE } = await server.ssrLoadModule('/src/ui/index.js')
   assert.equal(typeof HelperGroup, 'function', 'production public barrel export')
   assert.equal(typeof useHelperSelection, 'function', 'production selection policy hook export')
+  assert.equal(typeof helperOwnerToggle, 'function', 'production owner-toggle reducer export')
+  assert.equal(typeof helperMemberToggle, 'function', 'production member-toggle reducer export')
+  assert.equal(typeof helperSelectionIds, 'function', 'production displayed-selection helper export')
+  assert.equal(typeof helperOwnerState, 'function', 'production owner-rollup export')
   assert.equal(HELPER_OWNER_STATE.PARTIAL, 'partial', 'production owner-rollup vocabulary export')
   for (const fixture of fixtures.cases) {
     const opened = [], refreshed = []
@@ -199,24 +223,9 @@ try {
         await click(container.querySelector('.ordinary-child-exit'))
         assert.equal(opened.at(-1), fixture.ordinaryChild, 'retained ordinary child exit invokes its original callback')
       }
-      // The canonical cascade policy, exercised through the real mounted rows
-      // and the exported host hook: one named fixture step per toggle, each
-      // stating the exact selected set and the owner rollup afterwards.
-      if (fixture.selectionScript) assert.deepEqual(selectionStatus(), [], `${fixture.name}: clean selection before the script`)
-      for (const step of fixture.selectionScript || []) {
-        await click(container.querySelector(`.helper-tree [data-thread-id="${step.toggle}"] input[type="checkbox"]`))
-        // Selection is a set; insertion order is not part of the contract.
-        assert.deepEqual(selectionStatus().sort(), [...step.expectedSelected].sort(),
-          `${fixture.name}: selected set after toggling ${step.toggle}`)
-        if (!fixture.owner) continue
-        const ownerInput = ownerRow.querySelector('input[type="checkbox"]')
-        assert.equal(ownerInput.checked, step.expectedOwnerState === 'checked',
-          `${fixture.name}: owner checked after toggling ${step.toggle}`)
-        assert.equal(ownerInput.indeterminate, step.expectedOwnerState === 'partial',
-          `${fixture.name}: owner mixed after toggling ${step.toggle}`)
-        assert.equal(ownerInput.getAttribute('aria-checked'), step.expectedOwnerState === 'partial' ? 'mixed' : null,
-          `${fixture.name}: owner mixed state is exposed to assistive technology`)
-      }
+      // Explicit individual selection runs first, then clears its pick, so the
+      // named state-machine script below starts from the same clean tree as every
+      // other case. A member pick touches only that member and rolls the owner up.
       if (fixture.select) {
         const groupIndex = fixture.groups.findIndex((group) => group.members.includes(fixture.select))
         const trigger = triggers[groupIndex]
@@ -247,6 +256,26 @@ try {
         await click(trigger)
         assert.ok(container.querySelector(`.helper-group-members [data-thread-id="${fixture.select}"] input`).checked, 'reopening retains the selection')
         assert.equal(anchorCount(), fixture.expectedAnchorCounts.expanded, 'reopening restores the traced anchors')
+        await click(container.querySelector(`.helper-group-members [data-thread-id="${fixture.select}"] input`))
+        assert.deepEqual(selectionStatus(), [], 'explicit selection cleared before the cycle script')
+      }
+      // The canonical two-state cycle, exercised through the real mounted rows and
+      // the exported host hook: one named fixture step per toggle, each stating
+      // the exact selected set and the owner rollup afterwards.
+      if (fixture.selectionScript) assert.deepEqual(selectionStatus(), [], `${fixture.name}: clean selection before the script`)
+      for (const step of fixture.selectionScript || []) {
+        await click(container.querySelector(`.helper-tree [data-thread-id="${step.toggle}"] input[type="checkbox"]`))
+        // Selection is a set; insertion order is not part of the contract.
+        assert.deepEqual(selectionStatus().sort(), [...step.expectedSelected].sort(),
+          `${fixture.name}: selected set after toggling ${step.toggle}`)
+        if (!fixture.owner) continue
+        const ownerInput = ownerRow.querySelector('input[type="checkbox"]')
+        assert.equal(ownerInput.checked, step.expectedOwnerState === 'checked',
+          `${fixture.name}: owner checked after toggling ${step.toggle}`)
+        assert.equal(ownerInput.indeterminate, step.expectedOwnerState === 'partial',
+          `${fixture.name}: owner mixed after toggling ${step.toggle}`)
+        assert.equal(ownerInput.getAttribute('aria-checked'), step.expectedOwnerState === 'partial' ? 'mixed' : null,
+          `${fixture.name}: owner mixed state is exposed to assistive technology`)
       }
       if (fixture.scopeExpired) {
         // Fail-closed honesty: an expired scope renders no stale member actions,
@@ -271,6 +300,83 @@ try {
         : fixture.expectedRows
       assert.deepEqual(mountedRowIDs(), [fixture.owner, ...finallyMounted].filter(Boolean), 'the tree holds exactly the owner and the mounted members')
       console.log(`PASS ${fixture.name}`)
+    } finally { await act(async () => root.unmount()) }
+  }
+
+  // The pure reducer replay: the same named script drives the exported
+  // helperOwnerToggle and helperMemberToggle with no DOM, so the policy is
+  // verifiable on its own and the mounted suite above proves the hook applies
+  // exactly it.
+  for (const fixture of fixtures.cases) {
+    if (!fixture.selectionScript) continue
+    const memberIds = fixture.owner ? [...new Set(fixture.groups.flatMap((group) => group.members))] : []
+    let state = { allActive: false, manual: new Set() }
+    for (const step of fixture.selectionScript) {
+      if (step.toggle === fixture.owner) {
+        state = helperOwnerToggle(state)
+      } else {
+        const before = helperSelectionIds(state, fixture.owner, memberIds)
+        state = helperMemberToggle(state, fixture.owner, memberIds, step.toggle, !before.includes(step.toggle))
+      }
+      const displayed = helperSelectionIds(state, fixture.owner, memberIds)
+      assert.deepEqual(displayed.slice().sort(), [...step.expectedSelected].sort(),
+        `${fixture.name}: reducer selected set after toggling ${step.toggle}`)
+      if (fixture.owner) {
+        assert.equal(helperOwnerState(fixture.owner, memberIds, (id) => displayed.includes(id)), step.expectedOwnerState,
+          `${fixture.name}: reducer owner rollup after toggling ${step.toggle}`)
+      }
+    }
+    console.log(`PASS ${fixture.name} reducer`)
+  }
+
+  // The configured-selection oracle: the saved manual pick seeds the tree, the
+  // owner cycle restores it, and a scenario switch to a different tree resets to
+  // that tree's configured selection instead of carrying the pick over.
+  {
+    const { seed, switch: next, steps } = fixtures.configured
+    const container = document.getElementById('root')
+    const root = createRoot(container)
+    let active = seed
+    const memberIdsOf = (tree) => [...new Set(tree.groups.flatMap((group) => group.members))]
+    const click = async (element) => {
+      assert.ok(element, 'configured selection action exists')
+      element.focus()
+      await act(async () => element.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true })))
+    }
+    function ConfiguredHost() {
+      const selection = useHelperSelection({
+        ownerId: active.owner, memberIds: memberIdsOf(active), initialSelectedIds: active.initialSelectedIds || [],
+      })
+      const row = (id) => React.createElement(HelperThreadRow, { ...fixtures.rows[id],
+        selected: id === active.owner ? selection.ownerState === HELPER_OWNER_STATE.CHECKED : selection.isSelected(id),
+        indeterminate: id === active.owner && selection.ownerState === HELPER_OWNER_STATE.PARTIAL,
+        onSelect: selection.onSelect })
+      return React.createElement(React.Fragment, null,
+        React.createElement('p', { className: 'selection-status', role: 'status' }, selection.selectedIds.join(',')),
+        active.groups.map((group) => React.createElement(HelperGroupListItem, { key: group.id, owner: row(active.owner) },
+          React.createElement(HelperGroup, {
+            groupId: group.id, memberScope: group.scope, helperThreadCount: group.count,
+            members: group.members, getMemberKey: (id) => id, renderMember: row,
+          }))))
+    }
+    const status = () => container.querySelector('.selection-status').textContent.split(',').filter(Boolean)
+    const ownerInput = () => container.querySelector('.helper-tree-rows > .helper-tree-row input[type="checkbox"]')
+    await act(async () => root.render(React.createElement(ConfiguredHost)))
+    try {
+      assert.deepEqual(status().sort(), [...seed.initialSelectedIds].sort(), 'the configured selection seeds the manual state')
+      assert.equal(ownerInput().indeterminate, true, 'a configured partial tree rolls the owner up to mixed')
+      for (const step of steps) {
+        await click(container.querySelector(`.helper-tree [data-thread-id="${step.toggle}"] input[type="checkbox"]`))
+        assert.deepEqual(status().sort(), [...step.expectedSelected].sort(), `configured: selected set after toggling ${step.toggle}`)
+        assert.equal(ownerInput().checked, step.expectedOwnerState === 'checked', `configured: owner checked after toggling ${step.toggle}`)
+        assert.equal(ownerInput().indeterminate, step.expectedOwnerState === 'partial', `configured: owner mixed after toggling ${step.toggle}`)
+      }
+      active = next
+      await act(async () => root.render(React.createElement(ConfiguredHost)))
+      assert.deepEqual(status(), [], 'switching trees resets to the new configured selection')
+      assert.equal(ownerInput().checked, false, 'the new tree owner starts unchecked')
+      assert.equal(ownerInput().indeterminate, false, 'the new tree owner starts clean')
+      console.log('PASS configured selection seed and reset')
     } finally { await act(async () => root.unmount()) }
   }
 

@@ -830,7 +830,9 @@
         "HelperThreadRow",
         "useHelperSelection",
         "helperOwnerState",
-        "helperSelectionAfter",
+        "helperSelectionIds",
+        "helperOwnerToggle",
+        "helperMemberToggle",
         "HELPER_OWNER_STATE"
       ],
       "doc": "HelperGroup - a count chip inside one owner-anchored tree of saved threads.",
