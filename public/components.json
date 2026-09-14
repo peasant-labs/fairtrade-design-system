@@ -270,7 +270,7 @@
         "Radio",
         "RadioGroup"
       ],
-      "doc": "",
+      "doc": "A single checkbox - checked, unchecked, or mixed (indeterminate).",
       "props": {
         "defaultChecked": {
           "control": "boolean"
@@ -827,7 +827,11 @@
       "exports": [
         "HelperGroup",
         "HelperGroupListItem",
-        "HelperThreadRow"
+        "HelperThreadRow",
+        "useHelperSelection",
+        "helperOwnerState",
+        "helperSelectionAfter",
+        "HELPER_OWNER_STATE"
       ],
       "doc": "HelperGroup - a count chip inside one owner-anchored tree of saved threads.",
       "props": {},
@@ -841,6 +845,7 @@
         "UnavailableOwner",
         "ExpiredQuery",
         "NestedOwner",
+        "OwnerCascade",
         "UnknownInputs",
         "OrdinaryChildExit",
         "DisplayOnly"
