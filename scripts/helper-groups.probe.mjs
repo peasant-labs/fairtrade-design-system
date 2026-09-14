@@ -172,8 +172,10 @@ try {
         for (const id of [fixture.owner, ...fixture.groups.flatMap((group) => group.members)]) {
           assert.ok(selectedText.includes(id), `owner tick states ${id} in the selection`)
         }
+        await page.screenshot({ path: resolve(output, `${theme}-${fixture.name}-cascade-selected.png`) })
         const firstMember = fixture.groups[0].members[0]
         await page.click(`.helper-group-members [data-thread-id="${firstMember}"] input`)
+        await page.screenshot({ path: resolve(output, `${theme}-${fixture.name}-cascade-mixed.png`) })
         assert.equal(await page.$eval(`.helper-group-members [data-thread-id="${firstMember}"] input`, (el) => el.checked), false,
           'a manual member untick clears only that member')
         assert.ok(await page.$eval(ownerInput, (el) => el.indeterminate), 'the owner rolls up to the mixed state')
