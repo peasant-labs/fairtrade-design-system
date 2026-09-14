@@ -4,6 +4,14 @@ import YAML from 'yaml'
 import { adaptTranscript, prefilterTurns } from '../src/ui/transcript/adapter.js'
 import { buildContextFixture } from '../src/mockups/inuse/context-fixture.js'
 
+/**
+ * @typedef {object} InvalidNavigationCase
+ * @property {string} name
+ * @property {'duplicate-kind' | 'malformed-anchor'} category
+ * @property {string} refusal
+ * @property {object[]} navigation
+ */
+
 function load(name) {
   const docs = YAML.parseAllDocuments(readFileSync(new URL(`testdata/${name}.yaml`, import.meta.url), 'utf8'), { strict: true, uniqueKeys: true })
   assert.equal(docs.length, 1)
@@ -21,6 +29,23 @@ names(fixture.navigationCases, manifest.requiredNavigationCases)
 names(fixture.countCases, manifest.requiredCountCases)
 names(fixture.invalidCounts, manifest.requiredInvalidCounts)
 names(fixture.cases.find(item => item.invalid).invalid, manifest.requiredInvalidCases)
+
+/** @type {InvalidNavigationCase[]} */
+const invalidNavigation = fixture.invalidNavigation
+const INVALID_NAVIGATION_CATEGORIES = new Set(['duplicate-kind', 'malformed-anchor'])
+names(invalidNavigation, manifest.requiredInvalidNavigation)
+assert.deepEqual([...new Set(invalidNavigation.map(item => item.category))].sort(),
+  [...INVALID_NAVIGATION_CATEGORIES].sort(), 'every fail-closed navigation category is covered')
+assert.ok(Array.isArray(fixture.invalidNavigationPartitions) &&
+  fixture.invalidNavigationPartitions.every(partition => fixture.partitions.includes(partition)),
+  'invalid navigation partitions come from the fixture partition vocabulary')
+for (const item of invalidNavigation) {
+  assert.ok(INVALID_NAVIGATION_CATEGORIES.has(item.category), `${item.name}: known invalid navigation category`)
+  assert.ok(item.navigation?.length, `${item.name}: a navigation array is required to exercise the refusal`)
+  assert.ok(item.refusal?.length, `${item.name}: a refusal reason is required so the assertion is non-vacuous`)
+  assert.ok(item.navigation.every(entry => entry.kind === 'context_from' || entry.kind === 'started_by'),
+    `${item.name}: navigation entries use canonical relationship kinds`)
+}
 
 function assertProvenance(cooked, raw) {
   if (raw?.submissionRef === '') {
@@ -120,6 +145,27 @@ for (const testCase of fixture.navigationCases) {
   assert.deepEqual(vm.relationships.flatMap(item => item.navigation ? [item.navigation.localId] : []), testCase.expectedTargets)
   if (testCase.exact !== undefined) assert.equal(!!vm.relationships[0].navigation.anchor, testCase.exact)
   console.log(`PASS ${testCase.name}`)
+}
+
+function assertRefused(trigger, expected, label) {
+  let refusal
+  try { trigger() } catch (error) { refusal = error }
+  assert.ok(refusal instanceof Error, `${label}: adaptTranscript must refuse`)
+  assert.match(refusal.message, /adaptTranscript refused/, `${label}: refusal prefix`)
+  assert.ok(refusal.message.includes(expected), `${label}: refusal reason (${expected})`)
+}
+
+for (const testCase of invalidNavigation) {
+  for (const partition of fixture.invalidNavigationPartitions) {
+    const input = buildContextFixture(fixture, 'native-text-thinking-pair', partition)
+    assertRefused(
+      () => adaptTranscript(input, undefined, undefined,
+        { relationshipNavigation: structuredClone(testCase.navigation) }),
+      testCase.refusal,
+      `${testCase.name}/${partition}`,
+    )
+    console.log(`PASS ${testCase.name}/${partition}`)
+  }
 }
 for (const testCase of fixture.countCases) {
   const input = buildContextFixture(fixture, 'native-text-thinking-pair')

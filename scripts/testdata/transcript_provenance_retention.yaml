@@ -252,6 +252,51 @@ navigationCases:
     omit: true
     expectedLabels: [context inherited from, started by]
     expectedTargets: []
+# The fail-closed oracle for relationship navigation. Every case below must be
+# REFUSED before any transcript is cooked: a duplicate kind makes the authorized
+# target ambiguous, and a malformed anchor is not schema-valid host read
+# metadata. Each case runs on the main and earlier partitions so the refusal
+# holds whether the durable evidence sits in the current or earlier domain.
+invalidNavigationPartitions: [main, earlier]
+invalidNavigation:
+  - name: duplicate-context-kind
+    category: duplicate-kind
+    refusal: duplicate relationship kinds make the authorized target ambiguous
+    navigation:
+      - {kind: context_from, status: resolved, localId: ses_contextsource, anchor: {kind: through_redacted_entry, sourceEntryRef: branch-entry, sourceRevisionRef: public-revision}}
+      - {kind: context_from, status: resolved, localId: ses_secondsource}
+  - name: duplicate-starter-kind
+    category: duplicate-kind
+    refusal: duplicate relationship kinds make the authorized target ambiguous
+    navigation:
+      - {kind: started_by, status: resolved, localId: ses_startersource}
+      - {kind: started_by, status: resolved, localId: ses_secondsource}
+  - name: duplicate-context-kind-across-statuses
+    category: duplicate-kind
+    refusal: duplicate relationship kinds make the authorized target ambiguous
+    navigation:
+      - {kind: context_from, status: resolved, localId: ses_contextsource}
+      - {kind: context_from, status: known_unavailable}
+  - name: malformed-anchor-unknown-kind
+    category: malformed-anchor
+    refusal: during read-metadata validation
+    navigation:
+      - {kind: context_from, status: resolved, localId: ses_contextsource, anchor: {kind: not_a_source_anchor}}
+  - name: malformed-anchor-missing-kind
+    category: malformed-anchor
+    refusal: during read-metadata validation
+    navigation:
+      - {kind: context_from, status: resolved, localId: ses_contextsource, anchor: {sourceEntryRef: branch-entry}}
+  - name: malformed-anchor-empty
+    category: malformed-anchor
+    refusal: during read-metadata validation
+    navigation:
+      - {kind: context_from, status: resolved, localId: ses_contextsource, anchor: {}}
+  - name: malformed-anchor-unknown-field
+    category: malformed-anchor
+    refusal: during read-metadata validation
+    navigation:
+      - {kind: started_by, status: resolved, localId: ses_startersource, anchor: {kind: through_redacted_entry, revisionRef: public-revision}}
 countCases:
   - {name: unmeasured, absent: true, expected: unknown}
   - {name: measured-zero, value: 0, expected: '0'}
