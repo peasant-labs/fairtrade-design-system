@@ -4,6 +4,41 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.20 — 2026-09-14
+
+### Added
+
+- **Session provenance and grouped helper reads.** The canonical transcript
+  adapter cooks native parser evidence: per-turn origin, actor, delivery,
+  ownership, and evidence, input modalities, submission references, and an
+  independently counted input submission total (absent means unknown, a recorded
+  zero means measured none). Saved helper threads render as one owner-anchored
+  tree under the session that owns them: collapsed by default, one count chip
+  between owner and members (`N helper thread(s)`, `, M selected`, show/hide), a
+  single measured rail traced through every mounted row, and explicit per-member
+  selection that never widens to the owner or siblings. Member paging is
+  host-owned and now has a canonical slot after the member rows; an expired
+  member scope fails closed with a refresh of the originating list only, and
+  unsupported evidence is refused instead of stripped. (#84)
+- **`PromptDigest`.** One read-only component family renders the schema
+  `PromptDigest` type for the prompts behind a pull request: a header with
+  session, prompt, and commit counts, the harness leading with its real brand
+  mark, the recorded redaction level and one link out to the whole digest, a
+  skills row that keeps recorded names exactly, and per-prompt rows that link out
+  instead of re-implementing transcript rendering. (#86)
+
+### Changed
+
+- Pinned `@peasant-labs/schema` to published version `0.20.0`, a strict superset
+  of `0.19.0`. The package keeps the canonical wire contract for session
+  provenance and grouped reads; no local link or replacement stands in for the
+  published package.
+- Release pull requests validate native stack merges, and the required
+  release-guard scenarios stay protected by fixture-backed tests. (#82, #83)
+- The packed-artifact roundtrip and fail-closed refusals now run as part of
+  `build:lib`, so release readiness is reproduced against the exact tarball at
+  the shipping commit.
+
 ## 0.0.19 — 2026-09-07
 
 ### Added
