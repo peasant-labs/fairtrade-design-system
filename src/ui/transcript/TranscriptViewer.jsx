@@ -13,6 +13,7 @@ import { formatDuration } from '../StepsWaterfall.jsx'
 import { TOOL_GROUPS } from './view-model.js'
 import { categoryCounts, projectTurn } from './filters.js'
 import TurnCard from './TurnCard.jsx'
+import TranscriptContext from './TranscriptContext.jsx'
 import { UsageScopes } from './UsageDisclosure.jsx'
 import DiffEntryCard from './DiffEntryCard.jsx'
 import OutlineRail from './OutlineRail.jsx'
@@ -29,7 +30,7 @@ import { transcriptInitialPositionReadiness } from './initial-position.js'
    ─────────────────────────────────────────────────────────────────────────
    Lifted from the canonical mockup's `TranscriptApp` (src/mockups/inuse/
    TranscriptApp.jsx:880) into an EXPORTED, DUMB composite. It assembles the
-   chrome + the canvas (the S3 turn cards, or the consumer's `graphSlot` in graph
+   chrome + the canvas (the turn cards, or the consumer's `graphSlot` in graph
    mode) + the rails + scrubber + scorecard + the between-turn markers, ALL from a
    single cooked `TranscriptViewModel`. It never parses wire and never reads a git
    wire field — only `vm`.
@@ -46,7 +47,7 @@ import { transcriptInitialPositionReadiness } from './initial-position.js'
    (a consuming app plugs fairtrade's own `/graph` @xyflow engine; the mockup
    plugs SVG); no `@xyflow` dependency here.
 
-   CHECKPOINTS: S3 relocated commits off the per-turn card; the composite draws
+   CHECKPOINTS: commits live outside the per-turn card; the composite draws
    them between turns from the cooked `session.git.commits` (render-when-present),
    anchored to a turn when the cooked commit carries one, else clustered at the end.
    ─────────────────────────────────────────────────────────────────────────── */
@@ -175,6 +176,8 @@ export default function TranscriptViewer({
   onRightRailOpenChange,
   openTools: openToolsProp,
   onOpenToolsChange,
+  earlierHistoryOpen: earlierHistoryOpenProp,
+  onEarlierHistoryOpenChange,
   initialPosition: initialPositionProp,
   activeTurn: activeTurnProp,
   onActiveTurnChange,
@@ -206,6 +209,7 @@ export default function TranscriptViewer({
   const [leftRailOpen, setLeftRailOpen] = useControllable(leftRailOpenProp, onLeftRailOpenChange, true)
   const [rightRailOpen, setRightRailOpen] = useControllable(rightRailOpenProp, onRightRailOpenChange, true)
   const [openTools, setOpenTools] = useControllable(openToolsProp, onOpenToolsChange, {})
+  const [earlierHistoryOpen, setEarlierHistoryOpen] = useControllable(earlierHistoryOpenProp, onEarlierHistoryOpenChange, {})
   const [activeTurn, setActiveTurn] = useControllable(activeTurnProp, onActiveTurnChange, vm?.turns?.[0]?.index ?? 0)
   const [query, setQuery] = useControllable(searchProp, onSearchChange, '')
   const [filters, setFilters] = useControllable(filtersProp, onFiltersChange, DEFAULT_FILTERS)
@@ -213,6 +217,12 @@ export default function TranscriptViewer({
   // the action-menu disclosures are view-state too (controllable; default CLOSED).
   const [shareOpen, setShareOpen] = useControllable(shareOpenProp, onShareOpenChange, false)
   const [moreOpen, setMoreOpen] = useControllable(moreOpenProp, onMoreOpenChange, false)
+
+  // Unmanaged disclosure state is session-local. Controlled hosts restore their
+  // own saved map on Back and are not reset by this default behavior.
+  useEffect(() => {
+    if (earlierHistoryOpenProp === undefined) setEarlierHistoryOpen({})
+  }, [vm?.session?.id])
 
   /* ── local (non-exposed) UI state ───────────────────────────────────────────── */
   const [copiedTurn, setCopiedTurn] = useState(null)
@@ -671,7 +681,7 @@ export default function TranscriptViewer({
   // Session titles are frequently a whole first prompt — bound the hero to
   // 160 characters so a run-on title cannot swallow the header (the
   // pre-composite viewers truncated; consumers rely on it).
-  const rawTitle = session.title ?? tasks[0]?.prompt ?? turns.find((t) => t.role === 'user')?.content ?? session.id ?? 'transcript'
+  const rawTitle = session.title ?? (session.hasNormalizedEvidence ? undefined : tasks[0]?.prompt ?? turns.find((t) => t.role === 'user')?.content) ?? session.id ?? 'transcript'
   // codePointAt guard: never slice through a surrogate pair (mojibake before the ellipsis).
   const cut = (rawTitle.codePointAt(158) ?? 0) > 0xffff ? 158 : 159
   const title = rawTitle.length > 160 ? rawTitle.slice(0, cut).trimEnd() + '…' : rawTitle
@@ -782,6 +792,7 @@ export default function TranscriptViewer({
           {session.git?.author && <span className="metaitem" title="author"><User size={14} aria-hidden="true" /> {session.git.author}</span>}
           {session.durationMins != null && <span className="metaitem" title="session duration"><Clock size={14} aria-hidden="true" /> <b className="tnum">{session.durationMins}m</b></span>}
           {session.turnCount != null && <span className="metaitem"><ListTree size={14} aria-hidden="true" /> <b className="tnum">{session.turnCount}</b> turns</span>}
+          <span className="metaitem"><MessageSquareText size={14} aria-hidden="true" /> <b className="tnum">{session.inputSubmissionCount ?? 'unknown'}</b> input submissions</span>
           {session.toolCallCount != null && <span className="metaitem"><Wrench size={14} aria-hidden="true" /> <b className="tnum">{session.toolCallCount}</b> tools</span>}
           {!vm.usageScopes?.length && session.totalTokens != null && <span className="metaitem" title={fmtTokens(session.tokensIn ?? 0) + ' in · ' + fmtTokens(session.tokensOut ?? 0) + ' out'}><Coins size={14} aria-hidden="true" /> <b className="tnum">{fmtTokens(session.totalTokens)}</b> tokens</span>}
           {commits.length > 0 && <span className="metaitem"><GitCommitHorizontal size={14} aria-hidden="true" /> <b className="tnum">{commits.length}</b> {commits.length === 1 ? 'commit' : 'commits'}</span>}
@@ -887,6 +898,16 @@ export default function TranscriptViewer({
                     {streamPrelude != null && (
                       <div className="txn-stream-prelude">{streamPrelude}</div>
                     )}
+                    <TranscriptContext
+                      key={session.id}
+                      relationships={vm.relationships}
+                      earlierHistory={vm.earlierHistory}
+                      onNavigate={callbacks.onNavigateRelationship}
+                      open={earlierHistoryOpen}
+                      toggle={id => setEarlierHistoryOpen(previous => ({ ...previous, [id]: !previous[id] }))}
+                      openTools={openTools}
+                      toggleTool={toggleTool}
+                    />
                     {visibleTurns.length === 0 && (
                       <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><h3>no turns to display</h3><p>every turn is filtered out. clear a filter to bring them back.</p></div>
                     )}
@@ -898,7 +919,7 @@ export default function TranscriptViewer({
                       const task = taskByFirstTurn.get(t.index)
                       const turnCommits = anchoredCommits.filter((c) => c.turn === t.index)
                       return (
-                        <div key={t.index}>
+                        <div key={t.identity ?? t.index}>
                           {showPhase && <PhaseDivider phase={phase} />}
                           {t.role === 'user' && task && <TaskBoundary task={task} />}
                           <TurnCard

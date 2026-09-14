@@ -1,0 +1,185 @@
+# requiredNames is the deletion-protection manifest: every case below must be
+# present by NAME (never a bare count), and no case may be renamed away silently.
+requiredNames:
+  - three-independent-counts
+  - helper-only-search
+  - unresolved-independent
+  - identical-independent-helpers
+  - trunk-append
+  - trunk-replacement
+  - scope-expired
+  - unavailable-owner
+  - measured-zero
+  - unknown-input-count
+  - ordinary-child-exit
+  - two-live-paging-states
+smoke:
+  group: { groupId: hg_parent, memberScope: exact-query, helperThreadCount: 2, members: [G1, G2] }
+  context: { ownerStatus: known_unavailable }
+  thread: G2
+rows:
+  P1: { id: P1, title: Fix Parser, provider: codex, inputSubmissionCount: 1, turnCount: 5 }
+  G1: { id: G1, title: Review Parser, provider: codex, inputSubmissionCount: 0, turnCount: 4 }
+  G2: { id: G2, title: Review Parser, provider: codex, inputSubmissionCount: 0, turnCount: 9 }
+  G4: { id: G4, title: Replacement Review, provider: codex, inputSubmissionCount: 0, turnCount: 1 }
+  OLD: { id: OLD, title: Historical Input, provider: opencode, turnCount: 5 }
+  O1: { id: O1, title: Ordinary Child, provider: opencode, turnCount: 3 }
+  G3: { id: G3, title: Audit Parser, provider: codex, inputSubmissionCount: 2, turnCount: 6 }
+  G5: { id: G5, title: Migrate Parser, provider: opencode, inputSubmissionCount: 0, turnCount: 2 }
+  G6: { id: G6, title: Document Parser, provider: codex, inputSubmissionCount: 1, turnCount: 3 }
+  G7: { id: G7, title: Backfill Parser, provider: opencode, inputSubmissionCount: 0, turnCount: 7 }
+cases:
+  - name: three-independent-counts
+    owner: P1
+    groups: [{ id: hg_parent, scope: exact-query, count: 2, members: [G1, G2] }]
+    expectedRows: [G1, G2]
+    expectedLabels: [2 helper threads]
+    expectedText: [1 input submission, 5 turns]
+    expectedAnchorCounts: { collapsed: 1, expanded: 3 }
+    select: G2
+    expectedSelected: [G2]
+    expectedSelectedLabel: 2 helper threads, 1 selected
+    # The canonical two-state cycle. A manual helper pick is followed by the owner
+    # selecting the whole tree; the owner untick RESTORES that manual pick instead
+    # of clearing it. A manual member edit while the whole tree is in the all
+    # selection writes all-but-that-member, and the owner untick after that
+    # restores all-but-that-member.
+    selectionScript:
+      - { toggle: G1, expectedSelected: [G1], expectedOwnerState: partial }
+      - { toggle: P1, expectedSelected: [P1, G1, G2], expectedOwnerState: checked }
+      - { toggle: P1, expectedSelected: [G1], expectedOwnerState: partial }
+      - { toggle: P1, expectedSelected: [P1, G1, G2], expectedOwnerState: checked }
+      - { toggle: G2, expectedSelected: [P1, G1], expectedOwnerState: partial }
+      - { toggle: P1, expectedSelected: [P1, G1, G2], expectedOwnerState: checked }
+      - { toggle: P1, expectedSelected: [P1, G1], expectedOwnerState: partial }
+  - name: helper-only-search
+    ownerStatus: resolved
+    groups: [{ id: hg_parent, scope: search-G2-only, count: 1, members: [G2] }]
+    expectedRows: [G2]
+    expectedLabels: [1 helper thread]
+    expectedText: [owner is outside this result, 0 input submissions]
+    expectedAnchorCounts: { collapsed: 0, expanded: 1 }
+    select: G2
+    expectedSelected: [G2]
+    expectedSelectedLabel: 1 helper thread, 1 selected
+    # A helper-only result has no owner to cascade from: a member edit touches
+    # only that member.
+    selectionScript:
+      - { toggle: G2, expectedSelected: [G2] }
+      - { toggle: G2, expectedSelected: [] }
+  - name: unresolved-independent
+    ownerStatus: unknown
+    groups:
+      - { id: hg_unknown_G1, scope: unknown-G1, count: 1, members: [G1] }
+      - { id: hg_unknown_G2, scope: unknown-G2, count: 1, members: [G2] }
+    expectedRows: [G1, G2]
+    expectedLabels: [1 helper thread, 1 helper thread]
+    expectedText: [owner is unknown]
+    expectedAnchorCounts: { collapsed: 0, expanded: 2 }
+    # Independent groups have no shared owner: a member edit never widens to a
+    # member of another group.
+    selectionScript:
+      - { toggle: G1, expectedSelected: [G1] }
+      - { toggle: G2, expectedSelected: [G1, G2] }
+      - { toggle: G1, expectedSelected: [G2] }
+  - name: identical-independent-helpers
+    owner: P1
+    groups: [{ id: hg_parent, scope: identity-query, count: 2, members: [G1, G2] }]
+    expectedRows: [G1, G2]
+    expectedLabels: [2 helper threads]
+    expectedText: [2 helper threads]
+    expectedAnchorCounts: { collapsed: 1, expanded: 3 }
+  - name: trunk-append
+    owner: P1
+    groups: [{ id: hg_parent, scope: appended-query, count: 2, members: [G1, G2] }]
+    expectedRows: [G1, G2]
+    expectedLabels: [2 helper threads]
+    update: { id: G1, turnCount: 20 }
+    expectedText: [2 helper threads, 20 turns]
+    expectedAnchorCounts: { collapsed: 1, expanded: 3 }
+  - name: trunk-replacement
+    owner: P1
+    groups: [{ id: hg_parent, scope: replacement-query, count: 3, members: [G1, G2, G4] }]
+    expectedRows: [G1, G2, G4]
+    expectedLabels: [3 helper threads]
+    expectedText: [3 helper threads, 1 turn]
+    expectedAnchorCounts: { collapsed: 1, expanded: 4 }
+  - name: scope-expired
+    ownerStatus: resolved
+    groups: [{ id: hg_parent, scope: expired-G2-only, count: 1, members: [G2] }]
+    expectedLabels: [1 helper thread]
+    scopeExpired: true
+    expectedRows: []
+    expectedText: [query expired, no broader results were loaded, refresh list]
+    expectedAnchorCounts: { collapsed: 0, expanded: 0 }
+  - name: unavailable-owner
+    ownerStatus: known_unavailable
+    groups: [{ id: hg_missing, scope: missing-owner-query, count: 1, members: [G2] }]
+    expectedRows: [G2]
+    expectedLabels: [1 helper thread]
+    expectedText: [owner is unavailable]
+    expectedAnchorCounts: { collapsed: 0, expanded: 1 }
+  - name: measured-zero
+    owner: G1
+    groups: [{ id: hg_nested, scope: nested-query, count: 1, members: [G2] }]
+    expectedRows: [G2]
+    expectedLabels: [1 helper thread]
+    expectedText: [0 input submissions]
+    expectedAnchorCounts: { collapsed: 1, expanded: 2 }
+    # The owner is itself a helper thread here, and the cycle still applies: the
+    # owner engages the all selection, unticking it restores the manual selection,
+    # and a manual member edit under the all selection is restored by the next
+    # untick.
+    selectionScript:
+      - { toggle: G1, expectedSelected: [G1, G2], expectedOwnerState: checked }
+      - { toggle: G1, expectedSelected: [], expectedOwnerState: unchecked }
+      - { toggle: G2, expectedSelected: [G2], expectedOwnerState: partial }
+      - { toggle: G1, expectedSelected: [G1, G2], expectedOwnerState: checked }
+      - { toggle: G1, expectedSelected: [G2], expectedOwnerState: partial }
+  - name: unknown-input-count
+    owner: OLD
+    groups: [{ id: hg_old, scope: historical-query, count: 1, members: [G2] }]
+    expectedRows: [G2]
+    expectedLabels: [1 helper thread]
+    expectedText: [unknown input submissions, 5 turns]
+    expectedAnchorCounts: { collapsed: 1, expanded: 2 }
+  - name: ordinary-child-exit
+    owner: P1
+    ordinaryChild: O1
+    groups: [{ id: hg_parent, scope: child-query, count: 1, members: [G2] }]
+    expectedRows: [G2]
+    expectedLabels: [1 helper thread]
+    expectedText: [ordinary child]
+    expectedAnchorCounts: { collapsed: 1, expanded: 2 }
+  # The two-deep paging oracle: the owner P1 expands to G1, and G1 itself owns a
+  # nested group. Each group carries its own host-owned page state, page indicator,
+  # and previous/next rendered into the memberFooter slot, so one tree proves two
+  # independent live paging states. The fixture holds each group's FULL authorized
+  # set (the server total); the demo host owns page state, slices the loaded page,
+  # and passes it as `members` while stating the total as `helperThreadCount`.
+  - name: two-live-paging-states
+    owner: P1
+    paging: { limit: 2 }
+    groups:
+      - { id: hg_paged_parent, scope: paged-parent-query, count: 4, members: [G1, G3, G4, G6] }
+    nested:
+      - owner: G1
+        group: { id: hg_paged_nested, scope: paged-nested-query, count: 3, members: [G2, G5, G7] }
+    expectedRows: [G1, G3, G4, G6]
+    expectedLabels: [4 helper threads]
+    expectedText: [4 helper threads]
+    expectedAnchorCounts: { collapsed: 1, expanded: 5 }
+# The configured-selection oracle: initialSelectedIds is the host's saved manual
+# pick, the owner cycle restores it, and switching to a different owner or member
+# set resets to that tree's configured selection instead of carrying the pick over.
+configured:
+  seed:
+    owner: P1
+    groups: [{ id: hg_seed, scope: seed-query, count: 2, members: [G1, G2] }]
+    initialSelectedIds: [G2]
+  switch:
+    owner: G1
+    groups: [{ id: hg_switch, scope: switch-query, count: 1, members: [G2] }]
+  steps:
+    - { toggle: P1, expectedSelected: [P1, G1, G2], expectedOwnerState: checked }
+    - { toggle: P1, expectedSelected: [G2], expectedOwnerState: partial }

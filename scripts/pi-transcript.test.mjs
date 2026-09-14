@@ -63,7 +63,7 @@ for (const c of cases) {
     continue
   }
   assert.equal(vm.turns[1].content, input.turns[1].content)
-  assert.equal(vm.turns[2].thinking.text, 'Consider Orchard constraints exactly once.')
+  assert.equal(vm.turns[6].thinking.text, 'Consider Orchard constraints exactly once.')
   assert.equal(vm.turns[2].content, 'Checking the plan. [image omitted]')
   assert.equal(vm.toolCallsById.get('tool-orchard').args.Plan.Options[1].Mode, 'Careful')
   assert.equal(vm.toolCallsById.get('tool-orchard').output, payload.turns[2].toolCalls[0].result)
@@ -72,7 +72,7 @@ for (const c of cases) {
   assert.equal(vm.toolCallsById.get('tool-pending').usage, undefined)
   assert.equal(vm.turns[2].usage.cost.output, '0.30000000000000004')
   assert.ok(!JSON.stringify(vm.turns.map(t => t.content)).includes('MetadataOnlyNeedle'))
-  assert.equal(vm.filterIndex.totalTurns, 6)
+  assert.equal(vm.filterIndex.totalTurns, 7)
   const assistant = vm.usageScopes.find(scope => scope.scope === 'assistant')
   assert.equal(assistant.ownerCount, 2)
   assert.deepEqual(assistant.tokens[0], { label: 'input', value: '0', completeness: c.equalOwners ? 'complete' : 'partial' })

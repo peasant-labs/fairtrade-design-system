@@ -1,0 +1,127 @@
+# Packed-artifact consumer fixture. This is the single source for the roundtrip
+# assertions scripts/packed-tarball-consumer.mjs runs against the installed
+# tarball: one durable payload plus its separately-authorized read metadata,
+# the importables a host must be able to pull from the package, and the
+# fail-closed refusals that prove an unsupported payload is rejected rather
+# than stripped. The payload mirrors the canonical native text/thinking pair so
+# the roundtrip exercises the shipped folding contract, not a test-only shape.
+expectedCaseCount: 1
+cases:
+  - name: native-text-thinking-pair
+    # The durable payload a producer persists and a consumer reads back.
+    payload:
+      id: packed-roundtrip
+      harness: codex
+      project: Parser
+      startTime: '2026-09-01T10:00:00Z'
+      endTime: '2026-09-01T10:01:00Z'
+      durationMins: 1
+      totalTokens: 0
+      tokensIn: 0
+      tokensOut: 0
+      turnCount: 5
+      inputSubmissionCount: 1
+      toolCallCount: 1
+      relationships:
+        - kind: context_from
+          targetState: target_known
+          targetLocalId: ses_contextsource
+          evidence: native_typed
+          anchor: {kind: through_redacted_entry, sourceEntryRef: branch-entry, sourceRevisionRef: public-revision}
+        - {kind: started_by, targetState: target_known, targetLocalId: ses_startersource, evidence: native_typed}
+      turns:
+        - index: 0
+          role: user
+          entryType: text
+          depth: 0
+          content: fix parser
+          timestamp: '2026-09-01T10:00:00Z'
+          sourceEntryRef: e_u1
+          provenance: {origin: submitted_input, actor: unknown, delivery: session_admission, ownership: local, evidence: native_typed, inputModality: text, submissionRef: s_u1}
+        - index: 1
+          role: system
+          entryType: text
+          depth: 0
+          content: injected AGENTS content
+          timestamp: '2026-09-01T10:00:00Z'
+          sourceEntryRef: e_ctx1
+          provenance: {origin: harness_context, actor: harness, delivery: system_lifecycle, ownership: local, evidence: native_typed, inputModality: none}
+        - index: 2
+          role: user
+          entryType: text
+          depth: 0
+          content: canonical media display content
+          timestamp: '2026-09-01T10:00:00Z'
+          sourceEntryRef: e_media1
+          provenance: {origin: submitted_input, actor: unknown, delivery: session_admission, ownership: local, evidence: native_typed, inputModality: media, submissionRef: s_u1}
+        - index: 3
+          role: assistant
+          entryType: text
+          depth: 0
+          content: I will inspect.
+          timestamp: '2026-09-01T10:00:00Z'
+          sourceEntryRef: e_a1
+          provenance: {origin: agent_output, actor: agent_delegate, delivery: unknown, ownership: local, evidence: native_typed, inputModality: none}
+          toolCalls:
+            - id: parser-tool
+              name: Bash
+              toolKind: execute
+              arguments: '{"command":"rg parser"}'
+              result: 'parser.go:12 parser name resolved'
+              callEntryRef: e_call1
+              resultEntryRef: e_result1
+              callProvenance: {origin: tool_activity, actor: agent_delegate, delivery: tool_delivery, ownership: local, evidence: native_typed, inputModality: none}
+              resultProvenance: {origin: tool_activity, actor: agent_delegate, delivery: tool_delivery, ownership: local, evidence: native_typed, inputModality: none}
+              usage: {ownerId: usage-result, sourceEntryRef: e_result1, scope: tool, completeness: partial, tokens: {output: 2}}
+        - index: 4
+          role: assistant
+          entryType: thinking
+          depth: 0
+          content: I will inspect.
+          timestamp: '2026-09-01T10:00:00Z'
+          sourceEntryRef: e_reason1
+          provenance: {origin: agent_output, actor: agent_delegate, delivery: unknown, ownership: local, evidence: native_typed, inputModality: none}
+    # Read-only host authority, kept OUT of the durable payload and passed to
+    # adaptTranscript separately, exactly as a consuming host must.
+    navigation:
+      - {kind: context_from, status: resolved, localId: ses_contextsource, anchor: {kind: through_redacted_entry, sourceEntryRef: branch-entry, sourceRevisionRef: public-revision}}
+      - {kind: started_by, status: resolved, localId: ses_startersource}
+    expect:
+      turnIndices: [0, 1, 2, 3, 4]
+      turnCount: 5
+      inputSubmissionCount: 1
+      textTurnIndex: 3
+      textContent: I will inspect.
+      thinkingTurnIndex: 4
+      thinkingText: I will inspect.
+      relationshipLabels: [context inherited from, started by]
+      relationshipTargets: [ses_contextsource, ses_startersource]
+      contextNavigationStatus: resolved
+      contextAnchorRevision: public-revision
+      starterNavigationStatus: general_link_only
+# Every public symbol a host application imports after installing the package.
+# subpath is the exports-map key; names must resolve as live exports.
+importables:
+  - subpath: ui
+    names: [adaptTranscript, prefilterTurns, TranscriptViewer, HelperGroup, HelperGroupListItem, HelperThreadRow]
+# Fail-closed evidence. Each overlay is merged onto the named case payload and
+# the packed adapter MUST throw with expectedError rather than strip the field
+# or return a degraded transcript.
+refusals:
+  - name: relationship-carries-a-cooked-field
+    caseName: native-text-thinking-pair
+    overlay:
+      relationships:
+        - {kind: context_from, targetState: target_known, targetLocalId: ses_contextsource, evidence: native_typed, label: context inherited from}
+    expectedError: relationship contains forbidden field label
+  - name: durable-payload-embeds-read-metadata
+    caseName: native-text-thinking-pair
+    overlay:
+      relationshipNavigation:
+        - {kind: context_from, status: resolved, localId: ses_contextsource}
+    expectedError: durable payload contains forbidden read-only or cooked field relationshipNavigation
+  - name: input-submission-count-is-not-an-integer
+    caseName: native-text-thinking-pair
+    overlay:
+      inputSubmissionCount: '1'
+    expectedError: inputSubmissionCount is outside 0..9007199254740991

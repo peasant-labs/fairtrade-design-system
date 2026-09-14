@@ -19,7 +19,62 @@ boundary. Canonical flat `gitBranch`, `gitRemote`, and `workingDirectory` win wh
 present; nullable canonical `turns` becomes an empty list. Both data modules carry `// @ts-check` and are pinned by `tsc -p tsconfig.contract.json`
 (`pnpm test:contract`).
 
-## observed model and sticky state
+## normalized evidence, current sources, and earlier history
+
+`adaptTranscript(durablePayload, annotations, analytics, options)` validates the complete
+evidence-bearing value with schema's `parseSessionDetailPayloadValue` before filtering. Hosts
+must still use the canonical text parser at the network boundary for lexical JSON validation.
+Do not pass the flat read DTO as durable content: separate `relationshipNavigation` into
+`options.relationshipNavigation`. Village supplies this option from metadata, not from `/content`.
+
+The adapter protects turns with source refs, present provenance (including unknown evidence),
+or folded call/result evidence. Protected rows bypass legacy noise removal, equal-text collapse,
+and leading `<thinking>` inference. Only normalized `entryType: thinking` cooks a protected
+`ThinkingVM`. Truly legacy rows retain their old filter and wrapper behavior. The exported
+`prefilterTurns` uses canonical field validators; full cross-partition identity/attachment checks
+belong to the complete-payload adapter boundary, never a synthetic partial payload.
+The adapter cooks the canonical parser's returned value, including its optional-empty-ref
+normalization, while retaining the explicitly supported legacy `gitContext` extension.
+Optional empty refs do not weaken required usage-owner/source or attachment validation.
+
+Cooked `TurnVM.identity` is scoped by `partition` (`main` or `earlier-N`) plus source ref, falling
+back to the index only for legacy rows. Refs/provenance and folded refs/provenance are retained.
+`vm.earlierHistory` contains independently cooked turns, usage scopes and native metadata. Main
+indices, filters, annotations, totals and tool lookup maps never incorporate an earlier section.
+The viewer renders earlier history collapsed before the first current turn; expanding reads
+already-captured data and never fetches a parent. Earlier DOM anchors are scoped and never alias
+the main `turn-N` anchors or main active-turn observer.
+
+`vm.relationships` cooks labels and unavailable/conflict states. A durable target is not permission
+to navigate. Only a separately authorized read target is supplied to
+`callbacks.onNavigateRelationship(navigation)`. Without that callback, the viewer displays
+`navigation unavailable`, never a dummy link. The host builds the current-target route and owns
+authorization, query/scroll/selection restoration and Back. Source/starter labels combine only
+when their known targets and read navigation agree. An exact anchor is passed only when the
+authorized read result confirms the durable entry and public revision; otherwise the callback
+receives a general current-source link and the viewer explains the unverified earlier state.
+
+`earlierHistoryOpen` and `onEarlierHistoryOpenChange` form a controllable section-ID disclosure
+map for host Back restoration. Default is closed. Hosts scope that saved map to the session.
+Earlier turns deliberately do not invoke legacy numeric main-turn label/copy-link callbacks.
+
+`session.inputSubmissionCount` preserves optional presence exactly. The metadata label is
+`input submissions`; omitted displays `unknown`, present zero displays `0`. Filtering, expanding
+and navigation never recount it. `session.turnCount` remains the producer's main-record count,
+and helper-thread counts remain the independent saved-identity metric. Normalized evidence also
+disables the viewer's legacy first-prompt title guess; hosts may supply their already-authoritative
+title through `vm.session.title` without lowercasing it.
+
+The mounted canonical example is `?app=transcript&transcript=context#inuse`.
+`contextCase`, `contextPartition`, `contextNavigation` and `contextCount` select named synthetic
+YAML fixture states. They exercise the same production adapter and composite as consumers.
+Run `pnpm test:transcript-provenance` for all retention/invalid/count/navigation cases, then
+build the production app and run `pnpm test:transcript-provenance:mounted` for keyboard
+disclosures, current-target callbacks, Back restoration, both-theme style probes and captures.
+The mounted gate refuses a build without this renderer and fixture; it records exact served
+asset hashes and the source revision. These fixtures are not native harness decoders.
+
+## observed model resolution
 
 `TurnDetail.observedModel` is source evidence from assistant output. The adapter resolves it over the
 complete ordered payload before noise filtering or an optional host projection. Root assistant

@@ -27,7 +27,7 @@
 
 import { parseArgs, parseResult, extractPath, editPairs, writeContent, countDiff } from './adapter.parse.js'
 import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analytics.js'
-import { zObservedModelID, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
+import { zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
 import { aggregateUsage } from './usage.js'
 
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
@@ -93,18 +93,67 @@ function recordOf(v) {
 
 /* ── Turn prefilter (noise filter + consecutive dedup) ───────────────────────── */
 
+/** @param {object} value @param {string} key */
+const present = (value, key) => Object.prototype.hasOwnProperty.call(value, key)
+
+/** Evidence presence is independent of author, role, eligibility, or text. @param {TurnDetail} turn */
+function protectedTurn(turn) {
+  return !!turn.sourceEntryRef || present(turn, 'provenance') || !!turn.usage ||
+    !!turn.toolCalls?.some(tool => tool.callEntryRef || tool.resultEntryRef || tool.usage ||
+      present(tool, 'callProvenance') || present(tool, 'resultProvenance'))
+}
+
+/** Detect malformed PRESENT evidence too, before any destructive legacy filtering. @param {TurnDetail} turn */
+function hasTurnEvidence(turn) {
+  return (present(turn, 'sourceEntryRef') && turn.sourceEntryRef !== '') || present(turn, 'provenance') || present(turn, 'usage') ||
+    !!turn.toolCalls?.some(tool => (present(tool, 'callEntryRef') && tool.callEntryRef !== '') ||
+      (present(tool, 'resultEntryRef') && tool.resultEntryRef !== '') ||
+      ['callProvenance', 'resultProvenance', 'usage', 'namespace'].some(key => present(tool, key)))
+}
+
+/** Empty optional submission refs have canonical absence semantics. @param {unknown} value */
+function validateProvenanceEvidence(value) {
+  const record = recordOf(value)
+  if (record?.submissionRef === '') {
+    const { submissionRef: _absent, ...withoutEmptyRef } = record
+    zContentProvenance.parse(withoutEmptyRef)
+  } else zContentProvenance.parse(value)
+}
+
+/** The public array helper validates relevant fields using canonical schemas, not a replacement wire model.
+ * Full cross-partition/attachment validation is performed by adaptTranscript before invoking it.
+ * @param {TurnDetail[]} turns
+ */
+function validateTurnEvidence(turns) {
+  turns.forEach((turn, position) => {
+    try {
+      if (present(turn, 'sourceEntryRef') && turn.sourceEntryRef !== '') zSourceEntryRef.parse(turn.sourceEntryRef)
+      if (present(turn, 'provenance')) validateProvenanceEvidence(turn.provenance)
+      for (const tool of turn.toolCalls ?? []) {
+        if (present(tool, 'callEntryRef') && tool.callEntryRef !== '') zSourceEntryRef.parse(tool.callEntryRef)
+        if (present(tool, 'resultEntryRef') && tool.resultEntryRef !== '') zSourceEntryRef.parse(tool.resultEntryRef)
+        if (present(tool, 'callProvenance')) validateProvenanceEvidence(tool.callProvenance)
+        if (present(tool, 'resultProvenance')) validateProvenanceEvidence(tool.resultProvenance)
+      }
+    } catch (cause) {
+      throw Object.assign(new TypeError(`Fairtrade prefilterTurns refused turn at position ${position} during evidence validation: a source reference or provenance field is malformed. No turns were filtered. Correct the producer using the canonical schema and retry.`), { cause })
+    }
+  })
+}
+
 /**
- * Default turn prefilter the adapter applies to `payload.turns`: drop turns with
- * neither content nor tool calls (and short tool-less system banners), then
- * collapse adjacent same-role turns with identical content (a streaming
- * artifact), preferring the tool-bearing copy. Pure, order-preserving. Exported
+ * Default turn prefilter the adapter applies independently per partition:
+ * preserve normalized evidence, including unknown provenance and folded refs.
+ * Only truly legacy rows lose empty/short banners or collapse equal adjacent
+ * content, preferring the tool-bearing copy. Pure, order-preserving. Exported
  * so a host that pre-scopes turns can run the SAME filter.
  * @param {TurnDetail[]} turns
  * @returns {TurnDetail[]}
  */
 export function prefilterTurns(turns) {
+  validateTurnEvidence(turns)
   const filtered = turns.filter((t) => {
-    if (t.sourceEntryRef || t.usage) return true
+    if (protectedTurn(t)) return true
     const hasContent = !!t.content?.trim()
     const hasTools = (t.toolCalls?.length ?? 0) > 0
     if (!hasContent && !hasTools) return false
@@ -115,7 +164,7 @@ export function prefilterTurns(turns) {
   const deduped = []
   for (const curr of filtered) {
     const prev = deduped[deduped.length - 1]
-    if (prev && !prev.sourceEntryRef && !curr.sourceEntryRef && !prev.usage && !curr.usage && prev.role === curr.role && prev.content === curr.content && prev.content.trim() !== '') {
+    if (prev && !protectedTurn(prev) && !protectedTurn(curr) && prev.role === curr.role && prev.content === curr.content && prev.content.trim() !== '') {
       const prevHasTools = (prev.toolCalls?.length ?? 0) > 0
       const currHasTools = (curr.toolCalls?.length ?? 0) > 0
       if (currHasTools && !prevHasTools) deduped[deduped.length - 1] = curr
@@ -179,6 +228,7 @@ function resolveStickyModels(turns, seed) {
 /**
  * @typedef {object} AdaptTranscriptOptions
  * @property {readonly number[]} [visibleTurnIndices] post-resolution projection by canonical turn index
+ * @property {import('@peasant-labs/schema').SessionRelationshipNavigation[]} [relationshipNavigation] separately authorized read metadata; never durable content
  */
 
 /* ── Tool-call cooking ───────────────────────────────────────────────────────── */
@@ -356,6 +406,10 @@ function buildToolCallVM(call) {
   if (call.exitCode != null) vm.exitCode = call.exitCode
   if (call.isError) vm.isError = true
   if (call.usage) vm.usage = call.usage
+  if (call.callEntryRef) vm.callEntryRef = call.callEntryRef
+  if (call.resultEntryRef) vm.resultEntryRef = call.resultEntryRef
+  if (call.callProvenance) vm.callProvenance = call.callProvenance
+  if (call.resultProvenance) vm.resultProvenance = call.resultProvenance
   if (call.callEntryRef && !call.resultEntryRef) vm.pending = true
   const diff = buildDiffHunks(call)
   if (diff) {
@@ -476,6 +530,10 @@ function cookSession(payload, git) {
   }
   if (payload.project) session.project = payload.project
   if (payload.model) session.model = payload.model
+  if (payload.inputSubmissionCount !== undefined) session.inputSubmissionCount = payload.inputSubmissionCount
+  if (payload.purpose) session.purpose = payload.purpose
+  if (payload.rootSessionId) session.rootSessionId = payload.rootSessionId
+  if (hasNormalizedEvidence(payload)) session.hasNormalizedEvidence = true
   const workingDirectory = payload.workingDirectory ?? payload.gitContext?.workingDirectory
   if (workingDirectory) session.workingDirectory = workingDirectory
   if (payload.outcome) session.outcome = payload.outcome
@@ -683,16 +741,139 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
  * @returns {TranscriptViewModel}
  */
 export function adaptTranscript(payload, annotations, analytics, options) {
-  // New evidence uses the published validator. Preserve the existing legacy
-  // git/observation compatibility boundary. Callers scan raw network text with
-  // schema's root-specific parser before supplying a value here.
-  const hasToolNamespace = payload.turns?.some(turn => turn.toolCalls?.some(tool => recordOf(tool) && Object.prototype.hasOwnProperty.call(tool, 'namespace')))
-  const hasEvidence = payload.harness === 'pi' || payload.nativeMetadata !== undefined || hasToolNamespace || payload.turns?.some(t => t.usage || t.toolCalls?.some(tool => tool.usage))
-  if (hasEvidence) parseSessionDetailPayloadValue(payload)
+  const hasEvidence = hasNormalizedEvidence(payload)
+  // Validate the ORIGINAL complete durable value, including all earlier sections,
+  // before filtering. Never project away an invalid duplicate owner or attachment.
+  if (hasEvidence) {
+    try {
+      // Cook the canonical normalized value, not the original evidence object.
+      // Only the explicitly supported legacy git extension stays outside schema.
+      payload = {
+        ...parseSessionDetailPayloadValue(payload),
+        ...(payload.gitContext === undefined ? {} : { gitContext: payload.gitContext }),
+      }
+    } catch (cause) {
+      throw Object.assign(new TypeError(`Fairtrade adaptTranscript refused the durable payload during main/earlier evidence validation: ${cause instanceof Error ? cause.message : 'canonical validation failed'}. No transcript was cooked. Correct the producer using the canonical schema and retry.`), { cause })
+    }
+  }
   const completeTurns = payload.turns ?? []
+  const main = cookPartition(payload, completeTurns, payload.nativeMetadata, 'main', annotations, analytics, options?.visibleTurnIndices)
+  const { turns: turnVMs, toolCallsById, analytics: an, annotationsByTurn, filteredTurns: turns } = main
+  const git = cookGit(payload)
+  if (git?.commits) anchorCommitsToTurns(git.commits, turnVMs)
+  const phases = an.phases ?? []
+  /** @type {TranscriptViewModel} */
+  const vm = {
+    session: cookSession(payload, git),
+    turns: turnVMs,
+    toolCallsById,
+    diffs: buildDiffs(turnVMs),
+    files: buildFiles(turnVMs),
+    tasks: an.taskGroups ?? computeTaskGroups(turns),
+    highlights: buildHighlights(turnVMs, phases, git),
+    filterIndex: buildFilterIndex(turnVMs, annotationsByTurn),
+    analytics: an,
+  }
+  if (payload.nativeMetadata) vm.nativeMetadata = payload.nativeMetadata
+  if (hasEvidence) vm.usageScopes = aggregateUsage(completeTurns)
+  vm.relationships = cookRelationships(payload.relationships ?? [], options?.relationshipNavigation)
+  vm.earlierHistory = (payload.earlierHistory ?? []).map((section, index) => {
+    const id = `earlier-${index}`
+    const earlier = cookPartition(payload, section.turns, section.nativeMetadata, id)
+    return {
+      id, state: section.state,
+      explanation: 'ownership of this earlier history is uncertain. it is retained here, separate from current turns and input submissions.',
+      turns: earlier.turns,
+      nativeMetadata: section.nativeMetadata,
+      usageScopes: aggregateUsage(section.turns),
+    }
+  })
+  return vm
+}
+
+/** @param {TranscriptWireInput} payload */
+function hasNormalizedEvidence(payload) {
+  return payload.harness === 'pi' || ['nativeMetadata', 'inputSubmissionCount', 'rootSessionId', 'purpose', 'relationships', 'earlierHistory'].some(key => present(payload, key)) ||
+    !!payload.turns?.some(hasTurnEvidence)
+}
+
+/**
+ * Navigation is read-only host authority. Durable native targets alone never
+ * produce a route; an exact anchor is used only when authorized read evidence
+ * confirms the same saved public revision and entry.
+ * @param {import('@peasant-labs/schema').SessionRelationship[]} relationships
+ * @param {import('@peasant-labs/schema').SessionRelationshipNavigation[]} [navigation]
+ * @returns {import('./view-model.js').RelationshipVM[]}
+ */
+function cookRelationships(relationships, navigation) {
+  /** @type {import('@peasant-labs/schema').SessionRelationshipNavigation[]} */
+  let nav
+  try {
+    nav = zSessionRelationshipNavigation.array().parse(navigation === undefined ? [] : navigation)
+  } catch (cause) {
+    throw Object.assign(new TypeError(`Fairtrade adaptTranscript refused relationshipNavigation during read-metadata validation: ${cause instanceof Error ? cause.message : 'canonical validation failed'}. No source links were cooked. Return schema-valid authorized read metadata separately from the durable payload and retry.`), { cause })
+  }
+  if (new Set(nav.map(item => item.kind)).size !== nav.length) {
+    throw new TypeError('Fairtrade adaptTranscript refused relationship navigation during cooking: duplicate relationship kinds make the authorized target ambiguous. No links were produced. Return one schema-valid read result per relationship kind and retry.')
+  }
+  const context = relationships.find(item => item.kind === 'context_from')
+  const starter = relationships.find(item => item.kind === 'started_by')
+  const rows = [context, starter].filter(item => item !== undefined).filter(item => item.targetState !== 'explicit_none').map(relation => {
+    const item = nav.find(candidate => candidate.kind === relation.kind)
+    const known = relation.targetState === 'target_known' || relation.targetState === 'target_known_retained'
+    const resolved = item && (item.status === 'resolved' || item.status === 'general_link_only')
+    const targetCount = Number(!!item?.localId) + Number(!!item?.transcriptId)
+    const usable = known && resolved && targetCount === 1 && (!item.localId || item.localId === relation.targetLocalId)
+    /** @type {import('./view-model.js').RelationshipVM} */
+    const row = {
+      kind: relation.kind,
+      label: relation.kind === 'context_from' ? 'context inherited from' : 'started by',
+      statusLabel: relation.targetState === 'conflicting_current_native_evidence' || item?.status === 'conflicting' ? 'conflicting source evidence'
+        : !known || item?.status === 'unknown' ? 'unknown source'
+          : item?.status === 'inaccessible' ? 'source inaccessible'
+            : 'source unavailable',
+    }
+    if (usable && item) {
+      row.statusLabel = 'current session'
+      const saved = relation.anchor
+      const verified = item.anchor
+      const exact = relation.kind === 'context_from' && item.status === 'resolved' && saved && verified &&
+        saved.kind !== 'general_source_session' && saved.kind === verified.kind &&
+        saved.sourceEntryRef === verified.sourceEntryRef && saved.sourceRevisionRef === verified.sourceRevisionRef
+      row.navigation = { kind: item.kind, status: exact ? 'resolved' : 'general_link_only',
+        ...(item.localId ? { localId: item.localId } : { transcriptId: item.transcriptId }),
+        ...(exact ? { anchor: verified } : {}) }
+      if (relation.kind === 'context_from') row.note = exact
+        ? 'opens the current source at the recorded branch point. captured child history stays unchanged.'
+        : 'opens the current source. the earlier source state is not verified; captured child history stays unchanged.'
+    }
+    return row
+  })
+  if (context?.targetLocalId && context.targetLocalId === starter?.targetLocalId && rows.length === 2 &&
+      rows[0].statusLabel === rows[1].statusLabel &&
+      rows[0].navigation?.localId === rows[1].navigation?.localId &&
+      rows[0].navigation?.transcriptId === rows[1].navigation?.transcriptId) {
+    rows[0].label = 'context inherited from and started by'
+    return [rows[0]]
+  }
+  return rows
+}
+
+/**
+ * Cook each index domain independently; earlier records never inherit main model,
+ * annotation, filter-selection, task, or tool state.
+ * @param {TranscriptWireInput} payload
+ * @param {TurnDetail[]} completeTurns
+ * @param {import('@peasant-labs/schema').NativeMetadataRecord[] | undefined} nativeMetadata
+ * @param {string} partition
+ * @param {AnnotationSummary[]} [annotations]
+ * @param {TranscriptAnalyticsVM} [analytics]
+ * @param {readonly number[]} [visibleIndices]
+ */
+function cookPartition(payload, completeTurns, nativeMetadata, partition, annotations, analytics, visibleIndices) {
   const stickyModels = resolveStickyModels(completeTurns, payload.model)
   const filteredTurns = payload.harness === 'pi' ? completeTurns : prefilterTurns(completeTurns)
-  const visibleTurnIndices = options?.visibleTurnIndices === undefined ? null : new Set(options.visibleTurnIndices)
+  const visibleTurnIndices = visibleIndices === undefined ? null : new Set(visibleIndices)
   const turns = visibleTurnIndices === null ? filteredTurns : filteredTurns.filter((turn) => visibleTurnIndices.has(turn.index))
   const labels = computeTurnLabels(turns)
   const provider = payload.harness
@@ -719,7 +900,8 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     const t = turns[p]
     const toolCalls = (t.toolCalls ?? []).map(buildToolCallVM)
     for (const tc of toolCalls) {
-      const records = payload.nativeMetadata?.filter(record => record.attachment?.turnIndex === t.index && record.attachment?.toolCallId === tc.id)
+      tc.partition = partition
+      const records = nativeMetadata?.filter(record => record.attachment?.turnIndex === t.index && record.attachment?.toolCallId === tc.id)
       if (records?.length) tc.nativeMetadata = records
     }
     for (const tc of toolCalls) toolCallsById.set(tc.id, tc)
@@ -727,12 +909,12 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     let content = t.content ?? ''
     /** @type {import('./view-model.js').ThinkingVM | undefined} */
     let thinking
-    if (t.entryType === 'thinking' && content.trim() !== '') {
+    if (t.entryType === 'thinking' && (protectedTurn(t) || content.trim() !== '')) {
       // STANDALONE thinking entry: the whole turn IS the thinking. This path is LIVE on the real wire —
       // peasant emits a standalone entryType=thinking turn — so a real consumer renders it today.
       thinking = { text: content, words: wordCount(content) }
       content = ''
-    } else {
+    } else if (!protectedTurn(t)) {
       // TOOL-SIBLING (inline) thinking, folded into the parent turn's content as a leading
       // <thinking>…</thinking> block: extract it into ThinkingVM (render-when-present) and leave the
       // response as content. RENDER-WHEN-PRESENT, pending a backend follow-up: peasant does NOT currently
@@ -756,6 +938,8 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     /** @type {TurnVM} */
     const turnVM = {
       index: t.index,
+      identity: `${partition}:${t.sourceEntryRef || t.index}`,
+      partition,
       role: t.role,
       label: labels[p] ?? String(p + 1),
       content,
@@ -767,6 +951,8 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     if (t.agentName) turnVM.agentName = t.agentName
     if (thinking) turnVM.thinking = thinking
     if (t.usage) turnVM.usage = t.usage
+    if (t.sourceEntryRef) turnVM.sourceEntryRef = t.sourceEntryRef
+    if (t.provenance) turnVM.provenance = t.provenance
     if (t.entryType) turnVM.entryType = t.entryType
     if (t.stopReason !== undefined && t.stopReason !== null) turnVM.stopReason = t.stopReason
     if (isError) turnVM.isError = true
@@ -779,23 +965,5 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     turnVMs.push(turnVM)
   }
 
-  const git = cookGit(payload)
-  if (git?.commits) anchorCommitsToTurns(git.commits, turnVMs)
-  const phases = an.phases ?? []
-
-  /** @type {TranscriptViewModel} */
-  const vm = {
-    session: cookSession(payload, git),
-    turns: turnVMs,
-    toolCallsById,
-    diffs: buildDiffs(turnVMs),
-    files: buildFiles(turnVMs),
-    tasks: an.taskGroups ?? computeTaskGroups(turns),
-    highlights: buildHighlights(turnVMs, phases, git),
-    filterIndex: buildFilterIndex(turnVMs, annotationsByTurn),
-    analytics: an,
-  }
-  if (payload.nativeMetadata) vm.nativeMetadata = payload.nativeMetadata
-  if (hasEvidence) vm.usageScopes = aggregateUsage(completeTurns)
-  return vm
+  return { turns: turnVMs, toolCallsById, analytics: an, annotationsByTurn, filteredTurns: turns }
 }

@@ -84,6 +84,10 @@
  * @property {number} tokensIn
  * @property {number} tokensOut
  * @property {number} turnCount
+ * @property {number} [inputSubmissionCount] absent means unmeasured, never inferred from turns
+ * @property {boolean} [hasNormalizedEvidence] prevents legacy prompt-derived title inference
+ * @property {import('@peasant-labs/schema').SessionPurpose} [purpose]
+ * @property {string} [rootSessionId]
  * @property {number} toolCallCount
  * @property {string} [title]               editorial session title/summary (render-when-present; else the consumer derives one from the first prompt). Not a wire field — supplied by a curated consumer.
  * @property {string} [project]
@@ -139,6 +143,11 @@ export const TOOL_GROUPS = Object.freeze([
  * @typedef {object} ToolCallVM
  * @property {string} id
  * @property {string} name                  display name (e.g. "Read", "Bash")
+ * @property {string} [callEntryRef]
+ * @property {string} [resultEntryRef]
+ * @property {import('@peasant-labs/schema').ContentProvenance} [callProvenance]
+ * @property {import('@peasant-labs/schema').ContentProvenance} [resultProvenance]
+ * @property {string} [partition] main or earlier-N, never a native coordinate
  * @property {string} [namespace]           separately recorded namespace; empty string remains present evidence
  * @property {import('./wire-types.js').ToolCallKind} kind
  * @property {ToolGroup} group              filters-rail grouping
@@ -173,6 +182,10 @@ export const TOOL_GROUPS = Object.freeze([
  *
  * @typedef {object} TurnVM
  * @property {number} index
+ * @property {string} [identity] partition-scoped stable rendering key
+ * @property {string} [partition] main or earlier-N; main index navigation stays unchanged
+ * @property {string} [sourceEntryRef]
+ * @property {import('@peasant-labs/schema').ContentProvenance} [provenance]
  * @property {import('./wire-types.js').Role} role
  * @property {string} label                 display label, e.g. "1a" / "2"
  * @property {string} content               markdown body (thinking already extracted)
@@ -365,6 +378,8 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {HighlightVM[]} highlights                BACKS the HIGHLIGHTS tab (non-empty when present)
  * @property {FilterIndexVM} filterIndex
  * @property {TranscriptAnalyticsVM} [analytics]       render-when-present
+ * @property {RelationshipVM[]} [relationships] authorized current-target navigation, cooked once
+ * @property {EarlierHistoryVM[]} [earlierHistory] separate index domains, collapsed by default
  * @property {import('@peasant-labs/schema').NativeMetadataRecord[]} [nativeMetadata] non-conversational, including unattached records
  * @property {UsageScopeVM[]} [usageScopes] complete owner universe, before visible-turn filtering
  */
@@ -382,6 +397,25 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {number} ownerCount
  * @property {UsageFieldVM[]} tokens
  * @property {UsageFieldVM[]} cost
+ */
+
+/**
+ * @typedef {object} RelationshipVM
+ * @property {import('@peasant-labs/schema').SessionRelationshipKind} kind
+ * @property {string} label
+ * @property {string} statusLabel
+ * @property {string} [note]
+ * @property {import('@peasant-labs/schema').SessionRelationshipNavigation} [navigation] only usable, authorized targets
+ */
+
+/**
+ * @typedef {object} EarlierHistoryVM
+ * @property {string} id
+ * @property {import('@peasant-labs/schema').EarlierHistoryState} state
+ * @property {string} explanation
+ * @property {TurnVM[]} turns
+ * @property {import('@peasant-labs/schema').NativeMetadataRecord[]} [nativeMetadata]
+ * @property {UsageScopeVM[]} usageScopes
  */
 
 export {}

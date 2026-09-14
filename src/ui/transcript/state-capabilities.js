@@ -85,6 +85,8 @@
  * capability is true (see ViewerCapabilities). `onLabel` carries the popover's
  * cooked result; `onExport` carries the requested format. The viewer never
  * mutates the host's data — it reports intent through these.
+ * Relationship navigation is gated by authorized read evidence rather than a
+ * mutation capability; no usable target or no callback means no active control.
  *
  * @typedef {object} ViewerCallbacks
  * @property {() => void} [onEdit]
@@ -93,6 +95,7 @@
  * @property {() => void} [onCopyLink]
  * @property {() => void} [onChangeVisibility]
  * @property {(format: 'json' | 'jsonl' | 'markdown') => void} [onExport]
+ * @property {(navigation: import('@peasant-labs/schema').SessionRelationshipNavigation) => void} [onNavigateRelationship] authorized read target only; host owns current route and Back restoration
  */
 
 /* ── graph slot (render-prop; the graph-engine seam) ─────────────────────────── */
@@ -144,6 +147,8 @@
  * @property {(open: boolean) => void} [onRightRailOpenChange]
  * @property {Record<string, boolean>} [openTools]                     tool id → open?
  * @property {(openTools: Record<string, boolean>) => void} [onOpenToolsChange]
+ * @property {Record<string, boolean>} [earlierHistoryOpen] section id to disclosure state, default closed
+ * @property {(open: Record<string, boolean>) => void} [onEarlierHistoryOpenChange] persist with host route state for Back
  * @property {TranscriptInitialPosition | null} [initialPosition]     one-time position; null clears, and session/target/requestKey changes rearm
  * @property {number} [activeTurn]
  * @property {(turnIndex: number) => void} [onActiveTurnChange]

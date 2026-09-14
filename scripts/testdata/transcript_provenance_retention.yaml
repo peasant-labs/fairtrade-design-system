@@ -1,0 +1,312 @@
+base:
+  id: context-retention-demo
+  harness: codex
+  project: Parser
+  startTime: '2026-09-01T10:00:00Z'
+  endTime: '2026-09-01T10:01:00Z'
+  durationMins: 1
+  totalTokens: 0
+  tokensIn: 0
+  tokensOut: 0
+  turnCount: 5
+  inputSubmissionCount: 1
+  toolCallCount: 1
+  relationships:
+    - {kind: context_from, targetState: target_known, targetLocalId: ses_contextsource, evidence: native_typed, anchor: {kind: through_redacted_entry, sourceEntryRef: branch-entry, sourceRevisionRef: public-revision}}
+    - {kind: started_by, targetState: target_known, targetLocalId: ses_startersource, evidence: native_typed}
+  turns: &layout
+    - index: 0
+      role: user
+      entryType: text
+      depth: 0
+      content: fix parser
+      sourceEntryRef: e_u1
+      provenance: &input {origin: submitted_input, actor: unknown, delivery: session_admission, ownership: local, evidence: native_typed, inputModality: text, submissionRef: s_u1}
+    - index: 1
+      role: system
+      entryType: text
+      depth: 0
+      content: injected AGENTS content
+      sourceEntryRef: e_ctx1
+      provenance: &context {origin: harness_context, actor: harness, delivery: system_lifecycle, ownership: local, evidence: native_typed, inputModality: none}
+    - index: 2
+      role: user
+      entryType: text
+      depth: 0
+      content: canonical media display content
+      sourceEntryRef: e_media1
+      provenance: {origin: submitted_input, actor: unknown, delivery: session_admission, ownership: local, evidence: native_typed, inputModality: media, submissionRef: s_u1}
+    - index: 3
+      role: assistant
+      entryType: text
+      depth: 0
+      content: I will inspect.
+      sourceEntryRef: e_a1
+      provenance: &output {origin: agent_output, actor: agent_delegate, delivery: unknown, ownership: local, evidence: native_typed, inputModality: none}
+      toolCalls:
+        - id: parser-tool
+          name: Bash
+          toolKind: execute
+          arguments: '{"command":"rg parser"}'
+          result: "parser.go:12 plus fixture long output\nexact trailing newline\n"
+          callEntryRef: e_call1
+          resultEntryRef: e_result1
+          callProvenance: &tool {origin: tool_activity, actor: agent_delegate, delivery: tool_delivery, ownership: local, evidence: native_typed, inputModality: none}
+          resultProvenance: *tool
+          usage: {ownerId: usage-result, sourceEntryRef: e_result1, scope: tool, completeness: partial, tokens: {output: 2}}
+    - {index: 4, role: assistant, entryType: thinking, depth: 0, content: I will inspect., sourceEntryRef: e_reason1, provenance: *output}
+turnDefaults: {timestamp: '2026-09-01T10:00:00Z'}
+navigation:
+  - {kind: context_from, status: resolved, localId: ses_contextsource, anchor: {kind: through_redacted_entry, sourceEntryRef: branch-entry, sourceRevisionRef: public-revision}}
+  - {kind: started_by, status: resolved, localId: ses_startersource}
+partitions: [main, earlier, both]
+themes: [dark, light]
+captures: [native-text-thinking-pair, short-native-system-context, unknown-literal-wrapper]
+viewport: {width: 1440, height: 1100}
+navigationSearch: parser
+longResult:
+  turnIndex: 3
+  toolId: parser-tool
+  chunk: "parser.go:12 plus fixture long output\n"
+  repetitions: 128
+  suffix: "exact trailing newline\n"
+  minimumBytes: 4096
+cases:
+  - name: native-text-thinking-pair
+    detail: {}
+    expectedIndices: [0, 1, 2, 3, 4]
+  - name: short-native-system-context
+    detail:
+      turnCount: 2
+      inputSubmissionCount: 0
+      toolCallCount: 0
+      turns:
+        - {index: 0, role: system, entryType: text, depth: 0, content: ok, sourceEntryRef: e_short, provenance: *context}
+        - {index: 1, role: system, entryType: text, depth: 0, content: ok, sourceEntryRef: e_unknown, provenance: &unknown {origin: unknown, actor: unknown, delivery: unknown, ownership: uncertain, evidence: unknown, inputModality: unknown}}
+    expectedIndices: [0, 1]
+  - name: equal-text-distinct-submissions
+    detail:
+      turnCount: 2
+      inputSubmissionCount: 2
+      toolCallCount: 0
+      turns:
+        - {index: 0, role: user, entryType: text, depth: 0, content: same input, sourceEntryRef: e_input_a, provenance: {origin: submitted_input, actor: unknown, delivery: session_admission, ownership: local, evidence: native_typed, inputModality: text, submissionRef: s_a}}
+        - {index: 1, role: user, entryType: text, depth: 0, content: same input, sourceEntryRef: e_input_b, provenance: {origin: submitted_input, actor: unknown, delivery: session_admission, ownership: local, evidence: native_typed, inputModality: text, submissionRef: s_b}}
+    expectedIndices: [0, 1]
+  - name: equal-text-distinct-partitions
+    detail:
+      turnCount: 1
+      inputSubmissionCount: 0
+      toolCallCount: 0
+      turns:
+        - {index: 0, role: user, entryType: text, depth: 0, content: Same retained text, sourceEntryRef: e_main, provenance: *unknown}
+    expectedIndices: [0]
+  - name: reference-only-and-mixed-boundary
+    detail:
+      turnCount: 6
+      toolCallCount: 0
+      turns:
+        - {index: 0, role: user, entryType: text, depth: 0, content: same input}
+        - {index: 1, role: user, entryType: text, depth: 0, content: same input, sourceEntryRef: e_reference}
+        - {index: 2, role: user, entryType: text, depth: 0, content: same input}
+        - {index: 3, role: system, entryType: text, depth: 0, content: '', sourceEntryRef: e_empty}
+        - {index: 4, role: assistant, entryType: text, depth: 0, content: '', provenance: *unknown}
+        - {index: 5, role: assistant, entryType: text, depth: 0, content: same input, toolCalls: [{id: folded-only, name: Bash, arguments: '{}', result: '', callProvenance: *tool}]}
+    expectedIndices: [0, 1, 2, 3, 4, 5]
+  - name: unknown-literal-wrapper
+    detail:
+      turnCount: 1
+      inputSubmissionCount: 0
+      toolCallCount: 0
+      turns:
+        - {index: 0, role: user, entryType: text, depth: 0, content: '<thinking>literal excerpt</thinking>', sourceEntryRef: e_literal, provenance: *unknown}
+    expectedIndices: [0]
+  - name: invalid-evidence-not-legacy
+    detail: {}
+    invalid:
+      - {name: empty-provenance, path: [turns, 1, provenance], value: {}, arrayReject: true}
+      - {name: null-provenance, path: [turns, 1, provenance], value: null, arrayReject: true}
+      - {name: null-reference, path: [turns, 1, sourceEntryRef], value: null, arrayReject: true}
+      - {name: malformed-utf8, path: [turns, 1, sourceEntryRef], surrogate: true, arrayReject: true}
+      - {name: oversized-reference, path: [turns, 1, sourceEntryRef], value: '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901', arrayReject: true}
+      - {name: duplicate-owner-reference, path: [turns, 1, sourceEntryRef], value: e_u1, scopedReference: true}
+      - {name: wrong-folded-usage-target, path: [turns, 3, toolCalls, 0, usage, sourceEntryRef], value: e_u1, scopedReference: true}
+      - {name: malformed-folded-provenance, path: [turns, 3, toolCalls, 0, callProvenance], value: {}, arrayReject: true}
+      - {name: empty-required-usage-source, path: [turns, 3, toolCalls, 0, usage, sourceEntryRef], value: ''}
+      - {name: empty-required-usage-owner, path: [turns, 3, toolCalls, 0, usage, ownerId], value: ''}
+      - {name: empty-required-result-attachment, path: [turns, 3, toolCalls, 0, resultEntryRef], value: ''}
+  - name: legacy-filter-control
+    legacy: true
+    detail:
+      turnCount: 6
+      toolCallCount: 1
+      turns:
+        - {index: 0, role: system, entryType: text, depth: 0, content: ok}
+        - {index: 1, role: assistant, entryType: text, depth: 0, content: ''}
+        - {index: 2, role: assistant, entryType: text, depth: 0, content: same}
+        - {index: 3, role: assistant, entryType: text, depth: 0, content: same, toolCalls: [{id: legacy-tool, name: Bash, arguments: '{}', result: ok}]}
+        - {index: 4, role: assistant, entryType: text, depth: 0, content: same}
+        - {index: 5, role: assistant, entryType: text, depth: 0, content: '<thinking>legacy thought</thinking>legacy response'}
+    expectedIndices: [3, 5]
+  - name: pi-native-attachments
+    detail:
+      harness: pi
+      turns:
+        - index: 0
+          role: assistant
+          depth: 0
+          entryType: text
+          content: Native details remain attached.
+          sourceEntryRef: e_pi_carrier
+          provenance: *output
+          toolCalls:
+            - id: pi-tool
+              name: Parser.NativeCheck
+              toolKind: other
+              arguments: '{}'
+              result: 'Exact native result'
+              callEntryRef: e_pi_call
+              resultEntryRef: e_pi_result
+              callProvenance: *tool
+              resultProvenance: *tool
+              usage: {ownerId: pi-result-owner, sourceEntryRef: e_pi_result, scope: tool, completeness: partial, tokens: {output: 2}}
+      nativeMetadata:
+        - id: pi-record
+          kind: pi.toolresult.details
+          source: {entryRef: e_pi_result, sourceType: pi.message, messageRole: toolResult}
+          attachment: {turnIndex: 0, toolCallId: pi-tool}
+          data: {Status: NativeAttachmentRetained}
+      turnCount: 1
+      toolCallCount: 1
+      inputSubmissionCount: 0
+    expectedIndices: [0]
+  - name: empty-optional-reference-control
+    legacy: true
+    detail:
+      turnCount: 3
+      toolCallCount: 0
+      turns:
+        - {index: 0, role: system, entryType: text, depth: 0, content: ok, sourceEntryRef: ''}
+        - {index: 1, role: user, entryType: text, depth: 0, content: same input, sourceEntryRef: ''}
+        - {index: 2, role: user, entryType: text, depth: 0, content: same input}
+    expectedIndices: [1]
+  - name: empty-optional-submission-refs
+    detail:
+      turnCount: 1
+      inputSubmissionCount: 0
+      toolCallCount: 1
+      turns:
+        - index: 0
+          role: assistant
+          entryType: text
+          depth: 0
+          content: '<thinking>literal excerpt</thinking>'
+          sourceEntryRef: e_empty_submission
+          provenance: &emptySubmission {origin: unknown, actor: unknown, delivery: unknown, ownership: uncertain, evidence: unknown, inputModality: unknown, submissionRef: ''}
+          toolCalls:
+            - {id: empty-submission-tool, name: Check, arguments: '{}', result: retained result, callEntryRef: e_empty_call, resultEntryRef: e_empty_result, callProvenance: *emptySubmission, resultProvenance: *emptySubmission}
+    expectedIndices: [0]
+  - name: empty-optional-folded-refs
+    detail:
+      turnCount: 1
+      inputSubmissionCount: 0
+      toolCallCount: 1
+      turns:
+        - index: 0
+          role: assistant
+          entryType: text
+          depth: 0
+          content: retained response
+          sourceEntryRef: ''
+          toolCalls:
+            - {id: empty-folded-refs, name: Check, arguments: '{}', result: retained result, callEntryRef: '', resultEntryRef: ''}
+    expectedIndices: [0]
+navigationCases:
+  - name: different-source-and-starter
+    expectedLabels: [context inherited from, started by]
+    expectedTargets: [ses_contextsource, ses_startersource]
+    exact: true
+  - name: same-source-and-starter
+    sameTarget: true
+    expectedLabels: [context inherited from and started by]
+    expectedTargets: [ses_contextsource]
+    exact: true
+  - name: changed-public-revision
+    revision: changed-revision
+    expectedLabels: [context inherited from, started by]
+    expectedTargets: [ses_contextsource, ses_startersource]
+    exact: false
+  - name: unavailable-source
+    status: known_unavailable
+    expectedLabels: [context inherited from, started by]
+    expectedTargets: []
+  - name: inaccessible-source
+    status: inaccessible
+    expectedLabels: [context inherited from, started by]
+    expectedTargets: []
+  - name: conflicting-evidence
+    conflict: true
+    expectedLabels: [context inherited from, started by]
+    expectedTargets: []
+  - name: missing-host-navigation
+    omit: true
+    expectedLabels: [context inherited from, started by]
+    expectedTargets: []
+# The fail-closed oracle for relationship navigation. Every case below must be
+# REFUSED before any transcript is cooked: a duplicate kind makes the authorized
+# target ambiguous, and a malformed anchor is not schema-valid host read
+# metadata. Each case runs on the main and earlier partitions so the refusal
+# holds whether the durable evidence sits in the current or earlier domain.
+invalidNavigationPartitions: [main, earlier]
+invalidNavigation:
+  - name: duplicate-context-kind
+    category: duplicate-kind
+    refusal: duplicate relationship kinds make the authorized target ambiguous
+    navigation:
+      - {kind: context_from, status: resolved, localId: ses_contextsource, anchor: {kind: through_redacted_entry, sourceEntryRef: branch-entry, sourceRevisionRef: public-revision}}
+      - {kind: context_from, status: resolved, localId: ses_secondsource}
+  - name: duplicate-starter-kind
+    category: duplicate-kind
+    refusal: duplicate relationship kinds make the authorized target ambiguous
+    navigation:
+      - {kind: started_by, status: resolved, localId: ses_startersource}
+      - {kind: started_by, status: resolved, localId: ses_secondsource}
+  - name: duplicate-context-kind-across-statuses
+    category: duplicate-kind
+    refusal: duplicate relationship kinds make the authorized target ambiguous
+    navigation:
+      - {kind: context_from, status: resolved, localId: ses_contextsource}
+      - {kind: context_from, status: known_unavailable}
+  - name: malformed-anchor-unknown-kind
+    category: malformed-anchor
+    refusal: during read-metadata validation
+    navigation:
+      - {kind: context_from, status: resolved, localId: ses_contextsource, anchor: {kind: not_a_source_anchor}}
+  - name: malformed-anchor-missing-kind
+    category: malformed-anchor
+    refusal: during read-metadata validation
+    navigation:
+      - {kind: context_from, status: resolved, localId: ses_contextsource, anchor: {sourceEntryRef: branch-entry}}
+  - name: malformed-anchor-empty
+    category: malformed-anchor
+    refusal: during read-metadata validation
+    navigation:
+      - {kind: context_from, status: resolved, localId: ses_contextsource, anchor: {}}
+  - name: malformed-anchor-unknown-field
+    category: malformed-anchor
+    refusal: during read-metadata validation
+    navigation:
+      - {kind: started_by, status: resolved, localId: ses_startersource, anchor: {kind: through_redacted_entry, revisionRef: public-revision}}
+countCases:
+  - {name: unmeasured, absent: true, expected: unknown}
+  - {name: measured-zero, value: 0, expected: '0'}
+  - {name: one-submission-five-records, value: 1, expected: '1'}
+invalidCounts:
+  - {name: null-count, value: null}
+  - {name: string-count, value: '1'}
+  - {name: negative-count, value: -1}
+  - {name: fractional-count, value: 0.5}
+  - {name: unsafe-count, value: 9007199254740992}
+sources:
+  ses_contextsource: {title: Current context source, content: 'Current source additions remain separate from the child.', boundary: 'Earlier source boundary.', entryRef: branch-entry, revisionRef: public-revision}
+  ses_startersource: {title: Current starter source, content: 'Current starter additions remain separate from the child.'}

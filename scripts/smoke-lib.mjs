@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, statSync } from 'node:fs'
+import { existsSync, statSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import React from 'react'
@@ -9,6 +9,9 @@ import * as icons from '../dist/lib/icons.js'
 import * as graph from '../dist/lib/graph.js'
 import * as commons from '../dist/lib/commons.js'
 import * as analytics from '../dist/lib/analytics.js'
+import YAML from 'yaml'
+
+const helperFixtures = YAML.parse(readFileSync(new URL('./testdata/helper_group_listing.yaml', import.meta.url), 'utf8'))
 
 // Types-emit assertion (runs after `tsc -p tsconfig.lib.json`). tsconfig.lib has
 // noEmitOnError:false, so a silent declaration-emit failure (bad include glob,
@@ -108,6 +111,11 @@ const promptDigest = {
 }
 
 const sampleProps = {
+  HelperGroup: { ...helperFixtures.smoke.group, getMemberKey: (id) => id,
+    renderMember: (id) => React.createElement(ui.HelperThreadRow, helperFixtures.rows[id]),
+    onRefreshList: () => {} },
+  HelperGroupListItem: helperFixtures.smoke.context,
+  HelperThreadRow: helperFixtures.rows[helperFixtures.smoke.thread],
   ChartBar: { data: chartData, xKey: 'label', series: [{ key: 'count', name: 'count' }], title: 'bars' },
   ChartLine: { data: chartData, xKey: 'label', series: [{ key: 'count', name: 'count' }], title: 'line' },
   CommandPalette: {

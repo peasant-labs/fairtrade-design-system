@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 /* checkbox + radio, ported from the controls / states canvas specimens. the styled box and dot ARE
    the native inputs (appearance:none; the .check-box / .is-radio-dot ::after pseudo-element draws the
@@ -7,9 +7,13 @@ import { useState } from 'react'
    (checked/value + onChange) and uncontrolled (defaultChecked/defaultValue) use. */
 
 /**
+ * A single checkbox - checked, unchecked, or mixed (indeterminate).
+ *
  * @typedef {Object} CheckboxProps
  * @property {boolean} [checked]        controlled checked state (pair with onChange)
  * @property {boolean} [defaultChecked] initial state for uncontrolled use (default false)
+ * @property {boolean} [indeterminate]  mixed state: draws a dash and reports the mixed
+ *                                      accessible state while `checked` stays false (default false)
  * @property {(checked: boolean, event: import('react').ChangeEvent<HTMLInputElement>) => void} [onChange]
  * @property {boolean} [disabled]       native disabled attribute (default false)
  * @property {import('react').ReactNode} [children] label text (rendered as passed, not lowercased)
@@ -17,12 +21,24 @@ import { useState } from 'react'
 
 /**
  * A single checkbox: <label class="check"> wrapping the styled <input type="checkbox" class="check-box">.
+ *
+ * `indeterminate` is a mixed state, distinct from checked: it renders its own dash and is exposed to
+ * assistive technology as `aria-checked="mixed"`, so the state is never carried by the mark alone.
+ * The mixed flag is not a DOM attribute on a native checkbox; it is the input's `indeterminate` IDL
+ * property, which is why the component owns a ref. A click on a mixed checkbox reports `true`, exactly
+ * as a plain unchecked checkbox would.
  * @param {CheckboxProps & import('react').InputHTMLAttributes<HTMLInputElement>} props
  */
-export default function Checkbox({ checked, defaultChecked = false, onChange, disabled = false, children, ...rest }) {
+export default function Checkbox({ checked, defaultChecked = false, indeterminate = false, onChange, disabled = false, children, ...rest }) {
   const isControlled = checked !== undefined
   const [internal, setInternal] = useState(defaultChecked)
+  const inputRef = useRef(null)
   const value = isControlled ? checked : internal
+
+  useEffect(() => {
+    const input = inputRef.current
+    if (input) input.indeterminate = indeterminate
+  }, [indeterminate])
 
   const handleChange = (e) => {
     if (!isControlled) setInternal(e.target.checked)
@@ -32,10 +48,12 @@ export default function Checkbox({ checked, defaultChecked = false, onChange, di
   return (
     <label className="check">
       <input
+        ref={inputRef}
         type="checkbox"
         className="check-box"
         checked={value}
         disabled={disabled}
+        aria-checked={indeterminate ? 'mixed' : undefined}
         onChange={handleChange}
         {...rest}
       />

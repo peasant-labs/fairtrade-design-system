@@ -1,7 +1,7 @@
 {
   "$description": "fairtrade component manifest, generated from src/ui. import from the barrel: import { Button } from \"src/ui\". every component is token-styled (classes in src/index.css) and works in both themes. props shows the Storybook-controllable props; full prop docs are the JSDoc in each file.",
   "import": "src/ui (barrel: src/ui/index.js)",
-  "count": 52,
+  "count": 53,
   "components": [
     {
       "name": "Accordion",
@@ -270,7 +270,7 @@
         "Radio",
         "RadioGroup"
       ],
-      "doc": "",
+      "doc": "A single checkbox - checked, unchecked, or mixed (indeterminate).",
       "props": {
         "defaultChecked": {
           "control": "boolean"
@@ -817,6 +817,41 @@
         "Default",
         "Collapsed",
         "TogglesCascade"
+      ]
+    },
+    {
+      "name": "HelperGroup",
+      "category": "lists",
+      "title": "lists/helper groups",
+      "file": "src/ui/HelperGroup.jsx",
+      "exports": [
+        "HelperGroup",
+        "HelperGroupListItem",
+        "HelperThreadRow",
+        "useHelperSelection",
+        "helperOwnerState",
+        "helperSelectionIds",
+        "helperOwnerToggle",
+        "helperMemberToggle",
+        "HELPER_OWNER_STATE"
+      ],
+      "doc": "HelperGroup - a count chip inside one owner-anchored tree of saved threads.",
+      "props": {},
+      "stories": [
+        "OwnerRetained",
+        "HelperOnlySearch",
+        "UnknownOwners",
+        "IdenticalHelpers",
+        "TrunkAppend",
+        "TrunkReplacement",
+        "UnavailableOwner",
+        "ExpiredQuery",
+        "NestedOwner",
+        "OwnerCascade",
+        "UnknownInputs",
+        "OrdinaryChildExit",
+        "TwoLivePagingStates",
+        "DisplayOnly"
       ]
     },
     {
