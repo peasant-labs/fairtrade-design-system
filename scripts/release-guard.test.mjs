@@ -19,6 +19,11 @@ const requiredNativeStackMutations = new Map([
   ['merged commit is disconnected from main', 'disconnected_commit'],
   ['ordinary non-main PR is rejected', 'direct_non_main'],
 ])
+const requiredResolveMutations = new Map([
+  ['missing merged timeline event', 'missing_merged'],
+  ['merged timeline repository differs', 'resolve_timeline_repository'],
+  ['merged commit is disconnected from main', 'resolve_disconnected_commit'],
+])
 
 function object(value, where) { assert.ok(value && typeof value === 'object' && !Array.isArray(value), `${where} must be an object`); return value }
 function array(value, where, min) { assert.ok(Array.isArray(value) && value.length >= min, `${where} must contain at least ${min} rows`); return value }
@@ -36,7 +41,12 @@ function validateFixtures(f) {
   keys(f.permissions, ['allowed', 'denied'], 'permissions'); array(f.permissions.allowed, 'permissions.allowed', 2); array(f.permissions.denied, 'permissions.denied', 4)
   named(array(f.reviews, 'reviews', 3), 'reviews'); for (const row of f.reviews) { keys(row, ['name', 'maintainers', 'reviews', 'approved'], 'reviews row'); array(row.maintainers, 'maintainers', 1); array(row.reviews, 'reviews', 1); assert.equal(typeof row.approved, 'boolean'); for (const review of row.reviews) keys(review, ['user', 'state'], 'review') }
   keys(f.metadata, ['valid', 'invalid'], 'metadata'); keys(f.metadata.valid, ['number', 'state', 'merged', 'title', 'user', 'base', 'merge_commit_sha'], 'metadata.valid'); named(array(f.metadata.invalid, 'metadata.invalid', 4), 'metadata.invalid'); for (const row of f.metadata.invalid) { const allowed = row.payload === undefined ? ['name', 'patch'] : ['name', 'payload']; keys(row, allowed, 'metadata.invalid row') }
-  keys(f.github, ['resolve', 'malformed_response', 'native_stack', 'pagination'], 'github'); keys(f.github.resolve, ['responses', 'expected_merge_sha'], 'github.resolve'); array(f.github.resolve.responses, 'github.resolve.responses', 2); keys(f.github.malformed_response, ['body'], 'github.malformed_response')
+  keys(f.github, ['resolve', 'malformed_response', 'native_stack', 'pagination'], 'github'); keys(f.github.resolve, ['responses', 'expected_merge_sha', 'expected_paths', 'invalid'], 'github.resolve'); array(f.github.resolve.responses, 'github.resolve.responses', 4); array(f.github.resolve.expected_paths, 'github.resolve.expected_paths', 4)
+  named(array(f.github.resolve.invalid, 'github.resolve.invalid', 1), 'github.resolve.invalid')
+  const resolveCases = new Map()
+  for (const row of f.github.resolve.invalid) { keys(row, ['name', 'mutation'], 'github.resolve.invalid row'); assert.ok([...requiredResolveMutations.values()].includes(row.mutation), `github.resolve.invalid.${row.name} has unknown mutation ${row.mutation}`); resolveCases.set(row.name, row.mutation) }
+  for (const [name, mutation] of requiredResolveMutations) assert.equal(resolveCases.get(name), mutation, `github.resolve.invalid must retain required scenario ${name} with mutation ${mutation}`)
+  keys(f.github.malformed_response, ['body'], 'github.malformed_response')
   keys(f.github.native_stack, ['valid', 'invalid', 'loader_invalid'], 'github.native_stack'); keys(f.github.native_stack.valid, ['name', 'responses', 'expected_paths', 'expected_merge_sha'], 'github.native_stack.valid'); array(f.github.native_stack.valid.responses, 'github.native_stack.valid.responses', 5); array(f.github.native_stack.valid.expected_paths, 'github.native_stack.valid.expected_paths', 5)
   named(array(f.github.native_stack.invalid, 'github.native_stack.invalid', 1), 'github.native_stack.invalid')
   const nativeStackCases = new Map()
@@ -80,11 +90,30 @@ test('merged pull request API metadata is validated', async () => {
   assert.equal(validateMergedPullRequest(fixtures.metadata.valid, 'maintain').tag, 'fairtrade-v0.0.11')
   for (const row of fixtures.metadata.invalid) assert.throws(() => validateMergedPullRequest(row.payload ?? { ...fixtures.metadata.valid, ...row.patch }, 'maintain'), Error, row.name)
   assert.throws(() => validateMergedPullRequest(fixtures.metadata.valid, 'write'), /only admin or maintain/)
-  const queue = [...fixtures.github.resolve.responses]; const client = new GitHubReleaseClient({ token: 'test', repository: 'peasant-labs/fairtrade-design-system', fetchImpl: async () => response(queue.shift()) })
+  const queue = [...fixtures.github.resolve.responses]; const paths = []
+  const client = new GitHubReleaseClient({ token: 'test', repository: 'peasant-labs/fairtrade-design-system', fetchImpl: async (url, options) => { assert.equal(options.headers['x-github-api-version'], '2026-03-10'); paths.push(new URL(url).pathname.replace('/repos/peasant-labs/fairtrade-design-system', '') + new URL(url).search); return response(queue.shift()) } })
   assert.equal((await client.resolveMergedPullRequest(16)).mergeSha, fixtures.github.resolve.expected_merge_sha)
+  assert.deepEqual(paths, fixtures.github.resolve.expected_paths)
+  for (const row of fixtures.github.resolve.invalid) await assert.rejects(() => runResolve(row.mutation), Error, row.name)
   const malformed = new GitHubReleaseClient({ token: 'test', repository: 'peasant-labs/fairtrade-design-system', fetchImpl: async () => response(fixtures.github.malformed_response) })
   await assert.rejects(() => malformed.resolveMergedPullRequest(16), /user.login/); await assert.rejects(() => malformed.reviews(16), /reviews page 1 must be an array/)
 })
+
+function resolveResponses(mutation) {
+  const responses = structuredClone(fixtures.github.resolve.responses)
+  if (mutation === 'missing_merged') responses[2].body = []
+  if (mutation === 'resolve_timeline_repository') responses[2].body[0].commit_url = 'https://api.github.com/repos/other/project/commits/cccccccccccccccccccccccccccccccccccccccc'
+  if (mutation === 'resolve_disconnected_commit') { responses[3].body.status = 'diverged'; responses[3].body.merge_base_commit.sha = 'dddddddddddddddddddddddddddddddddddddddd' }
+  if (![...requiredResolveMutations.values()].includes(mutation)) throw new Error(`resolve fixture mutation ${mutation} is unknown; add it to the required mutation inventory before using it`)
+  return responses
+}
+
+function runResolve(mutation) {
+  const repository = 'peasant-labs/fairtrade-design-system'
+  const queue = [...resolveResponses(mutation)]
+  const client = new GitHubReleaseClient({ token: 'test', repository, fetchImpl: async () => response(queue.shift()) })
+  return client.resolveMergedPullRequest(16)
+}
 
 function nativeStackResponses(mutation) {
   const responses = structuredClone(fixtures.github.native_stack.valid.responses)
