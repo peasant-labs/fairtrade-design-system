@@ -1176,6 +1176,37 @@
       ]
     },
     {
+      "name": "PromptDigest",
+      "category": "components",
+      "title": "components/PromptDigest",
+      "file": "src/ui/PromptDigest.jsx",
+      "exports": [
+        "PromptDigest"
+      ],
+      "doc": "@typedef {import('@peasant-labs/schema').PromptDigest} PromptDigestPayload",
+      "props": {
+        "digest": {
+          "control": "object"
+        },
+        "className": {
+          "control": "text"
+        }
+      },
+      "stories": [
+        "Playground",
+        "Chain",
+        "CollapsedBoundaries",
+        "WithoutCommits",
+        "SessionBoundary",
+        "Prompt",
+        "ExpandedWithSkill",
+        "ExpandedWithCommit",
+        "Expanded",
+        "WithoutLinks",
+        "ManyCommitsAndSkills"
+      ]
+    },
+    {
       "name": "ProviderIcon",
       "category": "in use",
       "title": "in use/ProviderIcon",
