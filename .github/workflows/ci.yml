@@ -88,6 +88,13 @@ jobs:
   gates:
     needs: determine-runner
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
+    env:
+      # The pool checks the repo out under a deep work path that the runner
+      # also exports as TMPDIR. Puppeteer builds its temp Chrome profile under
+      # TMPDIR, and Chrome's SingletonSocket then exceeds the unix socket path
+      # limit and refuses to start ("Socket path too long"). Point temp files
+      # at /tmp so the browser gates can launch.
+      TMPDIR: /tmp
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
