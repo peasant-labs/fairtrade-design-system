@@ -16,7 +16,7 @@ const CHROME = process.env.CHROME_PATH
 const DIST_ROOT = resolve(process.env.BREADCRUMB_DIST_ROOT || resolve(ROOT, 'dist'))
 const SHOT_DIR = process.env.BREADCRUMB_MOUNTED_SHOT_DIR
 const fixture = loadFixture(resolve(HERE, 'testdata/breadcrumb.yaml'))
-const manifest = loadFixture(resolve(HERE, 'testdata/breadcrumb.manifest.yaml'))
+const manifest = loadDocument(resolve(HERE, 'testdata/breadcrumb.manifest.yaml'))
 const mutationName = process.env.BREADCRUMB_MUTATION_NAME
 const mutation = mutationName ? manifest.mutations.find((candidate) => candidate.name === mutationName) : null
 if (mutationName && !mutation) throw mountedFixtureError(`unknown mounted mutation ${JSON.stringify(mutationName)}`, 'where: scripts/breadcrumb-rendered-probe.mjs mutation selection; when: mounted preflight; what it means: the requested mounted mutant cannot be attributed; how to fix: pass one exact mounted mutation name from breadcrumb.manifest.yaml.')
@@ -246,11 +246,17 @@ function mountedFixtureError(what, where) {
 }
 
 function loadFixture(path) {
+  const value = loadDocument(path)
+  if (!value || typeof value !== 'object' || !Array.isArray(value.cases)) throw new Error(`breadcrumb mounted fixture root must contain a cases array`)
+  return value
+}
+
+function loadDocument(path) {
   const source = readFileSync(path, 'utf8')
   const documents = YAML.parseAllDocuments(source, { strict: true, uniqueKeys: true })
   const errors = documents.flatMap((document) => document.errors)
   if (documents.length !== 1 || errors.length || (source.match(/^---\s*$/gm) ?? []).length) throw new Error(`breadcrumb mounted fixture ${path} is not one strict unique-key YAML document: ${errors.map((error) => error.message).join('; ')}`)
   const value = documents[0].toJS()
-  if (!value || typeof value !== 'object' || !Array.isArray(value.cases)) throw new Error(`breadcrumb mounted fixture root must contain a cases array`)
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`breadcrumb mounted fixture ${path} root must be an object`)
   return value
 }

@@ -148,7 +148,7 @@ function readGitState(root) {
 
 function runGit(root, ...args) {
   try {
-    return execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim()
+    return execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
   } catch (error) {
     throw provenanceError(`git ${args.join(' ')} failed: ${error instanceof Error ? error.message : String(error)}`, 'where: repository state; when: git identity validation; what it means: the exact source identity cannot be proven; how to fix: run the command from a valid feature worktree with the requested base and head.')
   }
