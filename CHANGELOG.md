@@ -4,6 +4,24 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.21 — 2026-09-24
+
+### Added
+
+- **`SessionGroupDisclosure`.** One collapsed count control for a session list,
+  exported from `@peasant-labs/fairtrade/ui`: a leading chevron, the group's
+  membership count, and trailing `show`/`hide` over a real `<button>` with
+  `aria-expanded` and `aria-controls`. An `indent` step marks a group nested in
+  a list, and `bare` drops the outer border inside an already-bordered panel.
+  The saved helper-group chip renders through it, so the design system holds
+  one implementation instead of two. (#97)
+- **Element journeys on Playwright.** The story smoke, the twenty built-app
+  checks, and the disclosure interaction run as `pnpm journey:ci` in the
+  pinned official Playwright container — the same image village journeys use.
+  The puppeteer story smoke, app validator, and map-pointer CI steps retire
+  (their scripts stay for local use); the timeline probes read the container
+  browser from `CHROME_PATH`. (#99)
+
 ## 0.0.20 — 2026-09-14
 
 ### Added
