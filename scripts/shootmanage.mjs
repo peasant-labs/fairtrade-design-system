@@ -45,6 +45,7 @@ page.on('pageerror', (error) => errs.push('pageerr: ' + error.message))
 
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const gate = new SurfaceGate(page)
+const actionableMessage = ({ what, why, where, when, impact, remedy, expected, observed }) => `ERROR [shootmanage.mjs] what: ${what}; why: ${why}; where: ${where}; when: ${when}; impact: ${impact}; remedy: ${remedy}; expected: ${JSON.stringify(expected)}; observed: ${JSON.stringify(observed)}.`
 const waitFor = async (selector, timeoutMs = 8000) => {
   const start = Date.now()
   while (Date.now() - start < timeoutMs) {
@@ -52,23 +53,81 @@ const waitFor = async (selector, timeoutMs = 8000) => {
     if (element) return element
     await pause(80)
   }
-  throw new Error(`ERROR [shootmanage.mjs] selector ${selector} never mounted within ${timeoutMs}ms; where: Manage capture navigation; how to fix: verify the exact feature build serves the expected in-use shell.`)
+  throw new Error(actionableMessage({
+    what: `mounted selector ${JSON.stringify(selector)} is missing`,
+    why: 'Manage capture navigation cannot reach the requested mounted surface without this element',
+    where: 'shootmanage.mjs waitFor',
+    when: `after ${timeoutMs}ms of bounded polling`,
+    impact: 'the capture cannot prove the requested production surface',
+    remedy: 'verify the exact feature build serves the expected in-use shell before recapturing',
+    expected: `one element matching ${JSON.stringify(selector)}`,
+    observed: 'no matching element was returned before the timeout',
+  }))
 }
 
 const clickExactText = async (selector, text) => {
   const handle = await page.evaluateHandle(({ selector, text }) => [...document.querySelectorAll(selector)].find((element) => element.textContent.trim() === text) ?? null, { selector, text })
   const element = handle.asElement()
-  assert.ok(element, `ERROR [shootmanage.mjs] mounted control ${JSON.stringify(`${selector} > ${text}`)} is missing; where: Manage capture navigation; how to fix: update the capture only if the production control label changed.`)
+  assert.ok(element, actionableMessage({
+    what: `mounted control ${JSON.stringify(`${selector} > ${text}`)} is missing`,
+    why: 'the capture must follow the same mounted production control used by a user',
+    where: 'shootmanage.mjs clickExactText',
+    when: 'while navigating to the requested Manage surface',
+    impact: `the ${text} path cannot be captured from the production shell`,
+    remedy: 'verify the exact feature preview and update the selector only if the production control label changed',
+    expected: `a visible element matching ${JSON.stringify(selector)} with exact text ${JSON.stringify(text)}`,
+    observed: element ? 'the matching element was found after the state check' : 'no matching element was found in the mounted DOM',
+  }))
   await element.click()
+}
+
+const waitForNavActive = async (navLabel, itemLabel) => {
+  try {
+    await page.waitForFunction(({ navLabel, itemLabel }) => [...document.querySelectorAll(`#inuse-stage nav[aria-label="${navLabel}"] button.iu-subnav-item`)].some((button) => button.textContent.trim() === itemLabel && button.classList.contains('active')), { timeout: 15000 }, { navLabel, itemLabel })
+  } catch {
+    const observed = await page.evaluate(({ navLabel, itemLabel }) => {
+      const nav = document.querySelector(`#inuse-stage nav[aria-label="${navLabel}"]`)
+      const buttons = [...(nav?.querySelectorAll('button.iu-subnav-item') ?? [])].map((button) => ({ text: button.textContent.trim(), active: button.classList.contains('active') }))
+      return { navPresent: Boolean(nav), buttons }
+    }, { navLabel, itemLabel })
+    throw new Error(actionableMessage({
+      what: `navigation item ${JSON.stringify(`${navLabel} > ${itemLabel}`)} did not become active`,
+      why: 'the mounted click did not settle into the requested section, so later checks could target stale content',
+      where: 'shootmanage.mjs clickNavItem',
+      when: 'after the mounted navigation click and 15s bounded wait',
+      impact: 'the capture cannot prove the requested Manage section',
+      remedy: 'verify the exact feature preview, selected app, and production section label; update the capture only for a deliberate UI contract change',
+      expected: `an active button with exact text ${JSON.stringify(itemLabel)} in ${JSON.stringify(navLabel)}`,
+      observed,
+    }))
+  }
 }
 
 const clickNavItem = async (navLabel, itemLabel) => {
   await clickExactText(`#inuse-stage nav[aria-label="${navLabel}"] button.iu-subnav-item`, itemLabel)
-  await page.waitForFunction(({ navLabel, itemLabel }) => [...document.querySelectorAll(`#inuse-stage nav[aria-label="${navLabel}"] button.iu-subnav-item`)].some((button) => button.textContent.trim() === itemLabel && button.classList.contains('active')), { timeout: 15000 }, { navLabel, itemLabel })
+  await waitForNavActive(navLabel, itemLabel)
 }
 
 const waitForApp = async (app, navLabel) => {
-  await page.waitForFunction(({ app, navLabel }) => document.querySelector(`#iu-tab-${app}`)?.getAttribute('aria-selected') === 'true' && document.querySelector('#inuse-stage')?.getAttribute('aria-labelledby') === `iu-tab-${app}` && Boolean(document.querySelector(`#inuse-stage nav[aria-label="${navLabel}"]`)), { timeout: 15000 }, { app, navLabel })
+  try {
+    await page.waitForFunction(({ app, navLabel }) => document.querySelector(`#iu-tab-${app}`)?.getAttribute('aria-selected') === 'true' && document.querySelector('#inuse-stage')?.getAttribute('aria-labelledby') === `iu-tab-${app}` && Boolean(document.querySelector(`#inuse-stage nav[aria-label="${navLabel}"]`)), { timeout: 15000 }, { app, navLabel })
+  } catch {
+    const observed = await page.evaluate(({ app, navLabel }) => ({
+      selectedTab: document.querySelector(`#iu-tab-${app}`)?.getAttribute('aria-selected') ?? null,
+      stageLabelledBy: document.querySelector('#inuse-stage')?.getAttribute('aria-labelledby') ?? null,
+      navPresent: Boolean(document.querySelector(`#inuse-stage nav[aria-label="${navLabel}"]`)),
+    }), { app, navLabel })
+    throw new Error(actionableMessage({
+      what: `app ${JSON.stringify(app)} did not settle with the expected shell`,
+      why: 'the mounted app transition must select the requested app and publish its section navigation before capture',
+      where: 'shootmanage.mjs waitForApp',
+      when: 'after app navigation and a 15s bounded wait',
+      impact: 'later section and target assertions would inspect the wrong or incomplete app',
+      remedy: 'verify the exact feature preview, app tab, stage label, and production navigation label',
+      expected: { app, navLabel, ariaSelected: 'true', stageLabelledBy: `iu-tab-${app}`, navPresent: true },
+      observed,
+    }))
+  }
 }
 
 const assertFullShell = async ({ app, section, targetSelector, targetText, bodySelector, requireAriaCurrent = false }) => {
@@ -115,22 +174,32 @@ const assertFullShell = async ({ app, section, targetSelector, targetText, bodyS
     }
   }, { app, section, targetSelector, targetText, bodySelector, requireAriaCurrent })
   const expectedSections = app === 'graph' ? ['analytics', 'changes', 'code map'] : ['explore', 'collectives', 'publish', 'profile']
-  assert.equal(result.rootVisible, true, `ERROR [shootmanage.mjs] ${app}/${section} capture has no visible #inuse root`)
-  assert.equal(result.barVisible, true, `ERROR [shootmanage.mjs] ${app}/${section} capture has no visible .iu-bar`)
-  assert.equal(result.stageVisible, true, `ERROR [shootmanage.mjs] ${app}/${section} capture has no visible #inuse-stage`)
-  assert.equal(result.tablistVisible, true, `ERROR [shootmanage.mjs] ${app}/${section} capture has no visible app tablist`)
-  assert.equal(result.tabsMounted, true, `ERROR [shootmanage.mjs] ${app}/${section} capture is missing one of the three app tabs`)
-  assert.equal(result.selectedCount, 1, `ERROR [shootmanage.mjs] ${app}/${section} capture must have exactly one selected app`)
-  assert.equal(result.selectedApp, app, `ERROR [shootmanage.mjs] ${app}/${section} capture selected the wrong app`)
-  assert.equal(result.stageLabelledBy, `iu-tab-${app}`, `ERROR [shootmanage.mjs] ${app}/${section} stage aria-labelledby is wrong`)
-  assert.deepEqual(result.sectionLabels, expectedSections, `ERROR [shootmanage.mjs] ${app}/${section} section navigation labels are wrong`)
-  assert.equal(result.activeSectionCount, 1, `ERROR [shootmanage.mjs] ${app}/${section} must have exactly one active section`)
-  assert.equal(result.activeSection, section, `ERROR [shootmanage.mjs] ${app}/${section} active section is wrong`)
-  if (requireAriaCurrent) assert.equal(result.ariaCurrent, 'page', `ERROR [shootmanage.mjs] ${app}/${section} top-level section lacks aria-current=page`)
-  assert.equal(result.targetVisible, true, `ERROR [shootmanage.mjs] ${app}/${section} target heading is not visible`)
-  assert.equal(result.targetIntersectsShell, true, `ERROR [shootmanage.mjs] ${app}/${section} target heading does not intersect the shell`)
-  assert.equal(result.bodyVisible, true, `ERROR [shootmanage.mjs] ${app}/${section} representative body is not visible`)
-  assert.equal(result.bodyIntersectsShell, true, `ERROR [shootmanage.mjs] ${app}/${section} representative body does not intersect the shell`)
+  const shellMessage = (property, expected, observed) => actionableMessage({
+    what: `${app}/${section} full-shell ${property} is invalid`,
+    why: 'the capture must prove the mounted app chrome and target body before saving a production-path image',
+    where: 'shootmanage.mjs assertFullShell',
+    when: 'after real navigation and immediately before screenshot capture',
+    impact: `the ${app}/${section} image cannot prove the complete mounted shell`,
+    remedy: 'verify the exact feature preview, selected app, section navigation, and target state; recapture after the production shell settles',
+    expected,
+    observed,
+  })
+  assert.equal(result.rootVisible, true, shellMessage('root visibility', true, result.rootVisible))
+  assert.equal(result.barVisible, true, shellMessage('banner visibility', true, result.barVisible))
+  assert.equal(result.stageVisible, true, shellMessage('stage visibility', true, result.stageVisible))
+  assert.equal(result.tablistVisible, true, shellMessage('app tablist visibility', true, result.tablistVisible))
+  assert.equal(result.tabsMounted, true, shellMessage('three app tabs mounted and visible', true, result.tabsMounted))
+  assert.equal(result.selectedCount, 1, shellMessage('selected app count', 1, result.selectedCount))
+  assert.equal(result.selectedApp, app, shellMessage('selected app identity', app, result.selectedApp))
+  assert.equal(result.stageLabelledBy, `iu-tab-${app}`, shellMessage('stage aria-labelledby', `iu-tab-${app}`, result.stageLabelledBy))
+  assert.deepEqual(result.sectionLabels, expectedSections, shellMessage('section navigation labels', expectedSections, result.sectionLabels))
+  assert.equal(result.activeSectionCount, 1, shellMessage('active owning section count', 1, result.activeSectionCount))
+  assert.equal(result.activeSection, section, shellMessage('active owning section', section, result.activeSection))
+  if (requireAriaCurrent) assert.equal(result.ariaCurrent, 'page', shellMessage('top-level aria-current', 'page', result.ariaCurrent))
+  assert.equal(result.targetVisible, true, shellMessage('target visibility', true, result.targetVisible))
+  assert.equal(result.targetIntersectsShell, true, shellMessage('target intersection with shell', true, result.targetIntersectsShell))
+  assert.equal(result.bodyVisible, true, shellMessage('representative body visibility', true, result.bodyVisible))
+  assert.equal(result.bodyIntersectsShell, true, shellMessage('representative body intersection with shell', true, result.bodyIntersectsShell))
 }
 
 const shot = async (name, shell) => {
@@ -166,7 +235,16 @@ try {
 
   const collectiveCard = await page.evaluateHandle(() => [...document.querySelectorAll('.cmg-col-card')].find((card) => [...card.querySelectorAll('.cmg-col-name')].some((name) => name.textContent.trim() === 'AI Research Team')) ?? null)
   const collectiveCardElement = collectiveCard.asElement()
-  assert.ok(collectiveCardElement, 'ERROR [shootmanage.mjs] exact AI Research Team card is missing; where: Manage detail capture; how to fix: update the capture only if the production collective fixture changed.')
+  assert.ok(collectiveCardElement, actionableMessage({
+    what: 'exact AI Research Team collective card is missing',
+    why: 'the detail capture must follow the production card a user clicks',
+    where: 'shootmanage.mjs Manage detail capture',
+    when: 'after the collectives section is active',
+    impact: 'the requested detail surface cannot be captured from the production shell',
+    remedy: 'verify the exact feature preview and update the capture only if the production collective fixture changed',
+    expected: 'a visible .cmg-col-card containing exact name AI Research Team',
+    observed: collectiveCardElement ? 'the matching card was found' : 'no matching .cmg-col-card containing AI Research Team was mounted',
+  }))
   await collectiveCardElement.click()
   await page.waitForSelector('.cmg-detail', { timeout: 15000 })
   await shot('manage-detail', { app: 'commons', section: 'collectives', targetSelector: 'h2.cmg-title', targetText: 'AI Research Team', bodySelector: '.cmg-detail' })
@@ -182,7 +260,16 @@ try {
   await page.waitForSelector('.cmg-col-card', { timeout: 15000 })
   const contributeCard = await page.evaluateHandle(() => [...document.querySelectorAll('.cmg-col-card')].find((card) => [...card.querySelectorAll('.cmg-col-name')].some((name) => name.textContent.trim() === 'AI Research Team')) ?? null)
   const contributeCardElement = contributeCard.asElement()
-  assert.ok(contributeCardElement, 'ERROR [shootmanage.mjs] exact AI Research Team card is missing for contribute capture')
+  assert.ok(contributeCardElement, actionableMessage({
+    what: 'exact AI Research Team collective card is missing for Contribute capture',
+    why: 'the Contribute capture must follow the production card a user clicks before selecting a role',
+    where: 'shootmanage.mjs Manage Contribute capture',
+    when: 'after the collectives section is active for the Contribute path',
+    impact: 'the Contributor-to-Contribute production path cannot be captured',
+    remedy: 'verify the exact feature preview and update the capture only if the production collective fixture changed',
+    expected: 'a visible .cmg-col-card containing exact name AI Research Team',
+    observed: contributeCardElement ? 'the matching card was found' : 'no matching .cmg-col-card containing AI Research Team was mounted',
+  }))
   await contributeCardElement.click()
   await page.waitForSelector('.cmg-detail', { timeout: 15000 })
   await clickExactText('.cmg-roleseg', 'contributor')
@@ -196,13 +283,54 @@ try {
   await page.waitForSelector('.cmg-col-card', { timeout: 15000 })
   const settingsCard = await page.evaluateHandle(() => [...document.querySelectorAll('.cmg-col-card')].find((card) => [...card.querySelectorAll('.cmg-col-name')].some((name) => name.textContent.trim() === 'AI Research Team')) ?? null)
   const settingsCardElement = settingsCard.asElement()
-  assert.ok(settingsCardElement, 'ERROR [shootmanage.mjs] exact AI Research Team card is missing for settings capture')
+  assert.ok(settingsCardElement, actionableMessage({
+    what: 'exact AI Research Team collective card is missing for Settings capture',
+    why: 'the settings capture must follow the production card a user clicks before opening the settings action',
+    where: 'shootmanage.mjs Manage settings capture',
+    when: 'after the collectives section is active for the settings path',
+    impact: 'the full settings surface cannot be captured from the production shell',
+    remedy: 'verify the exact feature preview and update the capture only if the production collective fixture changed',
+    expected: 'a visible .cmg-col-card containing exact name AI Research Team',
+    observed: settingsCardElement ? 'the matching card was found' : 'no matching .cmg-col-card containing AI Research Team was mounted',
+  }))
   await settingsCardElement.click()
   await page.waitForSelector('.cmg-detail', { timeout: 15000 })
   await clickExactText('.cmg-d-actions button', 'settings')
   await page.waitForSelector('.cmg-settings', { timeout: 15000 })
-  await page.setViewport({ width: 1460, height: 1000, deviceScaleFactor: 1 })
-  await shot('manage-settings')
+  {
+    const stageHeight = await page.evaluate(() => {
+      const stage = document.querySelector('.iu-stage')
+      const bar = document.querySelector('.iu-bar')
+      return Math.ceil((stage?.scrollHeight ?? 0) + (bar?.getBoundingClientRect().height ?? 0)) + 24
+    })
+    await page.setViewport({ width: 1460, height: Math.max(stageHeight, 1000), deviceScaleFactor: 1 })
+    try {
+      await pause(200)
+      const stillScrolls = await page.evaluate(() => {
+        const stage = document.querySelector('.iu-stage')
+        return {
+          needsScroll: stage ? stage.scrollHeight > stage.clientHeight + 2 : true,
+          scrollHeight: stage?.scrollHeight ?? null,
+          clientHeight: stage?.clientHeight ?? null,
+        }
+      })
+      if (stillScrolls.needsScroll) {
+        throw new Error(actionableMessage({
+          what: 'manage-settings still needs internal scrolling after viewport growth',
+          why: 'the settings capture must include the full mounted #inuse surface, including the lower DangerZone controls',
+          where: 'shootmanage.mjs full-height manage-settings capture',
+          when: 'after the computed stage height, viewport resize, and 200ms settle',
+          impact: 'the saved settings image would omit below-fold production content and could falsely pass a clipped-viewport gate',
+          remedy: 're-check the .iu-stage scrollHeight computation for another vh-based ancestor; do not capture or accept a clipped settings image',
+          expected: { needsScroll: false, viewportHeight: Math.max(stageHeight, 1000), stageHeight },
+          observed: stillScrolls,
+        }))
+      }
+      await shot('manage-settings')
+    } finally {
+      await page.setViewport({ width: 1460, height: 1000, deviceScaleFactor: 1 })
+    }
+  }
 
   console.log('console errors:', errs.length ? errs.slice(0, 5) : 'none')
 } finally {

@@ -26,6 +26,7 @@ const VIEWPORTS = Object.freeze({
   desktop: Object.freeze({ width: 1460, height: 1000, deviceScaleFactor: 1 }),
   mobile: Object.freeze({ width: 390, height: 844, deviceScaleFactor: 1 }),
 })
+const actionableMessage = ({ what, why, where, when, impact, remedy, expected, observed }) => `timeline rendered probe failed: what: ${what}; why: ${why}; where: ${where}; when: ${when}; impact: ${impact}; remedy: ${remedy}; expected: ${JSON.stringify(expected)}; observed: ${JSON.stringify(observed)}.`
 
 if (SHOT_DIR) mkdirSync(SHOT_DIR, { recursive: true })
 if (cases.length === 0) throw new Error(`timeline rendered probe case filter ${JSON.stringify(CASE_FILTER)} matched no fixture case`)
@@ -298,33 +299,91 @@ try {
 
 console.log(`timeline rendered probe: ${cases.length} production-build theme and motion cases passed in Chrome${CASE_FILTER ? ' (filtered)' : ''}`)
 
+async function waitForNavActive(page, navLabel, itemLabel) {
+  try {
+    await page.waitForFunction(({ navLabel, itemLabel }) => {
+      const nav = document.querySelector(`#inuse-stage nav[aria-label="${navLabel}"]`)
+      return [...(nav?.querySelectorAll('button.iu-subnav-item') ?? [])].some((button) => button.textContent.trim() === itemLabel && button.classList.contains('active'))
+    }, { timeout: 15000 }, { navLabel, itemLabel })
+  } catch {
+    const observed = await page.evaluate(({ navLabel, itemLabel }) => {
+      const nav = document.querySelector(`#inuse-stage nav[aria-label="${navLabel}"]`)
+      const buttons = [...(nav?.querySelectorAll('button.iu-subnav-item') ?? [])].map((button) => ({ text: button.textContent.trim(), active: button.classList.contains('active') }))
+      return { navPresent: Boolean(nav), buttons }
+    }, { navLabel, itemLabel })
+    throw new Error(actionableMessage({
+      what: `navigation item ${JSON.stringify(`${navLabel} > ${itemLabel}`)} did not become active`,
+      why: 'the mounted click did not settle into the requested section, so later checks could inspect stale content',
+      where: 'timeline-rendered-probe.mjs clickNavItem',
+      when: 'after the mounted navigation click and 15s bounded wait',
+      impact: 'the production-path case cannot prove its requested section',
+      remedy: 'verify the exact feature preview, selected app, and production section label; update the probe only for a deliberate UI contract change',
+      expected: `an active button with exact text ${JSON.stringify(itemLabel)} in ${JSON.stringify(navLabel)}`,
+      observed,
+    }))
+  }
+}
+
 async function clickNavItem(page, navLabel, itemLabel) {
   const handle = await page.evaluateHandle(({ navLabel, itemLabel }) => {
     const nav = document.querySelector(`#inuse-stage nav[aria-label="${navLabel}"]`)
     return [...(nav?.querySelectorAll('button.iu-subnav-item') ?? [])].find((button) => button.textContent.trim() === itemLabel) ?? null
   }, { navLabel, itemLabel })
   const element = handle.asElement()
-  assert.ok(element, `mounted navigation control ${JSON.stringify(`${navLabel} > ${itemLabel}`)} is missing`)
+  assert.ok(element, actionableMessage({
+    what: `mounted navigation control ${JSON.stringify(`${navLabel} > ${itemLabel}`)} is missing`,
+    why: 'the probe must follow the same mounted navigation control used by a user',
+    where: 'timeline-rendered-probe.mjs clickNavItem',
+    when: 'while navigating to the production-path target',
+    impact: `the ${itemLabel} case cannot be proven from the mounted shell`,
+    remedy: 'verify the exact feature preview and update the selector only if the production control label changed',
+    expected: `a visible button in ${JSON.stringify(navLabel)} with exact text ${JSON.stringify(itemLabel)}`,
+    observed: element ? 'the matching element was found after the state check' : 'no matching navigation button was found in the mounted DOM',
+  }))
   await element.click()
-  await page.waitForFunction(({ navLabel, itemLabel }) => {
-    const nav = document.querySelector(`#inuse-stage nav[aria-label="${navLabel}"]`)
-    return [...(nav?.querySelectorAll('button.iu-subnav-item') ?? [])].some((button) => button.textContent.trim() === itemLabel && button.classList.contains('active'))
-  }, { timeout: 15000 }, { navLabel, itemLabel })
+  await waitForNavActive(page, navLabel, itemLabel)
 }
 
 async function clickExactText(page, selector, text) {
   const handle = await page.evaluateHandle(({ selector, text }) => [...document.querySelectorAll(selector)].find((element) => element.textContent.trim() === text) ?? null, { selector, text })
   const element = handle.asElement()
-  assert.ok(element, `mounted control ${JSON.stringify(`${selector} > ${text}`)} is missing`)
+  assert.ok(element, actionableMessage({
+    what: `mounted control ${JSON.stringify(`${selector} > ${text}`)} is missing`,
+    why: 'the probe must click the production control rather than a test-only selector',
+    where: 'timeline-rendered-probe.mjs clickExactText',
+    when: 'while driving the mounted heading-case path',
+    impact: `the ${text} path cannot be proven from the production shell`,
+    remedy: 'verify the exact feature preview and update the selector only if the production control label changed',
+    expected: `a visible element matching ${JSON.stringify(selector)} with exact text ${JSON.stringify(text)}`,
+    observed: element ? 'the matching element was found after the state check' : 'no matching control was found in the mounted DOM',
+  }))
   await element.click()
 }
 
 async function waitForApp(page, appId, navLabel) {
-  await page.waitForFunction(({ appId, navLabel }) => {
-    const tab = document.querySelector(`#iu-tab-${appId}`)
-    const stage = document.querySelector('#inuse-stage')
-    return tab?.getAttribute('aria-selected') === 'true' && stage?.getAttribute('aria-labelledby') === tab?.id && Boolean(document.querySelector(`#inuse-stage nav[aria-label="${navLabel}"]`))
-  }, { timeout: 15000 }, { appId, navLabel })
+  try {
+    await page.waitForFunction(({ appId, navLabel }) => {
+      const tab = document.querySelector(`#iu-tab-${appId}`)
+      const stage = document.querySelector('#inuse-stage')
+      return tab?.getAttribute('aria-selected') === 'true' && stage?.getAttribute('aria-labelledby') === tab?.id && Boolean(document.querySelector(`#inuse-stage nav[aria-label="${navLabel}"]`))
+    }, { timeout: 15000 }, { appId, navLabel })
+  } catch {
+    const observed = await page.evaluate(({ appId, navLabel }) => ({
+      selectedTab: document.querySelector(`#iu-tab-${appId}`)?.getAttribute('aria-selected') ?? null,
+      stageLabelledBy: document.querySelector('#inuse-stage')?.getAttribute('aria-labelledby') ?? null,
+      navPresent: Boolean(document.querySelector(`#inuse-stage nav[aria-label="${navLabel}"]`)),
+    }), { appId, navLabel })
+    throw new Error(actionableMessage({
+      what: `app ${JSON.stringify(appId)} did not settle with the expected shell`,
+      why: 'the mounted app transition must select the requested app and publish its section navigation before heading checks',
+      where: 'timeline-rendered-probe.mjs waitForApp',
+      when: 'after app navigation and a 15s bounded wait',
+      impact: 'later section and target assertions would inspect the wrong or incomplete app',
+      remedy: 'verify the exact feature preview, app tab, stage label, and production navigation label',
+      expected: { appId, navLabel, ariaSelected: 'true', stageLabelledBy: `iu-tab-${appId}`, navPresent: true },
+      observed,
+    }))
+  }
 }
 
 async function readExactTextInfo(page, selector, expectedText) {
@@ -334,8 +393,26 @@ async function readExactTextInfo(page, selector, expectedText) {
       ? { found: true, text: element.textContent.trim(), textTransform: getComputedStyle(element).textTransform, hasChromeAttribute: element.hasAttribute('data-chrome-heading') }
       : { found: false, text: null, textTransform: null, hasChromeAttribute: false }
   }, { selector, expectedText })
-  assert.equal(result.found, true, `mounted heading ${JSON.stringify(`${selector} > ${expectedText}`)} is missing`)
-  assert.equal(result.text, expectedText, `mounted heading text changed; expected ${JSON.stringify(expectedText)}`)
+  assert.equal(result.found, true, actionableMessage({
+    what: `mounted heading ${JSON.stringify(`${selector} > ${expectedText}`)} is missing`,
+    why: 'the case must inspect the exact mounted heading that represents its user or chrome contract',
+    where: 'timeline-rendered-probe.mjs readExactTextInfo',
+    when: 'after the production click path settled',
+    impact: 'the case cannot prove the expected heading text or its computed transform',
+    remedy: 'verify the exact feature preview and update the selector only if the production heading changed',
+    expected: `a visible element matching ${JSON.stringify(selector)} with exact text ${JSON.stringify(expectedText)}`,
+    observed: { found: result.found, text: result.text },
+  }))
+  assert.equal(result.text, expectedText, actionableMessage({
+    what: `mounted heading text for ${JSON.stringify(`${selector} > ${expectedText}`)} changed`,
+    why: 'the heading-case contract must compare against the exact mounted production value',
+    where: 'timeline-rendered-probe.mjs readExactTextInfo',
+    when: 'after finding the matching heading selector',
+    impact: 'the case could silently verify a different user or chrome value',
+    remedy: 'verify the production fixture and update the expected value only for a deliberate content change',
+    expected: expectedText,
+    observed: result.text,
+  }))
   return result
 }
 
@@ -401,23 +478,33 @@ async function assertFullShell(page, fixtureValue, surface, testCaseName) {
     bodySelector: surface.bodySelector,
     requireAriaCurrent: surface.requireAriaCurrent === true,
   })
-  assert.equal(result.rootVisible, true, `${testCaseName}: ${surface.name} full shell root is not visible`)
-  assert.equal(result.barVisible, true, `${testCaseName}: ${surface.name} full shell banner is not visible`)
-  assert.equal(result.stageVisible, true, `${testCaseName}: ${surface.name} full shell stage is not visible`)
-  assert.equal(result.tablistVisible, true, `${testCaseName}: ${surface.name} app tablist is not visible`)
-  assert.equal(result.tabsMounted, true, `${testCaseName}: ${surface.name} app tabs are not all mounted`)
-  assert.equal(result.selectedCount, 1, `${testCaseName}: ${surface.name} must have exactly one selected app`)
-  assert.equal(result.selectedApp, surface.app, `${testCaseName}: ${surface.name} selected the wrong app`)
-  assert.equal(result.stageLabelledBy, `iu-tab-${surface.app}`, `${testCaseName}: ${surface.name} stage is not labelled by the active app`)
-  assert.deepEqual(result.sectionLabels, expectedSections, `${testCaseName}: ${surface.name} section navigation labels changed`)
-  assert.equal(result.activeSectionCount, 1, `${testCaseName}: ${surface.name} must have exactly one active owning section`)
-  assert.equal(result.activeSection, surface.section, `${testCaseName}: ${surface.name} active owning section changed`)
-  if (surface.requireAriaCurrent) assert.equal(result.ariaCurrent, 'page', `${testCaseName}: ${surface.name} top-level section must expose aria-current=page`)
-  assert.equal(result.targetVisible, true, `${testCaseName}: ${surface.name} target heading is not visible`)
-  assert.equal(result.targetIntersectsShell, true, `${testCaseName}: ${surface.name} target heading does not intersect the captured shell`)
-  assert.equal(result.bodyVisible, true, `${testCaseName}: ${surface.name} representative body is not visible`)
-  assert.equal(result.bodyIntersectsShell, true, `${testCaseName}: ${surface.name} representative body does not intersect the captured shell`)
-  assert.equal(result.targetText, surface.expectedText, `${testCaseName}: ${surface.name} target text changed`)
+  const shellMessage = (property, expected, observed) => actionableMessage({
+    what: `${testCaseName} ${surface.name} full-shell ${property} is invalid`,
+    why: 'the case must prove the mounted app chrome and target body before completing its production-path check',
+    where: 'timeline-rendered-probe.mjs assertFullShell',
+    when: 'after real navigation and computed heading checks',
+    impact: `the ${surface.name} case cannot prove the complete mounted shell`,
+    remedy: 'verify the exact feature preview, selected app, section navigation, and target state; update the fixture only for a deliberate production contract change',
+    expected,
+    observed,
+  })
+  assert.equal(result.rootVisible, true, shellMessage('root visibility', true, result.rootVisible))
+  assert.equal(result.barVisible, true, shellMessage('banner visibility', true, result.barVisible))
+  assert.equal(result.stageVisible, true, shellMessage('stage visibility', true, result.stageVisible))
+  assert.equal(result.tablistVisible, true, shellMessage('app tablist visibility', true, result.tablistVisible))
+  assert.equal(result.tabsMounted, true, shellMessage('three app tabs mounted and visible', true, result.tabsMounted))
+  assert.equal(result.selectedCount, 1, shellMessage('selected app count', 1, result.selectedCount))
+  assert.equal(result.selectedApp, surface.app, shellMessage('selected app identity', surface.app, result.selectedApp))
+  assert.equal(result.stageLabelledBy, `iu-tab-${surface.app}`, shellMessage('stage aria-labelledby', `iu-tab-${surface.app}`, result.stageLabelledBy))
+  assert.deepEqual(result.sectionLabels, expectedSections, shellMessage('section navigation labels', expectedSections, result.sectionLabels))
+  assert.equal(result.activeSectionCount, 1, shellMessage('active owning section count', 1, result.activeSectionCount))
+  assert.equal(result.activeSection, surface.section, shellMessage('active owning section', surface.section, result.activeSection))
+  if (surface.requireAriaCurrent) assert.equal(result.ariaCurrent, 'page', shellMessage('top-level aria-current', 'page', result.ariaCurrent))
+  assert.equal(result.targetVisible, true, shellMessage('target visibility', true, result.targetVisible))
+  assert.equal(result.targetIntersectsShell, true, shellMessage('target intersection with shell', true, result.targetIntersectsShell))
+  assert.equal(result.bodyVisible, true, shellMessage('representative body visibility', true, result.bodyVisible))
+  assert.equal(result.bodyIntersectsShell, true, shellMessage('representative body intersection with shell', true, result.bodyIntersectsShell))
+  assert.equal(result.targetText, surface.expectedText, shellMessage('target text', surface.expectedText, result.targetText))
 }
 
 async function verifyProvenance(originValue, distRoot, requiredMarkers) {

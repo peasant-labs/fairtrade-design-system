@@ -76,7 +76,6 @@ changesOverflow:
     - 8c0e41
     - f1a920
   returnedExpanded: true
-buildMarker: data-session-provider
 headingCase:
   graphSession:
     name: graph user heading
@@ -133,7 +132,6 @@ fullShell:
     requiredMarkers:
       - data-session-provider
       - Village Core
-    manifestAlgorithm: sorted-path-nul-per-asset-sha256-newline
 mutations:
   expectedMutationCount: 2
   requiredMutationNames:
