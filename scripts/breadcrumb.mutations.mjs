@@ -20,6 +20,7 @@ const manifest = loadManifest(MANIFEST_PATH)
 const outputRoot = mkdtempSync(join(tmpdir(), 'fairtrade-breadcrumb-mutants-'))
 
 assertRequiredProvenanceEnv()
+assertExecutionEnv()
 assertCleanWorktree('before mutation baseline')
 const trackedMutationFiles = [...new Set(manifest.mutations.map((mutation) => mutation.file))]
 const sourceBefore = new Map(trackedMutationFiles.map((file) => [file, readFileSync(resolve(ROOT, file))]))
@@ -164,6 +165,14 @@ function assertExternalArtifactRoot(artifactRoot, name) {
 function assertRequiredProvenanceEnv() {
   if (!BASE) throw new Error('breadcrumb mutation gate failed: what went wrong: BREADCRUMB_BASE is missing; why: exact source provenance is required; where: scripts/breadcrumb.mutations.mjs startup; when: clean baseline preflight; what it means: the baseline cannot identify its review range; how to fix: run with the exact base and head exported explicitly.')
   if (!HEAD) throw new Error('breadcrumb mutation gate failed: what went wrong: BREADCRUMB_HEAD is missing; why: exact source provenance is required; where: scripts/breadcrumb.mutations.mjs startup; when: clean baseline preflight; what it means: the baseline cannot identify its reviewed head; how to fix: run with the exact base and head exported explicitly.')
+}
+
+function assertExecutionEnv() {
+  const expectedSource = manifest.execution.source.join(',')
+  const expectedMounted = manifest.execution.mounted.join(',')
+  if (process.env.BREADCRUMB_SOURCE_CASES !== expectedSource) throw new Error(`breadcrumb mutation gate failed: what went wrong: BREADCRUMB_SOURCE_CASES must equal ${expectedSource}; why: exact source case membership is required; where: scripts/breadcrumb.mutations.mjs startup; when: selection preflight; what it means: the baseline could skip a required case; how to fix: invoke the package command with its explicit comma-separated source inventory.`)
+  if (process.env.BREADCRUMB_MOUNTED_CASES !== expectedMounted) throw new Error(`breadcrumb mutation gate failed: what went wrong: BREADCRUMB_MOUNTED_CASES must equal ${expectedMounted}; why: exact mounted case membership is required; where: scripts/breadcrumb.mutations.mjs startup; when: selection preflight; what it means: the baseline could skip a required theme; how to fix: invoke the package command with its explicit comma-separated mounted inventory.`)
+  if (process.env.BREADCRUMB_REQUIRE_FULL_CASES !== '1') throw new Error('breadcrumb mutation gate failed: what went wrong: BREADCRUMB_REQUIRE_FULL_CASES must be 1 for the clean baseline; why: a partial inventory cannot establish the baseline; where: scripts/breadcrumb.mutations.mjs startup; when: selection preflight; what it means: the mutation gate is not the required full baseline; how to fix: invoke the package command unchanged.')
 }
 
 function assertCleanWorktree(when) {
