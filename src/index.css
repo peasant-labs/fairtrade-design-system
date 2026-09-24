@@ -215,8 +215,8 @@
   /* in-prose links carry a non-colour cue (WCAG 1.4.1); chrome links stay clean */
   a.link, .prose a { text-decoration: underline dotted; text-underline-offset: 3px; }
   a.link:hover, a.link:focus-visible, .prose a:hover { text-decoration-style: solid; }
-  /* centered, width-capped content column (this element rule was lost in the tailwind port -> caused full-bleed stretching) */
-  section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
+  /* the explicit content-column opt-in; a bare section stays unconstrained */
+  section.band { max-width: var(--maxw); margin: 0 auto; }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -2138,13 +2138,9 @@
     border-top: var(--bd);
   }
   .iu:fullscreen { height: 100vh; border-top: 0; }
-  /* the global base reset `section { max-width: --maxw; margin: 0 auto }` is for the presentation page's
-     centred content column. inside the in-use apps, <section> is just semantic grouping (chart cards,
-     panels), and those auto margins on a grid/flex child shrink-wrap + CENTER it instead of letting it fill
-     its track - which left the analytics chart cards narrow and misaligned under the full-width kpi row.
-     neutralise the cap + the centering here (NOT padding: the cards set their own, and .iu section would
-     out-specify it). */
-  .iu section { max-width: none; margin-inline: 0; }
+  /* in-use semantic sections fill their host; an explicit section.band opts into the base container
+     contract, while the host guard below exempts it without affecting unclassed sections. */
+  .iu section:not(.band) { max-width: none; margin-inline: 0; }
   /* the dashboard-style in-use views (analytics, the changes git-graph) cap their content and centre it:
      on a wide monitor they otherwise sprawl edge to edge - the kpi row goes full-bleed and the commit
      "recorded" status gets flung to the far right with a vast empty gap. the full-bleed apps (code map,
@@ -2337,17 +2333,10 @@
   .txn-body-grid[data-left-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) 272px; }
   .txn-body-grid[data-right-rail="closed"] { grid-template-columns: 240px minmax(0, 1fr) var(--txn-rail-strip-w); }
   .txn-body-grid[data-left-rail="closed"][data-right-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) var(--txn-rail-strip-w); }
-  /* .txn-center is a real <section>, so it inherits the presentation page's global
-     `section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }` reset. As a
-     grid item in .txn-body-grid's `minmax(0, 1fr)` centre track, an auto horizontal margin wins
-     over grid stretch alignment: the box shrink-wraps to its content width, then centres inside
-     the track with leftover space on BOTH sides — boxing the transcript into a narrow column with
-     wide empty gutters. This was a real user-reported defect: the transcript composite rendered
-     boxed into a cramped column whenever a consuming app embedded it outside the demo wrapper.
-     `.iu section` already neutralises this same reset, but only inside the fairtrade demo's own
-     `.iu` wrapper - it never reaches TranscriptViewer when a consuming app (peasant-web, village)
-     embeds it WITHOUT that wrapper, which is exactly where the cramped captures came from.
-     Neutralise it directly here so every host context gets full-width behaviour. */
+  /* .txn-center is a real <section>, so it can receive a consumer-level semantic section rule.
+     Keep the explicit neutralisation here: the transcript grid item must fill its centre track in
+     every host, including consumers that do not wrap the viewer in the fairtrade demo shell.
+     The .iu host guard is narrower, but only reaches the in-use shell. */
   .txn-center { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border-right: var(--bd); max-width: none; margin-inline: 0; padding-inline: 0; }
 
   /* ---- trace ---- */
@@ -2929,8 +2918,8 @@
   .cex-viewseg .bs-seg-opt { height: var(--control-h-sm); }
 
   /* collectives results strip */
-  /* also a real <section>: zero the global `section { padding: 0 var(--gutter) }` side inset so the
-     matching-collectives strip aligns with the transcript results below it in the same column. */
+  /* also a real <section>: retain the host padding reset so the matching-collectives strip aligns with
+     the transcript results below it in the same column. */
   .cex-coll-results { display: flex; flex-direction: column; gap: var(--sp-3); padding-inline: 0; padding-bottom: var(--sp-4); border-bottom: var(--bd); }
   .cex-coll-grid { display: grid; grid-template-columns: 1fr; gap: var(--sp-3); }
   @media (min-width: 720px) { .cex-coll-grid { grid-template-columns: 1fr 1fr; } }
@@ -3100,11 +3089,9 @@
   /* kpi tiles */
   @media (max-width: 560px) { .cex-kpis { grid-template-columns: 1fr; } }
 
-  /* sections. NB: `.cex-psec` is a real <section>, so the global `section { padding: 0 var(--gutter) }`
-     applied a 32px side inset that `.iu section` does NOT reset (it only neutralises max-width + margin).
-     that pushed the library / attestations / privacy / danger sections 32px further in than the sibling
-     crumb, hero and kpi <div>s directly above them - the "weird padding/width" misalignment. zero the
-     inline padding so every profile container shares the .iu-view inset and lines up. */
+  /* sections. NB: `.cex-psec` is a real <section>, so retain the explicit host padding reset. This
+     keeps the library / attestations / privacy / danger sections aligned with the sibling crumb, hero
+     and kpi containers instead of inheriting a page-gutter inset from a consuming host. */
   .cex-psec { display: flex; flex-direction: column; gap: var(--sp-3); padding-inline: 0; }
   .cex-psec-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
   .cex-psec-title { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-md); color: var(--ink-strong); text-transform: lowercase; }
@@ -3194,17 +3181,10 @@
   .cmg-page,
   .cmg-detail { flex: 1; min-height: 0; min-width: 0; overflow: auto; padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-5); }
   .cmg-detail { gap: var(--sp-4); }
-  /* mockup pages span the full stage width: cancel the global <section> max-width + auto-margins + the
-     page gutter. NB: zeroing padding-inline here out-specified the .card `p-4` on these
-     <section class="... card"> elements - it stripped the getting-started + recent cards' left/right
-     padding so their content sat flush on the card border (the "weird padding/width"). reset padding to 0
-     to kill the gutter, then restore the card padding so .card sections look like every other card.
-     descendant (not just direct-child) combinator: cmg-d-grid's <main class="cmg-d-main"> sits BETWEEN
-     .cmg-detail and its inner <section>s (provider share, redaction review, data browser), so a `>`
-     direct-child selector never matched them - those sections kept the global centred/clamped width
-     (visible as e.g. the provider-share card rendering narrow + auto-centered instead of filling the
-     main column, in any host that does not also wrap content in the .iu showcase shell's own
-     `.iu section` reset). */
+  /* mockup pages span the full stage width: retain explicit guards for semantic sections in these
+     hosts. The host rules are intentionally independent of the base section container; card sections
+     restore their own padding after the host reset. The descendant (not direct-child) combinator
+     reaches sections below cmg-detail's intermediate main element. */
   /* .cmg-settings covers hosts (e.g. village's /groups/:id/settings route) that render the
      settings surface's DangerZone/etc. sections without the .cmg-page/.cmg-detail wrapper the
      mockup page uses - same narrow/centered-section bug, different host markup. */
@@ -3920,19 +3900,11 @@
 }
 
 /* ── consumer-context guard (UNLAYERED on purpose) ────────────────────────────
-   The presentation site's bare `section { max-width; margin: 0 auto;
-   padding: 0 gutter }` reading-measure rule ships inside components.css's
-   @layer base. A consumer bundle is free to DECLARE @layer analytics before
-   @layer base (Next.js bundling does), and between layers the LATER-declared
-   one wins — so the site rule can out-cascade the whole analytics layer and
-   clamp the dashboard's cards (ch-based, so the mono-font cards shrink to
-   ~360px and center). Same collision the commons surfaces guard with
-   `.cmg-page section` and the demo stage with `.iu section`. This guard is
-   UNLAYERED because unlayered declarations beat every layer regardless of
-   declaration order — it cannot lose to either bundle ordering. Re-assert
-   the card box the bare rule overrode, including the ≤560px compact variant
-   (the layered mobile rule would otherwise lose to this unlayered
-   re-assert). */
+   The presentation site's explicit section.band container is only a container opt-in; analytics
+   sections are semantic content and must fill their host. A consumer bundle can declare its layers
+   in a different order, so this guard is UNLAYERED to keep the semantic card box authoritative.
+   Re-assert that box, including the ≤560px compact variant (the layered mobile rule would otherwise
+   lose to this unlayered re-assert). */
 .gan-root section { max-width: none; margin: 0; padding: 0; }
 .gan-root .gan-card,
 .gan-root .gan-tablecard { padding: var(--sp-3) var(--sp-4) var(--sp-4); }
