@@ -1,0 +1,160 @@
+schema: fairtrade-section-width-v1
+sourceCases:
+  bare-section-global-rule-absent:
+    file: src/index.css
+    contract: bare-global-section-unconstrained
+    forbiddenSelector: section
+    forbiddenProperties:
+      - max-width
+      - margin
+      - margin-inline
+      - padding
+      - padding-inline
+  explicit-section-band-container:
+    file: src/index.css
+    contract: explicit-section-band
+    selector: section.band
+    declarations:
+      max-width: var(--maxw)
+      margin: 0 auto
+  iu-host-guard-narrowed:
+    file: src/index.css
+    contract: iu-host-guard
+    selector: .iu section:not(.band)
+    declarations:
+      max-width: none
+      margin-inline: 0
+  iu-host-guard-band-exempt:
+    file: src/index.css
+    contract: iu-host-band-exempt
+    requiredSelector: .iu section:not(.band)
+    forbiddenSelector: .iu section
+  other-host-guards-retained:
+    file: src/index.css
+    contract: retained-host-guards
+    guards:
+      - selector: .cex-coll-results
+        declarations:
+          padding-inline: 0
+      - selector: .cex-psec
+        declarations:
+          padding-inline: 0
+      - selector: .cmg-page section, .cmg-detail section, .cmg-settings section
+        declarations:
+          max-width: none
+          margin-inline: 0
+          padding: 0
+      - selector: .gan-root section
+        declarations:
+          max-width: none
+          margin: 0
+          padding: 0
+  txn-center-guard-retained:
+    file: src/index.css
+    contract: retained-txn-center
+    selector: .txn-center
+    declarations:
+      max-width: none
+      margin-inline: 0
+      padding-inline: 0
+  generated-base-explicit-container:
+    file: packages/tokens/base.css
+    contract: generated-explicit-section-band
+    selector: section.band
+    declarations:
+      max-width: var(--maxw)
+      margin: 0 auto
+  generated-output-excludes-iu-host-guard:
+    file: packages/tokens/base.css
+    contract: generated-excludes-iu
+    forbiddenSelectors:
+      - section
+      - .iu section:not(.band)
+  generator-source-sync:
+    file: scripts/gen-llm-artifacts.mjs
+    contract: generator-source-sync
+    requiredSnippets:
+      - "'section.band { max-width: var(--maxw); margin: 0 auto; }\\n' +"
+    forbiddenSnippets:
+      - "'section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }\\n' +"
+  design-contract-documented:
+    file: llm/DESIGN.md
+    contract: design-contract
+    requiredSnippets:
+      - a bare `section` is unconstrained
+      - '`section.band` is the explicit canonical content container'
+      - existing `.band` component rule owns its padding and border
+      - Host-specific guards may deliberately exempt semantic containers
+    forbiddenSnippets:
+      - .ft-container
+  transcript-composite-width-selector-updated:
+    file: scripts/transcript-composite-width.test.mjs
+    contract: transcript-source-rationale
+    requiredSnippets:
+      - explicit `.txn-center` neutraliser
+      - no longer constrains bare sections
+    forbiddenSnippets:
+      - neutralises the global
+  transcript-composite-width-guard-retained:
+    file: scripts/testdata/transcript-composite-width-invariants.yaml
+    contract: transcript-fixture-rationale
+    requiredSnippets:
+      - txn-center-retains-semantic-section-neutralizer
+      - 'max-width: none;'
+      - 'margin-inline: 0;'
+      - 'padding-inline: 0;'
+    forbiddenSnippets:
+      - txn-center-neutralizes-global-section-reset
+  band-component-padding-retained:
+    file: src/index.css
+    contract: band-component-padding
+    selector: .band
+    declarations:
+      padding: var(--sp-8) var(--gutter)
+      border-top: var(--bd)
+  existing-band-usage-grounded:
+    file: src/App.jsx
+    contract: existing-band-usage
+    expectedUsage:
+      - path: src/App.jsx
+        count: 1
+      - path: src/DocSections.jsx
+        count: 5
+      - path: src/ComponentSections.jsx
+        count: 6
+      - path: src/sections-react
+        count: 21
+mountedCases:
+  section-width-dark:
+    theme: dark
+    screenshot: section-width-dark.png
+    parentSelector: '#section-width-specimen-parent'
+    parentMinWidth: 1200
+    bareSelector: '[data-section-width-specimen="bare"]'
+    bandSelector: '[data-section-width-specimen="band"]'
+    retainedSelector: '[data-section-width-specimen="retained"]'
+  section-width-light:
+    theme: light
+    screenshot: section-width-light.png
+    parentSelector: '#section-width-specimen-parent'
+    parentMinWidth: 1200
+    bareSelector: '[data-section-width-specimen="bare"]'
+    bandSelector: '[data-section-width-specimen="band"]'
+    retainedSelector: '[data-section-width-specimen="retained"]'
+geometry:
+  bareMaxWidth: none
+  bareMarginLeft: 0px
+  bareMarginRight: 0px
+  barePaddingLeft: 0px
+  barePaddingRight: 0px
+  bandMaxWidth: 1040px
+  bandPaddingLeft: 32px
+  bandPaddingRight: 32px
+  retainedMaxWidth: none
+mutationCases:
+  restore-bare-selector:
+    diagnostic: 'source: bare section base constraint restored'
+  remove-explicit-band:
+    diagnostic: 'source: section.band base container missing'
+  generator-output-drift:
+    diagnostic: 'generated: base.css differs from section.band generator contract'
