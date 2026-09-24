@@ -68,6 +68,7 @@ try {
           BREADCRUMB_MUTATION_NAME: mutation.name,
           BREADCRUMB_MOUNTED_CASES: mutation.probeCase,
           BREADCRUMB_REQUIRE_FULL_CASES: '0',
+          BREADCRUMB_DIST_ROOT: artifactRoot,
           BREADCRUMB_MUTATION_ARTIFACT_MANIFEST: identityPath,
         })
 
