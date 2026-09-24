@@ -132,10 +132,11 @@ jobs:
       # The job container already carries Playwright's own Chromium for the
       # pinned @playwright/test. The two remaining puppeteer probes (timeline)
       # read it from CHROME_PATH; the journeys below use it directly with no
-      # CHROME_PATH plumbing at all.
+      # CHROME_PATH plumbing at all. Resolve the path through Playwright's own
+      # registry rather than globbing its install directory.
       - name: Point CHROME_PATH at the container browser
         run: |
-          CHROME="$(echo /ms-playwright/chromium-*/chrome-linux/chrome | cut -d' ' -f1)"
+          CHROME="$(pnpm exec node -e "console.log(require('@playwright/test').chromium.executablePath())")"
           test -x "$CHROME"
           echo "CHROME_PATH=$CHROME" >> "$GITHUB_ENV"
 
