@@ -124,7 +124,7 @@ export function PublishView() {
         </div>
         <header className="cmg-head">
           <div>
-            <h2 className="cmg-title">publishing dashboard</h2>
+            <h2 className="cmg-title" data-chrome-heading>publishing dashboard</h2>
             <p className="cmg-deck">push transcripts from the peasant cli to the village.</p>
           </div>
         </header>
@@ -896,7 +896,7 @@ export function CollectiveSettingsView() {
 const PROJECTS = [
   {
     id: 'village',
-    name: 'village',
+    name: 'Village Core',
     branch: 'fix/auth-middleware',
     transcripts: [
       { id: 'v1', provider: 'claude-code', title: 'Debugging auth middleware with Claude Code', date: 'Jun 15', visibility: 'public' },
