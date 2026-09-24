@@ -50,7 +50,13 @@ try {
     const address = server.address()
     if (!address || typeof address === 'string') throw new Error(`${mutation.name}: mutant preview server did not expose a TCP address`)
 
-    browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', defaultViewport: { width: 1460, height: 1000, deviceScaleFactor: 1 } })
+    browser = await puppeteer.launch({
+      executablePath: CHROME,
+      headless: 'new',
+      defaultViewport: { width: 1460, height: 1000, deviceScaleFactor: 1 },
+      // Same root-container sandbox note as timeline-rendered-probe.mjs.
+      args: typeof process.getuid === 'function' && process.getuid() === 0 ? ['--no-sandbox'] : [],
+    })
     const page = await browser.newPage()
     try {
       const routeError = await captureRouteFailure(page, `http://127.0.0.1:${address.port}`, fixture.routeCase)

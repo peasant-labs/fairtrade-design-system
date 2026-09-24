@@ -44,14 +44,14 @@ try {
     await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }])
     for (const fixture of fixtures.cases) {
       await page.goto(`http://127.0.0.1:${port}/?app=commons&helpers=${fixture.name}&theme=${theme}#inuse`, { waitUntil: 'networkidle2' })
-      await page.waitForSelector(`[data-helper-demo="${fixture.name}"] .helper-group-trigger`)
+      await page.waitForSelector(`[data-helper-demo="${fixture.name}"] .sgd-trigger`)
       await page.$eval('#inuse', (element) => element.scrollIntoView({ behavior: 'instant' }))
       await page.evaluate(() => document.fonts.ready)
       assert.ok(await page.$eval('.iu-subnav', (el) => el.textContent.includes('explore')), 'mounted shell and navigation')
-      const triggers = await page.$$('.helper-group-trigger')
+      const triggers = await page.$$('.sgd-trigger')
       assert.equal(triggers.length, fixture.groups.length, `${fixture.name}: one control per group`)
       // The closed control states its count, and the members it holds do not exist.
-      assert.deepEqual(await page.$$eval('.helper-group-count', (els) => els.map((el) => el.textContent)),
+      assert.deepEqual(await page.$$eval('.sgd-count', (els) => els.map((el) => el.textContent)),
         fixture.expectedLabels, `${fixture.name}: closed control label`)
       assert.equal(await page.$('.helper-group-members'), null, 'members exist only while expanded')
       assert.equal(await page.$('.helper-thread-marker'), null, 'no subagent-inset marker anywhere')
@@ -67,10 +67,10 @@ try {
       assert.equal(collapsedAnchors.reduce((total, count) => total + count, 0), fixture.expectedAnchorCounts.collapsed)
       assert.equal(await page.$$eval('.helper-tree-rail__path', (els) => els.length),
         ownerAnchorsPerTree.filter((count) => count > 0).length, 'collapsed rail paints exactly when an anchor is mounted')
-      assert.equal(await page.$$eval('.helper-group-trigger', (els) => els.every((el) => el.firstElementChild?.tagName.toLowerCase() === 'svg')), true, 'chevron leads every control')
-      assert.equal(await page.$$eval('.helper-group-trigger', (els) => els.every((el) => el.closest('.helper-tree-children') !== null)), true, 'every chip sits indented inside the tree')
-      assert.equal(await page.$$eval('.helper-group-trigger input, .helper-group-context input', (els) => els.length), 0, 'the chip and the context line carry no checkbox')
-      assert.deepEqual(await page.$$eval('.helper-group-trigger', (els) => els.map((el) => el.querySelector('.helper-group-show').textContent)),
+      assert.equal(await page.$$eval('.sgd-trigger', (els) => els.every((el) => el.firstElementChild?.tagName.toLowerCase() === 'svg')), true, 'chevron leads every control')
+      assert.equal(await page.$$eval('.sgd-trigger', (els) => els.every((el) => el.closest('.helper-tree-children') !== null)), true, 'every chip sits indented inside the tree')
+      assert.equal(await page.$$eval('.sgd-trigger input, .helper-group-context input', (els) => els.length), 0, 'the chip and the context line carry no checkbox')
+      assert.deepEqual(await page.$$eval('.sgd-trigger', (els) => els.map((el) => el.querySelector('.sgd-show').textContent)),
         fixture.groups.map(() => 'show'), 'closed control offers show')
       if (fixture.name === 'three-independent-counts') await page.screenshot({ path: resolve(output, `${theme}-collapsed.png`) })
       if (fixture.paging) {
@@ -82,8 +82,8 @@ try {
         const nested = fixture.nested[0].group
         const parentRoot = `.helper-group[data-group-id="${parent.id}"]`
         const nestedRoot = `.helper-group[data-group-id="${nested.id}"]`
-        const ownRows = (root) => `${root} > .helper-group-body > .helper-group-members > li > [data-thread-id]`
-        const ownPaging = (root, id) => `${root} > .helper-group-body > .helper-group-footer > [data-helper-paging="${id}"]`
+        const ownRows = (root) => `${root} > .sgd > .helper-group-body > .helper-group-members > li > [data-thread-id]`
+        const ownPaging = (root, id) => `${root} > .sgd > .helper-group-body > .helper-group-footer > [data-helper-paging="${id}"]`
         const parentPaging = ownPaging(parentRoot, parent.id)
         const nestedPaging = ownPaging(nestedRoot, nested.id)
         const rowsOf = (selector) => page.$$eval(selector, (rows) => rows.map((row) => row.dataset.threadId))
@@ -103,7 +103,7 @@ try {
         // element, immediately after the rows it pages.
         await triggers[0].click()
         await page.waitForSelector(parentPaging, { timeout: 10000 })
-        assert.notEqual(await page.$(`${parentRoot} > .helper-group-body > .helper-group-members + .helper-group-footer`), null,
+        assert.notEqual(await page.$(`${parentRoot} > .sgd > .helper-group-body > .helper-group-members + .helper-group-footer`), null,
           'the paging slot sits immediately after the member rows')
         assert.equal(await indicator(parentPaging), `page 1 of ${pageCount(parent)}`)
         assert.deepEqual(await rowsOf(ownRows(parentRoot)), slice(parent, 1))
@@ -112,7 +112,7 @@ try {
         assert.equal(await page.$eval(`${parentPaging} [data-helper-next]`, (el) => el.disabled), false, 'the first page enables next')
         await waitForAnchors(1 + slice(parent, 1).length)
         // G1 owns the nested group: opening it reveals the second live page state.
-        await click(`${nestedRoot} .helper-group-trigger`)
+        await click(`${nestedRoot} .sgd-trigger`)
         await page.waitForSelector(nestedPaging, { timeout: 10000 })
         assert.equal(await indicator(nestedPaging), `page 1 of ${pageCount(nested)}`)
         assert.deepEqual(await rowsOf(ownRows(nestedRoot)), slice(nested, 1))
@@ -142,7 +142,7 @@ try {
         await click(`${parentPaging} [data-helper-prev]`)
         await waitForPage(parentPaging, 1)
         assert.deepEqual(await rowsOf(ownRows(parentRoot)), slice(parent, 1))
-        await click(`${nestedRoot} .helper-group-trigger`)
+        await click(`${nestedRoot} .sgd-trigger`)
         await page.waitForSelector(nestedPaging, { timeout: 10000 })
         assert.equal(await pageMarker(nestedPaging), 2, 'the parent page never reset the nested page')
         assert.deepEqual(await rowsOf(ownRows(nestedRoot)), slice(nested, 2))
@@ -181,7 +181,7 @@ try {
         await page.keyboard.press('Enter')
         assert.equal(await trigger.evaluate((el) => el.getAttribute('aria-expanded')), 'true')
         assert.ok(await trigger.evaluate((el) => document.activeElement === el), 'keyboard expansion retains focus')
-        assert.equal(await trigger.evaluate((el) => el.querySelector('.helper-group-show').textContent), 'hide', 'open control offers hide')
+        assert.equal(await trigger.evaluate((el) => el.querySelector('.sgd-show').textContent), 'hide', 'open control offers hide')
       }
       // The connector re-measures after expansion: every revealed member row is
       // an anchor, and the single path traces them. The re-measure is scheduled
@@ -238,7 +238,7 @@ try {
       const renderedText = await page.$eval('.helper-demo', (el) => el.textContent)
       for (const text of fixture.expectedText) assert.ok(renderedText.includes(text), `${fixture.name}: ${text}`)
       // Singular at one, never "1 helper threads" / "1 input submissions" / "1 turns".
-      assert.equal((await page.$$eval('.helper-group-count', (els) => els.map((el) => el.textContent).join(' '))).includes('1 helper threads'), false)
+      assert.equal((await page.$$eval('.sgd-count', (els) => els.map((el) => el.textContent).join(' '))).includes('1 helper threads'), false)
       assert.equal(await page.$$eval('.helper-thread-facts', (els) => /\b1 (?:input submission|turn)s\b/.test(els.map((el) => el.textContent).join(' '))), false)
       if (fixture.select) {
         const groupIndex = fixture.groups.findIndex((group) => group.members.includes(fixture.select))
@@ -249,7 +249,7 @@ try {
         // A selection inside the fold is stated on the CLOSED control, never silent.
         await triggers[groupIndex].click()
         assert.equal(await triggers[groupIndex].evaluate((el) => el.getAttribute('aria-expanded')), 'false', 'selection collapse')
-        assert.equal(await page.$eval('.helper-group-count', (el) => el.textContent), fixture.expectedSelectedLabel, 'closed control states the hidden selection')
+        assert.equal(await page.$eval('.sgd-count', (el) => el.textContent), fixture.expectedSelectedLabel, 'closed control states the hidden selection')
         assert.equal(await page.$('.helper-group-members'), null, 'collapsed members are gone')
         await waitForAnchors(fixture.expectedAnchorCounts.expanded - fixture.groups[groupIndex].members.length)
         await triggers[groupIndex].click()
@@ -259,7 +259,7 @@ try {
         await page.keyboard.press('Enter')
         assert.equal(await page.$eval('.helper-demo > div:not([hidden]) [data-thread-id]', (el) => el.dataset.threadId), fixture.select, 'actual individual open callback')
         await page.click('.helper-demo > div:not([hidden]) > button')
-        assert.equal(await page.$eval('.helper-group-trigger', (el) => el.getAttribute('aria-expanded')), 'true', 'return retains disclosure')
+        assert.equal(await page.$eval('.sgd-trigger', (el) => el.getAttribute('aria-expanded')), 'true', 'return retains disclosure')
         assert.ok(await page.$eval('.helper-demo', (el, wanted) => el.textContent.includes(`selected transcripts: ${wanted}`), fixture.select), 'return retains selection')
       }
       if (fixture.owner && fixture.selectionScript) {
@@ -333,9 +333,9 @@ try {
         assert.equal(await page.$$eval('.helper-tree-rail', (els) => els.reduce((total, el) => total + Number(el.dataset.anchorCount), 0)), 0, 'expired scope has nothing to trace')
         await page.screenshot({ path: resolve(output, `${theme}-${fixture.name}.png`) })
         await page.click('.helper-group-action')
-        assert.equal(await page.$eval('.helper-group-trigger', (el) => el.getAttribute('aria-expanded')), 'false', 'refreshed scope resets disclosure')
-        assert.equal(await page.$eval('.helper-group-count', (el) => el.textContent), fixture.expectedLabels[0], 'refreshed control states the restored count')
-        await page.click('.helper-group-trigger')
+        assert.equal(await page.$eval('.sgd-trigger', (el) => el.getAttribute('aria-expanded')), 'false', 'refreshed scope resets disclosure')
+        assert.equal(await page.$eval('.sgd-count', (el) => el.textContent), fixture.expectedLabels[0], 'refreshed control states the restored count')
+        await page.click('.sgd-trigger')
         assert.deepEqual(await page.$$eval('.helper-group-members [data-thread-id]', (rows) => rows.map((el) => el.dataset.threadId)), ['G2'], 'refresh retains exact helper-only scope')
         await waitForAnchors(1)
         assert.equal(await page.$$eval('.helper-tree-rail', (els) => els.reduce((total, el) => total + Number(el.dataset.anchorCount), 0)), 1, 'refreshed member is traced')
@@ -387,8 +387,8 @@ try {
             break
           }
         }
-        return { trigger: read('.helper-group-trigger'), group,
-          count: read('.helper-group-count'), show: read('.helper-group-show'),
+        return { trigger: read('.sgd-trigger'), group,
+          count: read('.sgd-count'), show: read('.sgd-show'),
           body: read('.helper-group-body'), title: read('.helper-thread-open'), facts: read('.helper-thread-facts'),
           members: read('.helper-group-members'), memberSeparators,
           bodyRule: (() => {
@@ -397,7 +397,7 @@ try {
           })(),
           rail: read('.helper-tree-rail'), rows: read('.helper-tree-rows'), children: read('.helper-tree-children'),
           rule: getComputedStyle(document.querySelector('.helper-group-item')).borderBottomColor,
-          indent: { tree: rect('.helper-tree'), owner: rect('.helper-tree-rows > .helper-tree-row'), control: rect('.helper-group-trigger'),
+          indent: { tree: rect('.helper-tree'), owner: rect('.helper-tree-rows > .helper-tree-row'), control: rect('.sgd-trigger'),
             member: rect('.helper-group-members .helper-thread-row'),
             ownerInput: rect('.helper-tree-rows > .helper-tree-row input'), memberInput: rect('.helper-group-members .helper-thread-row input') },
           fonts: document.fonts.check('16px "Atkinson Hyperlegible"') && document.fonts.check('14px "Atkinson Hyperlegible Mono"'),

@@ -200,17 +200,17 @@ try {
       const ownerRow = container.querySelector('.helper-tree-rows > .helper-tree-row > [data-thread-id]')
       if (!fixture.owner) assert.ok(ownerRow === null, 'context cannot fabricate a hidden owner row')
       else assert.equal(ownerRow.dataset.threadId, fixture.owner, 'ordinary owner anchors the tree')
-      const triggers = [...container.querySelectorAll('.helper-group-trigger')]
+      const triggers = [...container.querySelectorAll('.sgd-trigger')]
       assert.equal(triggers.length, fixture.groups.length, 'one collapsed disclosure per group')
       assert.equal(container.querySelectorAll('.helper-tree-children').length, fixture.groups.length, 'each group is one nested list')
       // The closed control states its count; the members it holds do not exist.
-      assert.deepEqual([...container.querySelectorAll('.helper-group-count')].map((element) => element.textContent),
+      assert.deepEqual([...container.querySelectorAll('.sgd-count')].map((element) => element.textContent),
         fixture.expectedLabels, 'closed control states its count')
       assert.equal(container.querySelectorAll('.helper-group-members [data-thread-id]').length, 0, 'members exist only while expanded')
       assert.equal(container.querySelectorAll('.helper-thread-marker').length, 0, 'no subagent-inset marker anywhere')
       for (const [index, trigger] of triggers.entries()) {
         assert.equal(trigger.getAttribute('aria-expanded'), 'false')
-        assert.equal(trigger.querySelector('.helper-group-show').textContent, 'show', 'closed control offers show')
+        assert.equal(trigger.querySelector('.sgd-show').textContent, 'show', 'closed control offers show')
         assert.equal(document.getElementById(trigger.getAttribute('aria-controls')), null, 'closed control reveals nothing')
         assert.equal(trigger.firstElementChild.tagName.toLowerCase(), 'svg', 'chevron leads the control')
         assert.equal(trigger.closest('.helper-tree-children') !== null, true, 'the chip sits indented inside the tree')
@@ -218,7 +218,7 @@ try {
         else await click(trigger)
         assert.equal(trigger.getAttribute('aria-expanded'), 'true')
         assert.ok(document.activeElement === trigger, 'expansion preserves keyboard focus')
-        assert.equal(trigger.querySelector('.helper-group-show').textContent, 'hide', 'open control offers hide')
+        assert.equal(trigger.querySelector('.sgd-show').textContent, 'hide', 'open control offers hide')
       }
       if (fixture.update) await act(async () => updateRow(fixture.update))
       const memberRows = [...container.querySelectorAll('.helper-group-members [data-thread-id]')]
@@ -238,7 +238,7 @@ try {
         assert.equal(row.querySelector('a').getAttribute('href'), `/transcripts/${row.dataset.threadId}`)
       }
       for (const text of fixture.expectedText) assert.ok(container.textContent.includes(text), `${fixture.name}: ${text}`)
-      assert.equal(container.querySelectorAll('.helper-group-trigger input,.helper-group-context input').length, 0, 'no aggregate or context selection')
+      assert.equal(container.querySelectorAll('.sgd-trigger input,.helper-group-context input').length, 0, 'no aggregate or context selection')
       for (const row of memberRows) await click(row.querySelector('a'))
       assert.deepEqual(opened, fixture.expectedRows, 'individual open identity')
       if (fixture.ordinaryChild) {
@@ -272,7 +272,7 @@ try {
         await click(trigger)
         assert.equal(trigger.getAttribute('aria-expanded'), 'false')
         assert.equal(container.querySelectorAll('.helper-group-members [data-thread-id]').length, 0, 'collapsed members are gone')
-        assert.equal(trigger.querySelector('.helper-group-count').textContent, fixture.expectedSelectedLabel, 'closed control states the hidden selection')
+        assert.equal(trigger.querySelector('.sgd-count').textContent, fixture.expectedSelectedLabel, 'closed control states the hidden selection')
         const stillMounted = fixture.expectedRows.filter((id) => !fixture.groups[groupIndex].members.includes(id)).length
         assert.equal(anchorCount(), (fixture.owner ? 1 : 0) + stillMounted, 'collapsed members drop out of the rail')
         await click(trigger)
@@ -309,9 +309,9 @@ try {
         for (const action of container.querySelectorAll('.helper-group-action')) await click(action)
         assert.deepEqual(refreshed, fixture.groups.map((group) => group.id), 'refresh stays scoped to the originating list')
         // The refreshed scope is a new token, so the disclosure remounts closed.
-        const refreshedTrigger = container.querySelector('.helper-group-trigger')
+        const refreshedTrigger = container.querySelector('.sgd-trigger')
         assert.equal(refreshedTrigger.getAttribute('aria-expanded'), 'false', 'refreshed scope resets disclosure')
-        assert.equal(refreshedTrigger.querySelector('.helper-group-count').textContent, fixture.expectedLabels[0], 'refreshed control states the restored count')
+        assert.equal(refreshedTrigger.querySelector('.sgd-count').textContent, fixture.expectedLabels[0], 'refreshed control states the restored count')
         assert.equal(anchorCount(), fixture.expectedAnchorCounts.collapsed, 'refreshed tree is back to its collapsed anchors')
         await click(refreshedTrigger)
         assert.deepEqual([...container.querySelectorAll('.helper-group-members [data-thread-id]')].map((row) => row.dataset.threadId), ['G2'], 'refresh restores the exact scope')
@@ -446,7 +446,7 @@ try {
       assert.deepEqual(rails.map((rail) => rail.getAttribute('data-anchor-count')), fixture.groups.map(() => '0'),
         `${fixture.name}: no checkbox means no anchor`)
       assert.equal(container.querySelector('.helper-tree-rail__path'), null, 'display-only tree paints no connector')
-      for (const trigger of [...container.querySelectorAll('.helper-group-trigger')]) {
+      for (const trigger of [...container.querySelectorAll('.sgd-trigger')]) {
         trigger.focus()
         await act(async () => trigger.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true })))
         assert.equal(trigger.getAttribute('aria-expanded'), 'true', 'display-only chip still expands')
@@ -487,7 +487,7 @@ try {
       group('empty', { helperThreadCount: 0, members: [], memberFooter: slot() }))))
     try {
       assert.equal(container.querySelectorAll('.slot-marker').length, 0, 'a folded group renders no paging slot')
-      for (const trigger of [...container.querySelectorAll('.helper-group-trigger')]) await click(trigger)
+      for (const trigger of [...container.querySelectorAll('.sgd-trigger')]) await click(trigger)
       const caseOf = (name) => container.querySelector(`[data-case="${name}"]`)
       const bodyOf = (name) => caseOf(name).querySelector('.helper-group-body')
       // Open: the slot is the body's last element, right after the rows it pages.
@@ -556,21 +556,21 @@ try {
         }))
     }
     const rootOf = (id) => `.helper-group[data-group-id="${id}"]`
-    const bodyOf = (id) => container.querySelector(`${rootOf(id)} > .helper-group-body`)
+    const bodyOf = (id) => container.querySelector(`${rootOf(id)} > .sgd > .helper-group-body`)
     // Scope the controls to THIS group's own footer: a nested group's footer
     // lives inside the parent's member list, so a body-wide query would find the
     // deeper group's page indicator first.
-    const footerOf = (id) => container.querySelector(`${rootOf(id)} > .helper-group-body > .helper-group-footer`)
+    const footerOf = (id) => container.querySelector(`${rootOf(id)} > .sgd > .helper-group-body > .helper-group-footer`)
     const rowsOf = (id) => [...container.querySelectorAll(
-      `${rootOf(id)} > .helper-group-body > .helper-group-members > li > [data-thread-id]`)].map((row) => row.dataset.threadId)
+      `${rootOf(id)} > .sgd > .helper-group-body > .helper-group-members > li > [data-thread-id]`)].map((row) => row.dataset.threadId)
     const indicator = (id) => footerOf(id).querySelector('.page-indicator').textContent
     const slice = (group, page) => group.members.slice((page - 1) * limit, page * limit)
     await act(async () => root.render(React.createElement(PagingHost)))
     try {
-      await click(container.querySelector(`${rootOf(parent.id)} > .helper-group-trigger`))
+      await click(container.querySelector(`${rootOf(parent.id)} .sgd-trigger`))
       assert.equal(indicator(parent.id), `page 1 of ${pageCount(parent)}`)
       assert.deepEqual(rowsOf(parent.id), slice(parent, 1))
-      await click(container.querySelector(`${rootOf(nested.id)} .helper-group-trigger`))
+      await click(container.querySelector(`${rootOf(nested.id)} .sgd-trigger`))
       assert.equal(indicator(nested.id), `page 1 of ${pageCount(nested)}`)
       assert.deepEqual(rowsOf(nested.id), slice(nested, 1))
       // Paging the nested group leaves the parent page and rows untouched.
@@ -587,7 +587,7 @@ try {
       // Returning remounts the nested group; its host page state was never reset.
       await click(footerOf(parent.id).querySelector('.page-prev'))
       assert.deepEqual(rowsOf(parent.id), slice(parent, 1))
-      await click(container.querySelector(`${rootOf(nested.id)} .helper-group-trigger`))
+      await click(container.querySelector(`${rootOf(nested.id)} .sgd-trigger`))
       assert.equal(indicator(nested.id), `page 2 of ${pageCount(nested)}`, 'the parent page never reset the nested page')
       assert.deepEqual(rowsOf(nested.id), slice(nested, 2))
       console.log('PASS two independent live paging states')

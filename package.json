@@ -151,7 +151,9 @@
     "build-storybook": "storybook build",
     "build:all": "pnpm build && pnpm build-storybook && rm -rf dist/storybook && cp -r storybook-static dist/storybook",
     "start": "http-server dist -p ${PORT:-3000} -a 0.0.0.0 --silent",
-    "test:turns-to-flow-edges": "node scripts/turns-to-flow-edges.test.mjs"
+    "test:turns-to-flow-edges": "node scripts/turns-to-flow-edges.test.mjs",
+    "journey": "playwright test --config playwright.journey.config.mjs",
+    "journey:ci": "JOURNEY_HTML=0 playwright test --config playwright.journey.config.mjs"
   },
   "dependencies": {
     "@peasant-labs/schema": "0.20.0",
@@ -169,6 +171,8 @@
     "react-dom": ">=19.0.0 <20"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.63.0",
     "@storybook/addon-a11y": "^10.4.6",
     "@storybook/addon-themes": "^10.4.6",
     "@storybook/react-vite": "^10.4.6",
