@@ -1,7 +1,7 @@
 {
   "$description": "fairtrade component manifest, generated from src/ui. import from the barrel: import { Button } from \"src/ui\". every component is token-styled (classes in src/index.css) and works in both themes. props shows the Storybook-controllable props; full prop docs are the JSDoc in each file.",
   "import": "src/ui (barrel: src/ui/index.js)",
-  "count": 53,
+  "count": 54,
   "components": [
     {
       "name": "Accordion",
@@ -1323,6 +1323,47 @@
         "Roster",
         "ConfirmRemove",
         "Danger"
+      ]
+    },
+    {
+      "name": "SessionGroupDisclosure",
+      "category": "components",
+      "title": "components/SessionGroupDisclosure",
+      "file": "src/ui/SessionGroupDisclosure.jsx",
+      "exports": [
+        "SessionGroupDisclosure"
+      ],
+      "doc": "SessionGroupDisclosure - the one collapsed count control for a session list.",
+      "props": {
+        "expanded": {
+          "control": "boolean"
+        },
+        "bare": {
+          "control": "boolean"
+        },
+        "indent": {
+          "control": "boolean"
+        },
+        "label": {
+          "control": "text"
+        },
+        "collapsedLabel": {
+          "control": "text"
+        },
+        "rowsID": {
+          "control": "false"
+        },
+        "onToggle": {
+          "control": "false"
+        },
+        "children": {
+          "control": "false"
+        }
+      },
+      "stories": [
+        "Playground",
+        "ExpandsAndCollapses",
+        "Indented"
       ]
     },
     {

@@ -4165,6 +4165,28 @@
   .tuiw-keys { color: var(--ink-4); font-style: italic; }
 }
 
+/* session group disclosure (.sgd-*): the one collapsed count control for a
+   session list. It sits at the end of the list it belongs to, states the count
+   of rows the list holds back, and reveals them in place. The saved helper
+   group renders its chip through this same control, so the two cannot drift.
+   `indent` moves the whole group one step in, matching a nested list. */
+.sgd { color: var(--ink); }
+.sgd-bare { border: 0; }
+.sgd:not(.sgd-bare) { border: var(--bd); background: var(--surface); }
+.sgd-indent { padding-left: var(--sp-5); }
+.sgd-trigger {
+  display: flex; align-items: center; gap: var(--sp-2); width: 100%;
+  min-height: var(--target-comfortable); padding: var(--sp-3) var(--sp-4);
+  border: 0; color: var(--ink-3); background: transparent;
+  font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
+  letter-spacing: 0; text-align: left; text-transform: lowercase; cursor: pointer;
+}
+.sgd-trigger:hover { background: var(--surface-hover); color: var(--ink); }
+.sgd-trigger svg { width: var(--ic-md); height: var(--ic-md); flex-shrink: 0; }
+.sgd-count { color: inherit; font-variant-numeric: tabular-nums; }
+.sgd-spacer { flex: 1; }
+.sgd-show { color: var(--ink-4); }
+
 /* saved helper groups: one owner-anchored tree above ordinary rows */
 .helper-group-item { border-bottom: var(--bd); }
 /* The tree root hosts the single connector overlay; the rows sit above it so
@@ -4196,21 +4218,16 @@
 /* The group paints no background: it spans the indent gutter the connector
    runs in, and a surface fill would paint over the rail. */
 .helper-group { color: var(--ink); }
-.helper-group-trigger, .helper-group-action {
+.helper-group-action {
   display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--control-h);
   padding: 0 var(--sp-3); border: var(--bd-strong); border-radius: 0;
   color: var(--ink); background: var(--surface); font-family: var(--font-mono);
   font-size: var(--fs-label); line-height: var(--lh-mono); letter-spacing: 0;
   text-align: left; text-transform: lowercase; cursor: pointer;
 }
-/* The group control mirrors the session-group disclosure: full-width, a
-   comfortable target, chrome-weight ink, leading chevron, count, spacer, and
-   show/hide on the trailing edge. */
-.helper-group-trigger {
-  width: 100%; min-height: var(--target-comfortable); padding: var(--sp-3) var(--sp-4);
-  border: 0; color: var(--ink-3); background: transparent;
-}
-.helper-group-trigger:hover, .helper-group-action:hover, .helper-thread-open:hover {
+/* The group's own control is the shared session-group disclosure (.sgd-*);
+   only the refresh action keeps a bordered button style here. */
+.helper-group-action:hover, .helper-thread-open:hover {
   background: var(--surface-hover); color: var(--ink);
 }
 /* A paging bound control states where the host's page sits: muted and inert at
@@ -4218,18 +4235,13 @@
 .helper-group-action:disabled, .helper-group-action:disabled:hover {
   color: var(--ink-4); background: transparent; cursor: default;
 }
-.helper-group-trigger svg, .helper-group-action svg, .helper-group-context svg {
+.sgd-trigger svg, .helper-group-action svg, .helper-group-context svg {
   width: var(--ic-md); height: var(--ic-md); flex-shrink: 0;
 }
-.helper-group-spacer { flex: 1; }
-.helper-group-show { color: var(--ink-4); }
-.helper-group-count, .helper-thread-facts {
+.helper-thread-facts {
   font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
   font-variant-numeric: tabular-nums; letter-spacing: 0;
 }
-/* The count reads in the control's own chrome ink (mirroring the session
-   groups); "show"/"hide" is the muted trailing hint. */
-.helper-group-count { color: inherit; }
 /* Revealed members are a plain list of ordinary rows: no inset rule, no corner
    marker, the control's top rule is the only separation from it. Both rules
    start at the row's content column so they never cross the connector that runs

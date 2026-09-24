@@ -43,14 +43,16 @@ manager: **pnpm**. Source is **JS/JSX only - no TypeScript**. Icons: `lucide-rea
   no `>` prefixes (except the nav active marker). Namespaced classes; no generic collisions.
 
 ## before declaring done
-Run `pnpm build`, `node scripts/sbsmoke.mjs`, and screenshot the changed components in BOTH
+Run `pnpm build`, `pnpm journey:ci`, and screenshot the changed components in BOTH
 themes (`scripts/sbshot.mjs`) and look at them. Keep every gate green.
 
 ## visual / screenshot harness
 
 `scripts/` — the DS's OWN capture + fidelity tooling (the source of truth the consumer harnesses
-mirror). Puppeteer capture: `shoot.mjs` / `shootdemo.mjs` / `shootmanage.mjs`. Storybook:
-`sbshot.mjs` / `sbsmoke.mjs`. Regression: `imgdiff.mjs` / `png-diff.mjs`. Gates: `surface-gate.mjs`
+mirror). Element journeys (`scripts/journey/`, Playwright, run in CI in the official Playwright
+container): story smoke over the whole catalog, the twenty built-app checks, focused component
+interactions. Puppeteer capture: `shoot.mjs` / `shootdemo.mjs` / `shootmanage.mjs`. Storybook:
+`sbshot.mjs` / `sbsmoke.mjs` (local use; CI runs the journey ports). Regression: `imgdiff.mjs` / `png-diff.mjs`. Gates: `surface-gate.mjs`
 / `check-surface-gate.mjs`. Graph SxS oracle: `graph-oracle.mjs` / `check-graph-oracle.mjs`. WCAG
 contrast gate: `contrast.mjs`. Smokes: `smoke-{lib,map,transcript,transcript-ui,tarball}.mjs`. The
 in-use **demo** (`#inuse` at fairtrade.peasantlabs.org) is the fidelity oracle consumers gate

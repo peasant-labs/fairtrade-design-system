@@ -1,7 +1,8 @@
 import { createContext, Fragment, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { ChevronDown, ChevronRight, RefreshCw, Unlink } from 'lucide-react'
+import { RefreshCw, Unlink } from 'lucide-react'
 import BrandMark from './BrandMark.jsx'
 import Checkbox from './Checkbox.jsx'
+import SessionGroupDisclosure from './SessionGroupDisclosure.jsx'
 
 /**
  * HelperGroup - a count chip inside one owner-anchored tree of saved threads.
@@ -312,21 +313,18 @@ function HelperGroupDisclosure({
 
   return (
     <div className="helper-group helper-tree-children" data-group-id={groupId}>
-      <button type="button" className="helper-group-trigger" id={`${id}-trigger`}
-        aria-expanded={open} aria-controls={`${id}-body`} onClick={toggle}>
-        {open
-          ? <ChevronDown className="helper-group-chevron" aria-hidden="true" />
-          : <ChevronRight className="helper-group-chevron" aria-hidden="true" />}
-        <span className="helper-group-count" data-testid="helper-group-label">
-          {helperThreadGroupSelectionLabel(helperThreadCount, selectedCount)}
-        </span>
-        <span className="helper-group-spacer" aria-hidden="true" />
-        <span className="helper-group-show">{open ? 'hide' : 'show'}</span>
-      </button>
-      {/* The members exist only while the control is open, exactly like the
-          session-group rows below a list: a folded row cannot be mistaken for a
-          visible one, and nothing hidden holds the page's height. */}
-      {open && (
+      <SessionGroupDisclosure
+        label={helperThreadGroupSelectionLabel(helperThreadCount, selectedCount)}
+        collapsedLabel={helperThreadGroupSelectionLabel(helperThreadCount, selectedCount)}
+        expanded={open}
+        onToggle={toggle}
+        rowsID={`${id}-body`}
+        testID="helper-group"
+        bare
+      >
+        {/* The members exist only while the control is open, exactly like the
+            session-group rows below a list: a folded row cannot be mistaken for a
+            visible one, and nothing hidden holds the page's height. */}
         <HelperTreeContext.Provider value={deeper}>
           <div id={`${id}-body`} className="helper-group-body">
             {scopeExpired ? (
@@ -350,7 +348,7 @@ function HelperGroupDisclosure({
             </>}
           </div>
         </HelperTreeContext.Provider>
-      )}
+      </SessionGroupDisclosure>
     </div>
   )
 }
