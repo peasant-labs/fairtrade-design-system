@@ -157,7 +157,7 @@ jobs:
         run: pnpm journey:ci
 
       - name: Timeline route gate (production build + source mutation)
-        run: pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
+        run: pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations && pnpm test:timeline-heading-case:mutations
 
       - name: Upload Storybook build on failure
         if: failure()
