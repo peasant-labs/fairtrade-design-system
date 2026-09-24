@@ -39,6 +39,15 @@ if (typeFailures.length) {
   )
 }
 
+const breadcrumbTypePath = join(TYPES, 'Breadcrumb.d.ts')
+if (!existsSync(breadcrumbTypePath) || statSync(breadcrumbTypePath).size === 0) {
+  throw new Error('fairtrade smoke failed in scripts/smoke-lib.mjs: Breadcrumb declaration is missing or empty after tsc; why: consumers need the generated public API; where: dist/lib/types/Breadcrumb.d.ts; when: declaration smoke; what it means: the package types do not prove the link and case contract; how to fix: check tsconfig.lib.json and rerun pnpm build:lib.')
+}
+const breadcrumbDeclaration = readFileSync(breadcrumbTypePath, 'utf8')
+for (const contract of ['LinkComponent', 'chrome']) {
+  if (!breadcrumbDeclaration.includes(contract)) throw new Error(`fairtrade smoke failed in scripts/smoke-lib.mjs: Breadcrumb declaration lacks ${contract}; why: the generated public API must expose the new contract; where: dist/lib/types/Breadcrumb.d.ts; when: declaration smoke; what it means: TypeScript consumers cannot use the feature; how to fix: repair Breadcrumb JSDoc and rerun pnpm build:lib.`)
+}
+
 const chartData = [{ label: 'a', count: 1 }, { label: 'b', count: 2 }]
 const diffHunks = [
   {

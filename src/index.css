@@ -498,12 +498,13 @@
   .card .card-foot .grow { color: var(--ink); }
 
   /* trails */
-  .crumb { @apply flex items-center gap-2 font-mono text-label lowercase text-ink-3; min-width: 0; max-width: 100%; overflow-x: auto; }
+  .crumb { @apply flex items-center gap-2 font-mono text-label text-ink-3; min-width: 0; max-width: 100%; overflow-x: auto; }
   .crumb .lucide { @apply text-ink-5; width: var(--ic-sm); height: var(--ic-sm); }
   .crumb .cur { @apply text-ink; }
   .crumb a { @apply text-ink-3; }
   .crumb a:hover, .crumb a:focus-visible { @apply text-ink; }
   .crumb-item { @apply inline-flex items-center; gap: var(--sp-2); white-space: nowrap; }
+  .crumb .crumb-item-chrome { @apply lowercase; }
   .steps { @apply flex items-center flex-wrap; gap: 0; }
   .step { @apply inline-flex items-center gap-2 font-mono text-label lowercase text-ink-3; }
   .step .num { @apply inline-flex items-center justify-center; width: var(--sp-5); height: var(--sp-5); border: var(--bd-strong); font-size: var(--fs-label); font-variant-numeric: tabular-nums; }

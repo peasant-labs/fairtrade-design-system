@@ -2,8 +2,9 @@ import { ChevronRight, Check } from 'lucide-react';
 
 /**
  * @typedef {Object} CrumbItem
- * @property {string} label - the crumb text
- * @property {string} [href] - optional link target; when present the crumb renders as an <a>
+ * @property {string} label - the crumb text; preserve user capitalization unless chrome is true
+ * @property {string} [href] - optional link target for an intermediate crumb
+ * @property {boolean} [chrome=false] - opt this static chrome item into lowercase presentation
  * @property {React.ComponentType<{className?: string}>} [icon] - optional leading lucide icon component (e.g. icon={Folder})
  */
 
@@ -16,9 +17,10 @@ import { ChevronRight, Check } from 'lucide-react';
  * @param {Object} props
  * @param {CrumbItem[]} props.items - ordered crumbs from root to current; the last is the current page.
  * @param {string} [props.label='breadcrumb'] - aria-label for the nav landmark.
+ * @param {import('react').ElementType} [props.LinkComponent='a'] - component for intermediate href items.
  * @returns {JSX.Element}
  */
-export default function Breadcrumb({ items = [], label = 'breadcrumb' }) {
+export default function Breadcrumb({ items = [], label = 'breadcrumb', LinkComponent = 'a' }) {
   return (
     <nav aria-label={label}>
       <div className="crumb">
@@ -26,7 +28,7 @@ export default function Breadcrumb({ items = [], label = 'breadcrumb' }) {
           const isCur = i === items.length - 1;
           const Icon = item.icon;
           const content = (
-            <span className="crumb-item">
+            <span className={'crumb-item' + (item.chrome ? ' crumb-item-chrome' : '')}>
               {Icon ? <Icon className="lucide" aria-hidden="true" /> : null}
               {item.label}
             </span>
@@ -34,7 +36,7 @@ export default function Breadcrumb({ items = [], label = 'breadcrumb' }) {
           return (
             <span key={item.href || item.label + i} style={{ display: 'contents' }}>
               {item.href && !isCur ? (
-                <a href={item.href}>{content}</a>
+                <LinkComponent href={item.href} className="link">{content}</LinkComponent>
               ) : isCur ? (
                 <span className="cur" aria-current="page">
                   {content}
