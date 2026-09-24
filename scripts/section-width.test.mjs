@@ -10,6 +10,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..')
 const GENERIC_DIAGNOSTIC = 'source: section width contract mismatch'
 const GENERATED_DIAGNOSTIC = 'generated: base.css differs from section.band generator contract'
+const TRACKED_SOURCE_GENERATED_FILES = Object.freeze(['src/index.css', 'packages/tokens/base.css', 'scripts/gen-llm-artifacts.mjs'])
 
 export function loadSectionWidthFixtures(root = ROOT) {
   const fixture = parseOne(readFileSync(resolve(root, 'scripts/testdata/section-width.yaml'), 'utf8'), 'section-width fixture')
@@ -35,17 +36,14 @@ export function validateSectionWidthContract({ root = ROOT, fixture, manifest } 
     switch (testCase.contract) {
       case 'bare-global-section-unconstrained': {
         const bare = sourceRules.filter((rule) => rule.selectors.includes(testCase.forbiddenSelector))
-        if (bare.length) {
-          const owned = bare.filter((rule) => Object.keys(rule.declarations).some((property) => testCase.forbiddenProperties.includes(property)))
-          if (owned.length) fail({
-            name,
-            file: testCase.file,
-            diagnostic: 'source: bare section base constraint restored',
-            observed: JSON.stringify(owned),
-            expected: `no ${testCase.forbiddenSelector} selector with ${testCase.forbiddenProperties.join(', ')}`,
-            remedy: 'keep the base constraint on section.band and leave bare sections unconstrained',
-          })
-        }
+        if (bare.length) fail({
+          name,
+          file: testCase.file,
+          diagnostic: 'source: bare section base constraint restored',
+          observed: JSON.stringify(bare),
+          expected: `no bare ${testCase.forbiddenSelector} selector owning ${testCase.forbiddenProperties.join(', ')}`,
+          remedy: 'keep the base constraint on section.band and leave bare sections unconstrained',
+        })
         results.push(`${name}: no bare global section container`)
         break
       }
@@ -225,10 +223,16 @@ function validateInventory(fixture, manifest) {
   assertUnique(Object.keys(fixture.mountedCases), 'section-width mounted case names')
   assertUnique(Object.keys(fixture.mutationCases), 'section-width mutation case names')
   assertExactSet(fixture.mountedCases, manifest.mountedCases, 'mounted case names')
+  for (const [name, testCase] of Object.entries(fixture.mountedCases)) assertExactKeys(testCase, ['theme', 'screenshot', 'parentSelector', 'parentMinWidth', 'bareSelector', 'bandSelector', 'retainedSelector'], `section-width mounted case ${name}`)
+  assertExactKeys(fixture.geometry, ['bareMaxWidth', 'bareMarginLeft', 'bareMarginRight', 'barePaddingLeft', 'barePaddingRight', 'bandMaxWidth', 'bandPaddingLeft', 'bandPaddingRight', 'retainedMaxWidth'], 'section-width geometry')
   assert.deepEqual(Object.keys(fixture.mutationCases).sort(), Object.keys(manifest.mutationCases).sort(), 'section-width mutation cases differ from the independent name manifest')
   for (const [name, testCase] of Object.entries(fixture.mutationCases)) {
+    assertExactKeys(testCase, ['diagnostic', 'file', 'find', 'replace'], `section-width mutation ${name}`)
     if (testCase.diagnostic !== manifest.mutationCases[name]) throw new Error(`section-width mutation ${JSON.stringify(name)} diagnostic differs between fixture (${JSON.stringify(testCase.diagnostic)}) and independent manifest (${JSON.stringify(manifest.mutationCases[name])})`)
+    if (!TRACKED_SOURCE_GENERATED_FILES.includes(testCase.file)) throw new Error(`section-width mutation ${JSON.stringify(name)} names unknown source/generated owner ${JSON.stringify(testCase.file)}`)
   }
+  assert.ok(Array.isArray(manifest.sourceFiles) && manifest.sourceFiles.every((file) => typeof file === 'string' && file.length > 0), 'section-width manifest sourceFiles must be a non-empty string inventory')
+  assertUnique(manifest.sourceFiles, 'section-width manifest source owners')
   const mountedThemes = Object.values(fixture.mountedCases).map((testCase) => testCase.theme)
   assertUnique(mountedThemes, 'section-width mounted themes')
   if (!Object.values(fixture.mountedCases).every((testCase) => testCase.theme === 'dark' || testCase.theme === 'light')) {

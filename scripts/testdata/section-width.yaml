@@ -154,7 +154,16 @@ geometry:
 mutationCases:
   restore-bare-selector:
     diagnostic: 'source: bare section base constraint restored'
+    file: src/index.css
+    find: 'section.band { max-width: var(--maxw); margin: 0 auto; }'
+    replace: 'section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }'
   remove-explicit-band:
     diagnostic: 'source: section.band base container missing'
+    file: src/index.css
+    find: 'section.band { max-width: var(--maxw); margin: 0 auto; }'
+    replace: 'section.band { }'
   generator-output-drift:
     diagnostic: 'generated: base.css differs from section.band generator contract'
+    file: packages/tokens/base.css
+    find: 'section.band { max-width: var(--maxw); margin: 0 auto; }'
+    replace: 'section.band { max-width: 960px; margin: 0; }'

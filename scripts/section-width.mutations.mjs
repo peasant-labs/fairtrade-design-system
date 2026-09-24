@@ -24,26 +24,6 @@ const READ_ONLY_LINKS = Object.freeze([
   'src/ComponentSections.jsx',
   'src/sections-react',
 ])
-const MUTATIONS = Object.freeze([
-  Object.freeze({
-    name: 'restore-bare-selector',
-    file: 'src/index.css',
-    find: 'section.band { max-width: var(--maxw); margin: 0 auto; }',
-    replace: 'section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }',
-  }),
-  Object.freeze({
-    name: 'remove-explicit-band',
-    file: 'src/index.css',
-    find: 'section.band { max-width: var(--maxw); margin: 0 auto; }',
-    replace: 'section.band { }',
-  }),
-  Object.freeze({
-    name: 'generator-output-drift',
-    file: 'packages/tokens/base.css',
-    find: 'section.band { max-width: var(--maxw); margin: 0 auto; }',
-    replace: 'section.band { max-width: 960px; margin: 0; }',
-  }),
-])
 
 const scopedStatusBefore = gitStatus(TRACKED_INPUTS)
 if (scopedStatusBefore) throw actionable(`mutation baseline is dirty\ncase: clean-source-generated-baseline\nfile: ${TRACKED_INPUTS.join(', ')}\nobserved: ${JSON.stringify(scopedStatusBefore)}\nexpected: no tracked status entries\nremedy: commit or restore these tracked inputs before running source/generated mutations`)
@@ -58,15 +38,16 @@ try {
   temporaryRoot = mkdtempSync(join(tmpdir(), 'fairtrade-section-width-'))
   prepareTemporaryRoot(temporaryRoot)
 
-  for (const mutation of MUTATIONS) {
-    const expectedDiagnostic = manifest.mutationCases[mutation.name]
-    assert.equal(typeof expectedDiagnostic, 'string', `manifest mutation ${mutation.name} must name an exact diagnostic`)
+  for (const [name, mutation] of Object.entries(fixture.mutationCases)) {
+    const expectedDiagnostic = manifest.mutationCases[name]
+    assert.equal(typeof expectedDiagnostic, 'string', `manifest mutation ${name} must name an exact diagnostic`)
+    assert.ok(TRACKED_INPUTS.includes(mutation.file), `fixture mutation ${name} must target a tracked source/generated input`)
     const destination = resolve(temporaryRoot, mutation.file)
     const original = readFileSync(destination, 'utf8')
     const occurrences = original.split(mutation.find).length - 1
-    if (occurrences !== 1) throw actionable(`mutation target drifted\ncase: ${mutation.name}\nfile: ${mutation.file}\nobserved: ${occurrences} exact target occurrence(s)\nexpected: one exact target occurrence\nremedy: keep the mutation fixture aligned with the named source/generated contract or update both inventories together`)
+    if (occurrences !== 1) throw actionable(`mutation target drifted\ncase: ${name}\nfile: ${mutation.file}\nobserved: ${occurrences} exact target occurrence(s)\nexpected: one exact target occurrence\nremedy: keep the mutation fixture aligned with the named source/generated contract or update both inventories together`)
     const mutated = original.replace(mutation.find, mutation.replace)
-    if (mutated === original) throw actionable(`mutation was not observable\ncase: ${mutation.name}\nfile: ${mutation.file}\nobserved: unchanged bytes\nexpected: a temporary source/generated change\nremedy: choose a non-empty replacement that exercises the named diagnostic`)
+    if (mutated === original) throw actionable(`mutation was not observable\ncase: ${name}\nfile: ${mutation.file}\nobserved: unchanged bytes\nexpected: a temporary source/generated change\nremedy: choose a non-empty replacement that exercises the named diagnostic`)
     writeFileSync(destination, mutated)
 
     let observedDiagnostic
@@ -75,8 +56,8 @@ try {
     } catch (error) {
       observedDiagnostic = error instanceof Error ? error.message.split('\n')[0] : String(error)
     }
-    if (observedDiagnostic !== expectedDiagnostic) throw actionable(`mutation was not killed by its named diagnostic\ncase: ${mutation.name}\nfile: ${mutation.file}\nobserved: ${JSON.stringify(observedDiagnostic ?? 'mutation survived')}\nexpected: ${JSON.stringify(expectedDiagnostic)}\nremedy: route this temporary mutation to the named source/generated case; generic parse, server, or browser failures do not count`)
-    console.log(`PASS ${mutation.name}: ${observedDiagnostic}`)
+    if (observedDiagnostic !== expectedDiagnostic) throw actionable(`mutation was not killed by its named diagnostic\ncase: ${name}\nfile: ${mutation.file}\nobserved: ${JSON.stringify(observedDiagnostic ?? 'mutation survived')}\nexpected: ${JSON.stringify(expectedDiagnostic)}\nremedy: route this temporary mutation to the named source/generated case; generic parse, server, or browser failures do not count`)
+    console.log(`PASS ${name}: ${observedDiagnostic}`)
     writeFileSync(destination, original)
   }
 } finally {
