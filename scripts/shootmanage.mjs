@@ -7,7 +7,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { preview } from 'vite'
 import { SurfaceGate } from './surface-gate.mjs'
-import { assertServedBuildProvenance, observeServedJavaScript } from './served-build-provenance.mjs'
+import { assertServedBuildProvenance, observeServedBuildAssets } from './served-build-provenance.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST_ROOT = resolve(process.env.BREADCRUMB_DIST_ROOT || resolve(ROOT, 'dist'))
@@ -32,7 +32,7 @@ if (!address || typeof address === 'string') throw new Error('ERROR [shootmanage
 const url = `http://127.0.0.1:${address.port}/?fb=off${theme === 'light' ? '&theme=light' : ''}`
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', defaultViewport: { width: 1460, height: 1000, deviceScaleFactor: 1 }, args: typeof process.getuid === 'function' && process.getuid() === 0 ? ['--no-sandbox'] : [] })
 const page = await browser.newPage()
-const observer = observeServedJavaScript(page, url)
+const observer = observeServedBuildAssets(page, url)
 await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }])
 const errs = []
 page.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text())) errs.push(m.text()) })
@@ -67,7 +67,7 @@ const clickText = async (selector, text) => {
 }
 const prove = async () => {
   observer.stop()
-  await assertServedBuildProvenance({ mode: 'feature', origin: url, distRoot: DIST_ROOT, observedJavaScriptPaths: [...observer.paths], observedForeignOrigins: [...observer.foreignOrigins], marker: 'crumb-item-chrome', base: process.env.BREADCRUMB_BASE || '6afc3fe4ac49c43d9ff093610fd131f0492118dd', expectedBranch: process.env.BREADCRUMB_BRANCH || 'fairtrade-44--fix--breadcrumb-links-case', allowDirty: process.env.BREADCRUMB_PROVENANCE_ALLOW_DIRTY === '1' })
+  await assertServedBuildProvenance({ mode: 'feature', origin: url, distRoot: DIST_ROOT, observedJavaScriptPaths: [...observer.paths], observedForeignOrigins: [...observer.foreignOrigins], marker: 'crumb-item-chrome', base: process.env.BREADCRUMB_BASE, expectedHead: process.env.BREADCRUMB_HEAD, expectedBranch: process.env.BREADCRUMB_BRANCH })
 }
 const gotoCommons = async (search = '') => {
   await page.goto(`${url}${search}`, { waitUntil: 'networkidle0' })
@@ -75,14 +75,17 @@ const gotoCommons = async (search = '') => {
 }
 
 try {
+  // Preserve the established query-driven collectives-list capture lifecycle.
+  await gotoCommons('&app=commons&commons=collectives')
+  await waitFor('#inuse-stage .cmg-root', 8000)
+  await shot('manage-collectives', '#inuse')
+
+  // Only manage-detail uses the real in-use control path to reach the public Breadcrumb.
   await gotoCommons('')
   await clickText('[role="tab"]', 'village')
   await waitFor('#inuse-stage .iu-subnav')
   await clickText('#inuse-stage .iu-subnav-item', 'collectives')
   await waitFor('#inuse-stage .cmg-grid')
-  await prove()
-  await shot('manage-collectives', '#inuse')
-
   await clickText('#inuse-stage .cmg-col-card', 'AI Research Team')
   await waitFor('#inuse-stage .cmg-detail')
   await prove()
@@ -104,7 +107,6 @@ try {
       return stage ? stage.scrollHeight > stage.clientHeight + 2 : true
     })
     if (stillScrolls) throw new Error(`ERROR [shootmanage.mjs] manage-settings still needs internal scroll after resizing the viewport to ${stageHeight}px; where: shootmanage.mjs full-height manage-settings capture; fix: re-check .iu-stage scrollHeight and vh-based layout.`)
-    await prove()
     await shot('manage-settings', '#inuse')
     await page.setViewport({ width: 1460, height: 1000, deviceScaleFactor: 1 })
   }

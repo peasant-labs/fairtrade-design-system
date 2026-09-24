@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { dirname, normalize, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import React from 'react'
@@ -10,16 +11,25 @@ import { JSDOM } from 'jsdom'
 import { createServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import YAML from 'yaml'
+import { assertFeatureGitIdentity } from './served-build-provenance.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..')
 const fixture = loadFixture(resolve(HERE, 'testdata/breadcrumb.yaml'))
 const manifest = loadFixture(resolve(HERE, 'testdata/breadcrumb.manifest.yaml'))
-const sourceCases = fixture.cases.filter((testCase) => testCase.owner === 'source' && (!process.env.BREADCRUMB_SOURCE_CASE || testCase.name === process.env.BREADCRUMB_SOURCE_CASE))
-const sourceMutation = process.env.BREADCRUMB_MUTATION_FILE
-  ? { file: process.env.BREADCRUMB_MUTATION_FILE, find: process.env.BREADCRUMB_MUTATION_FIND, replace: process.env.BREADCRUMB_MUTATION_REPLACE }
-  : null
 validateFixtureInventory()
+
+const mutationName = process.env.BREADCRUMB_MUTATION_NAME
+const sourceMutation = mutationName ? manifest.mutations.find((mutation) => mutation.name === mutationName) : null
+if (mutationName && !sourceMutation) throw fixtureError(`unknown mutation ${JSON.stringify(mutationName)}`, 'where: scripts/breadcrumb.test.mjs mutation selection; when: source preflight; what it means: the requested source mutant cannot be attributed; how to fix: pass one exact name from the mutation manifest.')
+const sourceCaseIds = selectCaseIds({
+  raw: process.env.BREADCRUMB_SOURCE_CASES,
+  owner: 'source',
+  required: manifest.execution.source,
+  selected: sourceMutation ? [sourceMutation.logicalCase] : null,
+  requireFull: !sourceMutation,
+})
+const sourceCases = sourceCaseIds.map((name) => fixture.cases.find((testCase) => testCase.name === name))
 
 const server = await createServer({
   root: ROOT,
@@ -35,13 +45,13 @@ try {
   const { Folder, FileText } = await import('lucide-react')
   const icons = { Folder, FileText }
 
-  for (const testCase of sourceCases) {
-    await verifyCase(Breadcrumb, testCase, icons)
-  }
+  for (const testCase of sourceCases) await verifyCase(Breadcrumb, testCase, icons)
+  verifyProvenanceNegativeCases()
 } finally {
   await server.close()
 }
 
+console.log(`breadcrumb source execution: ${sourceCaseIds.join(',')}`)
 console.log(`breadcrumb source: ${sourceCases.length} fixture cases passed against src/ui/Breadcrumb.jsx`)
 
 async function verifyCase(Breadcrumb, testCase, icons) {
@@ -58,7 +68,7 @@ async function verifyCase(Breadcrumb, testCase, icons) {
     const document = new JSDOM(renderToStaticMarkup(React.createElement(Breadcrumb, props))).window.document
     const expected = testCase.expected
     const nav = document.querySelector('nav')
-    assert.ok(nav, `nav landmark is missing`)
+    assert.ok(nav, 'nav landmark is missing')
     if (expected.navLabel) assert.equal(nav.getAttribute('aria-label'), expected.navLabel, 'nav aria-label')
 
     if (expected.linkTag) {
@@ -131,11 +141,33 @@ async function verifyCase(Breadcrumb, testCase, icons) {
   }
 }
 
+function verifyProvenanceNegativeCases() {
+  const head = gitOutput('rev-parse', 'HEAD')
+  const base = gitOutput('rev-parse', 'HEAD^')
+  assert.throws(() => assertFeatureGitIdentity({ sourceRoot: ROOT, base, expectedHead: undefined }), /explicit expectedHead commit/)
+  assert.throws(() => assertFeatureGitIdentity({ sourceRoot: ROOT, base: undefined, expectedHead: head }), /explicit base commit/)
+  assert.throws(() => assertFeatureGitIdentity({ sourceRoot: ROOT, base, expectedHead: base }), /repository HEAD is .*expected/)
+  assert.throws(() => assertFeatureGitIdentity({ sourceRoot: ROOT, base: 'not-a-commit', expectedHead: head }), /does not resolve to a commit/)
+  assert.throws(() => assertFeatureGitIdentity({ sourceRoot: ROOT, base, expectedHead: head, expectedBranch: 'not-a-real-feature-branch' }), /repository branch is .*expected/)
+
+  const unrelated = gitOutput('rev-list', '--all', '--not', head).split('\n').filter(Boolean)[0]
+  if (unrelated) assert.throws(() => assertFeatureGitIdentity({ sourceRoot: ROOT, base: unrelated, expectedHead: head }), /not the actual merge-base/)
+
+  const dirtyPath = resolve(ROOT, `.breadcrumb-provenance-dirty-${process.pid}`)
+  writeFileSync(dirtyPath, 'dirty provenance negative\n')
+  try {
+    assert.throws(() => assertFeatureGitIdentity({ sourceRoot: ROOT, base, expectedHead: head }), /worktree is dirty/)
+  } finally {
+    unlinkSync(dirtyPath)
+  }
+  console.log('breadcrumb provenance negatives: omitted head, omitted/mismatched base, mismatched head/branch, and dirty worktree rejected')
+}
+
 function inMemorySourceMutation(mutation) {
   const sourcePath = normalize(resolve(ROOT, mutation.file))
   const source = readFileSync(sourcePath, 'utf8')
   const occurrences = source.split(mutation.find).length - 1
-  if (occurrences !== 1) throw new Error(`breadcrumb source mutation target ${mutation.file} must occur exactly once; received ${occurrences}`)
+  if (occurrences !== 1) throw fixtureError(`source mutation target ${mutation.file} must occur exactly once; received ${occurrences}`, 'where: scripts/breadcrumb.test.mjs mutation preflight; when: in-memory source load; what it means: the designated mutant is not isolated; how to fix: correct the manifest find needle and rerun the mutation gate.')
   return {
     name: 'in-memory-breadcrumb-source-mutation',
     enforce: 'pre',
@@ -153,15 +185,54 @@ function validateFixtureInventory() {
   const requiredCases = ['default-anchor-item', 'custom-link-forwarding', 'icon-and-separator-preserved', 'content-default-case', 'chrome-item-case', 'non-linked-intermediate-item', 'final-item-current-and-href-ignored', 'nav-label-preserved', 'commons-detail-dark', 'commons-detail-light']
   const requiredSource = requiredCases.filter((name) => !name.startsWith('commons-detail-'))
   const requiredMounted = requiredCases.filter((name) => name.startsWith('commons-detail-'))
+  const requiredOwners = Object.fromEntries(requiredCases.map((name) => [name, name.startsWith('commons-detail-') ? 'mounted' : 'source']))
+  const requiredMutations = [
+    { name: 'restore-global-crumb-lowercase', file: 'src/index.css', find: '.crumb { @apply flex items-center gap-2 font-mono text-label text-ink-3;', replace: '.crumb { @apply flex items-center gap-2 font-mono text-label lowercase text-ink-3;', runner: 'scripts/breadcrumb-rendered-probe.mjs', probeCase: 'commons-detail-dark', logicalCase: 'content-default-case', diagnostic: 'breadcrumb content computed transform: expected none, observed lowercase' },
+    { name: 'apply-per-item-crumb-lowercase', file: 'src/index.css', find: '.crumb .crumb-item-chrome { @apply lowercase; }', replace: '.crumb .crumb-item { @apply lowercase; }', runner: 'scripts/breadcrumb-rendered-probe.mjs', probeCase: 'commons-detail-dark', logicalCase: 'content-default-case', diagnostic: 'breadcrumb content computed transform: expected none, observed lowercase' },
+    { name: 'remove-link-component-forwarding', file: 'src/ui/Breadcrumb.jsx', find: '<LinkComponent href={item.href} className="link">{content}</LinkComponent>', replace: '<a href={item.href}>{content}</a>', runner: 'scripts/breadcrumb.test.mjs', probeCase: 'custom-link-forwarding', logicalCase: 'custom-link-forwarding', diagnostic: 'breadcrumb custom link forwarding: expected custom-link marker and className=link' },
+  ]
   assert.deepEqual(manifest.caseNames, requiredCases, 'breadcrumb manifest case names must match the required inventory')
   assert.deepEqual(manifest.sourceCaseNames, requiredSource, 'breadcrumb manifest source names must match the required inventory')
   assert.deepEqual(manifest.mountedCaseNames, requiredMounted, 'breadcrumb manifest mounted names must match the required inventory')
+  assert.deepEqual(manifest.caseOwners, requiredOwners, 'breadcrumb manifest owners must match the required inventory')
+  assert.deepEqual(manifest.execution?.source, requiredSource, 'breadcrumb source execution map must match the required source inventory')
+  assert.deepEqual(manifest.execution?.mounted, requiredMounted, 'breadcrumb mounted execution map must match the required mounted inventory')
   assert.deepEqual(fixture.cases.map((testCase) => testCase.name), requiredCases, 'breadcrumb fixture case names must match the manifest')
-  assert.deepEqual(manifest.mutations.map((mutation) => mutation.name), ['restore-global-crumb-lowercase', 'apply-per-item-crumb-lowercase', 'remove-link-component-forwarding'], 'breadcrumb mutation names must match the required inventory')
+  for (const testCase of fixture.cases) assert.equal(testCase.owner, requiredOwners[testCase.name], `${testCase.name} fixture owner must match the manifest`)
+  assert.deepEqual(manifest.mutations, requiredMutations, 'breadcrumb mutation runner/probe/logical/diagnostic mapping must match the required contract')
   for (const mutation of manifest.mutations) {
-    for (const field of ['name', 'file', 'find', 'replace', 'designatedCase', 'diagnostic']) assert.equal(typeof mutation[field], 'string', `${mutation.name} manifest field ${field}`)
-    assert.ok(requiredCases.includes(mutation.designatedCase), `${mutation.name} designated case is not in the required inventory`)
+    assert.ok(requiredCases.includes(mutation.probeCase), `${mutation.name} probe case is not in the required inventory`)
+    assert.ok(requiredCases.includes(mutation.logicalCase), `${mutation.name} logical case is not in the required inventory`)
+    assert.equal(manifest.caseOwners[mutation.probeCase], mutation.runner.endsWith('breadcrumb-rendered-probe.mjs') ? 'mounted' : 'source', `${mutation.name} probe case owner must match its runner`)
   }
+}
+
+function selectCaseIds({ raw, owner, required, selected, requireFull }) {
+  const ids = parseCaseIds(raw, owner)
+  if (selected) assert.deepEqual(ids, selected, `breadcrumb ${owner} mutation selection must equal its logical/probe case`)
+  else if (requireFull) assert.deepEqual(ids, required, `breadcrumb ${owner} execution must equal the complete required inventory`)
+  return ids
+}
+
+function parseCaseIds(raw, owner) {
+  if (typeof raw !== 'string' || !raw.trim()) throw fixtureError(`explicit ${owner} case IDs are required`, `where: scripts/breadcrumb.test.mjs ${owner} selection; when: gate startup; what it means: an empty or owner-filtered run could pass without executing required cases; how to fix: pass the exact comma-separated ${owner} case IDs.`)
+  const ids = raw.split(',').map((value) => value.trim())
+  if (ids.some((value) => !value)) throw fixtureError(`empty ${owner} case ID in ${JSON.stringify(raw)}`, `where: scripts/breadcrumb.test.mjs ${owner} selection; when: gate startup; what it means: the required case inventory is ambiguous; how to fix: remove empty comma entries and pass exact IDs.`)
+  if (new Set(ids).size !== ids.length) throw fixtureError(`duplicate ${owner} case ID in ${ids.join(',')}`, `where: scripts/breadcrumb.test.mjs ${owner} selection; when: gate startup; what it means: a case could be counted twice while another required case is skipped; how to fix: pass each required ${owner} case ID exactly once.`)
+  for (const id of ids) {
+    const testCase = fixture.cases.find((candidate) => candidate.name === id)
+    if (!testCase) throw fixtureError(`unknown ${owner} case ${JSON.stringify(id)}`, `where: scripts/breadcrumb.test.mjs ${owner} selection; when: gate startup; what it means: the requested evidence case is not in the fixture; how to fix: pass only names from breadcrumb.yaml.`)
+    if (testCase.owner !== owner) throw fixtureError(`${id} is owned by ${testCase.owner}, not ${owner}`, `where: scripts/breadcrumb.test.mjs ${owner} selection; when: gate startup; what it means: the wrong production path would be exercised; how to fix: pass the case to its owner-specific command.`)
+  }
+  return ids
+}
+
+function gitOutput(...args) {
+  return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim()
+}
+
+function fixtureError(what, where) {
+  return new Error(`breadcrumb fixture gate failed: what went wrong: ${what}; why: the named evidence inventory must be explicit and exact; ${where}; what it means: the requested gate cannot prove its contract; how to fix: correct the selection or manifest and rerun.`)
 }
 
 function loadFixture(path) {

@@ -21,22 +21,52 @@ sourceCaseNames:
 mountedCaseNames:
   - commons-detail-dark
   - commons-detail-light
+caseOwners:
+  default-anchor-item: source
+  custom-link-forwarding: source
+  icon-and-separator-preserved: source
+  content-default-case: source
+  chrome-item-case: source
+  non-linked-intermediate-item: source
+  final-item-current-and-href-ignored: source
+  nav-label-preserved: source
+  commons-detail-dark: mounted
+  commons-detail-light: mounted
+execution:
+  source:
+    - default-anchor-item
+    - custom-link-forwarding
+    - icon-and-separator-preserved
+    - content-default-case
+    - chrome-item-case
+    - non-linked-intermediate-item
+    - final-item-current-and-href-ignored
+    - nav-label-preserved
+  mounted:
+    - commons-detail-dark
+    - commons-detail-light
 mutations:
   - name: restore-global-crumb-lowercase
     file: src/index.css
     find: ".crumb { @apply flex items-center gap-2 font-mono text-label text-ink-3;"
     replace: ".crumb { @apply flex items-center gap-2 font-mono text-label lowercase text-ink-3;"
-    designatedCase: content-default-case
+    runner: scripts/breadcrumb-rendered-probe.mjs
+    probeCase: commons-detail-dark
+    logicalCase: content-default-case
     diagnostic: "breadcrumb content computed transform: expected none, observed lowercase"
   - name: apply-per-item-crumb-lowercase
     file: src/index.css
     find: ".crumb .crumb-item-chrome { @apply lowercase; }"
     replace: ".crumb .crumb-item { @apply lowercase; }"
-    designatedCase: content-default-case
+    runner: scripts/breadcrumb-rendered-probe.mjs
+    probeCase: commons-detail-dark
+    logicalCase: content-default-case
     diagnostic: "breadcrumb content computed transform: expected none, observed lowercase"
   - name: remove-link-component-forwarding
     file: src/ui/Breadcrumb.jsx
     find: "<LinkComponent href={item.href} className=\"link\">{content}</LinkComponent>"
     replace: "<a href={item.href}>{content}</a>"
-    designatedCase: custom-link-forwarding
+    runner: scripts/breadcrumb.test.mjs
+    probeCase: custom-link-forwarding
+    logicalCase: custom-link-forwarding
     diagnostic: "breadcrumb custom link forwarding: expected custom-link marker and className=link"
