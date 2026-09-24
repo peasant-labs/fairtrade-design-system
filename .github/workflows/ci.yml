@@ -88,12 +88,21 @@ jobs:
   gates:
     needs: determine-runner
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
+    timeout-minutes: 30
+    # The official Playwright image carries the browsers (pinned to the same
+    # 1.63.0 the repo tests against) and their system dependencies, so jobs
+    # never apt-install at runtime and never download browsers. --ipc=host
+    # and --init are Playwright's recommended Chromium flags. The image ships
+    # Node 24, so setup-node below still provides the repo's Node 26. This is
+    # the same container village's journey job runs in.
+    container:
+      # mcr.microsoft.com/playwright:v1.63.0-noble, linux/amd64 manifest.
+      image: mcr.microsoft.com/playwright@sha256:bc6ab0d6d44ff4826e4cb8c1e6d801e185bfc42bb0753f8e2a30efc70db054c7
+      options: --ipc=host --init
     env:
-      # The pool checks the repo out under a deep work path that the runner
-      # also exports as TMPDIR. Puppeteer builds its temp Chrome profile under
-      # TMPDIR, and Chrome's SingletonSocket then exceeds the unix socket path
-      # limit and refuses to start ("Socket path too long"). Point temp files
-      # at /tmp so the browser gates can launch.
+      # Playwright builds its temp profiles under TMPDIR; the pool checks the
+      # repo out under a deep work path that would exceed the unix socket path
+      # limit. Point temp files at /tmp so the browser gates can launch.
       TMPDIR: /tmp
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -120,67 +129,34 @@ jobs:
       - name: Build (contrast gate + vite build)
         run: pnpm build
 
-      # puppeteer-core bundles no browser; validate.mjs / sbsmoke.mjs read the
-      # binary path from CHROME_PATH (falls back to the local macOS default).
-      - name: Install Chrome
-        id: chrome
-        uses: browser-actions/setup-chrome@c785b87e244131f27c9f19c1a33e2ead956ab7ce # v1.7.3
-        with:
-          chrome-version: stable
-          # The container image carries no Chrome system libraries (libnspr4,
-          # ...), so let the action apt-install them (sudo is available).
-          install-dependencies: true
-
-      # setup-chrome's tool-cache install ships a chrome-sandbox helper without
-      # the setuid bit, and the runner kernel restricts unprivileged user
-      # namespaces — Chrome refuses to start rather than drop sandboxing. Give
-      # the helper exactly what Chrome's own error prescribes (root-owned,
-      # mode 4755) so the browser gates keep running SANDBOXED (no --no-sandbox).
-      - name: Configure Chrome sandbox helper
+      # The job container already carries Playwright's own Chromium for the
+      # pinned @playwright/test. The two remaining puppeteer probes (timeline)
+      # read it from CHROME_PATH; the journeys below use it directly with no
+      # CHROME_PATH plumbing at all.
+      - name: Point CHROME_PATH at the container browser
         run: |
-          SANDBOX="$(dirname "${{ steps.chrome.outputs.chrome-path }}")/chrome-sandbox"
-          sudo chown root:root "$SANDBOX"
-          sudo chmod 4755 "$SANDBOX"
+          CHROME="$(echo /ms-playwright/chromium-*/chrome-linux/chrome | cut -d' ' -f1)"
+          test -x "$CHROME"
+          echo "CHROME_PATH=$CHROME" >> "$GITHUB_ENV"
 
-      # gate 2: the 20-check interactive validator, driven against the BUILT app.
-      # serve dist/ on a fixed port, wait for it, then pass the URL explicitly so
-      # the served port and the asserted URL can never drift.
-      - name: Serve built app (vite preview)
-        run: pnpm exec vite preview --port 5180 --strictPort &
-
-      - name: Wait for app to be ready
-        run: npx --yes wait-on http://localhost:5180 --timeout 60000
-
-      - name: Validate (20-check puppeteer gate)
-        env:
-          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
-        run: node scripts/validate.mjs "http://localhost:5180/?fb=off"
-
-      - name: Timeline route gate (production build + source mutation)
-        env:
-          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
-        run: pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
-
-      # gate 3: storybook builds (the type/parse gate for src/ui/*).
+      # gate 2: the twenty interaction checks, ported from scripts/validate.mjs
+      # onto the journey harness (scripts/journey/app-validate.journey.mjs).
+      # The journey config serves dist/ on :5180 itself, so no manual
+      # vite-preview/wait-on steps that could drift from the asserted URL.
       - name: Build Storybook
         run: pnpm build-storybook
 
-      # gate 4: storybook smoke. sbsmoke.mjs self-serves storybook-static on its
-      # own port, loads all stories headless, runs their play() tests, and exits
-      # non-zero on a real assertion error (benign resource 404s are separated out).
-      - name: Storybook smoke (render + play)
-        env:
-          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
-        run: node scripts/sbsmoke.mjs
+      # gate 3: element journeys (story smoke over the whole catalog, the
+      # twenty app checks, the SessionGroupDisclosure interaction) through
+      # Playwright's bundled Chromium. Real user input absorbs what
+      # check-map-pointer.mjs proved separately with a raw CDP mouse, so the
+      # puppeteer story smoke and map gate are retired from CI (the scripts
+      # stay for local use).
+      - name: Journey gates
+        run: pnpm journey:ci
 
-      # gate 4b: REAL-input map gate. play() tests dispatch synthetic events,
-      # which skip pointer-capture retargeting — the one mechanism that made
-      # the zoom cluster render fine yet never receive a click. This drives a
-      # genuine CDP mouse against the built MapCanvas story.
-      - name: Map pointer gate (real mouse)
-        env:
-          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
-        run: node scripts/check-map-pointer.mjs
+      - name: Timeline route gate (production build + source mutation)
+        run: pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
 
       - name: Upload Storybook build on failure
         if: failure()

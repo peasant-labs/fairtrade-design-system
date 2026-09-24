@@ -57,6 +57,10 @@ try {
       executablePath: CHROME,
       headless: 'new',
       defaultViewport: VIEWPORTS[testCase.viewport],
+      // The pool's job container runs as root, where Chromium cannot use its
+      // sandbox; Playwright's own runner launches unsandboxed by default, so
+      // match it there. Local runs (non-root) keep the sandbox.
+      args: typeof process.getuid === 'function' && process.getuid() === 0 ? ['--no-sandbox'] : [],
     })
     const page = await browser.newPage()
     const errors = []
