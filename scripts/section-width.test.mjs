@@ -224,7 +224,7 @@ function validateInventory(fixture, manifest) {
   assertUnique(Object.keys(fixture.mutationCases), 'section-width mutation case names')
   assertExactSet(fixture.mountedCases, manifest.mountedCases, 'mounted case names')
   for (const [name, testCase] of Object.entries(fixture.mountedCases)) assertExactKeys(testCase, ['theme', 'screenshot', 'parentSelector', 'parentMinWidth', 'bareSelector', 'bandSelector', 'retainedSelector'], `section-width mounted case ${name}`)
-  assertExactKeys(fixture.geometry, ['bareMaxWidth', 'bareMarginLeft', 'bareMarginRight', 'barePaddingLeft', 'barePaddingRight', 'bandMaxWidth', 'bandPaddingLeft', 'bandPaddingRight', 'retainedMaxWidth'], 'section-width geometry')
+  assertExactKeys(fixture.geometry, ['bareMaxWidth', 'bareMarginLeft', 'bareMarginRight', 'barePaddingLeft', 'barePaddingRight', 'bandMaxWidth', 'bandPaddingLeft', 'bandPaddingRight', 'retainedMaxWidth', 'retainedMarginLeft', 'retainedMarginRight', 'retainedPaddingLeft', 'retainedPaddingRight'], 'section-width geometry')
   assert.deepEqual(Object.keys(fixture.mutationCases).sort(), Object.keys(manifest.mutationCases).sort(), 'section-width mutation cases differ from the independent name manifest')
   for (const [name, testCase] of Object.entries(fixture.mutationCases)) {
     assertExactKeys(testCase, ['diagnostic', 'file', 'find', 'replace'], `section-width mutation ${name}`)

@@ -151,6 +151,10 @@ geometry:
   bandPaddingLeft: 32px
   bandPaddingRight: 32px
   retainedMaxWidth: none
+  retainedMarginLeft: 0px
+  retainedMarginRight: 0px
+  retainedPaddingLeft: 0px
+  retainedPaddingRight: 0px
 mutationCases:
   restore-bare-selector:
     diagnostic: 'source: bare section base constraint restored'
