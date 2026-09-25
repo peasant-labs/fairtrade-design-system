@@ -72,7 +72,7 @@ decoration/structure only. `--rule-strong` is the functional control border (at 
 - **reading prose:** Atkinson Hyperlegible proportional (`--font-body`), for long-form body text only (paragraphs, descriptions, transcript bodies).
 - Both faces load from Google Fonts in `index.html`.
 - **scale (`--fs-*`):** label 14, sm 14, body 16, md 18, lg 22, xl 28, hero 40, display 52. Body line-height is ~1.5. The body floor is **16px** (`--fs-min`); nothing readable drops below it.
-- **case:** UI chrome is all-lowercase (nav, labels, buttons, headings). **Never lowercase user content**: usernames, transcript text, collective names, and code keep their case.
+- **case:** unannotated `h1`, `h2`, and `h3` headings preserve their source case so user names, titles, project values, and other data remain legible. Intentional chrome headings opt in with `data-chrome-heading` (or the equivalent element-scoped selector) and render lowercase; never lowercase user content.
 - **bold** earns a small amber "terminal glow" (dark theme only).
 - **numbers** are tabular (`tnum`) in any column, stat, count, or duration.
 

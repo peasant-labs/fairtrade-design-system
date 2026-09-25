@@ -199,11 +199,14 @@
     -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3 {
-    @apply font-display text-ink-strong lowercase;
+    @apply font-display text-ink-strong;
     margin: 0;
     font-weight: 700;
     line-height: var(--lh-tight);
   }
+  h1[data-chrome-heading],
+  h2[data-chrome-heading],
+  h3[data-chrome-heading] { text-transform: lowercase; }
   p { margin: 0; }
   /* neuroinclusive defaults (see llm/NEUROINCLUSIVE.md): prose gets comfortable
      tracking + capped measure; mono/data/chrome stays tight and aligned */
@@ -3214,7 +3217,7 @@
 
   .cmg-crumb { margin-bottom: var(--sp-1); }
   .cmg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; }
-  .cmg-title { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); line-height: 1.1; color: var(--ink-strong); text-transform: lowercase; }
+  .cmg-title { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); line-height: 1.1; color: var(--ink-strong); }
   .cmg-deck { margin-top: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-3); line-height: 1.5; }
   .cmg-sub { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-md); line-height: 1.2; color: var(--ink-strong); text-transform: lowercase; display: inline-flex; align-items: center; gap: var(--sp-2); }
   .cmg-sub .lucide { color: var(--ink-3); flex: none; }
@@ -3388,7 +3391,7 @@
   .cmg-proj-toggle:hover { color: var(--ink-strong); }
   .cmg-proj-toggle:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
   .cmg-proj-toggle .lucide { color: var(--ink-3); flex: none; }
-  .cmg-proj-name { font-size: var(--fs-sm); font-weight: 600; text-transform: lowercase; color: var(--ink); }
+  .cmg-proj-name { font-size: var(--fs-sm); font-weight: 600; color: var(--ink); }
   .cmg-proj-branch { display: inline-flex; align-items: center; gap: var(--sp-1); font-size: var(--fs-label); color: var(--ink-4); }
   .cmg-proj-branch .lucide { width: 12px; height: 12px; }
   .cmg-proj-cnt { margin-left: auto; font-size: var(--fs-label); color: var(--ink-4); }
