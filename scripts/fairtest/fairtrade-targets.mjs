@@ -9,6 +9,11 @@
 
 import { importFairtestSource } from '../fairtest-source.mjs'
 
+const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
+const targetsContract = await importFairtestSource('src/host-contract/targets.mjs')
+const resolutionContract = await importFairtestSource('src/host-contract/resolution.mjs')
+const valuesContract = await importFairtestSource('src/core/values.mjs')
+
 /**
  * Identifier of the single product target covered by this module.
  * @type {string}
@@ -262,22 +267,228 @@ export function productDeclarationInput({ createdAtMs, capabilities, fixtures = 
  * @returns {Promise<object>} the frozen contract receipt
  */
 export async function validateProductTargetContract({ createdAtMs } = {}) {
-  const kinds = await importFairtestSource('src/host-contract/kinds.mjs')
-  const contractTargets = await importFairtestSource('src/host-contract/targets.mjs')
-  if (!kinds.HOST_KINDS.includes(PRODUCT_TARGET_KIND)) {
+  if (!kindsContract.HOST_KINDS.includes(PRODUCT_TARGET_KIND)) {
     throw new Error(
       `fairtrade targets: kind ${JSON.stringify(PRODUCT_TARGET_KIND)} is outside the shared vocabulary for field "kind" at path target.kind; ` +
-      `repair: use one of ${[...kinds.HOST_KINDS].join(', ')} for "kind".`,
+      `repair: use one of ${[...kindsContract.HOST_KINDS].join(', ')} for "kind".`,
     )
   }
-  const capabilities = contractTargets.validateCapabilityList(
-    [...contractTargets.PRODUCT_CAPABILITIES],
+  const capabilities = targetsContract.validateCapabilityList(
+    [...targetsContract.PRODUCT_CAPABILITIES],
     PRODUCT_TARGET_KIND,
     'fairtrade targets',
     'target.capabilities',
   )
-  const declaration = contractTargets.createTargetDeclaration(
+  const declaration = targetsContract.createTargetDeclaration(
     productDeclarationInput({ createdAtMs, capabilities: [...capabilities] }),
   )
   return Object.freeze({ kind: PRODUCT_TARGET_KIND, capabilities, declaration })
+}
+
+/**
+ * Row-scoped theme setup descriptor: the theme the row serves, the raw
+ * attribute value the row must render before any interaction (absent or
+ * empty for dark, the light value for light), and the route that serves
+ * it. The route query value is the app-owned setup mechanism: the
+ * pre-paint inline script sets the light value only when the light query
+ * value is present and otherwise leaves the attribute absent.
+ * @param {unknown} theme dark or light row theme
+ * @returns {object} the frozen setup descriptor for the row
+ */
+export function productThemeSetup(theme) {
+  if (theme !== 'dark' && theme !== 'light') {
+    throw new Error(
+      `fairtrade targets: unknown row theme ${JSON.stringify(theme)} for field "theme" at path setup.theme; ` +
+      'repair: use one of dark, light for "theme".',
+    )
+  }
+  return Object.freeze({
+    theme,
+    expectedAttribute: theme === 'light' ? 'light' : '',
+    route: productRouteForTheme(theme),
+  })
+}
+
+/**
+ * Reject project-name-only theme inference. The row theme always comes
+ * from the explicit row key, never from a runner project name, so any
+ * helper that would derive it from a project name must fail instead of
+ * guessing.
+ * @param {unknown} projectName candidate runner project name
+ * @returns {never} always throws
+ */
+export function productThemeFromProjectName(projectName) {
+  throw new Error(
+    'fairtrade targets: project-name theme inference is forbidden for field "project" at path theme.project; ' +
+    `got ${JSON.stringify(projectName)}; ` +
+    'repair: bind the theme from the explicit row key (dark or light) instead of deriving it from the project name.',
+  )
+}
+
+/**
+ * Validate a theme observation and reject contradictions. Both names must
+ * be known theme names and the rendered name must equal the expected one;
+ * a missing record, an unknown name, or an expected/observed mismatch
+ * fails here, before any capture or evidence work.
+ * @param {unknown} observation candidate theme observation
+ * @returns {object} the frozen validated theme observation
+ */
+export function assertProductThemeObservation(observation) {
+  if (observation === null || observation === undefined) {
+    throw new Error(
+      'fairtrade targets: missing theme observation for field "themeObservation" at path proof.themeObservation; ' +
+      'repair: read the rendered value after mount and before interaction, then observe it with the expected row theme.',
+    )
+  }
+  const validated = kindsContract.validateThemeObservation(observation, 'fairtrade targets')
+  if (validated.expected !== validated.observed) {
+    throw new Error(
+      'fairtrade targets: contradictory theme observation for field "observed" at path theme.observed; ' +
+      `expected ${JSON.stringify(validated.expected)} but rendered ${JSON.stringify(validated.observed)}; ` +
+      'repair: serve the row route for the expected theme and read the rendered value after mount and before interaction.',
+    )
+  }
+  return validated
+}
+
+/**
+ * Observe the rendered theme for a row. The raw attribute value is read
+ * from the mounted tree after mount and before any interaction, then
+ * normalized through the shared rendered-theme rule (absent or empty is
+ * dark, the light value is light) and persisted with the expected theme,
+ * the source note, and the read time. Contradictions fail before the
+ * record is built.
+ * @param {object} [input] observation inputs
+ * @param {string} input.expected theme the row was asked to render
+ * @param {unknown} input.renderedAttribute raw rendered attribute value, absent as nullish
+ * @param {string} input.source caller-owned note naming where the read came from
+ * @param {number} input.observedAtMs read time in whole milliseconds
+ * @returns {object} the frozen validated theme observation
+ */
+export function observeProductTheme(input = {}) {
+  valuesContract.assertExactFields(input, ['expected', 'renderedAttribute', 'source', 'observedAtMs'], 'fairtrade targets', 'theme')
+  const { expected, renderedAttribute, source, observedAtMs } = /** @type {Record<string, unknown>} */ (input)
+  if (expected !== 'dark' && expected !== 'light') {
+    throw new Error(
+      `fairtrade targets: unknown row theme ${JSON.stringify(expected)} for field "expected" at path theme.expected; ` +
+      'repair: use one of dark, light for "expected".',
+    )
+  }
+  const observed = normalizeRenderedTheme(renderedAttribute)
+  return assertProductThemeObservation({ expected, observed, source, observedAtMs })
+}
+
+/**
+ * Expected field set of the app-owned product proof record, so fixtures
+ * can be checked for exact membership with no silent extras. The base
+ * fields cover a proof without a named action; the extended set adds the
+ * completed action result.
+ * @type {object}
+ */
+export const PRODUCT_PROOF_RECORD_SCHEMA = Object.freeze({
+  kind: 'product',
+  fields: Object.freeze(['kind', 'identity', 'chrome', 'body', 'route', 'activeSection', 'view', 'theme']),
+  fieldsWithAction: Object.freeze(['kind', 'identity', 'chrome', 'body', 'route', 'activeSection', 'view', 'theme', 'action']),
+  partFields: Object.freeze(['observed', 'observedAtMs']),
+  themeFields: Object.freeze(['expected', 'observed', 'source', 'observedAtMs']),
+  actionFields: Object.freeze(['name', 'completed', 'observedAtMs']),
+  identityFields: Object.freeze(['kind', 'id', 'createdAtMs']),
+})
+
+/**
+ * Assemble the app-owned product proof record from separately observed
+ * parts and validate it through the shared product resolver. The row
+ * theme must equal the observed theme, every one of the five parts must
+ * be separately observed (a blanket mounted flag is rejected), the
+ * initial section must be the analytics section, and a completed named
+ * action must come from the app-owned action registry with the active
+ * section on the action target. Component-shaped and cross-kind records
+ * fail through the shared validator. The returned record is frozen.
+ * @param {object} [input] proof inputs
+ * @param {string} input.rowTheme dark or light row theme
+ * @param {object} input.identity product-branch identity
+ * @param {object} input.chrome separately observed persistent chrome
+ * @param {object} input.body separately observed representative body
+ * @param {object} input.route separately observed route
+ * @param {object} input.activeSection separately observed active section
+ * @param {object} input.view separately observed mounted view
+ * @param {object} input.themeObservation validated theme observation
+ * @param {string} input.initialSection section rendered before any action
+ * @param {string} input.activeSectionId section id active when the proof completes
+ * @param {object} [input.action] optional completed named action result
+ * @returns {object} the frozen validated product resolution
+ */
+export function buildProductProof(input = {}) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    throw new Error(
+      'fairtrade targets: missing product proof input for field "proof" at path proof; ' +
+      'repair: observe chrome, body, route, active section, view, and theme before building the proof.',
+    )
+  }
+  if (Object.hasOwn(input, 'mounted')) {
+    throw new Error(
+      'fairtrade targets: blanket mounted flag is not an observation for field "mounted" at path proof.mounted; ' +
+      'repair: observe chrome, body, route, activeSection, and view separately instead of trusting a mounted boolean.',
+    )
+  }
+  const wantInputFields = Object.hasOwn(input, 'action')
+    ? ['rowTheme', 'identity', 'chrome', 'body', 'route', 'activeSection', 'view', 'themeObservation', 'initialSection', 'activeSectionId', 'action']
+    : ['rowTheme', 'identity', 'chrome', 'body', 'route', 'activeSection', 'view', 'themeObservation', 'initialSection', 'activeSectionId']
+  valuesContract.assertExactFields(input, wantInputFields, 'fairtrade targets', 'proof')
+  const record = /** @type {Record<string, unknown>} */ (input)
+  if (record.rowTheme !== 'dark' && record.rowTheme !== 'light') {
+    throw new Error(
+      `fairtrade targets: unknown row theme ${JSON.stringify(record.rowTheme)} for field "rowTheme" at path proof.rowTheme; ` +
+      'repair: use one of dark, light for "rowTheme".',
+    )
+  }
+  const identity = targetsContract.validateTargetIdentity(record.identity, 'product', 'fairtrade targets')
+  const theme = assertProductThemeObservation(record.themeObservation)
+  if (record.rowTheme !== theme.expected) {
+    throw new Error(
+      'fairtrade targets: row setup does not match the theme observation for field "rowTheme" at path proof.rowTheme; ' +
+      `expected ${JSON.stringify(theme.expected)} but the row declares ${JSON.stringify(record.rowTheme)}; ` +
+      'repair: serve the row route for the observed theme before building the proof.',
+    )
+  }
+  const parts = {}
+  for (const part of resolutionContract.PRODUCT_ONLY_FIELDS) {
+    parts[part] = resolutionContract.validateObservedPart(record[part], 'fairtrade targets', `resolution.${part}`)
+  }
+  if (record.initialSection !== PRODUCT_INITIAL_SECTION) {
+    throw new Error(
+      `fairtrade targets: unexpected initial section ${JSON.stringify(record.initialSection)} for field "initialSection" at path proof.initialSection; ` +
+      `repair: start the proof from ${JSON.stringify(PRODUCT_INITIAL_SECTION)} for "initialSection".`,
+    )
+  }
+  if (!PRODUCT_SECTIONS.includes(/** @type {string} */ (record.activeSectionId))) {
+    throw new Error(
+      `fairtrade targets: unknown active section ${JSON.stringify(record.activeSectionId)} for field "activeSectionId" at path proof.activeSectionId; ` +
+      `repair: use one of ${[...PRODUCT_SECTIONS].join(', ')} for "activeSectionId".`,
+    )
+  }
+  let action = null
+  if (Object.hasOwn(input, 'action')) {
+    const candidate = /** @type {Record<string, unknown>} */ (record.action)
+    const registered = getProductAction(candidate?.name)
+    action = resolutionContract.validateNamedResult(record.action, 'fairtrade targets', 'resolution.action')
+    if (record.activeSectionId !== registered.to) {
+      throw new Error(
+        `fairtrade targets: action ${JSON.stringify(registered.name)} expects the active section ${JSON.stringify(registered.to)} for field "activeSectionId" at path proof.activeSectionId; ` +
+        `got ${JSON.stringify(record.activeSectionId)}; ` +
+        `repair: select the ${JSON.stringify(registered.to)} section before completing the named action.`,
+      )
+    }
+  } else if (record.activeSectionId !== record.initialSection) {
+    throw new Error(
+      'fairtrade targets: active section drifted without a named action for field "activeSectionId" at path proof.activeSectionId; ' +
+      `got ${JSON.stringify(record.activeSectionId)}; ` +
+      `repair: keep the active section on ${JSON.stringify(record.initialSection)} until the named action completes.`,
+    )
+  }
+  const candidate = { kind: 'product', identity, ...parts, theme }
+  if (action) {
+    candidate.action = action
+  }
+  return resolutionContract.validateProductResolution(candidate, 'fairtrade targets')
 }

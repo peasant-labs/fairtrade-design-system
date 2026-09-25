@@ -2,9 +2,15 @@
  * mounted surface must satisfy.
  *
  * App-agnostic: this is the canonical copy consumers vendor into their own
- * journey harness. See scripts/journey/README.md. */
+ * journey harness. See scripts/journey/README.md.
+ *
+ * The theme rule lives in the app-owned product target contract
+ * (scripts/fairtest/fairtrade-targets.mjs) and the shared host contract;
+ * this module only adapts those rules to the live tree. Do not add a
+ * second copy of the theme table here. */
 import { expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
+import { normalizeRenderedTheme, observeProductTheme } from '../../fairtest/fairtrade-targets.mjs'
 
 export const DEFAULT_AXE_TAGS = ['wcag2a', 'wcag2aa']
 
@@ -28,9 +34,25 @@ export function seriousViolations(scan) {
   return scan.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
 }
 
-/** The document element must carry the requested theme (the app's own control writes it). */
+/**
+ * The mounted tree must carry the requested theme. The comparison is
+ * normalized through the app-owned target contract, so an absent or empty
+ * attribute counts as dark and the light value counts as light; a wrong
+ * or contradictory value fails through that contract before the final
+ * assertion.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} theme dark or light row theme
+ */
 export async function expectTheme(page, theme) {
-  await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+  const raw = await page.locator('html').getAttribute('data-theme')
+  const observed = normalizeRenderedTheme(raw)
+  await observeProductTheme({
+    expected: theme,
+    renderedAttribute: raw,
+    source: 'journey-assertions-expectTheme',
+    observedAtMs: Date.now(),
+  })
+  expect(observed, `rendered theme ${JSON.stringify(observed)} must equal the expected row theme ${JSON.stringify(theme)}`).toBe(theme)
 }
 
 /**
