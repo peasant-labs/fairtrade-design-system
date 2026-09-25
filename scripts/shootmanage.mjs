@@ -8,8 +8,10 @@ import { fileURLToPath } from 'node:url'
 import { preview } from 'vite'
 import { SurfaceGate } from './surface-gate.mjs'
 import { assertServedBuildProvenance, observeServedBuildAssets } from './served-build-provenance.mjs'
+import { resolveFeatureGitIdentity } from './feature-git-identity.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const featureIdentity = resolveFeatureGitIdentity({ sourceRoot: ROOT })
 const DIST_ROOT = resolve(process.env.BREADCRUMB_DIST_ROOT || resolve(ROOT, 'dist'))
 const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const theme = process.argv[2] || 'dark'
@@ -67,7 +69,7 @@ const clickText = async (selector, text) => {
 }
 const prove = async () => {
   observer.stop()
-  await assertServedBuildProvenance({ mode: 'feature', origin: url, distRoot: DIST_ROOT, observedJavaScriptPaths: [...observer.paths], observedForeignOrigins: [...observer.foreignOrigins], marker: 'crumb-item-chrome', base: process.env.BREADCRUMB_BASE, expectedHead: process.env.BREADCRUMB_HEAD, expectedBranch: process.env.BREADCRUMB_BRANCH })
+  await assertServedBuildProvenance({ mode: 'feature', origin: url, distRoot: DIST_ROOT, observedJavaScriptPaths: [...observer.paths], observedForeignOrigins: [...observer.foreignOrigins], marker: 'crumb-item-chrome', base: featureIdentity.base, expectedHead: featureIdentity.expectedHead, expectedBranch: featureIdentity.expectedBranch })
 }
 const gotoCommons = async (search = '') => {
   await page.goto(`${url}${search}`, { waitUntil: 'networkidle0' })

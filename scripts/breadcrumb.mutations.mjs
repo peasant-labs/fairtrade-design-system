@@ -9,17 +9,15 @@ import { dirname, isAbsolute, join, normalize, relative, resolve, sep } from 'no
 import { fileURLToPath } from 'node:url'
 import { build } from 'vite'
 import YAML from 'yaml'
+import { resolveFeatureGitIdentity } from './feature-git-identity.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..')
 const MANIFEST_PATH = resolve(HERE, 'testdata/breadcrumb.manifest.yaml')
-const BASE = process.env.BREADCRUMB_BASE
-const HEAD = process.env.BREADCRUMB_HEAD
-const BRANCH = process.env.BREADCRUMB_BRANCH
+const { base: BASE, expectedHead: HEAD, expectedBranch: BRANCH } = resolveFeatureGitIdentity({ sourceRoot: ROOT })
 const manifest = loadManifest(MANIFEST_PATH)
 const outputRoot = mkdtempSync(join(tmpdir(), 'fairtrade-breadcrumb-mutants-'))
 
-assertRequiredProvenanceEnv()
 assertExecutionEnv()
 assertCleanWorktree('before mutation baseline')
 const trackedMutationFiles = [...new Set(manifest.mutations.map((mutation) => mutation.file))]
@@ -160,11 +158,6 @@ function listArtifactAssets(root) {
 function assertExternalArtifactRoot(artifactRoot, name) {
   const pathFromRoot = relative(ROOT, artifactRoot)
   assert.ok(pathFromRoot.startsWith('..') || isAbsolute(pathFromRoot), `${name}: mutation artifact ${artifactRoot} must remain outside the source worktree ${ROOT}`)
-}
-
-function assertRequiredProvenanceEnv() {
-  if (!BASE) throw new Error('breadcrumb mutation gate failed: what went wrong: BREADCRUMB_BASE is missing; why: exact source provenance is required; where: scripts/breadcrumb.mutations.mjs startup; when: clean baseline preflight; what it means: the baseline cannot identify its review range; how to fix: run with the exact base and head exported explicitly.')
-  if (!HEAD) throw new Error('breadcrumb mutation gate failed: what went wrong: BREADCRUMB_HEAD is missing; why: exact source provenance is required; where: scripts/breadcrumb.mutations.mjs startup; when: clean baseline preflight; what it means: the baseline cannot identify its reviewed head; how to fix: run with the exact base and head exported explicitly.')
 }
 
 function assertExecutionEnv() {

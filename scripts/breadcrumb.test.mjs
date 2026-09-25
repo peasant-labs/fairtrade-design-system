@@ -12,6 +12,7 @@ import { createServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import YAML from 'yaml'
 import { assertFeatureGitIdentity } from './served-build-provenance.mjs'
+import { resolveFeatureGitIdentity } from './feature-git-identity.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..')
@@ -142,8 +143,7 @@ async function verifyCase(Breadcrumb, testCase, icons) {
 }
 
 function verifyProvenanceNegativeCases() {
-  const head = gitOutput('rev-parse', 'HEAD')
-  const base = gitOutput('rev-parse', 'HEAD^')
+  const { base, expectedHead: head } = resolveFeatureGitIdentity({ sourceRoot: ROOT })
   assert.throws(() => assertFeatureGitIdentity({ sourceRoot: ROOT, base, expectedHead: undefined }), /explicit expectedHead commit/)
   assert.throws(() => assertFeatureGitIdentity({ sourceRoot: ROOT, base: undefined, expectedHead: head }), /explicit base commit/)
   assert.throws(() => assertFeatureGitIdentity({ sourceRoot: ROOT, base, expectedHead: base }), /repository HEAD is .*expected/)

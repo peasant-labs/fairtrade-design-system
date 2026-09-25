@@ -9,9 +9,11 @@ import puppeteer from 'puppeteer-core'
 import YAML from 'yaml'
 import { SurfaceGate } from './surface-gate.mjs'
 import { assertServedBuildProvenance, observeServedBuildAssets } from './served-build-provenance.mjs'
+import { resolveFeatureGitIdentity } from './feature-git-identity.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..')
+const featureIdentity = resolveFeatureGitIdentity({ sourceRoot: ROOT })
 const CHROME = process.env.CHROME_PATH
 const DIST_ROOT = resolve(process.env.BREADCRUMB_DIST_ROOT || resolve(ROOT, 'dist'))
 const SHOT_DIR = process.env.BREADCRUMB_MOUNTED_SHOT_DIR
@@ -63,7 +65,7 @@ try {
       await page.waitForSelector('#inuse-stage .cmg-detail')
       observer.stop()
 
-      const provenance = await assertServedBuildProvenance({ mode: 'feature', origin, distRoot: DIST_ROOT, observedJavaScriptPaths: [...observer.paths], observedForeignOrigins: [...observer.foreignOrigins], marker: 'crumb-item-chrome', base: process.env.BREADCRUMB_BASE, expectedHead: process.env.BREADCRUMB_HEAD, expectedBranch: process.env.BREADCRUMB_BRANCH, mutationArtifactManifest: process.env.BREADCRUMB_MUTATION_ARTIFACT_MANIFEST })
+      const provenance = await assertServedBuildProvenance({ mode: 'feature', origin, distRoot: DIST_ROOT, observedJavaScriptPaths: [...observer.paths], observedForeignOrigins: [...observer.foreignOrigins], marker: 'crumb-item-chrome', base: featureIdentity.base, expectedHead: featureIdentity.expectedHead, expectedBranch: featureIdentity.expectedBranch, mutationArtifactManifest: process.env.BREADCRUMB_MUTATION_ARTIFACT_MANIFEST })
       const expected = testCase.expected
       const result = await page.evaluate((expected) => {
         const root = document.querySelector(expected.rootSelector)
