@@ -2,20 +2,25 @@
 // registry. Every behavioral row lives in product-target.testdata.yaml with
 // its required-name manifest; this module owns no row tables, only the fake
 // lifecycle driver, shape checks, and mutation wiring. It runs with node
-// --test. The stale-asset mutation case serves a throwaway dist/ copy on a
-// loopback port through the real static driver; no Storybook, Puppeteer, or
-// second browser oracle is started. Run pnpm build first so dist/ holds the
-// exact built app the stale case copies.
+// --test. The stale-served-asset mutation case serves a throwaway dist/ copy
+// on a loopback port through the real static driver, so run pnpm build first
+// so dist/ holds the exact built app that case copies. The real static-driver
+// start-failure cases below need no built app: they drive the real producer
+// driver on scratch loopback ports against a throwaway fixture root. No
+// Storybook, Puppeteer, or second browser oracle is started.
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import http from 'node:http'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { expectTheme } from '../journey/lib/assertions.mjs'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
 import {
+  FAIRTEST_PRODUCT_HOST,
   PRODUCT_ARTIFACT_CLASSES,
   PRODUCT_A11Y_GATE_POINTS,
   PRODUCT_A11Y_PAGE_WIDE_FIELDS,
@@ -23,6 +28,7 @@ import {
   PRODUCT_PRE_ACTION_PARTS,
   assertProductObservationTimes,
   buildProductAccessibilityEvidence,
+  createProductStaticDriver,
   readProductAccessibilityVerdict,
 } from './product-producer.mjs'
 import { PRODUCT_MUTATION_NAMES, runProductMutation } from './product-mutations.mjs'
@@ -40,6 +46,12 @@ const A11Y_POINTS = ['initial', 'after-action']
 const A11Y_IMPACTS = ['minor', 'moderate', 'serious', 'critical']
 const ROW_THEMES = ['dark', 'light']
 const PROOF_PARTS = ['chrome', 'body', 'route', 'activeSection', 'view']
+// Scratch loopback ports for the real static-driver start-failure cases. They
+// are deliberately not the Fairtest Playwright config port (5189) and never
+// the mutation-suite ports (5196, 5197), so no mounted row or mutation run
+// collides with them.
+const REAL_DRIVER_SQUATTER_PORT = 5198
+const REAL_DRIVER_ABSENT_DIST_PORT = 5199
 
 const coreFixtures = await importFairtestSource('src/core/fixtures.mjs')
 const contractTargets = await importFairtestSource('src/host-contract/targets.mjs')
@@ -968,6 +980,197 @@ function createFakeDriver(behavior = {}) {
   }
 }
 
+/**
+ * Wrap one real lifecycle driver in a delegating observer. Every call reaches
+ * the real driver unchanged; the observer only records the ordered calls, so
+ * the reset-before-stop guarantee can be observed on the real driver whose
+ * own reset and stop are otherwise indistinguishable no-ops.
+ * @param {object} driver the real injected driver
+ * @returns {object} the delegating observed driver
+ */
+function observeDriverCalls(driver) {
+  const calls = []
+  return {
+    calls,
+    start: (...args) => {
+      calls.push('start')
+      return driver.start(...args)
+    },
+    reset: (...args) => {
+      calls.push('reset')
+      return driver.reset(...args)
+    },
+    stop: (...args) => {
+      calls.push('stop')
+      return driver.stop(...args)
+    },
+    isRunning: () => driver.isRunning(),
+    readiness: () => driver.readiness(),
+    stats: () => driver.stats(),
+  }
+}
+
+/**
+ * Create a throwaway static root holding only the mount point the real static
+ * driver requires. A start failure never serves these bytes, so the fixture
+ * keeps the case hermetic: no built dist/ tree and no repository byte is
+ * read, and the whole root is removed in the caller's finally block.
+ * @param {string} scratchRoot scratch parent directory
+ * @returns {string} the fixture root handed to the driver as its distRoot
+ */
+function createStaticFixtureRoot(scratchRoot) {
+  const fixtureRoot = join(scratchRoot, 'dist')
+  mkdirSync(fixtureRoot, { recursive: true })
+  writeFileSync(join(fixtureRoot, 'index.html'), '<!doctype html><html><body><div id="root"></div></body></html>\n')
+  return fixtureRoot
+}
+
+/**
+ * Point the real driver at a static root that does not exist, so its own
+ * built-app precondition fails before it ever opens a listener.
+ * @param {string} scratchRoot scratch parent directory
+ * @returns {string} the absent root handed to the driver as its distRoot
+ */
+function createAbsentStaticRoot(scratchRoot) {
+  return join(scratchRoot, 'absent-dist-root')
+}
+
+/**
+ * Bind a real loopback server on a scratch port so the real driver's own
+ * listen fails with a genuine address-in-use error, and release it on demand.
+ * @param {number} port scratch loopback port
+ * @returns {object} the squatter handle
+ */
+function squatOnPort(port) {
+  const server = http.createServer((_request, response) => {
+    response.writeHead(503, { 'content-type': 'text/plain; charset=utf-8' })
+    response.end('fairtest adapter lifecycle squatter')
+  })
+  return {
+    async bind() {
+      try {
+        await new Promise((responseResolve, responseReject) => {
+          server.on('error', responseReject)
+          server.listen(port, FAIRTEST_PRODUCT_HOST, () => responseResolve(undefined))
+        })
+      } catch (error) {
+        const cause = error instanceof Error ? error.message : String(error)
+        throw new Error(
+          `adapter lifecycle case: scratch port ${port} is already held on ${FAIRTEST_PRODUCT_HOST}; caused by ${cause}; ` +
+          'repair: free the scratch lifecycle port or run the adapter lifecycle cases one at a time.',
+        )
+      }
+    },
+    async release() {
+      await new Promise((responseResolve) => server.close(() => responseResolve(undefined)))
+    },
+  }
+}
+
+/**
+ * Assert nothing still holds a scratch port by binding and releasing a fresh
+ * listener on it. A half-bound server the driver failed to clean up fails
+ * here with EADDRINUSE.
+ * @param {number} port scratch loopback port
+ */
+async function assertPortReleased(port) {
+  const probe = http.createServer()
+  try {
+    await new Promise((responseResolve, responseReject) => {
+      probe.on('error', responseReject)
+      probe.listen(port, FAIRTEST_PRODUCT_HOST, () => responseResolve(undefined))
+    })
+  } catch (error) {
+    const cause = error instanceof Error ? error.message : String(error)
+    throw new Error(
+      `adapter lifecycle case: port ${port} is still held after the adapter teardown; caused by ${cause}; ` +
+      'repair: drop or close the half-bound server on the driver start-failure path so teardown leaves no listener.',
+    )
+  }
+  await new Promise((responseResolve) => probe.close(() => responseResolve(undefined)))
+}
+
+/**
+ * Drive one real static-driver start failure through the real adapter and
+ * assert the cleanup guarantees against the real driver: it rejects rather
+ * than resolves, reset runs before stop exactly once, stop runs exactly once
+ * on the failure path, the adapter and the driver both report no running
+ * service, the lifecycle trace stays at the declared stage, teardown stops
+ * once more and stays idempotent, the scratch port is free again, and the
+ * throwaway static root is gone. The finally block stops the real driver and
+ * releases the squatter, so a regressed driver fails with its own diagnostic
+ * instead of hanging the run on a listener it left bound.
+ * @param {object} input case inputs
+ * @param {string} input.runId adapter run id
+ * @param {number} input.port scratch loopback port handed to the driver
+ * @param {boolean} input.holdPort bind a real squatter on the scratch port first
+ * @param {(scratchRoot: string) => string} input.distRoot builds the driver distRoot from the scratch root
+ * @returns {Promise<object>} the observed failure record
+ */
+async function driveRealStaticDriverStartFailure({ runId, port, holdPort, distRoot }) {
+  const scratch = mkdtempSync(join(tmpdir(), 'fairtest-adapter-lifecycle-'))
+  const squatter = squatOnPort(port)
+  let driver = null
+  let squatterBound = false
+  let failureRecord = null
+  try {
+    if (holdPort) {
+      await squatter.bind()
+      squatterBound = true
+    }
+    driver = createProductStaticDriver({ port, host: FAIRTEST_PRODUCT_HOST, distRoot: distRoot(scratch) })
+    const observed = observeDriverCalls(driver)
+    const adapter = await createFairtradeAdapter({ runId, driver: observed, createdAtMs: 1000 })
+    let message = null
+    try {
+      await adapter.start()
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error)
+    }
+    assert.ok(message, `${runId}: the real static driver must reject adapter.start instead of resolving`)
+    expectFragments(
+      ['fairtrade adapter: driver start failed', 'field "driver"', 'at path adapter.start', 'repair:', 'caused by'],
+      message,
+      runId,
+    )
+    assert.deepEqual(observed.calls, ['start', 'reset', 'stop'], `${runId}: the real driver must see reset exactly once before stop exactly once`)
+    assert.deepEqual(adapter.stats(), { stops: 1, resets: 1 }, `${runId}: the adapter must run one reset and one stop for the failed start`)
+    assert.equal(driver.isRunning(), false, `${runId}: the real driver must not report a running service after the failed start`)
+    assert.equal(adapter.isRunning(), false, `${runId}: the adapter must not report a running service after the failed start`)
+    assert.deepEqual([...adapter.lifecycleTrace().stages], ['declared'], `${runId}: a failed start must leave the lifecycle at the declared stage`)
+    assert.equal(driver.stats().stops, 0, `${runId}: the real driver never reached a running service, so its own stop must stay the idempotent no-op`)
+    failureRecord = {
+      message,
+      calls: [...observed.calls],
+      driverRoot: driver.distRoot,
+      driverPort: driver.port,
+    }
+    const teardown = await adapter.teardown()
+    assert.deepEqual(teardown, { released: true, noop: false, stops: 2 }, `${runId}: teardown after a failed start must release and stop once more`)
+    const repeat = await adapter.teardown()
+    assert.deepEqual(repeat, { released: true, noop: true, stops: 2 }, `${runId}: teardown after a failed start must stay idempotent`)
+    assert.deepEqual(observed.calls, ['start', 'reset', 'stop', 'stop'], `${runId}: teardown must add exactly one stop and the repeated teardown none`)
+    assert.equal(driver.isRunning(), false, `${runId}: the real driver must stay stopped after teardown`)
+    assert.equal(adapter.isRunning(), false, `${runId}: the adapter must stay stopped after teardown`)
+    assert.deepEqual([...adapter.lifecycleTrace().stages], ['declared'], `${runId}: teardown after a failed start must leave the trace at the declared stage, never a released stage behind a missing acquired stage`)
+    if (squatterBound) {
+      await squatter.release()
+      squatterBound = false
+    }
+    await assertPortReleased(port)
+  } finally {
+    if (driver) {
+      await driver.stop()
+    }
+    if (squatterBound) {
+      await squatter.release()
+    }
+    rmSync(scratch, { recursive: true, force: true })
+  }
+  assert.equal(existsSync(failureRecord.driverRoot), false, `${runId}: the throwaway static root must be removed once the case finishes`)
+  return failureRecord
+}
+
 describe('product target fixture family', () => {
   const manifest = /** @type {Record<string, unknown>} */ (coreFixtures.loadSingleDocument(manifestSource, MANIFEST_REL))
   const parsed = /** @type {Record<string, unknown>} */ (coreFixtures.loadSingleDocument(corpusSource, CORPUS_REL))
@@ -1524,6 +1727,57 @@ describe('product adapter lifecycle with a fake driver', () => {
       /revoked.*field "revoked".*at path handle\.revoked.*repair:/s,
       'a revoked handle must stay unusable',
     )
+  })
+})
+
+describe('product adapter lifecycle with the real static driver', () => {
+  it('cleans a squatted real static-driver start with reset before stop and no listener residue', { timeout: 30000 }, async () => {
+    const record = await driveRealStaticDriverStartFailure({
+      runId: 'real-driver-squatter',
+      port: REAL_DRIVER_SQUATTER_PORT,
+      holdPort: true,
+      distRoot: createStaticFixtureRoot,
+    })
+    expectFragments(
+      [
+        'product producer: driver start failed',
+        'field "port"',
+        'at path driver.start',
+        `could not listen on ${FAIRTEST_PRODUCT_HOST}:${REAL_DRIVER_SQUATTER_PORT}`,
+        'EADDRINUSE',
+        'repair:',
+      ],
+      record.message,
+      'real-driver-squatter',
+    )
+    assert.equal(record.driverPort, REAL_DRIVER_SQUATTER_PORT, 'the real driver must have been driven on the scratch squatted port')
+    assert.deepEqual(record.calls, ['start', 'reset', 'stop'], 'the squatted start must still run one reset before one stop')
+  })
+
+  it('cleans a real static-driver start that never finds its built app, again with no residue', { timeout: 30000 }, async () => {
+    const record = await driveRealStaticDriverStartFailure({
+      runId: 'real-driver-absent-dist',
+      port: REAL_DRIVER_ABSENT_DIST_PORT,
+      holdPort: false,
+      distRoot: createAbsentStaticRoot,
+    })
+    expectFragments(
+      [
+        'product producer: built app is missing',
+        'field "dist"',
+        'at path driver.distRoot',
+        'looked for',
+        'repair:',
+      ],
+      record.message,
+      'real-driver-absent-dist',
+    )
+    assert.ok(
+      record.message.includes(record.driverRoot),
+      `the adapter diagnostic must name the absent static root the real driver looked for; got ${record.message}`,
+    )
+    assert.equal(record.driverPort, REAL_DRIVER_ABSENT_DIST_PORT, 'the real driver must have been driven on the second scratch port')
+    assert.deepEqual(record.calls, ['start', 'reset', 'stop'], 'the absent-build failure must still run one reset before one stop')
   })
 })
 

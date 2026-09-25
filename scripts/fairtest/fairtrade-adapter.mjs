@@ -261,6 +261,9 @@ export async function createFairtradeAdapter(options = {}) {
   /**
    * Release the managed service. The first call stops once, revokes every
    * minted handle, and records release; later calls are no-ops that report it.
+   * A run whose start never acquired the service releases nothing, so its
+   * trace stays a leading run of the canonical stages instead of recording
+   * "released" behind a missing "acquired".
    * @returns {Promise<object>} the frozen teardown receipt
    */
   async function teardown() {
@@ -276,7 +279,9 @@ export async function createFairtradeAdapter(options = {}) {
         state.revoked.add(token)
       }
       state.live.clear()
-      stages.push('released')
+      if (state.started) {
+        stages.push('released')
+      }
     }
     return Object.freeze({ released: true, noop: false, stops: state.stops })
   }
