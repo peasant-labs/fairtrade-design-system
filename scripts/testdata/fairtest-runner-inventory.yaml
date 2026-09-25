@@ -132,3 +132,19 @@ guidance:
   - path: .github/workflows/ci.yml
     owner: evidence-ci
     topic: workflow
+# Forbidden stale-guidance fragments. None of these phrases may appear in any
+# tracked guidance file above: they describe the retired runner model
+# (unfiltered Puppeteer catalog, two-project rows, project-name theme
+# inference, agent-browser as a CI oracle). Each entry is matched
+# case-insensitively against the full file text.
+forbiddenGuidanceFragments:
+  - name: stale-puppeteer-catalog
+    fragment: unfiltered puppeteer catalog
+  - name: stale-two-project-model
+    fragment: two-project
+  - name: stale-two-projects-plural
+    fragment: two projects
+  - name: stale-project-name-theme
+    fragment: project-name
+  - name: stale-agent-browser-oracle
+    fragment: agent-browser as

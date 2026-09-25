@@ -3,7 +3,7 @@ requiredRecordNames:
   - example-mounted-product-proof
   - example-mounted-component-proof
   - example-browser-free-boundary
-expectedMutationCount: 12
+expectedMutationCount: 13
 requiredMutationNames:
   - missing-answer-subject
   - missing-decision
@@ -13,6 +13,7 @@ requiredMutationNames:
   - renamed-answer-field
   - duplicate-record-name
   - trailing-document
+  - trailing-document-end-marker
   - unknown-record-field
   - blank-production-path
   - invalid-decision-verdict
@@ -56,6 +57,11 @@ mutations:
   - name: trailing-document
     kind: trailing-document
     target: document
+    expectedField: document[1]
+  - name: trailing-document-end-marker
+    kind: trailing-document
+    target: document
+    style: end-marker
     expectedField: document[1]
   - name: unknown-record-field
     kind: unknown-field
