@@ -1,0 +1,70 @@
+records:
+  - name: example-mounted-product-proof
+    answers:
+      subject: A mounted check that the built product shell renders persistent chrome and representative body on one real route.
+      necessity: Value-level checks cannot observe DOM structure, rendered theme state, or served bytes, so a mounted row is required for this named risk.
+      productionPath: The built product target served locally from its exact build output, driven through one named section action.
+      cost: Two bounded theme rows, one service lifecycle, one named action, and six small artifacts; no catalog sweep.
+      lifetime: One immutable run root and one loopback service, cleaned up on success, failure, timeout, and interruption.
+      concurrency: One product row at a time; row identity and run root prevent stale or cross-run output.
+      ciParity: The exact row command runs after a clean build in the pinned container; no local-only service is assumed.
+      evidence: Computed styles, ARIA, axe output, screenshot, resolution, normalized theme observation, and served provenance.
+      mutation: Removing chrome, body, section, or view state, or serving a stale asset, kills the row for the intended reason.
+      exitCondition: Remove the row when a lower-level or existing gate proves the same named risk without a mounted harness.
+    lowerLayer:
+      result: promote
+      detail: Value and contract checks cover shape and policy only; none observes the mounted shell, so the elaborate row is justified.
+    decision:
+      verdict: approve
+      rationale: All ten answers are present, the lower layer cannot observe the named risk, and the execution policy is bounded.
+    executionPolicy:
+      runner: Row-scoped mounted runner against the built target only.
+      budget: Two theme rows inside the existing job budget with no retries.
+      cleanup: Service and run root are removed in a finally step on every exit path.
+    exitCondition: Reuse an equivalent existing journey or delete the row once a lower-level gate proves the same named risk.
+  - name: example-mounted-component-proof
+    answers:
+      subject: A mounted check that one component story mounts its root, answers one interaction, and reports ARIA and token evidence.
+      necessity: Server-free checks cannot observe direct story mounting, real input behavior, or story theme globals.
+      productionPath: The built storybook-static direct iframe for one named story and its documented root node.
+      cost: Two bounded component rows and six small artifacts; no app service, product row, or catalog duplicate.
+      lifetime: One run root and one loopback storybook port with deterministic cleanup on every exit path.
+      concurrency: Component row identity is separate from product rows and cannot share a protected producer key.
+      ciParity: The exact component command runs after a clean storybook build in the pinned container.
+      evidence: Mounted root, interaction result, ARIA, computed tokens, axe output, screenshot, resolution, and provenance.
+      mutation: A missing root, wrong theme, missing interaction, or product-shaped proof kills the component owner.
+      exitCondition: Keep only named component risks; remove the row if an existing journey proves the same behavior without mounting.
+    lowerLayer:
+      result: promote
+      detail: Unit checks cover adapter values only; none observes the mounted story root or real click behavior.
+    decision:
+      verdict: approve
+      rationale: The component risk needs a mounted story target, the policy is component-only, and the exit condition is explicit.
+    executionPolicy:
+      runner: Row-scoped mounted runner against the built storybook target only.
+      budget: Two theme rows inside the existing job budget with no retries.
+      cleanup: Storybook service and run root are removed in a finally step on every exit path.
+    exitCondition: Delete the row when an existing journey or lower-level component check proves the same named behavior.
+  - name: example-browser-free-boundary
+    answers:
+      subject: A browser-free check that shared validation values stay free of browser, DOM, and app route knowledge.
+      necessity: A mounted test cannot observe module resolution or source imports; only a direct source guard observes this boundary.
+      productionPath: Frozen install followed by a browser-free command run from a clean checkout with browser packages unavailable.
+      cost: Browser-free node checks over named fixtures; no service, browser, or temporary output beyond a scratch directory.
+      lifetime: Temporary scratch directories are removed in a finally step; no persistent process or database is created.
+      concurrency: Unique temporary roots and read-only fixture inputs; no shared package output is written.
+      ciParity: The exact command runs in the pinned toolchain from a clean checkout.
+      evidence: Machine-readable pass or fail plus fixture and mutation diagnostics naming the offending import.
+      mutation: A browser or app import injected into the guarded surface fails at the owning guard for the intended symbol.
+      exitCondition: Simplify the guard when a direct package or value check proves the same boundary without a dedicated script.
+    lowerLayer:
+      result: retain
+      detail: A direct import scan already observes this boundary, so no mounted or elaborate layer is added for it.
+    decision:
+      verdict: reject
+      rationale: The lower layer observes the risk, so promoting an elaborate test is refused under the lower-layer-first rule.
+    executionPolicy:
+      runner: Plain node command with no service, browser, or network access.
+      budget: Seconds of local compute inside the existing browser-free phase.
+      cleanup: Scratch directories are removed in a finally step on every exit path.
+    exitCondition: Remove this record family if the boundary moves into a lower-level package check that proves the same invariant.
