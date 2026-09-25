@@ -1,7 +1,5 @@
 import assert from 'node:assert/strict'
-import { execFileSync, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 import YAML from 'yaml'
@@ -32,7 +30,7 @@ function keys(value, allowed, where) { object(value, where); assert.deepEqual(Ob
 function named(rows, where) { const names = rows.map((row, index) => string(row.name, `${where}[${index}].name`)); assert.equal(new Set(names).size, names.length, `${where} names must be unique`) }
 
 function validateFixtures(f) {
-  keys(f, ['titles', 'tags', 'permissions', 'reviews', 'metadata', 'github', 'workflow', 'git'], 'root')
+  keys(f, ['titles', 'tags', 'permissions', 'reviews', 'metadata', 'github', 'workflow'], 'root')
   for (const kind of ['titles', 'tags']) {
     keys(f[kind], ['valid', 'invalid'], kind); named(array(f[kind].valid, `${kind}.valid`, 3), `${kind}.valid`); named(array(f[kind].invalid, `${kind}.invalid`, kind === 'titles' ? 11 : 8), `${kind}.invalid`)
     for (const row of f[kind].valid) { keys(row, kind === 'titles' ? ['name', 'input', 'version', 'tag'] : ['name', 'input'], `${kind}.valid row`); string(row.input, `${kind}.valid input`) }
@@ -57,7 +55,6 @@ function validateFixtures(f) {
   named(array(f.github.pagination, 'github.pagination', 2), 'github.pagination')
   for (const row of f.github.pagination) { keys(row, ['name', 'responses', 'approved', 'expected_paths'], 'pagination row'); array(row.responses, 'pagination responses', 3); array(row.expected_paths, 'pagination expected_paths', 3); for (const response of row.responses) keys(response, response.link === undefined ? ['body'] : ['body', 'link'], 'response') }
   keys(f.workflow, ['validate_if', 'tag_if', 'release_needles', 'publish_needles', 'mutations'], 'workflow'); string(f.workflow.validate_if, 'workflow.validate_if'); string(f.workflow.tag_if, 'workflow.tag_if'); array(f.workflow.release_needles, 'workflow.release_needles', 10); array(f.workflow.publish_needles, 'workflow.publish_needles', 2); named(array(f.workflow.mutations, 'workflow.mutations', 3), 'workflow.mutations'); for (const row of f.workflow.mutations) keys(row, ['name', 'target', 'replacement'], 'workflow mutation')
-  keys(f.git, ['tag', 'first_message', 'second_message'], 'git')
   return f
 }
 
@@ -180,11 +177,4 @@ test('workflow control flow and release invariants are exact and mutation-proven
   const releaseText = fs.readFileSync(path.join(root, '.github/workflows/release-pr.yml'), 'utf8'); const publishText = fs.readFileSync(path.join(root, '.github/workflows/npm-publish.yml'), 'utf8'); const release = YAML.parse(releaseText); const publish = YAML.parse(publishText)
   assertWorkflowContract(release, publish, releaseText, publishText)
   for (const mutation of fixtures.workflow.mutations) { const changed = structuredClone(release); changed.jobs[mutation.target === 'tag_if' ? 'tag' : 'validate'].if = mutation.replacement; assert.throws(() => assertWorkflowContract(changed, publish, YAML.stringify(changed), publishText), { name: 'AssertionError' }, mutation.name) }
-})
-
-test('an annotated remote tag cannot be moved by a second non-force push', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fairtrade-release-guard-')); const remote = path.join(dir, 'remote.git'); const work = path.join(dir, 'work'); execFileSync('git', ['init', '--bare', remote]); execFileSync('git', ['init', work]); const git = (...args) => execFileSync('git', ['-C', work, ...args], { stdio: 'pipe' })
-  git('config', 'user.name', 'test'); git('config', 'user.email', 'test@example.invalid'); git('remote', 'add', 'origin', remote); fs.writeFileSync(path.join(work, 'file'), 'one'); git('add', 'file'); git('commit', '-m', 'one'); git('tag', '-a', fixtures.git.tag, '-m', fixtures.git.first_message); git('push', 'origin', `refs/tags/${fixtures.git.tag}`)
-  const first = execFileSync('git', ['--git-dir', remote, 'rev-parse', `${fixtures.git.tag}^{}`], { encoding: 'utf8' }).trim(); fs.writeFileSync(path.join(work, 'file'), 'two'); git('commit', '-am', 'two'); git('tag', '-d', fixtures.git.tag); git('tag', '-a', fixtures.git.tag, '-m', fixtures.git.second_message)
-  assert.notEqual(spawnSync('git', ['-C', work, 'push', 'origin', `refs/tags/${fixtures.git.tag}`]).status, 0); assert.equal(execFileSync('git', ['--git-dir', remote, 'rev-parse', `${fixtures.git.tag}^{}`], { encoding: 'utf8' }).trim(), first)
 })

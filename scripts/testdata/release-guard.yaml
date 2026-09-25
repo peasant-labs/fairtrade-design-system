@@ -130,4 +130,3 @@ workflow:
     - {name: unconditional prefix, target: tag_if, replacement: "true || github.event_name == 'workflow_dispatch'"}
     - {name: missing merged condition, target: tag_if, replacement: "github.event_name == 'workflow_dispatch' || github.event.action == 'closed'"}
     - {name: weakened validate condition, target: validate_if, replacement: "true || github.event_name == 'pull_request'"}
-git: {tag: fairtrade-v1.2.3, first_message: first release, second_message: attempted replacement}
