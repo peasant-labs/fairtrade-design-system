@@ -15,6 +15,7 @@ import {
   assertIntegerInRange,
   assertNonEmptyString,
   assertNumberInRange,
+  assertStringList,
   assertWithinRoot,
   checkDuplicate,
   checkRequiredNames,
@@ -221,7 +222,7 @@ function expectFragments(fragments, message, name) {
 
 // ── values family ────────────────────────────────────────────────────────────
 
-const VALUE_CHECKS = ['exact-fields', 'text', 'int-range', 'number-range', 'plain-record']
+const VALUE_CHECKS = ['exact-fields', 'text', 'int-range', 'number-range', 'plain-record', 'string-list']
 
 /** @param {Record<string, unknown>} value */
 function validateValuesFamily(value) {
@@ -235,7 +236,7 @@ function validateValuesFamily(value) {
     const path = `cases[${index}]`
     if (entry.check === 'exact-fields') {
       assertExactFields(entry, ['name', 'check', 'fields', 'value', 'expectValid', ...(entry.expectValid ? [] : ['expectedErrorContains'])], label, path)
-    } else if (entry.check === 'text' || entry.check === 'plain-record') {
+    } else if (entry.check === 'text' || entry.check === 'plain-record' || entry.check === 'string-list') {
       assertExactFields(entry, ['name', 'check', 'value', 'expectValid', ...(entry.expectValid ? [] : ['expectedErrorContains'])], label, path)
     } else {
       assertExactFields(entry, ['name', 'check', 'value', 'min', 'max', 'expectValid', ...(entry.expectValid ? [] : ['expectedErrorContains'])], label, path)
@@ -254,6 +255,8 @@ function runValuesCase(entry) {
       assertExactFields(entry.value, /** @type {string[]} */ (entry.fields), name, 'case.value')
     } else if (entry.check === 'text') {
       assertNonEmptyString(entry.value, 'value', 'case.value')
+    } else if (entry.check === 'string-list') {
+      assertStringList(entry.value, 'value', 'case.value')
     } else if (entry.check === 'int-range') {
       assertIntegerInRange(entry.value, 'value', 'case.value', { min: /** @type {number} */ (entry.min), max: /** @type {number} */ (entry.max) })
     } else if (entry.check === 'number-range') {

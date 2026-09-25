@@ -1,16 +1,17 @@
-// Executable suite for the eight named negative product mutations.
+// Executable suite for the nine named negative product mutations.
 //
 // Each named mutation must fail at its owning product boundary with an
 // actionable diagnostic. This module drives the real producer path through
 // scripts/fairtest/product-mutations.mjs: observation-input removal through
-// the real proof builder, contradiction through the real theme observer,
-// registry rejection through the real adapter and target registry,
-// cross-kind rejection through the shared contract, and stale-asset
-// comparison over real served bytes from a throwaway dist/ copy.
+// the real proof builder, the active-view floor guard over the real served
+// DOM, contradiction through the real theme observer, registry rejection
+// through the real adapter and target registry, cross-kind rejection through
+// the shared contract, and stale-asset comparison over real served bytes from
+// a throwaway dist/ copy.
 //
 // Precondition: run pnpm build first so dist/ holds the exact built app.
-// The stale-asset mutation and the DOM-absence proof serve throwaway roots
-// or remove live elements only; the real dist/ tree is never modified and
+// The stale-asset mutation and the DOM proofs serve throwaway roots or remove
+// or empty live elements only; the real dist/ tree is never modified and
 // every service, browser, and scratch directory is released in finally
 // blocks. Runs with node --test and starts no Storybook or Puppeteer path.
 import assert from 'node:assert/strict'
@@ -26,6 +27,12 @@ import {
   runProductMutation,
   servedProvenanceDigestMatch,
 } from './product-mutations.mjs'
+import {
+  PRODUCT_MIN_BODY_DESCENDANTS,
+  PRODUCT_MIN_BODY_TEXT_LENGTH,
+  PRODUCT_VIEW_SELECTORS,
+  assertProductActiveViewMounted,
+} from './product-producer.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
@@ -37,6 +44,7 @@ const EXPECTED_DIAGNOSTICS = {
   'missing-body': ['body', 'at path', 'repair:'],
   'missing-section': ['activeSection', 'at path', 'repair:'],
   'missing-view': ['view', 'at path', 'repair:'],
+  'blank-active-view': ['blank representative body', 'proof.body', 'active view', 'hidden changes view', 'repair:'],
   'wrong-theme': ['"light"', '"dark"', 'at path', 'repair:'],
   'unregistered-action': ['select-changes-section', 'at path', 'repair:'],
   'cross-kind-proof': ['identity', 'at path', 'repair:'],
@@ -51,12 +59,13 @@ function expectDiagnostic(fragments, message, name) {
 }
 
 describe('named negative product mutations', () => {
-  it('names exactly the eight required mutations with owning boundaries', () => {
+  it('names exactly the nine required mutations with owning boundaries', () => {
     assert.deepEqual([...PRODUCT_MUTATION_NAMES], [
       'missing-chrome',
       'missing-body',
       'missing-section',
       'missing-view',
+      'blank-active-view',
       'wrong-theme',
       'unregistered-action',
       'cross-kind-proof',
@@ -123,6 +132,39 @@ describe('named negative product mutations', () => {
       () => servedProvenanceDigestMatch({ recordedDigest: 'abc', servedDigest: 'def', servedUrl: 'http://127.0.0.1:1' }),
       /stale served asset.*field "assetDigests".*at path provenance\.assetDigests.*repair:/s,
     )
+  })
+
+  it('reads the floors off the active view, not the container the hidden view sits in', () => {
+    const context = {
+      label: 'blank representative body',
+      part: 'body',
+      path: 'proof.body',
+      repair: 'keep the analytics dashboard mounted with non-trivial content instead of a blank section',
+    }
+    // The healthy active view clears the declared floors.
+    const healthy = assertProductActiveViewMounted({
+      activeView: { roots: 1, descendants: PRODUCT_MIN_BODY_DESCENDANTS, textLength: PRODUCT_MIN_BODY_TEXT_LENGTH },
+      container: { descendants: 834, textLength: 2027 },
+    }, context)
+    assert.deepEqual(healthy, { roots: 1, descendants: PRODUCT_MIN_BODY_DESCENDANTS, textLength: PRODUCT_MIN_BODY_TEXT_LENGTH })
+    // The emptied active view beside the permanently mounted hidden changes
+    // view fails closed: the container totals (188 / 804 on the real built
+    // surface) are both above the declared floors and are still refused.
+    assert.throws(
+      () => assertProductActiveViewMounted({
+        activeView: { roots: 1, descendants: 0, textLength: 0 },
+        container: { descendants: 188, textLength: 804 },
+      }, context),
+      /blank representative body.*at path proof\.body.*active view.*hidden changes view.*repair:/s,
+    )
+    assert.throws(
+      () => assertProductActiveViewMounted({
+        activeView: { roots: 0, descendants: 0, textLength: 0 },
+        container: { descendants: 188, textLength: 804 },
+      }, context),
+      /blank representative body/,
+    )
+    assert.match(PRODUCT_VIEW_SELECTORS.activeView, /:not\(\[hidden\]\)/, 'the active-view selector must exclude the permanently mounted hidden view')
   })
 
   it('proves the real DOM path fails when each part element is genuinely absent', { timeout: 180000 }, async () => {

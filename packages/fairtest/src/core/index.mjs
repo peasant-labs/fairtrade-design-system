@@ -7,6 +7,7 @@ export {
   assertIntegerInRange,
   assertNonEmptyString,
   assertNumberInRange,
+  assertStringList,
   freezeRecord,
   isPlainRecord,
 } from './values.mjs'

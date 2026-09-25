@@ -12,6 +12,13 @@
 //   proveDomAbsenceRealPath additionally shows the live tree genuinely
 //   missing each element (removed in place on the real served bytes) so the
 //   producer wait observes nothing to attach to.
+// - blank active view: the inverse case the absence proof cannot reach. The
+//   real served app is opened in a real browser, the ACTIVE view's children
+//   are emptied in place while the permanently mounted hidden changes view
+//   stays attached, and the producer's own shared measurement plus its
+//   active-view floor guard decide the result. Absence cannot hide a blank
+//   view; only an active-view-scoped floor can, so the guard is measured
+//   healthy first and then on the emptied tree.
 // - wrong theme: a contradictory rendered value is observed through
 //   observeProductTheme, which rejects before any capture or evidence work.
 //   Form: real observation call with a contradicted rendered attribute.
@@ -48,7 +55,12 @@ import {
   getProductAction,
   observeProductTheme,
 } from './fairtrade-targets.mjs'
-import { createProductStaticDriver } from './product-producer.mjs'
+import {
+  PRODUCT_VIEW_SELECTORS,
+  assertProductActiveViewMounted,
+  createProductStaticDriver,
+  measureProductView,
+} from './product-producer.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
@@ -58,7 +70,7 @@ const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 const resolutionContract = await importFairtestSource('src/host-contract/resolution.mjs')
 
 /**
- * The eight named negative product mutations. Exact set, frozen.
+ * The nine named negative product mutations. Exact set, frozen.
  * @type {string[]}
  */
 export const PRODUCT_MUTATION_NAMES = Object.freeze([
@@ -66,6 +78,7 @@ export const PRODUCT_MUTATION_NAMES = Object.freeze([
   'missing-body',
   'missing-section',
   'missing-view',
+  'blank-active-view',
   'wrong-theme',
   'unregistered-action',
   'cross-kind-proof',
@@ -82,6 +95,7 @@ export const PRODUCT_MUTATION_BOUNDARIES = Object.freeze({
   'missing-body': 'fairtrade-targets.buildProductProof at proof.body through resolution.body',
   'missing-section': 'fairtrade-targets.buildProductProof at proof.activeSection through resolution.activeSection',
   'missing-view': 'fairtrade-targets.buildProductProof at proof.view through resolution.view',
+  'blank-active-view': 'product-producer.assertProductActiveViewMounted at proof.body on the shared active-view measurement',
   'wrong-theme': 'fairtrade-targets.observeProductTheme at theme.observed before evidence finalization',
   'unregistered-action': 'fairtrade-adapter.performAction at adapter.action and fairtrade-targets.getProductAction at target.action',
   'cross-kind-proof': 'shared host contract through fairtrade-targets.buildProductProof at path proof.identity',
@@ -231,6 +245,64 @@ export function mutateMissingView() {
 }
 
 /**
+ * Run the blank-active-view mutation against the real served app in a real
+ * browser. The healthy active view is measured first and must clear the
+ * producer's own floor guard, so the emptied measurement is the only thing
+ * that can fail. Then the active view's children are emptied in place while
+ * the permanently mounted hidden changes view stays attached inside the same
+ * container, and the same shared measurement plus the same guard decide again.
+ * The hidden sibling's own counts (188 descendants, 804 characters on the
+ * real built surface) are exactly what a container-scoped floor would have
+ * read, so this case is the one that distinguishes the two.
+ * @param {object} [options] mutation options
+ * @param {number} [options.port] fixed loopback port for the proof service
+ * @returns {Promise<never>} always throws with the producer's blank-view diagnostic
+ */
+export async function mutateBlankActiveView({ port = 5195 } = {}) {
+  const { chromium } = await import('@playwright/test')
+  const driver = createProductStaticDriver({ port, host: '127.0.0.1', distRoot: DIST_ROOT })
+  await driver.start()
+  const browser = await chromium.launch()
+  const context = {
+    label: 'blank representative body',
+    part: 'body',
+    path: 'proof.body',
+    repair: 'keep the analytics dashboard mounted with non-trivial content instead of a blank section',
+  }
+  try {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } })
+    try {
+      await page.goto(`${driver.baseUrl}/?app=graph&fb=off&theme=none#inuse`, { waitUntil: 'networkidle' })
+      await page.waitForSelector(PRODUCT_SELECTORS.activeView, { timeout: 15000, state: 'attached' })
+      const healthy = await page.evaluate(measureProductView, PRODUCT_VIEW_SELECTORS)
+      assertProductActiveViewMounted(healthy, context)
+      const emptiedRoots = await page.evaluate((selector) => {
+        const roots = [...document.querySelectorAll(selector)]
+        for (const root of roots) root.replaceChildren()
+        return roots.length
+      }, PRODUCT_SELECTORS.activeView)
+      if (emptiedRoots < 1) {
+        throw new Error(
+          'product mutations: blank-active-view probe emptied no active view root for field "roots" at path producer.activeView.body; ' +
+          'repair: keep the empty evaluate intact so the probe empties the real active view.',
+        )
+      }
+      const emptied = await page.evaluate(measureProductView, PRODUCT_VIEW_SELECTORS)
+      assertProductActiveViewMounted(emptied, context)
+    } finally {
+      await page.close()
+    }
+  } finally {
+    await browser.close()
+    await driver.stop()
+  }
+  throw new Error(
+    'product mutations: emptied active view unexpectedly cleared the floor for field "activeView" at path producer.activeView.body; ' +
+    'repair: keep the floors scoped to the active view so the hidden changes view cannot satisfy them.',
+  )
+}
+
+/**
  * Run the wrong-theme mutation: the light row renders the dark value, so
  * the theme observation rejects the contradiction before any capture or
  * evidence work.
@@ -338,6 +410,8 @@ export async function runProductMutation(name, options = {}) {
       return mutateMissingSection()
     case 'missing-view':
       return mutateMissingView()
+    case 'blank-active-view':
+      return mutateBlankActiveView(options)
     case 'wrong-theme':
       return mutateWrongTheme()
     case 'unregistered-action':

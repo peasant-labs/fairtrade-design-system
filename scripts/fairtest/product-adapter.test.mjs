@@ -3,17 +3,19 @@
 // its required-name manifest; this module owns no row tables, only the fake
 // lifecycle driver, shape checks, and mutation wiring. It runs with node
 // --test. The stale-served-asset mutation case serves a throwaway dist/ copy
-// on a loopback port through the real static driver, so run pnpm build first
-// so dist/ holds the exact built app that case copies. The real static-driver
-// start-failure cases below need no built app: they drive the real producer
-// driver on scratch loopback ports against a throwaway fixture root. No
-// Storybook, Puppeteer, or second browser oracle is started.
+// on a loopback port through the real static driver, and the
+// blank-active-view mutation case empties the active view on the real served
+// dist/ in the same real browser the mutations suite uses, so run pnpm build
+// first so dist/ holds the exact built app both cases drive. The real
+// static-driver start-failure cases below need no built app: they drive the
+// real producer driver on scratch loopback ports against a throwaway fixture
+// root. No Storybook, Puppeteer, or second browser oracle is started.
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import { tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
@@ -25,11 +27,17 @@ import {
   PRODUCT_A11Y_GATE_POINTS,
   PRODUCT_A11Y_PAGE_WIDE_FIELDS,
   PRODUCT_A11Y_RECORD_FIELDS,
+  PRODUCT_MIN_BODY_DESCENDANTS,
+  PRODUCT_MIN_BODY_TEXT_LENGTH,
   PRODUCT_PRE_ACTION_PARTS,
+  PRODUCT_VIEW_SELECTORS,
+  assertProductActiveViewMounted,
   assertProductObservationTimes,
+  assertProductRowDirFresh,
   buildProductAccessibilityEvidence,
   createProductStaticDriver,
   readProductAccessibilityVerdict,
+  resolveProductRunRoot,
 } from './product-producer.mjs'
 import { PRODUCT_MUTATION_NAMES, runProductMutation } from './product-mutations.mjs'
 import * as targets from './fairtrade-targets.mjs'
@@ -41,7 +49,7 @@ const MANIFEST_REL = 'scripts/fairtest/product-target.testdata.manifest.yaml'
 const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs']
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
-const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time']
+const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'cli-target']
 const A11Y_POINTS = ['initial', 'after-action']
 const A11Y_IMPACTS = ['minor', 'moderate', 'serious', 'critical']
 const ROW_THEMES = ['dark', 'light']
@@ -149,6 +157,10 @@ function checkCaseShape(entry, index) {
       : ('stale' in entry
         ? ['name', 'check', 'artifact', 'stale', 'expectValid', 'expectedErrorContains']
         : ['name', 'check', 'artifact', 'expectValid', 'expectedErrorContains']),
+    'run-root': entry.expectValid
+      ? ['name', 'check', 'runRootEnv', 'expectRoot', 'expectValid']
+      : ['name', 'check', 'runRootEnv', 'expectValid', 'expectedErrorContains'],
+    'cli-target': ['name', 'check', 'args', 'expectValid', 'expectExitCode', 'expectedErrorContains'],
     'a11y-baseline': ['name', 'check', 'policy', 'point', 'violations', ...tail],
     'a11y-delta': ['name', 'check', 'point', 'measured', ...('baseline' in entry ? ['baseline'] : []), ...tail],
     'a11y-record': entry.expectValid
@@ -191,6 +203,28 @@ function checkCaseShape(entry, index) {
     }
     if (typeof entry.boundary !== 'string' || entry.boundary.trim().length === 0) {
       throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing its owning boundary for field "boundary" at path ${path}.boundary; repair: name the owning product boundary for "boundary".`)
+    }
+  }
+  if (entry.check === 'run-root') {
+    if (entry.runRootEnv !== null && (typeof entry.runRootEnv !== 'string' || entry.runRootEnv.length === 0)) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" holds a malformed run-root env value for field "runRootEnv" at path ${path}.runRootEnv; repair: declare the FAIRTEST_RUN_ROOT value the case sets, or null for an unset variable.`)
+    }
+    if (entry.expectValid && (typeof entry.expectRoot !== 'string' || !isAbsolute(entry.expectRoot))) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing the resolved root for field "expectRoot" at path ${path}.expectRoot; repair: declare the absolute run root the producer must resolve.`)
+    }
+  }
+  if (entry.check === 'cli-target') {
+    // Every mounted-CLI case in this family asserts a fail-closed rejection:
+    // a successful mounted run spawns the real runner, and the mounted
+    // command owns that proof, not this browser-free family.
+    if (entry.expectValid !== false) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" declares a passing verdict for field "expectValid" at path ${path}.expectValid; repair: declare expectValid false so the case only asserts a fail-closed target rejection.`)
+    }
+    if (!Array.isArray(entry.args) || entry.args.some((arg) => typeof arg !== 'string')) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" holds a malformed argument list for field "args" at path ${path}.args; repair: declare the exact CLI arguments the mounted shim receives.`)
+    }
+    if (!Number.isInteger(entry.expectExitCode)) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing the expected exit code for field "expectExitCode" at path ${path}.expectExitCode; repair: declare the whole exit code the shim must return.`)
     }
   }
 }
@@ -757,6 +791,15 @@ function runA11yDeltaCase(entry) {
     assert.equal(receipt.policy, targets.PRODUCT_A11Y_POLICY, `${name}: gate receipt must name the app-owned policy`)
     assert.equal(receipt.result, 'pass', `${name}: gate receipt must record a pass`)
     assert.ok(Object.isFrozen(receipt), `${name}: gate receipt must be frozen`)
+    // The real gate output against the policy owner's declared field set, in
+    // one browser-free assertion: a receipt that grows or loses a field turns
+    // this case red instead of silently changing the durable record contract
+    // the verifier-facing reader consumes.
+    assert.deepEqual(
+      Object.keys(receipt).sort(),
+      [...targets.PRODUCT_A11Y_GATE_RECEIPT_FIELDS].sort(),
+      `${name}: the real gate receipt must carry exactly the declared field set for field "policy"`,
+    )
   } catch (error) {
     message = error instanceof Error ? error.message : String(error)
   }
@@ -768,17 +811,23 @@ function runA11yDeltaCase(entry) {
   }
 }
 
-/** @param {Record<string, unknown>} entry */
+/**
+ * Run one artifact-class case against the producer's real run-root guard.
+ * Every case first proves the clean branch: a real scratch row directory with
+ * no artifact in it must clear the guard the mounted row calls. A case marked
+ * stale then writes the artifact into that same real directory and must be
+ * refused by the guard itself, so the refusal is the producer's own
+ * diagnostic rather than a throw this module wrote for itself. The unknown
+ * artifact case is a closed-set case: the guard passes a clean directory and
+ * the declared six-class vocabulary rejects the name.
+ * @param {Record<string, unknown>} entry
+ */
 function runArtifactClassCase(entry) {
   const name = /** @type {string} */ (entry.name)
+  const scratch = mkdtempSync(join(tmpdir(), 'fairtest-row-dir-'))
   let message = null
   try {
-    if (entry.stale === true) {
-      throw new Error(
-        `${CORPUS_REL}: case "${name}" holds a stale duplicate artifact ${JSON.stringify(entry.artifact)} for field "artifact" at path artifact; ` +
-        'repair: write each artifact class once per row into a fresh run root instead of reusing a previous subtree.',
-      )
-    }
+    assertProductRowDirFresh(scratch)
     if (!PRODUCT_ARTIFACT_CLASSES.includes(/** @type {string} */ (entry.artifact))) {
       throw new Error(
         `${CORPUS_REL}: case "${name}" names an unknown artifact ${JSON.stringify(entry.artifact)} for field "artifact" at path artifact; ` +
@@ -787,8 +836,14 @@ function runArtifactClassCase(entry) {
     }
     assert.ok(Object.isFrozen(PRODUCT_ARTIFACT_CLASSES), `${name}: producer artifact classes must be frozen`)
     assert.equal(PRODUCT_ARTIFACT_CLASSES.length, 6, `${name}: producer must write exactly six artifact classes`)
+    if (entry.stale === true) {
+      writeFileSync(join(scratch, /** @type {string} */ (entry.artifact)), `${CORPUS_REL}: ${name}\n`)
+      assertProductRowDirFresh(scratch)
+    }
   } catch (error) {
     message = error instanceof Error ? error.message : String(error)
+  } finally {
+    rmSync(scratch, { recursive: true, force: true })
   }
   if (entry.expectValid) {
     assert.equal(message, null, `${name}: valid artifact class failed: ${message}`)
@@ -796,6 +851,94 @@ function runArtifactClassCase(entry) {
     assert.ok(message, `${name}: broken artifact class passed instead of failing`)
     expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
   }
+}
+
+/**
+ * Prove the mounted row still calls the exported run-root guard. The
+ * artifact-class cases above drive the guard directly, so this is the wiring
+ * half: a row that stopped calling the guard would let a rerun append into a
+ * previous run subtree while every family case still passed.
+ */
+function assertMountedRowCallsRunRootGuard() {
+  const source = readFileSync(resolve(HERE, 'product-producer.mjs'), 'utf8')
+  const row = source.slice(source.indexOf('export async function captureProductRow'))
+  assert.ok(row.length > 0, `${CORPUS_REL}: the mounted row is missing for field "artifact" at path producer.captureProductRow; repair: keep the row that writes the six artifact classes.`)
+  assert.ok(
+    row.includes('assertProductRowDirFresh(rowDir)'),
+    `${CORPUS_REL}: the mounted row no longer calls the run-root guard for field "artifact" at path producer.captureProductRow; repair: call assertProductRowDirFresh(rowDir) before any artifact write so a rerun can never append into a previous run subtree.`,
+  )
+}
+
+/**
+ * Run one run-root case through the producer's real run-root resolution: the
+ * declared FAIRTEST_RUN_ROOT value is installed in the process environment,
+ * the real resolver reads it, and the environment is restored in a finally
+ * block so no case leaks state into the next one.
+ * @param {Record<string, unknown>} entry
+ */
+function runRunRootCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const declared = entry.runRootEnv
+  const previous = process.env.FAIRTEST_RUN_ROOT
+  let message = null
+  let observed = null
+  try {
+    if (declared === null) {
+      delete process.env.FAIRTEST_RUN_ROOT
+    } else {
+      process.env.FAIRTEST_RUN_ROOT = /** @type {string} */ (declared)
+    }
+    observed = resolveProductRunRoot()
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  } finally {
+    if (previous === undefined) {
+      delete process.env.FAIRTEST_RUN_ROOT
+    } else {
+      process.env.FAIRTEST_RUN_ROOT = previous
+    }
+  }
+  if (entry.expectValid) {
+    assert.equal(message, null, `${name}: valid run root failed: ${message}`)
+    assert.equal(observed, resolve(/** @type {string} */ (entry.expectRoot)), `${name}: resolved run root must equal the declared absolute root`)
+    assert.ok(isAbsolute(/** @type {string} */ (observed)), `${name}: resolved run root must stay absolute`)
+  } else {
+    assert.ok(message, `${name}: unusable run root passed instead of failing`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  }
+}
+
+/**
+ * Run one mounted-CLI case as a real subprocess of the mounted shim, so the
+ * target-flag guard is observed at its own exit code and diagnostic instead
+ * of being re-implemented here. The cases only exercise the branches that
+ * fail closed before the shim spawns the runner.
+ * @param {Record<string, unknown>} entry
+ */
+function runCliTargetCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const shim = resolve(HERE, 'run-mounted.mjs')
+  let status = null
+  let stderr = ''
+  let failure = null
+  try {
+    const result = spawnSync(process.execPath, [shim, .../** @type {string[]} */ (entry.args)], {
+      cwd: ROOT,
+      encoding: 'utf8',
+      env: { ...process.env, PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1' },
+    })
+    status = result.status
+    stderr = result.stderr || ''
+    if (result.error) failure = result.error.message
+  } catch (error) {
+    failure = error instanceof Error ? error.message : String(error)
+  }
+  assert.equal(failure, null, `${name}: the mounted shim could not run: ${failure}`)
+  assert.equal(status, entry.expectExitCode, `${name}: mounted shim must exit ${String(entry.expectExitCode)}; got ${String(status)} with stderr ${stderr}`)
+  // The production diagnostic is the shim's own stderr, so the family uses
+  // one fragment vocabulary for every case.
+  expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), stderr, name)
+  assert.ok(!stderr.includes('playwright'), `${name}: a rejected target must fail before the runner spawns; got ${stderr}`)
 }
 
 /**
@@ -878,6 +1021,8 @@ const RUNNERS = {
   'a11y-delta': runA11yDeltaCase,
   'a11y-record': runA11yRecordCase,
   'observation-time': runObservationTimeCase,
+  'run-root': runRunRootCase,
+  'cli-target': runCliTargetCase,
 }
 
 /** @param {Record<string, unknown>} entry */
@@ -1179,6 +1324,10 @@ describe('product target fixture family', () => {
     validateManifest(manifest)
   })
 
+  it('keeps the mounted row wired to the real run-root guard', () => {
+    assertMountedRowCallsRunRootGuard()
+  })
+
   it('holds exact fields and required names', () => {
     validateFamily(parsed, manifest)
   })
@@ -1238,6 +1387,9 @@ describe('product target registry and theme rows', () => {
     assert.deepEqual({ ...selected.selectors }, {
       chrome: '.iu-bar',
       body: '.iu-view',
+      // The active view excludes the permanently mounted hidden changes view,
+      // so the body and view floors can never be satisfied by that sibling.
+      activeView: '.iu-view > :not([hidden])',
       sectionNav: 'nav[aria-label="peasant sections"]',
       activeSection: 'nav[aria-label="peasant sections"] .iu-subnav-item[aria-current="page"]',
       sectionView: '#inuse-stage[role="tabpanel"]',
@@ -1427,7 +1579,7 @@ describe('verifier-facing record accessibility evidence', () => {
       const { [field]: dropped, ...rest } = record
       assert.throws(
         () => readProductAccessibilityVerdict(rest),
-        new RegExp(`missing field ${JSON.stringify(field)}.*at path record\\.accessibility.*repair:`, 's'),
+        new RegExp(`missing required field ${JSON.stringify(field)}.*at path record\\.accessibility.*repair:`, 's'),
         `a record without ${field} must be refused`,
       )
     }
@@ -1435,6 +1587,61 @@ describe('verifier-facing record accessibility evidence', () => {
       () => readProductAccessibilityVerdict({ ...record, pageWide: { ...record.pageWide, informational: false } }),
       /informational.*at path record\.accessibility\.pageWide\.informational.*repair:/s,
       'an unmarked page-wide census must be refused',
+    )
+  })
+
+  it('refuses a record that mislabels its gated population', () => {
+    const record = buildProductAccessibilityEvidence(producerAccessibilityInputs())
+    assert.throws(
+      () => readProductAccessibilityVerdict({ ...record, gatedScope: 'page' }),
+      /mislabeled gated scope "page".*at path record\.accessibility\.gatedScope.*"product-view".*repair:/s,
+      'a page-wide gated scope must be refused instead of read as the gated product view',
+    )
+    assert.throws(
+      () => readProductAccessibilityVerdict({ ...record, scopeRoot: 'body' }),
+      /mislabeled scope root "body".*at path record\.accessibility\.scopeRoot.*inuse-stage.*repair:/s,
+      'a foreign scope root must be refused',
+    )
+  })
+
+  it('refuses a foreign gate receipt or one measured at the wrong point', () => {
+    const record = buildProductAccessibilityEvidence(producerAccessibilityInputs())
+    assert.throws(
+      () => readProductAccessibilityVerdict({
+        ...record,
+        gate: { ...record.gate, after: { ...record.gate.after, policy: 'page-wide-baseline-delta' } },
+      }),
+      /foreign gate receipt policy.*at path record\.accessibility\.gate\.after\.policy.*repair:/s,
+      'a receipt from another policy must be refused',
+    )
+    assert.throws(
+      () => readProductAccessibilityVerdict({
+        ...record,
+        gate: { ...record.gate, before: { ...record.gate.before, point: 'after-action' } },
+      }),
+      /mismatched gate observation point.*at path record\.accessibility\.gate\.before\.point.*repair:/s,
+      'a receipt claiming the wrong observation point must be refused',
+    )
+  })
+
+  it('refuses a scoped count that contradicts the gate receipt beside it', () => {
+    const record = buildProductAccessibilityEvidence(producerAccessibilityInputs())
+    assert.throws(
+      () => readProductAccessibilityVerdict({
+        ...record,
+        scopedAfter: { ...record.scopedAfter, violations: 0, ids: [] },
+      }),
+      /contradicts the gate receipt.*at path record\.accessibility\.scopedAfter\.violations.*record\.accessibility\.gate\.after\.measured recorded 1.*repair:/s,
+      'a scoped count disagreeing with its own gate receipt must be refused',
+    )
+    // The declared receipts from the real gate carry exactly the fields the
+    // reader consumes, so a healthy record stays readable end to end.
+    const verdict = readProductAccessibilityVerdict(record)
+    assert.equal(verdict.result, 'pass')
+    assert.deepEqual(
+      Object.keys(record.gate.after).sort(),
+      [...targets.PRODUCT_A11Y_GATE_RECEIPT_FIELDS].sort(),
+      'the assembled receipt must carry the declared field set the reader consumes',
     )
   })
 })

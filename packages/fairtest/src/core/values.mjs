@@ -98,6 +98,20 @@ export function assertNumberInRange(value, field, path, range) {
 }
 
 /**
+ * Assert the value is a list whose every entry is a non-empty string, the
+ * shape every id or label inventory in a durable record carries.
+ * @param {unknown} value candidate list
+ * @param {string} field field name used in diagnostics
+ * @param {string} path value path used in diagnostics
+ * @returns {asserts value is string[]}
+ */
+export function assertStringList(value, field, path) {
+  if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string' || entry.trim().length === 0)) {
+    fail(`invalid value ${JSON.stringify(value)} for field "${field}" at path ${path}; repair: list non-empty strings for "${field}".`)
+  }
+}
+
+/**
  * Deep-freeze a plain value tree and return it. Records and lists are frozen
  * recursively so shared identities and policies stay immutable by construction.
  * @template T

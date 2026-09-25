@@ -15,10 +15,18 @@
 // section, observe the active section transition analytics to map plus the
 // updated mounted view, then build the proof through buildProductProof.
 //
+// The representative body is measured on the ACTIVE view, never on the view
+// container: the graph shell keeps a permanently mounted hidden changes view
+// inside that container, and on the real built surface that hidden sibling
+// alone carries 188 descendants and 804 characters, so a container-scoped
+// floor would be satisfied by a blank active section. Container totals are
+// still read and recorded, explicitly labelled as container totals.
+//
 // Every observedAtMs value in resolution.json is the real clock reading taken
 // at the observation it names: rowStartedAtMs when the row begins, one
-// captured reading for the chrome, body, and route parts read by the single
-// pre-interaction evaluate, the theme reading, then the action reading.
+// captured reading for the chrome, body, and route parts read by the
+// pre-interaction observation (the product tuple, then the shared active-view
+// measurement), the theme reading, then the action reading.
 // assertProductObservationTimes fails the row closed if those times ever
 // degrade into assembly-order offsets again.
 //
@@ -44,7 +52,10 @@ import {
   PRODUCT_ACTION_NAME,
   PRODUCT_ACTION_TO_SECTION,
   PRODUCT_A11Y_BASELINE,
+  PRODUCT_A11Y_GATE_POINT_SLOTS,
+  PRODUCT_A11Y_GATE_RECEIPT_FIELDS,
   PRODUCT_A11Y_POINT_SECTIONS,
+  PRODUCT_A11Y_POINTS,
   PRODUCT_A11Y_POLICY,
   PRODUCT_A11Y_SCOPE_ROOT,
   PRODUCT_INITIAL_SECTION,
@@ -61,6 +72,11 @@ import {
 import { DEFAULT_AXE_TAGS, scanAxe, seriousViolations } from '../journey/lib/assertions.mjs'
 
 const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
+// Generic value validation (records, fields, counts, strings, id lists) is a
+// browser-neutral mechanism the private child already owns. This module
+// consumes it through the sole source route instead of re-declaring a second
+// copy with its own plain-record semantics and its own diagnostic wording.
+const valuesContract = await importFairtestSource('src/core/values.mjs')
 
 /**
  * Fixed loopback port for the built app. Mirrors the port owned by the
@@ -97,22 +113,39 @@ export const PRODUCT_ARTIFACT_CLASSES = Object.freeze([
 ])
 
 /**
- * Minimum descendant element count inside .iu-view that counts as a
- * non-blank representative body. The analytics dashboard renders hundreds of
- * nodes (834 descendants observed on the real built surface); a blank or
- * failed mount renders near zero. The margin is wide on purpose: anything
- * below this floor is unproven body content, not a close call.
+ * Minimum descendant element count inside the ACTIVE view (the non-hidden
+ * children of the view container) that counts as a non-blank representative
+ * body. Measured on the active view, never on the container: the graph shell
+ * keeps a permanently mounted hidden changes view inside that container, and
+ * on the real built surface that hidden sibling alone contributes 188
+ * descendants, far above this floor, so a container-scoped measurement cannot
+ * tell a blank active section from a rendered one. The active analytics view
+ * renders hundreds of nodes (646 descendants observed on the real built
+ * surface) and the active map view 564, so the floor is wide on purpose:
+ * anything below it is unproven body content, not a close call.
  * @type {number}
  */
 export const PRODUCT_MIN_BODY_DESCENDANTS = 20
 
 /**
- * Minimum trimmed text length inside .iu-view that counts as non-blank
- * body content. The real dashboard carries about 2000 characters; a blank
- * section carries near zero.
+ * Minimum trimmed text length inside the ACTIVE view that counts as non-blank
+ * body content. Observed active-view contributions are 1223 characters at
+ * analytics and 3217 at the code map; a blank active section carries near
+ * zero once the permanently mounted hidden changes view is excluded.
  * @type {number}
  */
 export const PRODUCT_MIN_BODY_TEXT_LENGTH = 200
+
+/**
+ * The two selectors one active-view measurement reads: the view container and
+ * the active view inside it. Derived from the app-owned selector bundle, never
+ * a second literal pair.
+ * @type {{ container: string, activeView: string }}
+ */
+export const PRODUCT_VIEW_SELECTORS = Object.freeze({
+  container: PRODUCT_SELECTORS.body,
+  activeView: PRODUCT_SELECTORS.activeView,
+})
 
 /**
  * Scope labels shared by axe.json and the record.json accessibility block,
@@ -227,10 +260,13 @@ export function productRowDir(runRoot, theme) {
 /**
  * Assert the row directory is fresh: none of the six artifact classes may
  * already exist. A rerun must use a fresh run root, never silently append
- * into a previous run subtree.
+ * into a previous run subtree. Exported so the fixture family drives this
+ * exact guard against a real scratch row directory instead of a
+ * self-authored stand-in that no producer change could ever affect.
  * @param {string} rowDir row directory
+ * @returns {void}
  */
-function assertRowDirFresh(rowDir) {
+export function assertProductRowDirFresh(rowDir) {
   for (const name of PRODUCT_ARTIFACT_CLASSES) {
     if (existsSync(join(rowDir, name))) {
       throw new Error(
@@ -569,92 +605,131 @@ function summarizeAxeForGate(scan) {
 }
 
 /**
- * Assert a record is a plain object holding exactly the declared fields, with
- * one diagnostic naming an unknown member and one naming a missing member.
+ * Assert a record holds exactly the declared fields, routing the check itself
+ * to the private child and owning only the product wording. The child's
+ * assertExactFields decides plain-record membership and which member is
+ * missing or unknown; this wrapper adds the product repair hint so a reader
+ * of the record still gets an actionable fix beside the child's own reason.
  * @param {unknown} value candidate record
  * @param {string[]} fields the exact declared field set
  * @param {string} field product field name used in diagnostics
  * @param {string} path value path used in diagnostics
  * @param {string} repair repair hint appended to the diagnostic
+ * @returns {asserts value is Record<string, unknown>}
  */
-function assertExactRecordFields(value, fields, field, path, repair) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw new Error(
-      `product producer: malformed record for field "${field}" at path ${path}; ` +
-      `repair: ${repair}.`,
-    )
-  }
-  const record = /** @type {Record<string, unknown>} */ (value)
-  for (const key of Object.keys(record)) {
-    if (!fields.includes(key)) {
-      throw new Error(
-        `product producer: unknown field ${JSON.stringify(key)} for field "${field}" at path ${path}; ` +
-        `the declared fields are ${fields.join(', ')}; ` +
-        `repair: ${repair}.`,
-      )
-    }
-  }
-  for (const key of fields) {
-    if (!(key in record)) {
-      throw new Error(
-        `product producer: missing field ${JSON.stringify(key)} for field "${field}" at path ${path}; ` +
-        `the declared fields are ${fields.join(', ')}; ` +
-        `repair: ${repair}.`,
-      )
-    }
+function assertProductRecordFields(value, fields, field, path, repair) {
+  try {
+    valuesContract.assertExactFields(value, fields, 'product producer', path)
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error)
+    throw new Error(`${reason} product repair for field "${field}": ${repair}.`)
   }
 }
 
 /**
- * Assert a value is a non-empty string, used for the scope labels a verifier
- * reads to know which population a count covers.
- * @param {unknown} value candidate string
- * @param {string} field product field name used in diagnostics
- * @param {string} path value path used in diagnostics
- * @param {string} repair repair hint appended to the diagnostic
- */
-function assertScopeText(value, field, path, repair) {
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new Error(
-      `product producer: missing scope label for field "${field}" at path ${path}; ` +
-      `got ${JSON.stringify(value)}; ` +
-      `repair: ${repair}.`,
-    )
-  }
-}
-
-/**
- * Assert a value is a non-negative whole count.
+ * Assert a non-negative whole count, routing the range check to the private
+ * child and owning only the product wording.
  * @param {unknown} value candidate count
  * @param {string} field product field name used in diagnostics
  * @param {string} path value path used in diagnostics
  * @param {string} repair repair hint appended to the diagnostic
+ * @returns {asserts value is number}
  */
-function assertCount(value, field, path, repair) {
-  if (!Number.isInteger(value) || /** @type {number} */ (value) < 0) {
-    throw new Error(
-      `product producer: invalid count ${JSON.stringify(value)} for field "${field}" at path ${path}; ` +
-      `repair: ${repair}.`,
-    )
+function assertProductCount(value, field, path, repair) {
+  try {
+    valuesContract.assertIntegerInRange(value, field, path, { min: 0, max: Number.MAX_SAFE_INTEGER })
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error)
+    throw new Error(`${reason} product repair: ${repair}.`)
   }
 }
 
 /**
- * Assert a value is a list of non-empty strings, the shape of every id list
- * the accessibility evidence carries.
- * @param {unknown} value candidate list
- * @param {string} field product field name used in diagnostics
- * @param {string} path value path used in diagnostics
- * @param {string} repair repair hint appended to the diagnostic
+ * Measure the mounted view in the live page: the active view and the view
+ * container that also holds the permanently mounted hidden changes view. Runs
+ * inside the page (the runner serializes this function), so it references
+ * nothing outside its argument. Both halves are returned because the guard
+ * needs the container totals to say plainly why they are not the measurement
+ * the floors apply to.
+ * @param {{ container: string, activeView: string }} selectors app-owned view selectors
+ * @returns {{ activeView: { roots: number, descendants: number, textLength: number }, container: { descendants: number, textLength: number } }} the measured view
  */
-function assertIdList(value, field, path, repair) {
-  if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string' || entry.length === 0)) {
-    throw new Error(
-      `product producer: invalid id list for field "${field}" at path ${path}; ` +
-      `got ${JSON.stringify(value)}; ` +
-      `repair: ${repair}.`,
-    )
+export function measureProductView(selectors) {
+  const container = document.querySelector(selectors.container)
+  const roots = [...document.querySelectorAll(selectors.activeView)]
+  return {
+    activeView: {
+      roots: roots.length,
+      descendants: roots.reduce((total, root) => total + root.querySelectorAll('*').length, 0),
+      textLength: roots.reduce((total, root) => total + (root.textContent || '').trim().length, 0),
+    },
+    container: {
+      descendants: container ? container.querySelectorAll('*').length : -1,
+      textLength: ((container ? container.textContent : '') || '').trim().length,
+    },
   }
+}
+
+/**
+ * Fail-closed guard for the mounted ACTIVE view. The floors apply to the
+ * active view alone, because the view container also holds the permanently
+ * mounted hidden changes view: on the real built surface that hidden sibling
+ * alone carries 188 descendants and 804 text characters, far above both
+ * floors, so a container-scoped check cannot tell a blank active section from
+ * a rendered one. An active view with no roots, too few descendants, or too
+ * little text fails closed naming the measured numbers, the floors, the
+ * container totals it is not reading, and the repair.
+ * @param {object} observed measured view from measureProductView
+ * @param {object} context product context for the diagnostic
+ * @param {string} context.label short name for the blank condition
+ * @param {string} context.part observed part the guard protects
+ * @param {string} context.path record path of the observed part
+ * @param {string} context.repair repair hint naming the section to keep mounted
+ * @returns {{ roots: number, descendants: number, textLength: number }} the accepted active-view measurement
+ */
+export function assertProductActiveViewMounted(observed, context = {}) {
+  assertProductRecordFields(
+    context,
+    ['label', 'part', 'path', 'repair'],
+    'activeViewContext',
+    'producer.activeViewContext',
+    'name the observed part, its record path, and the repair for a blank active view',
+  )
+  const { label, part, path, repair } = /** @type {Record<string, string>} */ (context)
+  assertProductRecordFields(
+    observed,
+    ['activeView', 'container'],
+    'viewObservation',
+    `producer.viewObservation.${part}`,
+    'measure both the active view and the view container before observing the part',
+  )
+  const measurement = /** @type {Record<string, any>} */ (observed)
+  assertProductRecordFields(
+    measurement.activeView,
+    ['roots', 'descendants', 'textLength'],
+    'activeView',
+    `producer.activeView.${part}`,
+    'record how many active roots, descendants, and text characters the active view carries',
+  )
+  assertProductRecordFields(
+    measurement.container,
+    ['descendants', 'textLength'],
+    'container',
+    `producer.viewContainer.${part}`,
+    'record the view container totals beside the active view measurement',
+  )
+  const { roots, descendants, textLength } = measurement.activeView
+  if (roots >= 1 && descendants >= PRODUCT_MIN_BODY_DESCENDANTS && textLength >= PRODUCT_MIN_BODY_TEXT_LENGTH) {
+    return Object.freeze({ roots, descendants, textLength })
+  }
+  throw new Error(
+    `product producer: ${label} for field ${JSON.stringify(part)} at path ${path}; ` +
+    `active view ${JSON.stringify(PRODUCT_VIEW_SELECTORS.activeView)} has ${roots} roots with ${descendants} descendants and ${textLength} text characters; ` +
+    `floor is ${PRODUCT_MIN_BODY_DESCENDANTS} descendants and ${PRODUCT_MIN_BODY_TEXT_LENGTH} characters; ` +
+    `the container ${JSON.stringify(PRODUCT_VIEW_SELECTORS.container)} totals ${measurement.container.descendants} descendants and ${measurement.container.textLength} characters, ` +
+    'which include the permanently mounted hidden changes view and are never read as the active view; ' +
+    `repair: ${repair}.`,
+  )
 }
 
 /**
@@ -694,7 +769,7 @@ function summarizeScopedScan(scan) {
  */
 export function buildProductAccessibilityEvidence(input = {}) {
   const wanted = ['pageWide', 'scopedBefore', 'scopedAfter', 'gateBefore', 'gateAfter']
-  assertExactRecordFields(
+  assertProductRecordFields(
     input,
     wanted,
     'accessibility',
@@ -735,10 +810,16 @@ export function buildProductAccessibilityEvidence(input = {}) {
  *      `gate.after` are the baseline-delta decisions taken over the gated
  *      product-view scope; the verdict is `pass` only when both read `pass`.
  *   2. `gatedScope` and `scopeRoot` state which population those receipts
- *      cover, so the verdict is never attributed to the whole document.
+ *      cover, so the verdict is never attributed to the whole document. They
+ *      are compared against the app-owned declarations, not merely required to
+ *      be non-empty: a record that mislabels its scope or its root is a
+ *      contradiction, not a readable label.
  *   3. `scopedBefore` and `scopedAfter` are the measured populations the gate
  *      compared against the declared baseline: evidence of what was measured,
- *      not an independent verdict.
+ *      not an independent verdict. Each receipt must name the app-owned policy
+ *      and the observation point its slot carries, and each scoped
+ *      `violations` count must equal its own receipt's `measured`, so no half
+ *      of the record can contradict the other beside a `pass`.
  *   4. `pageWide` is an informational census over the whole document. Its
  *      `violations`, `blocking`, and `blockingIds` counts are never read into
  *      the verdict: a page-wide `blocking: 7` beside a passing gate means
@@ -754,7 +835,7 @@ export function buildProductAccessibilityEvidence(input = {}) {
  * @returns {{ policy: string, gatedScope: string, scopeRoot: string, result: string, points: { before: object, after: object } }} the frozen verdict read from the gate receipts
  */
 export function readProductAccessibilityVerdict(accessibility) {
-  assertExactRecordFields(
+  assertProductRecordFields(
     accessibility,
     PRODUCT_A11Y_RECORD_FIELDS,
     'accessibility',
@@ -768,56 +849,97 @@ export function readProductAccessibilityVerdict(accessibility) {
       `repair: record the app-owned policy ${JSON.stringify(PRODUCT_A11Y_POLICY)} for "policy".`,
     )
   }
-  assertScopeText(
-    record.gatedScope,
-    'gatedScope',
-    'record.accessibility.gatedScope',
-    `name the gated scope ${JSON.stringify(PRODUCT_A11Y_SCOPES.gated)} so the verdict cannot be read as page-wide`,
-  )
-  assertScopeText(
-    record.scopeRoot,
-    'scopeRoot',
-    'record.accessibility.scopeRoot',
-    'record the selector the gate covered for "scopeRoot"',
+  // Rules 2 and 3 are claims about WHICH population a verdict covers, so a
+  // label that does not match the app-owned declaration is a contradiction,
+  // not a free-form string. Validating shape alone let a record claiming
+  // gatedScope "page" over root "body" read as a pass over the gated view.
+  if (record.gatedScope !== PRODUCT_A11Y_SCOPES.gated) {
+    throw new Error(
+      `product producer: mislabeled gated scope ${JSON.stringify(record.gatedScope)} for field "gatedScope" at path record.accessibility.gatedScope; ` +
+      `the verdict is only attributable to the declared gated scope ${JSON.stringify(PRODUCT_A11Y_SCOPES.gated)}; ` +
+      `repair: name the gated scope ${JSON.stringify(PRODUCT_A11Y_SCOPES.gated)} so the verdict cannot be read as page-wide.`,
+    )
+  }
+  if (record.scopeRoot !== PRODUCT_A11Y_SCOPE_ROOT) {
+    throw new Error(
+      `product producer: mislabeled scope root ${JSON.stringify(record.scopeRoot)} for field "scopeRoot" at path record.accessibility.scopeRoot; ` +
+      `the gate covered the declared root ${JSON.stringify(PRODUCT_A11Y_SCOPE_ROOT)}; ` +
+      `repair: record the selector the gate covered for "scopeRoot" instead of an unrelated root.`,
+    )
+  }
+  const gate = record.gate
+  assertProductRecordFields(
+    gate,
+    PRODUCT_A11Y_GATE_POINTS,
+    'gate',
+    'record.accessibility.gate',
+    'record one gate receipt per observation point',
   )
   for (const point of PRODUCT_A11Y_GATE_POINTS) {
-    const receipt = record.gate?.[point]
-    assertExactRecordFields(
+    const receipt = gate[point]
+    const slot = `record.accessibility.gate.${point}`
+    assertProductRecordFields(
       receipt,
-      ['policy', 'point', 'result', 'measured', 'baseline'],
+      PRODUCT_A11Y_GATE_RECEIPT_FIELDS,
       'gate',
-      `record.accessibility.gate.${point}`,
+      slot,
       'record the baseline-delta gate receipt for both observation points',
     )
+    if (receipt.policy !== PRODUCT_A11Y_POLICY) {
+      throw new Error(
+        `product producer: foreign gate receipt policy ${JSON.stringify(receipt.policy)} for field "policy" at path ${slot}.policy; ` +
+        `the receipt must carry the app-owned policy ${JSON.stringify(PRODUCT_A11Y_POLICY)}; ` +
+        `repair: record the policy the gate actually ran under for "policy".`,
+      )
+    }
+    const declaredPoint = PRODUCT_A11Y_GATE_POINT_SLOTS[point]
+    if (receipt.point !== declaredPoint) {
+      throw new Error(
+        `product producer: mismatched gate observation point ${JSON.stringify(receipt.point)} for field "point" at path ${slot}.point; ` +
+        `gate.${point} carries the ${JSON.stringify(declaredPoint)} measurement; ` +
+        `repair: record ${JSON.stringify(declaredPoint)} for the gate.${point} receipt.`,
+      )
+    }
     if (receipt.result !== 'pass' && receipt.result !== 'fail') {
       throw new Error(
-        `product producer: unknown gate result ${JSON.stringify(receipt.result)} for field "result" at path record.accessibility.gate.${point}.result; ` +
+        `product producer: unknown gate result ${JSON.stringify(receipt.result)} for field "result" at path ${slot}.result; ` +
         'repair: record the gate decision as pass or fail for "result".',
       )
     }
-    const scoped = point === 'before' ? record.scopedBefore : record.scopedAfter
-    assertExactRecordFields(
+    assertProductCount(receipt.measured, 'measured', `${slot}.measured`, 'record how many scoped violations the gate measured for "measured"')
+    assertProductCount(receipt.baseline, 'baseline', `${slot}.baseline`, 'record how many baseline entries the gate compared for "baseline"')
+    const scopedName = point === 'before' ? 'scopedBefore' : 'scopedAfter'
+    const scopedPath = `record.accessibility.${scopedName}`
+    const scoped = record[scopedName]
+    assertProductRecordFields(
       scoped,
       ['violations', 'ids', 'incomplete', 'passes'],
-      `scoped${point === 'before' ? 'Before' : 'After'}`,
-      `record.accessibility.scoped${point === 'before' ? 'Before' : 'After'}`,
+      scopedName,
+      scopedPath,
       'record the scoped measurement the gate compared against the baseline',
     )
-    assertCount(
+    assertProductCount(
       scoped.violations,
       'violations',
-      `record.accessibility.scoped${point === 'before' ? 'Before' : 'After'}.violations`,
+      `${scopedPath}.violations`,
       'record the measured scoped violation count for "violations"',
     )
-    assertIdList(
-      scoped.ids,
-      'ids',
-      `record.accessibility.scoped${point === 'before' ? 'Before' : 'After'}.ids`,
-      'list the measured scoped violation ids for "ids"',
-    )
+    valuesContract.assertStringList(scoped.ids, 'ids', `${scopedPath}.ids`)
+    valuesContract.assertStringList(scoped.incomplete, 'incomplete', `${scopedPath}.incomplete`)
+    // The receipt's measured count and the scoped measurement beside it
+    // describe the same population at the same point. A record where they
+    // disagree is self-contradictory, so the reader refuses instead of
+    // reading one half and discarding the other.
+    if (scoped.violations !== receipt.measured) {
+      throw new Error(
+        `product producer: scoped measurement contradicts the gate receipt for field "violations" at path ${scopedPath}.violations; ` +
+        `${scopedName} measured ${JSON.stringify(scoped.violations)} while the gate receipt at ${slot}.measured recorded ${JSON.stringify(receipt.measured)}; ` +
+        'repair: record the scoped measurement the gate receipt was computed from, never a second count beside it.',
+      )
+    }
   }
   const pageWide = record.pageWide
-  assertExactRecordFields(
+  assertProductRecordFields(
     pageWide,
     PRODUCT_A11Y_PAGE_WIDE_FIELDS,
     'pageWide',
@@ -831,13 +953,13 @@ export function readProductAccessibilityVerdict(accessibility) {
       'repair: set informational to true so the page-wide counts can never be read as a verdict.',
     )
   }
-  assertScopeText(pageWide.scope, 'scope', 'record.accessibility.pageWide.scope', 'name the page-wide scope for "scope"')
-  assertScopeText(pageWide.root, 'root', 'record.accessibility.pageWide.root', 'name the page-wide root for "root"')
+  valuesContract.assertNonEmptyString(pageWide.scope, 'scope', 'record.accessibility.pageWide.scope')
+  valuesContract.assertNonEmptyString(pageWide.root, 'root', 'record.accessibility.pageWide.root')
   for (const count of ['violations', 'blocking', 'passes']) {
-    assertCount(pageWide[count], count, `record.accessibility.pageWide.${count}`, `record the observed page-wide ${count} count`)
+    assertProductCount(pageWide[count], count, `record.accessibility.pageWide.${count}`, `record the observed page-wide ${count} count`)
   }
-  assertIdList(pageWide.blockingIds, 'blockingIds', 'record.accessibility.pageWide.blockingIds', 'list the observed page-wide blocking ids')
-  assertIdList(pageWide.incomplete, 'incomplete', 'record.accessibility.pageWide.incomplete', 'list the observed page-wide incomplete ids')
+  valuesContract.assertStringList(pageWide.blockingIds, 'blockingIds', 'record.accessibility.pageWide.blockingIds')
+  valuesContract.assertStringList(pageWide.incomplete, 'incomplete', 'record.accessibility.pageWide.incomplete')
 
   // The verdict reads the gate receipts only. The page-wide census above is
   // validated as evidence and then deliberately not consulted.
@@ -858,11 +980,12 @@ export function readProductAccessibilityVerdict(accessibility) {
  * Assert the row's observation times are real clock readings in observation
  * order, never assembly-order offsets.
  *
- * The rule: chrome, body, and route are read by one pre-interaction evaluate,
- * so they share the single reading captured immediately after that evaluate;
- * the theme reading follows, and the action reading follows the theme. A row
- * whose part times disagree with each other, or that claim to have observed
- * something at or before its own row start, is synthetic and fails closed.
+ * The rule: chrome, body, and route are read by one pre-interaction
+ * observation window, so they share the single reading captured immediately
+ * after that window closes; the theme reading follows, and the action reading
+ * follows the theme. A row whose part times disagree with each other, or that
+ * claim to have observed something at or before its own row start, is
+ * synthetic and fails closed.
  * @param {object} input observation times for the row
  * @param {number} input.rowStartedAtMs clock reading when the row began
  * @param {number} input.chrome observedAtMs recorded for the chrome part
@@ -874,7 +997,7 @@ export function readProductAccessibilityVerdict(accessibility) {
  */
 export function assertProductObservationTimes(input = {}) {
   const wanted = ['rowStartedAtMs', ...PRODUCT_PRE_ACTION_PARTS, 'theme', 'action']
-  assertExactRecordFields(
+  assertProductRecordFields(
     input,
     wanted,
     'observationTimes',
@@ -893,8 +1016,8 @@ export function assertProductObservationTimes(input = {}) {
   for (const part of PRODUCT_PRE_ACTION_PARTS) {
     if (times[part] !== times.chrome) {
       throw new Error(
-        `product producer: pre-action part ${JSON.stringify(part)} claims its own observation time ${JSON.stringify(times[part])} while the shared pre-interaction evaluate was read at ${JSON.stringify(times.chrome)} for field "${part}" at path resolution.${part}.observedAtMs; ` +
-        'repair: capture one clock reading immediately after the pre-interaction evaluate and use it for chrome, body, and route instead of synthesizing per-part offsets.',
+        `product producer: pre-action part ${JSON.stringify(part)} claims its own observation time ${JSON.stringify(times[part])} while the shared pre-interaction observation was read at ${JSON.stringify(times.chrome)} for field "${part}" at path resolution.${part}.observedAtMs; ` +
+        'repair: capture one clock reading immediately after the pre-interaction observation and use it for chrome, body, and route instead of synthesizing per-part offsets.',
       )
     }
   }
@@ -956,7 +1079,7 @@ export async function captureProductRow(page, theme, options = {}) {
   const row = productThemeRow(theme)
   const rowDir = productRowDir(runRoot, theme)
   mkdirSync(rowDir, { recursive: true })
-  assertRowDirFresh(rowDir)
+  assertProductRowDirFresh(rowDir)
   if (!existsSync(join(DIST_ROOT, 'index.html'))) {
     throw new Error(
       'product producer: built app is missing for field "dist" at path row.dist; ' +
@@ -1000,15 +1123,12 @@ export async function captureProductRow(page, theme, options = {}) {
     const active = document.querySelector(selectors.activeSection)
     const barRect = bar ? bar.getBoundingClientRect() : null
     const viewRect = view ? view.getBoundingClientRect() : null
-    const descendants = view ? view.querySelectorAll('*').length : -1
     return {
       rawTheme: document.documentElement.getAttribute('data-theme'),
       chromeChildren: bar ? bar.childElementCount : -1,
       chromeTextLength: ((bar ? bar.textContent : '') || '').trim().length,
       chromeBox: barRect ? { width: Math.round(barRect.width), height: Math.round(barRect.height) } : null,
       bodyChildren: view ? view.childElementCount : -1,
-      bodyDescendants: descendants,
-      bodyTextLength: ((view ? view.textContent : '') || '').trim().length,
       bodyBox: viewRect ? { width: Math.round(viewRect.width), height: Math.round(viewRect.height) } : null,
       stagePresent: !!stage,
       stageDescendants: stage ? stage.querySelectorAll('*').length : -1,
@@ -1022,6 +1142,11 @@ export async function captureProductRow(page, theme, options = {}) {
       },
     }
   }, PRODUCT_SELECTORS)
+  // The representative body is the ACTIVE view, measured by the one shared
+  // in-page measurement the named blank-active-view mutation also drives. The
+  // container totals it returns include the permanently mounted hidden changes
+  // view and are recorded beside the measurement for contrast only.
+  const activeBefore = await page.evaluate(measureProductView, PRODUCT_VIEW_SELECTORS)
 
   // One real clock reading for everything that evaluate just read. Nothing
   // below derives a part time from the row start: the timestamp names the
@@ -1035,19 +1160,19 @@ export async function captureProductRow(page, theme, options = {}) {
       `repair: keep the persistent chrome mounted and non-empty on the product path.`,
     )
   }
-  if (
-    before.bodyDescendants < PRODUCT_MIN_BODY_DESCENDANTS ||
-    before.bodyTextLength < PRODUCT_MIN_BODY_TEXT_LENGTH ||
-    !before.bodyBox || before.bodyBox.width <= 0 || before.bodyBox.height <= 0
-  ) {
+  if (!before.bodyBox || before.bodyBox.width <= 0 || before.bodyBox.height <= 0) {
     throw new Error(
-      `product producer: blank representative body for field "body" at path proof.body; ` +
-      `selector ${JSON.stringify(PRODUCT_SELECTORS.body)} has ${before.bodyDescendants} descendants, ` +
-      `${before.bodyTextLength} text characters, box ${JSON.stringify(before.bodyBox)}; ` +
-      `floor is ${PRODUCT_MIN_BODY_DESCENDANTS} descendants and ${PRODUCT_MIN_BODY_TEXT_LENGTH} characters; ` +
-      'repair: keep the analytics dashboard mounted with non-trivial content instead of a blank section.',
+      `product producer: unrendered representative body for field "body" at path proof.body; ` +
+      `selector ${JSON.stringify(PRODUCT_SELECTORS.body)} has box ${JSON.stringify(before.bodyBox)}; ` +
+      'repair: keep the analytics dashboard laid out with a rendered box instead of a collapsed section.',
     )
   }
+  assertProductActiveViewMounted(activeBefore, {
+    label: 'blank representative body',
+    part: 'body',
+    path: 'proof.body',
+    repair: `keep the ${PRODUCT_INITIAL_SECTION} dashboard mounted with non-trivial content instead of a blank section`,
+  })
   if (before.location !== row.route) {
     throw new Error(
       `product producer: route mismatch for field "route" at path proof.route; ` +
@@ -1125,16 +1250,16 @@ export async function captureProductRow(page, theme, options = {}) {
   const after = await page.evaluate((selectors) => {
     const active = document.querySelector(selectors.activeSection)
     const stage = document.querySelector(selectors.sectionView)
-    const view = document.querySelector(selectors.body)
     return {
       activeText: active ? (active.textContent || '').trim() : null,
       activeHasClass: !!document.querySelector('.iu-subnav-item.active'),
       stageDescendants: stage ? stage.querySelectorAll('*').length : -1,
-      viewDescendants: view ? view.querySelectorAll('*').length : -1,
-      viewTextLength: ((view ? view.textContent : '') || '').trim().length,
       location: location.pathname + location.search + location.hash,
     }
   }, PRODUCT_SELECTORS)
+  // Same shared active-view measurement as the pre-interaction read, so the
+  // post-action floor is never satisfied by the hidden changes view.
+  const activeAfter = await page.evaluate(measureProductView, PRODUCT_VIEW_SELECTORS)
 
   if (!after.activeText || !after.activeText.toLowerCase().includes('code map') || !after.activeHasClass) {
     throw new Error(
@@ -1143,13 +1268,19 @@ export async function captureProductRow(page, theme, options = {}) {
       `repair: the named action must leave the map button active with aria-current="page".`,
     )
   }
-  if (after.viewDescendants < PRODUCT_MIN_BODY_DESCENDANTS || after.viewTextLength < PRODUCT_MIN_BODY_TEXT_LENGTH) {
+  if (activeAfter.container.descendants < 1) {
     throw new Error(
-      `product producer: blank mounted view after the action for field "view" at path proof.view; ` +
-      `view has ${after.viewDescendants} descendants and ${after.viewTextLength} text characters; ` +
-      'repair: keep the map view mounted with non-trivial content after the section switch.',
+      `product producer: unmounted view container after the action for field "view" at path proof.view; ` +
+      `selector ${JSON.stringify(PRODUCT_SELECTORS.body)} carries ${activeAfter.container.descendants} descendants; ` +
+      'repair: keep the map view mounted inside the view container after the section switch.',
     )
   }
+  assertProductActiveViewMounted(activeAfter, {
+    label: 'blank mounted view after the action',
+    part: 'view',
+    path: 'proof.view',
+    repair: `keep the ${PRODUCT_ACTION_TO_SECTION} view mounted with non-trivial content after the section switch`,
+  })
 
   const actionObservedAtMs = Date.now()
   assertProductObservationTimes({
@@ -1197,31 +1328,31 @@ export async function captureProductRow(page, theme, options = {}) {
     baseline: {
       policy: PRODUCT_A11Y_BASELINE.policy,
       scopeRoot: PRODUCT_A11Y_BASELINE.scopeRoot,
-      points: {
-        initial: PRODUCT_A11Y_BASELINE.points.initial.map((entry) => ({ ...entry, themes: [...entry.themes] })),
-        'after-action': PRODUCT_A11Y_BASELINE.points['after-action'].map((entry) => ({ ...entry, themes: [...entry.themes] })),
-      },
+      points: Object.fromEntries(PRODUCT_A11Y_POINTS.map((point) => [
+        point,
+        PRODUCT_A11Y_BASELINE.points[point].map((entry) => ({ ...entry, themes: [...entry.themes] })),
+      ])),
     },
     scoped: {
       scope: PRODUCT_A11Y_SCOPES.gated,
       root: PRODUCT_A11Y_SCOPE_ROOT,
-      before: { section: PRODUCT_A11Y_POINT_SECTIONS.initial, ...scopedBefore },
-      after: { section: PRODUCT_A11Y_POINT_SECTIONS['after-action'], ...scopedAfter },
+      before: { section: PRODUCT_A11Y_POINT_SECTIONS[PRODUCT_A11Y_GATE_POINT_SLOTS.before], ...scopedBefore },
+      after: { section: PRODUCT_A11Y_POINT_SECTIONS[PRODUCT_A11Y_GATE_POINT_SLOTS.after], ...scopedAfter },
     },
     pageWide: { scope: PRODUCT_A11Y_SCOPES.page, root: PRODUCT_A11Y_SCOPES.pageRoot, ...pageWide },
   }
   const axePath = join(rowDir, 'axe.json')
   writeFileSync(axePath, `${JSON.stringify(axeRecord, null, 2)}\n`)
   const gateBefore = assertProductAxeBaselineDelta({
-    point: 'initial',
+    point: PRODUCT_A11Y_GATE_POINT_SLOTS.before,
     measured: summarizeAxeForGate(scopedBefore),
-    baseline: PRODUCT_A11Y_BASELINE.points.initial.map((entry) => ({ ...entry })),
+    baseline: PRODUCT_A11Y_BASELINE.points[PRODUCT_A11Y_GATE_POINT_SLOTS.before].map((entry) => ({ ...entry })),
     artifactPath: axePath,
   })
   const gateAfter = assertProductAxeBaselineDelta({
-    point: 'after-action',
+    point: PRODUCT_A11Y_GATE_POINT_SLOTS.after,
     measured: summarizeAxeForGate(scopedAfter),
-    baseline: PRODUCT_A11Y_BASELINE.points['after-action'].map((entry) => ({ ...entry })),
+    baseline: PRODUCT_A11Y_BASELINE.points[PRODUCT_A11Y_GATE_POINT_SLOTS.after].map((entry) => ({ ...entry })),
     artifactPath: axePath,
   })
 
@@ -1294,16 +1425,28 @@ export async function captureProductRow(page, theme, options = {}) {
       children: before.chromeChildren,
       box: before.chromeBox,
     },
+    // The recorded body numbers are the ACTIVE view's, so a verifier reading
+    // record.json sees the population the floors were applied to. The
+    // container totals stay beside them, explicitly labelled, because they
+    // include the permanently mounted hidden changes view.
     body: {
       selector: PRODUCT_SELECTORS.body,
-      descendants: before.bodyDescendants,
-      textLength: before.bodyTextLength,
+      activeViewSelector: PRODUCT_SELECTORS.activeView,
+      activeRoots: activeBefore.activeView.roots,
+      descendants: activeBefore.activeView.descendants,
+      textLength: activeBefore.activeView.textLength,
       box: before.bodyBox,
+      containerDescendants: activeBefore.container.descendants,
+      containerTextLength: activeBefore.container.textLength,
     },
     view: {
       selector: PRODUCT_SELECTORS.sectionView,
+      activeViewSelector: PRODUCT_SELECTORS.activeView,
       stageDescendantsAfter: after.stageDescendants,
-      viewDescendantsAfter: after.viewDescendants,
+      viewDescendantsAfter: activeAfter.activeView.descendants,
+      viewTextLengthAfter: activeAfter.activeView.textLength,
+      containerDescendantsAfter: activeAfter.container.descendants,
+      containerTextLengthAfter: activeAfter.container.textLength,
     },
     computedStyles: { ...before.computed },
     viewport: { ...PRODUCT_VIEWPORT },

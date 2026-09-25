@@ -15,23 +15,32 @@
 # with its per-part and action negatives, and the journey compatibility
 # wrapper behavior.
 #
-# The fourth family names the eight negative product mutations
-# (missing chrome/body/section/view, wrong theme, unregistered action,
-# cross-kind proof, stale served asset). Each names its owning boundary and
-# the diagnostic fragments the real producer path must fail with; the
-# executable runners live in product-mutations.mjs, proven browser-free
-# plus one real-DOM absence proof and one throwaway-copy stale-asset proof.
+# The fourth family names the nine negative product mutations
+# (missing chrome/body/section/view, blank active view, wrong theme,
+# unregistered action, cross-kind proof, stale served asset). Each names its
+# owning boundary and the diagnostic fragments the real producer path must
+# fail with; the executable runners live in product-mutations.mjs, proven
+# browser-free plus real-DOM absence and blank-view proofs over the served
+# bytes and one throwaway-copy stale-asset proof.
 #
 # The fifth family carries the record.json accessibility block as a
 # verifier-facing reading: the verdict is read from the gate receipts over the
 # gated product-view scope, the page-wide census stays nested and explicitly
 # informational, and churning that informational count never moves the
-# verdict. The unqualified page-wide shape and the missing gated scope are
-# held as refusals, not as passes.
+# verdict. The unqualified page-wide shape, the missing gated scope, a
+# mislabeled scope or root, a foreign gate policy, a mismatched gate point,
+# and a scoped count contradicting its own gate receipt are held as refusals,
+# not as passes.
 #
 # The sixth family carries the row observation times: real readings in
 # observation order, never assembly-order offsets off the row start.
-expectedCaseCount: 77
+#
+# The seventh family covers the two cheap pure guards that keep the run
+# subtree immutable and the mounted command honest: the run-root resolver
+# (missing, relative, absolute) and the mounted CLI target flag (missing,
+# unknown). Both fail closed at their own boundary, and the CLI cases are run
+# as real subprocesses of the shim.
+expectedCaseCount: 88
 cases:
   - name: theme-row-dark-absent-passes
     check: theme-row
@@ -482,6 +491,12 @@ cases:
     boundary: proof.view
     expectValid: false
     expectedErrorContains: ['view', 'at path', 'repair:']
+  - name: mutation-blank-active-view-fails
+    check: product-mutation
+    mutation: blank-active-view
+    boundary: producer.activeView.body
+    expectValid: false
+    expectedErrorContains: ['blank representative body', 'proof.body', 'active view', 'hidden changes view', 'repair:']
   - name: mutation-wrong-theme-fails
     check: product-mutation
     mutation: wrong-theme
@@ -730,6 +745,121 @@ cases:
     expectVerdict: none
     expectValid: false
     expectedErrorContains: ['gatedScope', 'record.accessibility', 'at path', 'repair:']
+  - name: a11y-record-mislabeled-gated-scope-fails
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: page
+      scopeRoot: '#inuse-stage[role="tabpanel"]'
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: initial, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [color-required-children, color-contrast]
+        incomplete: [color-contrast]
+        passes: 120
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['mislabeled gated scope', 'gatedScope', 'record.accessibility.gatedScope', 'product-view', 'repair:']
+  - name: a11y-record-mislabeled-scope-root-fails
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: product-view
+      scopeRoot: body
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: initial, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [aria-required-children, color-contrast]
+        incomplete: [color-contrast]
+        passes: 120
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['mislabeled scope root', 'scopeRoot', 'record.accessibility.scopeRoot', 'inuse-stage', 'repair:']
+  - name: a11y-record-foreign-gate-policy-fails
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: product-view
+      scopeRoot: '#inuse-stage[role="tabpanel"]'
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: initial, result: pass, measured: 0, baseline: 0}
+        after: {policy: page-wide-baseline-delta, point: after-action, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [aria-required-children, color-contrast]
+        incomplete: [color-contrast]
+        passes: 120
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['foreign gate receipt policy', 'record.accessibility.gate.after.policy', 'product-view-baseline-delta', 'repair:']
+  - name: a11y-record-mislabeled-gate-point-fails
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: product-view
+      scopeRoot: '#inuse-stage[role="tabpanel"]'
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: after-action, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [aria-required-children, color-contrast]
+        incomplete: [color-contrast]
+        passes: 120
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['mismatched gate observation point', 'record.accessibility.gate.before.point', 'after-action', 'repair:']
+  - name: a11y-record-scoped-count-contradiction-fails
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: product-view
+      scopeRoot: '#inuse-stage[role="tabpanel"]'
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: initial, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [aria-required-children, color-contrast]
+        incomplete: [color-contrast]
+        passes: 120
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['contradicts the gate receipt', 'record.accessibility.scopedAfter.violations', 'gate.after.measured', 'repair:']
   - name: obs-time-real-observation-passes
     check: observation-time
     rowStartedAtMs: 1790353572800
@@ -769,3 +899,30 @@ cases:
     action: 1790353590386
     expectValid: false
     expectedErrorContains: ['observation order', 'resolution.theme.observedAtMs', 'at path', 'repair:']
+  - name: run-root-absolute-passes
+    check: run-root
+    runRootEnv: /tmp/opencode/fairtest-fixture-run-root
+    expectRoot: /tmp/opencode/fairtest-fixture-run-root
+    expectValid: true
+  - name: run-root-missing-fails
+    check: run-root
+    runRootEnv: null
+    expectValid: false
+    expectedErrorContains: ['missing run root', 'FAIRTEST_RUN_ROOT', 'run.root', 'repair:']
+  - name: run-root-relative-fails
+    check: run-root
+    runRootEnv: relative/run/root
+    expectValid: false
+    expectedErrorContains: ['invalid run root', 'FAIRTEST_RUN_ROOT', 'run.root', 'repair:']
+  - name: cli-target-missing-fails
+    check: cli-target
+    args: []
+    expectValid: false
+    expectExitCode: 2
+    expectedErrorContains: ['missing target', 'cli.target', 'repair:', '-- --target=product']
+  - name: cli-target-unknown-fails
+    check: cli-target
+    args: ['--target', 'component']
+    expectValid: false
+    expectExitCode: 2
+    expectedErrorContains: ['unknown target', 'component', 'cli.target', 'repair:']

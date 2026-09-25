@@ -59,6 +59,12 @@ export const PRODUCT_ACTION_TO_SECTION = 'map'
 export const PRODUCT_SELECTORS = Object.freeze({
   chrome: '.iu-bar',
   body: '.iu-view',
+  // The active view inside the view container. The container also holds the
+  // permanently mounted hidden changes view, so the container alone can never
+  // stand in for the active view: only the children the shell is not hiding
+  // carry the section the row is proving. One selector, summed over every
+  // active child, so a section rendering more than one root is measured whole.
+  activeView: '.iu-view > :not([hidden])',
   sectionNav: 'nav[aria-label="peasant sections"]',
   activeSection: 'nav[aria-label="peasant sections"] .iu-subnav-item[aria-current="page"]',
   sectionView: '#inuse-stage[role="tabpanel"]',
@@ -517,6 +523,29 @@ export const PRODUCT_A11Y_SCOPE_ROOT = PRODUCT_SELECTORS.sectionView
  * @type {string[]}
  */
 export const PRODUCT_A11Y_POINTS = Object.freeze(['initial', 'after-action'])
+
+/**
+ * Exact field set of the gate receipt assertProductAxeBaselineDelta returns
+ * and the record.json accessibility block carries under gate.<slot>. Declared
+ * once here, by the policy owner, so the reader that consumes the receipt
+ * never hardcodes a second copy of the record shape: a receipt that grows or
+ * loses a field turns the browser-free gate case red instead of silently
+ * changing the durable contract.
+ * @type {string[]}
+ */
+export const PRODUCT_A11Y_GATE_RECEIPT_FIELDS = Object.freeze(['policy', 'point', 'result', 'measured', 'baseline'])
+
+/**
+ * Record gate slots mapped to the app-owned observation point each slot
+ * carries, in record order. A verifier reading gate.before is reading the
+ * initial measurement and gate.after the after-action measurement; the reader
+ * refuses a receipt that claims a different point for its slot.
+ * @type {object}
+ */
+export const PRODUCT_A11Y_GATE_POINT_SLOTS = Object.freeze({
+  before: PRODUCT_A11Y_POINTS[0],
+  after: PRODUCT_A11Y_POINTS[1],
+})
 
 /**
  * Section rendered at each scoped observation point.

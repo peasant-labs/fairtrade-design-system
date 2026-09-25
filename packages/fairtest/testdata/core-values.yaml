@@ -1,6 +1,6 @@
 # Neutral value-check cases. Every threshold, bound, and string here is synthetic
 # caller-owned test data. No caller floor, name, or product meaning is pinned.
-expectedCaseCount: 8
+expectedCaseCount: 11
 cases:
   - name: exact fields accept declared keys
     check: exact-fields
@@ -46,3 +46,16 @@ cases:
     value: [1, 2]
     expectValid: false
     expectedErrorContains: ["at path", "repair:"]
+  - name: string list accepts empty inventory
+    check: string-list
+    value: []
+    expectValid: true
+  - name: string list accepts content
+    check: string-list
+    value: ["aria-required-children", "color-contrast"]
+    expectValid: true
+  - name: string list rejects blank entry
+    check: string-list
+    value: ["color-contrast", "   "]
+    expectValid: false
+    expectedErrorContains: ["value", "at path", "repair:"]

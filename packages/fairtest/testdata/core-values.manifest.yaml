@@ -1,5 +1,5 @@
 # Required-name inventory and executable mutations for core-values.yaml.
-expectedCaseCount: 8
+expectedCaseCount: 11
 requiredCaseNames:
   - exact fields accept declared keys
   - exact fields reject unknown key
@@ -9,7 +9,10 @@ requiredCaseNames:
   - int range rejects overflow
   - number range accepts midpoint
   - plain record rejects list
-expectedMutationCount: 7
+  - string list accepts empty inventory
+  - string list accepts content
+  - string list rejects blank entry
+expectedMutationCount: 8
 requiredMutationNames:
   - removing the blank-text record breaks the required inventory
   - duplicating a case name breaks uniqueness
@@ -18,6 +21,7 @@ requiredMutationNames:
   - adding an unknown case field breaks exact membership
   - inventing a check kind breaks the closed vocabulary
   - appending a trailing document breaks single-document loading
+  - removing the blank-entry string-list record breaks the required inventory
 mutations:
   - name: removing the blank-text record breaks the required inventory
     kind: delete-record
@@ -54,3 +58,7 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document
+  - name: removing the blank-entry string-list record breaks the required inventory
+    kind: delete-record
+    target: string list rejects blank entry
+    expectedField: string list rejects blank entry

@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # product-target.testdata.yaml.
-expectedCaseCount: 77
+expectedCaseCount: 88
 requiredCaseNames:
   - theme-row-dark-absent-passes
   - theme-row-dark-empty-passes
@@ -46,6 +46,7 @@ requiredCaseNames:
   - mutation-missing-body-fails
   - mutation-missing-section-fails
   - mutation-missing-view-fails
+  - mutation-blank-active-view-fails
   - mutation-wrong-theme-fails
   - mutation-unregistered-action-fails
   - mutation-cross-kind-proof-fails
@@ -75,11 +76,21 @@ requiredCaseNames:
   - a11y-record-gate-failure-reads-fail
   - a11y-record-unqualified-blocking-fails
   - a11y-record-missing-gated-scope-fails
+  - a11y-record-mislabeled-gated-scope-fails
+  - a11y-record-mislabeled-scope-root-fails
+  - a11y-record-foreign-gate-policy-fails
+  - a11y-record-mislabeled-gate-point-fails
+  - a11y-record-scoped-count-contradiction-fails
   - obs-time-real-observation-passes
   - obs-time-synthetic-offsets-fail
   - obs-time-parts-at-row-start-fail
   - obs-time-out-of-order-fails
-expectedMutationCount: 29
+  - run-root-absolute-passes
+  - run-root-missing-fails
+  - run-root-relative-fails
+  - cli-target-missing-fails
+  - cli-target-unknown-fails
+expectedMutationCount: 41
 requiredMutationNames:
   - removing the light theme row breaks the required inventory
   - duplicating a route name breaks uniqueness
@@ -110,6 +121,18 @@ requiredMutationNames:
   - reintroducing an unqualified page-wide count breaks the verdict reading rule
   - dropping the gated scope label breaks the verdict reading rule
   - dropping a pre-action part time breaks the observation-time case shape
+  - emptying the active-view mutation case breaks the required inventory
+  - inventing a blank-view mutation name breaks the closed set
+  - dropping the blank-view owning boundary breaks the case shape
+  - inverting the gated scope breaks the verdict reading rule
+  - narrowing the scope root to the document body breaks the verdict reading rule
+  - attaching a foreign policy to a gate receipt breaks the verdict reading rule
+  - mislabelling the gate observation point breaks the verdict reading rule
+  - contradicting the gate receipt with a second scoped count breaks the verdict reading rule
+  - removing the mislabeled scope-root refusal breaks the required inventory
+  - dropping the stale-artifact marker breaks the run-root guard coverage
+  - declaring a relative run root in the passing case breaks the run-root resolver
+  - renaming the expected mounted exit code breaks the mounted CLI case
 mutations:
   - name: removing the light theme row breaks the required inventory
     kind: delete-record
@@ -259,3 +282,70 @@ mutations:
     target: obs-time-real-observation-passes
     field: route
     expectedField: route
+  - name: emptying the active-view mutation case breaks the required inventory
+    kind: delete-record
+    target: mutation-blank-active-view-fails
+    expectedField: mutation-blank-active-view-fails
+  - name: inventing a blank-view mutation name breaks the closed set
+    kind: bad-value
+    target: mutation-blank-active-view-fails
+    field: mutation
+    value: blank-view
+    expectedField: mutation
+  - name: dropping the blank-view owning boundary breaks the case shape
+    kind: delete-field
+    target: mutation-blank-active-view-fails
+    field: boundary
+    expectedField: boundary
+  - name: inverting the gated scope breaks the verdict reading rule
+    kind: bad-value
+    target: a11y-record-gate-verdict-passes
+    field: accessibility.gatedScope
+    value: page
+    expectedField: gatedScope
+  - name: narrowing the scope root to the document body breaks the verdict reading rule
+    kind: bad-value
+    target: a11y-record-gate-verdict-passes
+    field: accessibility.scopeRoot
+    value: body
+    expectedField: scopeRoot
+  - name: attaching a foreign policy to a gate receipt breaks the verdict reading rule
+    kind: bad-value
+    target: a11y-record-gate-verdict-passes
+    field: accessibility.gate.after.policy
+    value: page-wide-baseline-delta
+    expectedField: policy
+  - name: mislabelling the gate observation point breaks the verdict reading rule
+    kind: bad-value
+    target: a11y-record-gate-verdict-passes
+    field: accessibility.gate.before.point
+    value: after-action
+    expectedField: point
+  - name: contradicting the gate receipt with a second scoped count breaks the verdict reading rule
+    kind: bad-value
+    target: a11y-record-gate-verdict-passes
+    field: accessibility.scopedAfter.violations
+    value: 0
+    expectedField: violations
+  - name: removing the mislabeled scope-root refusal breaks the required inventory
+    kind: delete-record
+    target: a11y-record-mislabeled-scope-root-fails
+    expectedField: a11y-record-mislabeled-scope-root-fails
+  - name: dropping the stale-artifact marker breaks the run-root guard coverage
+    kind: bad-value
+    target: artifact-stale-duplicate-fails
+    field: stale
+    value: 'yes'
+    expectedField: stale
+  - name: declaring a relative run root in the passing case breaks the run-root resolver
+    kind: bad-value
+    target: run-root-absolute-passes
+    field: runRootEnv
+    value: relative/run/root
+    expectedField: FAIRTEST_RUN_ROOT
+  - name: renaming the expected mounted exit code breaks the mounted CLI case
+    kind: bad-value
+    target: cli-target-unknown-fails
+    field: expectExitCode
+    value: 0
+    expectedField: exit
