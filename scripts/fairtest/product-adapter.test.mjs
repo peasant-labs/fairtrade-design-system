@@ -2,7 +2,10 @@
 // registry. Every behavioral row lives in product-target.testdata.yaml with
 // its required-name manifest; this module owns no row tables, only the fake
 // lifecycle driver, shape checks, and mutation wiring. It runs with node
-// --test and starts no service or runner.
+// --test. The stale-asset mutation case serves a throwaway dist/ copy on a
+// loopback port through the real static driver; no Storybook, Puppeteer, or
+// second browser oracle is started. Run pnpm build first so dist/ holds the
+// exact built app the stale case copies.
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
@@ -13,6 +16,7 @@ import { importFairtestSource } from '../fairtest-source.mjs'
 import { expectTheme } from '../journey/lib/assertions.mjs'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
 import { PRODUCT_ARTIFACT_CLASSES } from './product-producer.mjs'
+import { PRODUCT_MUTATION_NAMES, runProductMutation } from './product-mutations.mjs'
 import * as targets from './fairtrade-targets.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -22,7 +26,7 @@ const MANIFEST_REL = 'scripts/fairtest/product-target.testdata.manifest.yaml'
 const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs']
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
-const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta']
+const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta']
 const A11Y_POINTS = ['initial', 'after-action']
 const A11Y_IMPACTS = ['minor', 'moderate', 'serious', 'critical']
 const ROW_THEMES = ['dark', 'light']
@@ -115,6 +119,7 @@ function checkCaseShape(entry, index) {
       : ['name', 'check', 'expected', 'renderedAttribute', 'source', 'observedAtMs', ...tail],
     'project-inference': ['name', 'check', 'project', 'expectValid', 'expectedErrorContains'],
     'product-proof': ['name', 'check', 'rowTheme', 'identity', 'parts', 'themeObservation', 'initialSection', 'activeSectionId', 'action', 'omitPart', 'mounted', ...tail],
+    'product-mutation': ['name', 'check', 'mutation', 'boundary', 'expectValid', 'expectedErrorContains'],
     'wrapper-theme': entry.expectValid
       ? ['name', 'check', 'theme', 'renderedAttribute', 'expectValid']
       : ['name', 'check', 'theme', 'renderedAttribute', 'expectValid', 'expectedErrorContains'],
@@ -145,6 +150,14 @@ function checkCaseShape(entry, index) {
     }
     if ('stale' in entry && typeof entry.stale !== 'boolean') {
       throw new Error(`${CORPUS_REL}: case "${entry.name}" holds a non-boolean stale marker for field "stale" at path ${path}.stale; repair: set stale to true or remove it.`)
+    }
+  }
+  if (entry.check === 'product-mutation') {
+    if (!PRODUCT_MUTATION_NAMES.includes(/** @type {string} */ (entry.mutation))) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" names an unknown mutation ${JSON.stringify(entry.mutation)} for field "mutation" at path ${path}.mutation; repair: use one of ${PRODUCT_MUTATION_NAMES.join(', ')} for "mutation".`)
+    }
+    if (typeof entry.boundary !== 'string' || entry.boundary.trim().length === 0) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing its owning boundary for field "boundary" at path ${path}.boundary; repair: name the owning product boundary for "boundary".`)
     }
   }
 }
@@ -554,6 +567,19 @@ function runProductProofCase(entry) {
   }
 }
 
+/** @param {Record<string, unknown>} entry */
+async function runProductMutationCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  let message = null
+  try {
+    await runProductMutation(/** @type {string} */ (entry.mutation))
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  assert.ok(message, `${name}: named mutation passed instead of failing at ${entry.boundary}`)
+  expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+}
+
 /**
  * Build a fake tree handle that serves one canned attribute value and
  * records the selector read, so the compatibility wrapper is proven
@@ -697,6 +723,7 @@ const RUNNERS = {
   'theme-observation': runThemeObservationCase,
   'project-inference': runProjectInferenceCase,
   'product-proof': runProductProofCase,
+  'product-mutation': runProductMutationCase,
   'wrapper-theme': runWrapperThemeCase,
   'artifact-class': runArtifactClassCase,
   'a11y-baseline': runA11yBaselineCase,
@@ -999,6 +1026,8 @@ describe('journey compatibility and import resolution', () => {
       'scripts/fairtest/fairtrade-adapter.mjs',
       'scripts/fairtest/product-producer.mjs',
       'scripts/fairtest/product.journey.mjs',
+      'scripts/fairtest/product-mutations.mjs',
+      'scripts/fairtest/product-mutations.test.mjs',
       'scripts/fairtest/run-mounted.mjs',
       'playwright.fairtest.config.mjs',
     ]

@@ -1,0 +1,75 @@
+# Ownership inventory for every helper exported by scripts/journey/lib/.
+#
+# Exactly one owner per (file, symbol):
+# - browser-neutral-core-policy: pure values with no browser, DOM, runner, or
+#   app import. Only the two pinned constants qualify.
+# - app-owned-host-runtime: browser/DOM behavior, Playwright wiring, and pure
+#   app-side predicates with a single app-side owner. Browser code here is
+#   never duplicated into the private child package.
+# - compatibility-re-export: a re-export of a canonical pure value, never a
+#   redefinition. Value identity with the canonical file is asserted.
+#
+# The legacy `theme` fixture (project-name inference for the broad catalog)
+# rides with the `test` row: it is defined inside the extended test object,
+# not as a module export, so export membership cannot name it separately.
+# The row-scoped `resolveRowTheme` helper (explicit row key for Fairtest) is
+# its own row. Both paths are app-owned and documented as separate paths in
+# fixtures.mjs: neither silently replaces the other.
+expectedCaseCount: 14
+cases:
+  - name: helper-constants-frozen-epoch
+    file: determinism-constants.mjs
+    symbol: FROZEN_EPOCH_MS
+    owner: browser-neutral-core-policy
+  - name: helper-constants-prng-seed
+    file: determinism-constants.mjs
+    symbol: PRNG_SEED
+    owner: browser-neutral-core-policy
+  - name: helper-determinism-install
+    file: determinism.mjs
+    symbol: installDeterminism
+    owner: app-owned-host-runtime
+  - name: helper-determinism-frozen-epoch-reexport
+    file: determinism.mjs
+    symbol: FROZEN_EPOCH_MS
+    owner: compatibility-re-export
+  - name: helper-determinism-prng-seed-reexport
+    file: determinism.mjs
+    symbol: PRNG_SEED
+    owner: compatibility-re-export
+  - name: helper-assertions-axe-tags
+    file: assertions.mjs
+    symbol: DEFAULT_AXE_TAGS
+    owner: app-owned-host-runtime
+  - name: helper-assertions-scan-axe
+    file: assertions.mjs
+    symbol: scanAxe
+    owner: app-owned-host-runtime
+  - name: helper-assertions-serious-violations
+    file: assertions.mjs
+    symbol: seriousViolations
+    owner: app-owned-host-runtime
+  - name: helper-assertions-expect-theme
+    file: assertions.mjs
+    symbol: expectTheme
+    owner: app-owned-host-runtime
+  - name: helper-assertions-expect-computed-tokens
+    file: assertions.mjs
+    symbol: expectComputedTokens
+    owner: app-owned-host-runtime
+  - name: helper-fixtures-test
+    file: fixtures.mjs
+    symbol: test
+    owner: app-owned-host-runtime
+  - name: helper-fixtures-expect
+    file: fixtures.mjs
+    symbol: expect
+    owner: app-owned-host-runtime
+  - name: helper-fixtures-story-url
+    file: fixtures.mjs
+    symbol: storyUrl
+    owner: app-owned-host-runtime
+  - name: helper-fixtures-resolve-row-theme
+    file: fixtures.mjs
+    symbol: resolveRowTheme
+    owner: app-owned-host-runtime

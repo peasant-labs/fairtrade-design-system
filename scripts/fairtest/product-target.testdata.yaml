@@ -14,7 +14,14 @@
 # project-name inference rejection, the assembled product proof record
 # with its per-part and action negatives, and the journey compatibility
 # wrapper behavior.
-expectedCaseCount: 61
+#
+# The fourth family names the eight negative product mutations
+# (missing chrome/body/section/view, wrong theme, unregistered action,
+# cross-kind proof, stale served asset). Each names its owning boundary and
+# the diagnostic fragments the real producer path must fail with; the
+# executable runners live in product-mutations.mjs, proven browser-free
+# plus one real-DOM absence proof and one throwaway-copy stale-asset proof.
+expectedCaseCount: 69
 cases:
   - name: theme-row-dark-absent-passes
     check: theme-row
@@ -441,6 +448,54 @@ cases:
     mounted: false
     expectValid: false
     expectedErrorContains: ['"map"', '"analytics"', 'at path', 'repair:']
+  - name: mutation-missing-chrome-fails
+    check: product-mutation
+    mutation: missing-chrome
+    boundary: proof.chrome
+    expectValid: false
+    expectedErrorContains: ['chrome', 'at path', 'repair:']
+  - name: mutation-missing-body-fails
+    check: product-mutation
+    mutation: missing-body
+    boundary: proof.body
+    expectValid: false
+    expectedErrorContains: ['body', 'at path', 'repair:']
+  - name: mutation-missing-section-fails
+    check: product-mutation
+    mutation: missing-section
+    boundary: proof.activeSection
+    expectValid: false
+    expectedErrorContains: ['activeSection', 'at path', 'repair:']
+  - name: mutation-missing-view-fails
+    check: product-mutation
+    mutation: missing-view
+    boundary: proof.view
+    expectValid: false
+    expectedErrorContains: ['view', 'at path', 'repair:']
+  - name: mutation-wrong-theme-fails
+    check: product-mutation
+    mutation: wrong-theme
+    boundary: theme.observed
+    expectValid: false
+    expectedErrorContains: ['"light"', '"dark"', 'at path', 'repair:']
+  - name: mutation-unregistered-action-fails
+    check: product-mutation
+    mutation: unregistered-action
+    boundary: adapter.action
+    expectValid: false
+    expectedErrorContains: ['select-changes-section', 'at path', 'repair:']
+  - name: mutation-cross-kind-proof-fails
+    check: product-mutation
+    mutation: cross-kind-proof
+    boundary: proof.identity
+    expectValid: false
+    expectedErrorContains: ['identity', 'at path', 'repair:']
+  - name: mutation-stale-served-asset-fails
+    check: product-mutation
+    mutation: stale-served-asset
+    boundary: provenance.assetDigests
+    expectValid: false
+    expectedErrorContains: ['assetDigests', 'at path', 'repair:']
   - name: wrapper-dark-absent-passes
     check: wrapper-theme
     theme: dark
