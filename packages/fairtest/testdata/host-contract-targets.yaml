@@ -1,0 +1,146 @@
+# Host-contract target declarations and lifecycle traces. Kinds, identities,
+# capabilities, names, clocks, and stages are synthetic caller-owned test
+# data. No runner, route, selector, or product meaning is pinned here.
+expectedCaseCount: 17
+cases:
+  - name: product target with full capabilities passes
+    check: target-product
+    declaration:
+      kind: product
+      identity: {kind: product, id: product-target-a, createdAtMs: 1000}
+      capabilities: [observe-chrome, observe-body, observe-route, observe-section, observe-view, observe-theme, perform-action]
+      fixtures: [synthetic-fixture-a, synthetic-fixture-b]
+      actions: [synthetic-action-a]
+    expectValid: true
+    expectFrozen: true
+  - name: product target with required capabilities only passes
+    check: target-product
+    declaration:
+      kind: product
+      identity: {kind: product, id: product-target-b, createdAtMs: 1000}
+      capabilities: [observe-chrome, observe-body, observe-route, observe-section, observe-view, observe-theme]
+      fixtures: [synthetic-fixture-a]
+      actions: []
+    expectValid: true
+    expectFrozen: true
+  - name: component target with interaction capability passes
+    check: target-component
+    declaration:
+      kind: component
+      identity: {kind: component, id: component-target-a, createdAtMs: 1000}
+      capabilities: [observe-root, observe-interaction, observe-theme, perform-action]
+      fixtures: [synthetic-fixture-a]
+      actions: [synthetic-action-a]
+    expectValid: true
+    expectFrozen: true
+  - name: component target minimal passes
+    check: target-component
+    declaration:
+      kind: component
+      identity: {kind: component, id: component-target-b, createdAtMs: 2000}
+      capabilities: [observe-root, observe-theme]
+      fixtures: [synthetic-fixture-a]
+      actions: []
+    expectValid: true
+    expectFrozen: true
+  - name: product declaration with component identity fails
+    check: target-product
+    declaration:
+      kind: product
+      identity: {kind: component, id: component-target-a, createdAtMs: 1000}
+      capabilities: [observe-chrome, observe-body, observe-route, observe-section, observe-view, observe-theme]
+      fixtures: [synthetic-fixture-a]
+      actions: []
+    expectValid: false
+    expectedErrorContains: ["identity", "at path", "repair:"]
+  - name: component declaration with product-only capability fails
+    check: target-component
+    declaration:
+      kind: component
+      identity: {kind: component, id: component-target-c, createdAtMs: 1000}
+      capabilities: [observe-root, observe-theme, observe-chrome]
+      fixtures: [synthetic-fixture-a]
+      actions: []
+    expectValid: false
+    expectedErrorContains: ["observe-chrome", "at path", "repair:"]
+  - name: product declaration with unknown capability fails
+    check: target-product
+    declaration:
+      kind: product
+      identity: {kind: product, id: product-target-c, createdAtMs: 1000}
+      capabilities: [observe-chrome, observe-body, observe-route, observe-section, observe-view, observe-theme, invented-capability]
+      fixtures: [synthetic-fixture-a]
+      actions: []
+    expectValid: false
+    expectedErrorContains: ["invented-capability", "at path", "repair:"]
+  - name: product declaration missing a required capability fails
+    check: target-product
+    declaration:
+      kind: product
+      identity: {kind: product, id: product-target-d, createdAtMs: 1000}
+      capabilities: [observe-chrome, observe-body, observe-section, observe-view, observe-theme]
+      fixtures: [synthetic-fixture-a]
+      actions: []
+    expectValid: false
+    expectedErrorContains: ["observe-route", "at path", "repair:"]
+  - name: declaration with empty capabilities fails
+    check: target-product
+    declaration:
+      kind: product
+      identity: {kind: product, id: product-target-e, createdAtMs: 1000}
+      capabilities: []
+      fixtures: [synthetic-fixture-a]
+      actions: []
+    expectValid: false
+    expectedErrorContains: ["capabilities", "at path", "repair:"]
+  - name: declaration with malformed identity fails
+    check: target-product
+    declaration:
+      kind: product
+      identity: {kind: product, id: Product-Target-A, createdAtMs: 1000}
+      capabilities: [observe-chrome, observe-body, observe-route, observe-section, observe-view, observe-theme]
+      fixtures: [synthetic-fixture-a]
+      actions: []
+    expectValid: false
+    expectedErrorContains: ["id", "at path", "repair:"]
+  - name: declaration with unknown field fails
+    check: target-product
+    declaration:
+      kind: product
+      identity: {kind: product, id: product-target-f, createdAtMs: 1000}
+      capabilities: [observe-chrome, observe-body, observe-route, observe-section, observe-view, observe-theme]
+      fixtures: [synthetic-fixture-a]
+      actions: []
+      unlisted: unlisted-value
+    expectValid: false
+    expectedErrorContains: ["unlisted", "at path", "repair:"]
+  - name: full lifecycle trace passes
+    check: lifecycle
+    trace: {stages: [declared, acquired, ready, released]}
+    expectValid: true
+    expectFrozen: true
+  - name: lifecycle prefix trace passes
+    check: lifecycle
+    trace: {stages: [declared, acquired]}
+    expectValid: true
+    expectFrozen: true
+  - name: lifecycle with unknown stage fails
+    check: lifecycle
+    trace: {stages: [declared, invented-stage]}
+    expectValid: false
+    expectedErrorContains: ["invented-stage", "at path", "repair:"]
+  - name: lifecycle moving backward fails
+    check: lifecycle
+    trace: {stages: [declared, acquired, declared]}
+    expectValid: false
+    expectedErrorContains: ["declared", "at path", "repair:"]
+  - name: lifecycle skipping the opening stage fails
+    check: lifecycle
+    trace: {stages: [acquired, ready]}
+    expectValid: false
+    expectedErrorContains: ["acquired", "at path", "repair:"]
+  - name: lifecycle with empty stages fails
+    check: lifecycle
+    trace: {stages: []}
+    expectValid: false
+    expectedErrorContains: ["stages", "at path", "repair:"]

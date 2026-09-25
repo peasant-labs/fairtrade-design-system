@@ -1,0 +1,79 @@
+# Required-name inventory and executable mutations for host-contract-targets.yaml.
+expectedCaseCount: 17
+requiredCaseNames:
+  - product target with full capabilities passes
+  - product target with required capabilities only passes
+  - component target with interaction capability passes
+  - component target minimal passes
+  - product declaration with component identity fails
+  - component declaration with product-only capability fails
+  - product declaration with unknown capability fails
+  - product declaration missing a required capability fails
+  - declaration with empty capabilities fails
+  - declaration with malformed identity fails
+  - declaration with unknown field fails
+  - full lifecycle trace passes
+  - lifecycle prefix trace passes
+  - lifecycle with unknown stage fails
+  - lifecycle moving backward fails
+  - lifecycle skipping the opening stage fails
+  - lifecycle with empty stages fails
+expectedMutationCount: 9
+requiredMutationNames:
+  - removing the full-capability record breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the check discriminator breaks the case shape
+  - deleting the declaration breaks the case shape
+  - adding an unknown case field breaks exact membership
+  - presenting a component kind as a product breaks the closed vocabulary
+  - inventing a capability breaks the closed vocabulary
+  - presenting a product identity as a component breaks the identity branch
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing the full-capability record breaks the required inventory
+    kind: delete-record
+    target: product target with full capabilities passes
+    expectedField: product target with full capabilities passes
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: component target minimal passes
+    expectedField: component target minimal passes
+  - name: renaming the check discriminator breaks the case shape
+    kind: rename-field
+    target: product target with required capabilities only passes
+    field: check
+    newField: operation
+    expectedField: check
+  - name: deleting the declaration breaks the case shape
+    kind: delete-field
+    target: component target with interaction capability passes
+    field: declaration
+    expectedField: declaration
+  - name: adding an unknown case field breaks exact membership
+    kind: unknown-field
+    target: product target with full capabilities passes
+    field: unlisted
+    value: unlisted-value
+    expectedField: unlisted
+  - name: presenting a component kind as a product breaks the closed vocabulary
+    kind: bad-value
+    target: product target with required capabilities only passes
+    field: declaration.kind
+    value: component
+    expectedField: kind
+  - name: inventing a capability breaks the closed vocabulary
+    kind: bad-value
+    target: product target with full capabilities passes
+    field: declaration.capabilities
+    value: [observe-chrome, observe-body, observe-route, observe-section, observe-view, observe-theme, invented-capability]
+    expectedField: invented-capability
+  - name: presenting a product identity as a component breaks the identity branch
+    kind: bad-value
+    target: component target minimal passes
+    field: declaration.identity.kind
+    value: product
+    expectedField: identity
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document
