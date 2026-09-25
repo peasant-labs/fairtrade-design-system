@@ -155,7 +155,8 @@
     "journey": "playwright test --config playwright.journey.config.mjs",
     "journey:ci": "JOURNEY_HTML=0 playwright test --config playwright.journey.config.mjs",
     "test:fairtest:promotion": "node scripts/assert-test-promotion.mjs",
-    "test:fairtest:inventory": "node scripts/fairtest-runner-inventory.mjs"
+    "test:fairtest:inventory": "node scripts/fairtest-runner-inventory.mjs",
+    "test:fairtest:boundary": "node scripts/assert-fairtest-boundary.mjs"
   },
   "dependencies": {
     "@peasant-labs/schema": "0.20.0",

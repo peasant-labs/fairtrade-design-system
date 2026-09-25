@@ -1,0 +1,55 @@
+# Required-name inventory and executable mutations for evidence-contract.yaml.
+expectedCaseCount: 7
+requiredCaseNames:
+  - bound-record-valid
+  - bound-record-bad-identity
+  - bound-record-identity-mismatch
+  - bound-record-bad-digest
+  - duplicate-repeat-in-scope
+  - fresh-within-ceiling
+  - fresh-stale-clock
+expectedMutationCount: 7
+requiredMutationNames:
+  - removing the bound-record-valid record breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the check discriminator breaks the case shape
+  - deleting the record breaks the case shape
+  - adding an unknown case field breaks exact membership
+  - inventing a check kind breaks the closed vocabulary
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing the bound-record-valid record breaks the required inventory
+    kind: delete-record
+    target: bound-record-valid
+    expectedField: bound-record-valid
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: bound-record-valid
+    expectedField: bound-record-valid
+  - name: renaming the check discriminator breaks the case shape
+    kind: rename-field
+    target: fresh-within-ceiling
+    field: check
+    newField: kind
+    expectedField: check
+  - name: deleting the record breaks the case shape
+    kind: delete-field
+    target: bound-record-valid
+    field: record
+    expectedField: record
+  - name: adding an unknown case field breaks exact membership
+    kind: unknown-field
+    target: bound-record-valid
+    field: theme
+    value: light
+    expectedField: theme
+  - name: inventing a check kind breaks the closed vocabulary
+    kind: bad-value
+    target: fresh-stale-clock
+    field: check
+    value: invented-check
+    expectedField: check
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document

@@ -14,7 +14,7 @@
   "scripts": {
     "test:adapter": "node --test test/host-contract.test.mjs",
     "test:bridge-contract": "node --test test/bridge-contract.test.mjs",
-    "test:core": "node --test test/core.test.mjs",
+    "test:core": "node --test test/core.test.mjs test/isolation.test.mjs",
     "test:evidence": "node --test test/evidence.test.mjs"
   }
 }

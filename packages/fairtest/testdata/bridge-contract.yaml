@@ -1,0 +1,48 @@
+# Bridge contract cases. Identities name local or process participants only.
+# Declarations pair a kind with a kind-matched identity and a capability
+# inventory. Readiness reports a caller-owned host note plus a numeric
+# channel. Cleanup receipts name a closed stop signal and explicit reap and
+# release flags. Host notes are synthetic; no endpoint literal, address, or
+# runner name appears here.
+expectedCaseCount: 9
+cases:
+  - name: local-identity-valid
+    check: identity
+    identity: {kind: "local", id: "bridge-local-a", createdAtMs: 1000}
+    expectValid: true
+  - name: process-identity-valid
+    check: identity
+    identity: {kind: "process", id: "bridge-process-a", createdAtMs: 2000}
+    expectValid: true
+  - name: identity-bad-kind
+    check: identity
+    identity: {kind: "remote", id: "bridge-remote-a", createdAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["bridge kind", "at path", "repair:"]
+  - name: declaration-valid
+    check: declaration
+    declaration: {kind: "local", identity: {kind: "local", id: "bridge-local-a", createdAtMs: 1000}, capabilities: ["report-readiness", "cleanup-process"]}
+    expectValid: true
+  - name: declaration-cross-kind
+    check: declaration
+    declaration: {kind: "local", identity: {kind: "process", id: "bridge-process-a", createdAtMs: 2000}, capabilities: ["report-readiness", "cleanup-process"]}
+    expectValid: false
+    expectedErrorContains: ["bridge.identity.kind", "at path", "repair:"]
+  - name: declaration-missing-capability
+    check: declaration
+    declaration: {kind: "process", identity: {kind: "process", id: "bridge-process-a", createdAtMs: 2000}, capabilities: ["describe-target"]}
+    expectValid: false
+    expectedErrorContains: ["capabilities", "at path", "repair:"]
+  - name: readiness-valid
+    check: readiness
+    readiness: {identityId: "bridge-local-a", host: "synthetic-loopback", port: 4311, ready: true, observedAtMs: 3000}
+    expectValid: true
+  - name: readiness-bad-channel
+    check: readiness
+    readiness: {identityId: "bridge-local-a", host: "synthetic-loopback", port: 0, ready: true, observedAtMs: 3000}
+    expectValid: false
+    expectedErrorContains: ["port", "at path", "repair:"]
+  - name: cleanup-valid
+    check: cleanup
+    cleanup: {identityId: "bridge-process-a", signal: "terminated", reaped: true, portReleased: true, observedAtMs: 4000}
+    expectValid: true

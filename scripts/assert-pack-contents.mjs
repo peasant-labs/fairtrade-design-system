@@ -11,6 +11,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import YAML from 'yaml'
 import { SURFACE_BUNDLES, findForeignNamespaces } from './surface-namespaces.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -62,6 +63,32 @@ const missing = [...targets].filter((t) => !packed.has(t))
 if (missing.length) problems.push(`exports targets absent from the packed tarball: ${missing.join(', ')}`)
 if (fileCount < FLOOR) {
   problems.push(`packed fileCount ${fileCount} is below the floor ${FLOOR} — dist/lib is likely missing (the 0.0.1 dist-less failure class)`)
+}
+
+// ── Fairtest packed-path manifest (S2 source-only boundary) ────────────────
+// The private workspace child is source-only: no Fairtest path may reach the
+// published tarball. The forbidden fragments are owned by the named fixture
+// scripts/testdata/fairtest-boundary.yaml (single source with the boundary
+// guard); this check fails closed when the fixture is missing or malformed,
+// and also rejects any packed path under packages/ outright.
+let fairtestFragments = []
+try {
+  const boundary = YAML.parse(readFileSync(join(ROOT, 'scripts', 'testdata', 'fairtest-boundary.yaml'), 'utf8'))
+  if (!boundary || !Array.isArray(boundary.forbiddenPackFragments) || boundary.forbiddenPackFragments.length === 0) {
+    throw new Error('forbiddenPackFragments must be a non-empty list')
+  }
+  fairtestFragments = boundary.forbiddenPackFragments
+} catch (err) {
+  problems.push(`Fairtest pack manifest unreadable: ${err?.message ?? err} — repair: restore scripts/testdata/fairtest-boundary.yaml`)
+}
+const fairtestLeaks = [...packed].filter((path) => path.startsWith('packages/') || fairtestFragments.some((fragment) => path.includes(fragment)))
+if (fairtestLeaks.length) {
+  problems.push(`packed tarball carries Fairtest paths: ${fairtestLeaks.join(', ')} — the private child must stay source-only and unpacked`)
+}
+const staticSurface = [...targets, ...(pkg.files ?? [])]
+const staticLeaks = staticSurface.filter((path) => typeof path === 'string' && (/fairtest/i.test(path) || String(path).startsWith('packages/')))
+if (staticLeaks.length) {
+  problems.push(`package surface references Fairtest paths: ${staticLeaks.join(', ')} — keep exports and files free of the private child`)
 }
 
 if (problems.length) {
@@ -187,5 +214,5 @@ if (isoProblems.length) {
 }
 
 console.log(
-  `pack-content assertion: all ${targets.size} exports targets present in the tarball; fileCount ${fileCount} (floor ${FLOOR}); per-surface bundle isolation OK.`,
+  `pack-content assertion: all ${targets.size} exports targets present in the tarball; fileCount ${fileCount} (floor ${FLOOR}); per-surface bundle isolation OK; no Fairtest path in ${packed.size} packed files (${fairtestFragments.length} forbidden fragments).`,
 )
