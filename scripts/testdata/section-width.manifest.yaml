@@ -25,6 +25,19 @@ sourceFiles:
   - src/DocSections.jsx
   - src/ComponentSections.jsx
   - src/sections-react
+usageCases:
+  app-single-band:
+    path: src/App.jsx
+    count: 1
+  docs-band-uses:
+    path: src/DocSections.jsx
+    count: 5
+  component-band-uses:
+    path: src/ComponentSections.jsx
+    count: 6
+  section-band-uses:
+    path: src/sections-react
+    count: 21
 mountedCases:
   - section-width-dark
   - section-width-light

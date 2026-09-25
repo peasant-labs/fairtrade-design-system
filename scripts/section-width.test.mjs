@@ -184,12 +184,12 @@ export function validateSectionWidthContract({ root = ROOT, fixture, manifest } 
             name,
             file: expected.path,
             diagnostic: GENERIC_DIAGNOSTIC,
-            observed: `${observed} section.band use(s)`,
-            expected: `${expected.count} section.band use(s)`,
+            observed: `${expected.name}: ${observed} section.band use(s)`,
+            expected: `${expected.name}: ${expected.count} section.band use(s)`,
             remedy: 'retain the existing explicit-band usage grounding; this correction does not migrate JSX',
           })
         }
-        results.push(`${name}: existing usage remains 1 + 5 + 6 + 21 across the named owners`)
+        results.push(`${name}: ${testCase.expectedUsage.map((expected) => expected.name).join(', ')} retain their named usage inventories`)
         break
       }
       default:
@@ -210,7 +210,7 @@ function validateInventory(fixture, manifest) {
   assertObject(fixture, 'section-width fixture root')
   assertObject(manifest, 'section-width manifest root')
   assertExactKeys(fixture, ['schema', 'sourceCases', 'mountedCases', 'geometry', 'mutationCases'], 'section-width fixture')
-  assertExactKeys(manifest, ['schema', 'sourceCases', 'sourceFiles', 'mountedCases', 'mutationCases'], 'section-width manifest')
+  assertExactKeys(manifest, ['schema', 'sourceCases', 'sourceFiles', 'usageCases', 'mountedCases', 'mutationCases'], 'section-width manifest')
   assert.equal(fixture.schema, 'fairtrade-section-width-v1')
   assert.equal(manifest.schema, 'fairtrade-section-width-manifest-v1')
   assertObject(fixture.sourceCases, 'section-width sourceCases')
@@ -218,6 +218,19 @@ function validateInventory(fixture, manifest) {
   assert.deepEqual(Object.keys(fixture.sourceCases).sort(), Object.keys(manifest.sourceCases).sort(), 'section-width source cases differ from the independent name manifest')
   for (const [name, testCase] of Object.entries(fixture.sourceCases)) {
     if (testCase.contract !== manifest.sourceCases[name]) throw new Error(`section-width source case ${JSON.stringify(name)} contract differs between fixture (${JSON.stringify(testCase.contract)}) and independent manifest (${JSON.stringify(manifest.sourceCases[name])})`)
+  }
+  const usageCase = fixture.sourceCases['existing-band-usage-grounded']
+  assert.ok(usageCase && Array.isArray(usageCase.expectedUsage), 'section-width usage fixture must name its expected owners')
+  assertObject(manifest.usageCases, 'section-width manifest usageCases')
+  const usageNames = usageCase.expectedUsage.map((expected) => expected.name)
+  assertUnique(usageNames, 'section-width usage owner names')
+  assert.deepEqual(usageNames.slice().sort(), Object.keys(manifest.usageCases).sort(), 'section-width usage owners differ from the independent name manifest')
+  for (const expected of usageCase.expectedUsage) {
+    assertExactKeys(expected, ['name', 'path', 'count'], `section-width usage owner ${expected.name}`)
+    const declared = manifest.usageCases[expected.name]
+    assertExactKeys(declared, ['path', 'count'], `section-width manifest usage owner ${expected.name}`)
+    assert.equal(expected.path, declared.path, `section-width usage owner ${expected.name} path differs from the independent manifest`)
+    assert.equal(expected.count, declared.count, `section-width usage owner ${expected.name} count differs from the independent manifest`)
   }
   assertUnique(Object.keys(fixture.sourceCases), 'section-width source case names')
   assertUnique(Object.keys(fixture.mountedCases), 'section-width mounted case names')
