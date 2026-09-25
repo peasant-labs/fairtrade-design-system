@@ -1,0 +1,114 @@
+# Required-name manifest for the Fairtest runner inventory.
+# Every command, runner, and guidance path below must appear exactly once in
+# scripts/testdata/fairtest-runner-inventory.yaml. Mutations name executable
+# stale-guidance cases; combinatorial cases live here, never inline.
+expectedCommandCount: 17
+requiredCommandNames:
+  - fairtest dev
+  - test:adapter
+  - test:bridge-contract
+  - test:core
+  - test:evidence
+  - test:fairtest:compat
+  - test:fairtest:init
+  - test:fairtest:inventory
+  - test:fairtest:list:ci
+  - test:fairtest:list:local
+  - test:fairtest:mounted
+  - test:fairtest:preflight
+  - test:fairtest:process
+  - test:fairtest:promotion
+  - test:fairtest:select
+  - test:fairtest:selection-receipt
+  - test:fairtest:verify
+expectedRunnerCount: 4
+requiredRunnerNames:
+  - agent-browser-optional-attach
+  - fairtest-mounted-rows
+  - playwright-required-catalog
+  - puppeteer-focused-compat
+expectedGuidanceCount: 5
+requiredGuidancePaths:
+  - .github/workflows/ci.yml
+  - AGENTS.md
+  - CONTRIBUTING.md
+  - docs/testing/test-promotion.md
+  - scripts/journey/README.md
+expectedMutationCount: 12
+requiredMutationNames:
+  - deleted-required-command
+  - removed-command-owner
+  - stale-command-name
+  - duplicate-command-name
+  - renamed-owner-field
+  - unknown-command-field
+  - legacy-puppeteer-catalog
+  - stale-two-project-model
+  - stale-project-name-theme
+  - agent-browser-as-ci-oracle
+  - unknown-guidance-file
+  - trailing-document
+mutations:
+  - name: deleted-required-command
+    kind: delete-record
+    target: commands:test:fairtest:inventory
+    expectedField: test:fairtest:inventory
+  - name: removed-command-owner
+    kind: delete-field
+    target: commands:test:fairtest:verify
+    field: owner
+    expectedField: owner
+  - name: stale-command-name
+    kind: stale-name
+    target: commands:test:fairtest:list:ci
+    value: test:fairtest:list:all
+    expectedField: test:fairtest:list:all
+  - name: duplicate-command-name
+    kind: duplicate-name
+    target: commands:test:fairtest:mounted
+    expectedField: test:fairtest:mounted
+  - name: renamed-owner-field
+    kind: rename-field
+    target: commands:test:fairtest:promotion
+    field: owner
+    newField: ownerName
+    expectedField: owner
+  - name: unknown-command-field
+    kind: unknown-field
+    target: commands:test:fairtest:promotion
+    field: timeout
+    value: 60
+    expectedField: timeout
+  - name: legacy-puppeteer-catalog
+    kind: bad-enum
+    target: runners:playwright-required-catalog
+    field: model
+    value: puppeteer-full-catalog
+    expectedField: model
+  - name: stale-two-project-model
+    kind: bad-enum
+    target: runners:fairtest-mounted-rows
+    field: model
+    value: two-project
+    expectedField: model
+  - name: stale-project-name-theme
+    kind: bad-enum
+    target: runners:fairtest-mounted-rows
+    field: themeBinding
+    value: project-name
+    expectedField: themeBinding
+  - name: agent-browser-as-ci-oracle
+    kind: bad-enum
+    target: runners:agent-browser-optional-attach
+    field: ciOracle
+    value: true
+    expectedField: ciOracle
+  - name: unknown-guidance-file
+    kind: stale-name
+    target: guidance:.github/workflows/ci.yml
+    value: .github/workflows/fairtest-ci.yml
+    expectedField: .github/workflows/fairtest-ci.yml
+  - name: trailing-document
+    kind: trailing-document
+    target: document
+    expectedField: document[1]

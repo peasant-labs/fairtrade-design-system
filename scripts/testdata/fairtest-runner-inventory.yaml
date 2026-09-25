@@ -1,0 +1,134 @@
+# Required Fairtest command, runner, and guidance inventory.
+# Static, deterministic, and browser-free. This file declares the command names,
+# runner sources, and contributor guidance that later package and CI work must
+# implement. It starts no service and requires no browser.
+# Child contract commands run as pnpm --filter @peasant-labs/fairtest <name>.
+# The local bridge command never enters required CI.
+commands:
+  - name: test:fairtest:promotion
+    invocation: pnpm test:fairtest:promotion
+    owner: promotion-guardrails
+    stage: browser-free
+    runner: none
+  - name: test:core
+    invocation: pnpm --filter @peasant-labs/fairtest test:core
+    owner: fairtest-core
+    stage: browser-free
+    runner: child-contract
+  - name: test:adapter
+    invocation: pnpm --filter @peasant-labs/fairtest test:adapter
+    owner: fairtest-core
+    stage: browser-free
+    runner: child-contract
+  - name: test:evidence
+    invocation: pnpm --filter @peasant-labs/fairtest test:evidence
+    owner: fairtest-core
+    stage: browser-free
+    runner: child-contract
+  - name: test:bridge-contract
+    invocation: pnpm --filter @peasant-labs/fairtest test:bridge-contract
+    owner: fairtest-core
+    stage: browser-free
+    runner: child-contract
+  - name: test:fairtest:init
+    invocation: pnpm test:fairtest:init
+    owner: evidence-ci
+    stage: pre-service
+    runner: none
+  - name: test:fairtest:inventory
+    invocation: pnpm test:fairtest:inventory
+    owner: promotion-guardrails
+    stage: pre-service
+    runner: none
+  - name: test:fairtest:list:ci
+    invocation: pnpm test:fairtest:list:ci
+    owner: evidence-ci
+    stage: pre-service
+    runner: none
+  - name: test:fairtest:list:local
+    invocation: pnpm test:fairtest:list:local
+    owner: evidence-ci
+    stage: pre-service
+    runner: none
+  - name: test:fairtest:select
+    invocation: pnpm test:fairtest:select
+    owner: evidence-ci
+    stage: pre-service
+    runner: none
+  - name: test:fairtest:selection-receipt
+    invocation: pnpm test:fairtest:selection-receipt
+    owner: evidence-ci
+    stage: pre-service
+    runner: none
+  - name: test:fairtest:process
+    invocation: pnpm test:fairtest:process
+    owner: local-bridge
+    stage: process
+    runner: process-only
+  - name: test:fairtest:mounted
+    invocation: pnpm test:fairtest:mounted
+    owner: product-proof
+    stage: mounted
+    runner: playwright-one-project
+  - name: test:fairtest:verify
+    invocation: pnpm test:fairtest:verify
+    owner: evidence-ci
+    stage: verify
+    runner: none
+  - name: test:fairtest:preflight
+    invocation: pnpm test:fairtest:preflight
+    owner: evidence-ci
+    stage: verify
+    runner: none
+  - name: test:fairtest:compat
+    invocation: pnpm test:fairtest:compat
+    owner: evidence-ci
+    stage: verify
+    runner: none
+  - name: fairtest dev
+    invocation: pnpm fairtest dev -- --target=product
+    owner: local-bridge
+    stage: local-only
+    runner: local-bridge
+# Runner and documentation sources. Playwright is the required repeatable
+# runner. Puppeteer stays focused compatibility and local evidence only.
+# The optional attach target is local exploration only, never a CI oracle.
+runners:
+  - name: fairtest-mounted-rows
+    owner: product-proof
+    model: one-project-row-scoped
+    themeBinding: row-key
+    ciOracle: true
+  - name: playwright-required-catalog
+    owner: existing
+    model: existing-catalog
+    themeBinding: none
+    ciOracle: true
+  - name: puppeteer-focused-compat
+    owner: evidence-ci
+    model: focused-compat
+    themeBinding: none
+    ciOracle: false
+  - name: agent-browser-optional-attach
+    owner: local-bridge
+    model: local-attach
+    themeBinding: none
+    ciOracle: false
+# Tracked contributor guidance. Only these paths carry runner, command, or
+# workflow meaning for this inventory. Any other guidance file is unknown.
+guidance:
+  - path: docs/testing/test-promotion.md
+    owner: promotion-guardrails
+    topic: promotion
+  - path: scripts/journey/README.md
+    owner: promotion-guardrails
+    topic: runner-inventory
+  - path: AGENTS.md
+    owner: promotion-guardrails
+    topic: terminology
+  - path: CONTRIBUTING.md
+    owner: promotion-guardrails
+    topic: terminology
+  - path: .github/workflows/ci.yml
+    owner: evidence-ci
+    topic: workflow
