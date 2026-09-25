@@ -1,5 +1,5 @@
 # Required-name inventory and executable mutations for core-measurement.yaml.
-expectedCaseCount: 7
+expectedCaseCount: 9
 requiredCaseNames:
   - strict caller policy passes ample sample
   - same sample fails stricter caller floor
@@ -7,13 +7,17 @@ requiredCaseNames:
   - policy rejects version drift
   - measurement rejects unknown field
   - age ceiling fails stale observation
+  - ceiling fails measurement without observation clocks
+  - fresh observation passes age ceiling
   - measurement rejects malformed digest
-expectedMutationCount: 7
+expectedMutationCount: 9
 requiredMutationNames:
   - removing the lenient-policy record breaks the required inventory
   - duplicating a case name breaks uniqueness
   - renaming the policy field breaks the case shape
   - deleting the measurement breaks the case shape
+  - deleting the observation clocks breaks the caller ceiling
+  - flipping the passing verdict breaks the behavioral outcome
   - adding an unknown case field breaks exact membership
   - inventing an outcome value breaks case validation
   - appending a trailing document breaks single-document loading
@@ -37,6 +41,17 @@ mutations:
     target: age ceiling fails stale observation
     field: measurement
     expectedField: measurement
+  - name: deleting the observation clocks breaks the caller ceiling
+    kind: delete-field
+    target: fresh observation passes age ceiling
+    field: measurement.observedAtMs
+    expectedField: observedAtMs
+  - name: flipping the passing verdict breaks the behavioral outcome
+    kind: bad-value
+    target: strict caller policy passes ample sample
+    field: expectPass
+    value: false
+    expectedField: expectPass
   - name: adding an unknown case field breaks exact membership
     kind: unknown-field
     target: strict caller policy passes ample sample

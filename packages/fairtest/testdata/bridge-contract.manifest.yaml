@@ -10,12 +10,13 @@ requiredCaseNames:
   - readiness-valid
   - readiness-bad-channel
   - cleanup-valid
-expectedMutationCount: 7
+expectedMutationCount: 8
 requiredMutationNames:
   - removing the declaration-valid record breaks the required inventory
   - duplicating a case name breaks uniqueness
   - renaming the check discriminator breaks the case shape
   - deleting the declaration breaks the case shape
+  - flipping the readiness channel breaks the behavioral runner
   - adding an unknown case field breaks exact membership
   - inventing a check kind breaks the closed vocabulary
   - appending a trailing document breaks single-document loading
@@ -39,6 +40,12 @@ mutations:
     target: declaration-valid
     field: declaration
     expectedField: declaration
+  - name: flipping the readiness channel breaks the behavioral runner
+    kind: bad-value
+    target: readiness-valid
+    field: readiness.port
+    value: 0
+    expectedField: port
   - name: adding an unknown case field breaks exact membership
     kind: unknown-field
     target: local-identity-valid

@@ -366,8 +366,10 @@ function runMeasurementCase(entry) {
     return
   }
   assert.ok(!('expectMeasurementErrorContains' in entry), `${name}: invalid measurement passed validation`)
-  assert.equal(verdict.pass, entry.expectPass, `${name}: verdict mismatch: ${JSON.stringify(verdict.failures)}`)
   assert.ok(Object.isFrozen(verdict), `${name}: verdict must be frozen`)
+  if (verdict.pass !== entry.expectPass) {
+    throw new Error(`${name}: verdict mismatch for field "expectPass" at path case.expectPass; got pass=${JSON.stringify(verdict.pass)} with failures [${verdict.failures.join('; ')}]; repair: restore the expected behavioral outcome in ${name}.`)
+  }
   if (entry.expectPass) {
     assert.deepEqual(verdict.failures, [], `${name}: passing verdict must list no failures`)
   } else {
@@ -529,16 +531,20 @@ for (const family of FAMILIES) {
     const source = readSource(family.corpus)
     const manifest = readFamily(family.manifest)
     const parsed = readFamily(family.corpus)
-    const validate = VALIDATORS[family.id]
+    const validateShape = VALIDATORS[family.id]
     const runCase = RUNNERS[family.id]
+    const validate = (value) => {
+      validateShape(value)
+      for (const entry of /** @type {Record<string, unknown>[]} */ (value.cases)) runCase(entry)
+    }
 
     it('holds a valid manifest inventory', () => {
       validateManifest(manifest, family.manifest)
     })
 
     it('holds exact fields and required names', () => {
-      validate(parsed)
-      validateFamily(/** @type {Record<string, unknown>[]} */ (parsed.cases), manifest, family.corpus, (entry) => validate({ ...parsed, cases: [entry], expectedCaseCount: 1 }))
+      validateShape(parsed)
+      validateFamily(/** @type {Record<string, unknown>[]} */ (parsed.cases), manifest, family.corpus, (entry) => validateShape({ ...parsed, cases: [entry], expectedCaseCount: 1 }))
     })
 
     it('executes every behavioral case', () => {
@@ -584,12 +590,21 @@ describe('core structural units', () => {
 
 // ── isolation: imports, escapes, leakage ─────────────────────────────────────
 
+/** @param {string} text */
+function stripComments(text) {
+  return text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '')
+}
+
 describe('core isolation', () => {
   it('declares every static import', () => {
     const allowedBare = new Set([...DECLARED_DEPS])
     for (const entry of coreSourceFiles()) {
       const text = readFileSync(new URL(entry, CORE_DIR), 'utf8')
-      assert.ok(!text.includes('require('), `${entry}: require() calls are not allowed in neutral core`)
+      const code = stripComments(text)
+      assert.ok(!code.includes('require('), `${entry}: require() calls are not allowed in neutral core`)
+      assert.ok(!/import\s*\(/.test(code), `${entry}: dynamic import() is not allowed in neutral core`)
+      const sideEffect = [...code.matchAll(/^\s*import\s*['"]([^'"]+)['"]/gm)].map((match) => match[1])
+      assert.deepEqual(sideEffect, [], `${entry}: side-effect imports are not allowed in neutral core; got [${sideEffect.join(', ')}]`)
       for (const match of text.matchAll(/(?:import|export)[^'"]*from\s*['"]([^'"]+)['"]/g)) {
         const specifier = match[1]
         if (specifier.startsWith('node:')) continue
@@ -636,6 +651,21 @@ describe('core isolation', () => {
       assert.ok(message.includes(snippet), `probe "${probe.name}" diagnostic must name the injected material`)
       assert.ok(message.includes('at path') && message.includes('repair:'), `probe "${probe.name}" diagnostic must stay actionable`)
     }
+  })
+})
+
+describe('core single-document loader', () => {
+  it('loads a valid document with a leading start marker', () => {
+    const parsed = loadSingleDocument('---\nrecords: []\n', 'probe.yaml')
+    assert.deepEqual(parsed, { records: [] })
+  })
+
+  it('rejects a trailing document after an end marker', () => {
+    assert.throws(
+      () => loadSingleDocument('records: []\n...\n---\norphan: true\n', 'probe.yaml'),
+      /trailing YAML document at path document\[1\].*repair:/s,
+      'trailing document after ... must fail closed',
+    )
   })
 })
 

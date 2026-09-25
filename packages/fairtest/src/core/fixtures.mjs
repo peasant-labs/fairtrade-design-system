@@ -17,10 +17,14 @@ export function loadSingleDocument(source, label) {
   if (typeof source !== 'string' || source.length === 0) {
     throw new Error(`${label}: empty fixture source at path document; repair: restore the single YAML document in ${label}.`)
   }
-  if ((source.match(/^---\s*$/gm) ?? []).length > 0) {
+  const documents = YAML.parseAllDocuments(source, { strict: true, uniqueKeys: true })
+  if (documents.length !== 1) {
+    if (documents.length === 0) {
+      throw new Error(`${label}: empty fixture source at path document; repair: restore the single YAML document in ${label}.`)
+    }
     throw new Error(`${label}: trailing YAML document at path document[1]; repair: remove everything from the trailing --- marker so ${label} holds exactly one document.`)
   }
-  const parsed = YAML.parseDocument(source, { strict: true, uniqueKeys: true })
+  const [parsed] = documents
   if (parsed.errors.length > 0) {
     throw new Error(`${label}: invalid YAML at path document; ${parsed.errors.map((entry) => entry.message).join('; ')}; repair: fix the YAML syntax in ${label}.`)
   }

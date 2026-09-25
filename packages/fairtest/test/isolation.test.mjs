@@ -12,6 +12,8 @@ import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { basename, join, sep } from 'node:path'
 import { describe, it } from 'node:test'
+import { fileURLToPath } from 'node:url'
+import { resolveFairtestSource } from '../../../scripts/fairtest-source.mjs'
 import { assertExactFields, assertWithinRoot, checkRequiredNames, isAllowedImport, loadSingleDocument } from '../src/core/index.mjs'
 
 const CHILD_ROOT_URL = new URL('..', import.meta.url)
@@ -42,6 +44,22 @@ function childSources() {
 function staticImports(file, text) {
   const found = []
   for (const match of text.matchAll(/(?:import|export)[^'"]*from\s*['"]([^'"]+)['"]/g)) {
+    found.push({ file, specifier: match[1] })
+  }
+  return found
+}
+
+/** @param {string} text */
+function stripComments(text) {
+  return text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '')
+}
+
+/** @param {string} file @param {string} text */
+function dynamicImports(file, text) {
+  const code = stripComments(text)
+  const found = []
+  if (/import\s*\(/.test(code)) found.push({ file, specifier: 'import()' })
+  for (const match of code.matchAll(/^\s*import\s*['"]([^'"]+)['"]/gm)) {
     found.push({ file, specifier: match[1] })
   }
   return found
@@ -89,7 +107,9 @@ describe('fairtest isolation package boundary', () => {
 describe('fairtest isolation static imports', () => {
   it('declares every static import inside the child manifest', () => {
     for (const { file, text } of childSources()) {
-      assert.ok(!text.includes('require('), `${file}: require() calls are not allowed in the child source`)
+      const code = stripComments(text)
+      assert.ok(!code.includes('require('), `${file}: require() calls are not allowed in the child source`)
+      assert.deepEqual(dynamicImports(file, text), [], `${file}: dynamic import() and side-effect imports are not allowed in the child source`)
       for (const { specifier } of staticImports(file, text)) {
         if (specifier.startsWith('node:')) continue
         if (specifier.startsWith('./') || specifier.startsWith('../')) {
@@ -116,6 +136,28 @@ describe('fairtest isolation static imports', () => {
     assertWithinRoot('/scope/packages/fairtest/src/core/values.mjs', root)
     for (const escaped of ['/scope/packages/other.mjs', '/scope/package.json', '/etc/hostname']) {
       assert.throws(() => assertWithinRoot(escaped, root), /escapes its root.*repair:/s, `${escaped} must fail containment`)
+    }
+  })
+
+  it('rejects a real symlink escape through the production source route', () => {
+    const childRoot = realpathSync(fileURLToPath(CHILD_ROOT_URL))
+    const outsideDir = mkdtempSync(join(tmpdir(), 'fairtest-symlink-outside-'))
+    const linkName = `symlink-escape-probe-${process.pid}.mjs`
+    const linkAbs = join(childRoot, 'src', 'core', linkName)
+    try {
+      const targetAbs = join(outsideDir, 'escape-target.mjs')
+      writeFileSync(targetAbs, 'export const escape = true\n')
+      symlinkSync(targetAbs, linkAbs)
+      assert.equal(realpathSync(linkAbs), realpathSync(targetAbs), 'control: the planted link must resolve outside the child root')
+      assert.ok(linkAbs === childRoot || linkAbs.startsWith(childRoot + sep), 'control: the link path is lexically inside the root, so a string-prefix check without realpath would pass')
+      assert.throws(
+        () => resolveFairtestSource(`src/core/${linkName}`),
+        /escapes.*at path.*repair:/s,
+        'symlink escape through the production route must fail containment',
+      )
+    } finally {
+      rmSync(linkAbs, { force: true })
+      rmSync(outsideDir, { recursive: true, force: true })
     }
   })
 

@@ -118,7 +118,9 @@ function runCase(entry) {
   }
   if (entry.check === 'fresh') {
     const fresh = isFresh(/** @type {number} */ (entry.observedAtMs), /** @type {number} */ (entry.nowMs), /** @type {number} */ (entry.maxAgeMs))
-    assert.equal(fresh, entry.expectFresh, `${name}: freshness mismatch`)
+    if (fresh !== entry.expectFresh) {
+      throw new Error(`${name}: freshness mismatch for field "expectFresh" at path case.expectFresh; got fresh=${JSON.stringify(fresh)}; repair: restore the expected behavioral outcome in ${name}.`)
+    }
     return
   }
   let message = null
@@ -213,6 +215,7 @@ describe('evidence contract fixture family', () => {
           applyMutation(cases, mutation)
           validateFamilyShape({ ...parsed, cases })
           checkRequiredNames(cases.map((entry) => /** @type {string} */ (entry.name)), /** @type {string[]} */ (manifest.requiredCaseNames), CORPUS)
+          for (const entry of cases) runCase(entry)
         }
       } catch (error) {
         message = error instanceof Error ? error.message : String(error)

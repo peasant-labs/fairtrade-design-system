@@ -208,6 +208,7 @@ describe('bridge contract fixture family', () => {
           applyMutation(cases, mutation)
           validateFamilyShape({ ...parsed, cases })
           checkRequiredNames(cases.map((entry) => /** @type {string} */ (entry.name)), /** @type {string[]} */ (manifest.requiredCaseNames), CORPUS)
+          for (const entry of cases) runCase(entry)
         }
       } catch (error) {
         message = error instanceof Error ? error.message : String(error)
