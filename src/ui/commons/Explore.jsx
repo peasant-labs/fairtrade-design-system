@@ -356,6 +356,13 @@ export default function Explore({
     : []
 
   const providerOptions = useMemo(() => {
+    if (Object.prototype.hasOwnProperty.call(payload, 'harnessFacets')) {
+      const facets = payload.harnessFacets ?? []
+      return [
+        { slug: 'all', count: facets.reduce((sum, facet) => sum + facet.count, 0) },
+        ...facets.map(({ harness, count }) => ({ slug: harness, count })),
+      ]
+    }
     const counts = new Map()
     for (const transcript of transcriptRows) {
       counts.set(transcript.modelProvider, (counts.get(transcript.modelProvider) || 0) + 1)
@@ -364,7 +371,7 @@ export default function Explore({
       { slug: 'all', count: transcriptRows.length },
       ...[...counts.entries()].map(([slug, count]) => ({ slug, count })),
     ]
-  }, [transcriptRows])
+  }, [payload, transcriptRows])
 
   useEffect(() => {
     if (selectedId && !transcriptRows.some((row) => row.id === selectedId)) {
