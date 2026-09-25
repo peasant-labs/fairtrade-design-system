@@ -44,7 +44,7 @@ em, i { font-style: normal; font-weight: 600; }
 a { color: var(--amber); text-decoration: none; }
 a.link, .prose a { text-decoration: underline dotted; text-underline-offset: 3px; }
 a.link:hover, a.link:focus-visible, .prose a:hover { text-decoration-style: solid; }
-section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
+section.band { max-width: var(--maxw); margin: 0 auto; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {

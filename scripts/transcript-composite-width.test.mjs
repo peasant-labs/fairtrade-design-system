@@ -1,21 +1,19 @@
 #!/usr/bin/env node
 /* ───────────────────────────────────────────────────────────────────────────
-   transcript-composite-width — source-text regression guard for the real UAT-found "cramped
-   transcript composite" defect: the main content sat boxed into a narrow column with wide empty
-   gutters on both sides at desktop widths, because `.txn-center` (a real <section>) inherits
-   the presentation page's global `section { max-width; margin: 0 auto;
-   padding: 0 var(--gutter); }` reset — an auto horizontal margin wins over
-   grid stretch alignment, so the box shrink-wraps and centres inside its 1fr
-   grid track instead of filling it.
+   transcript-composite-width - source-text regression guard for the real UAT-found "cramped
+   transcript composite" defect. `.txn-center` is a semantic section, and a host-level section
+   container can otherwise give it a max-width, auto margins, or page-gutter padding. As a grid
+   item, auto horizontal margins beat stretch alignment, so the box shrink-wraps and centres
+   inside its 1fr track instead of filling it.
 
-   Follows this repo's smoke-script convention (no unit-test runner here —
-   plain node scripts with `assert()`), the same style as
-   mobile-layout.test.mjs and transcript-initial-position.render.test.mjs's
-   sibling in this file. Asserts against SOURCE (never the built dist, which
-   may minify/reorder declarations) — the fixture is the durable contract; a
-   future edit that drops the neutralising declarations off `.txn-center`
-   fails this loudly instead of silently reboxing the composite until the
-   next manual desktop eyeball.
+   The explicit `.txn-center` neutraliser remains required even though the Fairtrade base layer
+   no longer constrains bare sections: consumer presentation hosts can still style semantic
+   sections, and TranscriptViewer is embedded outside the Fairtrade `.iu` shell in real apps.
+
+   Follows this repo's smoke-script convention (no unit-test runner here -
+   plain node scripts with assertions), the same style as mobile-layout.test.mjs.
+   It asserts against authored source, never the built dist, because the fixture is the durable
+   contract and minified output can reorder declarations.
 
    Run: `node scripts/transcript-composite-width.test.mjs` (wired into build:lib).
    ─────────────────────────────────────────────────────────────────────────── */
@@ -36,10 +34,11 @@ function assert(id, desc, cond) {
   results.push({ id, desc, ok: !!cond })
 }
 
-if (fixture.invariants.length !== manifest.expectedInvariantCount) {
+const invariantNames = fixture.invariants.map((invariant) => invariant.id)
+const requiredInvariantNames = manifest.requiredInvariantNames
+if (new Set(invariantNames).size !== invariantNames.length || requiredInvariantNames.length !== invariantNames.length || requiredInvariantNames.some((name) => !invariantNames.includes(name)) || invariantNames.some((name) => !requiredInvariantNames.includes(name))) {
   console.error(
-    `transcript-composite-width fixture drift: testdata/transcript-composite-width-invariants.yaml has ${fixture.invariants.length} invariant(s), ` +
-      `manifest expects ${manifest.expectedInvariantCount}. Update the manifest when adding/removing a case (row-count guard).`,
+    `transcript-composite-width fixture drift: invariant names ${JSON.stringify(invariantNames)} do not exactly match required names ${JSON.stringify(requiredInvariantNames)}. Update the required-name manifest when adding/removing a case.`,
   )
   process.exit(1)
 }
@@ -100,11 +99,9 @@ if (fails.length) {
     [
       '',
       `transcript-composite-width regression guard FAILED: ${fails.length}/${results.length} invariant(s) red.`,
-      'What went wrong: the .txn-center fix that neutralises the global `section { max-width; margin: 0 auto;',
-      'padding: 0 var(--gutter) }` reset was reverted or weakened.',
-      'Why it matters: without it, `.txn-center` (a real <section>) shrink-wraps and centres inside its 1fr',
-      'grid track again, boxing the transcript composite into a narrow column with wide empty gutters on both',
-      'sides at desktop widths (the exact defect a real user flagged in UAT).',
+      'What went wrong: the explicit .txn-center semantic-section neutraliser was reverted or weakened.',
+      'Why it matters: a consuming host can otherwise give the real <section> a max-width, auto margins, or page',
+      'gutter, causing it to shrink-wrap and centre inside its 1fr grid track instead of filling the track.',
       'Where: ' + fails.map((f) => f.id).join(', '),
       'How to fix: restore the named declaration(s) in the file the failing invariant names.',
     ].join('\n'),
