@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # product-target.testdata.yaml.
-expectedCaseCount: 45
+expectedCaseCount: 53
 requiredCaseNames:
   - theme-row-dark-absent-passes
   - theme-row-dark-empty-passes
@@ -47,7 +47,15 @@ requiredCaseNames:
   - wrapper-light-attribute-passes
   - wrapper-contradiction-fails
   - wrapper-wrong-value-fails
-expectedMutationCount: 14
+  - artifact-record-required
+  - artifact-aria-required
+  - artifact-axe-required
+  - artifact-screenshot-required
+  - artifact-provenance-required
+  - artifact-resolution-required
+  - artifact-missing-fails
+  - artifact-stale-duplicate-fails
+expectedMutationCount: 17
 requiredMutationNames:
   - removing the light theme row breaks the required inventory
   - duplicating a route name breaks uniqueness
@@ -63,6 +71,9 @@ requiredMutationNames:
   - adding an unknown observation field breaks exact membership
   - inventing a proof row theme breaks the closed vocabulary
   - rendering dark as a literal value breaks normalization
+  - removing the aria artifact breaks the required inventory
+  - duplicating a provenance name breaks uniqueness
+  - inventing an artifact class breaks the closed set
 mutations:
   - name: removing the light theme row breaks the required inventory
     kind: delete-record
@@ -136,3 +147,17 @@ mutations:
     field: renderedAttribute
     value: dark
     expectedField: renderedAttribute
+  - name: removing the aria artifact breaks the required inventory
+    kind: delete-record
+    target: artifact-aria-required
+    expectedField: artifact-aria-required
+  - name: duplicating a provenance name breaks uniqueness
+    kind: duplicate-name
+    target: artifact-provenance-required
+    expectedField: artifact-provenance-required
+  - name: inventing an artifact class breaks the closed set
+    kind: bad-value
+    target: artifact-record-required
+    field: artifact
+    value: evidence.json
+    expectedField: artifact

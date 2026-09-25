@@ -8,7 +8,7 @@
 # project-name inference rejection, the assembled product proof record
 # with its per-part and action negatives, and the journey compatibility
 # wrapper behavior.
-expectedCaseCount: 45
+expectedCaseCount: 53
 cases:
   - name: theme-row-dark-absent-passes
     check: theme-row
@@ -462,3 +462,44 @@ cases:
     renderedAttribute: 'dark'
     expectValid: false
     expectedErrorContains: ['"dark"', 'renderedAttribute', 'at path', 'repair:']
+  - name: artifact-record-required
+    check: artifact-class
+    artifact: record.json
+    expectValid: true
+    expectFrozen: true
+  - name: artifact-aria-required
+    check: artifact-class
+    artifact: aria.json
+    expectValid: true
+    expectFrozen: true
+  - name: artifact-axe-required
+    check: artifact-class
+    artifact: axe.json
+    expectValid: true
+    expectFrozen: true
+  - name: artifact-screenshot-required
+    check: artifact-class
+    artifact: screenshot.png
+    expectValid: true
+    expectFrozen: true
+  - name: artifact-provenance-required
+    check: artifact-class
+    artifact: provenance.json
+    expectValid: true
+    expectFrozen: true
+  - name: artifact-resolution-required
+    check: artifact-class
+    artifact: resolution.json
+    expectValid: true
+    expectFrozen: true
+  - name: artifact-missing-fails
+    check: artifact-class
+    artifact: evidence.json
+    expectValid: false
+    expectedErrorContains: ['evidence.json', 'at path', 'repair:']
+  - name: artifact-stale-duplicate-fails
+    check: artifact-class
+    artifact: record.json
+    stale: true
+    expectValid: false
+    expectedErrorContains: ['stale', 'at path', 'repair:']

@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { expectTheme } from '../journey/lib/assertions.mjs'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
+import { PRODUCT_ARTIFACT_CLASSES } from './product-producer.mjs'
 import * as targets from './fairtrade-targets.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -21,7 +22,7 @@ const MANIFEST_REL = 'scripts/fairtest/product-target.testdata.manifest.yaml'
 const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs']
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
-const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'wrapper-theme']
+const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'wrapper-theme', 'artifact-class']
 const ROW_THEMES = ['dark', 'light']
 const PROOF_PARTS = ['chrome', 'body', 'route', 'activeSection', 'view']
 
@@ -115,6 +116,11 @@ function checkCaseShape(entry, index) {
     'wrapper-theme': entry.expectValid
       ? ['name', 'check', 'theme', 'renderedAttribute', 'expectValid']
       : ['name', 'check', 'theme', 'renderedAttribute', 'expectValid', 'expectedErrorContains'],
+    'artifact-class': entry.expectValid
+      ? ['name', 'check', 'artifact', 'expectValid', 'expectFrozen']
+      : ('stale' in entry
+        ? ['name', 'check', 'artifact', 'stale', 'expectValid', 'expectedErrorContains']
+        : ['name', 'check', 'artifact', 'expectValid', 'expectedErrorContains']),
   }
   coreFixtures.checkKeys(entry, fieldsByCheck[entry.check], 'case record', CORPUS_REL, path)
   if (!entry.expectValid) {
@@ -122,6 +128,14 @@ function checkCaseShape(entry, index) {
   }
   if (entry.check === 'product-proof') {
     checkProofCaseShape(entry, path)
+  }
+  if (entry.check === 'artifact-class') {
+    if (typeof entry.artifact !== 'string' || entry.artifact.length === 0) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing its artifact class for field "artifact" at path ${path}.artifact; repair: name one of the six producer artifact classes.`)
+    }
+    if ('stale' in entry && typeof entry.stale !== 'boolean') {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" holds a non-boolean stale marker for field "stale" at path ${path}.stale; repair: set stale to true or remove it.`)
+    }
   }
 }
 
@@ -465,6 +479,36 @@ async function runWrapperThemeCase(entry) {
   }
 }
 
+/** @param {Record<string, unknown>} entry */
+function runArtifactClassCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  let message = null
+  try {
+    if (entry.stale === true) {
+      throw new Error(
+        `${CORPUS_REL}: case "${name}" holds a stale duplicate artifact ${JSON.stringify(entry.artifact)} for field "artifact" at path artifact; ` +
+        'repair: write each artifact class once per row into a fresh run root instead of reusing a previous subtree.',
+      )
+    }
+    if (!PRODUCT_ARTIFACT_CLASSES.includes(/** @type {string} */ (entry.artifact))) {
+      throw new Error(
+        `${CORPUS_REL}: case "${name}" names an unknown artifact ${JSON.stringify(entry.artifact)} for field "artifact" at path artifact; ` +
+        `repair: use one of ${[...PRODUCT_ARTIFACT_CLASSES].join(', ')} for "artifact".`,
+      )
+    }
+    assert.ok(Object.isFrozen(PRODUCT_ARTIFACT_CLASSES), `${name}: producer artifact classes must be frozen`)
+    assert.equal(PRODUCT_ARTIFACT_CLASSES.length, 6, `${name}: producer must write exactly six artifact classes`)
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  if (entry.expectValid) {
+    assert.equal(message, null, `${name}: valid artifact class failed: ${message}`)
+  } else {
+    assert.ok(message, `${name}: broken artifact class passed instead of failing`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  }
+}
+
 const RUNNERS = {
   'theme-row': runThemeRowCase,
   route: runRouteCase,
@@ -478,6 +522,7 @@ const RUNNERS = {
   'project-inference': runProjectInferenceCase,
   'product-proof': runProductProofCase,
   'wrapper-theme': runWrapperThemeCase,
+  'artifact-class': runArtifactClassCase,
 }
 
 /** @param {Record<string, unknown>} entry */
@@ -774,6 +819,10 @@ describe('journey compatibility and import resolution', () => {
       'scripts/journey/storybook-smoke.journey.mjs',
       'scripts/fairtest/fairtrade-targets.mjs',
       'scripts/fairtest/fairtrade-adapter.mjs',
+      'scripts/fairtest/product-producer.mjs',
+      'scripts/fairtest/product.journey.mjs',
+      'scripts/fairtest/run-mounted.mjs',
+      'playwright.fairtest.config.mjs',
     ]
     for (const file of files) {
       execFileSync('node', ['--check', file], { cwd: ROOT, stdio: 'pipe' })
