@@ -22,7 +22,9 @@ const MANIFEST_REL = 'scripts/fairtest/product-target.testdata.manifest.yaml'
 const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs']
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
-const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'wrapper-theme', 'artifact-class']
+const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta']
+const A11Y_POINTS = ['initial', 'after-action']
+const A11Y_IMPACTS = ['minor', 'moderate', 'serious', 'critical']
 const ROW_THEMES = ['dark', 'light']
 const PROOF_PARTS = ['chrome', 'body', 'route', 'activeSection', 'view']
 
@@ -121,6 +123,8 @@ function checkCaseShape(entry, index) {
       : ('stale' in entry
         ? ['name', 'check', 'artifact', 'stale', 'expectValid', 'expectedErrorContains']
         : ['name', 'check', 'artifact', 'expectValid', 'expectedErrorContains']),
+    'a11y-baseline': ['name', 'check', 'policy', 'point', 'violations', ...tail],
+    'a11y-delta': ['name', 'check', 'point', 'measured', ...('baseline' in entry ? ['baseline'] : []), ...tail],
   }
   coreFixtures.checkKeys(entry, fieldsByCheck[entry.check], 'case record', CORPUS_REL, path)
   if (!entry.expectValid) {
@@ -128,6 +132,12 @@ function checkCaseShape(entry, index) {
   }
   if (entry.check === 'product-proof') {
     checkProofCaseShape(entry, path)
+  }
+  if (entry.check === 'a11y-baseline') {
+    checkA11yBaselineShape(entry, path)
+  }
+  if (entry.check === 'a11y-delta') {
+    checkA11yDeltaShape(entry, path)
   }
   if (entry.check === 'artifact-class') {
     if (typeof entry.artifact !== 'string' || entry.artifact.length === 0) {
@@ -178,6 +188,106 @@ function checkProofCaseShape(entry, path) {
   }
   if (typeof entry.mounted !== 'boolean') {
     throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing its mounted flag for field "mounted" at path ${path}.mounted; repair: set mounted to true or false.`)
+  }
+}
+
+/**
+ * Validate one declared baseline violation entry: exact fields, a ranked
+ * impact, a non-negative integer node count, and a non-empty theme
+ * inventory drawn from the closed row vocabulary.
+ * @param {Record<string, unknown>} item candidate entry
+ * @param {string} path value path for diagnostics
+ * @param {string} name owning case name
+ */
+function checkA11yViolationItem(item, path, name) {
+  if (!isRecord(item)) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds a malformed baseline entry for field "violations" at path ${path}; repair: declare each entry with exactly id, impact, nodes, and themes.`)
+  }
+  coreFixtures.checkKeys(item, ['id', 'impact', 'nodes', 'themes'], 'baseline entry', CORPUS_REL, path)
+  if (typeof item.id !== 'string' || item.id.length === 0) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds an empty violation id for field "id" at path ${path}.id; repair: use the axe rule id observed on the real built surface for "id".`)
+  }
+  if (!A11Y_IMPACTS.includes(/** @type {string} */ (item.impact))) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds an unknown impact ${JSON.stringify(item.impact)} for field "impact" at path ${path}.impact; repair: use one of ${A11Y_IMPACTS.join(', ')} for "impact".`)
+  }
+  if (!Number.isInteger(item.nodes) || /** @type {number} */ (item.nodes) < 0) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid node count ${JSON.stringify(item.nodes)} for field "nodes" at path ${path}.nodes; repair: record the measured violating node count as a non-negative integer for "nodes".`)
+  }
+  if (!Array.isArray(item.themes) || item.themes.length === 0 || item.themes.some((theme) => theme !== 'dark' && theme !== 'light')) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid theme inventory for field "themes" at path ${path}.themes; repair: list every row theme the entry was observed in using dark and light for "themes".`)
+  }
+}
+
+/**
+ * Validate a declared baseline violation list.
+ * @param {unknown} value candidate list
+ * @param {string} path value path for diagnostics
+ * @param {string} name owning case name
+ */
+function checkA11yViolationList(value, path, name) {
+  if (!Array.isArray(value)) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds no violation list for field "violations" at path ${path}; repair: restore the declared per-point violation list for "violations".`)
+  }
+  value.forEach((item, index) => checkA11yViolationItem(item, `${path}[${index}]`, name))
+}
+
+/**
+ * Validate one delta probe measurement: exact triple fields with a
+ * non-negative integer node count.
+ * @param {Record<string, unknown>} item candidate measurement
+ * @param {string} path value path for diagnostics
+ * @param {string} name owning case name
+ */
+function checkA11yMeasuredItem(item, path, name) {
+  if (!isRecord(item)) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds a malformed measurement for field "measured" at path ${path}; repair: declare each measurement with exactly id, impact, and nodeCount.`)
+  }
+  coreFixtures.checkKeys(item, ['id', 'impact', 'nodeCount'], 'measured entry', CORPUS_REL, path)
+  if (typeof item.id !== 'string' || item.id.length === 0) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds an empty violation id for field "id" at path ${path}.id; repair: use the observed axe rule id for "id".`)
+  }
+  if (!A11Y_IMPACTS.includes(/** @type {string} */ (item.impact))) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds an unknown impact ${JSON.stringify(item.impact)} for field "impact" at path ${path}.impact; repair: use one of ${A11Y_IMPACTS.join(', ')} for "impact".`)
+  }
+  if (!Number.isInteger(item.nodeCount) || /** @type {number} */ (item.nodeCount) < 0) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid node count for field "nodeCount" at path ${path}.nodeCount; repair: record the observed violating node count as a non-negative integer for "nodeCount".`)
+  }
+}
+
+/**
+ * Validate the a11y-baseline declaration shape: the named policy, a known
+ * observation point, and the per-point violation list.
+ * @param {Record<string, unknown>} entry
+ * @param {string} path
+ */
+function checkA11yBaselineShape(entry, path) {
+  const name = /** @type {string} */ (entry.name)
+  if (typeof entry.policy !== 'string' || entry.policy.length === 0) {
+    throw new Error(`${CORPUS_REL}: case "${name}" is missing its policy name for field "policy" at path ${path}.policy; repair: name the app-owned accessibility policy for "policy".`)
+  }
+  if (!A11Y_POINTS.includes(/** @type {string} */ (entry.point))) {
+    throw new Error(`${CORPUS_REL}: case "${name}" names an unknown observation point ${JSON.stringify(entry.point)} for field "point" at path ${path}.point; repair: use one of ${A11Y_POINTS.join(', ')} for "point".`)
+  }
+  checkA11yViolationList(entry.violations, `${path}.violations`, name)
+}
+
+/**
+ * Validate the a11y-delta probe shape: a known observation point, the
+ * measured triples, and the optional synthetic baseline override.
+ * @param {Record<string, unknown>} entry
+ * @param {string} path
+ */
+function checkA11yDeltaShape(entry, path) {
+  const name = /** @type {string} */ (entry.name)
+  if (!A11Y_POINTS.includes(/** @type {string} */ (entry.point))) {
+    throw new Error(`${CORPUS_REL}: case "${name}" names an unknown observation point ${JSON.stringify(entry.point)} for field "point" at path ${path}.point; repair: use one of ${A11Y_POINTS.join(', ')} for "point".`)
+  }
+  if (!Array.isArray(entry.measured)) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds no measurement list for field "measured" at path ${path}.measured; repair: restore the observed violation triples for "measured".`)
+  }
+  entry.measured.forEach((item, index) => checkA11yMeasuredItem(item, `${path}.measured[${index}]`, name))
+  if ('baseline' in entry) {
+    checkA11yViolationList(entry.baseline, `${path}.baseline`, name)
   }
 }
 
@@ -480,6 +590,72 @@ async function runWrapperThemeCase(entry) {
 }
 
 /** @param {Record<string, unknown>} entry */
+function runA11yBaselineCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  let message = null
+  try {
+    if (entry.policy !== targets.PRODUCT_A11Y_POLICY) {
+      throw new Error(`${CORPUS_REL}: case "${name}" names policy ${JSON.stringify(entry.policy)} for field "policy" at path policy; repair: use ${JSON.stringify(targets.PRODUCT_A11Y_POLICY)} for "policy".`)
+    }
+    assert.equal(targets.PRODUCT_A11Y_SCOPE_ROOT, targets.PRODUCT_SELECTORS.sectionView, `${name}: the gate scope root must stay the registry section view`)
+    assert.ok(Object.isFrozen(targets.PRODUCT_A11Y_BASELINE), `${name}: the declared baseline must be frozen`)
+    const runtime = targets.PRODUCT_A11Y_BASELINE.points[/** @type {string} */ (entry.point)]
+    assert.ok(Array.isArray(runtime), `${name}: runtime baseline holds no entry list for this point`)
+    const declared = /** @type {Record<string, unknown>[]} */ (entry.violations)
+    if (declared.length !== runtime.length) {
+      throw new Error(`${CORPUS_REL}: case "${name}" declares ${declared.length} violations for field "violations" at path violations; the runtime baseline declares ${runtime.length}; repair: re-measure both themes on the built dist/ and declare exactly the observed per-point set.`)
+    }
+    declared.forEach((item, index) => {
+      const want = runtime[index]
+      for (const field of ['id', 'impact', 'nodes']) {
+        if (item[field] !== want[field]) {
+          throw new Error(`${CORPUS_REL}: case "${name}" declares ${JSON.stringify(item[field])} for field "${field}" at path violations[${index}].${field}; the runtime baseline declares ${JSON.stringify(want[field])}; repair: re-measure both themes on the built dist/ and declare the observed value for "${field}".`)
+        }
+      }
+      try {
+        assert.deepEqual([.../** @type {unknown[]} */ (item.themes)], [...want.themes])
+      } catch {
+        throw new Error(`${CORPUS_REL}: case "${name}" declares themes ${JSON.stringify(item.themes)} for field "themes" at path violations[${index}].themes; the runtime baseline declares ${JSON.stringify(want.themes)}; repair: record every row theme the entry was observed in for "themes".`)
+      }
+    })
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  if (entry.expectValid) {
+    assert.equal(message, null, `${name}: valid baseline declaration failed: ${message}`)
+  } else {
+    assert.ok(message, `${name}: broken baseline declaration passed instead of failing`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  }
+}
+
+/** @param {Record<string, unknown>} entry */
+function runA11yDeltaCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  let message = null
+  try {
+    const input = {
+      point: entry.point,
+      measured: /** @type {Record<string, unknown>[]} */ (entry.measured).map((item) => ({ ...item })),
+      artifactPath: 'fixture-probe/axe.json',
+      ...('baseline' in entry ? { baseline: structuredClone(entry.baseline) } : {}),
+    }
+    const receipt = targets.assertProductAxeBaselineDelta(input)
+    assert.equal(receipt.policy, targets.PRODUCT_A11Y_POLICY, `${name}: gate receipt must name the app-owned policy`)
+    assert.equal(receipt.result, 'pass', `${name}: gate receipt must record a pass`)
+    assert.ok(Object.isFrozen(receipt), `${name}: gate receipt must be frozen`)
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  if (entry.expectValid) {
+    assert.equal(message, null, `${name}: valid delta probe failed: ${message}`)
+  } else {
+    assert.ok(message, `${name}: regressed measurement passed the gate instead of failing`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  }
+}
+
+/** @param {Record<string, unknown>} entry */
 function runArtifactClassCase(entry) {
   const name = /** @type {string} */ (entry.name)
   let message = null
@@ -523,6 +699,8 @@ const RUNNERS = {
   'product-proof': runProductProofCase,
   'wrapper-theme': runWrapperThemeCase,
   'artifact-class': runArtifactClassCase,
+  'a11y-baseline': runA11yBaselineCase,
+  'a11y-delta': runA11yDeltaCase,
 }
 
 /** @param {Record<string, unknown>} entry */

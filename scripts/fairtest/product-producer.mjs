@@ -25,21 +25,27 @@ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'no
 import http from 'node:http'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { AxeBuilder } from '@axe-core/playwright'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import {
   PRODUCT_ACTION_NAME,
   PRODUCT_ACTION_TO_SECTION,
+  PRODUCT_A11Y_BASELINE,
+  PRODUCT_A11Y_POINT_SECTIONS,
+  PRODUCT_A11Y_POLICY,
+  PRODUCT_A11Y_SCOPE_ROOT,
   PRODUCT_INITIAL_SECTION,
   PRODUCT_PROVENANCE_SOURCE,
   PRODUCT_SELECTORS,
   PRODUCT_TARGET_ID,
+  assertProductAxeBaselineDelta,
   assertProductThemeObservation,
   buildProductProof,
   observeProductTheme,
   productRouteForTheme,
   productThemeRow,
 } from './fairtrade-targets.mjs'
-import { scanAxe, seriousViolations } from '../journey/lib/assertions.mjs'
+import { DEFAULT_AXE_TAGS, scanAxe, seriousViolations } from '../journey/lib/assertions.mjs'
 
 const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 
@@ -443,6 +449,56 @@ async function collectServedProvenance({ baseUrl, servedHtml, viewport, targetId
 }
 
 /**
+ * Scope guard: the primary accessibility scan stays inside the product view
+ * root owned by the target registry, never a second literal copy.
+ */
+if (PRODUCT_A11Y_SCOPE_ROOT !== PRODUCT_SELECTORS.sectionView) {
+  throw new Error(
+    'product producer: accessibility scope drifted for field "scopeRoot" at path evidence.axe.scopeRoot; ' +
+    `got ${JSON.stringify(PRODUCT_A11Y_SCOPE_ROOT)} but the target registry declares ${JSON.stringify(PRODUCT_SELECTORS.sectionView)}; ` +
+    'repair: scope the primary scan to PRODUCT_SELECTORS.sectionView instead of a second literal.',
+  )
+}
+
+/**
+ * Run axe-core scoped to one root on the current page and return the same
+ * compact JSON-serializable shape as the shared page-wide scanAxe, so both
+ * scopes stay comparable in the row artifact. Built here in the producer
+ * because the shared assertion helper owns only the page-wide scan.
+ * @param {import('@playwright/test').Page} page Playwright page for the row
+ * @param {string} rootSelector scope root, always the product view root
+ * @param {string[]} [tags] axe tags, pinned to the shared default
+ * @returns {Promise<object>} the compact scoped report
+ */
+async function scanAxeAtRoot(page, rootSelector, tags = DEFAULT_AXE_TAGS) {
+  const results = await new AxeBuilder({ page }).withTags(tags).include(rootSelector).analyze()
+  return {
+    tags: [...tags],
+    violations: results.violations.map((v) => ({
+      id: v.id,
+      impact: v.impact,
+      nodes: v.nodes.map((n) => n.target),
+    })),
+    incomplete: results.incomplete.map((v) => v.id),
+    passes: results.passes.length,
+  }
+}
+
+/**
+ * Summarize a compact scan for the baseline-delta gate: one triple per
+ * violation with the node count instead of the raw target lists.
+ * @param {object} scan compact scan report
+ * @returns {{ id: string, impact: string, nodeCount: number }[]} measured triples
+ */
+function summarizeAxeForGate(scan) {
+  return scan.violations.map((entry) => ({
+    id: entry.id,
+    impact: entry.impact,
+    nodeCount: entry.nodes.length,
+  }))
+}
+
+/**
  * Capture one product theme row on the real built surface and write its six
  * durable artifacts. The page must already belong to a browser owned by the
  * Playwright runner; the loopback service must already be ready.
@@ -597,6 +653,15 @@ export async function captureProductRow(page, theme, options = {}) {
   assertProductThemeObservation(themeObservation)
   kindsContract.validateThemeObservation(themeObservation, 'product producer')
 
+  const scopedBefore = await scanAxeAtRoot(page, PRODUCT_A11Y_SCOPE_ROOT)
+  if (!scopedBefore || !Array.isArray(scopedBefore.violations)) {
+    throw new Error(
+      'product producer: missing scoped accessibility scan for field "scopedBefore" at path evidence.axe.scoped.before; ' +
+      `selector ${JSON.stringify(PRODUCT_A11Y_SCOPE_ROOT)} returned no compact report; ` +
+      'repair: keep the product-view scoped scan wired at the initial observation point.',
+    )
+  }
+
   const mapButton = page.locator(`${PRODUCT_SELECTORS.sectionNav} .iu-subnav-item`, { hasText: 'code map' })
   try {
     await mapButton.first().click({ timeout: PRODUCT_ACTION_TIMEOUT_MS })
@@ -668,14 +733,58 @@ export async function captureProductRow(page, theme, options = {}) {
     action: { name: PRODUCT_ACTION_NAME, completed: true, observedAtMs: actionObservedAtMs },
   })
 
-  const axe = await scanAxe(page)
-  if (!axe || !Array.isArray(axe.violations)) {
+  const pageWide = await scanAxe(page)
+  if (!pageWide || !Array.isArray(pageWide.violations)) {
     throw new Error(
-      'product producer: missing accessibility scan for field "axe" at path evidence.axe; ' +
-      'repair: keep the axe scan wired so every row records its violations, incomplete, and pass counts.',
+      'product producer: missing accessibility scan for field "pageWide" at path evidence.axe.pageWide; ' +
+      'repair: keep the page-wide axe scan wired so every row records its violations, incomplete, and pass counts.',
     )
   }
-  const blocking = seriousViolations(axe)
+  const scopedAfter = await scanAxeAtRoot(page, PRODUCT_A11Y_SCOPE_ROOT)
+  if (!scopedAfter || !Array.isArray(scopedAfter.violations)) {
+    throw new Error(
+      'product producer: missing scoped accessibility scan for field "scopedAfter" at path evidence.axe.scoped.after; ' +
+      `selector ${JSON.stringify(PRODUCT_A11Y_SCOPE_ROOT)} returned no compact report; ` +
+      'repair: keep the product-view scoped scan wired at the post-interaction observation point.',
+    )
+  }
+  const blocking = seriousViolations(pageWide)
+
+  const axeRecord = {
+    target: PRODUCT_TARGET_ID,
+    rowTheme: theme,
+    policy: PRODUCT_A11Y_POLICY,
+    scopeRoot: PRODUCT_A11Y_SCOPE_ROOT,
+    baseline: {
+      policy: PRODUCT_A11Y_BASELINE.policy,
+      scopeRoot: PRODUCT_A11Y_BASELINE.scopeRoot,
+      points: {
+        initial: PRODUCT_A11Y_BASELINE.points.initial.map((entry) => ({ ...entry, themes: [...entry.themes] })),
+        'after-action': PRODUCT_A11Y_BASELINE.points['after-action'].map((entry) => ({ ...entry, themes: [...entry.themes] })),
+      },
+    },
+    scoped: {
+      scope: 'product-view',
+      root: PRODUCT_A11Y_SCOPE_ROOT,
+      before: { section: PRODUCT_A11Y_POINT_SECTIONS.initial, ...scopedBefore },
+      after: { section: PRODUCT_A11Y_POINT_SECTIONS['after-action'], ...scopedAfter },
+    },
+    pageWide: { scope: 'page', root: 'document', ...pageWide },
+  }
+  const axePath = join(rowDir, 'axe.json')
+  writeFileSync(axePath, `${JSON.stringify(axeRecord, null, 2)}\n`)
+  const gateBefore = assertProductAxeBaselineDelta({
+    point: 'initial',
+    measured: summarizeAxeForGate(scopedBefore),
+    baseline: PRODUCT_A11Y_BASELINE.points.initial.map((entry) => ({ ...entry })),
+    artifactPath: axePath,
+  })
+  const gateAfter = assertProductAxeBaselineDelta({
+    point: 'after-action',
+    measured: summarizeAxeForGate(scopedAfter),
+    baseline: PRODUCT_A11Y_BASELINE.points['after-action'].map((entry) => ({ ...entry })),
+    artifactPath: axePath,
+  })
 
   const ariaSnapshot = await page.locator('#inuse').ariaSnapshot()
   if (!ariaSnapshot || ariaSnapshot.trim().length < 50) {
@@ -741,18 +850,32 @@ export async function captureProductRow(page, theme, options = {}) {
     computedStyles: { ...before.computed },
     viewport: { ...PRODUCT_VIEWPORT },
     accessibility: {
-      violations: axe.violations.length,
+      policy: PRODUCT_A11Y_POLICY,
+      scopeRoot: PRODUCT_A11Y_SCOPE_ROOT,
+      violations: pageWide.violations.length,
       blocking: blocking.length,
       blockingIds: blocking.map((entry) => entry.id),
-      incomplete: axe.incomplete,
-      passes: axe.passes,
+      incomplete: pageWide.incomplete,
+      passes: pageWide.passes,
+      scopedBefore: {
+        violations: scopedBefore.violations.length,
+        ids: scopedBefore.violations.map((entry) => entry.id),
+        incomplete: scopedBefore.incomplete,
+        passes: scopedBefore.passes,
+      },
+      scopedAfter: {
+        violations: scopedAfter.violations.length,
+        ids: scopedAfter.violations.map((entry) => entry.id),
+        incomplete: scopedAfter.incomplete,
+        passes: scopedAfter.passes,
+      },
+      gate: { before: { ...gateBefore }, after: { ...gateAfter } },
     },
     producedAtMs: Date.now(),
   }
 
   writeFileSync(join(rowDir, 'record.json'), `${JSON.stringify(record, null, 2)}\n`)
   writeFileSync(join(rowDir, 'aria.json'), `${JSON.stringify({ target: PRODUCT_TARGET_ID, rowTheme: theme, snapshot: ariaSnapshot }, null, 2)}\n`)
-  writeFileSync(join(rowDir, 'axe.json'), `${JSON.stringify({ target: PRODUCT_TARGET_ID, rowTheme: theme, ...axe }, null, 2)}\n`)
   writeFileSync(join(rowDir, 'provenance.json'), `${JSON.stringify(provenance, null, 2)}\n`)
   writeFileSync(join(rowDir, 'resolution.json'), `${JSON.stringify(proof, null, 2)}\n`)
 
