@@ -15,6 +15,19 @@
 // section, observe the active section transition analytics to map plus the
 // updated mounted view, then build the proof through buildProductProof.
 //
+// Every observedAtMs value in resolution.json is the real clock reading taken
+// at the observation it names: rowStartedAtMs when the row begins, one
+// captured reading for the chrome, body, and route parts read by the single
+// pre-interaction evaluate, the theme reading, then the action reading.
+// assertProductObservationTimes fails the row closed if those times ever
+// degrade into assembly-order offsets again.
+//
+// Accessibility evidence reading rule (see readProductAccessibilityVerdict
+// for the authoritative statement): the verdict comes from the gate receipts
+// over the gated product-view scope alone. The page-wide census is
+// informational, stays nested under accessibility.pageWide, and is never a
+// verdict input.
+//
 // Fail-closed: any missing, contradictory, or unproven part throws an
 // actionable error naming the missing part, the selector or path, and the
 // repair. A failing row never writes a passing record.
@@ -100,6 +113,63 @@ export const PRODUCT_MIN_BODY_DESCENDANTS = 20
  * @type {number}
  */
 export const PRODUCT_MIN_BODY_TEXT_LENGTH = 200
+
+/**
+ * Scope labels shared by axe.json and the record.json accessibility block,
+ * declared once so the two artifacts can never drift into different words.
+ * The gate covers the product view; the census covers the whole document.
+ * @type {{ gated: string, page: string, pageRoot: string }}
+ */
+export const PRODUCT_A11Y_SCOPES = Object.freeze({
+  gated: 'product-view',
+  page: 'page',
+  pageRoot: 'document',
+})
+
+/**
+ * Exact field set of the record.json accessibility block. The page-wide
+ * census is never one of these names: it lives under `pageWide`, so an
+ * unqualified `blocking` or `violations` count cannot be read as a verdict.
+ * @type {string[]}
+ */
+export const PRODUCT_A11Y_RECORD_FIELDS = Object.freeze([
+  'policy',
+  'gatedScope',
+  'scopeRoot',
+  'scopedBefore',
+  'scopedAfter',
+  'gate',
+  'pageWide',
+])
+
+/**
+ * Exact field set of the informational page-wide census inside the record
+ * accessibility block, mirroring the axe.json pageWide nesting.
+ * @type {string[]}
+ */
+export const PRODUCT_A11Y_PAGE_WIDE_FIELDS = Object.freeze([
+  'scope',
+  'root',
+  'informational',
+  'violations',
+  'blocking',
+  'blockingIds',
+  'incomplete',
+  'passes',
+])
+
+/**
+ * Observation points carrying a gate receipt, in record order.
+ * @type {string[]}
+ */
+export const PRODUCT_A11Y_GATE_POINTS = Object.freeze(['before', 'after'])
+
+/**
+ * The product parts whose observedAtMs is one captured reading of the single
+ * pre-interaction evaluate, in record order.
+ * @type {string[]}
+ */
+export const PRODUCT_PRE_ACTION_PARTS = Object.freeze(['chrome', 'body', 'route'])
 
 /**
  * Mount wait budget per selector in milliseconds.
@@ -499,16 +569,373 @@ function summarizeAxeForGate(scan) {
 }
 
 /**
+ * Assert a record is a plain object holding exactly the declared fields, with
+ * one diagnostic naming an unknown member and one naming a missing member.
+ * @param {unknown} value candidate record
+ * @param {string[]} fields the exact declared field set
+ * @param {string} field product field name used in diagnostics
+ * @param {string} path value path used in diagnostics
+ * @param {string} repair repair hint appended to the diagnostic
+ */
+function assertExactRecordFields(value, fields, field, path, repair) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(
+      `product producer: malformed record for field "${field}" at path ${path}; ` +
+      `repair: ${repair}.`,
+    )
+  }
+  const record = /** @type {Record<string, unknown>} */ (value)
+  for (const key of Object.keys(record)) {
+    if (!fields.includes(key)) {
+      throw new Error(
+        `product producer: unknown field ${JSON.stringify(key)} for field "${field}" at path ${path}; ` +
+        `the declared fields are ${fields.join(', ')}; ` +
+        `repair: ${repair}.`,
+      )
+    }
+  }
+  for (const key of fields) {
+    if (!(key in record)) {
+      throw new Error(
+        `product producer: missing field ${JSON.stringify(key)} for field "${field}" at path ${path}; ` +
+        `the declared fields are ${fields.join(', ')}; ` +
+        `repair: ${repair}.`,
+      )
+    }
+  }
+}
+
+/**
+ * Assert a value is a non-empty string, used for the scope labels a verifier
+ * reads to know which population a count covers.
+ * @param {unknown} value candidate string
+ * @param {string} field product field name used in diagnostics
+ * @param {string} path value path used in diagnostics
+ * @param {string} repair repair hint appended to the diagnostic
+ */
+function assertScopeText(value, field, path, repair) {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(
+      `product producer: missing scope label for field "${field}" at path ${path}; ` +
+      `got ${JSON.stringify(value)}; ` +
+      `repair: ${repair}.`,
+    )
+  }
+}
+
+/**
+ * Assert a value is a non-negative whole count.
+ * @param {unknown} value candidate count
+ * @param {string} field product field name used in diagnostics
+ * @param {string} path value path used in diagnostics
+ * @param {string} repair repair hint appended to the diagnostic
+ */
+function assertCount(value, field, path, repair) {
+  if (!Number.isInteger(value) || /** @type {number} */ (value) < 0) {
+    throw new Error(
+      `product producer: invalid count ${JSON.stringify(value)} for field "${field}" at path ${path}; ` +
+      `repair: ${repair}.`,
+    )
+  }
+}
+
+/**
+ * Assert a value is a list of non-empty strings, the shape of every id list
+ * the accessibility evidence carries.
+ * @param {unknown} value candidate list
+ * @param {string} field product field name used in diagnostics
+ * @param {string} path value path used in diagnostics
+ * @param {string} repair repair hint appended to the diagnostic
+ */
+function assertIdList(value, field, path, repair) {
+  if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string' || entry.length === 0)) {
+    throw new Error(
+      `product producer: invalid id list for field "${field}" at path ${path}; ` +
+      `got ${JSON.stringify(value)}; ` +
+      `repair: ${repair}.`,
+    )
+  }
+}
+
+/**
+ * Summarize one scoped product-view scan into the compact receipt the record
+ * accessibility block carries beside its gate decision.
+ * @param {object} scan compact scoped scan report
+ * @returns {{ violations: number, ids: string[], incomplete: string[], passes: number }} the scoped summary
+ */
+function summarizeScopedScan(scan) {
+  return {
+    violations: scan.violations.length,
+    ids: scan.violations.map((entry) => entry.id),
+    incomplete: [...scan.incomplete],
+    passes: scan.passes,
+  }
+}
+
+/**
+ * Assemble the record.json accessibility block from the two scan scopes and
+ * the two gate receipts.
+ *
+ * Shape contract, mirrored from axe.json: the gated product-view population is
+ * the qualified one (`gatedScope`, `scopeRoot`, `scopedBefore`, `scopedAfter`,
+ * `gate`), and the page-wide population is nested under `pageWide` with an
+ * explicit `informational: true` marker. A reader keying off the bare field
+ * name `blocking` therefore cannot find it at the top level and cannot read a
+ * page-wide count as an accepted failure. The page-wide blocking count is
+ * informational census only: the verdict belongs to the gate receipts, which
+ * are the sole inputs to readProductAccessibilityVerdict.
+ * @param {object} input assembled accessibility evidence
+ * @param {object} input.pageWide compact page-wide scan report
+ * @param {object} input.scopedBefore compact scoped scan before the action
+ * @param {object} input.scopedAfter compact scoped scan after the action
+ * @param {object} input.gateBefore gate receipt at the initial point
+ * @param {object} input.gateAfter gate receipt at the after-action point
+ * @returns {object} the record accessibility block
+ */
+export function buildProductAccessibilityEvidence(input = {}) {
+  const wanted = ['pageWide', 'scopedBefore', 'scopedAfter', 'gateBefore', 'gateAfter']
+  assertExactRecordFields(
+    input,
+    wanted,
+    'accessibility',
+    'record.accessibility',
+    'pass the page-wide scan, both scoped scans, and both gate receipts',
+  )
+  const { pageWide, scopedBefore, scopedAfter, gateBefore, gateAfter } = /** @type {Record<string, any>} */ (input)
+  const blocking = seriousViolations(pageWide)
+  return {
+    policy: PRODUCT_A11Y_POLICY,
+    gatedScope: PRODUCT_A11Y_SCOPES.gated,
+    scopeRoot: PRODUCT_A11Y_SCOPE_ROOT,
+    scopedBefore: summarizeScopedScan(scopedBefore),
+    scopedAfter: summarizeScopedScan(scopedAfter),
+    gate: {
+      before: { ...gateBefore },
+      after: { ...gateAfter },
+    },
+    pageWide: {
+      scope: PRODUCT_A11Y_SCOPES.page,
+      root: PRODUCT_A11Y_SCOPES.pageRoot,
+      informational: true,
+      violations: pageWide.violations.length,
+      blocking: blocking.length,
+      blockingIds: blocking.map((entry) => entry.id),
+      incomplete: [...pageWide.incomplete],
+      passes: pageWide.passes,
+    },
+  }
+}
+
+/**
+ * Verifier-facing reader for a record.json accessibility block. This is the
+ * single supported way to read the row's accessibility verdict.
+ *
+ * The reading rule, in order:
+ *   1. The verdict is the gate receipts and nothing else. `gate.before` and
+ *      `gate.after` are the baseline-delta decisions taken over the gated
+ *      product-view scope; the verdict is `pass` only when both read `pass`.
+ *   2. `gatedScope` and `scopeRoot` state which population those receipts
+ *      cover, so the verdict is never attributed to the whole document.
+ *   3. `scopedBefore` and `scopedAfter` are the measured populations the gate
+ *      compared against the declared baseline: evidence of what was measured,
+ *      not an independent verdict.
+ *   4. `pageWide` is an informational census over the whole document. Its
+ *      `violations`, `blocking`, and `blockingIds` counts are never read into
+ *      the verdict: a page-wide `blocking: 7` beside a passing gate means
+ *      seven serious-or-worse violations exist somewhere in the documentation
+ *      page, not that seven failures were accepted. The counts stay nested
+ *      and carry `informational: true` so that reading stays unambiguous.
+ *
+ * An unqualified page-wide count (a bare `violations`, `blocking`,
+ * `blockingIds`, `incomplete`, or `passes` at the top level of the block) is
+ * the ambiguous shape this reader refuses: it fails closed and names the
+ * field instead of guessing which population it belongs to.
+ * @param {object} accessibility the record.json accessibility block
+ * @returns {{ policy: string, gatedScope: string, scopeRoot: string, result: string, points: { before: object, after: object } }} the frozen verdict read from the gate receipts
+ */
+export function readProductAccessibilityVerdict(accessibility) {
+  assertExactRecordFields(
+    accessibility,
+    PRODUCT_A11Y_RECORD_FIELDS,
+    'accessibility',
+    'record.accessibility',
+    'keep the page-wide census nested under pageWide so only the gate receipts are unqualified verdict inputs',
+  )
+  const record = /** @type {Record<string, any>} */ (accessibility)
+  if (record.policy !== PRODUCT_A11Y_POLICY) {
+    throw new Error(
+      `product producer: unknown accessibility policy ${JSON.stringify(record.policy)} for field "policy" at path record.accessibility.policy; ` +
+      `repair: record the app-owned policy ${JSON.stringify(PRODUCT_A11Y_POLICY)} for "policy".`,
+    )
+  }
+  assertScopeText(
+    record.gatedScope,
+    'gatedScope',
+    'record.accessibility.gatedScope',
+    `name the gated scope ${JSON.stringify(PRODUCT_A11Y_SCOPES.gated)} so the verdict cannot be read as page-wide`,
+  )
+  assertScopeText(
+    record.scopeRoot,
+    'scopeRoot',
+    'record.accessibility.scopeRoot',
+    'record the selector the gate covered for "scopeRoot"',
+  )
+  for (const point of PRODUCT_A11Y_GATE_POINTS) {
+    const receipt = record.gate?.[point]
+    assertExactRecordFields(
+      receipt,
+      ['policy', 'point', 'result', 'measured', 'baseline'],
+      'gate',
+      `record.accessibility.gate.${point}`,
+      'record the baseline-delta gate receipt for both observation points',
+    )
+    if (receipt.result !== 'pass' && receipt.result !== 'fail') {
+      throw new Error(
+        `product producer: unknown gate result ${JSON.stringify(receipt.result)} for field "result" at path record.accessibility.gate.${point}.result; ` +
+        'repair: record the gate decision as pass or fail for "result".',
+      )
+    }
+    const scoped = point === 'before' ? record.scopedBefore : record.scopedAfter
+    assertExactRecordFields(
+      scoped,
+      ['violations', 'ids', 'incomplete', 'passes'],
+      `scoped${point === 'before' ? 'Before' : 'After'}`,
+      `record.accessibility.scoped${point === 'before' ? 'Before' : 'After'}`,
+      'record the scoped measurement the gate compared against the baseline',
+    )
+    assertCount(
+      scoped.violations,
+      'violations',
+      `record.accessibility.scoped${point === 'before' ? 'Before' : 'After'}.violations`,
+      'record the measured scoped violation count for "violations"',
+    )
+    assertIdList(
+      scoped.ids,
+      'ids',
+      `record.accessibility.scoped${point === 'before' ? 'Before' : 'After'}.ids`,
+      'list the measured scoped violation ids for "ids"',
+    )
+  }
+  const pageWide = record.pageWide
+  assertExactRecordFields(
+    pageWide,
+    PRODUCT_A11Y_PAGE_WIDE_FIELDS,
+    'pageWide',
+    'record.accessibility.pageWide',
+    'nest the page-wide census under pageWide with the informational marker',
+  )
+  if (pageWide.informational !== true) {
+    throw new Error(
+      `product producer: page-wide census is not marked informational for field "informational" at path record.accessibility.pageWide.informational; ` +
+      `got ${JSON.stringify(pageWide.informational)}; ` +
+      'repair: set informational to true so the page-wide counts can never be read as a verdict.',
+    )
+  }
+  assertScopeText(pageWide.scope, 'scope', 'record.accessibility.pageWide.scope', 'name the page-wide scope for "scope"')
+  assertScopeText(pageWide.root, 'root', 'record.accessibility.pageWide.root', 'name the page-wide root for "root"')
+  for (const count of ['violations', 'blocking', 'passes']) {
+    assertCount(pageWide[count], count, `record.accessibility.pageWide.${count}`, `record the observed page-wide ${count} count`)
+  }
+  assertIdList(pageWide.blockingIds, 'blockingIds', 'record.accessibility.pageWide.blockingIds', 'list the observed page-wide blocking ids')
+  assertIdList(pageWide.incomplete, 'incomplete', 'record.accessibility.pageWide.incomplete', 'list the observed page-wide incomplete ids')
+
+  // The verdict reads the gate receipts only. The page-wide census above is
+  // validated as evidence and then deliberately not consulted.
+  const pass = PRODUCT_A11Y_GATE_POINTS.every((point) => record.gate[point].result === 'pass')
+  return Object.freeze({
+    policy: record.policy,
+    gatedScope: record.gatedScope,
+    scopeRoot: record.scopeRoot,
+    result: pass ? 'pass' : 'fail',
+    points: Object.freeze({
+      before: Object.freeze({ ...record.gate.before }),
+      after: Object.freeze({ ...record.gate.after }),
+    }),
+  })
+}
+
+/**
+ * Assert the row's observation times are real clock readings in observation
+ * order, never assembly-order offsets.
+ *
+ * The rule: chrome, body, and route are read by one pre-interaction evaluate,
+ * so they share the single reading captured immediately after that evaluate;
+ * the theme reading follows, and the action reading follows the theme. A row
+ * whose part times disagree with each other, or that claim to have observed
+ * something at or before its own row start, is synthetic and fails closed.
+ * @param {object} input observation times for the row
+ * @param {number} input.rowStartedAtMs clock reading when the row began
+ * @param {number} input.chrome observedAtMs recorded for the chrome part
+ * @param {number} input.body observedAtMs recorded for the body part
+ * @param {number} input.route observedAtMs recorded for the route part
+ * @param {number} input.theme observedAtMs recorded for the theme observation
+ * @param {number} input.action observedAtMs recorded for the named action
+ * @returns {void}
+ */
+export function assertProductObservationTimes(input = {}) {
+  const wanted = ['rowStartedAtMs', ...PRODUCT_PRE_ACTION_PARTS, 'theme', 'action']
+  assertExactRecordFields(
+    input,
+    wanted,
+    'observationTimes',
+    'producer.observationTimes',
+    'pass the row start reading plus one reading per observed part',
+  )
+  const times = /** @type {Record<string, number>} */ (/** @type {unknown} */ (input))
+  for (const key of wanted) {
+    if (!Number.isInteger(times[key]) || times[key] < 0) {
+      throw new Error(
+        `product producer: invalid observation time ${JSON.stringify(times[key])} for field "${key}" at path producer.observationTimes.${key}; ` +
+        'repair: record whole milliseconds since the epoch for every observed part.',
+      )
+    }
+  }
+  for (const part of PRODUCT_PRE_ACTION_PARTS) {
+    if (times[part] !== times.chrome) {
+      throw new Error(
+        `product producer: pre-action part ${JSON.stringify(part)} claims its own observation time ${JSON.stringify(times[part])} while the shared pre-interaction evaluate was read at ${JSON.stringify(times.chrome)} for field "${part}" at path resolution.${part}.observedAtMs; ` +
+        'repair: capture one clock reading immediately after the pre-interaction evaluate and use it for chrome, body, and route instead of synthesizing per-part offsets.',
+      )
+    }
+  }
+  for (const part of PRODUCT_PRE_ACTION_PARTS) {
+    if (times[part] <= times.rowStartedAtMs) {
+      throw new Error(
+        `product producer: part ${JSON.stringify(part)} claims observation time ${JSON.stringify(times[part])} at or before the row start ${JSON.stringify(times.rowStartedAtMs)} for field "${part}" at path resolution.${part}.observedAtMs; ` +
+        'repair: capture the clock reading at the observation itself, after the evaluate that read the part, instead of offsetting it from the row start.',
+      )
+    }
+  }
+  const ordered = [['chrome', 'theme'], ['theme', 'action']]
+  for (const [earlier, later] of ordered) {
+    if (times[later] < times[earlier]) {
+      throw new Error(
+        `product producer: ${JSON.stringify(later)} observation time ${JSON.stringify(times[later])} precedes the ${JSON.stringify(earlier)} observation ${JSON.stringify(times[earlier])} for field "${later}" at path resolution.${later}.observedAtMs; ` +
+        'repair: read the clock at each observation so the recorded times stay in observation order.',
+      )
+    }
+  }
+}
+
+/**
  * Capture one product theme row on the real built surface and write its six
  * durable artifacts. The page must already belong to a browser owned by the
  * Playwright runner; the loopback service must already be ready.
+ *
+ * Two fail-closed invariants run inside the row, so neither defect can reach
+ * durable evidence again: assertProductObservationTimes rejects observation
+ * times that are synthesized from the row start instead of read at the
+ * observation, and readProductAccessibilityVerdict rejects an accessibility
+ * block whose own reading rule does not report a pass. The accessibility
+ * verdict comes from the gate receipts over the gated product-view scope; the
+ * page-wide census stays nested and informational.
  * @param {import('@playwright/test').Page} page Playwright page for the row
  * @param {string} theme dark or light row theme
  * @param {object} [options] row options
  * @param {string} [options.runRoot] immutable run root (defaults to FAIRTEST_RUN_ROOT)
  * @param {string} [options.baseUrl] running loopback base URL
  * @param {number} [options.createdAtMs] identity creation time in whole ms
- * @returns {Promise<object>} row summary with proof, provenance, and artifact paths
+ * @returns {Promise<object>} row summary with proof, provenance, accessibility evidence and its verdict, real observation times, and artifact paths
  */
 export async function captureProductRow(page, theme, options = {}) {
   if (!ROW_THEMES.includes(theme)) {
@@ -596,6 +1023,11 @@ export async function captureProductRow(page, theme, options = {}) {
     }
   }, PRODUCT_SELECTORS)
 
+  // One real clock reading for everything that evaluate just read. Nothing
+  // below derives a part time from the row start: the timestamp names the
+  // observation, not the assembly order.
+  const partsObservedAtMs = Date.now()
+
   if (!before.chromeBox || before.chromeBox.width <= 0 || before.chromeBox.height <= 0 || before.chromeChildren < 1) {
     throw new Error(
       `product producer: empty persistent chrome for field "chrome" at path proof.chrome; ` +
@@ -650,6 +1082,7 @@ export async function captureProductRow(page, theme, options = {}) {
     source: 'product-producer:documentElement:data-theme',
     observedAtMs: Date.now(),
   })
+  const themeObservedAtMs = themeObservation.observedAtMs
   assertProductThemeObservation(themeObservation)
   kindsContract.validateThemeObservation(themeObservation, 'product producer')
 
@@ -719,12 +1152,20 @@ export async function captureProductRow(page, theme, options = {}) {
   }
 
   const actionObservedAtMs = Date.now()
+  assertProductObservationTimes({
+    rowStartedAtMs,
+    chrome: partsObservedAtMs,
+    body: partsObservedAtMs,
+    route: partsObservedAtMs,
+    theme: themeObservedAtMs,
+    action: actionObservedAtMs,
+  })
   const proof = buildProductProof({
     rowTheme: theme,
     identity: { kind: 'product', id: PRODUCT_TARGET_ID, createdAtMs },
-    chrome: { observed: true, observedAtMs: rowStartedAtMs },
-    body: { observed: true, observedAtMs: rowStartedAtMs + 1 },
-    route: { observed: true, observedAtMs: rowStartedAtMs + 2 },
+    chrome: { observed: true, observedAtMs: partsObservedAtMs },
+    body: { observed: true, observedAtMs: partsObservedAtMs },
+    route: { observed: true, observedAtMs: partsObservedAtMs },
     activeSection: { observed: true, observedAtMs: actionObservedAtMs },
     view: { observed: true, observedAtMs: actionObservedAtMs },
     themeObservation: { ...themeObservation },
@@ -748,8 +1189,6 @@ export async function captureProductRow(page, theme, options = {}) {
       'repair: keep the product-view scoped scan wired at the post-interaction observation point.',
     )
   }
-  const blocking = seriousViolations(pageWide)
-
   const axeRecord = {
     target: PRODUCT_TARGET_ID,
     rowTheme: theme,
@@ -764,12 +1203,12 @@ export async function captureProductRow(page, theme, options = {}) {
       },
     },
     scoped: {
-      scope: 'product-view',
+      scope: PRODUCT_A11Y_SCOPES.gated,
       root: PRODUCT_A11Y_SCOPE_ROOT,
       before: { section: PRODUCT_A11Y_POINT_SECTIONS.initial, ...scopedBefore },
       after: { section: PRODUCT_A11Y_POINT_SECTIONS['after-action'], ...scopedAfter },
     },
-    pageWide: { scope: 'page', root: 'document', ...pageWide },
+    pageWide: { scope: PRODUCT_A11Y_SCOPES.page, root: PRODUCT_A11Y_SCOPES.pageRoot, ...pageWide },
   }
   const axePath = join(rowDir, 'axe.json')
   writeFileSync(axePath, `${JSON.stringify(axeRecord, null, 2)}\n`)
@@ -802,6 +1241,25 @@ export async function captureProductRow(page, theme, options = {}) {
       `product producer: blank screenshot for field "screenshot" at path evidence.screenshot; ` +
       `wrote ${screenshotBytes} bytes to ${JSON.stringify(screenshotPath)}; ` +
       'repair: keep the mounted product view rendered so the capture is non-blank.',
+    )
+  }
+
+  // The record a verifier reads is assembled once, then read back through the
+  // one supported reader: a row can never write accessibility evidence whose
+  // own reading rule reports anything but a pass.
+  const accessibility = buildProductAccessibilityEvidence({
+    pageWide,
+    scopedBefore,
+    scopedAfter,
+    gateBefore,
+    gateAfter,
+  })
+  const accessibilityVerdict = readProductAccessibilityVerdict(accessibility)
+  if (accessibilityVerdict.result !== 'pass') {
+    throw new Error(
+      `product producer: accessibility verdict reads ${JSON.stringify(accessibilityVerdict.result)} for field "accessibility" at path record.accessibility.gate; ` +
+      `the gated receipts read before ${JSON.stringify(accessibilityVerdict.points.before.result)} and after ${JSON.stringify(accessibilityVerdict.points.after.result)} over ${JSON.stringify(accessibilityVerdict.scopeRoot)}; ` +
+      'repair: fix the gated product-view violation instead of relying on the informational page-wide census under record.accessibility.pageWide.',
     )
   }
 
@@ -849,28 +1307,7 @@ export async function captureProductRow(page, theme, options = {}) {
     },
     computedStyles: { ...before.computed },
     viewport: { ...PRODUCT_VIEWPORT },
-    accessibility: {
-      policy: PRODUCT_A11Y_POLICY,
-      scopeRoot: PRODUCT_A11Y_SCOPE_ROOT,
-      violations: pageWide.violations.length,
-      blocking: blocking.length,
-      blockingIds: blocking.map((entry) => entry.id),
-      incomplete: pageWide.incomplete,
-      passes: pageWide.passes,
-      scopedBefore: {
-        violations: scopedBefore.violations.length,
-        ids: scopedBefore.violations.map((entry) => entry.id),
-        incomplete: scopedBefore.incomplete,
-        passes: scopedBefore.passes,
-      },
-      scopedAfter: {
-        violations: scopedAfter.violations.length,
-        ids: scopedAfter.violations.map((entry) => entry.id),
-        incomplete: scopedAfter.incomplete,
-        passes: scopedAfter.passes,
-      },
-      gate: { before: { ...gateBefore }, after: { ...gateAfter } },
-    },
+    accessibility,
     producedAtMs: Date.now(),
   }
 
@@ -893,6 +1330,14 @@ export async function captureProductRow(page, theme, options = {}) {
     rowDir,
     proof,
     provenance,
+    accessibility,
+    accessibilityVerdict,
+    observationTimes: Object.freeze({
+      rowStartedAtMs,
+      parts: partsObservedAtMs,
+      theme: themeObservedAtMs,
+      action: actionObservedAtMs,
+    }),
     artifacts: PRODUCT_ARTIFACT_CLASSES.map((name) => join(rowDir, name)),
   }
 }

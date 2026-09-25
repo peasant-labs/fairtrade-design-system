@@ -15,7 +15,16 @@ import { fileURLToPath } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { expectTheme } from '../journey/lib/assertions.mjs'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
-import { PRODUCT_ARTIFACT_CLASSES } from './product-producer.mjs'
+import {
+  PRODUCT_ARTIFACT_CLASSES,
+  PRODUCT_A11Y_GATE_POINTS,
+  PRODUCT_A11Y_PAGE_WIDE_FIELDS,
+  PRODUCT_A11Y_RECORD_FIELDS,
+  PRODUCT_PRE_ACTION_PARTS,
+  assertProductObservationTimes,
+  buildProductAccessibilityEvidence,
+  readProductAccessibilityVerdict,
+} from './product-producer.mjs'
 import { PRODUCT_MUTATION_NAMES, runProductMutation } from './product-mutations.mjs'
 import * as targets from './fairtrade-targets.mjs'
 
@@ -26,7 +35,7 @@ const MANIFEST_REL = 'scripts/fairtest/product-target.testdata.manifest.yaml'
 const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs']
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
-const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta']
+const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time']
 const A11Y_POINTS = ['initial', 'after-action']
 const A11Y_IMPACTS = ['minor', 'moderate', 'serious', 'critical']
 const ROW_THEMES = ['dark', 'light']
@@ -130,6 +139,12 @@ function checkCaseShape(entry, index) {
         : ['name', 'check', 'artifact', 'expectValid', 'expectedErrorContains']),
     'a11y-baseline': ['name', 'check', 'policy', 'point', 'violations', ...tail],
     'a11y-delta': ['name', 'check', 'point', 'measured', ...('baseline' in entry ? ['baseline'] : []), ...tail],
+    'a11y-record': entry.expectValid
+      ? ['name', 'check', 'accessibility', 'informationalChurn', 'expectVerdict', ...tail]
+      : ['name', 'check', 'accessibility', 'expectVerdict', ...tail],
+    'observation-time': entry.expectValid
+      ? ['name', 'check', 'rowStartedAtMs', ...PRODUCT_PRE_ACTION_PARTS, 'theme', 'action', 'expectValid']
+      : ['name', 'check', 'rowStartedAtMs', ...PRODUCT_PRE_ACTION_PARTS, 'theme', 'action', ...tail],
   }
   coreFixtures.checkKeys(entry, fieldsByCheck[entry.check], 'case record', CORPUS_REL, path)
   if (!entry.expectValid) {
@@ -143,6 +158,12 @@ function checkCaseShape(entry, index) {
   }
   if (entry.check === 'a11y-delta') {
     checkA11yDeltaShape(entry, path)
+  }
+  if (entry.check === 'a11y-record') {
+    checkA11yRecordShape(entry, path)
+  }
+  if (entry.check === 'observation-time') {
+    checkObservationTimeShape(entry, path)
   }
   if (entry.check === 'artifact-class') {
     if (typeof entry.artifact !== 'string' || entry.artifact.length === 0) {
@@ -301,6 +322,60 @@ function checkA11yDeltaShape(entry, path) {
   entry.measured.forEach((item, index) => checkA11yMeasuredItem(item, `${path}.measured[${index}]`, name))
   if ('baseline' in entry) {
     checkA11yViolationList(entry.baseline, `${path}.baseline`, name)
+  }
+}
+
+/**
+ * Validate the a11y-record declaration shape: the record accessibility block
+ * the verifier-facing reader consumes, the optional informational-count churn
+ * that must not move the verdict, and the declared verdict. The block itself
+ * is deliberately not shape-checked here: the reader is the contract, so the
+ * refusal cases can carry a block the reader must reject.
+ * @param {Record<string, unknown>} entry
+ * @param {string} path
+ */
+function checkA11yRecordShape(entry, path) {
+  const name = /** @type {string} */ (entry.name)
+  if (!isRecord(entry.accessibility)) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds no accessibility record for field "accessibility" at path ${path}.accessibility; repair: declare the record.json accessibility block the verifier reads.`)
+  }
+  if (!['pass', 'fail', 'none'].includes(/** @type {string} */ (entry.expectVerdict))) {
+    throw new Error(`${CORPUS_REL}: case "${name}" names an unknown verdict ${JSON.stringify(entry.expectVerdict)} for field "expectVerdict" at path ${path}.expectVerdict; repair: use pass, fail, or none for a refused record.`)
+  }
+  if (entry.expectValid && entry.expectVerdict === 'none') {
+    throw new Error(`${CORPUS_REL}: case "${name}" declares no verdict for a readable record at path ${path}.expectVerdict; repair: declare the verdict the reader must return for a readable record.`)
+  }
+  if (!entry.expectValid && entry.expectVerdict !== 'none') {
+    throw new Error(`${CORPUS_REL}: case "${name}" declares verdict ${JSON.stringify(entry.expectVerdict)} for a refused record at path ${path}.expectVerdict; repair: declare none for a record the reader must refuse.`)
+  }
+  if ('informationalChurn' in entry) {
+    const churn = entry.informationalChurn
+    if (!isRecord(churn) || typeof churn.field !== 'string' || churn.field.length === 0) {
+      throw new Error(`${CORPUS_REL}: case "${name}" holds a malformed churn for field "informationalChurn" at path ${path}.informationalChurn; repair: declare the informational page-wide field to churn and its replacement value.`)
+    }
+    if (!PRODUCT_A11Y_PAGE_WIDE_FIELDS.includes(churn.field) || churn.field === 'informational' || churn.field === 'scope' || churn.field === 'root') {
+      throw new Error(`${CORPUS_REL}: case "${name}" churns ${JSON.stringify(churn.field)} for field "informationalChurn" at path ${path}.informationalChurn.field; repair: churn an informational page-wide count from ${PRODUCT_A11Y_PAGE_WIDE_FIELDS.filter((field) => !['informational', 'scope', 'root'].includes(field)).join(', ')}.`)
+    }
+    if (!('value' in churn)) {
+      throw new Error(`${CORPUS_REL}: case "${name}" declares no replacement value for field "informationalChurn" at path ${path}.informationalChurn.value; repair: declare the replacement value the churn writes.`)
+    }
+  } else if (entry.expectValid) {
+    throw new Error(`${CORPUS_REL}: case "${name}" declares no informational churn at path ${path}.informationalChurn; repair: a readable verdict case must prove the page-wide counts cannot move the verdict.`)
+  }
+}
+
+/**
+ * Validate the observation-time declaration shape: the row start reading plus
+ * one whole-millisecond reading per observed part.
+ * @param {Record<string, unknown>} entry
+ * @param {string} path
+ */
+function checkObservationTimeShape(entry, path) {
+  const name = /** @type {string} */ (entry.name)
+  for (const field of ['rowStartedAtMs', ...PRODUCT_PRE_ACTION_PARTS, 'theme', 'action']) {
+    if (!Number.isInteger(entry[field]) || /** @type {number} */ (entry[field]) < 0) {
+      throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid observation time ${JSON.stringify(entry[field])} for field "${field}" at path ${path}.${field}; repair: record whole milliseconds since the epoch for "${field}".`)
+    }
   }
 }
 
@@ -711,6 +786,67 @@ function runArtifactClassCase(entry) {
   }
 }
 
+/**
+ * Run one a11y-record case through the verifier-facing reader: read the
+ * verdict, prove the frozen verdict shape, and prove the informational
+ * page-wide census cannot move it.
+ * @param {Record<string, unknown>} entry
+ */
+function runA11yRecordCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const accessibility = structuredClone(entry.accessibility)
+  let message = null
+  let verdict = null
+  try {
+    verdict = readProductAccessibilityVerdict(accessibility)
+    assert.equal(verdict.result, entry.expectVerdict, `${name}: verdict must read the declared gate result`)
+    assert.ok(Object.isFrozen(verdict), `${name}: the read verdict must be frozen`)
+    assert.ok(Object.isFrozen(verdict.points), `${name}: the gate receipts must be frozen`)
+    if ('informationalChurn' in entry) {
+      const churn = /** @type {Record<string, unknown>} */ (entry.informationalChurn)
+      const churned = structuredClone(accessibility)
+      const census = /** @type {Record<string, unknown>} */ (churned.pageWide)
+      census[/** @type {string} */ (churn.field)] = churn.value
+      const after = readProductAccessibilityVerdict(churned)
+      assert.equal(after.result, verdict.result, `${name}: churning the informational page-wide ${String(churn.field)} must not move the verdict`)
+      assert.equal(after.gatedScope, verdict.gatedScope, `${name}: the churned record must still name the gated scope`)
+    }
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  if (entry.expectValid) {
+    assert.equal(message, null, `${name}: readable accessibility record failed: ${message}`)
+  } else {
+    assert.ok(message, `${name}: ambiguous accessibility record was read instead of refused`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  }
+}
+
+/**
+ * Run one observation-time case through the producer's own fail-closed
+ * timing guard.
+ * @param {Record<string, unknown>} entry
+ */
+function runObservationTimeCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const input = {}
+  for (const field of ['rowStartedAtMs', ...PRODUCT_PRE_ACTION_PARTS, 'theme', 'action']) {
+    input[field] = entry[field]
+  }
+  let message = null
+  try {
+    assertProductObservationTimes(input)
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  if (entry.expectValid) {
+    assert.equal(message, null, `${name}: real observation times failed: ${message}`)
+  } else {
+    assert.ok(message, `${name}: synthetic observation times passed the timing guard`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  }
+}
+
 const RUNNERS = {
   'theme-row': runThemeRowCase,
   route: runRouteCase,
@@ -728,6 +864,8 @@ const RUNNERS = {
   'artifact-class': runArtifactClassCase,
   'a11y-baseline': runA11yBaselineCase,
   'a11y-delta': runA11yDeltaCase,
+  'a11y-record': runA11yRecordCase,
+  'observation-time': runObservationTimeCase,
 }
 
 /** @param {Record<string, unknown>} entry */
@@ -994,6 +1132,170 @@ describe('product proof record schema and shared vocabulary', () => {
       () => targets.productThemeFromProjectName('product-dark'),
       /field "project".*at path theme\.project.*"product-dark".*repair:/s,
       'project-name inference must fail with the observed value and repair',
+    )
+  })
+})
+
+describe('verifier-facing record accessibility evidence', () => {
+  /**
+   * Build the two scan scopes and the two gate receipts a real row measures:
+   * a clean gated scope before the action, one declared-baseline violation
+   * after it, and a page-wide population carrying a serious violation the
+   * gate never sees. Shared by the reader wiring proofs in this family.
+   * @param {object} [input] receipt overrides
+   * @param {string} [input.gateAfterResult] after-action gate result
+   * @returns {object} producer accessibility inputs
+   */
+  function producerAccessibilityInputs({ gateAfterResult = 'pass' } = {}) {
+    const tags = ['wcag2a', 'wcag2aa']
+    return {
+      pageWide: {
+        tags,
+        violations: [
+          { id: 'color-contrast', impact: 'serious', nodes: [['nav']] },
+          { id: 'link-name', impact: 'minor', nodes: [['a']] },
+        ],
+        incomplete: ['color-contrast'],
+        passes: 120,
+      },
+      scopedBefore: { tags, violations: [], incomplete: [], passes: 41 },
+      scopedAfter: {
+        tags,
+        violations: [{ id: 'aria-required-children', impact: 'critical', nodes: [['g'], ['g'], ['g']] }],
+        incomplete: [],
+        passes: 38,
+      },
+      gateBefore: { policy: targets.PRODUCT_A11Y_POLICY, point: 'initial', result: 'pass', measured: 0, baseline: 0 },
+      gateAfter: { policy: targets.PRODUCT_A11Y_POLICY, point: 'after-action', result: gateAfterResult, measured: 1, baseline: 1 },
+    }
+  }
+
+  it('keeps the page-wide census nested and marked informational', () => {
+    const record = buildProductAccessibilityEvidence(producerAccessibilityInputs())
+    assert.deepEqual(Object.keys(record).sort(), [...PRODUCT_A11Y_RECORD_FIELDS].sort(), 'the record block must carry exactly the declared fields')
+    assert.equal(record.gatedScope, 'product-view', 'the gated scope must be named explicitly')
+    assert.equal(record.scopeRoot, targets.PRODUCT_A11Y_SCOPE_ROOT, 'the gate scope root must be the registry section view')
+    assert.equal(record.pageWide.informational, true, 'the page-wide census must be marked informational')
+    assert.equal(record.pageWide.scope, 'page', 'the page-wide census must name its own scope')
+    assert.equal(record.pageWide.root, 'document', 'the page-wide census must name its own root')
+    assert.equal(record.pageWide.blocking, 1, 'the page-wide census reports the serious-or-worse population')
+    assert.deepEqual(Object.keys(record.gate).sort(), [...PRODUCT_A11Y_GATE_POINTS].sort(), 'the gate must carry one receipt per observation point')
+    assert.equal(record.blocking, undefined, 'an unqualified blocking count must not sit beside the gate receipts')
+    assert.equal(record.violations, undefined, 'an unqualified violations count must not sit beside the gate receipts')
+    assert.deepEqual(Object.keys(record.pageWide).sort(), [...PRODUCT_A11Y_PAGE_WIDE_FIELDS].sort(), 'the page-wide block must carry exactly the declared fields')
+  })
+
+  it('reads the verdict from the gate receipts and not from the page-wide counts', () => {
+    const passing = buildProductAccessibilityEvidence(producerAccessibilityInputs())
+    const verdict = readProductAccessibilityVerdict(passing)
+    assert.equal(verdict.result, 'pass', 'two passing gate receipts read as a pass')
+    assert.equal(verdict.gatedScope, 'product-view', 'the verdict must stay attributed to the gated scope')
+
+    const churned = buildProductAccessibilityEvidence({
+      ...producerAccessibilityInputs(),
+      pageWide: { ...passing.pageWide, violations: [], blocking: 0, blockingIds: [], incomplete: [], passes: 9 },
+    })
+    assert.equal(readProductAccessibilityVerdict(churned).result, 'pass', 'churning the informational counts must not move the verdict')
+
+    const failing = buildProductAccessibilityEvidence(producerAccessibilityInputs({ gateAfterResult: 'fail' }))
+    assert.equal(readProductAccessibilityVerdict(failing).result, 'fail', 'a failing gate receipt must read as a fail')
+    const failingQuiet = buildProductAccessibilityEvidence({
+      ...producerAccessibilityInputs({ gateAfterResult: 'fail' }),
+      pageWide: { ...passing.pageWide, violations: [], blocking: 0, blockingIds: [], incomplete: [], passes: 9 },
+    })
+    assert.equal(readProductAccessibilityVerdict(failingQuiet).result, 'fail', 'a silent page-wide census must not rescue a failing gate')
+  })
+
+  it('refuses an ambiguous record carrying unqualified page-wide counts', () => {
+    const record = buildProductAccessibilityEvidence(producerAccessibilityInputs())
+    for (const field of PRODUCT_A11Y_PAGE_WIDE_FIELDS) {
+      const ambiguous = { ...record, [field]: record.pageWide[field] }
+      assert.throws(
+        () => readProductAccessibilityVerdict(ambiguous),
+        new RegExp(`unknown field ${JSON.stringify(field)}.*at path record\\.accessibility.*repair:`, 's'),
+        `an unqualified ${field} must be refused instead of read as a verdict input`,
+      )
+    }
+  })
+
+  it('refuses a record that drops the gate receipts or the informational marker', () => {
+    const record = buildProductAccessibilityEvidence(producerAccessibilityInputs())
+    for (const field of ['gatedScope', 'scopeRoot', 'scopedBefore', 'scopedAfter', 'gate', 'pageWide']) {
+      const { [field]: dropped, ...rest } = record
+      assert.throws(
+        () => readProductAccessibilityVerdict(rest),
+        new RegExp(`missing field ${JSON.stringify(field)}.*at path record\\.accessibility.*repair:`, 's'),
+        `a record without ${field} must be refused`,
+      )
+    }
+    assert.throws(
+      () => readProductAccessibilityVerdict({ ...record, pageWide: { ...record.pageWide, informational: false } }),
+      /informational.*at path record\.accessibility\.pageWide\.informational.*repair:/s,
+      'an unmarked page-wide census must be refused',
+    )
+  })
+})
+
+describe('product row observation times', () => {
+  it('accepts one real reading shared by the pre-action parts in observation order', () => {
+    assert.doesNotThrow(() => assertProductObservationTimes({
+      rowStartedAtMs: 1790353572800,
+      chrome: 1790353589111,
+      body: 1790353589111,
+      route: 1790353589111,
+      theme: 1790353589111,
+      action: 1790353590386,
+    }), 'a real reading shared by one evaluate must pass')
+  })
+
+  it('refuses the assembly-order offsets the row used to synthesize', () => {
+    assert.throws(
+      () => assertProductObservationTimes({
+        rowStartedAtMs: 1790353572800,
+        chrome: 1790353572800,
+        body: 1790353572801,
+        route: 1790353572802,
+        theme: 1790353589115,
+        action: 1790353590386,
+      }),
+      /claims its own observation time.*at path resolution\.body\.observedAtMs.*per-part offsets/s,
+      'per-part offsets off the row start must be refused',
+    )
+    assert.throws(
+      () => assertProductObservationTimes({
+        rowStartedAtMs: 1790353572800,
+        chrome: 1790353572800,
+        body: 1790353572800,
+        route: 1790353572800,
+        theme: 1790353589115,
+        action: 1790353590386,
+      }),
+      /row start.*at path resolution\.chrome\.observedAtMs.*repair:/s,
+      'a part claiming the row start as its observation time must be refused',
+    )
+  })
+
+  it('refuses readings that run backwards through the row sequence', () => {
+    for (const [later, earlier] of [['theme', 'chrome'], ['action', 'theme']]) {
+      const times = {
+        rowStartedAtMs: 1790353572800,
+        chrome: 1790353589111,
+        body: 1790353589111,
+        route: 1790353589111,
+        theme: 1790353589115,
+        action: 1790353590386,
+        [later]: 1790353580000,
+      }
+      assert.throws(
+        () => assertProductObservationTimes(times),
+        new RegExp(`precedes the ${JSON.stringify(earlier)} observation.*at path resolution\\.${later}\\.observedAtMs.*repair:`, 's'),
+        `a ${later} reading before the ${earlier} reading must be refused`,
+      )
+    }
+    assert.throws(
+      () => assertProductObservationTimes({ rowStartedAtMs: 1, chrome: 'later', body: 2, route: 2, theme: 3, action: 4 }),
+      /invalid observation time.*at path producer\.observationTimes\.chrome.*repair:/s,
+      'a non-integer reading must be refused',
     )
   })
 })

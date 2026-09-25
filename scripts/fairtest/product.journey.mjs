@@ -6,7 +6,10 @@
  * normalized theme), performs the one named map-section interaction with a
  * trusted click, and writes the six durable artifact classes into the
  * immutable run root. A row fails, never skips, when the app is not built
- * or any part of the tuple cannot be observed.
+ * or any part of the tuple cannot be observed. The written artifacts are then
+ * read back and asserted: six classes present, an accessibility record the
+ * verifier-facing reader resolves to a pass from its gate receipts alone, and
+ * a proof carrying real observation times in observation order.
  *
  * Theme comes from the row key only. There is exactly one project in the
  * Fairtest config, so no project name is read here.
@@ -18,9 +21,11 @@ import {
   FAIRTEST_PRODUCT_HOST,
   FAIRTEST_PRODUCT_PORT,
   PRODUCT_ARTIFACT_CLASSES,
+  PRODUCT_PRE_ACTION_PARTS,
   captureProductRow,
   createProductStaticDriver,
   productRowDir,
+  readProductAccessibilityVerdict,
   resolveProductRunRoot,
 } from './product-producer.mjs'
 
@@ -73,14 +78,39 @@ test.describe('fairtest mounted product', () => {
       expect(summary.proof.theme.observed).toBe(theme)
       expect(summary.proof.action.name).toBe('select-map-section')
       expect(summary.proof.action.completed).toBe(true)
+      const { readFileSync, existsSync } = await import('node:fs')
+      const { join } = await import('node:path')
       for (const name of PRODUCT_ARTIFACT_CLASSES) {
-        const { readFileSync, existsSync } = await import('node:fs')
-        const { join } = await import('node:path')
         const path = join(productRowDir(runRoot, theme), name)
         expect(existsSync(path), `row artifact ${name} must exist at ${path}`).toBe(true)
         await testInfo.attach(`${theme}-${name}`, { path })
         expect(readFileSync(path).length > 0, `row artifact ${name} must be non-empty`).toBe(true)
       }
+
+      // The written record must be readable by the one supported reader: the
+      // verdict comes from the gate receipts over the gated scope, and the
+      // page-wide census stays nested and informational, so a verifier keying
+      // off a bare `blocking` count finds nothing.
+      const rowDir = productRowDir(runRoot, theme)
+      const record = JSON.parse(readFileSync(join(rowDir, 'record.json'), 'utf8'))
+      const verdict = readProductAccessibilityVerdict(record.accessibility)
+      expect(verdict.result, `row ${theme} gate verdict must pass`).toBe('pass')
+      expect(verdict.gatedScope, `row ${theme} verdict must stay attributed to the gated scope`).toBe('product-view')
+      expect(record.accessibility.pageWide.informational, `row ${theme} page-wide census must be informational`).toBe(true)
+      expect(record.accessibility.blocking, `row ${theme} must carry no unqualified blocking count`).toBeUndefined()
+      expect(record.accessibility.violations, `row ${theme} must carry no unqualified violations count`).toBeUndefined()
+
+      // The written proof must carry the real readings the row took: one
+      // shared pre-action reading after the row started, then the theme
+      // reading, then the action reading.
+      const proof = JSON.parse(readFileSync(join(rowDir, 'resolution.json'), 'utf8'))
+      const times = summary.observationTimes
+      expect(times.parts, `row ${theme} pre-action parts must be read after the row starts`).toBeGreaterThan(times.rowStartedAtMs)
+      for (const part of PRODUCT_PRE_ACTION_PARTS) {
+        expect(proof[part].observedAtMs, `row ${theme} ${part} must carry the shared pre-action reading`).toBe(times.parts)
+      }
+      expect(proof.theme.observedAtMs, `row ${theme} theme must be read at or after the parts`).toBeGreaterThanOrEqual(times.parts)
+      expect(proof.action.observedAtMs, `row ${theme} action must be read at or after the theme`).toBeGreaterThanOrEqual(proof.theme.observedAtMs)
     })
   }
 })

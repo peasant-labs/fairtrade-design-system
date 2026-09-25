@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # product-target.testdata.yaml.
-expectedCaseCount: 69
+expectedCaseCount: 77
 requiredCaseNames:
   - theme-row-dark-absent-passes
   - theme-row-dark-empty-passes
@@ -71,7 +71,15 @@ requiredCaseNames:
   - a11y-delta-new-violation-fails
   - a11y-delta-increased-nodes-fails
   - a11y-delta-escalated-impact-fails
-expectedMutationCount: 26
+  - a11y-record-gate-verdict-passes
+  - a11y-record-gate-failure-reads-fail
+  - a11y-record-unqualified-blocking-fails
+  - a11y-record-missing-gated-scope-fails
+  - obs-time-real-observation-passes
+  - obs-time-synthetic-offsets-fail
+  - obs-time-parts-at-row-start-fail
+  - obs-time-out-of-order-fails
+expectedMutationCount: 29
 requiredMutationNames:
   - removing the light theme row breaks the required inventory
   - duplicating a route name breaks uniqueness
@@ -99,6 +107,9 @@ requiredMutationNames:
   - renaming the mutation discriminator breaks the case shape
   - adding an unknown mutation field breaks exact membership
   - inventing a mutation name breaks the closed set
+  - reintroducing an unqualified page-wide count breaks the verdict reading rule
+  - dropping the gated scope label breaks the verdict reading rule
+  - dropping a pre-action part time breaks the observation-time case shape
 mutations:
   - name: removing the light theme row breaks the required inventory
     kind: delete-record
@@ -232,3 +243,19 @@ mutations:
     field: mutation
     value: missing-everything
     expectedField: mutation
+  - name: reintroducing an unqualified page-wide count breaks the verdict reading rule
+    kind: unknown-field
+    target: a11y-record-gate-verdict-passes
+    field: accessibility.blocking
+    value: 7
+    expectedField: blocking
+  - name: dropping the gated scope label breaks the verdict reading rule
+    kind: delete-field
+    target: a11y-record-gate-verdict-passes
+    field: accessibility.gatedScope
+    expectedField: gatedScope
+  - name: dropping a pre-action part time breaks the observation-time case shape
+    kind: delete-field
+    target: obs-time-real-observation-passes
+    field: route
+    expectedField: route
