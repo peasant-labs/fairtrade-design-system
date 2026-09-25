@@ -116,13 +116,17 @@ sourceCases:
     file: src/App.jsx
     contract: existing-band-usage
     expectedUsage:
-      - path: src/App.jsx
+      - name: app-single-band
+        path: src/App.jsx
         count: 1
-      - path: src/DocSections.jsx
+      - name: docs-band-uses
+        path: src/DocSections.jsx
         count: 5
-      - path: src/ComponentSections.jsx
+      - name: component-band-uses
+        path: src/ComponentSections.jsx
         count: 6
-      - path: src/sections-react
+      - name: section-band-uses
+        path: src/sections-react
         count: 21
 mountedCases:
   section-width-dark:

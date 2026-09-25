@@ -34,10 +34,11 @@ function assert(id, desc, cond) {
   results.push({ id, desc, ok: !!cond })
 }
 
-if (fixture.invariants.length !== manifest.expectedInvariantCount) {
+const invariantNames = fixture.invariants.map((invariant) => invariant.id)
+const requiredInvariantNames = manifest.requiredInvariantNames
+if (new Set(invariantNames).size !== invariantNames.length || requiredInvariantNames.length !== invariantNames.length || requiredInvariantNames.some((name) => !invariantNames.includes(name)) || invariantNames.some((name) => !requiredInvariantNames.includes(name))) {
   console.error(
-    `transcript-composite-width fixture drift: testdata/transcript-composite-width-invariants.yaml has ${fixture.invariants.length} invariant(s), ` +
-      `manifest expects ${manifest.expectedInvariantCount}. Update the manifest when adding/removing a case (row-count guard).`,
+    `transcript-composite-width fixture drift: invariant names ${JSON.stringify(invariantNames)} do not exactly match required names ${JSON.stringify(requiredInvariantNames)}. Update the required-name manifest when adding/removing a case.`,
   )
   process.exit(1)
 }
