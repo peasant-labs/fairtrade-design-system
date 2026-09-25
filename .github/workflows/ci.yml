@@ -163,6 +163,9 @@ jobs:
       - name: Breadcrumb source, mounted, and mutation gates
         run: pnpm test:breadcrumb && pnpm test:breadcrumb-mounted && pnpm test:breadcrumb:mutations
 
+      - name: Section container ownership (source, mutations, dist geometry)
+        run: pnpm test:section-width && pnpm test:section-width:mutations && pnpm test:transcript-composite-width && pnpm test:section-width:rendered
+
       # gate 2: the twenty interaction checks, ported from scripts/validate.mjs
       # onto the journey harness (scripts/journey/app-validate.journey.mjs).
       # The journey config serves dist/ on :5180 itself, so no manual

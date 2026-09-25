@@ -63,6 +63,7 @@ decoration/structure only. `--rule-strong` is the functional control border (at 
 - **controls:** buttons and inputs share one height (`--control-h`, 36px) and identical padding.
 - **z-index:** a single named scale, `--z-sticky` < `--z-nav` < `--z-dropdown` < `--z-dialog` < `--z-toast` < `--z-tooltip`.
 - **breakpoints (desktop-first):** one scale - `xs` < 480 (phone), `sm` 480-767 (large phone / small tablet), `md` 768-1023 (tablet), `lg` 1024-1439 (laptop), `xl` >= 1440 (desktop). Desktop is the canonical, base layout; narrower widths **adapt down** with `max-width` queries off this scale. The majority of users are on desktop; mobile *complements* it and must stay overflow-free, legible, and tappable from 320px up, but the desktop layout is never compromised to serve mobile.
+- **section containers:** a bare `section` is unconstrained. `section.band` is the explicit canonical content container: the base layer supplies its 1040px maximum and centering, while the existing `.band` component rule owns its padding and border. Host-specific guards may deliberately exempt semantic containers; do not depend on a semantic-element side effect.
 
 ---
 
