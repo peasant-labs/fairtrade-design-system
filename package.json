@@ -153,7 +153,9 @@
     "start": "http-server dist -p ${PORT:-3000} -a 0.0.0.0 --silent",
     "test:turns-to-flow-edges": "node scripts/turns-to-flow-edges.test.mjs",
     "journey": "playwright test --config playwright.journey.config.mjs",
-    "journey:ci": "JOURNEY_HTML=0 playwright test --config playwright.journey.config.mjs"
+    "journey:ci": "JOURNEY_HTML=0 playwright test --config playwright.journey.config.mjs",
+    "test:fairtest:promotion": "node scripts/assert-test-promotion.mjs",
+    "test:fairtest:inventory": "node scripts/fairtest-runner-inventory.mjs"
   },
   "dependencies": {
     "@peasant-labs/schema": "0.20.0",
