@@ -1,0 +1,80 @@
+expectedRecordCount: 3
+requiredRecordNames:
+  - example-mounted-product-proof
+  - example-mounted-component-proof
+  - example-browser-free-boundary
+expectedMutationCount: 12
+requiredMutationNames:
+  - missing-answer-subject
+  - missing-decision
+  - missing-lower-layer-result
+  - missing-execution-policy
+  - missing-exit-condition
+  - renamed-answer-field
+  - duplicate-record-name
+  - trailing-document
+  - unknown-record-field
+  - blank-production-path
+  - invalid-decision-verdict
+  - deleted-required-record
+mutations:
+  - name: missing-answer-subject
+    kind: delete-field
+    target: example-mounted-product-proof
+    field: answers.subject
+    expectedField: answers.subject
+  - name: missing-decision
+    kind: delete-field
+    target: example-mounted-product-proof
+    field: decision
+    expectedField: decision
+  - name: missing-lower-layer-result
+    kind: delete-field
+    target: example-mounted-component-proof
+    field: lowerLayer.result
+    expectedField: lowerLayer.result
+  - name: missing-execution-policy
+    kind: delete-field
+    target: example-mounted-component-proof
+    field: executionPolicy
+    expectedField: executionPolicy
+  - name: missing-exit-condition
+    kind: delete-field
+    target: example-browser-free-boundary
+    field: exitCondition
+    expectedField: exitCondition
+  - name: renamed-answer-field
+    kind: rename-field
+    target: example-mounted-product-proof
+    field: answers.subject
+    newField: answers.topic
+    expectedField: answers.subject
+  - name: duplicate-record-name
+    kind: duplicate-name
+    target: example-mounted-component-proof
+    expectedField: example-mounted-component-proof
+  - name: trailing-document
+    kind: trailing-document
+    target: document
+    expectedField: document[1]
+  - name: unknown-record-field
+    kind: unknown-field
+    target: example-browser-free-boundary
+    field: reviewer
+    value: extra reviewer note
+    expectedField: reviewer
+  - name: blank-production-path
+    kind: blank-field
+    target: example-mounted-product-proof
+    field: answers.productionPath
+    expectedField: answers.productionPath
+  - name: invalid-decision-verdict
+    kind: bad-enum
+    target: example-mounted-component-proof
+    field: decision.verdict
+    value: maybe
+    expectedField: decision.verdict
+  - name: deleted-required-record
+    kind: delete-record
+    target: example-browser-free-boundary
+    expectedField: example-browser-free-boundary
