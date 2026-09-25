@@ -1,26 +1,26 @@
 records:
   - name: example-mounted-product-proof
     answers:
-      subject: A mounted check that the built product shell renders persistent chrome and representative body on one real route.
-      necessity: Value-level checks cannot observe DOM structure, rendered theme state, or served bytes, so a mounted row is required for this named risk.
-      productionPath: The built product target served locally from its exact build output, driven through one named section action.
-      cost: Two bounded theme rows, one service lifecycle, one named action, and six small artifacts; no catalog sweep.
-      lifetime: One immutable run root and one loopback service, cleaned up on success, failure, timeout, and interruption.
-      concurrency: One product row at a time; row identity and run root prevent stale or cross-run output.
-      ciParity: The exact row command runs after a clean build in the pinned container; no local-only service is assumed.
-      evidence: Computed styles, ARIA, axe output, screenshot, resolution, normalized theme observation, and served provenance.
-      mutation: Removing chrome, body, section, or view state, or serving a stale asset, kills the row for the intended reason.
-      exitCondition: Remove the row when a lower-level or existing gate proves the same named risk without a mounted harness.
+      subject: The real mounted product can pass with a false theme, missing shell, stale served build, or unproven section.
+      necessity: Pure value and contract tests cannot observe DOM structure, computed styles, browser input, service readiness, or served bytes, so a mounted row is required for this named risk.
+      productionPath: The built dist/ Fairtrade graph product under the actual Playwright host via FAIRTEST_RUN_ROOT=<run-root> pnpm test:fairtest:mounted -- --target=product.
+      cost: Two bounded theme rows, one browser and service lifecycle, one named map-section action, and six small artifacts per row, inside the existing job budget with no retries.
+      lifetime: One immutable run root created fresh per run plus one loopback service, cleaned up in finally on success, failure, timeout, and interruption.
+      concurrency: One product row at a time; row identity plus the immutable run root prevent stale or cross-run output.
+      ciParity: The exact command runs after a clean build in the pinned Playwright container; no local demo or external service is assumed.
+      evidence: Computed styles, ARIA tree, axe report, screenshot, resolution, normalized theme observation, and served-build provenance with asset digests.
+      mutation: A wrong theme, missing selector or part, unregistered action, missing artifact, or stale served asset kills the row for the intended reason.
+      exitCondition: Remove or simplify the mounted row when a lower-level gate or an existing journey proves the same named risk.
     lowerLayer:
       result: promote
-      detail: Value and contract checks cover shape and policy only; none observes the mounted shell, so the elaborate row is justified.
+      detail: Value, contract, and fixture checks cover shape, policy, and proof assembly only; none observes the mounted shell, served bytes, or real input, so the elaborate row is justified.
     decision:
       verdict: approve
-      rationale: All ten answers are present, the lower layer cannot observe the named risk, and the execution policy is bounded.
+      rationale: All ten answers are present, the lower layer cannot observe the named risk, and the execution policy is bounded to two rows with no retries.
     executionPolicy:
-      runner: Row-scoped mounted runner against the built target only.
+      runner: Row-scoped mounted runner against the built dist/ target only.
       budget: Two theme rows inside the existing job budget with no retries.
-      cleanup: Service and run root are removed in a finally step on every exit path.
+      cleanup: Adapter service and run root are released in a finally step on every exit path.
     exitCondition: Reuse an equivalent existing journey or delete the row once a lower-level gate proves the same named risk.
   - name: example-mounted-component-proof
     answers:

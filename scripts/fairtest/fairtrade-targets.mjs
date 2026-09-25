@@ -492,3 +492,207 @@ export function buildProductProof(input = {}) {
   }
   return resolutionContract.validateProductResolution(candidate, 'fairtrade targets')
 }
+
+/**
+ * Name of the app-owned product accessibility policy. The row gates the
+ * scoped product-view scan against a declared violation baseline instead
+ * of absolute zero (the pre-existing product defect is recorded, not
+ * fixed here) and instead of no gate at all (a record that never fails
+ * cannot catch a regression).
+ * @type {string}
+ */
+export const PRODUCT_A11Y_POLICY = 'product-view-baseline-delta'
+
+/**
+ * Root the primary accessibility scan is scoped to. Taken from the
+ * existing product selector bundle, never a second literal copy.
+ * @type {string}
+ */
+export const PRODUCT_A11Y_SCOPE_ROOT = PRODUCT_SELECTORS.sectionView
+
+/**
+ * Observation points carrying a scoped product-view scan: after the
+ * initial mount (section analytics) and after the named map interaction
+ * completes (section map).
+ * @type {string[]}
+ */
+export const PRODUCT_A11Y_POINTS = Object.freeze(['initial', 'after-action'])
+
+/**
+ * Section rendered at each scoped observation point.
+ * @type {object}
+ */
+export const PRODUCT_A11Y_POINT_SECTIONS = Object.freeze({
+  initial: PRODUCT_INITIAL_SECTION,
+  'after-action': PRODUCT_ACTION_TO_SECTION,
+})
+
+/**
+ * Axe impact severity rank, least to most severe. A measured impact above
+ * the declared rank for the same violation id fails the row closed.
+ * @type {object}
+ */
+export const PRODUCT_A11Y_IMPACT_RANK = Object.freeze({
+  minor: 1,
+  moderate: 2,
+  serious: 3,
+  critical: 4,
+})
+
+/**
+ * Declared product-view violation baseline, measured on the real built
+ * dist/ in both row themes (dark and light reported identical sets):
+ * the analytics point scans clean, the map point carries the one
+ * pre-existing critical aria-required-children violation over three
+ * nodes inside the product view. Improvement (a violation that
+ * disappears) never fails; anything beyond this baseline does.
+ * @type {object}
+ */
+export const PRODUCT_A11Y_BASELINE = Object.freeze({
+  policy: PRODUCT_A11Y_POLICY,
+  scopeRoot: PRODUCT_A11Y_SCOPE_ROOT,
+  points: Object.freeze({
+    initial: Object.freeze([]),
+    'after-action': Object.freeze([
+      Object.freeze({
+        id: 'aria-required-children',
+        impact: 'critical',
+        nodes: 3,
+        themes: Object.freeze(['dark', 'light']),
+      }),
+    ]),
+  }),
+})
+
+/**
+ * Validate one baseline entry shape: exact fields, a ranked impact, a
+ * non-negative integer node count, and a non-empty theme inventory drawn
+ * from the closed row vocabulary.
+ * @param {unknown} entry candidate baseline entry
+ * @param {string} point observation point the entry belongs to
+ * @returns {object} the validated entry
+ */
+export function validateProductAxeBaselineEntry(entry, point) {
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+    throw new Error(
+      `fairtrade targets: missing accessibility baseline entry for field "entry" at path a11y.baseline.${point}; ` +
+      'repair: declare each baseline violation with exactly id, impact, nodes, and themes.',
+    )
+  }
+  valuesContract.assertExactFields(entry, ['id', 'impact', 'nodes', 'themes'], 'fairtrade targets', `a11y.baseline.${point}`)
+  const candidate = /** @type {Record<string, unknown>} */ (entry)
+  if (typeof candidate.id !== 'string' || candidate.id.length === 0) {
+    throw new Error(
+      `fairtrade targets: invalid violation id ${JSON.stringify(candidate.id)} for field "id" at path a11y.baseline.${point}.id; ` +
+      'repair: use the axe rule id observed on the real built surface for "id".',
+    )
+  }
+  if (!Object.hasOwn(PRODUCT_A11Y_IMPACT_RANK, /** @type {string} */ (candidate.impact))) {
+    throw new Error(
+      `fairtrade targets: unknown impact ${JSON.stringify(candidate.impact)} for field "impact" at path a11y.baseline.${point}.impact; ` +
+      `repair: use one of ${Object.keys(PRODUCT_A11Y_IMPACT_RANK).join(', ')} for "impact".`,
+    )
+  }
+  if (!Number.isInteger(candidate.nodes) || /** @type {number} */ (candidate.nodes) < 0) {
+    throw new Error(
+      `fairtrade targets: invalid node count ${JSON.stringify(candidate.nodes)} for field "nodes" at path a11y.baseline.${point}.nodes; ` +
+      'repair: record the measured violating node count as a non-negative integer for "nodes".',
+    )
+  }
+  if (!Array.isArray(candidate.themes) || candidate.themes.length === 0 || candidate.themes.some((theme) => theme !== 'dark' && theme !== 'light')) {
+    throw new Error(
+      `fairtrade targets: invalid theme inventory ${JSON.stringify(candidate.themes)} for field "themes" at path a11y.baseline.${point}.themes; ` +
+      'repair: list every row theme the entry was observed in using dark and light for "themes".',
+    )
+  }
+  return candidate
+}
+
+/**
+ * Gate a scoped product-view scan against the declared baseline,
+ * failing closed when the measurement exceeds it. A violation id absent
+ * from the baseline (a new violation), a node count above the declared
+ * count, or an impact more severe than declared each fail with a
+ * diagnostic naming the rule, the observed triple, the declared
+ * baseline, the artifact path, and the repair. A baseline violation
+ * that disappears (improvement) never fails.
+ * @param {object} [input] gate inputs
+ * @param {string} input.point observation point the measurement belongs to
+ * @param {{ id: string, impact: string, nodeCount: number }[]} input.measured scoped violations just observed
+ * @param {object[]} [input.baseline] declared entries, defaults to the app-owned baseline for the point
+ * @param {string} input.artifactPath row axe.json path the full result was written to
+ * @returns {object} the frozen gate receipt on pass
+ */
+export function assertProductAxeBaselineDelta(input = {}) {
+  const wantsBaseline = !!input && typeof input === 'object' && Object.hasOwn(input, 'baseline')
+  valuesContract.assertExactFields(
+    input,
+    wantsBaseline ? ['point', 'measured', 'artifactPath', 'baseline'] : ['point', 'measured', 'artifactPath'],
+    'fairtrade targets',
+    'a11y.gate',
+  )
+  const record = /** @type {Record<string, unknown>} */ (input)
+  if (!PRODUCT_A11Y_POINTS.includes(/** @type {string} */ (record.point))) {
+    throw new Error(
+      `fairtrade targets: unknown accessibility point ${JSON.stringify(record.point)} for field "point" at path a11y.gate.point; ` +
+      `repair: use one of ${[...PRODUCT_A11Y_POINTS].join(', ')} for "point".`,
+    )
+  }
+  const point = /** @type {string} */ (record.point)
+  const declared = record.baseline ?? PRODUCT_A11Y_BASELINE.points[point]
+  if (!Array.isArray(declared)) {
+    throw new Error(
+      `fairtrade targets: missing accessibility baseline for field "baseline" at path a11y.gate.baseline; ` +
+      'repair: pass the declared per-point baseline entries for "baseline".',
+    )
+  }
+  const baseline = declared.map((entry) => validateProductAxeBaselineEntry(entry, point))
+  if (!Array.isArray(record.measured) || record.measured.some((entry) => !entry || typeof entry !== 'object')) {
+    throw new Error(
+      `fairtrade targets: missing scoped measurement for field "measured" at path a11y.gate.measured; ` +
+      'repair: pass the scoped product-view violations observed at this point for "measured".',
+    )
+  }
+  const measured = /** @type {Record<string, unknown>[]} */ (record.measured)
+  const artifactPath = /** @type {string} */ (record.artifactPath)
+  const baselineById = new Map(baseline.map((entry) => [entry.id, entry]))
+  for (const entry of measured) {
+    valuesContract.assertExactFields(entry, ['id', 'impact', 'nodeCount'], 'fairtrade targets', 'a11y.gate.measured')
+    const observed = `id ${JSON.stringify(entry.id)} with impact ${JSON.stringify(entry.impact)} over ${JSON.stringify(entry.nodeCount)} nodes`
+    const declaredText = `baseline ${JSON.stringify(baseline.map(({ id, impact, nodes }) => ({ id, impact, nodes })))}`
+    const known = baselineById.get(/** @type {string} */ (entry.id))
+    if (!known) {
+      throw new Error(
+        `fairtrade targets: accessibility gate new-violation for field "id" at path a11y.gate.measured; ` +
+        `observed ${observed} at point ${JSON.stringify(point)} but the declared ${declaredText} names no such id; ` +
+        `full result is recorded at ${JSON.stringify(artifactPath)}; ` +
+        'repair: fix the new product-view violation, or re-measure both themes on the built dist/ and re-declare the baseline.',
+      )
+    }
+    if (/** @type {number} */ (entry.nodeCount) > /** @type {number} */ (known.nodes)) {
+      throw new Error(
+        `fairtrade targets: accessibility gate increased-nodes for field "nodeCount" at path a11y.gate.measured; ` +
+        `observed ${observed} at point ${JSON.stringify(point)} but the declared ${declaredText} allows ${JSON.stringify(known.nodes)} nodes; ` +
+        `full result is recorded at ${JSON.stringify(artifactPath)}; ` +
+        'repair: fix the spread of the product-view violation, or re-measure both themes on the built dist/ and re-declare the baseline.',
+      )
+    }
+    const seen = PRODUCT_A11Y_IMPACT_RANK[/** @type {string} */ (entry.impact)] ?? 0
+    const allowed = PRODUCT_A11Y_IMPACT_RANK[/** @type {string} */ (known.impact)] ?? 0
+    if (seen > allowed) {
+      throw new Error(
+        `fairtrade targets: accessibility gate escalated-impact for field "impact" at path a11y.gate.measured; ` +
+        `observed ${observed} at point ${JSON.stringify(point)} but the declared ${declaredText} caps impact at ${JSON.stringify(known.impact)}; ` +
+        `full result is recorded at ${JSON.stringify(artifactPath)}; ` +
+        'repair: fix the escalated product-view violation, or re-measure both themes on the built dist/ and re-declare the baseline.',
+      )
+    }
+  }
+  return Object.freeze({
+    policy: PRODUCT_A11Y_POLICY,
+    point,
+    result: 'pass',
+    measured: Object.freeze(measured.length),
+    baseline: Object.freeze(baseline.length),
+  })
+}

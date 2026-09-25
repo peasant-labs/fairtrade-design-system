@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # product-target.testdata.yaml.
-expectedCaseCount: 45
+expectedCaseCount: 61
 requiredCaseNames:
   - theme-row-dark-absent-passes
   - theme-row-dark-empty-passes
@@ -47,7 +47,23 @@ requiredCaseNames:
   - wrapper-light-attribute-passes
   - wrapper-contradiction-fails
   - wrapper-wrong-value-fails
-expectedMutationCount: 14
+  - artifact-record-required
+  - artifact-aria-required
+  - artifact-axe-required
+  - artifact-screenshot-required
+  - artifact-provenance-required
+  - artifact-resolution-required
+  - artifact-missing-fails
+  - artifact-stale-duplicate-fails
+  - a11y-baseline-initial-clean
+  - a11y-baseline-after-action-declared
+  - a11y-delta-at-baseline-passes
+  - a11y-delta-improved-passes
+  - a11y-delta-initial-clean-passes
+  - a11y-delta-new-violation-fails
+  - a11y-delta-increased-nodes-fails
+  - a11y-delta-escalated-impact-fails
+expectedMutationCount: 21
 requiredMutationNames:
   - removing the light theme row breaks the required inventory
   - duplicating a route name breaks uniqueness
@@ -63,6 +79,13 @@ requiredMutationNames:
   - adding an unknown observation field breaks exact membership
   - inventing a proof row theme breaks the closed vocabulary
   - rendering dark as a literal value breaks normalization
+  - removing the aria artifact breaks the required inventory
+  - duplicating a provenance name breaks uniqueness
+  - inventing an artifact class breaks the closed set
+  - declaring a new violation id breaks the declared baseline
+  - raising the declared node count breaks the declared baseline
+  - removing the after-action baseline breaks the required inventory
+  - duplicating the initial baseline name breaks uniqueness
 mutations:
   - name: removing the light theme row breaks the required inventory
     kind: delete-record
@@ -136,3 +159,37 @@ mutations:
     field: renderedAttribute
     value: dark
     expectedField: renderedAttribute
+  - name: removing the aria artifact breaks the required inventory
+    kind: delete-record
+    target: artifact-aria-required
+    expectedField: artifact-aria-required
+  - name: duplicating a provenance name breaks uniqueness
+    kind: duplicate-name
+    target: artifact-provenance-required
+    expectedField: artifact-provenance-required
+  - name: inventing an artifact class breaks the closed set
+    kind: bad-value
+    target: artifact-record-required
+    field: artifact
+    value: evidence.json
+    expectedField: artifact
+  - name: declaring a new violation id breaks the declared baseline
+    kind: bad-value
+    target: a11y-baseline-after-action-declared
+    field: violations
+    value: [{id: color-contrast, impact: serious, nodes: 1, themes: [dark]}]
+    expectedField: id
+  - name: raising the declared node count breaks the declared baseline
+    kind: bad-value
+    target: a11y-baseline-after-action-declared
+    field: violations
+    value: [{id: aria-required-children, impact: critical, nodes: 4, themes: [dark, light]}]
+    expectedField: nodes
+  - name: removing the after-action baseline breaks the required inventory
+    kind: delete-record
+    target: a11y-baseline-after-action-declared
+    expectedField: a11y-baseline-after-action-declared
+  - name: duplicating the initial baseline name breaks uniqueness
+    kind: duplicate-name
+    target: a11y-baseline-initial-clean
+    expectedField: a11y-baseline-initial-clean
