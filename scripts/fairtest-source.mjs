@@ -17,7 +17,7 @@ export const FAIRTEST_PACKAGE_ROOT = resolve(REPO_ROOT, 'packages', 'fairtest')
 const ALLOWED_EXTENSIONS = new Set(['.mjs', '.js', '.cjs', '.json'])
 
 function reject(spec, reason) {
-  throw new Error(`fairtest source route: rejected ${JSON.stringify(spec)}: ${reason}.`)
+  throw new Error(`fairtest source route: rejected ${JSON.stringify(spec)}: ${reason} at path spec; repair: use a child-relative .mjs path inside packages/fairtest such as src/core/values.mjs.`)
 }
 
 export function resolveFairtestSource(spec) {

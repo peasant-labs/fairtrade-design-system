@@ -103,11 +103,18 @@ export function evaluateMeasurement(measurement, policy) {
   if (measurement.fraction < policy.minFraction) {
     failures.push(`fraction ${measurement.fraction} is below the caller floor ${policy.minFraction} at path measurement.fraction`)
   }
-  if (policy.maxAgeMs !== undefined && measurement.observedAtMs !== undefined && measurement.nowMs !== undefined) {
-    assertIntegerInRange(measurement.observedAtMs, 'observedAtMs', 'measurement.observedAtMs', { min: 0, max: MAX_SAFE })
-    assertIntegerInRange(measurement.nowMs, 'nowMs', 'measurement.nowMs', { min: 0, max: MAX_SAFE })
-    if (measurement.observedAtMs > measurement.nowMs || measurement.nowMs - measurement.observedAtMs > policy.maxAgeMs) {
-      failures.push(`observation age exceeds the caller ceiling ${policy.maxAgeMs} at path measurement.observedAtMs`)
+  if (policy.maxAgeMs !== undefined) {
+    const missing = []
+    if (measurement.observedAtMs === undefined) missing.push('observedAtMs')
+    if (measurement.nowMs === undefined) missing.push('nowMs')
+    if (missing.length > 0) {
+      failures.push(`measurement omits ${missing.map((clock) => `"${clock}"`).join(' and ')} required by the caller ceiling ${policy.maxAgeMs} at path ${missing.map((clock) => `measurement.${clock}`).join(', ')}; repair: persist observedAtMs and nowMs in measurement.`)
+    } else {
+      assertIntegerInRange(measurement.observedAtMs, 'observedAtMs', 'measurement.observedAtMs', { min: 0, max: MAX_SAFE })
+      assertIntegerInRange(measurement.nowMs, 'nowMs', 'measurement.nowMs', { min: 0, max: MAX_SAFE })
+      if (measurement.observedAtMs > measurement.nowMs || measurement.nowMs - measurement.observedAtMs > policy.maxAgeMs) {
+        failures.push(`observation age exceeds the caller ceiling ${policy.maxAgeMs} at path measurement.observedAtMs`)
+      }
     }
   }
   return freezeRecord({ pass: failures.length === 0, failures: freezeRecord([...failures]) })

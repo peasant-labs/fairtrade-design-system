@@ -13,9 +13,9 @@
 // developer dependency only. No service, runner, or network is required.
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, extname, join, relative as relativePath, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
 import { resolveFairtestSource } from './fairtest-source.mjs'
@@ -27,6 +27,7 @@ const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field
 const CHECKS = ['root-package', 'child-package', 'pack-path', 'source-route']
 const CHILD_REL = join('packages', 'fairtest')
 const ROUTE_MARKER = 'packages/fairtest'
+const ROUTE_EXTENSIONS = new Set(['.mjs', '.js', '.cjs'])
 
 /** @param {string} source @param {string} label @returns {Record<string, unknown>} */
 function loadSingleDocument(source, label) {
@@ -243,7 +244,8 @@ function runRouteCase(entry, index) {
     if (!/rejected|escapes|not allowed/.test(message)) {
       throw new Error(`${CORPUS_REL}: case "${name}" failed for the wrong reason at path ${path}.spec; got ${message}; repair: restore the intended rejection.`)
     }
-    message = `${CORPUS_REL}: case "${name}" rejected ${JSON.stringify(spec)} at path ${path}.spec; ${message}; repair: keep escapes and bare specifiers rejected by the source route.`
+    assert.ok(message.includes('at path'), `${CORPUS_REL}: case "${name}" production diagnostic is missing path context at path ${path}.spec; got ${message}; repair: name the spec path in the source-route rejection.`)
+    assert.ok(message.includes('repair:'), `${CORPUS_REL}: case "${name}" production diagnostic is missing repair guidance at path ${path}.spec; got ${message}; repair: append a repair hint to the source-route rejection.`)
   }
   expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
 }
@@ -297,18 +299,28 @@ function applyMutation(cases, mutation) {
   node[segments.at(-1)] = structuredClone(mutation.value)
 }
 
-/** @param {string} directory @returns {Map<string, string[]>} file plus matched lines */
-function filesReferencingChild(directory) {
+/** @param {string} directory @param {string} [base] @returns {Map<string, string[]>} relative path plus matched lines */
+function filesReferencingChild(directory, base = directory) {
   const hits = new Map()
-  let names = []
+  let entries = []
   try {
-    names = readdirSync(directory).filter((entry) => entry.endsWith('.mjs')).sort()
+    entries = readdirSync(directory, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name))
   } catch {
     return hits
   }
-  for (const name of names) {
-    const text = readFileSync(join(directory, name), 'utf8')
-    if (text.includes(ROUTE_MARKER)) hits.set(name, text.split('\n').filter((line) => line.includes(ROUTE_MARKER)))
+  for (const entry of entries) {
+    const absolute = join(directory, entry.name)
+    if (entry.isDirectory()) {
+      if (entry.name === 'node_modules') continue
+      for (const [relative, lines] of filesReferencingChild(absolute, base)) hits.set(relative, lines)
+      continue
+    }
+    if (!ROUTE_EXTENSIONS.has(extname(entry.name))) continue
+    const text = readFileSync(absolute, 'utf8')
+    if (text.includes(ROUTE_MARKER)) {
+      const relative = relativePath(base, absolute).split(sep).join('/')
+      hits.set(relative, text.split('\n').filter((line) => line.includes(ROUTE_MARKER)))
+    }
   }
   return hits
 }
@@ -409,15 +421,23 @@ function main() {
 
   // Sole repository-local source route.
   const allowedRoutes = /** @type {string[]} */ (parsed.allowedRouteFiles)
-  const hits = filesReferencingChild(join(ROOT, 'scripts'))
+  const scriptsDir = join(ROOT, 'scripts')
+  const hits = filesReferencingChild(scriptsDir)
   const actual = [...hits.keys()].map((name) => `scripts/${name}`).sort()
   assert.deepEqual(actual, [...allowedRoutes].sort(), `fairtest boundary: source-route inventory drifted at path scripts; got [${actual.join(', ')}]; repair: route every child source import through scripts/fairtest-source.mjs.`)
-  // A planted second route in a scratch directory must be flagged.
+  // A planted second route in a scratch directory must be flagged, including
+  // a nested subdirectory route and a non-.mjs source extension.
   const scratch = mkdtempSync(join(tmpdir(), 'fairtest-route-probe-'))
   try {
     writeFileSync(join(scratch, 'second-route.mjs'), `import x from '../packages/fairtest/src/core/values.mjs'\nconsole.log(x)\n`)
+    const nested = join(scratch, 'journey')
+    mkdirSync(nested, { recursive: true })
+    writeFileSync(join(nested, 'nested-route.mjs'), `import x from '../../packages/fairtest/src/core/values.mjs'\nconsole.log(x)\n`)
+    writeFileSync(join(scratch, 'legacy-route.cjs'), `require('../packages/fairtest/src/core/values.mjs')\n`)
     const planted = filesReferencingChild(scratch)
     assert.ok(planted.has('second-route.mjs'), 'fairtest boundary: planted second route passed undetected; repair: keep the route detector literal exact.')
+    assert.ok(planted.has('journey/nested-route.mjs'), 'fairtest boundary: planted nested route passed undetected; repair: keep the route scan recursive across scripts/.')
+    assert.ok(planted.has('legacy-route.cjs'), 'fairtest boundary: planted .cjs route passed undetected; repair: keep the route scan covering .mjs, .js, and .cjs.')
   } finally {
     rmSync(scratch, { recursive: true, force: true })
   }
