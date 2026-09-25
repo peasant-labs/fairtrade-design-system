@@ -52,11 +52,26 @@ export const PRODUCT_ACTION_FROM_SECTION = 'analytics'
 export const PRODUCT_ACTION_TO_SECTION = 'map'
 
 /**
+ * Display label the section navigation renders for PRODUCT_ACTION_TO_SECTION.
+ * The section id and its rendered label are different strings on the real
+ * surface (the map section reads "code map"), so the row carries the rendered
+ * label from here instead of repeating the product copy in the producer.
+ * @type {string}
+ */
+export const PRODUCT_ACTION_LABEL = 'code map'
+
+/**
  * Product-only selector bundle. Keys name the observed part, values are the
- * selectors the row-scoped producer queries on the real built surface.
+ * selectors the row-scoped producer queries on the real built surface. This
+ * bundle is the single declared source of app structure: the producer derives
+ * every product selector it touches from these keys and holds no `iu-` class
+ * or `#inuse` selector literal of its own.
  * @type {object}
  */
 export const PRODUCT_SELECTORS = Object.freeze({
+  // The in-use shell root. The ARIA snapshot the row records is taken from
+  // this root so the snapshot covers the whole product shell, not one part.
+  shell: '#inuse',
   chrome: '.iu-bar',
   body: '.iu-view',
   // The active view inside the view container. The container also holds the
@@ -66,9 +81,36 @@ export const PRODUCT_SELECTORS = Object.freeze({
   // active child, so a section rendering more than one root is measured whole.
   activeView: '.iu-view > :not([hidden])',
   sectionNav: 'nav[aria-label="peasant sections"]',
+  // The section-item class and the active-state class the shell toggles, kept
+  // as their own keys so the row never re-spells them inline. activeSection is
+  // derived from the two so the nav-scoped active query and the two class
+  // probes cannot drift apart.
+  sectionItem: '.iu-subnav-item',
+  activeSectionItem: '.iu-subnav-item.active',
   activeSection: 'nav[aria-label="peasant sections"] .iu-subnav-item[aria-current="page"]',
   sectionView: '#inuse-stage[role="tabpanel"]',
 })
+
+/**
+ * Drift guard: the nav-scoped active-section query is assembled from the nav,
+ * the section-item class, and the shell's own active marker, so the item key,
+ * the active-state key, and this query can never disagree about what "the
+ * active section button" means.
+ */
+if (PRODUCT_SELECTORS.activeSection !== `${PRODUCT_SELECTORS.sectionNav} ${PRODUCT_SELECTORS.sectionItem}[aria-current="page"]`) {
+  throw new Error(
+    'fairtrade targets: active-section selector drifted for field "activeSection" at path target.selectors.activeSection; ' +
+    `got ${JSON.stringify(PRODUCT_SELECTORS.activeSection)}; ` +
+    'repair: derive the active-section query from the sectionNav, sectionItem, and active-marker keys instead of a second literal.',
+  )
+}
+if (!PRODUCT_SELECTORS.activeSectionItem.startsWith(`${PRODUCT_SELECTORS.sectionItem}.`)) {
+  throw new Error(
+    'fairtrade targets: active-section item drifted for field "activeSectionItem" at path target.selectors.activeSectionItem; ' +
+    `got ${JSON.stringify(PRODUCT_SELECTORS.activeSectionItem)}; ` +
+    `repair: express the active state as the section item class ${JSON.stringify(PRODUCT_SELECTORS.sectionItem)} plus the shell's active class.`,
+  )
+}
 
 /**
  * Opaque handle names for the separately observed product parts.
@@ -116,7 +158,43 @@ const PRODUCT_ACTION = Object.freeze({
   name: PRODUCT_ACTION_NAME,
   from: PRODUCT_ACTION_FROM_SECTION,
   to: PRODUCT_ACTION_TO_SECTION,
+  label: PRODUCT_ACTION_LABEL,
 })
+
+/**
+ * The ways an active view can be PRESENT in the DOM and still not RENDERED.
+ * Every name here is a fail-closed reason the row reports for the active
+ * view: a root in one of these modes is excluded from the rendered
+ * population the floors are applied to, so an unrendered active view can
+ * never satisfy a count, a text-length, or a screenshot floor. Declared in
+ * the app-owned registry because the modes are named product evidence
+ * vocabulary: the in-page measurement reports them, the guard refuses on
+ * them, and the record carries the rendered/total split beside them.
+ * @type {string[]}
+ */
+export const PRODUCT_UNRENDERED_MODES = Object.freeze([
+  'display-none',
+  'visibility-hidden',
+  'opacity-zero',
+  'zero-size',
+  'clipped',
+])
+
+/**
+ * Exact field set of one per-root unrendered refusal the in-page measurement
+ * reports. The measured computed style and box travel with the mode, so a
+ * verifier reads why a root was excluded and not only that it was.
+ * @type {string[]}
+ */
+export const PRODUCT_UNRENDERED_REFUSAL_FIELDS = Object.freeze([
+  'mode',
+  'display',
+  'visibility',
+  'opacity',
+  'width',
+  'height',
+  'intersectsStage',
+])
 
 const PRODUCT_TARGET_RECORD = Object.freeze({
   id: PRODUCT_TARGET_ID,

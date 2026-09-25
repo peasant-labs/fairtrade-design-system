@@ -8,18 +8,19 @@
  * immutable run root. A row fails, never skips, when the app is not built
  * or any part of the tuple cannot be observed. The written artifacts are then
  * read back and asserted: six classes present, an accessibility record the
- * verifier-facing reader resolves to a pass from its gate receipts alone, and
- * a proof carrying real observation times in observation order.
+ * verifier-facing reader resolves to a pass from its gate receipts alone, a
+ * proof carrying real observation times in observation order, and a body and
+ * view block whose unqualified numbers are the rendered active-view
+ * measurement the floors were applied to rather than a container total.
  *
  * Theme comes from the row key only. There is exactly one project in the
  * Fairtest config, so no project name is read here.
  */
 import { test, expect } from '@playwright/test'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
+import { FAIRTEST_APP_HOST, FAIRTEST_APP_PORT } from './fairtest-runtime.mjs'
 import { PRODUCT_TARGET_ID } from './fairtrade-targets.mjs'
 import {
-  FAIRTEST_PRODUCT_HOST,
-  FAIRTEST_PRODUCT_PORT,
   PRODUCT_ARTIFACT_CLASSES,
   PRODUCT_PRE_ACTION_PARTS,
   captureProductRow,
@@ -45,7 +46,7 @@ test.describe('fairtest mounted product', () => {
 
   test.beforeAll(async () => {
     runRoot = resolveProductRunRoot()
-    driver = createProductStaticDriver({ port: FAIRTEST_PRODUCT_PORT, host: FAIRTEST_PRODUCT_HOST })
+    driver = createProductStaticDriver({ port: FAIRTEST_APP_PORT, host: FAIRTEST_APP_HOST })
     adapter = await createFairtradeAdapter({
       runId: sanitizeRunId(runRoot),
       driver,
@@ -99,6 +100,50 @@ test.describe('fairtest mounted product', () => {
       expect(record.accessibility.pageWide.informational, `row ${theme} page-wide census must be informational`).toBe(true)
       expect(record.accessibility.blocking, `row ${theme} must carry no unqualified blocking count`).toBeUndefined()
       expect(record.accessibility.violations, `row ${theme} must carry no unqualified violations count`).toBeUndefined()
+
+      // Record truthfulness on disk: the unqualified body and view numbers a
+      // verifier reads must be the RENDERED active-view measurement the floors
+      // were applied to, never a container total. The row summary carries the
+      // accepted rendered triples, so this compares the written record against
+      // the measurement the guard decided on, and proves each is strictly
+      // below the container total it must never be confused with.
+      const recordedBlocks = [
+        {
+          part: 'body',
+          block: record.body,
+          accepted: summary.body,
+          fields: {
+            renderedRoots: 'renderedRoots',
+            descendants: 'descendants',
+            textLength: 'textLength',
+            containerDescendants: 'containerDescendants',
+            containerTextLength: 'containerTextLength',
+          },
+        },
+        {
+          part: 'view',
+          block: record.view,
+          accepted: summary.view,
+          fields: {
+            renderedRoots: 'renderedRootsAfter',
+            descendants: 'viewDescendantsAfter',
+            textLength: 'viewTextLengthAfter',
+            containerDescendants: 'containerDescendantsAfter',
+            containerTextLength: 'containerTextLengthAfter',
+          },
+        },
+      ]
+      for (const { part, block, accepted, fields } of recordedBlocks) {
+        for (const [role, field] of Object.entries(fields)) {
+          expect(typeof block[field], `row ${theme} ${part} must record its ${role} as a number under ${field}`).toBe('number')
+        }
+        expect(block[fields.renderedRoots], `row ${theme} ${part} must record how many active roots rendered`).toBeGreaterThanOrEqual(1)
+        expect(block[fields.renderedRoots], `row ${theme} ${part} rendered roots must be the measurement the guard accepted`).toBe(accepted.rendered)
+        expect(block[fields.descendants], `row ${theme} ${part} descendants must be the rendered active-view count`).toBe(accepted.descendants)
+        expect(block[fields.textLength], `row ${theme} ${part} text length must be the rendered active-view count`).toBe(accepted.textLength)
+        expect(block[fields.descendants], `row ${theme} ${part} rendered descendants must stay below the container total`).toBeLessThan(block[fields.containerDescendants])
+        expect(block[fields.textLength], `row ${theme} ${part} rendered text must stay below the container total`).toBeLessThan(block[fields.containerTextLength])
+      }
 
       // The written proof must carry the real readings the row took: one
       // shared pre-action reading after the row started, then the theme

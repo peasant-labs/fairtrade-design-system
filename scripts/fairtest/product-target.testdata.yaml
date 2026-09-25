@@ -15,13 +15,14 @@
 # with its per-part and action negatives, and the journey compatibility
 # wrapper behavior.
 #
-# The fourth family names the nine negative product mutations
-# (missing chrome/body/section/view, blank active view, wrong theme,
-# unregistered action, cross-kind proof, stale served asset). Each names its
-# owning boundary and the diagnostic fragments the real producer path must
-# fail with; the executable runners live in product-mutations.mjs, proven
-# browser-free plus real-DOM absence and blank-view proofs over the served
-# bytes and one throwaway-copy stale-asset proof.
+# The fourth family names the ten negative product mutations
+# (missing chrome/body/section/view, blank active view, unrendered active
+# view, wrong theme, unregistered action, cross-kind proof, stale served
+# asset). Each names its owning boundary and the diagnostic fragments the real
+# producer path must fail with; the executable runners live in
+# product-mutations.mjs, proven browser-free plus real-DOM absence,
+# blank-view, and unrendered-view proofs over the served bytes and one
+# throwaway-copy stale-asset proof.
 #
 # The fifth family carries the record.json accessibility block as a
 # verifier-facing reading: the verdict is read from the gate receipts over the
@@ -50,7 +51,25 @@
 # fake driver whose stop rejects when it is not running must still leave the
 # original start diagnostic as the failure a maintainer reads, and the adapter
 # must declare that stop requirement on its driver surface.
-expectedCaseCount: 91
+#
+# The eighth family carries the RENDERED active view: the healthy population
+# must clear the floors and return the accepted triple, while one case per
+# declared unrendered mode (display none, hidden visibility, zero opacity, an
+# empty box, and a box clipped away from the mounted stage) must be refused by
+# name with the measured computed style and box. The ninth family pins record
+# truthfulness: the recorded body and view numbers must be the rendered
+# measurement the guard accepted, and swapping them back to the container
+# totals must fail.
+#
+# The tenth family carries the run-subtree ordering contract observed through
+# the real preparation seam (validated before created, and a stale row
+# directory refused with no step observed and its previous bytes untouched),
+# the Fairtest Playwright config runner shape (exactly one project, the exact
+# product/component journey matches, retries 0, workers 1, reducedMotion
+# reduce, no webServer or reuseExistingServer), the single loopback host/port
+# owner both the config and the producer read, and the single owner of the
+# compact axe report shape.
+expectedCaseCount: 107
 cases:
   - name: theme-row-dark-absent-passes
     check: theme-row
@@ -507,6 +526,12 @@ cases:
     boundary: producer.activeView.body
     expectValid: false
     expectedErrorContains: ['blank representative body', 'proof.body', 'active view', 'hidden changes view', 'repair:']
+  - name: mutation-unrendered-active-view-fails
+    check: product-mutation
+    mutation: unrendered-active-view
+    boundary: producer.activeView.body.refusals
+    expectValid: false
+    expectedErrorContains: ['unrendered active view refused', 'field "mode"', 'at path producer.activeView.body.refusals', 'display-none', 'visibility-hidden', 'opacity-zero', 'zero-size', 'clipped', 'repair:']
   - name: mutation-wrong-theme-fails
     check: product-mutation
     mutation: wrong-theme
@@ -955,4 +980,143 @@ cases:
     check: driver-stop-contract
     startFailure: fake start failed before readiness
     contractRequirement: stop must be safe to call when the driver is not running
+    expectValid: true
+  - name: rendered-active-view-healthy-passes
+    check: rendered-active-view
+    mode: rendered
+    activeView: {roots: 1, rendered: 1, descendants: 646, textLength: 1223, refusals: []}
+    container: {descendants: 834, textLength: 2027}
+    expectAccepted: {roots: 1, rendered: 1, descendants: 646, textLength: 1223}
+    expectValid: true
+    expectFrozen: true
+  - name: rendered-active-view-display-none-fails
+    check: rendered-active-view
+    mode: display-none
+    activeView:
+      roots: 1
+      rendered: 0
+      descendants: 0
+      textLength: 0
+      refusals:
+        - {mode: display-none, display: none, visibility: visible, opacity: 1, width: 0, height: 0, intersectsStage: false}
+    container: {descendants: 834, textLength: 2027}
+    expectValid: false
+    expectedErrorContains: ['unrendered representative body', 'at path proof.body', '1 roots of which 0 render', 'display none', 'floor is one rendering root', 'repair:']
+  - name: rendered-active-view-visibility-hidden-fails
+    check: rendered-active-view
+    mode: visibility-hidden
+    activeView:
+      roots: 1
+      rendered: 0
+      descendants: 0
+      textLength: 0
+      refusals:
+        - {mode: visibility-hidden, display: flex, visibility: hidden, opacity: 1, width: 1184, height: 1621, intersectsStage: true}
+    container: {descendants: 834, textLength: 2027}
+    expectValid: false
+    expectedErrorContains: ['unrendered representative body', 'visibility hidden', '1 roots of which 0 render', 'repair:']
+  - name: rendered-active-view-opacity-zero-fails
+    check: rendered-active-view
+    mode: opacity-zero
+    activeView:
+      roots: 1
+      rendered: 0
+      descendants: 0
+      textLength: 0
+      refusals:
+        - {mode: opacity-zero, display: flex, visibility: visible, opacity: 0, width: 1184, height: 1621, intersectsStage: true}
+    container: {descendants: 834, textLength: 2027}
+    expectValid: false
+    expectedErrorContains: ['unrendered representative body', 'opacity 0', '1 roots of which 0 render', 'repair:']
+  - name: rendered-active-view-zero-size-fails
+    check: rendered-active-view
+    mode: zero-size
+    activeView:
+      roots: 1
+      rendered: 0
+      descendants: 0
+      textLength: 0
+      refusals:
+        - {mode: zero-size, display: flex, visibility: visible, opacity: 1, width: 0, height: 0, intersectsStage: true}
+    container: {descendants: 834, textLength: 2027}
+    expectValid: false
+    expectedErrorContains: ['unrendered representative body', 'box 0x0', '1 roots of which 0 render', 'repair:']
+  - name: rendered-active-view-clipped-fails
+    check: rendered-active-view
+    mode: clipped
+    activeView:
+      roots: 1
+      rendered: 0
+      descendants: 0
+      textLength: 0
+      refusals:
+        - {mode: clipped, display: flex, visibility: visible, opacity: 1, width: 1088, height: 1621, intersectsStage: false}
+    container: {descendants: 834, textLength: 2027}
+    expectValid: false
+    expectedErrorContains: ['unrendered representative body', 'intersects the mounted stage false', '1 roots of which 0 render', 'repair:']
+  - name: record-body-tracks-rendered-active-view
+    check: record-truthfulness
+    part: body
+    accepted: {roots: 1, rendered: 1, descendants: 646, textLength: 1223}
+    activeView: {roots: 1, rendered: 1, descendants: 646, textLength: 1223, refusals: []}
+    container: {descendants: 834, textLength: 2027}
+    expectValid: true
+    expectFrozen: true
+  - name: record-view-tracks-rendered-active-view
+    check: record-truthfulness
+    part: view
+    accepted: {roots: 2, rendered: 2, descendants: 564, textLength: 3217}
+    activeView: {roots: 2, rendered: 2, descendants: 564, textLength: 3217, refusals: []}
+    container: {descendants: 752, textLength: 4021}
+    expectValid: true
+    expectFrozen: true
+  - name: record-body-container-swap-fails
+    check: record-truthfulness
+    part: body
+    accepted: {roots: 1, rendered: 1, descendants: 646, textLength: 1223}
+    activeView: {roots: 1, rendered: 1, descendants: 834, textLength: 2027, refusals: []}
+    container: {descendants: 834, textLength: 2027}
+    expectValid: false
+    expectedErrorContains: ['recorded body measurement contradicts the rendered guard', 'field "descendants"', 'at path record.body.descendants', 'container totals', 'repair:']
+  - name: record-view-container-swap-fails
+    check: record-truthfulness
+    part: view
+    accepted: {roots: 2, rendered: 2, descendants: 564, textLength: 3217}
+    activeView: {roots: 2, rendered: 2, descendants: 752, textLength: 4021, refusals: []}
+    container: {descendants: 752, textLength: 4021}
+    expectValid: false
+    expectedErrorContains: ['recorded view measurement contradicts the rendered guard', 'field "viewDescendantsAfter"', 'at path record.view.viewDescendantsAfter', 'container totals', 'repair:']
+  - name: row-dir-prepares-after-validating
+    check: row-dir-preparation
+    existingArtifact: null
+    expectedSteps: [validated, created]
+    expectPrepared: true
+    expectValid: true
+  - name: row-dir-stale-refuses-before-any-mutation
+    check: row-dir-preparation
+    existingArtifact: record.json
+    expectedSteps: []
+    expectPrepared: false
+    expectValid: false
+    expectedErrorContains: ['stale artifact', 'field "artifact"', 'at path run.rowDir/record.json', 'repair:']
+  - name: runner-config-shape-pinned
+    check: runner-config
+    configFile: playwright.fairtest.config.mjs
+    expectedProjects: [fairtest]
+    expectedTestMatch: ['**/product.journey.mjs']
+    expectedTestDir: ./scripts/fairtest
+    expectedRetries: 0
+    expectedWorkers: 1
+    expectedFullyParallel: false
+    expectedReducedMotion: reduce
+    forbiddenKeys: [webServer, reuseExistingServer]
+    expectValid: true
+  - name: config-port-owner-single-declaration
+    check: port-owner
+    ownerModule: scripts/fairtest/fairtest-runtime.mjs
+    consumerModules: [playwright.fairtest.config.mjs, scripts/fairtest/product-producer.mjs, scripts/fairtest/product.journey.mjs, scripts/fairtest/product-mutations.mjs]
+    portEnvName: FAIRTEST_APP_PORT
+    expectValid: true
+  - name: axe-report-shape-one-owner
+    check: axe-report-shape
     expectValid: true

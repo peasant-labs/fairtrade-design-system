@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # product-target.testdata.yaml.
-expectedCaseCount: 91
+expectedCaseCount: 107
 requiredCaseNames:
   - theme-row-dark-absent-passes
   - theme-row-dark-empty-passes
@@ -47,6 +47,7 @@ requiredCaseNames:
   - mutation-missing-section-fails
   - mutation-missing-view-fails
   - mutation-blank-active-view-fails
+  - mutation-unrendered-active-view-fails
   - mutation-wrong-theme-fails
   - mutation-unregistered-action-fails
   - mutation-cross-kind-proof-fails
@@ -93,7 +94,22 @@ requiredCaseNames:
   - driver-out-of-root-request-refused
   - driver-non-loopback-host-refused
   - driver-idle-stop-keeps-start-diagnostic
-expectedMutationCount: 44
+  - rendered-active-view-healthy-passes
+  - rendered-active-view-display-none-fails
+  - rendered-active-view-visibility-hidden-fails
+  - rendered-active-view-opacity-zero-fails
+  - rendered-active-view-zero-size-fails
+  - rendered-active-view-clipped-fails
+  - record-body-tracks-rendered-active-view
+  - record-view-tracks-rendered-active-view
+  - record-body-container-swap-fails
+  - record-view-container-swap-fails
+  - row-dir-prepares-after-validating
+  - row-dir-stale-refuses-before-any-mutation
+  - runner-config-shape-pinned
+  - config-port-owner-single-declaration
+  - axe-report-shape-one-owner
+expectedMutationCount: 57
 requiredMutationNames:
   - removing the light theme row breaks the required inventory
   - duplicating a route name breaks uniqueness
@@ -139,6 +155,19 @@ requiredMutationNames:
   - declaring a wrong refused status breaks the out-of-root driver case
   - dropping the rejected host list breaks the driver case shape
   - declaring a different stop requirement breaks the driver contract case
+  - declaring a second mounted project breaks the config shape
+  - declaring a runner-managed server breaks the config shape
+  - raising the declared retry budget breaks the config shape
+  - widening the declared worker budget breaks the config shape
+  - renaming the unrendered-mode mutation breaks the closed set
+  - dropping the unrendered-view boundary breaks the case shape
+  - reordering the row-directory preparation breaks the ordering contract
+  - deleting the stale-preparation case breaks the required inventory
+  - declaring an unrendered root as rendered breaks the rendered guard
+  - inventing an unrendered mode breaks the declared vocabulary
+  - recording a container total under the body descendants name breaks record truthfulness
+  - claiming a foreign owner for the loopback port breaks the port owner
+  - inventing an axe result field breaks the single report shape
 mutations:
   - name: removing the light theme row breaks the required inventory
     kind: delete-record
@@ -372,3 +401,78 @@ mutations:
     field: contractRequirement
     value: stop must be called at most once
     expectedField: contractRequirement
+  - name: declaring a second mounted project breaks the config shape
+    kind: bad-value
+    target: runner-config-shape-pinned
+    field: expectedProjects
+    value: [fairtest, fairtest-light]
+    expectedField: expectedProjects
+  - name: declaring a runner-managed server breaks the config shape
+    kind: unknown-field
+    target: runner-config-shape-pinned
+    field: webServer
+    value: {command: pnpm preview, url: http://127.0.0.1:5189, reuseExistingServer: true}
+    expectedField: webServer
+  - name: raising the declared retry budget breaks the config shape
+    kind: bad-value
+    target: runner-config-shape-pinned
+    field: expectedRetries
+    value: 2
+    expectedField: expectedRetries
+  - name: widening the declared worker budget breaks the config shape
+    kind: bad-value
+    target: runner-config-shape-pinned
+    field: expectedWorkers
+    value: 4
+    expectedField: expectedWorkers
+  - name: renaming the unrendered-mode mutation breaks the closed set
+    kind: bad-value
+    target: mutation-unrendered-active-view-fails
+    field: mutation
+    value: unrendered-view
+    expectedField: mutation
+  - name: dropping the unrendered-view boundary breaks the case shape
+    kind: delete-field
+    target: mutation-unrendered-active-view-fails
+    field: boundary
+    expectedField: boundary
+  - name: reordering the row-directory preparation breaks the ordering contract
+    kind: bad-value
+    target: row-dir-prepares-after-validating
+    field: expectedSteps
+    value: [created, validated]
+    expectedField: expectedSteps
+  - name: deleting the stale-preparation case breaks the required inventory
+    kind: delete-record
+    target: row-dir-stale-refuses-before-any-mutation
+    expectedField: row-dir-stale-refuses-before-any-mutation
+  - name: declaring an unrendered root as rendered breaks the rendered guard
+    kind: bad-value
+    target: rendered-active-view-display-none-fails
+    field: activeView.rendered
+    value: 1
+    expectedField: activeView.rendered
+  - name: inventing an unrendered mode breaks the declared vocabulary
+    kind: bad-value
+    target: rendered-active-view-clipped-fails
+    field: activeView.refusals.0.mode
+    value: offstage
+    expectedField: mode
+  - name: recording a container total under the body descendants name breaks record truthfulness
+    kind: bad-value
+    target: record-body-tracks-rendered-active-view
+    field: activeView.descendants
+    value: 834
+    expectedField: descendants
+  - name: claiming a foreign owner for the loopback port breaks the port owner
+    kind: bad-value
+    target: config-port-owner-single-declaration
+    field: ownerModule
+    value: playwright.fairtest.config.mjs
+    expectedField: ownerModule
+  - name: inventing an axe result field breaks the single report shape
+    kind: bad-value
+    target: axe-report-shape-one-owner
+    field: extraField
+    value: ruleIds
+    expectedField: extraField

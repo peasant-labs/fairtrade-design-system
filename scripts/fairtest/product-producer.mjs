@@ -3,10 +3,15 @@
 //
 // This module never invents routes, selectors, theme semantics, or proof
 // vocabulary. Every one of those comes from fairtrade-targets.mjs (app-owned
-// target registry) and the shared host contract through the sole source
-// route. The caller supplies the Playwright page; this module performs the
-// row-scoped observation sequence and writes exactly six artifact classes
-// per theme row into an immutable run root.
+// target registry), from fairtest-runtime.mjs (the single loopback origin
+// owner both this module and the Fairtest Playwright config read), and from
+// the shared host contract through the sole source route. It holds no
+// product class-name literal, no shell id selector, and no product display
+// label of its own: the shell root, the section item, the active-state class,
+// and the action label all come from the registry. The caller supplies the
+// Playwright page; this module performs the row-scoped observation sequence
+// and writes exactly six artifact classes per theme row into an immutable run
+// root.
 //
 // Row sequence per theme (dark, light): serve the row route, wait for genuine
 // mount (selector readiness, never a fixed sleep alone), observe chrome, body,
@@ -22,7 +27,16 @@
 // floor would be satisfied by a blank active section. Container totals are
 // still read and recorded, explicitly labelled as container totals.
 //
-// Every observedAtMs value in resolution.json is the real clock reading taken
+// A PRESENT active view is not a RENDERED one, so counting nodes and text is
+// not enough. measureProductView reads, per active root, the computed display,
+// visibility, and effective opacity, the root's own box, and the box left
+// after every clipping ancestor up to the mounted stage; a root in one of the
+// PRODUCT_UNRENDERED_MODES is refused by name and excluded from the rendered
+// population. assertProductActiveViewMounted is the single app-owned rendered
+// predicate: it runs at the pre-action and the post-action observation point
+// on the same rendered population, applies the floors to that population
+// alone, and returns the accepted triple the record then carries. Every
+// observedAtMs value in resolution.json is the real clock reading taken
 // at the observation it names: rowStartedAtMs when the row begins, one
 // captured reading for the chrome, body, and route parts read by the
 // pre-interaction observation (the product tuple, then the shared active-view
@@ -45,10 +59,10 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { AxeBuilder } from '@axe-core/playwright'
 import { importFairtestSource } from '../fairtest-source.mjs'
+import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, FAIRTEST_REPO_ROOT } from './fairtest-runtime.mjs'
 import {
+  PRODUCT_ACTION_LABEL,
   PRODUCT_ACTION_NAME,
   PRODUCT_ACTION_TO_SECTION,
   PRODUCT_A11Y_BASELINE,
@@ -62,6 +76,8 @@ import {
   PRODUCT_PROVENANCE_SOURCE,
   PRODUCT_SELECTORS,
   PRODUCT_TARGET_ID,
+  PRODUCT_UNRENDERED_MODES,
+  PRODUCT_UNRENDERED_REFUSAL_FIELDS,
   assertProductAxeBaselineDelta,
   assertProductThemeObservation,
   buildProductProof,
@@ -69,7 +85,7 @@ import {
   productRouteForTheme,
   productThemeRow,
 } from './fairtrade-targets.mjs'
-import { DEFAULT_AXE_TAGS, scanAxe, seriousViolations } from '../journey/lib/assertions.mjs'
+import { AXE_RESULT_FIELDS, scanAxe, seriousViolations } from '../journey/lib/assertions.mjs'
 
 const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 // Generic value validation (records, fields, counts, strings, id lists) is a
@@ -77,20 +93,6 @@ const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 // consumes it through the sole source route instead of re-declaring a second
 // copy with its own plain-record semantics and its own diagnostic wording.
 const valuesContract = await importFairtestSource('src/core/values.mjs')
-
-/**
- * Fixed loopback port for the built app. Mirrors the port owned by the
- * Fairtest Playwright config; the config is the owner, this default keeps
- * direct producer use on the same port. Override with FAIRTEST_APP_PORT.
- * @type {number}
- */
-export const FAIRTEST_PRODUCT_PORT = Number(process.env.FAIRTEST_APP_PORT || 5189)
-
-/**
- * Loopback host for the built app. Never a wildcard listener.
- * @type {string}
- */
-export const FAIRTEST_PRODUCT_HOST = '127.0.0.1'
 
 /**
  * Explicit viewport every product row renders at. Recorded in provenance.
@@ -113,38 +115,42 @@ export const PRODUCT_ARTIFACT_CLASSES = Object.freeze([
 ])
 
 /**
- * Minimum descendant element count inside the ACTIVE view (the non-hidden
- * children of the view container) that counts as a non-blank representative
- * body. Measured on the active view, never on the container: the graph shell
- * keeps a permanently mounted hidden changes view inside that container, and
- * on the real built surface that hidden sibling alone contributes 188
- * descendants, far above this floor, so a container-scoped measurement cannot
- * tell a blank active section from a rendered one. The active analytics view
- * renders hundreds of nodes (646 descendants observed on the real built
- * surface) and the active map view 564, so the floor is wide on purpose:
- * anything below it is unproven body content, not a close call.
+ * Minimum descendant element count inside the RENDERED active view (the
+ * non-hidden children of the view container that render) that counts as a
+ * non-blank representative body. Measured on the rendered active view, never
+ * on the container and never on an unrendered root: the graph shell keeps a
+ * permanently mounted hidden changes view inside the container, and on the
+ * real built surface that hidden sibling alone contributes 188 descendants,
+ * far above this floor, so a container-scoped measurement cannot tell a blank
+ * active section from a rendered one. The rendered active analytics view
+ * carries 646 descendants on the real built surface and the rendered active
+ * map root 298, so the floor is wide on purpose: anything below it is
+ * unproven body content, not a close call.
  * @type {number}
  */
 export const PRODUCT_MIN_BODY_DESCENDANTS = 20
 
 /**
- * Minimum trimmed text length inside the ACTIVE view that counts as non-blank
- * body content. Observed active-view contributions are 1223 characters at
- * analytics and 3217 at the code map; a blank active section carries near
- * zero once the permanently mounted hidden changes view is excluded.
+ * Minimum trimmed text length inside the RENDERED active view that counts as
+ * non-blank body content. Observed rendered-view contributions are 1223
+ * characters at analytics and 1195 at the code map; a blank or unrendered
+ * active section contributes near zero once the permanently mounted hidden
+ * changes view and every unrendered root are excluded.
  * @type {number}
  */
 export const PRODUCT_MIN_BODY_TEXT_LENGTH = 200
 
 /**
- * The two selectors one active-view measurement reads: the view container and
- * the active view inside it. Derived from the app-owned selector bundle, never
- * a second literal pair.
- * @type {{ container: string, activeView: string }}
+ * The three selectors one active-view measurement reads: the view container,
+ * the active view inside it, and the mounted stage the active view must still
+ * intersect to count as rendered. Derived from the app-owned selector bundle,
+ * never a second literal triple.
+ * @type {{ container: string, activeView: string, stage: string }}
  */
 export const PRODUCT_VIEW_SELECTORS = Object.freeze({
   container: PRODUCT_SELECTORS.body,
   activeView: PRODUCT_SELECTORS.activeView,
+  stage: PRODUCT_SELECTORS.sectionView,
 })
 
 /**
@@ -217,7 +223,7 @@ export const PRODUCT_MOUNT_TIMEOUT_MS = 15000
 export const PRODUCT_ACTION_TIMEOUT_MS = 10000
 
 const ROW_THEMES = Object.freeze(['dark', 'light'])
-const DIST_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'dist')
+const DIST_ROOT = join(FAIRTEST_REPO_ROOT, 'dist')
 
 /**
  * Resolve the immutable run root for the current run. The root must be
@@ -258,15 +264,15 @@ export function productRowDir(runRoot, theme) {
 }
 
 /**
- * Assert the row directory is fresh: none of the six artifact classes may
- * already exist. A rerun must use a fresh run root, never silently append
- * into a previous run subtree. Exported so the fixture family drives this
- * exact guard against a real scratch row directory instead of a
- * self-authored stand-in that no producer change could ever affect.
+ * Refuse a row directory that already carries one of the six artifact
+ * classes. A rerun must use a fresh run root, never silently append into a
+ * previous run subtree. Module-private on purpose: prepareProductRowDir is the
+ * only way the row can reach this refusal, so freshness can never be
+ * validated after a write has already overwritten a previous run's bytes.
  * @param {string} rowDir row directory
  * @returns {void}
  */
-export function assertProductRowDirFresh(rowDir) {
+function refuseStaleRunSubtree(rowDir) {
   for (const name of PRODUCT_ARTIFACT_CLASSES) {
     if (existsSync(join(rowDir, name))) {
       throw new Error(
@@ -279,34 +285,79 @@ export function assertProductRowDirFresh(rowDir) {
 }
 
 /**
+ * Prepare one theme row's run directory: validate freshness FIRST, then
+ * create the directory, and hand the row the prepared paths. This is the one
+ * seam every row goes through, and it is the executable form of the ordering
+ * the run-root guard rests on: the freshness refusal happens before the row
+ * directory is created and therefore before any artifact write can reach a
+ * previous run subtree.
+ *
+ * The `observe` step hook reports the boundary each step just crossed so the
+ * ordering is observed through this real function instead of being read out
+ * of the row's source text. Production callers pass nothing; the fixture
+ * family passes a recorder and asserts the validation boundary comes first
+ * and that a refused row directory is left exactly as it was found.
+ * @param {object} input preparation inputs
+ * @param {string} input.runRoot immutable run root
+ * @param {string} input.theme dark or light row theme
+ * @param {(step: 'validated' | 'created') => void} [input.observe] step boundary observer
+ * @returns {{ runRoot: string, rowDir: string }} the prepared paths for the row
+ */
+export function prepareProductRowDir(input = {}) {
+  const observeStep = Object.hasOwn(input, 'observe') ? input.observe : null
+  assertProductRecordFields(
+    input,
+    observeStep === null ? ['runRoot', 'theme'] : ['runRoot', 'theme', 'observe'],
+    'rowPreparation',
+    'producer.rowPreparation',
+    'pass the immutable run root and the row theme to prepare the row directory',
+  )
+  if (observeStep !== null && typeof observeStep !== 'function') {
+    throw new Error(
+      `product producer: invalid step observer ${JSON.stringify(observeStep)} for field "observe" at path producer.rowPreparation.observe; ` +
+      'repair: pass a function that receives the validated and created boundaries, or omit it.',
+    )
+  }
+  const observe = observeStep ?? (() => {})
+  const { runRoot, theme } = /** @type {Record<string, string>} */ (input)
+  const rowDir = productRowDir(runRoot, theme)
+  refuseStaleRunSubtree(rowDir)
+  observe('validated')
+  mkdirSync(rowDir, { recursive: true })
+  observe('created')
+  return Object.freeze({ runRoot: resolve(runRoot), rowDir })
+}
+
+/**
  * Create a loopback static driver serving the exact built app from dist/.
- * The driver starts one http server on the fixed loopback port and reports
- * readiness over real HTTP. It refuses to serve any resolved path outside
- * distRoot (403) and refuses to bind a non-loopback host, so the validation
- * origin is loopback-only and can never read a file beyond the served root.
- * It satisfies the adapter's declared driver contract: stop is safe to call
- * when the driver is not running, which is how a start that failed before the
- * server listened is cleaned up and released.
+ * The driver starts one http server on the fixed loopback port owned by
+ * fairtest-runtime.mjs and reports readiness over real HTTP. It refuses to
+ * serve any resolved path outside distRoot (403) and refuses to bind a
+ * non-loopback host, so the validation origin is loopback-only and can never
+ * read a file beyond the served root. It satisfies the adapter's declared
+ * driver contract: stop is safe to call when the driver is not running,
+ * which is how a start that failed before the server listened is cleaned up
+ * and released.
  * @param {object} [options] driver options
  * @param {number} [options.port] fixed loopback port
- * @param {string} [options.host] loopback host, always 127.0.0.1
+ * @param {string} [options.host] loopback host, always the declared owner
  * @param {string} [options.distRoot] built app root served over HTTP
  * @returns {object} the injected lifecycle driver for createFairtradeAdapter
  */
 export function createProductStaticDriver(options = {}) {
-  const port = options.port ?? FAIRTEST_PRODUCT_PORT
-  const host = options.host ?? FAIRTEST_PRODUCT_HOST
+  const port = options.port ?? FAIRTEST_APP_PORT
+  const host = options.host ?? FAIRTEST_APP_HOST
   const distRoot = options.distRoot ?? DIST_ROOT
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error(
       `product producer: invalid port ${JSON.stringify(port)} for field "port" at path driver.port; ` +
-      'repair: use the fixed loopback port owned by the Fairtest config for "port".',
+      'repair: use the fixed loopback port owned by scripts/fairtest/fairtest-runtime.mjs for "port".',
     )
   }
-  if (host !== '127.0.0.1') {
+  if (host !== FAIRTEST_APP_HOST) {
     throw new Error(
       `product producer: non-loopback host ${JSON.stringify(host)} for field "host" at path driver.host; ` +
-      'repair: bind the built app to 127.0.0.1 for "host".',
+      `repair: bind the built app to ${FAIRTEST_APP_HOST} for "host".`,
     )
   }
   const MIME = {
@@ -387,6 +438,12 @@ export function createProductStaticDriver(options = {}) {
     server = null
     running = false
     stops += 1
+    // A served page keeps keep-alive sockets open, and a bare close() waits
+    // for them, so a stopped driver can hold the fixed loopback port after it
+    // reported itself stopped. Dropping the lingering sockets makes "stopped"
+    // mean the port is actually free, which is what the next bounded session
+    // on the same port depends on.
+    current.closeAllConnections()
     await new Promise((responseResolve) => current.close(() => responseResolve(undefined)))
   }
 
@@ -571,27 +628,50 @@ if (PRODUCT_A11Y_SCOPE_ROOT !== PRODUCT_SELECTORS.sectionView) {
 }
 
 /**
- * Run axe-core scoped to one root on the current page and return the same
- * compact JSON-serializable shape as the shared page-wide scanAxe, so both
- * scopes stay comparable in the row artifact. Built here in the producer
- * because the shared assertion helper owns only the page-wide scan.
- * @param {import('@playwright/test').Page} page Playwright page for the row
- * @param {string} rootSelector scope root, always the product view root
- * @param {string[]} [tags] axe tags, pinned to the shared default
- * @returns {Promise<object>} the compact scoped report
+ * Fail-closed check that one axe scan carries exactly the shared compact
+ * report field set. The shape has ONE owner: the shared journey assertion
+ * primitive, which declares the field set once. The row never re-maps a scan
+ * result, so a field added to the shared primitive lands in both the
+ * page-wide and the scoped entries of axe.json, and a scan that arrives with
+ * a different shape fails here instead of being recorded as evidence no
+ * verifier can compare.
+ * @param {unknown} scan compact axe report
+ * @param {string} part observed part the scan belongs to
+ * @param {string} path record path of the scan
+ * @returns {asserts scan is Record<string, unknown>} the validated scan
  */
-async function scanAxeAtRoot(page, rootSelector, tags = DEFAULT_AXE_TAGS) {
-  const results = await new AxeBuilder({ page }).withTags(tags).include(rootSelector).analyze()
-  return {
-    tags: [...tags],
-    violations: results.violations.map((v) => ({
-      id: v.id,
-      impact: v.impact,
-      nodes: v.nodes.map((n) => n.target),
-    })),
-    incomplete: results.incomplete.map((v) => v.id),
-    passes: results.passes.length,
+export function assertProductAxeScanShape(scan, part, path) {
+  assertProductRecordFields(
+    scan,
+    AXE_RESULT_FIELDS,
+    'axeScan',
+    path,
+    'record the compact scan the shared axe primitive returned, with no second local mapping',
+  )
+  const report = /** @type {Record<string, any>} */ (scan)
+  if (!Array.isArray(report.violations)) {
+    throw new Error(
+      `product producer: malformed accessibility scan for field "violations" at path ${path}; ` +
+      `part ${JSON.stringify(part)}; ` +
+      'repair: keep the shared axe primitive wired so every scan returns its violation list.',
+    )
   }
+}
+
+/**
+ * Run axe-core over one root on the current page through the shared journey
+ * primitive. The row never builds its own axe builder: the shared primitive
+ * owns the compact report shape for the page-wide and the scoped scans alike,
+ * so both entries in axe.json are produced by one owner.
+ * @param {import('@playwright/test').Page} page Playwright page for the row
+ * @param {string} part observed part the scan belongs to
+ * @param {string} [root] scope root, always the product view root when given
+ * @returns {Promise<object>} the compact scan report
+ */
+async function scanProductViewAxe(page, part, root = PRODUCT_A11Y_SCOPE_ROOT) {
+  const scan = await scanAxe(page, { root })
+  assertProductAxeScanShape(scan, part, root ? 'evidence.axe.scoped' : 'evidence.axe.pageWide')
+  return scan
 }
 
 /**
@@ -652,20 +732,102 @@ function assertProductCount(value, field, path, repair) {
  * Measure the mounted view in the live page: the active view and the view
  * container that also holds the permanently mounted hidden changes view. Runs
  * inside the page (the runner serializes this function), so it references
- * nothing outside its argument. Both halves are returned because the guard
- * needs the container totals to say plainly why they are not the measurement
- * the floors apply to.
- * @param {{ container: string, activeView: string }} selectors app-owned view selectors
- * @returns {{ activeView: { roots: number, descendants: number, textLength: number }, container: { descendants: number, textLength: number } }} the measured view
+ * nothing outside its argument and repeats its geometry inline.
+ *
+ * A PRESENT active view is not a RENDERED one. For every active root the
+ * measurement reads the computed display and visibility, the effective
+ * opacity (the root's own opacity times every ancestor's up to the view
+ * container, because a parent at zero hides a child that computes as visible),
+ * the root's own box, and the box that is left after intersecting that root
+ * with the mounted stage and with every clipping ancestor between the two. A
+ * root whose display is none, whose visibility is hidden or collapsed, whose
+ * effective opacity is zero, whose own box is empty, or whose visible area
+ * does not intersect the stage is refused by the declared mode name and is
+ * EXCLUDED from the rendered population the floors are applied to. Only
+ * rendering roots contribute descendants and text, so an unrendered active
+ * view with its full content still fails closed.
+ *
+ * "Intersects the stage" is deliberately the stage's VISIBLE box, not its
+ * scrollable content: the row's evidence is a 1280x720 capture of the mounted
+ * surface, so a root that lies entirely below the stage's fold renders
+ * nothing a user or a verifier of this row can see, and counting it would put
+ * a number in record.json that no capture supports. The measured rendered and
+ * total root counts are both recorded, so that split stays legible: on the real
+ * map section the visible root and the root below the fold are 298 and 455
+ * descendants respectively, and the record says so instead of reporting one
+ * unqualified total.
+ *
+ * Both halves are returned because the guard needs the container totals to
+ * say plainly why they are not the measurement the floors apply to, and the
+ * record needs the rendered/total split to stay legible.
+ * @param {{ container: string, activeView: string, stage: string }} selectors app-owned view selectors
+ * @returns {object} the measured view with the rendered population, the per-root refusals, and the container totals
  */
 export function measureProductView(selectors) {
   const container = document.querySelector(selectors.container)
+  const stage = document.querySelector(selectors.stage)
   const roots = [...document.querySelectorAll(selectors.activeView)]
+  const stageRect = stage ? stage.getBoundingClientRect() : null
+  const refusals = []
+  let rendered = 0
+  let descendants = 0
+  let textLength = 0
+  for (const root of roots) {
+    const rect = root.getBoundingClientRect()
+    const style = getComputedStyle(root)
+    let opacity = 1
+    for (let node = root; node; node = node.parentElement) {
+      opacity *= Number.parseFloat(getComputedStyle(node).opacity || '1')
+      if (node === container) break
+    }
+    const clips = []
+    for (let node = root.parentElement; node; node = node.parentElement) {
+      const parent = getComputedStyle(node)
+      if (parent.overflowX !== 'visible' || parent.overflowY !== 'visible') {
+        clips.push(node.getBoundingClientRect())
+      }
+      if (node === container) break
+    }
+    const left = clips.reduce((edge, box) => Math.max(edge, box.left), rect.left)
+    const top = clips.reduce((edge, box) => Math.max(edge, box.top), rect.top)
+    const right = clips.reduce((edge, box) => Math.min(edge, box.right), rect.right)
+    const bottom = clips.reduce((edge, box) => Math.min(edge, box.bottom), rect.bottom)
+    const intersectsStage = !!stageRect
+      && left < stageRect.right && right > stageRect.left
+      && top < stageRect.bottom && bottom > stageRect.top
+    const width = Math.round(rect.width)
+    const height = Math.round(rect.height)
+    const visibleWidth = intersectsStage ? Math.max(0, Math.min(right, stageRect.right) - Math.max(left, stageRect.left)) : 0
+    const visibleHeight = intersectsStage ? Math.max(0, Math.min(bottom, stageRect.bottom) - Math.max(top, stageRect.top)) : 0
+    let mode = ''
+    if (style.display === 'none') mode = 'display-none'
+    else if (style.visibility === 'hidden' || style.visibility === 'collapse') mode = 'visibility-hidden'
+    else if (opacity <= 0) mode = 'opacity-zero'
+    else if (width <= 0 || height <= 0) mode = 'zero-size'
+    else if (!intersectsStage || visibleWidth <= 0 || visibleHeight <= 0) mode = 'clipped'
+    if (mode) {
+      refusals.push({
+        mode,
+        display: style.display,
+        visibility: style.visibility,
+        opacity: Math.round(opacity * 1000) / 1000,
+        width,
+        height,
+        intersectsStage,
+      })
+      continue
+    }
+    rendered += 1
+    descendants += root.querySelectorAll('*').length
+    textLength += (root.textContent || '').trim().length
+  }
   return {
     activeView: {
       roots: roots.length,
-      descendants: roots.reduce((total, root) => total + root.querySelectorAll('*').length, 0),
-      textLength: roots.reduce((total, root) => total + (root.textContent || '').trim().length, 0),
+      rendered,
+      descendants,
+      textLength,
+      refusals,
     },
     container: {
       descendants: container ? container.querySelectorAll('*').length : -1,
@@ -675,21 +837,34 @@ export function measureProductView(selectors) {
 }
 
 /**
- * Fail-closed guard for the mounted ACTIVE view. The floors apply to the
- * active view alone, because the view container also holds the permanently
- * mounted hidden changes view: on the real built surface that hidden sibling
- * alone carries 188 descendants and 804 text characters, far above both
- * floors, so a container-scoped check cannot tell a blank active section from
- * a rendered one. An active view with no roots, too few descendants, or too
- * little text fails closed naming the measured numbers, the floors, the
- * container totals it is not reading, and the repair.
+ * Fail-closed guard for the mounted ACTIVE view, and the single app-owned
+ * rendered predicate the row runs at BOTH observation points (before the
+ * named action and after it). The floors apply to the RENDERED population
+ * alone, for two independent reasons:
+ *
+ * 1. The view container also holds the permanently mounted hidden changes
+ *    view: on the real built surface that hidden sibling alone carries 188
+ *    descendants and 804 text characters, far above both floors, so a
+ *    container-scoped check cannot tell a blank active section from a
+ *    rendered one.
+ * 2. An active view can hold its full content and still not be rendered
+ *    (display none, hidden visibility, zero opacity, an empty box, or a box
+ *    clipped away from the mounted stage). Counting nodes and text cannot see
+ *    that, so roots in a declared unrendered mode are refused by name and
+ *    excluded from the population the floors are measured on.
+ *
+ * A row with no rendering root, too few rendered descendants, or too little
+ * rendered text fails closed naming the measured numbers, the floors, the
+ * per-root refusal with its computed style and box, the container totals it
+ * is not reading, and the repair. The accepted triple is returned so the
+ * record is built from exactly the population the guard measured.
  * @param {object} observed measured view from measureProductView
  * @param {object} context product context for the diagnostic
  * @param {string} context.label short name for the blank condition
  * @param {string} context.part observed part the guard protects
  * @param {string} context.path record path of the observed part
  * @param {string} context.repair repair hint naming the section to keep mounted
- * @returns {{ roots: number, descendants: number, textLength: number }} the accepted active-view measurement
+ * @returns {{ roots: number, rendered: number, descendants: number, textLength: number }} the accepted rendered measurement
  */
 export function assertProductActiveViewMounted(observed, context = {}) {
   assertProductRecordFields(
@@ -710,10 +885,10 @@ export function assertProductActiveViewMounted(observed, context = {}) {
   const measurement = /** @type {Record<string, any>} */ (observed)
   assertProductRecordFields(
     measurement.activeView,
-    ['roots', 'descendants', 'textLength'],
+    ['roots', 'rendered', 'descendants', 'textLength', 'refusals'],
     'activeView',
     `producer.activeView.${part}`,
-    'record how many active roots, descendants, and text characters the active view carries',
+    'record how many active roots render, how many are refused, and the rendered descendants and text characters',
   )
   assertProductRecordFields(
     measurement.container,
@@ -722,18 +897,179 @@ export function assertProductActiveViewMounted(observed, context = {}) {
     `producer.viewContainer.${part}`,
     'record the view container totals beside the active view measurement',
   )
-  const { roots, descendants, textLength } = measurement.activeView
-  if (roots >= 1 && descendants >= PRODUCT_MIN_BODY_DESCENDANTS && textLength >= PRODUCT_MIN_BODY_TEXT_LENGTH) {
-    return Object.freeze({ roots, descendants, textLength })
+  const { roots, rendered, descendants, textLength, refusals } = measurement.activeView
+  for (const refusal of refusals) {
+    assertProductRecordFields(
+      refusal,
+      PRODUCT_UNRENDERED_REFUSAL_FIELDS,
+      'unrenderedRoot',
+      `producer.activeView.${part}.refusals`,
+      'record the unrendered mode with the measured display, visibility, opacity, box, and stage intersection',
+    )
+    if (typeof refusal.mode !== 'string' || !PRODUCT_UNRENDERED_MODES.includes(refusal.mode)) {
+      throw new Error(
+        `product producer: unknown unrendered mode ${JSON.stringify(refusal.mode)} for field "mode" at path producer.activeView.${part}.refusals.mode; ` +
+        `repair: use one of ${[...PRODUCT_UNRENDERED_MODES].join(', ')} for "mode".`,
+      )
+    }
+    for (const dimension of ['width', 'height']) {
+      assertProductCount(refusal[dimension], dimension, `producer.activeView.${part}.refusals.${dimension}`, 'record the measured box dimension of the refused root')
+    }
+    if (typeof refusal.intersectsStage !== 'boolean') {
+      throw new Error(
+        `product producer: invalid stage intersection ${JSON.stringify(refusal.intersectsStage)} for field "intersectsStage" at path producer.activeView.${part}.refusals.intersectsStage; ` +
+        'repair: record whether the refused root still intersects the mounted stage.',
+      )
+    }
   }
+  if (rendered >= 1 && descendants >= PRODUCT_MIN_BODY_DESCENDANTS && textLength >= PRODUCT_MIN_BODY_TEXT_LENGTH) {
+    return Object.freeze({ roots, rendered, descendants, textLength })
+  }
+  const refused = refusals.length > 0
+    ? `${refusals.length} of them render nothing: ${refusals.map((refusal) => `${refusal.mode} (display ${refusal.display}, visibility ${refusal.visibility}, opacity ${refusal.opacity}, box ${refusal.width}x${refusal.height}, intersects the mounted stage ${refusal.intersectsStage})`).join('; ')}. `
+    : ''
   throw new Error(
     `product producer: ${label} for field ${JSON.stringify(part)} at path ${path}; ` +
-    `active view ${JSON.stringify(PRODUCT_VIEW_SELECTORS.activeView)} has ${roots} roots with ${descendants} descendants and ${textLength} text characters; ` +
-    `floor is ${PRODUCT_MIN_BODY_DESCENDANTS} descendants and ${PRODUCT_MIN_BODY_TEXT_LENGTH} characters; ` +
+    `active view ${JSON.stringify(PRODUCT_VIEW_SELECTORS.activeView)} has ${roots} roots of which ${rendered} render, with ${descendants} rendered descendants and ${textLength} rendered text characters; ` +
+    `floor is one rendering root with ${PRODUCT_MIN_BODY_DESCENDANTS} descendants and ${PRODUCT_MIN_BODY_TEXT_LENGTH} characters; ` +
+    `${refused}` +
     `the container ${JSON.stringify(PRODUCT_VIEW_SELECTORS.container)} totals ${measurement.container.descendants} descendants and ${measurement.container.textLength} characters, ` +
     'which include the permanently mounted hidden changes view and are never read as the active view; ' +
     `repair: ${repair}.`,
   )
+}
+
+/**
+ * Assert a recorded body or view block carries the RENDERED active-view
+ * measurement the rendered guard accepted, not a container total and not a
+ * re-measured number. This is the record-truthfulness contract: a verifier
+ * reading `descendants` must be reading the population a floor was applied
+ * to. The recorded number is taken from the measurement, then required to
+ * equal the guard's returned triple, and required to differ from the
+ * container total whenever the two populations differ, so swapping the
+ * recorded values back to container totals fails here before the record is
+ * written.
+ * @param {object} input recorded-block inputs
+ * @param {object} input.record the recorded block about to be written
+ * @param {object} input.accepted the triple assertProductActiveViewMounted returned
+ * @param {object} input.observation the measured view the guard decided on
+ * @param {string} input.part observed part the block belongs to
+ * @param {string} input.path record path of the block
+ * @param {string} input.descendantsField recorded field carrying the descendant count
+ * @param {string} input.textField recorded field carrying the text length
+ * @returns {void}
+ */
+export function assertProductRecordedActiveView(input = {}) {
+  assertProductRecordFields(
+    input,
+    ['record', 'accepted', 'observation', 'part', 'path', 'rootField', 'renderedField', 'descendantsField', 'textField'],
+    'recordedActiveView',
+    'producer.recordedActiveView',
+    'pass the recorded block, the accepted rendered measurement, and the four recorded field names it carries them under',
+  )
+  const { record, accepted, observation, part, path } = /** @type {Record<string, any>} */ (input)
+  const measured = observation.activeView
+  const fields = [
+    ['roots', input.rootField],
+    ['rendered', input.renderedField],
+    ['descendants', input.descendantsField],
+    ['textLength', input.textField],
+  ]
+  for (const [measuredField, field] of fields) {
+    const recorded = record[/** @type {string} */ (field)]
+    if (recorded !== measured[measuredField] || recorded !== accepted[measuredField]) {
+      throw new Error(
+        `product producer: recorded ${part} measurement contradicts the rendered guard for field ${JSON.stringify(field)} at path ${path}.${field}; ` +
+        `recorded ${JSON.stringify(recorded)} but the ${measuredField} the guard accepted on the rendered active view is ${JSON.stringify(accepted[measuredField])} and the observation measured ${JSON.stringify(measured[measuredField])}; ` +
+        `the container totals ${JSON.stringify(observation.container.descendants)} descendants and ${JSON.stringify(observation.container.textLength)} characters are a different population that no floor was applied to; ` +
+        `repair: record the rendered active-view ${measuredField} the guard returned for "${field}".`,
+      )
+    }
+  }
+  const containerTotal = observation.container.descendants
+  if (accepted.descendants !== containerTotal && record[/** @type {string} */ (input.descendantsField)] === containerTotal) {
+    throw new Error(
+      `product producer: recorded ${part} descendants are the container total for field ${JSON.stringify(input.descendantsField)} at path ${path}.${input.descendantsField}; ` +
+      `recorded ${JSON.stringify(containerTotal)}, which is the view container total, not the ${JSON.stringify(accepted.descendants)} rendered descendants the floors were applied to; ` +
+      'repair: record the rendered active-view descendant count beside the container total, never the container total under the unqualified name.',
+    )
+  }
+}
+
+/**
+ * Build the record.json body block from the rendered measurement the guard
+ * accepted. The unqualified `descendants` and `textLength` names carry the
+ * RENDERED active-view numbers the floors were applied to; the container
+ * totals stay beside them under explicitly labelled names, and the rendered
+ * and total root counts are both recorded so the split is legible.
+ * @param {object} input body-block inputs
+ * @param {object} input.accepted triple returned by assertProductActiveViewMounted
+ * @param {object} input.observation the measured view the guard decided on
+ * @param {{ width: number, height: number } | null} input.box the container box
+ * @returns {object} the frozen recorded body block
+ */
+export function buildProductBodyRecord({ accepted, observation, box } = {}) {
+  assertProductRecordFields({ accepted, observation, box }, ['accepted', 'observation', 'box'], 'bodyRecord', 'record.body', 'pass the accepted rendered measurement, the observed view, and the container box')
+  const record = {
+    selector: PRODUCT_SELECTORS.body,
+    activeViewSelector: PRODUCT_SELECTORS.activeView,
+    activeRoots: observation.activeView.roots,
+    renderedRoots: observation.activeView.rendered,
+    descendants: observation.activeView.descendants,
+    textLength: observation.activeView.textLength,
+    box,
+    containerDescendants: observation.container.descendants,
+    containerTextLength: observation.container.textLength,
+  }
+  assertProductRecordedActiveView({
+    record,
+    accepted,
+    observation,
+    part: 'body',
+    path: 'record.body',
+    rootField: 'activeRoots',
+    renderedField: 'renderedRoots',
+    descendantsField: 'descendants',
+    textField: 'textLength',
+  })
+  return Object.freeze(record)
+}
+
+/**
+ * Build the record.json view block the same way as the body block: the
+ * post-action unqualified counts are the rendered active view's, with the
+ * container totals labelled beside them.
+ * @param {object} input view-block inputs
+ * @param {object} input.accepted triple returned by assertProductActiveViewMounted
+ * @param {object} input.observation the measured view the guard decided on
+ * @param {number} input.stageDescendantsAfter descendants of the mounted stage
+ * @returns {object} the frozen recorded view block
+ */
+export function buildProductViewRecord({ accepted, observation, stageDescendantsAfter } = {}) {
+  assertProductRecordFields({ accepted, observation, stageDescendantsAfter }, ['accepted', 'observation', 'stageDescendantsAfter'], 'viewRecord', 'record.view', 'pass the accepted rendered measurement, the observed view, and the stage descendant count')
+  const record = {
+    selector: PRODUCT_SELECTORS.sectionView,
+    activeViewSelector: PRODUCT_SELECTORS.activeView,
+    stageDescendantsAfter,
+    viewRootsAfter: observation.activeView.roots,
+    renderedRootsAfter: observation.activeView.rendered,
+    viewDescendantsAfter: observation.activeView.descendants,
+    viewTextLengthAfter: observation.activeView.textLength,
+    containerDescendantsAfter: observation.container.descendants,
+    containerTextLengthAfter: observation.container.textLength,
+  }
+  assertProductRecordedActiveView({
+    record,
+    accepted,
+    observation,
+    part: 'view',
+    path: 'record.view',
+    rootField: 'viewRootsAfter',
+    renderedField: 'renderedRootsAfter',
+    descendantsField: 'viewDescendantsAfter',
+    textField: 'viewTextLengthAfter',
+  })
+  return Object.freeze(record)
 }
 
 /**
@@ -1049,20 +1385,25 @@ export function assertProductObservationTimes(input = {}) {
  * durable artifacts. The page must already belong to a browser owned by the
  * Playwright runner; the loopback service must already be ready.
  *
- * Two fail-closed invariants run inside the row, so neither defect can reach
- * durable evidence again: assertProductObservationTimes rejects observation
- * times that are synthesized from the row start instead of read at the
- * observation, and readProductAccessibilityVerdict rejects an accessibility
+ * Three fail-closed invariants run inside the row, so none of these defects
+ * can reach durable evidence again: prepareProductRowDir validates the run
+ * subtree is fresh before the row creates it, and therefore before any
+ * artifact write; assertProductObservationTimes rejects observation times
+ * that are synthesized from the row start instead of read at the
+ * observation; and readProductAccessibilityVerdict rejects an accessibility
  * block whose own reading rule does not report a pass. The accessibility
  * verdict comes from the gate receipts over the gated product-view scope; the
- * page-wide census stays nested and informational.
+ * page-wide census stays nested and informational. The recorded body and view
+ * blocks are built from the rendered measurements the single
+ * assertProductActiveViewMounted predicate returned, so the record carries
+ * the population the floors were applied to and not a container total.
  * @param {import('@playwright/test').Page} page Playwright page for the row
  * @param {string} theme dark or light row theme
  * @param {object} [options] row options
  * @param {string} [options.runRoot] immutable run root (defaults to FAIRTEST_RUN_ROOT)
  * @param {string} [options.baseUrl] running loopback base URL
  * @param {number} [options.createdAtMs] identity creation time in whole ms
- * @returns {Promise<object>} row summary with proof, provenance, accessibility evidence and its verdict, real observation times, and artifact paths
+ * @returns {Promise<object>} row summary with proof, provenance, accessibility evidence and its verdict, real observation times, the recorded rendered measurements, and artifact paths
  */
 export async function captureProductRow(page, theme, options = {}) {
   if (!ROW_THEMES.includes(theme)) {
@@ -1072,7 +1413,7 @@ export async function captureProductRow(page, theme, options = {}) {
     )
   }
   const runRoot = resolve(options.runRoot ?? resolveProductRunRoot())
-  const baseUrl = options.baseUrl || `http://${FAIRTEST_PRODUCT_HOST}:${FAIRTEST_PRODUCT_PORT}`
+  const baseUrl = options.baseUrl || FAIRTEST_APP_BASE_URL
   const createdAtMs = options.createdAtMs ?? Date.now()
   if (!Number.isInteger(createdAtMs) || createdAtMs < 0) {
     throw new Error(
@@ -1081,9 +1422,10 @@ export async function captureProductRow(page, theme, options = {}) {
     )
   }
   const row = productThemeRow(theme)
-  const rowDir = productRowDir(runRoot, theme)
-  mkdirSync(rowDir, { recursive: true })
-  assertProductRowDirFresh(rowDir)
+  // Freshness first, then the row directory. The run-root guard is reachable
+  // only through this preparation seam, so no artifact write can land in a
+  // previous run subtree before the guard has refused it.
+  const { rowDir } = prepareProductRowDir({ runRoot, theme })
   if (!existsSync(join(DIST_ROOT, 'index.html'))) {
     throw new Error(
       'product producer: built app is missing for field "dist" at path row.dist; ' +
@@ -1137,7 +1479,7 @@ export async function captureProductRow(page, theme, options = {}) {
       stagePresent: !!stage,
       stageDescendants: stage ? stage.querySelectorAll('*').length : -1,
       activeText: active ? (active.textContent || '').trim() : null,
-      activeHasClass: !!document.querySelector('.iu-subnav-item.active'),
+      activeHasClass: !!document.querySelector(selectors.activeSectionItem),
       location: location.pathname + location.search + location.hash,
       computed: {
         viewBackground: view ? getComputedStyle(view).backgroundColor : null,
@@ -1146,10 +1488,11 @@ export async function captureProductRow(page, theme, options = {}) {
       },
     }
   }, PRODUCT_SELECTORS)
-  // The representative body is the ACTIVE view, measured by the one shared
-  // in-page measurement the named blank-active-view mutation also drives. The
-  // container totals it returns include the permanently mounted hidden changes
-  // view and are recorded beside the measurement for contrast only.
+  // The representative body is the RENDERED active view, measured by the one
+  // shared in-page measurement the named blank-active-view and
+  // unrendered-active-view mutations also drive. The container totals it
+  // returns include the permanently mounted hidden changes view and are
+  // recorded beside the measurement for contrast only.
   const activeBefore = await page.evaluate(measureProductView, PRODUCT_VIEW_SELECTORS)
 
   // One real clock reading for everything that evaluate just read. Nothing
@@ -1171,11 +1514,11 @@ export async function captureProductRow(page, theme, options = {}) {
       'repair: keep the analytics dashboard laid out with a rendered box instead of a collapsed section.',
     )
   }
-  assertProductActiveViewMounted(activeBefore, {
+  const acceptedBefore = assertProductActiveViewMounted(activeBefore, {
     label: 'blank representative body',
     part: 'body',
     path: 'proof.body',
-    repair: `keep the ${PRODUCT_INITIAL_SECTION} dashboard mounted with non-trivial content instead of a blank section`,
+    repair: `keep the ${PRODUCT_INITIAL_SECTION} dashboard mounted and rendered with non-trivial content instead of a blank section`,
   })
   if (before.location !== row.route) {
     throw new Error(
@@ -1215,7 +1558,7 @@ export async function captureProductRow(page, theme, options = {}) {
   assertProductThemeObservation(themeObservation)
   kindsContract.validateThemeObservation(themeObservation, 'product producer')
 
-  const scopedBefore = await scanAxeAtRoot(page, PRODUCT_A11Y_SCOPE_ROOT)
+  const scopedBefore = await scanProductViewAxe(page, 'scopedBefore')
   if (!scopedBefore || !Array.isArray(scopedBefore.violations)) {
     throw new Error(
       'product producer: missing scoped accessibility scan for field "scopedBefore" at path evidence.axe.scoped.before; ' +
@@ -1224,30 +1567,30 @@ export async function captureProductRow(page, theme, options = {}) {
     )
   }
 
-  const mapButton = page.locator(`${PRODUCT_SELECTORS.sectionNav} .iu-subnav-item`, { hasText: 'code map' })
+  const mapButton = page.locator(`${PRODUCT_SELECTORS.sectionNav} ${PRODUCT_SELECTORS.sectionItem}`, { hasText: PRODUCT_ACTION_LABEL })
   try {
     await mapButton.first().click({ timeout: PRODUCT_ACTION_TIMEOUT_MS })
   } catch (error) {
     const cause = error instanceof Error ? error.message : String(error)
     throw new Error(
       `product producer: named action did not complete for field "action" at path proof.action; ` +
-      `click on the map section failed: ${cause}; ` +
+      `click on the ${JSON.stringify(PRODUCT_ACTION_LABEL)} section failed: ${cause}; ` +
       `repair: keep the ${JSON.stringify(PRODUCT_ACTION_TO_SECTION)} section button clickable in ${JSON.stringify(PRODUCT_SELECTORS.sectionNav)}.`,
     )
   }
   try {
     await page.waitForFunction(
-      (expected) => {
-        const el = document.querySelector('.iu-subnav-item[aria-current="page"]');
-        return !!el && el.textContent.trim().toLowerCase().includes(expected);
+      (selectors) => {
+        const el = document.querySelector(selectors.activeSection);
+        return !!el && el.textContent.trim().toLowerCase().includes(selectors.actionLabel);
       },
-      'code map',
+      { activeSection: PRODUCT_SELECTORS.activeSection, actionLabel: PRODUCT_ACTION_LABEL.toLowerCase() },
       { timeout: PRODUCT_ACTION_TIMEOUT_MS },
     )
   } catch {
     throw new Error(
       `product producer: active section did not become ${JSON.stringify(PRODUCT_ACTION_TO_SECTION)} for field "activeSection" at path proof.activeSection; ` +
-      `repair: selecting the map section must mark its button .active with aria-current="page".`,
+      'repair: selecting the map section must mark its button with the shell active class and aria-current="page".',
     )
   }
 
@@ -1256,20 +1599,21 @@ export async function captureProductRow(page, theme, options = {}) {
     const stage = document.querySelector(selectors.sectionView)
     return {
       activeText: active ? (active.textContent || '').trim() : null,
-      activeHasClass: !!document.querySelector('.iu-subnav-item.active'),
+      activeHasClass: !!document.querySelector(selectors.activeSectionItem),
       stageDescendants: stage ? stage.querySelectorAll('*').length : -1,
       location: location.pathname + location.search + location.hash,
     }
   }, PRODUCT_SELECTORS)
-  // Same shared active-view measurement as the pre-interaction read, so the
-  // post-action floor is never satisfied by the hidden changes view.
+  // Same shared rendered active-view measurement and the same single rendered
+  // predicate as the pre-interaction read, so the post-action floor is never
+  // satisfied by the hidden changes view or by an unrendered map view.
   const activeAfter = await page.evaluate(measureProductView, PRODUCT_VIEW_SELECTORS)
 
-  if (!after.activeText || !after.activeText.toLowerCase().includes('code map') || !after.activeHasClass) {
+  if (!after.activeText || !after.activeText.toLowerCase().includes(PRODUCT_ACTION_LABEL) || !after.activeHasClass) {
     throw new Error(
       `product producer: unproven section transition for field "activeSection" at path proof.activeSection; ` +
       `active button reads ${JSON.stringify(after.activeText)} with active class ${after.activeHasClass}; ` +
-      `repair: the named action must leave the map button active with aria-current="page".`,
+      'repair: the named action must leave the map button active with aria-current="page".',
     )
   }
   if (activeAfter.container.descendants < 1) {
@@ -1279,11 +1623,11 @@ export async function captureProductRow(page, theme, options = {}) {
       'repair: keep the map view mounted inside the view container after the section switch.',
     )
   }
-  assertProductActiveViewMounted(activeAfter, {
+  const acceptedAfter = assertProductActiveViewMounted(activeAfter, {
     label: 'blank mounted view after the action',
     part: 'view',
     path: 'proof.view',
-    repair: `keep the ${PRODUCT_ACTION_TO_SECTION} view mounted with non-trivial content after the section switch`,
+    repair: `keep the ${PRODUCT_ACTION_TO_SECTION} view mounted and rendered with non-trivial content after the section switch`,
   })
 
   const actionObservedAtMs = Date.now()
@@ -1310,13 +1654,14 @@ export async function captureProductRow(page, theme, options = {}) {
   })
 
   const pageWide = await scanAxe(page)
+  assertProductAxeScanShape(pageWide, 'pageWide', 'evidence.axe.pageWide')
   if (!pageWide || !Array.isArray(pageWide.violations)) {
     throw new Error(
       'product producer: missing accessibility scan for field "pageWide" at path evidence.axe.pageWide; ' +
       'repair: keep the page-wide axe scan wired so every row records its violations, incomplete, and pass counts.',
     )
   }
-  const scopedAfter = await scanAxeAtRoot(page, PRODUCT_A11Y_SCOPE_ROOT)
+  const scopedAfter = await scanProductViewAxe(page, 'scopedAfter')
   if (!scopedAfter || !Array.isArray(scopedAfter.violations)) {
     throw new Error(
       'product producer: missing scoped accessibility scan for field "scopedAfter" at path evidence.axe.scoped.after; ' +
@@ -1360,7 +1705,7 @@ export async function captureProductRow(page, theme, options = {}) {
     artifactPath: axePath,
   })
 
-  const ariaSnapshot = await page.locator('#inuse').ariaSnapshot()
+  const ariaSnapshot = await page.locator(PRODUCT_SELECTORS.shell).ariaSnapshot()
   if (!ariaSnapshot || ariaSnapshot.trim().length < 50) {
     throw new Error(
       'product producer: empty ARIA snapshot for field "aria" at path evidence.aria; ' +
@@ -1429,29 +1774,14 @@ export async function captureProductRow(page, theme, options = {}) {
       children: before.chromeChildren,
       box: before.chromeBox,
     },
-    // The recorded body numbers are the ACTIVE view's, so a verifier reading
-    // record.json sees the population the floors were applied to. The
+    // The recorded body numbers are the RENDERED active view's, so a verifier
+    // reading record.json sees the population the floors were applied to. The
     // container totals stay beside them, explicitly labelled, because they
-    // include the permanently mounted hidden changes view.
-    body: {
-      selector: PRODUCT_SELECTORS.body,
-      activeViewSelector: PRODUCT_SELECTORS.activeView,
-      activeRoots: activeBefore.activeView.roots,
-      descendants: activeBefore.activeView.descendants,
-      textLength: activeBefore.activeView.textLength,
-      box: before.bodyBox,
-      containerDescendants: activeBefore.container.descendants,
-      containerTextLength: activeBefore.container.textLength,
-    },
-    view: {
-      selector: PRODUCT_SELECTORS.sectionView,
-      activeViewSelector: PRODUCT_SELECTORS.activeView,
-      stageDescendantsAfter: after.stageDescendants,
-      viewDescendantsAfter: activeAfter.activeView.descendants,
-      viewTextLengthAfter: activeAfter.activeView.textLength,
-      containerDescendantsAfter: activeAfter.container.descendants,
-      containerTextLengthAfter: activeAfter.container.textLength,
-    },
+    // include the permanently mounted hidden changes view, and the
+    // rendered/total root split is recorded so an unrendered root could never
+    // hide inside an unqualified count.
+    body: buildProductBodyRecord({ accepted: acceptedBefore, observation: activeBefore, box: before.bodyBox }),
+    view: buildProductViewRecord({ accepted: acceptedAfter, observation: activeAfter, stageDescendantsAfter: after.stageDescendants }),
     computedStyles: { ...before.computed },
     viewport: { ...PRODUCT_VIEWPORT },
     accessibility,
@@ -1479,6 +1809,11 @@ export async function captureProductRow(page, theme, options = {}) {
     provenance,
     accessibility,
     accessibilityVerdict,
+    // The rendered measurements the recorded body and view blocks carry, so a
+    // consumer of this summary compares the same triple the record was built
+    // from instead of re-deriving it.
+    body: acceptedBefore,
+    view: acceptedAfter,
     observationTimes: Object.freeze({
       rowStartedAtMs,
       parts: partsObservedAtMs,

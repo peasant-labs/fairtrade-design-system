@@ -19,6 +19,16 @@
 //   active-view floor guard decide the result. Absence cannot hide a blank
 //   view; only an active-view-scoped floor can, so the guard is measured
 //   healthy first and then on the emptied tree.
+// - unrendered active view: a PRESENT active view with its full content that
+//   renders nothing. The same real served app is driven in ONE bounded
+//   browser session: one stylesheet per declared unrendered mode
+//   (display none, hidden visibility, zero opacity, an empty box, and a box
+//   clipped away from the mounted stage) is installed on the active view in
+//   turn, the producer's own shared measurement reports the mode per root,
+//   and the producer's single rendered predicate must refuse each one. The
+//   healthy measurement is taken first, so a refusal can only come from the
+//   rendering check. Node and text counts are untouched by every one of these
+//   modes, which is the whole point: counting alone cannot see them.
 // - wrong theme: a contradictory rendered value is observed through
 //   observeProductTheme, which rejects before any capture or evidence work.
 //   Form: real observation call with a contradicted rendered attribute.
@@ -45,12 +55,14 @@ import { createHash } from 'node:crypto'
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import { tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
+import { FAIRTEST_APP_HOST, FAIRTEST_REPO_ROOT } from './fairtest-runtime.mjs'
 import {
   PRODUCT_SELECTORS,
+  PRODUCT_UNRENDERED_MODES,
   buildProductProof,
   getProductAction,
   observeProductTheme,
@@ -63,14 +75,13 @@ import {
 } from './product-producer.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const ROOT = resolve(HERE, '..', '..')
-const DIST_ROOT = join(ROOT, 'dist')
+const DIST_ROOT = join(FAIRTEST_REPO_ROOT, 'dist')
 
 const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 const resolutionContract = await importFairtestSource('src/host-contract/resolution.mjs')
 
 /**
- * The nine named negative product mutations. Exact set, frozen.
+ * The ten named negative product mutations. Exact set, frozen.
  * @type {string[]}
  */
 export const PRODUCT_MUTATION_NAMES = Object.freeze([
@@ -79,6 +90,7 @@ export const PRODUCT_MUTATION_NAMES = Object.freeze([
   'missing-section',
   'missing-view',
   'blank-active-view',
+  'unrendered-active-view',
   'wrong-theme',
   'unregistered-action',
   'cross-kind-proof',
@@ -96,10 +108,29 @@ export const PRODUCT_MUTATION_BOUNDARIES = Object.freeze({
   'missing-section': 'fairtrade-targets.buildProductProof at proof.activeSection through resolution.activeSection',
   'missing-view': 'fairtrade-targets.buildProductProof at proof.view through resolution.view',
   'blank-active-view': 'product-producer.assertProductActiveViewMounted at proof.body on the shared active-view measurement',
+  'unrendered-active-view': 'product-producer.assertProductActiveViewMounted at proof.body on the rendered-root predicate of the shared measurement',
   'wrong-theme': 'fairtrade-targets.observeProductTheme at theme.observed before evidence finalization',
   'unregistered-action': 'fairtrade-adapter.performAction at adapter.action and fairtrade-targets.getProductAction at target.action',
   'cross-kind-proof': 'shared host contract through fairtrade-targets.buildProductProof at path proof.identity',
   'stale-served-asset': 'product-mutations.servedProvenanceDigestMatch at provenance.assetDigests over real served bytes',
+})
+
+/**
+ * The declared unrendered modes and the stylesheet that produces each one on
+ * the real built surface. Every rule is assembled from the app-owned selector
+ * registry, never from a class literal here, and every rule leaves the active
+ * view's own box and its node and text counts intact, so a refusal can only
+ * come from the rendering predicate. The clipped mode takes the view container
+ * out of flow and pushes it off the mounted stage: the active root keeps its
+ * full content and a non-zero box, but none of it survives inside the stage.
+ * @type {Record<string, string>}
+ */
+export const PRODUCT_UNRENDERED_RULES = Object.freeze({
+  'display-none': `${PRODUCT_SELECTORS.activeView} { display: none !important; }`,
+  'visibility-hidden': `${PRODUCT_SELECTORS.activeView} { visibility: hidden !important; }`,
+  'opacity-zero': `${PRODUCT_SELECTORS.activeView} { opacity: 0 !important; }`,
+  'zero-size': `${PRODUCT_SELECTORS.activeView} { width: 0 !important; height: 0 !important; overflow: hidden !important; }`,
+  clipped: `${PRODUCT_SELECTORS.body} { position: absolute !important; top: -4000px !important; }`,
 })
 
 /**
@@ -136,13 +167,16 @@ function sha256(data) {
 }
 
 /**
- * Fetch raw bytes over HTTP from a running loopback server.
+ * Fetch raw bytes over HTTP from a running loopback server. The request never
+ * reuses a pooled connection: this suite stops and restarts a throwaway driver
+ * on the same fixed port, and a kept-alive socket to the previous server would
+ * surface as a socket hang up instead of the digest being compared.
  * @param {string} url loopback URL to read
  * @returns {Promise<Buffer>} the served bytes
  */
 function fetchBytes(url) {
   return new Promise((responseResolve, responseReject) => {
-    http.get(url, (res) => {
+    http.get(url, { agent: false }, (res) => {
       if (res.statusCode !== 200) {
         responseReject(new Error(`unexpected status ${res.statusCode}`))
         res.resume()
@@ -260,7 +294,7 @@ export function mutateMissingView() {
  */
 export async function mutateBlankActiveView({ port = 5195 } = {}) {
   const { chromium } = await import('@playwright/test')
-  const driver = createProductStaticDriver({ port, host: '127.0.0.1', distRoot: DIST_ROOT })
+  const driver = createProductStaticDriver({ port, host: FAIRTEST_APP_HOST, distRoot: DIST_ROOT })
   await driver.start()
   const browser = await chromium.launch()
   const context = {
@@ -299,6 +333,88 @@ export async function mutateBlankActiveView({ port = 5195 } = {}) {
   throw new Error(
     'product mutations: emptied active view unexpectedly cleared the floor for field "activeView" at path producer.activeView.body; ' +
     'repair: keep the floors scoped to the active view so the hidden changes view cannot satisfy them.',
+  )
+}
+
+/**
+ * Run the unrendered-active-view mutation against the real served app in ONE
+ * bounded browser session. A present-but-unrendered active view keeps every
+ * node and every character it had, so the only thing that can refuse it is the
+ * producer's rendered predicate. The healthy page is measured first and must
+ * clear that predicate, then one stylesheet per declared unrendered mode is
+ * installed in turn, the shared measurement is taken again, and the single
+ * predicate must refuse every mode by name with the measured display,
+ * visibility, opacity, box, and stage intersection. The browser, the page, the
+ * service, and each stylesheet are released as the loop advances, so one
+ * launch covers all five declared modes and nothing is left installed.
+ * @param {object} [options] mutation options
+ * @param {number} [options.port] fixed loopback port for the proof service
+ * @returns {Promise<never>} always throws with the producer's unrendered-view diagnostic
+ */
+export async function mutateUnrenderedActiveView({ port = 5202 } = {}) {
+  const { chromium } = await import('@playwright/test')
+  const driver = createProductStaticDriver({ port, host: FAIRTEST_APP_HOST, distRoot: DIST_ROOT })
+  await driver.start()
+  const browser = await chromium.launch()
+  const context = {
+    label: 'unrendered representative body',
+    part: 'body',
+    path: 'proof.body',
+    repair: 'keep the analytics dashboard laid out and rendered instead of present but invisible',
+  }
+  const refused = []
+  try {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } })
+    try {
+      await page.goto(`${driver.baseUrl}/?app=graph&fb=off&theme=none#inuse`, { waitUntil: 'networkidle' })
+      await page.waitForSelector(PRODUCT_SELECTORS.activeView, { timeout: 15000, state: 'attached' })
+      const healthy = await page.evaluate(measureProductView, PRODUCT_VIEW_SELECTORS)
+      assertProductActiveViewMounted(healthy, context)
+      for (const mode of PRODUCT_UNRENDERED_MODES) {
+        await page.addStyleTag({ content: PRODUCT_UNRENDERED_RULES[mode] })
+        const measured = await page.evaluate(measureProductView, PRODUCT_VIEW_SELECTORS)
+        let message = null
+        try {
+          assertProductActiveViewMounted(measured, context)
+        } catch (error) {
+          message = error instanceof Error ? error.message : String(error)
+        }
+        if (!message) {
+          throw new Error(
+            `product mutations: unrendered-active-view probe left the ${mode} active view clearing the floor for field "mode" at path producer.activeView.body.refusals; ` +
+            'repair: keep the rendered predicate so a present but unrendered active view fails closed.',
+          )
+        }
+        if (!message.includes(mode)) {
+          throw new Error(
+            `product mutations: unrendered-active-view probe refused the ${mode} active view without naming the mode for field "mode" at path producer.activeView.body.refusals; got ${message}; ` +
+            'repair: report the measured unrendered mode beside the computed style and box so the diagnostic names the refusal.',
+          )
+        }
+        refused.push(Object.freeze({
+          mode,
+          roots: measured.activeView.roots,
+          rendered: measured.activeView.rendered,
+          message: message.split('\n')[0],
+        }))
+        // A real reload, never a same-document navigation: the row route keeps
+        // its hash, so navigating to it again would leave the previous
+        // mode's stylesheet installed and the next mode would be measured on
+        // top of it.
+        await page.reload({ waitUntil: 'networkidle' })
+        await page.waitForSelector(PRODUCT_SELECTORS.activeView, { timeout: 15000, state: 'attached' })
+      }
+    } finally {
+      await page.close()
+    }
+  } finally {
+    await browser.close()
+    await driver.stop()
+  }
+  throw new Error(
+    `product mutations: unrendered active view refused at the owning boundary for field "mode" at path producer.activeView.body.refusals; ` +
+    `the shared measurement reported ${JSON.stringify(refused.map((entry) => ({ mode: entry.mode, roots: entry.roots, rendered: entry.rendered })))}; ` +
+    'repair: keep the rendered-root predicate so a present but unrendered active view fails closed while every mode stays named in the diagnostic.',
   )
 }
 
@@ -376,7 +492,7 @@ export async function mutateStaleServedAsset({ port = 5197 } = {}) {
     cpSync(DIST_ROOT, scratch, { recursive: true })
     const copyIndex = join(scratch, 'index.html')
     writeFileSync(copyIndex, `${readFileSync(copyIndex, 'utf8')}\n<!-- fairtest stale-asset mutation probe -->\n`)
-    driver = createProductStaticDriver({ port, host: '127.0.0.1', distRoot: scratch })
+    driver = createProductStaticDriver({ port, host: FAIRTEST_APP_HOST, distRoot: scratch })
     await driver.start()
     const servedBytes = await fetchBytes(`${driver.baseUrl}/index.html`)
     const servedDigest = sha256(servedBytes)
@@ -412,6 +528,8 @@ export async function runProductMutation(name, options = {}) {
       return mutateMissingView()
     case 'blank-active-view':
       return mutateBlankActiveView(options)
+    case 'unrendered-active-view':
+      return mutateUnrenderedActiveView(options)
     case 'wrong-theme':
       return mutateWrongTheme()
     case 'unregistered-action':
@@ -441,7 +559,7 @@ export async function runProductMutation(name, options = {}) {
  */
 export async function proveDomAbsenceRealPath({ port = 5196 } = {}) {
   const { chromium } = await import('@playwright/test')
-  const driver = createProductStaticDriver({ port, host: '127.0.0.1', distRoot: DIST_ROOT })
+  const driver = createProductStaticDriver({ port, host: FAIRTEST_APP_HOST, distRoot: DIST_ROOT })
   await driver.start()
   const browser = await chromium.launch()
   const evidence = []

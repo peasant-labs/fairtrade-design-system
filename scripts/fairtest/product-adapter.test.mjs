@@ -3,29 +3,37 @@
 // its required-name manifest; this module owns no row tables, only the fake
 // lifecycle driver, shape checks, and mutation wiring. It runs with node
 // --test. The stale-served-asset mutation case serves a throwaway dist/ copy
-// on a loopback port through the real static driver, and the blank-active-view
-// mutation case empties the active view on the real served dist/ in the same
-// real browser the mutations suite uses, so run pnpm build first so dist/
-// holds the exact built app both cases drive. The real static-driver
-// start-failure cases below need no built app: they drive the real producer
-// driver on scratch loopback ports against a throwaway fixture root. The real
-// static driver's fail-closed listener controls (out-of-root refusal and
-// loopback-only host) and the adapter's declared driver contract are named
-// cases in the same fixture family and run there. No Storybook, Puppeteer, or
-// second browser oracle is started.
+// on a loopback port through the real static driver, the blank-active-view
+// mutation case empties the active view on the real served dist/, and the
+// unrendered-active-view case walks the declared unrendered modes on that same
+// served dist/ inside ONE bounded browser session, so run pnpm build first so
+// dist/ holds the exact built app those cases drive. The remaining families
+// are browser-free and observe the real functions directly: the rendered
+// predicate over one case per declared unrendered mode, the record builders
+// over the guard's accepted measurement, the run-subtree ordering through the
+// real preparation seam, the Fairtest Playwright config's runner shape, the
+// single loopback host/port owner, and the single compact axe report shape.
+// The real static-driver start-failure cases below need no built app: they
+// drive the real producer driver on scratch loopback ports against a
+// throwaway fixture root. The real static driver's fail-closed listener
+// controls (out-of-root refusal and loopback-only host) and the adapter's
+// declared driver contract are named cases in the same fixture family and run
+// there. No Storybook, Puppeteer, or second browser oracle is started.
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import { tmpdir } from 'node:os'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { pathToFileURL } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { expectTheme } from '../journey/lib/assertions.mjs'
+import { AXE_RESULT_FIELDS } from '../journey/lib/assertions.mjs'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
+import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT } from './fairtest-runtime.mjs'
 import {
-  FAIRTEST_PRODUCT_HOST,
   PRODUCT_ARTIFACT_CLASSES,
   PRODUCT_A11Y_GATE_POINTS,
   PRODUCT_A11Y_PAGE_WIDE_FIELDS,
@@ -35,33 +43,54 @@ import {
   PRODUCT_PRE_ACTION_PARTS,
   PRODUCT_VIEW_SELECTORS,
   assertProductActiveViewMounted,
+  assertProductAxeScanShape,
   assertProductObservationTimes,
-  assertProductRowDirFresh,
+  buildProductBodyRecord,
+  buildProductViewRecord,
   buildProductAccessibilityEvidence,
   createProductStaticDriver,
+  prepareProductRowDir,
+  productRowDir,
   readProductAccessibilityVerdict,
   resolveProductRunRoot,
 } from './product-producer.mjs'
-import { PRODUCT_MUTATION_NAMES, runProductMutation } from './product-mutations.mjs'
+import { PRODUCT_MUTATION_NAMES, PRODUCT_UNRENDERED_RULES, runProductMutation } from './product-mutations.mjs'
+import { PRODUCT_UNRENDERED_MODES, PRODUCT_UNRENDERED_REFUSAL_FIELDS } from './fairtrade-targets.mjs'
 import * as targets from './fairtrade-targets.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
 const CORPUS_REL = 'scripts/fairtest/product-target.testdata.yaml'
 const MANIFEST_REL = 'scripts/fairtest/product-target.testdata.manifest.yaml'
+const CONFIG_REL = 'playwright.fairtest.config.mjs'
+const RUNTIME_REL = 'scripts/fairtest/fairtest-runtime.mjs'
 const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs']
+// The product-host modules whose every product selector, label, and loopback
+// origin must come from the app-owned registry and the single runtime owner.
+const PRODUCT_HOST_FILES = ['product-producer.mjs', 'product-mutations.mjs', 'product.journey.mjs']
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
-const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'cli-target', 'driver-out-of-root', 'driver-host-refusal', 'driver-stop-contract']
+const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'cli-target', 'driver-out-of-root', 'driver-host-refusal', 'driver-stop-contract', 'rendered-active-view', 'record-truthfulness', 'row-dir-preparation', 'runner-config', 'port-owner', 'axe-report-shape']
 const A11Y_POINTS = ['initial', 'after-action']
 const A11Y_IMPACTS = ['minor', 'moderate', 'serious', 'critical']
 const ROW_THEMES = ['dark', 'light']
 const PROOF_PARTS = ['chrome', 'body', 'route', 'activeSection', 'view']
+// The guard context every rendered-active-view case is decided against, so a
+// refusal diagnostic is compared across the healthy and unrendered modes with
+// one vocabulary.
+const RENDER_GUARD_CONTEXT = Object.freeze({
+  label: 'unrendered representative body',
+  part: 'body',
+  path: 'proof.body',
+  repair: 'keep the analytics dashboard laid out and rendered instead of present but invisible',
+})
+const ACCEPTED_MEASUREMENT_FIELDS = ['roots', 'rendered', 'descendants', 'textLength']
 // Scratch loopback ports for the real static-driver cases. They are
-// deliberately not the Fairtest Playwright config port (5189) and never the
-// mutation-suite ports (5196, 5197) or the start-failure ports (5198, 5199),
-// so no mounted row or mutation run collides with them. The host case never
-// binds its port: it proves the refusal at driver construction.
+// deliberately not the Fairtest loopback port owned by fairtest-runtime.mjs and
+// never the mutation-suite ports (5195, 5196, 5197, 5202) or the
+// start-failure ports (5198, 5199), so no mounted row or mutation run collides
+// with them. The host case never binds its port: it proves the refusal at
+// driver construction.
 const REAL_DRIVER_SQUATTER_PORT = 5198
 const REAL_DRIVER_ABSENT_DIST_PORT = 5199
 const REAL_DRIVER_OUT_OF_ROOT_PORT = 5200
@@ -178,6 +207,14 @@ function checkCaseShape(entry, index) {
     'driver-out-of-root': ['name', 'check', 'servedRoot', 'markerFile', 'markerBody', 'traversalPrefixes', 'refusedStatus', 'inRootRequest', 'inRootStatus', 'expectValid'],
     'driver-host-refusal': ['name', 'check', 'rejectedHosts', 'loopbackHost', 'expectValid'],
     'driver-stop-contract': ['name', 'check', 'startFailure', 'contractRequirement', 'expectValid'],
+    'rendered-active-view': entry.expectValid
+      ? ['name', 'check', 'mode', 'activeView', 'container', 'expectAccepted', 'expectValid', 'expectFrozen']
+      : ['name', 'check', 'mode', 'activeView', 'container', 'expectValid', 'expectedErrorContains'],
+    'record-truthfulness': ['name', 'check', 'part', 'accepted', 'activeView', 'container', ...tail],
+    'row-dir-preparation': ['name', 'check', 'existingArtifact', 'expectedSteps', 'expectPrepared', 'expectValid', ...tail.filter((field) => field !== 'expectFrozen')],
+    'runner-config': ['name', 'check', 'configFile', 'expectedProjects', 'expectedTestMatch', 'expectedTestDir', 'expectedRetries', 'expectedWorkers', 'expectedFullyParallel', 'expectedReducedMotion', 'forbiddenKeys', 'expectValid'],
+    'port-owner': ['name', 'check', 'ownerModule', 'consumerModules', 'portEnvName', 'expectValid'],
+    'axe-report-shape': ['name', 'check', 'expectValid'],
   }
   coreFixtures.checkKeys(entry, fieldsByCheck[entry.check], 'case record', CORPUS_REL, path)
   if (!entry.expectValid) {
@@ -206,6 +243,21 @@ function checkCaseShape(entry, index) {
   }
   if (entry.check === 'driver-stop-contract') {
     checkDriverStopContractShape(entry, path)
+  }
+  if (entry.check === 'rendered-active-view') {
+    checkRenderedActiveViewShape(entry, path)
+  }
+  if (entry.check === 'record-truthfulness') {
+    checkRecordTruthfulnessShape(entry, path)
+  }
+  if (entry.check === 'row-dir-preparation') {
+    checkRowDirPreparationShape(entry, path)
+  }
+  if (entry.check === 'runner-config') {
+    checkRunnerConfigShape(entry, path)
+  }
+  if (entry.check === 'port-owner') {
+    checkPortOwnerShape(entry, path)
   }
   if (entry.check === 'artifact-class') {
     if (typeof entry.artifact !== 'string' || entry.artifact.length === 0) {
@@ -521,6 +573,203 @@ function checkDriverStopContractShape(entry, path) {
   }
   if (!entry.startFailure.includes(' ')) {
     throw new Error(`${CORPUS_REL}: case "${name}" holds ${JSON.stringify(entry.startFailure)} for field "startFailure" at path ${path}.startFailure; repair: declare the full driver failure text so the start diagnostic can be proven to carry it.`)
+  }
+}
+
+/**
+ * Validate the measured view a rendered-active-view case is decided against:
+ * the active-view measurement with its rendered/total split and its per-root
+ * refusals, plus the container totals that must never stand in for it. Every
+ * refusal must name one of the declared unrendered modes and carry the exact
+ * measured field set, so a case can never invent a mode the guard refuses on.
+ * @param {Record<string, unknown>} entry
+ * @param {string} path
+ */
+function checkMeasuredViewShape(entry, path) {
+  const name = /** @type {string} */ (entry.name)
+  if (!isRecord(entry.activeView)) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds no active-view measurement for field "activeView" at path ${path}.activeView; repair: restore the measured rendered population and its refusals.`)
+  }
+  coreFixtures.checkKeys(entry.activeView, ['roots', 'rendered', 'descendants', 'textLength', 'refusals'], 'active view record', CORPUS_REL, `${path}.activeView`)
+  for (const field of ['roots', 'rendered', 'descendants', 'textLength']) {
+    if (!Number.isInteger(entry.activeView[field]) || /** @type {number} */ (entry.activeView[field]) < 0) {
+      throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid active-view count ${JSON.stringify(entry.activeView[field])} for field "${field}" at path ${path}.activeView.${field}; repair: record whole non-negative counts for "${field}".`)
+    }
+  }
+  if (/** @type {number} */ (entry.activeView.rendered) > /** @type {number} */ (entry.activeView.roots)) {
+    throw new Error(`${CORPUS_REL}: case "${name}" declares more rendered roots than roots for field "rendered" at path ${path}.activeView.rendered; repair: the rendered count can never exceed the active-root count.`)
+  }
+  if (!Array.isArray(entry.activeView.refusals)) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds no refusal list for field "refusals" at path ${path}.activeView.refusals; repair: restore the per-root unrendered refusals.`)
+  }
+  entry.activeView.refusals.forEach((refusal, index) => {
+    const at = `${path}.activeView.refusals[${index}]`
+    if (!isRecord(refusal)) {
+      throw new Error(`${CORPUS_REL}: case "${name}" holds a malformed refusal for field "refusals" at path ${at}; repair: declare each refusal as a record.`)
+    }
+    coreFixtures.checkKeys(refusal, PRODUCT_UNRENDERED_REFUSAL_FIELDS, 'unrendered refusal', CORPUS_REL, at)
+    if (!PRODUCT_UNRENDERED_MODES.includes(/** @type {string} */ (refusal.mode))) {
+      throw new Error(`${CORPUS_REL}: case "${name}" names an unknown unrendered mode ${JSON.stringify(refusal.mode)} for field "mode" at path ${at}.mode; repair: use one of ${PRODUCT_UNRENDERED_MODES.join(', ')}.`)
+    }
+  })
+  if (!isRecord(entry.container)) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds no container measurement for field "container" at path ${path}.container; repair: restore the view container totals.`)
+  }
+  coreFixtures.checkKeys(entry.container, ['descendants', 'textLength'], 'container record', CORPUS_REL, `${path}.container`)
+  for (const field of ['descendants', 'textLength']) {
+    if (!Number.isInteger(entry.container[field]) || /** @type {number} */ (entry.container[field]) < 0) {
+      throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid container count ${JSON.stringify(entry.container[field])} for field "${field}" at path ${path}.container.${field}; repair: record whole non-negative counts for "${field}".`)
+    }
+  }
+}
+
+/**
+ * Validate the rendered-active-view declaration: the mode under test, the
+ * measured view, and, for a case that must pass, the exact triple the rendered
+ * guard returns. A refusal case must name a declared unrendered mode and
+ * declare a rendered population of zero, so a case can never assert a refusal
+ * that no unrendered root could produce.
+ * @param {Record<string, unknown>} entry
+ * @param {string} path
+ */
+function checkRenderedActiveViewShape(entry, path) {
+  const name = /** @type {string} */ (entry.name)
+  checkMeasuredViewShape(entry, path)
+  const mode = /** @type {string} */ (entry.mode)
+  if (mode !== 'rendered' && !PRODUCT_UNRENDERED_MODES.includes(mode)) {
+    throw new Error(`${CORPUS_REL}: case "${name}" names an unknown render mode ${JSON.stringify(mode)} for field "mode" at path ${path}.mode; repair: use rendered, or one of ${PRODUCT_UNRENDERED_MODES.join(', ')}.`)
+  }
+  if (entry.expectValid) {
+    if (!isRecord(entry.expectAccepted)) {
+      throw new Error(`${CORPUS_REL}: case "${name}" holds no accepted measurement for field "expectAccepted" at path ${path}.expectAccepted; repair: declare the exact triple the rendered guard returns.`)
+    }
+    coreFixtures.checkKeys(entry.expectAccepted, ACCEPTED_MEASUREMENT_FIELDS, 'accepted measurement', CORPUS_REL, `${path}.expectAccepted`)
+    if (/** @type {number} */ (entry.activeView.rendered) < 1) {
+      throw new Error(`${CORPUS_REL}: case "${name}" declares a passing verdict with no rendered root for field "rendered" at path ${path}.activeView.rendered; repair: a passing case must render at least one active root.`)
+    }
+  } else {
+    if (mode === 'rendered') {
+      throw new Error(`${CORPUS_REL}: case "${name}" declares a failing verdict for the healthy mode at path ${path}.mode; repair: name one declared unrendered mode for a refusal case.`)
+    }
+    if (/** @type {number} */ (entry.activeView.rendered) !== 0) {
+      throw new Error(`${CORPUS_REL}: case "${name}" declares a refusing verdict with ${JSON.stringify(entry.activeView.rendered)} rendered roots for field "rendered" at path ${path}.activeView.rendered; repair: a refusal case must declare the unrendered population the guard refuses.`)
+    }
+    const refusals = /** @type {Record<string, unknown>[]} */ (entry.activeView.refusals)
+    if (refusals.length < 1 || !refusals.some((refusal) => refusal.mode === mode)) {
+      throw new Error(`${CORPUS_REL}: case "${name}" declares no refusal for the ${JSON.stringify(mode)} mode at path ${path}.activeView.refusals; repair: declare the refusal the real served surface reports for this mode.`)
+    }
+  }
+}
+
+/**
+ * Validate the record-truthfulness declaration: the part the recorded block
+ * belongs to, the rendered triple the guard accepted, and the measured view
+ * the record is built from.
+ * @param {Record<string, unknown>} entry
+ * @param {string} path
+ */
+function checkRecordTruthfulnessShape(entry, path) {
+  const name = /** @type {string} */ (entry.name)
+  if (!['body', 'view'].includes(/** @type {string} */ (entry.part))) {
+    throw new Error(`${CORPUS_REL}: case "${name}" names an unknown recorded part ${JSON.stringify(entry.part)} for field "part" at path ${path}.part; repair: use body, or view for "part".`)
+  }
+  if (!isRecord(entry.accepted)) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds no accepted measurement for field "accepted" at path ${path}.accepted; repair: declare the triple the rendered guard returned.`)
+  }
+  coreFixtures.checkKeys(entry.accepted, ACCEPTED_MEASUREMENT_FIELDS, 'accepted measurement', CORPUS_REL, `${path}.accepted`)
+  checkMeasuredViewShape(entry, path)
+}
+
+/**
+ * Validate the run-subtree ordering declaration: the artifact class a previous
+ * run already wrote (or none), the ordered preparation steps the real seam must
+ * cross, and whether the row directory is expected to exist afterwards.
+ * @param {Record<string, unknown>} entry
+ * @param {string} path
+ */
+function checkRowDirPreparationShape(entry, path) {
+  const name = /** @type {string} */ (entry.name)
+  if (entry.existingArtifact !== null && !PRODUCT_ARTIFACT_CLASSES.includes(/** @type {string} */ (entry.existingArtifact))) {
+    throw new Error(`${CORPUS_REL}: case "${name}" names an unknown artifact ${JSON.stringify(entry.existingArtifact)} for field "existingArtifact" at path ${path}.existingArtifact; repair: use null, or one of ${PRODUCT_ARTIFACT_CLASSES.join(', ')}.`)
+  }
+  const steps = entry.expectedSteps
+  if (!Array.isArray(steps) || steps.some((step) => !['validated', 'created'].includes(/** @type {string} */ (step)))) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid step list ${JSON.stringify(steps)} for field "expectedSteps" at path ${path}.expectedSteps; repair: declare the validated and created boundaries in the order the real preparation seam must cross them.`)
+  }
+  if (new Set(steps).size !== steps.length) {
+    throw new Error(`${CORPUS_REL}: case "${name}" repeats a preparation step for field "expectedSteps" at path ${path}.expectedSteps; repair: declare each boundary once.`)
+  }
+  if (typeof entry.expectPrepared !== 'boolean') {
+    throw new Error(`${CORPUS_REL}: case "${name}" is missing its preparation expectation for field "expectPrepared" at path ${path}.expectPrepared; repair: set expectPrepared to true or false.`)
+  }
+  if (!entry.expectValid && entry.existingArtifact === null) {
+    throw new Error(`${CORPUS_REL}: case "${name}" declares a refusing verdict with no stale artifact for field "existingArtifact" at path ${path}.existingArtifact; repair: a refusal case must declare the artifact a previous run left behind.`)
+  }
+}
+
+/**
+ * Validate the runner-config declaration: the config under test, the exact
+ * project set, journey match set, test dir, retry and worker budget, the
+ * reduced-motion marker, and the runner-owned keys the config must never
+ * declare.
+ * @param {Record<string, unknown>} entry
+ * @param {string} path
+ */
+function checkRunnerConfigShape(entry, path) {
+  const name = /** @type {string} */ (entry.name)
+  if (entry.configFile !== CONFIG_REL) {
+    throw new Error(`${CORPUS_REL}: case "${name}" names an unknown config ${JSON.stringify(entry.configFile)} for field "configFile" at path ${path}.configFile; repair: pin the Fairtest config ${CONFIG_REL} for "configFile".`)
+  }
+  for (const field of ['expectedProjects', 'expectedTestMatch', 'forbiddenKeys']) {
+    const value = entry[field]
+    if (!Array.isArray(value) || value.length === 0 || value.some((item) => typeof item !== 'string' || item.length === 0)) {
+      throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid list ${JSON.stringify(value)} for field "${field}" at path ${path}.${field}; repair: declare the non-empty string list the runner shape must match.`)
+    }
+  }
+  if (new Set(entry.expectedProjects).size !== entry.expectedProjects.length) {
+    throw new Error(`${CORPUS_REL}: case "${name}" repeats a project name for field "expectedProjects" at path ${path}.expectedProjects; repair: declare each project once.`)
+  }
+  if (/** @type {string[]} */ (entry.expectedProjects).length !== 1) {
+    throw new Error(`${CORPUS_REL}: case "${name}" declares ${JSON.stringify(entry.expectedProjects).length} projects for field "expectedProjects" at path ${path}.expectedProjects; repair: the Fairtest config carries exactly one project.`)
+  }
+  for (const field of ['expectedRetries', 'expectedWorkers']) {
+    if (!Number.isInteger(entry[field]) || /** @type {number} */ (entry[field]) < 0) {
+      throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid budget ${JSON.stringify(entry[field])} for field "${field}" at path ${path}.${field}; repair: declare the whole retry or worker count the config must carry.`)
+    }
+  }
+  if (typeof entry.expectedFullyParallel !== 'boolean') {
+    throw new Error(`${CORPUS_REL}: case "${name}" is missing its parallel marker for field "expectedFullyParallel" at path ${path}.expectedFullyParallel; repair: set expectedFullyParallel to true or false.`)
+  }
+  for (const field of ['expectedTestDir', 'expectedReducedMotion']) {
+    if (typeof entry[field] !== 'string' || entry[field].length === 0) {
+      throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid value ${JSON.stringify(entry[field])} for field "${field}" at path ${path}.${field}; repair: declare the non-empty ${field} the config must carry.`)
+    }
+  }
+}
+
+/**
+ * Validate the loopback-owner declaration: the one module allowed to own the
+ * host and port, the consumers that must read them from it, and the
+ * environment variable name that overrides the port.
+ * @param {Record<string, unknown>} entry
+ * @param {string} path
+ */
+function checkPortOwnerShape(entry, path) {
+  const name = /** @type {string} */ (entry.name)
+  if (entry.ownerModule !== RUNTIME_REL) {
+    throw new Error(`${CORPUS_REL}: case "${name}" names an unknown owner ${JSON.stringify(entry.ownerModule)} for field "ownerModule" at path ${path}.ownerModule; repair: the single owner is ${RUNTIME_REL}.`)
+  }
+  const consumers = entry.consumerModules
+  if (!Array.isArray(consumers) || consumers.length < 2 || consumers.includes(/** @type {string} */ (entry.ownerModule))) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid consumer list ${JSON.stringify(consumers)} for field "consumerModules" at path ${path}.consumerModules; repair: list at least two consumers that must read the owner, never the owner itself.`)
+  }
+  for (const consumer of /** @type {string[]} */ (consumers)) {
+    if (!existsSync(resolve(ROOT, consumer))) {
+      throw new Error(`${CORPUS_REL}: case "${name}" names a missing consumer ${JSON.stringify(consumer)} for field "consumerModules" at path ${path}.consumerModules; repair: list repository-relative modules that read the declared owner.`)
+    }
+  }
+  if (entry.portEnvName !== 'FAIRTEST_APP_PORT') {
+    throw new Error(`${CORPUS_REL}: case "${name}" names an unknown port override ${JSON.stringify(entry.portEnvName)} for field "portEnvName" at path ${path}.portEnvName; repair: the loopback port is overridden through FAIRTEST_APP_PORT.`)
   }
 }
 
@@ -911,22 +1160,25 @@ function runA11yDeltaCase(entry) {
 }
 
 /**
- * Run one artifact-class case against the producer's real run-root guard.
- * Every case first proves the clean branch: a real scratch row directory with
- * no artifact in it must clear the guard the mounted row calls. A case marked
- * stale then writes the artifact into that same real directory and must be
- * refused by the guard itself, so the refusal is the producer's own
- * diagnostic rather than a throw this module wrote for itself. The unknown
- * artifact case is a closed-set case: the guard passes a clean directory and
- * the declared six-class vocabulary rejects the name.
+ * Run one artifact-class case against the producer's real run-root guard,
+ * reached through the real preparation seam. Every case first proves the clean
+ * branch: a real scratch run root with no previous row must clear the guard
+ * and create exactly that row directory. A case marked stale then writes the
+ * artifact into that same real row directory and must be refused by the guard
+ * itself, so the refusal is the producer's own diagnostic rather than a throw
+ * this module wrote for itself. The unknown artifact case is a closed-set
+ * case: the guard passes a clean directory and the declared six-class
+ * vocabulary rejects the name.
  * @param {Record<string, unknown>} entry
  */
 function runArtifactClassCase(entry) {
   const name = /** @type {string} */ (entry.name)
   const scratch = mkdtempSync(join(tmpdir(), 'fairtest-row-dir-'))
+  const rowDir = productRowDir(scratch, 'dark')
   let message = null
   try {
-    assertProductRowDirFresh(scratch)
+    const prepared = prepareProductRowDir({ runRoot: scratch, theme: 'dark' })
+    assert.equal(prepared.rowDir, rowDir, `${name}: the prepared row directory must be the declared product row directory`)
     if (!PRODUCT_ARTIFACT_CLASSES.includes(/** @type {string} */ (entry.artifact))) {
       throw new Error(
         `${CORPUS_REL}: case "${name}" names an unknown artifact ${JSON.stringify(entry.artifact)} for field "artifact" at path artifact; ` +
@@ -936,8 +1188,8 @@ function runArtifactClassCase(entry) {
     assert.ok(Object.isFrozen(PRODUCT_ARTIFACT_CLASSES), `${name}: producer artifact classes must be frozen`)
     assert.equal(PRODUCT_ARTIFACT_CLASSES.length, 6, `${name}: producer must write exactly six artifact classes`)
     if (entry.stale === true) {
-      writeFileSync(join(scratch, /** @type {string} */ (entry.artifact)), `${CORPUS_REL}: ${name}\n`)
-      assertProductRowDirFresh(scratch)
+      writeFileSync(join(rowDir, /** @type {string} */ (entry.artifact)), `${CORPUS_REL}: ${name}\n`)
+      prepareProductRowDir({ runRoot: scratch, theme: 'dark' })
     }
   } catch (error) {
     message = error instanceof Error ? error.message : String(error)
@@ -950,22 +1202,6 @@ function runArtifactClassCase(entry) {
     assert.ok(message, `${name}: broken artifact class passed instead of failing`)
     expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
   }
-}
-
-/**
- * Prove the mounted row still calls the exported run-root guard. The
- * artifact-class cases above drive the guard directly, so this is the wiring
- * half: a row that stopped calling the guard would let a rerun append into a
- * previous run subtree while every family case still passed.
- */
-function assertMountedRowCallsRunRootGuard() {
-  const source = readFileSync(resolve(HERE, 'product-producer.mjs'), 'utf8')
-  const row = source.slice(source.indexOf('export async function captureProductRow'))
-  assert.ok(row.length > 0, `${CORPUS_REL}: the mounted row is missing for field "artifact" at path producer.captureProductRow; repair: keep the row that writes the six artifact classes.`)
-  assert.ok(
-    row.includes('assertProductRowDirFresh(rowDir)'),
-    `${CORPUS_REL}: the mounted row no longer calls the run-root guard for field "artifact" at path producer.captureProductRow; repair: call assertProductRowDirFresh(rowDir) before any artifact write so a rerun can never append into a previous run subtree.`,
-  )
 }
 
 /**
@@ -1077,12 +1313,249 @@ function runA11yRecordCase(entry) {
 }
 
 /**
+ * Run one rendered-active-view case through the producer's single rendered
+ * predicate. The healthy case must return the declared accepted triple, and
+ * every declared unrendered mode must be refused with a diagnostic that names
+ * the mode, the observed part, and its record path, so a present but
+ * unrendered active view can never clear a floor.
+ * @param {Record<string, unknown>} entry
+ */
+function runRenderedActiveViewCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  // Every declared unrendered mode must be exercised by the one real-browser
+  // named mutation as well as by the pure case, so the two never drift apart.
+  if (PRODUCT_UNRENDERED_MODES.includes(/** @type {string} */ (entry.mode))) {
+    assert.ok(
+      Object.hasOwn(PRODUCT_UNRENDERED_RULES, /** @type {string} */ (entry.mode)),
+      `${name}: the declared mode ${JSON.stringify(entry.mode)} has no real-served-surface rule; repair: add the stylesheet that produces this mode on the built surface.`,
+    )
+  }
+  const observed = { activeView: structuredClone(entry.activeView), container: structuredClone(entry.container) }
+  let message = null
+  let accepted = null
+  try {
+    accepted = assertProductActiveViewMounted(observed, { ...RENDER_GUARD_CONTEXT })
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  if (entry.expectValid) {
+    assert.equal(message, null, `${name}: rendered active view failed: ${message}`)
+    assert.deepEqual({ ...accepted }, { ...entry.expectAccepted }, `${name}: the rendered predicate must return the declared accepted measurement`)
+    assert.ok(Object.isFrozen(accepted), `${name}: the accepted rendered measurement must be frozen`)
+  } else {
+    assert.ok(message, `${name}: an unrendered active view cleared the rendered predicate`)
+    expectFragments([`${RENDER_GUARD_CONTEXT.label}`, `at path ${RENDER_GUARD_CONTEXT.path}`, `${entry.mode}`, 'repair:'], message, name)
+  }
+}
+
+/**
+ * Run one record-truthfulness case through the real record builders. The
+ * recorded body and view blocks must carry the rendered measurement the guard
+ * accepted, and a case whose measured view was swapped to the container totals
+ * must be refused before a record is written.
+ * @param {Record<string, unknown>} entry
+ */
+function runRecordTruthfulnessCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const accepted = structuredClone(entry.accepted)
+  const observation = { activeView: structuredClone(entry.activeView), container: structuredClone(entry.container) }
+  let message = null
+  let record = null
+  try {
+    record = entry.part === 'view'
+      ? buildProductViewRecord({ accepted, observation, stageDescendantsAfter: 812 })
+      : buildProductBodyRecord({ accepted, observation, box: { width: 1216, height: 1653 } })
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  if (entry.expectValid) {
+    assert.equal(message, null, `${name}: a truthful record build failed: ${message}`)
+    const containerField = entry.part === 'view' ? 'containerDescendantsAfter' : 'containerDescendants'
+    const descendantsField = entry.part === 'view' ? 'viewDescendantsAfter' : 'descendants'
+    const textField = entry.part === 'view' ? 'viewTextLengthAfter' : 'textLength'
+    const renderedField = entry.part === 'view' ? 'renderedRootsAfter' : 'renderedRoots'
+    const containerTextField = entry.part === 'view' ? 'containerTextLengthAfter' : 'containerTextLength'
+    assert.equal(record[descendantsField], accepted.descendants, `${name}: the recorded descendants must be the rendered measurement the guard accepted`)
+    assert.equal(record[textField], accepted.textLength, `${name}: the recorded text length must be the rendered measurement the guard accepted`)
+    assert.equal(record[renderedField], accepted.rendered, `${name}: the recorded rendered-root count must be the rendered measurement the guard accepted`)
+    assert.equal(record[containerField], entry.container.descendants, `${name}: the labelled container total must stay beside the rendered numbers`)
+    assert.ok(record[descendantsField] < record[containerField], `${name}: the rendered descendants must stay strictly below the container total they are never confused with`)
+    assert.ok(record[textField] < record[containerTextField], `${name}: the rendered text must stay strictly below the container total it is never confused with`)
+    assert.ok(Object.isFrozen(record), `${name}: the recorded block must be frozen`)
+  } else {
+    assert.ok(message, `${name}: a record carrying container totals was written instead of failing`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  }
+}
+
+/**
+ * Run one run-subtree ordering case through the real preparation seam. The
+ * observed step sequence IS the ordering proof: a fresh row must cross
+ * validated before created, and a row directory a previous run already wrote
+ * into must be refused with no step observed at all and its previous bytes
+ * untouched, which is what "a rerun must use a fresh run root" means.
+ * @param {Record<string, unknown>} entry
+ */
+function runRowDirPreparationCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const scratch = mkdtempSync(join(tmpdir(), 'fairtest-row-order-'))
+  const artifact = /** @type {string | null} */ (entry.existingArtifact)
+  const artifactPath = artifact ? join(productRowDir(scratch, 'dark'), artifact) : null
+  if (artifactPath) {
+    mkdirSync(dirname(artifactPath), { recursive: true })
+    writeFileSync(artifactPath, `${CORPUS_REL}: ${name} previous run\n`)
+  }
+  const previousBytes = artifactPath ? readFileSync(artifactPath, 'utf8') : null
+  const steps = []
+  let message = null
+  let prepared = null
+  try {
+    prepared = prepareProductRowDir({ runRoot: scratch, theme: 'dark', observe: (step) => steps.push(step) })
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  try {
+    assert.deepEqual(steps, /** @type {string[]} */ (entry.expectedSteps), `${CORPUS_REL}: case "${name}" observed the steps ${JSON.stringify(steps)} for field "expectedSteps" at path cases[${name}].expectedSteps; repair: declare the boundaries the real preparation seam must cross in the order it crosses them, validated before created.`)
+    assert.equal(prepared !== null, entry.expectPrepared, `${name}: the real preparation seam must ${entry.expectPrepared ? 'return' : 'refuse'} the row directory`)
+    if (previousBytes !== null) {
+      assert.equal(readFileSync(/** @type {string} */ (artifactPath), 'utf8'), previousBytes, `${name}: a refused row directory must keep the previous run's bytes exactly`)
+    }
+  } finally {
+    rmSync(scratch, { recursive: true, force: true })
+  }
+  if (entry.expectValid) {
+    assert.equal(message, null, `${name}: a fresh row directory was refused: ${message}`)
+  } else {
+    assert.ok(message, `${name}: a stale row directory was prepared instead of being refused`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  }
+}
+
+/**
+ * Run one runner-config case against the real Fairtest Playwright config. The
+ * config is imported, never re-described: exactly one project, the exact
+ * product/component journey matches with no journey module left unmatched, the
+ * declared retry and worker budget, the reduced-motion marker, and no
+ * runner-managed server key anywhere in the config source.
+ * @param {Record<string, unknown>} entry
+ */
+async function runRunnerConfigCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const configPath = resolve(ROOT, /** @type {string} */ (entry.configFile))
+  const config = /** @type {Record<string, any>} */ ((await import(pathToFileURL(configPath).href)).default)
+  const forbidden = /** @type {string[]} */ (entry.forbiddenKeys)
+  for (const key of forbidden) {
+    assert.ok(!(key in config), `${CORPUS_REL}: case "${name}" found a runner-managed ${JSON.stringify(key)} entry for field "forbiddenKeys" at path cases.${name}.forbiddenKeys; repair: the Fairtrade adapter owns the service lifecycle, so the config must declare no ${key}.`)
+  }
+  const source = readFileSync(configPath, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+  for (const key of forbidden) {
+    assert.ok(!new RegExp(`\\b${key}\\b`).test(source), `${CORPUS_REL}: case "${name}" found ${JSON.stringify(key)} in the config source for field "forbiddenKeys" at path cases.${name}.forbiddenKeys; repair: keep the runner-managed server controls out of the Fairtest config source.`)
+  }
+  assert.deepEqual(config.projects.map((project) => project.name), /** @type {string[]} */ (entry.expectedProjects), `${CORPUS_REL}: case "${name}" declares projects ${JSON.stringify(entry.expectedProjects)} for field "expectedProjects" at path cases.${name}.expectedProjects; repair: the Fairtest config carries exactly the one fairtest project.`)
+  assert.equal(config.retries, entry.expectedRetries, `${CORPUS_REL}: case "${name}" declares retries ${JSON.stringify(entry.expectedRetries)} for field "expectedRetries" at path cases.${name}.expectedRetries; repair: the mounted rows are single-attempt evidence, so retries must stay ${JSON.stringify(entry.expectedRetries)}.`)
+  assert.equal(config.workers, entry.expectedWorkers, `${CORPUS_REL}: case "${name}" declares workers ${JSON.stringify(entry.expectedWorkers)} for field "expectedWorkers" at path cases.${name}.expectedWorkers; repair: the rows share one fixed loopback origin, so workers must stay ${JSON.stringify(entry.expectedWorkers)}.`)
+  assert.equal(config.fullyParallel, entry.expectedFullyParallel, `${CORPUS_REL}: case "${name}" declares fullyParallel ${JSON.stringify(entry.expectedFullyParallel)} for field "expectedFullyParallel" at path cases.${name}.expectedFullyParallel; repair: the mounted rows write one immutable run subtree and must stay serial.`)
+  assert.equal(config.testDir, entry.expectedTestDir, `${CORPUS_REL}: case "${name}" declares testDir ${JSON.stringify(entry.expectedTestDir)} for field "expectedTestDir" at path cases.${name}.expectedTestDir; repair: the Fairtest config selects only the Fairtest journey directory.`)
+  assert.equal(config.use.reducedMotion, entry.expectedReducedMotion, `${CORPUS_REL}: case "${name}" declares reducedMotion ${JSON.stringify(entry.expectedReducedMotion)} for field "expectedReducedMotion" at path cases.${name}.expectedReducedMotion; repair: the mounted rows must render with reduced motion.`)
+  const matches = Array.isArray(config.testMatch) ? config.testMatch : [config.testMatch]
+  assert.deepEqual(matches, /** @type {string[]} */ (entry.expectedTestMatch), `${CORPUS_REL}: case "${name}" declares testMatch ${JSON.stringify(entry.expectedTestMatch)} for field "expectedTestMatch" at path cases.${name}.expectedTestMatch; repair: the config must select exactly the declared product and component journey entries.`)
+  // Every mounted journey module on disk must be selected, so a component
+  // journey that lands later cannot be added without widening the match.
+  const journeyDir = resolve(ROOT, /** @type {string} */ (entry.expectedTestDir))
+  const journeyModules = readdirSync(journeyDir)
+    .filter((name) => name.endsWith('.journey.mjs'))
+    .sort()
+  assert.ok(journeyModules.length > 0, `${CORPUS_REL}: case "${name}" found no mounted journey module under ${String(entry.expectedTestDir)}; repair: keep the Fairtest journey directory populated.`)
+  for (const module of journeyModules) {
+    assert.ok(
+      /** @type {string[]} */ (entry.expectedTestMatch).some((pattern) => pattern.includes(module.replace(/\.mjs$/, ''))),
+      `${CORPUS_REL}: case "${name}" leaves the mounted journey ${JSON.stringify(module)} unselected for field "expectedTestMatch" at path cases.${name}.expectedTestMatch; repair: widen the match to the journey module, never the whole directory.`,
+    )
+  }
+}
+
+/**
+ * Run one loopback-owner case. The declared owner is the only module allowed
+ * to declare the host and port, every consumer must read that same value, the
+ * driver's own defaults must come from it, and no consumer may carry a second
+ * declaration of either value.
+ * @param {Record<string, unknown>} entry
+ */
+async function runPortOwnerCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const ownerModule = /** @type {string} */ (entry.ownerModule)
+  const owner = /** @type {Record<string, any>} */ (await import(pathToFileURL(resolve(ROOT, ownerModule)).href))
+  const config = /** @type {Record<string, any>} */ (await import(pathToFileURL(resolve(ROOT, CONFIG_REL)).href))
+  for (const key of ['FAIRTEST_APP_HOST', 'FAIRTEST_APP_PORT', 'FAIRTEST_APP_BASE_URL']) {
+    assert.equal(config[key], owner[key], `${CORPUS_REL}: case "${name}" found the config declaring its own ${key} for field "ownerModule" at path cases.${name}.ownerModule; repair: import ${key} from ${ownerModule} instead of declaring it again.`)
+  }
+  assert.equal(owner.FAIRTEST_APP_BASE_URL, `http://${owner.FAIRTEST_APP_HOST}:${owner.FAIRTEST_APP_PORT}`, `${CORPUS_REL}: case "${name}" found a base URL outside the declared host and port for field "ownerModule" at path cases.${name}.ownerModule; repair: derive the base URL from the declared pair.`)
+  assert.equal(config.default.use.baseURL, owner.FAIRTEST_APP_BASE_URL, `${CORPUS_REL}: case "${name}" found the runner resolving a different base URL for field "ownerModule" at path cases.${name}.ownerModule; repair: build use.baseURL from the declared owner.`)
+  const driver = createProductStaticDriver()
+  assert.equal(driver.port, owner.FAIRTEST_APP_PORT, `${CORPUS_REL}: case "${name}" found the static driver defaulting to another port for field "portEnvName" at path cases.${name}.portEnvName; repair: default the driver to the declared owner.`)
+  assert.equal(driver.host, owner.FAIRTEST_APP_HOST, `${CORPUS_REL}: case "${name}" found the static driver defaulting to another host for field "ownerModule" at path cases.${name}.ownerModule; repair: default the driver to the declared owner.`)
+  const ownerText = readFileSync(resolve(ROOT, ownerModule), 'utf8')
+  const hostLiteral = String(owner.FAIRTEST_APP_HOST)
+  const portLiteral = String(owner.FAIRTEST_APP_PORT)
+  assert.ok(ownerText.includes(hostLiteral), `${CORPUS_REL}: case "${name}" found no ${JSON.stringify(hostLiteral)} declaration in the owner for field "ownerModule" at path cases.${name}.ownerModule; repair: declare the loopback host in the owner.`)
+  assert.ok(ownerText.includes(portLiteral), `${CORPUS_REL}: case "${name}" found no ${JSON.stringify(portLiteral)} declaration in the owner for field "portEnvName" at path cases.${name}.portEnvName; repair: declare the loopback port default in the owner.`)
+  for (const consumer of /** @type {string[]} */ (entry.consumerModules)) {
+    const text = readFileSync(resolve(ROOT, consumer), 'utf8')
+    const lines = text.split('\n')
+    lines.forEach((line, index) => {
+      if (new RegExp(`(['"\`])${hostLiteral}\\1`).test(line)) {
+        throw new Error(
+          `${CORPUS_REL}: case "${name}" found a second loopback host declaration in ${consumer} on line ${String(index + 1)} for field "ownerModule" at path cases.${name}.ownerModule; ` +
+          `repair: read the host from ${ownerModule} instead of repeating ${JSON.stringify(hostLiteral)}.`,
+        )
+      }
+      if (new RegExp(`(FAIRTEST_APP_PORT|FAIRTEST_APP_HOST|FAIRTEST_APP_BASE_URL)\\s*=`).test(line) && !line.includes('import')) {
+        throw new Error(
+          `${CORPUS_REL}: case "${name}" found a second loopback origin declaration in ${consumer} on line ${String(index + 1)} for field "ownerModule" at path cases.${name}.ownerModule; ` +
+          `repair: import the origin from ${ownerModule} instead of declaring it again.`,
+        )
+      }
+    })
+  }
+}
+
+/**
+ * Run one axe-report-shape case. The compact scan shape has one owner: the
+ * shared journey primitive and its declared field set. The producer's
+ * fail-closed shape check must accept exactly that set and refuse both an
+ * extra and a missing field, so no second local mapping can drift beside it.
+ * @param {Record<string, unknown>} entry
+ */
+function runAxeReportShapeCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const canned = {
+    tags: ['wcag2a', 'wcag2aa'],
+    violations: [{ id: 'color-contrast', impact: 'serious', nodes: [['nav']] }],
+    incomplete: [],
+    passes: 12,
+  }
+  const declared = [...AXE_RESULT_FIELDS]
+  assert.ok(declared.length > 0, `${name}: the shared axe primitive must declare its compact result field set`)
+  assert.deepEqual(Object.keys(canned).sort(), [...declared].sort(), `${CORPUS_REL}: case "${name}" holds a canned scan outside the shared declared shape for field "check" at path cases.${name}.check; repair: build the canned scan from AXE_RESULT_FIELDS so the two reports in axe.json share one shape.`)
+  assertProductAxeScanShape(canned, 'pageWide', 'evidence.axe.pageWide')
+  for (const mutation of [{ ...canned, ruleIds: [] }, Object.fromEntries(Object.entries(canned).slice(1))]) {
+    let message = null
+    try {
+      assertProductAxeScanShape(mutation, 'scopedBefore', 'evidence.axe.scoped')
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error)
+    }
+    assert.ok(message, `${name}: a scan outside the declared shared shape was accepted; repair: keep the producer's axe shape check exact.`)
+    expectFragments(['axeScan', 'at path evidence.axe.scoped', 'repair:'], message, name)
+  }
+}
+
+/**
  * Run one observation-time case through the producer's own fail-closed
  * timing guard.
  * @param {Record<string, unknown>} entry
  */
-function runObservationTimeCase(entry) {
-  const name = /** @type {string} */ (entry.name)
+function runObservationTimeCase(entry) {  const name = /** @type {string} */ (entry.name)
   const input = {}
   for (const field of ['rowStartedAtMs', ...PRODUCT_PRE_ACTION_PARTS, 'theme', 'action']) {
     input[field] = entry[field]
@@ -1104,13 +1577,16 @@ function runObservationTimeCase(entry) {
 /**
  * Read one real response from the loopback origin, keeping the status and the
  * served bytes. A refused request is only proven fail-closed when the bytes it
- * did return are checked as well, so the body is never discarded here.
+ * did return are checked as well, so the body is never discarded here. The
+ * request never reuses a pooled connection: these cases stop and restart a
+ * driver on the same fixed port, and a kept-alive socket to the previous
+ * server would surface as a socket hang up instead of a refusal.
  * @param {string} url loopback URL to request
  * @returns {Promise<{ status: number, body: string }>} the observed response
  */
 function readLoopbackResponse(url) {
   return new Promise((responseResolve, responseReject) => {
-    http.get(url, (res) => {
+    http.get(url, { agent: false }, (res) => {
       res.setEncoding('utf8')
       let body = ''
       res.on('data', (chunk) => { body += chunk })
@@ -1141,7 +1617,7 @@ async function runDriverOutOfRootCase(entry) {
   writeFileSync(join(scratch, markerFile), markerBody)
   let inRoot = null
   try {
-    const driver = createProductStaticDriver({ port: REAL_DRIVER_OUT_OF_ROOT_PORT, host: FAIRTEST_PRODUCT_HOST, distRoot: servedRoot })
+    const driver = createProductStaticDriver({ port: REAL_DRIVER_OUT_OF_ROOT_PORT, host: FAIRTEST_APP_HOST, distRoot: servedRoot })
     try {
       await driver.start()
       inRoot = await readLoopbackResponse(`${driver.baseUrl}${entry.inRootRequest}`)
@@ -1316,6 +1792,12 @@ const RUNNERS = {
   'driver-out-of-root': runDriverOutOfRootCase,
   'driver-host-refusal': runDriverHostRefusalCase,
   'driver-stop-contract': runDriverStopContractCase,
+  'rendered-active-view': runRenderedActiveViewCase,
+  'record-truthfulness': runRecordTruthfulnessCase,
+  'row-dir-preparation': runRowDirPreparationCase,
+  'runner-config': runRunnerConfigCase,
+  'port-owner': runPortOwnerCase,
+  'axe-report-shape': runAxeReportShapeCase,
 }
 
 /** @param {Record<string, unknown>} entry */
@@ -1327,16 +1809,22 @@ async function runCase(entry) {
 
 /**
  * Validate mutated cases the way the owning guards do: exact shape plus
- * required names plus behavior, without the manifest count pin, so a removed
- * record fails on its missing required name.
+ * required names over the whole mutated corpus, then the ONE case the mutation
+ * touched. The family carries real-browser cases, so re-running the whole
+ * corpus once per manifest mutation would multiply a full browser launch (and
+ * a loopback port) by the mutation count for no extra coverage: a mutation
+ * either fails a shape or inventory rule for the whole corpus, or it fails in
+ * the case it changed, and both diagnostics are checked by the caller.
  * @param {Record<string, unknown>[]} cases
  * @param {Record<string, unknown>} manifest
+ * @param {Record<string, unknown>} mutation
  */
-async function validateMutated(cases, manifest) {
+async function validateMutated(cases, manifest, mutation) {
   cases.forEach(checkCaseShape)
   coreFixtures.checkRequiredNames(cases.map((entry) => entry.name), /** @type {string[]} */ (manifest.requiredCaseNames), CORPUS_REL)
-  for (const entry of cases) {
-    await runCase(entry)
+  const target = cases.find((entry) => entry.name === mutation.target)
+  if (target) {
+    await runCase(target)
   }
 }
 /**
@@ -1375,7 +1863,10 @@ function applyMutation(cases, mutation) {
   }
   let node = target
   for (const segment of segments.slice(0, -1)) {
-    if (!isRecord(node[segment])) node[segment] = {}
+    // An array is a traversable node like a record: replacing it with a fresh
+    // object here would rewrite the whole list and hide which field the
+    // mutation was aimed at.
+    if (node[segment] === null || typeof node[segment] !== 'object') node[segment] = {}
     node = /** @type {Record<string, unknown>} */ (node[segment])
   }
   node[segments.at(-1)] = structuredClone(mutation.value)
@@ -1501,12 +1992,12 @@ function squatOnPort(port) {
       try {
         await new Promise((responseResolve, responseReject) => {
           server.on('error', responseReject)
-          server.listen(port, FAIRTEST_PRODUCT_HOST, () => responseResolve(undefined))
+          server.listen(port, FAIRTEST_APP_HOST, () => responseResolve(undefined))
         })
       } catch (error) {
         const cause = error instanceof Error ? error.message : String(error)
         throw new Error(
-          `adapter lifecycle case: scratch port ${port} is already held on ${FAIRTEST_PRODUCT_HOST}; caused by ${cause}; ` +
+          `adapter lifecycle case: scratch port ${port} is already held on ${FAIRTEST_APP_HOST}; caused by ${cause}; ` +
           'repair: free the scratch lifecycle port or run the adapter lifecycle cases one at a time.',
         )
       }
@@ -1528,7 +2019,7 @@ async function assertPortReleased(port) {
   try {
     await new Promise((responseResolve, responseReject) => {
       probe.on('error', responseReject)
-      probe.listen(port, FAIRTEST_PRODUCT_HOST, () => responseResolve(undefined))
+      probe.listen(port, FAIRTEST_APP_HOST, () => responseResolve(undefined))
     })
   } catch (error) {
     const cause = error instanceof Error ? error.message : String(error)
@@ -1569,7 +2060,7 @@ async function driveRealStaticDriverStartFailure({ runId, port, holdPort, distRo
       await squatter.bind()
       squatterBound = true
     }
-    driver = createProductStaticDriver({ port, host: FAIRTEST_PRODUCT_HOST, distRoot: distRoot(scratch) })
+    driver = createProductStaticDriver({ port, host: FAIRTEST_APP_HOST, distRoot: distRoot(scratch) })
     const observed = observeDriverCalls(driver)
     const adapter = await createFairtradeAdapter({ runId, driver: observed, createdAtMs: 1000 })
     let message = null
@@ -1630,10 +2121,6 @@ describe('product target fixture family', () => {
     validateManifest(manifest)
   })
 
-  it('keeps the mounted row wired to the real run-root guard', () => {
-    assertMountedRowCallsRunRootGuard()
-  })
-
   it('holds exact fields and required names', () => {
     validateFamily(parsed, manifest)
   })
@@ -1671,7 +2158,7 @@ describe('product target fixture family', () => {
         } else {
           const mutated = structuredClone(cases)
           applyMutation(mutated, mutation)
-          await validateMutated(mutated, manifest)
+          await validateMutated(mutated, manifest, mutation)
         }
       } catch (error) {
         message = error instanceof Error ? error.message : String(error)
@@ -1691,12 +2178,18 @@ describe('product target registry and theme rows', () => {
     assert.equal(selected.kind, 'product')
     assert.ok(Object.isFrozen(selected), 'target record must be frozen')
     assert.deepEqual({ ...selected.selectors }, {
+      // The in-use shell root the ARIA snapshot is taken from.
+      shell: '#inuse',
       chrome: '.iu-bar',
       body: '.iu-view',
       // The active view excludes the permanently mounted hidden changes view,
       // so the body and view floors can never be satisfied by that sibling.
       activeView: '.iu-view > :not([hidden])',
       sectionNav: 'nav[aria-label="peasant sections"]',
+      // The section-item and active-state classes the row's probes read, and
+      // the nav-scoped active query assembled from them.
+      sectionItem: '.iu-subnav-item',
+      activeSectionItem: '.iu-subnav-item.active',
       activeSection: 'nav[aria-label="peasant sections"] .iu-subnav-item[aria-current="page"]',
       sectionView: '#inuse-stage[role="tabpanel"]',
     })
@@ -2042,6 +2535,7 @@ describe('journey compatibility and import resolution', () => {
       'scripts/journey/storybook-smoke.journey.mjs',
       'scripts/fairtest/fairtrade-targets.mjs',
       'scripts/fairtest/fairtrade-adapter.mjs',
+      'scripts/fairtest/fairtest-runtime.mjs',
       'scripts/fairtest/product-producer.mjs',
       'scripts/fairtest/product.journey.mjs',
       'scripts/fairtest/product-mutations.mjs',
@@ -2256,7 +2750,7 @@ describe('product adapter lifecycle with the real static driver', () => {
         'product producer: driver start failed',
         'field "port"',
         'at path driver.start',
-        `could not listen on ${FAIRTEST_PRODUCT_HOST}:${REAL_DRIVER_SQUATTER_PORT}`,
+        `could not listen on ${FAIRTEST_APP_HOST}:${REAL_DRIVER_SQUATTER_PORT}`,
         'EADDRINUSE',
         'repair:',
       ],
@@ -2320,6 +2814,53 @@ describe('adapter source boundary', () => {
         assert.ok(!text.includes(token), `${file}: names forbidden material ${JSON.stringify(token)} at path ${file}; repair: keep runner and host-global material in the injected driver.`)
       }
     }
+  })
+
+  it('keeps every product selector and label literal in the app-owned registry', () => {
+    // The producer's header claims it invents no selectors or labels. A quoted
+    // product class, shell id, or action label anywhere in the product host
+    // modules is a second owner of app structure the registry declares, so the
+    // claim is proven against the source rather than trusted.
+    const forbidden = [
+      { pattern: /(['"])(?:#inuse|\.?iu-[\w-]+)\1/, what: 'product selector literal' },
+      { pattern: /(['"`])code map\1/, what: 'product display label literal' },
+    ]
+    for (const file of PRODUCT_HOST_FILES) {
+      const lines = readFileSync(resolve(HERE, file), 'utf8').split('\n')
+      lines.forEach((line, index) => {
+        const quoted = line.replace(/^\s*(\/\/|\*).*$/, '')
+        for (const { pattern, what } of forbidden) {
+          assert.ok(
+            !pattern.test(quoted),
+            `${file}: carries a ${what} on line ${String(index + 1)} at path ${file}; repair: take the selector or label from PRODUCT_SELECTORS or the target registry instead of repeating it here.`,
+          )
+        }
+      })
+    }
+  })
+
+  it('carries no second axe report mapping and no second loopback origin', () => {
+    const producer = readFileSync(resolve(HERE, 'product-producer.mjs'), 'utf8')
+    for (const token of ['AxeBuilder', 'withTags(', '@axe-core/playwright', 'results.passes.length', 'results.violations.map']) {
+      assert.ok(!producer.includes(token), `product-producer.mjs: names ${JSON.stringify(token)} at path product-producer.mjs; repair: keep the axe primitive and its compact report shape in the shared journey assertion.`)
+    }
+    assert.ok(producer.includes('scanAxe(page, { root })'), 'product-producer.mjs: must run the scoped scan through the shared scanAxe contract; repair: call scanAxe(page, { root }) instead of a local scanner.')
+    assert.ok(producer.includes('AXE_RESULT_FIELDS'), 'product-producer.mjs: must pin the scan shape to the shared AXE_RESULT_FIELDS; repair: validate every scan against the shared declared field set.')
+    const ownerText = readFileSync(resolve(ROOT, RUNTIME_REL), 'utf8')
+    assert.ok(/export const FAIRTEST_APP_PORT = Number\(process\.env\.FAIRTEST_APP_PORT \|\| \d+\)/.test(ownerText), `${RUNTIME_REL}: must declare the loopback port as the env-overridable default; repair: keep the port override in the single owner.`)
+  })
+
+  it('keeps the mounted row preparing its run subtree before any artifact write', () => {
+    const source = readFileSync(resolve(HERE, 'product-producer.mjs'), 'utf8')
+    const row = source.slice(source.indexOf('export async function captureProductRow'))
+    assert.ok(row.length > 0, 'product-producer.mjs: the mounted row is missing at path producer.captureProductRow; repair: keep the row that writes the six artifact classes.')
+    const prepared = row.indexOf('prepareProductRowDir(')
+    const firstWrite = row.indexOf('writeFileSync(')
+    assert.ok(prepared > -1, 'product-producer.mjs: the mounted row no longer prepares its run directory at path producer.captureProductRow; repair: call prepareProductRowDir({ runRoot, theme }) so the freshness guard runs first.')
+    assert.ok(!/assertProductRowDirFresh/.test(source), 'product-producer.mjs: still exposes the old named run-root guard at path producer.assertProductRowDirFresh; repair: keep the refusal private to the preparation seam so a row cannot reach it after a write.')
+    assert.equal(source.split('refuseStaleRunSubtree(').length - 1, 2, 'product-producer.mjs: the stale-subtree refusal must have exactly one call site at path producer.refuseStaleRunSubtree; repair: call it once, inside prepareProductRowDir, before the row directory is created.')
+    assert.ok(!/mkdirSync\(\s*rowDir/.test(row), 'product-producer.mjs: the mounted row creates its row directory directly at path producer.captureProductRow; repair: let prepareProductRowDir create it after validating freshness.')
+    assert.ok(firstWrite > prepared, 'product-producer.mjs: the mounted row writes an artifact before preparing its run directory at path producer.captureProductRow; repair: prepare the run directory before any artifact write.')
   })
 
   it('keeps the existing boundary and source guards green', () => {
