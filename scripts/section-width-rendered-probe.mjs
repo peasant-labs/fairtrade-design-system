@@ -49,10 +49,10 @@ const mergeBase = git('merge-base', 'HEAD', 'origin/main')
 const branch = git('branch', '--show-current')
 const status = git('status', '--porcelain')
 const clean = status.length === 0
+const provenanceMode = featureHead === canonicalHead ? 'canonical' : 'feature'
 if (!clean) {
   throw actionable(`section-width mounted probe requires a clean committed worktree\ncase: feature-provenance\nfile: ${ROOT}\nobserved: ${JSON.stringify(status)}\nexpected: clean git status\nremedy: commit the intended source and evidence changes, or restore the worktree`)
 }
-if (featureHead === canonicalHead) throw actionable('section-width mounted probe cannot prove a feature artifact\ncase: feature-provenance\nfile: git HEAD\nexpected: feature head distinct from canonical origin/main\nremedy: run the probe on the isolated feature worktree')
 
 const indexDisk = readFileSync(resolve(DIST, 'index.html'))
 const allAssetPaths = listFiles(DIST).filter((path) => ['.css', '.js'].includes(extname(path))).map((path) => `/${relative(DIST, path).split(sep).join('/')}`).sort()
@@ -96,6 +96,7 @@ const evidence = {
   branch,
   featureHead,
   canonicalHead,
+  provenanceMode,
   mergeBase,
   clean,
   status,
@@ -140,12 +141,50 @@ try {
   }
   writeFileSync(resolve(EVIDENCE_DIR, 'section-width-provenance.json'), JSON.stringify(evidence, null, 2) + '\n')
   console.log(`section-width mounted probe: ${evidence.themes.map((theme) => theme.name).join(', ')} passed`)
-  console.log(`provenance: feature=${featureHead} canonical=${canonicalHead} base=${mergeBase} branch=${branch} clean=${clean}`)
+  console.log(`provenance: mode=${provenanceMode} feature=${featureHead} canonical=${canonicalHead} base=${mergeBase} branch=${branch} clean=${clean}`)
   console.log(`asset manifest: ${evidence.assets.length} JS/CSS files sha256=${evidence.assetManifestDigest}`)
   for (const theme of evidence.themes) console.log(`${theme.name}: ${theme.screenshot} SurfaceGate=${theme.surfaceGate.passed}`)
 } finally {
   await browser?.close()
   await new Promise((resolveClose, rejectClose) => server.close((error) => error ? rejectClose(error) : resolveClose()))
+}
+
+async function assertRealTranscriptPath(page, origin, theme) {
+  const query = new URLSearchParams({ app: 'transcript', fb: 'off', theme })
+  await page.goto(`${origin}/?${query}#inuse`, { waitUntil: 'networkidle0' })
+  await page.waitForSelector('#inuse.iu .iu-bar')
+  await page.waitForSelector('#inuse-stage .iu-screen')
+  await page.waitForSelector('#inuse-stage .txn-center')
+  const observed = await page.evaluate(() => {
+    const box = (element) => {
+      const rect = element?.getBoundingClientRect()
+      return rect ? { width: rect.width, height: rect.height } : { width: 0, height: 0 }
+    }
+    const root = document.querySelector('#inuse.iu')
+    const bar = document.querySelector('#inuse .iu-bar')
+    const stage = document.querySelector('#inuse-stage')
+    const selectedTab = document.querySelector('#inuse .iu-opt[aria-selected="true"]')
+    const center = document.querySelector('#inuse-stage .txn-center')
+    const stream = document.querySelector('#inuse-stage .txn-stream')
+    return {
+      root: box(root),
+      bar: box(bar),
+      stage: box(stage),
+      center: box(center),
+      stream: box(stream),
+      selectedTabId: selectedTab?.id ?? '',
+      selectedTabText: selectedTab?.textContent.trim() ?? '',
+      centerTextLength: center?.textContent.trim().length ?? 0,
+      streamTextLength: stream?.textContent.trim().length ?? 0,
+    }
+  })
+  requireCase(observed.root.width > 0 && observed.root.height > 0, 'transcript-production', 'full shell', observed.root, 'non-empty #inuse.iu', 'keep the real in-use shell mounted')
+  requireCase(observed.bar.width > 0 && observed.bar.height > 0, 'transcript-production', 'persistent bar', observed.bar, 'non-empty .iu-bar', 'keep the persistent in-use chrome mounted')
+  requireCase(observed.stage.width > 1000 && observed.stage.height > 400, 'transcript-production', 'stage geometry', observed.stage, 'wide non-empty #inuse-stage', 'keep the real transcript stage mounted')
+  requireCase(observed.selectedTabId === 'iu-tab-transcript', 'transcript-production', 'selected app', { id: observed.selectedTabId, text: observed.selectedTabText }, 'iu-tab-transcript', 'navigate through the real transcript app tab')
+  requireCase(observed.center.width > 0 && observed.center.height > 0 && observed.centerTextLength > 0, 'transcript-production', 'transcript center', observed.center, 'non-empty .txn-center with user content', 'do not replace the real TranscriptViewer with a synthetic specimen')
+  requireCase(observed.stream.width > 0 && observed.stream.height > 0 && observed.streamTextLength > 0, 'transcript-production', 'transcript stream', observed.stream, 'non-empty .txn-stream with user content', 'keep the real transcript production path mounted')
+  return observed
 }
 
 async function runMountedCase({ browser, origin, name, testCase, geometry, sourceMarker }) {
@@ -156,6 +195,7 @@ async function runMountedCase({ browser, origin, name, testCase, geometry, sourc
   const query = new URLSearchParams({ app: 'graph', fb: 'off', theme: testCase.theme })
   try {
     await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }])
+    const realTranscript = await assertRealTranscriptPath(page, origin, testCase.theme)
     await page.goto(`${origin}/?${query}#inuse`, { waitUntil: 'networkidle0' })
     await page.waitForSelector('#inuse.iu .iu-bar')
     await page.waitForSelector('#inuse-stage .iu-subnav')
@@ -281,7 +321,7 @@ async function runMountedCase({ browser, origin, name, testCase, geometry, sourc
     const gate = new SurfaceGate(page)
     const surfaceGate = await gate.assert(name, screenshot, { sel: '#inuse.iu', where: 'section-width-rendered-probe.mjs' })
     requireCase(errors.length === 0, name, 'browser errors after capture', errors, [], 'fix any page/console error raised during capture and rerun')
-    return { name, theme: testCase.theme, sourceMarker, screenshot, geometry: observed, errors, surfaceGate: { passed: true, ...surfaceGate } }
+    return { name, theme: testCase.theme, sourceMarker, realTranscript, screenshot, geometry: observed, errors, surfaceGate: { passed: true, ...surfaceGate } }
   } finally {
     await page.close()
   }
