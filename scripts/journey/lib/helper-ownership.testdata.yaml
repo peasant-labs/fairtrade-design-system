@@ -6,6 +6,11 @@
 # - app-owned-host-runtime: browser/DOM behavior, Playwright wiring, and pure
 #   app-side predicates with a single app-side owner. Browser code here is
 #   never duplicated into the private child package.
+# - shared-vendored-source: a helper in the file consumers copy byte-for-byte.
+#   The whole file is the shared source, so every export in it carries this
+#   owner: an app semantic belongs in the app-owned target or adapter, never in
+#   a body a consumer loads without the app. A file holding this owner may
+#   import nothing but its own directory and the two declared dependencies.
 # - compatibility-re-export: a re-export of a canonical pure value, never a
 #   redefinition. Value identity with the canonical file is asserted.
 #
@@ -15,7 +20,7 @@
 # The row-scoped `resolveRowTheme` helper (explicit row key for Fairtest) is
 # its own row. Both paths are app-owned and documented as separate paths in
 # fixtures.mjs: neither silently replaces the other.
-expectedCaseCount: 14
+expectedCaseCount: 15
 cases:
   - name: helper-constants-frozen-epoch
     file: determinism-constants.mjs
@@ -40,23 +45,27 @@ cases:
   - name: helper-assertions-axe-tags
     file: assertions.mjs
     symbol: DEFAULT_AXE_TAGS
-    owner: app-owned-host-runtime
+    owner: shared-vendored-source
+  - name: helper-assertions-axe-result-fields
+    file: assertions.mjs
+    symbol: AXE_RESULT_FIELDS
+    owner: shared-vendored-source
   - name: helper-assertions-scan-axe
     file: assertions.mjs
     symbol: scanAxe
-    owner: app-owned-host-runtime
+    owner: shared-vendored-source
   - name: helper-assertions-serious-violations
     file: assertions.mjs
     symbol: seriousViolations
-    owner: app-owned-host-runtime
+    owner: shared-vendored-source
   - name: helper-assertions-expect-theme
     file: assertions.mjs
     symbol: expectTheme
-    owner: app-owned-host-runtime
+    owner: shared-vendored-source
   - name: helper-assertions-expect-computed-tokens
     file: assertions.mjs
     symbol: expectComputedTokens
-    owner: app-owned-host-runtime
+    owner: shared-vendored-source
   - name: helper-fixtures-test
     file: fixtures.mjs
     symbol: test

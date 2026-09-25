@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # product-target.testdata.yaml.
-expectedCaseCount: 107
+expectedCaseCount: 108
 requiredCaseNames:
   - theme-row-dark-absent-passes
   - theme-row-dark-empty-passes
@@ -109,7 +109,8 @@ requiredCaseNames:
   - runner-config-shape-pinned
   - config-port-owner-single-declaration
   - axe-report-shape-one-owner
-expectedMutationCount: 57
+  - driver-idle-reset-keeps-start-diagnostic
+expectedMutationCount: 59
 requiredMutationNames:
   - removing the light theme row breaks the required inventory
   - duplicating a route name breaks uniqueness
@@ -168,6 +169,8 @@ requiredMutationNames:
   - recording a container total under the body descendants name breaks record truthfulness
   - claiming a foreign owner for the loopback port breaks the port owner
   - inventing an axe result field breaks the single report shape
+  - declaring a different reset requirement breaks the idle-reset case
+  - dropping the declared cleanup failure breaks the idle-reset case shape
 mutations:
   - name: removing the light theme row breaks the required inventory
     kind: delete-record
@@ -476,3 +479,14 @@ mutations:
     field: extraField
     value: ruleIds
     expectedField: extraField
+  - name: declaring a different reset requirement breaks the idle-reset case
+    kind: bad-value
+    target: driver-idle-reset-keeps-start-diagnostic
+    field: contractRequirement
+    value: reset must be called at most once
+    expectedField: contractRequirement
+  - name: dropping the declared cleanup failure breaks the idle-reset case shape
+    kind: delete-field
+    target: driver-idle-reset-keeps-start-diagnostic
+    field: cleanupFailure
+    expectedField: cleanupFailure

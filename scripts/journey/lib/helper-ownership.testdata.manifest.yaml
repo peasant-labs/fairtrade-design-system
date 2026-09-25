@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # helper-ownership.testdata.yaml.
-expectedCaseCount: 14
+expectedCaseCount: 15
 requiredCaseNames:
   - helper-constants-frozen-epoch
   - helper-constants-prng-seed
@@ -8,6 +8,7 @@ requiredCaseNames:
   - helper-determinism-frozen-epoch-reexport
   - helper-determinism-prng-seed-reexport
   - helper-assertions-axe-tags
+  - helper-assertions-axe-result-fields
   - helper-assertions-scan-axe
   - helper-assertions-serious-violations
   - helper-assertions-expect-theme
@@ -16,13 +17,14 @@ requiredCaseNames:
   - helper-fixtures-expect
   - helper-fixtures-story-url
   - helper-fixtures-resolve-row-theme
-expectedMutationCount: 5
+expectedMutationCount: 6
 requiredMutationNames:
   - removing the row-theme helper breaks the required inventory
   - duplicating the expect-theme name breaks uniqueness
   - renaming the owner field breaks the case shape
   - adding an unknown helper field breaks exact membership
   - assigning browser behavior to the core breaks the owner rule
+  - dropping the declared axe result shape breaks the required inventory
 mutations:
   - name: removing the row-theme helper breaks the required inventory
     kind: delete-record
@@ -50,3 +52,7 @@ mutations:
     field: owner
     value: browser-neutral-core-policy
     expectedField: owner
+  - name: dropping the declared axe result shape breaks the required inventory
+    kind: delete-record
+    target: helper-assertions-axe-result-fields
+    expectedField: helper-assertions-axe-result-fields

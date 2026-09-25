@@ -1,13 +1,17 @@
 // Validator for the journey helper-ownership inventory.
 //
 // Assigns every exported helper of scripts/journey/lib/ to exactly one
-// owner (browser-neutral-core-policy, app-owned-host-runtime, or
-// compatibility-re-export) and proves the classification is real:
+// owner (browser-neutral-core-policy, app-owned-host-runtime,
+// shared-vendored-source, or compatibility-re-export) and proves the
+// classification is real:
 // - every row names a file, symbol, and owner with exact fields;
 // - the row set equals the actual module export set (no helper
 //   unclassified, no phantom row);
 // - only the two pinned pure constants are core-owned, and their file
 //   carries no browser/DOM/runner token;
+// - every shared-vendored-source file loads from nothing but its own
+//   directory and its two declared dependencies, so no app semantic can
+//   reach a body a consumer copies byte-for-byte;
 // - every compatibility re-export holds value identity with its canonical
 //   file and is a re-export, never a redefinition;
 // - the pinned pure values appear nowhere in the private child package,
@@ -26,7 +30,7 @@ const ROOT = resolve(HERE, '..', '..', '..')
 const CORPUS_REL = 'scripts/journey/lib/helper-ownership.testdata.yaml'
 const MANIFEST_REL = 'scripts/journey/lib/helper-ownership.testdata.manifest.yaml'
 const LIB_FILES = ['determinism-constants.mjs', 'determinism.mjs', 'assertions.mjs', 'fixtures.mjs']
-const OWNERS = ['browser-neutral-core-policy', 'app-owned-host-runtime', 'compatibility-re-export']
+const OWNERS = ['browser-neutral-core-policy', 'app-owned-host-runtime', 'shared-vendored-source', 'compatibility-re-export']
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
 
 /** Pinned pure values: the only symbols the core owner may hold. */
@@ -34,6 +38,12 @@ const CORE_ROWS = new Set([
   'determinism-constants.mjs:FROZEN_EPOCH_MS',
   'determinism-constants.mjs:PRNG_SEED',
 ])
+
+/** The dependencies a byte-vendored journey helper may declare by name. */
+const VENDORED_DECLARED_DEPENDENCIES = new Set(['@playwright/test', '@axe-core/playwright'])
+
+/** A relative specifier that stays inside the vendored journey helper directory. */
+const VENDORED_LOCAL_SPECIFIER = /^\.\/[\w.-]+$/
 
 /** Word-boundary browser/DOM/runner tokens no core-owned file may carry. */
 const BROWSER_TOKEN_PATTERN = /\b(page|locator|document|window|playwright|addInitScript|getComputedStyle|AxeBuilder|context|storybook)\b/
@@ -113,6 +123,9 @@ function checkRowOwnership(entry) {
       throw new Error(`${CORPUS_REL}: case "${name}" assigns a core owner to a file carrying browser material ${JSON.stringify(hit[0])} for field "owner" at path owner; repair: keep browser/DOM helpers in app-owned-host-runtime.`)
     }
   }
+  if (owner === 'shared-vendored-source') {
+    assertVendoredSourceLoads(file)
+  }
   if (owner === 'compatibility-re-export') {
     const canonical = libModules['determinism-constants.mjs']
     if (!(symbol in canonical)) {
@@ -139,6 +152,47 @@ function listChildSources() {
   }
   for (const root of roots) walk(root)
   return found
+}
+
+/** Every static and dynamic module specifier named by one helper body. */
+function importSpecifiers(text) {
+  const specifiers = [...text.matchAll(/(?:\bfrom\s*|\bimport\s*|\brequire\s*\(\s*)['"]([^'"]+)['"]/g)].map((match) => match[1])
+  return [...new Set(specifiers)]
+}
+
+/**
+ * Refuse a byte-vendored journey helper that reaches outside the directory a
+ * consumer copies. A vendored body loads in the consumer's own tree, so an app
+ * module, a target registry, or a private workspace package turns the mandated
+ * re-vendor into a module that cannot resolve at all.
+ * @param {string} text one vendored helper body
+ * @param {string} label diagnostic label naming the body under test
+ * @returns {string|null} the refusal message, or null when the body is loadable
+ */
+function vendoredSourceViolation(text, label) {
+  for (const specifier of importSpecifiers(text)) {
+    if (VENDORED_LOCAL_SPECIFIER.test(specifier)) continue
+    if (VENDORED_DECLARED_DEPENDENCIES.has(specifier)) continue
+    if (specifier.startsWith('node:')) continue
+    return (
+      `${CORPUS_REL}: vendored file ${JSON.stringify(label)} imports ${JSON.stringify(specifier)} at path import; ` +
+      'repair: keep a byte-vendored journey helper dependent only on its own directory plus its two declared dependencies, and normalize an app theme in the app-owned target or adapter.'
+    )
+  }
+  if (!text.includes([...VENDORED_DECLARED_DEPENDENCIES][0])) {
+    return `${CORPUS_REL}: vendored file ${JSON.stringify(label)} declares no runner dependency at path import; repair: restore the declared runner import.`
+  }
+  return null
+}
+
+/**
+ * @param {string} file helper file name inside scripts/journey/lib
+ */
+function assertVendoredSourceLoads(file) {
+  const violation = vendoredSourceViolation(readFileSync(join(HERE, file), 'utf8'), file)
+  if (violation) {
+    throw new Error(violation)
+  }
 }
 
 describe('helper ownership inventory', () => {
@@ -177,6 +231,27 @@ describe('helper ownership inventory', () => {
     for (const entry of cases) {
       checkRowOwnership(entry)
     }
+  })
+
+  it('keeps the byte-vendored journey helpers free of app and private-child imports', () => {
+    const vendored = new Set(
+      /** @type {Record<string, unknown>[]} */ (parsed.cases)
+        .filter((entry) => entry.owner === 'shared-vendored-source')
+        .map((entry) => /** @type {string} */ (entry.file)),
+    )
+    assert.ok(vendored.size > 0, `${CORPUS_REL}: no helper carries the shared-vendored-source owner at path cases; repair: classify the byte-vendored file so its import boundary is observed.`)
+    for (const file of vendored) {
+      assertVendoredSourceLoads(file)
+    }
+    // A planted app import into a vendored body must be refused, so the guard
+    // cannot pass by having nothing to look at.
+    const original = readFileSync(join(HERE, 'assertions.mjs'), 'utf8')
+    const appImport = vendoredSourceViolation(`${original}\nimport { normalizeRenderedTheme } from '../../fairtest/fairtrade-targets.mjs'\n`, 'planted-assertions.mjs')
+    assert.ok(appImport && appImport.includes('../../fairtest/fairtrade-targets.mjs'), `planted app import passed instead of failing: ${appImport}`)
+    assert.ok(appImport.includes('at path import') && appImport.includes('repair:'), `planted app import diagnostic is missing path or repair context: ${appImport}`)
+    const escapingImport = vendoredSourceViolation(`${original}\nimport { test } from '../fixtures.mjs'\n`, 'planted-assertions.mjs')
+    assert.ok(escapingImport && escapingImport.includes('../fixtures.mjs'), `a planted import out of the vendored directory passed instead of failing: ${escapingImport}`)
+    assert.equal(vendoredSourceViolation(original, 'assertions.mjs'), null, 'the live vendored body must stay loadable')
   })
 
   it('keeps the pinned pure values byte-identical and out of the child package', () => {

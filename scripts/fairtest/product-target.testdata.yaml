@@ -68,8 +68,9 @@
 # product/component journey matches, retries 0, workers 1, reducedMotion
 # reduce, no webServer or reuseExistingServer), the single loopback host/port
 # owner both the config and the producer read, and the single owner of the
-# compact axe report shape.
-expectedCaseCount: 107
+# compact axe report shape. The driver contract family also proves reset is
+# safe to call when the driver is not running.
+expectedCaseCount: 108
 cases:
   - name: theme-row-dark-absent-passes
     check: theme-row
@@ -979,7 +980,13 @@ cases:
   - name: driver-idle-stop-keeps-start-diagnostic
     check: driver-stop-contract
     startFailure: fake start failed before readiness
-    contractRequirement: stop must be safe to call when the driver is not running
+    contractRequirement: stop and reset must be safe to call when the driver is not running
+    expectValid: true
+  - name: driver-idle-reset-keeps-start-diagnostic
+    check: driver-reset-contract
+    startFailure: fake start failed before the service came up
+    contractRequirement: stop and reset must be safe to call when the driver is not running
+    cleanupFailure: 'fake reset refused: the driver is not running'
     expectValid: true
   - name: rendered-active-view-healthy-passes
     check: rendered-active-view

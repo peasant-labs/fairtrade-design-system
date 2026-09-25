@@ -12,12 +12,14 @@
 //
 // Injected driver contract (declared where a driver author reads it, in
 // assertDriver): async start, async stop, async reset, a sync isRunning
-// probe, and a stop that is safe to call when the driver is not running. A
-// start that failed before the service came up leaves the driver not running,
-// and the failure path stops it anyway; a driver rejecting that stop would
-// replace the start diagnostic with a cleanup failure. Teardown never repeats
-// the failure path's stop, so the start diagnostic is what a maintainer still
-// reads.
+// probe, and a stop and a reset that are both safe to call when the driver
+// is not running. A start that failed before the service came up leaves the
+// driver not running, and the failure path cleans that partial start with
+// reset before stop anyway; a driver rejecting either there would replace the
+// start diagnostic with a cleanup failure, so the failure path reports the
+// cleanup failure beside the start diagnostic instead of letting it win.
+// Teardown never repeats the failure path's stop, so the start diagnostic is
+// what a maintainer still reads.
 
 import { importFairtestSource } from '../fairtest-source.mjs'
 import {
@@ -65,10 +67,10 @@ function assertRunId(runId) {
 /**
  * Assert the injected driver offers the required lifecycle surface: an async
  * start, an async stop, an async reset, and a sync isRunning probe. The stop
- * must also be safe to call when the driver is not running, because a start
- * that failed before the service came up leaves the driver not running and
- * the failure path still stops it; a stop that rejects there would replace
- * the start diagnostic with a cleanup failure.
+ * and the reset must both be safe to call when the driver is not running,
+ * because a start that failed before the service came up leaves the driver not
+ * running and the failure path still cleans that partial start; a stop or reset
+ * that rejects there would replace the start diagnostic with a cleanup failure.
  * @param {unknown} driver candidate lifecycle driver
  */
 function assertDriver(driver) {
@@ -76,7 +78,7 @@ function assertDriver(driver) {
     throw new Error(
       'fairtrade adapter: missing driver for field "driver" at path adapter.driver; ' +
       'repair: inject a driver with async start, stop, reset and a sync isRunning probe for "driver"; ' +
-      'stop must be safe to call when the driver is not running.',
+      'stop and reset must be safe to call when the driver is not running.',
     )
   }
   for (const method of ['start', 'stop', 'reset', 'isRunning']) {
@@ -84,7 +86,7 @@ function assertDriver(driver) {
       throw new Error(
         `fairtrade adapter: driver is missing "${method}" for field "driver" at path adapter.driver.${method}; ` +
         `repair: provide async start, stop, reset and a sync isRunning probe on "driver"; ` +
-        'stop must be safe to call when the driver is not running.',
+        'stop and reset must be safe to call when the driver is not running.',
       )
     }
   }
@@ -174,20 +176,30 @@ export async function createFairtradeAdapter(options = {}) {
   }
 
   /**
-   * Run reset before stop so a partial start leaves no service running. Stop
-   * always runs, even when reset itself fails. This is the one place a driver
-   * is stopped while it may not be running, so it is where the declared
-   * requirement that stop is safe on an idle driver is relied upon; the start
-   * failure is reported by the caller after this cleanup resolves.
+   * Run reset before stop so a partial start leaves no service running. Both
+   * always run, and a rejecting one is reported to the caller instead of
+   * thrown from here: this is the one place a driver is cleaned while it may
+   * not be running, so it is where the declared requirement that stop and
+   * reset are safe on an idle driver is relied upon, and the start diagnostic
+   * is what a maintainer must still read whether or not the cleanup itself
+   * failed. The returned failure is appended to that diagnostic.
+   * @returns {Promise<unknown>} the cleanup failure, or undefined when clean
    */
   async function resetBeforeStop() {
+    let cleanup = undefined
     try {
       await driver.reset()
       state.resets += 1
-    } finally {
+    } catch (error) {
+      cleanup = error
+    }
+    try {
       await driver.stop()
       state.stops += 1
+    } catch (error) {
+      cleanup = cleanup === undefined ? error : cleanup
     }
+    return cleanup
   }
 
   /**
@@ -237,14 +249,19 @@ export async function createFairtradeAdapter(options = {}) {
         )
       }
     } catch (error) {
-      await resetBeforeStop()
+      const cleanup = await resetBeforeStop()
+      const cleanupNote = cleanup === undefined
+        ? ''
+        : `; cleanup after the failed start also failed for field "driver" at path adapter.start, caused by ${cleanup instanceof Error ? cleanup.message : String(cleanup)}`
       if (error && error.isAdapterTimeout) {
-        throw error
+        const timeout = new Error(`${error.message}${cleanupNote}`)
+        timeout.isAdapterTimeout = true
+        throw timeout
       }
       const cause = error instanceof Error ? error.message : String(error)
       throw new Error(
         `fairtrade adapter: driver start failed for field "driver" at path adapter.start; ` +
-        `repair: fix the injected driver start and retry; caused by ${cause}.`,
+        `repair: fix the injected driver start and retry; caused by ${cause}${cleanupNote}.`,
       )
     }
     state.started = true

@@ -78,6 +78,18 @@ banner. The consumer's `vendor-guard` test fails when the vendored body drifts
 from the copy here. When changing a shared file, change it here first, re-vendor,
 then update consumers.
 
+A vendored body loads in the consumer's own tree, so `lib/assertions.mjs`
+depends on nothing but its own directory plus `@playwright/test` and
+`@axe-core/playwright`. It is a byte-vendored shared source, never an app-owned
+one: an app that renders one theme as an absent or empty `data-theme` value owns
+that normalization in its own target or adapter, and the Fairtrade row theme
+contract lives in `scripts/fairtest/fairtrade-targets.mjs`. The
+helper-ownership inventory carries a `shared-vendored-source` owner that refuses
+any import reaching out of `lib/`, and the compatibility test loads a copy of the
+helpers into a tree holding only the shared bodies, so a product semantic cannot
+reach a vendored body again. `scanAxe(page, { root })` returns the one compact
+report shape declared by `AXE_RESULT_FIELDS`, whether it ran page-wide or scoped.
+
 Fairtrade's own element journeys (Storybook-driven component interactions) will
 live here as well; this slice establishes the shared layer only. The
 `fixtures.mjs` theme helper binds the current row key; element

@@ -29,8 +29,7 @@ import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { pathToFileURL } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
-import { expectTheme } from '../journey/lib/assertions.mjs'
-import { AXE_RESULT_FIELDS } from '../journey/lib/assertions.mjs'
+import { AXE_RESULT_FIELDS, expectTheme } from '../journey/lib/assertions.mjs'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
 import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT } from './fairtest-runtime.mjs'
 import {
@@ -70,7 +69,7 @@ const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs']
 const PRODUCT_HOST_FILES = ['product-producer.mjs', 'product-mutations.mjs', 'product.journey.mjs']
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
-const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'cli-target', 'driver-out-of-root', 'driver-host-refusal', 'driver-stop-contract', 'rendered-active-view', 'record-truthfulness', 'row-dir-preparation', 'runner-config', 'port-owner', 'axe-report-shape']
+const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'cli-target', 'driver-out-of-root', 'driver-host-refusal', 'driver-stop-contract', 'driver-reset-contract', 'rendered-active-view', 'record-truthfulness', 'row-dir-preparation', 'runner-config', 'port-owner', 'axe-report-shape']
 const A11Y_POINTS = ['initial', 'after-action']
 const A11Y_IMPACTS = ['minor', 'moderate', 'serious', 'critical']
 const ROW_THEMES = ['dark', 'light']
@@ -215,6 +214,7 @@ function checkCaseShape(entry, index) {
     'runner-config': ['name', 'check', 'configFile', 'expectedProjects', 'expectedTestMatch', 'expectedTestDir', 'expectedRetries', 'expectedWorkers', 'expectedFullyParallel', 'expectedReducedMotion', 'forbiddenKeys', 'expectValid'],
     'port-owner': ['name', 'check', 'ownerModule', 'consumerModules', 'portEnvName', 'expectValid'],
     'axe-report-shape': ['name', 'check', 'expectValid'],
+    'driver-reset-contract': ['name', 'check', 'startFailure', 'contractRequirement', 'cleanupFailure', 'expectValid'],
   }
   coreFixtures.checkKeys(entry, fieldsByCheck[entry.check], 'case record', CORPUS_REL, path)
   if (!entry.expectValid) {
@@ -258,6 +258,14 @@ function checkCaseShape(entry, index) {
   }
   if (entry.check === 'port-owner') {
     checkPortOwnerShape(entry, path)
+  }
+  if (entry.check === 'driver-reset-contract') {
+    checkDriverStopContractShape(entry, path)
+    for (const field of ['contractRequirement', 'cleanupFailure']) {
+      if (typeof entry[field] !== 'string' || entry[field].trim().length === 0) {
+        throw new Error(`${CORPUS_REL}: case "${entry.name}" holds an invalid value ${JSON.stringify(entry[field])} for field "${field}" at path ${path}.${field}; repair: declare the non-empty ${field} the idle-reset cleanup is proven against.`)
+      }
+    }
   }
   if (entry.check === 'artifact-class') {
     if (typeof entry.artifact !== 'string' || entry.artifact.length === 0) {
@@ -1051,8 +1059,8 @@ async function runProductMutationCase(entry) {
 
 /**
  * Build a fake tree handle that serves one canned attribute value and
- * records the selector read, so the compatibility wrapper is proven
- * against the read path instead of a hardcoded value.
+ * records the selector read, so the theme wrapper is proven against the
+ * read path instead of a hardcoded value.
  * @param {unknown} renderedAttribute canned raw attribute value, absent as nullish
  */
 function fakeThemeTree(renderedAttribute) {
@@ -1067,12 +1075,60 @@ function fakeThemeTree(renderedAttribute) {
   }
 }
 
+/**
+ * Assert the product row theme on a mounted tree. The rendered-value rule is
+ * the app-owned product target contract: dark is an absent or empty
+ * data-theme value and light is the light value. The rule lives in
+ * fairtrade-targets.mjs and is what the mounted producer observes; this
+ * wrapper only reads the raw attribute, settles it, and hands it to that
+ * contract, because the byte-vendored journey helper asserts the attribute
+ * value verbatim for consumers that render an explicit dark value.
+ * @param {{ locator: (selector: string) => { getAttribute: (name: string) => Promise<string|null> } }} page fake or real page handle
+ * @param {string} theme dark or light row theme
+ * @param {{ timeoutMs?: number, pollMs?: number }} [options] bounded read budget
+ */
+async function expectProductTheme(page, theme, options = {}) {
+  const timeoutMs = options.timeoutMs ?? 1000
+  const pollMs = options.pollMs ?? 20
+  const deadlineMs = Date.now() + timeoutMs
+  let raw = await page.locator('html').getAttribute('data-theme')
+  let observed = null
+  for (;;) {
+    try {
+      observed = targets.normalizeRenderedTheme(raw)
+    } catch {
+      observed = null
+    }
+    if (observed === theme) {
+      break
+    }
+    if (Date.now() >= deadlineMs) {
+      break
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollMs))
+    raw = await page.locator('html').getAttribute('data-theme')
+  }
+  const settledRaw = raw
+  const settledObserved = observed
+  targets.observeProductTheme({
+    expected: theme,
+    renderedAttribute: settledRaw,
+    source: 'journey-assertions-expectTheme',
+    observedAtMs: Date.now(),
+  })
+  assert.equal(
+    settledObserved,
+    theme,
+    `rendered theme ${JSON.stringify(settledObserved)} (raw data-theme ${JSON.stringify(settledRaw)}) must equal the expected row theme ${JSON.stringify(theme)}; repair: serve the row route for the expected theme and read the rendered value after it settles.`,
+  )
+}
+
 /** @param {Record<string, unknown>} entry */
 async function runWrapperThemeCase(entry) {
   const name = /** @type {string} */ (entry.name)
   let message = null
   try {
-    await expectTheme(fakeThemeTree(entry.renderedAttribute), entry.theme)
+    await expectProductTheme(fakeThemeTree(entry.renderedAttribute), /** @type {string} */ (entry.theme))
   } catch (error) {
     message = error instanceof Error ? error.message : String(error)
   }
@@ -1768,6 +1824,84 @@ async function runDriverStopContractCase(entry) {
   assert.deepEqual(repeat, { released: true, noop: true, stops: 1 }, `${name}: the repeated teardown must stay a no-op reporting the same stop count`)
 }
 
+/**
+ * Prove the declared reset requirement on the failure path. A start that
+ * failed before the service came up leaves the driver not running, and the
+ * failure path cleans that partial start with reset before stop, so a reset
+ * that rejects there is a case the driver contract rules out. The start
+ * diagnostic is what a maintainer must still read, so the cleanup failure is
+ * reported beside it instead of replacing it, and the run still holds the
+ * canonical receipts: one reset, one stop, a declared-stage trace, and a
+ * teardown that never asks the driver to stop again.
+ * @param {Record<string, unknown>} entry declared case
+ */
+async function runDriverResetContractCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  let declared = null
+  try {
+    await createFairtradeAdapter({
+      runId: 'adapter-probe-no-reset',
+      driver: { start: async () => {}, stop: async () => {}, isRunning: () => false },
+      createdAtMs: 1000,
+    })
+  } catch (error) {
+    declared = error instanceof Error ? error.message : String(error)
+  }
+  if (!declared) {
+    throw new Error(
+      `${CORPUS_REL}: case "${name}" accepted a driver with no reset method for field "contractRequirement" at path cases.${name}.contractRequirement; ` +
+      'repair: keep the driver surface requirement so an unusable driver is refused at construction.',
+    )
+  }
+  if (!declared.includes(/** @type {string} */ (entry.contractRequirement))) {
+    throw new Error(
+      `${CORPUS_REL}: case "${name}" declares no ${JSON.stringify(entry.contractRequirement)} for field "contractRequirement" at path cases.${name}.contractRequirement; got ${declared}; ` +
+      'repair: declare on the adapter driver surface that reset must be safe to call when the driver is not running.',
+    )
+  }
+  expectFragments(['adapter.driver.reset', 'repair:'], declared, name)
+  const driver = createFakeDriver({
+    failStartWhileIdle: true,
+    startFailure: /** @type {string} */ (entry.startFailure),
+    failResetWhenIdle: true,
+  })
+  const adapter = await createFairtradeAdapter({ runId: 'adapter-probe-idle-reset', driver, createdAtMs: 1000 })
+  let startMessage = null
+  try {
+    await adapter.start()
+  } catch (error) {
+    startMessage = error instanceof Error ? error.message : String(error)
+  }
+  if (!startMessage) {
+    throw new Error(
+      `${CORPUS_REL}: case "${name}" resolved a start that failed with ${JSON.stringify(entry.startFailure)} for field "startFailure" at path cases.${name}.startFailure; ` +
+      'repair: keep the failed start failing so its diagnostic is the one a maintainer reads.',
+    )
+  }
+  expectFragments(
+    [
+      'fairtrade adapter: driver start failed',
+      'field "driver"',
+      'at path adapter.start',
+      'repair:',
+      `caused by ${entry.startFailure}`,
+      `caused by ${entry.cleanupFailure}`,
+    ],
+    startMessage,
+    name,
+  )
+  assert.equal(driver.calls.resets, 1, `${name}: the failure path must reset exactly once even when the reset rejects`)
+  assert.equal(driver.calls.stops, 1, `${name}: the failure path must still stop the driver it cleaned`)
+  assert.equal(adapter.isRunning(), false, `${name}: no service may remain after a failed start`)
+  assert.equal(adapter.stats().stops, 1, `${name}: the adapter must count exactly one stop for the failed run`)
+  const teardown = await adapter.teardown()
+  assert.deepEqual(teardown, { released: true, noop: false, stops: 1 }, `${name}: teardown after a failed start must release without asking the driver to stop again`)
+  assert.equal(driver.calls.stops, 1, `${name}: teardown must never repeat the failure path's stop`)
+  assert.deepEqual([...adapter.lifecycleTrace().stages], ['declared'], `${name}: a run that never started must stay at the declared stage`)
+  const repeat = await adapter.teardown()
+  assert.deepEqual(repeat, { released: true, noop: true, stops: 1 }, `${name}: the repeated teardown must stay a no-op reporting the same stop count`)
+}
+
 const RUNNERS = {
   'theme-row': runThemeRowCase,
   route: runRouteCase,
@@ -1798,6 +1932,7 @@ const RUNNERS = {
   'runner-config': runRunnerConfigCase,
   'port-owner': runPortOwnerCase,
   'axe-report-shape': runAxeReportShapeCase,
+  'driver-reset-contract': runDriverResetContractCase,
 }
 
 /** @param {Record<string, unknown>} entry */
@@ -1876,14 +2011,20 @@ function applyMutation(cases, mutation) {
  * Create a fake injected lifecycle driver with observable calls. The
  * failStart switch models a driver that acquired a service and then failed
  * before readiness, so the failure path stops a running driver; the
- * failStopWhenIdle switch models a driver that refuses a stop it is not
- * running for, the case the adapter's declared driver contract rules out.
+ * failStartWhileIdle switch models a driver that failed before the service
+ * came up, so the failure path cleans one that is not running; the
+ * failStopWhenIdle and failResetWhenIdle switches model a driver that
+ * refuses an idle stop or reset, the cases the adapter's declared driver
+ * contract rules out. A cleanup failure must never displace the start
+ * diagnostic the failure path reports.
  * @param {object} [behavior] failure switches
  * @param {boolean} [behavior.hangStart] never settle the start
  * @param {boolean} [behavior.failStart] fail after acquiring
+ * @param {boolean} [behavior.failStartWhileIdle] fail before the service comes up
  * @param {string} [behavior.startFailure] driver failure text reported by start
  * @param {boolean} [behavior.failStop] reject every stop
  * @param {boolean} [behavior.failStopWhenIdle] reject a stop while not running
+ * @param {boolean} [behavior.failResetWhenIdle] reject a reset while not running
  */
 function createFakeDriver(behavior = {}) {
   const calls = { starts: 0, stops: 0, resets: 0 }
@@ -1896,6 +2037,9 @@ function createFakeDriver(behavior = {}) {
       if (behavior.hangStart) {
         await new Promise(() => {})
       }
+      if (behavior.failStartWhileIdle) {
+        throw new Error(behavior.startFailure || 'fake start failed before the service came up')
+      }
       if (behavior.failStart) {
         running = true
         throw new Error(behavior.startFailure || 'fake start failed mid-way')
@@ -1904,6 +2048,9 @@ function createFakeDriver(behavior = {}) {
     },
     async reset() {
       calls.resets += 1
+      if (behavior.failResetWhenIdle && !running) {
+        throw new Error('fake reset refused: the driver is not running')
+      }
     },
     async stop() {
       calls.stops += 1
@@ -2517,6 +2664,12 @@ describe('journey compatibility and import resolution', () => {
     assert.equal(typeof assertions.seriousViolations, 'function', 'seriousViolations must stay exported')
     assert.equal(typeof assertions.expectTheme, 'function', 'expectTheme must stay exported')
     assert.equal(typeof assertions.expectComputedTokens, 'function', 'expectComputedTokens must stay exported')
+    assert.ok(Object.isFrozen(assertions.AXE_RESULT_FIELDS), 'the declared axe result shape must stay frozen')
+    assert.deepEqual(
+      [...assertions.AXE_RESULT_FIELDS],
+      ['tags', 'violations', 'incomplete', 'passes'],
+      'the declared axe result shape must cover exactly the compact report the producer writes into its artifact',
+    )
     assert.deepEqual(
       assertions.seriousViolations({ violations: [{ impact: 'critical' }, { impact: 'minor' }] }).map((entry) => entry.impact),
       ['critical'],
@@ -2549,11 +2702,11 @@ describe('journey compatibility and import resolution', () => {
   })
 })
 
-describe('expectTheme retry semantics', () => {
+describe('shared journey theme assertion contract', () => {
   /**
    * Build a fake page whose rendered theme settles after a bounded number
-   * of dark reads, modelling a consumer theme toggle that writes
-   * data-theme asynchronously after the click.
+   * of reads, modelling a consumer theme toggle that writes data-theme
+   * asynchronously after the click.
    * @param {object} [input] settling behavior
    */
   function fakeSettlingThemePage({ darkReads = 3, settledValue = 'light' } = {}) {
@@ -2562,8 +2715,8 @@ describe('expectTheme retry semantics', () => {
       calls: () => calls,
       locator: (selector) => ({
         getAttribute: async (attributeName) => {
-          assert.equal(selector, 'html', 'wrapper must read the root element')
-          assert.equal(attributeName, 'data-theme', 'wrapper must read the rendered theme attribute')
+          assert.equal(selector, 'html', 'assertion must read the root element')
+          assert.equal(attributeName, 'data-theme', 'assertion must read the rendered theme attribute')
           calls += 1
           await new Promise((resolve) => setTimeout(resolve, 5))
           return calls <= darkReads ? null : settledValue
@@ -2572,58 +2725,27 @@ describe('expectTheme retry semantics', () => {
     }
   }
 
-  /**
-   * Build a fake page that always serves one canned value while counting
-   * reads, so a failure proves the bounded retry re-read instead of a
-   * single read.
-   * @param {unknown} renderedAttribute canned raw attribute value, absent as nullish
-   */
-  function fakeCountingThemePage(renderedAttribute) {
-    let calls = 0
-    return {
-      calls: () => calls,
-      locator: (selector) => ({
-        getAttribute: async (attributeName) => {
-          assert.equal(selector, 'html', 'wrapper must read the root element')
-          assert.equal(attributeName, 'data-theme', 'wrapper must read the rendered theme attribute')
-          calls += 1
-          await new Promise((resolve) => setTimeout(resolve, 5))
-          return renderedAttribute
-        },
-      }),
-    }
-  }
+  it('carries no app-owned rendered-value rule of its own', () => {
+    const shared = readFileSync(resolve(HERE, '..', 'journey', 'lib', 'assertions.mjs'), 'utf8')
+    assert.ok(!shared.includes('normalizeRenderedTheme'), 'the vendored helper must not own the app rendered-theme rule')
+    assert.ok(!shared.includes('observeProductTheme'), 'the vendored helper must not own the app theme observation')
+    assert.ok(!shared.includes('fairtrade'), 'the vendored helper must not name a fairtrade-owned module')
+    const specifiers = [...shared.matchAll(/from\s*['"]([^'"]+)['"]/g)].map((match) => match[1])
+    assert.deepEqual(specifiers, ['@playwright/test', '@axe-core/playwright'], 'the vendored helper must declare only its two dependencies')
+    // The attribute contract a consumer renders is passed through verbatim, so
+    // a server-rendered data-theme="dark" default still satisfies a dark row.
+    assert.match(shared, /toHaveAttribute\('data-theme', theme\)/, 'the vendored helper must assert the rendered attribute value verbatim')
+  })
 
-  it('waits for the rendered theme to settle instead of failing on the first read', { timeout: 10000 }, async () => {
+  it('keeps the app-owned rendered-value rule on the product target contract', { timeout: 10000 }, async () => {
     const page = fakeSettlingThemePage({ darkReads: 3, settledValue: 'light' })
-    await expectTheme(page, 'light')
-    assert.ok(page.calls() > 3, `retry must re-read until the value settles; got ${page.calls()} read(s)`)
-  })
-
-  it('still passes settled absent and empty values for dark and light for light', { timeout: 10000 }, async () => {
-    await expectTheme(fakeThemeTree(null), 'dark')
-    await expectTheme(fakeThemeTree(''), 'dark')
-    await expectTheme(fakeThemeTree('light'), 'light')
-  })
-
-  it('still fails a wrong value after retrying instead of passing', { timeout: 10000 }, async () => {
-    const page = fakeCountingThemePage('dark')
-    await assert.rejects(
-      () => expectTheme(page, 'dark', { timeoutMs: 120, pollMs: 10 }),
-      /"dark".*renderedAttribute.*at path.*repair:/s,
-      'wrong rendered value must fail',
-    )
-    assert.ok(page.calls() > 1, `wrong value must fail after retrying, not on a single read; got ${page.calls()} read(s)`)
-  })
-
-  it('still fails a contradiction after retrying instead of passing', { timeout: 10000 }, async () => {
-    const page = fakeCountingThemePage(null)
-    await assert.rejects(
-      () => expectTheme(page, 'light', { timeoutMs: 120, pollMs: 10 }),
-      /at path.*"light".*"dark".*repair:/s,
-      'contradictory observation must fail',
-    )
-    assert.ok(page.calls() > 1, `contradiction must fail after retrying, not on a single read; got ${page.calls()} read(s)`)
+    await expectProductTheme(page, 'light')
+    assert.ok(page.calls() > 3, `the product theme observation must re-read until the value settles; got ${page.calls()} read(s)`)
+    assert.equal(targets.normalizeRenderedTheme(undefined), 'dark')
+    assert.equal(targets.normalizeRenderedTheme(null), 'dark')
+    assert.equal(targets.normalizeRenderedTheme(''), 'dark')
+    assert.equal(targets.normalizeRenderedTheme('light'), 'light')
+    assert.throws(() => targets.normalizeRenderedTheme('dark'), /unexpected rendered theme "dark".*at path.*repair:/s)
   })
 })
 
