@@ -1,0 +1,55 @@
+# Required-name inventory and executable mutations for core-measurement.yaml.
+expectedCaseCount: 7
+requiredCaseNames:
+  - strict caller policy passes ample sample
+  - same sample fails stricter caller floor
+  - lenient caller policy passes small sample
+  - policy rejects version drift
+  - measurement rejects unknown field
+  - age ceiling fails stale observation
+  - measurement rejects malformed digest
+expectedMutationCount: 7
+requiredMutationNames:
+  - removing the lenient-policy record breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the policy field breaks the case shape
+  - deleting the measurement breaks the case shape
+  - adding an unknown case field breaks exact membership
+  - inventing an outcome value breaks case validation
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing the lenient-policy record breaks the required inventory
+    kind: delete-record
+    target: lenient caller policy passes small sample
+    expectedField: lenient caller policy passes small sample
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: strict caller policy passes ample sample
+    expectedField: strict caller policy passes ample sample
+  - name: renaming the policy field breaks the case shape
+    kind: rename-field
+    target: same sample fails stricter caller floor
+    field: policy
+    newField: thresholds
+    expectedField: policy
+  - name: deleting the measurement breaks the case shape
+    kind: delete-field
+    target: age ceiling fails stale observation
+    field: measurement
+    expectedField: measurement
+  - name: adding an unknown case field breaks exact membership
+    kind: unknown-field
+    target: strict caller policy passes ample sample
+    field: surfaceFloor
+    value: 400
+    expectedField: surfaceFloor
+  - name: inventing an outcome value breaks case validation
+    kind: bad-value
+    target: lenient caller policy passes small sample
+    field: expectPass
+    value: always
+    expectedField: expectPass
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document

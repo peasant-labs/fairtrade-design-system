@@ -1,0 +1,56 @@
+# Required-name inventory and executable mutations for core-values.yaml.
+expectedCaseCount: 8
+requiredCaseNames:
+  - exact fields accept declared keys
+  - exact fields reject unknown key
+  - text accepts content
+  - text rejects blank
+  - int range accepts upper bound
+  - int range rejects overflow
+  - number range accepts midpoint
+  - plain record rejects list
+expectedMutationCount: 7
+requiredMutationNames:
+  - removing the blank-text record breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the check discriminator breaks the case shape
+  - deleting the value breaks the case shape
+  - adding an unknown case field breaks exact membership
+  - inventing a check kind breaks the closed vocabulary
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing the blank-text record breaks the required inventory
+    kind: delete-record
+    target: text rejects blank
+    expectedField: text rejects blank
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: text accepts content
+    expectedField: text accepts content
+  - name: renaming the check discriminator breaks the case shape
+    kind: rename-field
+    target: int range accepts upper bound
+    field: check
+    newField: kind
+    expectedField: check
+  - name: deleting the value breaks the case shape
+    kind: delete-field
+    target: number range accepts midpoint
+    field: value
+    expectedField: value
+  - name: adding an unknown case field breaks exact membership
+    kind: unknown-field
+    target: exact fields accept declared keys
+    field: selector
+    value: "#inuse.iu"
+    expectedField: selector
+  - name: inventing a check kind breaks the closed vocabulary
+    kind: bad-value
+    target: text accepts content
+    field: check
+    value: invented-check
+    expectedField: check
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document

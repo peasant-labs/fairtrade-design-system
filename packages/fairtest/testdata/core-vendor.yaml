@@ -1,0 +1,53 @@
+# Source-vendoring and import-policy cases. Names, versions, digests, origins,
+# and specifiers are synthetic caller-owned test data. The isolation probes
+# are app-material snippets that must never appear in neutral core source and
+# must fail as unknown fields when injected into a valid record.
+expectedCaseCount: 7
+cases:
+  - name: vendor record pins source
+    check: vendor-record
+    input: {name: "example-scope/example-pack", version: "1.2.3", sourceDigest: "1111111111111111111111111111111111111111111111111111111111111111", origin: "taken from upstream release notes"}
+    expectValid: true
+    expectFrozen: true
+  - name: vendor record rejects short version
+    check: vendor-record
+    input: {name: "example-pack", version: "1.2", sourceDigest: "11111111111111111111111111111111", origin: "taken from upstream release notes"}
+    expectValid: false
+    expectedErrorContains: ["version", "at path", "repair:"]
+  - name: vendor record rejects uppercase digest
+    check: vendor-record
+    input: {name: "example-pack", version: "1.2.3", sourceDigest: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", origin: "taken from upstream release notes"}
+    expectValid: false
+    expectedErrorContains: ["sourceDigest", "at path", "repair:"]
+  - name: node builtin import is allowed
+    check: import
+    specifier: "node:crypto"
+    allowlist: ["yaml"]
+    expectAllowed: true
+  - name: bare import rejected when undeclared
+    check: import
+    specifier: "some-pack"
+    allowlist: ["yaml"]
+    expectAllowed: false
+  - name: bare import allowed when declared
+    check: import
+    specifier: "yaml"
+    allowlist: ["yaml"]
+    expectAllowed: true
+  - name: resolved path escapes root
+    check: within-root
+    resolved: "/tmp/other/file.mjs"
+    root: "/tmp/scope"
+    expectValid: false
+    expectedErrorContains: ["source.resolvedPath", "repair:"]
+isolationProbes:
+  - name: route literal cannot enter core
+    snippet: "/?app=graph"
+  - name: selector literal cannot enter core
+    snippet: "#inuse.iu"
+  - name: product threshold name cannot enter core
+    snippet: "txn-scrubber"
+  - name: theme attribute literal cannot enter core
+    snippet: "data-theme"
+  - name: runner global cannot enter core
+    snippet: "page.evaluate"

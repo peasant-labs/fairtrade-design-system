@@ -1,0 +1,35 @@
+# Caller-owned measurement policy cases. Every bound below is synthetic test
+# data supplied by the caller in the fixture. The same sample passes one
+# caller policy and fails a stricter one, proving the core holds no threshold.
+expectedCaseCount: 7
+cases:
+  - name: strict caller policy passes ample sample
+    policy: {version: 1, minBytes: 12, minDistinct: 2, minFraction: 0.5}
+    measurement: {bytes: 64, distinct: 3, fraction: 0.75}
+    expectPass: true
+  - name: same sample fails stricter caller floor
+    policy: {version: 1, minBytes: 4096, minDistinct: 2, minFraction: 0.5}
+    measurement: {bytes: 64, distinct: 3, fraction: 0.75}
+    expectPass: false
+    expectedFailuresContains: ["bytes"]
+  - name: lenient caller policy passes small sample
+    policy: {version: 1, minBytes: 1, minDistinct: 1, minFraction: 0}
+    measurement: {bytes: 2, distinct: 1, fraction: 0}
+    expectPass: true
+  - name: policy rejects version drift
+    policy: {version: 2, minBytes: 1, minDistinct: 1, minFraction: 0}
+    measurement: {bytes: 2, distinct: 1, fraction: 0}
+    expectPolicyErrorContains: ["version", "at path", "repair:"]
+  - name: measurement rejects unknown field
+    policy: {version: 1, minBytes: 1, minDistinct: 1, minFraction: 0}
+    measurement: {bytes: 2, distinct: 1, fraction: 0, surface: "extra"}
+    expectMeasurementErrorContains: ["surface", "at path", "repair:"]
+  - name: age ceiling fails stale observation
+    policy: {version: 1, minBytes: 1, minDistinct: 1, minFraction: 0, maxAgeMs: 1000}
+    measurement: {bytes: 2, distinct: 1, fraction: 0, observedAtMs: 0, nowMs: 5000}
+    expectPass: false
+    expectedFailuresContains: ["observedAtMs"]
+  - name: measurement rejects malformed digest
+    policy: {version: 1, minBytes: 1, minDistinct: 1, minFraction: 0}
+    measurement: {bytes: 2, distinct: 1, fraction: 0, digest: "NOT-HEX"}
+    expectMeasurementErrorContains: ["digest", "at path", "repair:"]
