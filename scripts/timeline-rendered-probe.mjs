@@ -9,6 +9,8 @@ import puppeteer from 'puppeteer-core'
 import { preview } from 'vite'
 import YAML from 'yaml'
 import { SurfaceGate } from './surface-gate.mjs'
+import { assertServedBuildProvenance } from './served-build-provenance.mjs'
+import { resolveFeatureGitIdentity } from './feature-git-identity.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..')
@@ -512,6 +514,18 @@ async function assertFullShell(page, fixtureValue, surface, testCaseName) {
 }
 
 async function verifyProvenance(originValue, distRoot, requiredMarkers) {
+  if (!INJECTED_ORIGIN) {
+    const featureIdentity = resolveFeatureGitIdentity({ sourceRoot: ROOT })
+    const provenance = await assertServedBuildProvenance({ mode: 'feature', origin: originValue, distRoot, observedJavaScriptPaths: [], observedForeignOrigins: [], marker: requiredMarkers[0], sourceRoot: ROOT, base: featureIdentity.base, expectedHead: featureIdentity.expectedHead, expectedBranch: featureIdentity.expectedBranch })
+    const assets = collectJavaScriptAssets(distRoot)
+    if (assets.length === 0) throw new Error(`timeline rendered probe provenance failed: no JavaScript assets were found beneath ${distRoot}; where: scripts/timeline-rendered-probe.mjs; when: build preflight; how to fix: build the app before running the probe`)
+    const builtJavaScript = Buffer.concat(assets.map((asset) => Buffer.from(readFileSync(resolve(distRoot, asset))))).toString('utf8')
+    for (const marker of requiredMarkers) {
+      if (!builtJavaScript.includes(marker)) throw new Error(`timeline rendered probe provenance failed: served JavaScript lacks required independent marker ${JSON.stringify(marker)}; where: ${distRoot}; when: build preflight; how to fix: rebuild from the current feature source`)
+    }
+    return { ...provenance, markers: requiredMarkers }
+  }
+
   const assets = collectJavaScriptAssets(distRoot)
   if (assets.length === 0) throw new Error(`timeline rendered probe provenance failed: no JavaScript assets were found beneath ${distRoot}; where: scripts/timeline-rendered-probe.mjs; when: build preflight; how to fix: build the app before running the probe`)
   const records = []
