@@ -1,0 +1,20 @@
+{
+  "name": "@peasant-labs/fairtest",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Private source-only validation core for Fairtrade mounted checks. Never published and never a runtime dependency of the published package.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=26"
+  },
+  "dependencies": {
+    "yaml": "2.9.0"
+  },
+  "scripts": {
+    "test:adapter": "node --test test/adapter.test.mjs",
+    "test:bridge-contract": "node --test test/bridge-contract.test.mjs",
+    "test:core": "node --test test/core.test.mjs",
+    "test:evidence": "node --test test/evidence.test.mjs"
+  }
+}
