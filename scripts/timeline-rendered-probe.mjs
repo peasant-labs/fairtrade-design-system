@@ -9,7 +9,7 @@ import puppeteer from 'puppeteer-core'
 import { preview } from 'vite'
 import YAML from 'yaml'
 import { SurfaceGate } from './surface-gate.mjs'
-import { assertServedBuildProvenance } from './served-build-provenance.mjs'
+import { assertServedBuildProvenance, observeServedBuildAssets } from './served-build-provenance.mjs'
 import { resolveFeatureGitIdentity } from './feature-git-identity.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -58,9 +58,6 @@ try {
     origin = `http://127.0.0.1:${address.port}`
   }
 
-  const provenance = await verifyProvenance(origin, DIST_ROOT, fixture.fullShell.provenance.requiredMarkers)
-  console.log(`timeline rendered probe provenance: ${JSON.stringify(provenance)}`)
-
   for (const testCase of cases) {
     browser = await puppeteer.launch({
       executablePath: CHROME,
@@ -72,6 +69,7 @@ try {
       args: typeof process.getuid === 'function' && process.getuid() === 0 ? ['--no-sandbox'] : [],
     })
     const page = await browser.newPage()
+    const observer = INJECTED_ORIGIN ? null : observeServedBuildAssets(page, origin)
     const errors = []
     page.on('console', (message) => { if (message.type() === 'error' && !/favicon/.test(message.text())) errors.push(message.text()) })
     page.on('pageerror', (error) => errors.push(error.message))
@@ -292,6 +290,9 @@ try {
     await assertFullShell(page, fixture, fixture.headingCase.contribute, testCase.name)
 
     assert.deepEqual(errors, [], `${testCase.name}: browser console and page errors after mounted heading checks`)
+    const provenance = await verifyProvenance(origin, DIST_ROOT, fixture.fullShell.provenance.requiredMarkers, observer)
+    console.log(`timeline rendered probe provenance: ${JSON.stringify(provenance)}`)
+    observer?.stop()
     await page.close()
     await browser.close()
     browser = undefined
@@ -513,10 +514,10 @@ async function assertFullShell(page, fixtureValue, surface, testCaseName) {
   assert.equal(result.targetText, surface.expectedText, shellMessage('target text', surface.expectedText, result.targetText))
 }
 
-async function verifyProvenance(originValue, distRoot, requiredMarkers) {
+async function verifyProvenance(originValue, distRoot, requiredMarkers, observer = null) {
   if (!INJECTED_ORIGIN) {
     const featureIdentity = resolveFeatureGitIdentity({ sourceRoot: ROOT })
-    const provenance = await assertServedBuildProvenance({ mode: 'feature', origin: originValue, distRoot, observedJavaScriptPaths: [], observedForeignOrigins: [], marker: requiredMarkers[0], sourceRoot: ROOT, base: featureIdentity.base, expectedHead: featureIdentity.expectedHead, expectedBranch: featureIdentity.expectedBranch })
+    const provenance = await assertServedBuildProvenance({ mode: 'feature', origin: originValue, distRoot, observedJavaScriptPaths: observer ? [...observer.paths] : [], observedForeignOrigins: observer ? [...observer.foreignOrigins] : [], marker: requiredMarkers[0], sourceRoot: ROOT, base: featureIdentity.base, expectedHead: featureIdentity.expectedHead, expectedBranch: featureIdentity.expectedBranch })
     const assets = collectJavaScriptAssets(distRoot)
     if (assets.length === 0) throw new Error(`timeline rendered probe provenance failed: no JavaScript assets were found beneath ${distRoot}; where: scripts/timeline-rendered-probe.mjs; when: build preflight; how to fix: build the app before running the probe`)
     const builtJavaScript = Buffer.concat(assets.map((asset) => Buffer.from(readFileSync(resolve(distRoot, asset))))).toString('utf8')

@@ -219,7 +219,6 @@ const shot = async (name, shell) => {
 }
 
 const prove = async () => {
-  observer.stop()
   await assertServedBuildProvenance({ mode: 'feature', origin: url, distRoot: DIST_ROOT, observedJavaScriptPaths: [...observer.paths], observedForeignOrigins: [...observer.foreignOrigins], marker: 'crumb-item-chrome', base: featureIdentity.base, expectedHead: featureIdentity.expectedHead, expectedBranch: featureIdentity.expectedBranch })
 }
 
@@ -230,7 +229,6 @@ const gotoApp = async (app, navLabel) => {
 
 try {
   await gotoApp('graph', 'peasant sections')
-  await prove()
   await clickNavItem('peasant sections', 'changes')
   await page.waitForSelector('.cg-history-row[data-commit-hash="c1d4a3"] .tlp-overflow-toggle', { timeout: 15000 })
   await page.click('.cg-history-row[data-commit-hash="c1d4a3"] .tlp-overflow-toggle')
@@ -343,6 +341,7 @@ try {
     }
   }
 
+  await prove()
   console.log('console errors:', errs.length ? errs.slice(0, 5) : 'none')
 } finally {
   observer.stop()
