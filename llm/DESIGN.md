@@ -73,7 +73,7 @@ decoration/structure only. `--rule-strong` is the functional control border (at 
 - **reading prose:** Atkinson Hyperlegible proportional (`--font-body`), for long-form body text only (paragraphs, descriptions, transcript bodies).
 - Both faces load from Google Fonts in `index.html`.
 - **scale (`--fs-*`):** label 14, sm 14, body 16, md 18, lg 22, xl 28, hero 40, display 52. Body line-height is ~1.5. The body floor is **16px** (`--fs-min`); nothing readable drops below it.
-- **case:** UI chrome is all-lowercase (nav, labels, buttons, headings). **Never lowercase user content**: usernames, transcript text, collective names, and code keep their case.
+- **case:** unannotated `h1`, `h2`, and `h3` headings preserve their source case so user names, titles, project values, and other data remain legible. Intentional chrome headings opt in with `data-chrome-heading` (or the equivalent element-scoped selector) and render lowercase; never lowercase user content.
 - **bold** earns a small amber "terminal glow" (dark theme only).
 - **numbers** are tabular (`tnum`) in any column, stat, count, or duration.
 
@@ -147,7 +147,7 @@ and Hero/Philosophy/Cards inline in `src/App.jsx`. Components emit token-styled 
 - **nav** (`01-nav.jsx`) fixed, sticky. Brand + `#logo`, nav links (active gets a `>` affordance + amber color), search affordance (cmd-k), live status indicator, theme toggle.
 - **controls** (`34-controls.jsx`) buttons (primary / secondary / ghost / danger; sm / md / lg / icon), inputs, select, checkbox, all one height.
 - **chips & badges** (`42-badges.jsx`) provider marks, outcome states (redacted / partial / failed), token & duration badges (mono, tabular).
-- **trails** (`44-trails.jsx`) breadcrumb, step indicator (wizard), tabs (active underline + count), pagination. *Orientation lives here.*
+- **trails** (`44-trails.jsx`) breadcrumb, step indicator (wizard), tabs (active underline + count), pagination. *Orientation lives here.* Breadcrumb link items use the caller's `LinkComponent`, which defaults to a native anchor and receives `href`, `className="link"`, and children. The final item remains a non-link current span with `aria-current="page"`, even when a final `href` is supplied. Item labels preserve user capitalization by default; only items explicitly marked `chrome: true` are lowercased. Breadcrumb links do not add a visited-state contract.
 - **cards & rows** (Cards in `App.jsx`) transcript card with ascii thumb, collective card, compact rows.
 - **conversation window** (`48-conversation.jsx`) the transcript reading view: a header whose title + meta chips leave once the full trace is scrolled while its breadcrumb + actions row stays pinned (with the tab strip, the condensed scrubber header carrying provider + model + position, and the turns bar; scrolling back to the top restores the full header), role-accented turns (user = teal, assistant = amber, each led by an icon), collapsible tool-call rows with tool icons, thinking blocks, unified diff (rail + gutter + sign), code blocks, a persistent footer action bar.
 - **canvas** (`50-canvas.jsx`) the map/graph surface: dot-grid background, square nodes (intensity fill, selected = amber), orthogonal structure edges + dashed activity edges, persistent zoom controls, minimap, activity time-strip.

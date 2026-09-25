@@ -56,6 +56,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
@@ -141,6 +142,27 @@ jobs:
           test -x "$CHROME"
           echo "CHROME_PATH=$CHROME" >> "$GITHUB_ENV"
 
+      - name: Set exact Breadcrumb provenance identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            base_input="${{ github.event.pull_request.base.sha }}"
+            base="$(git merge-base "$head" "$base_input")"
+          else
+            base="$(git rev-parse HEAD^)"
+          fi
+          echo "BREADCRUMB_BASE=$base" >> "$GITHUB_ENV"
+          echo "BREADCRUMB_HEAD=$head" >> "$GITHUB_ENV"
+          branch="$(git branch --show-current)"
+          if [[ -n "$branch" ]]; then
+            echo "BREADCRUMB_BRANCH=$branch" >> "$GITHUB_ENV"
+          fi
+
+      - name: Breadcrumb source, mounted, and mutation gates
+        run: pnpm test:breadcrumb && pnpm test:breadcrumb-mounted && pnpm test:breadcrumb:mutations
+
       - name: Section container ownership (source, mutations, dist geometry)
         run: pnpm test:section-width && pnpm test:section-width:mutations && pnpm test:transcript-composite-width && pnpm test:section-width:rendered
 
@@ -161,7 +183,7 @@ jobs:
         run: pnpm journey:ci
 
       - name: Timeline route gate (production build + source mutation)
-        run: pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
+        run: pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations && pnpm test:timeline-heading-case:mutations
 
       - name: Upload Storybook build on failure
         if: failure()
