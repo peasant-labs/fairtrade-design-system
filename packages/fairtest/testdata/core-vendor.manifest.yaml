@@ -1,0 +1,55 @@
+# Required-name inventory and executable mutations for core-vendor.yaml.
+expectedCaseCount: 7
+requiredCaseNames:
+  - vendor record pins source
+  - vendor record rejects short version
+  - vendor record rejects uppercase digest
+  - node builtin import is allowed
+  - bare import rejected when undeclared
+  - bare import allowed when declared
+  - resolved path escapes root
+expectedMutationCount: 7
+requiredMutationNames:
+  - removing the pinned-source record breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the check discriminator breaks the case shape
+  - deleting the input breaks the case shape
+  - adding an unknown case field breaks exact membership
+  - inventing a check kind breaks the closed vocabulary
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing the pinned-source record breaks the required inventory
+    kind: delete-record
+    target: vendor record pins source
+    expectedField: vendor record pins source
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: node builtin import is allowed
+    expectedField: node builtin import is allowed
+  - name: renaming the check discriminator breaks the case shape
+    kind: rename-field
+    target: vendor record rejects short version
+    field: check
+    newField: kind
+    expectedField: check
+  - name: deleting the input breaks the case shape
+    kind: delete-field
+    target: vendor record rejects uppercase digest
+    field: input
+    expectedField: input
+  - name: adding an unknown case field breaks exact membership
+    kind: unknown-field
+    target: vendor record pins source
+    field: surface
+    value: "txn-scrubber"
+    expectedField: surface
+  - name: inventing a check kind breaks the closed vocabulary
+    kind: bad-value
+    target: bare import allowed when declared
+    field: check
+    value: invented-check
+    expectedField: check
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document

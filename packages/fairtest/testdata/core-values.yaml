@@ -1,0 +1,48 @@
+# Neutral value-check cases. Every threshold, bound, and string here is synthetic
+# caller-owned test data. No caller floor, name, or product meaning is pinned.
+expectedCaseCount: 8
+cases:
+  - name: exact fields accept declared keys
+    check: exact-fields
+    fields: [alpha, beta]
+    value: {alpha: "x", beta: "y"}
+    expectValid: true
+  - name: exact fields reject unknown key
+    check: exact-fields
+    fields: [alpha, beta]
+    value: {alpha: "x", beta: "y", gamma: 1}
+    expectValid: false
+    expectedErrorContains: ["gamma", "at path", "repair:"]
+  - name: text accepts content
+    check: text
+    value: "observed entry"
+    expectValid: true
+  - name: text rejects blank
+    check: text
+    value: "   "
+    expectValid: false
+    expectedErrorContains: ["at path", "repair:"]
+  - name: int range accepts upper bound
+    check: int-range
+    value: 10
+    min: 0
+    max: 10
+    expectValid: true
+  - name: int range rejects overflow
+    check: int-range
+    value: 11
+    min: 0
+    max: 10
+    expectValid: false
+    expectedErrorContains: ["at path", "repair:"]
+  - name: number range accepts midpoint
+    check: number-range
+    value: 0.5
+    min: 0
+    max: 1
+    expectValid: true
+  - name: plain record rejects list
+    check: plain-record
+    value: [1, 2]
+    expectValid: false
+    expectedErrorContains: ["at path", "repair:"]
