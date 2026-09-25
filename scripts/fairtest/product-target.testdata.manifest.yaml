@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # product-target.testdata.yaml.
-expectedCaseCount: 61
+expectedCaseCount: 69
 requiredCaseNames:
   - theme-row-dark-absent-passes
   - theme-row-dark-empty-passes
@@ -42,6 +42,14 @@ requiredCaseNames:
   - proof-missing-view-fails
   - proof-wrong-initial-section-fails
   - proof-action-without-map-fails
+  - mutation-missing-chrome-fails
+  - mutation-missing-body-fails
+  - mutation-missing-section-fails
+  - mutation-missing-view-fails
+  - mutation-wrong-theme-fails
+  - mutation-unregistered-action-fails
+  - mutation-cross-kind-proof-fails
+  - mutation-stale-served-asset-fails
   - wrapper-dark-absent-passes
   - wrapper-dark-empty-passes
   - wrapper-light-attribute-passes
@@ -63,7 +71,7 @@ requiredCaseNames:
   - a11y-delta-new-violation-fails
   - a11y-delta-increased-nodes-fails
   - a11y-delta-escalated-impact-fails
-expectedMutationCount: 21
+expectedMutationCount: 26
 requiredMutationNames:
   - removing the light theme row breaks the required inventory
   - duplicating a route name breaks uniqueness
@@ -86,6 +94,11 @@ requiredMutationNames:
   - raising the declared node count breaks the declared baseline
   - removing the after-action baseline breaks the required inventory
   - duplicating the initial baseline name breaks uniqueness
+  - removing the stale-asset mutation breaks the required inventory
+  - duplicating a mutation name breaks uniqueness
+  - renaming the mutation discriminator breaks the case shape
+  - adding an unknown mutation field breaks exact membership
+  - inventing a mutation name breaks the closed set
 mutations:
   - name: removing the light theme row breaks the required inventory
     kind: delete-record
@@ -193,3 +206,29 @@ mutations:
     kind: duplicate-name
     target: a11y-baseline-initial-clean
     expectedField: a11y-baseline-initial-clean
+  - name: removing the stale-asset mutation breaks the required inventory
+    kind: delete-record
+    target: mutation-stale-served-asset-fails
+    expectedField: mutation-stale-served-asset-fails
+  - name: duplicating a mutation name breaks uniqueness
+    kind: duplicate-name
+    target: mutation-missing-chrome-fails
+    expectedField: mutation-missing-chrome-fails
+  - name: renaming the mutation discriminator breaks the case shape
+    kind: rename-field
+    target: mutation-missing-body-fails
+    field: check
+    newField: kind
+    expectedField: check
+  - name: adding an unknown mutation field breaks exact membership
+    kind: unknown-field
+    target: mutation-wrong-theme-fails
+    field: threshold
+    value: high
+    expectedField: threshold
+  - name: inventing a mutation name breaks the closed set
+    kind: bad-value
+    target: mutation-cross-kind-proof-fails
+    field: mutation
+    value: missing-everything
+    expectedField: mutation
