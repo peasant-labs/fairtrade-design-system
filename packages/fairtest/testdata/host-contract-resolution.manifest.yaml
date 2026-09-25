@@ -1,0 +1,67 @@
+# Required-name inventory and executable mutations for host-contract-resolution.yaml.
+expectedCaseCount: 12
+requiredCaseNames:
+  - product resolution with action result passes
+  - product resolution without action passes
+  - component resolution with interaction passes
+  - component resolution without interaction passes
+  - component record resolved as product fails
+  - product record resolved as component fails
+  - component resolution with product-only field fails
+  - product resolution with unobserved part fails
+  - product resolution with invalid theme fails
+  - resolution with mismatched identity branch fails
+  - resolution with unknown field fails
+  - resolution with malformed clock fails
+expectedMutationCount: 8
+requiredMutationNames:
+  - removing the action-result record breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the check discriminator breaks the case shape
+  - deleting the record breaks the case shape
+  - adding an unknown record field breaks exact membership
+  - presenting a component kind as a product breaks the closed vocabulary
+  - smuggling a product-only part into a component breaks kind separation
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing the action-result record breaks the required inventory
+    kind: delete-record
+    target: product resolution with action result passes
+    expectedField: product resolution with action result passes
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: component resolution without interaction passes
+    expectedField: component resolution without interaction passes
+  - name: renaming the check discriminator breaks the case shape
+    kind: rename-field
+    target: product resolution without action passes
+    field: check
+    newField: operation
+    expectedField: check
+  - name: deleting the record breaks the case shape
+    kind: delete-field
+    target: component resolution with interaction passes
+    field: record
+    expectedField: record
+  - name: adding an unknown record field breaks exact membership
+    kind: unknown-field
+    target: product resolution with action result passes
+    field: record.unlisted
+    value: unlisted-value
+    expectedField: unlisted
+  - name: presenting a component kind as a product breaks the closed vocabulary
+    kind: bad-value
+    target: product resolution without action passes
+    field: record.kind
+    value: component
+    expectedField: kind
+  - name: smuggling a product-only part into a component breaks kind separation
+    kind: bad-value
+    target: component resolution without interaction passes
+    field: record.chrome
+    value: {observed: true, observedAtMs: 1000}
+    expectedField: chrome
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document

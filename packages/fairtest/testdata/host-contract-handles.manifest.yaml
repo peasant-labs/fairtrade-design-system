@@ -1,0 +1,57 @@
+# Required-name inventory and executable mutations for host-contract-handles.yaml.
+expectedCaseCount: 9
+requiredCaseNames:
+  - opaque handle passes
+  - revoked opaque handle passes
+  - handle with object token fails
+  - handle with traversal token fails
+  - handle with scheme token fails
+  - handle with empty token fails
+  - handle missing revoked fails
+  - handle with unknown dereference field fails
+  - handle with non-boolean revoked fails
+expectedMutationCount: 7
+requiredMutationNames:
+  - removing the opaque-handle record breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the check discriminator breaks the case shape
+  - deleting the revoked flag breaks the record shape
+  - adding an unknown record field breaks exact membership
+  - replacing the token with a traversal breaks handle safety
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing the opaque-handle record breaks the required inventory
+    kind: delete-record
+    target: opaque handle passes
+    expectedField: opaque handle passes
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: revoked opaque handle passes
+    expectedField: revoked opaque handle passes
+  - name: renaming the check discriminator breaks the case shape
+    kind: rename-field
+    target: opaque handle passes
+    field: check
+    newField: operation
+    expectedField: check
+  - name: deleting the revoked flag breaks the record shape
+    kind: delete-field
+    target: revoked opaque handle passes
+    field: record.revoked
+    expectedField: revoked
+  - name: adding an unknown record field breaks exact membership
+    kind: unknown-field
+    target: opaque handle passes
+    field: record.unlisted
+    value: unlisted-value
+    expectedField: unlisted
+  - name: replacing the token with a traversal breaks handle safety
+    kind: bad-value
+    target: opaque handle passes
+    field: record.token
+    value: ../escape
+    expectedField: token
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document
