@@ -132,7 +132,7 @@
         "Breadcrumb",
         "Steps"
       ],
-      "doc": "@property {string} label - the crumb text",
+      "doc": "@property {string} label - the crumb text; preserve user capitalization unless chrome is true",
       "props": {
         "label": {
           "control": "text"
@@ -143,6 +143,9 @@
       },
       "stories": [
         "Playground",
+        "MixedCaseContent",
+        "ChromeItems",
+        "CustomLinkForwarding",
         "WithIcons",
         "SingleCurrent",
         "DeepPath",

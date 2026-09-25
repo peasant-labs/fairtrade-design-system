@@ -56,6 +56,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
@@ -108,6 +109,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
@@ -139,6 +141,27 @@ jobs:
           CHROME="$(pnpm exec node -e "console.log(require('@playwright/test').chromium.executablePath())")"
           test -x "$CHROME"
           echo "CHROME_PATH=$CHROME" >> "$GITHUB_ENV"
+
+      - name: Set exact Breadcrumb provenance identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            base_input="${{ github.event.pull_request.base.sha }}"
+            base="$(git merge-base "$head" "$base_input")"
+          else
+            base="$(git rev-parse HEAD^)"
+          fi
+          echo "BREADCRUMB_BASE=$base" >> "$GITHUB_ENV"
+          echo "BREADCRUMB_HEAD=$head" >> "$GITHUB_ENV"
+          branch="$(git branch --show-current)"
+          if [[ -n "$branch" ]]; then
+            echo "BREADCRUMB_BRANCH=$branch" >> "$GITHUB_ENV"
+          fi
+
+      - name: Breadcrumb source, mounted, and mutation gates
+        run: pnpm test:breadcrumb && pnpm test:breadcrumb-mounted && pnpm test:breadcrumb:mutations
 
       # gate 2: the twenty interaction checks, ported from scripts/validate.mjs
       # onto the journey harness (scripts/journey/app-validate.journey.mjs).
