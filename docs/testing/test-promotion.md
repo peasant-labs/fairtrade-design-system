@@ -41,9 +41,11 @@ Each record carries the ten answers plus three explicit sections:
 - `scripts/testdata/test-promotion.manifest.yaml`: required record and mutation names
   plus the executable mutation inventory. Combinatorial cases live here, never inline.
 - `scripts/assert-test-promotion.mjs`: strict one-document loader and validator. It
-  checks exact declared fields and membership, passes every named valid record, and
-  executes every named mutation for deletion, rename, duplicate names, trailing
-  documents, and unknown fields. Each failure names the missing or invalid field with
+  checks exact declared fields and membership, passes every named valid record
+  (including a leading `---` start marker), and executes every named mutation
+  for deletion, blank values, rename, duplicate names, trailing documents
+  (including a `...` end-marker trailing case), unknown fields, and bad enums.
+  Each failure names the missing or invalid field with
   document and path context plus repair guidance.
 
 Run it browser-free with no service:

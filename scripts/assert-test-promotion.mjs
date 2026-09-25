@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import assert from 'node:assert/strict'
-import YAML from 'yaml'
+import { loadSingleDocument } from './fairtest-single-document.mjs'
 
 const ROOT = resolve(new URL('..', import.meta.url).pathname)
 const CORPUS_REL = 'scripts/testdata/test-promotion.yaml'
@@ -21,6 +21,8 @@ validateManifest(manifest)
 const corpus = loadSingleDocument(corpusSource, CORPUS_REL)
 validateRecords(corpus, CORPUS_REL)
 checkRequiredNames(corpus.records.map((record) => record.name), manifest.requiredRecordNames, CORPUS_REL)
+// A legal leading `---` start marker is still exactly one document.
+loadSingleDocument(`---\n${corpusSource}`, CORPUS_REL)
 runMutations(corpusSource, corpus, manifest)
 
 console.log(`promotion records: all ${corpus.records.length} named records passed and all ${manifest.mutations.length} named mutations failed for their intended field.`)
@@ -30,7 +32,10 @@ function runMutations(source, parsed, manifestValue) {
     let message = null
     try {
       if (mutation.kind === 'trailing-document') {
-        loadSingleDocument(`${source.trimEnd()}\n---\norphan: true\n`, CORPUS_REL)
+        const trailing = mutation.style === 'end-marker'
+          ? `${source.trimEnd()}\n...\n---\norphan: true\n`
+          : `${source.trimEnd()}\n---\norphan: true\n`
+        loadSingleDocument(trailing, CORPUS_REL)
       } else {
         const records = structuredClone(parsed.records)
         applyMutation(records, mutation)
@@ -88,7 +93,7 @@ function applyMutation(records, mutation) {
 function validateManifest(value) {
   checkKeys(value, ['expectedRecordCount', 'requiredRecordNames', 'expectedMutationCount', 'requiredMutationNames', 'mutations'], 'manifest', MANIFEST_REL)
   assert.equal(value.expectedRecordCount, 3, 'manifest: expectedRecordCount guard')
-  assert.equal(value.expectedMutationCount, 12, 'manifest: expectedMutationCount guard')
+  assert.equal(value.expectedMutationCount, 13, 'manifest: expectedMutationCount guard')
   assert.deepEqual([...value.requiredRecordNames].sort(), ['example-browser-free-boundary', 'example-mounted-component-proof', 'example-mounted-product-proof'], 'manifest: required record inventory')
   assert.equal(value.mutations.length, value.expectedMutationCount, 'manifest: mutation inventory count')
   checkRequiredNames(value.mutations.map((item) => item.name), value.requiredMutationNames, MANIFEST_REL)
@@ -97,11 +102,15 @@ function validateManifest(value) {
     if (['delete-field', 'blank-field'].includes(mutation.kind)) fields.push('field')
     if (mutation.kind === 'rename-field') fields.push('field', 'newField')
     if (['unknown-field', 'bad-enum'].includes(mutation.kind)) fields.push('field', 'value')
+    if (mutation.kind === 'trailing-document' && mutation.style !== undefined) fields.push('style')
     checkKeys(mutation, fields, `manifest mutation ${index}`, MANIFEST_REL)
     assert.ok(MUTATION_KINDS.includes(mutation.kind), `manifest mutation ${index}: unknown kind ${mutation.kind}`)
     assert.ok(typeof mutation.expectedField === 'string' && mutation.expectedField.length, `manifest mutation ${index}: expectedField must name the intended field`)
     if (mutation.kind === 'trailing-document') {
       assert.equal(mutation.target, 'document', `manifest mutation ${index}: trailing-document targets the document`)
+      if (mutation.style !== undefined) {
+        assert.equal(mutation.style, 'end-marker', `manifest mutation ${index}: unknown trailing style ${mutation.style}`)
+      }
     } else {
       assert.ok(value.requiredRecordNames.includes(mutation.target), `manifest mutation ${index}: unknown target ${mutation.target}`)
     }
@@ -171,19 +180,6 @@ function checkRequiredNames(actual, required, label) {
   for (const name of actual) {
     if (!required.includes(name)) fail(`document: required record inventory mismatch at path records in ${label}; unknown record "${name}"; repair: remove the "${name}" record or register it in the manifest required names.`)
   }
-}
-
-function loadSingleDocument(source, label) {
-  if ((source.match(/^---\s*$/gm) ?? []).length) {
-    fail(`${label}: trailing YAML document at path document[1]; repair: remove everything from the trailing --- marker so ${label} holds exactly one document.`)
-  }
-  const document = YAML.parseDocument(source, { strict: true, uniqueKeys: true })
-  if (document.errors.length) fail(`${label}: invalid YAML at path document; ${document.errors.map((error) => error.message).join('; ')}; repair: fix the YAML syntax in ${label}.`)
-  const value = document.toJS()
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    fail(`${label}: document root must be an object at path document; repair: restore the mapping root in ${label}.`)
-  }
-  return value
 }
 
 function getPath(root, segments, mutation) {

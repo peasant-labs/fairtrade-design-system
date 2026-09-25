@@ -34,7 +34,14 @@ requiredGuidancePaths:
   - CONTRIBUTING.md
   - docs/testing/test-promotion.md
   - scripts/journey/README.md
-expectedMutationCount: 12
+expectedGuidanceFragmentCount: 5
+requiredGuidanceFragmentNames:
+  - stale-agent-browser-oracle
+  - stale-project-name-theme
+  - stale-puppeteer-catalog
+  - stale-two-project-model
+  - stale-two-projects-plural
+expectedMutationCount: 18
 requiredMutationNames:
   - deleted-required-command
   - removed-command-owner
@@ -48,6 +55,12 @@ requiredMutationNames:
   - agent-browser-as-ci-oracle
   - unknown-guidance-file
   - trailing-document
+  - trailing-document-end-marker
+  - planted-stale-puppeteer-catalog
+  - planted-stale-two-project-model
+  - planted-stale-two-projects-plural
+  - planted-stale-project-name-theme
+  - planted-stale-agent-browser-oracle
 mutations:
   - name: deleted-required-command
     kind: delete-record
@@ -112,3 +125,33 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document[1]
+  - name: trailing-document-end-marker
+    kind: trailing-document
+    target: document
+    style: end-marker
+    expectedField: document[1]
+  - name: planted-stale-puppeteer-catalog
+    kind: stale-guidance-content
+    target: guidance:scripts/journey/README.md
+    fragment: stale-puppeteer-catalog
+    expectedField: unfiltered puppeteer catalog
+  - name: planted-stale-two-project-model
+    kind: stale-guidance-content
+    target: guidance:AGENTS.md
+    fragment: stale-two-project-model
+    expectedField: two-project
+  - name: planted-stale-two-projects-plural
+    kind: stale-guidance-content
+    target: guidance:CONTRIBUTING.md
+    fragment: stale-two-projects-plural
+    expectedField: two projects
+  - name: planted-stale-project-name-theme
+    kind: stale-guidance-content
+    target: guidance:docs/testing/test-promotion.md
+    fragment: stale-project-name-theme
+    expectedField: project-name
+  - name: planted-stale-agent-browser-oracle
+    kind: stale-guidance-content
+    target: guidance:.github/workflows/ci.yml
+    fragment: stale-agent-browser-oracle
+    expectedField: agent-browser as

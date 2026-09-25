@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import assert from 'node:assert/strict'
-import YAML from 'yaml'
+import { loadSingleDocument } from './fairtest-single-document.mjs'
 
 const ROOT = resolve(new URL('..', import.meta.url).pathname)
 const CORPUS_REL = 'scripts/testdata/fairtest-runner-inventory.yaml'
@@ -18,7 +18,7 @@ const RUNNER_MODELS = ['one-project-row-scoped', 'existing-catalog', 'focused-co
 const THEME_BINDINGS = ['row-key', 'none']
 const GUIDANCE_TOPICS = ['promotion', 'runner-inventory', 'terminology', 'workflow']
 const CI_ORACLES = ['fairtest-mounted-rows', 'playwright-required-catalog']
-const MUTATION_KINDS = ['delete-field', 'rename-field', 'unknown-field', 'bad-enum', 'stale-name', 'duplicate-name', 'delete-record', 'trailing-document']
+const MUTATION_KINDS = ['delete-field', 'rename-field', 'unknown-field', 'bad-enum', 'stale-name', 'duplicate-name', 'delete-record', 'trailing-document', 'stale-guidance-content']
 
 const corpusSource = readFileSync(resolve(ROOT, CORPUS_REL), 'utf8')
 const manifestSource = readFileSync(resolve(ROOT, MANIFEST_REL), 'utf8')
@@ -29,9 +29,13 @@ validateInventory(corpus, CORPUS_REL)
 checkRequiredNames(corpus.commands.map((command) => command.name), manifest.requiredCommandNames, CORPUS_REL, 'command')
 checkRequiredNames(corpus.runners.map((runner) => runner.name), manifest.requiredRunnerNames, CORPUS_REL, 'runner')
 checkRequiredNames(corpus.guidance.map((guide) => guide.path), manifest.requiredGuidancePaths, CORPUS_REL, 'guidance file')
+checkGuidanceFragmentRefs(corpus, manifest)
+checkGuidanceContent(readGuidanceEntries(ROOT, corpus), corpus.forbiddenGuidanceFragments, CORPUS_REL)
+// A legal leading `---` start marker is still exactly one document.
+loadSingleDocument(`---\n${corpusSource}`, CORPUS_REL)
 runMutations(corpusSource, corpus, manifest)
 
-console.log(`runner inventory: all ${corpus.commands.length} commands, ${corpus.runners.length} runners, and ${corpus.guidance.length} guidance files passed with all ${manifest.mutations.length} named mutations failing for their intended field.`)
+console.log(`runner inventory: all ${corpus.commands.length} commands, ${corpus.runners.length} runners, and ${corpus.guidance.length} guidance files passed with all ${corpus.forbiddenGuidanceFragments.length} forbidden guidance fragments absent and all ${manifest.mutations.length} named mutations failing for their intended field.`)
 
 export const REQUIRED_COMMAND_NAMES = manifest.requiredCommandNames
 export const REQUIRED_RUNNER_NAMES = manifest.requiredRunnerNames
@@ -41,11 +45,21 @@ export const ALLOWED_COMMAND_OWNERS = ALLOWED_OWNERS
 export const INVENTORY = corpus
 
 function runMutations(source, parsed, manifestValue) {
+  const fragments = parsed.forbiddenGuidanceFragments
   for (const mutation of manifestValue.mutations) {
     let message = null
     try {
       if (mutation.kind === 'trailing-document') {
-        loadSingleDocument(`${source.trimEnd()}\n---\norphan: true\n`, CORPUS_REL)
+        const trailing = mutation.style === 'end-marker'
+          ? `${source.trimEnd()}\n...\n---\norphan: true\n`
+          : `${source.trimEnd()}\n---\norphan: true\n`
+        loadSingleDocument(trailing, CORPUS_REL)
+      } else if (mutation.kind === 'stale-guidance-content') {
+        const [, guidePath] = splitTarget(mutation)
+        const entry = fragments.find((item) => item.name === mutation.fragment)
+        assert.ok(entry, `${mutation.name}: unknown guidance fragment ${mutation.fragment}`)
+        const original = readFileSync(resolve(ROOT, guidePath), 'utf8')
+        checkGuidanceContent([{ path: guidePath, text: `${original}\nstale-guidance probe: ${entry.fragment}\n` }], fragments, CORPUS_REL)
       } else {
         const inventory = structuredClone(parsed)
         applyMutation(inventory, mutation)
@@ -126,14 +140,16 @@ function setIdentity(family, record, identity) {
 }
 
 function validateManifest(value) {
-  checkKeys(value, ['expectedCommandCount', 'requiredCommandNames', 'expectedRunnerCount', 'requiredRunnerNames', 'expectedGuidanceCount', 'requiredGuidancePaths', 'expectedMutationCount', 'requiredMutationNames', 'mutations'], 'manifest', MANIFEST_REL)
+  checkKeys(value, ['expectedCommandCount', 'requiredCommandNames', 'expectedRunnerCount', 'requiredRunnerNames', 'expectedGuidanceCount', 'requiredGuidancePaths', 'expectedGuidanceFragmentCount', 'requiredGuidanceFragmentNames', 'expectedMutationCount', 'requiredMutationNames', 'mutations'], 'manifest', MANIFEST_REL)
   assert.equal(value.expectedCommandCount, 17, 'manifest: expectedCommandCount guard')
   assert.equal(value.expectedRunnerCount, 4, 'manifest: expectedRunnerCount guard')
   assert.equal(value.expectedGuidanceCount, 5, 'manifest: expectedGuidanceCount guard')
-  assert.equal(value.expectedMutationCount, 12, 'manifest: expectedMutationCount guard')
+  assert.equal(value.expectedGuidanceFragmentCount, 5, 'manifest: expectedGuidanceFragmentCount guard')
+  assert.equal(value.expectedMutationCount, 18, 'manifest: expectedMutationCount guard')
   assert.deepEqual([...value.requiredCommandNames].sort(), ['fairtest dev', 'test:adapter', 'test:bridge-contract', 'test:core', 'test:evidence', 'test:fairtest:compat', 'test:fairtest:init', 'test:fairtest:inventory', 'test:fairtest:list:ci', 'test:fairtest:list:local', 'test:fairtest:mounted', 'test:fairtest:preflight', 'test:fairtest:process', 'test:fairtest:promotion', 'test:fairtest:select', 'test:fairtest:selection-receipt', 'test:fairtest:verify'], 'manifest: required command inventory')
   assert.deepEqual([...value.requiredRunnerNames].sort(), ['agent-browser-optional-attach', 'fairtest-mounted-rows', 'playwright-required-catalog', 'puppeteer-focused-compat'], 'manifest: required runner inventory')
   assert.deepEqual([...value.requiredGuidancePaths].sort(), ['.github/workflows/ci.yml', 'AGENTS.md', 'CONTRIBUTING.md', 'docs/testing/test-promotion.md', 'scripts/journey/README.md'], 'manifest: required guidance inventory')
+  assert.deepEqual([...value.requiredGuidanceFragmentNames].sort(), ['stale-agent-browser-oracle', 'stale-project-name-theme', 'stale-puppeteer-catalog', 'stale-two-project-model', 'stale-two-projects-plural'], 'manifest: required guidance fragment inventory')
   assert.equal(value.mutations.length, value.expectedMutationCount, 'manifest: mutation inventory count')
   checkRequiredNames(value.mutations.map((item) => item.name), value.requiredMutationNames, MANIFEST_REL, 'mutation')
   for (const [index, mutation] of value.mutations.entries()) {
@@ -142,11 +158,21 @@ function validateManifest(value) {
     if (mutation.kind === 'rename-field') fields.push('field', 'newField')
     if (['unknown-field', 'bad-enum'].includes(mutation.kind)) fields.push('field', 'value')
     if (mutation.kind === 'stale-name') fields.push('value')
+    if (mutation.kind === 'stale-guidance-content') fields.push('fragment')
+    if (mutation.kind === 'trailing-document' && mutation.style !== undefined) fields.push('style')
     checkKeys(mutation, fields, `manifest mutation ${index}`, MANIFEST_REL)
     assert.ok(MUTATION_KINDS.includes(mutation.kind), `manifest mutation ${index}: unknown kind ${mutation.kind}`)
     assert.ok(typeof mutation.expectedField === 'string' && mutation.expectedField.length, `manifest mutation ${index}: expectedField must name the intended field`)
     if (mutation.kind === 'trailing-document') {
       assert.equal(mutation.target, 'document', `manifest mutation ${index}: trailing-document targets the document`)
+      if (mutation.style !== undefined) {
+        assert.equal(mutation.style, 'end-marker', `manifest mutation ${index}: unknown trailing style ${mutation.style}`)
+      }
+    } else if (mutation.kind === 'stale-guidance-content') {
+      const [family, identity] = splitTarget(mutation)
+      assert.equal(family, 'guidance', `manifest mutation ${index}: stale-guidance-content targets a guidance file`)
+      assert.ok(value.requiredGuidancePaths.includes(identity), `manifest mutation ${index}: unknown target ${mutation.target}`)
+      assert.ok(typeof mutation.fragment === 'string' && mutation.fragment.length, `manifest mutation ${index}: fragment must name a forbidden guidance fragment`)
     } else {
       const [family, identity] = splitTarget(mutation)
       assert.ok(['commands', 'runners', 'guidance'].includes(family), `manifest mutation ${index}: unknown family ${family}`)
@@ -157,7 +183,7 @@ function validateManifest(value) {
 }
 
 function validateInventory(value, label) {
-  checkKeys(value, ['commands', 'runners', 'guidance'], 'document', label)
+  checkKeys(value, ['commands', 'runners', 'guidance', 'forbiddenGuidanceFragments'], 'document', label)
   assert.ok(Array.isArray(value.commands) && value.commands.length, `${label}: document holds no commands at path commands; repair: restore the named command list in ${CORPUS_REL}.`)
   assert.ok(Array.isArray(value.runners) && value.runners.length, `${label}: document holds no runners at path runners; repair: restore the named runner list in ${CORPUS_REL}.`)
   assert.ok(Array.isArray(value.guidance) && value.guidance.length, `${label}: document holds no guidance at path guidance; repair: restore the named guidance list in ${CORPUS_REL}.`)
@@ -227,6 +253,53 @@ function validateInventory(value, label) {
       fail(`guidance "${guide.path}": invalid value ${JSON.stringify(guide.topic)} for field "topic" at path ${path}.topic; expected one of ${GUIDANCE_TOPICS.join(', ')}; repair: restore the topic for the guidance file.`)
     }
   }
+  validateGuidanceFragments(value.forbiddenGuidanceFragments, label)
+}
+
+function validateGuidanceFragments(fragments, label) {
+  if (!Array.isArray(fragments) || fragments.length === 0) {
+    fail(`${label}: document holds no forbidden guidance fragments at path forbiddenGuidanceFragments; repair: restore the named stale-guidance fragment list in ${CORPUS_REL}.`)
+  }
+  const seen = new Set()
+  for (const [index, entry] of fragments.entries()) {
+    const path = `forbiddenGuidanceFragments[${index}]`
+    checkKeys(entry, ['name', 'fragment'], `guidance fragment ${index}`, label, path)
+    checkText(entry.name, `guidance fragment ${index}`, 'name', `${path}.name`, 'use the required fragment name from the manifest')
+    checkText(entry.fragment, `guidance fragment "${entry.name}"`, 'fragment', `${path}.fragment`, 'restore the stale phrase this fragment forbids')
+    if (seen.has(entry.name)) fail(`document: duplicate guidance fragment name "${entry.name}" at path ${path}.name; repair: give every forbidden fragment a unique required name and update the manifest inventory.`)
+    seen.add(entry.name)
+  }
+}
+
+function checkGuidanceFragmentRefs(corpus, manifestValue) {
+  checkRequiredNames(corpus.forbiddenGuidanceFragments.map((entry) => entry.name), manifestValue.requiredGuidanceFragmentNames, CORPUS_REL, 'guidance fragment')
+  const fragments = new Map(corpus.forbiddenGuidanceFragments.map((entry) => [entry.name, entry.fragment]))
+  for (const mutation of manifestValue.mutations) {
+    if (mutation.kind !== 'stale-guidance-content') continue
+    assert.ok(fragments.has(mutation.fragment), `${mutation.name}: unknown guidance fragment ${mutation.fragment}`)
+    assert.equal(mutation.expectedField, fragments.get(mutation.fragment), `${mutation.name}: expectedField must equal the forbidden fragment text`)
+  }
+}
+
+function readGuidanceEntries(root, corpus) {
+  return corpus.guidance.map((guide) => {
+    try {
+      return { path: guide.path, text: readFileSync(resolve(root, guide.path), 'utf8') }
+    } catch {
+      fail(`guidance "${guide.path}": required guidance file is missing or unreadable at path guidance-content:${guide.path}; repair: restore ${guide.path} in the checkout.`)
+    }
+  })
+}
+
+function checkGuidanceContent(entries, fragments, label) {
+  for (const { path, text } of entries) {
+    const lower = text.toLowerCase()
+    for (const entry of fragments) {
+      if (lower.includes(entry.fragment.toLowerCase())) {
+        fail(`guidance "${path}": stale forbidden fragment ${JSON.stringify(entry.fragment)} from fragment "${entry.name}" for field "guidance-content" at path guidance-content:${path} in ${label}; repair: remove the stale runner guidance from ${path} and keep the one-project row-scoped mounted runner, focused puppeteer compat, and local-only attach wording.`)
+      }
+    }
+  }
 }
 
 function checkKeys(value, fields, tag, label, path = '', prefix = '') {
@@ -259,19 +332,6 @@ function checkRequiredNames(actual, required, label, kind) {
   for (const name of required) {
     if (!actual.includes(name)) fail(`document: required ${kind} inventory mismatch at path ${kind === 'guidance file' ? 'guidance' : `${kind}s`} in ${label}; missing required ${kind} "${name}"; repair: restore the "${name}" ${kind} or update the manifest required names.`)
   }
-}
-
-function loadSingleDocument(source, label) {
-  if ((source.match(/^---\s*$/gm) ?? []).length) {
-    fail(`${label}: trailing YAML document at path document[1]; repair: remove everything from the trailing --- marker so ${label} holds exactly one document.`)
-  }
-  const document = YAML.parseDocument(source, { strict: true, uniqueKeys: true })
-  if (document.errors.length) fail(`${label}: invalid YAML at path document; ${document.errors.map((error) => error.message).join('; ')}; repair: fix the YAML syntax in ${label}.`)
-  const value = document.toJS()
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    fail(`${label}: document root must be an object at path document; repair: restore the mapping root in ${label}.`)
-  }
-  return value
 }
 
 function getPath(root, segments, mutation) {
