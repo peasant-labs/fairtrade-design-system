@@ -9,6 +9,15 @@
 // the lifecycle trace follows the declared, acquired, ready, released order.
 // Host-contract values load only through the sole source route; this module
 // holds no second relative path into the private child.
+//
+// Injected driver contract (declared where a driver author reads it, in
+// assertDriver): async start, async stop, async reset, a sync isRunning
+// probe, and a stop that is safe to call when the driver is not running. A
+// start that failed before the service came up leaves the driver not running,
+// and the failure path stops it anyway; a driver rejecting that stop would
+// replace the start diagnostic with a cleanup failure. Teardown never repeats
+// the failure path's stop, so the start diagnostic is what a maintainer still
+// reads.
 
 import { importFairtestSource } from '../fairtest-source.mjs'
 import {
@@ -54,21 +63,28 @@ function assertRunId(runId) {
 }
 
 /**
- * Assert the injected driver offers the required lifecycle surface.
+ * Assert the injected driver offers the required lifecycle surface: an async
+ * start, an async stop, an async reset, and a sync isRunning probe. The stop
+ * must also be safe to call when the driver is not running, because a start
+ * that failed before the service came up leaves the driver not running and
+ * the failure path still stops it; a stop that rejects there would replace
+ * the start diagnostic with a cleanup failure.
  * @param {unknown} driver candidate lifecycle driver
  */
 function assertDriver(driver) {
   if (!driver || typeof driver !== 'object') {
     throw new Error(
       'fairtrade adapter: missing driver for field "driver" at path adapter.driver; ' +
-      'repair: inject a driver with async start, stop, reset and a sync isRunning probe for "driver".',
+      'repair: inject a driver with async start, stop, reset and a sync isRunning probe for "driver"; ' +
+      'stop must be safe to call when the driver is not running.',
     )
   }
   for (const method of ['start', 'stop', 'reset', 'isRunning']) {
     if (typeof driver[method] !== 'function') {
       throw new Error(
         `fairtrade adapter: driver is missing "${method}" for field "driver" at path adapter.driver.${method}; ` +
-        `repair: provide async start, stop, reset and a sync isRunning probe on "driver".`,
+        `repair: provide async start, stop, reset and a sync isRunning probe on "driver"; ` +
+        'stop must be safe to call when the driver is not running.',
       )
     }
   }
@@ -159,7 +175,10 @@ export async function createFairtradeAdapter(options = {}) {
 
   /**
    * Run reset before stop so a partial start leaves no service running. Stop
-   * always runs, even when reset itself fails.
+   * always runs, even when reset itself fails. This is the one place a driver
+   * is stopped while it may not be running, so it is where the declared
+   * requirement that stop is safe on an idle driver is relied upon; the start
+   * failure is reported by the caller after this cleanup resolves.
    */
   async function resetBeforeStop() {
     try {
@@ -263,7 +282,11 @@ export async function createFairtradeAdapter(options = {}) {
    * minted handle, and records release; later calls are no-ops that report it.
    * A run whose start never acquired the service releases nothing, so its
    * trace stays a leading run of the canonical stages instead of recording
-   * "released" behind a missing "acquired".
+   * "released" behind a missing "acquired". Its stop is not repeated: the
+   * failure path already stopped the driver, so a second stop would call a
+   * driver that is not running and would surface a cleanup failure where the
+   * start failure is what a maintainer needs to read. A run that did acquire
+   * the service stops here, exactly once, before its handles are revoked.
    * @returns {Promise<object>} the frozen teardown receipt
    */
   async function teardown() {
@@ -272,8 +295,10 @@ export async function createFairtradeAdapter(options = {}) {
     }
     state.released = true
     try {
-      await driver.stop()
-      state.stops += 1
+      if (state.started) {
+        await driver.stop()
+        state.stops += 1
+      }
     } finally {
       for (const token of state.live) {
         state.revoked.add(token)

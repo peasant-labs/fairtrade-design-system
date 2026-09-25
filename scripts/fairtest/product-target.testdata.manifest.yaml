@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # product-target.testdata.yaml.
-expectedCaseCount: 88
+expectedCaseCount: 91
 requiredCaseNames:
   - theme-row-dark-absent-passes
   - theme-row-dark-empty-passes
@@ -90,7 +90,10 @@ requiredCaseNames:
   - run-root-relative-fails
   - cli-target-missing-fails
   - cli-target-unknown-fails
-expectedMutationCount: 41
+  - driver-out-of-root-request-refused
+  - driver-non-loopback-host-refused
+  - driver-idle-stop-keeps-start-diagnostic
+expectedMutationCount: 44
 requiredMutationNames:
   - removing the light theme row breaks the required inventory
   - duplicating a route name breaks uniqueness
@@ -133,6 +136,9 @@ requiredMutationNames:
   - dropping the stale-artifact marker breaks the run-root guard coverage
   - declaring a relative run root in the passing case breaks the run-root resolver
   - renaming the expected mounted exit code breaks the mounted CLI case
+  - declaring a wrong refused status breaks the out-of-root driver case
+  - dropping the rejected host list breaks the driver case shape
+  - declaring a different stop requirement breaks the driver contract case
 mutations:
   - name: removing the light theme row breaks the required inventory
     kind: delete-record
@@ -349,3 +355,20 @@ mutations:
     field: expectExitCode
     value: 0
     expectedField: exit
+  - name: declaring a wrong refused status breaks the out-of-root driver case
+    kind: bad-value
+    target: driver-out-of-root-request-refused
+    field: refusedStatus
+    value: 404
+    expectedField: refusedStatus
+  - name: dropping the rejected host list breaks the driver case shape
+    kind: delete-field
+    target: driver-non-loopback-host-refused
+    field: rejectedHosts
+    expectedField: rejectedHosts
+  - name: declaring a different stop requirement breaks the driver contract case
+    kind: bad-value
+    target: driver-idle-stop-keeps-start-diagnostic
+    field: contractRequirement
+    value: stop must be called at most once
+    expectedField: contractRequirement

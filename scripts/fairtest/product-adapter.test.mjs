@@ -3,19 +3,22 @@
 // its required-name manifest; this module owns no row tables, only the fake
 // lifecycle driver, shape checks, and mutation wiring. It runs with node
 // --test. The stale-served-asset mutation case serves a throwaway dist/ copy
-// on a loopback port through the real static driver, and the
-// blank-active-view mutation case empties the active view on the real served
-// dist/ in the same real browser the mutations suite uses, so run pnpm build
-// first so dist/ holds the exact built app both cases drive. The real
-// static-driver start-failure cases below need no built app: they drive the
-// real producer driver on scratch loopback ports against a throwaway fixture
-// root. No Storybook, Puppeteer, or second browser oracle is started.
+// on a loopback port through the real static driver, and the blank-active-view
+// mutation case empties the active view on the real served dist/ in the same
+// real browser the mutations suite uses, so run pnpm build first so dist/
+// holds the exact built app both cases drive. The real static-driver
+// start-failure cases below need no built app: they drive the real producer
+// driver on scratch loopback ports against a throwaway fixture root. The real
+// static driver's fail-closed listener controls (out-of-root refusal and
+// loopback-only host) and the adapter's declared driver contract are named
+// cases in the same fixture family and run there. No Storybook, Puppeteer, or
+// second browser oracle is started.
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import { tmpdir } from 'node:os'
-import { dirname, isAbsolute, join, resolve } from 'node:path'
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
@@ -49,17 +52,20 @@ const MANIFEST_REL = 'scripts/fairtest/product-target.testdata.manifest.yaml'
 const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs']
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
-const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'cli-target']
+const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'cli-target', 'driver-out-of-root', 'driver-host-refusal', 'driver-stop-contract']
 const A11Y_POINTS = ['initial', 'after-action']
 const A11Y_IMPACTS = ['minor', 'moderate', 'serious', 'critical']
 const ROW_THEMES = ['dark', 'light']
 const PROOF_PARTS = ['chrome', 'body', 'route', 'activeSection', 'view']
-// Scratch loopback ports for the real static-driver start-failure cases. They
-// are deliberately not the Fairtest Playwright config port (5189) and never
-// the mutation-suite ports (5196, 5197), so no mounted row or mutation run
-// collides with them.
+// Scratch loopback ports for the real static-driver cases. They are
+// deliberately not the Fairtest Playwright config port (5189) and never the
+// mutation-suite ports (5196, 5197) or the start-failure ports (5198, 5199),
+// so no mounted row or mutation run collides with them. The host case never
+// binds its port: it proves the refusal at driver construction.
 const REAL_DRIVER_SQUATTER_PORT = 5198
 const REAL_DRIVER_ABSENT_DIST_PORT = 5199
+const REAL_DRIVER_OUT_OF_ROOT_PORT = 5200
+const REAL_DRIVER_HOST_REFUSAL_PORT = 5201
 
 const coreFixtures = await importFairtestSource('src/core/fixtures.mjs')
 const contractTargets = await importFairtestSource('src/host-contract/targets.mjs')
@@ -169,6 +175,9 @@ function checkCaseShape(entry, index) {
     'observation-time': entry.expectValid
       ? ['name', 'check', 'rowStartedAtMs', ...PRODUCT_PRE_ACTION_PARTS, 'theme', 'action', 'expectValid']
       : ['name', 'check', 'rowStartedAtMs', ...PRODUCT_PRE_ACTION_PARTS, 'theme', 'action', ...tail],
+    'driver-out-of-root': ['name', 'check', 'servedRoot', 'markerFile', 'markerBody', 'traversalPrefixes', 'refusedStatus', 'inRootRequest', 'inRootStatus', 'expectValid'],
+    'driver-host-refusal': ['name', 'check', 'rejectedHosts', 'loopbackHost', 'expectValid'],
+    'driver-stop-contract': ['name', 'check', 'startFailure', 'contractRequirement', 'expectValid'],
   }
   coreFixtures.checkKeys(entry, fieldsByCheck[entry.check], 'case record', CORPUS_REL, path)
   if (!entry.expectValid) {
@@ -188,6 +197,15 @@ function checkCaseShape(entry, index) {
   }
   if (entry.check === 'observation-time') {
     checkObservationTimeShape(entry, path)
+  }
+  if (entry.check === 'driver-out-of-root') {
+    checkDriverOutOfRootShape(entry, path)
+  }
+  if (entry.check === 'driver-host-refusal') {
+    checkDriverHostShape(entry, path)
+  }
+  if (entry.check === 'driver-stop-contract') {
+    checkDriverStopContractShape(entry, path)
   }
   if (entry.check === 'artifact-class') {
     if (typeof entry.artifact !== 'string' || entry.artifact.length === 0) {
@@ -422,6 +440,87 @@ function checkObservationTimeShape(entry, path) {
     if (!Number.isInteger(entry[field]) || /** @type {number} */ (entry[field]) < 0) {
       throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid observation time ${JSON.stringify(entry[field])} for field "${field}" at path ${path}.${field}; repair: record whole milliseconds since the epoch for "${field}".`)
     }
+  }
+}
+
+/**
+ * Validate the out-of-root case declaration: a served root and a marker file
+ * that are single path segments beside each other, distinct encoded traversal
+ * prefixes, and the two status codes the real driver must answer with.
+ * @param {Record<string, unknown>} entry
+ * @param {string} path
+ */
+function checkDriverOutOfRootShape(entry, path) {
+  const name = /** @type {string} */ (entry.name)
+  for (const field of ['servedRoot', 'markerFile', 'markerBody', 'inRootRequest']) {
+    if (typeof entry[field] !== 'string' || entry[field].trim().length === 0) {
+      throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid value ${JSON.stringify(entry[field])} for field "${field}" at path ${path}.${field}; repair: declare the non-empty ${field} the real static driver is driven with.`)
+    }
+  }
+  for (const field of ['servedRoot', 'markerFile']) {
+    const value = /** @type {string} */ (entry[field])
+    if (value.includes('/') || value === '.' || value === '..') {
+      throw new Error(`${CORPUS_REL}: case "${name}" holds ${JSON.stringify(value)} for field "${field}" at path ${path}.${field}; repair: name one path segment so the marker stays exactly one level above the served root.`)
+    }
+  }
+  if (!/** @type {string} */ (entry.inRootRequest).startsWith('/')) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds ${JSON.stringify(entry.inRootRequest)} for field "inRootRequest" at path ${path}.inRootRequest; repair: request an absolute in-root path so the case proves the served root is still readable.`)
+  }
+  const prefixes = entry.traversalPrefixes
+  if (!Array.isArray(prefixes) || prefixes.length === 0 || prefixes.some((value) => typeof value !== 'string' || !value.startsWith('/') || !value.includes('%'))) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid traversal prefix list ${JSON.stringify(prefixes)} for field "traversalPrefixes" at path ${path}.traversalPrefixes; repair: declare absolute percent-encoded traversal prefixes such as /..%2f.`)
+  }
+  if (new Set(prefixes).size !== prefixes.length) {
+    throw new Error(`${CORPUS_REL}: case "${name}" repeats a traversal prefix ${JSON.stringify(prefixes)} for field "traversalPrefixes" at path ${path}.traversalPrefixes; repair: declare each encoded traversal form once.`)
+  }
+  for (const field of ['refusedStatus', 'inRootStatus']) {
+    if (!Number.isInteger(entry[field]) || /** @type {number} */ (entry[field]) < 100 || /** @type {number} */ (entry[field]) > 599) {
+      throw new Error(`${CORPUS_REL}: case "${name}" holds ${JSON.stringify(entry[field])} for field "${field}" at path ${path}.${field}; repair: record the real HTTP status the loopback driver answers with.`)
+    }
+  }
+}
+
+/**
+ * Validate the host-refusal case declaration: distinct non-loopback hosts the
+ * real driver must refuse, plus the loopback host it must still accept.
+ * @param {Record<string, unknown>} entry
+ * @param {string} path
+ */
+function checkDriverHostShape(entry, path) {
+  const name = /** @type {string} */ (entry.name)
+  if (typeof entry.loopbackHost !== 'string' || entry.loopbackHost.trim().length === 0) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid value ${JSON.stringify(entry.loopbackHost)} for field "loopbackHost" at path ${path}.loopbackHost; repair: declare the one loopback host the real driver must still accept.`)
+  }
+  const hosts = entry.rejectedHosts
+  if (!Array.isArray(hosts) || hosts.length === 0 || hosts.some((value) => typeof value !== 'string' || value.trim().length === 0)) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid host list ${JSON.stringify(hosts)} for field "rejectedHosts" at path ${path}.rejectedHosts; repair: declare the non-loopback hosts the real driver must refuse.`)
+  }
+  if (new Set(hosts).size !== hosts.length) {
+    throw new Error(`${CORPUS_REL}: case "${name}" repeats a rejected host ${JSON.stringify(hosts)} for field "rejectedHosts" at path ${path}.rejectedHosts; repair: declare each rejected host once.`)
+  }
+  for (const host of hosts) {
+    if (host === entry.loopbackHost) {
+      throw new Error(`${CORPUS_REL}: case "${name}" lists the accepted host ${JSON.stringify(host)} for field "rejectedHosts" at path ${path}.rejectedHosts; repair: list only hosts outside "loopbackHost" so the case proves the guard discriminates.`)
+    }
+  }
+}
+
+/**
+ * Validate the stop-contract case declaration: the driver failure text the
+ * original start diagnostic must still carry, and the driver-surface
+ * requirement the adapter must declare for it.
+ * @param {Record<string, unknown>} entry
+ * @param {string} path
+ */
+function checkDriverStopContractShape(entry, path) {
+  const name = /** @type {string} */ (entry.name)
+  for (const field of ['startFailure', 'contractRequirement']) {
+    if (typeof entry[field] !== 'string' || entry[field].trim().length === 0) {
+      throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid value ${JSON.stringify(entry[field])} for field "${field}" at path ${path}.${field}; repair: declare the non-empty ${field} the fake driver and the adapter driver surface are proven against.`)
+    }
+  }
+  if (!entry.startFailure.includes(' ')) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds ${JSON.stringify(entry.startFailure)} for field "startFailure" at path ${path}.startFailure; repair: declare the full driver failure text so the start diagnostic can be proven to carry it.`)
   }
 }
 
@@ -1002,6 +1101,197 @@ function runObservationTimeCase(entry) {
   }
 }
 
+/**
+ * Read one real response from the loopback origin, keeping the status and the
+ * served bytes. A refused request is only proven fail-closed when the bytes it
+ * did return are checked as well, so the body is never discarded here.
+ * @param {string} url loopback URL to request
+ * @returns {Promise<{ status: number, body: string }>} the observed response
+ */
+function readLoopbackResponse(url) {
+  return new Promise((responseResolve, responseReject) => {
+    http.get(url, (res) => {
+      res.setEncoding('utf8')
+      let body = ''
+      res.on('data', (chunk) => { body += chunk })
+      res.on('end', () => responseResolve({ status: res.statusCode, body }))
+    }).on('error', responseReject)
+  })
+}
+
+/**
+ * Run one out-of-root case against the real static driver. The served root is
+ * a throwaway directory whose parent holds a marker file, so a traversal that
+ * escapes the root resolves to a genuinely readable file: the refusal is then
+ * proven on the wire, over real HTTP, with no built app involved.
+ * @param {Record<string, unknown>} entry
+ */
+async function runDriverOutOfRootCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const markerFile = /** @type {string} */ (entry.markerFile)
+  const markerBody = /** @type {string} */ (entry.markerBody)
+  const scratch = mkdtempSync(join(tmpdir(), 'fairtest-driver-out-of-root-'))
+  const servedRoot = createStaticFixtureRoot(scratch)
+  if (basename(servedRoot) !== entry.servedRoot) {
+    throw new Error(
+      `${CORPUS_REL}: case "${name}" served the root ${JSON.stringify(basename(servedRoot))} where the declared served root is ${JSON.stringify(entry.servedRoot)} at path cases.${name}.servedRoot; ` +
+      'repair: declare the directory the real static fixture root is created under so the marker stays one level above it.',
+    )
+  }
+  writeFileSync(join(scratch, markerFile), markerBody)
+  let inRoot = null
+  try {
+    const driver = createProductStaticDriver({ port: REAL_DRIVER_OUT_OF_ROOT_PORT, host: FAIRTEST_PRODUCT_HOST, distRoot: servedRoot })
+    try {
+      await driver.start()
+      inRoot = await readLoopbackResponse(`${driver.baseUrl}${entry.inRootRequest}`)
+      if (inRoot.status !== entry.inRootStatus) {
+        throw new Error(
+          `${CORPUS_REL}: case "${name}" observed status ${inRoot.status} for the in-root request ${JSON.stringify(entry.inRootRequest)} where the declared in-root status is ${JSON.stringify(entry.inRootStatus)} at path cases.${name}.inRootStatus; ` +
+          'repair: keep the served root readable so this case proves a real refusal instead of an unreadable service.',
+        )
+      }
+      for (const prefix of /** @type {string[]} */ (entry.traversalPrefixes)) {
+        const requestPath = `${prefix}${markerFile}`
+        const refused = await readLoopbackResponse(`${driver.baseUrl}${requestPath}`)
+        if (refused.status !== entry.refusedStatus) {
+          throw new Error(
+            `${CORPUS_REL}: case "${name}" observed status ${refused.status} for the out-of-root request ${JSON.stringify(requestPath)} where the declared refusal status is ${JSON.stringify(entry.refusedStatus)} at path cases.${name}.refusedStatus; ` +
+            'repair: keep the out-of-root guard so every resolved path outside the served root is refused.',
+          )
+        }
+        if (refused.body.includes(markerBody)) {
+          throw new Error(
+            `${CORPUS_REL}: case "${name}" disclosed the out-of-root marker bytes for field "markerBody" at path cases.${name}.markerBody on the out-of-root request ${JSON.stringify(requestPath)}; ` +
+            'repair: keep the out-of-root guard so a file beside the served root is never disclosed to the browser under test.',
+          )
+        }
+      }
+    } finally {
+      await driver.stop()
+    }
+    await assertPortReleased(REAL_DRIVER_OUT_OF_ROOT_PORT)
+  } finally {
+    rmSync(scratch, { recursive: true, force: true })
+  }
+  assert.equal(existsSync(scratch), false, `${name}: the throwaway static root must be removed once the case finishes`)
+  assert.ok(inRoot !== null && inRoot.body.includes('id="root"'), `${name}: the in-root control request must still serve the real app mount point`)
+}
+
+/**
+ * Run one host-refusal case against the real static driver. The loopback host
+ * must still build a driver, and every declared non-loopback host must be
+ * refused at construction with the actionable driver.host diagnostic, so the
+ * validation origin can never become a wildcard or named listener. The
+ * scratch port is proved still free afterwards: the refusal happens before
+ * any listener is opened.
+ * @param {Record<string, unknown>} entry
+ */
+async function runDriverHostRefusalCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const scratch = mkdtempSync(join(tmpdir(), 'fairtest-driver-host-'))
+  const distRoot = createStaticFixtureRoot(scratch)
+  try {
+    const loopbackHost = /** @type {string} */ (entry.loopbackHost)
+    const accepted = createProductStaticDriver({ port: REAL_DRIVER_HOST_REFUSAL_PORT, host: loopbackHost, distRoot })
+    if (accepted.host !== loopbackHost) {
+      throw new Error(
+        `${CORPUS_REL}: case "${name}" built a driver on host ${JSON.stringify(accepted.host)} where the declared loopback host is ${JSON.stringify(loopbackHost)} at path cases.${name}.loopbackHost; ` +
+        'repair: keep the loopback host accepted so this case proves the guard discriminates rather than refusing everything.',
+      )
+    }
+    for (const host of /** @type {string[]} */ (entry.rejectedHosts)) {
+      let message = null
+      try {
+        createProductStaticDriver({ port: REAL_DRIVER_HOST_REFUSAL_PORT, host, distRoot })
+      } catch (error) {
+        message = error instanceof Error ? error.message : String(error)
+      }
+      if (!message) {
+        throw new Error(
+          `${CORPUS_REL}: case "${name}" accepted the non-loopback host ${JSON.stringify(host)} for field "rejectedHosts" at path cases.${name}.rejectedHosts; ` +
+          'repair: keep the non-loopback guard so the built app can never bind a wildcard or named listener.',
+        )
+      }
+      expectFragments(
+        ['product producer: non-loopback host', `"${host}"`, 'field "host"', 'at path driver.host', 'repair:'],
+        message,
+        name,
+      )
+    }
+  } finally {
+    rmSync(scratch, { recursive: true, force: true })
+  }
+  await assertPortReleased(REAL_DRIVER_HOST_REFUSAL_PORT)
+}
+
+/**
+ * Run one stop-contract case. The declared driver surface must state the
+ * idle-stop requirement where a driver author reads it, and a driver that
+ * rejects a stop it is not running for must still leave the original start
+ * diagnostic as the failure: the failure path stops the running driver once,
+ * and teardown for a run that never started must not ask for a second stop
+ * that would surface as a cleanup failure in the journey's afterAll.
+ * @param {Record<string, unknown>} entry
+ */
+async function runDriverStopContractCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  let declared = null
+  try {
+    await createFairtradeAdapter({
+      runId: 'adapter-probe-no-stop',
+      driver: { start: async () => {}, reset: async () => {}, isRunning: () => false },
+      createdAtMs: 1000,
+    })
+  } catch (error) {
+    declared = error instanceof Error ? error.message : String(error)
+  }
+  if (!declared) {
+    throw new Error(
+      `${CORPUS_REL}: case "${name}" accepted a driver with no stop method for field "contractRequirement" at path cases.${name}.contractRequirement; ` +
+      'repair: keep the driver surface requirement so an unusable driver is refused at construction.',
+    )
+  }
+  if (!declared.includes(/** @type {string} */ (entry.contractRequirement))) {
+    throw new Error(
+      `${CORPUS_REL}: case "${name}" declares no ${JSON.stringify(entry.contractRequirement)} for field "contractRequirement" at path cases.${name}.contractRequirement; got ${declared}; ` +
+      'repair: declare on the adapter driver surface that stop must be safe to call when the driver is not running.',
+    )
+  }
+  expectFragments(['adapter.driver.stop', 'repair:'], declared, name)
+  const driver = createFakeDriver({
+    failStart: true,
+    startFailure: /** @type {string} */ (entry.startFailure),
+    failStopWhenIdle: true,
+  })
+  const adapter = await createFairtradeAdapter({ runId: 'adapter-probe-idle-stop', driver, createdAtMs: 1000 })
+  let startMessage = null
+  try {
+    await adapter.start()
+  } catch (error) {
+    startMessage = error instanceof Error ? error.message : String(error)
+  }
+  if (!startMessage) {
+    throw new Error(
+      `${CORPUS_REL}: case "${name}" resolved a start that failed with ${JSON.stringify(entry.startFailure)} for field "startFailure" at path cases.${name}.startFailure; ` +
+      'repair: keep the failed start failing so its diagnostic is the one a maintainer reads.',
+    )
+  }
+  expectFragments(
+    ['fairtrade adapter: driver start failed', 'field "driver"', 'at path adapter.start', 'repair:', `caused by ${entry.startFailure}`],
+    startMessage,
+    name,
+  )
+  const teardown = await adapter.teardown()
+  assert.deepEqual(teardown, { released: true, noop: false, stops: 1 }, `${name}: teardown after a failed start must release without asking the driver to stop again`)
+  assert.equal(driver.calls.stops, 1, `${name}: the driver must never be asked to stop while it is not running`)
+  assert.equal(driver.calls.resets, 1, `${name}: the failure path must still reset exactly once`)
+  assert.equal(adapter.stats().stops, 1, `${name}: the adapter must count exactly one stop for the failed run`)
+  assert.deepEqual([...adapter.lifecycleTrace().stages], ['declared'], `${name}: a run that never started must stay at the declared stage`)
+  const repeat = await adapter.teardown()
+  assert.deepEqual(repeat, { released: true, noop: true, stops: 1 }, `${name}: the repeated teardown must stay a no-op reporting the same stop count`)
+}
+
 const RUNNERS = {
   'theme-row': runThemeRowCase,
   route: runRouteCase,
@@ -1023,6 +1313,9 @@ const RUNNERS = {
   'observation-time': runObservationTimeCase,
   'run-root': runRunRootCase,
   'cli-target': runCliTargetCase,
+  'driver-out-of-root': runDriverOutOfRootCase,
+  'driver-host-refusal': runDriverHostRefusalCase,
+  'driver-stop-contract': runDriverStopContractCase,
 }
 
 /** @param {Record<string, unknown>} entry */
@@ -1089,8 +1382,17 @@ function applyMutation(cases, mutation) {
 }
 
 /**
- * Create a fake injected lifecycle driver with observable calls.
+ * Create a fake injected lifecycle driver with observable calls. The
+ * failStart switch models a driver that acquired a service and then failed
+ * before readiness, so the failure path stops a running driver; the
+ * failStopWhenIdle switch models a driver that refuses a stop it is not
+ * running for, the case the adapter's declared driver contract rules out.
  * @param {object} [behavior] failure switches
+ * @param {boolean} [behavior.hangStart] never settle the start
+ * @param {boolean} [behavior.failStart] fail after acquiring
+ * @param {string} [behavior.startFailure] driver failure text reported by start
+ * @param {boolean} [behavior.failStop] reject every stop
+ * @param {boolean} [behavior.failStopWhenIdle] reject a stop while not running
  */
 function createFakeDriver(behavior = {}) {
   const calls = { starts: 0, stops: 0, resets: 0 }
@@ -1105,7 +1407,7 @@ function createFakeDriver(behavior = {}) {
       }
       if (behavior.failStart) {
         running = true
-        throw new Error('fake start failed mid-way')
+        throw new Error(behavior.startFailure || 'fake start failed mid-way')
       }
       running = true
     },
@@ -1116,6 +1418,9 @@ function createFakeDriver(behavior = {}) {
       calls.stops += 1
       if (behavior.failStop) {
         throw new Error('fake stop failed')
+      }
+      if (behavior.failStopWhenIdle && !running) {
+        throw new Error('fake stop refused: the driver is not running')
       }
       running = false
     },
@@ -1228,8 +1533,8 @@ async function assertPortReleased(port) {
   } catch (error) {
     const cause = error instanceof Error ? error.message : String(error)
     throw new Error(
-      `adapter lifecycle case: port ${port} is still held after the adapter teardown; caused by ${cause}; ` +
-      'repair: drop or close the half-bound server on the driver start-failure path so teardown leaves no listener.',
+      `product driver case: port ${port} is still held after the driver stopped; caused by ${cause}; ` +
+      'repair: drop or close the half-bound server on the driver start-failure path and release the real driver in the case finally block so no scratch port stays held.',
     )
   }
   await new Promise((responseResolve) => probe.close(() => responseResolve(undefined)))
@@ -1240,11 +1545,12 @@ async function assertPortReleased(port) {
  * assert the cleanup guarantees against the real driver: it rejects rather
  * than resolves, reset runs before stop exactly once, stop runs exactly once
  * on the failure path, the adapter and the driver both report no running
- * service, the lifecycle trace stays at the declared stage, teardown stops
- * once more and stays idempotent, the scratch port is free again, and the
- * throwaway static root is gone. The finally block stops the real driver and
- * releases the squatter, so a regressed driver fails with its own diagnostic
- * instead of hanging the run on a listener it left bound.
+ * service, the lifecycle trace stays at the declared stage, teardown releases
+ * without asking the already-stopped driver to stop again and stays
+ * idempotent, the scratch port is free again, and the throwaway static root is
+ * gone. The finally block stops the real driver and releases the squatter, so
+ * a regressed driver fails with its own diagnostic instead of hanging the run
+ * on a listener it left bound.
  * @param {object} input case inputs
  * @param {string} input.runId adapter run id
  * @param {number} input.port scratch loopback port handed to the driver
@@ -1291,10 +1597,10 @@ async function driveRealStaticDriverStartFailure({ runId, port, holdPort, distRo
       driverPort: driver.port,
     }
     const teardown = await adapter.teardown()
-    assert.deepEqual(teardown, { released: true, noop: false, stops: 2 }, `${runId}: teardown after a failed start must release and stop once more`)
+    assert.deepEqual(teardown, { released: true, noop: false, stops: 1 }, `${runId}: teardown after a failed start must release without repeating the stop the failure path already ran`)
     const repeat = await adapter.teardown()
-    assert.deepEqual(repeat, { released: true, noop: true, stops: 2 }, `${runId}: teardown after a failed start must stay idempotent`)
-    assert.deepEqual(observed.calls, ['start', 'reset', 'stop', 'stop'], `${runId}: teardown must add exactly one stop and the repeated teardown none`)
+    assert.deepEqual(repeat, { released: true, noop: true, stops: 1 }, `${runId}: teardown after a failed start must stay idempotent`)
+    assert.deepEqual(observed.calls, ['start', 'reset', 'stop'], `${runId}: a run that never started must never ask the driver to stop again`)
     assert.equal(driver.isRunning(), false, `${runId}: the real driver must stay stopped after teardown`)
     assert.equal(adapter.isRunning(), false, `${runId}: the adapter must stay stopped after teardown`)
     assert.deepEqual([...adapter.lifecycleTrace().stages], ['declared'], `${runId}: teardown after a failed start must leave the trace at the declared stage, never a released stage behind a missing acquired stage`)

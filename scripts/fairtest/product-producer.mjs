@@ -280,9 +280,13 @@ export function assertProductRowDirFresh(rowDir) {
 
 /**
  * Create a loopback static driver serving the exact built app from dist/.
- * The driver starts one http server on the fixed loopback port, reports
- * readiness over real HTTP, and stops exactly once (second stop is a safe
- * no-op so adapter teardown stays idempotent).
+ * The driver starts one http server on the fixed loopback port and reports
+ * readiness over real HTTP. It refuses to serve any resolved path outside
+ * distRoot (403) and refuses to bind a non-loopback host, so the validation
+ * origin is loopback-only and can never read a file beyond the served root.
+ * It satisfies the adapter's declared driver contract: stop is safe to call
+ * when the driver is not running, which is how a start that failed before the
+ * server listened is cleaned up and released.
  * @param {object} [options] driver options
  * @param {number} [options.port] fixed loopback port
  * @param {string} [options.host] loopback host, always 127.0.0.1

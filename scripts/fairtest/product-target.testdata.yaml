@@ -40,7 +40,17 @@
 # (missing, relative, absolute) and the mounted CLI target flag (missing,
 # unknown). Both fail closed at their own boundary, and the CLI cases are run
 # as real subprocesses of the shim.
-expectedCaseCount: 88
+#
+# It also carries the real static driver's two fail-closed listener controls and
+# the adapter's declared driver contract. The real driver is started on a
+# scratch loopback port against a throwaway root whose parent holds a marker
+# file, and every encoded traversal form must be refused with the declared
+# status while the marker bytes stay out of the response; a non-loopback host
+# must be refused at construction while the loopback host is still accepted. A
+# fake driver whose stop rejects when it is not running must still leave the
+# original start diagnostic as the failure a maintainer reads, and the adapter
+# must declare that stop requirement on its driver surface.
+expectedCaseCount: 91
 cases:
   - name: theme-row-dark-absent-passes
     check: theme-row
@@ -926,3 +936,23 @@ cases:
     expectValid: false
     expectExitCode: 2
     expectedErrorContains: ['unknown target', 'component', 'cli.target', 'repair:']
+  - name: driver-out-of-root-request-refused
+    check: driver-out-of-root
+    servedRoot: dist
+    markerFile: out-of-root-marker.txt
+    markerBody: 'FAIRTEST-OUT-OF-ROOT-MARKER-7c41'
+    traversalPrefixes: ['/..%2f', '/%2e%2e%2f']
+    refusedStatus: 403
+    inRootRequest: /index.html
+    inRootStatus: 200
+    expectValid: true
+  - name: driver-non-loopback-host-refused
+    check: driver-host-refusal
+    rejectedHosts: ['0.0.0.0', 'localhost']
+    loopbackHost: 127.0.0.1
+    expectValid: true
+  - name: driver-idle-stop-keeps-start-diagnostic
+    check: driver-stop-contract
+    startFailure: fake start failed before readiness
+    contractRequirement: stop must be safe to call when the driver is not running
+    expectValid: true
