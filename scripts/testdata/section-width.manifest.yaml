@@ -1,0 +1,47 @@
+schema: fairtrade-section-width-manifest-v1
+sourceCases:
+  bare-section-global-rule-absent: bare-global-section-unconstrained
+  explicit-section-band-container: explicit-section-band
+  iu-host-guard-narrowed: iu-host-guard
+  iu-host-guard-band-exempt: iu-host-band-exempt
+  other-host-guards-retained: retained-host-guards
+  txn-center-guard-retained: retained-txn-center
+  generated-base-explicit-container: generated-explicit-section-band
+  generated-output-excludes-iu-host-guard: generated-excludes-iu
+  generator-source-sync: generator-source-sync
+  design-contract-documented: design-contract
+  transcript-composite-width-selector-updated: transcript-source-rationale
+  transcript-composite-width-guard-retained: transcript-fixture-rationale
+  band-component-padding-retained: band-component-padding
+  existing-band-usage-grounded: existing-band-usage
+sourceFiles:
+  - src/index.css
+  - packages/tokens/base.css
+  - scripts/gen-llm-artifacts.mjs
+  - llm/DESIGN.md
+  - scripts/transcript-composite-width.test.mjs
+  - scripts/testdata/transcript-composite-width-invariants.yaml
+  - src/App.jsx
+  - src/DocSections.jsx
+  - src/ComponentSections.jsx
+  - src/sections-react
+usageCases:
+  app-single-band:
+    path: src/App.jsx
+    count: 1
+  docs-band-uses:
+    path: src/DocSections.jsx
+    count: 5
+  component-band-uses:
+    path: src/ComponentSections.jsx
+    count: 6
+  section-band-uses:
+    path: src/sections-react
+    count: 21
+mountedCases:
+  - section-width-dark
+  - section-width-light
+mutationCases:
+  restore-bare-selector: 'source: bare section base constraint restored'
+  remove-explicit-band: 'source: section.band base container missing'
+  generator-output-drift: 'generated: base.css differs from section.band generator contract'

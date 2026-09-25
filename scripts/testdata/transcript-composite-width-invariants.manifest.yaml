@@ -1,1 +1,6 @@
-expectedInvariantCount: 5
+requiredInvariantNames:
+  - txn-center-retains-semantic-section-neutralizer
+  - txn-markdown-body-stretches
+  - txn-markdown-prose-keeps-reading-measure
+  - txn-markdown-wide-blocks-scroll-locally
+  - txn-markdown-content-typography-stays-readable

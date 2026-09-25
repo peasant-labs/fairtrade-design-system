@@ -76,4 +76,75 @@ changesOverflow:
     - 8c0e41
     - f1a920
   returnedExpanded: true
-buildMarker: data-session-provider
+headingCase:
+  graphSession:
+    name: graph user heading
+    app: graph
+    section: changes
+    targetSelector: '#gmp-session-destination-title'
+    expectedText: Verify map session links
+    expectedTextTransform: none
+    bodySelector: .gmp-session-destination
+  publish:
+    name: publish chrome heading
+    app: commons
+    section: publish
+    targetSelector: h2.cmg-title
+    expectedText: publishing dashboard
+    expectedTextTransform: lowercase
+    expectedAttribute: data-chrome-heading
+    requireAriaCurrent: true
+    bodySelector: .cmg-page
+  detail:
+    name: manage detail mixed heading
+    app: commons
+    section: collectives
+    targetSelector: h2.cmg-title
+    expectedText: AI Research Team
+    expectedTextTransform: none
+    bodySelector: .cmg-detail
+  contribute:
+    name: manage contribute mixed headings
+    app: commons
+    section: collectives
+    targetSelector: h2.cmg-title
+    expectedText: contribute to AI Research Team
+    expectedTextTransform: none
+    bodySelector: .cmg-page
+fullShell:
+  appTabs:
+    - iu-tab-transcript
+    - iu-tab-commons
+    - iu-tab-graph
+  graphSections:
+    - analytics
+    - changes
+    - code map
+  villageSections:
+    - explore
+    - collectives
+    - publish
+    - profile
+  barSelector: .iu-bar
+  stageSelector: '#inuse-stage'
+  rootSelector: '#inuse'
+  provenance:
+    requiredMarkers:
+      - data-session-provider
+      - Village Core
+mutations:
+  expectedMutationCount: 2
+  requiredMutationNames:
+    - restore global lowercase
+    - remove publish chrome annotation
+  cases:
+    - name: restore global lowercase
+      file: src/index.css
+      find: '@apply font-display text-ink-strong;'
+      replace: '@apply font-display text-ink-strong lowercase;'
+      expectedFailure: user heading computed transform
+    - name: remove publish chrome annotation
+      file: src/mockups/inuse/CommonsManage.jsx
+      find: '<h2 className="cmg-title" data-chrome-heading>publishing dashboard</h2>'
+      replace: '<h2 className="cmg-title">publishing dashboard</h2>'
+      expectedFailure: chrome heading computed transform
