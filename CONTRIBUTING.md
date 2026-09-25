@@ -24,7 +24,7 @@ pnpm build-storybook
 node scripts/sbsmoke.mjs
 ```
 
-`pnpm build` regenerates the machine-readable artifacts, checks WCAG contrast in both themes, then builds the Vite app. `pnpm build:lib` validates the publishable library and its contracts, runtime behavior, styles, contrast, exports, and package contents. CI also runs the built-app interaction validator, rendered timeline checks, Storybook smoke tests, and the real-pointer map check. browser checks use Chrome and may require `CHROME_PATH` outside the usual local setup.
+`pnpm build` regenerates the machine-readable artifacts, checks WCAG contrast in both themes, then builds the Vite app. `pnpm build:lib` validates the publishable library and its contracts, runtime behavior, styles, contrast, exports, and package contents. CI also runs the built-app interaction validator, rendered timeline checks, Storybook smoke tests, and the real-pointer map check. playwright is the required repeatable runner and the sole required full-catalog path. puppeteer scripts are focused compatibility and local evidence only, never an unfiltered full catalog. an optional local attach target (agent-browser, when installed) is local-only exploration, never a dependency, install step, CI oracle, or evidence path. a fairtest private workspace source package, if added, stays unpublished and outside the runtime exports, dependencies, and packed files. browser checks use Chrome and may require `CHROME_PATH` outside the usual local setup.
 
 for visual changes, inspect the affected stories in both themes and use the repository's screenshot and fidelity scripts documented in `AGENTS.md`.
 
