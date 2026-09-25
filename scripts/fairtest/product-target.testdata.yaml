@@ -1,0 +1,103 @@
+# Fairtrade product target cases: theme rows, route per theme, section
+# selection, capability and cross-kind negatives, project-name inference
+# rejection, and lifecycle traces. This record is the single source for the
+# product adapter contract test; the test module owns no row data.
+expectedCaseCount: 17
+cases:
+  - name: theme-row-dark-absent-passes
+    check: theme-row
+    theme: dark
+    renderedAttribute: null
+    expectTheme: dark
+    expectValid: true
+    expectFrozen: true
+  - name: theme-row-dark-empty-passes
+    check: theme-row
+    theme: dark
+    renderedAttribute: ''
+    expectTheme: dark
+    expectValid: true
+    expectFrozen: true
+  - name: theme-row-light-attribute-passes
+    check: theme-row
+    theme: light
+    renderedAttribute: 'light'
+    expectTheme: light
+    expectValid: true
+    expectFrozen: true
+  - name: wrong-theme-value-fails
+    check: theme-row
+    theme: dark
+    renderedAttribute: 'dark'
+    expectValid: false
+    expectedErrorContains: ['"dark"', 'at path', 'repair:']
+  - name: route-dark-passes
+    check: route
+    theme: dark
+    route: '/?app=graph&fb=off&theme=none#inuse'
+    expectValid: true
+    expectFrozen: true
+  - name: route-light-passes
+    check: route
+    theme: light
+    route: '/?app=graph&fb=off&theme=light#inuse'
+    expectValid: true
+    expectFrozen: true
+  - name: section-select-analytics-to-map-passes
+    check: section-action
+    action: select-map-section
+    fromSection: analytics
+    toSection: map
+    expectValid: true
+    expectFrozen: true
+  - name: unregistered-action-fails
+    check: section-action
+    action: select-changes-section
+    expectValid: false
+    expectedErrorContains: ['select-changes-section', 'at path', 'repair:']
+  - name: product-capabilities-pass
+    check: capability
+    capabilities: [observe-chrome, observe-body, observe-route, observe-section, observe-view, observe-theme, perform-action]
+    expectValid: true
+    expectFrozen: true
+  - name: unknown-capability-fails
+    check: capability
+    capabilities: [observe-chrome, observe-body, observe-route, observe-section, observe-view, observe-theme, observe-screenshot]
+    expectValid: false
+    expectedErrorContains: ['observe-screenshot', 'at path', 'repair:']
+  - name: cross-kind-record-fails
+    check: cross-kind
+    kind: product
+    identityKind: component
+    expectValid: false
+    expectedErrorContains: ['identity', 'at path', 'repair:']
+  - name: lifecycle-valid-leading-run-passes
+    check: lifecycle
+    stages: [declared, acquired, ready]
+    expectValid: true
+    expectFrozen: true
+  - name: lifecycle-skipped-stage-fails
+    check: lifecycle
+    stages: [declared, ready]
+    expectValid: false
+    expectedErrorContains: ['"ready"', 'at path', 'repair:']
+  - name: lifecycle-out-of-order-fails
+    check: lifecycle
+    stages: [acquired, declared]
+    expectValid: false
+    expectedErrorContains: ['"acquired"', 'at path', 'repair:']
+  - name: lifecycle-duplicate-stage-fails
+    check: lifecycle
+    stages: [declared, declared]
+    expectValid: false
+    expectedErrorContains: ['"declared"', 'at path', 'repair:']
+  - name: lifecycle-empty-trace-fails
+    check: lifecycle
+    stages: []
+    expectValid: false
+    expectedErrorContains: ['stages', 'at path', 'repair:']
+  - name: project-name-theme-inference-fails
+    check: theme-inference
+    project: product-dark
+    expectValid: false
+    expectedErrorContains: ['project', 'at path', 'repair:']

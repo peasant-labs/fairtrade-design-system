@@ -1,0 +1,66 @@
+# Required-name inventory and executable mutations for
+# product-target.testdata.yaml.
+expectedCaseCount: 17
+requiredCaseNames:
+  - theme-row-dark-absent-passes
+  - theme-row-dark-empty-passes
+  - theme-row-light-attribute-passes
+  - wrong-theme-value-fails
+  - route-dark-passes
+  - route-light-passes
+  - section-select-analytics-to-map-passes
+  - unregistered-action-fails
+  - product-capabilities-pass
+  - unknown-capability-fails
+  - cross-kind-record-fails
+  - lifecycle-valid-leading-run-passes
+  - lifecycle-skipped-stage-fails
+  - lifecycle-out-of-order-fails
+  - lifecycle-duplicate-stage-fails
+  - lifecycle-empty-trace-fails
+  - project-name-theme-inference-fails
+expectedMutationCount: 7
+requiredMutationNames:
+  - removing the light theme row breaks the required inventory
+  - duplicating a route name breaks uniqueness
+  - renaming the check discriminator breaks the case shape
+  - deleting the action breaks the case shape
+  - adding an unknown case field breaks exact membership
+  - inventing a row theme breaks the closed vocabulary
+  - appending a trailing record breaks single-record loading
+mutations:
+  - name: removing the light theme row breaks the required inventory
+    kind: delete-record
+    target: theme-row-light-attribute-passes
+    expectedField: theme-row-light-attribute-passes
+  - name: duplicating a route name breaks uniqueness
+    kind: duplicate-name
+    target: route-dark-passes
+    expectedField: route-dark-passes
+  - name: renaming the check discriminator breaks the case shape
+    kind: rename-field
+    target: route-light-passes
+    field: check
+    newField: kind
+    expectedField: check
+  - name: deleting the action breaks the case shape
+    kind: delete-field
+    target: section-select-analytics-to-map-passes
+    field: action
+    expectedField: action
+  - name: adding an unknown case field breaks exact membership
+    kind: unknown-field
+    target: product-capabilities-pass
+    field: threshold
+    value: high
+    expectedField: threshold
+  - name: inventing a row theme breaks the closed vocabulary
+    kind: bad-value
+    target: theme-row-dark-absent-passes
+    field: theme
+    value: dusk
+    expectedField: theme
+  - name: appending a trailing record breaks single-record loading
+    kind: trailing-document
+    target: document
+    expectedField: document
