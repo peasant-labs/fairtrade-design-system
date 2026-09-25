@@ -1,0 +1,78 @@
+# Fairtest package, pack, and source-isolation boundary cases. This is the
+# single source for the forbidden Fairtest packed-path manifest, the sole
+# source-route inventory, the leakage probe list, and the executable
+# boundary cases scripts/assert-fairtest-boundary.mjs and
+# scripts/assert-pack-contents.mjs enforce. Pack-path cases name tarball
+# paths; source-route cases name child-relative module specs. Both stay
+# browser-free.
+expectedCaseCount: 8
+cases:
+  - name: root-package-pinned
+    check: root-package
+    expectValid: true
+    expected: {name: "@peasant-labs/fairtrade", version: "0.0.21"}
+  - name: child-package-private
+    check: child-package
+    expectValid: true
+    expected: {name: "@peasant-labs/fairtest", private: true}
+  - name: packed-ui-entry-allowed
+    check: pack-path
+    path: dist/lib/ui.js
+    expectAllowed: true
+  - name: packed-fairtest-source-rejected
+    check: pack-path
+    path: packages/fairtest/src/core/values.mjs
+    expectAllowed: false
+    expectedErrorContains: ["packages/fairtest", "at path", "repair:"]
+  - name: packed-fairtest-test-rejected
+    check: pack-path
+    path: packages/fairtest/test/core.test.mjs
+    expectAllowed: false
+    expectedErrorContains: ["packages/fairtest", "at path", "repair:"]
+  - name: child-core-source-allowed
+    check: source-route
+    spec: src/core/values.mjs
+    expectAllowed: true
+  - name: root-relative-escape-rejected
+    check: source-route
+    spec: ../../package.json
+    expectAllowed: false
+    expectedErrorContains: ["parent-directory", "at path", "repair:"]
+  - name: bare-runner-specifier-rejected
+    check: source-route
+    spec: playwright
+    expectAllowed: false
+    expectedErrorContains: ["playwright", "at path", "repair:"]
+requiredChildScripts:
+  - test:adapter
+  - test:bridge-contract
+  - test:core
+  - test:evidence
+forbiddenPackFragments:
+  - packages/fairtest
+  - fairtest
+allowedRouteFiles:
+  - scripts/fairtest-source.mjs
+  - scripts/assert-fairtest-boundary.mjs
+forbiddenSourcePatterns:
+  - name: page-global
+    pattern: "\\b(window|navigator|globalThis)\\b"
+  - name: live-document
+    pattern: "document\\s*\\.\\s*(createElement|querySelector|querySelectorAll|getElementById|body|head|documentElement|addEventListener|cookie|title|write|location)"
+  - name: runner-name
+    pattern: "playwright|puppeteer|jsdom|storybook|agent-browser"
+  - name: scheme-address
+    pattern: "https?://|localhost|127\\.0\\.0\\.1"
+isolationProbes:
+  - name: page-global-window
+    snippet: window
+  - name: live-document-query
+    snippet: document.querySelector
+  - name: runner-playwright
+    snippet: playwright
+  - name: runner-puppeteer
+    snippet: puppeteer
+  - name: app-selector-inuse
+    snippet: "#inuse"
+  - name: app-theme-attribute
+    snippet: "[data-theme"

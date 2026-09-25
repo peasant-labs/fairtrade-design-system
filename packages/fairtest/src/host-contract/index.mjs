@@ -1,8 +1,8 @@
 // Host-contract barrel. Re-exports the type-only and value-validation seam
 // for later app-owned adapters: closed kind and theme vocabulary, target
-// declarations, lifecycle traces, the resolution proof union, and opaque
-// handles. No adapter, browser runtime, route, selector, or fixture data is
-// added at this layer.
+// declarations, lifecycle traces, the resolution proof union, opaque
+// handles, and bridge identity/readiness/cleanup records. No adapter,
+// browser runtime, route, selector, or fixture data is added at this layer.
 
 export { HOST_KINDS, THEME_NAMES, assertHostKind, validateThemeObservation } from './kinds.mjs'
 export {
@@ -30,3 +30,18 @@ export {
 } from './resolution.mjs'
 export { LIFECYCLE_STAGES, validateLifecycleTrace } from './lifecycle.mjs'
 export { validateOpaqueHandle } from './handles.mjs'
+export {
+  BRIDGE_CAPABILITIES,
+  BRIDGE_IDENTITY_KINDS,
+  BRIDGE_REQUIRED_CAPABILITIES,
+  BRIDGE_SIGNALS,
+  assertBridgeKind,
+  createBridgeDeclaration,
+  requiresBridgeCapability,
+  validateBridgeCapabilities,
+  validateBridgeCleanup,
+  validateBridgeDeclaration,
+  validateBridgeIdentity,
+  validateBridgeReadiness,
+  validateCoreIdentityForBridge,
+} from './bridge.mjs'
