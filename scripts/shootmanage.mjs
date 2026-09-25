@@ -9,10 +9,17 @@
  * collective cards, role controls, and action buttons. */
 import assert from 'node:assert/strict'
 import puppeteer from 'puppeteer-core'
-import { mkdirSync, existsSync } from 'node:fs'
-import { createConnection } from 'node:net'
+import { existsSync, mkdirSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { preview } from 'vite'
 import { SurfaceGate } from './surface-gate.mjs'
+import { assertServedBuildProvenance, observeServedBuildAssets } from './served-build-provenance.mjs'
+import { resolveFeatureGitIdentity } from './feature-git-identity.mjs'
 
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const featureIdentity = resolveFeatureGitIdentity({ sourceRoot: ROOT })
+const DIST_ROOT = resolve(process.env.BREADCRUMB_DIST_ROOT || resolve(ROOT, 'dist'))
 const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const theme = process.argv[2] || 'dark'
 const out = process.argv[3] || `/tmp/manage-${theme}`
@@ -25,19 +32,17 @@ if (!existsSync(CHROME)) {
   process.exit(1)
 }
 
-const probePort = (host) => new Promise((resolve) => {
-  const socket = createConnection({ port: PORT, host })
-  socket.on('connect', () => { socket.destroy(); resolve(true) })
-  socket.on('error', () => resolve(false))
-})
-if (!(await probePort('localhost')) && !(await probePort('::1')) && !(await probePort('127.0.0.1'))) {
-  console.error(`ERROR [shootmanage.mjs] Demo server is not listening on port ${PORT}. Start the exact feature build or canonical demo first.`)
-  process.exit(1)
+if (!existsSync(resolve(DIST_ROOT, 'index.html'))) {
+  throw new Error(`ERROR [shootmanage.mjs] exact dist is missing at ${DIST_ROOT}. Build the app before capturing.`)
 }
 
-const baseUrl = `http://localhost:${PORT}/?fb=off${theme === 'light' ? '&theme=light' : ''}`
-const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', defaultViewport: { width: 1460, height: 1000, deviceScaleFactor: 1 } })
+const server = await preview({ root: resolve(DIST_ROOT, '..'), configFile: false, logLevel: 'silent', preview: { host: '127.0.0.1', port: PORT, strictPort: true } })
+const address = server.httpServer.address()
+if (!address || typeof address === 'string') throw new Error('ERROR [shootmanage.mjs] Vite preview did not expose a TCP address')
+const url = `http://127.0.0.1:${address.port}/?fb=off${theme === 'light' ? '&theme=light' : ''}`
+const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', defaultViewport: { width: 1460, height: 1000, deviceScaleFactor: 1 }, args: typeof process.getuid === 'function' && process.getuid() === 0 ? ['--no-sandbox'] : [] })
 const page = await browser.newPage()
+const observer = observeServedBuildAssets(page, url)
 await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }])
 const errs = []
 page.on('console', (message) => { if (message.type() === 'error' && !/favicon/.test(message.text())) errs.push(message.text()) })
@@ -213,13 +218,19 @@ const shot = async (name, shell) => {
   console.log('shot', name.padEnd(24), `${Math.round(box.width)}x${Math.round(box.height)}`.padEnd(11), `nonbg=${(result.nonbgRatio * 100).toFixed(1)}% colors=${result.distinctColors}`)
 }
 
+const prove = async () => {
+  observer.stop()
+  await assertServedBuildProvenance({ mode: 'feature', origin: url, distRoot: DIST_ROOT, observedJavaScriptPaths: [...observer.paths], observedForeignOrigins: [...observer.foreignOrigins], marker: 'crumb-item-chrome', base: featureIdentity.base, expectedHead: featureIdentity.expectedHead, expectedBranch: featureIdentity.expectedBranch })
+}
+
 const gotoApp = async (app, navLabel) => {
-  await page.goto(`${baseUrl}&app=${app}`, { waitUntil: 'networkidle0' })
+  await page.goto(`${url}&app=${app}`, { waitUntil: 'networkidle0' })
   await waitForApp(app, navLabel)
 }
 
 try {
   await gotoApp('graph', 'peasant sections')
+  await prove()
   await clickNavItem('peasant sections', 'changes')
   await page.waitForSelector('.cg-history-row[data-commit-hash="c1d4a3"] .tlp-overflow-toggle', { timeout: 15000 })
   await page.click('.cg-history-row[data-commit-hash="c1d4a3"] .tlp-overflow-toggle')
@@ -334,5 +345,7 @@ try {
 
   console.log('console errors:', errs.length ? errs.slice(0, 5) : 'none')
 } finally {
+  observer.stop()
   await browser.close()
+  await new Promise((resolveClose, rejectClose) => server.httpServer.close((error) => error ? rejectClose(error) : resolveClose()))
 }

@@ -43,6 +43,7 @@ import {
   ConfirmInline,
   Tag,
   ProviderIcon,
+  Breadcrumb,
 } from '../../ui'
 
 /* ============================================================================
@@ -551,8 +552,14 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
       <div className="cmg-detail">
         {/* hero + action cluster */}
         <header className="cmg-d-hero">
-          <div className="crumb cmg-crumb">
-            village <ChevronRight size={13} aria-hidden="true" /> collectives <ChevronRight size={13} aria-hidden="true" /> <span className="cur">{collective.name}</span>
+          <div className="cmg-crumb">
+            <Breadcrumb
+              items={[
+                { label: 'village', href: '#village', chrome: true },
+                { label: 'collectives', href: '#collectives', chrome: true },
+                { label: collective.name },
+              ]}
+            />
           </div>
           <div className="cmg-d-hero-row">
             <div>
