@@ -781,6 +781,84 @@ describe('journey compatibility and import resolution', () => {
   })
 })
 
+describe('expectTheme retry semantics', () => {
+  /**
+   * Build a fake page whose rendered theme settles after a bounded number
+   * of dark reads, modelling a consumer theme toggle that writes
+   * data-theme asynchronously after the click.
+   * @param {object} [input] settling behavior
+   */
+  function fakeSettlingThemePage({ darkReads = 3, settledValue = 'light' } = {}) {
+    let calls = 0
+    return {
+      calls: () => calls,
+      locator: (selector) => ({
+        getAttribute: async (attributeName) => {
+          assert.equal(selector, 'html', 'wrapper must read the root element')
+          assert.equal(attributeName, 'data-theme', 'wrapper must read the rendered theme attribute')
+          calls += 1
+          await new Promise((resolve) => setTimeout(resolve, 5))
+          return calls <= darkReads ? null : settledValue
+        },
+      }),
+    }
+  }
+
+  /**
+   * Build a fake page that always serves one canned value while counting
+   * reads, so a failure proves the bounded retry re-read instead of a
+   * single read.
+   * @param {unknown} renderedAttribute canned raw attribute value, absent as nullish
+   */
+  function fakeCountingThemePage(renderedAttribute) {
+    let calls = 0
+    return {
+      calls: () => calls,
+      locator: (selector) => ({
+        getAttribute: async (attributeName) => {
+          assert.equal(selector, 'html', 'wrapper must read the root element')
+          assert.equal(attributeName, 'data-theme', 'wrapper must read the rendered theme attribute')
+          calls += 1
+          await new Promise((resolve) => setTimeout(resolve, 5))
+          return renderedAttribute
+        },
+      }),
+    }
+  }
+
+  it('waits for the rendered theme to settle instead of failing on the first read', { timeout: 10000 }, async () => {
+    const page = fakeSettlingThemePage({ darkReads: 3, settledValue: 'light' })
+    await expectTheme(page, 'light')
+    assert.ok(page.calls() > 3, `retry must re-read until the value settles; got ${page.calls()} read(s)`)
+  })
+
+  it('still passes settled absent and empty values for dark and light for light', { timeout: 10000 }, async () => {
+    await expectTheme(fakeThemeTree(null), 'dark')
+    await expectTheme(fakeThemeTree(''), 'dark')
+    await expectTheme(fakeThemeTree('light'), 'light')
+  })
+
+  it('still fails a wrong value after retrying instead of passing', { timeout: 10000 }, async () => {
+    const page = fakeCountingThemePage('dark')
+    await assert.rejects(
+      () => expectTheme(page, 'dark', { timeoutMs: 120, pollMs: 10 }),
+      /"dark".*renderedAttribute.*at path.*repair:/s,
+      'wrong rendered value must fail',
+    )
+    assert.ok(page.calls() > 1, `wrong value must fail after retrying, not on a single read; got ${page.calls()} read(s)`)
+  })
+
+  it('still fails a contradiction after retrying instead of passing', { timeout: 10000 }, async () => {
+    const page = fakeCountingThemePage(null)
+    await assert.rejects(
+      () => expectTheme(page, 'light', { timeoutMs: 120, pollMs: 10 }),
+      /at path.*"light".*"dark".*repair:/s,
+      'contradictory observation must fail',
+    )
+    assert.ok(page.calls() > 1, `contradiction must fail after retrying, not on a single read; got ${page.calls()} read(s)`)
+  })
+})
+
 describe('product adapter lifecycle with a fake driver', () => {
   it('runs reset before stop on partial start failure and leaves no service', async () => {
     const driver = createFakeDriver({ failStart: true })

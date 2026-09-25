@@ -39,20 +39,47 @@ export function seriousViolations(scan) {
  * normalized through the app-owned target contract, so an absent or empty
  * attribute counts as dark and the light value counts as light; a wrong
  * or contradictory value fails through that contract before the final
- * assertion.
+ * assertion. Reads poll until the normalized value settles on the
+ * requested theme, so a caller may assert immediately after a theme
+ * toggle, navigation, or client-side state change that writes
+ * data-theme.
  * @param {import('@playwright/test').Page} page
  * @param {string} theme dark or light row theme
+ * @param {{ timeoutMs?: number, pollMs?: number }} [options] bounded retry budget
  */
-export async function expectTheme(page, theme) {
-  const raw = await page.locator('html').getAttribute('data-theme')
-  const observed = normalizeRenderedTheme(raw)
+export async function expectTheme(page, theme, options = {}) {
+  const timeoutMs = options.timeoutMs ?? 1000
+  const pollMs = options.pollMs ?? 20
+  const deadlineMs = Date.now() + timeoutMs
+  let raw = await page.locator('html').getAttribute('data-theme')
+  let observed = null
+  for (;;) {
+    try {
+      observed = normalizeRenderedTheme(raw)
+    } catch {
+      observed = null
+    }
+    if (observed === theme) {
+      break
+    }
+    if (Date.now() >= deadlineMs) {
+      break
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollMs))
+    raw = await page.locator('html').getAttribute('data-theme')
+  }
+  const settledRaw = raw
+  const settledObserved = observed
   await observeProductTheme({
     expected: theme,
-    renderedAttribute: raw,
+    renderedAttribute: settledRaw,
     source: 'journey-assertions-expectTheme',
     observedAtMs: Date.now(),
   })
-  expect(observed, `rendered theme ${JSON.stringify(observed)} must equal the expected row theme ${JSON.stringify(theme)}`).toBe(theme)
+  expect(
+    settledObserved,
+    `rendered theme ${JSON.stringify(settledObserved)} (raw data-theme ${JSON.stringify(settledRaw)}) must equal the expected row theme ${JSON.stringify(theme)}; repair: serve the row route for the expected theme and read the rendered value after it settles.`,
+  ).toBe(theme)
 }
 
 /**
