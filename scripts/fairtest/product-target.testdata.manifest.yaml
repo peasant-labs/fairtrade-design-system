@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # product-target.testdata.yaml.
-expectedCaseCount: 17
+expectedCaseCount: 45
 requiredCaseNames:
   - theme-row-dark-absent-passes
   - theme-row-dark-empty-passes
@@ -19,7 +19,35 @@ requiredCaseNames:
   - lifecycle-duplicate-stage-fails
   - lifecycle-empty-trace-fails
   - project-name-theme-inference-fails
-expectedMutationCount: 7
+  - setup-dark-passes
+  - setup-light-passes
+  - setup-unknown-theme-fails
+  - observation-dark-absent-passes
+  - observation-light-attribute-passes
+  - observation-contradiction-light-expected-fails
+  - observation-contradiction-dark-expected-fails
+  - project-name-inference-rejected
+  - proof-dark-initial-passes
+  - proof-light-with-map-action-passes
+  - proof-missing-observation-fails
+  - proof-contradictory-observation-fails
+  - proof-row-theme-mismatch-fails
+  - proof-unregistered-action-fails
+  - proof-cross-kind-identity-fails
+  - proof-blanket-mounted-fails
+  - proof-missing-chrome-fails
+  - proof-missing-body-fails
+  - proof-missing-route-fails
+  - proof-missing-active-section-fails
+  - proof-missing-view-fails
+  - proof-wrong-initial-section-fails
+  - proof-action-without-map-fails
+  - wrapper-dark-absent-passes
+  - wrapper-dark-empty-passes
+  - wrapper-light-attribute-passes
+  - wrapper-contradiction-fails
+  - wrapper-wrong-value-fails
+expectedMutationCount: 14
 requiredMutationNames:
   - removing the light theme row breaks the required inventory
   - duplicating a route name breaks uniqueness
@@ -28,6 +56,13 @@ requiredMutationNames:
   - adding an unknown case field breaks exact membership
   - inventing a row theme breaks the closed vocabulary
   - appending a trailing record breaks single-record loading
+  - removing the light proof breaks the required inventory
+  - duplicating a wrapper name breaks uniqueness
+  - renaming the setup discriminator breaks the case shape
+  - deleting the proof initial section breaks the case shape
+  - adding an unknown observation field breaks exact membership
+  - inventing a proof row theme breaks the closed vocabulary
+  - rendering dark as a literal value breaks normalization
 mutations:
   - name: removing the light theme row breaks the required inventory
     kind: delete-record
@@ -64,3 +99,40 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document
+  - name: removing the light proof breaks the required inventory
+    kind: delete-record
+    target: proof-light-with-map-action-passes
+    expectedField: proof-light-with-map-action-passes
+  - name: duplicating a wrapper name breaks uniqueness
+    kind: duplicate-name
+    target: wrapper-dark-absent-passes
+    expectedField: wrapper-dark-absent-passes
+  - name: renaming the setup discriminator breaks the case shape
+    kind: rename-field
+    target: setup-dark-passes
+    field: check
+    newField: kind
+    expectedField: check
+  - name: deleting the proof initial section breaks the case shape
+    kind: delete-field
+    target: proof-dark-initial-passes
+    field: initialSection
+    expectedField: initialSection
+  - name: adding an unknown observation field breaks exact membership
+    kind: unknown-field
+    target: observation-dark-absent-passes
+    field: budget
+    value: low
+    expectedField: budget
+  - name: inventing a proof row theme breaks the closed vocabulary
+    kind: bad-value
+    target: proof-dark-initial-passes
+    field: rowTheme
+    value: dusk
+    expectedField: rowTheme
+  - name: rendering dark as a literal value breaks normalization
+    kind: bad-value
+    target: observation-dark-absent-passes
+    field: renderedAttribute
+    value: dark
+    expectedField: renderedAttribute

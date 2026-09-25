@@ -10,6 +10,7 @@ import { dirname, resolve } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
+import { expectTheme } from '../journey/lib/assertions.mjs'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
 import * as targets from './fairtrade-targets.mjs'
 
@@ -20,8 +21,9 @@ const MANIFEST_REL = 'scripts/fairtest/product-target.testdata.manifest.yaml'
 const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs']
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
-const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference']
+const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'wrapper-theme']
 const ROW_THEMES = ['dark', 'light']
+const PROOF_PARTS = ['chrome', 'body', 'route', 'activeSection', 'view']
 
 const coreFixtures = await importFairtestSource('src/core/fixtures.mjs')
 const contractTargets = await importFairtestSource('src/host-contract/targets.mjs')
@@ -102,10 +104,66 @@ function checkCaseShape(entry, index) {
     'cross-kind': ['name', 'check', 'kind', 'identityKind', ...tail],
     lifecycle: ['name', 'check', 'stages', ...tail],
     'theme-inference': ['name', 'check', 'project', ...tail],
+    'theme-setup': entry.expectValid
+      ? ['name', 'check', 'theme', 'expectedAttribute', 'route', ...tail]
+      : ['name', 'check', 'theme', ...tail],
+    'theme-observation': entry.expectValid
+      ? ['name', 'check', 'expected', 'renderedAttribute', 'source', 'observedAtMs', 'expectObserved', ...tail]
+      : ['name', 'check', 'expected', 'renderedAttribute', 'source', 'observedAtMs', ...tail],
+    'project-inference': ['name', 'check', 'project', 'expectValid', 'expectedErrorContains'],
+    'product-proof': ['name', 'check', 'rowTheme', 'identity', 'parts', 'themeObservation', 'initialSection', 'activeSectionId', 'action', 'omitPart', 'mounted', ...tail],
+    'wrapper-theme': entry.expectValid
+      ? ['name', 'check', 'theme', 'renderedAttribute', 'expectValid']
+      : ['name', 'check', 'theme', 'renderedAttribute', 'expectValid', 'expectedErrorContains'],
   }
   coreFixtures.checkKeys(entry, fieldsByCheck[entry.check], 'case record', CORPUS_REL, path)
   if (!entry.expectValid) {
     checkFragmentList(entry.expectedErrorContains, CORPUS_REL, `${path}.expectedErrorContains`)
+  }
+  if (entry.check === 'product-proof') {
+    checkProofCaseShape(entry, path)
+  }
+}
+
+/**
+ * Validate the nested product-proof record: exact part inventory, the
+ * omit-part marker, the mounted flag, and the nullable observation and
+ * action records.
+ * @param {Record<string, unknown>} entry
+ * @param {string} path
+ */
+function checkProofCaseShape(entry, path) {
+  if (!isRecord(entry.identity)) {
+    throw new Error(`${CORPUS_REL}: case "${entry.name}" holds no identity record for field "identity" at path ${path}.identity; repair: restore the product-branch identity record.`)
+  }
+  coreFixtures.checkKeys(entry.identity, ['kind', 'id', 'createdAtMs'], 'identity record', CORPUS_REL, `${path}.identity`)
+  if (!isRecord(entry.parts)) {
+    throw new Error(`${CORPUS_REL}: case "${entry.name}" holds no parts record for field "parts" at path ${path}.parts; repair: restore the five separately observed parts.`)
+  }
+  coreFixtures.checkKeys(entry.parts, PROOF_PARTS, 'parts record', CORPUS_REL, `${path}.parts`)
+  for (const part of PROOF_PARTS) {
+    if (!isRecord(entry.parts[part])) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" holds no part record for field "${part}" at path ${path}.parts.${part}; repair: restore the observed part record.`)
+    }
+    coreFixtures.checkKeys(entry.parts[part], ['observed', 'observedAtMs'], 'part record', CORPUS_REL, `${path}.parts.${part}`)
+  }
+  if (entry.themeObservation !== null) {
+    if (!isRecord(entry.themeObservation)) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" holds no theme observation for field "themeObservation" at path ${path}.themeObservation; repair: restore the observation record or null for the missing case.`)
+    }
+    coreFixtures.checkKeys(entry.themeObservation, ['expected', 'observed', 'source', 'observedAtMs'], 'theme observation', CORPUS_REL, `${path}.themeObservation`)
+  }
+  if (entry.action !== null) {
+    if (!isRecord(entry.action)) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" holds no action record for field "action" at path ${path}.action; repair: restore the named action record or null.`)
+    }
+    coreFixtures.checkKeys(entry.action, ['name', 'completed', 'observedAtMs'], 'action record', CORPUS_REL, `${path}.action`)
+  }
+  if (entry.omitPart !== 'none' && !PROOF_PARTS.includes(/** @type {string} */ (entry.omitPart))) {
+    throw new Error(`${CORPUS_REL}: case "${entry.name}" names an unknown omitted part ${JSON.stringify(entry.omitPart)} for field "omitPart" at path ${path}.omitPart; repair: use one of none, ${PROOF_PARTS.join(', ')} for "omitPart".`)
+  }
+  if (typeof entry.mounted !== 'boolean') {
+    throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing its mounted flag for field "mounted" at path ${path}.mounted; repair: set mounted to true or false.`)
   }
 }
 
@@ -262,6 +320,151 @@ function runThemeInferenceCase(entry) {
   }
 }
 
+/** @param {Record<string, unknown>} entry */
+function runThemeSetupCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  let message = null
+  try {
+    const setup = targets.productThemeSetup(entry.theme)
+    assert.equal(setup.theme, entry.theme, `${name}: setup theme must equal the row theme`)
+    assert.equal(setup.expectedAttribute, entry.expectedAttribute, `${name}: setup attribute must equal the declared raw value`)
+    assert.equal(setup.route, entry.route, `${name}: setup route must equal the declared route`)
+    assert.equal(setup.route, targets.productRouteForTheme(entry.theme), `${name}: setup route must match the row route`)
+    assert.ok(Object.isFrozen(setup), `${name}: setup descriptor must be frozen`)
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  if (entry.expectValid) {
+    assert.equal(message, null, `${name}: valid theme setup failed: ${message}`)
+  } else {
+    assert.ok(message, `${name}: unknown row theme passed setup`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  }
+}
+
+/** @param {Record<string, unknown>} entry */
+function runThemeObservationCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  let message = null
+  try {
+    const observation = targets.observeProductTheme({
+      expected: entry.expected,
+      renderedAttribute: entry.renderedAttribute,
+      source: entry.source,
+      observedAtMs: entry.observedAtMs,
+    })
+    assert.equal(observation.expected, entry.expected, `${name}: persisted expected theme must match`)
+    assert.equal(observation.observed, entry.expectObserved, `${name}: normalized observed theme must match`)
+    assert.equal(observation.source, entry.source, `${name}: persisted source must match`)
+    assert.equal(observation.observedAtMs, entry.observedAtMs, `${name}: persisted time must match`)
+    assert.ok(Object.isFrozen(observation), `${name}: theme observation must be frozen`)
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  if (entry.expectValid) {
+    assert.equal(message, null, `${name}: valid theme observation failed: ${message}`)
+  } else {
+    assert.ok(message, `${name}: contradictory observation passed instead of failing`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  }
+}
+
+/** @param {Record<string, unknown>} entry */
+function runProjectInferenceCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  let message = null
+  try {
+    targets.productThemeFromProjectName(entry.project)
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  assert.ok(message, `${name}: project-name inference passed instead of failing`)
+  expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+}
+
+/** @param {Record<string, unknown>} entry */
+function runProductProofCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const parts = {}
+  for (const [key, value] of Object.entries(/** @type {Record<string, unknown>} */ (entry.parts))) {
+    parts[key] = { .../** @type {Record<string, unknown>} */ (value) }
+  }
+  if (entry.omitPart !== 'none') {
+    delete parts[/** @type {string} */ (entry.omitPart)]
+  }
+  const input = {
+    rowTheme: entry.rowTheme,
+    identity: { .../** @type {Record<string, unknown>} */ (entry.identity) },
+    ...parts,
+    themeObservation: entry.themeObservation === null ? null : { .../** @type {Record<string, unknown>} */ (entry.themeObservation) },
+    initialSection: entry.initialSection,
+    activeSectionId: entry.activeSectionId,
+    ...(entry.action === null ? {} : { action: { .../** @type {Record<string, unknown>} */ (entry.action) } }),
+    ...(entry.mounted ? { mounted: true } : {}),
+  }
+  let message = null
+  try {
+    const proof = targets.buildProductProof(input)
+    assert.equal(proof.kind, 'product', `${name}: proof kind must stay product`)
+    assert.equal(proof.identity.kind, 'product', `${name}: proof identity must stay on the product branch`)
+    assert.equal(proof.theme.expected, entry.rowTheme, `${name}: proof theme must match the row theme`)
+    for (const part of PROOF_PARTS) {
+      assert.equal(proof[part].observed, true, `${name}: part ${part} must be separately observed`)
+    }
+    assert.ok(Object.isFrozen(proof), `${name}: product proof must be frozen`)
+    if (entry.action === null) {
+      assert.ok(!('action' in proof), `${name}: proof without an action must carry no action result`)
+    } else {
+      assert.equal(proof.action.name, /** @type {Record<string, unknown>} */ (entry.action).name, `${name}: proof action name must match`)
+    }
+    const revalidated = contractResolution.validateProductResolution({ ...proof }, name)
+    assert.deepEqual({ ...revalidated }, { ...proof }, `${name}: shared resolver must accept the assembled proof`)
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  if (entry.expectValid) {
+    assert.equal(message, null, `${name}: valid product proof failed: ${message}`)
+  } else {
+    assert.ok(message, `${name}: broken product proof passed instead of failing`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  }
+}
+
+/**
+ * Build a fake tree handle that serves one canned attribute value and
+ * records the selector read, so the compatibility wrapper is proven
+ * against the read path instead of a hardcoded value.
+ * @param {unknown} renderedAttribute canned raw attribute value, absent as nullish
+ */
+function fakeThemeTree(renderedAttribute) {
+  return {
+    locator: (selector) => ({
+      getAttribute: async (attributeName) => {
+        assert.equal(selector, 'html', 'wrapper must read the root element')
+        assert.equal(attributeName, 'data-theme', 'wrapper must read the rendered theme attribute')
+        return renderedAttribute
+      },
+    }),
+  }
+}
+
+/** @param {Record<string, unknown>} entry */
+async function runWrapperThemeCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  let message = null
+  try {
+    await expectTheme(fakeThemeTree(entry.renderedAttribute), entry.theme)
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  if (entry.expectValid) {
+    assert.equal(message, null, `${name}: wrapper rejected a matching theme: ${message}`)
+  } else {
+    assert.ok(message, `${name}: wrapper accepted a wrong theme instead of failing`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  }
+}
+
 const RUNNERS = {
   'theme-row': runThemeRowCase,
   route: runRouteCase,
@@ -270,13 +473,18 @@ const RUNNERS = {
   'cross-kind': runCrossKindCase,
   lifecycle: runLifecycleCase,
   'theme-inference': runThemeInferenceCase,
+  'theme-setup': runThemeSetupCase,
+  'theme-observation': runThemeObservationCase,
+  'project-inference': runProjectInferenceCase,
+  'product-proof': runProductProofCase,
+  'wrapper-theme': runWrapperThemeCase,
 }
 
 /** @param {Record<string, unknown>} entry */
-function runCase(entry) {
+async function runCase(entry) {
   const runner = RUNNERS[entry.check]
   assert.ok(runner, `${CORPUS_REL}: case "${entry.name}" names an unknown check ${JSON.stringify(entry.check)}`)
-  runner(entry)
+  await runner(entry)
 }
 
 /**
@@ -286,11 +494,11 @@ function runCase(entry) {
  * @param {Record<string, unknown>[]} cases
  * @param {Record<string, unknown>} manifest
  */
-function validateMutated(cases, manifest) {
+async function validateMutated(cases, manifest) {
   cases.forEach(checkCaseShape)
   coreFixtures.checkRequiredNames(cases.map((entry) => entry.name), /** @type {string[]} */ (manifest.requiredCaseNames), CORPUS_REL)
   for (const entry of cases) {
-    runCase(entry)
+    await runCase(entry)
   }
 }
 /**
@@ -384,9 +592,9 @@ describe('product target fixture family', () => {
     validateFamily(parsed, manifest)
   })
 
-  it('executes every named case', () => {
+  it('executes every named case', async () => {
     for (const entry of /** @type {Record<string, unknown>[]} */ (parsed.cases)) {
-      runCase(entry)
+      await runCase(entry)
     }
   })
 
@@ -407,7 +615,7 @@ describe('product target fixture family', () => {
     assert.match(message, /at path.*repair:/s, 'trailing rejection must carry path and repair')
   })
 
-  it('fails every executable mutation for its intended field', () => {
+  it('fails every executable mutation for its intended field', async () => {
     const cases = /** @type {Record<string, unknown>[]} */ (parsed.cases)
     for (const mutation of /** @type {Record<string, unknown>[]} */ (manifest.mutations)) {
       let message = null
@@ -417,7 +625,7 @@ describe('product target fixture family', () => {
         } else {
           const mutated = structuredClone(cases)
           applyMutation(mutated, mutation)
-          validateMutated(mutated, manifest)
+          await validateMutated(mutated, manifest)
         }
       } catch (error) {
         message = error instanceof Error ? error.message : String(error)
@@ -503,6 +711,151 @@ describe('product target registry and theme rows', () => {
     }
     assert.equal(receipt.declaration.kind, 'product')
     assert.deepEqual([...receipt.declaration.actions], [targets.PRODUCT_ACTION_NAME])
+  })
+})
+
+describe('product proof record schema and shared vocabulary', () => {
+  it('matches the shared product-only field set with no silent extras', () => {
+    const schema = targets.PRODUCT_PROOF_RECORD_SCHEMA
+    assert.ok(Object.isFrozen(schema), 'proof schema must be frozen')
+    assert.equal(schema.kind, 'product', 'proof schema kind must stay product')
+    assert.deepEqual(
+      [...schema.fields],
+      ['kind', 'identity', ...contractResolution.PRODUCT_ONLY_FIELDS, 'theme'],
+      'proof fields must equal the shared product record shape',
+    )
+    assert.deepEqual(
+      [...schema.fieldsWithAction],
+      ['kind', 'identity', ...contractResolution.PRODUCT_ONLY_FIELDS, 'theme', 'action'],
+      'proof fields with an action must add exactly the action result',
+    )
+    assert.deepEqual([...schema.partFields], ['observed', 'observedAtMs'], 'proof part fields must stay exact')
+    assert.deepEqual([...schema.themeFields], ['expected', 'observed', 'source', 'observedAtMs'], 'proof theme fields must stay exact')
+    assert.deepEqual([...schema.actionFields], ['name', 'completed', 'observedAtMs'], 'proof action fields must stay exact')
+    assert.deepEqual([...schema.identityFields], ['kind', 'id', 'createdAtMs'], 'proof identity fields must stay exact')
+  })
+
+  it('describes the row setup without project-name inference', () => {
+    for (const theme of ['dark', 'light']) {
+      const setup = targets.productThemeSetup(theme)
+      assert.equal(targets.normalizeRenderedTheme(setup.expectedAttribute), theme, `setup attribute must normalize to ${theme}`)
+    }
+    assert.throws(
+      () => targets.productThemeFromProjectName('product-dark'),
+      /field "project".*at path theme\.project.*"product-dark".*repair:/s,
+      'project-name inference must fail with the observed value and repair',
+    )
+  })
+})
+
+describe('journey compatibility and import resolution', () => {
+  it('keeps the assertion surface intact for existing consumers', async () => {
+    const assertions = await import('../journey/lib/assertions.mjs')
+    assert.deepEqual(assertions.DEFAULT_AXE_TAGS, ['wcag2a', 'wcag2aa'], 'axe tags must stay pinned')
+    assert.equal(typeof assertions.scanAxe, 'function', 'scanAxe must stay exported')
+    assert.equal(typeof assertions.seriousViolations, 'function', 'seriousViolations must stay exported')
+    assert.equal(typeof assertions.expectTheme, 'function', 'expectTheme must stay exported')
+    assert.equal(typeof assertions.expectComputedTokens, 'function', 'expectComputedTokens must stay exported')
+    assert.deepEqual(
+      assertions.seriousViolations({ violations: [{ impact: 'critical' }, { impact: 'minor' }] }).map((entry) => entry.impact),
+      ['critical'],
+      'serious violations must still filter critical and serious impact only',
+    )
+  })
+
+  it('resolves the existing journey module graph without consumer edits', () => {
+    const files = [
+      'scripts/journey/lib/assertions.mjs',
+      'scripts/journey/lib/fixtures.mjs',
+      'scripts/journey/lib/determinism.mjs',
+      'scripts/journey/lib/determinism-constants.mjs',
+      'scripts/journey/app-validate.journey.mjs',
+      'scripts/journey/session-group-disclosure.journey.mjs',
+      'scripts/journey/storybook-smoke.journey.mjs',
+      'scripts/fairtest/fairtrade-targets.mjs',
+      'scripts/fairtest/fairtrade-adapter.mjs',
+    ]
+    for (const file of files) {
+      execFileSync('node', ['--check', file], { cwd: ROOT, stdio: 'pipe' })
+    }
+  })
+})
+
+describe('expectTheme retry semantics', () => {
+  /**
+   * Build a fake page whose rendered theme settles after a bounded number
+   * of dark reads, modelling a consumer theme toggle that writes
+   * data-theme asynchronously after the click.
+   * @param {object} [input] settling behavior
+   */
+  function fakeSettlingThemePage({ darkReads = 3, settledValue = 'light' } = {}) {
+    let calls = 0
+    return {
+      calls: () => calls,
+      locator: (selector) => ({
+        getAttribute: async (attributeName) => {
+          assert.equal(selector, 'html', 'wrapper must read the root element')
+          assert.equal(attributeName, 'data-theme', 'wrapper must read the rendered theme attribute')
+          calls += 1
+          await new Promise((resolve) => setTimeout(resolve, 5))
+          return calls <= darkReads ? null : settledValue
+        },
+      }),
+    }
+  }
+
+  /**
+   * Build a fake page that always serves one canned value while counting
+   * reads, so a failure proves the bounded retry re-read instead of a
+   * single read.
+   * @param {unknown} renderedAttribute canned raw attribute value, absent as nullish
+   */
+  function fakeCountingThemePage(renderedAttribute) {
+    let calls = 0
+    return {
+      calls: () => calls,
+      locator: (selector) => ({
+        getAttribute: async (attributeName) => {
+          assert.equal(selector, 'html', 'wrapper must read the root element')
+          assert.equal(attributeName, 'data-theme', 'wrapper must read the rendered theme attribute')
+          calls += 1
+          await new Promise((resolve) => setTimeout(resolve, 5))
+          return renderedAttribute
+        },
+      }),
+    }
+  }
+
+  it('waits for the rendered theme to settle instead of failing on the first read', { timeout: 10000 }, async () => {
+    const page = fakeSettlingThemePage({ darkReads: 3, settledValue: 'light' })
+    await expectTheme(page, 'light')
+    assert.ok(page.calls() > 3, `retry must re-read until the value settles; got ${page.calls()} read(s)`)
+  })
+
+  it('still passes settled absent and empty values for dark and light for light', { timeout: 10000 }, async () => {
+    await expectTheme(fakeThemeTree(null), 'dark')
+    await expectTheme(fakeThemeTree(''), 'dark')
+    await expectTheme(fakeThemeTree('light'), 'light')
+  })
+
+  it('still fails a wrong value after retrying instead of passing', { timeout: 10000 }, async () => {
+    const page = fakeCountingThemePage('dark')
+    await assert.rejects(
+      () => expectTheme(page, 'dark', { timeoutMs: 120, pollMs: 10 }),
+      /"dark".*renderedAttribute.*at path.*repair:/s,
+      'wrong rendered value must fail',
+    )
+    assert.ok(page.calls() > 1, `wrong value must fail after retrying, not on a single read; got ${page.calls()} read(s)`)
+  })
+
+  it('still fails a contradiction after retrying instead of passing', { timeout: 10000 }, async () => {
+    const page = fakeCountingThemePage(null)
+    await assert.rejects(
+      () => expectTheme(page, 'light', { timeoutMs: 120, pollMs: 10 }),
+      /at path.*"light".*"dark".*repair:/s,
+      'contradictory observation must fail',
+    )
+    assert.ok(page.calls() > 1, `contradiction must fail after retrying, not on a single read; got ${page.calls()} read(s)`)
   })
 })
 

@@ -2,7 +2,13 @@
 # selection, capability and cross-kind negatives, project-name inference
 # rejection, and lifecycle traces. This record is the single source for the
 # product adapter contract test; the test module owns no row data.
-expectedCaseCount: 17
+#
+# The second family covers the row-scoped theme setup descriptor, the
+# normalized rendered-theme observation with its contradiction guard, the
+# project-name inference rejection, the assembled product proof record
+# with its per-part and action negatives, and the journey compatibility
+# wrapper behavior.
+expectedCaseCount: 45
 cases:
   - name: theme-row-dark-absent-passes
     check: theme-row
@@ -101,3 +107,358 @@ cases:
     project: product-dark
     expectValid: false
     expectedErrorContains: ['project', 'at path', 'repair:']
+  - name: setup-dark-passes
+    check: theme-setup
+    theme: dark
+    expectedAttribute: ''
+    route: '/?app=graph&fb=off&theme=none#inuse'
+    expectValid: true
+    expectFrozen: true
+  - name: setup-light-passes
+    check: theme-setup
+    theme: light
+    expectedAttribute: 'light'
+    route: '/?app=graph&fb=off&theme=light#inuse'
+    expectValid: true
+    expectFrozen: true
+  - name: setup-unknown-theme-fails
+    check: theme-setup
+    theme: dusk
+    expectValid: false
+    expectedErrorContains: ['"dusk"', 'at path', 'repair:']
+  - name: observation-dark-absent-passes
+    check: theme-observation
+    expected: dark
+    renderedAttribute: null
+    source: product-theme-observer
+    observedAtMs: 1000
+    expectObserved: dark
+    expectValid: true
+    expectFrozen: true
+  - name: observation-light-attribute-passes
+    check: theme-observation
+    expected: light
+    renderedAttribute: 'light'
+    source: product-theme-observer
+    observedAtMs: 1000
+    expectObserved: light
+    expectValid: true
+    expectFrozen: true
+  - name: observation-contradiction-light-expected-fails
+    check: theme-observation
+    expected: light
+    renderedAttribute: ''
+    source: product-theme-observer
+    observedAtMs: 1000
+    expectValid: false
+    expectedErrorContains: ['"light"', '"dark"', 'at path', 'repair:']
+  - name: observation-contradiction-dark-expected-fails
+    check: theme-observation
+    expected: dark
+    renderedAttribute: 'light'
+    source: product-theme-observer
+    observedAtMs: 1000
+    expectValid: false
+    expectedErrorContains: ['"dark"', '"light"', 'at path', 'repair:']
+  - name: project-name-inference-rejected
+    check: project-inference
+    project: product-dark
+    expectValid: false
+    expectedErrorContains: ['project', '"product-dark"', 'at path', 'repair:']
+  - name: proof-dark-initial-passes
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: none
+    mounted: false
+    expectValid: true
+    expectFrozen: true
+  - name: proof-light-with-map-action-passes
+    check: product-proof
+    rowTheme: light
+    identity: {kind: product, id: proof-light, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: light, observed: light, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: map
+    action: {name: select-map-section, completed: true, observedAtMs: 2000}
+    omitPart: none
+    mounted: false
+    expectValid: true
+    expectFrozen: true
+  - name: proof-missing-observation-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: null
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: none
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['themeObservation', 'at path', 'repair:']
+  - name: proof-contradictory-observation-fails
+    check: product-proof
+    rowTheme: light
+    identity: {kind: product, id: proof-light, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: light, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: none
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['"light"', '"dark"', 'at path', 'repair:']
+  - name: proof-row-theme-mismatch-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: light, observed: light, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: none
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['rowTheme', 'at path', 'repair:']
+  - name: proof-unregistered-action-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: map
+    action: {name: select-changes-section, completed: true, observedAtMs: 2000}
+    omitPart: none
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['select-changes-section', 'at path', 'repair:']
+  - name: proof-cross-kind-identity-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: component, id: proof-cross-kind, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: none
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['identity', 'at path', 'repair:']
+  - name: proof-blanket-mounted-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: none
+    mounted: true
+    expectValid: false
+    expectedErrorContains: ['mounted', 'at path', 'repair:']
+  - name: proof-missing-chrome-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: chrome
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['chrome', 'at path', 'repair:']
+  - name: proof-missing-body-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: body
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['body', 'at path', 'repair:']
+  - name: proof-missing-route-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: route
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['route', 'at path', 'repair:']
+  - name: proof-missing-active-section-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: activeSection
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['activeSection', 'at path', 'repair:']
+  - name: proof-missing-view-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: view
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['view', 'at path', 'repair:']
+  - name: proof-wrong-initial-section-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: changes
+    activeSectionId: changes
+    action: null
+    omitPart: none
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['"changes"', 'initialSection', 'at path', 'repair:']
+  - name: proof-action-without-map-fails
+    check: product-proof
+    rowTheme: light
+    identity: {kind: product, id: proof-light, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: light, observed: light, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: {name: select-map-section, completed: true, observedAtMs: 2000}
+    omitPart: none
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['"map"', '"analytics"', 'at path', 'repair:']
+  - name: wrapper-dark-absent-passes
+    check: wrapper-theme
+    theme: dark
+    renderedAttribute: null
+    expectValid: true
+  - name: wrapper-dark-empty-passes
+    check: wrapper-theme
+    theme: dark
+    renderedAttribute: ''
+    expectValid: true
+  - name: wrapper-light-attribute-passes
+    check: wrapper-theme
+    theme: light
+    renderedAttribute: 'light'
+    expectValid: true
+  - name: wrapper-contradiction-fails
+    check: wrapper-theme
+    theme: light
+    renderedAttribute: null
+    expectValid: false
+    expectedErrorContains: ['"light"', '"dark"', 'at path', 'repair:']
+  - name: wrapper-wrong-value-fails
+    check: wrapper-theme
+    theme: dark
+    renderedAttribute: 'dark'
+    expectValid: false
+    expectedErrorContains: ['"dark"', 'renderedAttribute', 'at path', 'repair:']
