@@ -13,7 +13,7 @@
 // no service and no browser.
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -28,7 +28,15 @@ const SURFACE_GATE_REL = 'surface-gate.mjs'
 const SOURCE_ROUTE_MARKER = "'./fairtest-source.mjs'"
 const MUTATION_KINDS = ['source-runtime', 'source-text', 'importer-drop', 'importer-plant', 'importer-binding', 'importer-classification', 'neutral-name']
 const EXPORT_KINDS = ['value', 'function', 'class']
-const CLASSIFICATIONS = ['required-gate', 'periodic-compat']
+// Closed consumer disposition vocabulary. `required-gate` is the cheap
+// importer/signature/policy gate a bounded command runs; `protected-specialized`
+// is the expensive screenshot compatibility evidence that stays present,
+// un-migrated, and OUT of the required CI job unless a bounded check is
+// explicitly wired for it. No third disposition exists.
+const REQUIRED_GATE = 'required-gate'
+const PROTECTED_SPECIALIZED = 'protected-specialized'
+const CLASSIFICATIONS = [REQUIRED_GATE, PROTECTED_SPECIALIZED]
+const REQUIRED_CI_REL = '.github/workflows/ci.yml'
 const THRESHOLD_EXPORTS = { 'min-nonbg-ratio': 'MIN_NONBG_RATIO', 'min-distinct-colors': 'MIN_DISTINCT_COLORS' }
 const LUSH = { w: 800, h: 600, pixels: 480000, nonbgRatio: 0.05, bgShare: 0.9, distinctColors: 20 }
 const IMPORT_RE = /from\s+'\.\/surface-gate\.mjs'/
@@ -224,14 +232,74 @@ function assertImporterBinding(path, expectedBinding, label) {
 
 /** @param {Record<string, unknown>[]} importers @param {string[]} requiredGate @param {string} label */
 function assertRequiredGateSet(importers, requiredGate, label) {
-  const actual = importers.filter((entry) => entry.classification === 'required-gate').map((entry) => entry.path)
+  const actual = importers.filter((entry) => entry.classification === REQUIRED_GATE).map((entry) => entry.path)
   const unknown = actual.filter((path) => !requiredGate.includes(path))
   if (unknown.length > 0) {
-    fail(`${label}: consumer ${JSON.stringify(unknown[0])} is classified required-gate at path importers.classification; repair: classify the expensive specialized consumer as periodic-compat, or add it to the manifest required-gate paths.`)
+    fail(`${label}: consumer ${JSON.stringify(unknown[0])} is classified required-gate at path importers.classification; repair: classify the expensive specialized consumer as ${PROTECTED_SPECIALIZED}, or add it to the manifest required-gate paths.`)
   }
   const missing = requiredGate.filter((path) => !actual.includes(path))
   if (missing.length > 0) {
-    fail(`${label}: required-gate consumer ${JSON.stringify(missing[0])} is missing at path importers.classification; repair: classify "${missing[0]}" as required-gate or drop it from the manifest required-gate paths.`)
+    fail(`${label}: required-gate consumer ${JSON.stringify(missing[0])} is missing at path importers.classification; repair: classify "${missing[0]}" as ${REQUIRED_GATE} or drop it from the manifest required-gate paths.`)
+  }
+}
+
+/**
+ * Assert the protected-specialized set is non-empty and exactly the consumers
+ * the required-gate manifest does NOT name. A widened required-gate inventory
+ * that promotes every expensive consumer is refused here even when the
+ * required-gate set matches itself, so the protected class can never silently
+ * disappear.
+ * @param {Record<string, unknown>[]} importers @param {string[]} requiredGate @param {string} label
+ * @returns {string[]} the protected-specialized consumer paths
+ */
+export function assertProtectedSpecializedSet(importers, requiredGate, label) {
+  const protectedPaths = importers.filter((entry) => entry.classification === PROTECTED_SPECIALIZED).map((entry) => /** @type {string} */ (entry.path))
+  if (protectedPaths.length === 0) {
+    fail(`${label}: no ${PROTECTED_SPECIALIZED} consumer remains at path importers.classification; repair: keep the expensive screenshot consumers classified ${PROTECTED_SPECIALIZED}, never claim them as required CI, and add any genuinely bounded check to the manifest required-gate paths.`)
+  }
+  const expected = importers.map((entry) => /** @type {string} */ (entry.path)).filter((path) => !requiredGate.includes(path))
+  const unknown = protectedPaths.filter((path) => !expected.includes(path))
+  if (unknown.length > 0) {
+    fail(`${label}: consumer ${JSON.stringify(unknown[0])} is classified ${PROTECTED_SPECIALIZED} but is named in the required-gate paths at path importers.classification; repair: remove it from the manifest required-gate paths or classify it ${REQUIRED_GATE}.`)
+  }
+  return protectedPaths
+}
+
+/**
+ * Assert every protected-specialized consumer is absent from the required CI
+ * workflow, so an omitted expensive capture is never claimed as CI coverage.
+ * The cheap required-gate command may appear; the protected probes may not.
+ * @param {string[]} protectedPaths protected-specialized consumer paths
+ * @param {string} workflowText required CI workflow source
+ * @param {string} label owning corpus used in diagnostics
+ * @returns {void}
+ */
+export function assertSpecializedAbsentFromRequiredCi(protectedPaths, workflowText, label) {
+  for (const path of protectedPaths) {
+    if (workflowText.includes(path)) {
+      fail(`${label}: protected specialized consumer ${JSON.stringify(path)} is invoked by the required CI workflow at path ${REQUIRED_CI_REL}; repair: remove the expensive capture from required CI and keep it as protected periodic/manual evidence, or add an explicit bounded check and reclassify it ${REQUIRED_GATE}.`)
+    }
+  }
+}
+
+/**
+ * Inspect the whole consumer disposition: the required-gate set is exact, the
+ * protected-specialized set is non-empty and disjoint, no protected consumer
+ * is invoked by required CI, and every protected consumer is still present.
+ * Shared by the guard's own run and by the mutation suite, so both exercise one
+ * owner.
+ * @param {{ importers: Record<string, unknown>[], requiredGateImporterPaths: string[], workflowText: string, specializedPresent: (path: string) => boolean, label: string }} input
+ * @returns {void}
+ */
+export function inspectConsumerClassification(input) {
+  const { importers, requiredGateImporterPaths, workflowText, specializedPresent, label } = input
+  assertRequiredGateSet(importers, requiredGateImporterPaths, label)
+  const protectedPaths = assertProtectedSpecializedSet(importers, requiredGateImporterPaths, label)
+  assertSpecializedAbsentFromRequiredCi(protectedPaths, workflowText, label)
+  for (const path of protectedPaths) {
+    if (!specializedPresent(path)) {
+      fail(`${label}: protected specialized consumer ${JSON.stringify(path)} is missing from the checkout at path importers.path; repair: restore the protected probe so a future named-risk migration decision still has evidence to protect.`)
+    }
   }
 }
 
@@ -458,7 +526,14 @@ async function main() {
   checkRequiredNames(thresholdNames, /** @type {string[]} */ (manifest.requiredThresholdNames), CORPUS_REL, 'threshold', 'thresholds')
   checkRequiredNames(importerPaths, /** @type {string[]} */ (manifest.requiredImporterPaths), CORPUS_REL, 'importer', 'importers')
   const corpusImporters = /** @type {Record<string, unknown>[]} */ (corpus.importers)
-  assertRequiredGateSet(corpusImporters, /** @type {string[]} */ (manifest.requiredGateImporterPaths), CORPUS_REL)
+  const workflowText = readFileSync(resolve(ROOT, REQUIRED_CI_REL), 'utf8')
+  inspectConsumerClassification({
+    importers: corpusImporters,
+    requiredGateImporterPaths: /** @type {string[]} */ (manifest.requiredGateImporterPaths),
+    workflowText,
+    specializedPresent: (path) => existsSync(resolve(ROOT, path)),
+    label: CORPUS_REL,
+  })
   checkRequiredNames(/** @type {string[]} */ (corpus.returnKeys), /** @type {string[]} */ (manifest.requiredReturnKeys), CORPUS_REL, 'return key', 'returnKeys')
   checkRequiredNames(/** @type {string[]} */ (/** @type {Record<string, unknown>} */ (corpus.graphGate).exports), /** @type {string[]} */ (manifest.requiredGraphExportNames), CORPUS_REL, 'graph export', 'graphGate.exports')
   checkRequiredNames(/** @type {string[]} */ (/** @type {Record<string, unknown>} */ (corpus.neutralPolicy).probeNames), /** @type {string[]} */ (manifest.requiredNeutralProbeNames), CORPUS_REL, 'neutral probe', 'neutralPolicy.probeNames')
@@ -487,14 +562,17 @@ async function main() {
   console.log(
     `surface manifest: ${exportNames.length} exports, ${importerPaths.length} importer families, ${floorNames.length} floors, ` +
     `${thresholdNames.length} thresholds, ${/** @type {string[]} */ (corpus.returnKeys).length} legacy return keys, and ` +
-    `${/** @type {string[]} */ (manifest.requiredGraphExportNames).length} graph exports passed; all ` +
+    `${/** @type {string[]} */ (manifest.requiredGraphExportNames).length} graph exports passed; ` +
+    `${/** @type {string[]} */ (manifest.requiredGateImporterPaths).length} consumers stay required while the rest stay protected specialized and out of required CI; all ` +
     `${/** @type {Record<string, unknown>[]} */ (manifest.mutations).length} named source-drift mutations failed for their intended field.`,
   )
 }
 
-try {
-  await main()
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error))
-  process.exitCode = 1
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    await main()
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error))
+    process.exitCode = 1
+  }
 }

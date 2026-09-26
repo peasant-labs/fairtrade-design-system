@@ -1,0 +1,88 @@
+# Required-name inventory and executable fixture mutations for
+# fairtest-evidence-mutations.yaml. Every required case name, family, and owner
+# below must appear exactly once in the corpus; the manifest is the deletion
+# protection for the mutation family. The executable mutations prove the
+# fixture shape itself is validated, never the mutations the cases drive.
+expectedCaseCount: 13
+requiredCaseNames:
+  - baseline-complete-run
+  - missing-artifact-class
+  - stale-artifact-digest
+  - duplicate-cross-theme-scope
+  - wrong-row-kind
+  - partial-producer-missing-row
+  - oversize-output-cap
+  - wrong-provenance-root
+  - classification-honest-split
+  - specialized-consumer-in-required-ci
+  - cheap-gate-reclassified-protected
+  - specialized-consumer-reclassified-required
+  - all-consumers-required
+expectedFamilyCount: 9
+requiredFamilyNames:
+  - baseline
+  - missing-class
+  - stale-digest
+  - duplicate-scope
+  - wrong-kind
+  - partial-producer
+  - oversize
+  - wrong-root
+  - classification
+expectedOwnerCount: 3
+requiredOwnerNames:
+  - run-root
+  - verifier
+  - surface-manifest
+expectedMutationCount: 8
+requiredMutationNames:
+  - removing a required case breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the family discriminator breaks the case shape
+  - deleting the mutation breaks the case shape
+  - flipping the completeness outcome breaks the behavioral runner
+  - relabelling the owner breaks exact membership
+  - inventing a mutation kind breaks the closed vocabulary
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing a required case breaks the required inventory
+    kind: delete-record
+    target: baseline-complete-run
+    expectedField: baseline-complete-run
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: baseline-complete-run
+    expectedField: baseline-complete-run
+  - name: renaming the family discriminator breaks the case shape
+    kind: rename-field
+    target: missing-artifact-class
+    field: family
+    newField: class
+    expectedField: family
+  - name: deleting the mutation breaks the case shape
+    kind: delete-field
+    target: missing-artifact-class
+    field: mutation
+    expectedField: mutation
+  - name: flipping the completeness outcome breaks the behavioral runner
+    kind: bad-value
+    target: baseline-complete-run
+    field: expectComplete
+    value: false
+    expectedField: expectComplete
+  - name: relabelling the owner breaks exact membership
+    kind: bad-value
+    target: baseline-complete-run
+    field: owner
+    value: borrowed-owner
+    expectedField: owner
+  - name: inventing a mutation kind breaks the closed vocabulary
+    kind: bad-value
+    target: missing-artifact-class
+    field: mutation
+    value: {kind: invented-mutation}
+    expectedField: mutation
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document

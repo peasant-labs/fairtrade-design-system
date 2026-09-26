@@ -65,8 +65,9 @@ graphGate:
 # ./surface-gate.mjs; none is migrated by this facade. `classification` records
 # the consumer disposition: "required-gate" is the cheap importer/signature/policy
 # gate (the bounded compatibility command plus the already-required timeline
-# probe); "periodic-compat" is named periodic/manual evidence that is never
-# claimed as required CI. No row is deleted or migrated.
+# probe); "protected-specialized" is the expensive capture compatibility evidence
+# that stays present, un-migrated, and OUT of required CI until a bounded check is
+# explicitly wired. No row is deleted or migrated.
 importers:
   - path: scripts/check-surface-gate.mjs
     family: gate-self-check
@@ -79,15 +80,15 @@ importers:
   - path: scripts/pi-transcript.probe.mjs
     family: pi-transcript-probe
     binding: SurfaceGate
-    classification: periodic-compat
+    classification: protected-specialized
   - path: scripts/shootdemo.mjs
     family: capture-harness
     binding: SurfaceGate
-    classification: periodic-compat
+    classification: protected-specialized
   - path: scripts/shootmanage.mjs
     family: manage-capture
     binding: SurfaceGate
-    classification: periodic-compat
+    classification: protected-specialized
   - path: scripts/timeline-rendered-probe.mjs
     family: timeline-probe
     binding: SurfaceGate

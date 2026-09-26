@@ -1,0 +1,134 @@
+# Fail-closed evidence mutation family: one named case per required mutation
+# disposition, plus the specialized-consumer classification checks. Every case
+# names the boundary that OWNS its failure (the browser-neutral run-root
+# verifier, the neutral evidence verifier, or the SurfaceGate consumer
+# manifest), and the mutation the suite applies before running that boundary.
+#
+# The run description below is the one valid single-capture run every evidence
+# case starts from: four caller-owned rows, one artifact class set, one
+# freshness/output policy. Caller-owned ids, roots, class names, and thresholds
+# are fixture values only; no Fairtrade route, selector, port, or product
+# threshold appears here. The specialized capture consumers are classified as
+# protected compatibility evidence and are never claimed as required CI.
+expectedCaseCount: 13
+run:
+  runId: mutation-run-alpha
+  nowMs: 100000
+  servedFrom: run-root-alpha
+  roots:
+    product: dist
+    component: storybook-static
+  identity:
+    product: product-target-alpha
+    component: component-target-alpha
+  policy:
+    version: 1
+    artifactClasses: [record.json, aria.json, axe.json, screenshot.png, provenance.json, resolution.json]
+    duplicateScopes: [same-key, cross-row, cross-theme]
+    maxAgeMs: 50000
+    maxOutputBytes: 4096
+  rows:
+    - {key: product-dark, kind: product, theme: dark}
+    - {key: product-light, kind: product, theme: light}
+    - {key: component-dark, kind: component, theme: dark}
+    - {key: component-light, kind: component, theme: light}
+artifactTemplates:
+  aria.json: '{"row":"{row}","artifact":"aria"}'
+  axe.json: '{"row":"{row}","artifact":"axe"}'
+  screenshot.png: 'png-{row}-alpha'
+cases:
+  # baseline: the whole run verifies complete, so the failing cases below are
+  # the only difference between a green run and each named defect.
+  - name: baseline-complete-run
+    family: baseline
+    owner: run-root
+    mutation: {kind: none}
+    expectComplete: true
+    expectedCodes: []
+  # missing-class: a required artifact class is absent from a row.
+  - name: missing-artifact-class
+    family: missing-class
+    owner: run-root
+    mutation: {kind: delete-artifact, target: product-dark, artifact: screenshot.png}
+    expectComplete: false
+    expectedCodes: [missing-artifact]
+  # stale-digest: an artifact observation records a digest that no longer
+  # matches the bytes it describes. Owned by the neutral verifier, the only
+  # boundary that compares a recorded digest to its content.
+  - name: stale-artifact-digest
+    family: stale-digest
+    owner: verifier
+    mutation: {kind: stale-artifact-digest, target: product-dark, artifact: screenshot.png}
+    expectComplete: false
+    expectedCodes: [digest-mismatch]
+  # duplicate-scope: one theme's artifact bytes are reused for another theme.
+  - name: duplicate-cross-theme-scope
+    family: duplicate-scope
+    owner: run-root
+    mutation: {kind: copy-artifact, target: product-light, artifact: screenshot.png, from: product-dark}
+    expectComplete: false
+    expectedCodes: [duplicate-cross-theme]
+  # wrong-kind: the row is self-consistent but declared under the wrong kind.
+  - name: wrong-row-kind
+    family: wrong-kind
+    owner: run-root
+    mutation: {kind: set-row-kind, target: product-dark, value: component}
+    expectComplete: false
+    expectedCodes: [kind-mismatch]
+  # partial-producer: one required producer row was never written.
+  - name: partial-producer-missing-row
+    family: partial-producer
+    owner: run-root
+    mutation: {kind: delete-producer-row, target: component-light}
+    expectComplete: false
+    expectedCodes: [missing-row]
+  # oversize: the run's artifact bytes exceed the caller output cap. Owned by
+  # the neutral verifier, which takes the caller cap as policy input.
+  - name: oversize-output-cap
+    family: oversize
+    owner: verifier
+    mutation: {kind: cap-output, value: 1}
+    expectComplete: false
+    expectedCodes: [output-cap]
+  # wrong-root: the row's provenance names a tree the policy does not expect.
+  - name: wrong-provenance-root
+    family: wrong-root
+    owner: run-root
+    mutation: {kind: set-provenance-root, target: product-dark, value: other-built-root}
+    expectComplete: false
+    expectedCodes: [cross-root]
+  # classification: the real consumer disposition is honest, so the cheap
+  # importer/signature/policy gate stays required and the expensive capture
+  # consumers stay protected, present, and out of required CI.
+  - name: classification-honest-split
+    family: classification
+    owner: surface-manifest
+    mutation: {kind: none}
+    expectValid: true
+  - name: specialized-consumer-in-required-ci
+    family: classification
+    owner: surface-manifest
+    mutation: {kind: invoke-specialized-in-ci, consumer: scripts/shootdemo.mjs}
+    expectValid: false
+    expectedField: shootdemo.mjs
+  - name: cheap-gate-reclassified-protected
+    family: classification
+    owner: surface-manifest
+    mutation: {kind: reclassify-importer, target: scripts/check-surface-gate.mjs, value: protected-specialized}
+    expectValid: false
+    expectedField: check-surface-gate.mjs
+  - name: specialized-consumer-reclassified-required
+    family: classification
+    owner: surface-manifest
+    mutation: {kind: reclassify-importer, target: scripts/shootdemo.mjs, value: required-gate}
+    expectValid: false
+    expectedField: shootdemo.mjs
+  # classification: promoting every expensive consumer into the required gate
+  # leaves the protected set empty, which is the exact disposition this gate
+  # refuses even when the required-gate inventory is widened to match.
+  - name: all-consumers-required
+    family: classification
+    owner: surface-manifest
+    mutation: {kind: require-all-consumers}
+    expectValid: false
+    expectedField: protected-specialized
