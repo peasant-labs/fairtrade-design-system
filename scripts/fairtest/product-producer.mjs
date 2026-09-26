@@ -578,13 +578,14 @@ function readWorktreeState() {
  * @param {object} input comparison inputs
  * @param {Record<string, string>} input.assetDigests digests the row read over HTTP, keyed by run-root-relative path
  * @param {string} input.distRoot the run's built tree on disk
+ * @param {string} [input.label] owning producer used in the diagnostic, defaults to the product producer
  * @returns {object} the comparison receipt naming what was compared
  */
-export function assertServedDigestsMatchRunRoot({ assetDigests, distRoot } = {}) {
+export function assertServedDigestsMatchRunRoot({ assetDigests, distRoot, label = 'product producer' } = {}) {
   const compared = Object.keys(assetDigests).sort()
   if (compared.length === 0) {
     throw new Error(
-      'product producer: empty served digest set for field "assetDigests" at path provenance.assetDigests; ' +
+      `${label}: empty served digest set for field "assetDigests" at path provenance.assetDigests; ` +
       'repair: record at least the served index.html digest before comparing the served bytes to the built tree.',
     )
   }
@@ -596,17 +597,17 @@ export function assertServedDigestsMatchRunRoot({ assetDigests, distRoot } = {})
     } catch (error) {
       const cause = error instanceof Error ? error.message : String(error)
       throw new Error(
-        `product producer: served asset ${JSON.stringify(relative)} is missing from the run build tree for field "assetDigests" at path provenance.assetDigests; ` +
+        `${label}: served asset ${JSON.stringify(relative)} is missing from the run build tree for field "assetDigests" at path provenance.assetDigests; ` +
         `looked for ${JSON.stringify(onDiskPath)}; caused by ${cause}; ` +
-        'repair: rebuild dist/ so the served origin and the built tree are the same tree.',
+        'repair: rebuild the served tree so the served origin and the built tree are the same tree.',
       )
     }
     const onDiskDigest = sha256(onDisk)
     if (onDiskDigest !== assetDigests[relative]) {
       throw new Error(
-        `product producer: served bytes differ from the run build tree for field "assetDigests" at path provenance.assetDigests; ` +
+        `${label}: served bytes differ from the run build tree for field "assetDigests" at path provenance.assetDigests; ` +
         `${JSON.stringify(relative)} served digest ${JSON.stringify(assetDigests[relative])} but ${JSON.stringify(onDiskPath)} holds ${JSON.stringify(onDiskDigest)}; ` +
-        'repair: serve the exact built tree (rebuild dist/ and make sure no other server holds the loopback port).',
+        'repair: serve the exact built tree (rebuild it and make sure no other server holds the loopback port).',
       )
     }
   }

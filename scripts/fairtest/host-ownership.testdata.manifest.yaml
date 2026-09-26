@@ -1,7 +1,7 @@
 # Required-name inventory and executable mutations for
 # host-ownership.testdata.yaml. Every row name must appear exactly once, and
 # every mutation must fail for its intended field.
-expectedExportCount: 70
+expectedExportCount: 111
 requiredExportNames:
   - fairtest-runtime-fairtest_repo_root
   - fairtest-runtime-fairtest_app_host
@@ -73,6 +73,47 @@ requiredExportNames:
   - product-mutations-served-provenance-digest-match
   - product-mutations-run-product-mutation
   - product-mutations-prove-dom-absence-real-path
+  - fairtest-runtime-fairtest-storybook-port
+  - fairtrade-component-target-component-a11y-gate-receipt-fields
+  - fairtrade-component-target-component-a11y-points
+  - fairtrade-component-target-component-a11y-policy
+  - fairtrade-component-target-component-action-name
+  - fairtrade-component-target-component-action-timeout-ms
+  - fairtrade-component-target-component-collapsed-label
+  - fairtrade-component-target-component-min-aria-chars
+  - fairtrade-component-target-component-min-root-descendants
+  - fairtrade-component-target-component-min-root-text-length
+  - fairtrade-component-target-component-min-screenshot-bytes
+  - fairtrade-component-target-component-mount-body-classes
+  - fairtrade-component-target-component-mount-timeout-ms
+  - fairtrade-component-target-component-proof-record-schema
+  - fairtrade-component-target-component-provenance-source
+  - fairtrade-component-target-component-row-count
+  - fairtrade-component-target-component-row-texts
+  - fairtrade-component-target-component-selectors
+  - fairtrade-component-target-component-story-id
+  - fairtrade-component-target-component-target-id
+  - fairtrade-component-target-component-target-registry
+  - fairtrade-component-target-assertcomponentmounted
+  - fairtrade-component-target-buildcomponentproof
+  - fairtrade-component-target-componentdeclarationinput
+  - fairtrade-component-target-componentstoryurl
+  - fairtrade-component-target-componentthemefromprojectname
+  - fairtrade-component-target-componentthemerow
+  - fairtrade-component-target-componentthemesetup
+  - fairtrade-component-target-getcomponentaction
+  - fairtrade-component-target-selectcomponenttarget
+  - fairtrade-component-target-validatecomponenttargetcontract
+  - component-producer-component-a11y-page-wide-fields
+  - component-producer-component-a11y-record-fields
+  - component-producer-component-artifact-classes
+  - component-producer-buildcomponentaccessibilityevidence
+  - component-producer-capturecomponentrow
+  - component-producer-componentrowdir
+  - component-producer-createcomponentstaticdriver
+  - component-producer-preparecomponentrowdir
+  - component-producer-readcomponentaccessibilityverdict
+  - component-producer-resolvecomponentrunroot
 expectedMutationCount: 9
 requiredMutationNames:
   - unclassified-export-row-removed

@@ -28,6 +28,12 @@ import {
   productDeclarationInput,
   selectProductTarget,
 } from './fairtrade-targets.mjs'
+import {
+  COMPONENT_ACTION_NAME,
+  COMPONENT_TARGET_ID,
+  componentDeclarationInput,
+  selectComponentTarget,
+} from './fairtrade-component-target.mjs'
 
 const RUN_ID_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/
 
@@ -120,11 +126,15 @@ function runWithTimeout(promise, timeoutMs, message) {
 }
 
 /**
- * Create a Fairtrade product adapter around one injected lifecycle driver.
+ * Create a Fairtrade adapter around one injected lifecycle driver. One adapter
+ * serves both host kinds: `kind` selects the product or component target and
+ * capability vocabulary, and the lifecycle, handle, and teardown logic is the
+ * same for both.
  * @param {object} [options] adapter options
  * @param {string} options.runId owning run id used for handle membership
  * @param {object} options.driver injected lifecycle driver
- * @param {string} [options.targetId] registered product target id
+ * @param {string} [options.kind] host kind, product or component
+ * @param {string} [options.targetId] registered target id for the kind
  * @param {number} [options.createdAtMs] identity creation time in whole ms
  * @param {string[]} [options.capabilities] declared capability inventory
  * @param {string[]} [options.fixtures] named fixtures served
@@ -137,7 +147,8 @@ export async function createFairtradeAdapter(options = {}) {
   const {
     runId,
     driver,
-    targetId = PRODUCT_TARGET_ID,
+    kind = 'product',
+    targetId,
     createdAtMs = Date.now(),
     capabilities,
     fixtures,
@@ -146,16 +157,27 @@ export async function createFairtradeAdapter(options = {}) {
   assertRunId(runId)
   assertDriver(driver)
 
-  const target = selectProductTarget(targetId)
-  const declaredCapabilities = capabilities ?? [...contract.targets.PRODUCT_CAPABILITIES]
+  if (kind !== 'product' && kind !== 'component') {
+    throw new Error(
+      `fairtrade adapter: unknown host kind ${JSON.stringify(kind)} for field "kind" at path adapter.kind; ` +
+      'repair: use one of product, component for "kind".',
+    )
+  }
+  const isComponent = kind === 'component'
+  const target = isComponent
+    ? selectComponentTarget(targetId ?? COMPONENT_TARGET_ID)
+    : selectProductTarget(targetId ?? PRODUCT_TARGET_ID)
+  const declarationInput = isComponent ? componentDeclarationInput : productDeclarationInput
+  const registeredAction = isComponent ? COMPONENT_ACTION_NAME : PRODUCT_ACTION_NAME
+  const declaredCapabilities = capabilities ?? [...(isComponent ? contract.targets.COMPONENT_CAPABILITIES : contract.targets.PRODUCT_CAPABILITIES)]
   const validatedCapabilities = contract.targets.validateCapabilityList(
     [...declaredCapabilities],
-    'product',
+    kind,
     'fairtrade adapter',
     'adapter.capabilities',
   )
   const declaration = contract.targets.createTargetDeclaration(
-    productDeclarationInput({
+    declarationInput({
       createdAtMs,
       capabilities: [...validatedCapabilities],
       ...(fixtures === undefined ? {} : { fixtures }),
@@ -385,10 +407,10 @@ export async function createFairtradeAdapter(options = {}) {
    * @returns {Promise<object>} the frozen named action result
    */
   async function performAction(name, actionOptions = {}) {
-    if (name !== PRODUCT_ACTION_NAME) {
+    if (name !== registeredAction) {
       throw new Error(
         `fairtrade adapter: unknown action ${JSON.stringify(name)} for field "action" at path adapter.action; ` +
-        `repair: use one of ${PRODUCT_ACTION_NAME} for "action".`,
+        `repair: use one of ${registeredAction} for "action".`,
       )
     }
     if (!state.started) {

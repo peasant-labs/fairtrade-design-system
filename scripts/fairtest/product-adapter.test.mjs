@@ -82,14 +82,16 @@ const HOST_FILE_OWNERS = Object.freeze({
   'fairtest-runtime.mjs': 'runtime-constants-owner',
   'fairtrade-adapter.mjs': 'app-owned-adapter',
   'fairtrade-targets.mjs': 'app-owned-registry',
+  'fairtrade-component-target.mjs': 'app-owned-registry',
   'product-producer.mjs': 'browser-bearing-host-runtime',
   'product-mutations.mjs': 'browser-bearing-host-runtime',
+  'component-producer.mjs': 'browser-bearing-host-runtime',
 })
 const HOST_MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'stale-name', 'delete-field', 'rename-field', 'unknown-field', 'bad-value'])
-const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs']
-// The product-host modules whose every product selector, label, and loopback
-// origin must come from the app-owned registry and the single runtime owner.
-const PRODUCT_HOST_FILES = ['product-producer.mjs', 'product-mutations.mjs', 'product.journey.mjs']
+const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs', 'fairtrade-component-target.mjs']
+// The host modules whose every app selector, label, and loopback origin must
+// come from an app-owned registry and the single runtime owner.
+const PRODUCT_HOST_FILES = ['product-producer.mjs', 'product-mutations.mjs', 'product.journey.mjs', 'component-producer.mjs']
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
 const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'cli-target', 'driver-out-of-root', 'driver-host-refusal', 'driver-stop-contract', 'driver-reset-contract', 'rendered-active-view', 'record-truthfulness', 'row-dir-preparation', 'runner-config', 'port-owner', 'axe-report-shape', 'mounted-row-guard-calls', 'combined-suite-invocation', 'product-contract-command', 'mounted-command', 'host-literal-guard', 'served-digest-comparison']
@@ -3508,7 +3510,9 @@ describe('fairtest host export ownership', async () => {
   const declaredUnclassifiedFiles = Object.freeze([
     'product-adapter.test.mjs',
     'product-mutations.test.mjs',
+    'component-adapter.test.mjs',
     'product.journey.mjs',
+    'component.journey.mjs',
     'run-mounted.mjs',
     'run-product-contract.mjs',
   ])
@@ -3585,6 +3589,12 @@ describe('fairtest host export ownership', async () => {
     }
     const source = readFileSync(resolve(HERE, file), 'utf8')
     const code = stripComments(source)
+    // The host-global scan runs over executable code only: string and template
+    // literals are app-owned DATA (a selector, a route, a story id), so a
+    // registry that declares the string "#storybook-root" is not importing a
+    // runner, while the same token as an identifier is. This matches the scan
+    // assertNoHostGlobalTokens already runs over the impl files.
+    const literalFree = stripCommentsAndStrings(source)
     if (owner === 'browser-bearing-host-runtime') {
       // These two MAY drive a page. What they may not do is own app structure
       // or a runtime value: the registry, the viewport, and the scratch ports
@@ -3631,8 +3641,9 @@ describe('fairtest host export ownership', async () => {
         )
       }
       assert.ok(
-        /from '\.\/fairtrade-targets\.mjs'/.test(source) && /productRouteForTheme|PRODUCT_SELECTORS/.test(source),
-        `${HOST_CORPUS_REL}: row "${name}" has ${file} outside the app-owned registry at path owner; repair: take the route and selectors from fairtrade-targets.mjs.`,
+        /from '\.\/fairtrade-targets\.mjs'/.test(source) && /productRouteForTheme|PRODUCT_SELECTORS/.test(source)
+          || /from '\.\/fairtrade-component-target\.mjs'/.test(source) && /componentStoryUrl|COMPONENT_SELECTORS/.test(source),
+        `${HOST_CORPUS_REL}: row "${name}" has ${file} outside the app-owned registry at path owner; repair: take the route/URL and selectors from fairtrade-targets.mjs or fairtrade-component-target.mjs.`,
       )
       return
     }
@@ -3642,7 +3653,7 @@ describe('fairtest host export ownership', async () => {
     // that could be skipped.
     for (const { token, pattern } of HOST_GLOBAL_TOKENS) {
       assert.equal(
-        pattern.exec(code),
+        pattern.exec(literalFree),
         null,
         `${HOST_CORPUS_REL}: row "${name}" has ${file} running code that names ${JSON.stringify(token)} at path owner; repair: ${file} is ${JSON.stringify(owner)} and must stay free of browser, DOM, and runner material.`,
       )
@@ -3868,7 +3879,7 @@ describe('adapter source boundary', () => {
       const specs = [...text.matchAll(/from\s*['"]([^'"]+)['"]/g)].map((match) => match[1])
       assert.ok(specs.length > 0, `${file}: holds no imports`)
       for (const spec of specs) {
-        const allowed = spec.startsWith('node:') || spec === '../fairtest-source.mjs' || spec === './fairtrade-targets.mjs'
+        const allowed = spec.startsWith('node:') || spec === '../fairtest-source.mjs' || spec === './fairtrade-targets.mjs' || spec === './fairtrade-component-target.mjs'
         assert.ok(allowed, `${file}: import ${JSON.stringify(spec)} bypasses the sole source route at path import; repair: import child values through ../fairtest-source.mjs.`)
       }
       const dynamic = [...text.matchAll(/importFairtestSource\(\s*['"]([^'"]+)['"]\s*\)/g)].map((match) => match[1])

@@ -1,19 +1,32 @@
 #!/usr/bin/env node
 // Minimal CLI for the ratified mounted command:
 // FAIRTEST_RUN_ROOT=<run-root> pnpm test:fairtest:mounted -- --target=product
+// FAIRTEST_RUN_ROOT=<run-root> pnpm test:fairtest:mounted -- --target=component
 //
 // Playwright rejects unknown flags such as --target, so this shim consumes
 // the target flag, validates it fail-closed, and then runs the one-project
-// Fairtest config without forwarding the flag. The component target arrives
-// later under the same config; until then only product is valid.
+// Fairtest config selecting exactly the matching journey with Playwright's
+// first-class --grep. Both the product and the component journey live under
+// the same config; no second config, project, or catalog is added.
 //
 // REQUIRED-CI MOUNT: DEFERRED. This command is the evidence path for the
-// mounted product rows, but no required CI workflow invokes it yet. Declared
-// is not the same as enforced, and the banner plus
+// mounted product and component rows, but no required CI workflow invokes it
+// yet. Declared is not the same as enforced, and the banner plus
 // MOUNTED_REQUIRED_CI_MOUNT exist so a reader cannot read one as the other.
 // Mounting it in required CI is a separate, later change that must also flip
 // this status and the case in the product fixture family that reads it.
 import { spawnSync } from 'node:child_process'
+
+/**
+ * The declared targets and the exact describe-title prefix each one selects.
+ * One list, read by the validator, the banner, and the grep argument, so the
+ * declaration cannot drift from what actually runs.
+ * @type {{ product: string, component: string }}
+ */
+export const MOUNTED_TARGET_GREPS = Object.freeze({
+  product: 'fairtest mounted product',
+  component: 'fairtest mounted component',
+})
 
 /**
  * What this command is, and what it is not yet. `status: 'declared-not-ci'`
@@ -49,27 +62,29 @@ function main() {
   if (!target) {
     console.error(
       'fairtest mounted: missing target for field "target" at path cli.target; ' +
-      'repair: run with -- --target=product.',
+      'repair: run with -- --target=product or -- --target=component.',
     )
     return 2
   }
-  if (target !== 'product') {
+  if (!Object.hasOwn(MOUNTED_TARGET_GREPS, target)) {
     console.error(
       `fairtest mounted: unknown target ${JSON.stringify(target)} for field "target" at path cli.target; ` +
-      'repair: use --target=product (the component target arrives later).',
+      'repair: use --target=product or --target=component.',
     )
     return 2
   }
   for (const line of [
-    'fairtest mounted: running the row-scoped product rows through the one-project Playwright config',
-    '  precondition: pnpm build first and FAIRTEST_RUN_ROOT set, so dist/ holds the exact built app',
+    `fairtest mounted: running the ${target} rows through the one-project Playwright config`,
+    target === 'product'
+      ? '  precondition: pnpm build first and FAIRTEST_RUN_ROOT set, so dist/ holds the exact built app'
+      : '  precondition: pnpm build-storybook first and FAIRTEST_RUN_ROOT set, so storybook-static/ holds the exact built story',
     `  required-ci mount: ${MOUNTED_REQUIRED_CI_MOUNT.status} (${MOUNTED_REQUIRED_CI_MOUNT.reason})`,
   ]) {
     console.log(line)
   }
   const result = spawnSync(
     'pnpm',
-    ['exec', 'playwright', 'test', '--config', 'playwright.fairtest.config.mjs'],
+    ['exec', 'playwright', 'test', '--config', 'playwright.fairtest.config.mjs', '--grep', MOUNTED_TARGET_GREPS[target]],
     { stdio: 'inherit' },
   )
   return result.status ?? 1

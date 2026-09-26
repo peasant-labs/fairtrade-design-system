@@ -24,12 +24,13 @@
  * and is read from there. The mounted row pins the page to it anyway, which is
  * why a viewport declared here could not silently drift into the evidence.
  *
- * Scope: testDir and testMatch select ONLY the Fairtest product journey. The
- * broad scripts/journey catalog never runs under this config. Later work
- * widens the match to the component journey without adding a config. The
- * `runner-config` cases in the product fixture family pin this shape, so a
- * second project, a webServer entry, or a changed retry/worker/viewport budget
- * turns them red.
+ * Scope: testDir and testMatch select ONLY the Fairtest product and component
+ * journeys. The broad scripts/journey catalog never runs under this config. The
+ * array form is deliberate: a glob would also collect the co-located
+ * `*.test.mjs` fixtures and the broad story smoke. The `runner-config` cases in
+ * the product fixture family pin this shape, so a second project, a webServer
+ * entry, a widened glob, or a changed retry/worker/viewport budget turns them
+ * red.
  */
 import { defineConfig } from '@playwright/test'
 import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, PRODUCT_VIEWPORT } from './scripts/fairtest/fairtest-runtime.mjs'
@@ -42,7 +43,7 @@ const RUN_ROOT = process.env.FAIRTEST_RUN_ROOT || ''
 
 export default defineConfig({
   testDir: './scripts/fairtest',
-  testMatch: '**/product.journey.mjs',
+  testMatch: ['**/product.journey.mjs', '**/component.journey.mjs'],
   fullyParallel: false,
   workers: 1,
   forbidOnly: !!process.env.CI,

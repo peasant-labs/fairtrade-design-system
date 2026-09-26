@@ -994,10 +994,10 @@ cases:
     expectedErrorContains: ['missing target', 'cli.target', 'repair:', '-- --target=product']
   - name: cli-target-unknown-fails
     check: cli-target
-    args: ['--target', 'component']
+    args: ['--target', 'dusk']
     expectValid: false
     expectExitCode: 2
-    expectedErrorContains: ['unknown target', 'component', 'cli.target', 'repair:']
+    expectedErrorContains: ['unknown target', 'dusk', 'cli.target', 'repair:']
   - name: driver-out-of-root-request-refused
     check: driver-out-of-root
     servedRoot: dist
@@ -1146,7 +1146,7 @@ cases:
     check: runner-config
     configFile: playwright.fairtest.config.mjs
     expectedProjects: [fairtest]
-    expectedTestMatch: ['**/product.journey.mjs']
+    expectedTestMatch: ['**/product.journey.mjs', '**/component.journey.mjs']
     expectedTestDir: ./scripts/fairtest
     expectedRetries: 0
     expectedWorkers: 1
@@ -1158,7 +1158,7 @@ cases:
   - name: config-port-owner-single-declaration
     check: port-owner
     ownerModule: scripts/fairtest/fairtest-runtime.mjs
-    consumerModules: [playwright.fairtest.config.mjs, scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.mjs, scripts/fairtest/product-producer.mjs, scripts/fairtest/product.journey.mjs]
+    consumerModules: [playwright.fairtest.config.mjs, scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.mjs, scripts/fairtest/product-producer.mjs, scripts/fairtest/product.journey.mjs, scripts/fairtest/component-producer.mjs, scripts/fairtest/component.journey.mjs]
     portEnvName: FAIRTEST_APP_PORT
     expectValid: true
   - name: served-digests-match-the-run-build-tree
@@ -1201,8 +1201,8 @@ cases:
     check: product-contract-command
     commandName: test:fairtest:product-contract
     expectedScript: node scripts/fairtest/run-product-contract.mjs
-    expectedSuites: [scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
-    expectedNodeArgs: ['--test', '--test-concurrency=1', scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
+    expectedSuites: [scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/fairtest/component-adapter.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
+    expectedNodeArgs: ['--test', '--test-concurrency=1', scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/fairtest/component-adapter.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
     ciMountStatus: declared-not-ci
     workflowDir: .github/workflows
     expectValid: true

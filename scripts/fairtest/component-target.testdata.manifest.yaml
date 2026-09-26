@@ -1,0 +1,124 @@
+# Required-name inventory and executable mutations for
+# component-target.testdata.yaml.
+expectedCaseCount: 41
+requiredCaseNames:
+  - component-row-dark-absent-theme-passes
+  - component-row-dark-empty-theme-passes
+  - component-row-light-attribute-passes
+  - component-row-literal-dark-value-fails
+  - component-row-unknown-theme-fails
+  - component-url-dark-passes
+  - component-url-light-passes
+  - component-setup-dark-passes
+  - component-setup-light-passes
+  - component-setup-unknown-theme-fails
+  - component-project-name-inference-fails
+  - component-mount-healthy-passes
+  - component-mount-empty-root-fails
+  - component-mount-not-ready-body-fails
+  - component-mount-error-display-fails
+  - component-mount-error-stack-fails
+  - component-capabilities-pass
+  - component-minimal-capabilities-pass
+  - component-unknown-capability-fails
+  - component-product-capability-fails
+  - component-missing-required-capability-fails
+  - component-action-registered-passes
+  - component-action-unregistered-fails
+  - component-proof-dark-expanded-passes
+  - component-proof-light-expanded-passes
+  - component-proof-without-interaction-passes
+  - component-proof-row-theme-mismatch-fails
+  - component-proof-missing-root-fails
+  - component-proof-unregistered-interaction-fails
+  - component-proof-incomplete-interaction-fails
+  - component-proof-missing-theme-fails
+  - component-proof-blanket-mounted-fails
+  - component-record-product-route-rejected
+  - component-record-product-chrome-rejected
+  - component-record-product-body-rejected
+  - component-record-product-active-section-rejected
+  - component-record-product-view-rejected
+  - component-record-product-kind-rejected
+  - component-record-product-identity-rejected
+  - component-cannot-satisfy-product-shell-fails
+  - product-record-rejected-as-component-fails
+expectedMutationCount: 13
+requiredMutationNames:
+  - component-delete-dark-row-breaking-the-required-inventory
+  - component-duplicate-case-name-breaks-uniqueness
+  - component-rename-check-discriminator-breaks-shape
+  - component-delete-theme-field-breaks-shape
+  - component-unknown-case-field-breaks-membership
+  - component-invented-row-theme-breaks-the-vocabulary
+  - component-rename-case-breaks-required-names
+  - component-delete-mount-case-breaks-required-inventory
+  - component-delete-cross-kind-refusal-breaks-required-inventory
+  - component-delete-interaction-field-breaks-shape
+  - component-invented-check-kind-breaks-the-vocabulary
+  - component-delete-blanket-mounted-case-breaks-required-inventory
+  - component-trailing-document-breaks-single-document-loading
+mutations:
+  - name: component-delete-dark-row-breaking-the-required-inventory
+    kind: delete-record
+    target: component-row-dark-absent-theme-passes
+    expectedField: component-row-dark-absent-theme-passes
+  - name: component-duplicate-case-name-breaks-uniqueness
+    kind: duplicate-name
+    target: component-row-light-attribute-passes
+    expectedField: component-row-light-attribute-passes
+  - name: component-rename-check-discriminator-breaks-shape
+    kind: rename-field
+    target: component-url-dark-passes
+    field: check
+    newField: kind
+    expectedField: check
+  - name: component-delete-theme-field-breaks-shape
+    kind: delete-field
+    target: component-row-dark-absent-theme-passes
+    field: theme
+    expectedField: theme
+  - name: component-unknown-case-field-breaks-membership
+    kind: unknown-field
+    target: component-mount-healthy-passes
+    field: timeout
+    value: 60
+    expectedField: timeout
+  - name: component-invented-row-theme-breaks-the-vocabulary
+    kind: bad-value
+    target: component-row-dark-absent-theme-passes
+    field: theme
+    value: dusk
+    expectedField: dusk
+  - name: component-rename-case-breaks-required-names
+    kind: stale-name
+    target: component-proof-dark-expanded-passes
+    value: component-proof-renamed
+    expectedField: component-proof-dark-expanded-passes
+  - name: component-delete-mount-case-breaks-required-inventory
+    kind: delete-record
+    target: component-mount-empty-root-fails
+    expectedField: component-mount-empty-root-fails
+  - name: component-delete-cross-kind-refusal-breaks-required-inventory
+    kind: delete-record
+    target: component-cannot-satisfy-product-shell-fails
+    expectedField: component-cannot-satisfy-product-shell-fails
+  - name: component-delete-interaction-field-breaks-shape
+    kind: delete-field
+    target: component-proof-dark-expanded-passes
+    field: interaction
+    expectedField: interaction
+  - name: component-invented-check-kind-breaks-the-vocabulary
+    kind: bad-value
+    target: component-mount-healthy-passes
+    field: check
+    value: invented-check
+    expectedField: check
+  - name: component-delete-blanket-mounted-case-breaks-required-inventory
+    kind: delete-record
+    target: component-proof-blanket-mounted-fails
+    expectedField: component-proof-blanket-mounted-fails
+  - name: component-trailing-document-breaks-single-document-loading
+    kind: trailing-document
+    target: document
+    expectedField: document

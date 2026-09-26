@@ -65,6 +65,17 @@ export const FAIRTEST_APP_PORT = Number(process.env.FAIRTEST_APP_PORT || 5189)
 export const FAIRTEST_APP_BASE_URL = `http://${FAIRTEST_APP_HOST}:${FAIRTEST_APP_PORT}`
 
 /**
+ * Fixed loopback port for the built Storybook artifact, shared by the mounted
+ * component rows and the component producer. Override with
+ * FAIRTEST_STORYBOOK_PORT. It is deliberately distinct from the app port and
+ * from the broad journey catalog's Storybook port, so the component rows can
+ * never attach to an unrelated already-running server. The host is the same
+ * fixed loopback host, so the component origin shares one host declaration.
+ * @type {number}
+ */
+export const FAIRTEST_STORYBOOK_PORT = Number(process.env.FAIRTEST_STORYBOOK_PORT || 6018)
+
+/**
  * The one render viewport every Fairtest surface measures at. The mounted row
  * pins the page to it, the runner config declares it as the default, the
  * negative mutations open their pages at it, and the config-shape case

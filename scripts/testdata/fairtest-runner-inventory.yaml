@@ -67,7 +67,7 @@ commands:
     runner: process-only
   - name: test:fairtest:mounted
     invocation: pnpm test:fairtest:mounted
-    owner: product-proof
+    owner: mounted-proofs
     stage: mounted
     runner: playwright-one-project
   # REQUIRED-CI MOUNT: DEFERRED for both mounted-stage commands. Each row is
@@ -108,7 +108,7 @@ commands:
 # The optional attach target is local exploration only, never a CI oracle.
 runners:
   - name: fairtest-mounted-rows
-    owner: product-proof
+    owner: mounted-proofs
     model: one-project-row-scoped
     themeBinding: row-key
     ciOracle: true

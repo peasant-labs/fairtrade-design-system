@@ -26,7 +26,7 @@
 #                                  declaring one.
 #
 # Runs with node --test inside the declared Fairtest product-contract command.
-expectedExportCount: 70
+expectedExportCount: 111
 exports:
   - name: fairtest-runtime-fairtest_repo_root
     file: fairtest-runtime.mjs
@@ -307,4 +307,168 @@ exports:
   - name: product-mutations-prove-dom-absence-real-path
     file: product-mutations.mjs
     symbol: proveDomAbsenceRealPath
+    owner: browser-bearing-host-runtime
+  - name: fairtest-runtime-fairtest-storybook-port
+    file: fairtest-runtime.mjs
+    symbol: FAIRTEST_STORYBOOK_PORT
+    owner: runtime-constants-owner
+  - name: fairtrade-component-target-component-a11y-gate-receipt-fields
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_A11Y_GATE_RECEIPT_FIELDS
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-a11y-points
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_A11Y_POINTS
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-a11y-policy
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_A11Y_POLICY
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-action-name
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_ACTION_NAME
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-action-timeout-ms
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_ACTION_TIMEOUT_MS
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-collapsed-label
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_COLLAPSED_LABEL
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-min-aria-chars
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_MIN_ARIA_CHARS
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-min-root-descendants
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_MIN_ROOT_DESCENDANTS
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-min-root-text-length
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_MIN_ROOT_TEXT_LENGTH
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-min-screenshot-bytes
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_MIN_SCREENSHOT_BYTES
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-mount-body-classes
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_MOUNT_BODY_CLASSES
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-mount-timeout-ms
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_MOUNT_TIMEOUT_MS
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-proof-record-schema
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_PROOF_RECORD_SCHEMA
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-provenance-source
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_PROVENANCE_SOURCE
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-row-count
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_ROW_COUNT
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-row-texts
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_ROW_TEXTS
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-selectors
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_SELECTORS
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-story-id
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_STORY_ID
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-target-id
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_TARGET_ID
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-target-registry
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_TARGET_REGISTRY
+    owner: app-owned-registry
+  - name: fairtrade-component-target-assertcomponentmounted
+    file: fairtrade-component-target.mjs
+    symbol: assertComponentMounted
+    owner: app-owned-registry
+  - name: fairtrade-component-target-buildcomponentproof
+    file: fairtrade-component-target.mjs
+    symbol: buildComponentProof
+    owner: app-owned-registry
+  - name: fairtrade-component-target-componentdeclarationinput
+    file: fairtrade-component-target.mjs
+    symbol: componentDeclarationInput
+    owner: app-owned-registry
+  - name: fairtrade-component-target-componentstoryurl
+    file: fairtrade-component-target.mjs
+    symbol: componentStoryUrl
+    owner: app-owned-registry
+  - name: fairtrade-component-target-componentthemefromprojectname
+    file: fairtrade-component-target.mjs
+    symbol: componentThemeFromProjectName
+    owner: app-owned-registry
+  - name: fairtrade-component-target-componentthemerow
+    file: fairtrade-component-target.mjs
+    symbol: componentThemeRow
+    owner: app-owned-registry
+  - name: fairtrade-component-target-componentthemesetup
+    file: fairtrade-component-target.mjs
+    symbol: componentThemeSetup
+    owner: app-owned-registry
+  - name: fairtrade-component-target-getcomponentaction
+    file: fairtrade-component-target.mjs
+    symbol: getComponentAction
+    owner: app-owned-registry
+  - name: fairtrade-component-target-selectcomponenttarget
+    file: fairtrade-component-target.mjs
+    symbol: selectComponentTarget
+    owner: app-owned-registry
+  - name: fairtrade-component-target-validatecomponenttargetcontract
+    file: fairtrade-component-target.mjs
+    symbol: validateComponentTargetContract
+    owner: app-owned-registry
+  - name: component-producer-component-a11y-page-wide-fields
+    file: component-producer.mjs
+    symbol: COMPONENT_A11Y_PAGE_WIDE_FIELDS
+    owner: browser-bearing-host-runtime
+  - name: component-producer-component-a11y-record-fields
+    file: component-producer.mjs
+    symbol: COMPONENT_A11Y_RECORD_FIELDS
+    owner: browser-bearing-host-runtime
+  - name: component-producer-component-artifact-classes
+    file: component-producer.mjs
+    symbol: COMPONENT_ARTIFACT_CLASSES
+    owner: browser-bearing-host-runtime
+  - name: component-producer-buildcomponentaccessibilityevidence
+    file: component-producer.mjs
+    symbol: buildComponentAccessibilityEvidence
+    owner: browser-bearing-host-runtime
+  - name: component-producer-capturecomponentrow
+    file: component-producer.mjs
+    symbol: captureComponentRow
+    owner: browser-bearing-host-runtime
+  - name: component-producer-componentrowdir
+    file: component-producer.mjs
+    symbol: componentRowDir
+    owner: browser-bearing-host-runtime
+  - name: component-producer-createcomponentstaticdriver
+    file: component-producer.mjs
+    symbol: createComponentStaticDriver
+    owner: browser-bearing-host-runtime
+  - name: component-producer-preparecomponentrowdir
+    file: component-producer.mjs
+    symbol: prepareComponentRowDir
+    owner: browser-bearing-host-runtime
+  - name: component-producer-readcomponentaccessibilityverdict
+    file: component-producer.mjs
+    symbol: readComponentAccessibilityVerdict
+    owner: browser-bearing-host-runtime
+  - name: component-producer-resolvecomponentrunroot
+    file: component-producer.mjs
+    symbol: resolveComponentRunRoot
     owner: browser-bearing-host-runtime
