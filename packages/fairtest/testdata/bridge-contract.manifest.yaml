@@ -1,5 +1,9 @@
 # Required-name inventory and executable mutations for bridge-contract.yaml.
-expectedCaseCount: 9
+# Every case name below must appear exactly once in the corpus, so deleting a
+# named record is observable. Each mutation deletes, renames, duplicates, or
+# corrupts one record so the owning guard is proven to fail for its intended
+# field. Combinatorial cases live here, never inline in the test.
+expectedCaseCount: 25
 requiredCaseNames:
   - local-identity-valid
   - process-identity-valid
@@ -10,7 +14,23 @@ requiredCaseNames:
   - readiness-valid
   - readiness-bad-channel
   - cleanup-valid
-expectedMutationCount: 8
+  - local-invocation-identity-valid
+  - process-invocation-identity-valid
+  - local-readout-valid
+  - process-readiness-valid
+  - process-cleanup-receipt-valid
+  - reject-producer-purpose-as-local
+  - reject-producer-row-as-local
+  - reject-process-purpose-as-local
+  - reject-process-declaration-in-local-readout
+  - reject-local-purpose-as-process
+  - reject-producer-row-as-process
+  - reject-readiness-for-another-process
+  - reject-readiness-missing-ready-flag
+  - reject-unknown-bridge-capability
+  - reject-partial-process-receipt
+  - reject-process-receipt-with-local-purpose
+expectedMutationCount: 14
 requiredMutationNames:
   - removing the declaration-valid record breaks the required inventory
   - duplicating a case name breaks uniqueness
@@ -20,6 +40,12 @@ requiredMutationNames:
   - adding an unknown case field breaks exact membership
   - inventing a check kind breaks the closed vocabulary
   - appending a trailing document breaks single-document loading
+  - flipping the local identity purpose breaks the local identity guard
+  - unknown process case breaks the process identity guard
+  - foreign local readout declaration breaks the readout guard
+  - foreign process readiness owner breaks the readiness guard
+  - local receipt purpose breaks the cleanup ordering guard
+  - dropping receipt cases breaks the cleanup ordering guard
 mutations:
   - name: removing the declaration-valid record breaks the required inventory
     kind: delete-record
@@ -62,3 +88,39 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document
+  - name: flipping the local identity purpose breaks the local identity guard
+    kind: bad-value
+    target: local-invocation-identity-valid
+    field: identity.purpose
+    value: producer
+    expectedField: purpose
+  - name: unknown process case breaks the process identity guard
+    kind: bad-value
+    target: process-invocation-identity-valid
+    field: identity.processCaseId
+    value: process-unknown
+    expectedField: processCaseId
+  - name: foreign local readout declaration breaks the readout guard
+    kind: bad-value
+    target: local-readout-valid
+    field: readout.declaration.identity.id
+    value: local-other
+    expectedField: declaration
+  - name: foreign process readiness owner breaks the readiness guard
+    kind: bad-value
+    target: process-readiness-valid
+    field: readiness.identityId
+    value: process-other
+    expectedField: identityId
+  - name: local receipt purpose breaks the cleanup ordering guard
+    kind: bad-value
+    target: process-cleanup-receipt-valid
+    field: receipt.purpose
+    value: local
+    expectedField: purpose
+  - name: dropping receipt cases breaks the cleanup ordering guard
+    kind: bad-value
+    target: process-cleanup-receipt-valid
+    field: receipt.cases
+    value: []
+    expectedField: cases

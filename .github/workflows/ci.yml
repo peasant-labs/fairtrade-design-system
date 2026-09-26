@@ -189,6 +189,16 @@ jobs:
           pnpm test:fairtest:select
           pnpm test:fairtest:selection-receipt
 
+      # The sole process-only command runs after the selection receipt and
+      # before the mounted producer. It runs the four real OS process cases and
+      # writes guards/process-cleanup.json; it refuses any invocation without
+      # the explicit CI entry point. The interactive dev bridge and its
+      # optional attach hint stay local-only and never appear here.
+      - name: Fairtest process lifecycle
+        env:
+          FAIRTEST_CI_PROCESS: "1"
+        run: pnpm test:fairtest:process
+
       # The bounded producer starts the one adapter-managed loopback service and
       # writes a fresh producer/ subtree; JOURNEY_HTML=0 keeps report generation
       # out of the budget. retries: 0 is declared by the one-project Fairtest

@@ -4,7 +4,12 @@
 # channel. Cleanup receipts name a closed stop signal and explicit reap and
 # release flags. Host notes are synthetic; no endpoint literal, address, or
 # runner name appears here.
-expectedCaseCount: 9
+#
+# The local and process invocation contracts carry their own participant
+# purpose, so a producer evidence row, a local identity, or a process identity
+# is refused at the boundary before any service starts. Those negatives are
+# pure: no service, process, or browser is started.
+expectedCaseCount: 25
 cases:
   - name: local-identity-valid
     check: identity
@@ -46,3 +51,137 @@ cases:
     check: cleanup
     cleanup: {identityId: "bridge-process-a", signal: "terminated", reaped: true, portReleased: true, observedAtMs: 4000}
     expectValid: true
+  # Local and process invocation contracts: valid participants for the two
+  # engaged branches, so a corrupted positive proves each guard reddens.
+  - name: local-invocation-identity-valid
+    check: local-identity
+    identity: {purpose: "local", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+    expectValid: true
+  - name: process-invocation-identity-valid
+    check: process-identity
+    identity: {purpose: "process", runId: "process-run-a", invocationId: "process-invoke-a", project: "fairtest", processCaseId: "process-normal-stop", createdAtMs: 1000}
+    expectValid: true
+  - name: local-readout-valid
+    check: local-readout
+    readout:
+      identity: {purpose: "local", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+      declaration: {kind: "local", identity: {kind: "local", id: "local-invoke-a", createdAtMs: 1000}, capabilities: ["report-readiness", "cleanup-process"]}
+      scenario: {route: "synthetic/route", fixture: "product-theme-rows", action: "select-map-section"}
+      provenance: {source: "dist", root: "synthetic/dist", commit: "abc123", dirty: false, producedAtMs: 5000}
+      url: "synthetic/route"
+    expectValid: true
+  - name: process-readiness-valid
+    check: process-readiness
+    identity: {purpose: "process", runId: "process-run-a", invocationId: "process-invoke-a", project: "fairtest", processCaseId: "process-normal-stop", createdAtMs: 1000}
+    readiness: {identityId: "process-invoke-a", host: "synthetic-loopback", port: 5311, ready: true, observedAtMs: 3000}
+    expectValid: true
+  - name: process-cleanup-receipt-valid
+    check: process-receipt
+    receipt:
+      version: 1
+      runId: "process-run-a"
+      project: "fairtest"
+      purpose: "process"
+      invocationId: "process-invoke-a"
+      cases:
+        - {caseId: "process-normal-stop", scenario: "normal", outcome: "stopped", signal: "completed", reaped: true, portReleased: true, pid: 4201, port: 5311, processGroup: "4201", deadlineExceeded: false, observedAtMs: 6000}
+        - {caseId: "process-partial-start", scenario: "partial-start", outcome: "readiness-failed", signal: "terminated", reaped: true, portReleased: true, pid: 4202, port: 5312, processGroup: "4202", deadlineExceeded: false, observedAtMs: 6100}
+        - {caseId: "process-bounded-timeout", scenario: "timeout", outcome: "deadline-exceeded", signal: "terminated", reaped: true, portReleased: true, pid: 4203, port: 5313, processGroup: "4203", deadlineExceeded: true, observedAtMs: 6200}
+        - {caseId: "process-sigterm-interruption", scenario: "interruption", outcome: "interrupted", signal: "interrupted", reaped: true, portReleased: true, pid: 4204, port: 5314, processGroup: "4204", deadlineExceeded: false, observedAtMs: 6300}
+      observedAtMs: 9000
+    expectValid: true
+  # Wrong producer identity: a local participant refuses a producer purpose and
+  # a producer evidence row before any service starts.
+  - name: reject-producer-purpose-as-local
+    check: local-identity
+    identity: {purpose: "producer", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["purpose", "at path", "repair:"]
+  - name: reject-producer-row-as-local
+    check: local-identity
+    identity: {key: "product-dark", kind: "product", theme: "dark"}
+    expectValid: false
+    expectedErrorContains: ["purpose", "at path", "repair:"]
+  # Wrong mode: a process purpose on the local branch and a process declaration
+  # inside a local readout are refused at the participant kind.
+  - name: reject-process-purpose-as-local
+    check: local-identity
+    identity: {purpose: "process", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["purpose", "at path", "repair:"]
+  - name: reject-process-declaration-in-local-readout
+    check: local-readout
+    readout:
+      identity: {purpose: "local", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+      declaration: {kind: "process", identity: {kind: "process", id: "bridge-process-a", createdAtMs: 2000}, capabilities: ["report-readiness", "cleanup-process"]}
+      scenario: {route: "synthetic/route", fixture: "product-theme-rows", action: "select-map-section"}
+      provenance: {source: "dist", root: "synthetic/dist", commit: "abc123", dirty: false, producedAtMs: 5000}
+      url: "synthetic/route"
+    expectValid: false
+    expectedErrorContains: ["declaration", "at path", "repair:"]
+  # Wrong local identity and protected-run rejection: a process participant
+  # refuses a local purpose, a producer evidence row, and a local evidence row
+  # before any service starts.
+  - name: reject-local-purpose-as-process
+    check: process-identity
+    identity: {purpose: "local", runId: "process-run-a", invocationId: "process-invoke-a", project: "fairtest", processCaseId: "process-normal-stop", createdAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["purpose", "at path", "repair:"]
+  - name: reject-producer-row-as-process
+    check: process-identity
+    identity: {key: "product-dark", kind: "product", theme: "dark"}
+    expectValid: false
+    expectedErrorContains: ["purpose", "at path", "repair:"]
+  # Missing readiness: a readiness record for another process participant, and a
+  # host readiness record whose ready flag was never reported.
+  - name: reject-readiness-for-another-process
+    check: process-readiness
+    identity: {purpose: "process", runId: "process-run-a", invocationId: "process-invoke-a", project: "fairtest", processCaseId: "process-normal-stop", createdAtMs: 1000}
+    readiness: {identityId: "process-other", host: "synthetic-loopback", port: 5311, ready: true, observedAtMs: 3000}
+    expectValid: false
+    expectedErrorContains: ["identityId", "at path", "repair:"]
+  - name: reject-readiness-missing-ready-flag
+    check: readiness
+    readiness: {identityId: "bridge-local-a", host: "synthetic-loopback", port: 4311, observedAtMs: 3000}
+    expectValid: false
+    expectedErrorContains: ["ready", "at path", "repair:"]
+  # Unsupported action: a capability outside the closed bridge vocabulary.
+  - name: reject-unknown-bridge-capability
+    check: declaration
+    declaration: {kind: "process", identity: {kind: "process", id: "bridge-process-a", createdAtMs: 2000}, capabilities: ["report-readiness", "cleanup-process", "launch-missiles"]}
+    expectValid: false
+    expectedErrorContains: ["capability", "at path", "repair:"]
+  # Cleanup ordering and wrong mode on the durable process receipt: a receipt
+  # that omits an observed case cannot be credited, and a receipt that claims a
+  # non-process purpose is refused.
+  - name: reject-partial-process-receipt
+    check: process-receipt
+    receipt:
+      version: 1
+      runId: "process-run-a"
+      project: "fairtest"
+      purpose: "process"
+      invocationId: "process-invoke-a"
+      cases:
+        - {caseId: "process-normal-stop", scenario: "normal", outcome: "stopped", signal: "completed", reaped: true, portReleased: true, pid: 4201, port: 5311, processGroup: "4201", deadlineExceeded: false, observedAtMs: 6000}
+        - {caseId: "process-partial-start", scenario: "partial-start", outcome: "readiness-failed", signal: "terminated", reaped: true, portReleased: true, pid: 4202, port: 5312, processGroup: "4202", deadlineExceeded: false, observedAtMs: 6100}
+        - {caseId: "process-bounded-timeout", scenario: "timeout", outcome: "deadline-exceeded", signal: "terminated", reaped: true, portReleased: true, pid: 4203, port: 5313, processGroup: "4203", deadlineExceeded: true, observedAtMs: 6200}
+      observedAtMs: 9000
+    expectValid: false
+    expectedErrorContains: ["cases", "at path", "repair:"]
+  - name: reject-process-receipt-with-local-purpose
+    check: process-receipt
+    receipt:
+      version: 1
+      runId: "process-run-a"
+      project: "fairtest"
+      purpose: "local"
+      invocationId: "process-invoke-a"
+      cases:
+        - {caseId: "process-normal-stop", scenario: "normal", outcome: "stopped", signal: "completed", reaped: true, portReleased: true, pid: 4201, port: 5311, processGroup: "4201", deadlineExceeded: false, observedAtMs: 6000}
+        - {caseId: "process-partial-start", scenario: "partial-start", outcome: "readiness-failed", signal: "terminated", reaped: true, portReleased: true, pid: 4202, port: 5312, processGroup: "4202", deadlineExceeded: false, observedAtMs: 6100}
+        - {caseId: "process-bounded-timeout", scenario: "timeout", outcome: "deadline-exceeded", signal: "terminated", reaped: true, portReleased: true, pid: 4203, port: 5313, processGroup: "4203", deadlineExceeded: true, observedAtMs: 6200}
+        - {caseId: "process-sigterm-interruption", scenario: "interruption", outcome: "interrupted", signal: "interrupted", reaped: true, portReleased: true, pid: 4204, port: 5314, processGroup: "4204", deadlineExceeded: false, observedAtMs: 6300}
+      observedAtMs: 9000
+    expectValid: false
+    expectedErrorContains: ["purpose", "at path", "repair:"]

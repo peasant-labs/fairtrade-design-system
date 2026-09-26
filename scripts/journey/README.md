@@ -20,6 +20,26 @@ unfiltered full catalog. An optional local attach target (agent-browser, when
 installed) is local exploration only, never a dependency, install step, CI
 dependency, or CI oracle.
 
+## Local bridge and process command
+
+Fairtest carries two bridge commands, with different mounts:
+
+- **`fairtest dev` is optional and local-only.** A maintainer runs
+  `pnpm fairtest dev -- --target=product` to start the exact adapter-selected
+  app on loopback and read back the URL, scenario, route, fixture, action, and
+  provenance. It is interactive exploration, never a required CI step, oracle,
+  or evidence path, and it can be removed without changing the required mounted
+  proof.
+- **`pnpm test:fairtest:process` is the sole process-only required-CI command.**
+  It runs the four real OS process cases and writes `guards/process-cleanup.json`
+  after the selection receipt and before the mounted producer. It refuses any
+  invocation without `FAIRTEST_CI_PROCESS=1` and a protected `FAIRTEST_RUN_ROOT`.
+
+The local bridge prints an attach instruction only when `--attach` is passed. It
+names an already-installed agent-browser for local exploration and never
+imports, installs, or invokes that tool; the bridge is fully useful without it,
+and no required workflow carries the dev command or its attach hint.
+
 ## What `lib/` provides
 
 | File | Role |
