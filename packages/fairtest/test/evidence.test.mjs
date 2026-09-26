@@ -418,7 +418,12 @@ function buildProof(spec) {
   const kind = spec.proofKind ?? spec.kind
   const identity = { kind, id: spec.proofIdentityId ?? spec.identityId, createdAtMs: 1000 }
   const observed = { observed: true, observedAtMs: spec.observedAtMs }
-  const theme = { expected: spec.theme, observed: spec.theme, source: 'fixture-proof', observedAtMs: spec.observedAtMs }
+  // proofTheme lets one fixture case isolate the proof.theme distrust branch:
+  // the row theme stays valid while only the proof's normalized theme is wrong.
+  const proofTheme = /** @type {Record<string, string> | undefined} */ (spec.proofTheme)
+  const theme = proofTheme
+    ? { expected: proofTheme.expected, observed: proofTheme.observed, source: 'fixture-proof', observedAtMs: spec.observedAtMs }
+    : { expected: spec.theme, observed: spec.theme, source: 'fixture-proof', observedAtMs: spec.observedAtMs }
   if (kind === 'product') {
     return {
       kind: 'product',

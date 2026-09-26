@@ -58,7 +58,7 @@ import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
-import { dirname, isAbsolute, join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, FAIRTEST_REPO_ROOT, PRODUCT_VIEWPORT } from './fairtest-runtime.mjs'
 import {
@@ -88,6 +88,7 @@ import {
 } from './fairtrade-targets.mjs'
 import { AXE_RESULT_FIELDS, scanAxe, seriousViolations } from '../journey/lib/assertions.mjs'
 import { ARTIFACT_CLASSES, assertServedDigestsMatchRunRoot } from './fairtest-artifacts.mjs'
+import { requireEnvelopeForRun, resolveRunId, resolveRunRoot } from './run-envelope-contract.mjs'
 
 const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 // Generic value validation (records, fields, counts, strings, id lists) is a
@@ -217,25 +218,18 @@ const ROW_THEMES = Object.freeze(['dark', 'light'])
 const DIST_ROOT = join(FAIRTEST_REPO_ROOT, 'dist')
 
 /**
- * Resolve the immutable run root for the current run. The root must be
- * provided through FAIRTEST_RUN_ROOT and must be an absolute path.
+ * Resolve the immutable run root for the current run through the ONE
+ * run-envelope resolver, then require the envelope to belong to this run
+ * before the row touches its subtree. The resolver requires an absolute path
+ * whose final segment names FAIRTEST_RUN_ID and the envelope must name the
+ * same run and project, so a foreign or mismatched root fails before any
+ * producer row directory is created.
  * @returns {string} the resolved run root
  */
 export function resolveProductRunRoot() {
-  const root = process.env.FAIRTEST_RUN_ROOT || ''
-  if (!root) {
-    throw new Error(
-      'product producer: missing run root for field "FAIRTEST_RUN_ROOT" at path run.root; ' +
-      'repair: run with FAIRTEST_RUN_ROOT=<run-root> pointing at a fresh absolute directory.',
-    )
-  }
-  if (!isAbsolute(root)) {
-    throw new Error(
-      `product producer: invalid run root ${JSON.stringify(root)} for field "FAIRTEST_RUN_ROOT" at path run.root; ` +
-      'repair: use an absolute directory path for FAIRTEST_RUN_ROOT.',
-    )
-  }
-  return resolve(root)
+  const root = resolveRunRoot()
+  requireEnvelopeForRun(root, resolveRunId(), 'product producer')
+  return root
 }
 
 /**
@@ -1473,6 +1467,7 @@ export async function captureProductRow(page, theme, options = {}) {
   // Freshness first, then the row directory. The run-root guard is reachable
   // only through this preparation seam, so no artifact write can land in a
   // previous run subtree before the guard has refused it.
+  requireEnvelopeForRun(runRoot, resolveRunId(), 'product producer')
   const { rowDir } = prepareProductRowDir({ runRoot, theme })
   if (!existsSync(join(DIST_ROOT, 'index.html'))) {
     throw new Error(

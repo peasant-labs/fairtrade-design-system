@@ -40,6 +40,16 @@ commands:
     owner: promotion-guardrails
     stage: pre-service
     runner: none
+  # REQUIRED-CI MOUNT: ENFORCED. The Fairtest required-CI job runs this cheap
+  # browser-free guard in its contracts step before any service starts, so the
+  # pinned upload SHA, the always-run preflight/upload, the bounded retention,
+  # and the 24-minute budget are guarded in required CI rather than merely
+  # declared.
+  - name: test:fairtest:envelope
+    invocation: pnpm test:fairtest:envelope
+    owner: promotion-guardrails
+    stage: browser-free
+    runner: none
   - name: test:fairtest:list:ci
     invocation: pnpm test:fairtest:list:ci
     owner: evidence-ci
@@ -102,6 +112,10 @@ commands:
     owner: evidence-ci
     stage: verify
     runner: none
+  # REQUIRED-CI MOUNT: ENFORCED. The Fairtest required-CI job runs this cheap
+  # browser-free SurfaceGate compatibility gate in its contracts step, so a
+  # floor, threshold, legacy return-key, digest, source-route, or importer
+  # regression actually turns required CI red.
   - name: fairtest dev
     invocation: pnpm fairtest dev -- --target=product
     owner: local-bridge

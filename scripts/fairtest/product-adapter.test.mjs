@@ -230,8 +230,8 @@ function checkCaseShape(entry, index) {
         ? ['name', 'check', 'artifact', 'stale', 'expectValid', 'expectedErrorContains']
         : ['name', 'check', 'artifact', 'expectValid', 'expectedErrorContains']),
     'run-root': entry.expectValid
-      ? ['name', 'check', 'runRootEnv', 'expectRoot', 'expectValid']
-      : ['name', 'check', 'runRootEnv', 'expectValid', 'expectedErrorContains'],
+      ? ['name', 'check', 'runRootEnv', 'runIdEnv', 'seedEnvelope', 'expectRoot', 'expectValid']
+      : ['name', 'check', 'runRootEnv', 'expectValid', 'expectedErrorContains', ...('seedEnvelope' in entry ? ['runIdEnv', 'seedEnvelope', 'envelopeRunId'] : [])],
     'cli-target': ['name', 'check', 'args', 'expectValid', 'expectExitCode', 'expectedErrorContains'],
     'a11y-baseline': ['name', 'check', 'policy', 'point', 'violations', ...tail],
     'a11y-delta': ['name', 'check', 'point', 'observedSection', 'measured', ...('baseline' in entry ? ['baseline'] : []), ...tail],
@@ -335,6 +335,14 @@ function checkCaseShape(entry, index) {
     }
     if (entry.expectValid && (typeof entry.expectRoot !== 'string' || !isAbsolute(entry.expectRoot))) {
       throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing the resolved root for field "expectRoot" at path ${path}.expectRoot; repair: declare the absolute run root the producer must resolve.`)
+    }
+    if ('seedEnvelope' in entry && typeof entry.seedEnvelope !== 'boolean') {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" holds a non-boolean seed marker for field "seedEnvelope" at path ${path}.seedEnvelope; repair: set seedEnvelope to true or remove it.`)
+    }
+    for (const field of ['runIdEnv', 'envelopeRunId']) {
+      if (field in entry && (typeof entry[field] !== 'string' || entry[field].length === 0)) {
+        throw new Error(`${CORPUS_REL}: case "${entry.name}" holds an invalid value ${JSON.stringify(entry[field])} for field "${field}" at path ${path}.${field}; repair: declare the run id the case sets.`)
+      }
     }
   }
   if (entry.check === 'cli-target') {
@@ -1572,23 +1580,46 @@ function runArtifactClassCase(entry) {
 function runRunRootCase(entry) {
   const name = /** @type {string} */ (entry.name)
   const declared = entry.runRootEnv
-  const previous = process.env.FAIRTEST_RUN_ROOT
+  const declaredRunId = entry.runIdEnv ?? null
+  const previousRoot = process.env.FAIRTEST_RUN_ROOT
+  const previousRunId = process.env.FAIRTEST_RUN_ID
+  let seeded = null
   let message = null
   let observed = null
   try {
+    if (entry.seedEnvelope === true && typeof declared === 'string' && isAbsolute(declared)) {
+      rmSync(declared, { recursive: true, force: true })
+      mkdirSync(join(declared, 'guards'), { recursive: true })
+      writeFileSync(
+        join(declared, 'guards', 'run-envelope.json'),
+        `${JSON.stringify({ runId: entry.envelopeRunId ?? declaredRunId, project: 'fairtest' }, null, 2)}\n`,
+      )
+      seeded = declared
+    }
     if (declared === null) {
       delete process.env.FAIRTEST_RUN_ROOT
     } else {
       process.env.FAIRTEST_RUN_ROOT = /** @type {string} */ (declared)
     }
+    if (declaredRunId === null) {
+      delete process.env.FAIRTEST_RUN_ID
+    } else {
+      process.env.FAIRTEST_RUN_ID = declaredRunId
+    }
     observed = resolveProductRunRoot()
   } catch (error) {
     message = error instanceof Error ? error.message : String(error)
   } finally {
-    if (previous === undefined) {
+    if (seeded !== null) rmSync(seeded, { recursive: true, force: true })
+    if (previousRoot === undefined) {
       delete process.env.FAIRTEST_RUN_ROOT
     } else {
-      process.env.FAIRTEST_RUN_ROOT = previous
+      process.env.FAIRTEST_RUN_ROOT = previousRoot
+    }
+    if (previousRunId === undefined) {
+      delete process.env.FAIRTEST_RUN_ID
+    } else {
+      process.env.FAIRTEST_RUN_ID = previousRunId
     }
   }
   if (entry.expectValid) {

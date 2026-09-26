@@ -168,7 +168,9 @@ jobs:
         run: pnpm test:fairtest:init
 
       # The browser-free contracts run before any service starts: the promotion
-      # record, the four child contract commands, and the runner inventory.
+      # record, the four child contract commands, the runner inventory, the
+      # run-envelope wiring guard (which pins the upload SHA and always-run
+      # steps), and the SurfaceGate compatibility gate.
       - name: Fairtest browser-free contracts
         run: |
           pnpm test:fairtest:promotion
@@ -177,6 +179,8 @@ jobs:
           pnpm --filter @peasant-labs/fairtest test:evidence
           pnpm --filter @peasant-labs/fairtest test:bridge-contract
           pnpm test:fairtest:inventory
+          pnpm test:fairtest:envelope
+          pnpm test:fairtest:compat
 
       - name: Fairtest inventory and selection (browser-free, before services)
         run: |

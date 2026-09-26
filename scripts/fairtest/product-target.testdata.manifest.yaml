@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # product-target.testdata.yaml.
-expectedCaseCount: 119
+expectedCaseCount: 120
 requiredCaseNames:
   - theme-row-dark-absent-passes
   - theme-row-dark-empty-passes
@@ -90,6 +90,7 @@ requiredCaseNames:
   - run-root-absolute-passes
   - run-root-missing-fails
   - run-root-relative-fails
+  - run-root-envelope-mismatch-fails
   - cli-target-missing-fails
   - cli-target-unknown-fails
   - driver-out-of-root-request-refused

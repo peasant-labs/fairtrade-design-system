@@ -20,7 +20,7 @@ keySets:
     keys:
       - local-product-dark
       - local-product-light
-expectedCaseCount: 29
+expectedCaseCount: 32
 cases:
   - name: ci-key-set-is-exact
     check: key-set
@@ -123,6 +123,14 @@ cases:
     check: preflight-selection-digest-mismatch
     expectValid: false
     expectedErrorContains: ['selectionDigest', 'at path guards/selection-receipt.json.selectionDigest', 'repair:']
+  - name: preflight-rejects-a-local-mode-selection
+    check: preflight-local-mode-selection
+    expectValid: false
+    expectedErrorContains: ['not the CI set', 'selection/expected-selection.json.mode', 'repair:']
+  - name: preflight-rejects-an-undeclared-sibling
+    check: preflight-undeclared-sibling
+    expectValid: false
+    expectedErrorContains: ['undeclared run subtree', 'at path run.root', 'repair:']
   - name: preflight-accepts-a-complete-run
     check: preflight-complete-run
     expectValid: true
@@ -130,6 +138,10 @@ cases:
     check: verify-prior-evidence
     expectValid: false
     expectedErrorContains: ['prior evidence', 'at path evidence/evidence.json', 'repair:']
+  - name: verify-rejects-a-wrong-root
+    check: verify-wrong-root
+    expectValid: false
+    expectedErrorContains: ['wrong run root', 'at path run.root', 'repair:']
   - name: budget-stages-sum-to-the-declared-total
     check: budget-sum
     expectValid: true

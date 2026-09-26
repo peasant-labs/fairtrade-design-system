@@ -2,7 +2,7 @@
 # Every command, runner, and guidance path below must appear exactly once in
 # scripts/testdata/fairtest-runner-inventory.yaml. Mutations name executable
 # stale-guidance cases; combinatorial cases live here, never inline.
-expectedCommandCount: 18
+expectedCommandCount: 19
 requiredCommandNames:
   - fairtest dev
   - test:adapter
@@ -10,6 +10,7 @@ requiredCommandNames:
   - test:core
   - test:evidence
   - test:fairtest:compat
+  - test:fairtest:envelope
   - test:fairtest:init
   - test:fairtest:inventory
   - test:fairtest:list:ci

@@ -19,6 +19,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { FAIRTEST_EVIDENCE_ROW_KEYS } from './fairtest-evidence-policy.mjs'
+import { ARTIFACT_CLASSES } from './fairtest-artifacts.mjs'
 
 /**
  * Run-envelope schema version written into every envelope and receipt.
@@ -76,19 +77,13 @@ export const SELECTION_RECEIPT_REL = `${GUARDS_DIR}/selection-receipt.json`
 export const EVIDENCE_REL = `${EVIDENCE_DIR}/evidence.json`
 
 /**
- * The closed six-class producer artifact set, listed here so the envelope
- * preflight and the producers read one list. Kept beside the key sets because
- * both describe the same producer rows.
+ * The closed six-class producer artifact set the envelope preflight checks the
+ * verifier report against. It is the ONE shared constant, imported from its
+ * owner in fairtest-artifacts.mjs so the preflight and the producers can never
+ * read two different lists.
  * @type {string[]}
  */
-export const PRODUCER_ARTIFACT_CLASSES = Object.freeze([
-  'record.json',
-  'aria.json',
-  'axe.json',
-  'screenshot.png',
-  'provenance.json',
-  'resolution.json',
-])
+export const PRODUCER_ARTIFACT_CLASSES = ARTIFACT_CLASSES
 
 /**
  * The exact one-theme CI row keys. Derived, not re-spelled: the evidence policy
@@ -341,9 +336,12 @@ export function fileDigest(path) {
 }
 
 /**
- * Read the run envelope and require its run id to match the current run. Every
- * owner calls this before touching its subtree, so a cross-run root fails
- * before any write.
+ * Read the run envelope and require its run id to match the current run. The
+ * pre-service owners (list, select, selection-receipt, preflight) call this
+ * before touching their subtree; init and the verifier resolve their root
+ * through resolveRunRoot; and the two producer root resolvers call this after
+ * resolveRunRoot, so a cross-run root fails before any producer row or
+ * evidence file is written.
  * @param {string} root resolved run root
  * @param {string} runId expected run id
  * @param {string} label caller label used in diagnostics

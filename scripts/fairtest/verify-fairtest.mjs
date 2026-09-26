@@ -15,9 +15,10 @@
 // .github/workflows/ci.yml invokes this command after the mounted producers, so
 // the browser-neutral verifier is now enforced rather than merely declared.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { isAbsolute, join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { FAIRTEST_EVIDENCE_ROW_KEYS, fairtestEvidencePolicyInput } from './fairtest-evidence-policy.mjs'
+import { resolveRunRoot } from './run-envelope-contract.mjs'
 
 const evidence = await importFairtestSource('src/evidence/index.mjs')
 
@@ -34,25 +35,15 @@ export const VERIFY_REQUIRED_CI_MOUNT = Object.freeze({
 })
 
 /**
- * Resolve the run root from FAIRTEST_RUN_ROOT. The root must be an absolute
- * path so a report always lands inside the run it describes.
+ * Resolve the run root from FAIRTEST_RUN_ROOT through the ONE run-envelope
+ * resolver every other owner uses, so the verifier cannot accept a root its
+ * sibling commands reject. The resolver requires an absolute path whose final
+ * segment names FAIRTEST_RUN_ID; a wrong root therefore fails before the
+ * verifier writes any durable evidence.
  * @returns {string} the resolved run root
  */
 export function resolveVerifyRunRoot() {
-  const root = process.env.FAIRTEST_RUN_ROOT || ''
-  if (!root) {
-    throw new Error(
-      'fairtest verify: missing run root for field "FAIRTEST_RUN_ROOT" at path run.root; ' +
-      'repair: run with FAIRTEST_RUN_ROOT=<run-root> pointing at the run directory to verify.',
-    )
-  }
-  if (!isAbsolute(root)) {
-    throw new Error(
-      `fairtest verify: invalid run root ${JSON.stringify(root)} for field "FAIRTEST_RUN_ROOT" at path run.root; ` +
-      'repair: use an absolute directory path for FAIRTEST_RUN_ROOT.',
-    )
-  }
-  return resolve(root)
+  return resolveRunRoot()
 }
 
 /**
@@ -104,6 +95,29 @@ function readEnvelopeRunId(root) {
 }
 
 /**
+ * Read the row's freshness timestamp from its producer record. A record that
+ * omits producedAtMs, or carries a non-integer or negative value, is refused
+ * with a typed failure at its owning field: freshness is the verifier's
+ * independent guarantee, so an absent timestamp must never be silently treated
+ * as "now" and verify green. Both producers always write a whole-millisecond
+ * producedAtMs, so this guard only fires on a missing or corrupt record.
+ * @param {Record<string, any>} record parsed producer record.json
+ * @param {string} key required row key used in diagnostics
+ * @returns {number} the validated non-negative whole-millisecond timestamp
+ */
+function readProducedAtMs(record, key) {
+  const producedAtMs = record.producedAtMs
+  if (!Number.isInteger(producedAtMs) || producedAtMs < 0) {
+    throw new Error(
+      `fairtest verify: invalid freshness timestamp for field "producedAtMs" at path producer/${key}/record.json.producedAtMs; ` +
+      `observed ${JSON.stringify(producedAtMs)}; ` +
+      'repair: rewrite record.json with a non-negative integer producedAtMs so the verifier can prove the row is fresh.',
+    )
+  }
+  return producedAtMs
+}
+
+/**
  * Rebuild one neutral evidence row from a producer row directory. A row whose
  * essential records are absent is returned as null so the verifier reports it
  * as a missing row instead of the CLI crashing; a row whose records are present
@@ -128,7 +142,7 @@ function readProducerRow(root, required, artifactClasses) {
       const bytes = readFileSync(join(dir, name))
       return evidence.createArtifactObservation({ name, content: bytes, digest: evidence.artifactDigest(bytes) })
     })
-  const observedAtMs = Number.isInteger(record.producedAtMs) ? record.producedAtMs : Date.now()
+  const observedAtMs = readProducedAtMs(record, required.key)
   return evidence.createEvidenceRow({
     key: required.key,
     kind: record.kind ?? required.kind,

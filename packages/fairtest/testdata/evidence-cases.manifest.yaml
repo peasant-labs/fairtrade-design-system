@@ -2,7 +2,7 @@
 # Every required case name below must appear exactly once in the corpus; the
 # guard inventory names the case that turns each closed verifier code red; the
 # mutations prove the fixture family itself is shape-validated.
-expectedCaseCount: 21
+expectedCaseCount: 24
 requiredCaseNames:
   - baseline-complete
   - missing-row
@@ -10,22 +10,25 @@ requiredCaseNames:
   - incomplete-artifact-set
   - unexpected-artifact
   - stale-record
+  - future-dated-observation
   - digest-mismatch
   - duplicate-same-key
   - duplicate-cross-row
   - duplicate-cross-theme
   - unproven-proof
+  - unproven-proof-theme
   - unproven-missing-proof
   - cross-root
   - missing-provenance
   - unexpected-row
   - kind-mismatch
   - theme-mismatch
+  - theme-observation-mismatch
   - unsupported-mode
   - run-identity-mismatch
   - output-cap
   - single-capture-rejects-side-by-side-field
-expectedGuardCount: 17
+expectedGuardCount: 20
 requiredGuardNames:
   - guard-run-identity-mismatch
   - guard-unsupported-mode
@@ -33,14 +36,17 @@ requiredGuardNames:
   - guard-unexpected-row
   - guard-kind-mismatch
   - guard-theme-mismatch
+  - guard-theme-observation-mismatch
   - guard-missing-artifact
   - guard-unexpected-artifact
   - guard-digest-mismatch
   - guard-stale-record
+  - guard-future-dated-observation
   - guard-output-cap
   - guard-missing-provenance
   - guard-cross-root
   - guard-unproven
+  - guard-unproven-proof-theme
   - guard-duplicate-same-key
   - guard-duplicate-cross-row
   - guard-duplicate-cross-theme
@@ -51,14 +57,17 @@ guards:
   - {name: guard-unexpected-row, case: unexpected-row, code: unexpected-row}
   - {name: guard-kind-mismatch, case: kind-mismatch, code: kind-mismatch}
   - {name: guard-theme-mismatch, case: theme-mismatch, code: theme-mismatch}
+  - {name: guard-theme-observation-mismatch, case: theme-observation-mismatch, code: theme-mismatch}
   - {name: guard-missing-artifact, case: missing-artifact, code: missing-artifact}
   - {name: guard-unexpected-artifact, case: unexpected-artifact, code: unexpected-artifact}
   - {name: guard-digest-mismatch, case: digest-mismatch, code: digest-mismatch}
   - {name: guard-stale-record, case: stale-record, code: stale-record}
+  - {name: guard-future-dated-observation, case: future-dated-observation, code: stale-record}
   - {name: guard-output-cap, case: output-cap, code: output-cap}
   - {name: guard-missing-provenance, case: missing-provenance, code: missing-provenance}
   - {name: guard-cross-root, case: cross-root, code: cross-root}
   - {name: guard-unproven, case: unproven-proof, code: unproven}
+  - {name: guard-unproven-proof-theme, case: unproven-proof-theme, code: unproven}
   - {name: guard-duplicate-same-key, case: duplicate-same-key, code: duplicate-same-key}
   - {name: guard-duplicate-cross-row, case: duplicate-cross-row, code: duplicate-cross-row}
   - {name: guard-duplicate-cross-theme, case: duplicate-cross-theme, code: duplicate-cross-theme}

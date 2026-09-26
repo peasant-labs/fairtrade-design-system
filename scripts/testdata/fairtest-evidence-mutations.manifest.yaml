@@ -3,7 +3,7 @@
 # below must appear exactly once in the corpus; the manifest is the deletion
 # protection for the mutation family. The executable mutations prove the
 # fixture shape itself is validated, never the mutations the cases drive.
-expectedCaseCount: 13
+expectedCaseCount: 14
 requiredCaseNames:
   - baseline-complete-run
   - missing-artifact-class
@@ -11,6 +11,7 @@ requiredCaseNames:
   - duplicate-cross-theme-scope
   - wrong-row-kind
   - partial-producer-missing-row
+  - missing-produced-timestamp-refused
   - oversize-output-cap
   - wrong-provenance-root
   - classification-honest-split
@@ -18,7 +19,7 @@ requiredCaseNames:
   - cheap-gate-reclassified-protected
   - specialized-consumer-reclassified-required
   - all-consumers-required
-expectedFamilyCount: 9
+expectedFamilyCount: 10
 requiredFamilyNames:
   - baseline
   - missing-class
@@ -26,12 +27,14 @@ requiredFamilyNames:
   - duplicate-scope
   - wrong-kind
   - partial-producer
+  - missing-timestamp
   - oversize
   - wrong-root
   - classification
-expectedOwnerCount: 3
+expectedOwnerCount: 4
 requiredOwnerNames:
   - run-root
+  - run-root-refusal
   - verifier
   - surface-manifest
 expectedMutationCount: 8

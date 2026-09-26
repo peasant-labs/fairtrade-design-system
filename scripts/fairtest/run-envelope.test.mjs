@@ -18,6 +18,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
 import { loadSingleDocument } from '../fairtest-single-document.mjs'
+import { fairtestEvidencePolicyInput } from './fairtest-evidence-policy.mjs'
 import {
   CI_ROW_KEYS,
   EVIDENCE_REL,
@@ -45,8 +46,9 @@ const CHECKS = [
   'select-prior-selection', 'select-run-id-mismatch', 'receipt-missing-selection', 'receipt-tampered-envelope',
   'preflight-missing-root', 'preflight-missing-envelope', 'preflight-missing-inventory-receipt',
   'preflight-missing-selection-receipt', 'preflight-incomplete-evidence', 'preflight-selection-digest-mismatch',
+  'preflight-local-mode-selection', 'preflight-undeclared-sibling',
   'preflight-complete-run', 'budget-sum', 'envelope-shape',
-  'verify-prior-evidence',
+  'verify-prior-evidence', 'verify-wrong-root',
   'workflow', 'workflow-order', 'workflow-budget',
 ]
 const CASE_FIELDS = ['name', 'check']
@@ -112,6 +114,10 @@ function setupRun(options = {}) {
   assert.equal(select.status, 0, `select must succeed:\n${select.combined}`)
   const receipt = runCli('scripts/fairtest/selection-receipt.mjs', [], { root, runId })
   assert.equal(receipt.status, 0, `selection-receipt must succeed:\n${receipt.combined}`)
+  // The mounted producers own the fourth subtree; this browser-free fixture
+  // creates the directory so the preflight's exact-subtree check can pass
+  // without running a browser. The preflight reads no producer row here.
+  mkdirSync(join(root, 'producer'), { recursive: true })
   return { parent, root, runId }
 }
 
@@ -480,6 +486,7 @@ function inspectWorkflowOrder(text) {
   const names = [
     'Build Storybook',
     'Fairtest run envelope',
+    'Fairtest browser-free contracts',
     'Fairtest inventory and selection (browser-free, before services)',
     'Fairtest mounted product producer',
     'Fairtest mounted component producer',
@@ -494,6 +501,15 @@ function inspectWorkflowOrder(text) {
   for (let index = 1; index < indices.length; index += 1) {
     if (indices[index] <= indices[index - 1]) {
       workflowFail(names[index], `step ${JSON.stringify(names[index])} must follow ${JSON.stringify(names[index - 1])}`)
+    }
+  }
+  // The cheap browser-free guards must actually run in the contracts step: the
+  // run-envelope wiring guard and the SurfaceGate compatibility gate are
+  // required gates, so dropping either command turns this guard red.
+  const browserFree = stepByName(steps, 'Fairtest browser-free contracts')
+  for (const command of ['pnpm test:fairtest:envelope', 'pnpm test:fairtest:compat']) {
+    if (!String(browserFree.run ?? '').includes(command)) {
+      workflowFail(command, `the browser-free contracts step must run ${command}, observed ${JSON.stringify(browserFree.run)}`)
     }
   }
   const uploadIndex = steps.findIndex((entry) => entry.name === 'Fairtest evidence upload')
@@ -727,6 +743,30 @@ function runCase(entry) {
       }
       return
     }
+    case 'preflight-local-mode-selection': {
+      const run = setupRun({ mode: 'local' })
+      try {
+        writeEvidence(run.root, run.runId)
+        const result = runCli('scripts/fairtest/preflight-fairtest.mjs', [], { root: run.root, runId: run.runId })
+        expectFailure(result, entry.expectedErrorContains, name)
+      } finally {
+        rmSync(run.parent, { recursive: true, force: true })
+      }
+      return
+    }
+    case 'preflight-undeclared-sibling': {
+      const run = setupRun()
+      try {
+        writeEvidence(run.root, run.runId)
+        mkdirSync(join(run.root, 'extra-undeclared'), { recursive: true })
+        writeFileSync(join(run.root, 'extra-undeclared', 'stray.txt'), 'stray bytes\n')
+        const result = runCli('scripts/fairtest/preflight-fairtest.mjs', [], { root: run.root, runId: run.runId })
+        expectFailure(result, entry.expectedErrorContains, name)
+      } finally {
+        rmSync(run.parent, { recursive: true, force: true })
+      }
+      return
+    }
     case 'preflight-complete-run': {
       const run = setupRun()
       try {
@@ -749,6 +789,21 @@ function runCase(entry) {
         writeEvidence(root, runId)
         const result = runCli('scripts/fairtest/verify-fairtest.mjs', [], { root, runId })
         expectFailure(result, entry.expectedErrorContains, name)
+      } finally {
+        rmSync(parent, { recursive: true, force: true })
+      }
+      return
+    }
+    case 'verify-wrong-root': {
+      const { parent, runId } = makeRunRoot()
+      const wrong = join(parent, 'not-the-run-id')
+      try {
+        const result = runCli('scripts/fairtest/verify-fairtest.mjs', [], { root: wrong, runId })
+        expectFailure(result, entry.expectedErrorContains, name)
+        assert.ok(
+          !existsSync(join(wrong, 'evidence', 'evidence.json')),
+          `${name}: verify must refuse the wrong root before writing any evidence`,
+        )
       } finally {
         rmSync(parent, { recursive: true, force: true })
       }
@@ -818,6 +873,15 @@ test('run-envelope fixture: valid corpus and manifest inventory', () => {
 
 test('run-envelope fixture: key sets match the contract and the verifier rows', () => {
   assertKeySetsMatchContract(corpus)
+})
+
+test('run-envelope: the producer artifact classes are the one shared evidence-policy list', () => {
+  const policyClasses = fairtestEvidencePolicyInput('run-envelope-fixture').artifactClasses
+  assert.deepEqual(
+    [...PRODUCER_ARTIFACT_CLASSES],
+    [...policyClasses],
+    'run-envelope-contract.mjs: PRODUCER_ARTIFACT_CLASSES must be the one shared fairtest-artifacts.mjs list the evidence policy reads at path artifacts; repair: import ARTIFACT_CLASSES instead of re-spelling the six-class set.',
+  )
 })
 
 test('run-envelope: every named case behaves as declared', () => {

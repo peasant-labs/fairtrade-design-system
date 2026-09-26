@@ -141,12 +141,12 @@ function setIdentity(family, record, identity) {
 
 function validateManifest(value) {
   checkKeys(value, ['expectedCommandCount', 'requiredCommandNames', 'expectedRunnerCount', 'requiredRunnerNames', 'expectedGuidanceCount', 'requiredGuidancePaths', 'expectedGuidanceFragmentCount', 'requiredGuidanceFragmentNames', 'expectedMutationCount', 'requiredMutationNames', 'mutations'], 'manifest', MANIFEST_REL)
-  assert.equal(value.expectedCommandCount, 18, 'manifest: expectedCommandCount guard')
+  assert.equal(value.expectedCommandCount, 19, 'manifest: expectedCommandCount guard')
   assert.equal(value.expectedRunnerCount, 4, 'manifest: expectedRunnerCount guard')
   assert.equal(value.expectedGuidanceCount, 5, 'manifest: expectedGuidanceCount guard')
   assert.equal(value.expectedGuidanceFragmentCount, 5, 'manifest: expectedGuidanceFragmentCount guard')
   assert.equal(value.expectedMutationCount, 19, 'manifest: expectedMutationCount guard')
-  assert.deepEqual([...value.requiredCommandNames].sort(), ['fairtest dev', 'test:adapter', 'test:bridge-contract', 'test:core', 'test:evidence', 'test:fairtest:compat', 'test:fairtest:init', 'test:fairtest:inventory', 'test:fairtest:list:ci', 'test:fairtest:list:local', 'test:fairtest:mounted', 'test:fairtest:preflight', 'test:fairtest:process', 'test:fairtest:product-contract', 'test:fairtest:promotion', 'test:fairtest:select', 'test:fairtest:selection-receipt', 'test:fairtest:verify'], 'manifest: required command inventory')
+  assert.deepEqual([...value.requiredCommandNames].sort(), ['fairtest dev', 'test:adapter', 'test:bridge-contract', 'test:core', 'test:evidence', 'test:fairtest:compat', 'test:fairtest:envelope', 'test:fairtest:init', 'test:fairtest:inventory', 'test:fairtest:list:ci', 'test:fairtest:list:local', 'test:fairtest:mounted', 'test:fairtest:preflight', 'test:fairtest:process', 'test:fairtest:product-contract', 'test:fairtest:promotion', 'test:fairtest:select', 'test:fairtest:selection-receipt', 'test:fairtest:verify'], 'manifest: required command inventory')
   assert.deepEqual([...value.requiredRunnerNames].sort(), ['agent-browser-optional-attach', 'fairtest-mounted-rows', 'playwright-required-catalog', 'puppeteer-focused-compat'], 'manifest: required runner inventory')
   assert.deepEqual([...value.requiredGuidancePaths].sort(), ['.github/workflows/ci.yml', 'AGENTS.md', 'CONTRIBUTING.md', 'docs/testing/test-promotion.md', 'scripts/journey/README.md'], 'manifest: required guidance inventory')
   assert.deepEqual([...value.requiredGuidanceFragmentNames].sort(), ['stale-agent-browser-oracle', 'stale-project-name-theme', 'stale-puppeteer-catalog', 'stale-two-project-model', 'stale-two-projects-plural'], 'manifest: required guidance fragment inventory')

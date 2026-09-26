@@ -18,6 +18,7 @@ import {
   FAIRTEST_PROJECT,
   PRODUCER_ARTIFACT_CLASSES,
   RUN_ENVELOPE_REL,
+  RUN_SUBTREES,
   SELECTION_RECEIPT_REL,
   SELECTION_REL,
   assertExactKeys,
@@ -47,6 +48,31 @@ export function listRunRootFiles(root) {
   }
   if (existsSync(root)) walk(root)
   return found
+}
+
+/**
+ * Assert the run root holds exactly the four declared subtrees, one owner
+ * each, and no undeclared sibling. An extra top-level entry (a stray
+ * diagnostics directory, a future producer writing at the root) would be
+ * uploaded by the whole-root upload without being verified, so the observed
+ * set must equal RUN_SUBTREES.
+ * @param {string} root run root
+ * @returns {void}
+ */
+export function validateRunSubtrees(root) {
+  const entries = existsSync(root) ? readdirSync(root, { withFileTypes: true }) : []
+  const expected = [...RUN_SUBTREES]
+  const observed = entries.map((entry) => entry.name).sort()
+  const missing = expected.filter((name) => !entries.some((entry) => entry.name === name && entry.isDirectory()))
+  const extra = observed.filter((name) => !expected.includes(name))
+  if (missing.length > 0 || extra.length > 0) {
+    throw new Error(
+      `fairtest preflight: undeclared run subtree for field "subtrees" at path run.root; ` +
+      `expected exactly ${JSON.stringify(expected)} observed ${JSON.stringify(observed)} ` +
+      `missing ${JSON.stringify(missing)} extra ${JSON.stringify(extra)}; ` +
+      'repair: write every owned file inside one of the four declared subtrees and remove any stray top-level entry.',
+    )
+  }
 }
 
 /**
@@ -156,6 +182,16 @@ export function validateSelectionAndReceipt(input) {
       'repair: rebuild the selection with the fairtest project identity.',
     )
   }
+  // A CI run must be bound to the CI selection, never the local exploration
+  // key set. The mode is the record's own declaration, so requiring it here is
+  // what keeps a local-mode selection from passing a CI completeness check.
+  if (selection.mode !== 'ci') {
+    throw new Error(
+      `${label}: expected selection is not the CI set for field "mode" at path ${SELECTION_REL}.mode; ` +
+      `expected "ci" observed ${JSON.stringify(selection.mode)}; ` +
+      'repair: run pnpm test:fairtest:select in the default ci mode so the run selects the four one-theme CI rows.',
+    )
+  }
   assertExactKeys(selection.mode, selection.keys, label)
   const receipt = readJsonFile(join(root, SELECTION_RECEIPT_REL), 'selection-receipt')
   const expectedDigest = selectionIdentityDigest(selection)
@@ -243,6 +279,7 @@ function main() {
       )
     }
     const envelopeDigest = fileDigest(join(root, RUN_ENVELOPE_REL))
+    validateRunSubtrees(root)
     validateInventoryReceipt({ root, runId, envelopeDigest })
     validateSelectionAndReceipt({ root, runId, envelopeDigest })
     validateEvidenceReport({ root, runId })

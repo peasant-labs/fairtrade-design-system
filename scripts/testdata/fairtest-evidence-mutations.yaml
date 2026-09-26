@@ -10,7 +10,7 @@
 # are fixture values only; no Fairtrade route, selector, port, or product
 # threshold appears here. The specialized capture consumers are classified as
 # protected compatibility evidence and are never claimed as required CI.
-expectedCaseCount: 13
+expectedCaseCount: 14
 run:
   runId: mutation-run-alpha
   nowMs: 100000
@@ -82,6 +82,16 @@ cases:
     mutation: {kind: delete-producer-row, target: component-light}
     expectComplete: false
     expectedCodes: [missing-row]
+  # missing-timestamp: a producer record omits producedAtMs. The run-root
+  # verifier owns the freshness guarantee, so it refuses the malformed record
+  # before writing any evidence rather than treating the absent timestamp as
+  # "now" and passing.
+  - name: missing-produced-timestamp-refused
+    family: missing-timestamp
+    owner: run-root-refusal
+    mutation: {kind: delete-produced-at, target: product-dark}
+    expectStatus: 1
+    expectedField: producedAtMs
   # oversize: the run's artifact bytes exceed the caller output cap. Owned by
   # the neutral verifier, which takes the caller cap as policy input.
   - name: oversize-output-cap

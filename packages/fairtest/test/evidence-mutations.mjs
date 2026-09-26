@@ -49,8 +49,8 @@ const CONSUMER_MANIFEST_REL = 'scripts/testdata/fairtest-surface-consumers.manif
 const WORKFLOW_REL = '.github/workflows/ci.yml'
 const VERIFY_CLI = join(ROOT, 'scripts', 'fairtest', 'verify-fairtest.mjs')
 
-const OWNERS = ['run-root', 'verifier', 'surface-manifest']
-const EVIDENCE_MUTATION_KINDS = ['none', 'delete-artifact', 'stale-artifact-digest', 'copy-artifact', 'set-row-kind', 'delete-producer-row', 'set-provenance-root', 'cap-output']
+const OWNERS = ['run-root', 'run-root-refusal', 'verifier', 'surface-manifest']
+const EVIDENCE_MUTATION_KINDS = ['none', 'delete-artifact', 'stale-artifact-digest', 'copy-artifact', 'set-row-kind', 'delete-producer-row', 'set-provenance-root', 'cap-output', 'delete-produced-at']
 const CLASSIFICATION_MUTATION_KINDS = ['none', 'invoke-specialized-in-ci', 'reclassify-importer', 'require-all-consumers']
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
 const STALE_DIGEST = '0'.repeat(64)
@@ -186,6 +186,17 @@ function validateCorpus(value) {
       if (!CLASSIFICATION_MUTATION_KINDS.includes(/** @type {string} */ (kind))) {
         fail(`${label}: case "${entry.name}" names an unknown classification mutation ${JSON.stringify(kind)} for field "mutation" at path ${path}.mutation.kind; repair: use one of ${CLASSIFICATION_MUTATION_KINDS.join(', ')}.`)
       }
+    } else if (entry.owner === 'run-root-refusal') {
+      checkExact(entry, ['name', 'family', 'owner', 'mutation', 'expectStatus', 'expectedField'], 'case', label, path)
+      if (!Number.isInteger(entry.expectStatus) || /** @type {number} */ (entry.expectStatus) === 0) {
+        fail(`${label}: case "${entry.name}" is missing a non-zero refusal exit code at path ${path}.expectStatus; repair: name the exit code the verifier refuses with.`)
+      }
+      if (typeof entry.expectedField !== 'string' || entry.expectedField.length === 0) {
+        fail(`${label}: case "${entry.name}" is missing the refused field at path ${path}.expectedField; repair: name the field the refusal must call out.`)
+      }
+      if (!EVIDENCE_MUTATION_KINDS.includes(/** @type {string} */ (kind))) {
+        fail(`${label}: case "${entry.name}" names an unknown evidence mutation ${JSON.stringify(kind)} for field "mutation" at path ${path}.mutation.kind; repair: use one of ${EVIDENCE_MUTATION_KINDS.join(', ')}.`)
+      }
     } else {
       checkExact(entry, ['name', 'family', 'owner', 'mutation', 'expectComplete', 'expectedCodes'], 'case', label, path)
       if (typeof entry.expectComplete !== 'boolean') {
@@ -263,6 +274,12 @@ function applyEvidenceMutation(spec, mutation) {
     /** @type {Record<string, unknown>} */ (spec.policy).maxOutputBytes = mutation.value
     return
   }
+  if (kind === 'delete-produced-at') {
+    const row = rows.find((entry) => entry.key === mutation.target)
+    if (!row) fail(`${CORPUS_REL}: mutation target ${JSON.stringify(mutation.target)} is not a declared row; repair: target one of the required row keys.`)
+    row.dropProducedAt = true
+    return
+  }
   const row = rows.find((entry) => entry.key === mutation.target)
   if (!row) fail(`${CORPUS_REL}: mutation target ${JSON.stringify(mutation.target)} is not a declared row; repair: target one of the required row keys.`)
   if (kind === 'delete-producer-row') { row.deleted = true; return }
@@ -292,7 +309,9 @@ function writeRunRoot(spec, run) {
     mkdirSync(dir, { recursive: true })
     const observedAtMs = Date.now()
     const identityId = identityIdFor(row.kind, run)
-    writeFileSync(join(dir, 'record.json'), `${JSON.stringify({ target: row.key, kind: row.kind, rowTheme: row.theme, theme: { expected: row.theme, observed: row.theme, source: 'mutation-fixture', observedAtMs }, producedAtMs: observedAtMs }, null, 2)}\n`)
+    const record = { target: row.key, kind: row.kind, rowTheme: row.theme, theme: { expected: row.theme, observed: row.theme, source: 'mutation-fixture', observedAtMs } }
+    if (row.dropProducedAt !== true) record.producedAtMs = observedAtMs
+    writeFileSync(join(dir, 'record.json'), `${JSON.stringify(record, null, 2)}\n`)
     writeFileSync(join(dir, 'resolution.json'), `${JSON.stringify(buildProof(row.kind, row.theme, identityId, observedAtMs), null, 2)}\n`)
     writeFileSync(join(dir, 'provenance.json'), `${JSON.stringify({ root: row.provenanceRoot, servedFrom: run.servedFrom, row: row.key }, null, 2)}\n`)
     for (const [name, content] of Object.entries(row.artifacts)) writeFileSync(join(dir, name), /** @type {string} */ (content))
@@ -390,6 +409,18 @@ function assertReport(report, entry) {
 function runEvidenceCase(entry, run) {
   const spec = makeSpec(corpus, run)
   applyEvidenceMutation(spec, /** @type {Record<string, unknown>} */ (entry.mutation))
+  if (entry.owner === 'run-root-refusal') {
+    const { parent, root } = writeRunRoot(spec, run)
+    try {
+      const result = runVerifyCli(root, /** @type {string} */ (run.runId))
+      assert.equal(result.status, entry.expectStatus, `${entry.name}: run-root verifier exited ${result.status} for field "expectStatus" at path case.expectStatus; expected exit ${entry.expectStatus}; repair: restore the fail-closed refusal.\n${result.combined}`)
+      assert.ok(result.combined.includes(/** @type {string} */ (entry.expectedField)), `${entry.name}: refusal must name ${entry.expectedField} at path case.expectedField; observed ${result.combined}`)
+      assert.ok(!existsSync(join(root, 'evidence', 'evidence.json')), `${entry.name}: a refused run must not write evidence/evidence.json`)
+    } finally {
+      rmSync(parent, { recursive: true, force: true })
+    }
+    return
+  }
   if (entry.owner === 'run-root') {
     const { parent, root } = writeRunRoot(spec, run)
     try {

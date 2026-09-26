@@ -974,6 +974,8 @@ cases:
   - name: run-root-absolute-passes
     check: run-root
     runRootEnv: /tmp/opencode/fairtest-fixture-run-root
+    runIdEnv: fairtest-fixture-run-root
+    seedEnvelope: true
     expectRoot: /tmp/opencode/fairtest-fixture-run-root
     expectValid: true
   - name: run-root-missing-fails
@@ -986,6 +988,14 @@ cases:
     runRootEnv: relative/run/root
     expectValid: false
     expectedErrorContains: ['invalid run root', 'FAIRTEST_RUN_ROOT', 'run.root', 'repair:']
+  - name: run-root-envelope-mismatch-fails
+    check: run-root
+    runRootEnv: /tmp/opencode/fairtest-fixture-run-root-other
+    runIdEnv: fairtest-fixture-run-root-other
+    seedEnvelope: true
+    envelopeRunId: some-other-run
+    expectValid: false
+    expectedErrorContains: ['another run', 'guards/run-envelope.json', 'repair:']
   - name: cli-target-missing-fails
     check: cli-target
     args: []

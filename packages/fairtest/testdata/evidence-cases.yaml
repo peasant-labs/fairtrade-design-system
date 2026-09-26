@@ -4,7 +4,7 @@
 # the exact closed failure codes the verifier returns. No runner, route,
 # selector, port, or product threshold literal appears here; caller-owned ids,
 # artifact classes, roots, and thresholds are fixture values only.
-expectedCaseCount: 21
+expectedCaseCount: 24
 base:
   runId: fixture-run-alpha
   mode: single-capture
@@ -150,6 +150,12 @@ cases:
       - {kind: patch-row, target: product-dark, patch: {observedAtMs: 0}}
     expectComplete: false
     expectedCodes: [stale-record]
+  - name: future-dated-observation
+    check: verdict
+    mutations:
+      - {kind: patch-row, target: product-dark, patch: {observedAtMs: 100001}}
+    expectComplete: false
+    expectedCodes: [stale-record]
   - name: digest-mismatch
     check: verdict
     mutations:
@@ -186,6 +192,12 @@ cases:
       - {kind: patch-row, target: product-dark, patch: {proof: absent}}
     expectComplete: false
     expectedCodes: [unproven]
+  - name: unproven-proof-theme
+    check: verdict
+    mutations:
+      - {kind: patch-row, target: product-dark, patch: {proofTheme: {expected: dark, observed: light}}}
+    expectComplete: false
+    expectedCodes: [unproven]
   - name: cross-root
     check: verdict
     mutations:
@@ -214,6 +226,12 @@ cases:
     check: verdict
     mutations:
       - {kind: set-required, target: product-dark, theme: light}
+    expectComplete: false
+    expectedCodes: [theme-mismatch]
+  - name: theme-observation-mismatch
+    check: verdict
+    mutations:
+      - {kind: patch-row, target: product-dark, patch: {themeObservation: {expected: dark, observed: light}}}
     expectComplete: false
     expectedCodes: [theme-mismatch]
   - name: unsupported-mode

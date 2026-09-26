@@ -4,7 +4,7 @@
 # protect the family record; the workflow mutations protect the CI guard by
 # editing the real .github/workflows/ci.yml text and requiring the guard to
 # fail for its intended field.
-expectedCaseCount: 29
+expectedCaseCount: 32
 requiredCaseNames:
   - ci-key-set-is-exact
   - ci-key-set-rejects-a-missing-key
@@ -28,8 +28,11 @@ requiredCaseNames:
   - preflight-rejects-a-missing-selection-receipt
   - preflight-rejects-incomplete-evidence
   - preflight-rejects-a-tampered-selection-digest
+  - preflight-rejects-a-local-mode-selection
+  - preflight-rejects-an-undeclared-sibling
   - preflight-accepts-a-complete-run
   - verify-rejects-a-prior-evidence-report
+  - verify-rejects-a-wrong-root
   - budget-stages-sum-to-the-declared-total
   - envelope-shape-is-pinned
   - workflow-declares-the-pinned-upload-and-always-preflight
@@ -86,7 +89,7 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document[1]
-expectedWorkflowMutationCount: 7
+expectedWorkflowMutationCount: 9
 requiredWorkflowMutationNames:
   - workflow-upload-pin-becomes-a-tag
   - workflow-upload-drops-no-files-error
@@ -95,6 +98,8 @@ requiredWorkflowMutationNames:
   - workflow-budget-env-drifts
   - workflow-drops-the-verification-step
   - workflow-drops-the-journey-gates
+  - workflow-drops-the-envelope-guard
+  - workflow-drops-the-compat-gate
 workflowMutations:
   - name: workflow-upload-pin-becomes-a-tag
     find: "      - name: Fairtest evidence upload\n        if: always()\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2\n"
@@ -124,3 +129,11 @@ workflowMutations:
     find: "      - name: Journey gates\n        run: pnpm journey:ci\n"
     replace: ''
     expectedField: pnpm journey:ci
+  - name: workflow-drops-the-envelope-guard
+    find: "          pnpm test:fairtest:envelope\n"
+    replace: ''
+    expectedField: test:fairtest:envelope
+  - name: workflow-drops-the-compat-gate
+    find: "          pnpm test:fairtest:compat\n"
+    replace: ''
+    expectedField: test:fairtest:compat

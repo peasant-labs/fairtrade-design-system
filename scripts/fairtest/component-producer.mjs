@@ -27,7 +27,7 @@ import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
-import { isAbsolute, join, resolve } from 'node:path'
+import { join, resolve } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { FAIRTEST_APP_HOST, FAIRTEST_REPO_ROOT, FAIRTEST_STORYBOOK_PORT, PRODUCT_VIEWPORT } from './fairtest-runtime.mjs'
 import { assertProductThemeObservation, observeProductTheme } from './fairtrade-targets.mjs'
@@ -55,6 +55,7 @@ import {
   componentThemeSetup,
 } from './fairtrade-component-target.mjs'
 import { ARTIFACT_CLASSES, PRODUCT_ONLY_FIELDS, assertServedDigestsMatchRunRoot } from './fairtest-artifacts.mjs'
+import { requireEnvelopeForRun, resolveRunId, resolveRunRoot } from './run-envelope-contract.mjs'
 
 const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 const valuesContract = await importFairtestSource('src/core/values.mjs')
@@ -124,25 +125,18 @@ const COMPONENT_A11Y_SCOPES = Object.freeze({
 })
 
 /**
- * Resolve the immutable run root for the current run. The root must be
- * provided through FAIRTEST_RUN_ROOT and must be an absolute path.
+ * Resolve the immutable component run root for the current run through the ONE
+ * run-envelope resolver, then require the envelope to belong to this run
+ * before the row touches its subtree. The resolver requires an absolute path
+ * whose final segment names FAIRTEST_RUN_ID and the envelope must name the
+ * same run and project, so a foreign or mismatched root fails before any
+ * component row directory is created.
  * @returns {string} the resolved run root
  */
 export function resolveComponentRunRoot() {
-  const root = process.env.FAIRTEST_RUN_ROOT || ''
-  if (!root) {
-    throw new Error(
-      'component producer: missing run root for field "FAIRTEST_RUN_ROOT" at path run.root; ' +
-      'repair: run with FAIRTEST_RUN_ROOT=<run-root> pointing at a fresh absolute directory.',
-    )
-  }
-  if (!isAbsolute(root)) {
-    throw new Error(
-      `component producer: invalid run root ${JSON.stringify(root)} for field "FAIRTEST_RUN_ROOT" at path run.root; ` +
-      'repair: use an absolute directory path for FAIRTEST_RUN_ROOT.',
-    )
-  }
-  return resolve(root)
+  const root = resolveRunRoot()
+  requireEnvelopeForRun(root, resolveRunId(), 'component producer')
+  return root
 }
 
 /**
@@ -908,6 +902,7 @@ export async function captureComponentRow(page, theme, options = {}) {
     )
   }
   const setup = componentThemeSetup(theme)
+  requireEnvelopeForRun(runRoot, resolveRunId(), 'component producer')
   const { rowDir } = prepareComponentRowDir({ runRoot, theme })
   if (!existsSync(join(STORYBOOK_ROOT, 'iframe.html'))) {
     throw new Error(
