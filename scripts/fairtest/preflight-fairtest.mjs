@@ -3,7 +3,8 @@
 //
 // It runs after the verifier (and after a producer failure, because CI runs it
 // with `if: always()`). It independently reloads the run envelope and every
-// receipt owner, confirms the four subtrees and their owned files are present
+// receipt owner -- including the process supervisor's durable cleanup receipt
+// under guards/ -- confirms the four subtrees and their owned files are present
 // and consistent, checks the declared budget has not elapsed, and refuses to
 // let an incomplete run read as green. On failure it prints the whole retained
 // run root so partial producer output stays visible before the upload step.
@@ -12,10 +13,12 @@
 // Invocation: FAIRTEST_RUN_ROOT=<absolute-root> FAIRTEST_RUN_ID=<run-id> pnpm test:fairtest:preflight
 import { existsSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
+import { importFairtestSource } from '../fairtest-source.mjs'
 import {
   EVIDENCE_REL,
   FAIRTEST_BUDGET,
   FAIRTEST_PROJECT,
+  PROCESS_CLEANUP_RECEIPT_REL,
   PRODUCER_ARTIFACT_CLASSES,
   RUN_ENVELOPE_REL,
   RUN_SUBTREES,
@@ -30,6 +33,8 @@ import {
   resolveRunRoot,
   selectionIdentityDigest,
 } from './run-envelope-contract.mjs'
+
+const processContract = await importFairtestSource('src/bridge/process.mjs')
 
 /**
  * List every file under the run root as root-relative posix paths, so a failed
@@ -212,6 +217,48 @@ export function validateSelectionAndReceipt(input) {
 }
 
 /**
+ * Validate the process supervisor's durable cleanup receipt against the
+ * envelope. The receipt is the sole record that every supervised process case
+ * observed its cleanup; the preflight reloads it and confirms its shape and its
+ * run/project binding, so a missing, malformed, foreign, or unbound receipt
+ * cannot pass as a complete run. It carries no run-envelope digest, so the
+ * binding is the run id and the project identity the envelope also carries.
+ * @param {{ root: string, runId: string }} input validation inputs
+ * @returns {object} the validated receipt
+ */
+export function validateProcessReceipt(input) {
+  const { root, runId } = input
+  const label = 'fairtest preflight'
+  const rel = PROCESS_CLEANUP_RECEIPT_REL
+  const receipt = readJsonFile(join(root, rel), 'process-cleanup')
+  let validated
+  try {
+    validated = processContract.validateProcessCleanupReceipt(receipt, label)
+  } catch (error) {
+    const cause = error instanceof Error ? error.message : String(error)
+    throw new Error(
+      `${label}: invalid process cleanup receipt for field "process-cleanup" at path ${rel}; ${cause}; ` +
+      'repair: re-run FAIRTEST_CI_PROCESS=1 pnpm test:fairtest:process so the supervisor writes a complete receipt.',
+    )
+  }
+  if (receipt.runId !== runId) {
+    throw new Error(
+      `${label}: process cleanup receipt belongs to another run for field "runId" at path ${rel}.runId; ` +
+      `expected ${JSON.stringify(runId)} observed ${JSON.stringify(receipt.runId)}; ` +
+      'repair: re-run FAIRTEST_CI_PROCESS=1 pnpm test:fairtest:process for this run.',
+    )
+  }
+  if (receipt.project !== FAIRTEST_PROJECT) {
+    throw new Error(
+      `${label}: process cleanup receipt names another project for field "project" at path ${rel}.project; ` +
+      `expected ${JSON.stringify(FAIRTEST_PROJECT)} observed ${JSON.stringify(receipt.project)}; ` +
+      'repair: rebuild the process receipt with the fairtest project identity.',
+    )
+  }
+  return validated
+}
+
+/**
  * Validate the verifier's durable report: it must belong to this run and be
  * complete with exactly the declared artifact classes. A partial producer is
  * reported, never converted to a pass.
@@ -268,6 +315,7 @@ function main() {
       inventoryReceiptRel('ci'),
       SELECTION_REL,
       SELECTION_RECEIPT_REL,
+      PROCESS_CLEANUP_RECEIPT_REL,
       EVIDENCE_REL,
     ]
     const missing = requiredFiles.filter((rel) => !existsSync(join(root, rel)))
@@ -282,6 +330,7 @@ function main() {
     validateRunSubtrees(root)
     validateInventoryReceipt({ root, runId, envelopeDigest })
     validateSelectionAndReceipt({ root, runId, envelopeDigest })
+    validateProcessReceipt({ root, runId })
     validateEvidenceReport({ root, runId })
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error))

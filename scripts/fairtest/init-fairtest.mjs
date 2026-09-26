@@ -14,6 +14,7 @@ import { join } from 'node:path'
 import {
   FAIRTEST_BUDGET,
   FAIRTEST_PROJECT,
+  GUARDS_FILE_OWNERS,
   RUN_ENVELOPE_REL,
   RUN_ENVELOPE_VERSION,
   RUN_SUBTREES,
@@ -68,7 +69,7 @@ export function createRunEnvelope(root, runId, createdAtMs) {
     createdAtMs,
     subtrees: [...RUN_SUBTREES],
     ownership: {
-      guards: 'init-fairtest.mjs',
+      guards: { ...GUARDS_FILE_OWNERS },
       selection: 'select-fairtest.mjs',
       producer: 'mounted producers',
       evidence: 'verify-fairtest.mjs',

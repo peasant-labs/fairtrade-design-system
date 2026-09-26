@@ -20,7 +20,7 @@ keySets:
     keys:
       - local-product-dark
       - local-product-light
-expectedCaseCount: 32
+expectedCaseCount: 36
 cases:
   - name: ci-key-set-is-exact
     check: key-set
@@ -115,6 +115,22 @@ cases:
     check: preflight-missing-selection-receipt
     expectValid: false
     expectedErrorContains: ['selection-receipt.json', 'ownedFiles', 'repair:']
+  - name: preflight-rejects-a-missing-process-receipt
+    check: preflight-missing-process-receipt
+    expectValid: false
+    expectedErrorContains: ['process-cleanup.json', 'ownedFiles', 'repair:']
+  - name: preflight-rejects-a-malformed-process-receipt
+    check: preflight-malformed-process-receipt
+    expectValid: false
+    expectedErrorContains: ['process-cleanup', 'process.receipt', 'repair:']
+  - name: preflight-rejects-a-foreign-process-receipt
+    check: preflight-foreign-process-receipt
+    expectValid: false
+    expectedErrorContains: ['runId', 'process-cleanup.json', 'repair:']
+  - name: preflight-rejects-an-unbound-process-receipt
+    check: preflight-unbound-process-receipt
+    expectValid: false
+    expectedErrorContains: ['project', 'process-cleanup.json', 'repair:']
   - name: preflight-rejects-incomplete-evidence
     check: preflight-incomplete-evidence
     expectValid: false

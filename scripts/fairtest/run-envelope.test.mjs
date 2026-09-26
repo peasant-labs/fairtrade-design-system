@@ -15,16 +15,20 @@ import test from 'node:test'
 import { existsSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import YAML from 'yaml'
 import { loadSingleDocument } from '../fairtest-single-document.mjs'
+import { importFairtestSource } from '../fairtest-source.mjs'
 import { fairtestEvidencePolicyInput } from './fairtest-evidence-policy.mjs'
 import {
   CI_ROW_KEYS,
   EVIDENCE_REL,
   FAIRTEST_BUDGET,
+  FAIRTEST_PROJECT,
+  GUARDS_FILE_OWNERS,
   LOCAL_ROW_KEYS,
   MODE_KEYS,
+  PROCESS_CLEANUP_RECEIPT_REL,
   PRODUCER_ARTIFACT_CLASSES,
   RUN_ENVELOPE_REL,
   RUN_SUBTREES,
@@ -33,7 +37,10 @@ import {
   UPLOAD_PIN,
   assertExactKeys,
   inventoryReceiptRel,
+  writeJsonAtomic,
 } from './run-envelope-contract.mjs'
+
+const processContract = await importFairtestSource('src/bridge/process.mjs')
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
@@ -45,7 +52,9 @@ const CHECKS = [
   'key-set', 'pre-service-flow', 'init-missing-root', 'init-wrong-root', 'init-prior-root',
   'select-prior-selection', 'select-run-id-mismatch', 'receipt-missing-selection', 'receipt-tampered-envelope',
   'preflight-missing-root', 'preflight-missing-envelope', 'preflight-missing-inventory-receipt',
-  'preflight-missing-selection-receipt', 'preflight-incomplete-evidence', 'preflight-selection-digest-mismatch',
+  'preflight-missing-selection-receipt', 'preflight-missing-process-receipt', 'preflight-malformed-process-receipt',
+  'preflight-foreign-process-receipt', 'preflight-unbound-process-receipt',
+  'preflight-incomplete-evidence', 'preflight-selection-digest-mismatch',
   'preflight-local-mode-selection', 'preflight-undeclared-sibling',
   'preflight-complete-run', 'budget-sum', 'envelope-shape',
   'verify-prior-evidence', 'verify-wrong-root',
@@ -114,6 +123,11 @@ function setupRun(options = {}) {
   assert.equal(select.status, 0, `select must succeed:\n${select.combined}`)
   const receipt = runCli('scripts/fairtest/selection-receipt.mjs', [], { root, runId })
   assert.equal(receipt.status, 0, `selection-receipt must succeed:\n${receipt.combined}`)
+  // The process supervisor owns the durable process cleanup receipt under
+  // guards/. This browser-free fixture writes a contract-valid receipt (the
+  // supervisor itself supervises real OS processes, which this suite does not)
+  // so the preflight completeness path can require and bind it.
+  writeProcessReceipt(root, runId)
   // The mounted producers own the fourth subtree; this browser-free fixture
   // creates the directory so the preflight's exact-subtree check can pass
   // without running a browser. The preflight reads no producer row here.
@@ -144,6 +158,68 @@ function writeEvidence(root, runId, options = {}) {
     rows: [],
     artifactClasses: [...PRODUCER_ARTIFACT_CLASSES],
   }, null, 2)}\n`)
+}
+
+/**
+ * Write a contract-valid process cleanup receipt so the preflight completeness
+ * path can be exercised without supervising real OS processes. The shape is
+ * produced by the owning process contract, so a drift fails here instead of in
+ * CI.
+ * @param {string} root run root
+ * @param {string} runId run id
+ * @param {{ runId?: string, project?: string }} [overrides] binding overrides
+ * @returns {object} the receipt written
+ */
+function writeProcessReceipt(root, runId, overrides = {}) {
+  const signals = ['completed', 'terminated', 'interrupted', 'interrupted']
+  const cases = processContract.PROCESS_CASE_IDS.map((caseId, index) => ({
+    caseId,
+    scenario: processContract.PROCESS_SCENARIOS[index],
+    outcome: processContract.PROCESS_OUTCOMES[index],
+    signal: signals[index],
+    reaped: true,
+    portReleased: true,
+    pid: 1000 + index,
+    port: 41000 + index,
+    processGroup: `pgid-${index}`,
+    deadlineExceeded: processContract.PROCESS_OUTCOMES[index] === 'deadline-exceeded',
+    observedAtMs: 1,
+  }))
+  const receipt = processContract.createProcessCleanupReceipt({
+    version: processContract.PROCESS_RECEIPT_VERSION,
+    runId: overrides.runId ?? runId,
+    project: overrides.project ?? FAIRTEST_PROJECT,
+    purpose: processContract.PROCESS_INVOCATION_PURPOSE,
+    invocationId: `process-${runId}`.toLowerCase().replace(/[^a-z0-9_-]/g, '-').slice(0, 64),
+    cases,
+    observedAtMs: 1,
+  })
+  writeJsonAtomic(join(root, PROCESS_CLEANUP_RECEIPT_REL), receipt)
+  return receipt
+}
+
+/**
+ * Build a complete run root whose process cleanup receipt carries one named
+ * defect, so both the fixture case and the source mutation prove the preflight
+ * rejects it for the intended reason.
+ * @param {'missing'|'malformed'|'foreign'|'unbound'} defect receipt defect
+ * @returns {{ parent: string, root: string, runId: string }} the defective run
+ */
+function defectRunRoot(defect) {
+  const run = setupRun()
+  writeEvidence(run.root, run.runId)
+  if (defect === 'missing') {
+    unlinkSync(join(run.root, PROCESS_CLEANUP_RECEIPT_REL))
+  } else if (defect === 'malformed') {
+    writeFileSync(join(run.root, PROCESS_CLEANUP_RECEIPT_REL), `${JSON.stringify({ runId: run.runId, project: FAIRTEST_PROJECT }, null, 2)}\n`)
+  } else if (defect === 'foreign') {
+    writeProcessReceipt(run.root, run.runId, { runId: 'another-run-id' })
+  } else if (defect === 'unbound') {
+    writeProcessReceipt(run.root, run.runId, { project: 'another-project' })
+  } else {
+    throw new Error(`defectRunRoot: unknown defect ${JSON.stringify(defect)}`)
+  }
+  return run
 }
 
 /**
@@ -261,12 +337,15 @@ function validateManifest(value) {
     'expectedCaseCount', 'requiredCaseNames',
     'expectedMutationCount', 'requiredMutationNames', 'mutations',
     'expectedWorkflowMutationCount', 'requiredWorkflowMutationNames', 'workflowMutations',
+    'expectedSourceMutationCount', 'requiredSourceMutationNames', 'sourceMutations',
   ], 'manifest', MANIFEST_REL)
   assert.equal(value.expectedCaseCount, value.requiredCaseNames.length, `${MANIFEST_REL}: case count must equal the required-name inventory at path manifest.expectedCaseCount; repair: align expectedCaseCount with requiredCaseNames.`)
   assert.equal(value.expectedMutationCount, value.mutations.length, `${MANIFEST_REL}: mutation count must equal the inventory at path manifest.expectedMutationCount; repair: align the counts.`)
   assert.equal(value.expectedWorkflowMutationCount, value.workflowMutations.length, `${MANIFEST_REL}: workflow mutation count must equal the inventory at path manifest.expectedWorkflowMutationCount; repair: align the counts.`)
+  assert.equal(value.expectedSourceMutationCount, value.sourceMutations.length, `${MANIFEST_REL}: source mutation count must equal the inventory at path manifest.expectedSourceMutationCount; repair: align the counts.`)
   checkRequiredNames(value.mutations.map((entry) => entry.name), value.requiredMutationNames, MANIFEST_REL)
   checkRequiredNames(value.workflowMutations.map((entry) => entry.name), value.requiredWorkflowMutationNames, MANIFEST_REL)
+  checkRequiredNames(value.sourceMutations.map((entry) => entry.name), value.requiredSourceMutationNames, MANIFEST_REL)
   for (const [index, mutation] of value.mutations.entries()) {
     const fields = ['name', 'kind', 'target', 'expectedField']
     if (['delete-field', 'unknown-field', 'bad-value'].includes(mutation.kind)) fields.push('field')
@@ -279,6 +358,13 @@ function validateManifest(value) {
   for (const [index, mutation] of value.workflowMutations.entries()) {
     checkKeys(mutation, ['name', 'find', 'replace', 'expectedField'], 'workflow mutation', MANIFEST_REL, `manifest.workflowMutations[${index}]`)
     assert.equal(typeof mutation.find, 'string', `${MANIFEST_REL}: workflow mutation ${index} must declare a find string at path manifest.workflowMutations[${index}].find; repair: restore the exact source substring.`)
+  }
+  for (const [index, mutation] of value.sourceMutations.entries()) {
+    checkKeys(mutation, ['name', 'source', 'defect', 'find', 'replace', 'expectedField'], 'source mutation', MANIFEST_REL, `manifest.sourceMutations[${index}]`)
+    for (const field of ['source', 'find', 'replace', 'expectedField']) {
+      assert.equal(typeof mutation[field], 'string', `${MANIFEST_REL}: source mutation ${index} must declare a ${field} string at path manifest.sourceMutations[${index}].${field}; repair: restore the exact source substring.`)
+    }
+    assert.ok(['missing', 'malformed', 'foreign', 'unbound', 'ownership'].includes(mutation.defect), `${MANIFEST_REL}: source mutation ${index} names an unknown defect at path manifest.sourceMutations[${index}].defect; repair: use one of missing, malformed, foreign, unbound, ownership.`)
   }
 }
 
@@ -717,6 +803,46 @@ function runCase(entry) {
       }
       return
     }
+    case 'preflight-missing-process-receipt': {
+      const run = defectRunRoot('missing')
+      try {
+        const result = runCli('scripts/fairtest/preflight-fairtest.mjs', [], { root: run.root, runId: run.runId })
+        expectFailure(result, entry.expectedErrorContains, name)
+      } finally {
+        rmSync(run.parent, { recursive: true, force: true })
+      }
+      return
+    }
+    case 'preflight-malformed-process-receipt': {
+      const run = defectRunRoot('malformed')
+      try {
+        const result = runCli('scripts/fairtest/preflight-fairtest.mjs', [], { root: run.root, runId: run.runId })
+        expectFailure(result, entry.expectedErrorContains, name)
+      } finally {
+        rmSync(run.parent, { recursive: true, force: true })
+      }
+      return
+    }
+    case 'preflight-foreign-process-receipt': {
+      const run = defectRunRoot('foreign')
+      try {
+        const result = runCli('scripts/fairtest/preflight-fairtest.mjs', [], { root: run.root, runId: run.runId })
+        expectFailure(result, entry.expectedErrorContains, name)
+      } finally {
+        rmSync(run.parent, { recursive: true, force: true })
+      }
+      return
+    }
+    case 'preflight-unbound-process-receipt': {
+      const run = defectRunRoot('unbound')
+      try {
+        const result = runCli('scripts/fairtest/preflight-fairtest.mjs', [], { root: run.root, runId: run.runId })
+        expectFailure(result, entry.expectedErrorContains, name)
+      } finally {
+        rmSync(run.parent, { recursive: true, force: true })
+      }
+      return
+    }
     case 'preflight-incomplete-evidence': {
       const run = setupRun()
       try {
@@ -825,6 +951,8 @@ function runCase(entry) {
         assert.equal(envelope.project, 'fairtest', `${name}: envelope project`)
         assert.deepEqual(envelope.subtrees, [...RUN_SUBTREES], `${name}: envelope subtrees`)
         assert.deepEqual(Object.keys(envelope.ownership).sort(), ['evidence', 'guards', 'producer', 'selection'], `${name}: envelope ownership`)
+        assert.deepEqual(envelope.ownership.guards, { ...GUARDS_FILE_OWNERS }, `${name}: envelope guards ownership must name every guards/ writer, including the process receipt owner`)
+        assert.equal(envelope.ownership.guards['process-cleanup.json'], 'process-supervisor.mjs', `${name}: envelope must declare the sole process cleanup receipt writer`)
         assert.equal(envelope.upload.action, UPLOAD_PIN.action, `${name}: upload action`)
         assert.equal(envelope.upload.sha, UPLOAD_PIN.sha, `${name}: upload pin`)
         assert.equal(envelope.budget.totalMinutes, FAIRTEST_BUDGET.totalMinutes, `${name}: envelope budget`)
@@ -923,3 +1051,88 @@ test('run-envelope: workflow mutations fail for their intended field', () => {
     assert.ok(message.includes(mutation.expectedField), `${mutation.name}: diagnostic names the wrong field; expected ${mutation.expectedField}, received ${message}`)
   }
 })
+
+/**
+ * The process receipt source mutations prove each new preflight guard is
+ * load-bearing. A mutation removes the guard from an in-memory (never on-disk)
+ * copy of the production source; the real preflight must still redden for the
+ * intended field on the defective run root, and the mutant must no longer do
+ * so. A mutation that survives (the mutant still reddens) means the guard it
+ * removes was redundant and the fixture case is not observing it.
+ */
+test('run-envelope: process receipt source mutations redden for their intended field', () => {
+  for (const mutation of manifest.sourceMutations) {
+    const sourcePath = resolve(ROOT, mutation.source)
+    const source = readFileSync(sourcePath, 'utf8')
+    const occurrences = source.split(mutation.find).length - 1
+    assert.equal(occurrences, 1, `${mutation.name}: source mutation anchor must occur exactly once in ${mutation.source}, observed ${occurrences}`)
+    const mutated = source.replace(mutation.find, mutation.replace)
+    if (mutation.defect === 'ownership') {
+      guardGuardsOwnership(source)
+      let message = null
+      try {
+        guardGuardsOwnership(mutated)
+      } catch (error) {
+        message = error instanceof Error ? error.message : String(error)
+      }
+      assert.ok(message && message.includes(mutation.expectedField), `${mutation.name}: the guards ownership guard did not redden for the removed process receipt owner; got ${message}`)
+      assert.equal(readFileSync(sourcePath, 'utf8'), source, `${mutation.name}: the ownership source was not restored`)
+      continue
+    }
+    const mutantDir = mkdtempSync(join(tmpdir(), 'fairtest-envelope-mutant-'))
+    const mutantPath = join(mutantDir, 'preflight-mutant.mjs')
+    const run = defectRunRoot(mutation.defect)
+    try {
+      writeFileSync(mutantPath, rewriteMutantImports(mutated))
+      const real = runCli('scripts/fairtest/preflight-fairtest.mjs', [], { root: run.root, runId: run.runId })
+      expectFailure(real, [mutation.expectedField], mutation.name)
+      const mutant = runCli(mutantPath, [], { root: run.root, runId: run.runId })
+      assert.ok(
+        !mutant.combined.includes(mutation.expectedField),
+        `${mutation.name}: source mutation survived; the mutant preflight still reddened for ${JSON.stringify(mutation.expectedField)}:\n${mutant.combined}`,
+      )
+      // The tracked source is never written: the mutant lives in a temp dir.
+      assert.equal(readFileSync(sourcePath, 'utf8'), source, `${mutation.name}: the tracked source must be restored unchanged`)
+    } finally {
+      rmSync(run.parent, { recursive: true, force: true })
+      rmSync(mutantDir, { recursive: true, force: true })
+    }
+  }
+})
+
+/**
+ * Rewrite the production module's relative imports to absolute file URLs so a
+ * mutant copy can run from a temp directory. The tracked source is never
+ * written; the mutant only ever lives in the caller's throwaway directory.
+ * @param {string} source mutated module source
+ * @returns {string} the standalone mutant source
+ */
+function rewriteMutantImports(source) {
+  const rewrites = [
+    ["'./run-envelope-contract.mjs'", pathToFileURL(resolve(ROOT, 'scripts/fairtest/run-envelope-contract.mjs')).href],
+    ["'../fairtest-source.mjs'", pathToFileURL(resolve(ROOT, 'scripts/fairtest-source.mjs')).href],
+  ]
+  let mutated = source
+  for (const [from, to] of rewrites) {
+    assert.equal(mutated.split(from).length - 1, 1, `mutant import rewrite anchor ${from} must occur exactly once`)
+    mutated = mutated.replace(from, JSON.stringify(to))
+  }
+  return mutated
+}
+
+/**
+ * The guards ownership declaration guard: the envelope's per-file owner map
+ * must name process-supervisor.mjs as the sole writer of the process receipt.
+ * @param {string} source run-envelope-contract.mjs source
+ * @returns {void}
+ */
+function guardGuardsOwnership(source) {
+  const declaration = source.match(/GUARDS_FILE_OWNERS = Object\.freeze\(\{([\s\S]*?)\n\}\)/)
+  if (!declaration) {
+    throw new Error('run-envelope-contract.mjs: missing guards ownership declaration for field "process-supervisor.mjs" at path GUARDS_FILE_OWNERS; repair: restore the per-file guards owner map.')
+  }
+  const owner = declaration[1].match(/'process-cleanup\.json':\s*'([^']+)'/)
+  if (!owner || owner[1] !== 'process-supervisor.mjs') {
+    throw new Error(`run-envelope-contract.mjs: wrong process cleanup receipt owner ${JSON.stringify(owner?.[1])} for field "process-supervisor.mjs" at path GUARDS_FILE_OWNERS.process-cleanup.json; repair: name process-supervisor.mjs as the sole writer.`)
+  }
+}

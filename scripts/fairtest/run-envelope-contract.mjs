@@ -4,8 +4,10 @@
 // has exactly one owner, and an owner may create or finalize only its own
 // subtree:
 //
-//   guards/     init-fairtest.mjs (run-envelope.json) and the receipt commands
-//               (inventory-<mode>-receipt.json, selection-receipt.json)
+//   guards/     init-fairtest.mjs (run-envelope.json), list-fairtest.mjs
+//               (inventory-<mode>-receipt.json), selection-receipt.mjs
+//               (selection-receipt.json), and process-supervisor.mjs
+//               (process-cleanup.json) -- exactly one declared writer per file
 //   selection/  select-fairtest.mjs (expected-selection.json)
 //   producer/   the mounted product and component producers
 //   evidence/   verify-fairtest.mjs (evidence.json)
@@ -77,6 +79,24 @@ export const SELECTION_RECEIPT_REL = `${GUARDS_DIR}/selection-receipt.json`
  * @type {string}
  */
 export const PROCESS_CLEANUP_RECEIPT_REL = `${GUARDS_DIR}/process-cleanup.json`
+
+/**
+ * The one declared writer of each durable guards/ file. Exactly one owner per
+ * file: init writes the envelope, the list command writes the mode receipts,
+ * the selection-receipt command stamps the selection receipt, and the process
+ * supervisor is the sole writer of the process cleanup receipt. The envelope's
+ * ownership record is built from this map, and the preflight requires the
+ * CI-required entries from it, so a second writer or a missing owner is
+ * observable.
+ * @type {Readonly<Record<string, string>>}
+ */
+export const GUARDS_FILE_OWNERS = Object.freeze({
+  'run-envelope.json': 'init-fairtest.mjs',
+  'inventory-ci-receipt.json': 'list-fairtest.mjs',
+  'inventory-local-receipt.json': 'list-fairtest.mjs',
+  'selection-receipt.json': 'selection-receipt.mjs',
+  'process-cleanup.json': 'process-supervisor.mjs',
+})
 
 /**
  * The verifier's durable report, owned by verify-fairtest.mjs.

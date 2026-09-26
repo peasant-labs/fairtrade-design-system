@@ -4,7 +4,7 @@
 # protect the family record; the workflow mutations protect the CI guard by
 # editing the real .github/workflows/ci.yml text and requiring the guard to
 # fail for its intended field.
-expectedCaseCount: 32
+expectedCaseCount: 36
 requiredCaseNames:
   - ci-key-set-is-exact
   - ci-key-set-rejects-a-missing-key
@@ -26,6 +26,10 @@ requiredCaseNames:
   - preflight-rejects-a-missing-envelope
   - preflight-rejects-a-missing-inventory-receipt
   - preflight-rejects-a-missing-selection-receipt
+  - preflight-rejects-a-missing-process-receipt
+  - preflight-rejects-a-malformed-process-receipt
+  - preflight-rejects-a-foreign-process-receipt
+  - preflight-rejects-an-unbound-process-receipt
   - preflight-rejects-incomplete-evidence
   - preflight-rejects-a-tampered-selection-digest
   - preflight-rejects-a-local-mode-selection
@@ -137,3 +141,41 @@ workflowMutations:
     find: "          pnpm test:fairtest:compat\n"
     replace: ''
     expectedField: test:fairtest:compat
+expectedSourceMutationCount: 5
+requiredSourceMutationNames:
+  - dropped-process-receipt-requirement
+  - dropped-process-receipt-validation
+  - dropped-process-receipt-run-binding
+  - dropped-process-receipt-project-binding
+  - dropped-process-receipt-owner
+sourceMutations:
+  - name: dropped-process-receipt-requirement
+    source: scripts/fairtest/preflight-fairtest.mjs
+    defect: missing
+    find: "      PROCESS_CLEANUP_RECEIPT_REL,\n      EVIDENCE_REL,"
+    replace: "      EVIDENCE_REL,"
+    expectedField: ownedFiles
+  - name: dropped-process-receipt-validation
+    source: scripts/fairtest/preflight-fairtest.mjs
+    defect: malformed
+    find: "    validated = processContract.validateProcessCleanupReceipt(receipt, label)"
+    replace: "    validated = receipt"
+    expectedField: process.receipt
+  - name: dropped-process-receipt-run-binding
+    source: scripts/fairtest/preflight-fairtest.mjs
+    defect: foreign
+    find: "  if (receipt.runId !== runId) {\n    throw new Error(\n      `${label}: process cleanup receipt belongs to another run"
+    replace: "  if (false) {\n    throw new Error(\n      `${label}: process cleanup receipt belongs to another run"
+    expectedField: runId
+  - name: dropped-process-receipt-project-binding
+    source: scripts/fairtest/preflight-fairtest.mjs
+    defect: unbound
+    find: "  if (receipt.project !== FAIRTEST_PROJECT) {"
+    replace: "  if (false) {"
+    expectedField: project
+  - name: dropped-process-receipt-owner
+    source: scripts/fairtest/run-envelope-contract.mjs
+    defect: ownership
+    find: "  'process-cleanup.json': 'process-supervisor.mjs',"
+    replace: "  'process-cleanup.json': 'init-fairtest.mjs',"
+    expectedField: process-supervisor.mjs
