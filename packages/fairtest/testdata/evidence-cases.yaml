@@ -1,0 +1,262 @@
+# Neutral evidence verification cases. Browser-free and self-contained: a base
+# run plus row templates describe one valid single-capture run, and each case
+# mutates that run (or names a construction that must be refused) and asserts
+# the exact closed failure codes the verifier returns. No runner, route,
+# selector, port, or product threshold literal appears here; caller-owned ids,
+# artifact classes, roots, and thresholds are fixture values only.
+expectedCaseCount: 21
+base:
+  runId: fixture-run-alpha
+  mode: single-capture
+  nowMs: 100000
+  policy:
+    version: 1
+    artifactClasses: [record.json, aria.json, axe.json, screenshot.png, provenance.json, resolution.json]
+    requiredRows:
+      - {key: product-dark, kind: product, theme: dark, root: built-app-root}
+      - {key: product-light, kind: product, theme: light, root: built-app-root}
+      - {key: component-dark, kind: component, theme: dark, root: built-component-root}
+      - {key: component-light, kind: component, theme: light, root: built-component-root}
+    duplicateScopes: [same-key, cross-row, cross-theme]
+    maxAgeMs: 50000
+    maxOutputBytes: 4096
+  rows:
+    - {use: product-dark}
+    - {use: product-light}
+    - {use: component-dark}
+    - {use: component-light}
+templates:
+  product-dark:
+    key: product-dark
+    kind: product
+    theme: dark
+    identityId: product-target-alpha
+    proofIdentityId: product-target-alpha
+    proof: present
+    observedAtMs: 99000
+    provenance: {root: built-app-root, servedFrom: run-root-alpha}
+    themeObservation: {expected: dark, observed: dark}
+    artifacts:
+      record.json: '{"row":"product-dark"}'
+      aria.json: '{"row":"product-dark","snapshot":"alpha"}'
+      axe.json: '{"row":"product-dark","passes":3}'
+      screenshot.png: 'png-product-dark-alpha'
+      provenance.json: '{"root":"built-app-root","row":"product-dark"}'
+      resolution.json: '{"row":"product-dark","kind":"product"}'
+  product-light:
+    key: product-light
+    kind: product
+    theme: light
+    identityId: product-target-alpha
+    proofIdentityId: product-target-alpha
+    proof: present
+    observedAtMs: 99000
+    provenance: {root: built-app-root, servedFrom: run-root-alpha}
+    themeObservation: {expected: light, observed: light}
+    artifacts:
+      record.json: '{"row":"product-light"}'
+      aria.json: '{"row":"product-light","snapshot":"alpha"}'
+      axe.json: '{"row":"product-light","passes":3}'
+      screenshot.png: 'png-product-light-alpha'
+      provenance.json: '{"root":"built-app-root","row":"product-light"}'
+      resolution.json: '{"row":"product-light","kind":"product"}'
+  component-dark:
+    key: component-dark
+    kind: component
+    theme: dark
+    identityId: component-target-alpha
+    proofIdentityId: component-target-alpha
+    proof: present
+    observedAtMs: 99000
+    provenance: {root: built-component-root, servedFrom: run-root-alpha}
+    themeObservation: {expected: dark, observed: dark}
+    artifacts:
+      record.json: '{"row":"component-dark"}'
+      aria.json: '{"row":"component-dark","snapshot":"alpha"}'
+      axe.json: '{"row":"component-dark","passes":3}'
+      screenshot.png: 'png-component-dark-alpha'
+      provenance.json: '{"root":"built-component-root","row":"component-dark"}'
+      resolution.json: '{"row":"component-dark","kind":"component"}'
+  component-light:
+    key: component-light
+    kind: component
+    theme: light
+    identityId: component-target-alpha
+    proofIdentityId: component-target-alpha
+    proof: present
+    observedAtMs: 99000
+    provenance: {root: built-component-root, servedFrom: run-root-alpha}
+    themeObservation: {expected: light, observed: light}
+    artifacts:
+      record.json: '{"row":"component-light"}'
+      aria.json: '{"row":"component-light","snapshot":"alpha"}'
+      axe.json: '{"row":"component-light","passes":3}'
+      screenshot.png: 'png-component-light-alpha'
+      provenance.json: '{"root":"built-component-root","row":"component-light"}'
+      resolution.json: '{"row":"component-light","kind":"component"}'
+  extra-row:
+    key: extra-dark
+    kind: product
+    theme: dark
+    identityId: product-target-alpha
+    proofIdentityId: product-target-alpha
+    proof: present
+    observedAtMs: 99000
+    provenance: {root: built-app-root, servedFrom: run-root-alpha}
+    themeObservation: {expected: dark, observed: dark}
+    artifacts:
+      record.json: '{"row":"extra-dark"}'
+      aria.json: '{"row":"extra-dark","snapshot":"alpha"}'
+      axe.json: '{"row":"extra-dark","passes":3}'
+      screenshot.png: 'png-extra-dark-alpha'
+      provenance.json: '{"root":"built-app-root","row":"extra-dark"}'
+      resolution.json: '{"row":"extra-dark","kind":"product"}'
+cases:
+  - name: baseline-complete
+    check: verdict
+    mutations:
+      - {kind: none}
+    expectComplete: true
+    expectedCodes: []
+  - name: missing-row
+    check: verdict
+    mutations:
+      - {kind: delete-row, target: product-dark}
+    expectComplete: false
+    expectedCodes: [missing-row]
+  - name: missing-artifact
+    check: verdict
+    mutations:
+      - {kind: delete-artifact, target: product-dark, artifact: screenshot.png}
+    expectComplete: false
+    expectedCodes: [missing-artifact]
+  - name: incomplete-artifact-set
+    check: verdict
+    mutations:
+      - {kind: delete-artifact, target: product-dark, artifact: record.json}
+      - {kind: delete-artifact, target: product-dark, artifact: aria.json}
+      - {kind: delete-artifact, target: product-dark, artifact: axe.json}
+    expectComplete: false
+    expectedCodes: [missing-artifact]
+  - name: unexpected-artifact
+    check: verdict
+    mutations:
+      - {kind: add-artifact, target: product-dark, artifact: scratch.txt, content: 'scratch-bytes'}
+    expectComplete: false
+    expectedCodes: [unexpected-artifact]
+  - name: stale-record
+    check: verdict
+    mutations:
+      - {kind: patch-row, target: product-dark, patch: {observedAtMs: 0}}
+    expectComplete: false
+    expectedCodes: [stale-record]
+  - name: digest-mismatch
+    check: verdict
+    mutations:
+      - {kind: set-artifact-digest, target: product-dark, artifact: screenshot.png, digest: '0000000000000000000000000000000000000000000000000000000000000000'}
+    expectComplete: false
+    expectedCodes: [digest-mismatch]
+  - name: duplicate-same-key
+    check: verdict
+    mutations:
+      - {kind: add-row, row: {use: product-dark}}
+    expectComplete: false
+    expectedCodes: [duplicate-same-key]
+  - name: duplicate-cross-row
+    check: verdict
+    mutations:
+      - {kind: set-artifact-content, target: component-dark, artifact: record.json, content: '{"row":"product-dark"}'}
+    expectComplete: false
+    expectedCodes: [duplicate-cross-row]
+  - name: duplicate-cross-theme
+    check: verdict
+    mutations:
+      - {kind: set-artifact-content, target: product-light, artifact: screenshot.png, content: 'png-product-dark-alpha'}
+    expectComplete: false
+    expectedCodes: [duplicate-cross-theme]
+  - name: unproven-proof
+    check: verdict
+    mutations:
+      - {kind: patch-row, target: product-dark, patch: {proofIdentityId: product-target-beta}}
+    expectComplete: false
+    expectedCodes: [unproven]
+  - name: unproven-missing-proof
+    check: verdict
+    mutations:
+      - {kind: patch-row, target: product-dark, patch: {proof: absent}}
+    expectComplete: false
+    expectedCodes: [unproven]
+  - name: cross-root
+    check: verdict
+    mutations:
+      - {kind: patch-row, target: product-dark, patch: {provenance: {root: other-built-root, servedFrom: run-root-alpha}}}
+    expectComplete: false
+    expectedCodes: [cross-root]
+  - name: missing-provenance
+    check: verdict
+    mutations:
+      - {kind: patch-row, target: product-dark, patch: {provenance: null}}
+    expectComplete: false
+    expectedCodes: [missing-provenance]
+  - name: unexpected-row
+    check: verdict
+    mutations:
+      - {kind: add-row, row: {use: extra-row}}
+    expectComplete: false
+    expectedCodes: [unexpected-row]
+  - name: kind-mismatch
+    check: verdict
+    mutations:
+      - {kind: set-required, target: product-dark, rowKind: component}
+    expectComplete: false
+    expectedCodes: [kind-mismatch]
+  - name: theme-mismatch
+    check: verdict
+    mutations:
+      - {kind: set-required, target: product-dark, theme: light}
+    expectComplete: false
+    expectedCodes: [theme-mismatch]
+  - name: unsupported-mode
+    check: verdict
+    mutations:
+      - {kind: set-mode, value: side-by-side}
+    expectComplete: false
+    expectedCodes: [unsupported-mode]
+  - name: run-identity-mismatch
+    check: verdict
+    mutations:
+      - {kind: set-run-id, value: fixture-run-beta}
+    expectComplete: false
+    expectedCodes: [run-identity-mismatch]
+  - name: output-cap
+    check: verdict
+    mutations:
+      - {kind: set-policy, field: maxOutputBytes, value: 1}
+    expectComplete: false
+    expectedCodes: [output-cap]
+  - name: single-capture-rejects-side-by-side-field
+    check: run
+    run:
+      identity: {kind: run, id: fixture-run-alpha, createdAtMs: 1000}
+      mode: single-capture
+      rows: []
+      reference: baseline-alpha
+    expectValid: false
+    expectedErrorContains: [reference, "at path", "repair:"]
+forbiddenVerifierPatterns:
+  - name: inuse-route
+    pattern: '#inuse'
+  - name: theme-attribute-selector
+    pattern: '\[data-theme'
+  - name: product-testid-selector
+    pattern: 'txn-scrubber'
+  - name: component-root-selector
+    pattern: '#storybook-root'
+  - name: storybook-built-root
+    pattern: 'storybook-static'
+  - name: loopback-address
+    pattern: '127\.0\.0\.1|localhost'
+  - name: scheme-address
+    pattern: 'https?://'
+  - name: browser-runner
+    pattern: 'playwright|puppeteer|jsdom'

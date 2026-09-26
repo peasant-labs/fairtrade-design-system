@@ -3560,6 +3560,8 @@ describe('fairtest host export ownership', async () => {
     'component.journey.mjs',
     'run-mounted.mjs',
     'run-product-contract.mjs',
+    'verify-fairtest.mjs',
+    'fairtest-evidence-policy.mjs',
   ])
   const hostModules = {}
   for (const file of hostFiles) {

@@ -83,6 +83,12 @@ commands:
     owner: mounted-proofs
     stage: mounted
     runner: process-only
+  # REQUIRED-CI MOUNT: DEFERRED for the browser-neutral verifier too. The
+  # verifier command is required in the runner inventory and runnable from a
+  # clean checkout, but no required CI workflow invokes it yet; the command
+  # prints the same declared-not-ci status on every run
+  # (scripts/fairtest/verify-fairtest.mjs). Mounting it in required CI is a
+  # separate, later change that must also flip that status.
   - name: test:fairtest:verify
     invocation: pnpm test:fairtest:verify
     owner: evidence-ci

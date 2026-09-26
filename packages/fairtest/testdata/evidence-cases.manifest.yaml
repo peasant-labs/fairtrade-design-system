@@ -1,0 +1,116 @@
+# Required-name inventory and executable fixture mutations for evidence-cases.yaml.
+# Every required case name below must appear exactly once in the corpus; the
+# guard inventory names the case that turns each closed verifier code red; the
+# mutations prove the fixture family itself is shape-validated.
+expectedCaseCount: 21
+requiredCaseNames:
+  - baseline-complete
+  - missing-row
+  - missing-artifact
+  - incomplete-artifact-set
+  - unexpected-artifact
+  - stale-record
+  - digest-mismatch
+  - duplicate-same-key
+  - duplicate-cross-row
+  - duplicate-cross-theme
+  - unproven-proof
+  - unproven-missing-proof
+  - cross-root
+  - missing-provenance
+  - unexpected-row
+  - kind-mismatch
+  - theme-mismatch
+  - unsupported-mode
+  - run-identity-mismatch
+  - output-cap
+  - single-capture-rejects-side-by-side-field
+expectedGuardCount: 17
+requiredGuardNames:
+  - guard-run-identity-mismatch
+  - guard-unsupported-mode
+  - guard-missing-row
+  - guard-unexpected-row
+  - guard-kind-mismatch
+  - guard-theme-mismatch
+  - guard-missing-artifact
+  - guard-unexpected-artifact
+  - guard-digest-mismatch
+  - guard-stale-record
+  - guard-output-cap
+  - guard-missing-provenance
+  - guard-cross-root
+  - guard-unproven
+  - guard-duplicate-same-key
+  - guard-duplicate-cross-row
+  - guard-duplicate-cross-theme
+guards:
+  - {name: guard-run-identity-mismatch, case: run-identity-mismatch, code: run-identity-mismatch}
+  - {name: guard-unsupported-mode, case: unsupported-mode, code: unsupported-mode}
+  - {name: guard-missing-row, case: missing-row, code: missing-row}
+  - {name: guard-unexpected-row, case: unexpected-row, code: unexpected-row}
+  - {name: guard-kind-mismatch, case: kind-mismatch, code: kind-mismatch}
+  - {name: guard-theme-mismatch, case: theme-mismatch, code: theme-mismatch}
+  - {name: guard-missing-artifact, case: missing-artifact, code: missing-artifact}
+  - {name: guard-unexpected-artifact, case: unexpected-artifact, code: unexpected-artifact}
+  - {name: guard-digest-mismatch, case: digest-mismatch, code: digest-mismatch}
+  - {name: guard-stale-record, case: stale-record, code: stale-record}
+  - {name: guard-output-cap, case: output-cap, code: output-cap}
+  - {name: guard-missing-provenance, case: missing-provenance, code: missing-provenance}
+  - {name: guard-cross-root, case: cross-root, code: cross-root}
+  - {name: guard-unproven, case: unproven-proof, code: unproven}
+  - {name: guard-duplicate-same-key, case: duplicate-same-key, code: duplicate-same-key}
+  - {name: guard-duplicate-cross-row, case: duplicate-cross-row, code: duplicate-cross-row}
+  - {name: guard-duplicate-cross-theme, case: duplicate-cross-theme, code: duplicate-cross-theme}
+expectedMutationCount: 8
+requiredMutationNames:
+  - removing a required case breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the check discriminator breaks the case shape
+  - deleting the mutation list breaks the verdict case shape
+  - flipping the completeness outcome breaks the behavioral runner
+  - adding an unknown case field breaks exact membership
+  - inventing a check kind breaks the closed vocabulary
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing a required case breaks the required inventory
+    kind: delete-record
+    target: baseline-complete
+    expectedField: baseline-complete
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: baseline-complete
+    expectedField: baseline-complete
+  - name: renaming the check discriminator breaks the case shape
+    kind: rename-field
+    target: missing-row
+    field: check
+    newField: kind
+    expectedField: check
+  - name: deleting the mutation list breaks the verdict case shape
+    kind: delete-field
+    target: missing-row
+    field: mutations
+    expectedField: mutations
+  - name: flipping the completeness outcome breaks the behavioral runner
+    kind: bad-value
+    target: baseline-complete
+    field: expectComplete
+    value: false
+    expectedField: expectComplete
+  - name: adding an unknown case field breaks exact membership
+    kind: unknown-field
+    target: baseline-complete
+    field: theme
+    value: light
+    expectedField: theme
+  - name: inventing a check kind breaks the closed vocabulary
+    kind: bad-value
+    target: baseline-complete
+    field: check
+    value: invented-check
+    expectedField: check
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document

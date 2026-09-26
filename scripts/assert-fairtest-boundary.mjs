@@ -328,7 +328,7 @@ function filesReferencingChild(directory, base = directory) {
 /** @returns {{ file: string, text: string }[]} */
 function childSources() {
   const entries = []
-  for (const dir of ['core', 'host-contract']) {
+  for (const dir of ['core', 'host-contract', 'evidence']) {
     const directory = join(ROOT, CHILD_REL, 'src', dir)
     for (const name of readdirSync(directory).filter((entry) => entry.endsWith('.mjs')).sort()) {
       entries.push({ file: `src/${dir}/${name}`, text: readFileSync(join(directory, name), 'utf8') })

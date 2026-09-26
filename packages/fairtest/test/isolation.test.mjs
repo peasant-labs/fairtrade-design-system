@@ -19,6 +19,7 @@ import { assertExactFields, assertWithinRoot, checkRequiredNames, isAllowedImpor
 const CHILD_ROOT_URL = new URL('..', import.meta.url)
 const CORE_DIR_URL = new URL('../src/core/', import.meta.url)
 const CONTRACT_DIR_URL = new URL('../src/host-contract/', import.meta.url)
+const EVIDENCE_DIR_URL = new URL('../src/evidence/', import.meta.url)
 const BOUNDARY_URL = new URL('../../../scripts/testdata/fairtest-boundary.yaml', import.meta.url)
 const CHILD_MANIFEST = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
 const DECLARED_DEPS = new Set(Object.keys(CHILD_MANIFEST.dependencies ?? {}))
@@ -32,13 +33,20 @@ function readBoundary() {
 /** @returns {{ file: string, text: string }[]} */
 function childSources() {
   const entries = []
-  for (const [dir, url] of [['core', CORE_DIR_URL], ['host-contract', CONTRACT_DIR_URL]]) {
+  for (const [dir, url] of [['core', CORE_DIR_URL], ['host-contract', CONTRACT_DIR_URL], ['evidence', EVIDENCE_DIR_URL]]) {
     for (const name of readdirSync(url).filter((entry) => entry.endsWith('.mjs')).sort()) {
       entries.push({ file: `src/${dir}/${name}`, text: readFileSync(new URL(name, url), 'utf8') })
     }
   }
   return entries
 }
+
+/**
+ * Sibling child module directories a source module may import from. A module
+ * may reach any of the declared child source trees but nothing outside them.
+ * @type {string[]}
+ */
+const ALLOWED_SIBLING_PREFIXES = ['../core/', '../host-contract/', '../evidence/']
 
 /** @param {string} file @param {string} text */
 function staticImports(file, text) {
@@ -113,7 +121,7 @@ describe('fairtest isolation static imports', () => {
       for (const { specifier } of staticImports(file, text)) {
         if (specifier.startsWith('node:')) continue
         if (specifier.startsWith('./') || specifier.startsWith('../')) {
-          assert.ok(!specifier.includes('..') || specifier.startsWith('../core/'), `${file}: import ${JSON.stringify(specifier)} escapes its module directory`)
+          assert.ok(!specifier.includes('..') || ALLOWED_SIBLING_PREFIXES.some((prefix) => specifier.startsWith(prefix)), `${file}: import ${JSON.stringify(specifier)} escapes its module directory`)
           continue
         }
         const root = specifier.startsWith('@') ? specifier.split('/').slice(0, 2).join('/') : specifier.split('/')[0]
