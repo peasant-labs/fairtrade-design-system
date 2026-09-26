@@ -57,6 +57,7 @@ import {
   buildProductBodyRecord,
   buildProductViewRecord,
   buildProductAccessibilityEvidence,
+  captureProductRow,
   createProductStaticDriver,
   prepareProductRowDir,
   productRowDir,
@@ -104,7 +105,7 @@ const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs', 'fairtrade
 const PRODUCT_HOST_FILES = ['product-producer.mjs', 'product-mutations.mjs', 'product.journey.mjs', 'component-producer.mjs', 'component-mutations.mjs']
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
-const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'cli-target', 'driver-out-of-root', 'driver-host-refusal', 'driver-stop-contract', 'driver-reset-contract', 'rendered-active-view', 'record-truthfulness', 'row-dir-preparation', 'runner-config', 'port-owner', 'axe-report-shape', 'mounted-row-guard-calls', 'combined-suite-invocation', 'product-contract-command', 'mounted-command', 'host-literal-guard', 'served-digest-comparison']
+const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'product-capture-envelope', 'cli-target', 'driver-out-of-root', 'driver-host-refusal', 'driver-stop-contract', 'driver-reset-contract', 'rendered-active-view', 'record-truthfulness', 'row-dir-preparation', 'runner-config', 'port-owner', 'axe-report-shape', 'mounted-row-guard-calls', 'combined-suite-invocation', 'product-contract-command', 'mounted-command', 'host-literal-guard', 'served-digest-comparison']
 const A11Y_POINTS = ['initial', 'after-action']
 const A11Y_IMPACTS = ['minor', 'moderate', 'serious', 'critical']
 const ROW_THEMES = ['dark', 'light']
@@ -232,6 +233,7 @@ function checkCaseShape(entry, index) {
     'run-root': entry.expectValid
       ? ['name', 'check', 'runRootEnv', 'runIdEnv', 'seedEnvelope', 'expectRoot', 'expectValid']
       : ['name', 'check', 'runRootEnv', 'expectValid', 'expectedErrorContains', ...('seedEnvelope' in entry ? ['runIdEnv', 'seedEnvelope', 'envelopeRunId'] : [])],
+    'product-capture-envelope': ['name', 'check', 'runRootEnv', 'runIdEnv', 'seedEnvelope', 'envelopeRunId', 'theme', 'expectValid', 'expectedErrorContains'],
     'cli-target': ['name', 'check', 'args', 'expectValid', 'expectExitCode', 'expectedErrorContains'],
     'a11y-baseline': ['name', 'check', 'policy', 'point', 'violations', ...tail],
     'a11y-delta': ['name', 'check', 'point', 'observedSection', 'measured', ...('baseline' in entry ? ['baseline'] : []), ...tail],
@@ -343,6 +345,28 @@ function checkCaseShape(entry, index) {
       if (field in entry && (typeof entry[field] !== 'string' || entry[field].length === 0)) {
         throw new Error(`${CORPUS_REL}: case "${entry.name}" holds an invalid value ${JSON.stringify(entry[field])} for field "${field}" at path ${path}.${field}; repair: declare the run id the case sets.`)
       }
+    }
+  }
+  if (entry.check === 'product-capture-envelope') {
+    if (entry.runRootEnv !== null && (typeof entry.runRootEnv !== 'string' || entry.runRootEnv.length === 0)) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" holds a malformed run-root env value for field "runRootEnv" at path ${path}.runRootEnv; repair: declare the FAIRTEST_RUN_ROOT value the case sets.`)
+    }
+    if (typeof entry.runRootEnv !== 'string' || !isAbsolute(entry.runRootEnv)) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing the absolute run root for field "runRootEnv" at path ${path}.runRootEnv; repair: declare the absolute run root the capture seam is passed.`)
+    }
+    if (entry.seedEnvelope !== true) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing its seeded envelope for field "seedEnvelope" at path ${path}.seedEnvelope; repair: set seedEnvelope true so the refusal is observed against a real envelope.`)
+    }
+    for (const field of ['runIdEnv', 'envelopeRunId']) {
+      if (typeof entry[field] !== 'string' || entry[field].length === 0) {
+        throw new Error(`${CORPUS_REL}: case "${entry.name}" holds an invalid value ${JSON.stringify(entry[field])} for field "${field}" at path ${path}.${field}; repair: declare the run id the case sets.`)
+      }
+    }
+    if (!ROW_THEMES.includes(/** @type {string} */ (entry.theme))) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" names an unknown row theme ${JSON.stringify(entry.theme)} for field "theme" at path ${path}.theme; repair: use one of ${ROW_THEMES.join(', ')} for "theme".`)
+    }
+    if (entry.expectValid !== false) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" declares a passing verdict for field "expectValid" at path ${path}.expectValid; repair: declare expectValid false so the capture seam can only assert a fail-closed refusal.`)
     }
   }
   if (entry.check === 'cli-target') {
@@ -1633,6 +1657,73 @@ function runRunRootCase(entry) {
 }
 
 /**
+ * A page stand-in that throws on every property access. The product capture
+ * seam must refuse a foreign run envelope BEFORE it touches the page or
+ * creates the row directory, so reaching this object at all proves the guard
+ * ran too late.
+ * @type {object}
+ */
+const TORN_PRODUCT_PAGE = new Proxy({}, {
+  get(_target, property) {
+    throw new Error(
+      `product producer: the run-envelope guard must run before the page is touched for field "page" at path row.page (accessed ${String(property)}); ` +
+      'repair: keep requireEnvelopeForRun before prepareProductRowDir so a foreign root is refused before any browser work.',
+    )
+  },
+})
+
+/**
+ * Run one capture-seam case through the producer's REAL capture wrapper. The
+ * declared run root is seeded with an envelope that belongs to another run and
+ * passed explicitly so the resolver seam is bypassed: only the re-require
+ * before the row directory is observed. The wrapper must refuse the foreign
+ * envelope before it touches the page or creates the row directory. The
+ * environment and the seeded root are restored in a finally block.
+ * @param {Record<string, unknown>} entry case record
+ * @returns {Promise<void>} resolves when the case has been checked
+ */
+async function runProductCaptureEnvelopeCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const declaredRunRoot = /** @type {string} */ (entry.runRootEnv)
+  const theme = /** @type {string} */ (entry.theme)
+  const previousRoot = process.env.FAIRTEST_RUN_ROOT
+  const previousRunId = process.env.FAIRTEST_RUN_ID
+  let message = null
+  let rowDirCreated = null
+  try {
+    rmSync(declaredRunRoot, { recursive: true, force: true })
+    mkdirSync(join(declaredRunRoot, 'guards'), { recursive: true })
+    writeFileSync(
+      join(declaredRunRoot, 'guards', 'run-envelope.json'),
+      `${JSON.stringify({ runId: entry.envelopeRunId ?? entry.runIdEnv, project: 'fairtest' }, null, 2)}\n`,
+    )
+    process.env.FAIRTEST_RUN_ROOT = declaredRunRoot
+    process.env.FAIRTEST_RUN_ID = /** @type {string} */ (entry.runIdEnv)
+    try {
+      await captureProductRow(TORN_PRODUCT_PAGE, theme, { runRoot: declaredRunRoot })
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error)
+    }
+    rowDirCreated = existsSync(join(declaredRunRoot, 'producer', `product-${theme}`))
+  } finally {
+    rmSync(declaredRunRoot, { recursive: true, force: true })
+    if (previousRoot === undefined) {
+      delete process.env.FAIRTEST_RUN_ROOT
+    } else {
+      process.env.FAIRTEST_RUN_ROOT = previousRoot
+    }
+    if (previousRunId === undefined) {
+      delete process.env.FAIRTEST_RUN_ID
+    } else {
+      process.env.FAIRTEST_RUN_ID = previousRunId
+    }
+  }
+  assert.ok(message, `${name}: the product capture seam accepted a foreign run envelope instead of refusing it`)
+  expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  assert.equal(rowDirCreated, false, `${name}: the capture seam must refuse a foreign envelope before creating the row directory`)
+}
+
+/**
  * Run one mounted-CLI case as a real subprocess of the mounted shim, so the
  * target-flag guard is observed at its own exit code and diagnostic instead
  * of being re-implemented here. The cases only exercise the branches that
@@ -2607,6 +2698,7 @@ const RUNNERS = {
   'a11y-record': runA11yRecordCase,
   'observation-time': runObservationTimeCase,
   'run-root': runRunRootCase,
+  'product-capture-envelope': runProductCaptureEnvelopeCase,
   'cli-target': runCliTargetCase,
   'driver-out-of-root': runDriverOutOfRootCase,
   'driver-host-refusal': runDriverHostRefusalCase,

@@ -10,14 +10,15 @@
 
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { storyUrl } from '../journey/lib/fixtures.mjs'
 import { normalizeRenderedTheme } from './fairtrade-targets.mjs'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
+import { captureComponentRow, resolveComponentRunRoot } from './component-producer.mjs'
 import * as targets from './fairtrade-component-target.mjs'
 import { COMPONENT_MUTATION_NAMES, runComponentMutation } from './component-mutations.mjs'
 import { PRODUCT_ONLY_FIELDS as PROOF_PRODUCT_ONLY_FIELDS } from './fairtest-artifacts.mjs'
@@ -33,7 +34,7 @@ const coreFixtures = await importFairtestSource('src/core/fixtures.mjs')
 const contractTargets = await importFairtestSource('src/host-contract/targets.mjs')
 const contractResolution = await importFairtestSource('src/host-contract/resolution.mjs')
 
-const CHECKS = ['component-row', 'component-url', 'component-setup', 'component-project', 'component-mount', 'component-declaration', 'component-action', 'component-proof', 'component-proof-blanket', 'component-cross-kind', 'component-mutation']
+const CHECKS = ['component-row', 'component-url', 'component-setup', 'component-project', 'component-mount', 'component-declaration', 'component-action', 'component-proof', 'component-proof-blanket', 'component-cross-kind', 'component-mutation', 'component-run-root', 'component-capture-envelope']
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'stale-name', 'trailing-document'])
 const ROW_THEMES = ['dark', 'light']
 
@@ -148,6 +149,10 @@ function checkCaseShape(entry, index) {
     'component-proof-blanket': ['name', 'check', 'mounted', 'expectValid', 'expectedErrorContains'],
     'component-cross-kind': ['name', 'check', 'record', 'presentedTo', 'expectValid', 'expectedErrorContains'],
     'component-mutation': ['name', 'check', 'mutation', 'boundary', 'expectValid', 'expectedErrorContains'],
+    'component-run-root': entry.expectValid
+      ? ['name', 'check', 'runRootEnv', 'runIdEnv', 'seedEnvelope', 'expectRoot', 'expectValid']
+      : ['name', 'check', 'runRootEnv', 'runIdEnv', 'seedEnvelope', 'envelopeRunId', 'expectValid', 'expectedErrorContains'],
+    'component-capture-envelope': ['name', 'check', 'runRootEnv', 'runIdEnv', 'seedEnvelope', 'envelopeRunId', 'theme', 'expectValid', 'expectedErrorContains'],
   }
   coreFixtures.checkKeys(entry, fieldsByCheck[entry.check], 'case record', CORPUS_REL, path)
   if (!entry.expectValid) {
@@ -184,6 +189,35 @@ function checkCaseShape(entry, index) {
     }
     if (typeof entry.boundary !== 'string' || entry.boundary.trim().length === 0) {
       throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing its owning boundary for field "boundary" at path ${path}.boundary; repair: name the owning component boundary for "boundary".`)
+    }
+  }
+  if (entry.check === 'component-run-root' || entry.check === 'component-capture-envelope') {
+    if (entry.runRootEnv !== null && (typeof entry.runRootEnv !== 'string' || entry.runRootEnv.length === 0)) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" holds a malformed run-root env value for field "runRootEnv" at path ${path}.runRootEnv; repair: declare the FAIRTEST_RUN_ROOT value the case sets, or null for an unset variable.`)
+    }
+    if (entry.expectValid && (typeof entry.expectRoot !== 'string' || !isAbsolute(entry.expectRoot))) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing the resolved root for field "expectRoot" at path ${path}.expectRoot; repair: declare the absolute run root the component producer must resolve.`)
+    }
+    if ('seedEnvelope' in entry && typeof entry.seedEnvelope !== 'boolean') {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" holds a non-boolean seed marker for field "seedEnvelope" at path ${path}.seedEnvelope; repair: set seedEnvelope to true or remove it.`)
+    }
+    for (const field of ['runIdEnv', 'envelopeRunId']) {
+      if (field in entry && (typeof entry[field] !== 'string' || entry[field].length === 0)) {
+        throw new Error(`${CORPUS_REL}: case "${entry.name}" holds an invalid value ${JSON.stringify(entry[field])} for field "${field}" at path ${path}.${field}; repair: declare the run id the case sets.`)
+      }
+    }
+  }
+  if (entry.check === 'component-capture-envelope') {
+    if (!ROW_THEMES.includes(/** @type {string} */ (entry.theme))) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" names an unknown row theme ${JSON.stringify(entry.theme)} for field "theme" at path ${path}.theme; repair: use one of ${ROW_THEMES.join(', ')} for "theme".`)
+    }
+    if (entry.expectValid !== false) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" declares a passing verdict for field "expectValid" at path ${path}.expectValid; repair: declare expectValid false so the capture seam can only assert a fail-closed refusal.`)
+    }
+  }
+  if (entry.check === 'component-run-root' && !entry.expectValid) {
+    if (entry.seedEnvelope !== true) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing its seeded envelope for field "seedEnvelope" at path ${path}.seedEnvelope; repair: set seedEnvelope true so the refusal is observed against a real envelope.`)
     }
   }
 }
@@ -233,6 +267,10 @@ function runCase(entry) {
       return runComponentCrossKindCase(entry)
     case 'component-mutation':
       return runComponentMutationCase(entry)
+    case 'component-run-root':
+      return runComponentRunRootCase(entry)
+    case 'component-capture-envelope':
+      return runComponentCaptureEnvelopeCase(entry)
     default:
       throw new Error(`${CORPUS_REL}: case "${name}" names an unknown check ${JSON.stringify(entry.check)}`)
   }
@@ -395,6 +433,127 @@ async function runComponentMutationCase(entry) {
   }
   assert.ok(message, `${name}: named mutation passed instead of failing at ${entry.boundary}`)
   expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+}
+
+/**
+ * A page stand-in that throws on every property access. The component capture
+ * seam must refuse a foreign run envelope BEFORE it touches the page, so
+ * reaching this object at all proves the guard ran too late.
+ * @type {object}
+ */
+const TORN_COMPONENT_PAGE = new Proxy({}, {
+  get(_target, property) {
+    throw new Error(
+      `component producer: the run-envelope guard must run before the page is touched for field "page" at path row.page (accessed ${String(property)}); ` +
+      'repair: keep requireEnvelopeForRun before prepareComponentRowDir so a foreign root is refused before any browser work.',
+    )
+  },
+})
+
+/**
+ * Install the case's declared run-root environment, seed the run envelope the
+ * case names, run the thunk against the real component producer seam, then
+ * restore the environment and remove the seeded root in every exit path. The
+ * optional observe hook runs after the thunk settles and before the seeded
+ * root is removed, so a case can read filesystem state the thunk left behind.
+ * The root is a throwaway path and no service or browser is started.
+ * @param {Record<string, unknown>} entry the run-envelope case
+ * @param {() => unknown} run the thunk that drives the real component seam
+ * @param {(seededRoot: string | null) => unknown} [observe] pre-cleanup filesystem probe
+ * @returns {Promise<{ message: string | null, value: unknown, observed: unknown }>} the caught diagnostic, returned value, and probe result
+ */
+async function withSeededEnvelope(entry, run, observe) {
+  const declared = /** @type {string | null} */ (entry.runRootEnv)
+  const declaredRunId = /** @type {string | null} */ (entry.runIdEnv ?? null)
+  const previousRoot = process.env.FAIRTEST_RUN_ROOT
+  const previousRunId = process.env.FAIRTEST_RUN_ID
+  let seeded = null
+  let message = null
+  let value = null
+  let observed = null
+  try {
+    if (entry.seedEnvelope === true && typeof declared === 'string' && isAbsolute(declared)) {
+      rmSync(declared, { recursive: true, force: true })
+      mkdirSync(join(declared, 'guards'), { recursive: true })
+      writeFileSync(
+        join(declared, 'guards', 'run-envelope.json'),
+        `${JSON.stringify({ runId: entry.envelopeRunId ?? declaredRunId, project: 'fairtest' }, null, 2)}\n`,
+      )
+      seeded = declared
+    }
+    if (declared === null) {
+      delete process.env.FAIRTEST_RUN_ROOT
+    } else {
+      process.env.FAIRTEST_RUN_ROOT = declared
+    }
+    if (declaredRunId === null) {
+      delete process.env.FAIRTEST_RUN_ID
+    } else {
+      process.env.FAIRTEST_RUN_ID = declaredRunId
+    }
+    value = await run()
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  } finally {
+    if (observe) observed = observe(seeded)
+    if (seeded !== null) rmSync(seeded, { recursive: true, force: true })
+    if (previousRoot === undefined) {
+      delete process.env.FAIRTEST_RUN_ROOT
+    } else {
+      process.env.FAIRTEST_RUN_ROOT = previousRoot
+    }
+    if (previousRunId === undefined) {
+      delete process.env.FAIRTEST_RUN_ID
+    } else {
+      process.env.FAIRTEST_RUN_ID = previousRunId
+    }
+  }
+  return { message, value, observed }
+}
+
+/**
+ * Run one component run-root case through the producer's REAL root resolver.
+ * The declared FAIRTEST_RUN_ROOT and FAIRTEST_RUN_ID are installed in the
+ * process environment, the real resolver reads them, and the environment is
+ * restored in a finally block. A matching envelope must resolve to the
+ * declared absolute root; a foreign envelope must be refused before any row
+ * directory is created.
+ * @param {Record<string, unknown>} entry case record
+ * @returns {Promise<void>} resolves when the case has been checked
+ */
+async function runComponentRunRootCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const { message, value } = await withSeededEnvelope(entry, () => resolveComponentRunRoot())
+  if (entry.expectValid) {
+    assert.equal(message, null, `${name}: a matching envelope must resolve the component run root; got ${message}`)
+    assert.equal(value, resolve(/** @type {string} */ (entry.expectRoot)), `${name}: the resolved component run root must equal the declared absolute root`)
+    assert.ok(isAbsolute(/** @type {string} */ (value)), `${name}: the resolved component run root must stay absolute`)
+  } else {
+    assert.ok(message, `${name}: an unusable component run root passed instead of failing`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  }
+}
+
+/**
+ * Run one capture-seam case through the producer's REAL capture wrapper. The
+ * run root is passed explicitly so the resolver seam is bypassed and only the
+ * re-require before the row directory is observed: the wrapper must refuse a
+ * foreign envelope before it touches the page or creates the row directory.
+ * @param {Record<string, unknown>} entry case record
+ * @returns {Promise<void>} resolves when the case has been checked
+ */
+async function runComponentCaptureEnvelopeCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const declaredRunRoot = /** @type {string} */ (entry.runRootEnv)
+  const theme = /** @type {string} */ (entry.theme)
+  const { message, observed } = await withSeededEnvelope(
+    entry,
+    () => captureComponentRow(TORN_COMPONENT_PAGE, theme, { runRoot: declaredRunRoot }),
+    () => existsSync(join(declaredRunRoot, 'producer', `component-${theme}`)),
+  )
+  assert.ok(message, `${name}: the component capture seam accepted a foreign run envelope instead of refusing it`)
+  expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  assert.equal(observed, false, `${name}: the capture seam must refuse a foreign envelope before creating the row directory`)
 }
 
 /**

@@ -996,6 +996,15 @@ cases:
     envelopeRunId: some-other-run
     expectValid: false
     expectedErrorContains: ['another run', 'guards/run-envelope.json', 'repair:']
+  - name: product-capture-envelope-mismatch-fails
+    check: product-capture-envelope
+    runRootEnv: /tmp/opencode/fairtest-fixture-product-capture-root
+    runIdEnv: fairtest-fixture-product-capture-root
+    seedEnvelope: true
+    envelopeRunId: some-other-run
+    theme: dark
+    expectValid: false
+    expectedErrorContains: ['belongs to another run', 'field "runId"', 'guards/run-envelope.json', 'repair:']
   - name: cli-target-missing-fails
     check: cli-target
     args: []

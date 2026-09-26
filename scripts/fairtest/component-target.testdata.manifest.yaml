@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # component-target.testdata.yaml.
-expectedCaseCount: 59
+expectedCaseCount: 62
 requiredCaseNames:
   - component-row-dark-absent-theme-passes
   - component-row-dark-empty-theme-passes
@@ -61,7 +61,10 @@ requiredCaseNames:
   - component-mutation-screenshot-floor-fails
   - component-mutation-aria-floor-fails
   - component-mutation-digest-mismatch-fails
-expectedMutationCount: 19
+  - component-run-root-matching-envelope-passes
+  - component-run-root-envelope-mismatch-fails
+  - component-capture-envelope-mismatch-fails
+expectedMutationCount: 21
 requiredMutationNames:
   - component-delete-dark-row-breaking-the-required-inventory
   - component-duplicate-case-name-breaks-uniqueness
@@ -82,6 +85,8 @@ requiredMutationNames:
   - component-invented-mutation-breaks-the-vocabulary
   - component-delete-cross-kind-mutation-breaks-required-inventory
   - component-unknown-mutation-case-field-breaks-membership
+  - component-delete-run-root-envelope-case-breaks-required-inventory
+  - component-delete-capture-envelope-case-breaks-required-inventory
 mutations:
   - name: component-delete-dark-row-breaking-the-required-inventory
     kind: delete-record
@@ -176,3 +181,11 @@ mutations:
     field: timeout
     value: 60
     expectedField: timeout
+  - name: component-delete-run-root-envelope-case-breaks-required-inventory
+    kind: delete-record
+    target: component-run-root-envelope-mismatch-fails
+    expectedField: component-run-root-envelope-mismatch-fails
+  - name: component-delete-capture-envelope-case-breaks-required-inventory
+    kind: delete-record
+    target: component-capture-envelope-mismatch-fails
+    expectedField: component-capture-envelope-mismatch-fails

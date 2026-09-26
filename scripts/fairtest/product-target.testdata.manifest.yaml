@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # product-target.testdata.yaml.
-expectedCaseCount: 120
+expectedCaseCount: 121
 requiredCaseNames:
   - theme-row-dark-absent-passes
   - theme-row-dark-empty-passes
@@ -91,6 +91,7 @@ requiredCaseNames:
   - run-root-missing-fails
   - run-root-relative-fails
   - run-root-envelope-mismatch-fails
+  - product-capture-envelope-mismatch-fails
   - cli-target-missing-fails
   - cli-target-unknown-fails
   - driver-out-of-root-request-refused
@@ -122,7 +123,7 @@ requiredCaseNames:
   - served-digests-differ-from-the-run-build-tree-fails
   - served-asset-missing-from-the-run-build-tree-fails
   - driver-idle-reset-keeps-start-diagnostic
-expectedMutationCount: 69
+expectedMutationCount: 70
 requiredMutationNames:
   - mounted-row-guard-calls-unknown-deleted-point
   - mounted-row-guard-points-drop-the-pre-action-point
@@ -174,6 +175,7 @@ requiredMutationNames:
   - removing the mislabeled scope-root refusal breaks the required inventory
   - dropping the stale-artifact marker breaks the run-root guard coverage
   - declaring a relative run root in the passing case breaks the run-root resolver
+  - deleting the product capture-envelope case breaks the required inventory
   - renaming the expected mounted exit code breaks the mounted CLI case
   - declaring a wrong refused status breaks the out-of-root driver case
   - dropping the rejected host list breaks the driver case shape
@@ -462,6 +464,10 @@ mutations:
     field: runRootEnv
     value: relative/run/root
     expectedField: FAIRTEST_RUN_ROOT
+  - name: deleting the product capture-envelope case breaks the required inventory
+    kind: delete-record
+    target: product-capture-envelope-mismatch-fails
+    expectedField: product-capture-envelope-mismatch-fails
   - name: renaming the expected mounted exit code breaks the mounted CLI case
     kind: bad-value
     target: cli-target-unknown-fails

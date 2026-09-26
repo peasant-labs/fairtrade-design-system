@@ -44,7 +44,7 @@
 # diagnostic; the component adapter test executes every one through
 # runComponentMutation and the component-mutations suite proves the single
 # owner of the diagnostics table.
-expectedCaseCount: 59
+expectedCaseCount: 62
 cases:
   # ---- Family A: theme rows ----
   - name: component-row-dark-absent-theme-passes
@@ -494,3 +494,36 @@ cases:
     boundary: fairtest-artifacts.assertServedDigestsMatchRunRoot at provenance.assetDigests
     expectValid: false
     expectedErrorContains: ['assetDigests', 'at path provenance.assetDigests', 'repair:']
+
+  # ---- Family I: producer run-envelope enforcement ----
+  # The component producer checks the run envelope at two seams: the root
+  # resolver before any row work, and the capture seam before the row
+  # directory. These cases drive the real resolver and the real capture
+  # wrapper against a seeded envelope. A matching envelope resolves; an
+  # envelope belonging to another run is refused by name. Deleting either
+  # requireEnvelopeForRun call turns its named case red while the product
+  # run-root case stays green.
+  - name: component-run-root-matching-envelope-passes
+    check: component-run-root
+    runRootEnv: /tmp/opencode/fairtest-fixture-component-run-root
+    runIdEnv: fairtest-fixture-component-run-root
+    seedEnvelope: true
+    expectRoot: /tmp/opencode/fairtest-fixture-component-run-root
+    expectValid: true
+  - name: component-run-root-envelope-mismatch-fails
+    check: component-run-root
+    runRootEnv: /tmp/opencode/fairtest-fixture-component-run-root
+    runIdEnv: fairtest-fixture-component-run-root
+    seedEnvelope: true
+    envelopeRunId: some-other-run
+    expectValid: false
+    expectedErrorContains: ['belongs to another run', 'field "runId"', 'guards/run-envelope.json', 'repair:']
+  - name: component-capture-envelope-mismatch-fails
+    check: component-capture-envelope
+    runRootEnv: /tmp/opencode/fairtest-fixture-component-run-root
+    runIdEnv: fairtest-fixture-component-run-root
+    seedEnvelope: true
+    envelopeRunId: some-other-run
+    theme: dark
+    expectValid: false
+    expectedErrorContains: ['belongs to another run', 'field "runId"', 'guards/run-envelope.json', 'repair:']
