@@ -90,6 +90,16 @@ helpers into a tree holding only the shared bodies, so a product semantic cannot
 reach a vendored body again. `scanAxe(page, { root })` returns the one compact
 report shape declared by `AXE_RESULT_FIELDS`, whether it ran page-wide or scoped.
 
+`scanAxe` takes one second-argument shape: an options object, or nothing. The
+positional tag list and positional root selector the old signature accepted are
+**refused with a `TypeError`**: destructuring them yields no recognized field, so
+the parameter default would scan the whole page with the default tags, which is
+a silent wrong answer inside an accessibility gate. A consumer re-vendoring this
+body must move its call sites in the same commit, as `scanAxe(page, { tags })`
+or `scanAxe(page, { root: "#view" })`; the refusal is the migration signal. The
+per-shape inventory in `scripts/journey/lib/journey-compat.testdata.yaml` pins
+which shapes are accepted and which must fail before any axe run starts.
+
 Fairtrade's own element journeys (Storybook-driven component interactions) will
 live here as well; this slice establishes the shared layer only. The
 `fixtures.mjs` theme helper binds the current row key; element

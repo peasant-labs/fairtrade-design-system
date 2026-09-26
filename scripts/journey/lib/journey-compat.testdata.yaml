@@ -1,0 +1,63 @@
+# Call-shape inventory for the byte-vendored axe helper.
+#
+# This body is copied into consumer trees, so a shape that stops being read here
+# keeps answering in a consumer that has not re-vendored its call sites. Each row
+# is one second argument a caller can pass to scanAxe, and the inventory states
+# the ONE shape the helper accepts plus the refusal every other shape must
+# produce. A refused row must fail before any axe run starts: the failure mode
+# this guards is a stale positional call silently scanning the whole page with
+# the default tags and reporting a clean accessibility result.
+#
+# shape discriminators are materialized by the test's callShape dispatcher, never
+# by a case table inline in the test body.
+#   no_options        scanAxe(page)
+#   empty_options     scanAxe(page, {})
+#   object_tags       scanAxe(page, { tags: expected_tags })
+#   object_root       scanAxe(page, { root: expected_root })
+#   array_tags        scanAxe(page, expected_tags)          stale positional
+#   positional_root   scanAxe(page, expected_root)          stale positional
+#   null_options      scanAxe(page, null)
+expectedShapeCount: 7
+shapes:
+  - name: omitted options scan page-wide with the pinned default tags
+    shape: no_options
+    accepted: true
+    expected_tags: [wcag2a, wcag2aa]
+    expected_root: null
+    expected_shape_phrase: null
+  - name: an empty options object still scans page-wide with the pinned default tags
+    shape: empty_options
+    accepted: true
+    expected_tags: [wcag2a, wcag2aa]
+    expected_root: null
+    expected_shape_phrase: null
+  - name: an options tag list is honored instead of replaced by the default
+    shape: object_tags
+    accepted: true
+    expected_tags: [wcag2a, wcag21aa]
+    expected_root: null
+    expected_shape_phrase: null
+  - name: an options root selector scopes the run
+    shape: object_root
+    accepted: true
+    expected_tags: [wcag2a, wcag2aa]
+    expected_root: "#transcript-viewer"
+    expected_shape_phrase: null
+  - name: a positional tag array is refused instead of scanned page-wide
+    shape: array_tags
+    accepted: false
+    expected_tags: [wcag2a, wcag21aa]
+    expected_root: null
+    expected_shape_phrase: a positional tag list
+  - name: a positional root selector is refused instead of scanned page-wide
+    shape: positional_root
+    accepted: false
+    expected_tags: [wcag2a, wcag2aa]
+    expected_root: "#transcript-viewer"
+    expected_shape_phrase: a positional root selector
+  - name: an explicit null options argument is refused instead of scanned page-wide
+    shape: null_options
+    accepted: false
+    expected_tags: [wcag2a, wcag2aa]
+    expected_root: null
+    expected_shape_phrase: an explicit null

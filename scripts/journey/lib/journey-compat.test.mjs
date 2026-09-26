@@ -24,9 +24,12 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import YAML from 'yaml'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..', '..')
+const SHAPE_CORPUS_REL = 'scripts/journey/lib/journey-compat.testdata.yaml'
+const SHAPE_MANIFEST_REL = 'scripts/journey/lib/journey-compat.testdata.manifest.yaml'
 
 const assertions = await import('./assertions.mjs')
 const constants = await import('./determinism-constants.mjs')
@@ -35,6 +38,89 @@ const fixtures = await import('./fixtures.mjs')
 
 /** The dependency specifiers a byte-vendored journey helper may declare. */
 const VENDORED_FILES = ['assertions.mjs', 'determinism.mjs', 'determinism-constants.mjs']
+
+/** Exact fields every call-shape inventory row carries. */
+const SHAPE_FIELDS = ['name', 'shape', 'accepted', 'expected_tags', 'expected_root', 'expected_shape_phrase']
+
+/** Parse exactly one YAML document, refusing trailing documents and non-record roots. */
+function loadSingleDocument(source, label) {
+  const documents = YAML.parseAllDocuments(source, { strict: true, uniqueKeys: true })
+  if (documents.length !== 1) {
+    throw new Error(`${label}: fixture must hold exactly one document at path document; repair: remove every trailing document from ${label}.`)
+  }
+  const [parsed] = documents
+  if (parsed.errors.length > 0) {
+    throw new Error(`${label}: invalid YAML at path document; ${parsed.errors.map((entry) => entry.message).join('; ')}; repair: fix the YAML syntax in ${label}.`)
+  }
+  const value = parsed.toJS()
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${label}: document root must be a record at path document; repair: restore the mapping root in ${label}.`)
+  }
+  return value
+}
+
+/** Assert the record holds exactly the declared fields. */
+function checkKeys(value, fields, tag, label, path) {
+  const where = path ? ` at path ${path}` : ''
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${tag}: record is missing or malformed${where} in ${label}; repair: restore the record with exactly: ${fields.join(', ')}.`)
+  }
+  for (const field of fields) {
+    if (!(field in value)) {
+      throw new Error(`${tag}: missing required field "${field}"${where} in ${label}; repair: restore "${field}" in ${label}.`)
+    }
+  }
+  for (const key of Object.keys(value)) {
+    if (!fields.includes(key)) {
+      throw new Error(`${tag}: unknown field "${key}"${where} in ${label}; repair: remove "${key}" from ${label}.`)
+    }
+  }
+}
+
+/** Assert the actual names match the required inventory exactly, with no duplicates. */
+function checkRequiredNames(actual, required, label) {
+  if (new Set(actual).size !== actual.length) {
+    throw new Error(`${label}: duplicate record name at path records; repair: give every record a unique required name.`)
+  }
+  for (const name of required) {
+    if (!actual.includes(name)) {
+      throw new Error(`${label}: required record inventory mismatch at path records; missing required record "${name}"; repair: restore the "${name}" record or update the manifest required names.`)
+    }
+  }
+  for (const name of actual) {
+    if (!required.includes(name)) {
+      throw new Error(`${label}: required record inventory mismatch at path records; unknown record "${name}"; repair: remove the "${name}" record or register it in the manifest required names.`)
+    }
+  }
+}
+
+/**
+ * Materialize one inventory row as the exact call a consumer would write.
+ * @param {Record<string, unknown>} row one call-shape inventory row
+ * @param {(page: object) => Promise<unknown>} scanAxe the vendored helper under test
+ * @returns {Promise<unknown>} the helper's promise for that call
+ */
+function callShape(row, scanAxe) {
+  const page = {}
+  switch (row.shape) {
+    case 'no_options':
+      return scanAxe(page)
+    case 'empty_options':
+      return scanAxe(page, {})
+    case 'object_tags':
+      return scanAxe(page, { tags: row.expected_tags })
+    case 'object_root':
+      return scanAxe(page, { root: row.expected_root })
+    case 'array_tags':
+      return scanAxe(page, row.expected_tags)
+    case 'positional_root':
+      return scanAxe(page, row.expected_root)
+    case 'null_options':
+      return scanAxe(page, null)
+    default:
+      throw new Error(`${SHAPE_CORPUS_REL}: row "${row.name}" names an unknown shape ${JSON.stringify(row.shape)} at path shapes[].shape; repair: use one of no_options, empty_options, object_tags, object_root, array_tags, positional_root, null_options for "shape".`)
+  }
+}
 
 /**
  * Build a fake tree handle serving one canned attribute value.
@@ -264,6 +350,123 @@ describe('journey helper compatibility', () => {
         [loaded.DEFAULT_AXE_TAGS, loaded.DEFAULT_AXE_TAGS],
         'both scopes must run the pinned default axe tags',
       )
+    } finally {
+      rmSync(scratch, { recursive: true, force: true })
+    }
+  })
+
+  it('takes one accepted scanAxe call shape and refuses a stale one before any scan', async () => {
+    const manifest = loadSingleDocument(readFileSync(join(HERE, 'journey-compat.testdata.manifest.yaml'), 'utf8'), SHAPE_MANIFEST_REL)
+    const corpus = loadSingleDocument(readFileSync(join(HERE, 'journey-compat.testdata.yaml'), 'utf8'), SHAPE_CORPUS_REL)
+    checkKeys(manifest, ['expectedShapeCount', 'requiredShapeNames', 'expectedMutationCount', 'requiredMutationNames', 'mutations'], 'manifest record', SHAPE_MANIFEST_REL, 'manifest record')
+    checkKeys(corpus, ['expectedShapeCount', 'shapes'], 'corpus record', SHAPE_CORPUS_REL, 'corpus record')
+    const shapes = corpus.shapes
+    assert.ok(Array.isArray(shapes) && shapes.length > 0, `${SHAPE_CORPUS_REL}: inventory holds no rows at path shapes; repair: restore the call-shape rows.`)
+    assert.equal(shapes.length, manifest.expectedShapeCount, `${SHAPE_CORPUS_REL}: shape count must match the manifest at path expectedShapeCount; repair: align the shapes list with the manifest.`)
+    assert.equal(corpus.expectedShapeCount, shapes.length, `${SHAPE_CORPUS_REL}: shape count must equal the row inventory at path expectedShapeCount; repair: align expectedShapeCount with the shapes list.`)
+    checkRequiredNames(shapes.map((row) => row.name), manifest.requiredShapeNames, SHAPE_CORPUS_REL)
+    for (const row of shapes) {
+      checkKeys(row, SHAPE_FIELDS, 'shape row', SHAPE_CORPUS_REL, `shapes.${row.name}`)
+      assert.equal(typeof row.accepted, 'boolean', `${SHAPE_CORPUS_REL}: row "${row.name}" must state a boolean at path shapes.${row.name}.accepted; repair: set accepted to true or false.`)
+      assert.ok(Array.isArray(row.expected_tags) && row.expected_tags.length > 0, `${SHAPE_CORPUS_REL}: row "${row.name}" must name the axe tags at path shapes.${row.name}.expected_tags; repair: list the tags the call is expected to run.`)
+      assert.ok(row.expected_root === null || typeof row.expected_root === 'string', `${SHAPE_CORPUS_REL}: row "${row.name}" must state a selector or null at path shapes.${row.name}.expected_root; repair: use a selector string or null.`)
+      if (row.accepted) {
+        assert.equal(row.expected_shape_phrase, null, `${SHAPE_CORPUS_REL}: accepted row "${row.name}" must not name a refusal at path shapes.${row.name}.expected_shape_phrase; repair: set the phrase to null for an accepted shape.`)
+      } else {
+        assert.ok(typeof row.expected_shape_phrase === 'string' && row.expected_shape_phrase.length > 0, `${SHAPE_CORPUS_REL}: refused row "${row.name}" must name the shape its diagnostic reports at path shapes.${row.name}.expected_shape_phrase; repair: state the phrase the refusal must contain.`)
+      }
+    }
+    // The live body, not only a copy: a consumer that has not re-vendored its
+    // call sites still reaches this module, so the refusal is asserted here too.
+    for (const row of shapes) {
+      if (row.accepted) continue
+      await assert.rejects(
+        () => callShape(row, assertions.scanAxe),
+        new RegExp(`${row.expected_shape_phrase}[\\s\\S]*field "options"[\\s\\S]*at path assertions\\.scanAxe\\.options[\\s\\S]*repair:`),
+        `row "${row.name}": the live helper must refuse a stale call shape with an actionable diagnostic`,
+      )
+    }
+    // The copied body, through a real axe run: the refusal must land before any
+    // builder exists, so a stale call site can never report a page-wide scan.
+    const { scratch, loaded, axe } = await loadVendoredCopy()
+    try {
+      for (const row of shapes) {
+        const buildersBefore = axe.builders.length
+        if (row.accepted) {
+          const scan = await callShape(row, loaded.scanAxe)
+          assert.deepEqual(Object.keys(scan), [...loaded.AXE_RESULT_FIELDS], `row "${row.name}": an accepted shape must still return the declared axe result shape`)
+          const builder = axe.builders.at(-1)
+          assert.deepEqual(builder.tags, row.expected_tags, `row "${row.name}": the accepted shape must run its own tags`)
+          assert.equal(builder.root ?? null, row.expected_root, `row "${row.name}": the accepted shape must scope the run to its own root`)
+          assert.equal(axe.builders.length, buildersBefore + 1, `row "${row.name}": an accepted shape must construct exactly one axe run`)
+          continue
+        }
+        await assert.rejects(
+          () => callShape(row, loaded.scanAxe),
+          (error) => {
+            assert.ok(error instanceof TypeError, `row "${row.name}": a refused shape must raise a type error; got ${error}`)
+            assert.ok(error.message.includes(row.expected_shape_phrase), `row "${row.name}": diagnostic does not name the shape the caller passed; got ${error.message}`)
+            assert.ok(error.message.includes('at path assertions.scanAxe.options'), `row "${row.name}": diagnostic is missing path context; got ${error.message}`)
+            assert.ok(error.message.includes('repair:'), `row "${row.name}": diagnostic is missing repair guidance; got ${error.message}`)
+            assert.ok(error.message.includes('scanAxe(page, { root:'), `row "${row.name}": diagnostic must name the options shape that replaced the positional argument; got ${error.message}`)
+            return true
+          },
+          `row "${row.name}": a stale call shape must fail loudly instead of scanning the whole page`,
+        )
+        assert.equal(axe.builders.length, buildersBefore, `row "${row.name}": a refused shape must fail before any axe run starts`)
+      }
+    } finally {
+      rmSync(scratch, { recursive: true, force: true })
+    }
+  })
+
+  it('fails every call-shape mutation for its intended record', async () => {
+    const manifest = loadSingleDocument(readFileSync(join(HERE, 'journey-compat.testdata.manifest.yaml'), 'utf8'), SHAPE_MANIFEST_REL)
+    const corpus = loadSingleDocument(readFileSync(join(HERE, 'journey-compat.testdata.yaml'), 'utf8'), SHAPE_CORPUS_REL)
+    const { scratch, loaded, axe } = await loadVendoredCopy()
+    try {
+      const mutations = manifest.mutations
+      assert.ok(Array.isArray(mutations) && mutations.length > 0, `${SHAPE_MANIFEST_REL}: manifest holds no mutations at path mutations; repair: restore the executable mutations.`)
+      assert.equal(mutations.length, manifest.expectedMutationCount, `${SHAPE_MANIFEST_REL}: mutation count must match the mutation inventory at path expectedMutationCount; repair: align expectedMutationCount with mutations.`)
+      checkRequiredNames(mutations.map((entry) => entry.name), manifest.requiredMutationNames, SHAPE_MANIFEST_REL)
+      for (const mutation of mutations) {
+        checkKeys(mutation, mutation.kind === 'bad-value' ? ['name', 'kind', 'target', 'field', 'value', 'expectedDiagnostic'] : ['name', 'kind', 'target', 'expectedDiagnostic'], 'mutation record', SHAPE_MANIFEST_REL, `manifest.mutations.${mutation.name}`)
+        const rows = structuredClone(corpus.shapes)
+        let message = null
+        try {
+          if (mutation.kind === 'delete-record') {
+            const index = rows.findIndex((row) => row.name === mutation.target)
+            assert.notEqual(index, -1, `mutation "${mutation.name}" targets an unknown row`)
+            rows.splice(index, 1)
+          } else {
+            const target = rows.find((row) => row.name === mutation.target)
+            assert.ok(target, `mutation "${mutation.name}" targets an unknown row`)
+            target[mutation.field] = structuredClone(mutation.value)
+          }
+          checkRequiredNames(rows.map((row) => row.name), manifest.requiredShapeNames, SHAPE_CORPUS_REL)
+          for (const row of rows) {
+            const buildersBefore = axe.builders.length
+            let refusal = null
+            try {
+              await callShape(row, loaded.scanAxe)
+            } catch (error) {
+              refusal = error
+            }
+            if (row.accepted) {
+              // A refused row that now claims acceptance has to fail the run:
+              // the mutation is only caught if the refusal is really the guard.
+              assert.equal(refusal, null, `mutation "${mutation.name}": row "${row.name}" is marked accepted but the helper refused it; got ${refusal}`)
+              continue
+            }
+            assert.ok(refusal instanceof TypeError, `mutation "${mutation.name}": row "${row.name}" must be refused with a type error; got ${refusal}`)
+            assert.equal(axe.builders.length, buildersBefore, `mutation "${mutation.name}": row "${row.name}" must not start an axe run`)
+          }
+        } catch (error) {
+          message = error instanceof Error ? error.message : String(error)
+        }
+        assert.ok(message, `mutation "${mutation.name}": the mutated inventory passed instead of failing`)
+        assert.ok(message.includes(mutation.expectedDiagnostic), `mutation "${mutation.name}": diagnostic names the wrong record; got ${message}`)
+      }
     } finally {
       rmSync(scratch, { recursive: true, force: true })
     }
