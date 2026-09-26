@@ -1,7 +1,7 @@
 # Required-name inventory and executable mutations for
 # host-ownership.testdata.yaml. Every row name must appear exactly once, and
 # every mutation must fail for its intended field.
-expectedExportCount: 125
+expectedExportCount: 129
 requiredExportNames:
   - fairtest-runtime-fairtest_repo_root
   - fairtest-runtime-fairtest_app_host
@@ -57,7 +57,9 @@ requiredExportNames:
   - product-producer-product-row-dir
   - product-producer-prepare-product-row-dir
   - product-producer-create-product-static-driver
-  - product-producer-assert-served-digests-match-run-root
+  - fairtest-artifacts-artifact-classes
+  - fairtest-artifacts-assert-served-digests-match-run-root
+  - fairtest-artifacts-product-only-fields
   - product-producer-assert-product-axe-scan-shape
   - product-producer-measure-product-view
   - product-producer-assert-product-active-view-mounted
@@ -118,6 +120,8 @@ requiredExportNames:
   - component-producer-collectcomponentservedassets
   - component-producer-assertcomponentobservationtimes
   - component-producer-assertcomponentartifactset
+  - component-producer-readcomponentartifactset
+  - component-producer-requirecomponentmountedroot
   - component-producer-assertcomponentscreenshotfloor
   - component-producer-assertcomponentariafloor
   - component-mutations-component_config_test_match

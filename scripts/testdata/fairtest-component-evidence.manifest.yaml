@@ -9,7 +9,7 @@ requiredCaseNames:
   - component-evidence-artifact-provenance-present
   - component-evidence-artifact-resolution-present
   - component-evidence-artifact-invented-seventh-fails
-  - component-evidence-artifact-parity-with-product
+  - component-evidence-artifact-closed-contract-parity
   - component-evidence-verdict-gate-pass
   - component-evidence-verdict-gate-failure-reads-fail
   - component-evidence-verdict-ignores-informational-census

@@ -54,7 +54,6 @@ import {
   assertProductActiveViewMounted,
   assertProductAxeScanShape,
   assertProductObservationTimes,
-  assertServedDigestsMatchRunRoot,
   buildProductBodyRecord,
   buildProductViewRecord,
   buildProductAccessibilityEvidence,
@@ -67,6 +66,7 @@ import {
 import { PRODUCT_MUTATION_NAMES, PRODUCT_UNRENDERED_RULES, runProductMutation } from './product-mutations.mjs'
 import { PRODUCT_UNRENDERED_MODES, PRODUCT_UNRENDERED_REFUSAL_FIELDS } from './fairtrade-targets.mjs'
 import * as targets from './fairtrade-targets.mjs'
+import { assertServedDigestsMatchRunRoot } from './fairtest-artifacts.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
@@ -83,16 +83,25 @@ const HOST_FILE_OWNERS = Object.freeze({
   'fairtrade-adapter.mjs': 'app-owned-adapter',
   'fairtrade-targets.mjs': 'app-owned-registry',
   'fairtrade-component-target.mjs': 'app-owned-registry',
+  'fairtest-artifacts.mjs': 'app-owned-registry',
   'product-producer.mjs': 'browser-bearing-host-runtime',
   'product-mutations.mjs': 'browser-bearing-host-runtime',
   'component-producer.mjs': 'browser-bearing-host-runtime',
   'component-mutations.mjs': 'browser-bearing-host-runtime',
 })
+// The only host modules whose DECLARED VALUES legitimately spell a token the
+// host-global scan forbids as an identifier: the component registry must name
+// the Storybook root id and the storybook-static tree. Their scan runs over
+// comments-and-STRING-stripped source, so a declared selector is data, not a
+// dependency. Every other host module is scanned with strings INTACT, so
+// string-encoded runner material (for example `await import('puppeteer')`) is
+// still caught.
+const STRING_BEARING_REGISTRY_FILES = Object.freeze(['fairtrade-component-target.mjs'])
 const HOST_MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'stale-name', 'delete-field', 'rename-field', 'unknown-field', 'bad-value'])
 const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs', 'fairtrade-component-target.mjs']
 // The host modules whose every app selector, label, and loopback origin must
 // come from an app-owned registry and the single runtime owner.
-const PRODUCT_HOST_FILES = ['product-producer.mjs', 'product-mutations.mjs', 'product.journey.mjs', 'component-producer.mjs']
+const PRODUCT_HOST_FILES = ['product-producer.mjs', 'product-mutations.mjs', 'product.journey.mjs', 'component-producer.mjs', 'component-mutations.mjs']
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
 const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'cli-target', 'driver-out-of-root', 'driver-host-refusal', 'driver-stop-contract', 'driver-reset-contract', 'rendered-active-view', 'record-truthfulness', 'row-dir-preparation', 'runner-config', 'port-owner', 'axe-report-shape', 'mounted-row-guard-calls', 'combined-suite-invocation', 'product-contract-command', 'mounted-command', 'host-literal-guard', 'served-digest-comparison']
@@ -1279,25 +1288,34 @@ function assertNoHostGlobalTokens(source, file) {
 }
 
 /**
- * Product structure literals the app-owned registry owns. A value in a product
- * host module is a SECOND owner of app structure whatever quote syntax spells
- * it, so the patterns match the TOKEN, not a quote-delimited pair: a literal
- * inside a template literal (which is exactly how the unrendered-mode
+ * App structure literals the app-owned registries own, for BOTH kinds. A value
+ * in a host module is a SECOND owner of app structure whatever quote syntax
+ * spells it, so the patterns match the TOKEN, not a quote-delimited pair: a
+ * literal inside a template literal (which is exactly how the unrendered-mode
  * stylesheets are assembled) has no quote on both sides of it, and a
- * quote-anchored pattern is green over a file that holds a second owner.
+ * quote-anchored pattern is green over a file that holds a second owner. The
+ * component patterns mirror the product ones: the component registry declares
+ * `#storybook-root`, the `.sgd-*` classes, and the Storybook chrome selectors,
+ * so a producer that re-spells one is a second owner.
  * @type {{ pattern: RegExp, what: string }[]}
  */
 const APP_STRUCTURE_LITERALS = Object.freeze([
   { pattern: /#inuse[\w-]*/, what: 'product selector literal' },
   { pattern: /(?<![\w-])\.?iu-[\w-]+/, what: 'product selector literal' },
   { pattern: /(?<![\w-])code map(?![\w-])/, what: 'product display label literal' },
+  { pattern: /(?<![\w-])\.sgd-[\w-]+/, what: 'component selector literal' },
+  { pattern: /(?<![\w-])#sgd-[\w-]+/, what: 'component selector literal' },
+  { pattern: /#storybook-root/, what: 'component root selector literal' },
+  { pattern: /(?<![\w-])\.sb-errordisplay/, what: 'Storybook error selector literal' },
+  { pattern: /#error-stack/, what: 'Storybook error selector literal' },
 ])
 
 /**
- * Fail when a product host module carries a product selector or display label
- * literal, naming the line that has to change. Comments are removed first, so
- * prose explaining the registry is not reported as a second owner, while the
- * string and template bodies stay in place because the literal IS one of them.
+ * Fail when a host module carries a product or component selector or display
+ * label literal, naming the line that has to change. Comments are removed
+ * first, so prose explaining the registry is not reported as a second owner,
+ * while the string and template bodies stay in place because the literal IS one
+ * of them.
  * @param {string} source module source to scan
  * @param {string} file path used in the diagnostic
  */
@@ -1309,7 +1327,32 @@ function assertNoAppStructureLiterals(source, file) {
     assert.equal(
       match,
       null,
-      `${file}: carries a ${what} ${JSON.stringify(match ? match[0] : '')} on line ${String(match ? lineOf(match.index) : 0)} at path ${file}; repair: take the selector or label from PRODUCT_SELECTORS or the target registry instead of repeating it here.`,
+      `${file}: carries a ${what} ${JSON.stringify(match ? match[0] : '')} on line ${String(match ? lineOf(match.index) : 0)} at path ${file}; repair: take the selector or label from PRODUCT_SELECTORS, COMPONENT_SELECTORS, or the target registry instead of repeating it here.`,
+    )
+  }
+}
+
+/**
+ * Fail when a non-browser host module runs code that names a runner, a live
+ * handle, or a host global. The scan source depends on the module: the one
+ * string-bearing component registry declares selector values that legitimately
+ * spell a token, so its string bodies are blanked; every other module is
+ * scanned with strings INTACT, so a string-encoded runner reference such as
+ * `await import('puppeteer')` is still caught. Scoped to code, and the
+ * diagnostic names the token, the file, and where the material belongs.
+ * @param {string} source module source to scan
+ * @param {string} file host module file name
+ * @param {string} name ownership row name used in the diagnostic
+ * @param {string} owner owner class used in the diagnostic
+ */
+function assertHostOwnerTokens(source, file, name, owner) {
+  const relaxed = STRING_BEARING_REGISTRY_FILES.includes(file)
+  const scanSource = relaxed ? stripCommentsAndStrings(source) : stripComments(source)
+  for (const { token, pattern } of HOST_GLOBAL_TOKENS) {
+    assert.equal(
+      pattern.exec(scanSource),
+      null,
+      `${HOST_CORPUS_REL}: row "${name}" has ${file} running code that names ${JSON.stringify(token)} at path owner; repair: ${file} is ${JSON.stringify(owner)} and must stay free of browser, DOM, and runner material.`,
     )
   }
 }
@@ -3591,12 +3634,6 @@ describe('fairtest host export ownership', async () => {
     }
     const source = readFileSync(resolve(HERE, file), 'utf8')
     const code = stripComments(source)
-    // The host-global scan runs over executable code only: string and template
-    // literals are app-owned DATA (a selector, a route, a story id), so a
-    // registry that declares the string "#storybook-root" is not importing a
-    // runner, while the same token as an identifier is. This matches the scan
-    // assertNoHostGlobalTokens already runs over the impl files.
-    const literalFree = stripCommentsAndStrings(source)
     if (owner === 'browser-bearing-host-runtime') {
       // These two MAY drive a page. What they may not do is own app structure
       // or a runtime value: the registry, the viewport, and the scratch ports
@@ -3653,13 +3690,7 @@ describe('fairtest host export ownership', async () => {
     // material may appear in their executable code, checked here per row so
     // the boundary is enforced by the inventory rather than by a sibling case
     // that could be skipped.
-    for (const { token, pattern } of HOST_GLOBAL_TOKENS) {
-      assert.equal(
-        pattern.exec(literalFree),
-        null,
-        `${HOST_CORPUS_REL}: row "${name}" has ${file} running code that names ${JSON.stringify(token)} at path owner; repair: ${file} is ${JSON.stringify(owner)} and must stay free of browser, DOM, and runner material.`,
-      )
-    }
+    assertHostOwnerTokens(source, file, name, owner)
     if (owner === 'runtime-constants-owner') {
       for (const spec of [...source.matchAll(/from\s*'([^']+)'/g)].map((match) => match[1])) {
         assert.ok(spec.startsWith('node:'), `${HOST_CORPUS_REL}: row "${name}" has ${file} importing ${JSON.stringify(spec)} at path owner; repair: the constant owner imports node builtins only, never another host module.`)
@@ -3676,6 +3707,7 @@ describe('fairtest host export ownership', async () => {
     const rows = /** @type {Record<string, unknown>[]} */ (hostParsed.exports)
     assert.ok(Array.isArray(rows) && rows.length > 0, `${HOST_CORPUS_REL}: record holds no rows at path exports; repair: restore the classified export rows.`)
     assert.equal(rows.length, hostManifest.expectedExportCount, `${HOST_CORPUS_REL}: row count must match the manifest at path expectedExportCount; repair: align the exports list with the manifest.`)
+    assert.equal(rows.length, hostParsed.expectedExportCount, `${HOST_CORPUS_REL}: row count must match the record's own declared expectedExportCount at path expectedExportCount; repair: align the declared count with the exports list.`)
     coreFixtures.checkRequiredNames(rows.map((entry) => String(entry.name)), /** @type {string[]} */ (hostManifest.requiredExportNames), HOST_CORPUS_REL)
     for (const entry of rows) {
       coreFixtures.checkKeys(entry, ['name', 'file', 'symbol', 'owner'], 'host ownership row', HOST_CORPUS_REL, `exports.${String(entry.name)}`)
@@ -3936,7 +3968,49 @@ describe('adapter source boundary', () => {
     }
   })
 
-  it('keeps every product selector and label literal in the app-owned registry', () => {
+  it('catches string-encoded runner material in a non-relaxed host row', () => {
+    // The host-global scan is relaxed to string-stripped source ONLY for the
+    // string-bearing component registry. Every other app-owned module is
+    // scanned with strings INTACT, so a runner reference encoded inside a
+    // string literal (for example `await import('puppeteer')`) is caught. The
+    // relaxed registry still passes because its selector values are data.
+    const planted = [
+      'export async function loadRunner() {',
+      "  return await import('puppeteer')",
+      '}',
+      '',
+    ].join('\n')
+    let message = null
+    try {
+      assertHostOwnerTokens(planted, 'fairtrade-adapter.mjs', 'planted-string-runner', 'app-owned-adapter')
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error)
+    }
+    assert.ok(message, 'a string-encoded runner reference in a non-relaxed host row must be reported')
+    expectFragments(['"puppeteer"', 'at path owner', 'repair:'], message, 'planted-string-runner')
+    // The one relaxed registry legitimately declares selector strings, so its
+    // real source passes the relaxed scan.
+    assertHostOwnerTokens(
+      readFileSync(resolve(HERE, STRING_BEARING_REGISTRY_FILES[0]), 'utf8'),
+      STRING_BEARING_REGISTRY_FILES[0],
+      'component-registry-relaxed',
+      'app-owned-registry',
+    )
+  })
+
+  it('catches a re-spelled component selector literal in a host module', () => {
+    const planted = "const root = document.querySelector('#sgd-story-rows')\n"
+    let message = null
+    try {
+      assertNoAppStructureLiterals(planted, 'component-producer.mjs')
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error)
+    }
+    assert.ok(message, 'a re-spelled component selector literal must be reported')
+    expectFragments(['component selector literal', '#sgd-story-rows', 'repair:'], message, 'planted-component-literal')
+  })
+
+  it('keeps every product and component selector and label literal in the app-owned registries', () => {
     for (const file of PRODUCT_HOST_FILES) {
       assertNoAppStructureLiterals(readFileSync(resolve(HERE, file), 'utf8'), file)
     }

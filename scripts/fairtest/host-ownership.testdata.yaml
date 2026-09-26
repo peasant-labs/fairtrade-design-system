@@ -26,7 +26,7 @@
 #                                  declaring one.
 #
 # Runs with node --test inside the declared Fairtest product-contract command.
-expectedExportCount: 111
+expectedExportCount: 129
 exports:
   - name: fairtest-runtime-fairtest_repo_root
     file: fairtest-runtime.mjs
@@ -244,10 +244,18 @@ exports:
     file: product-producer.mjs
     symbol: createProductStaticDriver
     owner: browser-bearing-host-runtime
-  - name: product-producer-assert-served-digests-match-run-root
-    file: product-producer.mjs
+  - name: fairtest-artifacts-artifact-classes
+    file: fairtest-artifacts.mjs
+    symbol: ARTIFACT_CLASSES
+    owner: app-owned-registry
+  - name: fairtest-artifacts-assert-served-digests-match-run-root
+    file: fairtest-artifacts.mjs
     symbol: assertServedDigestsMatchRunRoot
-    owner: browser-bearing-host-runtime
+    owner: app-owned-registry
+  - name: fairtest-artifacts-product-only-fields
+    file: fairtest-artifacts.mjs
+    symbol: PRODUCT_ONLY_FIELDS
+    owner: app-owned-registry
   - name: product-producer-assert-product-axe-scan-shape
     file: product-producer.mjs
     symbol: assertProductAxeScanShape
@@ -487,6 +495,14 @@ exports:
   - name: component-producer-assertcomponentartifactset
     file: component-producer.mjs
     symbol: assertComponentArtifactSet
+    owner: browser-bearing-host-runtime
+  - name: component-producer-readcomponentartifactset
+    file: component-producer.mjs
+    symbol: readComponentArtifactSet
+    owner: browser-bearing-host-runtime
+  - name: component-producer-requirecomponentmountedroot
+    file: component-producer.mjs
+    symbol: requireComponentMountedRoot
     owner: browser-bearing-host-runtime
   - name: component-producer-assertcomponentscreenshotfloor
     file: component-producer.mjs

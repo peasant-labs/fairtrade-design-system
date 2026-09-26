@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // The one required command that runs the whole Fairtest host contract.
 //
-// Six suites carry that contract, and before this command existed none of them
+// Seven suites carry that contract, and before this command existed none of them
 // was named by a package script, a CI step, or a runner-inventory row, so a
 // later deletion of the rendered-view predicate or of the preparation ordering
 // left every required gate green. This file is the single declaration of that

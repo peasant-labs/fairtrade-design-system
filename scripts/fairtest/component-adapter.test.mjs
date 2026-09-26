@@ -20,6 +20,7 @@ import { normalizeRenderedTheme } from './fairtrade-targets.mjs'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
 import * as targets from './fairtrade-component-target.mjs'
 import { COMPONENT_MUTATION_NAMES, runComponentMutation } from './component-mutations.mjs'
+import { PRODUCT_ONLY_FIELDS as PROOF_PRODUCT_ONLY_FIELDS } from './fairtest-artifacts.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
@@ -35,7 +36,6 @@ const contractResolution = await importFairtestSource('src/host-contract/resolut
 const CHECKS = ['component-row', 'component-url', 'component-setup', 'component-project', 'component-mount', 'component-declaration', 'component-action', 'component-proof', 'component-proof-blanket', 'component-cross-kind', 'component-mutation']
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'stale-name', 'trailing-document'])
 const ROW_THEMES = ['dark', 'light']
-const PROOF_PRODUCT_ONLY_FIELDS = ['chrome', 'body', 'route', 'activeSection', 'view']
 
 const corpusSource = readFileSync(resolve(ROOT, CORPUS_REL), 'utf8')
 const manifestSource = readFileSync(resolve(ROOT, MANIFEST_REL), 'utf8')
@@ -524,6 +524,7 @@ describe('component target registry and theme rows', () => {
       trigger: '.sgd-trigger',
       toggle: '[data-testid="session-group-disclosure-toggle"]',
       label: '[data-testid="session-group-disclosure-label"]',
+      count: '.sgd-count',
       rows: '#sgd-story-rows',
       rowItem: '#sgd-story-rows li',
       errorDisplay: '.sb-errordisplay',
@@ -591,6 +592,13 @@ describe('component proof record schema and shared vocabulary', () => {
     assert.deepEqual([...schema.themeFields], ['expected', 'observed', 'source', 'observedAtMs'])
     assert.deepEqual([...schema.interactionFields], ['name', 'completed', 'observedAtMs'])
     assert.deepEqual([...schema.identityFields], ['kind', 'id', 'createdAtMs'])
+    // The single-sourced product-only field list must equal the shared
+    // contract's list, so a drift in fairtest-artifacts.mjs turns red here.
+    assert.deepEqual(
+      [...PROOF_PRODUCT_ONLY_FIELDS],
+      [...contractResolution.PRODUCT_ONLY_FIELDS],
+      'the shared product-only field list must equal the shared host contract list',
+    )
   })
 
   it('describes the theme setup without project-name inference', () => {

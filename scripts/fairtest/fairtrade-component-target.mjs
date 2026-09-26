@@ -57,6 +57,7 @@ export const COMPONENT_SELECTORS = Object.freeze({
   trigger: '.sgd-trigger',
   toggle: '[data-testid="session-group-disclosure-toggle"]',
   label: '[data-testid="session-group-disclosure-label"]',
+  count: '.sgd-count',
   rows: '#sgd-story-rows',
   rowItem: '#sgd-story-rows li',
   // The two Storybook load-error signals. The load-error path writes its text
@@ -280,25 +281,14 @@ export function componentStoryUrl(story, theme) {
 }
 
 /**
- * Return the normalized row record for a theme: the theme name, the direct
- * iframe URL, and the raw rendered attribute marker the row must show before
- * any interaction (absent or empty for dark, the light value for light).
+ * Return the normalized row record for a theme. The single theme descriptor is
+ * componentThemeSetup; this row record only adds the story id, so the two can
+ * never describe different URLs or expected attributes.
  * @param {unknown} theme dark or light row theme
  * @returns {object} the frozen theme row record
  */
 export function componentThemeRow(theme) {
-  if (theme !== 'dark' && theme !== 'light') {
-    throw new Error(
-      `fairtrade component targets: unknown row theme ${JSON.stringify(theme)} for field "theme" at path row.theme; ` +
-      'repair: use one of dark, light for "theme".',
-    )
-  }
-  return Object.freeze({
-    theme,
-    storyId: COMPONENT_STORY_ID,
-    url: componentStoryUrl(COMPONENT_STORY_ID, theme),
-    expectedAttribute: theme === 'light' ? 'light' : '',
-  })
+  return Object.freeze({ ...componentThemeSetup(theme), storyId: COMPONENT_STORY_ID })
 }
 
 /**

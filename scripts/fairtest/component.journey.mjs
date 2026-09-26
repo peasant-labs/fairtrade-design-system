@@ -20,7 +20,7 @@
 import { test, expect } from '@playwright/test'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
 import { FAIRTEST_APP_HOST, FAIRTEST_STORYBOOK_PORT } from './fairtest-runtime.mjs'
-import { COMPONENT_STORY_ID, COMPONENT_TARGET_ID } from './fairtrade-component-target.mjs'
+import { COMPONENT_STORY_ID, COMPONENT_TARGET_ID, COMPONENT_PROVENANCE_SOURCE } from './fairtrade-component-target.mjs'
 import {
   COMPONENT_ARTIFACT_CLASSES,
   captureComponentRow,
@@ -29,9 +29,9 @@ import {
   readComponentAccessibilityVerdict,
   resolveComponentRunRoot,
 } from './component-producer.mjs'
+import { PRODUCT_ONLY_FIELDS } from './fairtest-artifacts.mjs'
 
 const ROW_THEMES = ['dark', 'light']
-const PRODUCT_ONLY_FIELDS = ['chrome', 'body', 'route', 'activeSection', 'view']
 
 function sanitizeRunId(value) {
   const base = String(value || '').split('/').filter(Boolean).pop() || 'fairtest-component-run'
@@ -128,7 +128,8 @@ test.describe('fairtest mounted component', () => {
       // The written provenance is a measured correspondence over the built
       // Storybook tree.
       const provenance = JSON.parse(readFileSync(join(rowDir, 'provenance.json'), 'utf8'))
-      expect(provenance.servedFrom, `row ${theme} provenance must name the tree its digests were compared against`).toBe('run-root-dist')
+      expect(provenance.servedFrom, `row ${theme} provenance must name the tree its digests were compared against`).toBe(COMPONENT_PROVENANCE_SOURCE.root)
+      expect(provenance.servedFrom, `row ${theme} provenance must name the storybook-static tree, not the product run root`).toBe('storybook-static')
       expect(provenance.commitCorrespondence, `row ${theme} provenance must name who owns the commit correspondence`).toBe('verifier-owned')
       expect(provenance.storyId, `row ${theme} provenance must name the story id`).toBe(COMPONENT_STORY_ID)
       expect(provenance.viewport, `row ${theme} provenance must record the shared render viewport`).toEqual(summary.provenance.viewport)

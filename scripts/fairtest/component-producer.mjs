@@ -24,7 +24,7 @@
 
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import { isAbsolute, join, resolve } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
@@ -51,10 +51,9 @@ import {
   COMPONENT_TARGET_ID,
   assertComponentMounted,
   buildComponentProof,
-  componentThemeRow,
   componentThemeSetup,
 } from './fairtrade-component-target.mjs'
-import { PRODUCT_ARTIFACT_CLASSES, assertServedDigestsMatchRunRoot } from './product-producer.mjs'
+import { ARTIFACT_CLASSES, PRODUCT_ONLY_FIELDS, assertServedDigestsMatchRunRoot } from './fairtest-artifacts.mjs'
 
 const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 const valuesContract = await importFairtestSource('src/core/values.mjs')
@@ -69,16 +68,16 @@ const STORYBOOK_ROOT = join(FAIRTEST_REPO_ROOT, 'storybook-static')
  * second six-element literal.
  * @type {string[]}
  */
-export const COMPONENT_ARTIFACT_CLASSES = PRODUCT_ARTIFACT_CLASSES
+export const COMPONENT_ARTIFACT_CLASSES = ARTIFACT_CLASSES
 
-// Drift guard: the component artifact set is the product artifact set, by
-// reference and by value. A component row that started emitting a seventh or a
-// renamed class would turn this red at import time rather than silently
-// diverge from the one verifier contract.
-if (COMPONENT_ARTIFACT_CLASSES !== PRODUCT_ARTIFACT_CLASSES || COMPONENT_ARTIFACT_CLASSES.length !== 6) {
+// Drift guard: the component artifact set is the one neutral shared set, by
+// reference and by the exact six-name length. A component row that started
+// emitting a seventh or a renamed class would turn this red at import time
+// rather than silently diverge from the one verifier contract.
+if (COMPONENT_ARTIFACT_CLASSES !== ARTIFACT_CLASSES || COMPONENT_ARTIFACT_CLASSES.length !== 6) {
   throw new Error(
-    'component producer: component artifact classes drifted from the product set for field "artifactClasses" at path artifacts; ' +
-    'repair: reuse PRODUCT_ARTIFACT_CLASSES unchanged so one verifier reads both kinds.',
+    'component producer: component artifact classes drifted from the shared set for field "artifactClasses" at path artifacts; ' +
+    'repair: reuse ARTIFACT_CLASSES unchanged so one verifier reads both kinds.',
   )
 }
 
@@ -699,7 +698,14 @@ export async function collectComponentServedAssets({ baseUrl, servedHtml, label 
 async function collectComponentProvenance({ baseUrl, servedHtml, viewport, targetIdentity, themeObservations }) {
   const { assetDigests } = await collectComponentServedAssets({ baseUrl, servedHtml })
   const { commit, dirty } = readWorktreeState()
-  const comparison = assertServedDigestsMatchRunRoot({ assetDigests, distRoot: STORYBOOK_ROOT, label: 'component producer' })
+  // The comparison reads storybook-static/, so the receipt names that tree, not
+  // the product run root: servedFrom and root can never disagree.
+  const comparison = assertServedDigestsMatchRunRoot({
+    assetDigests,
+    distRoot: STORYBOOK_ROOT,
+    label: 'component producer',
+    against: COMPONENT_PROVENANCE_SOURCE.root,
+  })
   const provenance = {
     source: COMPONENT_PROVENANCE_SOURCE.source,
     root: COMPONENT_PROVENANCE_SOURCE.root,
@@ -799,12 +805,39 @@ export function assertComponentScreenshotFloor(bytes, path = 'screenshot.png') {
 }
 
 /**
- * Assert a row directory ends with the complete shared six-class artifact set.
- * The same closed set the product row writes, so one verifier reads both kinds.
+ * Read a row directory and refuse any entry outside the one shared six-class
+ * artifact set. This is the closed-set reader: an extra class (an invented
+ * seventh, a leftover scratch file) is a real defect the completeness guard
+ * alone never saw, because a presence loop over the six cannot notice an
+ * unexpected member. The returned set is the declared six, in declared order.
+ * @param {string} rowDir row directory
+ * @returns {string[]} the frozen declared artifact class list
+ */
+export function readComponentArtifactSet(rowDir) {
+  const entries = readdirSync(rowDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name)
+  const unknown = entries.filter((name) => !COMPONENT_ARTIFACT_CLASSES.includes(name)).sort()
+  if (unknown.length > 0) {
+    throw new Error(
+      `component producer: unknown artifact class ${JSON.stringify(unknown[0])} for field "artifact" at path artifactClasses; ` +
+      `the row writes exactly ${JSON.stringify([...COMPONENT_ARTIFACT_CLASSES])}; ` +
+      `repair: remove the extra artifact ${JSON.stringify(unknown[0])} from ${JSON.stringify(rowDir)} so one verifier reads the closed six-class set.`,
+    )
+  }
+  return Object.freeze([...COMPONENT_ARTIFACT_CLASSES])
+}
+
+/**
+ * Assert a row directory ends with the complete shared six-class artifact set
+ * and nothing else. The closed-set reader refuses an extra class first, then
+ * this loop refuses a missing one by name. The same set the product row writes,
+ * so one verifier reads both kinds.
  * @param {string} rowDir row directory
  * @returns {void}
  */
 export function assertComponentArtifactSet(rowDir) {
+  readComponentArtifactSet(rowDir)
   for (const name of COMPONENT_ARTIFACT_CLASSES) {
     if (!existsSync(join(rowDir, name))) {
       throw new Error(
@@ -812,6 +845,36 @@ export function assertComponentArtifactSet(rowDir) {
         'repair: keep the six artifact writes intact so every row ends with the complete set.',
       )
     }
+  }
+}
+
+/**
+ * Wait for a genuine mounted story root on the page and refuse a missing one
+ * with the producer's own actionable diagnostic. Attachment is not a mount: the
+ * static iframe ships an empty root, and a removed root never gains children.
+ * This is the one mount-wait boundary the row calls and the real-DOM
+ * root-state proof drives, so a regression in this failure branch is observed.
+ * @param {import('@playwright/test').Page} page live page
+ * @param {string} url direct iframe URL the page was sent to, used in the diagnostic
+ * @param {number} [timeout] mount wait budget in ms, defaults to the component registry's budget
+ * @returns {Promise<void>} resolves when real root children are present
+ */
+export async function requireComponentMountedRoot(page, url, timeout = COMPONENT_MOUNT_TIMEOUT_MS) {
+  try {
+    await page.waitForFunction(
+      (selector) => {
+        const root = document.querySelector(selector)
+        return !!root && root.childElementCount > 0
+      },
+      COMPONENT_SELECTORS.root,
+      { timeout },
+    )
+  } catch {
+    throw new Error(
+      `component producer: missing mounted root for field "root" at path proof.root; ` +
+      `selector ${JSON.stringify(COMPONENT_SELECTORS.root)} never rendered children within ${timeout}ms at ${JSON.stringify(url)}; ` +
+      'repair: rebuild storybook-static/ and keep the story root mounted with real children on the direct iframe target.',
+    )
   }
 }
 
@@ -843,7 +906,6 @@ export async function captureComponentRow(page, theme, options = {}) {
       'repair: use whole milliseconds since the epoch for "createdAtMs".',
     )
   }
-  const row = componentThemeRow(theme)
   const setup = componentThemeSetup(theme)
   const { rowDir } = prepareComponentRowDir({ runRoot, theme })
   if (!existsSync(join(STORYBOOK_ROOT, 'iframe.html'))) {
@@ -861,22 +923,7 @@ export async function captureComponentRow(page, theme, options = {}) {
 
   // Wait for real children in the story root. Attachment is not a mount: the
   // static iframe ships an empty #storybook-root.
-  try {
-    await page.waitForFunction(
-      (selector) => {
-        const root = document.querySelector(selector)
-        return !!root && root.childElementCount > 0
-      },
-      COMPONENT_SELECTORS.root,
-      { timeout: COMPONENT_MOUNT_TIMEOUT_MS },
-    )
-  } catch {
-    throw new Error(
-      `component producer: missing mounted root for field "root" at path proof.root; ` +
-      `selector ${JSON.stringify(COMPONENT_SELECTORS.root)} never rendered children within ${COMPONENT_MOUNT_TIMEOUT_MS}ms at ${JSON.stringify(url)}; ` +
-      'repair: rebuild storybook-static/ and keep the story root mounted with real children on the direct iframe target.',
-    )
-  }
+  await requireComponentMountedRoot(page, url)
 
   const observedBefore = await page.evaluate((selectors) => {
     const root = document.querySelector(selectors.root)
@@ -886,7 +933,7 @@ export async function captureComponentRow(page, theme, options = {}) {
     const toggle = document.querySelector(selectors.toggle)
     const label = document.querySelector(selectors.label)
     const style = trigger ? getComputedStyle(trigger) : null
-    const countStyle = document.querySelector('.sgd-count')
+    const countStyle = document.querySelector(selectors.count)
     return {
       rootChildCount: root ? root.childElementCount : 0,
       bodyClass: document.body.className,
@@ -904,7 +951,7 @@ export async function captureComponentRow(page, theme, options = {}) {
       },
       tokenInk: (getComputedStyle(document.documentElement).getPropertyValue('--ink') || '').trim(),
       tokenCanvas: (getComputedStyle(document.documentElement).getPropertyValue('--canvas') || '').trim(),
-      tabularNumbers: countStyle ? countStyle.fontVariantNumeric : null,
+      tabularNumbers: countStyle ? getComputedStyle(countStyle).fontVariantNumeric : null,
     }
   }, COMPONENT_SELECTORS)
 
@@ -953,6 +1000,17 @@ export async function captureComponentRow(page, theme, options = {}) {
       'repair: keep the mounted surface themed by design tokens so the resolved custom properties are non-empty.',
     )
   }
+  // Tabular numbers on counts are a design-system invariant the record carries.
+  // Asserting it here means a drift in the count selector (which would null the
+  // reading) or a dropped tabular rule fails the row instead of shipping a
+  // blank token field under a green run.
+  if (typeof observedBefore.tabularNumbers !== 'string' || !observedBefore.tabularNumbers.includes('tabular-nums')) {
+    throw new Error(
+      'component producer: non-tabular count for field "computedStyles.fontVariantNumeric" at path evidence.computedStyles.fontVariantNumeric; ' +
+      `selector ${JSON.stringify(COMPONENT_SELECTORS.count)} resolved font-variant-numeric ${JSON.stringify(observedBefore.tabularNumbers)}; ` +
+      'repair: keep the count element tabular so counts align and the recorded token evidence is real.',
+    )
+  }
 
   const toggle = page.locator(COMPONENT_SELECTORS.toggle)
   try {
@@ -985,7 +1043,7 @@ export async function captureComponentRow(page, theme, options = {}) {
     const root = document.querySelector(selectors.root)
     const toggle = document.querySelector(selectors.toggle)
     const rows = document.querySelector(selectors.rows)
-    const rowTexts = rows ? [...rows.querySelectorAll('li')].map((li) => (li.textContent || '').trim()) : []
+    const rowTexts = rows ? [...document.querySelectorAll(selectors.rowItem)].map((item) => (item.textContent || '').trim()) : []
     const rect = root ? root.getBoundingClientRect() : null
     return {
       ariaExpanded: toggle ? toggle.getAttribute('aria-expanded') : null,
@@ -1122,8 +1180,9 @@ export async function captureComponentRow(page, theme, options = {}) {
 
   // A component record must never claim the product-only shell fields. This is
   // the app-owned half of the shared cross-kind contract; the shared resolver
-  // is the other half and both must stay true.
-  for (const productOnly of ['chrome', 'body', 'route', 'activeSection', 'view']) {
+  // is the other half and both must stay true. The list comes from the shared
+  // contract through fairtest-artifacts.mjs, never re-spelled here.
+  for (const productOnly of PRODUCT_ONLY_FIELDS) {
     if (productOnly in record) {
       throw new Error(
         `component producer: component record claims the product-only field ${JSON.stringify(productOnly)} for field "${productOnly}" at path record.${productOnly}; ` +

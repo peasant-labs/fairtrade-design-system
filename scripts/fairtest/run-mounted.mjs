@@ -19,8 +19,9 @@ import { spawnSync } from 'node:child_process'
 
 /**
  * The declared targets and the exact describe-title prefix each one selects.
- * One list, read by the validator, the banner, and the grep argument, so the
- * declaration cannot drift from what actually runs.
+ * One list, read by the grep argument and by the suite case that pins each
+ * prefix to its journey's real describe title, so the declaration cannot drift
+ * from what actually runs.
  * @type {{ product: string, component: string }}
  */
 export const MOUNTED_TARGET_GREPS = Object.freeze({

@@ -79,9 +79,10 @@ import {
   componentRowDir,
   createComponentStaticDriver,
   prepareComponentRowDir,
+  requireComponentMountedRoot,
   resolveComponentProvenanceRefs,
 } from './component-producer.mjs'
-import { PRODUCT_ARTIFACT_CLASSES, assertServedDigestsMatchRunRoot } from './product-producer.mjs'
+import { assertServedDigestsMatchRunRoot } from './fairtest-artifacts.mjs'
 
 const STORYBOOK_ROOT = join(FAIRTEST_REPO_ROOT, 'storybook-static')
 const CONFIG_REL = 'playwright.fairtest.config.mjs'
@@ -137,7 +138,7 @@ export const COMPONENT_MUTATION_BOUNDARIES = Object.freeze({
   'provenance-external-link': 'component-producer.resolveComponentProvenanceRefs at provenance.assetDigests',
   'screenshot-floor': 'component-producer.assertComponentScreenshotFloor at evidence.screenshot',
   'aria-floor': 'component-producer.assertComponentAriaFloor at evidence.aria',
-  'digest-mismatch': 'product-producer.assertServedDigestsMatchRunRoot at provenance.assetDigests over real served bytes',
+  'digest-mismatch': 'fairtest-artifacts.assertServedDigestsMatchRunRoot at provenance.assetDigests over real served bytes',
 })
 
 /**
@@ -648,26 +649,24 @@ export async function proveComponentRootStatesRealPath({ port } = {}) {
     try {
       const url = `${driver.baseUrl}${componentStoryUrl(COMPONENT_STORY_ID, 'dark')}`
 
-      // 1. Removed root: the mount wait observes nothing to attach to.
+      // 1. Removed root: the producer's own mount wait observes nothing to
+      // attach to. Drive the real boundary (requireComponentMountedRoot) so the
+      // producer's actionable missing-root diagnostic is exercised, not a
+      // re-declared predicate that would report Playwright's generic timeout.
       await page.goto(url, { waitUntil: 'networkidle' })
-      await page.waitForFunction((selector) => {
-        const root = document.querySelector(selector)
-        return !!root && root.childElementCount > 0
-      }, COMPONENT_SELECTORS.root, { timeout: 15000 })
+      await requireComponentMountedRoot(page, url)
       await page.evaluate((selector) => document.querySelector(selector)?.remove(), COMPONENT_SELECTORS.root)
       let removedDiagnostic = null
       try {
-        await page.waitForFunction((selector) => {
-          const root = document.querySelector(selector)
-          return !!root && root.childElementCount > 0
-        }, COMPONENT_SELECTORS.root, { timeout: 1000 })
+        await requireComponentMountedRoot(page, url, 1000)
       } catch (error) {
         removedDiagnostic = error instanceof Error ? error.message : String(error)
       }
-      if (!removedDiagnostic) {
+      if (!removedDiagnostic || !removedDiagnostic.includes('missing mounted root')) {
         throw new Error(
-          'component mutations: removed root still attached for field "root" at path mount; ' +
-          'repair: keep the removal evaluate intact so the absence proof observes a genuinely missing root.',
+          'component mutations: removed root did not reach the producer mount guard for field "root" at path proof.root; ' +
+          `got ${JSON.stringify(removedDiagnostic)}; ` +
+          'repair: keep the removal evaluate intact so the mount wait observes a genuinely missing root and fails closed.',
         )
       }
       evidence.push(Object.freeze({ state: 'missing-root', refused: true, diagnostic: removedDiagnostic }))
@@ -736,17 +735,34 @@ export async function proveComponentRootStatesRealPath({ port } = {}) {
 }
 
 /**
- * Assert the component and product artifact class sets are the same six names
- * by value, so one verifier reads both kinds. Shared by the mutation suite and
- * the verifier-facing evidence reader.
- * @returns {object} the frozen parity receipt
+ * The closed six-name artifact contract. This is an independent literal, not an
+ * alias of the shared set: comparing the component set to itself could never
+ * fail, so the check is against this declared contract. A renamed or
+ * substituted class (same length, same reference) passes the import-time
+ * length/reference guard in component-producer.mjs but fails here.
+ * @type {string[]}
+ */
+const EXPECTED_ARTIFACT_CLASSES = Object.freeze([
+  'record.json',
+  'aria.json',
+  'axe.json',
+  'screenshot.png',
+  'provenance.json',
+  'resolution.json',
+])
+
+/**
+ * Assert the component artifact class set is exactly the closed six names the
+ * one verifier reads for both kinds. Shared by the mutation suite and the
+ * verifier-facing evidence reader.
+ * @returns {object} the frozen receipt
  */
 export function assertComponentArtifactParity() {
-  if (JSON.stringify([...COMPONENT_ARTIFACT_CLASSES]) !== JSON.stringify([...PRODUCT_ARTIFACT_CLASSES])) {
+  if (JSON.stringify([...COMPONENT_ARTIFACT_CLASSES]) !== JSON.stringify([...EXPECTED_ARTIFACT_CLASSES])) {
     throw new Error(
       `component mutations: component artifact classes ${JSON.stringify([...COMPONENT_ARTIFACT_CLASSES])} for field "artifactClasses" at path artifacts; ` +
-      `the product row writes ${JSON.stringify([...PRODUCT_ARTIFACT_CLASSES])}; ` +
-      'repair: reuse the one shared six-class set so a single verifier reads both kinds.',
+      `the closed six-class contract is ${JSON.stringify([...EXPECTED_ARTIFACT_CLASSES])}; ` +
+      'repair: keep the one shared six-class set so a single verifier reads both kinds.',
     )
   }
   return Object.freeze({ classes: Object.freeze([...COMPONENT_ARTIFACT_CLASSES]), count: COMPONENT_ARTIFACT_CLASSES.length })

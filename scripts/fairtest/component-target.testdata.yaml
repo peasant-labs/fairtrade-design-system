@@ -491,6 +491,6 @@ cases:
   - name: component-mutation-digest-mismatch-fails
     check: component-mutation
     mutation: digest-mismatch
-    boundary: product-producer.assertServedDigestsMatchRunRoot at provenance.assetDigests
+    boundary: fairtest-artifacts.assertServedDigestsMatchRunRoot at provenance.assetDigests
     expectValid: false
     expectedErrorContains: ['assetDigests', 'at path provenance.assetDigests', 'repair:']

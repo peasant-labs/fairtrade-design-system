@@ -87,6 +87,7 @@ import {
   productThemeRow,
 } from './fairtrade-targets.mjs'
 import { AXE_RESULT_FIELDS, scanAxe, seriousViolations } from '../journey/lib/assertions.mjs'
+import { ARTIFACT_CLASSES, assertServedDigestsMatchRunRoot } from './fairtest-artifacts.mjs'
 
 const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 // Generic value validation (records, fields, counts, strings, id lists) is a
@@ -96,18 +97,13 @@ const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 const valuesContract = await importFairtestSource('src/core/values.mjs')
 
 /**
- * The six durable artifact classes every product row writes. Exact set, no
- * silent extras. The verifier owns completeness against this list.
+ * The six durable artifact classes every product row writes. The ONE frozen
+ * array lives in fairtest-artifacts.mjs (the app-owned, kind-neutral artifact
+ * contract) and is re-exported under the product name so every product consumer
+ * reads the same shared set the component row writes.
  * @type {string[]}
  */
-export const PRODUCT_ARTIFACT_CLASSES = Object.freeze([
-  'record.json',
-  'aria.json',
-  'axe.json',
-  'screenshot.png',
-  'provenance.json',
-  'resolution.json',
-])
+export const PRODUCT_ARTIFACT_CLASSES = ARTIFACT_CLASSES
 
 /**
  * Minimum descendant element count inside the RENDERED active view (the
@@ -556,66 +552,6 @@ function readWorktreeState() {
     dirty = true
   }
   return { commit, dirty }
-}
-
-/**
- * Compare the digests the row read over HTTP against the bytes the run's own
- * build tree holds on disk, so the recorded provenance is a MEASURED
- * correspondence instead of a bare list of hashes.
- *
- * What this proves: every recorded digest is the digest of the same bytes the
- * run root's built tree contains, so a served origin that was not this run's
- * build (an unrelated server already holding the port, a stale copy, a mutated
- * file) fails closed instead of producing a record whose digests describe
- * something other than what the row looked at.
- *
- * What this does NOT prove, and must not be read as proving: that the built
- * tree was produced from the recorded commit. dist/ is gitignored, so
- * `commit` and `dirty` describe the worktree the build ran in, not the bytes.
- * Binding those bytes to a commit needs a build digest recorded in source,
- * which is the verifier's comparison, not the producer's. The record says so in
- * `commitCorrespondence` rather than implying more.
- * @param {object} input comparison inputs
- * @param {Record<string, string>} input.assetDigests digests the row read over HTTP, keyed by run-root-relative path
- * @param {string} input.distRoot the run's built tree on disk
- * @param {string} [input.label] owning producer used in the diagnostic, defaults to the product producer
- * @returns {object} the comparison receipt naming what was compared
- */
-export function assertServedDigestsMatchRunRoot({ assetDigests, distRoot, label = 'product producer' } = {}) {
-  const compared = Object.keys(assetDigests).sort()
-  if (compared.length === 0) {
-    throw new Error(
-      `${label}: empty served digest set for field "assetDigests" at path provenance.assetDigests; ` +
-      'repair: record at least the served index.html digest before comparing the served bytes to the built tree.',
-    )
-  }
-  for (const relative of compared) {
-    const onDiskPath = join(distRoot, relative)
-    let onDisk
-    try {
-      onDisk = readFileSync(onDiskPath)
-    } catch (error) {
-      const cause = error instanceof Error ? error.message : String(error)
-      throw new Error(
-        `${label}: served asset ${JSON.stringify(relative)} is missing from the run build tree for field "assetDigests" at path provenance.assetDigests; ` +
-        `looked for ${JSON.stringify(onDiskPath)}; caused by ${cause}; ` +
-        'repair: rebuild the served tree so the served origin and the built tree are the same tree.',
-      )
-    }
-    const onDiskDigest = sha256(onDisk)
-    if (onDiskDigest !== assetDigests[relative]) {
-      throw new Error(
-        `${label}: served bytes differ from the run build tree for field "assetDigests" at path provenance.assetDigests; ` +
-        `${JSON.stringify(relative)} served digest ${JSON.stringify(assetDigests[relative])} but ${JSON.stringify(onDiskPath)} holds ${JSON.stringify(onDiskDigest)}; ` +
-        'repair: serve the exact built tree (rebuild it and make sure no other server holds the loopback port).',
-      )
-    }
-  }
-  return Object.freeze({
-    against: 'run-root-dist',
-    entries: Object.freeze(compared),
-    commitCorrespondence: 'verifier-owned',
-  })
 }
 
 /**

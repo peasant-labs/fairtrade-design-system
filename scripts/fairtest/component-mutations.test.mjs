@@ -8,20 +8,23 @@
 // component-adapter.test.mjs. This suite therefore does not re-run the eighteen
 // and does not restate their expectations; it proves the single owner is real
 // and it covers the invariants a fixture row cannot express:
-// - both cross-kind refusal directions through the real shared contract;
-// - the one-project config matching exactly the two journeys;
-// - the component artifact set equalling the product set;
+// - the one-project config matching exactly the two journeys, read from the
+//   real config file (a fixture row cannot express that);
 // - the real-DOM root states on the live served story in one bounded browser
 //   session;
 // - the verifier-facing evidence corpus (scripts/testdata/) reading rule;
+// - the mounted grep prefixes pinned to the real journey describe titles;
 // - the source-route and forbidden-material guards for the mutation module.
+// Every named mutation, including both cross-kind directions and the artifact
+// parity, is executed exactly once by the component fixture family above.
 //
 // Precondition: run pnpm build-storybook first so storybook-static/ holds the
 // exact built story. No product app service, Storybook dev server, Puppeteer
 // catalog, or second adapter is started.
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
@@ -31,7 +34,9 @@ import {
   COMPONENT_ARTIFACT_CLASSES,
   assertComponentObservationTimes,
   readComponentAccessibilityVerdict,
+  readComponentArtifactSet,
 } from './component-producer.mjs'
+import { MOUNTED_TARGET_GREPS } from './run-mounted.mjs'
 import {
   COMPONENT_CONFIG_TEST_MATCH,
   COMPONENT_MUTATION_BOUNDARIES,
@@ -176,11 +181,21 @@ function runEvidenceArtifactCase(entry) {
     assert.ok(receipt.classes.includes(/** @type {string} */ (entry.artifact)), `${name}: artifact ${JSON.stringify(entry.artifact)} must be one of the shared six`)
     return
   }
-  const message = COMPONENT_ARTIFACT_CLASSES.includes(/** @type {string} */ (entry.artifact))
-    ? `${EVIDENCE_REL}: case "${name}" expects a shared artifact class to fail`
-    : `component mutations: unknown artifact class ${JSON.stringify(entry.artifact)} for field "artifact" at path artifactClasses; ` +
-      `repair: use one of ${COMPONENT_ARTIFACT_CLASSES.join(', ')} for "artifact".`
-  expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  // Drive the REAL closed-set reader: build a row directory that carries the
+  // declared six classes plus the invented class, then require the production
+  // reader to refuse the extra member. No diagnostic is synthesized here.
+  const rowDir = mkdtempSync(join(tmpdir(), 'fairtest-evidence-artifact-'))
+  try {
+    for (const artifactClass of COMPONENT_ARTIFACT_CLASSES) {
+      writeFileSync(join(rowDir, artifactClass), '{}\n')
+    }
+    writeFileSync(join(rowDir, /** @type {string} */ (entry.artifact)), '{}\n')
+    const message = caught(() => readComponentArtifactSet(rowDir))
+    assert.ok(message, `${name}: the closed-set reader must refuse an artifact outside the six`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  } finally {
+    rmSync(rowDir, { recursive: true, force: true })
+  }
 }
 
 /** @param {Record<string, unknown>} entry */
@@ -401,17 +416,6 @@ describe('named negative component mutations', () => {
     )
   })
 
-  it('drives both cross-kind refusal directions through the real shared contract', async () => {
-    await assert.rejects(
-      () => runComponentMutation('cross-kind-product-shell'),
-      /cross-kind resolution "component".*at path resolution\.kind.*repair:/s,
-    )
-    await assert.rejects(
-      () => runComponentMutation('cross-kind-product-record'),
-      /product-only field "chrome".*at path resolution\.chrome.*repair:/s,
-    )
-  })
-
   it('matches exactly the product and component journeys and never the catalog', async () => {
     const receipt = await readAndAssertComponentRunnerConfig()
     assert.deepEqual([...receipt.testMatch], [...COMPONENT_CONFIG_TEST_MATCH])
@@ -423,10 +427,19 @@ describe('named negative component mutations', () => {
     assert.ok(catalog && catalog.includes('testMatch'), `a catalog match must fail the config guard; got ${catalog}`)
   })
 
-  it('writes the same six artifact class names as the product row', () => {
-    const receipt = assertComponentArtifactParity()
-    assert.deepEqual([...receipt.classes], ['record.json', 'aria.json', 'axe.json', 'screenshot.png', 'provenance.json', 'resolution.json'])
-    assert.equal(receipt.count, 6)
+  it('pins the mounted grep prefixes to the real journey describe titles', () => {
+    // The mounted shim selects a journey with Playwright --grep. A rename of a
+    // describe title would make the grep match zero tests and exit 1, but the
+    // drift would only surface at run time; this pins the declared prefixes to
+    // the actual titles the moment either side changes.
+    const titleOf = (file) => {
+      const source = readFileSync(resolve(HERE, file), 'utf8')
+      const match = /test\.describe\(\s*'([^']+)'/.exec(source)
+      assert.ok(match, `${file}: must declare a describe title at path describe; repair: keep one test.describe title per journey.`)
+      return match[1]
+    }
+    assert.equal(MOUNTED_TARGET_GREPS.product, titleOf('product.journey.mjs'), 'the product mounted grep must equal the product journey describe title')
+    assert.equal(MOUNTED_TARGET_GREPS.component, titleOf('component.journey.mjs'), 'the component mounted grep must equal the component journey describe title')
   })
 
   it('refuses the real missing, static-empty, and load-error roots on the live served story', { timeout: 120000 }, async () => {

@@ -75,12 +75,12 @@ commands:
   # workflow invokes either yet (see scripts/fairtest/run-product-contract.mjs
   # and scripts/fairtest/run-mounted.mjs, which print the same status on every
   # run). The mounted command runs the product rows through the one-project
-  # Playwright config; the product-contract command runs the five contract
+  # Playwright config; the product-contract command runs the seven contract
   # suites in one node --test invocation with --test-concurrency=1, because
   # two of them open real browsers and throwaway loopback listeners.
   - name: test:fairtest:product-contract
     invocation: pnpm test:fairtest:product-contract
-    owner: product-proof
+    owner: mounted-proofs
     stage: mounted
     runner: process-only
   - name: test:fairtest:verify

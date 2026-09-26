@@ -7,8 +7,9 @@
 #
 # Families:
 # - component-evidence-artifact: the shared six artifact class names. Every one
-#   of the six is claimed, an invented seventh is refused, and the component set
-#   is asserted to equal the product set, so one verifier reads both kinds.
+#   of the six is claimed, an invented seventh is refused by the real closed-set
+#   reader, and the component set is asserted against the closed six-name
+#   contract, so one verifier reads both kinds.
 # - component-evidence-verdict: the verdict is read from the gate receipt over
 #   the gated component-root scope ONLY. The page-wide census is nested and
 #   explicitly informational; an unqualified count, a mislabeled scope or root,
@@ -59,7 +60,7 @@ cases:
     artifact: evidence.json
     expectValid: false
     expectedErrorContains: ['evidence.json', 'artifactClasses', 'at path', 'repair:']
-  - name: component-evidence-artifact-parity-with-product
+  - name: component-evidence-artifact-closed-contract-parity
     check: component-evidence-artifact-parity
     expectValid: true
     expectFrozen: true
