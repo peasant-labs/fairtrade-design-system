@@ -7,8 +7,9 @@
 // this module and the runner config read), and from the shared host contract
 // through the sole source route. It writes exactly the SAME six artifact class
 // names the product row writes, from the one shared constant in
-// product-producer.mjs, into a `producer/component-<theme>/` row directory so
-// one verifier reads both kinds with one closed set.
+// fairtest-artifacts.mjs (which product-producer.mjs only re-exports), into a
+// `producer/component-<theme>/` row directory so one verifier reads both kinds
+// with one closed set.
 //
 // Row sequence per theme (dark, light): serve the direct iframe, wait for a
 // genuine mount (real root children, the ready-state body classes, a hidden
