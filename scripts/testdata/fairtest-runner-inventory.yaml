@@ -60,6 +60,11 @@ commands:
     owner: evidence-ci
     stage: pre-service
     runner: none
+  - name: test:fairtest:local-bridge
+    invocation: pnpm test:fairtest:local-bridge
+    owner: local-bridge
+    stage: browser-free
+    runner: local-bridge
   - name: test:fairtest:select
     invocation: pnpm test:fairtest:select
     owner: evidence-ci

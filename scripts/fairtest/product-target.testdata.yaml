@@ -1177,7 +1177,7 @@ cases:
   - name: config-port-owner-single-declaration
     check: port-owner
     ownerModule: scripts/fairtest/fairtest-runtime.mjs
-    consumerModules: [playwright.fairtest.config.mjs, scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.mjs, scripts/fairtest/product-producer.mjs, scripts/fairtest/product.journey.mjs, scripts/fairtest/component-producer.mjs, scripts/fairtest/component.journey.mjs, scripts/fairtest/component-mutations.mjs]
+    consumerModules: [playwright.fairtest.config.mjs, scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.mjs, scripts/fairtest/product-producer.mjs, scripts/fairtest/product.journey.mjs, scripts/fairtest/component-producer.mjs, scripts/fairtest/component.journey.mjs, scripts/fairtest/component-mutations.mjs, scripts/fairtest/fairtest-dev.mjs, scripts/fairtest/local-bridge.test.mjs]
     portEnvName: FAIRTEST_APP_PORT
     expectValid: true
   - name: served-digests-match-the-run-build-tree

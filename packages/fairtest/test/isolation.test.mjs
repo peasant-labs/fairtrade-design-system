@@ -20,6 +20,7 @@ const CHILD_ROOT_URL = new URL('..', import.meta.url)
 const CORE_DIR_URL = new URL('../src/core/', import.meta.url)
 const CONTRACT_DIR_URL = new URL('../src/host-contract/', import.meta.url)
 const EVIDENCE_DIR_URL = new URL('../src/evidence/', import.meta.url)
+const BRIDGE_DIR_URL = new URL('../src/bridge/', import.meta.url)
 const BOUNDARY_URL = new URL('../../../scripts/testdata/fairtest-boundary.yaml', import.meta.url)
 const CHILD_MANIFEST = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
 const DECLARED_DEPS = new Set(Object.keys(CHILD_MANIFEST.dependencies ?? {}))
@@ -33,7 +34,7 @@ function readBoundary() {
 /** @returns {{ file: string, text: string }[]} */
 function childSources() {
   const entries = []
-  for (const [dir, url] of [['core', CORE_DIR_URL], ['host-contract', CONTRACT_DIR_URL], ['evidence', EVIDENCE_DIR_URL]]) {
+  for (const [dir, url] of [['core', CORE_DIR_URL], ['host-contract', CONTRACT_DIR_URL], ['evidence', EVIDENCE_DIR_URL], ['bridge', BRIDGE_DIR_URL]]) {
     for (const name of readdirSync(url).filter((entry) => entry.endsWith('.mjs')).sort()) {
       entries.push({ file: `src/${dir}/${name}`, text: readFileSync(new URL(name, url), 'utf8') })
     }
@@ -46,7 +47,7 @@ function childSources() {
  * may reach any of the declared child source trees but nothing outside them.
  * @type {string[]}
  */
-const ALLOWED_SIBLING_PREFIXES = ['../core/', '../host-contract/', '../evidence/']
+const ALLOWED_SIBLING_PREFIXES = ['../core/', '../host-contract/', '../evidence/', '../bridge/']
 
 /** @param {string} file @param {string} text */
 function staticImports(file, text) {
