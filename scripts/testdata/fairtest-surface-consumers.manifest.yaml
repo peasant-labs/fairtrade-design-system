@@ -1,0 +1,132 @@
+# Required-name manifest for the SurfaceGate consumer/export inventory.
+# Every export, importer path, floor, threshold, return key, graph export, and
+# neutral probe below must appear exactly once in the corpus. Executable
+# source-drift mutations name the field each one must fail on. Combinatorial
+# cases live here, never inline in the guard.
+expectedExportCount: 6
+requiredExportNames:
+  - BYTE_FLOORS
+  - DEFAULT_MIN_BYTES
+  - MIN_DISTINCT_COLORS
+  - MIN_NONBG_RATIO
+  - SurfaceGate
+  - measurePng
+expectedImporterCount: 6
+requiredImporterPaths:
+  - scripts/check-surface-gate.mjs
+  - scripts/graph-oracle.mjs
+  - scripts/pi-transcript.probe.mjs
+  - scripts/shootdemo.mjs
+  - scripts/shootmanage.mjs
+  - scripts/timeline-rendered-probe.mjs
+expectedFloorCount: 2
+requiredFloorNames:
+  - default
+  - txn-scrubber
+expectedRequiredGateImporterCount: 3
+requiredGateImporterPaths:
+  - scripts/check-surface-gate.mjs
+  - scripts/graph-oracle.mjs
+  - scripts/timeline-rendered-probe.mjs
+expectedThresholdCount: 2
+requiredThresholdNames:
+  - min-distinct-colors
+  - min-nonbg-ratio
+expectedReturnKeyCount: 8
+requiredReturnKeys:
+  - bytes
+  - md5
+  - w
+  - h
+  - pixels
+  - nonbgRatio
+  - bgShare
+  - distinctColors
+expectedGraphExportCount: 4
+requiredGraphExportNames:
+  - GraphThemeGate
+  - MIN_THEME_DELTA
+  - ORACLE_BG
+  - THEME_TOL
+expectedNeutralProbeCount: 2
+requiredNeutralProbeNames:
+  - surface-alpha
+  - surface-beta
+expectedMutationCount: 11
+requiredMutationNames:
+  - changed-importer-binding
+  - default-floor-drift
+  - digest-algorithm-drift
+  - direct-child-route-drift
+  - dropped-importer
+  - fairtrade-name-in-neutral-probe
+  - misclassified-required-consumer
+  - neutral-policy-delegation-drift
+  - planted-importer
+  - return-key-drift
+  - txn-scrubber-floor-drift
+mutations:
+  # floor drift: the tiny-surface exception changes value.
+  - name: txn-scrubber-floor-drift
+    kind: source-runtime
+    find: "'txn-scrubber': 400"
+    replace: "'txn-scrubber': 500"
+    expectedField: txn-scrubber
+  # floor drift: the default fallback changes value.
+  - name: default-floor-drift
+    kind: source-runtime
+    find: "16 * 1024"
+    replace: "8 * 1024"
+    expectedField: DEFAULT_MIN_BYTES
+  # digest drift: the legacy md5 becomes another algorithm.
+  - name: digest-algorithm-drift
+    kind: source-runtime
+    find: "digestHex(buf, 'md5')"
+    replace: "digestHex(buf, 'sha256')"
+    expectedField: md5
+  # return-key mapping drift: a legacy key is renamed.
+  - name: return-key-drift
+    kind: source-runtime
+    find: "bgShare: m.bgShare"
+    replace: "backgroundShare: m.bgShare"
+    expectedField: bgShare
+  # delegation drift: the facade stops calling the neutral policy evaluator.
+  - name: neutral-policy-delegation-drift
+    kind: source-text
+    find: "evaluateMeasurement("
+    replace: "evaluateLocally("
+    expectedField: evaluateMeasurement
+  # source-route drift: the facade stops routing through the single child route.
+  - name: direct-child-route-drift
+    kind: source-text
+    find: "'./fairtest-source.mjs'"
+    replace: "'./surface-gate-core.mjs'"
+    expectedField: fairtest-source.mjs
+  # importer inventory drift: a declared consumer disappears.
+  - name: dropped-importer
+    kind: importer-drop
+    target: scripts/shootmanage.mjs
+    expectedField: scripts/shootmanage.mjs
+  # importer inventory drift: an undeclared consumer is planted.
+  - name: planted-importer
+    kind: importer-plant
+    value: scripts/planted-surface-consumer.mjs
+    expectedField: scripts/planted-surface-consumer.mjs
+  # importer inventory drift: a consumer stops binding SurfaceGate.
+  - name: changed-importer-binding
+    kind: importer-binding
+    target: scripts/check-surface-gate.mjs
+    value: GraphThemeGate
+    expectedField: binding
+  # consumer classification drift: an expensive periodic consumer is mislabeled
+  # as part of the required bounded gate.
+  - name: misclassified-required-consumer
+    kind: importer-classification
+    target: scripts/shootdemo.mjs
+    value: required-gate
+    expectedField: scripts/shootdemo.mjs
+  # neutral-name drift: a core-only probe learns a Fairtrade surface name.
+  - name: fairtrade-name-in-neutral-probe
+    kind: neutral-name
+    value: txn-scrubber
+    expectedField: txn-scrubber

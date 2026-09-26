@@ -1,0 +1,104 @@
+# Exact SurfaceGate / GraphThemeGate importer and export inventory, plus the
+# Fairtrade-owned floors and the neutral-policy seam. Static, deterministic, and
+# browser-free: every entry is checked against the real scripts/ tree and the
+# real modules by scripts/fairtest-surface-manifest.mjs. The six importer
+# families below are the current production and self-check consumers; no row is
+# a migration and no consumer is deleted.
+#
+# Ownership split this inventory pins: the generic policy (byte floor, selected
+# fraction, distinct-sample count, digest, duplicate scope) lives in the neutral
+# Fairtest core; the Fairtrade floor NAMES and PNG decode stay in the app-owned
+# scripts/surface-gate.mjs facade. Core-only seams use neutral probe names.
+
+exports:
+  - name: DEFAULT_MIN_BYTES
+    kind: value
+  - name: BYTE_FLOORS
+    kind: value
+  - name: MIN_NONBG_RATIO
+    kind: value
+  - name: MIN_DISTINCT_COLORS
+    kind: value
+  - name: measurePng
+    kind: function
+  - name: SurfaceGate
+    kind: class
+
+# caller-owned byte floors. "default" is the fallback every full surface uses;
+# "txn-scrubber" is the one tiny-surface exception. No other surface name exists.
+floors:
+  - name: default
+    bytes: 16384
+  - name: txn-scrubber
+    bytes: 400
+
+# caller-owned non-byte thresholds.
+thresholds:
+  - name: min-nonbg-ratio
+    value: 0.012
+  - name: min-distinct-colors
+    value: 6
+
+# the legacy measure() return keys every consumer reads, in contract order.
+returnKeys:
+  - bytes
+  - md5
+  - w
+  - h
+  - pixels
+  - nonbgRatio
+  - bgShare
+  - distinctColors
+
+# the graph oracle's own exported surface: GraphThemeGate must keep wrapping one
+# SurfaceGate instance so the byte-identical theme pair still trips the dup guard.
+graphGate:
+  path: scripts/graph-oracle.mjs
+  exports:
+    - MIN_THEME_DELTA
+    - THEME_TOL
+    - ORACLE_BG
+    - GraphThemeGate
+  requiresSurfaceGate: true
+
+# the six current importer families. Each imports the SurfaceGate binding from
+# ./surface-gate.mjs; none is migrated by this facade. `classification` records
+# the consumer disposition: "required-gate" is the cheap importer/signature/policy
+# gate (the bounded compatibility command plus the already-required timeline
+# probe); "periodic-compat" is named periodic/manual evidence that is never
+# claimed as required CI. No row is deleted or migrated.
+importers:
+  - path: scripts/check-surface-gate.mjs
+    family: gate-self-check
+    binding: SurfaceGate
+    classification: required-gate
+  - path: scripts/graph-oracle.mjs
+    family: graph-oracle
+    binding: SurfaceGate
+    classification: required-gate
+  - path: scripts/pi-transcript.probe.mjs
+    family: pi-transcript-probe
+    binding: SurfaceGate
+    classification: periodic-compat
+  - path: scripts/shootdemo.mjs
+    family: capture-harness
+    binding: SurfaceGate
+    classification: periodic-compat
+  - path: scripts/shootmanage.mjs
+    family: manage-capture
+    binding: SurfaceGate
+    classification: periodic-compat
+  - path: scripts/timeline-rendered-probe.mjs
+    family: timeline-probe
+    binding: SurfaceGate
+    classification: required-gate
+
+# the neutral-policy seam: generic callers, generic names. These probe names must
+# never be a Fairtrade floor name, so no core-only seam can learn an app surface.
+neutralPolicy:
+  module: src/core/index.mjs
+  probeNames:
+    - surface-alpha
+    - surface-beta
+  forbiddenNames:
+    - txn-scrubber
