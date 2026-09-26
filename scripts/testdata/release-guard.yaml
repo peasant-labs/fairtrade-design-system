@@ -130,3 +130,16 @@ workflow:
     - {name: unconditional prefix, target: tag_if, replacement: "true || github.event_name == 'workflow_dispatch'"}
     - {name: missing merged condition, target: tag_if, replacement: "github.event_name == 'workflow_dispatch' || github.event.action == 'closed'"}
     - {name: weakened validate condition, target: validate_if, replacement: "true || github.event_name == 'pull_request'"}
+git:
+  # The release-tag invariant stated in AGENTS.md: never move or delete a
+  # release tag. A plain push of an existing tag is refused by the receiver, so
+  # the exact command the release workflow runs cannot rewrite a published tag.
+  # The rows below are the controls that make that refusal specific: git moves
+  # the same tag the moment the guard is dropped, so a passing case is observing
+  # immutability rather than an incidental push failure.
+  tag: fairtrade-v1.2.3
+  first_message: first release
+  second_message: attempted replacement
+  mutations:
+    - {name: a forced push moves the release tag, operation: force_push}
+    - {name: a delete and re-push moves the release tag, operation: delete_then_push}

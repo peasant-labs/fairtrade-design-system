@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 import YAML from 'yaml'
@@ -7,6 +9,10 @@ import { GitHubReleaseClient, isMaintainerPermission, parseFairtradeTag, parseRe
 
 const root = path.resolve(import.meta.dirname, '..')
 const fixturePath = path.join(import.meta.dirname, 'testdata/release-guard.yaml')
+/** Per-command ceiling for one throwaway-repository git call, in ms. */
+const GIT_COMMAND_TIMEOUT_MS = 10000
+/** Ceiling for the whole release-tag case, in ms: a regression fails instead of hanging. */
+const RELEASE_TAG_CASE_TIMEOUT_MS = 60000
 const requiredNativeStackMutations = new Map([
   ['non-main stack trunk', 'stack_trunk'],
   ['requested PR is not a member', 'wrong_member'],
@@ -22,6 +28,10 @@ const requiredResolveMutations = new Map([
   ['merged timeline repository differs', 'resolve_timeline_repository'],
   ['merged commit is disconnected from main', 'resolve_disconnected_commit'],
 ])
+const requiredGitMutations = new Map([
+  ['a forced push moves the release tag', 'force_push'],
+  ['a delete and re-push moves the release tag', 'delete_then_push'],
+])
 
 function object(value, where) { assert.ok(value && typeof value === 'object' && !Array.isArray(value), `${where} must be an object`); return value }
 function array(value, where, min) { assert.ok(Array.isArray(value) && value.length >= min, `${where} must contain at least ${min} rows`); return value }
@@ -30,7 +40,7 @@ function keys(value, allowed, where) { object(value, where); assert.deepEqual(Ob
 function named(rows, where) { const names = rows.map((row, index) => string(row.name, `${where}[${index}].name`)); assert.equal(new Set(names).size, names.length, `${where} names must be unique`) }
 
 function validateFixtures(f) {
-  keys(f, ['titles', 'tags', 'permissions', 'reviews', 'metadata', 'github', 'workflow'], 'root')
+  keys(f, ['titles', 'tags', 'permissions', 'reviews', 'metadata', 'github', 'workflow', 'git'], 'root')
   for (const kind of ['titles', 'tags']) {
     keys(f[kind], ['valid', 'invalid'], kind); named(array(f[kind].valid, `${kind}.valid`, 3), `${kind}.valid`); named(array(f[kind].invalid, `${kind}.invalid`, kind === 'titles' ? 11 : 8), `${kind}.invalid`)
     for (const row of f[kind].valid) { keys(row, kind === 'titles' ? ['name', 'input', 'version', 'tag'] : ['name', 'input'], `${kind}.valid row`); string(row.input, `${kind}.valid input`) }
@@ -55,6 +65,11 @@ function validateFixtures(f) {
   named(array(f.github.pagination, 'github.pagination', 2), 'github.pagination')
   for (const row of f.github.pagination) { keys(row, ['name', 'responses', 'approved', 'expected_paths'], 'pagination row'); array(row.responses, 'pagination responses', 3); array(row.expected_paths, 'pagination expected_paths', 3); for (const response of row.responses) keys(response, response.link === undefined ? ['body'] : ['body', 'link'], 'response') }
   keys(f.workflow, ['validate_if', 'tag_if', 'release_needles', 'publish_needles', 'mutations'], 'workflow'); string(f.workflow.validate_if, 'workflow.validate_if'); string(f.workflow.tag_if, 'workflow.tag_if'); array(f.workflow.release_needles, 'workflow.release_needles', 10); array(f.workflow.publish_needles, 'workflow.publish_needles', 2); named(array(f.workflow.mutations, 'workflow.mutations', 3), 'workflow.mutations'); for (const row of f.workflow.mutations) keys(row, ['name', 'target', 'replacement'], 'workflow mutation')
+  keys(f.git, ['tag', 'first_message', 'second_message', 'mutations'], 'git'); for (const field of ['tag', 'first_message', 'second_message']) string(f.git[field], `git.${field}`)
+  named(array(f.git.mutations, 'git.mutations', 2), 'git.mutations')
+  const gitCases = new Map()
+  for (const row of f.git.mutations) { keys(row, ['name', 'operation'], 'git.mutations row'); string(row.operation, `git.mutations.${row.name}.operation`); assert.ok([...requiredGitMutations.values()].includes(row.operation), `git.mutations.${row.name} has unknown operation ${row.operation}`); gitCases.set(row.name, row.operation) }
+  for (const [name, operation] of requiredGitMutations) assert.equal(gitCases.get(name), operation, `git.mutations must retain required scenario ${name} with operation ${operation}`)
   return f
 }
 
@@ -177,4 +192,179 @@ test('workflow control flow and release invariants are exact and mutation-proven
   const releaseText = fs.readFileSync(path.join(root, '.github/workflows/release-pr.yml'), 'utf8'); const publishText = fs.readFileSync(path.join(root, '.github/workflows/npm-publish.yml'), 'utf8'); const release = YAML.parse(releaseText); const publish = YAML.parse(publishText)
   assertWorkflowContract(release, publish, releaseText, publishText)
   for (const mutation of fixtures.workflow.mutations) { const changed = structuredClone(release); changed.jobs[mutation.target === 'tag_if' ? 'tag' : 'validate'].if = mutation.replacement; assert.throws(() => assertWorkflowContract(changed, publish, YAML.stringify(changed), publishText), { name: 'AssertionError' }, mutation.name) }
+})
+
+/** Per-command signing opt-out, so no throwaway-repository git call can reach a signing agent. */
+const NO_SIGNING = ['-c', 'tag.gpgsign=false', '-c', 'commit.gpgsign=false', '-c', 'user.signingKey=']
+
+/**
+ * The environment every throwaway-repository git call runs under.
+ *
+ * The release-tag case must observe git's tag immutability and nothing else, so
+ * the scratch repository is sealed against the machine it runs on: each inherited
+ * GIT_* variable is dropped rather than trusted, the user and system config are
+ * replaced by an empty file inside the throwaway directory, and the credential
+ * and pinentry helpers are stubbed to fail. A contributor whose global config
+ * turns on commit or tag signing therefore observes the same repository this case
+ * observes, and no config, ref, tag, or key outside the throwaway directory is
+ * read or written.
+ * @param {string} dir the throwaway directory owning the scratch repositories
+ * @returns {Record<string, string>} the substituted environment
+ */
+function hermeticGitEnvironment(dir) {
+  const inherited = {}
+  for (const [key, value] of Object.entries(process.env)) if (!key.startsWith('GIT_')) inherited[key] = value
+  const askpass = path.join(dir, 'refuse-interactive.sh')
+  fs.writeFileSync(askpass, '#!/bin/sh\necho "release-guard test: refusing an interactive credential or passphrase request" >&2\nexit 1\n')
+  fs.chmodSync(askpass, 0o700)
+  const globalConfig = path.join(dir, 'global.gitconfig')
+  fs.writeFileSync(globalConfig, '')
+  return {
+    ...inherited,
+    GIT_CONFIG_GLOBAL: globalConfig,
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_TERMINAL_PROMPT: '0',
+    GIT_ASKPASS: askpass,
+    SSH_ASKPASS: askpass,
+    LC_ALL: 'C',
+  }
+}
+
+/**
+ * Run one git command in the throwaway repository, signing-opted-out and bounded.
+ * Every call carries a hard timeout, so a call that would block on a signing
+ * agent or a prompt fails the case with a diagnostic instead of hanging the run.
+ * @param {string} cwd the throwaway working directory
+ * @param {Record<string, string>} env the substituted environment
+ * @param {string[]} args the git arguments after the signing opt-out
+ * @returns {{ status: number, stdout: string, stderr: string }} the captured result
+ */
+function hermeticGit(cwd, env, args) {
+  const result = spawnSync('git', [...NO_SIGNING, ...args], { cwd, env, encoding: 'utf8', timeout: GIT_COMMAND_TIMEOUT_MS, killSignal: 'SIGKILL' })
+  if (result.error) {
+    const timedOut = result.error.code === 'ETIMEDOUT'
+    assert.fail(
+      `release-guard test: git ${args.join(' ')} ${timedOut ? `exceeded the ${GIT_COMMAND_TIMEOUT_MS}ms per-command ceiling` : `could not run (${result.error.message})`} at step "release tag scratch repository"; ` +
+      'repair: keep every scratch-repository call under hermeticGit so the empty global config, the failing askpass stub, and the per-command timeout keep a signing agent or prompt from blocking the case.',
+    )
+  }
+  return { status: result.status, stdout: result.stdout, stderr: result.stderr }
+}
+
+/**
+ * Run one git command that must succeed, reporting the command and its output on failure.
+ * @param {string} cwd the throwaway working directory
+ * @param {Record<string, string>} env the substituted environment
+ * @param {string[]} args the git arguments after the signing opt-out
+ * @returns {{ status: number, stdout: string, stderr: string }} the captured result
+ */
+function gitOk(cwd, env, args) {
+  const result = hermeticGit(cwd, env, args)
+  assert.equal(result.status, 0, `release-guard test: git ${args.join(' ')} must succeed in the throwaway repository at step "release tag scratch repository"; got status ${result.status} and ${result.stderr}`)
+  return result
+}
+
+/**
+ * Build one scratch pair: a bare remote and a work tree carrying the first
+ * release commit, an annotated release tag, and that tag already pushed.
+ * @param {string} parent the throwaway directory that owns this pair
+ * @param {Record<string, string>} env the substituted environment
+ * @returns {{ remote: string, work: string, firstObject: string, firstCommit: string }} the seeded pair
+ */
+function seedReleaseTagPair(parent, env) {
+  const remote = path.join(parent, 'remote.git')
+  const work = path.join(parent, 'work')
+  gitOk(parent, env, ['init', '--bare', '--quiet', remote])
+  gitOk(parent, env, ['init', '--quiet', work])
+  gitOk(work, env, ['config', 'user.name', 'release-guard test'])
+  gitOk(work, env, ['config', 'user.email', 'release-guard@example.invalid'])
+  gitOk(work, env, ['remote', 'add', 'origin', remote])
+  fs.writeFileSync(path.join(work, 'file'), 'one')
+  gitOk(work, env, ['add', 'file'])
+  gitOk(work, env, ['commit', '--quiet', '-m', 'one'])
+  gitOk(work, env, ['tag', '-a', fixtures.git.tag, '-m', fixtures.git.first_message])
+  gitOk(work, env, ['push', '--quiet', 'origin', `refs/tags/${fixtures.git.tag}`])
+  return {
+    remote,
+    work,
+    firstObject: gitOk(parent, env, ['--git-dir', remote, 'rev-parse', fixtures.git.tag]).stdout.trim(),
+    firstCommit: gitOk(parent, env, ['--git-dir', remote, 'rev-parse', `${fixtures.git.tag}^{}`]).stdout.trim(),
+  }
+}
+
+/**
+ * Recreate the release tag on a second commit, the state a retried or duplicated
+ * release run would be in.
+ * @param {{ remote: string, work: string }} pair the seeded pair
+ * @param {Record<string, string>} env the substituted environment
+ * @returns {string} the second commit the local tag now points at
+ */
+function retagReleaseTag(pair, env) {
+  fs.writeFileSync(path.join(pair.work, 'file'), 'two')
+  gitOk(pair.work, env, ['commit', '--quiet', '-am', 'two'])
+  gitOk(pair.work, env, ['tag', '--delete', fixtures.git.tag])
+  gitOk(pair.work, env, ['tag', '-a', fixtures.git.tag, '-m', fixtures.git.second_message])
+  return gitOk(pair.work, env, ['rev-parse', `${fixtures.git.tag}^{}`]).stdout.trim()
+}
+
+/**
+ * Move the remote tag without force, the exact command the release workflow runs.
+ * @param {{ remote: string, work: string }} pair the seeded pair
+ * @param {Record<string, string>} env the substituted environment
+ * @param {string[]} extraArgs additional push arguments, empty for a plain push
+ * @returns {{ status: number, stdout: string, stderr: string }} the captured push
+ */
+function pushReleaseTag(pair, env, extraArgs = []) {
+  return hermeticGit(pair.work, env, ['push', ...extraArgs, 'origin', `refs/tags/${fixtures.git.tag}`])
+}
+
+test('an annotated remote release tag cannot be moved or deleted by a plain push', { timeout: RELEASE_TAG_CASE_TIMEOUT_MS }, () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fairtrade-release-guard-'))
+  try {
+    const env = hermeticGitEnvironment(dir)
+    assert.ok(env.GIT_CONFIG_GLOBAL.startsWith(dir), 'the substituted global config must live inside the throwaway directory so no contributor config is read or written')
+    assert.equal(env.GIT_TERMINAL_PROMPT, '0', 'interactive terminal prompts must stay off so a credential request fails instead of waiting')
+
+    // The invariant: a plain push of an existing release tag is refused and the
+    // annotated tag object on the remote is untouched.
+    const immutable = path.join(dir, 'immutable')
+    fs.mkdirSync(immutable, { recursive: true })
+    const pair = seedReleaseTagPair(immutable, env)
+    // Hermeticity is asserted, not assumed: a case that passed only because the
+    // machine it ran on happened to have signing off would guard nothing on a
+    // contributor whose global config turns it on.
+    for (const setting of ['tag.gpgsign', 'commit.gpgsign']) {
+      assert.equal(gitOk(pair.work, env, ['config', '--get', setting]).stdout.trim(), 'false', `the scratch repository must opt out of ${setting} at step "release tag scratch repository"; repair: keep ${setting}=false in the NO_SIGNING per-command opt-out so the case cannot block on a signing agent.`)
+    }
+    assert.equal(gitOk(pair.work, env, ['config', '--get', 'user.signingKey']).stdout.trim(), '', 'the scratch repository must carry no signing key at step "release tag scratch repository"; repair: keep the empty user.signingKey in the NO_SIGNING per-command opt-out so no key material is required.')
+    const globalScopes = gitOk(pair.work, env, ['config', '--list', '--show-scope']).stdout.split('\n').filter((line) => line.startsWith('global\t'))
+    assert.deepEqual(globalScopes, [], `the scratch repository must see no global-scope config, so a contributor's signing settings cannot reach it; got ${globalScopes.join(' | ')}`)
+    retagReleaseTag(pair, env)
+    const refused = pushReleaseTag(pair, env)
+    assert.notEqual(refused.status, 0, `a plain push of the existing release tag ${fixtures.git.tag} must be refused; got status 0 and ${refused.stdout}${refused.stderr}`)
+    assert.match(refused.stderr, /already exists/, `the refusal must come from the receiver refusing to move an existing tag, not from an unrelated error; got ${refused.stderr}`)
+    assert.equal(gitOk(dir, env, ['--git-dir', pair.remote, 'rev-parse', fixtures.git.tag]).stdout.trim(), pair.firstObject, 'the remote release tag object must be unchanged after the refused push')
+    assert.equal(gitOk(dir, env, ['--git-dir', pair.remote, 'rev-parse', `${fixtures.git.tag}^{}`]).stdout.trim(), pair.firstCommit, 'the remote release tag must still point at the first release commit after the refused push')
+
+    // The controls: git moves the very same tag the moment the guard is dropped,
+    // so the refusal above is the receiver's immutability, not an incidental
+    // failure that would have made the assertion pass anyway.
+    for (const row of fixtures.git.mutations) {
+      const control = path.join(dir, `control-${row.operation}`)
+      fs.mkdirSync(control, { recursive: true })
+      const pair = seedReleaseTagPair(control, env)
+      const secondCommit = retagReleaseTag(pair, env)
+      if (row.operation === 'force_push') {
+        assert.equal(pushReleaseTag(pair, env, ['--force']).status, 0, `${row.name}: a forced push must move the tag, or the non-force refusal proves nothing`)
+      } else if (row.operation === 'delete_then_push') {
+        assert.equal(gitOk(pair.work, env, ['push', '--quiet', 'origin', `:refs/tags/${fixtures.git.tag}`]).status, 0, `${row.name}: deleting the remote tag must be accepted`)
+        assert.equal(pushReleaseTag(pair, env).status, 0, `${row.name}: re-pushing the recreated tag must be accepted`)
+      } else {
+        throw new Error(`release-guard test: git fixture operation ${row.operation} is unknown; add it to requiredGitMutations before using it`)
+      }
+      assert.equal(gitOk(dir, env, ['--git-dir', pair.remote, 'rev-parse', `${fixtures.git.tag}^{}`]).stdout.trim(), secondCommit, `${row.name}: the remote release tag must have moved, so the plain-push refusal is the guard and not an unrelated failure`)
+    }
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
 })
