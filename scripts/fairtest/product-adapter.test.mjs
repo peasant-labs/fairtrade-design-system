@@ -3694,6 +3694,7 @@ describe('fairtest host export ownership', async () => {
     'run-envelope.test.mjs',
     'fairtest-dev.mjs',
     'local-bridge.test.mjs',
+    'process-supervisor.mjs',
   ])
   const hostModules = {}
   for (const file of hostFiles) {

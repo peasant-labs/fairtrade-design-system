@@ -71,6 +71,14 @@ export const SELECTION_REL = `${SELECTION_DIR}/expected-selection.json`
 export const SELECTION_RECEIPT_REL = `${GUARDS_DIR}/selection-receipt.json`
 
 /**
+ * The process supervisor's durable cleanup receipt, owned by
+ * process-supervisor.mjs. It records the observed postconditions of all four
+ * supervised process cases under the guards/ subtree.
+ * @type {string}
+ */
+export const PROCESS_CLEANUP_RECEIPT_REL = `${GUARDS_DIR}/process-cleanup.json`
+
+/**
  * The verifier's durable report, owned by verify-fairtest.mjs.
  * @type {string}
  */
