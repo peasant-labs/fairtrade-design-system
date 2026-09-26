@@ -17,10 +17,7 @@
 # The legacy `theme` fixture (project-name inference for the broad catalog)
 # rides with the `test` row: it is defined inside the extended test object,
 # not as a module export, so export membership cannot name it separately.
-# The row-scoped `resolveRowTheme` helper (explicit row key for Fairtest) is
-# its own row. Both paths are app-owned and documented as separate paths in
-# fixtures.mjs: neither silently replaces the other.
-expectedCaseCount: 15
+expectedCaseCount: 14
 cases:
   - name: helper-constants-frozen-epoch
     file: determinism-constants.mjs
@@ -77,8 +74,4 @@ cases:
   - name: helper-fixtures-story-url
     file: fixtures.mjs
     symbol: storyUrl
-    owner: app-owned-host-runtime
-  - name: helper-fixtures-resolve-row-theme
-    file: fixtures.mjs
-    symbol: resolveRowTheme
     owner: app-owned-host-runtime

@@ -7,7 +7,7 @@ records:
       cost: Two bounded theme rows, one browser and service lifecycle, one named map-section action, and six small artifacts per row, inside the existing job budget with no retries.
       lifetime: One immutable run root created fresh per run plus one loopback service, cleaned up in finally on success, failure, timeout, and interruption.
       concurrency: One product row at a time; row identity plus the immutable run root prevent stale or cross-run output.
-      ciParity: The exact command runs after a clean build in the pinned Playwright container; no local demo or external service is assumed.
+      ciParity: The exact command runs after a clean build in the pinned Playwright container; no local demo or external service is assumed. Its required-CI mount is still deferred (the command prints declared-not-ci on every run), so a green CI run does not yet prove it.
       evidence: Computed styles, ARIA tree, axe report, screenshot, resolution, normalized theme observation, and served-build provenance with asset digests.
       mutation: A wrong theme, missing selector or part, unregistered action, missing artifact, or stale served asset kills the row for the intended reason.
       exitCondition: Remove or simplify the mounted row when a lower-level gate or an existing journey proves the same named risk.

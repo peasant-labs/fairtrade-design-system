@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # product-target.testdata.yaml.
-expectedCaseCount: 118
+expectedCaseCount: 119
 requiredCaseNames:
   - theme-row-dark-absent-passes
   - theme-row-dark-empty-passes
@@ -114,18 +114,22 @@ requiredCaseNames:
   - mounted-row-guard-calls-cover-the-pre-action-point
   - mounted-row-guard-calls-cover-the-post-action-point
   - product-contract-command-runs-every-suite
+  - mounted-command-declares-its-deferred-ci-mount
   - combined-suite-invocation-runs-both-browser-suites
   - host-literal-guard-sees-template-literal-selectors
   - served-digests-match-the-run-build-tree
   - served-digests-differ-from-the-run-build-tree-fails
   - served-asset-missing-from-the-run-build-tree-fails
   - driver-idle-reset-keeps-start-diagnostic
-expectedMutationCount: 66
+expectedMutationCount: 69
 requiredMutationNames:
   - mounted-row-guard-calls-unknown-deleted-point
   - mounted-row-guard-points-drop-the-pre-action-point
   - product-contract-command-names-another-command
   - product-contract-command-drops-serial-execution
+  - mounted-command-names-another-command
+  - mounted-command-declares-enforced-without-a-mount
+  - port-owner-consumer-inventory-drops-a-consumer
   - host-literal-guard-mutation-moves-no-literal
   - a11y-record-receipt-without-an-observed-point
   - served-digest-case-declares-its-own-build-tree
@@ -219,6 +223,24 @@ mutations:
     field: expectedNodeArgs
     value: ['--test', scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
     expectedField: expectedNodeArgs
+  - name: mounted-command-names-another-command
+    kind: bad-value
+    target: mounted-command-declares-its-deferred-ci-mount
+    field: commandName
+    value: test:fairtest:product-contract
+    expectedField: commandName
+  - name: mounted-command-declares-enforced-without-a-mount
+    kind: bad-value
+    target: mounted-command-declares-its-deferred-ci-mount
+    field: ciMountStatus
+    value: enforced
+    expectedField: ciMountStatus
+  - name: port-owner-consumer-inventory-drops-a-consumer
+    kind: bad-value
+    target: config-port-owner-single-declaration
+    field: consumerModules
+    value: [playwright.fairtest.config.mjs, scripts/fairtest/product-producer.mjs, scripts/fairtest/product.journey.mjs]
+    expectedField: consumerModules
   - name: host-literal-guard-mutation-moves-no-literal
     kind: bad-value
     target: host-literal-guard-sees-template-literal-selectors

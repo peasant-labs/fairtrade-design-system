@@ -1158,7 +1158,7 @@ cases:
   - name: config-port-owner-single-declaration
     check: port-owner
     ownerModule: scripts/fairtest/fairtest-runtime.mjs
-    consumerModules: [playwright.fairtest.config.mjs, scripts/fairtest/product-producer.mjs, scripts/fairtest/product.journey.mjs, scripts/fairtest/product-mutations.mjs]
+    consumerModules: [playwright.fairtest.config.mjs, scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.mjs, scripts/fairtest/product-producer.mjs, scripts/fairtest/product.journey.mjs]
     portEnvName: FAIRTEST_APP_PORT
     expectValid: true
   - name: served-digests-match-the-run-build-tree
@@ -1203,6 +1203,13 @@ cases:
     expectedScript: node scripts/fairtest/run-product-contract.mjs
     expectedSuites: [scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
     expectedNodeArgs: ['--test', '--test-concurrency=1', scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
+    ciMountStatus: declared-not-ci
+    workflowDir: .github/workflows
+    expectValid: true
+  - name: mounted-command-declares-its-deferred-ci-mount
+    check: mounted-command
+    commandName: test:fairtest:mounted
+    expectedScript: node scripts/fairtest/run-mounted.mjs
     ciMountStatus: declared-not-ci
     workflowDir: .github/workflows
     expectValid: true

@@ -77,7 +77,6 @@ const RUNTIME_REL = 'scripts/fairtest/fairtest-runtime.mjs'
 const INVENTORY_REL = 'scripts/testdata/fairtest-runner-inventory.yaml'
 const HOST_CORPUS_REL = 'scripts/fairtest/host-ownership.testdata.yaml'
 const HOST_MANIFEST_REL = 'scripts/fairtest/host-ownership.testdata.manifest.yaml'
-const HOST_FILES = ['fairtest-runtime.mjs', 'fairtrade-adapter.mjs', 'fairtrade-targets.mjs', 'product-producer.mjs', 'product-mutations.mjs']
 const HOST_OWNERS = ['runtime-constants-owner', 'app-owned-registry', 'app-owned-adapter', 'browser-bearing-host-runtime']
 const HOST_FILE_OWNERS = Object.freeze({
   'fairtest-runtime.mjs': 'runtime-constants-owner',
@@ -86,7 +85,6 @@ const HOST_FILE_OWNERS = Object.freeze({
   'product-producer.mjs': 'browser-bearing-host-runtime',
   'product-mutations.mjs': 'browser-bearing-host-runtime',
 })
-const HOST_SCRATCH_PORT_FILES = ['product-mutations.mjs']
 const HOST_MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'stale-name', 'delete-field', 'rename-field', 'unknown-field', 'bad-value'])
 const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs']
 // The product-host modules whose every product selector, label, and loopback
@@ -94,7 +92,7 @@ const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs']
 const PRODUCT_HOST_FILES = ['product-producer.mjs', 'product-mutations.mjs', 'product.journey.mjs']
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
-const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'cli-target', 'driver-out-of-root', 'driver-host-refusal', 'driver-stop-contract', 'driver-reset-contract', 'rendered-active-view', 'record-truthfulness', 'row-dir-preparation', 'runner-config', 'port-owner', 'axe-report-shape', 'mounted-row-guard-calls', 'combined-suite-invocation', 'product-contract-command', 'host-literal-guard', 'served-digest-comparison']
+const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'cli-target', 'driver-out-of-root', 'driver-host-refusal', 'driver-stop-contract', 'driver-reset-contract', 'rendered-active-view', 'record-truthfulness', 'row-dir-preparation', 'runner-config', 'port-owner', 'axe-report-shape', 'mounted-row-guard-calls', 'combined-suite-invocation', 'product-contract-command', 'mounted-command', 'host-literal-guard', 'served-digest-comparison']
 const A11Y_POINTS = ['initial', 'after-action']
 const A11Y_IMPACTS = ['minor', 'moderate', 'serious', 'critical']
 const ROW_THEMES = ['dark', 'light']
@@ -109,16 +107,13 @@ const RENDER_GUARD_CONTEXT = Object.freeze({
   repair: 'keep the analytics dashboard laid out and rendered instead of present but invisible',
 })
 const ACCEPTED_MEASUREMENT_FIELDS = ['roots', 'rendered', 'descendants', 'textLength']
-// Scratch loopback ports for the real static-driver cases. They are
-// deliberately not the Fairtest loopback port owned by fairtest-runtime.mjs and
-// never the mutation-suite ports (5195, 5196, 5197, 5202) or the
-// start-failure ports (5198, 5199), so no mounted row or mutation run collides
-// with them. The host case never binds its port: it proves the refusal at
-// driver construction.
 // No suite holds a scratch-port literal. Each real-driver case names the
 // purpose it needs and takes the port the single owner hands out, so this file
 // and scripts/fairtest/product-mutations.mjs can run in one node --test
 // invocation without either of them being blamed for the other's listener.
+// The ownership rule that enforces this lives in the host-ownership guard
+// below, and it covers the contract suites themselves, not only the host
+// modules.
 const REAL_DRIVER_PURPOSES = Object.freeze({
   squatter: 'adapter-squatter',
   absentDist: 'adapter-absent-dist',
@@ -248,6 +243,7 @@ function checkCaseShape(entry, index) {
     'mounted-row-guard-calls': ['name', 'check', 'producerModule', 'expectedGuardPoints', 'deletedCallPoint', 'expectValid'],
     'combined-suite-invocation': ['name', 'check', 'suites', 'selectedCases', 'expectValid'],
     'product-contract-command': ['name', 'check', 'commandName', 'expectedScript', 'expectedSuites', 'expectedNodeArgs', 'ciMountStatus', 'workflowDir', 'expectValid'],
+    'mounted-command': ['name', 'check', 'commandName', 'expectedScript', 'ciMountStatus', 'workflowDir', 'expectValid'],
     'host-literal-guard': ['name', 'check', 'hostFiles', 'mutatedLiteral', 'expectValid'],
     'served-digest-comparison': entry.expectValid
       ? ['name', 'check', 'files', 'mutateFile', 'mutateSuffix', 'wiredInto', 'expectValid']
@@ -837,6 +833,28 @@ function checkPortOwnerShape(entry, path) {
   if (entry.portEnvName !== 'FAIRTEST_APP_PORT') {
     throw new Error(`${CORPUS_REL}: case "${name}" names an unknown port override ${JSON.stringify(entry.portEnvName)} for field "portEnvName" at path ${path}.portEnvName; repair: the loopback port is overridden through FAIRTEST_APP_PORT.`)
   }
+}
+
+/**
+ * Derive the loopback-origin consumer set from the filesystem: every module
+ * under scripts/fairtest/ plus the Fairtest Playwright config that reads a
+ * FAIRTEST_APP_* origin symbol from the runtime owner. Hand-maintaining this
+ * list would let a new consumer read (and potentially re-declare) the origin
+ * ungoverned, so the port-owner case compares the declared consumers against
+ * exactly this set.
+ * @returns {string[]} repository-relative consumer module paths, sorted
+ */
+function deriveLoopbackOriginConsumers() {
+  const candidates = [
+    'playwright.fairtest.config.mjs',
+    ...readdirSync(HERE).filter((name) => name.endsWith('.mjs')).map((name) => `scripts/fairtest/${name}`),
+  ]
+  return candidates
+    .filter((relative) => {
+      const text = readFileSync(resolve(ROOT, relative), 'utf8')
+      return /from '[^']*fairtest-runtime\.mjs'/.test(text) && /FAIRTEST_APP_(PORT|HOST|BASE_URL)/.test(text)
+    })
+    .sort()
 }
 
 /**
@@ -1794,6 +1812,17 @@ async function runPortOwnerCase(entry) {
   const driver = createProductStaticDriver()
   assert.equal(driver.port, owner.FAIRTEST_APP_PORT, `${CORPUS_REL}: case "${name}" found the static driver defaulting to another port for field "portEnvName" at path cases.${name}.portEnvName; repair: default the driver to the declared owner.`)
   assert.equal(driver.host, owner.FAIRTEST_APP_HOST, `${CORPUS_REL}: case "${name}" found the static driver defaulting to another host for field "ownerModule" at path cases.${name}.ownerModule; repair: default the driver to the declared owner.`)
+  // The consumer inventory is DERIVED, not a hand list: every module that
+  // reads a loopback-origin symbol from the runtime owner must be inventoried
+  // here, and every inventoried module must actually read it. Closed in both
+  // directions, so a new consumer is required onto the list and a dropped one
+  // turns the case red.
+  const derivedConsumers = deriveLoopbackOriginConsumers()
+  assert.deepEqual(
+    [.../** @type {string[]} */ (entry.consumerModules)].sort(),
+    derivedConsumers,
+    `${CORPUS_REL}: case "${name}" found the consumer inventory ${JSON.stringify([.../** @type {string[]} */ (entry.consumerModules)].sort())} for field "consumerModules" at path cases.${name}.consumerModules; repair: the derived set of modules reading a loopback-origin symbol from ${ownerModule} is ${JSON.stringify(derivedConsumers)}; list exactly that set.`,
+  )
   const ownerText = readFileSync(resolve(ROOT, ownerModule), 'utf8')
   const hostLiteral = String(owner.FAIRTEST_APP_HOST)
   const portLiteral = String(owner.FAIRTEST_APP_PORT)
@@ -2057,6 +2086,65 @@ async function runProductContractCommandCase(entry) {
     assert.ok(
       !text.includes(commandName),
       `${CORPUS_REL}: case "${name}" found ${JSON.stringify(commandName)} in ${workflowDir}/${workflow} while the declared required-CI mount status is ${JSON.stringify(ciMountStatus)} for field "ciMountStatus" at path cases.${name}.ciMountStatus; repair: mount it in required CI and flip PRODUCT_CONTRACT_REQUIRED_CI_MOUNT.status and this case's ciMountStatus in the same change.`,
+    )
+  }
+}
+
+/**
+ * Run one mounted-command case. The mounted evidence command carries the same
+ * declared-not-ci standard the product-contract command carries: its package
+ * script, its runner-inventory row, and its declared required-CI mount status
+ * must all agree, and while the status is declared-not-ci no required CI
+ * workflow may invoke the command, so "declared" can never be misread as
+ * "enforced". The mount lands in a later slice and must flip this status and
+ * the case's ciMountStatus in the same change.
+ * @param {Record<string, unknown>} entry
+ */
+async function runMountedCommandCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const commandName = /** @type {string} */ (entry.commandName)
+  const expectedScript = /** @type {string} */ (entry.expectedScript)
+  const ciMountStatus = /** @type {string} */ (entry.ciMountStatus)
+  const workflowDir = /** @type {string} */ (entry.workflowDir)
+
+  const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'))
+  const script = pkg.scripts?.[commandName]
+  assert.equal(script, expectedScript, `${CORPUS_REL}: case "${name}" found package script ${JSON.stringify(script)} for field "commandName" at path cases.${name}.commandName; repair: declare "${commandName}" as ${JSON.stringify(expectedScript)} so the mounted evidence path stays reachable from one command.`)
+
+  const inventory = coreFixtures.loadSingleDocument(readFileSync(resolve(ROOT, INVENTORY_REL), 'utf8'), INVENTORY_REL)
+  const rows = /** @type {Record<string, unknown>[]} */ (inventory.commands).filter((row) => row.name === commandName)
+  assert.equal(rows.length, 1, `${CORPUS_REL}: case "${name}" found ${String(rows.length)} runner-inventory rows for field "commandName" at path cases.${name}.commandName; repair: declare ${JSON.stringify(commandName)} exactly once in ${INVENTORY_REL}.`)
+  assert.equal(rows[0].invocation, `pnpm ${commandName}`, `${CORPUS_REL}: case "${name}" found inventory invocation ${JSON.stringify(rows[0].invocation)} for field "commandName" at path cases.${name}.commandName; repair: declare the exact pnpm invocation for the command.`)
+
+  const mounted = await import('./run-mounted.mjs')
+  assert.ok(mounted.MOUNTED_REQUIRED_CI_MOUNT, `${CORPUS_REL}: case "${name}" found no declared required-CI mount in run-mounted.mjs for field "ciMountStatus" at path cases.${name}.ciMountStatus; repair: declare MOUNTED_REQUIRED_CI_MOUNT so the deferral is observable.`)
+  assert.equal(mounted.MOUNTED_REQUIRED_CI_MOUNT.status, ciMountStatus, `${CORPUS_REL}: case "${name}" found required-CI mount status ${JSON.stringify(mounted.MOUNTED_REQUIRED_CI_MOUNT.status)} for field "ciMountStatus" at path cases.${name}.ciMountStatus; repair: ${mounted.MOUNTED_REQUIRED_CI_MOUNT.reason}.`)
+
+  // The deferral, stated and checked. While the status is declared-not-ci,
+  // this case fails the moment a workflow starts running the command, which is
+  // the point: the status must be flipped in the same change that mounts it.
+  // Once the mount lands and the status flips, the direction inverts: at
+  // least one workflow must invoke the command, so the flip cannot be
+  // declared without the mount either.
+  const workflows = readdirSync(resolve(ROOT, workflowDir)).filter((workflowEntry) => workflowEntry.endsWith('.yml') || workflowEntry.endsWith('.yaml'))
+  let referenced = null
+  for (const workflow of workflows) {
+    const text = readFileSync(resolve(ROOT, workflowDir, workflow), 'utf8')
+    if (text.includes(commandName)) {
+      referenced = workflow
+      break
+    }
+  }
+  if (ciMountStatus === 'declared-not-ci') {
+    assert.equal(
+      referenced,
+      null,
+      `${CORPUS_REL}: case "${name}" found ${JSON.stringify(commandName)} in ${workflowDir}/${referenced} while the declared required-CI mount status is ${JSON.stringify(ciMountStatus)} for field "ciMountStatus" at path cases.${name}.ciMountStatus; repair: mount it in required CI and flip MOUNTED_REQUIRED_CI_MOUNT.status and this case's ciMountStatus in the same change.`,
+    )
+  } else {
+    assert.ok(
+      referenced,
+      `${CORPUS_REL}: case "${name}" declared the required-CI mount ${JSON.stringify(ciMountStatus)} but no workflow in ${workflowDir} invokes ${JSON.stringify(commandName)} for field "ciMountStatus" at path cases.${name}.ciMountStatus; repair: mount the command in required CI or keep the status declared-not-ci.`,
     )
   }
 }
@@ -2456,6 +2544,7 @@ const RUNNERS = {
   'mounted-row-guard-calls': runMountedRowGuardCallsCase,
   'combined-suite-invocation': runCombinedSuiteInvocationCase,
   'product-contract-command': runProductContractCommandCase,
+  'mounted-command': runMountedCommandCase,
   'host-literal-guard': runHostLiteralGuardCase,
   'served-digest-comparison': runServedDigestComparisonCase,
 }
@@ -2866,7 +2955,16 @@ describe('product target registry and theme rows', () => {
       sectionView: '#inuse-stage[role="tabpanel"]',
     })
     assert.equal(selected.initialSection, 'analytics')
-    assert.deepEqual([...selected.sections], ['analytics', 'changes', 'map'])
+    // Membership, not order: PRODUCT_SECTIONS is read only through .includes()
+    // (the row navigates by label and aria-current, never by index), so a
+    // behavior-preserving nav reorder must not turn this red. The comparison
+    // sorts both sides; adding, removing, or renaming a section id stays a
+    // deliberate red that names the vocabulary.
+    assert.deepEqual(
+      [...selected.sections].sort(),
+      ['analytics', 'changes', 'map'],
+      'the section vocabulary must stay exactly analytics, changes, and map at path target.sections; repair: keep the section ids in PRODUCT_SECTIONS; their order is deliberately not pinned.',
+    )
   })
 
   it('rejects unknown target ids with an actionable diagnostic', () => {
@@ -3398,8 +3496,24 @@ describe('product adapter lifecycle with a fake driver', () => {
 describe('fairtest host export ownership', async () => {
   const hostManifest = /** @type {Record<string, unknown>} */ (coreFixtures.loadSingleDocument(readFileSync(resolve(ROOT, HOST_MANIFEST_REL), 'utf8'), HOST_MANIFEST_REL))
   const hostParsed = /** @type {Record<string, unknown>} */ (coreFixtures.loadSingleDocument(readFileSync(resolve(ROOT, HOST_CORPUS_REL), 'utf8'), HOST_CORPUS_REL))
+  // The guarded module set is DERIVED, not hand-maintained: the ownership
+  // rows are the single declaration of which files are host modules, and the
+  // directory-closure case below fails any scripts/fairtest/*.mjs module that
+  // is neither classified here nor on the declared unclassified list. A new
+  // host module — for example the component producer the config header
+  // anticipates — therefore has to declare an owner before every gate is
+  // green again, rather than sitting silently ungoverned.
+  const hostFiles = [...new Set(hostParsed.exports.map((entry) => String(entry.file)))].sort()
+  const directoryModules = readdirSync(HERE).filter((name) => name.endsWith('.mjs')).sort()
+  const declaredUnclassifiedFiles = Object.freeze([
+    'product-adapter.test.mjs',
+    'product-mutations.test.mjs',
+    'product.journey.mjs',
+    'run-mounted.mjs',
+    'run-product-contract.mjs',
+  ])
   const hostModules = {}
-  for (const file of HOST_FILES) {
+  for (const file of hostFiles) {
     hostModules[file] = await import(pathToFileURL(resolve(HERE, file)).href)
   }
 
@@ -3460,7 +3574,7 @@ describe('fairtest host export ownership', async () => {
       // Name the field that is actually wrong: a row that points a real export
       // at the wrong module is a `file` mistake, and a row that names a symbol
       // nobody exports is a `symbol` mistake.
-      const elsewhere = HOST_FILES.filter((other) => other !== file && liveExports(other).includes(symbol))
+      const elsewhere = hostFiles.filter((other) => other !== file && liveExports(other).includes(symbol))
       if (elsewhere.length > 0) {
         throw new Error(`${HOST_CORPUS_REL}: row "${name}" names ${JSON.stringify(symbol)} in ${JSON.stringify(file)} at path file; repair: it is exported by ${elsewhere.map((other) => JSON.stringify(other)).join(', ')}, so point "file" there.`)
       }
@@ -3505,9 +3619,12 @@ describe('fairtest host export ownership', async () => {
         null,
         `${HOST_CORPUS_REL}: row "${name}" has ${file} declaring a loopback port literal at path owner; repair: take every port from FAIRTEST_APP_PORT or claimScratchPort in fairtest-runtime.mjs, never a number.`,
       )
-      if (HOST_SCRATCH_PORT_FILES.includes(file)) {
-        // A CALL, not an import: importing the owner and then declaring a port
-        // beside it would otherwise satisfy this check on the import alone.
+      // The scratch-port rule is DERIVED, not a hand list: any browser-bearing
+      // host module that references the runtime's scratch-port API must take
+      // its ports through claimScratchPort, the binding call. A module that
+      // never touches the API needs nothing, so a new host module is covered
+      // the moment it starts using throwaway listeners.
+      if (/claimScratchPort|fairtestScratchPort|FAIRTEST_SCRATCH_PORT_BASE|FAIRTEST_SCRATCH_PURPOSES/.test(code)) {
         assert.ok(
           /claimScratchPort\(/.test(source),
           `${HOST_CORPUS_REL}: row "${name}" has ${file} declaring a scratch port of its own at path owner; repair: take every throwaway loopback port from claimScratchPort in fairtest-runtime.mjs.`,
@@ -3552,9 +3669,9 @@ describe('fairtest host export ownership', async () => {
     }
     // The inventory is the export set: no module export may be unclassified and
     // no row may name something a module does not export.
-    const live = HOST_FILES.flatMap((file) => liveExports(file).map((symbol) => `${file}:${symbol}`)).sort()
+    const live = hostFiles.flatMap((file) => liveExports(file).map((symbol) => `${file}:${symbol}`)).sort()
     const declared = rows.map((entry) => `${String(entry.file)}:${String(entry.symbol)}`).sort()
-    assert.deepEqual(declared, live, `${HOST_CORPUS_REL}: the classified rows do not equal the live export set at path exports; repair: classify every export of ${HOST_FILES.join(', ')} exactly once and delete rows for symbols that no longer exist.`)
+    assert.deepEqual(declared, live, `${HOST_CORPUS_REL}: the classified rows do not equal the live export set at path exports; repair: classify every export of ${hostFiles.join(', ')} exactly once and delete rows for symbols that no longer exist.`)
   })
 
   it('enforces each owner class against the real host sources', () => {
@@ -3586,9 +3703,56 @@ describe('fairtest host export ownership', async () => {
   })
 
   it('resolves every host module with node --check', () => {
-    for (const file of HOST_FILES) {
+    for (const file of hostFiles) {
       const result = spawnSync(process.execPath, ['--check', resolve(HERE, file)], { encoding: 'utf8' })
       assert.equal(result.status, 0, `host module ${file} does not parse:\n${result.stderr || ''}`)
+    }
+  })
+
+  it('requires every module in the directory to be classified or declared unclassified', () => {
+    // The guarded set is closed in both directions: a module on disk that no
+    // row classifies and no declared list names is ungoverned, and a declared
+    // name that the directory no longer holds is a stale declaration. Either
+    // way the repair names the file.
+    assert.ok(directoryModules.length > 0, `${HOST_CORPUS_REL}: no modules found under scripts/fairtest/ at path directory; repair: run this guard from a checkout that holds the host modules.`)
+    const unclassified = directoryModules.filter((file) => !hostFiles.includes(file) && !declaredUnclassifiedFiles.includes(file))
+    assert.deepEqual(
+      unclassified,
+      [],
+      `${HOST_CORPUS_REL}: module ${JSON.stringify(unclassified[0])} under scripts/fairtest/ is neither classified by an ownership row nor declared unclassified at path exports; repair: add ownership rows for ${JSON.stringify(unclassified[0])} or record it on the declared unclassified list, never leave a host module ungoverned.`,
+    )
+    const phantom = declaredUnclassifiedFiles.filter((file) => !directoryModules.includes(file))
+    assert.deepEqual(
+      phantom,
+      [],
+      `${HOST_CORPUS_REL}: declared unclassified module ${JSON.stringify(phantom[0])} does not exist under scripts/fairtest/ at path exports; repair: drop the stale declared name or restore the module.`,
+    )
+    for (const file of hostFiles) {
+      assert.ok(
+        directoryModules.includes(file),
+        `${HOST_CORPUS_REL}: ownership rows classify ${JSON.stringify(file)} but the directory does not hold it at path exports; repair: delete the rows for the removed module or restore the module.`,
+      )
+      assert.ok(
+        HOST_FILE_OWNERS[file],
+        `${HOST_CORPUS_REL}: classified module ${JSON.stringify(file)} has no declared owner at path exports; repair: record the module's owner class in HOST_FILE_OWNERS.`,
+      )
+    }
+  })
+
+  it('keeps the contract suites themselves free of port literals', async () => {
+    // The no-port-literal ownership rule cannot stop at the host modules: the
+    // test files run in the same node --test invocation and could hold the
+    // same second declaration. The suite list comes from the declared command
+    // graph, so a suite the contract command runs is covered the moment it is
+    // declared there.
+    const contract = await import('./run-product-contract.mjs')
+    for (const file of contract.PRODUCT_CONTRACT_SUITES) {
+      const code = stripComments(readFileSync(resolve(ROOT, file), 'utf8'))
+      assert.equal(
+        /\bport\s*[:=]\s*\d/.exec(code),
+        null,
+        `${file}: declares a loopback port literal at path ${file}; repair: take every port from claimScratchPort in scripts/fairtest/fairtest-runtime.mjs, never a number.`,
+      )
     }
   })
 })
@@ -3794,7 +3958,12 @@ describe('adapter source boundary', () => {
     assert.ok(producer.includes('scanAxe(page, { root })'), 'product-producer.mjs: must run the scoped scan through the shared scanAxe contract; repair: call scanAxe(page, { root }) instead of a local scanner.')
     assert.ok(producer.includes('AXE_RESULT_FIELDS'), 'product-producer.mjs: must pin the scan shape to the shared AXE_RESULT_FIELDS; repair: validate every scan against the shared declared field set.')
     const ownerText = readFileSync(resolve(ROOT, RUNTIME_REL), 'utf8')
-    assert.ok(/export const FAIRTEST_APP_PORT = Number\(process\.env\.FAIRTEST_APP_PORT \|\| \d+\)/.test(ownerText), `${RUNTIME_REL}: must declare the loopback port as the env-overridable default; repair: keep the port override in the single owner.`)
+    // Spelled in two parts so this source line never itself matches the
+    // port-owner guard's second-declaration scan: this suite is itself an
+    // inventoried consumer of the loopback origin, so a bare declaration
+    // pattern on this line would read as a second owner.
+    const portDefaultDeclaration = ['export const FAIRTEST_APP_PORT ', '= Number(process.env.FAIRTEST_APP_PORT || '].join('')
+    assert.ok(ownerText.includes(portDefaultDeclaration), `${RUNTIME_REL}: must declare the loopback port as the env-overridable default; repair: keep the port override in the single owner.`)
   })
 
   it('keeps the mounted row preparing its run subtree before any artifact write', () => {

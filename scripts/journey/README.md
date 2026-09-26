@@ -102,6 +102,8 @@ which shapes are accepted and which must fail before any axe run starts.
 
 Fairtrade's own element journeys (Storybook-driven component interactions) will
 live here as well; this slice establishes the shared layer only. The
-`fixtures.mjs` theme helper binds the current row key; element
+`fixtures.mjs` theme fixture reads the Playwright project name for the broad
+catalog; the retired row-scoped helper must stay deleted, so Fairtest rows
+bind their theme through the app-owned target instead. Element
 journeys that assume a live clock (story play() functions, the built-app
 checks) skip the determinism shim, matching the unshimmed scripts they port.

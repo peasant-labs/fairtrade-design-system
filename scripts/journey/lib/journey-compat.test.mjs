@@ -1,11 +1,11 @@
 // Compatibility proof for the existing journey surface.
 //
 // The broad legacy validation path keeps working exactly as before: this
-// module proves the current journey helpers still load, the pinned pure
+// module proves the current journey helpers still load and the pinned pure
 // values are unchanged, and expectTheme still asserts the rendered
-// data-theme value under Playwright's own retry budget. It also pins the two
-// documented theme paths apart: the legacy project-name fixture stays for
-// the broad catalog, and the row-scoped helper binds only explicit row keys.
+// data-theme value under Playwright's own retry budget. The catalog theme
+// fixture stays bound to the Playwright project name; the retired row-scoped
+// helper must stay deleted rather than resurrected beside it.
 //
 // The vendored boundary is proven by behavior, not by a syntax check. A
 // hermetic consumer tree is built in a temporary directory that holds only
@@ -253,7 +253,6 @@ describe('journey helper compatibility', () => {
     assert.equal(typeof determinism.installDeterminism, 'function', 'installDeterminism must stay exported from determinism.mjs')
     assert.equal(typeof fixtures.test, 'function', 'test must stay exported from fixtures.mjs')
     assert.equal(typeof fixtures.storyUrl, 'function', 'storyUrl must stay exported from fixtures.mjs')
-    assert.equal(typeof fixtures.resolveRowTheme, 'function', 'resolveRowTheme must stay exported from fixtures.mjs')
     assert.deepEqual(
       assertions.seriousViolations({ violations: [{ impact: 'critical' }, { impact: 'minor' }] }).map((entry) => entry.impact),
       ['critical'],
@@ -472,21 +471,13 @@ describe('journey helper compatibility', () => {
     }
   })
 
-  it('keeps the two theme paths apart: project name for the catalog, row key for Fairtest', () => {
+  it('keeps the legacy theme fixture reading the project name for the broad catalog', () => {
     const text = readFileSync(join(HERE, 'fixtures.mjs'), 'utf8')
     assert.ok(text.includes('testInfo.project.name'), 'legacy theme fixture must keep reading the project name for the broad catalog')
-    assert.equal(fixtures.resolveRowTheme('dark'), 'dark')
-    assert.equal(fixtures.resolveRowTheme('light'), 'light')
-    assert.throws(
-      () => fixtures.resolveRowTheme('product-dark'),
-      /"product-dark".*field "rowKey".*at path fixtures\.rowTheme.*repair:/s,
-      'row-scoped helper must reject a project name instead of inferring from it',
-    )
-    assert.throws(
-      () => fixtures.resolveRowTheme('dusk'),
-      /"dusk".*field "rowKey".*at path fixtures\.rowTheme.*repair:/s,
-      'row-scoped helper must reject an unknown row key',
-    )
+    // The retired row-scoped helper must stay retired: no fixtures export and
+    // no caller may resurrect a second theme-binding path beside the catalog
+    // fixture.
+    assert.ok(!text.includes('resolveRowTheme'), 'the retired row-scoped theme helper must stay deleted from fixtures.mjs')
   })
 
   it('keeps the broad legacy validation path syntactically intact and scoped', () => {
