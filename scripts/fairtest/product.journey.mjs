@@ -19,7 +19,7 @@
 import { test, expect } from '@playwright/test'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
 import { FAIRTEST_APP_HOST, FAIRTEST_APP_PORT } from './fairtest-runtime.mjs'
-import { PRODUCT_TARGET_ID } from './fairtrade-targets.mjs'
+import { PRODUCT_A11Y_GATE_POINT_SLOTS, PRODUCT_A11Y_POINT_LABELS, PRODUCT_TARGET_ID } from './fairtrade-targets.mjs'
 import {
   PRODUCT_ARTIFACT_CLASSES,
   PRODUCT_PRE_ACTION_PARTS,
@@ -31,6 +31,8 @@ import {
 } from './product-producer.mjs'
 
 const ROW_THEMES = ['dark', 'light']
+const GATE_POINT_SLOTS = PRODUCT_A11Y_GATE_POINT_SLOTS
+const POINT_LABELS = PRODUCT_A11Y_POINT_LABELS
 
 function sanitizeRunId(value) {
   const base = String(value || '').split('/').filter(Boolean).pop() || 'fairtest-product-run'
@@ -81,6 +83,11 @@ test.describe('fairtest mounted product', () => {
       expect(summary.proof.action.completed).toBe(true)
       const { readFileSync, existsSync } = await import('node:fs')
       const { join } = await import('node:path')
+      // Real observation, not a source read: the row reports the rendered-view
+      // guard call sequence it actually made, and the two declared points must
+      // both appear in that order. Deleting either call site in the row
+      // shortens this sequence and fails the row here.
+      expect(summary.activeViewGuards, `row ${theme} must invoke the rendered-view guard at both declared points`).toEqual(['body@proof.body', 'view@proof.view'])
       for (const name of PRODUCT_ARTIFACT_CLASSES) {
         const path = join(productRowDir(runRoot, theme), name)
         expect(existsSync(path), `row artifact ${name} must exist at ${path}`).toBe(true)
@@ -156,6 +163,28 @@ test.describe('fairtest mounted product', () => {
       }
       expect(proof.theme.observedAtMs, `row ${theme} theme must be read at or after the parts`).toBeGreaterThanOrEqual(times.parts)
       expect(proof.action.observedAtMs, `row ${theme} action must be read at or after the theme`).toBeGreaterThanOrEqual(proof.theme.observedAtMs)
+
+      // The two gate receipts must each name the section the page actually
+      // showed when their scan was taken. The reader compares that observed text
+      // against the app-owned label for the slot, so a swapped scan fails closed
+      // instead of producing two receipts that agree with each other and not
+      // with the row.
+      const axe = JSON.parse(readFileSync(join(rowDir, 'axe.json'), 'utf8'))
+      for (const point of ['before', 'after']) {
+        const slot = GATE_POINT_SLOTS[point]
+        expect(axe.scoped[point].observedSection, `row ${theme} ${slot} scan must be gated with the ${axe.scoped[point].declaredSection} section active`).toBe(POINT_LABELS[slot])
+        expect(record.accessibility.gate[point].observedSection, `row ${theme} gate.${point} must carry the section the page showed`).toBe(axe.scoped[point].observedSection)
+        expect(record.accessibility.gate[point].point, `row ${theme} gate.${point} must name its declared observation point`).toBe(slot)
+      }
+      expect(axe.scoped.before.observedSection, `row ${theme} the two scans must be gated against different sections`).not.toBe(axe.scoped.after.observedSection)
+
+      // The written provenance is a measured correspondence, not a bare hash
+      // list: it names the tree its digests were compared against, and it says
+      // out loud which comparison is not the producer's to make.
+      const provenance = JSON.parse(readFileSync(join(rowDir, 'provenance.json'), 'utf8'))
+      expect(provenance.servedFrom, `row ${theme} provenance must name the tree its digests were compared against`).toBe('run-root-dist')
+      expect(provenance.commitCorrespondence, `row ${theme} provenance must name who owns the commit correspondence`).toBe('verifier-owned')
+      expect(provenance.viewport, `row ${theme} provenance must record the shared render viewport`).toEqual(summary.provenance.viewport)
     })
   }
 })

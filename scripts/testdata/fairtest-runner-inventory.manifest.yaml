@@ -2,7 +2,7 @@
 # Every command, runner, and guidance path below must appear exactly once in
 # scripts/testdata/fairtest-runner-inventory.yaml. Mutations name executable
 # stale-guidance cases; combinatorial cases live here, never inline.
-expectedCommandCount: 17
+expectedCommandCount: 18
 requiredCommandNames:
   - fairtest dev
   - test:adapter
@@ -16,6 +16,7 @@ requiredCommandNames:
   - test:fairtest:list:local
   - test:fairtest:mounted
   - test:fairtest:preflight
+  - test:fairtest:product-contract
   - test:fairtest:process
   - test:fairtest:promotion
   - test:fairtest:select
@@ -41,10 +42,11 @@ requiredGuidanceFragmentNames:
   - stale-puppeteer-catalog
   - stale-two-project-model
   - stale-two-projects-plural
-expectedMutationCount: 18
+expectedMutationCount: 19
 requiredMutationNames:
   - deleted-required-command
   - removed-command-owner
+  - invalid-product-contract-stage
   - stale-command-name
   - duplicate-command-name
   - renamed-owner-field
@@ -71,6 +73,12 @@ mutations:
     target: commands:test:fairtest:verify
     field: owner
     expectedField: owner
+  - name: invalid-product-contract-stage
+    kind: bad-enum
+    target: commands:test:fairtest:product-contract
+    field: stage
+    value: nightly
+    expectedField: stage
   - name: stale-command-name
     kind: stale-name
     target: commands:test:fairtest:list:ci

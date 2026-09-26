@@ -1,30 +1,38 @@
-// Executable suite for the ten named negative product mutations.
+// Executable suite for the negative product mutations.
 //
-// Each named mutation must fail at its owning product boundary with an
-// actionable diagnostic. This module drives the real producer path through
-// scripts/fairtest/product-mutations.mjs: observation-input removal through
-// the real proof builder, the active-view floor guard over the real served
-// DOM, the rendered-root predicate over the declared unrendered modes on that
-// same served DOM, contradiction through the real theme observer, registry
-// rejection through the real adapter and target registry, cross-kind
-// rejection through the shared contract, and stale-asset comparison over real
-// served bytes from a throwaway dist/ copy.
+// The ten named mutations have exactly ONE diagnostics table and ONE execution
+// owner, and neither lives here: the table is the `mutation-*` rows of
+// scripts/fairtest/product-target.testdata.yaml and the execution is the
+// product fixture family's `executes every named case` in
+// product-adapter.test.mjs. This suite therefore does not re-run the ten and
+// does not restate their expectations; it proves the single owner is real (every
+// named mutation is claimed by exactly one fixture row, and that row's
+// expectations are the ones the fixture family checks) and it covers the
+// invariants a fixture row cannot express.
+//
+// What stays here:
+// - the leaf contracts behind the real mutations, proven directly against the
+//   real producers so the fixture rows are checking something true;
+// - the real served-DOM absence proof, which is a mounted path with its own
+//   evidence shape rather than a negative case;
+// - the source-route and second-owner guards for this module.
 //
 // Precondition: run pnpm build first so dist/ holds the exact built app.
 // The stale-asset mutation and the DOM proofs serve throwaway roots or remove
-// or empty live elements only; the real dist/ tree is never modified and
-// every service, browser, and scratch directory is released in finally
-// blocks. Runs with node --test and starts no Storybook or Puppeteer path.
+// or empty live elements only; the real dist/ tree is never modified and every
+// service, browser, and scratch directory is released in finally blocks. Runs
+// with node --test and starts no Storybook or Puppeteer path.
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { importFairtestSource } from '../fairtest-source.mjs'
+import { loadSingleDocument } from '../fairtest-single-document.mjs'
 import {
   PRODUCT_MUTATION_BOUNDARIES,
   PRODUCT_MUTATION_NAMES,
-  PRODUCT_UNRENDERED_RULES,
   proveDomAbsenceRealPath,
   runProductMutation,
   servedProvenanceDigestMatch,
@@ -41,26 +49,11 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
 const DIST_ROOT = join(ROOT, 'dist')
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
+const CORPUS_REL = 'scripts/fairtest/product-target.testdata.yaml'
+const MUTATION_CHECK = 'product-mutation'
 
-const EXPECTED_DIAGNOSTICS = {
-  'missing-chrome': ['chrome', 'at path', 'repair:'],
-  'missing-body': ['body', 'at path', 'repair:'],
-  'missing-section': ['activeSection', 'at path', 'repair:'],
-  'missing-view': ['view', 'at path', 'repair:'],
-  'blank-active-view': ['blank representative body', 'proof.body', 'active view', 'hidden changes view', 'repair:'],
-  'unrendered-active-view': ['unrendered active view refused', 'field "mode"', 'at path producer.activeView.body.refusals', 'display-none', 'visibility-hidden', 'opacity-zero', 'zero-size', 'clipped', 'repair:'],
-  'wrong-theme': ['"light"', '"dark"', 'at path', 'repair:'],
-  'unregistered-action': ['select-changes-section', 'at path', 'repair:'],
-  'cross-kind-proof': ['identity', 'at path', 'repair:'],
-  'stale-served-asset': ['assetDigests', 'at path', 'repair:'],
-}
-
-/** @param {string[]} fragments @param {string} message @param {string} name */
-function expectDiagnostic(fragments, message, name) {
-  for (const fragment of fragments) {
-    assert.ok(message.includes(fragment), `${name}: diagnostic is missing ${JSON.stringify(fragment)}; got ${message}`)
-  }
-}
+const corpus = /** @type {Record<string, unknown>} */ (loadSingleDocument(readFileSync(resolve(ROOT, CORPUS_REL), 'utf8'), CORPUS_REL))
+const mutationRows = /** @type {Record<string, unknown>[]} */ (corpus.cases).filter((entry) => entry.check === MUTATION_CHECK)
 
 describe('named negative product mutations', () => {
   it('names exactly the ten required mutations with owning boundaries', () => {
@@ -82,18 +75,29 @@ describe('named negative product mutations', () => {
     }
   })
 
-  it('fails every named mutation at its owning boundary with an actionable diagnostic', async () => {
-    assert.ok(existsSync(join(DIST_ROOT, 'index.html')), 'stale-asset mutation needs the built app; repair: run pnpm build before node --test scripts/fairtest/product-mutations.test.mjs.')
-    for (const name of PRODUCT_MUTATION_NAMES) {
-      let message = null
-      try {
-        await runProductMutation(name)
-      } catch (error) {
-        message = error instanceof Error ? error.message : String(error)
-      }
-      assert.ok(message, `${name}: mutated path passed instead of failing at ${PRODUCT_MUTATION_BOUNDARIES[name]}`)
-      expectDiagnostic(EXPECTED_DIAGNOSTICS[name], message, name)
-      console.log(`MUTATION ${name} :: ${message.split('\n')[0]}`)
+  it('leaves the ten diagnostics and their execution to the one fixture owner', () => {
+    // One table: every named mutation is claimed by exactly one fixture row, so
+    // an expectation can never exist here and disagree with the one the fixture
+    // family checks. One execution owner: this suite does not re-run the ten,
+    // which is what the product fixture family's `executes every named case`
+    // already does, including the two real-browser mutations.
+    assert.deepEqual(
+      mutationRows.map((row) => String(row.mutation)).sort(),
+      [...PRODUCT_MUTATION_NAMES].sort(),
+      `the ${CORPUS_REL} ${MUTATION_CHECK} rows must claim every named mutation exactly once`,
+    )
+    for (const row of mutationRows) {
+      const name = String(row.name)
+      const fragments = /** @type {string[]} */ (row.expectedErrorContains)
+      assert.ok(Array.isArray(fragments) && fragments.length > 0, `${name}: the owner row must carry the diagnostic fragments the fixture family checks`)
+      assert.ok(
+        fragments.every((fragment) => typeof fragment === 'string' && fragment.length > 0),
+        `${name}: the owner row must carry non-empty diagnostic fragments`,
+      )
+      assert.ok(
+        fragments.includes('repair:'),
+        `${name}: the owner row must require an actionable repair in the diagnostic`,
+      )
     }
   })
 
@@ -105,6 +109,9 @@ describe('named negative product mutations', () => {
   })
 
   it('fails the body mutation by naming the body part, never by a blanket mounted flag', async () => {
+    // A property of the real body diagnostic the fixture fragments do not
+    // express: the refusal must not hide behind the blanket `proof.mounted`
+    // flag, because that flag cannot tell which part went missing.
     let message = null
     try {
       await runProductMutation('missing-body')
@@ -117,6 +124,8 @@ describe('named negative product mutations', () => {
   })
 
   it('leaves the real dist/ untouched and no scratch residue behind', async () => {
+    // A residue property of the real stale-asset mutation: the throwaway copy
+    // is served and removed, and no probe byte reaches the real tree.
     const before = createHash('sha256').update(readFileSync(join(DIST_ROOT, 'index.html'))).digest('hex')
     let message = null
     try {
@@ -192,9 +201,9 @@ describe('named negative product mutations', () => {
   it('refuses every declared unrendered mode on a present but unrendered active view', () => {
     // Node and text counts are untouched in every mode, so only the rendered
     // predicate can refuse them. The real served-DOM proof for the same five
-    // modes lives in the unrendered-active-view mutation above.
+    // modes lives in the unrendered-active-view mutation the fixture family
+    // executes.
     assert.deepEqual([...PRODUCT_UNRENDERED_MODES], ['display-none', 'visibility-hidden', 'opacity-zero', 'zero-size', 'clipped'])
-    assert.deepEqual(Object.keys(PRODUCT_UNRENDERED_RULES).sort(), [...PRODUCT_UNRENDERED_MODES].sort(), 'every declared unrendered mode needs a real-served-surface rule')
     const context = {
       label: 'unrendered representative body',
       part: 'body',
@@ -226,7 +235,9 @@ describe('named negative product mutations', () => {
   })
 
   it('proves the real DOM path fails when each part element is genuinely absent', { timeout: 180000 }, async () => {
-    const evidence = await proveDomAbsenceRealPath({ port: 5196 })
+    // The scratch port comes from the one owner, so this proof can share a
+    // node --test invocation with the adapter suite.
+    const evidence = await proveDomAbsenceRealPath()
     assert.equal(evidence.length, 4, 'absence proof must cover chrome, section, view, and body')
     for (const entry of evidence) {
       assert.equal(entry.attachedBefore, true, `${entry.part}: selector must attach on the real served app first`)
@@ -248,5 +259,6 @@ describe('named negative product mutations', () => {
     for (const token of forbidden) {
       assert.ok(!text.includes(token), `product-mutations.mjs: names forbidden material ${JSON.stringify(token)}; repair: keep catalog and DOM material in the producer and the live page.`)
     }
+    assert.ok(importFairtestSource, 'the sole source route must stay imported')
   })
 })

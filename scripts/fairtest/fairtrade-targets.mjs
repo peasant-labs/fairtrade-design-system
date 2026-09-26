@@ -25,7 +25,7 @@ export const PRODUCT_TARGET_ID = 'fairtrade-graph-product'
  * shared closed vocabulary, never against a local copy.
  * @type {string}
  */
-export const PRODUCT_TARGET_KIND = 'product'
+const PRODUCT_TARGET_KIND = 'product'
 
 /**
  * Section the graph surface renders before any action.
@@ -43,7 +43,7 @@ export const PRODUCT_ACTION_NAME = 'select-map-section'
  * Section the named action starts from.
  * @type {string}
  */
-export const PRODUCT_ACTION_FROM_SECTION = 'analytics'
+const PRODUCT_ACTION_FROM_SECTION = 'analytics'
 
 /**
  * Section the named action selects.
@@ -116,7 +116,7 @@ if (!PRODUCT_SELECTORS.activeSectionItem.startsWith(`${PRODUCT_SELECTORS.section
  * Opaque handle names for the separately observed product parts.
  * @type {object}
  */
-export const PRODUCT_HANDLES = Object.freeze({
+const PRODUCT_HANDLES = Object.freeze({
   chrome: 'chrome',
   body: 'body',
   section: 'section',
@@ -127,19 +127,19 @@ export const PRODUCT_HANDLES = Object.freeze({
  * Section ids the graph surface may report as active.
  * @type {string[]}
  */
-export const PRODUCT_SECTIONS = Object.freeze(['analytics', 'changes', 'map'])
+const PRODUCT_SECTIONS = Object.freeze(['analytics', 'changes', 'map'])
 
 /**
  * Named fixtures the product target serves.
  * @type {string[]}
  */
-export const PRODUCT_FIXTURES = Object.freeze(['product-theme-rows', 'product-section-select'])
+const PRODUCT_FIXTURES = Object.freeze(['product-theme-rows', 'product-section-select'])
 
 /**
  * Named actions the product target offers.
  * @type {string[]}
  */
-export const PRODUCT_ACTIONS = Object.freeze([PRODUCT_ACTION_NAME])
+const PRODUCT_ACTIONS = Object.freeze([PRODUCT_ACTION_NAME])
 
 /**
  * Served-build provenance source contract. Declares where the row-scoped
@@ -151,7 +151,12 @@ export const PRODUCT_PROVENANCE_SOURCE = Object.freeze({
   source: 'built-app',
   root: 'dist',
   entries: Object.freeze(['index.html', 'assets']),
-  fields: Object.freeze(['commit', 'dirty', 'assetDigests', 'viewport', 'targetIdentity', 'themeObservations']),
+  // `servedFrom` names the tree the recorded digests were compared against and
+  // `commitCorrespondence` names who owns the remaining comparison: the row can
+  // prove the served bytes are this run's built bytes, but binding those bytes
+  // to a commit is the verifier's comparison, so the record says so rather than
+  // letting `commit` read as a digest-level claim it is not.
+  fields: Object.freeze(['source', 'root', 'commit', 'dirty', 'assetDigests', 'servedFrom', 'commitCorrespondence', 'viewport', 'targetIdentity', 'themeObservations', 'servedUrl', 'producedAtMs']),
 })
 
 const PRODUCT_ACTION = Object.freeze({
@@ -608,10 +613,13 @@ export const PRODUCT_A11Y_POINTS = Object.freeze(['initial', 'after-action'])
  * once here, by the policy owner, so the reader that consumes the receipt
  * never hardcodes a second copy of the record shape: a receipt that grows or
  * loses a field turns the browser-free gate case red instead of silently
- * changing the durable contract.
+ * changing the durable contract. `observedSection` is in the set because it is
+ * the receipt's only OBSERVED tie to a moment in the row: `point` names which
+ * slot the receipt fills, and only the section the page actually showed can
+ * prove the scan came from that slot.
  * @type {string[]}
  */
-export const PRODUCT_A11Y_GATE_RECEIPT_FIELDS = Object.freeze(['policy', 'point', 'result', 'measured', 'baseline'])
+export const PRODUCT_A11Y_GATE_RECEIPT_FIELDS = Object.freeze(['policy', 'point', 'observedSection', 'result', 'measured', 'baseline'])
 
 /**
  * Record gate slots mapped to the app-owned observation point each slot
@@ -626,7 +634,7 @@ export const PRODUCT_A11Y_GATE_POINT_SLOTS = Object.freeze({
 })
 
 /**
- * Section rendered at each scoped observation point.
+ * Section id rendered at each scoped observation point.
  * @type {object}
  */
 export const PRODUCT_A11Y_POINT_SECTIONS = Object.freeze({
@@ -635,11 +643,24 @@ export const PRODUCT_A11Y_POINT_SECTIONS = Object.freeze({
 })
 
 /**
+ * The active-section TEXT the live page shows at each scoped observation point,
+ * which is what a gate receipt's observedSection is read from. It is declared
+ * beside the section ids because the two are not the same string: the rendered
+ * map button reads "code map" while the section it activates is "map", so a
+ * comparison against the section id would refuse a correct row.
+ * @type {object}
+ */
+export const PRODUCT_A11Y_POINT_LABELS = Object.freeze({
+  initial: PRODUCT_INITIAL_SECTION,
+  'after-action': PRODUCT_ACTION_LABEL,
+})
+
+/**
  * Axe impact severity rank, least to most severe. A measured impact above
  * the declared rank for the same violation id fails the row closed.
  * @type {object}
  */
-export const PRODUCT_A11Y_IMPACT_RANK = Object.freeze({
+const PRODUCT_A11Y_IMPACT_RANK = Object.freeze({
   minor: 1,
   moderate: 2,
   serious: 3,
@@ -679,7 +700,7 @@ export const PRODUCT_A11Y_BASELINE = Object.freeze({
  * @param {string} point observation point the entry belongs to
  * @returns {object} the validated entry
  */
-export function validateProductAxeBaselineEntry(entry, point) {
+function validateProductAxeBaselineEntry(entry, point) {
   if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
     throw new Error(
       `fairtrade targets: missing accessibility baseline entry for field "entry" at path a11y.baseline.${point}; ` +
@@ -727,6 +748,7 @@ export function validateProductAxeBaselineEntry(entry, point) {
  * @param {string} input.point observation point the measurement belongs to
  * @param {{ id: string, impact: string, nodeCount: number }[]} input.measured scoped violations just observed
  * @param {object[]} [input.baseline] declared entries, defaults to the app-owned baseline for the point
+ * @param {string} input.observedSection the section the live page showed when the scan was taken, read from the DOM beside the scan
  * @param {string} input.artifactPath row axe.json path the full result was written to
  * @returns {object} the frozen gate receipt on pass
  */
@@ -734,7 +756,7 @@ export function assertProductAxeBaselineDelta(input = {}) {
   const wantsBaseline = !!input && typeof input === 'object' && Object.hasOwn(input, 'baseline')
   valuesContract.assertExactFields(
     input,
-    wantsBaseline ? ['point', 'measured', 'artifactPath', 'baseline'] : ['point', 'measured', 'artifactPath'],
+    wantsBaseline ? ['point', 'measured', 'observedSection', 'artifactPath', 'baseline'] : ['point', 'measured', 'observedSection', 'artifactPath'],
     'fairtrade targets',
     'a11y.gate',
   )
@@ -746,6 +768,19 @@ export function assertProductAxeBaselineDelta(input = {}) {
     )
   }
   const point = /** @type {string} */ (record.point)
+  // The section a scan ran against is an OBSERVED value read from the live page
+  // beside the scan, not a label copied from the declaration. Without it the
+  // receipt's point name was the only thing tying a scan to a moment in the
+  // row, so a receipt could be handed the other scan with nothing in the
+  // record able to contradict it.
+  if (typeof record.observedSection !== 'string' || record.observedSection.trim().length === 0) {
+    throw new Error(
+      `fairtrade targets: missing observed section for field "observedSection" at path a11y.gate.observedSection; ` +
+      `the scan at point ${JSON.stringify(point)} was handed with no section read from the page; ` +
+      'repair: read the active section text beside the scan and pass it as "observedSection".',
+    )
+  }
+  const observedSection = record.observedSection
   const declared = record.baseline ?? PRODUCT_A11Y_BASELINE.points[point]
   if (!Array.isArray(declared)) {
     throw new Error(
@@ -798,6 +833,7 @@ export function assertProductAxeBaselineDelta(input = {}) {
   return Object.freeze({
     policy: PRODUCT_A11Y_POLICY,
     point,
+    observedSection,
     result: 'pass',
     measured: Object.freeze(measured.length),
     baseline: Object.freeze(baseline.length),

@@ -70,7 +70,7 @@
 # owner both the config and the producer read, and the single owner of the
 # compact axe report shape. The driver contract family also proves reset is
 # safe to call when the driver is not running.
-expectedCaseCount: 108
+expectedCaseCount: 118
 cases:
   - name: theme-row-dark-absent-passes
     check: theme-row
@@ -557,6 +557,29 @@ cases:
     boundary: provenance.assetDigests
     expectValid: false
     expectedErrorContains: ['assetDigests', 'at path', 'repair:']
+  - name: a11y-record-observed-point-swap-fails
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: product-view
+      scopeRoot: '#inuse-stage[role="tabpanel"]'
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: analytics, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [aria-required-children, color-contrast, heading-order, link-name, list, region, scrollable-region-focusable]
+        incomplete: [color-contrast]
+        passes: 120
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['mismatched gate observation point', 'field "observedSection"', 'at path record.accessibility.gate.after.observedSection', 'analytics', 'repair:']
   - name: wrapper-dark-absent-passes
     check: wrapper-theme
     theme: dark
@@ -643,25 +666,36 @@ cases:
   - name: a11y-delta-at-baseline-passes
     check: a11y-delta
     point: after-action
+    observedSection: code map
     measured:
       - {id: aria-required-children, impact: critical, nodeCount: 3}
+    expectValid: true
+    expectFrozen: true
+  - name: a11y-delta-records-the-observed-section-verbatim
+    check: a11y-delta
+    point: after-action
+    observedSection: analytics
+    measured: []
     expectValid: true
     expectFrozen: true
   - name: a11y-delta-improved-passes
     check: a11y-delta
     point: after-action
+    observedSection: code map
     measured: []
     expectValid: true
     expectFrozen: true
   - name: a11y-delta-initial-clean-passes
     check: a11y-delta
     point: initial
+    observedSection: analytics
     measured: []
     expectValid: true
     expectFrozen: true
   - name: a11y-delta-new-violation-fails
     check: a11y-delta
     point: after-action
+    observedSection: code map
     measured:
       - {id: aria-required-children, impact: critical, nodeCount: 3}
       - {id: color-contrast, impact: serious, nodeCount: 1}
@@ -670,6 +704,7 @@ cases:
   - name: a11y-delta-increased-nodes-fails
     check: a11y-delta
     point: after-action
+    observedSection: code map
     measured:
       - {id: aria-required-children, impact: critical, nodeCount: 4}
     expectValid: false
@@ -677,6 +712,7 @@ cases:
   - name: a11y-delta-escalated-impact-fails
     check: a11y-delta
     point: after-action
+    observedSection: code map
     baseline:
       - {id: label, impact: serious, nodes: 2, themes: [dark]}
     measured:
@@ -692,8 +728,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -716,8 +752,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 2, ids: [aria-required-children, color-contrast], incomplete: [], passes: 37}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, result: fail, measured: 2, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: fail, measured: 2, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -745,8 +781,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -767,8 +803,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -790,8 +826,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -813,8 +849,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -836,8 +872,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, result: pass, measured: 0, baseline: 0}
-        after: {policy: page-wide-baseline-delta, point: after-action, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: page-wide-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -859,8 +895,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: after-action, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -872,7 +908,7 @@ cases:
         passes: 120
     expectVerdict: none
     expectValid: false
-    expectedErrorContains: ['mismatched gate observation point', 'record.accessibility.gate.before.point', 'after-action', 'repair:']
+    expectedErrorContains: ['mismatched gate observation point', 'field "observedSection"', 'record.accessibility.gate.before.observedSection', 'after-action', 'repair:']
   - name: a11y-record-scoped-count-contradiction-fails
     check: a11y-record
     accessibility:
@@ -882,8 +918,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -1116,6 +1152,7 @@ cases:
     expectedWorkers: 1
     expectedFullyParallel: false
     expectedReducedMotion: reduce
+    expectedViewport: {width: 1280, height: 720}
     forbiddenKeys: [webServer, reuseExistingServer]
     expectValid: true
   - name: config-port-owner-single-declaration
@@ -1124,6 +1161,61 @@ cases:
     consumerModules: [playwright.fairtest.config.mjs, scripts/fairtest/product-producer.mjs, scripts/fairtest/product.journey.mjs, scripts/fairtest/product-mutations.mjs]
     portEnvName: FAIRTEST_APP_PORT
     expectValid: true
+  - name: served-digests-match-the-run-build-tree
+    check: served-digest-comparison
+    files: [[index.html, '<!doctype html><html></html>\n'], [assets/app.js, 'console.log(1)\n']]
+    mutateFile: null
+    mutateSuffix: ''
+    wiredInto: collectServedProvenance
+    expectValid: true
+  - name: served-digests-differ-from-the-run-build-tree-fails
+    check: served-digest-comparison
+    files: [[index.html, '<!doctype html><html></html>\n'], [assets/app.js, 'console.log(1)\n']]
+    mutateFile: assets/app.js
+    mutateSuffix: ' served by something else'
+    expectValid: false
+    expectedErrorContains: ['served bytes differ from the run build tree', 'field "assetDigests"', 'at path provenance.assetDigests', 'assets/app.js', 'repair:']
+  - name: served-asset-missing-from-the-run-build-tree-fails
+    check: served-digest-comparison
+    files: [[index.html, '<!doctype html><html></html>\n'], [assets/app.js, 'console.log(1)\n']]
+    mutateFile: assets/gone.js
+    mutateSuffix: ''
+    expectValid: false
+    expectedErrorContains: ['is missing from the run build tree', 'field "assetDigests"', 'at path provenance.assetDigests', 'repair:']
   - name: axe-report-shape-one-owner
     check: axe-report-shape
+    expectValid: true
+  - name: mounted-row-guard-calls-cover-the-pre-action-point
+    check: mounted-row-guard-calls
+    producerModule: product-producer.mjs
+    expectedGuardPoints: ['body@proof.body', 'view@proof.view']
+    deletedCallPoint: body@proof.body
+    expectValid: true
+  - name: mounted-row-guard-calls-cover-the-post-action-point
+    check: mounted-row-guard-calls
+    producerModule: product-producer.mjs
+    expectedGuardPoints: ['body@proof.body', 'view@proof.view']
+    deletedCallPoint: view@proof.view
+    expectValid: true
+  - name: product-contract-command-runs-every-suite
+    check: product-contract-command
+    commandName: test:fairtest:product-contract
+    expectedScript: node scripts/fairtest/run-product-contract.mjs
+    expectedSuites: [scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
+    expectedNodeArgs: ['--test', '--test-concurrency=1', scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
+    ciMountStatus: declared-not-ci
+    workflowDir: .github/workflows
+    expectValid: true
+  - name: combined-suite-invocation-runs-both-browser-suites
+    check: combined-suite-invocation
+    suites: [scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs]
+    selectedCases: ['holds exact fields and required names', 'proves the real DOM path fails when each part element is genuinely absent']
+    expectValid: true
+  - name: host-literal-guard-sees-template-literal-selectors
+    check: host-literal-guard
+    hostFiles: [product-producer.mjs, product-mutations.mjs, product.journey.mjs]
+    mutatedLiteral:
+      file: product-producer.mjs
+      from: 'viewport: { ...PRODUCT_VIEWPORT }'
+      to: 'viewport: { ...PRODUCT_VIEWPORT }, probe: `${"#inuse"}`'
     expectValid: true

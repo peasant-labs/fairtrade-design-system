@@ -1,0 +1,310 @@
+# Export-ownership inventory for the Fairtest host modules.
+#
+# Every export of the five host modules under scripts/fairtest/ is assigned to
+# exactly one owner, so "app-owned registry" and "browser-bearing host runtime"
+# are ENFORCED boundaries rather than described ones. The row set is the module
+# export set: no export may be unclassified and no row may be a phantom.
+#
+# The four owners and what each one may do:
+#
+#   runtime-constants-owner        the loopback origin, the render viewport, and
+#                                  the scratch-port range. Node builtins only,
+#                                  no other host module, no browser or runner
+#                                  material, and no filesystem or service.
+#   app-owned-registry             the product route, selectors, labels,
+#                                  actions, and accessibility policy. No
+#                                  browser, DOM, or runner material in
+#                                  executable code.
+#   app-owned-adapter              the lifecycle adapter over an injected
+#                                  driver. Same code-level restriction as the
+#                                  registry: the browser never arrives through
+#                                  an import here.
+#   browser-bearing-host-runtime   the row producer and the negative mutations.
+#                                  These MAY drive a page, and they must take
+#                                  every route, selector, label, viewport, and
+#                                  scratch port from an owner rather than
+#                                  declaring one.
+#
+# Runs with node --test inside the declared Fairtest product-contract command.
+expectedExportCount: 70
+exports:
+  - name: fairtest-runtime-fairtest_repo_root
+    file: fairtest-runtime.mjs
+    symbol: FAIRTEST_REPO_ROOT
+    owner: runtime-constants-owner
+  - name: fairtest-runtime-fairtest_app_host
+    file: fairtest-runtime.mjs
+    symbol: FAIRTEST_APP_HOST
+    owner: runtime-constants-owner
+  - name: fairtest-runtime-fairtest_app_port
+    file: fairtest-runtime.mjs
+    symbol: FAIRTEST_APP_PORT
+    owner: runtime-constants-owner
+  - name: fairtest-runtime-fairtest_app_base_url
+    file: fairtest-runtime.mjs
+    symbol: FAIRTEST_APP_BASE_URL
+    owner: runtime-constants-owner
+  - name: fairtest-runtime-product_viewport
+    file: fairtest-runtime.mjs
+    symbol: PRODUCT_VIEWPORT
+    owner: runtime-constants-owner
+  - name: fairtest-runtime-fairtest_scratch_purposes
+    file: fairtest-runtime.mjs
+    symbol: FAIRTEST_SCRATCH_PURPOSES
+    owner: runtime-constants-owner
+  - name: fairtest-runtime-fairtest_scratch_port_base
+    file: fairtest-runtime.mjs
+    symbol: FAIRTEST_SCRATCH_PORT_BASE
+    owner: runtime-constants-owner
+  - name: fairtest-runtime-fairtest-scratch-port
+    file: fairtest-runtime.mjs
+    symbol: fairtestScratchPort
+    owner: runtime-constants-owner
+  - name: fairtest-runtime-claim-scratch-port
+    file: fairtest-runtime.mjs
+    symbol: claimScratchPort
+    owner: runtime-constants-owner
+  - name: fairtrade-adapter-create-fairtrade-adapter
+    file: fairtrade-adapter.mjs
+    symbol: createFairtradeAdapter
+    owner: app-owned-adapter
+  - name: fairtrade-targets-product_target_id
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_TARGET_ID
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_initial_section
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_INITIAL_SECTION
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_action_name
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_ACTION_NAME
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_action_to_section
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_ACTION_TO_SECTION
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_action_label
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_ACTION_LABEL
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_selectors
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_SELECTORS
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_provenance_source
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_PROVENANCE_SOURCE
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_unrendered_modes
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_UNRENDERED_MODES
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_unrendered_refusal_fields
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_UNRENDERED_REFUSAL_FIELDS
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_target_registry
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_TARGET_REGISTRY
+    owner: app-owned-registry
+  - name: fairtrade-targets-select-product-target
+    file: fairtrade-targets.mjs
+    symbol: selectProductTarget
+    owner: app-owned-registry
+  - name: fairtrade-targets-get-product-action
+    file: fairtrade-targets.mjs
+    symbol: getProductAction
+    owner: app-owned-registry
+  - name: fairtrade-targets-normalize-rendered-theme
+    file: fairtrade-targets.mjs
+    symbol: normalizeRenderedTheme
+    owner: app-owned-registry
+  - name: fairtrade-targets-product-route-for-theme
+    file: fairtrade-targets.mjs
+    symbol: productRouteForTheme
+    owner: app-owned-registry
+  - name: fairtrade-targets-product-theme-row
+    file: fairtrade-targets.mjs
+    symbol: productThemeRow
+    owner: app-owned-registry
+  - name: fairtrade-targets-product-declaration-input
+    file: fairtrade-targets.mjs
+    symbol: productDeclarationInput
+    owner: app-owned-registry
+  - name: fairtrade-targets-validate-product-target-contract
+    file: fairtrade-targets.mjs
+    symbol: validateProductTargetContract
+    owner: app-owned-registry
+  - name: fairtrade-targets-product-theme-setup
+    file: fairtrade-targets.mjs
+    symbol: productThemeSetup
+    owner: app-owned-registry
+  - name: fairtrade-targets-product-theme-from-project-name
+    file: fairtrade-targets.mjs
+    symbol: productThemeFromProjectName
+    owner: app-owned-registry
+  - name: fairtrade-targets-assert-product-theme-observation
+    file: fairtrade-targets.mjs
+    symbol: assertProductThemeObservation
+    owner: app-owned-registry
+  - name: fairtrade-targets-observe-product-theme
+    file: fairtrade-targets.mjs
+    symbol: observeProductTheme
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_proof_record_schema
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_PROOF_RECORD_SCHEMA
+    owner: app-owned-registry
+  - name: fairtrade-targets-build-product-proof
+    file: fairtrade-targets.mjs
+    symbol: buildProductProof
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_a11-y_policy
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_A11Y_POLICY
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_a11-y_scope_root
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_A11Y_SCOPE_ROOT
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_a11-y_points
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_A11Y_POINTS
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_a11-y_gate_receipt_fields
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_A11Y_GATE_RECEIPT_FIELDS
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_a11-y_gate_point_slots
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_A11Y_GATE_POINT_SLOTS
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_a11-y_point_labels
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_A11Y_POINT_LABELS
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_a11-y_point_sections
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_A11Y_POINT_SECTIONS
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_a11-y_baseline
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_A11Y_BASELINE
+    owner: app-owned-registry
+  - name: fairtrade-targets-assert-product-axe-baseline-delta
+    file: fairtrade-targets.mjs
+    symbol: assertProductAxeBaselineDelta
+    owner: app-owned-registry
+  - name: product-producer-product_artifact_classes
+    file: product-producer.mjs
+    symbol: PRODUCT_ARTIFACT_CLASSES
+    owner: browser-bearing-host-runtime
+  - name: product-producer-product_min_body_descendants
+    file: product-producer.mjs
+    symbol: PRODUCT_MIN_BODY_DESCENDANTS
+    owner: browser-bearing-host-runtime
+  - name: product-producer-product_min_body_text_length
+    file: product-producer.mjs
+    symbol: PRODUCT_MIN_BODY_TEXT_LENGTH
+    owner: browser-bearing-host-runtime
+  - name: product-producer-product_view_selectors
+    file: product-producer.mjs
+    symbol: PRODUCT_VIEW_SELECTORS
+    owner: browser-bearing-host-runtime
+  - name: product-producer-product_a11-y_record_fields
+    file: product-producer.mjs
+    symbol: PRODUCT_A11Y_RECORD_FIELDS
+    owner: browser-bearing-host-runtime
+  - name: product-producer-product_a11-y_page_wide_fields
+    file: product-producer.mjs
+    symbol: PRODUCT_A11Y_PAGE_WIDE_FIELDS
+    owner: browser-bearing-host-runtime
+  - name: product-producer-product_a11-y_gate_points
+    file: product-producer.mjs
+    symbol: PRODUCT_A11Y_GATE_POINTS
+    owner: browser-bearing-host-runtime
+  - name: product-producer-product_pre_action_parts
+    file: product-producer.mjs
+    symbol: PRODUCT_PRE_ACTION_PARTS
+    owner: browser-bearing-host-runtime
+  - name: product-producer-resolve-product-run-root
+    file: product-producer.mjs
+    symbol: resolveProductRunRoot
+    owner: browser-bearing-host-runtime
+  - name: product-producer-product-row-dir
+    file: product-producer.mjs
+    symbol: productRowDir
+    owner: browser-bearing-host-runtime
+  - name: product-producer-prepare-product-row-dir
+    file: product-producer.mjs
+    symbol: prepareProductRowDir
+    owner: browser-bearing-host-runtime
+  - name: product-producer-create-product-static-driver
+    file: product-producer.mjs
+    symbol: createProductStaticDriver
+    owner: browser-bearing-host-runtime
+  - name: product-producer-assert-served-digests-match-run-root
+    file: product-producer.mjs
+    symbol: assertServedDigestsMatchRunRoot
+    owner: browser-bearing-host-runtime
+  - name: product-producer-assert-product-axe-scan-shape
+    file: product-producer.mjs
+    symbol: assertProductAxeScanShape
+    owner: browser-bearing-host-runtime
+  - name: product-producer-measure-product-view
+    file: product-producer.mjs
+    symbol: measureProductView
+    owner: browser-bearing-host-runtime
+  - name: product-producer-assert-product-active-view-mounted
+    file: product-producer.mjs
+    symbol: assertProductActiveViewMounted
+    owner: browser-bearing-host-runtime
+  - name: product-producer-build-product-body-record
+    file: product-producer.mjs
+    symbol: buildProductBodyRecord
+    owner: browser-bearing-host-runtime
+  - name: product-producer-build-product-view-record
+    file: product-producer.mjs
+    symbol: buildProductViewRecord
+    owner: browser-bearing-host-runtime
+  - name: product-producer-build-product-accessibility-evidence
+    file: product-producer.mjs
+    symbol: buildProductAccessibilityEvidence
+    owner: browser-bearing-host-runtime
+  - name: product-producer-read-product-accessibility-verdict
+    file: product-producer.mjs
+    symbol: readProductAccessibilityVerdict
+    owner: browser-bearing-host-runtime
+  - name: product-producer-assert-product-observation-times
+    file: product-producer.mjs
+    symbol: assertProductObservationTimes
+    owner: browser-bearing-host-runtime
+  - name: product-producer-capture-product-row
+    file: product-producer.mjs
+    symbol: captureProductRow
+    owner: browser-bearing-host-runtime
+  - name: product-mutations-product_mutation_names
+    file: product-mutations.mjs
+    symbol: PRODUCT_MUTATION_NAMES
+    owner: browser-bearing-host-runtime
+  - name: product-mutations-product_mutation_boundaries
+    file: product-mutations.mjs
+    symbol: PRODUCT_MUTATION_BOUNDARIES
+    owner: browser-bearing-host-runtime
+  - name: product-mutations-product_unrendered_rules
+    file: product-mutations.mjs
+    symbol: PRODUCT_UNRENDERED_RULES
+    owner: browser-bearing-host-runtime
+  - name: product-mutations-served-provenance-digest-match
+    file: product-mutations.mjs
+    symbol: servedProvenanceDigestMatch
+    owner: browser-bearing-host-runtime
+  - name: product-mutations-run-product-mutation
+    file: product-mutations.mjs
+    symbol: runProductMutation
+    owner: browser-bearing-host-runtime
+  - name: product-mutations-prove-dom-absence-real-path
+    file: product-mutations.mjs
+    symbol: proveDomAbsenceRealPath
+    owner: browser-bearing-host-runtime

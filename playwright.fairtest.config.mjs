@@ -19,15 +19,20 @@
  * unchanged; it never declares a host, a port, or a base URL of its own, so
  * the declared owner is the one production code actually reads.
  *
+ * Viewport ownership: the render viewport is a product-evidence parameter the
+ * rendered-root predicate depends on, so it lives in the same runtime owner
+ * and is read from there. The mounted row pins the page to it anyway, which is
+ * why a viewport declared here could not silently drift into the evidence.
+ *
  * Scope: testDir and testMatch select ONLY the Fairtest product journey. The
  * broad scripts/journey catalog never runs under this config. Later work
  * widens the match to the component journey without adding a config. The
  * `runner-config` cases in the product fixture family pin this shape, so a
- * second project, a webServer entry, or a changed retry/worker budget turns
- * them red.
+ * second project, a webServer entry, or a changed retry/worker/viewport budget
+ * turns them red.
  */
 import { defineConfig } from '@playwright/test'
-import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT } from './scripts/fairtest/fairtest-runtime.mjs'
+import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, PRODUCT_VIEWPORT } from './scripts/fairtest/fairtest-runtime.mjs'
 
 /* Loopback host, port, and base URL, re-exported unchanged from their single
  * owner in scripts/fairtest/fairtest-runtime.mjs. Never a second declaration. */
@@ -50,7 +55,7 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     baseURL: FAIRTEST_APP_BASE_URL,
-    viewport: { width: 1280, height: 720 },
+    viewport: { ...PRODUCT_VIEWPORT },
     reducedMotion: 'reduce',
     trace: 'retain-on-failure',
     video: 'retain-on-failure',

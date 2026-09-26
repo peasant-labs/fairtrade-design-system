@@ -1,0 +1,137 @@
+# Required-name inventory and executable mutations for
+# host-ownership.testdata.yaml. Every row name must appear exactly once, and
+# every mutation must fail for its intended field.
+expectedExportCount: 70
+requiredExportNames:
+  - fairtest-runtime-fairtest_repo_root
+  - fairtest-runtime-fairtest_app_host
+  - fairtest-runtime-fairtest_app_port
+  - fairtest-runtime-fairtest_app_base_url
+  - fairtest-runtime-product_viewport
+  - fairtest-runtime-fairtest_scratch_purposes
+  - fairtest-runtime-fairtest_scratch_port_base
+  - fairtest-runtime-fairtest-scratch-port
+  - fairtest-runtime-claim-scratch-port
+  - fairtrade-adapter-create-fairtrade-adapter
+  - fairtrade-targets-product_target_id
+  - fairtrade-targets-product_initial_section
+  - fairtrade-targets-product_action_name
+  - fairtrade-targets-product_action_to_section
+  - fairtrade-targets-product_action_label
+  - fairtrade-targets-product_selectors
+  - fairtrade-targets-product_provenance_source
+  - fairtrade-targets-product_unrendered_modes
+  - fairtrade-targets-product_unrendered_refusal_fields
+  - fairtrade-targets-product_target_registry
+  - fairtrade-targets-select-product-target
+  - fairtrade-targets-get-product-action
+  - fairtrade-targets-normalize-rendered-theme
+  - fairtrade-targets-product-route-for-theme
+  - fairtrade-targets-product-theme-row
+  - fairtrade-targets-product-declaration-input
+  - fairtrade-targets-validate-product-target-contract
+  - fairtrade-targets-product-theme-setup
+  - fairtrade-targets-product-theme-from-project-name
+  - fairtrade-targets-assert-product-theme-observation
+  - fairtrade-targets-observe-product-theme
+  - fairtrade-targets-product_proof_record_schema
+  - fairtrade-targets-build-product-proof
+  - fairtrade-targets-product_a11-y_policy
+  - fairtrade-targets-product_a11-y_scope_root
+  - fairtrade-targets-product_a11-y_points
+  - fairtrade-targets-product_a11-y_gate_receipt_fields
+  - fairtrade-targets-product_a11-y_gate_point_slots
+  - fairtrade-targets-product_a11-y_point_labels
+  - fairtrade-targets-product_a11-y_point_sections
+  - fairtrade-targets-product_a11-y_baseline
+  - fairtrade-targets-assert-product-axe-baseline-delta
+  - product-producer-product_artifact_classes
+  - product-producer-product_min_body_descendants
+  - product-producer-product_min_body_text_length
+  - product-producer-product_view_selectors
+  - product-producer-product_a11-y_record_fields
+  - product-producer-product_a11-y_page_wide_fields
+  - product-producer-product_a11-y_gate_points
+  - product-producer-product_pre_action_parts
+  - product-producer-resolve-product-run-root
+  - product-producer-product-row-dir
+  - product-producer-prepare-product-row-dir
+  - product-producer-create-product-static-driver
+  - product-producer-assert-served-digests-match-run-root
+  - product-producer-assert-product-axe-scan-shape
+  - product-producer-measure-product-view
+  - product-producer-assert-product-active-view-mounted
+  - product-producer-build-product-body-record
+  - product-producer-build-product-view-record
+  - product-producer-build-product-accessibility-evidence
+  - product-producer-read-product-accessibility-verdict
+  - product-producer-assert-product-observation-times
+  - product-producer-capture-product-row
+  - product-mutations-product_mutation_names
+  - product-mutations-product_mutation_boundaries
+  - product-mutations-product_unrendered_rules
+  - product-mutations-served-provenance-digest-match
+  - product-mutations-run-product-mutation
+  - product-mutations-prove-dom-absence-real-path
+expectedMutationCount: 9
+requiredMutationNames:
+  - unclassified-export-row-removed
+  - phantom-export-row
+  - duplicate-export-row
+  - runtime-constants-row-claimed-by-the-host-runtime
+  - registry-row-claimed-by-the-adapter
+  - unknown-owner-name
+  - row-for-another-directory
+  - unknown-row-field
+  - renamed-owner-field
+mutations:
+  - name: unclassified-export-row-removed
+    kind: delete-record
+    target: product-mutations-prove-dom-absence-real-path
+    expectedField: product-mutations-prove-dom-absence-real-path
+  - name: phantom-export-row
+    kind: bad-value
+    target: fairtest-runtime-fairtest_repo_root
+    field: symbol
+    value: PRODUCT_NOT_EXPORTED_ANYWHERE
+    expectedField: symbol
+  - name: duplicate-export-row
+    kind: duplicate-name
+    target: fairtest-runtime-fairtest_app_host
+    expectedField: fairtest-runtime-fairtest_app_host
+  - name: runtime-constants-row-claimed-by-the-host-runtime
+    kind: bad-value
+    target: fairtest-runtime-product_viewport
+    field: owner
+    value: browser-bearing-host-runtime
+    expectedField: owner
+  - name: registry-row-claimed-by-the-adapter
+    kind: bad-value
+    target: fairtrade-targets-product_selectors
+    field: owner
+    value: app-owned-adapter
+    expectedField: owner
+  - name: unknown-owner-name
+    kind: bad-value
+    target: product-producer-capture-product-row
+    field: owner
+    value: shared-utility
+    expectedField: owner
+  - name: row-for-another-directory
+    kind: bad-value
+    target: product-mutations-run-product-mutation
+    field: file
+    value: product-producer.mjs
+    expectedField: file
+  - name: unknown-row-field
+    kind: unknown-field
+    target: fairtrade-adapter-create-fairtrade-adapter
+    field: layer
+    value: adapter
+    expectedField: layer
+  - name: renamed-owner-field
+    kind: rename-field
+    target: fairtrade-targets-build-product-proof
+    field: owner
+    newField: ownerName
+    expectedField: owner

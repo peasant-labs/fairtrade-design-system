@@ -157,7 +157,8 @@
     "test:fairtest:promotion": "node scripts/assert-test-promotion.mjs",
     "test:fairtest:inventory": "node scripts/fairtest-runner-inventory.mjs",
     "test:fairtest:boundary": "node scripts/assert-fairtest-boundary.mjs && node scripts/fairtest-source.mjs --smoke",
-    "test:fairtest:mounted": "node scripts/fairtest/run-mounted.mjs"
+    "test:fairtest:mounted": "node scripts/fairtest/run-mounted.mjs",
+    "test:fairtest:product-contract": "node scripts/fairtest/run-product-contract.mjs"
   },
   "dependencies": {
     "@peasant-labs/schema": "0.20.0",

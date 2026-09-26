@@ -21,6 +21,7 @@
 // there. No Storybook, Puppeteer, or second browser oracle is started.
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import { tmpdir } from 'node:os'
@@ -31,7 +32,16 @@ import { pathToFileURL } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { AXE_RESULT_FIELDS, expectTheme } from '../journey/lib/assertions.mjs'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
-import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT } from './fairtest-runtime.mjs'
+import {
+  FAIRTEST_APP_BASE_URL,
+  FAIRTEST_APP_HOST,
+  FAIRTEST_APP_PORT,
+  FAIRTEST_SCRATCH_PORT_BASE,
+  FAIRTEST_SCRATCH_PURPOSES,
+  PRODUCT_VIEWPORT,
+  claimScratchPort,
+  fairtestScratchPort,
+} from './fairtest-runtime.mjs'
 import {
   PRODUCT_ARTIFACT_CLASSES,
   PRODUCT_A11Y_GATE_POINTS,
@@ -44,6 +54,7 @@ import {
   assertProductActiveViewMounted,
   assertProductAxeScanShape,
   assertProductObservationTimes,
+  assertServedDigestsMatchRunRoot,
   buildProductBodyRecord,
   buildProductViewRecord,
   buildProductAccessibilityEvidence,
@@ -63,13 +74,27 @@ const CORPUS_REL = 'scripts/fairtest/product-target.testdata.yaml'
 const MANIFEST_REL = 'scripts/fairtest/product-target.testdata.manifest.yaml'
 const CONFIG_REL = 'playwright.fairtest.config.mjs'
 const RUNTIME_REL = 'scripts/fairtest/fairtest-runtime.mjs'
+const INVENTORY_REL = 'scripts/testdata/fairtest-runner-inventory.yaml'
+const HOST_CORPUS_REL = 'scripts/fairtest/host-ownership.testdata.yaml'
+const HOST_MANIFEST_REL = 'scripts/fairtest/host-ownership.testdata.manifest.yaml'
+const HOST_FILES = ['fairtest-runtime.mjs', 'fairtrade-adapter.mjs', 'fairtrade-targets.mjs', 'product-producer.mjs', 'product-mutations.mjs']
+const HOST_OWNERS = ['runtime-constants-owner', 'app-owned-registry', 'app-owned-adapter', 'browser-bearing-host-runtime']
+const HOST_FILE_OWNERS = Object.freeze({
+  'fairtest-runtime.mjs': 'runtime-constants-owner',
+  'fairtrade-adapter.mjs': 'app-owned-adapter',
+  'fairtrade-targets.mjs': 'app-owned-registry',
+  'product-producer.mjs': 'browser-bearing-host-runtime',
+  'product-mutations.mjs': 'browser-bearing-host-runtime',
+})
+const HOST_SCRATCH_PORT_FILES = ['product-mutations.mjs']
+const HOST_MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'stale-name', 'delete-field', 'rename-field', 'unknown-field', 'bad-value'])
 const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs']
 // The product-host modules whose every product selector, label, and loopback
 // origin must come from the app-owned registry and the single runtime owner.
 const PRODUCT_HOST_FILES = ['product-producer.mjs', 'product-mutations.mjs', 'product.journey.mjs']
 const CHILD_MARKER = ['packages', 'fairtest'].join('/')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
-const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'cli-target', 'driver-out-of-root', 'driver-host-refusal', 'driver-stop-contract', 'driver-reset-contract', 'rendered-active-view', 'record-truthfulness', 'row-dir-preparation', 'runner-config', 'port-owner', 'axe-report-shape']
+const CHECKS = ['theme-row', 'route', 'section-action', 'capability', 'cross-kind', 'lifecycle', 'theme-inference', 'theme-setup', 'theme-observation', 'project-inference', 'product-proof', 'product-mutation', 'wrapper-theme', 'artifact-class', 'a11y-baseline', 'a11y-delta', 'a11y-record', 'observation-time', 'run-root', 'cli-target', 'driver-out-of-root', 'driver-host-refusal', 'driver-stop-contract', 'driver-reset-contract', 'rendered-active-view', 'record-truthfulness', 'row-dir-preparation', 'runner-config', 'port-owner', 'axe-report-shape', 'mounted-row-guard-calls', 'combined-suite-invocation', 'product-contract-command', 'host-literal-guard', 'served-digest-comparison']
 const A11Y_POINTS = ['initial', 'after-action']
 const A11Y_IMPACTS = ['minor', 'moderate', 'serious', 'critical']
 const ROW_THEMES = ['dark', 'light']
@@ -90,10 +115,16 @@ const ACCEPTED_MEASUREMENT_FIELDS = ['roots', 'rendered', 'descendants', 'textLe
 // start-failure ports (5198, 5199), so no mounted row or mutation run collides
 // with them. The host case never binds its port: it proves the refusal at
 // driver construction.
-const REAL_DRIVER_SQUATTER_PORT = 5198
-const REAL_DRIVER_ABSENT_DIST_PORT = 5199
-const REAL_DRIVER_OUT_OF_ROOT_PORT = 5200
-const REAL_DRIVER_HOST_REFUSAL_PORT = 5201
+// No suite holds a scratch-port literal. Each real-driver case names the
+// purpose it needs and takes the port the single owner hands out, so this file
+// and scripts/fairtest/product-mutations.mjs can run in one node --test
+// invocation without either of them being blamed for the other's listener.
+const REAL_DRIVER_PURPOSES = Object.freeze({
+  squatter: 'adapter-squatter',
+  absentDist: 'adapter-absent-dist',
+  outOfRoot: 'adapter-out-of-root',
+  hostRefusal: 'adapter-host-refusal',
+})
 
 const coreFixtures = await importFairtestSource('src/core/fixtures.mjs')
 const contractTargets = await importFairtestSource('src/host-contract/targets.mjs')
@@ -196,7 +227,7 @@ function checkCaseShape(entry, index) {
       : ['name', 'check', 'runRootEnv', 'expectValid', 'expectedErrorContains'],
     'cli-target': ['name', 'check', 'args', 'expectValid', 'expectExitCode', 'expectedErrorContains'],
     'a11y-baseline': ['name', 'check', 'policy', 'point', 'violations', ...tail],
-    'a11y-delta': ['name', 'check', 'point', 'measured', ...('baseline' in entry ? ['baseline'] : []), ...tail],
+    'a11y-delta': ['name', 'check', 'point', 'observedSection', 'measured', ...('baseline' in entry ? ['baseline'] : []), ...tail],
     'a11y-record': entry.expectValid
       ? ['name', 'check', 'accessibility', 'informationalChurn', 'expectVerdict', ...tail]
       : ['name', 'check', 'accessibility', 'expectVerdict', ...tail],
@@ -211,9 +242,16 @@ function checkCaseShape(entry, index) {
       : ['name', 'check', 'mode', 'activeView', 'container', 'expectValid', 'expectedErrorContains'],
     'record-truthfulness': ['name', 'check', 'part', 'accepted', 'activeView', 'container', ...tail],
     'row-dir-preparation': ['name', 'check', 'existingArtifact', 'expectedSteps', 'expectPrepared', 'expectValid', ...tail.filter((field) => field !== 'expectFrozen')],
-    'runner-config': ['name', 'check', 'configFile', 'expectedProjects', 'expectedTestMatch', 'expectedTestDir', 'expectedRetries', 'expectedWorkers', 'expectedFullyParallel', 'expectedReducedMotion', 'forbiddenKeys', 'expectValid'],
+    'runner-config': ['name', 'check', 'configFile', 'expectedProjects', 'expectedTestMatch', 'expectedTestDir', 'expectedRetries', 'expectedWorkers', 'expectedFullyParallel', 'expectedReducedMotion', 'expectedViewport', 'forbiddenKeys', 'expectValid'],
     'port-owner': ['name', 'check', 'ownerModule', 'consumerModules', 'portEnvName', 'expectValid'],
     'axe-report-shape': ['name', 'check', 'expectValid'],
+    'mounted-row-guard-calls': ['name', 'check', 'producerModule', 'expectedGuardPoints', 'deletedCallPoint', 'expectValid'],
+    'combined-suite-invocation': ['name', 'check', 'suites', 'selectedCases', 'expectValid'],
+    'product-contract-command': ['name', 'check', 'commandName', 'expectedScript', 'expectedSuites', 'expectedNodeArgs', 'ciMountStatus', 'workflowDir', 'expectValid'],
+    'host-literal-guard': ['name', 'check', 'hostFiles', 'mutatedLiteral', 'expectValid'],
+    'served-digest-comparison': entry.expectValid
+      ? ['name', 'check', 'files', 'mutateFile', 'mutateSuffix', 'wiredInto', 'expectValid']
+      : ['name', 'check', 'files', 'mutateFile', 'mutateSuffix', 'expectValid', 'expectedErrorContains'],
     'driver-reset-contract': ['name', 'check', 'startFailure', 'contractRequirement', 'cleanupFailure', 'expectValid'],
   }
   coreFixtures.checkKeys(entry, fieldsByCheck[entry.check], 'case record', CORPUS_REL, path)
@@ -439,6 +477,12 @@ function checkA11yDeltaShape(entry, path) {
   const name = /** @type {string} */ (entry.name)
   if (!A11Y_POINTS.includes(/** @type {string} */ (entry.point))) {
     throw new Error(`${CORPUS_REL}: case "${name}" names an unknown observation point ${JSON.stringify(entry.point)} for field "point" at path ${path}.point; repair: use one of ${A11Y_POINTS.join(', ')} for "point".`)
+  }
+  // The section the scan ran against is the receipt's only observed tie to a
+  // moment in the row, so a case may not omit it: a delta probe with no section
+  // would produce a receipt nothing in the record could contradict.
+  if (typeof entry.observedSection !== 'string' || entry.observedSection.trim().length === 0) {
+    throw new Error(`${CORPUS_REL}: case "${name}" is missing its observed section for field "observedSection" at path ${path}.observedSection; repair: declare the section the live page showed when the scan was taken.`)
   }
   if (!Array.isArray(entry.measured)) {
     throw new Error(`${CORPUS_REL}: case "${name}" holds no measurement list for field "measured" at path ${path}.measured; repair: restore the observed violation triples for "measured".`)
@@ -753,6 +797,20 @@ function checkRunnerConfigShape(entry, path) {
       throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid value ${JSON.stringify(entry[field])} for field "${field}" at path ${path}.${field}; repair: declare the non-empty ${field} the config must carry.`)
     }
   }
+  // The render viewport is a product-evidence parameter, not a cosmetic
+  // default, so it is pinned here: the case that runs the config also compares
+  // it against the single runtime owner, which is what makes the declared
+  // numbers a check on a value and not a second declaration.
+  const viewport = entry.expectedViewport
+  if (!isRecord(viewport)) {
+    throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid value ${JSON.stringify(viewport)} for field "expectedViewport" at path ${path}.expectedViewport; repair: declare the render viewport the config must carry.`)
+  }
+  coreFixtures.checkKeys(viewport, ['width', 'height'], 'viewport record', CORPUS_REL, `${path}.expectedViewport`)
+  for (const axis of ['width', 'height']) {
+    if (!Number.isInteger(viewport[axis]) || /** @type {number} */ (viewport[axis]) < 1) {
+      throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid ${axis} ${JSON.stringify(viewport[axis])} for field "expectedViewport" at path ${path}.expectedViewport.${axis}; repair: declare a whole positive pixel count.`)
+    }
+  }
 }
 
 /**
@@ -1058,6 +1116,184 @@ async function runProductMutationCase(entry) {
 }
 
 /**
+ * Remove comments from JavaScript source, keeping one output line per input
+ * line so a reported line number still points at the code the reader has to
+ * change. String and template bodies stay, because a value spelled inside one
+ * is exactly what the app-structure guard is looking for.
+ * @param {string} source raw module source
+ * @returns {string} the same source with comment bodies blanked
+ */
+function stripComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '))
+    .replace(/(^|[^\\])\/\/[^\n]*/g, (match, lead) => `${lead}${' '.repeat(Math.max(0, match.length - lead.length))}`)
+}
+
+/**
+ * Remove comments AND string/template/regex literal bodies from JavaScript
+ * source, keeping one output line per input line. Used to scope a token guard
+ * to executable code: prose that happens to spell a forbidden word is not a
+ * dependency.
+ *
+ * This is a small character scanner rather than a set of regexes on purpose. A
+ * quote-delimited pattern cannot span newlines safely: one unbalanced backtick
+ * anywhere in a large file pairs with the next one and blanks every line
+ * between them, which turns the guard blind over exactly the region it exists
+ * to check. The scanner walks the source once, so delimiters pair where the
+ * author put them.
+ *
+ * Two decisions are worth recording. A regex literal is recognised by the
+ * preceding significant token (an assignment, a call argument, an opening
+ * bracket), because a regex can contain a quote character and reading that
+ * quote as a string delimiter swallows the rest of the file. A `/` after an
+ * identifier or a closing bracket is division, not a regex. A `${...}`
+ * interpolation inside a template literal is blanked with the template, so a
+ * host global reached only through an interpolation is not reported; none of
+ * the covered modules does that, and it is stated here rather than left as a
+ * surprise.
+ * @param {string} source raw module source
+ * @returns {string} the same source with comments and literal bodies blanked
+ */
+function stripCommentsAndStrings(source) {
+  const blank = (out, from, to) => {
+    for (let index = from; index < to; index += 1) {
+      out.push(source[index] === '\n' ? '\n' : ' ')
+    }
+  }
+  const out = []
+  let index = 0
+  let previous = ''
+  const opensRegex = () => previous === '' || '(,=:[!&|?{};+-*%<>~^'.includes(previous)
+  while (index < source.length) {
+    const char = source[index]
+    if (char === '/' && source[index + 1] === '*') {
+      const close = source.indexOf('*/', index + 2)
+      const stop = close === -1 ? source.length : close + 2
+      blank(out, index, stop)
+      index = stop
+      continue
+    }
+    if (char === '/' && source[index + 1] === '/') {
+      const close = source.indexOf('\n', index)
+      const stop = close === -1 ? source.length : close
+      blank(out, index, stop)
+      index = stop
+      continue
+    }
+    if (char === '/' && opensRegex()) {
+      let cursor = index + 1
+      let inClass = false
+      while (cursor < source.length && source[cursor] !== '\n') {
+        const body = source[cursor]
+        if (body === '\\') {
+          cursor += 2
+          continue
+        }
+        if (body === '[') inClass = true
+        else if (body === ']') inClass = false
+        else if (body === '/' && !inClass) {
+          cursor += 1
+          while (cursor < source.length && /[a-z]/i.test(source[cursor])) cursor += 1
+          break
+        }
+        cursor += 1
+      }
+      blank(out, index, cursor)
+      index = cursor
+      continue
+    }
+    if (char === '"' || char === "'" || char === '`') {
+      let cursor = index + 1
+      while (cursor < source.length) {
+        if (source[cursor] === '\\') {
+          cursor += 2
+          continue
+        }
+        if (source[cursor] === char) {
+          cursor += 1
+          break
+        }
+        cursor += 1
+      }
+      blank(out, index, cursor)
+      index = cursor
+      previous = 'x'
+      continue
+    }
+    if (!/\s/.test(char)) previous = char
+    out.push(char)
+    index += 1
+  }
+  return out.join('')
+}
+
+/**
+ * The host-global and runner tokens no app-owned registry module may execute.
+ * Matched against comment- and literal-stripped source, so each pattern is a
+ * whole-token match on real code.
+ * @type {{ token: string, pattern: RegExp }[]}
+ */
+const HOST_GLOBAL_TOKENS = Object.freeze(
+  ['playwright', 'puppeteer', 'jsdom', 'storybook', 'agent-browser', 'window', 'document', 'locator', 'globalThis', 'querySelector', 'createElement']
+    .map((token) => Object.freeze({ token, pattern: new RegExp(`\\b${token}\\b`) })),
+)
+
+/**
+ * Fail when executable code in source names a runner, a live handle, or a
+ * host global. Scoped to code, and the diagnostic names the token, the file,
+ * and where the material belongs instead of blaming a comment.
+ * @param {string} source module source to scan
+ * @param {string} file path used in the diagnostic
+ */
+function assertNoHostGlobalTokens(source, file) {
+  const code = stripCommentsAndStrings(source)
+  for (const { token, pattern } of HOST_GLOBAL_TOKENS) {
+    const match = pattern.exec(code)
+    assert.equal(
+      match,
+      null,
+      `${file}: runs code that names host-global or runner material ${JSON.stringify(token)} at path ${file}; repair: move that ${JSON.stringify(token)} access into the injected driver or the browser-bearing host runtime, and keep ${file} free of it.`,
+    )
+  }
+}
+
+/**
+ * Product structure literals the app-owned registry owns. A value in a product
+ * host module is a SECOND owner of app structure whatever quote syntax spells
+ * it, so the patterns match the TOKEN, not a quote-delimited pair: a literal
+ * inside a template literal (which is exactly how the unrendered-mode
+ * stylesheets are assembled) has no quote on both sides of it, and a
+ * quote-anchored pattern is green over a file that holds a second owner.
+ * @type {{ pattern: RegExp, what: string }[]}
+ */
+const APP_STRUCTURE_LITERALS = Object.freeze([
+  { pattern: /#inuse[\w-]*/, what: 'product selector literal' },
+  { pattern: /(?<![\w-])\.?iu-[\w-]+/, what: 'product selector literal' },
+  { pattern: /(?<![\w-])code map(?![\w-])/, what: 'product display label literal' },
+])
+
+/**
+ * Fail when a product host module carries a product selector or display label
+ * literal, naming the line that has to change. Comments are removed first, so
+ * prose explaining the registry is not reported as a second owner, while the
+ * string and template bodies stay in place because the literal IS one of them.
+ * @param {string} source module source to scan
+ * @param {string} file path used in the diagnostic
+ */
+function assertNoAppStructureLiterals(source, file) {
+  const code = stripComments(source)
+  const lineOf = (index) => code.slice(0, index).split('\n').length
+  for (const { pattern, what } of APP_STRUCTURE_LITERALS) {
+    const match = pattern.exec(code)
+    assert.equal(
+      match,
+      null,
+      `${file}: carries a ${what} ${JSON.stringify(match ? match[0] : '')} on line ${String(match ? lineOf(match.index) : 0)} at path ${file}; repair: take the selector or label from PRODUCT_SELECTORS or the target registry instead of repeating it here.`,
+    )
+  }
+}
+
+/**
  * Build a fake tree handle that serves one canned attribute value and
  * records the selector read, so the theme wrapper is proven against the
  * read path instead of a hardcoded value.
@@ -1187,11 +1423,13 @@ function runA11yDeltaCase(entry) {
   try {
     const input = {
       point: entry.point,
+      observedSection: entry.observedSection,
       measured: /** @type {Record<string, unknown>[]} */ (entry.measured).map((item) => ({ ...item })),
       artifactPath: 'fixture-probe/axe.json',
       ...('baseline' in entry ? { baseline: structuredClone(entry.baseline) } : {}),
     }
     const receipt = targets.assertProductAxeBaselineDelta(input)
+    assert.equal(receipt.observedSection, entry.observedSection, `${name}: the gate must record the section the page showed verbatim, not the section it declares for the point`)
     assert.equal(receipt.policy, targets.PRODUCT_A11Y_POLICY, `${name}: gate receipt must name the app-owned policy`)
     assert.equal(receipt.result, 'pass', `${name}: gate receipt must record a pass`)
     assert.ok(Object.isFrozen(receipt), `${name}: gate receipt must be frozen`)
@@ -1513,6 +1751,12 @@ async function runRunnerConfigCase(entry) {
   assert.equal(config.fullyParallel, entry.expectedFullyParallel, `${CORPUS_REL}: case "${name}" declares fullyParallel ${JSON.stringify(entry.expectedFullyParallel)} for field "expectedFullyParallel" at path cases.${name}.expectedFullyParallel; repair: the mounted rows write one immutable run subtree and must stay serial.`)
   assert.equal(config.testDir, entry.expectedTestDir, `${CORPUS_REL}: case "${name}" declares testDir ${JSON.stringify(entry.expectedTestDir)} for field "expectedTestDir" at path cases.${name}.expectedTestDir; repair: the Fairtest config selects only the Fairtest journey directory.`)
   assert.equal(config.use.reducedMotion, entry.expectedReducedMotion, `${CORPUS_REL}: case "${name}" declares reducedMotion ${JSON.stringify(entry.expectedReducedMotion)} for field "expectedReducedMotion" at path cases.${name}.expectedReducedMotion; repair: the mounted rows must render with reduced motion.`)
+  // One viewport owner: the config's declared value must match the fixture AND
+  // the single runtime owner, so a fourth declaration beside them cannot appear
+  // without one of the two comparisons failing.
+  const runtime = /** @type {Record<string, any>} */ (await import(pathToFileURL(resolve(ROOT, RUNTIME_REL)).href))
+  assert.deepEqual({ ...config.use.viewport }, { ...entry.expectedViewport }, `${CORPUS_REL}: case "${name}" declares viewport ${JSON.stringify(config.use.viewport)} for field "expectedViewport" at path cases.${name}.expectedViewport; repair: declare the shared render viewport for "expectedViewport".`)
+  assert.deepEqual({ ...config.use.viewport }, { ...runtime.PRODUCT_VIEWPORT }, `${CORPUS_REL}: case "${name}" declares viewport ${JSON.stringify(config.use.viewport)} which is not the one owner in ${RUNTIME_REL} for field "expectedViewport" at path cases.${name}.expectedViewport; repair: read the render viewport from ${RUNTIME_REL} instead of declaring it again.`)
   const matches = Array.isArray(config.testMatch) ? config.testMatch : [config.testMatch]
   assert.deepEqual(matches, /** @type {string[]} */ (entry.expectedTestMatch), `${CORPUS_REL}: case "${name}" declares testMatch ${JSON.stringify(entry.expectedTestMatch)} for field "expectedTestMatch" at path cases.${name}.expectedTestMatch; repair: the config must select exactly the declared product and component journey entries.`)
   // Every mounted journey module on disk must be selected, so a component
@@ -1573,6 +1817,280 @@ async function runPortOwnerCase(entry) {
       }
     })
   }
+}
+
+/**
+ * Every rendered-view guard call site the mounted row makes, read out of the
+ * real producer source. A call site is the guard invocation plus the report it
+ * pushes immediately after, so the pair cannot be half-deleted without the
+ * reported sequence changing.
+ * @param {string} source product-producer.mjs source
+ * @returns {{ observation: string, part: string, path: string, point: string, text: string }[]} the call sites in source order
+ */
+function mountedRowGuardCallSites(source) {
+  const start = source.indexOf('export async function captureProductRow')
+  assert.notEqual(start, -1, 'product-producer.mjs: the mounted row is missing at path producer.captureProductRow; repair: keep the row that writes the six artifact classes.')
+  const row = source.slice(start)
+  const pattern = /activeViewGuard\((\w+),\s*\{\s*label: '([^']*)',\s*part: '([^']*)',\s*path: '([^']*)',[\s\S]*?\}\)\s*\n\s*activeViewGuardCalls\.push\('([^']+)'\)/g
+  return [...row.matchAll(pattern)].map((match) => ({
+    observation: match[1],
+    label: match[2],
+    part: match[3],
+    path: match[4],
+    point: match[5],
+    text: match[0],
+  }))
+}
+
+/**
+ * Run one served-digest comparison case. The recorded provenance digests are
+ * read over HTTP by the row, so something has to compare them to a real tree or
+ * a record's digests describe nothing. This case builds a throwaway build tree,
+ * takes the digests the served side would report, and requires the producer's
+ * real comparison to accept them when they match the tree and to refuse them
+ * when the served bytes differ or the asset is absent.
+ * @param {Record<string, unknown>} entry
+ */
+function runServedDigestComparisonCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const scratch = mkdtempSync(join(tmpdir(), 'fairtest-served-digest-'))
+  let message = null
+  let receipt = null
+  try {
+    const distRoot = join(scratch, 'dist')
+    mkdirSync(join(distRoot, 'assets'), { recursive: true })
+    /** @type {Record<string, string>} */
+    const assetDigests = {}
+    for (const [relative, body] of /** @type {[string, string][]} */ (entry.files)) {
+      writeFileSync(join(distRoot, relative), body)
+      assetDigests[relative] = createHash('sha256').update(body).digest('hex')
+    }
+    if (entry.mutateFile !== null) {
+      // The served side answered with different bytes than the tree holds, which
+      // is exactly what an unrelated server already holding the port produces.
+      assetDigests[String(entry.mutateFile)] = createHash('sha256').update(`${String(entry.mutateFile)}${String(entry.mutateSuffix)}`).digest('hex')
+    }
+    receipt = assertServedDigestsMatchRunRoot({ assetDigests, distRoot })
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  } finally {
+    rmSync(scratch, { recursive: true, force: true })
+  }
+  if (entry.expectValid) {
+    assert.equal(message, null, `${CORPUS_REL}: case "${name}" refused a served tree that matches the run build: ${message}`)
+    // The comparison has to be REACHED, not merely exist: a function nobody
+    // calls would leave every one of these behavioural cases green while the
+    // written provenance described bytes nothing had compared.
+    const producer = readFileSync(resolve(HERE, 'product-producer.mjs'), 'utf8')
+    const start = producer.indexOf(`function ${String(entry.wiredInto)}(`)
+    assert.notEqual(start, -1, `${name}: the producer no longer declares ${String(entry.wiredInto)} at path producer.${String(entry.wiredInto)}; repair: keep the served-provenance collector.`)
+    const body = producer.slice(start, producer.indexOf('\n}\n', start))
+    assert.ok(
+      /assertServedDigestsMatchRunRoot\(/.test(body),
+      `${name}: ${String(entry.wiredInto)} no longer compares the served digests with the run build tree at path producer.${String(entry.wiredInto)}; repair: compare every recorded digest against the built tree before the provenance is written.`,
+    )
+    assert.equal(receipt.against, 'run-root-dist', `${name}: the receipt must name the tree the digests were compared against`)
+    assert.equal(receipt.commitCorrespondence, 'verifier-owned', `${name}: the receipt must say who owns the commit correspondence`)
+    assert.deepEqual([...receipt.entries], /** @type {string[]} */ (entry.files).map(([relative]) => relative).sort(), `${name}: the receipt must name every compared entry`)
+  } else {
+    assert.ok(message, `${name}: a served tree that does not match the run build was accepted`)
+    expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+  }
+}
+
+/**
+ * Run one mounted-row guard-call case. The mounted row reaches the
+ * rendered-active-view predicate through one seam and must call it at BOTH
+ * declared observation points: the pre-action body read and the post-action
+ * view read. Each call site's reported point must agree with the part and path
+ * it was handed, so a call cannot be moved to the wrong observation point while
+ * still counting.
+ *
+ * The case then deletes each call site from the real source in memory and
+ * requires the same extraction to stop reporting it, which is the source
+ * mutation that makes the requirement load-bearing: a row with only one call
+ * site is a row whose post-action floor (or pre-action floor) is not enforced.
+ * @param {Record<string, unknown>} entry
+ */
+function runMountedRowGuardCallsCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const producerModule = /** @type {string} */ (entry.producerModule)
+  const expected = /** @type {string[]} */ (entry.expectedGuardPoints)
+  const deletedCallPoint = /** @type {string} */ (entry.deletedCallPoint)
+  const source = readFileSync(resolve(HERE, producerModule), 'utf8')
+  const callSites = mountedRowGuardCallSites(source)
+  const points = callSites.map((site) => site.point)
+
+  // The real path: both declared call sites, in declared order, each naming the
+  // observation point its context actually carried.
+  for (const site of callSites) {
+    assert.equal(
+      site.point,
+      `${site.part}@${site.path}`,
+      `${CORPUS_REL}: case "${name}" has a rendered-view guard call whose reported point ${JSON.stringify(site.point)} does not match the ${JSON.stringify(site.part)} at ${JSON.stringify(site.path)} it was handed for field "expectedGuardPoints" at path cases.${name}.expectedGuardPoints; repair: report the observation point the guard context actually carries.`,
+    )
+    assert.match(site.observation, /^active(Before|After)$/, `${CORPUS_REL}: case "${name}" has a guard call on ${JSON.stringify(site.observation)}; repair: guard the pre-action and post-action measurements the row reads.`)
+  }
+  assert.deepEqual(
+    points,
+    expected,
+    `${CORPUS_REL}: case "${name}" found the mounted row invoking the rendered-view guard at ${JSON.stringify(points)} for field "expectedGuardPoints" at path cases.${name}.expectedGuardPoints; repair: keep one guard call at each declared observation point (${expected.join(', ')}); deleting a call site leaves its observation point unguarded.`,
+  )
+
+  // The source mutation: delete the named call site and require the extraction
+  // to notice. This is what a reviewer gets when they remove one call to see
+  // whether anything goes red.
+  const target = callSites.find((site) => site.point === deletedCallPoint)
+  assert.ok(target, `${CORPUS_REL}: case "${name}" found no call site ${JSON.stringify(deletedCallPoint)} to delete for field "deletedCallPoint" at path cases.${name}.deletedCallPoint; repair: name one of the declared guard points.`)
+  const mutated = mountedRowGuardCallSites(source.replace(target.text, ''))
+  assert.notDeepEqual(
+    mutated.map((site) => site.point),
+    expected,
+    `${CORPUS_REL}: case "${name}" still reports every declared guard point after the ${JSON.stringify(deletedCallPoint)} call site was deleted for field "deletedCallPoint" at path cases.${name}.deletedCallPoint; repair: the extraction must read the row's real call sites so a deleted one is visible.`,
+  )
+  assert.ok(
+    !mutated.some((site) => site.point === deletedCallPoint),
+    `${CORPUS_REL}: case "${name}" still reports the deleted ${JSON.stringify(deletedCallPoint)} call site for field "deletedCallPoint" at path cases.${name}.deletedCallPoint; repair: report the call site the row actually makes.`,
+  )
+}
+
+/**
+ * Run one combined-suite-invocation case. The two browser-backed product
+ * suites are the pair that used to collide: Node runs test FILES concurrently by
+ * default, so both opened listeners in the same instant. This case runs them
+ * together in ONE `node --test` invocation, with the declared serial file
+ * execution, and requires both selected cases to pass from that single run, so
+ * a future second hard-coded scratch port cannot hide behind "they are never run
+ * together".
+ * @param {Record<string, unknown>} entry
+ */
+async function runCombinedSuiteInvocationCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const suites = /** @type {string[]} */ (entry.suites)
+  const selected = /** @type {string[]} */ (entry.selectedCases)
+  assert.ok(existsSync(join(ROOT, 'dist', 'index.html')), `${name}: the selected browser-backed case reads the built app; repair: run pnpm build before this suite.`)
+  for (const suite of suites) {
+    assert.ok(existsSync(resolve(ROOT, suite)), `${CORPUS_REL}: case "${name}" names a missing suite ${JSON.stringify(suite)} for field "suites" at path cases.${name}.suites; repair: list repository-relative suite paths.`)
+  }
+  const contract = await import('./run-product-contract.mjs')
+  assert.ok(
+    contract.PRODUCT_CONTRACT_NODE_ARGS.includes('--test-concurrency=1'),
+    `${CORPUS_REL}: case "${name}" found the declared command without serial file execution for field "suites" at path cases.${name}.suites; repair: keep --test-concurrency=1 in PRODUCT_CONTRACT_NODE_ARGS so the browser-backed suites cannot race.`,
+  )
+  for (const suite of suites) {
+    assert.ok(
+      contract.PRODUCT_CONTRACT_SUITES.includes(suite),
+      `${CORPUS_REL}: case "${name}" names a suite ${JSON.stringify(suite)} the declared command does not run for field "suites" at path cases.${name}.suites; repair: declare the suite in PRODUCT_CONTRACT_SUITES.`,
+    )
+  }
+  // The pattern selects one cheap case from each suite by name, so the child
+  // process runs both files without re-entering this one: neither selected name
+  // is a case that spawns another node --test invocation.
+  // Node refuses a nested `node --test` from inside a running test file, and the
+  // marker it keys on is NODE_TEST_CONTEXT in the child environment. This run is
+  // a genuinely independent invocation of the two suites, so the marker is
+  // cleared for the child: without that, the runner skips every file and exits
+  // green with no report at all, which would make this case pass vacuously.
+  const env = { ...process.env }
+  delete env.NODE_TEST_CONTEXT
+  const result = spawnSync(
+    process.execPath,
+    ['--test', '--test-reporter=tap', '--test-concurrency=1', `--test-name-pattern=${selected.map((caseName) => caseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')}`, ...suites],
+    { cwd: ROOT, encoding: 'utf8', env },
+  )
+  const output = `${result.stdout || ''}${result.stderr || ''}`
+  assert.equal(result.status, 0, `${name}: one node --test invocation over ${suites.join(' and ')} failed\n${output}`)
+  // One invocation, one report: each selected case must appear on its own TAP
+  // `ok` line, which is only possible if both files were discovered and run by
+  // this single command.
+  for (const caseName of selected) {
+    const escaped = caseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const okLine = output.split('\n').find((line) => new RegExp(`^\\s*ok \\d+ - ${escaped}$`).test(line))
+    assert.ok(okLine, `${name}: the single node --test invocation over ${suites.join(' and ')} never reported ${JSON.stringify(caseName)} as passing\n${output}`)
+  }
+  assert.ok(/^# fail 0$/m.test(output), `${name}: the single invocation over ${suites.join(' and ')} reported a failing case\n${output}`)
+}
+
+/**
+ * Run one product-contract-command case. Reachability is only real if a
+ * package script, a runner-inventory row, and the suites the command declares
+ * all agree, and if the deferred required-CI mount is stated rather than
+ * implied: the case reads the declared status and requires that no required CI
+ * workflow invokes the command yet, so "declared" can never be misread as
+ * "enforced".
+ * @param {Record<string, unknown>} entry
+ */
+async function runProductContractCommandCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  const commandName = /** @type {string} */ (entry.commandName)
+  const expectedScript = /** @type {string} */ (entry.expectedScript)
+  const expectedSuites = /** @type {string[]} */ (entry.expectedSuites)
+  const expectedNodeArgs = /** @type {string[]} */ (entry.expectedNodeArgs)
+  const ciMountStatus = /** @type {string} */ (entry.ciMountStatus)
+  const workflowDir = /** @type {string} */ (entry.workflowDir)
+
+  const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'))
+  const script = pkg.scripts?.[commandName]
+  assert.equal(script, expectedScript, `${CORPUS_REL}: case "${name}" found package script ${JSON.stringify(script)} for field "commandName" at path cases.${name}.commandName; repair: declare "${commandName}" as ${JSON.stringify(expectedScript)} so the contract suites are reachable from one command.`)
+
+  const contract = await import('./run-product-contract.mjs')
+  assert.deepEqual([...contract.PRODUCT_CONTRACT_SUITES], expectedSuites, `${CORPUS_REL}: case "${name}" found the declared suites ${JSON.stringify([...contract.PRODUCT_CONTRACT_SUITES])} for field "expectedSuites" at path cases.${name}.expectedSuites; repair: declare every host-contract suite in PRODUCT_CONTRACT_SUITES, in this order.`)
+  assert.deepEqual([...contract.PRODUCT_CONTRACT_NODE_ARGS], expectedNodeArgs, `${CORPUS_REL}: case "${name}" found the declared node arguments ${JSON.stringify([...contract.PRODUCT_CONTRACT_NODE_ARGS])} for field "expectedNodeArgs" at path cases.${name}.expectedNodeArgs; repair: execute the declared suites in one node --test invocation with serial file execution.`)
+  for (const suite of expectedSuites) {
+    assert.ok(existsSync(resolve(ROOT, suite)), `${CORPUS_REL}: case "${name}" names a missing declared suite ${JSON.stringify(suite)} for field "expectedSuites" at path cases.${name}.expectedSuites; repair: point the command at a suite that exists.`)
+  }
+
+  // The inventory row: one required command, invoked exactly as the package
+  // script is named, or the command graph is an orphan script again.
+  const inventory = coreFixtures.loadSingleDocument(readFileSync(resolve(ROOT, INVENTORY_REL), 'utf8'), INVENTORY_REL)
+  const rows = /** @type {Record<string, unknown>[]} */ (inventory.commands).filter((row) => row.name === commandName)
+  assert.equal(rows.length, 1, `${CORPUS_REL}: case "${name}" found ${String(rows.length)} runner-inventory rows for field "commandName" at path cases.${name}.commandName; repair: declare ${JSON.stringify(commandName)} exactly once in ${INVENTORY_REL}.`)
+  assert.equal(rows[0].invocation, `pnpm ${commandName}`, `${CORPUS_REL}: case "${name}" found inventory invocation ${JSON.stringify(rows[0].invocation)} for field "commandName" at path cases.${name}.commandName; repair: declare the exact pnpm invocation for the command.`)
+
+  // The deferral, stated and checked. Required-CI mounting is not done, so
+  // this case fails the moment a workflow starts running the command, which is
+  // the point: the status must be flipped in the same change that mounts it.
+  assert.equal(contract.PRODUCT_CONTRACT_REQUIRED_CI_MOUNT.status, ciMountStatus, `${CORPUS_REL}: case "${name}" found required-CI mount status ${JSON.stringify(contract.PRODUCT_CONTRACT_REQUIRED_CI_MOUNT.status)} for field "ciMountStatus" at path cases.${name}.ciMountStatus; repair: ${contract.PRODUCT_CONTRACT_REQUIRED_CI_MOUNT.reason}.`)
+  const workflows = readdirSync(resolve(ROOT, workflowDir)).filter((entryName) => entryName.endsWith('.yml') || entryName.endsWith('.yaml'))
+  for (const workflow of workflows) {
+    const text = readFileSync(resolve(ROOT, workflowDir, workflow), 'utf8')
+    assert.ok(
+      !text.includes(commandName),
+      `${CORPUS_REL}: case "${name}" found ${JSON.stringify(commandName)} in ${workflowDir}/${workflow} while the declared required-CI mount status is ${JSON.stringify(ciMountStatus)} for field "ciMountStatus" at path cases.${name}.ciMountStatus; repair: mount it in required CI and flip PRODUCT_CONTRACT_REQUIRED_CI_MOUNT.status and this case's ciMountStatus in the same change.`,
+    )
+  }
+}
+
+/**
+ * Run one host-literal-guard case. The real product host files must carry no
+ * app-structure literal in any quote syntax, and a copy with a product literal
+ * moved into a TEMPLATE literal must be refused. The template form is the
+ * realistic vector because that is the syntax the unrendered-mode stylesheets
+ * already use, so a guard that only understands single and double quotes would
+ * pass over a second owner.
+ * @param {Record<string, unknown>} entry
+ */
+function runHostLiteralGuardCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  for (const file of /** @type {string[]} */ (entry.hostFiles)) {
+    assertNoAppStructureLiterals(readFileSync(resolve(HERE, file), 'utf8'), file)
+  }
+  const mutated = /** @type {{ file: string, from: string, to: string }} */ (entry.mutatedLiteral)
+  const source = readFileSync(resolve(HERE, mutated.file), 'utf8')
+  assert.ok(source.includes(mutated.from), `${CORPUS_REL}: case "${name}" found no ${JSON.stringify(mutated.from)} in ${mutated.file} to mutate for field "mutatedLiteral" at path cases.${name}.mutatedLiteral; repair: point the mutation at source text that exists.`)
+  assert.ok(
+    !APP_STRUCTURE_LITERALS.some(({ pattern }) => pattern.test(mutated.from)),
+    `${CORPUS_REL}: case "${name}" is mutating a literal the guard already covers for field "mutatedLiteral" at path cases.${name}.mutatedLiteral; repair: mutate the quote syntax the guard must learn, not one it already sees.`,
+  )
+  const moved = source.replace(mutated.from, mutated.to)
+  let message = null
+  try {
+    assertNoAppStructureLiterals(moved, mutated.file)
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  assert.ok(message, `${CORPUS_REL}: case "${name}" accepted the mutated literal ${JSON.stringify(mutated)} for field "mutatedLiteral" at path cases.${name}.mutatedLiteral; repair: cover every quote syntax a value can take, template literals included.`)
+  expectFragments(['carries a product selector literal', 'at path', 'repair:'], message, name)
 }
 
 /**
@@ -1664,6 +2182,7 @@ async function runDriverOutOfRootCase(entry) {
   const markerBody = /** @type {string} */ (entry.markerBody)
   const scratch = mkdtempSync(join(tmpdir(), 'fairtest-driver-out-of-root-'))
   const servedRoot = createStaticFixtureRoot(scratch)
+  const { port } = await claimScratchPort(REAL_DRIVER_PURPOSES.outOfRoot)
   if (basename(servedRoot) !== entry.servedRoot) {
     throw new Error(
       `${CORPUS_REL}: case "${name}" served the root ${JSON.stringify(basename(servedRoot))} where the declared served root is ${JSON.stringify(entry.servedRoot)} at path cases.${name}.servedRoot; ` +
@@ -1673,7 +2192,7 @@ async function runDriverOutOfRootCase(entry) {
   writeFileSync(join(scratch, markerFile), markerBody)
   let inRoot = null
   try {
-    const driver = createProductStaticDriver({ port: REAL_DRIVER_OUT_OF_ROOT_PORT, host: FAIRTEST_APP_HOST, distRoot: servedRoot })
+    const driver = createProductStaticDriver({ port, host: FAIRTEST_APP_HOST, distRoot: servedRoot })
     try {
       await driver.start()
       inRoot = await readLoopbackResponse(`${driver.baseUrl}${entry.inRootRequest}`)
@@ -1702,7 +2221,7 @@ async function runDriverOutOfRootCase(entry) {
     } finally {
       await driver.stop()
     }
-    await assertPortReleased(REAL_DRIVER_OUT_OF_ROOT_PORT)
+    await assertPortReleased(port)
   } finally {
     rmSync(scratch, { recursive: true, force: true })
   }
@@ -1723,9 +2242,10 @@ async function runDriverHostRefusalCase(entry) {
   const name = /** @type {string} */ (entry.name)
   const scratch = mkdtempSync(join(tmpdir(), 'fairtest-driver-host-'))
   const distRoot = createStaticFixtureRoot(scratch)
+  const { port } = await claimScratchPort(REAL_DRIVER_PURPOSES.hostRefusal)
   try {
     const loopbackHost = /** @type {string} */ (entry.loopbackHost)
-    const accepted = createProductStaticDriver({ port: REAL_DRIVER_HOST_REFUSAL_PORT, host: loopbackHost, distRoot })
+    const accepted = createProductStaticDriver({ port, host: loopbackHost, distRoot })
     if (accepted.host !== loopbackHost) {
       throw new Error(
         `${CORPUS_REL}: case "${name}" built a driver on host ${JSON.stringify(accepted.host)} where the declared loopback host is ${JSON.stringify(loopbackHost)} at path cases.${name}.loopbackHost; ` +
@@ -1735,7 +2255,7 @@ async function runDriverHostRefusalCase(entry) {
     for (const host of /** @type {string[]} */ (entry.rejectedHosts)) {
       let message = null
       try {
-        createProductStaticDriver({ port: REAL_DRIVER_HOST_REFUSAL_PORT, host, distRoot })
+        createProductStaticDriver({ port, host, distRoot })
       } catch (error) {
         message = error instanceof Error ? error.message : String(error)
       }
@@ -1754,7 +2274,7 @@ async function runDriverHostRefusalCase(entry) {
   } finally {
     rmSync(scratch, { recursive: true, force: true })
   }
-  await assertPortReleased(REAL_DRIVER_HOST_REFUSAL_PORT)
+  await assertPortReleased(port)
 }
 
 /**
@@ -1933,6 +2453,11 @@ const RUNNERS = {
   'port-owner': runPortOwnerCase,
   'axe-report-shape': runAxeReportShapeCase,
   'driver-reset-contract': runDriverResetContractCase,
+  'mounted-row-guard-calls': runMountedRowGuardCallsCase,
+  'combined-suite-invocation': runCombinedSuiteInvocationCase,
+  'product-contract-command': runProductContractCommandCase,
+  'host-literal-guard': runHostLiteralGuardCase,
+  'served-digest-comparison': runServedDigestComparisonCase,
 }
 
 /** @param {Record<string, unknown>} entry */
@@ -2466,8 +2991,8 @@ describe('verifier-facing record accessibility evidence', () => {
         incomplete: [],
         passes: 38,
       },
-      gateBefore: { policy: targets.PRODUCT_A11Y_POLICY, point: 'initial', result: 'pass', measured: 0, baseline: 0 },
-      gateAfter: { policy: targets.PRODUCT_A11Y_POLICY, point: 'after-action', result: gateAfterResult, measured: 1, baseline: 1 },
+      gateBefore: { policy: targets.PRODUCT_A11Y_POLICY, point: 'initial', observedSection: targets.PRODUCT_A11Y_POINT_LABELS.initial, result: 'pass', measured: 0, baseline: 0 },
+      gateAfter: { policy: targets.PRODUCT_A11Y_POLICY, point: 'after-action', observedSection: targets.PRODUCT_A11Y_POINT_LABELS['after-action'], result: gateAfterResult, measured: 1, baseline: 1 },
     }
   }
 
@@ -2565,8 +3090,19 @@ describe('verifier-facing record accessibility evidence', () => {
         ...record,
         gate: { ...record.gate, before: { ...record.gate.before, point: 'after-action' } },
       }),
-      /mismatched gate observation point.*at path record\.accessibility\.gate\.before\.point.*repair:/s,
+      /mismatched gate observation point.*at path record\.accessibility\.gate\.before\.observedSection.*repair:/s,
       'a receipt claiming the wrong observation point must be refused',
+    )
+    // The section the page actually showed is the value that can contradict the
+    // point a receipt claims, so a receipt handed the other slot's scan is the
+    // refusal that matters: the point name still matches its own slot here.
+    assert.throws(
+      () => readProductAccessibilityVerdict({
+        ...record,
+        gate: { ...record.gate, after: { ...record.gate.after, observedSection: targets.PRODUCT_INITIAL_SECTION } },
+      }),
+      /mismatched gate observation point.*at path record\.accessibility\.gate\.after\.observedSection.*observed as "analytics".*repair:/s,
+      'a receipt whose observed section belongs to the other slot must be refused',
     )
   })
 
@@ -2859,11 +3395,258 @@ describe('product adapter lifecycle with a fake driver', () => {
   })
 })
 
+describe('fairtest host export ownership', async () => {
+  const hostManifest = /** @type {Record<string, unknown>} */ (coreFixtures.loadSingleDocument(readFileSync(resolve(ROOT, HOST_MANIFEST_REL), 'utf8'), HOST_MANIFEST_REL))
+  const hostParsed = /** @type {Record<string, unknown>} */ (coreFixtures.loadSingleDocument(readFileSync(resolve(ROOT, HOST_CORPUS_REL), 'utf8'), HOST_CORPUS_REL))
+  const hostModules = {}
+  for (const file of HOST_FILES) {
+    hostModules[file] = await import(pathToFileURL(resolve(HERE, file)).href)
+  }
+
+  /**
+   * Validate the host manifest: exact keys, a required-name inventory that is
+   * unique and matches the declared count, and mutation records whose kind,
+   * target, and field are all declared.
+   * @param {Record<string, unknown>} manifest parsed manifest
+   */
+  function validateHostManifest(manifest) {
+    coreFixtures.checkKeys(manifest, ['expectedExportCount', 'requiredExportNames', 'expectedMutationCount', 'requiredMutationNames', 'mutations'], 'host manifest record', HOST_MANIFEST_REL, 'manifest')
+    const names = /** @type {string[]} */ (manifest.requiredExportNames)
+    const mutations = /** @type {Record<string, unknown>[]} */ (manifest.mutations)
+    assert.equal(new Set(names).size, names.length, `${HOST_MANIFEST_REL}: required export names must be unique at path manifest.requiredExportNames; repair: list every classified export once.`)
+    assert.equal(manifest.expectedExportCount, names.length, `${HOST_MANIFEST_REL}: export count must equal the required-name inventory at path manifest.expectedExportCount; repair: align expectedExportCount with requiredExportNames.`)
+    assert.equal(manifest.expectedMutationCount, mutations.length, `${HOST_MANIFEST_REL}: mutation count must equal the mutation inventory at path manifest.expectedMutationCount; repair: align expectedMutationCount with mutations.`)
+    coreFixtures.checkRequiredNames(mutations.map((entry) => String(entry.name)), /** @type {string[]} */ (manifest.requiredMutationNames), HOST_MANIFEST_REL)
+    for (const [index, mutation] of mutations.entries()) {
+      const fields = ['name', 'kind', 'target', 'expectedField']
+      if (['delete-field', 'unknown-field', 'bad-value'].includes(String(mutation.kind))) fields.push('field')
+      if (mutation.kind === 'rename-field') fields.push('field', 'newField')
+      if (['unknown-field', 'bad-value'].includes(String(mutation.kind))) fields.push('value')
+      coreFixtures.checkKeys(mutation, fields, 'host mutation record', HOST_MANIFEST_REL, `manifest.mutations[${index}]`)
+      assert.ok(HOST_MUTATION_KINDS.has(String(mutation.kind)), `${HOST_MANIFEST_REL}: mutation ${index} names an unknown kind at path manifest.mutations[${index}].kind; repair: use one of ${[...HOST_MUTATION_KINDS].join(', ')}.`)
+      assert.ok(names.includes(String(mutation.target)), `${HOST_MANIFEST_REL}: mutation ${index} targets an unknown row at path manifest.mutations[${index}].target; repair: target one of the required export rows.`)
+    }
+  }
+
+  /**
+   * The live export set of one host module, read from the module namespace
+   * rather than from a text pattern, so a re-export or a renamed symbol is
+   * seen exactly as a consumer would see it.
+   * @param {string} file host module file name
+   * @returns {string[]} the sorted export names
+   */
+  function liveExports(file) {
+    return Object.keys(hostModules[file]).sort()
+  }
+
+  /**
+   * Check one ownership row against the live modules and against the owning
+   * class's real restriction, so a row cannot claim an owner whose rules the
+   * file breaks.
+   * @param {Record<string, unknown>} entry ownership row
+   */
+  function checkHostOwnershipRow(entry) {
+    const name = String(entry.name)
+    const file = String(entry.file)
+    const symbol = String(entry.symbol)
+    const owner = String(entry.owner)
+    if (!HOST_OWNERS.includes(owner)) {
+      throw new Error(`${HOST_CORPUS_REL}: row "${name}" names an unknown owner ${JSON.stringify(owner)} at path owner; repair: use one of ${HOST_OWNERS.join(', ')} for "owner".`)
+    }
+    if (!HOST_FILE_OWNERS[file]) {
+      throw new Error(`${HOST_CORPUS_REL}: row "${name}" names a file outside the host modules ${JSON.stringify(file)} at path file; repair: classify a module under scripts/fairtest/ for "file".`)
+    }
+    if (!liveExports(file).includes(symbol)) {
+      // Name the field that is actually wrong: a row that points a real export
+      // at the wrong module is a `file` mistake, and a row that names a symbol
+      // nobody exports is a `symbol` mistake.
+      const elsewhere = HOST_FILES.filter((other) => other !== file && liveExports(other).includes(symbol))
+      if (elsewhere.length > 0) {
+        throw new Error(`${HOST_CORPUS_REL}: row "${name}" names ${JSON.stringify(symbol)} in ${JSON.stringify(file)} at path file; repair: it is exported by ${elsewhere.map((other) => JSON.stringify(other)).join(', ')}, so point "file" there.`)
+      }
+      throw new Error(`${HOST_CORPUS_REL}: row "${name}" names an unexported symbol ${JSON.stringify(symbol)} at path symbol; repair: classify an actually exported symbol, or delete the export from ${file} if nothing consumes it.`)
+    }
+    if (owner !== HOST_FILE_OWNERS[file]) {
+      throw new Error(`${HOST_CORPUS_REL}: row "${name}" assigns ${JSON.stringify(symbol)} from ${JSON.stringify(file)} to ${JSON.stringify(owner)} at path owner; repair: ${file} is owned by ${JSON.stringify(HOST_FILE_OWNERS[file])}; the app/host split is decided per module, not per symbol.`)
+    }
+    const source = readFileSync(resolve(HERE, file), 'utf8')
+    const code = stripComments(source)
+    if (owner === 'browser-bearing-host-runtime') {
+      // These two MAY drive a page. What they may not do is own app structure
+      // or a runtime value: the registry, the viewport, and the scratch ports
+      // all have an owner, and a second declaration is a value production code
+      // does not read.
+      assertNoAppStructureLiterals(source, file)
+      // The render viewport is evidence-bearing, so no host module may declare
+      // its own; the host module that opens throwaway listeners must also take
+      // those ports from the same owner.
+      assert.ok(
+        /from '\.\/fairtest-runtime\.mjs'/.test(source),
+        `${HOST_CORPUS_REL}: row "${name}" has ${file} outside the runtime constant owner at path owner; repair: read the render viewport from fairtest-runtime.mjs instead of declaring it here.`,
+      )
+      // Reading the owner and declaring a local value of the same name are
+      // different acts, so the check is on the DECLARATION, not on the name:
+      // an import that is then shadowed by a local object is a second owner.
+      assert.equal(
+        /\b(?:const|let|var)\s+PRODUCT_VIEWPORT\b/.exec(code),
+        null,
+        `${HOST_CORPUS_REL}: row "${name}" has ${file} declaring its own render viewport at path owner; repair: read PRODUCT_VIEWPORT from fairtest-runtime.mjs instead of declaring it here.`,
+      )
+      assert.ok(
+        /PRODUCT_VIEWPORT/.test(code.replace(/^import[^\n]*$/gm, '')),
+        `${HOST_CORPUS_REL}: row "${name}" has ${file} not reading the shared render viewport at path owner; repair: render every product surface at PRODUCT_VIEWPORT.`,
+      )
+      // No suite may hold a port literal at all. Checking the call is not
+      // enough: one suite that still calls the owner for three of its four
+      // listeners can declare the fourth beside it, and the collision then
+      // shows up as an unrelated case losing its listener.
+      assert.equal(
+        /\bport\s*[:=]\s*\d/.exec(code),
+        null,
+        `${HOST_CORPUS_REL}: row "${name}" has ${file} declaring a loopback port literal at path owner; repair: take every port from FAIRTEST_APP_PORT or claimScratchPort in fairtest-runtime.mjs, never a number.`,
+      )
+      if (HOST_SCRATCH_PORT_FILES.includes(file)) {
+        // A CALL, not an import: importing the owner and then declaring a port
+        // beside it would otherwise satisfy this check on the import alone.
+        assert.ok(
+          /claimScratchPort\(/.test(source),
+          `${HOST_CORPUS_REL}: row "${name}" has ${file} declaring a scratch port of its own at path owner; repair: take every throwaway loopback port from claimScratchPort in fairtest-runtime.mjs.`,
+        )
+      }
+      assert.ok(
+        /from '\.\/fairtrade-targets\.mjs'/.test(source) && /productRouteForTheme|PRODUCT_SELECTORS/.test(source),
+        `${HOST_CORPUS_REL}: row "${name}" has ${file} outside the app-owned registry at path owner; repair: take the route and selectors from fairtrade-targets.mjs.`,
+      )
+      return
+    }
+    // The app-owned layers and the constant owner: no browser, DOM, or runner
+    // material may appear in their executable code, checked here per row so
+    // the boundary is enforced by the inventory rather than by a sibling case
+    // that could be skipped.
+    for (const { token, pattern } of HOST_GLOBAL_TOKENS) {
+      assert.equal(
+        pattern.exec(code),
+        null,
+        `${HOST_CORPUS_REL}: row "${name}" has ${file} running code that names ${JSON.stringify(token)} at path owner; repair: ${file} is ${JSON.stringify(owner)} and must stay free of browser, DOM, and runner material.`,
+      )
+    }
+    if (owner === 'runtime-constants-owner') {
+      for (const spec of [...source.matchAll(/from\s*'([^']+)'/g)].map((match) => match[1])) {
+        assert.ok(spec.startsWith('node:'), `${HOST_CORPUS_REL}: row "${name}" has ${file} importing ${JSON.stringify(spec)} at path owner; repair: the constant owner imports node builtins only, never another host module.`)
+      }
+    }
+  }
+
+  it('holds a valid host-ownership manifest inventory', () => {
+    validateHostManifest(hostManifest)
+  })
+
+  it('classifies every host export with no unclassified row and no phantom row', () => {
+    coreFixtures.checkKeys(hostParsed, ['expectedExportCount', 'exports'], 'host corpus record', HOST_CORPUS_REL, 'record')
+    const rows = /** @type {Record<string, unknown>[]} */ (hostParsed.exports)
+    assert.ok(Array.isArray(rows) && rows.length > 0, `${HOST_CORPUS_REL}: record holds no rows at path exports; repair: restore the classified export rows.`)
+    assert.equal(rows.length, hostManifest.expectedExportCount, `${HOST_CORPUS_REL}: row count must match the manifest at path expectedExportCount; repair: align the exports list with the manifest.`)
+    coreFixtures.checkRequiredNames(rows.map((entry) => String(entry.name)), /** @type {string[]} */ (hostManifest.requiredExportNames), HOST_CORPUS_REL)
+    for (const entry of rows) {
+      coreFixtures.checkKeys(entry, ['name', 'file', 'symbol', 'owner'], 'host ownership row', HOST_CORPUS_REL, `exports.${String(entry.name)}`)
+    }
+    // The inventory is the export set: no module export may be unclassified and
+    // no row may name something a module does not export.
+    const live = HOST_FILES.flatMap((file) => liveExports(file).map((symbol) => `${file}:${symbol}`)).sort()
+    const declared = rows.map((entry) => `${String(entry.file)}:${String(entry.symbol)}`).sort()
+    assert.deepEqual(declared, live, `${HOST_CORPUS_REL}: the classified rows do not equal the live export set at path exports; repair: classify every export of ${HOST_FILES.join(', ')} exactly once and delete rows for symbols that no longer exist.`)
+  })
+
+  it('enforces each owner class against the real host sources', () => {
+    for (const entry of /** @type {Record<string, unknown>[]} */ (hostParsed.exports)) {
+      checkHostOwnershipRow(entry)
+    }
+  })
+
+  it('fails every host-ownership mutation for its intended field', () => {
+    const mutations = /** @type {Record<string, unknown>[]} */ (hostManifest.mutations)
+    for (const mutation of mutations) {
+      const rows = structuredClone(/** @type {Record<string, unknown>[]} */ (hostParsed.exports))
+      let message = null
+      try {
+        applyHostMutation(rows, mutation)
+        for (const entry of rows) {
+          coreFixtures.checkKeys(entry, ['name', 'file', 'symbol', 'owner'], 'host ownership row', HOST_CORPUS_REL, `exports.${String(entry.name)}`)
+        }
+        coreFixtures.checkRequiredNames(rows.map((entry) => String(entry.name)), /** @type {string[]} */ (hostManifest.requiredExportNames), HOST_CORPUS_REL)
+        for (const entry of rows) {
+          checkHostOwnershipRow(entry)
+        }
+      } catch (error) {
+        message = error instanceof Error ? error.message : String(error)
+      }
+      assert.ok(message, `${String(mutation.name)}: mutated host inventory passed instead of failing`)
+      assert.ok(message.includes(String(mutation.expectedField)), `${String(mutation.name)}: diagnostic names the wrong field; expected ${String(mutation.expectedField)}, received ${message}`)
+    }
+  })
+
+  it('resolves every host module with node --check', () => {
+    for (const file of HOST_FILES) {
+      const result = spawnSync(process.execPath, ['--check', resolve(HERE, file)], { encoding: 'utf8' })
+      assert.equal(result.status, 0, `host module ${file} does not parse:\n${result.stderr || ''}`)
+    }
+  })
+})
+
+/**
+ * Apply one executable mutation to a cloned host-ownership row set. The kinds
+ * mirror the product fixture family so both inventories read the same way.
+ * @param {Record<string, unknown>[]} rows cloned ownership rows
+ * @param {Record<string, unknown>} mutation named mutation
+ */
+function applyHostMutation(rows, mutation) {
+  if (mutation.kind === 'duplicate-name') {
+    const donor = rows.find((entry) => entry.name !== mutation.target) ?? rows[0]
+    rows.push({ ...structuredClone(donor), name: mutation.target })
+    return
+  }
+  if (mutation.kind === 'delete-record') {
+    const index = rows.findIndex((entry) => entry.name === mutation.target)
+    assert.notEqual(index, -1, `${String(mutation.name)}: unknown mutation target ${String(mutation.target)}`)
+    rows.splice(index, 1)
+    return
+  }
+  const target = rows.find((entry) => entry.name === mutation.target)
+  assert.ok(target, `${String(mutation.name)}: unknown mutation target ${String(mutation.target)}`)
+  if (mutation.kind === 'stale-name') {
+    target.name = String(mutation.value)
+    return
+  }
+  const segments = String(mutation.field).split('.')
+  if (mutation.kind === 'delete-field') {
+    let node = target
+    for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
+    delete node[segments.at(-1)]
+    return
+  }
+  if (mutation.kind === 'rename-field') {
+    let node = target
+    for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
+    const last = segments.at(-1)
+    const value = node[last]
+    delete node[last]
+    node[String(mutation.newField)] = value
+    return
+  }
+  let node = target
+  for (const segment of segments.slice(0, -1)) {
+    if (node[segment] === null || typeof node[segment] !== 'object') node[segment] = {}
+    node = /** @type {Record<string, unknown>} */ (node[segment])
+  }
+  node[segments.at(-1)] = structuredClone(mutation.value)
+}
+
 describe('product adapter lifecycle with the real static driver', () => {
   it('cleans a squatted real static-driver start with reset before stop and no listener residue', { timeout: 30000 }, async () => {
+    const { port } = await claimScratchPort(REAL_DRIVER_PURPOSES.squatter)
     const record = await driveRealStaticDriverStartFailure({
       runId: 'real-driver-squatter',
-      port: REAL_DRIVER_SQUATTER_PORT,
+      port,
       holdPort: true,
       distRoot: createStaticFixtureRoot,
     })
@@ -2872,21 +3655,23 @@ describe('product adapter lifecycle with the real static driver', () => {
         'product producer: driver start failed',
         'field "port"',
         'at path driver.start',
-        `could not listen on ${FAIRTEST_APP_HOST}:${REAL_DRIVER_SQUATTER_PORT}`,
+        `could not listen on ${FAIRTEST_APP_HOST}:${port}`,
         'EADDRINUSE',
         'repair:',
       ],
       record.message,
       'real-driver-squatter',
     )
-    assert.equal(record.driverPort, REAL_DRIVER_SQUATTER_PORT, 'the real driver must have been driven on the scratch squatted port')
+    assert.equal(record.driverPort, port, 'the real driver must have been driven on the scratch port the single owner claimed')
+    assert.equal(port, fairtestScratchPort(REAL_DRIVER_PURPOSES.squatter), 'the claimed port must be the one the single owner declares for this purpose')
     assert.deepEqual(record.calls, ['start', 'reset', 'stop'], 'the squatted start must still run one reset before one stop')
   })
 
   it('cleans a real static-driver start that never finds its built app, again with no residue', { timeout: 30000 }, async () => {
+    const { port } = await claimScratchPort(REAL_DRIVER_PURPOSES.absentDist)
     const record = await driveRealStaticDriverStartFailure({
       runId: 'real-driver-absent-dist',
-      port: REAL_DRIVER_ABSENT_DIST_PORT,
+      port,
       holdPort: false,
       distRoot: createAbsentStaticRoot,
     })
@@ -2905,7 +3690,8 @@ describe('product adapter lifecycle with the real static driver', () => {
       record.message.includes(record.driverRoot),
       `the adapter diagnostic must name the absent static root the real driver looked for; got ${record.message}`,
     )
-    assert.equal(record.driverPort, REAL_DRIVER_ABSENT_DIST_PORT, 'the real driver must have been driven on the second scratch port')
+    assert.equal(record.driverPort, port, 'the real driver must have been driven on the second claimed scratch port')
+    assert.notEqual(port, fairtestScratchPort(REAL_DRIVER_PURPOSES.squatter), 'two purposes must never share one declared scratch port')
     assert.deepEqual(record.calls, ['start', 'reset', 'stop'], 'the absent-build failure must still run one reset before one stop')
   })
 })
@@ -2929,36 +3715,75 @@ describe('adapter source boundary', () => {
   })
 
   it('carries no runner, live-handle, or host-global literal', () => {
-    const forbidden = ['playwright', 'puppeteer', 'jsdom', 'storybook', 'agent-browser', 'window', 'document', 'locator', 'globalThis', 'querySelector', 'createElement']
+    // Scoped to EXECUTABLE code. A comment or a diagnostic string that happens
+    // to spell one of these words is prose, not a second dependency, and a
+    // guard that reports prose as a production mapping defect sends the next
+    // reader after a defect that is not there. Comments and string/template
+    // literals are removed first; what is left is the code the module runs.
     for (const file of IMPL_FILES) {
-      const text = readFileSync(resolve(HERE, file), 'utf8')
-      for (const token of forbidden) {
-        assert.ok(!text.includes(token), `${file}: names forbidden material ${JSON.stringify(token)} at path ${file}; repair: keep runner and host-global material in the injected driver.`)
+      const source = readFileSync(resolve(HERE, file), 'utf8')
+      const code = stripCommentsAndStrings(source)
+      for (const { token, pattern } of HOST_GLOBAL_TOKENS) {
+        const match = pattern.exec(code)
+        assert.equal(
+          match,
+          null,
+          `${file}: runs code that names host-global or runner material ${JSON.stringify(token)} at path ${file}; repair: move that ${JSON.stringify(token)} access into the injected driver or the browser-bearing host runtime, and keep ${file} free of it.`,
+        )
       }
     }
   })
 
-  it('keeps every product selector and label literal in the app-owned registry', () => {
-    // The producer's header claims it invents no selectors or labels. A quoted
-    // product class, shell id, or action label anywhere in the product host
-    // modules is a second owner of app structure the registry declares, so the
-    // claim is proven against the source rather than trusted.
-    const forbidden = [
-      { pattern: /(['"])(?:#inuse|\.?iu-[\w-]+)\1/, what: 'product selector literal' },
-      { pattern: /(['"`])code map\1/, what: 'product display label literal' },
-    ]
-    for (const file of PRODUCT_HOST_FILES) {
-      const lines = readFileSync(resolve(HERE, file), 'utf8').split('\n')
-      lines.forEach((line, index) => {
-        const quoted = line.replace(/^\s*(\/\/|\*).*$/, '')
-        for (const { pattern, what } of forbidden) {
-          assert.ok(
-            !pattern.test(quoted),
-            `${file}: carries a ${what} on line ${String(index + 1)} at path ${file}; repair: take the selector or label from PRODUCT_SELECTORS or the target registry instead of repeating it here.`,
-          )
-        }
-      })
+  it('still reports a real host-global access the comment-scoped guard catches', () => {
+    // The narrowed scope must not have made the guard vacuous: a token in a
+    // real code position is still reported, and the same token in a comment or
+    // a message string is not.
+    const planted = [
+      'export function readTheme(tree) {',
+      '  // the document is mounted by the caller, not here',
+      "  const label = 'the document title is read by the driver'",
+      '  return tree.locator(label).getAttribute(label)',
+      '}',
+      '',
+    ].join('\n')
+    let message = null
+    try {
+      assertNoHostGlobalTokens(planted, 'fairtrade-adapter.mjs')
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error)
     }
+    assert.ok(message, 'a host-global access in real code must still be reported')
+    expectFragments(['runs code that names host-global or runner material', '"locator"', 'repair:'], message, 'planted-host-global')
+    for (const token of ['document', 'locator', 'getAttribute']) {
+      assert.ok(planted.includes(token), `the planted fixture must exercise ${JSON.stringify(token)}`)
+    }
+  })
+
+  it('keeps every product selector and label literal in the app-owned registry', () => {
+    for (const file of PRODUCT_HOST_FILES) {
+      assertNoAppStructureLiterals(readFileSync(resolve(HERE, file), 'utf8'), file)
+    }
+  })
+
+  it('carries no unreachable re-check of a scan the shape assertion already validated', () => {
+    // assertProductAxeScanShape refuses a scan that is not a record with the
+    // exact declared field set and an array of violations, so a second
+    // presence check after a scan call can never fire. A dead guard in a
+    // fail-closed row is worse than none: it invites a maintainer to relax the
+    // real assertion while believing a second check still covers it.
+    const source = readFileSync(resolve(HERE, 'product-producer.mjs'), 'utf8')
+    const code = stripComments(source)
+    const row = code.slice(code.indexOf('export async function captureProductRow'))
+    for (const dead of [/!Array\.isArray\(/, /!scoped(Before|After)\b/, /!pageWide\b/]) {
+      const match = dead.exec(row)
+      assert.equal(
+        match,
+        null,
+        `product-producer.mjs: the mounted row re-checks a validated scan for ${JSON.stringify(match ? match[0] : '')} at path producer.captureProductRow; repair: let assertProductAxeScanShape own the compact-report shape and delete the unreachable duplicate.`,
+      )
+    }
+    const scanCalls = [...row.matchAll(/scanProductViewAxe\(/g)].length
+    assert.equal(scanCalls, 2, `product-producer.mjs: the mounted row runs ${String(scanCalls)} scoped scans; repair: keep one scoped scan at each declared observation point.`)
   })
 
   it('carries no second axe report mapping and no second loopback origin', () => {

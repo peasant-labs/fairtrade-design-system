@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # product-target.testdata.yaml.
-expectedCaseCount: 108
+expectedCaseCount: 118
 requiredCaseNames:
   - theme-row-dark-absent-passes
   - theme-row-dark-empty-passes
@@ -68,6 +68,7 @@ requiredCaseNames:
   - a11y-baseline-initial-clean
   - a11y-baseline-after-action-declared
   - a11y-delta-at-baseline-passes
+  - a11y-delta-records-the-observed-section-verbatim
   - a11y-delta-improved-passes
   - a11y-delta-initial-clean-passes
   - a11y-delta-new-violation-fails
@@ -109,9 +110,25 @@ requiredCaseNames:
   - runner-config-shape-pinned
   - config-port-owner-single-declaration
   - axe-report-shape-one-owner
+  - a11y-record-observed-point-swap-fails
+  - mounted-row-guard-calls-cover-the-pre-action-point
+  - mounted-row-guard-calls-cover-the-post-action-point
+  - product-contract-command-runs-every-suite
+  - combined-suite-invocation-runs-both-browser-suites
+  - host-literal-guard-sees-template-literal-selectors
+  - served-digests-match-the-run-build-tree
+  - served-digests-differ-from-the-run-build-tree-fails
+  - served-asset-missing-from-the-run-build-tree-fails
   - driver-idle-reset-keeps-start-diagnostic
-expectedMutationCount: 59
+expectedMutationCount: 66
 requiredMutationNames:
+  - mounted-row-guard-calls-unknown-deleted-point
+  - mounted-row-guard-points-drop-the-pre-action-point
+  - product-contract-command-names-another-command
+  - product-contract-command-drops-serial-execution
+  - host-literal-guard-mutation-moves-no-literal
+  - a11y-record-receipt-without-an-observed-point
+  - served-digest-case-declares-its-own-build-tree
   - removing the light theme row breaks the required inventory
   - duplicating a route name breaks uniqueness
   - renaming the check discriminator breaks the case shape
@@ -172,6 +189,47 @@ requiredMutationNames:
   - declaring a different reset requirement breaks the idle-reset case
   - dropping the declared cleanup failure breaks the idle-reset case shape
 mutations:
+  - name: served-digest-case-declares-its-own-build-tree
+    kind: unknown-field
+    target: served-digests-match-the-run-build-tree
+    field: distRoot
+    value: dist
+    expectedField: distRoot
+  - name: mounted-row-guard-calls-unknown-deleted-point
+    kind: bad-value
+    target: mounted-row-guard-calls-cover-the-pre-action-point
+    field: deletedCallPoint
+    value: nowhere@nowhere
+    expectedField: deletedCallPoint
+  - name: mounted-row-guard-points-drop-the-pre-action-point
+    kind: bad-value
+    target: mounted-row-guard-calls-cover-the-post-action-point
+    field: expectedGuardPoints
+    value: [view@proof.view]
+    expectedField: expectedGuardPoints
+  - name: product-contract-command-names-another-command
+    kind: bad-value
+    target: product-contract-command-runs-every-suite
+    field: commandName
+    value: test:fairtest:mounted
+    expectedField: commandName
+  - name: product-contract-command-drops-serial-execution
+    kind: bad-value
+    target: product-contract-command-runs-every-suite
+    field: expectedNodeArgs
+    value: ['--test', scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
+    expectedField: expectedNodeArgs
+  - name: host-literal-guard-mutation-moves-no-literal
+    kind: bad-value
+    target: host-literal-guard-sees-template-literal-selectors
+    field: mutatedLiteral.to
+    value: 'viewport: { ...PRODUCT_VIEWPORT }'
+    expectedField: mutatedLiteral
+  - name: a11y-record-receipt-without-an-observed-point
+    kind: delete-field
+    target: a11y-record-observed-point-swap-fails
+    field: accessibility.gate.after.observedSection
+    expectedField: observedSection
   - name: removing the light theme row breaks the required inventory
     kind: delete-record
     target: theme-row-light-attribute-passes

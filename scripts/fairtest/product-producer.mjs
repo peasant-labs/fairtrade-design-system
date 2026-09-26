@@ -60,7 +60,7 @@ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'no
 import http from 'node:http'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
-import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, FAIRTEST_REPO_ROOT } from './fairtest-runtime.mjs'
+import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, FAIRTEST_REPO_ROOT, PRODUCT_VIEWPORT } from './fairtest-runtime.mjs'
 import {
   PRODUCT_ACTION_LABEL,
   PRODUCT_ACTION_NAME,
@@ -68,6 +68,7 @@ import {
   PRODUCT_A11Y_BASELINE,
   PRODUCT_A11Y_GATE_POINT_SLOTS,
   PRODUCT_A11Y_GATE_RECEIPT_FIELDS,
+  PRODUCT_A11Y_POINT_LABELS,
   PRODUCT_A11Y_POINT_SECTIONS,
   PRODUCT_A11Y_POINTS,
   PRODUCT_A11Y_POLICY,
@@ -93,12 +94,6 @@ const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 // consumes it through the sole source route instead of re-declaring a second
 // copy with its own plain-record semantics and its own diagnostic wording.
 const valuesContract = await importFairtestSource('src/core/values.mjs')
-
-/**
- * Explicit viewport every product row renders at. Recorded in provenance.
- * @type {{ width: number, height: number }}
- */
-export const PRODUCT_VIEWPORT = Object.freeze({ width: 1280, height: 720 })
 
 /**
  * The six durable artifact classes every product row writes. Exact set, no
@@ -159,7 +154,7 @@ export const PRODUCT_VIEW_SELECTORS = Object.freeze({
  * The gate covers the product view; the census covers the whole document.
  * @type {{ gated: string, page: string, pageRoot: string }}
  */
-export const PRODUCT_A11Y_SCOPES = Object.freeze({
+const PRODUCT_A11Y_SCOPES = Object.freeze({
   gated: 'product-view',
   page: 'page',
   pageRoot: 'document',
@@ -214,13 +209,13 @@ export const PRODUCT_PRE_ACTION_PARTS = Object.freeze(['chrome', 'body', 'route'
  * Mount wait budget per selector in milliseconds.
  * @type {number}
  */
-export const PRODUCT_MOUNT_TIMEOUT_MS = 15000
+const PRODUCT_MOUNT_TIMEOUT_MS = 15000
 
 /**
  * Post-click settle budget for the active section transition in milliseconds.
  * @type {number}
  */
-export const PRODUCT_ACTION_TIMEOUT_MS = 10000
+const PRODUCT_ACTION_TIMEOUT_MS = 10000
 
 const ROW_THEMES = Object.freeze(['dark', 'light'])
 const DIST_ROOT = join(FAIRTEST_REPO_ROOT, 'dist')
@@ -564,8 +559,68 @@ function readWorktreeState() {
 }
 
 /**
+ * Compare the digests the row read over HTTP against the bytes the run's own
+ * build tree holds on disk, so the recorded provenance is a MEASURED
+ * correspondence instead of a bare list of hashes.
+ *
+ * What this proves: every recorded digest is the digest of the same bytes the
+ * run root's built tree contains, so a served origin that was not this run's
+ * build (an unrelated server already holding the port, a stale copy, a mutated
+ * file) fails closed instead of producing a record whose digests describe
+ * something other than what the row looked at.
+ *
+ * What this does NOT prove, and must not be read as proving: that the built
+ * tree was produced from the recorded commit. dist/ is gitignored, so
+ * `commit` and `dirty` describe the worktree the build ran in, not the bytes.
+ * Binding those bytes to a commit needs a build digest recorded in source,
+ * which is the verifier's comparison, not the producer's. The record says so in
+ * `commitCorrespondence` rather than implying more.
+ * @param {object} input comparison inputs
+ * @param {Record<string, string>} input.assetDigests digests the row read over HTTP, keyed by run-root-relative path
+ * @param {string} input.distRoot the run's built tree on disk
+ * @returns {object} the comparison receipt naming what was compared
+ */
+export function assertServedDigestsMatchRunRoot({ assetDigests, distRoot } = {}) {
+  const compared = Object.keys(assetDigests).sort()
+  if (compared.length === 0) {
+    throw new Error(
+      'product producer: empty served digest set for field "assetDigests" at path provenance.assetDigests; ' +
+      'repair: record at least the served index.html digest before comparing the served bytes to the built tree.',
+    )
+  }
+  for (const relative of compared) {
+    const onDiskPath = join(distRoot, relative)
+    let onDisk
+    try {
+      onDisk = readFileSync(onDiskPath)
+    } catch (error) {
+      const cause = error instanceof Error ? error.message : String(error)
+      throw new Error(
+        `product producer: served asset ${JSON.stringify(relative)} is missing from the run build tree for field "assetDigests" at path provenance.assetDigests; ` +
+        `looked for ${JSON.stringify(onDiskPath)}; caused by ${cause}; ` +
+        'repair: rebuild dist/ so the served origin and the built tree are the same tree.',
+      )
+    }
+    const onDiskDigest = sha256(onDisk)
+    if (onDiskDigest !== assetDigests[relative]) {
+      throw new Error(
+        `product producer: served bytes differ from the run build tree for field "assetDigests" at path provenance.assetDigests; ` +
+        `${JSON.stringify(relative)} served digest ${JSON.stringify(assetDigests[relative])} but ${JSON.stringify(onDiskPath)} holds ${JSON.stringify(onDiskDigest)}; ` +
+        'repair: serve the exact built tree (rebuild dist/ and make sure no other server holds the loopback port).',
+      )
+    }
+  }
+  return Object.freeze({
+    against: 'run-root-dist',
+    entries: Object.freeze(compared),
+    commitCorrespondence: 'verifier-owned',
+  })
+}
+
+/**
  * Collect served-build provenance over real HTTP: the served index.html
- * bytes plus every served asset file the page actually references.
+ * bytes plus every served asset file the page actually references, compared
+ * against the run's own built tree before anything is written.
  * @param {object} input provenance inputs
  * @param {string} input.baseUrl running loopback base URL
  * @param {string} input.servedHtml served index.html text just read over HTTP
@@ -601,18 +656,33 @@ async function collectServedProvenance({ baseUrl, servedHtml, viewport, targetId
     assetDigests[ref.replace(/^\//, '')] = sha256(bytes)
   }
   const { commit, dirty } = readWorktreeState()
-  return {
+  const comparison = assertServedDigestsMatchRunRoot({ assetDigests, distRoot: DIST_ROOT })
+  const provenance = {
     source: PRODUCT_PROVENANCE_SOURCE.source,
     root: PRODUCT_PROVENANCE_SOURCE.root,
     commit,
     dirty,
     assetDigests,
+    servedFrom: comparison.against,
+    commitCorrespondence: comparison.commitCorrespondence,
     viewport: { ...viewport },
     targetIdentity: { ...targetIdentity },
     themeObservations: themeObservations.map((entry) => ({ ...entry })),
     servedUrl: baseUrl,
     producedAtMs: Date.now(),
   }
+  // The record carries exactly the fields the registry declares, so the
+  // declaration stays the owner of the shape instead of a comment beside it.
+  const written = Object.keys(provenance).sort()
+  const declared = [...PRODUCT_PROVENANCE_SOURCE.fields].sort()
+  if (JSON.stringify(written) !== JSON.stringify(declared)) {
+    throw new Error(
+      `product producer: provenance record carries ${JSON.stringify(written)} for field "provenance" at path provenance.fields; ` +
+      `the registry declares ${JSON.stringify(declared)}; ` +
+      'repair: keep provenance.json to the declared field set in PRODUCT_PROVENANCE_SOURCE.fields.',
+    )
+  }
+  return provenance
 }
 
 /**
@@ -959,7 +1029,7 @@ export function assertProductActiveViewMounted(observed, context = {}) {
  * @param {string} input.textField recorded field carrying the text length
  * @returns {void}
  */
-export function assertProductRecordedActiveView(input = {}) {
+function assertProductRecordedActiveView(input = {}) {
   assertProductRecordFields(
     input,
     ['record', 'accepted', 'observation', 'part', 'path', 'rootField', 'renderedField', 'descendantsField', 'textField'],
@@ -1160,7 +1230,15 @@ export function buildProductAccessibilityEvidence(input = {}) {
  *      and the observation point its slot carries, and each scoped
  *      `violations` count must equal its own receipt's `measured`, so no half
  *      of the record can contradict the other beside a `pass`.
- *   4. `pageWide` is an informational census over the whole document. Its
+ *   4. Each receipt's `observedSection` is the section the page actually
+ *      showed when its scan was taken. It is the one value in the block that
+ *      can contradict a receipt's own point name, so it is compared against
+ *      the section the app declares for that point: a receipt handed the other
+ *      slot's scan reads a section that point does not render, and the row is
+ *      refused. (A receipt whose point was merely re-read from the declaration
+ *      would have proved nothing, which is why that comparison is not the
+ *      rule here.)
+ *   5. `pageWide` is an informational census over the whole document. Its
  *      `violations`, `blocking`, and `blockingIds` counts are never read into
  *      the verdict: a page-wide `blocking: 7` beside a passing gate means
  *      seven serious-or-worse violations exist somewhere in the documentation
@@ -1233,11 +1311,24 @@ export function readProductAccessibilityVerdict(accessibility) {
       )
     }
     const declaredPoint = PRODUCT_A11Y_GATE_POINT_SLOTS[point]
-    if (receipt.point !== declaredPoint) {
+    if (!PRODUCT_A11Y_POINTS.includes(/** @type {string} */ (receipt.point))) {
       throw new Error(
-        `product producer: mismatched gate observation point ${JSON.stringify(receipt.point)} for field "point" at path ${slot}.point; ` +
-        `gate.${point} carries the ${JSON.stringify(declaredPoint)} measurement; ` +
-        `repair: record ${JSON.stringify(declaredPoint)} for the gate.${point} receipt.`,
+        `product producer: unknown gate observation point ${JSON.stringify(receipt.point)} for field "point" at path ${slot}.point; ` +
+        `expected one of ${JSON.stringify([...PRODUCT_A11Y_POINTS])}; ` +
+        `repair: name a declared observation point for the gate.${point} receipt.`,
+      )
+    }
+    // The slot-to-point mapping is the reader's own, so comparing a receipt's
+    // point name against it proved nothing: the row fills gate.before from that
+    // same map. What CAN contradict is the section the page actually showed
+    // when the scan was taken, so that is what the reader compares, and a
+    // receipt handed the other slot's scan is refused.
+    const declaredLabel = PRODUCT_A11Y_POINT_LABELS[declaredPoint]
+    if (receipt.point !== declaredPoint || receipt.observedSection !== declaredLabel) {
+      throw new Error(
+        `product producer: mismatched gate observation point ${JSON.stringify(receipt.point)} for field "observedSection" at path ${slot}.observedSection; ` +
+        `gate.${point} carries the ${JSON.stringify(declaredPoint)} measurement, whose section ${JSON.stringify(PRODUCT_A11Y_POINT_SECTIONS[declaredPoint])} renders as ${JSON.stringify(declaredLabel)}, but the receipt names ${JSON.stringify(receipt.point)} observed as ${JSON.stringify(receipt.observedSection)}; ` +
+        `repair: take the scan at the ${JSON.stringify(declaredPoint)} observation point with the ${JSON.stringify(declaredLabel)} section active, and read the active section text beside the scan.`,
       )
     }
     if (receipt.result !== 'pass' && receipt.result !== 'fail') {
@@ -1397,13 +1488,22 @@ export function assertProductObservationTimes(input = {}) {
  * blocks are built from the rendered measurements the single
  * assertProductActiveViewMounted predicate returned, so the record carries
  * the population the floors were applied to and not a container total.
+ *
+ * That predicate is reached through one seam, options.assertActiveViewMounted,
+ * which defaults to the real function. The row calls it exactly twice, once per
+ * observation point, and the summary reports the call sequence the row actually
+ * made, so a caller can inject a recorder and observe that both call sites
+ * still run at the declared pre-action and post-action points. Deleting either
+ * call site shortens the reported sequence, which is what the
+ * mounted-row-guard-calls case and the mounted journey both assert.
  * @param {import('@playwright/test').Page} page Playwright page for the row
  * @param {string} theme dark or light row theme
  * @param {object} [options] row options
  * @param {string} [options.runRoot] immutable run root (defaults to FAIRTEST_RUN_ROOT)
  * @param {string} [options.baseUrl] running loopback base URL
  * @param {number} [options.createdAtMs] identity creation time in whole ms
- * @returns {Promise<object>} row summary with proof, provenance, accessibility evidence and its verdict, real observation times, the recorded rendered measurements, and artifact paths
+ * @param {(observed: object, context: object) => object} [options.assertActiveViewMounted] rendered-active-view guard, defaults to the real predicate
+ * @returns {Promise<object>} row summary with proof, provenance, accessibility evidence and its verdict, real observation times, the recorded rendered measurements, the rendered-view guard call sequence, and artifact paths
  */
 export async function captureProductRow(page, theme, options = {}) {
   if (!ROW_THEMES.includes(theme)) {
@@ -1412,6 +1512,17 @@ export async function captureProductRow(page, theme, options = {}) {
       'repair: use one of dark, light for "theme".',
     )
   }
+  if (options.assertActiveViewMounted !== undefined && typeof options.assertActiveViewMounted !== 'function') {
+    throw new Error(
+      `product producer: invalid rendered-view guard ${JSON.stringify(options.assertActiveViewMounted)} for field "assertActiveViewMounted" at path row.assertActiveViewMounted; ` +
+      'repair: omit the option to use the real rendered-active-view predicate, or pass a function with the same contract.',
+    )
+  }
+  // The one seam the rendered-view predicate is reached through. The default is
+  // the real function; a caller may substitute a recorder to observe the call
+  // sites without changing what the row decides.
+  const activeViewGuard = options.assertActiveViewMounted ?? assertProductActiveViewMounted
+  const activeViewGuardCalls = []
   const runRoot = resolve(options.runRoot ?? resolveProductRunRoot())
   const baseUrl = options.baseUrl || FAIRTEST_APP_BASE_URL
   const createdAtMs = options.createdAtMs ?? Date.now()
@@ -1514,12 +1625,13 @@ export async function captureProductRow(page, theme, options = {}) {
       'repair: keep the analytics dashboard laid out with a rendered box instead of a collapsed section.',
     )
   }
-  const acceptedBefore = assertProductActiveViewMounted(activeBefore, {
+  const acceptedBefore = activeViewGuard(activeBefore, {
     label: 'blank representative body',
     part: 'body',
     path: 'proof.body',
     repair: `keep the ${PRODUCT_INITIAL_SECTION} dashboard mounted and rendered with non-trivial content instead of a blank section`,
   })
+  activeViewGuardCalls.push('body@proof.body')
   if (before.location !== row.route) {
     throw new Error(
       `product producer: route mismatch for field "route" at path proof.route; ` +
@@ -1558,14 +1670,11 @@ export async function captureProductRow(page, theme, options = {}) {
   assertProductThemeObservation(themeObservation)
   kindsContract.validateThemeObservation(themeObservation, 'product producer')
 
+  // scanProductViewAxe already ran the one shape assertion over this scan, so
+  // there is no second guard here: a scan that arrives without a violation list
+  // is refused inside the scan call with the scan's own path, and a decorative
+  // re-check after it could only ever be unreachable.
   const scopedBefore = await scanProductViewAxe(page, 'scopedBefore')
-  if (!scopedBefore || !Array.isArray(scopedBefore.violations)) {
-    throw new Error(
-      'product producer: missing scoped accessibility scan for field "scopedBefore" at path evidence.axe.scoped.before; ' +
-      `selector ${JSON.stringify(PRODUCT_A11Y_SCOPE_ROOT)} returned no compact report; ` +
-      'repair: keep the product-view scoped scan wired at the initial observation point.',
-    )
-  }
 
   const mapButton = page.locator(`${PRODUCT_SELECTORS.sectionNav} ${PRODUCT_SELECTORS.sectionItem}`, { hasText: PRODUCT_ACTION_LABEL })
   try {
@@ -1623,12 +1732,13 @@ export async function captureProductRow(page, theme, options = {}) {
       'repair: keep the map view mounted inside the view container after the section switch.',
     )
   }
-  const acceptedAfter = assertProductActiveViewMounted(activeAfter, {
+  const acceptedAfter = activeViewGuard(activeAfter, {
     label: 'blank mounted view after the action',
     part: 'view',
     path: 'proof.view',
     repair: `keep the ${PRODUCT_ACTION_TO_SECTION} view mounted and rendered with non-trivial content after the section switch`,
   })
+  activeViewGuardCalls.push('view@proof.view')
 
   const actionObservedAtMs = Date.now()
   assertProductObservationTimes({
@@ -1654,21 +1764,12 @@ export async function captureProductRow(page, theme, options = {}) {
   })
 
   const pageWide = await scanAxe(page)
+  // assertProductAxeScanShape is the single owner of the compact-report shape
+  // for every scan this row records, page-wide included; the page-wide scan has
+  // no root to scope through scanProductViewAxe, so it calls the shared
+  // assertion directly and carries no second local guard.
   assertProductAxeScanShape(pageWide, 'pageWide', 'evidence.axe.pageWide')
-  if (!pageWide || !Array.isArray(pageWide.violations)) {
-    throw new Error(
-      'product producer: missing accessibility scan for field "pageWide" at path evidence.axe.pageWide; ' +
-      'repair: keep the page-wide axe scan wired so every row records its violations, incomplete, and pass counts.',
-    )
-  }
   const scopedAfter = await scanProductViewAxe(page, 'scopedAfter')
-  if (!scopedAfter || !Array.isArray(scopedAfter.violations)) {
-    throw new Error(
-      'product producer: missing scoped accessibility scan for field "scopedAfter" at path evidence.axe.scoped.after; ' +
-      `selector ${JSON.stringify(PRODUCT_A11Y_SCOPE_ROOT)} returned no compact report; ` +
-      'repair: keep the product-view scoped scan wired at the post-interaction observation point.',
-    )
-  }
   const axeRecord = {
     target: PRODUCT_TARGET_ID,
     rowTheme: theme,
@@ -1685,21 +1786,32 @@ export async function captureProductRow(page, theme, options = {}) {
     scoped: {
       scope: PRODUCT_A11Y_SCOPES.gated,
       root: PRODUCT_A11Y_SCOPE_ROOT,
-      before: { section: PRODUCT_A11Y_POINT_SECTIONS[PRODUCT_A11Y_GATE_POINT_SLOTS.before], ...scopedBefore },
-      after: { section: PRODUCT_A11Y_POINT_SECTIONS[PRODUCT_A11Y_GATE_POINT_SLOTS.after], ...scopedAfter },
+      // declaredSection is the label the registry predicts; observedSection is
+      // what the page showed. They are named apart so a reader can never take
+      // the prediction for the observation.
+      before: { declaredSection: PRODUCT_A11Y_POINT_SECTIONS[PRODUCT_A11Y_GATE_POINT_SLOTS.before], observedSection: before.activeText, ...scopedBefore },
+      after: { declaredSection: PRODUCT_A11Y_POINT_SECTIONS[PRODUCT_A11Y_GATE_POINT_SLOTS.after], observedSection: after.activeText, ...scopedAfter },
     },
     pageWide: { scope: PRODUCT_A11Y_SCOPES.page, root: PRODUCT_A11Y_SCOPES.pageRoot, ...pageWide },
   }
   const axePath = join(rowDir, 'axe.json')
   writeFileSync(axePath, `${JSON.stringify(axeRecord, null, 2)}\n`)
+  // The section each receipt carries is read from the page, not copied from the
+  // declaration: the initial slot is gated against the section the pre-action
+  // observation read, and the after-action slot against the section the
+  // post-action observation read. Two scans swapped therefore produce two
+  // receipts that name a section their point does not render, and the
+  // verifier-facing reader refuses them.
   const gateBefore = assertProductAxeBaselineDelta({
     point: PRODUCT_A11Y_GATE_POINT_SLOTS.before,
+    observedSection: before.activeText,
     measured: summarizeAxeForGate(scopedBefore),
     baseline: PRODUCT_A11Y_BASELINE.points[PRODUCT_A11Y_GATE_POINT_SLOTS.before].map((entry) => ({ ...entry })),
     artifactPath: axePath,
   })
   const gateAfter = assertProductAxeBaselineDelta({
     point: PRODUCT_A11Y_GATE_POINT_SLOTS.after,
+    observedSection: after.activeText,
     measured: summarizeAxeForGate(scopedAfter),
     baseline: PRODUCT_A11Y_BASELINE.points[PRODUCT_A11Y_GATE_POINT_SLOTS.after].map((entry) => ({ ...entry })),
     artifactPath: axePath,
@@ -1820,6 +1932,11 @@ export async function captureProductRow(page, theme, options = {}) {
       theme: themeObservedAtMs,
       action: actionObservedAtMs,
     }),
+    // The rendered-view guard call sequence this row actually made, in order:
+    // the pre-action body point and the post-action view point. A consumer can
+    // compare it against the declared pair, and an injected recorder sees
+    // exactly the same two calls.
+    activeViewGuards: Object.freeze([...activeViewGuardCalls]),
     artifacts: PRODUCT_ARTIFACT_CLASSES.map((name) => join(rowDir, name)),
   }
 }

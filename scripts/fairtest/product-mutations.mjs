@@ -50,6 +50,14 @@
 // Storybook run, Puppeteer catalog, or component target is added here.
 // Host-contract values load only through the sole source route; this module
 // holds no second relative path into the private child.
+//
+// App-structure and runtime ownership: the product route comes from the
+// app-owned registry (productRouteForTheme), the render viewport comes from the
+// runtime constant owner (PRODUCT_VIEWPORT), and every throwaway listener takes
+// its port from the same owner (claimScratchPort). This module declares no
+// route, no viewport, and no port of its own, so a mutation can never navigate
+// to a contract the registry no longer holds or collide with another suite's
+// scratch port when both run in one node --test invocation.
 
 import { createHash } from 'node:crypto'
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -59,13 +67,14 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
-import { FAIRTEST_APP_HOST, FAIRTEST_REPO_ROOT } from './fairtest-runtime.mjs'
+import { FAIRTEST_APP_HOST, FAIRTEST_REPO_ROOT, PRODUCT_VIEWPORT, claimScratchPort } from './fairtest-runtime.mjs'
 import {
   PRODUCT_SELECTORS,
   PRODUCT_UNRENDERED_MODES,
   buildProductProof,
   getProductAction,
   observeProductTheme,
+  productRouteForTheme,
 } from './fairtrade-targets.mjs'
 import {
   PRODUCT_VIEW_SELECTORS,
@@ -139,7 +148,7 @@ export const PRODUCT_UNRENDERED_RULES = Object.freeze({
  * @param {object} [overrides] fields to replace on the valid input
  * @returns {object} a complete valid proof input
  */
-export function validMutationProofInput(overrides = {}) {
+function validMutationProofInput(overrides = {}) {
   return {
     rowTheme: 'dark',
     identity: { kind: 'product', id: 'mutation-probe', createdAtMs: 1000 },
@@ -194,7 +203,7 @@ function fetchBytes(url) {
  * @param {string} root built-app root holding index.html
  * @returns {string} hex digest of the recorded bytes
  */
-export function digestRecordedIndexHtml(root) {
+function digestRecordedIndexHtml(root) {
   const file = join(root, 'index.html')
   if (!existsSync(file)) {
     throw new Error(
@@ -240,7 +249,7 @@ export function servedProvenanceDigestMatch({ recordedDigest, servedDigest, serv
  * removed before the proof is built, so the owning proof boundary rejects
  * it. Never a blanket mounted flag: the diagnostic names the chrome part.
  */
-export function mutateMissingChrome() {
+function mutateMissingChrome() {
   const input = validMutationProofInput()
   delete input.chrome
   return buildProductProof(input)
@@ -251,7 +260,7 @@ export function mutateMissingChrome() {
  * removed before the proof is built. The rejection names the body part, so
  * a blanket mounted boolean could never satisfy this boundary.
  */
-export function mutateMissingBody() {
+function mutateMissingBody() {
   const input = validMutationProofInput()
   delete input.body
   return buildProductProof(input)
@@ -262,7 +271,7 @@ export function mutateMissingBody() {
  * removed before the proof is built, so the owning proof boundary rejects
  * it.
  */
-export function mutateMissingSection() {
+function mutateMissingSection() {
   const input = validMutationProofInput()
   delete input.activeSection
   return buildProductProof(input)
@@ -272,7 +281,7 @@ export function mutateMissingSection() {
  * Run the missing-view mutation: the mounted-view observation is removed
  * before the proof is built, so the owning proof boundary rejects it.
  */
-export function mutateMissingView() {
+function mutateMissingView() {
   const input = validMutationProofInput()
   delete input.view
   return buildProductProof(input)
@@ -289,12 +298,13 @@ export function mutateMissingView() {
  * real built surface) are exactly what a container-scoped floor would have
  * read, so this case is the one that distinguishes the two.
  * @param {object} [options] mutation options
- * @param {number} [options.port] fixed loopback port for the proof service
+ * @param {number} [options.port] loopback port override, defaults to the scratch port the runtime owner claims
  * @returns {Promise<never>} always throws with the producer's blank-view diagnostic
  */
-export async function mutateBlankActiveView({ port = 5195 } = {}) {
+async function mutateBlankActiveView({ port } = {}) {
   const { chromium } = await import('@playwright/test')
-  const driver = createProductStaticDriver({ port, host: FAIRTEST_APP_HOST, distRoot: DIST_ROOT })
+  const loopback = await (port === undefined ? claimScratchPort('mutation-blank-active-view') : { port })
+  const driver = createProductStaticDriver({ port: loopback.port, host: FAIRTEST_APP_HOST, distRoot: DIST_ROOT })
   await driver.start()
   const browser = await chromium.launch()
   const context = {
@@ -304,9 +314,9 @@ export async function mutateBlankActiveView({ port = 5195 } = {}) {
     repair: 'keep the analytics dashboard mounted with non-trivial content instead of a blank section',
   }
   try {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } })
+    const page = await browser.newPage({ viewport: { ...PRODUCT_VIEWPORT } })
     try {
-      await page.goto(`${driver.baseUrl}/?app=graph&fb=off&theme=none#inuse`, { waitUntil: 'networkidle' })
+      await page.goto(`${driver.baseUrl}${productRouteForTheme('dark')}`, { waitUntil: 'networkidle' })
       await page.waitForSelector(PRODUCT_SELECTORS.activeView, { timeout: 15000, state: 'attached' })
       const healthy = await page.evaluate(measureProductView, PRODUCT_VIEW_SELECTORS)
       assertProductActiveViewMounted(healthy, context)
@@ -348,12 +358,13 @@ export async function mutateBlankActiveView({ port = 5195 } = {}) {
  * service, and each stylesheet are released as the loop advances, so one
  * launch covers all five declared modes and nothing is left installed.
  * @param {object} [options] mutation options
- * @param {number} [options.port] fixed loopback port for the proof service
+ * @param {number} [options.port] loopback port override, defaults to the scratch port the runtime owner claims
  * @returns {Promise<never>} always throws with the producer's unrendered-view diagnostic
  */
-export async function mutateUnrenderedActiveView({ port = 5202 } = {}) {
+async function mutateUnrenderedActiveView({ port } = {}) {
   const { chromium } = await import('@playwright/test')
-  const driver = createProductStaticDriver({ port, host: FAIRTEST_APP_HOST, distRoot: DIST_ROOT })
+  const loopback = await (port === undefined ? claimScratchPort('mutation-unrendered-active-view') : { port })
+  const driver = createProductStaticDriver({ port: loopback.port, host: FAIRTEST_APP_HOST, distRoot: DIST_ROOT })
   await driver.start()
   const browser = await chromium.launch()
   const context = {
@@ -364,9 +375,9 @@ export async function mutateUnrenderedActiveView({ port = 5202 } = {}) {
   }
   const refused = []
   try {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } })
+    const page = await browser.newPage({ viewport: { ...PRODUCT_VIEWPORT } })
     try {
-      await page.goto(`${driver.baseUrl}/?app=graph&fb=off&theme=none#inuse`, { waitUntil: 'networkidle' })
+      await page.goto(`${driver.baseUrl}${productRouteForTheme('dark')}`, { waitUntil: 'networkidle' })
       await page.waitForSelector(PRODUCT_SELECTORS.activeView, { timeout: 15000, state: 'attached' })
       const healthy = await page.evaluate(measureProductView, PRODUCT_VIEW_SELECTORS)
       assertProductActiveViewMounted(healthy, context)
@@ -423,7 +434,7 @@ export async function mutateUnrenderedActiveView({ port = 5202 } = {}) {
  * the theme observation rejects the contradiction before any capture or
  * evidence work.
  */
-export function mutateWrongTheme() {
+function mutateWrongTheme() {
   return observeProductTheme({
     expected: 'light',
     renderedAttribute: '',
@@ -452,7 +463,7 @@ function inertDriver() {
  * real target registry. Both reject the name outside the app-owned registry.
  * @returns {Promise<never>} always throws
  */
-export async function mutateUnregisteredAction() {
+async function mutateUnregisteredAction() {
   getProductAction('select-changes-section')
   const adapter = await createFairtradeAdapter({
     runId: 'mutation-probe-action',
@@ -467,7 +478,7 @@ export async function mutateUnregisteredAction() {
  * Run the cross-kind mutation: a component-shaped identity is presented as
  * a product proof, so the shared contract rejects it.
  */
-export function mutateCrossKindProof() {
+function mutateCrossKindProof() {
   return buildProductProof(validMutationProofInput({
     identity: { kind: 'component', id: 'mutation-cross-kind', createdAtMs: 1000 },
   }))
@@ -481,10 +492,11 @@ export function mutateCrossKindProof() {
  * fails closed. The real dist/ is never modified and the copy is removed in
  * a finally block.
  * @param {object} [options] mutation options
- * @param {number} [options.port] fixed loopback port for the throwaway service
+ * @param {number} [options.port] loopback port override, defaults to the scratch port the runtime owner claims
  * @returns {Promise<never>} always throws with the stale-asset diagnostic
  */
-export async function mutateStaleServedAsset({ port = 5197 } = {}) {
+async function mutateStaleServedAsset({ port } = {}) {
+  const loopback = await (port === undefined ? claimScratchPort('mutation-stale-served-asset') : { port })
   const recordedDigest = digestRecordedIndexHtml(DIST_ROOT)
   const scratch = mkdtempSync(join(tmpdir(), 'fairtest-mutation-stale-'))
   let driver = null
@@ -492,7 +504,7 @@ export async function mutateStaleServedAsset({ port = 5197 } = {}) {
     cpSync(DIST_ROOT, scratch, { recursive: true })
     const copyIndex = join(scratch, 'index.html')
     writeFileSync(copyIndex, `${readFileSync(copyIndex, 'utf8')}\n<!-- fairtest stale-asset mutation probe -->\n`)
-    driver = createProductStaticDriver({ port, host: FAIRTEST_APP_HOST, distRoot: scratch })
+    driver = createProductStaticDriver({ port: loopback.port, host: FAIRTEST_APP_HOST, distRoot: scratch })
     await driver.start()
     const servedBytes = await fetchBytes(`${driver.baseUrl}/index.html`)
     const servedDigest = sha256(servedBytes)
@@ -554,12 +566,13 @@ export async function runProductMutation(name, options = {}) {
  * diagnostics. The browser and service are released in a finally block and
  * no tracked source or dist/ byte is modified.
  * @param {object} [options] proof options
- * @param {number} [options.port] fixed loopback port for the proof service
+ * @param {number} [options.port] loopback port override, defaults to the scratch port the runtime owner claims
  * @returns {Promise<object[]>} per-part absence evidence
  */
-export async function proveDomAbsenceRealPath({ port = 5196 } = {}) {
+export async function proveDomAbsenceRealPath({ port } = {}) {
   const { chromium } = await import('@playwright/test')
-  const driver = createProductStaticDriver({ port, host: FAIRTEST_APP_HOST, distRoot: DIST_ROOT })
+  const loopback = await (port === undefined ? claimScratchPort('mutation-dom-absence') : { port })
+  const driver = createProductStaticDriver({ port: loopback.port, host: FAIRTEST_APP_HOST, distRoot: DIST_ROOT })
   await driver.start()
   const browser = await chromium.launch()
   const evidence = []
@@ -571,9 +584,9 @@ export async function proveDomAbsenceRealPath({ port = 5196 } = {}) {
       ['body', PRODUCT_SELECTORS.body],
     ]
     for (const [part, selector] of parts) {
-      const page = await browser.newPage({ viewport: { width: 1280, height: 720 } })
+      const page = await browser.newPage({ viewport: { ...PRODUCT_VIEWPORT } })
       try {
-        await page.goto(`${driver.baseUrl}/?app=graph&fb=off&theme=none#inuse`, { waitUntil: 'networkidle' })
+        await page.goto(`${driver.baseUrl}${productRouteForTheme('dark')}`, { waitUntil: 'networkidle' })
         await page.waitForSelector(selector, { timeout: 15000, state: 'attached' })
         await page.evaluate((sel) => {
           document.querySelector(sel)?.remove()

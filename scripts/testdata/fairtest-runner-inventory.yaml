@@ -70,6 +70,17 @@ commands:
     owner: product-proof
     stage: mounted
     runner: playwright-one-project
+  # REQUIRED-CI MOUNT: DEFERRED. This row is the required local/CI contract for
+  # the whole Fairtest host contract, but no required CI workflow invokes it yet
+  # (see scripts/fairtest/run-product-contract.mjs, which prints the same status
+  # on every run). It runs the five contract suites in one node --test
+  # invocation with --test-concurrency=1, because two of them open real browsers
+  # and throwaway loopback listeners.
+  - name: test:fairtest:product-contract
+    invocation: pnpm test:fairtest:product-contract
+    owner: product-proof
+    stage: mounted
+    runner: process-only
   - name: test:fairtest:verify
     invocation: pnpm test:fairtest:verify
     owner: evidence-ci
