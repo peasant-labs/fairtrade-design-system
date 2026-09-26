@@ -25,3 +25,13 @@ allowBuilds:
 minimumReleaseAge: 4320
 minimumReleaseAgeExclude:
   - '@peasant-labs/*'
+
+# Node engine enforcement: pnpm 11 enforces a project's declared `engines` at
+# install time (ERR_PNPM_UNSUPPORTED_ENGINE), so an out-of-contract Node fails
+# the install instead of only warning. Install-time only: this does NOT gate
+# test execution on an already-installed tree, so a Fairtest command run under
+# an out-of-contract Node with dependencies present still produces a confusing
+# partial-suite result. The setting lives here because pnpm 11 reads non-auth
+# settings from pnpm-workspace.yaml, not from .npmrc.
+# https://pnpm.io/settings/cli#enginestrict
+engineStrict: true
