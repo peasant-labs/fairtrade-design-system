@@ -101,6 +101,8 @@ export const FAIRTEST_SCRATCH_PURPOSES = Object.freeze([
   'mutation-stale-served-asset',
   'mutation-blank-active-view',
   'mutation-unrendered-active-view',
+  'mutation-component-root-states',
+  'mutation-component-provenance',
 ])
 
 /**

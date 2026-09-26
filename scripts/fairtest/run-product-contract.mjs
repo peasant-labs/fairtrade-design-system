@@ -18,6 +18,11 @@
 //                                                   and the component fixture
 //                                                   family (which owns the named
 //                                                   executable mutations)
+//   scripts/fairtest/component-mutations.test.mjs  the component negative-mutation
+//                                                   suite's own non-mutation cases,
+//                                                   the real root-state proof, and
+//                                                   the verifier-facing evidence
+//                                                   corpus
 //   scripts/journey/lib/helper-ownership.test.mjs  journey helper export
 //                                                   ownership
 //   scripts/journey/lib/journey-compat.test.mjs    journey helper compatibility
@@ -25,8 +30,8 @@
 //   scripts/surface-preservation.test.mjs          SurfaceGate and specialized
 //                                                   probe preservation
 //
-// Execution is a single `node --test` invocation over all six, with
-// --test-concurrency=1. That flag is not cosmetic: two of these suites open
+// Execution is a single `node --test` invocation over all seven, with
+// --test-concurrency=1. That flag is not cosmetic: several of these suites open
 // real browsers and throwaway loopback listeners, and Node's default runs test
 // FILES concurrently, so one suite's scratch listener can hold the port another
 // suite is about to bind. Every scratch port now comes from the single owner in
@@ -34,7 +39,9 @@
 // and the serial file order removes the remaining same-instant race.
 //
 // Preconditions (declared, not assumed): `pnpm build` first, because the
-// browser-backed cases read the real built app out of dist/.
+// browser-backed cases read the real built app out of dist/; and
+// `pnpm build-storybook` first, because the component negative-mutation suite
+// reads the real built Storybook artifact out of storybook-static/.
 //
 // REQUIRED-CI MOUNT: DEFERRED. This command is required in the runner inventory
 // and runnable from a clean checkout, but no required CI workflow invokes it
@@ -46,7 +53,7 @@ import { spawnSync } from 'node:child_process'
 import { FAIRTEST_REPO_ROOT } from './fairtest-runtime.mjs'
 
 /**
- * The six suites this command owns, in execution order. One list, read by the
+ * The seven suites this command owns, in execution order. One list, read by the
  * banner, by the node argument list, and by the product fixture family case
  * that proves the command is reachable, so the declaration cannot drift from
  * what actually runs.
@@ -56,6 +63,7 @@ export const PRODUCT_CONTRACT_SUITES = Object.freeze([
   'scripts/fairtest/product-adapter.test.mjs',
   'scripts/fairtest/product-mutations.test.mjs',
   'scripts/fairtest/component-adapter.test.mjs',
+  'scripts/fairtest/component-mutations.test.mjs',
   'scripts/journey/lib/helper-ownership.test.mjs',
   'scripts/journey/lib/journey-compat.test.mjs',
   'scripts/surface-preservation.test.mjs',

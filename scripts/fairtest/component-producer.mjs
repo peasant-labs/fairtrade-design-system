@@ -616,6 +616,73 @@ export function readComponentAccessibilityVerdict(accessibility) {
 }
 
 /**
+ * Resolve the served asset references an iframe.html carries. Both relative
+ * `./` references and root-absolute `/assets/` references resolve against the
+ * served Storybook root; absolute/external, `data:`, and fragment references
+ * are skipped. This is the ONE resolver the producer and the negative
+ * mutation suite read, so a relative reference the built iframe carries can
+ * never be silently dropped from provenance.
+ * @param {unknown} servedHtml served iframe.html text
+ * @returns {string[]} the sorted run-root-relative asset references
+ */
+export function resolveComponentProvenanceRefs(servedHtml) {
+  if (typeof servedHtml !== 'string' || servedHtml.length === 0) {
+    throw new Error(
+      'component producer: missing served iframe.html for field "servedHtml" at path provenance.servedHtml; ' +
+      'repair: read the served iframe.html before resolving its asset references.',
+    )
+  }
+  const refs = new Set()
+  for (const match of servedHtml.matchAll(/(?:src|href)="([^"]+)"/g)) {
+    const raw = match[1]
+    if (/^(?:[a-z]+:)?\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('#')) continue
+    const relative = raw.replace(/^\.\//, '').replace(/^\//, '')
+    if (relative.length === 0) continue
+    refs.add(relative)
+  }
+  return [...refs].sort()
+}
+
+/**
+ * Read the served iframe.html bytes plus every served asset file it references
+ * over real HTTP, keyed by run-root-relative path, and fail closed when the
+ * served document references no asset file at all. This is the shared served
+ * asset collector the row-scoped provenance reads and the negative mutation
+ * suite drives, so relative references are resolved (not dropped) and external
+ * documentation links never become a fetched asset.
+ * @param {object} input collection inputs
+ * @param {string} input.baseUrl running loopback base URL
+ * @param {string} input.servedHtml served iframe.html text just read over HTTP
+ * @param {string} [input.label] owning producer used in diagnostics
+ * @returns {Promise<{ refs: string[], assetDigests: Record<string, string> }>} the resolved refs and their digests
+ */
+export async function collectComponentServedAssets({ baseUrl, servedHtml, label = 'component producer' } = {}) {
+  const assetDigests = {}
+  assetDigests['iframe.html'] = sha256(servedHtml)
+  const refs = resolveComponentProvenanceRefs(servedHtml)
+  if (refs.length === 0) {
+    throw new Error(
+      `${label}: served iframe.html references no asset files for field "assetDigests" at path provenance.assetDigests; ` +
+      'repair: rebuild storybook-static/ with pnpm build-storybook so the served iframe references its hashed asset bundle.',
+    )
+  }
+  for (const ref of refs) {
+    let bytes = null
+    try {
+      bytes = await fetchBytes(`${baseUrl}/${ref}`)
+    } catch (error) {
+      const cause = error instanceof Error ? error.message : String(error)
+      throw new Error(
+        `${label}: cannot read served asset ${JSON.stringify(ref)} for field "assetDigests" at path provenance.assetDigests; caused by ${cause}; ` +
+        'repair: keep the loopback service running while provenance is collected and rebuild storybook-static/ if the asset is missing.',
+      )
+    }
+    assetDigests[ref] = sha256(bytes)
+  }
+  return Object.freeze({ refs, assetDigests })
+}
+
+/**
  * Collect served-build provenance for the built Storybook artifact over real
  * HTTP: the served iframe.html bytes plus every served asset file the iframe
  * references, compared against the run's own built Storybook tree before
@@ -630,35 +697,7 @@ export function readComponentAccessibilityVerdict(accessibility) {
  * @returns {Promise<object>} the provenance record
  */
 async function collectComponentProvenance({ baseUrl, servedHtml, viewport, targetIdentity, themeObservations }) {
-  const assetDigests = {}
-  assetDigests['iframe.html'] = sha256(servedHtml)
-  const refs = new Set()
-  for (const match of servedHtml.matchAll(/(?:src|href)="([^"]+)"/g)) {
-    const raw = match[1]
-    if (/^(?:[a-z]+:)?\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('#')) continue
-    const relative = raw.replace(/^\.\//, '').replace(/^\//, '')
-    if (relative.length === 0) continue
-    refs.add(relative)
-  }
-  if (refs.size === 0) {
-    throw new Error(
-      'component producer: served iframe.html references no asset files for field "assetDigests" at path provenance.assetDigests; ' +
-      'repair: rebuild storybook-static/ with pnpm build-storybook so the served iframe references its hashed asset bundle.',
-    )
-  }
-  for (const ref of [...refs].sort()) {
-    let bytes = null
-    try {
-      bytes = await fetchBytes(`${baseUrl}/${ref}`)
-    } catch (error) {
-      const cause = error instanceof Error ? error.message : String(error)
-      throw new Error(
-        `component producer: cannot read served asset ${JSON.stringify(ref)} for field "assetDigests" at path provenance.assetDigests; caused by ${cause}; ` +
-        'repair: keep the loopback service running while provenance is collected and rebuild storybook-static/ if the asset is missing.',
-      )
-    }
-    assetDigests[ref] = sha256(bytes)
-  }
+  const { assetDigests } = await collectComponentServedAssets({ baseUrl, servedHtml })
   const { commit, dirty } = readWorktreeState()
   const comparison = assertServedDigestsMatchRunRoot({ assetDigests, distRoot: STORYBOOK_ROOT, label: 'component producer' })
   const provenance = {
@@ -686,6 +725,94 @@ async function collectComponentProvenance({ baseUrl, servedHtml, viewport, targe
     )
   }
   return provenance
+}
+
+/**
+ * Assert the row's observation times are real clock readings in observation
+ * order, never assembly-order offsets. A row whose mount reading is not after
+ * its row start, or whose theme reading precedes the mount (or interaction
+ * precedes the theme), is synthetic and fails closed. The one guard the
+ * producer calls and the verifier-facing evidence reader drives.
+ * @param {object} input observation times for the row
+ * @param {number} input.rowStartedAtMs clock reading when the row began
+ * @param {number} input.mount observedAtMs recorded for the mounted root
+ * @param {number} input.theme observedAtMs recorded for the theme observation
+ * @param {number} input.interaction observedAtMs recorded for the named interaction
+ * @returns {void}
+ */
+export function assertComponentObservationTimes(input = {}) {
+  valuesContract.assertExactFields(input, ['rowStartedAtMs', 'mount', 'theme', 'interaction'], 'component producer', 'producer.observationTimes')
+  const times = /** @type {Record<string, number>} */ (/** @type {unknown} */ (input))
+  for (const key of ['rowStartedAtMs', 'mount', 'theme', 'interaction']) {
+    if (!Number.isInteger(times[key]) || times[key] < 0) {
+      throw new Error(
+        `component producer: invalid observation time ${JSON.stringify(times[key])} for field "${key}" at path producer.observationTimes.${key}; ` +
+        'repair: record whole milliseconds since the epoch for every observed part.',
+      )
+    }
+  }
+  const { rowStartedAtMs, mount, theme, interaction } = times
+  if (!(rowStartedAtMs < mount && mount <= theme && theme <= interaction)) {
+    throw new Error(
+      'component producer: observation times are not in observation order for field "observationTimes" at path producer.observationTimes; ' +
+      `row ${rowStartedAtMs}, mount ${mount}, theme ${theme}, interaction ${interaction}; ` +
+      'repair: read the clock at each observation instead of synthesizing offsets.',
+    )
+  }
+}
+
+/**
+ * Assert the mounted-root ARIA snapshot clears the component measured floor.
+ * The product's 50-character shell floor does not transfer; this reads the
+ * component floor from the target registry. The one guard the producer calls
+ * and the negative mutation suite drives.
+ * @param {unknown} snapshot mounted-root aria snapshot text
+ * @returns {void}
+ */
+export function assertComponentAriaFloor(snapshot) {
+  if (typeof snapshot !== 'string' || snapshot.trim().length < COMPONENT_MIN_ARIA_CHARS) {
+    throw new Error(
+      'component producer: empty ARIA snapshot for field "aria" at path evidence.aria; ' +
+      `snapshot holds ${(typeof snapshot === 'string' ? snapshot.trim().length : 0)} characters, below the component floor ${COMPONENT_MIN_ARIA_CHARS}; ` +
+      'repair: keep the mounted component expanded so its accessible tree is non-trivial.',
+    )
+  }
+}
+
+/**
+ * Assert a mounted-root screenshot file clears the component measured byte
+ * floor. The product's 8000-byte full-page floor does not transfer to an
+ * element capture; this reads the component floor from the target registry.
+ * The one guard the producer calls and the negative mutation suite drives.
+ * @param {unknown} bytes screenshot byte count
+ * @param {string} [path] screenshot path used in the diagnostic
+ * @returns {void}
+ */
+export function assertComponentScreenshotFloor(bytes, path = 'screenshot.png') {
+  if (!Number.isInteger(bytes) || bytes < COMPONENT_MIN_SCREENSHOT_BYTES) {
+    throw new Error(
+      'component producer: blank screenshot for field "screenshot" at path evidence.screenshot; ' +
+      `wrote ${JSON.stringify(bytes)} bytes to ${JSON.stringify(path)}, below the component floor ${COMPONENT_MIN_SCREENSHOT_BYTES}; ` +
+      'repair: keep the mounted component expanded and rendered so the capture is non-blank.',
+    )
+  }
+}
+
+/**
+ * Assert a row directory ends with the complete shared six-class artifact set.
+ * The same closed set the product row writes, so one verifier reads both kinds.
+ * @param {string} rowDir row directory
+ * @returns {void}
+ */
+export function assertComponentArtifactSet(rowDir) {
+  for (const name of COMPONENT_ARTIFACT_CLASSES) {
+    if (!existsSync(join(rowDir, name))) {
+      throw new Error(
+        `component producer: missing artifact ${JSON.stringify(name)} for field "artifact" at path run.rowDir/${name}; ` +
+        'repair: keep the six artifact writes intact so every row ends with the complete set.',
+      )
+    }
+  }
 }
 
 /**
@@ -912,13 +1039,7 @@ export async function captureComponentRow(page, theme, options = {}) {
   }
 
   const interactionObservedAtMs = Date.now()
-  if (!(rowStartedAtMs < mountObservedAtMs && mountObservedAtMs <= themeObservedAtMs && themeObservedAtMs <= interactionObservedAtMs)) {
-    throw new Error(
-      'component producer: observation times are not in observation order for field "observationTimes" at path producer.observationTimes; ' +
-      `row ${rowStartedAtMs}, mount ${mountObservedAtMs}, theme ${themeObservedAtMs}, interaction ${interactionObservedAtMs}; ` +
-      'repair: read the clock at each observation instead of synthesizing offsets.',
-    )
-  }
+  assertComponentObservationTimes({ rowStartedAtMs, mount: mountObservedAtMs, theme: themeObservedAtMs, interaction: interactionObservedAtMs })
 
   const scopedAfter = await scanAxe(page, { root: COMPONENT_SELECTORS.root })
   assertComponentAxeScanShape(scopedAfter, 'evidence.axe.scopedAfter')
@@ -927,24 +1048,11 @@ export async function captureComponentRow(page, theme, options = {}) {
   const gate = buildComponentGateReceipt({ scan: scopedAfter, observedTheme: themeObservation.observed, ariaExpanded: observedAfter.ariaExpanded === 'true' })
 
   const ariaSnapshot = await page.locator(COMPONENT_SELECTORS.root).ariaSnapshot()
-  if (!ariaSnapshot || ariaSnapshot.trim().length < COMPONENT_MIN_ARIA_CHARS) {
-    throw new Error(
-      'component producer: empty ARIA snapshot for field "aria" at path evidence.aria; ' +
-      `snapshot holds ${(ariaSnapshot || '').trim().length} characters, below the component floor ${COMPONENT_MIN_ARIA_CHARS}; ` +
-      'repair: keep the mounted component expanded so its accessible tree is non-trivial.',
-    )
-  }
+  assertComponentAriaFloor(ariaSnapshot)
 
   const screenshotPath = join(rowDir, 'screenshot.png')
   await page.locator(COMPONENT_SELECTORS.root).screenshot({ path: screenshotPath })
-  const screenshotBytes = statSync(screenshotPath).size
-  if (screenshotBytes < COMPONENT_MIN_SCREENSHOT_BYTES) {
-    throw new Error(
-      `component producer: blank screenshot for field "screenshot" at path evidence.screenshot; ` +
-      `wrote ${screenshotBytes} bytes to ${JSON.stringify(screenshotPath)}, below the component floor ${COMPONENT_MIN_SCREENSHOT_BYTES}; ` +
-      'repair: keep the mounted component expanded and rendered so the capture is non-blank.',
-    )
-  }
+  assertComponentScreenshotFloor(statSync(screenshotPath).size, screenshotPath)
 
   const accessibility = buildComponentAccessibilityEvidence({ pageWide, scoped: scopedAfter, gate })
   const accessibilityVerdict = readComponentAccessibilityVerdict(accessibility)
@@ -1030,14 +1138,7 @@ export async function captureComponentRow(page, theme, options = {}) {
   writeFileSync(join(rowDir, 'provenance.json'), `${JSON.stringify(provenance, null, 2)}\n`)
   writeFileSync(join(rowDir, 'resolution.json'), `${JSON.stringify(proof, null, 2)}\n`)
 
-  for (const name of COMPONENT_ARTIFACT_CLASSES) {
-    if (!existsSync(join(rowDir, name))) {
-      throw new Error(
-        `component producer: missing artifact ${JSON.stringify(name)} for field "artifact" at path run.rowDir/${name}; ` +
-        'repair: keep the six artifact writes intact so every row ends with the complete set.',
-      )
-    }
-  }
+  assertComponentArtifactSet(rowDir)
 
   return {
     theme,

@@ -19,6 +19,7 @@ import { storyUrl } from '../journey/lib/fixtures.mjs'
 import { normalizeRenderedTheme } from './fairtrade-targets.mjs'
 import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
 import * as targets from './fairtrade-component-target.mjs'
+import { COMPONENT_MUTATION_NAMES, runComponentMutation } from './component-mutations.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
@@ -31,7 +32,7 @@ const coreFixtures = await importFairtestSource('src/core/fixtures.mjs')
 const contractTargets = await importFairtestSource('src/host-contract/targets.mjs')
 const contractResolution = await importFairtestSource('src/host-contract/resolution.mjs')
 
-const CHECKS = ['component-row', 'component-url', 'component-setup', 'component-project', 'component-mount', 'component-declaration', 'component-action', 'component-proof', 'component-proof-blanket', 'component-cross-kind']
+const CHECKS = ['component-row', 'component-url', 'component-setup', 'component-project', 'component-mount', 'component-declaration', 'component-action', 'component-proof', 'component-proof-blanket', 'component-cross-kind', 'component-mutation']
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'stale-name', 'trailing-document'])
 const ROW_THEMES = ['dark', 'light']
 const PROOF_PRODUCT_ONLY_FIELDS = ['chrome', 'body', 'route', 'activeSection', 'view']
@@ -146,6 +147,7 @@ function checkCaseShape(entry, index) {
     'component-proof': ['name', 'check', 'rowTheme', 'identity', 'root', 'themeObservation', 'interaction', ...tail],
     'component-proof-blanket': ['name', 'check', 'mounted', 'expectValid', 'expectedErrorContains'],
     'component-cross-kind': ['name', 'check', 'record', 'presentedTo', 'expectValid', 'expectedErrorContains'],
+    'component-mutation': ['name', 'check', 'mutation', 'boundary', 'expectValid', 'expectedErrorContains'],
   }
   coreFixtures.checkKeys(entry, fieldsByCheck[entry.check], 'case record', CORPUS_REL, path)
   if (!entry.expectValid) {
@@ -176,6 +178,14 @@ function checkCaseShape(entry, index) {
       throw new Error(`${CORPUS_REL}: case "${entry.name}" names an unknown resolver ${JSON.stringify(entry.presentedTo)} for field "presentedTo" at path ${path}.presentedTo; repair: use component or product.`)
     }
   }
+  if (entry.check === 'component-mutation') {
+    if (!COMPONENT_MUTATION_NAMES.includes(/** @type {string} */ (entry.mutation))) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" names an unknown mutation ${JSON.stringify(entry.mutation)} for field "mutation" at path ${path}.mutation; repair: use one of ${COMPONENT_MUTATION_NAMES.join(', ')} for "mutation".`)
+    }
+    if (typeof entry.boundary !== 'string' || entry.boundary.trim().length === 0) {
+      throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing its owning boundary for field "boundary" at path ${path}.boundary; repair: name the owning component boundary for "boundary".`)
+    }
+  }
 }
 
 /**
@@ -196,6 +206,7 @@ function validateFamily(parsed, manifest) {
 /**
  * Run one case through the real target validators.
  * @param {Record<string, unknown>} entry case record
+ * @returns {Promise<void>|void} resolves when the case has been checked
  */
 function runCase(entry) {
   const name = /** @type {string} */ (entry.name)
@@ -220,6 +231,8 @@ function runCase(entry) {
       return runComponentProofBlanketCase(entry)
     case 'component-cross-kind':
       return runComponentCrossKindCase(entry)
+    case 'component-mutation':
+      return runComponentMutationCase(entry)
     default:
       throw new Error(`${CORPUS_REL}: case "${name}" names an unknown check ${JSON.stringify(entry.check)}`)
   }
@@ -371,18 +384,32 @@ function runComponentCrossKindCase(entry) {
   expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
 }
 
+/** @param {Record<string, unknown>} entry */
+async function runComponentMutationCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  let message = null
+  try {
+    await runComponentMutation(/** @type {string} */ (entry.mutation))
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  assert.ok(message, `${name}: named mutation passed instead of failing at ${entry.boundary}`)
+  expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+}
+
 /**
  * Validate a mutated corpus the way the owning guards do: case shapes plus the
  * required-name inventory, then the one case the mutation touched.
  * @param {Record<string, unknown>[]} cases mutated cases
  * @param {Record<string, unknown>} manifest parsed manifest
  * @param {Record<string, unknown>} mutation named mutation
+ * @returns {Promise<void>} resolves when the touched case has been checked
  */
-function validateMutated(cases, manifest, mutation) {
+async function validateMutated(cases, manifest, mutation) {
   cases.forEach(checkCaseShape)
   coreFixtures.checkRequiredNames(cases.map((entry) => entry.name), /** @type {string[]} */ (manifest.requiredCaseNames), CORPUS_REL)
   const target = cases.find((entry) => entry.name === mutation.target)
-  if (target) runCase(target)
+  if (target) await runCase(target)
 }
 
 /**
@@ -444,9 +471,9 @@ describe('component target fixture family', () => {
     validateFamily(parsed, manifest)
   })
 
-  it('executes every named case', () => {
+  it('executes every named case', async () => {
     for (const entry of /** @type {Record<string, unknown>[]} */ (parsed.cases)) {
-      runCase(entry)
+      await runCase(entry)
     }
   })
 
@@ -462,18 +489,21 @@ describe('component target fixture family', () => {
     assert.match(message, /at path.*repair:/s)
   })
 
-  it('fails every executable mutation for its intended field', () => {
+  it('fails every executable mutation for its intended field', async () => {
     const cases = /** @type {Record<string, unknown>[]} */ (parsed.cases)
     for (const mutation of /** @type {Record<string, unknown>[]} */ (manifest.mutations)) {
-      const message = caught(() => {
-        if (mutation.kind === 'trailing-document') {
-          coreFixtures.loadSingleDocument(`${corpusSource.trimEnd()}\n---\norphan: true\n`, CORPUS_REL)
-          return
+      let message = null
+      if (mutation.kind === 'trailing-document') {
+        message = caught(() => coreFixtures.loadSingleDocument(`${corpusSource.trimEnd()}\n---\norphan: true\n`, CORPUS_REL))
+      } else {
+        try {
+          const mutated = structuredClone(cases)
+          applyMutation(mutated, mutation)
+          await validateMutated(mutated, manifest, mutation)
+        } catch (error) {
+          message = error instanceof Error ? error.message : String(error)
         }
-        const mutated = structuredClone(cases)
-        applyMutation(mutated, mutation)
-        validateMutated(mutated, manifest, mutation)
-      })
+      }
       assert.ok(message, `${mutation.name}: mutated input passed validation instead of failing`)
       assert.ok(message.includes(/** @type {string} */ (mutation.expectedField)), `${mutation.name}: diagnostic names the wrong field; got ${message}`)
       assert.ok(message.includes('at path'), `${mutation.name}: diagnostic is missing path context: ${message}`)

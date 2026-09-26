@@ -1,0 +1,201 @@
+# Verifier-facing Fairtest component evidence corpus.
+#
+# This record is the single source for the component evidence reader the
+# component-mutations suite exercises. It stays under scripts/testdata/ (the
+# verifier-facing corpus split) while the component TARGET cases stay under
+# scripts/fairtest/; the split is intentional.
+#
+# Families:
+# - component-evidence-artifact: the shared six artifact class names. Every one
+#   of the six is claimed, an invented seventh is refused, and the component set
+#   is asserted to equal the product set, so one verifier reads both kinds.
+# - component-evidence-verdict: the verdict is read from the gate receipt over
+#   the gated component-root scope ONLY. The page-wide census is nested and
+#   explicitly informational; an unqualified count, a mislabeled scope or root,
+#   and a scoped count contradicting its own receipt all fail closed, and the
+#   informational census cannot change the verdict.
+# - component-evidence-theme: the measured Storybook dark state is the
+#   PRESENT-EMPTY data-theme value, which normalizes to dark; light carries the
+#   light value; a contradiction fails.
+# - component-evidence-observation-time: real clock readings in observation
+#   order; synthetic offsets fail.
+# - component-evidence-config: the one-project Fairtest config matches exactly
+#   the product and component journeys and never the full catalog.
+expectedCaseCount: 22
+cases:
+  # ---- Family A: the shared six artifact class names ----
+  - name: component-evidence-artifact-record-present
+    check: component-evidence-artifact
+    artifact: record.json
+    expectValid: true
+    expectFrozen: true
+  - name: component-evidence-artifact-aria-present
+    check: component-evidence-artifact
+    artifact: aria.json
+    expectValid: true
+    expectFrozen: true
+  - name: component-evidence-artifact-axe-present
+    check: component-evidence-artifact
+    artifact: axe.json
+    expectValid: true
+    expectFrozen: true
+  - name: component-evidence-artifact-screenshot-present
+    check: component-evidence-artifact
+    artifact: screenshot.png
+    expectValid: true
+    expectFrozen: true
+  - name: component-evidence-artifact-provenance-present
+    check: component-evidence-artifact
+    artifact: provenance.json
+    expectValid: true
+    expectFrozen: true
+  - name: component-evidence-artifact-resolution-present
+    check: component-evidence-artifact
+    artifact: resolution.json
+    expectValid: true
+    expectFrozen: true
+  - name: component-evidence-artifact-invented-seventh-fails
+    check: component-evidence-artifact
+    artifact: evidence.json
+    expectValid: false
+    expectedErrorContains: ['evidence.json', 'artifactClasses', 'at path', 'repair:']
+  - name: component-evidence-artifact-parity-with-product
+    check: component-evidence-artifact-parity
+    expectValid: true
+    expectFrozen: true
+
+  # ---- Family B: verdict from the gate receipt only ----
+  - name: component-evidence-verdict-gate-pass
+    check: component-evidence-verdict
+    accessibility:
+      policy: component-serious-violations-gate
+      gatedScope: component-root
+      scopeRoot: '#storybook-root'
+      scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 12}
+      gate: {policy: component-serious-violations-gate, point: after-interaction, observedTheme: dark, ariaExpanded: true, result: pass, measured: 0}
+      pageWide: {scope: page, root: document, informational: true, violations: 0, blocking: 0, blockingIds: [], incomplete: [], passes: 17}
+    expectVerdict: pass
+    expectValid: true
+    expectFrozen: true
+  - name: component-evidence-verdict-gate-failure-reads-fail
+    check: component-evidence-verdict
+    accessibility:
+      policy: component-serious-violations-gate
+      gatedScope: component-root
+      scopeRoot: '#storybook-root'
+      scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 11}
+      gate: {policy: component-serious-violations-gate, point: after-interaction, observedTheme: light, ariaExpanded: true, result: fail, measured: 1}
+      pageWide: {scope: page, root: document, informational: true, violations: 0, blocking: 0, blockingIds: [], incomplete: [], passes: 17}
+    expectVerdict: fail
+    expectValid: true
+    expectFrozen: true
+  - name: component-evidence-verdict-ignores-informational-census
+    check: component-evidence-verdict
+    accessibility:
+      policy: component-serious-violations-gate
+      gatedScope: component-root
+      scopeRoot: '#storybook-root'
+      scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 12}
+      gate: {policy: component-serious-violations-gate, point: after-interaction, observedTheme: dark, ariaExpanded: true, result: pass, measured: 0}
+      pageWide: {scope: page, root: document, informational: true, violations: 7, blocking: 7, blockingIds: [color-contrast], incomplete: [color-contrast], passes: 120}
+    informationalChurn: {field: blocking, value: 999}
+    expectVerdict: pass
+    expectValid: true
+    expectFrozen: true
+  - name: component-evidence-verdict-unqualified-blocking-fails
+    check: component-evidence-verdict
+    accessibility:
+      policy: component-serious-violations-gate
+      gatedScope: component-root
+      scopeRoot: '#storybook-root'
+      blocking: 7
+      violations: 7
+      scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 12}
+      gate: {policy: component-serious-violations-gate, point: after-interaction, observedTheme: dark, ariaExpanded: true, result: pass, measured: 0}
+      pageWide: {scope: page, root: document, informational: true, violations: 7, blocking: 7, blockingIds: [color-contrast], incomplete: [color-contrast], passes: 120}
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['"blocking"', 'record.accessibility', 'at path', 'repair:']
+  - name: component-evidence-verdict-mislabeled-scope-fails
+    check: component-evidence-verdict
+    accessibility:
+      policy: component-serious-violations-gate
+      gatedScope: page
+      scopeRoot: '#storybook-root'
+      scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 12}
+      gate: {policy: component-serious-violations-gate, point: after-interaction, observedTheme: dark, ariaExpanded: true, result: pass, measured: 0}
+      pageWide: {scope: page, root: document, informational: true, violations: 0, blocking: 0, blockingIds: [], incomplete: [], passes: 17}
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['mislabeled gated scope', 'gatedScope', 'record.accessibility.gatedScope', 'component-root', 'repair:']
+  - name: component-evidence-verdict-mislabeled-root-fails
+    check: component-evidence-verdict
+    accessibility:
+      policy: component-serious-violations-gate
+      gatedScope: component-root
+      scopeRoot: body
+      scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 12}
+      gate: {policy: component-serious-violations-gate, point: after-interaction, observedTheme: dark, ariaExpanded: true, result: pass, measured: 0}
+      pageWide: {scope: page, root: document, informational: true, violations: 0, blocking: 0, blockingIds: [], incomplete: [], passes: 17}
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['mislabeled scope root', 'scopeRoot', 'record.accessibility.scopeRoot', 'storybook-root', 'repair:']
+  - name: component-evidence-verdict-scoped-contradiction-fails
+    check: component-evidence-verdict
+    accessibility:
+      policy: component-serious-violations-gate
+      gatedScope: component-root
+      scopeRoot: '#storybook-root'
+      scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 12}
+      gate: {policy: component-serious-violations-gate, point: after-interaction, observedTheme: dark, ariaExpanded: true, result: pass, measured: 1}
+      pageWide: {scope: page, root: document, informational: true, violations: 0, blocking: 0, blockingIds: [], incomplete: [], passes: 17}
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['contradicts the gate receipt', 'record.accessibility.scopedAfter.violations', 'repair:']
+
+  # ---- Family C: theme, including present-empty Storybook dark ----
+  - name: component-evidence-theme-present-empty-dark-passes
+    check: component-evidence-theme
+    theme: dark
+    renderedAttribute: ''
+    expectTheme: dark
+    expectValid: true
+    expectFrozen: true
+  - name: component-evidence-theme-light-passes
+    check: component-evidence-theme
+    theme: light
+    renderedAttribute: 'light'
+    expectTheme: light
+    expectValid: true
+    expectFrozen: true
+  - name: component-evidence-theme-contradiction-fails
+    check: component-evidence-theme
+    theme: light
+    renderedAttribute: ''
+    expectValid: false
+    expectedErrorContains: ['contradictory theme observation', 'field "observed"', 'at path theme.observed', 'repair:']
+
+  # ---- Family D: observation times ----
+  - name: component-evidence-observation-time-real-passes
+    check: component-evidence-observation-time
+    times: {rowStartedAtMs: 1790353572800, mount: 1790353589111, theme: 1790353589115, interaction: 1790353590386}
+    expectValid: true
+  - name: component-evidence-observation-time-out-of-order-fails
+    check: component-evidence-observation-time
+    times: {rowStartedAtMs: 1790353572800, mount: 1790353589111, theme: 1790353580000, interaction: 1790353590386}
+    expectValid: false
+    expectedErrorContains: ['observation order', 'producer.observationTimes', 'at path', 'repair:']
+
+  # ---- Family E: runner config ----
+  - name: component-evidence-config-two-journeys-passes
+    check: component-evidence-config
+    testMatch: ['**/product.journey.mjs', '**/component.journey.mjs']
+    project: fairtest
+    expectValid: true
+    expectFrozen: true
+  - name: component-evidence-config-catalog-match-fails
+    check: component-evidence-config
+    testMatch: ['**/product.journey.mjs', '**/component.journey.mjs', '**/storybook-smoke.journey.mjs']
+    project: fairtest
+    expectValid: false
+    expectedErrorContains: ['testMatch', 'playwright.fairtest.config.mjs.testMatch', 'repair:']

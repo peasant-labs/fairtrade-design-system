@@ -38,7 +38,13 @@
 # and a component record cannot satisfy the product full-shell resolver. The
 # product record presented to the component resolver is refused in the other
 # direction.
-expectedCaseCount: 41
+#
+# Family H (component-mutation): the named negative component mutations. Each
+# drives the real producer/registry boundary and must fail with the owning
+# diagnostic; the component adapter test executes every one through
+# runComponentMutation and the component-mutations suite proves the single
+# owner of the diagnostics table.
+expectedCaseCount: 59
 cases:
   # ---- Family A: theme rows ----
   - name: component-row-dark-absent-theme-passes
@@ -378,3 +384,113 @@ cases:
       theme: {expected: dark, observed: dark, source: 'component-target-fixture', observedAtMs: 2100}
     expectValid: false
     expectedErrorContains: ['at path', 'repair:']
+
+  # ---- Family H: named negative component mutations ----
+  - name: component-mutation-missing-root-fails
+    check: component-mutation
+    mutation: missing-root
+    boundary: fairtrade-component-target.assertComponentMounted at mount.root
+    expectValid: false
+    expectedErrorContains: ['missing mount observation', 'field "mount"', 'at path mount', 'repair:']
+  - name: component-mutation-empty-root-fails
+    check: component-mutation
+    mutation: empty-root
+    boundary: fairtrade-component-target.assertComponentMounted at mount.rootChildCount
+    expectValid: false
+    expectedErrorContains: ['empty mounted root', 'field "rootChildCount"', 'at path mount.rootChildCount', 'repair:']
+  - name: component-mutation-error-display-root-fails
+    check: component-mutation
+    mutation: error-display-root
+    boundary: fairtrade-component-target.assertComponentMounted at mount.errorDisplay
+    expectValid: false
+    expectedErrorContains: ['error display is visible', 'field "errorDisplay"', 'at path mount.errorDisplay', 'repair:']
+  - name: component-mutation-wrong-theme-fails
+    check: component-mutation
+    mutation: wrong-theme
+    boundary: fairtrade-targets.observeProductTheme at theme.renderedAttribute
+    expectValid: false
+    expectedErrorContains: ['unexpected rendered theme', 'field "renderedAttribute"', 'at path theme.renderedAttribute', 'repair:']
+  - name: component-mutation-contradictory-theme-fails
+    check: component-mutation
+    mutation: contradictory-theme
+    boundary: fairtrade-targets.observeProductTheme at theme.observed
+    expectValid: false
+    expectedErrorContains: ['contradictory theme observation', 'field "observed"', 'at path theme.observed', 'repair:']
+  - name: component-mutation-missing-interaction-fails
+    check: component-mutation
+    mutation: missing-interaction
+    boundary: fairtrade-component-target.getComponentAction at target.action
+    expectValid: false
+    expectedErrorContains: ['unknown action', 'field "action"', 'at path target.action', 'repair:']
+  - name: component-mutation-non-completing-interaction-fails
+    check: component-mutation
+    mutation: non-completing-interaction
+    boundary: shared host contract through fairtrade-component-target.buildComponentProof at resolution.interaction.completed
+    expectValid: false
+    expectedErrorContains: ['incomplete result', 'at path resolution.interaction.completed', 'repair:']
+  - name: component-mutation-product-shaped-record-fails
+    check: component-mutation
+    mutation: product-shaped-record
+    boundary: fairtrade-component-target.buildComponentProof at proof.view
+    expectValid: false
+    expectedErrorContains: ['unknown field "view"', 'at path proof', 'repair:']
+  - name: component-mutation-cross-kind-product-shell-fails
+    check: component-mutation
+    mutation: cross-kind-product-shell
+    boundary: shared host contract through resolution.validateProductResolution at resolution.kind
+    expectValid: false
+    expectedErrorContains: ['cross-kind resolution', 'at path resolution.kind', 'repair:']
+  - name: component-mutation-cross-kind-product-record-fails
+    check: component-mutation
+    mutation: cross-kind-product-record
+    boundary: shared host contract through resolution.validateComponentResolution at resolution.chrome
+    expectValid: false
+    expectedErrorContains: ['product-only field "chrome"', 'at path resolution.chrome', 'repair:']
+  - name: component-mutation-stale-run-root-fails
+    check: component-mutation
+    mutation: stale-run-root
+    boundary: component-producer.prepareComponentRowDir at run.rowDir
+    expectValid: false
+    expectedErrorContains: ['stale artifact', 'record.json', 'at path run.rowDir', 'repair:']
+  - name: component-mutation-stale-artifact-fails
+    check: component-mutation
+    mutation: stale-artifact
+    boundary: component-producer.prepareComponentRowDir at run.rowDir
+    expectValid: false
+    expectedErrorContains: ['stale artifact', 'screenshot.png', 'at path run.rowDir', 'repair:']
+  - name: component-mutation-missing-artifact-fails
+    check: component-mutation
+    mutation: missing-artifact
+    boundary: component-producer.assertComponentArtifactSet at run.rowDir
+    expectValid: false
+    expectedErrorContains: ['missing artifact', '"aria.json"', 'at path run.rowDir', 'repair:']
+  - name: component-mutation-provenance-relative-unresolved-fails
+    check: component-mutation
+    mutation: provenance-relative-unresolved
+    boundary: component-producer.collectComponentServedAssets at provenance.assetDigests
+    expectValid: false
+    expectedErrorContains: ['cannot read served asset', 'missing-relative-asset.js', 'at path provenance.assetDigests', 'repair:']
+  - name: component-mutation-provenance-external-link-fails
+    check: component-mutation
+    mutation: provenance-external-link
+    boundary: component-producer.resolveComponentProvenanceRefs at provenance.assetDigests
+    expectValid: false
+    expectedErrorContains: ['references no asset files', 'field "assetDigests"', 'at path provenance.assetDigests', 'repair:']
+  - name: component-mutation-screenshot-floor-fails
+    check: component-mutation
+    mutation: screenshot-floor
+    boundary: component-producer.assertComponentScreenshotFloor at evidence.screenshot
+    expectValid: false
+    expectedErrorContains: ['blank screenshot', 'field "screenshot"', 'at path evidence.screenshot', 'repair:']
+  - name: component-mutation-aria-floor-fails
+    check: component-mutation
+    mutation: aria-floor
+    boundary: component-producer.assertComponentAriaFloor at evidence.aria
+    expectValid: false
+    expectedErrorContains: ['empty ARIA snapshot', 'field "aria"', 'at path evidence.aria', 'repair:']
+  - name: component-mutation-digest-mismatch-fails
+    check: component-mutation
+    mutation: digest-mismatch
+    boundary: product-producer.assertServedDigestsMatchRunRoot at provenance.assetDigests
+    expectValid: false
+    expectedErrorContains: ['assetDigests', 'at path provenance.assetDigests', 'repair:']

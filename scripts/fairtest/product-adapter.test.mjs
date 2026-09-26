@@ -86,6 +86,7 @@ const HOST_FILE_OWNERS = Object.freeze({
   'product-producer.mjs': 'browser-bearing-host-runtime',
   'product-mutations.mjs': 'browser-bearing-host-runtime',
   'component-producer.mjs': 'browser-bearing-host-runtime',
+  'component-mutations.mjs': 'browser-bearing-host-runtime',
 })
 const HOST_MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'stale-name', 'delete-field', 'rename-field', 'unknown-field', 'bad-value'])
 const IMPL_FILES = ['fairtrade-adapter.mjs', 'fairtrade-targets.mjs', 'fairtrade-component-target.mjs']
@@ -3511,6 +3512,7 @@ describe('fairtest host export ownership', async () => {
     'product-adapter.test.mjs',
     'product-mutations.test.mjs',
     'component-adapter.test.mjs',
+    'component-mutations.test.mjs',
     'product.journey.mjs',
     'component.journey.mjs',
     'run-mounted.mjs',

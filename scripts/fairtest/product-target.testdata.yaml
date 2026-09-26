@@ -1158,7 +1158,7 @@ cases:
   - name: config-port-owner-single-declaration
     check: port-owner
     ownerModule: scripts/fairtest/fairtest-runtime.mjs
-    consumerModules: [playwright.fairtest.config.mjs, scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.mjs, scripts/fairtest/product-producer.mjs, scripts/fairtest/product.journey.mjs, scripts/fairtest/component-producer.mjs, scripts/fairtest/component.journey.mjs]
+    consumerModules: [playwright.fairtest.config.mjs, scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.mjs, scripts/fairtest/product-producer.mjs, scripts/fairtest/product.journey.mjs, scripts/fairtest/component-producer.mjs, scripts/fairtest/component.journey.mjs, scripts/fairtest/component-mutations.mjs]
     portEnvName: FAIRTEST_APP_PORT
     expectValid: true
   - name: served-digests-match-the-run-build-tree
@@ -1201,8 +1201,8 @@ cases:
     check: product-contract-command
     commandName: test:fairtest:product-contract
     expectedScript: node scripts/fairtest/run-product-contract.mjs
-    expectedSuites: [scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/fairtest/component-adapter.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
-    expectedNodeArgs: ['--test', '--test-concurrency=1', scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/fairtest/component-adapter.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
+    expectedSuites: [scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/fairtest/component-adapter.test.mjs, scripts/fairtest/component-mutations.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
+    expectedNodeArgs: ['--test', '--test-concurrency=1', scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/fairtest/component-adapter.test.mjs, scripts/fairtest/component-mutations.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
     ciMountStatus: declared-not-ci
     workflowDir: .github/workflows
     expectValid: true

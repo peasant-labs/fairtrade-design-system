@@ -1,7 +1,7 @@
 # Required-name inventory and executable mutations for
 # host-ownership.testdata.yaml. Every row name must appear exactly once, and
 # every mutation must fail for its intended field.
-expectedExportCount: 111
+expectedExportCount: 125
 requiredExportNames:
   - fairtest-runtime-fairtest_repo_root
   - fairtest-runtime-fairtest_app_host
@@ -114,6 +114,20 @@ requiredExportNames:
   - component-producer-preparecomponentrowdir
   - component-producer-readcomponentaccessibilityverdict
   - component-producer-resolvecomponentrunroot
+  - component-producer-resolvecomponentprovenancerefs
+  - component-producer-collectcomponentservedassets
+  - component-producer-assertcomponentobservationtimes
+  - component-producer-assertcomponentartifactset
+  - component-producer-assertcomponentscreenshotfloor
+  - component-producer-assertcomponentariafloor
+  - component-mutations-component_config_test_match
+  - component-mutations-component_mutation_boundaries
+  - component-mutations-component_mutation_names
+  - component-mutations-assertcomponentartifactparity
+  - component-mutations-assertcomponentrunnerconfigmatchesjourneys
+  - component-mutations-provecomponentrootstatesrealpath
+  - component-mutations-readandassertcomponentrunnerconfig
+  - component-mutations-runcomponentmutation
 expectedMutationCount: 9
 requiredMutationNames:
   - unclassified-export-row-removed

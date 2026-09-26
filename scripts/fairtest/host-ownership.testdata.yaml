@@ -472,3 +472,59 @@ exports:
     file: component-producer.mjs
     symbol: resolveComponentRunRoot
     owner: browser-bearing-host-runtime
+  - name: component-producer-resolvecomponentprovenancerefs
+    file: component-producer.mjs
+    symbol: resolveComponentProvenanceRefs
+    owner: browser-bearing-host-runtime
+  - name: component-producer-collectcomponentservedassets
+    file: component-producer.mjs
+    symbol: collectComponentServedAssets
+    owner: browser-bearing-host-runtime
+  - name: component-producer-assertcomponentobservationtimes
+    file: component-producer.mjs
+    symbol: assertComponentObservationTimes
+    owner: browser-bearing-host-runtime
+  - name: component-producer-assertcomponentartifactset
+    file: component-producer.mjs
+    symbol: assertComponentArtifactSet
+    owner: browser-bearing-host-runtime
+  - name: component-producer-assertcomponentscreenshotfloor
+    file: component-producer.mjs
+    symbol: assertComponentScreenshotFloor
+    owner: browser-bearing-host-runtime
+  - name: component-producer-assertcomponentariafloor
+    file: component-producer.mjs
+    symbol: assertComponentAriaFloor
+    owner: browser-bearing-host-runtime
+  - name: component-mutations-component_config_test_match
+    file: component-mutations.mjs
+    symbol: COMPONENT_CONFIG_TEST_MATCH
+    owner: browser-bearing-host-runtime
+  - name: component-mutations-component_mutation_boundaries
+    file: component-mutations.mjs
+    symbol: COMPONENT_MUTATION_BOUNDARIES
+    owner: browser-bearing-host-runtime
+  - name: component-mutations-component_mutation_names
+    file: component-mutations.mjs
+    symbol: COMPONENT_MUTATION_NAMES
+    owner: browser-bearing-host-runtime
+  - name: component-mutations-assertcomponentartifactparity
+    file: component-mutations.mjs
+    symbol: assertComponentArtifactParity
+    owner: browser-bearing-host-runtime
+  - name: component-mutations-assertcomponentrunnerconfigmatchesjourneys
+    file: component-mutations.mjs
+    symbol: assertComponentRunnerConfigMatchesJourneys
+    owner: browser-bearing-host-runtime
+  - name: component-mutations-provecomponentrootstatesrealpath
+    file: component-mutations.mjs
+    symbol: proveComponentRootStatesRealPath
+    owner: browser-bearing-host-runtime
+  - name: component-mutations-readandassertcomponentrunnerconfig
+    file: component-mutations.mjs
+    symbol: readAndAssertComponentRunnerConfig
+    owner: browser-bearing-host-runtime
+  - name: component-mutations-runcomponentmutation
+    file: component-mutations.mjs
+    symbol: runComponentMutation
+    owner: browser-bearing-host-runtime

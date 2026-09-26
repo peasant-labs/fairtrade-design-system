@@ -1,0 +1,70 @@
+# Required-name inventory and executable mutations for
+# fairtest-component-evidence.yaml.
+expectedCaseCount: 22
+requiredCaseNames:
+  - component-evidence-artifact-record-present
+  - component-evidence-artifact-aria-present
+  - component-evidence-artifact-axe-present
+  - component-evidence-artifact-screenshot-present
+  - component-evidence-artifact-provenance-present
+  - component-evidence-artifact-resolution-present
+  - component-evidence-artifact-invented-seventh-fails
+  - component-evidence-artifact-parity-with-product
+  - component-evidence-verdict-gate-pass
+  - component-evidence-verdict-gate-failure-reads-fail
+  - component-evidence-verdict-ignores-informational-census
+  - component-evidence-verdict-unqualified-blocking-fails
+  - component-evidence-verdict-mislabeled-scope-fails
+  - component-evidence-verdict-mislabeled-root-fails
+  - component-evidence-verdict-scoped-contradiction-fails
+  - component-evidence-theme-present-empty-dark-passes
+  - component-evidence-theme-light-passes
+  - component-evidence-theme-contradiction-fails
+  - component-evidence-observation-time-real-passes
+  - component-evidence-observation-time-out-of-order-fails
+  - component-evidence-config-two-journeys-passes
+  - component-evidence-config-catalog-match-fails
+expectedMutationCount: 7
+requiredMutationNames:
+  - component-evidence-delete-verdict-case-breaks-required-inventory
+  - component-evidence-duplicate-artifact-case-breaks-uniqueness
+  - component-evidence-rename-check-discriminator-breaks-shape
+  - component-evidence-delete-verdict-field-breaks-shape
+  - component-evidence-invented-artifact-field-breaks-membership
+  - component-evidence-rename-case-breaks-required-names
+  - component-evidence-trailing-document-breaks-single-document-loading
+mutations:
+  - name: component-evidence-delete-verdict-case-breaks-required-inventory
+    kind: delete-record
+    target: component-evidence-verdict-gate-pass
+    expectedField: component-evidence-verdict-gate-pass
+  - name: component-evidence-duplicate-artifact-case-breaks-uniqueness
+    kind: duplicate-name
+    target: component-evidence-artifact-aria-present
+    expectedField: component-evidence-artifact-aria-present
+  - name: component-evidence-rename-check-discriminator-breaks-shape
+    kind: rename-field
+    target: component-evidence-artifact-record-present
+    field: check
+    newField: kind
+    expectedField: check
+  - name: component-evidence-delete-verdict-field-breaks-shape
+    kind: delete-field
+    target: component-evidence-verdict-gate-pass
+    field: accessibility
+    expectedField: accessibility
+  - name: component-evidence-invented-artifact-field-breaks-membership
+    kind: unknown-field
+    target: component-evidence-observation-time-real-passes
+    field: timeout
+    value: 60
+    expectedField: timeout
+  - name: component-evidence-rename-case-breaks-required-names
+    kind: stale-name
+    target: component-evidence-config-two-journeys-passes
+    value: component-evidence-config-renamed
+    expectedField: component-evidence-config-two-journeys-passes
+  - name: component-evidence-trailing-document-breaks-single-document-loading
+    kind: trailing-document
+    target: document
+    expectedField: document

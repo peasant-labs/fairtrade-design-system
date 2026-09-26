@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # component-target.testdata.yaml.
-expectedCaseCount: 41
+expectedCaseCount: 59
 requiredCaseNames:
   - component-row-dark-absent-theme-passes
   - component-row-dark-empty-theme-passes
@@ -43,7 +43,25 @@ requiredCaseNames:
   - component-record-product-identity-rejected
   - component-cannot-satisfy-product-shell-fails
   - product-record-rejected-as-component-fails
-expectedMutationCount: 13
+  - component-mutation-missing-root-fails
+  - component-mutation-empty-root-fails
+  - component-mutation-error-display-root-fails
+  - component-mutation-wrong-theme-fails
+  - component-mutation-contradictory-theme-fails
+  - component-mutation-missing-interaction-fails
+  - component-mutation-non-completing-interaction-fails
+  - component-mutation-product-shaped-record-fails
+  - component-mutation-cross-kind-product-shell-fails
+  - component-mutation-cross-kind-product-record-fails
+  - component-mutation-stale-run-root-fails
+  - component-mutation-stale-artifact-fails
+  - component-mutation-missing-artifact-fails
+  - component-mutation-provenance-relative-unresolved-fails
+  - component-mutation-provenance-external-link-fails
+  - component-mutation-screenshot-floor-fails
+  - component-mutation-aria-floor-fails
+  - component-mutation-digest-mismatch-fails
+expectedMutationCount: 19
 requiredMutationNames:
   - component-delete-dark-row-breaking-the-required-inventory
   - component-duplicate-case-name-breaks-uniqueness
@@ -58,6 +76,12 @@ requiredMutationNames:
   - component-invented-check-kind-breaks-the-vocabulary
   - component-delete-blanket-mounted-case-breaks-required-inventory
   - component-trailing-document-breaks-single-document-loading
+  - component-delete-mutation-case-breaks-required-inventory
+  - component-rename-mutation-boundary-breaks-shape
+  - component-delete-digest-mutation-breaks-required-inventory
+  - component-invented-mutation-breaks-the-vocabulary
+  - component-delete-cross-kind-mutation-breaks-required-inventory
+  - component-unknown-mutation-case-field-breaks-membership
 mutations:
   - name: component-delete-dark-row-breaking-the-required-inventory
     kind: delete-record
@@ -122,3 +146,33 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document
+  - name: component-delete-mutation-case-breaks-required-inventory
+    kind: delete-record
+    target: component-mutation-empty-root-fails
+    expectedField: component-mutation-empty-root-fails
+  - name: component-rename-mutation-boundary-breaks-shape
+    kind: rename-field
+    target: component-mutation-wrong-theme-fails
+    field: boundary
+    newField: owningBoundary
+    expectedField: boundary
+  - name: component-delete-digest-mutation-breaks-required-inventory
+    kind: delete-record
+    target: component-mutation-digest-mismatch-fails
+    expectedField: component-mutation-digest-mismatch-fails
+  - name: component-invented-mutation-breaks-the-vocabulary
+    kind: bad-value
+    target: component-mutation-empty-root-fails
+    field: mutation
+    value: invented-mutation
+    expectedField: invented-mutation
+  - name: component-delete-cross-kind-mutation-breaks-required-inventory
+    kind: delete-record
+    target: component-mutation-cross-kind-product-shell-fails
+    expectedField: component-mutation-cross-kind-product-shell-fails
+  - name: component-unknown-mutation-case-field-breaks-membership
+    kind: unknown-field
+    target: component-mutation-aria-floor-fails
+    field: timeout
+    value: 60
+    expectedField: timeout
