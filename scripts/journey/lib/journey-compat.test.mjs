@@ -123,41 +123,6 @@ function callShape(row, scanAxe) {
 }
 
 /**
- * Build a fake tree handle serving one canned attribute value.
- * @param {unknown} renderedAttribute canned raw attribute value, absent as nullish
- */
-function fakeThemeTree(renderedAttribute) {
-  return {
-    locator: (selector) => ({
-      getAttribute: async (attributeName) => {
-        assert.equal(selector, 'html', 'expectTheme must read the root element')
-        assert.equal(attributeName, 'data-theme', 'expectTheme must read the rendered theme attribute')
-        return renderedAttribute
-      },
-    }),
-  }
-}
-
-/**
- * Build a fake tree whose rendered theme settles after darkReads dark reads,
- * modelling a consumer theme toggle that writes data-theme asynchronously.
- * @param {object} [input] settling behavior
- */
-function fakeSettlingThemeTree({ darkReads = 3, settledValue = 'light' } = {}) {
-  let calls = 0
-  return {
-    calls: () => calls,
-    locator: () => ({
-      getAttribute: async () => {
-        calls += 1
-        await new Promise((responseResolve) => setTimeout(responseResolve, 5))
-        return calls <= darkReads ? null : settledValue
-      },
-    }),
-  }
-}
-
-/**
  * Copy the shared helper bodies into a temporary consumer tree that holds
  * nothing else, then load the copy through that tree's own resolution. The
  * doubles model only the delegated surface of the two declared dependencies:
