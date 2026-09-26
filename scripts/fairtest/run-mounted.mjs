@@ -9,12 +9,10 @@
 // first-class --grep. Both the product and the component journey live under
 // the same config; no second config, project, or catalog is added.
 //
-// REQUIRED-CI MOUNT: DEFERRED. This command is the evidence path for the
-// mounted product and component rows, but no required CI workflow invokes it
-// yet. Declared is not the same as enforced, and the banner plus
-// MOUNTED_REQUIRED_CI_MOUNT exist so a reader cannot read one as the other.
-// Mounting it in required CI is a separate, later change that must also flip
-// this status and the case in the product fixture family that reads it.
+// REQUIRED-CI MOUNT: ENFORCED. The Fairtest required-CI job in
+// .github/workflows/ci.yml invokes this command twice (--target=product and
+// --target=component) after the clean app and Storybook builds, so the mounted
+// product and component rows are now enforced rather than merely declared.
 import { spawnSync } from 'node:child_process'
 
 /**
@@ -30,16 +28,16 @@ export const MOUNTED_TARGET_GREPS = Object.freeze({
 })
 
 /**
- * What this command is, and what it is not yet. `status: 'declared-not-ci'`
- * is the observable statement that the command exists and runs locally but is
- * not yet enforced by any required CI workflow; `enforcedBy` names who owns
- * the remaining mount without pretending it is done.
+ * What this command is. `status: 'mounted'` is the observable statement that a
+ * required CI workflow invokes the command; `enforcedBy` names the job that
+ * mounts it, and the mounted-command fixture case requires a workflow to
+ * reference this command while the status is not `declared-not-ci`.
  * @type {{ status: string, enforcedBy: string, reason: string }}
  */
 export const MOUNTED_REQUIRED_CI_MOUNT = Object.freeze({
-  status: 'declared-not-ci',
-  enforcedBy: 'the Fairtest required-CI job, in the change that mounts it',
-  reason: 'no required CI workflow invokes this command yet, so a green CI run does not yet prove it',
+  status: 'mounted',
+  enforcedBy: '"Fairtest mounted product producer" and "Fairtest mounted component producer" in .github/workflows/ci.yml',
+  reason: 'a required CI workflow invokes this command, so a green CI run proves the mounted rows ran',
 })
 
 /**

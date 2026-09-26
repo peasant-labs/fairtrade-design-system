@@ -114,7 +114,7 @@ requiredCaseNames:
   - mounted-row-guard-calls-cover-the-pre-action-point
   - mounted-row-guard-calls-cover-the-post-action-point
   - product-contract-command-runs-every-suite
-  - mounted-command-declares-its-deferred-ci-mount
+  - mounted-command-declares-its-ci-mount
   - combined-suite-invocation-runs-both-browser-suites
   - host-literal-guard-sees-template-literal-selectors
   - served-digests-match-the-run-build-tree
@@ -128,7 +128,7 @@ requiredMutationNames:
   - product-contract-command-names-another-command
   - product-contract-command-drops-serial-execution
   - mounted-command-names-another-command
-  - mounted-command-declares-enforced-without-a-mount
+  - mounted-command-declares-a-wrong-mount-status
   - port-owner-consumer-inventory-drops-a-consumer
   - host-literal-guard-mutation-moves-no-literal
   - a11y-record-receipt-without-an-observed-point
@@ -225,13 +225,13 @@ mutations:
     expectedField: expectedNodeArgs
   - name: mounted-command-names-another-command
     kind: bad-value
-    target: mounted-command-declares-its-deferred-ci-mount
+    target: mounted-command-declares-its-ci-mount
     field: commandName
     value: test:fairtest:product-contract
     expectedField: commandName
-  - name: mounted-command-declares-enforced-without-a-mount
+  - name: mounted-command-declares-a-wrong-mount-status
     kind: bad-value
-    target: mounted-command-declares-its-deferred-ci-mount
+    target: mounted-command-declares-its-ci-mount
     field: ciMountStatus
     value: enforced
     expectedField: ciMountStatus

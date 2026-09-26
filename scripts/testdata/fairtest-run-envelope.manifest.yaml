@@ -1,0 +1,126 @@
+# Required-name manifest for the Fairtest run-envelope fixture family.
+# Every case below must appear exactly once in
+# scripts/testdata/fairtest-run-envelope.yaml. The fixture-shape mutations
+# protect the family record; the workflow mutations protect the CI guard by
+# editing the real .github/workflows/ci.yml text and requiring the guard to
+# fail for its intended field.
+expectedCaseCount: 29
+requiredCaseNames:
+  - ci-key-set-is-exact
+  - ci-key-set-rejects-a-missing-key
+  - ci-key-set-rejects-an-extra-key
+  - ci-key-set-rejects-a-local-key
+  - local-key-set-is-exact
+  - local-key-set-rejects-a-ci-key
+  - key-set-rejects-a-duplicate
+  - key-set-rejects-an-unknown-mode
+  - pre-service-flow-writes-every-owned-subtree
+  - init-rejects-a-missing-root
+  - init-rejects-a-wrong-root
+  - init-rejects-a-prior-root
+  - select-rejects-a-prior-selection
+  - select-rejects-another-runs-envelope
+  - receipt-rejects-a-missing-selection
+  - receipt-rejects-a-tampered-envelope-binding
+  - preflight-rejects-a-missing-root
+  - preflight-rejects-a-missing-envelope
+  - preflight-rejects-a-missing-inventory-receipt
+  - preflight-rejects-a-missing-selection-receipt
+  - preflight-rejects-incomplete-evidence
+  - preflight-rejects-a-tampered-selection-digest
+  - preflight-accepts-a-complete-run
+  - verify-rejects-a-prior-evidence-report
+  - budget-stages-sum-to-the-declared-total
+  - envelope-shape-is-pinned
+  - workflow-declares-the-pinned-upload-and-always-preflight
+  - workflow-orders-the-run-after-builds-and-before-existing-gates
+  - workflow-declares-the-bounded-fairtest-budget
+expectedMutationCount: 8
+requiredMutationNames:
+  - deleted-required-case
+  - stale-case-name
+  - duplicate-case-name
+  - dropped-case-check
+  - unknown-case-field
+  - drifted-ci-key-set
+  - drifted-local-key-set
+  - trailing-document
+mutations:
+  - name: deleted-required-case
+    kind: delete-record
+    target: case:ci-key-set-is-exact
+    expectedField: ci-key-set-is-exact
+  - name: stale-case-name
+    kind: stale-name
+    target: case:ci-key-set-is-exact
+    value: ci-key-set-renamed
+    expectedField: ci-key-set-renamed
+  - name: duplicate-case-name
+    kind: duplicate-name
+    target: case:pre-service-flow-writes-every-owned-subtree
+    expectedField: pre-service-flow-writes-every-owned-subtree
+  - name: dropped-case-check
+    kind: delete-field
+    target: case:ci-key-set-is-exact
+    field: check
+    expectedField: check
+  - name: unknown-case-field
+    kind: unknown-field
+    target: case:ci-key-set-is-exact
+    field: timeout
+    value: 60
+    expectedField: timeout
+  - name: drifted-ci-key-set
+    kind: bad-value
+    target: keySet:ci
+    field: keys
+    value: [product-dark, product-light, component-dark]
+    expectedField: keySets.ci.keys
+  - name: drifted-local-key-set
+    kind: bad-value
+    target: keySet:local
+    field: keys
+    value: [product-dark]
+    expectedField: keySets.local.keys
+  - name: trailing-document
+    kind: trailing-document
+    target: document
+    expectedField: document[1]
+expectedWorkflowMutationCount: 7
+requiredWorkflowMutationNames:
+  - workflow-upload-pin-becomes-a-tag
+  - workflow-upload-drops-no-files-error
+  - workflow-upload-drops-always
+  - workflow-upload-retention-unbounded
+  - workflow-budget-env-drifts
+  - workflow-drops-the-verification-step
+  - workflow-drops-the-journey-gates
+workflowMutations:
+  - name: workflow-upload-pin-becomes-a-tag
+    find: "      - name: Fairtest evidence upload\n        if: always()\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2\n"
+    replace: "      - name: Fairtest evidence upload\n        if: always()\n        uses: actions/upload-artifact@v4 # v4.6.2\n"
+    expectedField: upload-artifact
+  - name: workflow-upload-drops-no-files-error
+    find: "          if-no-files-found: error\n"
+    replace: ''
+    expectedField: if-no-files-found
+  - name: workflow-upload-drops-always
+    find: "      - name: Fairtest evidence preflight\n        if: always()\n"
+    replace: "      - name: Fairtest evidence preflight\n"
+    expectedField: always()
+  - name: workflow-upload-retention-unbounded
+    find: "          retention-days: 14\n"
+    replace: "          retention-days: 90\n"
+    expectedField: retention-days
+  - name: workflow-budget-env-drifts
+    find: "      FAIRTEST_BUDGET_MINUTES: \"24\"\n"
+    replace: "      FAIRTEST_BUDGET_MINUTES: \"90\"\n"
+    expectedField: FAIRTEST_BUDGET_MINUTES
+  - name: workflow-drops-the-verification-step
+    find: "      - name: Fairtest evidence verification\n        run: pnpm test:fairtest:verify\n"
+    replace: ''
+    expectedField: Fairtest evidence verification
+  - name: workflow-drops-the-journey-gates
+    find: "      - name: Journey gates\n        run: pnpm journey:ci\n"
+    replace: ''
+    expectedField: pnpm journey:ci

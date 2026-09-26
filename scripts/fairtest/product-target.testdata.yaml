@@ -1206,11 +1206,11 @@ cases:
     ciMountStatus: declared-not-ci
     workflowDir: .github/workflows
     expectValid: true
-  - name: mounted-command-declares-its-deferred-ci-mount
+  - name: mounted-command-declares-its-ci-mount
     check: mounted-command
     commandName: test:fairtest:mounted
     expectedScript: node scripts/fairtest/run-mounted.mjs
-    ciMountStatus: declared-not-ci
+    ciMountStatus: mounted
     workflowDir: .github/workflows
     expectValid: true
   - name: combined-suite-invocation-runs-both-browser-suites

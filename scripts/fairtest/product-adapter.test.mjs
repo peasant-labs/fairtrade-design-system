@@ -3562,6 +3562,13 @@ describe('fairtest host export ownership', async () => {
     'run-product-contract.mjs',
     'verify-fairtest.mjs',
     'fairtest-evidence-policy.mjs',
+    'run-envelope-contract.mjs',
+    'init-fairtest.mjs',
+    'list-fairtest.mjs',
+    'select-fairtest.mjs',
+    'selection-receipt.mjs',
+    'preflight-fairtest.mjs',
+    'run-envelope.test.mjs',
   ])
   const hostModules = {}
   for (const file of hostFiles) {

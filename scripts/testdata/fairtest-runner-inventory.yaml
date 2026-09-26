@@ -70,25 +70,23 @@ commands:
     owner: mounted-proofs
     stage: mounted
     runner: playwright-one-project
-  # REQUIRED-CI MOUNT: DEFERRED for both mounted-stage commands. Each row is
-  # the required local contract for its own evidence path, but no required CI
-  # workflow invokes either yet (see scripts/fairtest/run-product-contract.mjs
-  # and scripts/fairtest/run-mounted.mjs, which print the same status on every
-  # run). The mounted command runs the product rows through the one-project
-  # Playwright config; the product-contract command runs the seven contract
-  # suites in one node --test invocation with --test-concurrency=1, because
-  # two of them open real browsers and throwaway loopback listeners.
+  # REQUIRED-CI MOUNT: ENFORCED for the mounted command. The Fairtest required-CI
+  # job in .github/workflows/ci.yml invokes it twice (--target=product and
+  # --target=component) after the clean app and Storybook builds, so a green CI
+  # run proves the mounted rows ran. DEFERRED for the product-contract command,
+  # which remains the required local contract but is not yet invoked by a
+  # required workflow; two of its seven suites open real browsers and throwaway
+  # loopback listeners, so it runs in one node --test invocation with
+  # --test-concurrency=1.
   - name: test:fairtest:product-contract
     invocation: pnpm test:fairtest:product-contract
     owner: mounted-proofs
     stage: mounted
     runner: process-only
-  # REQUIRED-CI MOUNT: DEFERRED for the browser-neutral verifier too. The
-  # verifier command is required in the runner inventory and runnable from a
-  # clean checkout, but no required CI workflow invokes it yet; the command
-  # prints the same declared-not-ci status on every run
-  # (scripts/fairtest/verify-fairtest.mjs). Mounting it in required CI is a
-  # separate, later change that must also flip that status.
+  # REQUIRED-CI MOUNT: ENFORCED for the browser-neutral verifier. The Fairtest
+  # required-CI job invokes it after the mounted producers, so the verifier is
+  # enforced rather than merely declared. The preflight command runs after it,
+  # with `if: always()`, and the whole run root uploads with a pinned action.
   - name: test:fairtest:verify
     invocation: pnpm test:fairtest:verify
     owner: evidence-ci

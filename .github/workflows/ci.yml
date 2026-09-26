@@ -104,6 +104,17 @@ jobs:
       # repo out under a deep work path that would exceed the unix socket path
       # limit. Point temp files at /tmp so the browser gates can launch.
       TMPDIR: /tmp
+      # The one Fairtest run identity and the one run root. Every Fairtest
+      # command in this job reads exactly these; no command re-declares a root
+      # or an id. The root is absolute and its final segment is the run id, so
+      # the envelope can tell its own root apart from another run's.
+      FAIRTEST_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+      FAIRTEST_RUN_ROOT: ${{ github.workspace }}/review-capture/fairtest/${{ github.run_id }}-${{ github.run_attempt }}
+      # The explicit Fairtest budget inside this unchanged 30-minute job. The
+      # run envelope records the same total and per-stage minutes; a drift
+      # between this declaration, the envelope, and the job timeout fails the
+      # workflow guard.
+      FAIRTEST_BUDGET_MINUTES: "24"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -146,6 +157,69 @@ jobs:
       # vite-preview/wait-on steps that could drift from the asserted URL.
       - name: Build Storybook
         run: pnpm build-storybook
+
+      # Fairtest durable evidence: one immutable run envelope, the browser-free
+      # pre-service contracts (inventory, list, selection, selection receipt),
+      # the bounded product/component producer, then verification, an always-run
+      # preflight, and a pinned whole-root upload. The 24-minute Fairtest budget
+      # is declared in guards/run-envelope.json and enforced by the preflight;
+      # the enclosing 30-minute job is unchanged.
+      - name: Fairtest run envelope
+        run: pnpm test:fairtest:init
+
+      # The browser-free contracts run before any service starts: the promotion
+      # record, the four child contract commands, and the runner inventory.
+      - name: Fairtest browser-free contracts
+        run: |
+          pnpm test:fairtest:promotion
+          pnpm --filter @peasant-labs/fairtest test:core
+          pnpm --filter @peasant-labs/fairtest test:adapter
+          pnpm --filter @peasant-labs/fairtest test:evidence
+          pnpm --filter @peasant-labs/fairtest test:bridge-contract
+          pnpm test:fairtest:inventory
+
+      - name: Fairtest inventory and selection (browser-free, before services)
+        run: |
+          pnpm test:fairtest:list:ci
+          pnpm test:fairtest:list:local
+          pnpm test:fairtest:select
+          pnpm test:fairtest:selection-receipt
+
+      # The bounded producer starts the one adapter-managed loopback service and
+      # writes a fresh producer/ subtree; JOURNEY_HTML=0 keeps report generation
+      # out of the budget. retries: 0 is declared by the one-project Fairtest
+      # Playwright config.
+      - name: Fairtest mounted product producer
+        env:
+          JOURNEY_HTML: "0"
+        run: pnpm test:fairtest:mounted -- --target=product
+
+      - name: Fairtest mounted component producer
+        env:
+          JOURNEY_HTML: "0"
+        run: pnpm test:fairtest:mounted -- --target=component
+
+      - name: Fairtest evidence verification
+        run: pnpm test:fairtest:verify
+
+      # Always runs, including after a producer failure, so the retained partial
+      # producer output is reported before the upload. It fails closed when any
+      # owned subtree is missing or inconsistent.
+      - name: Fairtest evidence preflight
+        if: always()
+        run: pnpm test:fairtest:preflight
+
+      # Uploads the WHOLE run root, including partial producer output on
+      # failure. The action is pinned to a full commit SHA, the upload fails
+      # when no files are found, and retention is bounded.
+      - name: Fairtest evidence upload
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fairtest-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.FAIRTEST_RUN_ROOT }}
+          if-no-files-found: error
+          retention-days: 14
 
       # gate 3: element journeys (story smoke over the whole catalog, the
       # twenty app checks, the SessionGroupDisclosure interaction) through

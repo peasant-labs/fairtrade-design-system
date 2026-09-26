@@ -11,10 +11,9 @@
 //
 // Invocation: FAIRTEST_RUN_ROOT=<run-root> FAIRTEST_RUN_ID=<run-id> pnpm test:fairtest:verify
 //
-// REQUIRED-CI MOUNT: DEFERRED. This command is required in the runner
-// inventory and runnable from a clean checkout, but no required CI workflow
-// invokes it yet. Declared is not the same as enforced, and the banner plus
-// VERIFY_REQUIRED_CI_MOUNT exist so a reader cannot read one as the other.
+// REQUIRED-CI MOUNT: ENFORCED. The Fairtest required-CI job in
+// .github/workflows/ci.yml invokes this command after the mounted producers, so
+// the browser-neutral verifier is now enforced rather than merely declared.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
@@ -23,16 +22,15 @@ import { FAIRTEST_EVIDENCE_ROW_KEYS, fairtestEvidencePolicyInput } from './fairt
 const evidence = await importFairtestSource('src/evidence/index.mjs')
 
 /**
- * What this command is, and what it is not yet. `status: 'declared-not-ci'` is
- * the observable statement that the command exists and runs locally but is not
- * yet enforced by any required CI workflow; `enforcedBy` names who owns the
- * remaining mount without pretending it is done.
+ * What this command is. `status: 'mounted'` is the observable statement that a
+ * required CI workflow invokes the command; `enforcedBy` names the job that
+ * mounts it.
  * @type {{ status: string, enforcedBy: string, reason: string }}
  */
 export const VERIFY_REQUIRED_CI_MOUNT = Object.freeze({
-  status: 'declared-not-ci',
-  enforcedBy: 'the Fairtest required-CI job, in the change that mounts it',
-  reason: 'no required CI workflow invokes this command yet, so a green CI run does not yet prove it',
+  status: 'mounted',
+  enforcedBy: '"Fairtest evidence verification" in .github/workflows/ci.yml',
+  reason: 'a required CI workflow invokes this command, so a green CI run proves the verifier ran',
 })
 
 /**
@@ -163,6 +161,17 @@ function main() {
   }
   const envelopeRunId = readEnvelopeRunId(root)
   const runId = envelopeRunId ?? expectedRunId
+  // The verifier owns a FRESH evidence/ subtree. A prior report means this
+  // root already carries a verifier result, so a rerun would silently replace
+  // one run's evidence with another's; refuse before reading any producer row.
+  const priorReportPath = join(root, 'evidence', 'evidence.json')
+  if (existsSync(priorReportPath)) {
+    throw new Error(
+      'fairtest verify: prior evidence present for field "evidence" at path evidence/evidence.json; ' +
+      `found ${JSON.stringify(priorReportPath)}; ` +
+      'repair: use a fresh FAIRTEST_RUN_ROOT per run so the verifier writes evidence/ once.',
+    )
+  }
   const policy = evidence.createEvidencePolicy(fairtestEvidencePolicyInput(expectedRunId))
   const rows = []
   for (const required of policy.requiredRows) {

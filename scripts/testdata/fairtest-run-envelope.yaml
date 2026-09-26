@@ -1,0 +1,147 @@
+# Protected Fairtest run-envelope cases.
+#
+# One immutable run root carries exactly four exclusive subtrees (guards,
+# selection, producer, evidence). This file declares the two closed key sets and
+# the named cases scripts/fairtest/run-envelope.test.mjs executes against the
+# real command modules. Combinatorial and negative cases live here, never
+# inline; the required-name manifest protects every case name.
+#
+# keySets: the exact expected key set per selection mode. The CI set is the four
+# one-theme producer keys and must equal the verifier's required rows; the local
+# set is exploration-only and must never enter CI evidence.
+keySets:
+  ci:
+    keys:
+      - product-dark
+      - product-light
+      - component-dark
+      - component-light
+  local:
+    keys:
+      - local-product-dark
+      - local-product-light
+expectedCaseCount: 29
+cases:
+  - name: ci-key-set-is-exact
+    check: key-set
+    mode: ci
+    keys: [product-dark, product-light, component-dark, component-light]
+    expectValid: true
+  - name: ci-key-set-rejects-a-missing-key
+    check: key-set
+    mode: ci
+    keys: [product-dark, product-light, component-dark]
+    expectValid: false
+    expectedErrorContains: ['keys', 'at path selection.keys', 'missing', 'repair:']
+  - name: ci-key-set-rejects-an-extra-key
+    check: key-set
+    mode: ci
+    keys: [product-dark, product-light, component-dark, component-light, extra-row]
+    expectValid: false
+    expectedErrorContains: ['keys', 'at path selection.keys', 'extra', 'repair:']
+  - name: ci-key-set-rejects-a-local-key
+    check: key-set
+    mode: ci
+    keys: [product-dark, product-light, component-dark, local-product-light]
+    expectValid: false
+    expectedErrorContains: ['keys', 'at path selection.keys', 'cross-mode', 'repair:']
+  - name: local-key-set-is-exact
+    check: key-set
+    mode: local
+    keys: [local-product-dark, local-product-light]
+    expectValid: true
+  - name: local-key-set-rejects-a-ci-key
+    check: key-set
+    mode: local
+    keys: [local-product-dark, product-dark]
+    expectValid: false
+    expectedErrorContains: ['keys', 'at path selection.keys', 'cross-mode', 'repair:']
+  - name: key-set-rejects-a-duplicate
+    check: key-set
+    mode: ci
+    keys: [product-dark, product-dark, component-dark, component-light]
+    expectValid: false
+    expectedErrorContains: ['keys', 'at path selection.keys', 'duplicate', 'repair:']
+  - name: key-set-rejects-an-unknown-mode
+    check: key-set
+    mode: nightly
+    keys: [product-dark]
+    expectValid: false
+    expectedErrorContains: ['mode', 'at path selection.mode', 'repair:']
+  - name: pre-service-flow-writes-every-owned-subtree
+    check: pre-service-flow
+    mode: ci
+  - name: init-rejects-a-missing-root
+    check: init-missing-root
+    expectValid: false
+    expectedErrorContains: ['FAIRTEST_RUN_ROOT', 'at path run.root', 'repair:']
+  - name: init-rejects-a-wrong-root
+    check: init-wrong-root
+    expectValid: false
+    expectedErrorContains: ['wrong run root', 'at path run.root', 'repair:']
+  - name: init-rejects-a-prior-root
+    check: init-prior-root
+    expectValid: false
+    expectedErrorContains: ['prior run envelope', 'at path guards/run-envelope.json', 'repair:']
+  - name: select-rejects-a-prior-selection
+    check: select-prior-selection
+    expectValid: false
+    expectedErrorContains: ['prior selection', 'at path selection/expected-selection.json', 'repair:']
+  - name: select-rejects-another-runs-envelope
+    check: select-run-id-mismatch
+    expectValid: false
+    expectedErrorContains: ['another run', 'at path guards/run-envelope.json', 'repair:']
+  - name: receipt-rejects-a-missing-selection
+    check: receipt-missing-selection
+    expectValid: false
+    expectedErrorContains: ['missing expected selection', 'at path selection/expected-selection.json', 'repair:']
+  - name: receipt-rejects-a-tampered-envelope-binding
+    check: receipt-tampered-envelope
+    expectValid: false
+    expectedErrorContains: ['runEnvelopeDigest', 'at path selection/expected-selection.json.runEnvelopeDigest', 'repair:']
+  - name: preflight-rejects-a-missing-root
+    check: preflight-missing-root
+    expectValid: false
+    expectedErrorContains: ['FAIRTEST_RUN_ROOT', 'at path run.root', 'repair:']
+  - name: preflight-rejects-a-missing-envelope
+    check: preflight-missing-envelope
+    expectValid: false
+    expectedErrorContains: ['missing run envelope', 'at path guards/run-envelope.json', 'repair:']
+  - name: preflight-rejects-a-missing-inventory-receipt
+    check: preflight-missing-inventory-receipt
+    expectValid: false
+    expectedErrorContains: ['inventory-ci-receipt.json', 'ownedFiles', 'repair:']
+  - name: preflight-rejects-a-missing-selection-receipt
+    check: preflight-missing-selection-receipt
+    expectValid: false
+    expectedErrorContains: ['selection-receipt.json', 'ownedFiles', 'repair:']
+  - name: preflight-rejects-incomplete-evidence
+    check: preflight-incomplete-evidence
+    expectValid: false
+    expectedErrorContains: ['complete', 'at path evidence/evidence.json.complete', 'repair:']
+  - name: preflight-rejects-a-tampered-selection-digest
+    check: preflight-selection-digest-mismatch
+    expectValid: false
+    expectedErrorContains: ['selectionDigest', 'at path guards/selection-receipt.json.selectionDigest', 'repair:']
+  - name: preflight-accepts-a-complete-run
+    check: preflight-complete-run
+    expectValid: true
+  - name: verify-rejects-a-prior-evidence-report
+    check: verify-prior-evidence
+    expectValid: false
+    expectedErrorContains: ['prior evidence', 'at path evidence/evidence.json', 'repair:']
+  - name: budget-stages-sum-to-the-declared-total
+    check: budget-sum
+    expectValid: true
+  - name: envelope-shape-is-pinned
+    check: envelope-shape
+    expectValid: true
+  - name: workflow-declares-the-pinned-upload-and-always-preflight
+    check: workflow
+    expectValid: true
+  - name: workflow-orders-the-run-after-builds-and-before-existing-gates
+    check: workflow-order
+    expectValid: true
+  - name: workflow-declares-the-bounded-fairtest-budget
+    check: workflow-budget
+    expectValid: true

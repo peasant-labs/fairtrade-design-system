@@ -51,7 +51,7 @@ export default defineConfig({
   timeout: 120_000,
   expect: { timeout: 15_000 },
   outputDir: RUN_ROOT
-    ? `${RUN_ROOT}/playwright-output`
+    ? `${RUN_ROOT}/producer/playwright-diagnostics`
     : './node_modules/.cache/fairtest-playwright',
   reporter: [['list']],
   use: {
