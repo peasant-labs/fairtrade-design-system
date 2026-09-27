@@ -116,15 +116,15 @@ records:
     exitCondition: Fold the rule into a compiler or lint constraint, or delete the guard once a lower-level package check observes the same host-kind branch boundary.
   - name: fairtest-raw-path-literal-guard
     answers:
-      subject: No non-test module under scripts/fairtest/ or the Fairtest root guards may carry a bare repository-path literal outside scripts/fairtest/fairtest-paths.mjs.
+      subject: No module under scripts/fairtest/ or the Fairtest root guards may carry a bare repository-path literal outside scripts/fairtest/fairtest-paths.mjs.
       necessity: A value or contract test observes the path values the harness reads but cannot see the source of an arbitrary module; only a source scan over the real tree catches a new hardcoded build root, child path, or testdata corpus that would drift from the single owner.
-      productionPath: pnpm test:fairtest:paths (node scripts/fairtest/assert-fairtest-paths.mjs) scans the real scripts/fairtest tree plus the four Fairtest root guards with a lexer that ignores comments and template text, then applies one named mutation in a scratch module.
+      productionPath: pnpm test:fairtest:paths (node scripts/fairtest/assert-fairtest-paths.mjs) scans the real scripts/fairtest tree including its test modules plus the Fairtest root guards with a lexer that skips comments and treats a substitution-free template literal as its text, then applies three named mutations in scratch modules.
       cost: One browser-free node process, one readdir plus one readFile per scanned .mjs module, and one scratch directory for the mutation; no service, browser, network, or durable output.
       lifetime: No temporary state on the passing path; the mutation creates one mkdtemp directory under the OS temp dir and removes it with rmSync in a finally step on every exit path.
       concurrency: Read-only over the shared tree; the mutation scratch directory is mkdtemp-unique, so parallel runs cannot share a path and no port or identity is claimed.
       ciParity: The exact command pnpm test:fairtest:paths runs from a clean checkout under the pinned Node toolchain with the pinned yaml devDependency in the browser-free contracts step of the pinned Fairtest CI job, so a stray hardcoded build root or testdata corpus turns required CI red.
       evidence: A machine-readable pass line naming the scanned module count, plus, on refusal, a diagnostic naming the module, line, literal, path context, and repair guidance; the named mutation asserts the literal and the repair substring.
-      mutation: raw-literal-plant writes const DIST_ROOT = join(FAIRTEST_REPO_ROOT, 'dist') into a scratch module, runs the raw-literal guard over that directory, and asserts the guard names "dist" and the repair instead of passing it.
+      mutation: raw-literal-plant writes const DIST_ROOT = join(FAIRTEST_REPO_ROOT, 'dist') into a scratch module; test-file-literal-plant plants the same literal in a scratch test module; and path-escape-plant feeds a parent-directory traversal. Each runs the guard and asserts it names the literal or the refusal with the repair instead of passing.
       exitCondition: Fold the rule into a compiler or lint constraint, or delete the guard once a lower-level package check observes the same repository-path-literal boundary.
     lowerLayer:
       result: promote
