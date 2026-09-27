@@ -93,7 +93,7 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document[1]
-expectedWorkflowMutationCount: 9
+expectedWorkflowMutationCount: 13
 requiredWorkflowMutationNames:
   - workflow-upload-pin-becomes-a-tag
   - workflow-upload-drops-no-files-error
@@ -104,6 +104,10 @@ requiredWorkflowMutationNames:
   - workflow-drops-the-journey-gates
   - workflow-drops-the-envelope-guard
   - workflow-drops-the-compat-gate
+  - workflow-drops-the-type-program-gate
+  - workflow-drops-the-type-coverage-gate
+  - workflow-drops-the-paths-gate
+  - workflow-drops-the-boundary-gate
 workflowMutations:
   - name: workflow-upload-pin-becomes-a-tag
     find: "      - name: Fairtest evidence upload\n        if: always()\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2\n"
@@ -141,6 +145,22 @@ workflowMutations:
     find: "          pnpm test:fairtest:compat\n"
     replace: ''
     expectedField: test:fairtest:compat
+  - name: workflow-drops-the-type-program-gate
+    find: "          pnpm test:fairtest:types\n"
+    replace: ''
+    expectedField: test:fairtest:types
+  - name: workflow-drops-the-type-coverage-gate
+    find: "          pnpm test:fairtest:type-coverage\n"
+    replace: ''
+    expectedField: test:fairtest:type-coverage
+  - name: workflow-drops-the-paths-gate
+    find: "          pnpm test:fairtest:paths\n"
+    replace: ''
+    expectedField: test:fairtest:paths
+  - name: workflow-drops-the-boundary-gate
+    find: "          pnpm test:fairtest:boundary\n"
+    replace: ''
+    expectedField: test:fairtest:boundary
 expectedSourceMutationCount: 5
 requiredSourceMutationNames:
   - dropped-process-receipt-requirement

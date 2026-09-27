@@ -594,10 +594,18 @@ function inspectWorkflowOrder(text) {
     }
   }
   // The cheap browser-free guards must actually run in the contracts step: the
-  // run-envelope wiring guard and the SurfaceGate compatibility gate are
-  // required gates, so dropping either command turns this guard red.
+  // type program and its coverage, path, and boundary guards, the run-envelope
+  // wiring guard, and the SurfaceGate compatibility gate are required gates, so
+  // dropping any command turns this guard red.
   const browserFree = stepByName(steps, 'Fairtest browser-free contracts')
-  for (const command of ['pnpm test:fairtest:envelope', 'pnpm test:fairtest:compat']) {
+  for (const command of [
+    'pnpm test:fairtest:types',
+    'pnpm test:fairtest:type-coverage',
+    'pnpm test:fairtest:paths',
+    'pnpm test:fairtest:boundary',
+    'pnpm test:fairtest:envelope',
+    'pnpm test:fairtest:compat',
+  ]) {
     if (!String(browserFree.run ?? '').includes(command)) {
       workflowFail(command, `the browser-free contracts step must run ${command}, observed ${JSON.stringify(browserFree.run)}`)
     }

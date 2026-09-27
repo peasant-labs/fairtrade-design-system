@@ -167,12 +167,17 @@ jobs:
       - name: Fairtest run envelope
         run: pnpm test:fairtest:init
 
-      # The browser-free contracts run before any service starts: the promotion
+      # The browser-free contracts run before any service starts: the type
+      # program with its coverage, path, and boundary guards, the promotion
       # record, the four child contract commands, the runner inventory, the
       # run-envelope wiring guard (which pins the upload SHA and always-run
       # steps), and the SurfaceGate compatibility gate.
       - name: Fairtest browser-free contracts
         run: |
+          pnpm test:fairtest:types
+          pnpm test:fairtest:type-coverage
+          pnpm test:fairtest:paths
+          pnpm test:fairtest:boundary
           pnpm test:fairtest:promotion
           pnpm --filter @peasant-labs/fairtest test:core
           pnpm --filter @peasant-labs/fairtest test:adapter
