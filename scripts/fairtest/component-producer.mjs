@@ -31,7 +31,8 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import http from 'node:http'
 import { join, resolve } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
-import { FAIRTEST_APP_HOST, FAIRTEST_REPO_ROOT, FAIRTEST_STORYBOOK_PORT, PRODUCT_VIEWPORT } from './fairtest-runtime.mjs'
+import { FAIRTEST_APP_HOST, FAIRTEST_STORYBOOK_PORT, PRODUCT_VIEWPORT } from './fairtest-runtime.mjs'
+import { fairtestPath } from './fairtest-paths.mjs'
 import { assertProductThemeObservation, observeProductTheme } from './fairtrade-targets.mjs'
 import { AXE_RESULT_FIELDS, scanAxe, seriousViolations } from '../journey/lib/assertions.mjs'
 import {
@@ -63,7 +64,7 @@ const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 const valuesContract = await importFairtestSource('src/core/values.mjs')
 
 const ROW_THEMES = Object.freeze(['dark', 'light'])
-const STORYBOOK_ROOT = join(FAIRTEST_REPO_ROOT, 'storybook-static')
+const STORYBOOK_ROOT = fairtestPath('storybookRoot')
 
 /**
  * The six durable artifact classes a component row writes. It is the SAME

@@ -21,11 +21,12 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { importFairtestSource } from './fairtest-source.mjs'
 import { loadSingleDocument } from './fairtest-single-document.mjs'
+import { fairtestRelative } from './fairtest/fairtest-paths.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url)) // scripts/
 const ROOT = resolve(HERE, '..')
-const CORPUS_REL = 'scripts/testdata/fairtest-surface-consumers.yaml'
-const MANIFEST_REL = 'scripts/testdata/fairtest-surface-consumers.manifest.yaml'
+const CORPUS_REL = fairtestRelative('surfaceConsumersCorpus')
+const MANIFEST_REL = fairtestRelative('surfaceConsumersManifest')
 const SURFACE_GATE_REL = 'surface-gate.mjs'
 const SOURCE_ROUTE_MARKER = "'./fairtest-source.mjs'"
 const MUTATION_KINDS = ['source-runtime', 'source-text', 'importer-drop', 'importer-plant', 'importer-binding', 'importer-classification', 'neutral-name']
@@ -38,7 +39,7 @@ const EXPORT_KINDS = ['value', 'function', 'class']
 const REQUIRED_GATE = 'required-gate'
 const PROTECTED_SPECIALIZED = 'protected-specialized'
 const CLASSIFICATIONS = [REQUIRED_GATE, PROTECTED_SPECIALIZED]
-const REQUIRED_CI_REL = '.github/workflows/ci.yml'
+const REQUIRED_CI_REL = fairtestRelative('ciWorkflow')
 /** @type {Record<string, string>} */
 const THRESHOLD_EXPORTS = { 'min-nonbg-ratio': 'MIN_NONBG_RATIO', 'min-distinct-colors': 'MIN_DISTINCT_COLORS' }
 const LUSH = { w: 800, h: 600, pixels: 480000, nonbgRatio: 0.05, bgShare: 0.9, distinctColors: 20 }

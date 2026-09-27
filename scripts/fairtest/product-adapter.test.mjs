@@ -3718,6 +3718,8 @@ describe('fairtest host export ownership', async () => {
     'process-supervisor.mjs',
     'assert-ts-check-coverage.mjs',
     'assert-target-dispatch.mjs',
+    'assert-fairtest-paths.mjs',
+    'fairtest-paths.mjs',
     'fairtrade-targets.type-test.mjs',
   ])
   const hostModules = /** @type {Record<string, Record<string, unknown>>} */ ({})
@@ -4138,7 +4140,7 @@ describe('adapter source boundary', () => {
       const specs = [...text.matchAll(/from\s*['"]([^'"]+)['"]/g)].map((match) => match[1])
       assert.ok(specs.length > 0, `${file}: holds no imports`)
       for (const spec of specs) {
-        const allowed = spec.startsWith('node:') || spec === '../fairtest-source.mjs' || spec === './fairtrade-targets.mjs' || spec === './fairtrade-component-target.mjs'
+        const allowed = spec.startsWith('node:') || spec === '../fairtest-source.mjs' || spec === './fairtrade-targets.mjs' || spec === './fairtrade-component-target.mjs' || spec === './fairtest-paths.mjs'
         assert.ok(allowed, `${file}: import ${JSON.stringify(spec)} bypasses the sole source route at path import; repair: import child values through ../fairtest-source.mjs.`)
       }
       const dynamic = [...text.matchAll(/importFairtestSource\(\s*['"]([^'"]+)['"]\s*\)/g)].map((match) => match[1])

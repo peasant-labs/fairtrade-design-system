@@ -848,7 +848,7 @@ describe('component target source boundary', () => {
     const specs = [...text.matchAll(/from\s*['"]([^'"]+)['"]/g)].map((match) => match[1])
     assert.ok(specs.length > 0, `${TARGET_MODULE}: holds no imports`)
     for (const spec of specs) {
-      const allowed = spec.startsWith('node:') || spec === '../fairtest-source.mjs' || spec === './fairtrade-targets.mjs'
+      const allowed = spec.startsWith('node:') || spec === '../fairtest-source.mjs' || spec === './fairtrade-targets.mjs' || spec === './fairtest-paths.mjs'
       assert.ok(allowed, `${TARGET_MODULE}: import ${JSON.stringify(spec)} bypasses the sole source route at path import; repair: import child values through ../fairtest-source.mjs.`)
     }
     const dynamic = [...text.matchAll(/importFairtestSource\(\s*['"]([^'"]+)['"]\s*\)/g)].map((match) => match[1])

@@ -1,10 +1,12 @@
-expectedRecordCount: 5
+expectedRecordCount: 7
 requiredRecordNames:
   - example-mounted-product-proof
   - example-mounted-component-proof
   - example-browser-free-boundary
   - fairtest-type-program-coverage-guard
   - fairtest-target-dispatch-guard
+  - fairtest-raw-path-literal-guard
+  - fairtest-path-resolution-guard
 expectedMutationCount: 13
 requiredMutationNames:
   - missing-answer-subject

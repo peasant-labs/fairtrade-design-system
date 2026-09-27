@@ -27,10 +27,11 @@ import { createRequire } from 'node:module'
 import { dirname, join, relative as relativePath, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadSingleDocument } from '../fairtest-single-document.mjs'
+import { fairtestRelative } from './fairtest-paths.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const CORPUS_REL = 'scripts/testdata/fairtest-ts-program.yaml'
-const MANIFEST_REL = 'scripts/testdata/fairtest-ts-program.manifest.yaml'
+const CORPUS_REL = fairtestRelative('tsProgramCorpus')
+const MANIFEST_REL = fairtestRelative('tsProgramManifest')
 const RULES = ['pragma', 'vendored', 'escape', 'program']
 const MUTATION_KINDS = new Set([
   'remove-pragma',

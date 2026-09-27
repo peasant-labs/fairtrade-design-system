@@ -1,0 +1,47 @@
+# Required-name inventory and executable mutations for fairtest-paths.yaml.
+#
+# The guard (scripts/fairtest/assert-fairtest-paths.mjs) owns no case data;
+# every literal case, resolution case, and mutation lives here. The two named
+# mutations are behavioural: `raw-literal-plant` writes a bare inventory path
+# literal into a scratch module and proves the raw-literal guard refuses it,
+# naming the literal; `path-escape-plant` feeds a parent-directory candidate to
+# the resolver and proves the path-resolution guard refuses it, naming the
+# escape. Each must fail for its intended diagnostic.
+expectedLiteralCaseCount: 12
+requiredLiteralCaseNames:
+  - raw-dist-root
+  - raw-storybook-root
+  - raw-child-package
+  - raw-node-modules
+  - raw-testdata-corpus
+  - raw-ci-workflow
+  - owner-member-read
+  - owner-resolver-call
+  - relative-module-import
+  - mime-type-literal
+  - child-relative-spec
+  - template-text-mention
+expectedResolutionCaseCount: 9
+requiredResolutionCaseNames:
+  - declared-dist-inside
+  - declared-corpus-inside
+  - traversal-refused
+  - absolute-refused
+  - nested-traversal-refused
+  - backslash-refused
+  - empty-refused
+  - dot-segment-refused
+  - unknown-name-refused
+expectedMutationCount: 2
+requiredMutationNames:
+  - raw-literal-plant
+  - path-escape-plant
+mutations:
+  - name: raw-literal-plant
+    kind: plant-raw-literal
+    literal: dist
+    expectedDiagnostic: dist
+  - name: path-escape-plant
+    kind: plant-escape
+    candidate: ../escape
+    expectedDiagnostic: parent-directory

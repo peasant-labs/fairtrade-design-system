@@ -21,14 +21,15 @@ import { dirname, extname, join, relative as relativePath, resolve, sep } from '
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
 import { resolveFairtestSource } from './fairtest-source.mjs'
+import { FAIRTEST_PATHS, fairtestRelative } from './fairtest/fairtest-paths.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const CORPUS_REL = 'scripts/testdata/fairtest-boundary.yaml'
-const MANIFEST_REL = 'scripts/testdata/fairtest-boundary.manifest.yaml'
+const CORPUS_REL = fairtestRelative('boundaryCorpus')
+const MANIFEST_REL = fairtestRelative('boundaryManifest')
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
 const CHECKS = ['root-package', 'child-package', 'pack-path', 'source-route']
-const CHILD_REL = join('packages', 'fairtest')
-const ROUTE_MARKER = 'packages/fairtest'
+const CHILD_REL = fairtestRelative('childPackageRoot')
+const ROUTE_MARKER = fairtestRelative('childPackageRoot')
 const ROUTE_EXTENSIONS = new Set(['.mjs', '.js', '.cjs'])
 
 /** @param {string} source @param {string} label @returns {Record<string, unknown>} */
@@ -313,7 +314,7 @@ function filesReferencingChild(directory, base = directory) {
   for (const entry of entries) {
     const absolute = join(directory, entry.name)
     if (entry.isDirectory()) {
-      if (entry.name === 'node_modules') continue
+      if (entry.name === FAIRTEST_PATHS.nodeModulesRoot) continue
       for (const [relative, lines] of filesReferencingChild(absolute, base)) hits.set(relative, lines)
       continue
     }
@@ -406,7 +407,7 @@ function main() {
   for (const key of ['publishConfig', 'files', 'exports']) {
     assert.ok(!(key in childManifest), `fairtest boundary: child package must not gain ${key} at path packages/fairtest/package.json; repair: keep the child source-only.`)
   }
-  checkRequiredNames(Object.keys(childManifest.scripts ?? {}), requiredScripts, 'packages/fairtest/package.json scripts')
+  checkRequiredNames(Object.keys(childManifest.scripts ?? {}), requiredScripts, `${fairtestRelative('childPackageManifest')} scripts`)
 
   // Static packed-surface allowlist: files[] plus every exports target.
   const staticPacked = new Set()

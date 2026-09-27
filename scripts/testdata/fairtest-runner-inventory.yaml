@@ -10,6 +10,11 @@ commands:
     owner: promotion-guardrails
     stage: browser-free
     runner: none
+  - name: test:fairtest:paths
+    invocation: pnpm test:fairtest:paths
+    owner: promotion-guardrails
+    stage: browser-free
+    runner: none
   - name: test:core
     invocation: pnpm --filter @peasant-labs/fairtest test:core
     owner: fairtest-core

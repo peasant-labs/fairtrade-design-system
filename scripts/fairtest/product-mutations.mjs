@@ -69,7 +69,8 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { createAdapter } from './fairtrade-adapter.mjs'
-import { FAIRTEST_APP_HOST, FAIRTEST_REPO_ROOT, PRODUCT_VIEWPORT, claimScratchPort } from './fairtest-runtime.mjs'
+import { FAIRTEST_APP_HOST, PRODUCT_VIEWPORT, claimScratchPort } from './fairtest-runtime.mjs'
+import { fairtestPath } from './fairtest-paths.mjs'
 import {
   PRODUCT_SELECTORS,
   PRODUCT_UNRENDERED_MODES,
@@ -86,7 +87,7 @@ import {
 } from './product-producer.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const DIST_ROOT = join(FAIRTEST_REPO_ROOT, 'dist')
+const DIST_ROOT = fairtestPath('distRoot')
 
 const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 const resolutionContract = await importFairtestSource('src/host-contract/resolution.mjs')

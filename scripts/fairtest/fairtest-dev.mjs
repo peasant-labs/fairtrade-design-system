@@ -24,6 +24,7 @@ import { createServer } from 'node:net'
 import { join } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, FAIRTEST_REPO_ROOT, FAIRTEST_STORYBOOK_PORT } from './fairtest-runtime.mjs'
+import { fairtestPath, fairtestRelative } from './fairtest-paths.mjs'
 import { createAdapter } from './fairtrade-adapter.mjs'
 import { PRODUCT_TARGET, productThemeRow } from './fairtrade-targets.mjs'
 import { COMPONENT_TARGET, componentThemeRow } from './fairtrade-component-target.mjs'
@@ -77,8 +78,8 @@ export function devTargetSpec(target) {
       target: PRODUCT_TARGET,
       kind: PRODUCT_TARGET.kind,
       targetId: PRODUCT_TARGET.id,
-      source: 'dist',
-      root: join(FAIRTEST_REPO_ROOT, 'dist'),
+      source: fairtestRelative('distRoot'),
+      root: fairtestPath('distRoot'),
       route: productThemeRow('dark').route,
       port: FAIRTEST_APP_PORT,
       driverImport: './product-producer.mjs',
@@ -90,8 +91,8 @@ export function devTargetSpec(target) {
       target: COMPONENT_TARGET,
       kind: COMPONENT_TARGET.kind,
       targetId: COMPONENT_TARGET.id,
-      source: 'storybook-static',
-      root: join(FAIRTEST_REPO_ROOT, 'storybook-static'),
+      source: fairtestRelative('storybookRoot'),
+      root: fairtestPath('storybookRoot'),
       route: componentThemeRow('dark').url,
       port: FAIRTEST_STORYBOOK_PORT,
       driverImport: './component-producer.mjs',

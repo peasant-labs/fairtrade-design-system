@@ -19,6 +19,7 @@
 
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { assertProductThemeObservation } from './fairtrade-targets.mjs'
+import { fairtestRelative } from './fairtest-paths.mjs'
 
 const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 const targetsContract = await importFairtestSource('src/host-contract/targets.mjs')
@@ -158,7 +159,7 @@ export const COMPONENT_ACTION_TIMEOUT_MS = 10000
  */
 export const COMPONENT_PROVENANCE_SOURCE = Object.freeze({
   source: 'built-storybook',
-  root: 'storybook-static',
+  root: fairtestRelative('storybookRoot'),
   entries: Object.freeze(['iframe.html', 'assets']),
   fields: Object.freeze(['source', 'root', 'commit', 'dirty', 'assetDigests', 'servedFrom', 'commitCorrespondence', 'viewport', 'targetIdentity', 'themeObservations', 'storyId', 'servedUrl', 'producedAtMs']),
 })

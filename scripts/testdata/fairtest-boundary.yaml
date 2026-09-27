@@ -54,6 +54,7 @@ forbiddenPackFragments:
 allowedRouteFiles:
   - scripts/fairtest-source.mjs
   - scripts/assert-fairtest-boundary.mjs
+  - scripts/fairtest/fairtest-paths.mjs
 forbiddenSourcePatterns:
   - name: page-global
     pattern: "\\b(window|navigator|globalThis)\\b"

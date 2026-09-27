@@ -34,6 +34,7 @@ import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { FAIRTEST_REPO_ROOT } from './fairtest-runtime.mjs'
+import { fairtestRelative } from './fairtest-paths.mjs'
 import {
   FAIRTEST_PROJECT,
   PROCESS_CLEANUP_RECEIPT_REL,
@@ -95,7 +96,7 @@ const core = await importFairtestSource('src/core/index.mjs')
  * The run-root-relative process case fixture family this supervisor reads.
  * @type {string}
  */
-export const PROCESS_CASES_REL = 'scripts/testdata/fairtest-process-cases.yaml'
+export const PROCESS_CASES_REL = fairtestRelative('processCasesCorpus')
 
 /**
  * The loopback host every supervised child binds. Never a wildcard interface.

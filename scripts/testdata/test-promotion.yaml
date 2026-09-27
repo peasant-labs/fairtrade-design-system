@@ -114,3 +114,49 @@ records:
       budget: One source scan of the app modules plus one scratch-directory mutation inside the existing product-contract run; no added rows, retries, or services.
       cleanup: The mutation scratch directory is removed with rmSync in a finally step on every exit path; the passing path leaves no state.
     exitCondition: Fold the rule into a compiler or lint constraint, or delete the guard once a lower-level package check observes the same host-kind branch boundary.
+  - name: fairtest-raw-path-literal-guard
+    answers:
+      subject: No non-test module under scripts/fairtest/ or the Fairtest root guards may carry a bare repository-path literal outside scripts/fairtest/fairtest-paths.mjs.
+      necessity: A value or contract test observes the path values the harness reads but cannot see the source of an arbitrary module; only a source scan over the real tree catches a new hardcoded build root, child path, or testdata corpus that would drift from the single owner.
+      productionPath: pnpm test:fairtest:paths (node scripts/fairtest/assert-fairtest-paths.mjs) scans the real scripts/fairtest tree plus the four Fairtest root guards with a lexer that ignores comments and template text, then applies one named mutation in a scratch module.
+      cost: One browser-free node process, one readdir plus one readFile per scanned .mjs module, and one scratch directory for the mutation; no service, browser, network, or durable output.
+      lifetime: No temporary state on the passing path; the mutation creates one mkdtemp directory under the OS temp dir and removes it with rmSync in a finally step on every exit path.
+      concurrency: Read-only over the shared tree; the mutation scratch directory is mkdtemp-unique, so parallel runs cannot share a path and no port or identity is claimed.
+      ciParity: The exact command pnpm test:fairtest:paths runs from a clean checkout under the pinned Node toolchain with the pinned yaml devDependency; it is declared here and not yet wired into required CI.
+      evidence: A machine-readable pass line naming the scanned module count, plus, on refusal, a diagnostic naming the module, line, literal, path context, and repair guidance; the named mutation asserts the literal and the repair substring.
+      mutation: raw-literal-plant writes const DIST_ROOT = join(FAIRTEST_REPO_ROOT, 'dist') into a scratch module, runs the raw-literal guard over that directory, and asserts the guard names "dist" and the repair instead of passing it.
+      exitCondition: Fold the rule into a compiler or lint constraint, or delete the guard once a lower-level package check observes the same repository-path-literal boundary.
+    lowerLayer:
+      result: promote
+      detail: The value and contract suites pin the path values the harness reads, but none reads the source of an arbitrary module, so only this scan observes a stray hardcoded path; the elaborate check is justified.
+    decision:
+      verdict: approve
+      rationale: All ten answers are present, the lower layer cannot observe a stray literal in another module's source, and the guard is bounded to one browser-free scan with a uniquely named mutation.
+    executionPolicy:
+      runner: Browser-free node command scanning scripts/fairtest and the four root guards; no service, browser, or network access.
+      budget: One source scan of the harness modules plus one scratch-directory mutation inside the existing browser-free phase.
+      cleanup: The mutation scratch directory is removed with rmSync in a finally step on every exit path; the passing path leaves no state.
+    exitCondition: Fold the rule into a compiler or lint constraint, or delete the guard once a lower-level package check observes the same repository-path-literal boundary.
+  - name: fairtest-path-resolution-guard
+    answers:
+      subject: Every declared location in scripts/fairtest/fairtest-paths.mjs resolves to an absolute path inside FAIRTEST_REPO_ROOT, and a traversal or escape candidate is refused with the repository's path-context repair idiom.
+      necessity: A value test can read the declared strings but cannot observe that the resolver keeps them inside the repository; only exercising the resolver over the whole inventory and over traversal inputs proves containment and refusal.
+      productionPath: pnpm test:fairtest:paths (node scripts/fairtest/assert-fairtest-paths.mjs) resolves every declared location, runs the corpus resolution cases for traversal, absolute, empty, dot-segment, windows, and unknown-name inputs, and applies one named escape mutation.
+      cost: One browser-free node process over an in-memory inventory plus nine small cases; no filesystem walk beyond the guard's own source scan, and no service, browser, or network.
+      lifetime: No temporary files or directories are created by the resolution cases; the guard's scratch mutation is owned by the raw-literal guard.
+      concurrency: Pure in-memory computation over a frozen record; read-only over the tree, so two runs cannot interfere.
+      ciParity: The exact command pnpm test:fairtest:paths runs from a clean checkout under the pinned Node toolchain; it is declared here and not yet wired into required CI.
+      evidence: A machine-readable pass line naming the declared-location count, plus, on refusal, a diagnostic naming the candidate, path context, and repair guidance; each corpus case asserts its own diagnostic fragment.
+      mutation: path-escape-plant feeds ../escape to resolveFairtestRepoPath and asserts the refusal names the parent-directory segment, path context, and repair instead of resolving it.
+      exitCondition: Fold the rule into a package path helper or delete the guard once a lower-level package or compiler check proves the same containment invariant.
+    lowerLayer:
+      result: promote
+      detail: A value test reads the declared strings but cannot observe that every one resolves inside the repository root or that traversal is refused, so exercising the resolver is justified.
+    decision:
+      verdict: approve
+      rationale: All ten answers are present, the lower layer cannot observe resolution containment or a refusal, and the guard is bounded to one browser-free process over an in-memory inventory.
+    executionPolicy:
+      runner: Browser-free node command resolving the declared inventory and the corpus cases; no service, browser, or network access.
+      budget: Seconds of local compute inside the existing browser-free phase; one pass over the declared inventory plus nine cases.
+      cleanup: No temporary state is created; the mutation runs in memory and the process exits before the guard returns.
+    exitCondition: Fold the rule into a package path helper or delete the guard once a lower-level package or compiler check proves the same containment invariant.

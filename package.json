@@ -155,6 +155,7 @@
     "journey": "playwright test --config playwright.journey.config.mjs",
     "journey:ci": "JOURNEY_HTML=0 playwright test --config playwright.journey.config.mjs",
     "test:fairtest:promotion": "node scripts/assert-test-promotion.mjs",
+    "test:fairtest:paths": "node scripts/fairtest/assert-fairtest-paths.mjs",
     "test:fairtest:types": "tsc -p tsconfig.fairtest.json",
     "test:fairtest:type-coverage": "node scripts/fairtest/assert-ts-check-coverage.mjs",
     "test:fairtest:inventory": "node scripts/fairtest-runner-inventory.mjs",

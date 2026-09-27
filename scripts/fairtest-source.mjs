@@ -10,9 +10,9 @@
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { dirname, extname, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { fairtestPath } from './fairtest/fairtest-paths.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const REPO_ROOT = resolve(HERE, '..')
 
 // Type-only re-exports of the shared resolution contract. The child package
 // exposes these typedefs and app modules name their builder return types
@@ -22,7 +22,7 @@ const REPO_ROOT = resolve(HERE, '..')
 /** @typedef {import('../packages/fairtest/src/host-contract/resolution.mjs').ComponentResolution} ComponentResolution */
 
 export const FAIRTEST_PACKAGE_NAME = '@peasant-labs/fairtest'
-export const FAIRTEST_PACKAGE_ROOT = resolve(REPO_ROOT, 'packages', 'fairtest')
+export const FAIRTEST_PACKAGE_ROOT = fairtestPath('childPackageRoot')
 const ALLOWED_EXTENSIONS = new Set(['.mjs', '.js', '.cjs', '.json'])
 
 /** @param {unknown} spec @param {string} reason @returns {never} */

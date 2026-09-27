@@ -62,7 +62,8 @@ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'no
 import http from 'node:http'
 import { dirname, join, resolve } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
-import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, FAIRTEST_REPO_ROOT, PRODUCT_VIEWPORT } from './fairtest-runtime.mjs'
+import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, PRODUCT_VIEWPORT } from './fairtest-runtime.mjs'
+import { fairtestPath } from './fairtest-paths.mjs'
 import {
   PRODUCT_ACTION_LABEL,
   PRODUCT_ACTION_NAME,
@@ -346,7 +347,7 @@ const PRODUCT_MOUNT_TIMEOUT_MS = 15000
 const PRODUCT_ACTION_TIMEOUT_MS = 10000
 
 const ROW_THEMES = Object.freeze(['dark', 'light'])
-const DIST_ROOT = join(FAIRTEST_REPO_ROOT, 'dist')
+const DIST_ROOT = fairtestPath('distRoot')
 
 /**
  * Resolve the immutable run root for the current run through the ONE

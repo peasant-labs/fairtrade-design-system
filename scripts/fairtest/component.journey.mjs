@@ -22,6 +22,7 @@
 import { test, expect } from '@playwright/test'
 import { createAdapter } from './fairtrade-adapter.mjs'
 import { FAIRTEST_APP_HOST, FAIRTEST_STORYBOOK_PORT } from './fairtest-runtime.mjs'
+import { fairtestRelative } from './fairtest-paths.mjs'
 import { COMPONENT_STORY_ID, COMPONENT_TARGET, COMPONENT_TARGET_ID, COMPONENT_PROVENANCE_SOURCE } from './fairtrade-component-target.mjs'
 import {
   COMPONENT_ARTIFACT_CLASSES,
@@ -146,7 +147,7 @@ test.describe('fairtest mounted component', () => {
       // Storybook tree.
       const provenance = JSON.parse(readFileSync(join(rowDir, 'provenance.json'), 'utf8'))
       expect(provenance.servedFrom, `row ${theme} provenance must name the tree its digests were compared against`).toBe(COMPONENT_PROVENANCE_SOURCE.root)
-      expect(provenance.servedFrom, `row ${theme} provenance must name the storybook-static tree, not the product run root`).toBe('storybook-static')
+      expect(provenance.servedFrom, `row ${theme} provenance must name the storybook-static tree, not the product run root`).toBe(fairtestRelative('storybookRoot'))
       expect(provenance.commitCorrespondence, `row ${theme} provenance must name who owns the commit correspondence`).toBe('verifier-owned')
       expect(provenance.storyId, `row ${theme} provenance must name the story id`).toBe(COMPONENT_STORY_ID)
       expect(provenance.viewport, `row ${theme} provenance must record the shared render viewport`).toEqual(summary.provenance.viewport)

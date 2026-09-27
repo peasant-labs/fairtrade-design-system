@@ -62,6 +62,7 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { FAIRTEST_APP_HOST, FAIRTEST_REPO_ROOT, PRODUCT_VIEWPORT, claimScratchPort } from './fairtest-runtime.mjs'
+import { fairtestPath } from './fairtest-paths.mjs'
 import { observeProductTheme } from './fairtrade-targets.mjs'
 import {
   COMPONENT_ACTION_NAME,
@@ -86,7 +87,7 @@ import {
 } from './component-producer.mjs'
 import { assertServedDigestsMatchRunRoot } from './fairtest-artifacts.mjs'
 
-const STORYBOOK_ROOT = join(FAIRTEST_REPO_ROOT, 'storybook-static')
+const STORYBOOK_ROOT = fairtestPath('storybookRoot')
 const CONFIG_REL = 'playwright.fairtest.config.mjs'
 const CONFIG_PATH = join(FAIRTEST_REPO_ROOT, CONFIG_REL)
 

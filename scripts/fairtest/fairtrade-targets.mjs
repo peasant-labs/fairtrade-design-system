@@ -10,6 +10,7 @@
 // so every export stays inspectable without a run.
 
 import { importFairtestSource } from '../fairtest-source.mjs'
+import { fairtestRelative } from './fairtest-paths.mjs'
 
 const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 const targetsContract = await importFairtestSource('src/host-contract/targets.mjs')
@@ -149,7 +150,7 @@ const PRODUCT_ACTIONS = Object.freeze([PRODUCT_ACTION_NAME])
  */
 export const PRODUCT_PROVENANCE_SOURCE = Object.freeze({
   source: 'built-app',
-  root: 'dist',
+  root: fairtestRelative('distRoot'),
   entries: Object.freeze(['index.html', 'assets']),
   // `servedFrom` names the tree the recorded digests were compared against and
   // `commitCorrespondence` names who owns the remaining comparison: the row can
