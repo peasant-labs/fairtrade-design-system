@@ -551,11 +551,11 @@ export function createProductStaticDriver(options = {}) {
         res.end('not found')
       }
     })
-    const listening = server
     await new Promise((responseResolve, responseReject) => {
-      listening.on('error', responseReject)
-      listening.listen(port, host, () => {
-        listening.removeListener('error', responseReject)
+      const activeServer = /** @type {import('node:http').Server} */ (server)
+      activeServer.on('error', responseReject)
+      activeServer.listen(port, host, () => {
+        activeServer.removeListener('error', responseReject)
         responseResolve(undefined)
       })
     }).catch((error) => {
