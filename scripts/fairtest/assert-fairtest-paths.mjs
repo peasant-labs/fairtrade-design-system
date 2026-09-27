@@ -23,9 +23,10 @@
 // Every literal case, resolution case, and mutation lives in
 // scripts/testdata/fairtest-paths.yaml plus its required-name manifest; this
 // file owns no case data. Browser-free: node builtins plus the declared yaml
-// developer dependency only. The two named mutations are behavioural: one
-// plants a raw literal in a scratch module and the other feeds an escaping
-// candidate to the resolver.
+// developer dependency only. The three named mutations are behavioural: one
+// plants a raw literal in a scratch module, one plants the same literal in a
+// scratch test module to prove test modules are scanned, and the third feeds an
+// escaping candidate to the resolver.
 import assert from 'node:assert/strict'
 import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

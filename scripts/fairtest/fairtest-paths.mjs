@@ -11,12 +11,12 @@
 // corpora and required-name manifests it resolves (boundary, ts-program,
 // surface-consumers, runner-inventory, process-cases, promotion, paths,
 // dispatch). Both this list and FAIRTEST_PATH_ROOTS are the whole claim:
-// no module may read a location from here that this record cannot resolve, and
-// a corpus a guard reads but this module does not declare is owned by that
-// guard, not by this header. A module that needs one of these values reads it
-// here instead of spelling the path as a bare string literal, and the
+// every location an in-scope guard reads is declared here, because the
 // raw-literal path guard (scripts/fairtest/assert-fairtest-paths.mjs) refuses a
-// new bare literal equal to, or under, any declared root.
+// bare literal equal to, or under, any declared root; a guard cannot take
+// private ownership of a corpus by spelling its path. A module that needs one
+// of these values reads it here instead of spelling the path as a bare string
+// literal.
 //
 // Plain data plus pure functions only: a frozen record of named repo-relative
 // locations, a frozen list of the directory roots the guard treats as

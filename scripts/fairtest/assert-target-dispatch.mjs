@@ -8,11 +8,24 @@
 //
 // The detector is token-based, not a single regex, so the ordinary evasions of
 // a text match are caught: the reversed comparison `'product' === target.kind`,
-// the bracket access `target['kind'] === 'product'`, the `switch (target.kind)`
-// whose body cases a kind literal, the array-membership test
-// `['product','component'].includes(target.kind)`, and a comparison through an
-// alias (`const k = target.kind; k === 'product'`). Comments and string
-// contents are skipped, so a kind branch named only in prose is not a hit.
+// the bracket access `target['kind'] === 'product'`, a parenthesized operand
+// `(target.kind) === 'product'`, the `switch (target.kind)` whose body cases a
+// kind literal, the array-membership test
+// `['product','component'].includes(target.kind)`, a comparison through an
+// alias (`const k = target.kind; k === 'product'`), and the same through a
+// destructuring rename (`const { kind: k } = target; k === 'product'`).
+// Comments and string contents are skipped, so a kind branch named only in
+// prose is not a hit.
+//
+// Best-effort source scan: it does NOT catch every equivalent branch. A kind
+// literal assembled at runtime is invisible: concatenation
+// (`kind === 'pro' + 'duct'`), a kind substituted into template text (a
+// substituted template contributes only its expressions, so `pro` + `${'duct'}`
+// never reads as `product`), and a kind array held in a variable and probed
+// with `.includes`/`.has`/`.indexOf` (the only recognized membership test is an
+// inline array literal of kind strings probed with `.includes`) all elude it.
+// Narrowing the guarantee is the honest claim: it catches the ordinary
+// evasions, not an adversarial rewrite.
 //
 // Allowlist: only the modules that genuinely need to read the host kind are
 // exempt. The two declaration modules own the kind literals; `run-mounted.mjs`
@@ -228,6 +241,11 @@ function findOpen(tokens, closeIndex, open, close) {
 function isKindExprEndingAt(tokens, index, aliases) {
   const token = tokens[index]
   if (!token || token.type === 'string') return false
+  if (token.value === ')') {
+    const open = findOpen(tokens, index, '(', ')')
+    if (open === -1) return false
+    return isKindExprEndingAt(tokens, index - 1, aliases) && kindExprStartAt(tokens, index - 1) === open + 1
+  }
   if (token.value === ']') {
     return tokens[index - 1]?.type === 'string' && tokens[index - 1].value === 'kind' && tokens[index - 2]?.value === '['
   }
@@ -243,7 +261,11 @@ function isKindExprEndingAt(tokens, index, aliases) {
  */
 function kindExprStartAt(tokens, index) {
   let start = index
-  if (tokens[index]?.value === ']') {
+  if (tokens[index]?.value === ')') {
+    const open = findOpen(tokens, index, '(', ')')
+    if (open === -1) return index
+    start = open
+  } else if (tokens[index]?.value === ']') {
     const open = findOpen(tokens, index, '[', ']')
     if (open === -1) return index
     start = open
@@ -281,7 +303,17 @@ function collectKindAliases(tokens) {
       const token = tokens[index]
       if (!(token.type === 'ident' && (token.value === 'const' || token.value === 'let' || token.value === 'var'))) continue
       const name = tokens[index + 1]
-      if (!name || name.type !== 'ident' || tokens[index + 2]?.value !== '=') continue
+      if (!name) continue
+      if (name.value === '{') {
+        for (const bound of destructuredKindBindings(tokens, index + 1)) {
+          if (!aliases.has(bound)) {
+            aliases.add(bound)
+            changed = true
+          }
+        }
+        continue
+      }
+      if (name.type !== 'ident' || tokens[index + 2]?.value !== '=') continue
       if (aliases.has(name.value)) continue
       if (isKindExprStartingAt(tokens, index + 3, aliases)) {
         aliases.add(name.value)
@@ -294,6 +326,30 @@ function collectKindAliases(tokens) {
 }
 
 /**
+ * The local names a destructuring binding renames the host-kind property to:
+ * `const { kind: k } = target` binds `k` (which is `target.kind`). The property
+ * must be literally `kind`; the initializer is not required to be a kind
+ * expression because the property name is itself the kind selector. Shorthand
+ * `{ kind }` binds `kind`, which the detector already treats as a kind read.
+ * @param {Token[]} tokens
+ * @param {number} openBrace index of the `{`
+ * @returns {string[]} the renamed local names
+ */
+function destructuredKindBindings(tokens, openBrace) {
+  /** @type {string[]} */
+  const names = []
+  const close = findMatch(tokens, openBrace)
+  if (close === -1) return names
+  for (let index = openBrace + 1; index < close; index += 1) {
+    if (tokens[index]?.type === 'ident' && tokens[index].value === 'kind' && tokens[index + 1]?.value === ':' && tokens[index + 2]?.type === 'ident') {
+      names.push(tokens[index + 2].value)
+      index += 2
+    }
+  }
+  return names
+}
+
+/**
  * The index of the last token of the member chain starting at `start`, so an
  * alias initializer and a reversed comparison can be tested as a whole.
  * @param {Token[]} tokens
@@ -302,7 +358,10 @@ function collectKindAliases(tokens) {
  */
 function kindExprEndFromStart(tokens, start) {
   let end = start
-  if (tokens[start]?.value === '[') {
+  if (tokens[start]?.value === '(') {
+    const close = findMatch(tokens, start)
+    if (close !== -1) end = close
+  } else if (tokens[start]?.value === '[') {
     const close = findMatch(tokens, start)
     if (close !== -1) end = close
   }
@@ -449,7 +508,9 @@ function walkModules(directory) {
 /**
  * Assert the required-CI boundary command body actually chains the dispatch
  * guard. Without this, deleting the chained call stays green: the guard would
- * simply never run from required CI.
+ * simply never run from required CI. Membership is exact per `&&` segment, so a
+ * text mention (`echo <step>`) or a shell comment naming the step does not
+ * satisfy it.
  * @param {Record<string, unknown>} scripts package.json scripts mapping
  * @param {string} label owning file used in diagnostics
  * @returns {string} the command body
@@ -463,20 +524,34 @@ export function assertBoundaryChainsDispatch(scripts, label) {
     )
   }
   for (const step of BOUNDARY_REQUIRED_STEPS) {
-    if (!body.includes(step)) {
+    if (!boundarySegments(body).includes(step)) {
       throw new Error(
         `${label}: required-CI boundary command does not chain ${JSON.stringify(step)} for field "chain" at path package.json.scripts["${BOUNDARY_SCRIPT_NAME}"]; ` +
-        `repair: chain ${step} so the guard's required-CI mount is bound.`,
+        `repair: chain ${step} as its own && segment so the guard's required-CI mount is bound.`,
       )
     }
   }
   return body
 }
 
+/**
+ * The `&&`-separated command segments of a package.json script body, trimmed.
+ * Membership is exact per segment, not a substring test: a mention inside a
+ * longer command (`echo <step>`), a shell comment that names the step without
+ * running it, or any other text that merely contains the step string does not
+ * count as chaining it.
+ * @param {string} body script command body
+ * @returns {string[]} the trimmed command segments
+ */
+function boundarySegments(body) {
+  return body.split('&&').map((segment) => segment.trim())
+}
+
 /** @typedef {object} DispatchMutation
  * @property {string} name
  * @property {string} kind
  * @property {string} [source]
+ * @property {string} [body]
  * @property {boolean} [nested]
  * @property {string} expectedDiagnostic */
 
@@ -526,7 +601,7 @@ function runDispatchReach() {
           rmSync(directory, { recursive: true, force: true })
         }
       } else {
-        assertBoundaryChainsDispatch({ [BOUNDARY_SCRIPT_NAME]: 'node scripts/assert-fairtest-boundary.mjs && node scripts/fairtest-source.mjs --smoke' }, 'package.json')
+        assertBoundaryChainsDispatch({ [BOUNDARY_SCRIPT_NAME]: /** @type {string} */ (mutation.body) }, 'package.json')
       }
     } catch (error) {
       message = error instanceof Error ? error.message : String(error)
@@ -573,10 +648,10 @@ function validateManifest(value, label) {
   assert.deepEqual(mutations.map((entry) => entry.name).sort(), [.../** @type {string[]} */ (record.requiredMutationNames)].sort(), `${label}: mutation name inventory mismatch`)
   for (const [index, mutation] of mutations.entries()) {
     const path = `mutations[${index}]`
-    const fields = mutation.kind === 'plant-source' ? ['name', 'kind', 'source', 'expectedDiagnostic'] : ['name', 'kind', 'expectedDiagnostic']
+    const fields = mutation.kind === 'plant-source' ? ['name', 'kind', 'source', 'expectedDiagnostic'] : ['name', 'kind', 'body', 'expectedDiagnostic']
     if (mutation.nested) fields.push('nested')
     assert.deepEqual(Object.keys(mutation).sort(), [...fields].sort(), `${label}: mutation ${index} exact field mismatch at path ${path}`)
-    assert.ok(['plant-source', 'drop-chain'].includes(mutation.kind), `${label}: mutation "${mutation.name}" has an unknown kind at path ${path}.kind`)
+    assert.ok(['plant-source', 'boundary-body'].includes(mutation.kind), `${label}: mutation "${mutation.name}" has an unknown kind at path ${path}.kind`)
     assert.ok(typeof mutation.expectedDiagnostic === 'string' && mutation.expectedDiagnostic.length > 0, `${label}: mutation "${mutation.name}" must name its diagnostic at path ${path}.expectedDiagnostic`)
   }
 }

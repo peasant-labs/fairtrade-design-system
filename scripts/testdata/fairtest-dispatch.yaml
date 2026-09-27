@@ -8,12 +8,13 @@
 # `detectionCases` feed the token detector a source snippet and expect either a
 # detection naming the offending expression or a clean result. They pin the
 # ordinary evasions a text match would miss: the reversed comparison, the
-# bracket access, the switch over a kind, the array-membership test, and a
-# comparison through an alias. A clean case proves a comment, a string, an
-# unrelated switch, an assertion call, and an object literal do not trip it.
+# bracket access, a parenthesized operand, the switch over a kind, the
+# array-membership test, a comparison through an alias, and the same through a
+# destructuring rename. A clean case proves a comment, a string, an unrelated
+# switch, an assertion call, and an object literal do not trip it.
 # The executable mutations live in the manifest beside this file; one plants a
-# scratch module per evasion, and one removes the guard from the required-CI
-# boundary chain.
+# scratch module per evasion form, and the boundary-body mutations remove the
+# guard from the required-CI boundary chain or replace it with a text mention.
 detectionCases:
   - name: direct-equality
     source: |
@@ -30,6 +31,11 @@ detectionCases:
       if (target['kind'] === 'product') return 1
     expect: detected
     expectedExpression: "target['kind'] === 'product'"
+  - name: parenthesized-equality
+    source: |
+      if ((target.kind) === 'product') return 1
+    expect: detected
+    expectedExpression: "(target.kind) === 'product'"
   - name: switch-case
     source: |
       switch (target.kind) { case 'product': return 1; default: return 2 }
@@ -43,6 +49,12 @@ detectionCases:
   - name: aliased-equality
     source: |
       const k = target.kind
+      if (k === 'product') return 1
+    expect: detected
+    expectedExpression: k === 'product'
+  - name: destructured-equality
+    source: |
+      const { kind: k } = target
       if (k === 'product') return 1
     expect: detected
     expectedExpression: k === 'product'

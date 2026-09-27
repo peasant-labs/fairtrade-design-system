@@ -4,34 +4,42 @@
 # every detection case and mutation lives here. Each `plant-source` mutation
 # writes a scratch module carrying one evasion form and proves the guard refuses
 # it, naming the offending expression; one plants its module in a scratch
-# subdirectory to pin the recursive walk. The `drop-chain` mutation removes the
-# chained dispatch call from a copy of the required-CI boundary command body and
-# proves the chain binding refuses it. Each must fail for its intended
-# diagnostic.
-expectedDetectionCaseCount: 12
+# subdirectory to pin the recursive walk. Each `boundary-body` mutation feeds a
+# copy of the required-CI boundary command body to the chain binding: one
+# deletes the chained dispatch call, one replaces it with an `echo` text
+# mention, and one leaves it only inside a shell comment. All three prove the
+# binding refuses a body that does not run the guard as its own `&&` segment.
+# Each mutation must fail for its intended diagnostic.
+expectedDetectionCaseCount: 14
 requiredDetectionCaseNames:
   - direct-equality
   - reversed-equality
   - bracket-equality
+  - parenthesized-equality
   - switch-case
   - includes-array
   - aliased-equality
+  - destructured-equality
   - kind-read-clean
   - comment-mention-clean
   - string-mention-clean
   - unrelated-switch-clean
   - proof-assertion-clean
   - object-literal-clean
-expectedMutationCount: 8
+expectedMutationCount: 12
 requiredMutationNames:
   - plant-direct-equality
   - plant-reversed-equality
   - plant-bracket-equality
+  - plant-parenthesized-equality
   - plant-switch-case
   - plant-includes-array
   - plant-aliased-equality
+  - plant-destructured-equality
   - plant-nested-direct-equality
   - drop-boundary-chain
+  - echo-boundary-chain
+  - comment-boundary-chain
 mutations:
   - name: plant-direct-equality
     kind: plant-source
@@ -57,6 +65,14 @@ mutations:
         return 2
       }
     expectedDiagnostic: "target['kind'] === 'component'"
+  - name: plant-parenthesized-equality
+    kind: plant-source
+    source: |
+      export function pick(target) {
+        if ((target.kind) === 'product') return 'product'
+        return 'component'
+      }
+    expectedDiagnostic: "(target.kind) === 'product'"
   - name: plant-switch-case
     kind: plant-source
     source: |
@@ -84,6 +100,14 @@ mutations:
         return k === 'product'
       }
     expectedDiagnostic: k === 'product'
+  - name: plant-destructured-equality
+    kind: plant-source
+    source: |
+      export function pick(target) {
+        const { kind: k } = target
+        return k === 'product'
+      }
+    expectedDiagnostic: k === 'product'
   - name: plant-nested-direct-equality
     kind: plant-source
     nested: true
@@ -94,5 +118,14 @@ mutations:
       }
     expectedDiagnostic: kind === 'component'
   - name: drop-boundary-chain
-    kind: drop-chain
+    kind: boundary-body
+    body: "node scripts/assert-fairtest-boundary.mjs && node scripts/fairtest-source.mjs --smoke"
+    expectedDiagnostic: assert-target-dispatch.mjs
+  - name: echo-boundary-chain
+    kind: boundary-body
+    body: "node scripts/assert-fairtest-boundary.mjs && node scripts/fairtest-source.mjs --smoke && echo node scripts/fairtest/assert-target-dispatch.mjs"
+    expectedDiagnostic: assert-target-dispatch.mjs
+  - name: comment-boundary-chain
+    kind: boundary-body
+    body: "node scripts/assert-fairtest-boundary.mjs && node scripts/fairtest-source.mjs --smoke && # node scripts/fairtest/assert-target-dispatch.mjs"
     expectedDiagnostic: assert-target-dispatch.mjs
