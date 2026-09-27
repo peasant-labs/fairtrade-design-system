@@ -266,6 +266,22 @@ export const COMPONENT_TARGET_REGISTRY = Object.freeze({
  */
 
 /**
+ * Arguments componentDeclarationInput accepts: the creation time, the shared
+ * capability inventory, and the optional named fixtures and actions.
+ * @typedef {object} ComponentDeclarationInputArgs
+ * @property {number} createdAtMs creation time in whole milliseconds
+ * @property {string[]} capabilities declared capability inventory
+ * @property {readonly string[]} [fixtures] named fixtures served
+ * @property {readonly string[]} [actions] named actions offered
+ */
+
+/**
+ * Arguments validateComponentTargetContract accepts.
+ * @typedef {object} ComponentTargetContractInput
+ * @property {number} createdAtMs creation time in whole milliseconds
+ */
+
+/**
  * The contract receipt validateComponentTargetContract returns.
  * @typedef {object} ComponentTargetContractReceipt
  * @property {string} kind
@@ -440,7 +456,7 @@ export function assertComponentMounted(input) {
  * @param {readonly string[]} [input.actions] named actions offered
  * @returns {ComponentDeclarationInput} the frozen declaration input
  */
-export function componentDeclarationInput({ createdAtMs, capabilities, fixtures = COMPONENT_FIXTURES, actions = COMPONENT_ACTIONS }) {
+export function componentDeclarationInput({ createdAtMs, capabilities, fixtures = COMPONENT_FIXTURES, actions = COMPONENT_ACTIONS } = /** @type {ComponentDeclarationInputArgs} */ ({})) {
   if (!Number.isInteger(createdAtMs) || createdAtMs < 0 || createdAtMs > 9007199254740991) {
     throw new Error(
       `fairtrade component targets: invalid value ${JSON.stringify(createdAtMs)} for field "createdAtMs" at path target.identity.createdAtMs; ` +
@@ -470,7 +486,7 @@ export function componentDeclarationInput({ createdAtMs, capabilities, fixtures 
  * @param {number} input.createdAtMs creation time in whole milliseconds
  * @returns {Promise<ComponentTargetContractReceipt>} the frozen contract receipt
  */
-export async function validateComponentTargetContract({ createdAtMs }) {
+export async function validateComponentTargetContract({ createdAtMs } = /** @type {ComponentTargetContractInput} */ ({})) {
   if (!kindsContract.HOST_KINDS.includes('component')) {
     throw new Error(
       'fairtrade component targets: kind "component" is outside the shared vocabulary for field "kind" at path target.kind; ' +

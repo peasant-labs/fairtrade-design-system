@@ -236,6 +236,15 @@ function digestRecordedIndexHtml(root) {
 }
 
 /**
+ * Inputs servedProvenanceDigestMatch compares the recorded digest against
+ * served bytes with.
+ * @typedef {object} ServedProvenanceDigestInput
+ * @property {string} recordedDigest digest recorded from the built tree
+ * @property {string} servedDigest digest read over HTTP from the served tree
+ * @property {string} servedUrl serving origin the bytes were read from
+ */
+
+/**
  * Compare recorded provenance digests against bytes served over real HTTP
  * from a candidate root. A mismatch fails closed with the recorded digest,
  * the served digest, and the repair. Matching digests return a frozen pass
@@ -246,7 +255,7 @@ function digestRecordedIndexHtml(root) {
  * @param {string} input.servedUrl serving origin the bytes were read from
  * @returns {{ result: string, servedUrl: string }} frozen pass receipt when the digests match
  */
-export function servedProvenanceDigestMatch({ recordedDigest, servedDigest, servedUrl }) {
+export function servedProvenanceDigestMatch({ recordedDigest, servedDigest, servedUrl } = /** @type {ServedProvenanceDigestInput} */ ({})) {
   if (typeof recordedDigest !== 'string' || recordedDigest.length === 0) {
     throw new Error(
       'product mutations: missing recorded digest for field "recordedDigest" at path provenance.assetDigests; ' +

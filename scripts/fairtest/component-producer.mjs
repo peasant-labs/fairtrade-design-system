@@ -472,6 +472,15 @@ function summarizeScopedScan(scan) {
 }
 
 /**
+ * Inputs buildComponentGateReceipt derives the plain serious-violations
+ * receipt from.
+ * @typedef {object} ComponentGateReceiptInput
+ * @property {{ violations: { id: string }[] }} scan compact scoped scan report
+ * @property {string} observedTheme theme the page rendered when the scan ran
+ * @property {boolean} ariaExpanded expanded state the click left
+ */
+
+/**
  * Build the plain serious-violations gate receipt for the mounted component
  * scope. There is no baseline and no delta: the receipt is a pass exactly when
  * the scoped scan reports no serious or critical violation. `observedTheme` and
@@ -482,7 +491,7 @@ function summarizeScopedScan(scan) {
  * @param {boolean} input.ariaExpanded expanded state the click left
  * @returns {{ policy: string, point: string, observedTheme: string, ariaExpanded: boolean, result: string, measured: number }} the frozen gate receipt
  */
-function buildComponentGateReceipt({ scan, observedTheme, ariaExpanded }) {
+function buildComponentGateReceipt({ scan, observedTheme, ariaExpanded } = /** @type {ComponentGateReceiptInput} */ ({})) {
   valuesContract.assertExactFields({ scan, observedTheme, ariaExpanded }, ['scan', 'observedTheme', 'ariaExpanded'], 'component producer', 'a11y.gate')
   const serious = seriousViolations(scan)
   return Object.freeze({
@@ -660,6 +669,15 @@ export function resolveComponentProvenanceRefs(servedHtml) {
 }
 
 /**
+ * Inputs collectComponentServedAssets reads the served iframe and its assets
+ * from.
+ * @typedef {object} ComponentServedAssetsInput
+ * @property {string} baseUrl running loopback base URL
+ * @property {string} servedHtml served iframe.html text just read over HTTP
+ * @property {string} [label] owning producer used in diagnostics
+ */
+
+/**
  * Read the served iframe.html bytes plus every served asset file it references
  * over real HTTP, keyed by run-root-relative path, and fail closed when the
  * served document references no asset file at all. This is the shared served
@@ -672,7 +690,7 @@ export function resolveComponentProvenanceRefs(servedHtml) {
  * @param {string} [input.label] owning producer used in diagnostics
  * @returns {Promise<{ refs: string[], assetDigests: Record<string, string> }>} the resolved refs and their digests
  */
-export async function collectComponentServedAssets({ baseUrl, servedHtml, label = 'component producer' }) {
+export async function collectComponentServedAssets({ baseUrl, servedHtml, label = 'component producer' } = /** @type {ComponentServedAssetsInput} */ ({})) {
   const assetDigests = /** @type {Record<string, string>} */ ({})
   assetDigests['iframe.html'] = sha256(servedHtml)
   const refs = resolveComponentProvenanceRefs(servedHtml)

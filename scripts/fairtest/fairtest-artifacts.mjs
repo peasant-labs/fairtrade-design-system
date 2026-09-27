@@ -46,6 +46,16 @@ export const ARTIFACT_CLASSES = Object.freeze(/** @type {const} */ ([
 export const PRODUCT_ONLY_FIELDS = Object.freeze([...resolutionContract.PRODUCT_ONLY_FIELDS])
 
 /**
+ * Inputs assertServedDigestsMatchRunRoot compares the recorded served digests
+ * against the run's built tree with.
+ * @typedef {object} ServedDigestsComparisonInput
+ * @property {Record<string, string>} assetDigests digests read over HTTP, keyed by run-root-relative path
+ * @property {string} distRoot the run's built tree on disk
+ * @property {string} [label] owning producer used in the diagnostic
+ * @property {string} [against] the tree label the receipt names as compared
+ */
+
+/**
  * Hash bytes with sha256 and return the hex digest.
  * @param {Buffer|string} data bytes to hash
  * @returns {string} hex digest
@@ -78,7 +88,7 @@ function sha256(data) {
  * @param {string} [input.against] the tree label the receipt names as compared, defaults to the product run root
  * @returns {{ against: string, entries: readonly string[], commitCorrespondence: string }} the comparison receipt naming what was compared
  */
-export function assertServedDigestsMatchRunRoot({ assetDigests, distRoot, label = 'product producer', against = 'run-root-dist' }) {
+export function assertServedDigestsMatchRunRoot({ assetDigests, distRoot, label = 'product producer', against = 'run-root-dist' } = /** @type {ServedDigestsComparisonInput} */ ({})) {
   if (typeof against !== 'string' || against.length === 0) {
     throw new Error(
       `${label}: missing served-tree label for field "servedFrom" at path provenance.servedFrom; ` +

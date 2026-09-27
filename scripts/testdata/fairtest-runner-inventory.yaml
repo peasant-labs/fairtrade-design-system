@@ -10,6 +10,31 @@ commands:
     owner: promotion-guardrails
     stage: browser-free
     runner: none
+  # REQUIRED-CI MOUNT: ENFORCED. The Fairtest required-CI job runs the type
+  # program in its browser-free contracts step, so a type error in the covered
+  # roots turns required CI red rather than merely declaring the program locally.
+  - name: test:fairtest:types
+    invocation: pnpm test:fairtest:types
+    owner: promotion-guardrails
+    stage: browser-free
+    runner: none
+  # REQUIRED-CI MOUNT: ENFORCED. The Fairtest required-CI job runs the type
+  # program coverage guard in its browser-free contracts step, so a covered file
+  # that opts out or plants a suppression directive turns required CI red.
+  - name: test:fairtest:type-coverage
+    invocation: pnpm test:fairtest:type-coverage
+    owner: promotion-guardrails
+    stage: browser-free
+    runner: none
+  # REQUIRED-CI MOUNT: ENFORCED. The Fairtest required-CI job runs this
+  # browser-free boundary guard in its contracts step, so a browser or app
+  # import injected into the guarded surface, and a host-kind branch outside the
+  # declaration and view-construction modules, turn required CI red.
+  - name: test:fairtest:boundary
+    invocation: pnpm test:fairtest:boundary
+    owner: promotion-guardrails
+    stage: browser-free
+    runner: none
   - name: test:fairtest:paths
     invocation: pnpm test:fairtest:paths
     owner: promotion-guardrails

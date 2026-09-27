@@ -13,7 +13,8 @@
 // directory and asserts this guard refuses it.
 
 import { readFileSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 /**
  * App modules allowed to branch on the host kind: the two target-declaration
@@ -77,4 +78,19 @@ export function assertNoTargetKindDispatch(directory, allowed = DISPATCH_ALLOWED
     )
   }
   return { scanned }
+}
+
+// CLI entry: required CI chains `node scripts/fairtest/assert-target-dispatch.mjs`
+// into `pnpm test:fairtest:boundary`, so the guard runs over its own harness
+// directory from a clean checkout instead of only inside the product-contract
+// suite. It exits non-zero on a forbidden host-kind branch, carrying the
+// repository's `at path` context and `repair:` guidance.
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+  try {
+    const { scanned } = assertNoTargetKindDispatch(dirname(fileURLToPath(import.meta.url)))
+    console.log(`fairtest target dispatch: ${scanned.length} app modules scanned, no host-kind branch outside the declaration and view-construction modules.`)
+  } catch (error) {
+    console.error(`::error::${error instanceof Error ? error.message : String(error)}`)
+    process.exitCode = 1
+  }
 }

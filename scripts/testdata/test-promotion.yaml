@@ -76,7 +76,7 @@ records:
       cost: One browser-free node process plus one tsc --listFiles invocation over the covered roots; no service, browser, network, or durable output.
       lifetime: No temporary files or directories are created; the tsc subprocess is bounded by spawnSync and exits before the guard returns.
       concurrency: Read-only over the tree; the tsc invocation writes nothing because the program sets noEmit true, so two runs cannot interfere.
-      ciParity: The exact command pnpm test:fairtest:type-coverage runs from a clean checkout with the pinned typescript and yaml devDependencies; it is declared here and not yet wired into required CI.
+      ciParity: The exact command pnpm test:fairtest:type-coverage runs from a clean checkout with the pinned typescript and yaml devDependencies in the browser-free contracts step of the pinned Fairtest CI job (test:fairtest:types, test:fairtest:type-coverage, test:fairtest:paths, test:fairtest:boundary), so a covered file that opts out or plants a suppression directive turns required CI red.
       evidence: A machine-readable pass line reporting walked, checked, and vendored counts, the acknowledged-any totals, and the parity result, plus named diagnostics for every rule.
       mutation: Eight named mutations (missing pragma, vendored banner added and removed, planted suppression directives, planted and dropped explicit any, dropped-from-program) each fail the named rule for the intended file or token.
       exitCondition: Fold the checks into a lower-level program or compiler integration if one can observe program membership and suppression metadata directly.
@@ -99,7 +99,7 @@ records:
       cost: The guard is one browser-free source scan with one readdir plus one readFile per scanned .mjs module; no service, browser, network, or durable output.
       lifetime: No temporary state on the passing path; the mutation branch creates one mkdtemp directory under the OS temp dir and removes it with rmSync in a finally step on every exit path.
       concurrency: Read-only over the shared tree; the mutation scratch directory is mkdtemp-unique, so parallel runs cannot share a path, and no port or identity is claimed.
-      ciParity: The exact command pnpm test:fairtest:product-contract runs from a clean checkout under the pinned Node toolchain; the runner inventory records it as the required local contract but as DEFERRED from required CI, so a green CI run does not yet prove the guard ran.
+      ciParity: The exact command pnpm test:fairtest:boundary runs from a clean checkout under the pinned Node toolchain in the browser-free contracts step of the pinned Fairtest CI job; that command chains node scripts/fairtest/assert-target-dispatch.mjs over the real scripts/fairtest tree, so a green CI run proves the guard ran and no host-kind branch sits outside the declaration and view-construction modules.
       evidence: A machine-readable node --test pass line plus, on refusal, a diagnostic naming the offending module, the matched branch expression, path context, and repair guidance; the mutation asserts each of those substrings.
       mutation: adapter-branches-on-target-kind plants a scratch module whose pick() does `if (target.kind === 'product')`, calls the guard on the scratch directory, and asserts the guard names the module and the branch instead of passing it.
       exitCondition: Fold the rule into a compiler or lint constraint, or delete the guard once a lower-level package check observes the same host-kind branch boundary.
@@ -122,7 +122,7 @@ records:
       cost: One browser-free node process, one readdir plus one readFile per scanned .mjs module, and one scratch directory for the mutation; no service, browser, network, or durable output.
       lifetime: No temporary state on the passing path; the mutation creates one mkdtemp directory under the OS temp dir and removes it with rmSync in a finally step on every exit path.
       concurrency: Read-only over the shared tree; the mutation scratch directory is mkdtemp-unique, so parallel runs cannot share a path and no port or identity is claimed.
-      ciParity: The exact command pnpm test:fairtest:paths runs from a clean checkout under the pinned Node toolchain with the pinned yaml devDependency; it is declared here and not yet wired into required CI.
+      ciParity: The exact command pnpm test:fairtest:paths runs from a clean checkout under the pinned Node toolchain with the pinned yaml devDependency in the browser-free contracts step of the pinned Fairtest CI job, so a stray hardcoded build root or testdata corpus turns required CI red.
       evidence: A machine-readable pass line naming the scanned module count, plus, on refusal, a diagnostic naming the module, line, literal, path context, and repair guidance; the named mutation asserts the literal and the repair substring.
       mutation: raw-literal-plant writes const DIST_ROOT = join(FAIRTEST_REPO_ROOT, 'dist') into a scratch module, runs the raw-literal guard over that directory, and asserts the guard names "dist" and the repair instead of passing it.
       exitCondition: Fold the rule into a compiler or lint constraint, or delete the guard once a lower-level package check observes the same repository-path-literal boundary.
@@ -145,7 +145,7 @@ records:
       cost: One browser-free node process over an in-memory inventory plus nine small cases; no filesystem walk beyond the guard's own source scan, and no service, browser, or network.
       lifetime: No temporary files or directories are created by the resolution cases; the guard's scratch mutation is owned by the raw-literal guard.
       concurrency: Pure in-memory computation over a frozen record; read-only over the tree, so two runs cannot interfere.
-      ciParity: The exact command pnpm test:fairtest:paths runs from a clean checkout under the pinned Node toolchain; it is declared here and not yet wired into required CI.
+      ciParity: The exact command pnpm test:fairtest:paths runs from a clean checkout under the pinned Node toolchain in the browser-free contracts step of the pinned Fairtest CI job, so a declared location that escapes FAIRTEST_REPO_ROOT or a resolved traversal turns required CI red.
       evidence: A machine-readable pass line naming the declared-location count, plus, on refusal, a diagnostic naming the candidate, path context, and repair guidance; each corpus case asserts its own diagnostic fragment.
       mutation: path-escape-plant feeds ../escape to resolveFairtestRepoPath and asserts the refusal names the parent-directory segment, path context, and repair instead of resolving it.
       exitCondition: Fold the rule into a package path helper or delete the guard once a lower-level package or compiler check proves the same containment invariant.

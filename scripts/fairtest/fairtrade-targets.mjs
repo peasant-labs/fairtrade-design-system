@@ -270,6 +270,22 @@ export const PRODUCT_TARGET_REGISTRY = Object.freeze({
  */
 
 /**
+ * Arguments productDeclarationInput accepts: the creation time, the shared
+ * capability inventory, and the optional named fixtures and actions.
+ * @typedef {object} ProductDeclarationInputArgs
+ * @property {number} createdAtMs creation time in whole milliseconds
+ * @property {string[]} capabilities declared capability inventory
+ * @property {readonly string[]} [fixtures] named fixtures served
+ * @property {readonly string[]} [actions] named actions offered
+ */
+
+/**
+ * Arguments validateProductTargetContract accepts.
+ * @typedef {object} ProductTargetContractInput
+ * @property {number} createdAtMs creation time in whole milliseconds
+ */
+
+/**
  * The contract receipt validateProductTargetContract returns.
  * @typedef {object} ProductTargetContractReceipt
  * @property {string} kind
@@ -379,7 +395,7 @@ export function productThemeRow(theme) {
  * @param {readonly string[]} [input.actions] named actions offered
  * @returns {ProductDeclarationInput} the frozen declaration input
  */
-export function productDeclarationInput({ createdAtMs, capabilities, fixtures = PRODUCT_FIXTURES, actions = PRODUCT_ACTIONS }) {
+export function productDeclarationInput({ createdAtMs, capabilities, fixtures = PRODUCT_FIXTURES, actions = PRODUCT_ACTIONS } = /** @type {ProductDeclarationInputArgs} */ ({})) {
   if (!Number.isInteger(createdAtMs) || createdAtMs < 0 || createdAtMs > 9007199254740991) {
     throw new Error(
       `fairtrade targets: invalid value ${JSON.stringify(createdAtMs)} for field "createdAtMs" at path target.identity.createdAtMs; ` +
@@ -409,7 +425,7 @@ export function productDeclarationInput({ createdAtMs, capabilities, fixtures = 
  * @param {number} input.createdAtMs creation time in whole milliseconds
  * @returns {Promise<ProductTargetContractReceipt>} the frozen contract receipt
  */
-export async function validateProductTargetContract({ createdAtMs }) {
+export async function validateProductTargetContract({ createdAtMs } = /** @type {ProductTargetContractInput} */ ({})) {
   if (!kindsContract.HOST_KINDS.includes(PRODUCT_TARGET_KIND)) {
     throw new Error(
       `fairtrade targets: kind ${JSON.stringify(PRODUCT_TARGET_KIND)} is outside the shared vocabulary for field "kind" at path target.kind; ` +
