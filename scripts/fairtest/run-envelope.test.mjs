@@ -68,7 +68,9 @@ const MUTATION_KINDS = ['delete-record', 'stale-name', 'duplicate-name', 'delete
 
 const corpusSource = readFileSync(resolve(ROOT, CORPUS_REL), 'utf8')
 const manifestSource = readFileSync(resolve(ROOT, MANIFEST_REL), 'utf8')
+/** @type {Record<string, any>} */
 const manifest = loadSingleDocument(manifestSource, MANIFEST_REL)
+/** @type {Record<string, any>} */
 const corpus = loadSingleDocument(corpusSource, CORPUS_REL)
 const workflowSource = readFileSync(resolve(ROOT, WORKFLOW_REL), 'utf8')
 
@@ -174,7 +176,7 @@ function writeEvidence(root, runId, options = {}) {
  */
 function writeProcessReceipt(root, runId, overrides = {}) {
   const signals = ['completed', 'terminated', 'interrupted', 'interrupted']
-  const cases = processContract.PROCESS_CASE_IDS.map((caseId, index) => ({
+  const cases = processContract.PROCESS_CASE_IDS.map((/** @type {string} */ caseId, /** @type {number} */ index) => ({
     caseId,
     scenario: processContract.PROCESS_SCENARIOS[index],
     outcome: processContract.PROCESS_OUTCOMES[index],
@@ -345,9 +347,9 @@ function validateManifest(value) {
   assert.equal(value.expectedMutationCount, value.mutations.length, `${MANIFEST_REL}: mutation count must equal the inventory at path manifest.expectedMutationCount; repair: align the counts.`)
   assert.equal(value.expectedWorkflowMutationCount, value.workflowMutations.length, `${MANIFEST_REL}: workflow mutation count must equal the inventory at path manifest.expectedWorkflowMutationCount; repair: align the counts.`)
   assert.equal(value.expectedSourceMutationCount, value.sourceMutations.length, `${MANIFEST_REL}: source mutation count must equal the inventory at path manifest.expectedSourceMutationCount; repair: align the counts.`)
-  checkRequiredNames(value.mutations.map((entry) => entry.name), value.requiredMutationNames, MANIFEST_REL)
-  checkRequiredNames(value.workflowMutations.map((entry) => entry.name), value.requiredWorkflowMutationNames, MANIFEST_REL)
-  checkRequiredNames(value.sourceMutations.map((entry) => entry.name), value.requiredSourceMutationNames, MANIFEST_REL)
+  checkRequiredNames(value.mutations.map((/** @type {{ name: string }} */ entry) => entry.name), value.requiredMutationNames, MANIFEST_REL)
+  checkRequiredNames(value.workflowMutations.map((/** @type {{ name: string }} */ entry) => entry.name), value.requiredWorkflowMutationNames, MANIFEST_REL)
+  checkRequiredNames(value.sourceMutations.map((/** @type {{ name: string }} */ entry) => entry.name), value.requiredSourceMutationNames, MANIFEST_REL)
   for (const [index, mutation] of value.mutations.entries()) {
     const fields = ['name', 'kind', 'target', 'expectedField']
     if (['delete-field', 'unknown-field', 'bad-value'].includes(mutation.kind)) fields.push('field')
@@ -428,19 +430,19 @@ function checkRequiredNames(actual, required, label) {
 function applyCorpusMutation(value, mutation) {
   if (mutation.kind === 'duplicate-name') {
     const cases = value.cases
-    const donor = cases.find((entry) => entry.name !== mutation.target) ?? cases[0]
+    const donor = cases.find((/** @type {{ name: string }} */ entry) => entry.name !== mutation.target) ?? cases[0]
     cases.push({ ...structuredClone(donor), name: mutation.target })
     return
   }
   if (mutation.kind === 'delete-record') {
-    const index = value.cases.findIndex((entry) => entry.name === mutation.target)
+    const index = value.cases.findIndex((/** @type {{ name: string }} */ entry) => entry.name === mutation.target)
     assert.notEqual(index, -1, `unknown mutation target ${mutation.target}`)
     value.cases.splice(index, 1)
     return
   }
   const [family, identity] = String(mutation.target).split(':')
   let target
-  if (family === 'case') target = value.cases.find((entry) => entry.name === identity)
+  if (family === 'case') target = value.cases.find((/** @type {{ name: string }} */ entry) => entry.name === identity)
   else if (family === 'keySet') target = value.keySets[identity]
   else throw new Error(`unknown mutation family ${family}`)
   assert.ok(target, `unknown mutation target ${mutation.target}`)
@@ -455,7 +457,7 @@ function applyCorpusMutation(value, mutation) {
   }
   if (mutation.kind === 'rename-field') {
     const node = segments.length === 1 ? target : getPath(target, segments.slice(0, -1))
-    const last = segments.at(-1)
+    const last = /** @type {string} */ (segments.at(-1))
     const value_ = node[last]
     delete node[last]
     node[mutation.newField] = value_
@@ -478,13 +480,13 @@ function setPath(root, segments, value) {
     if (!node[segment] || typeof node[segment] !== 'object') node[segment] = {}
     node = node[segment]
   }
-  node[segments.at(-1)] = value
+  node[/** @type {string} */ (segments.at(-1))] = value
 }
 
 /** @param {Record<string, any>} root @param {string[]} segments @returns {void} */
 function deletePath(root, segments) {
   const parent = segments.length === 1 ? root : getPath(root, segments.slice(0, -1))
-  delete parent[segments.at(-1)]
+  delete parent[/** @type {string} */ (segments.at(-1))]
 }
 
 /* ── workflow guard ───────────────────────────────────────────────────── */
@@ -998,7 +1000,7 @@ function expectMessage(message, fragments, label) {
 
 test('run-envelope fixture: valid corpus and manifest inventory', () => {
   assert.equal(corpus.cases.length, manifest.expectedCaseCount, `${CORPUS_REL}: case count must match the manifest`)
-  checkRequiredNames(corpus.cases.map((entry) => entry.name), manifest.requiredCaseNames, CORPUS_REL)
+  checkRequiredNames(corpus.cases.map((/** @type {{ name: string }} */ entry) => entry.name), manifest.requiredCaseNames, CORPUS_REL)
 })
 
 test('run-envelope fixture: key sets match the contract and the verifier rows', () => {
@@ -1028,7 +1030,7 @@ test('run-envelope: fixture mutations fail for their intended field', () => {
         const mutated = structuredClone(corpus)
         applyCorpusMutation(mutated, mutation)
         validateCorpus(mutated, CORPUS_REL)
-        checkRequiredNames(mutated.cases.map((entry) => entry.name), manifest.requiredCaseNames, CORPUS_REL)
+        checkRequiredNames(mutated.cases.map((/** @type {{ name: string }} */ entry) => entry.name), manifest.requiredCaseNames, CORPUS_REL)
       }
     } catch (error) {
       message = error instanceof Error ? error.message : String(error)

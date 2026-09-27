@@ -42,7 +42,7 @@ export const FAIRTEST_EVIDENCE_MAX_OUTPUT_BYTES = 64 * 1024 * 1024
  * supplied by the caller (the run envelope or the run environment) so the
  * verifier can refuse a run root that does not belong to the expected run.
  * @param {string} runId expected run identity id
- * @returns {object} the policy input for the neutral verifier
+ * @returns {{ version: number, runId: string, mode: string, artifactClasses: string[], requiredRows: { key: string, kind: string, theme: string, root: string }[], duplicateScopes: string[], maxAgeMs: number, maxOutputBytes: number }} the policy input for the neutral verifier
  */
 export function fairtestEvidencePolicyInput(runId) {
   return {

@@ -61,10 +61,10 @@ acknowledgedAny:
   - file: scripts/fairtest/product-adapter.test.mjs
     count: 4
   - file: scripts/fairtest/product-producer.mjs
-    count: 5
+    count: 2
   - file: scripts/fairtest/run-envelope-contract.mjs
     count: 3
   - file: scripts/fairtest/run-envelope.test.mjs
-    count: 14
+    count: 16
   - file: scripts/fairtest/verify-fairtest.mjs
     count: 2

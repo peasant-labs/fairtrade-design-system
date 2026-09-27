@@ -118,6 +118,7 @@ function checkEvidenceShape(entry, index) {
     throw new Error(`${EVIDENCE_REL}: case "${entry.name}" is missing its verdict for field "expectValid" at path ${path}.expectValid; repair: set expectValid to true or false.`)
   }
   const tail = entry.expectValid ? ['expectValid', 'expectFrozen'] : ['expectValid', 'expectedErrorContains']
+  /** @type {Record<string, string[]>} */
   const fieldsByCheck = {
     'component-evidence-artifact': ['name', 'check', 'artifact', ...tail],
     'component-evidence-artifact-parity': ['name', 'check', ...tail],
@@ -132,7 +133,7 @@ function checkEvidenceShape(entry, index) {
       : ['name', 'check', 'times', 'expectValid', 'expectedErrorContains'],
     'component-evidence-config': ['name', 'check', 'testMatch', 'project', ...tail],
   }
-  const fields = fieldsByCheck[entry.check]
+  const fields = fieldsByCheck[/** @type {string} */ (entry.check)]
   for (const field of fields) {
     if (!(field in entry)) {
       throw new Error(`${EVIDENCE_REL}: case "${entry.name}" is missing required field "${field}" at path ${path}.${field}; repair: restore "${field}" in ${EVIDENCE_REL}.`)
@@ -211,10 +212,12 @@ function runEvidenceArtifactParityCase(entry) {
 /** @param {Record<string, unknown>} entry */
 function runEvidenceVerdictCase(entry) {
   const name = /** @type {string} */ (entry.name)
-  const accessibility = structuredClone(entry.accessibility)
+  const accessibility = /** @type {Record<string, unknown>} */ (structuredClone(entry.accessibility))
   if (entry.informationalChurn) {
     const churn = /** @type {{ field: string, value: number }} */ (entry.informationalChurn)
-    accessibility.pageWide[churn.field] = churn.value
+    /** @type {Record<string, unknown>} */
+    const pageWide = /** @type {Record<string, unknown>} */ (accessibility.pageWide)
+    pageWide[churn.field] = churn.value
   }
   if (entry.expectValid) {
     const verdict = readComponentAccessibilityVerdict(accessibility)
@@ -233,7 +236,7 @@ function runEvidenceThemeCase(entry) {
   if (entry.expectValid) {
     assert.equal(normalizeRenderedTheme(entry.renderedAttribute), entry.expectTheme, `${name}: the rendered value must normalize to the expected theme`)
     const observation = observeProductTheme({
-      expected: entry.theme,
+      expected: /** @type {string} */ (entry.theme),
       renderedAttribute: entry.renderedAttribute,
       source: 'component-evidence',
       observedAtMs: 1000,
@@ -243,7 +246,7 @@ function runEvidenceThemeCase(entry) {
     return
   }
   const message = caught(() => observeProductTheme({
-    expected: entry.theme,
+    expected: /** @type {string} */ (entry.theme),
     renderedAttribute: entry.renderedAttribute,
     source: 'component-evidence',
     observedAtMs: 1000,
@@ -255,11 +258,13 @@ function runEvidenceThemeCase(entry) {
 /** @param {Record<string, unknown>} entry */
 function runEvidenceObservationTimeCase(entry) {
   const name = /** @type {string} */ (entry.name)
+  /** @type {{ rowStartedAtMs: number, mount: number, theme: number, interaction: number }} */
+  const times = /** @type {{ rowStartedAtMs: number, mount: number, theme: number, interaction: number }} */ (entry.times)
   if (entry.expectValid) {
-    assertComponentObservationTimes(entry.times)
+    assertComponentObservationTimes(times)
     return
   }
-  const message = caught(() => assertComponentObservationTimes(entry.times))
+  const message = caught(() => assertComponentObservationTimes(times))
   assert.ok(message, `${name}: the case must fail closed on the observation-time guard`)
   expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
 }
@@ -349,13 +354,13 @@ function applyEvidenceMutation(cases, mutation) {
   if (mutation.kind === 'delete-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    delete node[segments.at(-1)]
+    delete node[/** @type {string} */ (segments.at(-1))]
     return
   }
   if (mutation.kind === 'rename-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    const last = segments.at(-1)
+    const last = /** @type {string} */ (segments.at(-1))
     const value = node[last]
     delete node[last]
     node[String(mutation.newField)] = value
@@ -366,7 +371,7 @@ function applyEvidenceMutation(cases, mutation) {
     if (node[segment] === null || typeof node[segment] !== 'object') node[segment] = {}
     node = /** @type {Record<string, unknown>} */ (node[segment])
   }
-  node[segments.at(-1)] = structuredClone(mutation.value)
+  node[/** @type {string} */ (segments.at(-1))] = structuredClone(mutation.value)
 }
 
 describe('named negative component mutations', () => {
@@ -434,6 +439,7 @@ describe('named negative component mutations', () => {
     // describe title would make the grep match zero tests and exit 1, but the
     // drift would only surface at run time; this pins the declared prefixes to
     // the actual titles the moment either side changes.
+    /** @param {string} file */
     const titleOf = (file) => {
       const source = readFileSync(resolve(HERE, file), 'utf8')
       const match = /test\.describe\(\s*'([^']+)'/.exec(source)

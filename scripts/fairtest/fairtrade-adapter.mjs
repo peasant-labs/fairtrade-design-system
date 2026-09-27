@@ -107,15 +107,15 @@ const RUN_ID_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/
  * @typedef {object} LifecycleAdapter
  * @property {string} runId
  * @property {string} targetId
- * @property {{ capabilities: string[], fixtures: string[], actions: string[] }} declaration
+ * @property {{ kind: string, capabilities: string[], fixtures: string[], actions: string[] }} declaration
  * @property {string[]} capabilities
- * @property {(options?: { timeoutMs?: number }) => Promise<object>} start
- * @property {() => Promise<object>} readiness
- * @property {() => Promise<object>} teardown
+ * @property {(options?: { timeoutMs?: number }) => Promise<{ started: boolean, runId: string, targetId: string }>} start
+ * @property {() => Promise<{ ready: boolean, runId: string, targetId: string, detail: object }>} readiness
+ * @property {() => Promise<{ released: boolean, noop: boolean, stops: number }>} teardown
  * @property {() => object} mintHandle
  * @property {(handle: unknown) => object} requireHandle
  * @property {(name: unknown, options?: { observedAtMs?: number }) => Promise<object>} performAction
- * @property {() => object} lifecycleTrace
+ * @property {() => { stages: readonly string[] }} lifecycleTrace
  * @property {() => boolean} isRunning
  * @property {() => { stops: number, resets: number }} stats
  */
@@ -311,7 +311,7 @@ export async function createAdapter(options) {
 
   /**
    * Return the validated lifecycle trace for the current stages.
-   * @returns {object} the frozen lifecycle trace
+   * @returns {{ stages: readonly string[] }} the frozen lifecycle trace
    */
   function lifecycleTrace() {
     return contract.lifecycle.validateLifecycleTrace({ stages: [...stages] }, 'fairtrade adapter')
@@ -322,7 +322,7 @@ export async function createAdapter(options) {
    * cleaned with reset before stop and an actionable error is thrown.
    * @param {object} [callOptions] start options
    * @param {number} [callOptions.timeoutMs] start deadline in milliseconds
-   * @returns {Promise<object>} the frozen start receipt
+   * @returns {Promise<{ started: boolean, runId: string, targetId: string }>} the frozen start receipt
    */
   async function start(callOptions = {}) {
     if (state.released) {
@@ -378,7 +378,7 @@ export async function createAdapter(options) {
 
   /**
    * Report readiness for a started adapter and mark the ready stage once.
-   * @returns {Promise<object>} the frozen readiness receipt
+   * @returns {Promise<{ ready: boolean, runId: string, targetId: string, detail: object }>} the frozen readiness receipt
    */
   async function readiness() {
     if (!state.started) {
@@ -411,7 +411,7 @@ export async function createAdapter(options) {
    * driver that is not running and would surface a cleanup failure where the
    * start failure is what a maintainer needs to read. A run that did acquire
    * the service stops here, exactly once, before its handles are revoked.
-   * @returns {Promise<object>} the frozen teardown receipt
+   * @returns {Promise<{ released: boolean, noop: boolean, stops: number }>} the frozen teardown receipt
    */
   async function teardown() {
     if (state.released) {

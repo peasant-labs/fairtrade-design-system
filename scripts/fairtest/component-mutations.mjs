@@ -532,7 +532,7 @@ function mutateDigestMismatch() {
  * component journeys and never the full catalog. Shared by the mutation suite
  * and the verifier-facing evidence reader.
  * @param {{ testMatch?: unknown, webServer?: unknown, projects?: unknown }} config parsed Playwright config
- * @returns {object} the frozen receipt
+ * @returns {{ testMatch: readonly string[], project: string }} the frozen receipt
  */
 export function assertComponentRunnerConfigMatchesJourneys(config) {
   const testMatch = /** @type {string[]} */ (config?.testMatch)
@@ -569,7 +569,7 @@ export function assertComponentRunnerConfigMatchesJourneys(config) {
 
 /**
  * Read the one-project Fairtest config and assert it matches exactly the two
- * journeys. @returns {Promise<object>} the frozen receipt
+ * journeys. @returns {Promise<{ testMatch: readonly string[], project: string }>} the frozen receipt
  */
 export async function readAndAssertComponentRunnerConfig() {
   const module = await import(pathToFileURL(CONFIG_PATH).href)
@@ -657,7 +657,7 @@ async function readMountObservation(page) {
  * in finally blocks.
  * @param {object} [options] proof options
  * @param {number} [options.port] loopback port override, defaults to the claimed scratch port
- * @returns {Promise<object[]>} per-state refusal evidence
+ * @returns {Promise<{ state: string, refused: boolean, diagnostic: string }[]>} per-state refusal evidence
  */
 export async function proveComponentRootStatesRealPath({ port } = {}) {
   const { chromium } = await import('@playwright/test')
@@ -665,7 +665,7 @@ export async function proveComponentRootStatesRealPath({ port } = {}) {
   const driver = createComponentStaticDriver({ port: loopback.port, host: FAIRTEST_APP_HOST, staticRoot: STORYBOOK_ROOT })
   await driver.start()
   const browser = await chromium.launch()
-  const evidence = []
+  const evidence = /** @type {{ state: string, refused: boolean, diagnostic: string }[]} */ ([])
   try {
     const page = await browser.newPage({ viewport: { ...PRODUCT_VIEWPORT } })
     try {
@@ -777,7 +777,7 @@ const EXPECTED_ARTIFACT_CLASSES = Object.freeze([
  * Assert the component artifact class set is exactly the closed six names the
  * one verifier reads for both kinds. Shared by the mutation suite and the
  * verifier-facing evidence reader.
- * @returns {object} the frozen receipt
+ * @returns {{ classes: readonly string[], count: number }} the frozen receipt
  */
 export function assertComponentArtifactParity() {
   if (JSON.stringify([...COMPONENT_ARTIFACT_CLASSES]) !== JSON.stringify([...EXPECTED_ARTIFACT_CLASSES])) {

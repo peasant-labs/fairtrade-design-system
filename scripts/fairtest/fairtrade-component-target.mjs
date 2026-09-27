@@ -242,9 +242,40 @@ export const COMPONENT_TARGET_REGISTRY = Object.freeze({
 })
 
 /**
+ * The frozen component target record selectComponentTarget returns.
+ * @typedef {object} ComponentTargetRecord
+ * @property {string} id
+ * @property {string} kind
+ * @property {string} storyId
+ * @property {typeof COMPONENT_SELECTORS} selectors
+ * @property {readonly string[]} fixtures
+ * @property {readonly string[]} actions
+ * @property {{ name: string, storyId: string }} action
+ * @property {object} provenanceSource
+ */
+
+/**
+ * The declaration input componentDeclarationInput returns.
+ * @typedef {object} ComponentDeclarationInput
+ * @property {string} kind
+ * @property {{ kind: string, id: string, createdAtMs: number }} identity
+ * @property {readonly string[]} capabilities
+ * @property {readonly string[]} fixtures
+ * @property {readonly string[]} actions
+ */
+
+/**
+ * The contract receipt validateComponentTargetContract returns.
+ * @typedef {object} ComponentTargetContractReceipt
+ * @property {string} kind
+ * @property {readonly string[]} capabilities
+ * @property {ComponentDeclarationInput} declaration
+ */
+
+/**
  * Return the frozen target record for a registered component id.
  * @param {unknown} id target id requested by the caller
- * @returns {object} the frozen component target record
+ * @returns {ComponentTargetRecord} the frozen component target record
  */
 export function selectComponentTarget(id) {
   if (typeof id !== 'string' || !Object.hasOwn(COMPONENT_TARGET_REGISTRY, id)) {
@@ -353,7 +384,7 @@ export function componentThemeFromProjectName(projectName) {
  * @param {string} input.bodyClass current body className
  * @param {string} input.errorDisplay computed display of the error display
  * @param {string} input.errorStackText trimmed #error-stack text
- * @returns {object} the frozen mount observation
+ * @returns {{ mounted: boolean, rootChildCount: number, bodyClass: string, errorDisplay: string, errorStackText: string }} the frozen mount observation
  */
 export function assertComponentMounted(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
@@ -394,7 +425,7 @@ export function assertComponentMounted(input) {
       'repair: fix the story load error instead of recording a mounted root the error page wrote into.',
     )
   }
-  return Object.freeze({ mounted: true, rootChildCount, bodyClass, errorDisplay, errorStackText })
+  return Object.freeze({ mounted: true, rootChildCount: /** @type {number} */ (rootChildCount), bodyClass: /** @type {string} */ (bodyClass), errorDisplay, errorStackText })
 }
 
 /**
@@ -406,7 +437,7 @@ export function assertComponentMounted(input) {
  * @param {string[]} input.capabilities declared capability inventory
  * @param {readonly string[]} [input.fixtures] named fixtures served
  * @param {readonly string[]} [input.actions] named actions offered
- * @returns {object} the frozen declaration input
+ * @returns {ComponentDeclarationInput} the frozen declaration input
  */
 export function componentDeclarationInput({ createdAtMs, capabilities, fixtures = COMPONENT_FIXTURES, actions = COMPONENT_ACTIONS }) {
   if (!Number.isInteger(createdAtMs) || createdAtMs < 0 || createdAtMs > 9007199254740991) {
@@ -436,7 +467,7 @@ export function componentDeclarationInput({ createdAtMs, capabilities, fixtures 
  * validation on the component branch, and declaration validation.
  * @param {object} input validation inputs
  * @param {number} input.createdAtMs creation time in whole milliseconds
- * @returns {Promise<object>} the frozen contract receipt
+ * @returns {Promise<ComponentTargetContractReceipt>} the frozen contract receipt
  */
 export async function validateComponentTargetContract({ createdAtMs }) {
   if (!kindsContract.HOST_KINDS.includes('component')) {
@@ -462,7 +493,7 @@ export async function validateComponentTargetContract({ createdAtMs }) {
  * be checked for exact membership with no silent extras. The base fields cover
  * a proof without a named interaction; the extended set adds the completed
  * interaction result. The product-only parts are deliberately absent.
- * @type {object}
+ * @type {{ kind: string, fields: readonly string[], fieldsWithInteraction: readonly string[], rootFields: readonly string[], themeFields: readonly string[], interactionFields: readonly string[], identityFields: readonly string[] }}
  */
 export const COMPONENT_PROOF_RECORD_SCHEMA = Object.freeze({
   kind: 'component',
@@ -481,12 +512,7 @@ export const COMPONENT_PROOF_RECORD_SCHEMA = Object.freeze({
  * (a blanket mounted boolean with no observation is refused); a completed named
  * interaction must come from the app-owned action registry. A product-shaped
  * record fails through the shared validator. The returned record is frozen.
- * @param {object} input proof inputs
- * @param {string} input.rowTheme dark or light row theme
- * @param {object} input.identity component-branch identity
- * @param {object} input.root separately observed mounted root
- * @param {object} input.themeObservation validated theme observation
- * @param {object} [input.interaction] optional completed named interaction result
+ * @param {object} input proof inputs, validated field by field at runtime
  * @returns {import('../fairtest-source.mjs').ComponentResolution} the frozen validated component resolution
  */
 export function buildComponentProof(input) {

@@ -242,9 +242,44 @@ export const PRODUCT_TARGET_REGISTRY = Object.freeze({
 })
 
 /**
+ * The frozen product target record selectProductTarget returns. Only the
+ * fields consumers read are named; the shared target-value fields are owned
+ * by the contract module.
+ * @typedef {object} ProductTargetRecord
+ * @property {string} id
+ * @property {string} kind
+ * @property {string} initialSection
+ * @property {typeof PRODUCT_SELECTORS} selectors
+ * @property {readonly string[]} sections
+ * @property {object} handles
+ * @property {readonly string[]} fixtures
+ * @property {readonly string[]} actions
+ * @property {{ name: string, from: string, to: string, label: string }} action
+ * @property {object} provenanceSource
+ */
+
+/**
+ * The declaration input productDeclarationInput returns.
+ * @typedef {object} ProductDeclarationInput
+ * @property {string} kind
+ * @property {{ kind: string, id: string, createdAtMs: number }} identity
+ * @property {readonly string[]} capabilities
+ * @property {readonly string[]} fixtures
+ * @property {readonly string[]} actions
+ */
+
+/**
+ * The contract receipt validateProductTargetContract returns.
+ * @typedef {object} ProductTargetContractReceipt
+ * @property {string} kind
+ * @property {readonly string[]} capabilities
+ * @property {ProductDeclarationInput} declaration
+ */
+
+/**
  * Return the frozen target record for a registered id.
  * @param {unknown} id target id requested by the caller
- * @returns {object} the frozen product target record
+ * @returns {ProductTargetRecord} the frozen product target record
  */
 export function selectProductTarget(id) {
   if (typeof id !== 'string' || !Object.hasOwn(PRODUCT_TARGET_REGISTRY, id)) {
@@ -341,7 +376,7 @@ export function productThemeRow(theme) {
  * @param {string[]} input.capabilities declared capability inventory
  * @param {readonly string[]} [input.fixtures] named fixtures served
  * @param {readonly string[]} [input.actions] named actions offered
- * @returns {object} the frozen declaration input
+ * @returns {ProductDeclarationInput} the frozen declaration input
  */
 export function productDeclarationInput({ createdAtMs, capabilities, fixtures = PRODUCT_FIXTURES, actions = PRODUCT_ACTIONS }) {
   if (!Number.isInteger(createdAtMs) || createdAtMs < 0 || createdAtMs > 9007199254740991) {
@@ -371,7 +406,7 @@ export function productDeclarationInput({ createdAtMs, capabilities, fixtures = 
  * inventory validation, and declaration validation.
  * @param {object} input validation inputs
  * @param {number} input.createdAtMs creation time in whole milliseconds
- * @returns {Promise<object>} the frozen contract receipt
+ * @returns {Promise<ProductTargetContractReceipt>} the frozen contract receipt
  */
 export async function validateProductTargetContract({ createdAtMs }) {
   if (!kindsContract.HOST_KINDS.includes(PRODUCT_TARGET_KIND)) {
@@ -400,7 +435,7 @@ export async function validateProductTargetContract({ createdAtMs }) {
  * pre-paint inline script sets the light value only when the light query
  * value is present and otherwise leaves the attribute absent.
  * @param {unknown} theme dark or light row theme
- * @returns {object} the frozen setup descriptor for the row
+ * @returns {{ theme: string, expectedAttribute: string, route: string }} the frozen setup descriptor for the row
  */
 export function productThemeSetup(theme) {
   if (theme !== 'dark' && theme !== 'light') {
@@ -500,7 +535,7 @@ export function observeProductTheme(input) {
  * can be checked for exact membership with no silent extras. The base
  * fields cover a proof without a named action; the extended set adds the
  * completed action result.
- * @type {object}
+ * @type {{ kind: string, fields: readonly string[], fieldsWithAction: readonly string[], partFields: readonly string[], themeFields: readonly string[], actionFields: readonly string[], identityFields: readonly string[] }}
  */
 export const PRODUCT_PROOF_RECORD_SCHEMA = Object.freeze({
   kind: 'product',
@@ -521,18 +556,7 @@ export const PRODUCT_PROOF_RECORD_SCHEMA = Object.freeze({
  * action must come from the app-owned action registry with the active
  * section on the action target. Component-shaped and cross-kind records
  * fail through the shared validator. The returned record is frozen.
- * @param {object} input proof inputs
- * @param {string} input.rowTheme dark or light row theme
- * @param {object} input.identity product-branch identity
- * @param {object} input.chrome separately observed persistent chrome
- * @param {object} input.body separately observed representative body
- * @param {object} input.route separately observed route
- * @param {object} input.activeSection separately observed active section
- * @param {object} input.view separately observed mounted view
- * @param {object} input.themeObservation validated theme observation
- * @param {string} input.initialSection section rendered before any action
- * @param {string} input.activeSectionId section id active when the proof completes
- * @param {object} [input.action] optional completed named action result
+ * @param {object} input proof inputs, validated field by field at runtime
  * @returns {import('../fairtest-source.mjs').ProductResolution} the frozen validated product resolution
  */
 export function buildProductProof(input) {
@@ -779,6 +803,19 @@ function validateProductAxeBaselineEntry(entry, point) {
 }
 
 /**
+ * One frozen gate receipt the record.json accessibility block carries under
+ * gate.<slot>. Declared as a named shape so a reader that consumes the
+ * receipt types its slots instead of re-deriving the field list.
+ * @typedef {object} ProductA11yGateReceipt
+ * @property {string} policy
+ * @property {string} point
+ * @property {string} observedSection
+ * @property {string} result
+ * @property {number} measured
+ * @property {number} baseline
+ */
+
+/**
  * Gate a scoped product-view scan against the declared baseline,
  * failing closed when the measurement exceeds it. A violation id absent
  * from the baseline (a new violation), a node count above the declared
@@ -788,11 +825,11 @@ function validateProductAxeBaselineEntry(entry, point) {
  * that disappears (improvement) never fails.
  * @param {object} input gate inputs
  * @param {string} input.point observation point the measurement belongs to
- * @param {{ id: string, impact: string, nodeCount: number }[]} input.measured scoped violations just observed
+ * @param {{ id: string, impact: string | null, nodeCount: number }[]} input.measured scoped violations just observed
  * @param {object[]} [input.baseline] declared entries, defaults to the app-owned baseline for the point
  * @param {string} input.observedSection the section the live page showed when the scan was taken, read from the DOM beside the scan
  * @param {string} input.artifactPath row axe.json path the full result was written to
- * @returns {object} the frozen gate receipt on pass
+ * @returns {ProductA11yGateReceipt} the frozen gate receipt on pass
  */
 export function assertProductAxeBaselineDelta(input) {
   const wantsBaseline = !!input && typeof input === 'object' && Object.hasOwn(input, 'baseline')

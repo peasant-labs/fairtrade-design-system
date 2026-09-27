@@ -100,6 +100,135 @@ const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 const valuesContract = await importFairtestSource('src/core/values.mjs')
 
 /**
+ * Inputs prepareProductRowDir validates and then acts on. Every field is
+ * optional in the type because the default is the empty record the runtime
+ * shape guard refuses by name; the declared fields are the accepted shape.
+ * @typedef {object} ProductRowDirInput
+ * @property {string} runRoot immutable run root
+ * @property {string} theme dark or light row theme
+ * @property {(step: 'validated' | 'created') => void} [observe] step boundary observer
+ */
+
+/**
+ * One per-root unrendered refusal the in-page measurement reports.
+ * @typedef {object} ProductUnrenderedRefusal
+ * @property {string} mode declared unrendered mode name
+ * @property {string} display measured computed display
+ * @property {string} visibility measured computed visibility
+ * @property {number} opacity effective opacity, rounded
+ * @property {number} width measured box width
+ * @property {number} height measured box height
+ * @property {boolean} intersectsStage whether the refused root still intersects the stage
+ */
+
+/**
+ * The rendered active-view measurement the floors are applied to.
+ * @typedef {object} ProductActiveViewMeasurement
+ * @property {number} roots
+ * @property {number} rendered
+ * @property {number} descendants
+ * @property {number} textLength
+ */
+
+/**
+ * The active-view and container halves measureProductView returns.
+ * @typedef {object} ProductViewMeasurement
+ * @property {ProductActiveViewMeasurement & { refusals: ProductUnrenderedRefusal[] }} activeView
+ * @property {{ descendants: number, textLength: number }} container
+ */
+
+/**
+ * Context assertProductActiveViewMounted names a blank condition with.
+ * @typedef {object} ProductActiveViewGuardContext
+ * @property {string} label
+ * @property {string} part
+ * @property {string} path
+ * @property {string} repair
+ */
+
+/**
+ * Inputs assertProductRecordedActiveView checks a recorded block against.
+ * @typedef {object} ProductRecordedActiveViewInput
+ * @property {object} record the recorded block about to be written
+ * @property {ProductActiveViewMeasurement} accepted the guard's returned triple
+ * @property {ProductViewMeasurement} observation the measured view the guard decided on
+ * @property {string} part
+ * @property {string} path
+ * @property {string} rootField
+ * @property {string} renderedField
+ * @property {string} descendantsField
+ * @property {string} textField
+ */
+
+/**
+ * Inputs buildProductBodyRecord assembles one frozen body block from.
+ * @typedef {object} ProductBodyRecordInput
+ * @property {ProductActiveViewMeasurement} accepted
+ * @property {ProductViewMeasurement} observation
+ * @property {{ width: number, height: number } | null} box
+ */
+
+/**
+ * Inputs buildProductViewRecord assembles one frozen view block from.
+ * @typedef {object} ProductViewRecordInput
+ * @property {ProductActiveViewMeasurement} accepted
+ * @property {ProductViewMeasurement} observation
+ * @property {number} stageDescendantsAfter
+ */
+
+/**
+ * Observation times assertProductObservationTimes validates the order of.
+ * @typedef {object} ProductObservationTimes
+ * @property {number} rowStartedAtMs
+ * @property {number} chrome
+ * @property {number} body
+ * @property {number} route
+ * @property {number} theme
+ * @property {number} action
+ */
+
+/**
+ * The compact axe scan the shared journey primitive returns.
+ * @typedef {object} CompactAxeScan
+ * @property {string[]} tags
+ * @property {{ id: string, impact: string | null, nodes: string[][] }[]} violations
+ * @property {string[]} incomplete
+ * @property {number} passes
+ */
+
+/**
+ * Inputs buildProductAccessibilityEvidence assembles the record block from.
+ * @typedef {object} ProductAccessibilityEvidenceInput
+ * @property {CompactAxeScan} pageWide
+ * @property {CompactAxeScan} scopedBefore
+ * @property {CompactAxeScan} scopedAfter
+ * @property {import('./fairtrade-targets.mjs').ProductA11yGateReceipt} gateBefore
+ * @property {import('./fairtrade-targets.mjs').ProductA11yGateReceipt} gateAfter
+ */
+
+/**
+ * One scoped scan summary inside the record accessibility block.
+ * @typedef {object} ProductScopedSummary
+ * @property {number} violations
+ * @property {string[]} ids
+ * @property {string[]} incomplete
+ * @property {number} passes
+ */
+
+/**
+ * The record.json accessibility block buildProductAccessibilityEvidence
+ * assembles and readProductAccessibilityVerdict reads.
+ * @typedef {object} ProductAccessibilityRecord
+ * @property {string} policy
+ * @property {string} gatedScope
+ * @property {string} scopeRoot
+ * @property {ProductScopedSummary} scopedBefore
+ * @property {ProductScopedSummary} scopedAfter
+ * @property {{ before: import('./fairtrade-targets.mjs').ProductA11yGateReceipt, after: import('./fairtrade-targets.mjs').ProductA11yGateReceipt }} gate
+ * @property {{ scope: string, root: string, informational: boolean, violations: number, blocking: number, blockingIds: string[], incomplete: string[], passes: number }} pageWide
+ */
+
+/**
  * The six durable artifact classes every product row writes. The ONE frozen
  * array lives in fairtest-artifacts.mjs (the app-owned, kind-neutral artifact
  * contract) and is re-exported under the product name so every product consumer
@@ -284,13 +413,10 @@ function refuseStaleRunSubtree(rowDir) {
  * of the row's source text. Production callers pass nothing; the fixture
  * family passes a recorder and asserts the validation boundary comes first
  * and that a refused row directory is left exactly as it was found.
- * @param {object} input preparation inputs
- * @param {string} input.runRoot immutable run root
- * @param {string} input.theme dark or light row theme
- * @param {(step: 'validated' | 'created') => void} [input.observe] step boundary observer
+ * @param {ProductRowDirInput} [input] preparation inputs
  * @returns {{ runRoot: string, rowDir: string }} the prepared paths for the row
  */
-export function prepareProductRowDir(input = {}) {
+export function prepareProductRowDir(input = /** @type {ProductRowDirInput} */ ({})) {
   const observeStep = Object.hasOwn(input, 'observe') ? input.observe : null
   assertProductRecordFields(
     input,
@@ -306,7 +432,7 @@ export function prepareProductRowDir(input = {}) {
     )
   }
   const observe = observeStep ?? (() => {})
-  const { runRoot, theme } = /** @type {Record<string, string>} */ (input)
+  const { runRoot, theme } = input
   const rowDir = productRowDir(runRoot, theme)
   refuseStaleRunSubtree(rowDir)
   observe('validated')
@@ -372,6 +498,7 @@ export function createProductStaticDriver(options = {}) {
       `repair: bind the built app to ${FAIRTEST_APP_HOST} for "host".`,
     )
   }
+  /** @type {Record<string, string>} */
   const MIME = {
     '.html': 'text/html; charset=utf-8',
     '.js': 'text/javascript; charset=utf-8',
@@ -384,6 +511,7 @@ export function createProductStaticDriver(options = {}) {
     '.mp4': 'video/mp4',
     '.woff2': 'font/woff2',
   }
+  /** @type {import('node:http').Server | null} */
   let server = null
   let running = false
   let stops = 0
@@ -423,10 +551,11 @@ export function createProductStaticDriver(options = {}) {
         res.end('not found')
       }
     })
+    const listening = server
     await new Promise((responseResolve, responseReject) => {
-      server.on('error', responseReject)
-      server.listen(port, host, () => {
-        server.removeListener('error', responseReject)
+      listening.on('error', responseReject)
+      listening.listen(port, host, () => {
+        listening.removeListener('error', responseReject)
         responseResolve(undefined)
       })
     }).catch((error) => {
@@ -533,7 +662,7 @@ function fetchBytes(url) {
         res.resume()
         return
       }
-      const chunks = []
+      const chunks = /** @type {Buffer[]} */ ([])
       res.on('data', (chunk) => chunks.push(chunk))
       res.on('end', () => responseResolve(Buffer.concat(chunks)))
     }).on('error', responseReject)
@@ -588,7 +717,7 @@ function readWorktreeState() {
  * @returns {Promise<object>} the provenance record (unfrozen, caller freezes on write)
  */
 async function collectServedProvenance({ baseUrl, servedHtml, viewport, targetIdentity, themeObservations }) {
-  const assetDigests = {}
+  const assetDigests = /** @type {Record<string, string>} */ ({})
   assetDigests['index.html'] = sha256(servedHtml)
   const refs = new Set()
   for (const match of servedHtml.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)) {
@@ -694,10 +823,10 @@ export function assertProductAxeScanShape(scan, part, path) {
  * @param {import('@playwright/test').Page} page Playwright page for the row
  * @param {string} part observed part the scan belongs to
  * @param {string} [root] scope root, always the product view root when given
- * @returns {Promise<object>} the compact scan report
+ * @returns {Promise<CompactAxeScan>} the compact scan report
  */
 async function scanProductViewAxe(page, part, root = PRODUCT_A11Y_SCOPE_ROOT) {
-  const scan = await scanAxe(page, { root })
+  const scan = /** @type {CompactAxeScan} */ (await scanAxe(page, { root }))
   assertProductAxeScanShape(scan, part, root ? 'evidence.axe.scoped' : 'evidence.axe.pageWide')
   return scan
 }
@@ -705,8 +834,8 @@ async function scanProductViewAxe(page, part, root = PRODUCT_A11Y_SCOPE_ROOT) {
 /**
  * Summarize a compact scan for the baseline-delta gate: one triple per
  * violation with the node count instead of the raw target lists.
- * @param {object} scan compact scan report
- * @returns {{ id: string, impact: string, nodeCount: number }[]} measured triples
+ * @param {CompactAxeScan} scan compact scan report
+ * @returns {{ id: string, impact: string | null, nodeCount: number }[]} measured triples
  */
 function summarizeAxeForGate(scan) {
   return scan.violations.map((entry) => ({
@@ -723,7 +852,7 @@ function summarizeAxeForGate(scan) {
  * missing or unknown; this wrapper adds the product repair hint so a reader
  * of the record still gets an actionable fix beside the child's own reason.
  * @param {unknown} value candidate record
- * @param {string[]} fields the exact declared field set
+ * @param {readonly string[]} fields the exact declared field set
  * @param {string} field product field name used in diagnostics
  * @param {string} path value path used in diagnostics
  * @param {string} repair repair hint appended to the diagnostic
@@ -788,9 +917,6 @@ function assertProductCount(value, field, path, repair) {
  * Both halves are returned because the guard needs the container totals to
  * say plainly why they are not the measurement the floors apply to, and the
  * record needs the rendered/total split to stay legible.
- * @typedef {object} ProductViewMeasurement
- * @property {{ roots: number, rendered: number, descendants: number, textLength: number, refusals: { mode: string, display: string, visibility: string, opacity: number, width: number, height: number, intersectsStage: boolean }[] }} activeView the rendered population and per-root refusals
- * @property {{ descendants: number, textLength: number }} container the container totals
  */
 
 /**
@@ -810,7 +936,7 @@ export function measureProductView(selectors) {
     const rect = root.getBoundingClientRect()
     const style = getComputedStyle(root)
     let opacity = 1
-    for (let node = root; node; node = node.parentElement) {
+    for (let node = /** @type {Element | null} */ (root); node; node = node.parentElement) {
       opacity *= Number.parseFloat(getComputedStyle(node).opacity || '1')
       if (node === container) break
     }
@@ -893,14 +1019,10 @@ export function measureProductView(selectors) {
  * is not reading, and the repair. The accepted triple is returned so the
  * record is built from exactly the population the guard measured.
  * @param {object} observed measured view from measureProductView
- * @param {object} context product context for the diagnostic
- * @param {string} context.label short name for the blank condition
- * @param {string} context.part observed part the guard protects
- * @param {string} context.path record path of the observed part
- * @param {string} context.repair repair hint naming the section to keep mounted
- * @returns {{ roots: number, rendered: number, descendants: number, textLength: number }} the accepted rendered measurement
+ * @param {ProductActiveViewGuardContext} [context] product context for the diagnostic
+ * @returns {ProductActiveViewMeasurement} the accepted rendered measurement
  */
-export function assertProductActiveViewMounted(observed, context = {}) {
+export function assertProductActiveViewMounted(observed, context = /** @type {ProductActiveViewGuardContext} */ ({})) {
   assertProductRecordFields(
     context,
     ['label', 'part', 'path', 'repair'],
@@ -908,7 +1030,7 @@ export function assertProductActiveViewMounted(observed, context = {}) {
     'producer.activeViewContext',
     'name the observed part, its record path, and the repair for a blank active view',
   )
-  const { label, part, path, repair } = /** @type {Record<string, string>} */ (context)
+  const { label, part, path, repair } = context
   assertProductRecordFields(
     observed,
     ['activeView', 'container'],
@@ -916,7 +1038,7 @@ export function assertProductActiveViewMounted(observed, context = {}) {
     `producer.viewObservation.${part}`,
     'measure both the active view and the view container before observing the part',
   )
-  const measurement = /** @type {Record<string, any>} */ (observed)
+  const measurement = /** @type {ProductViewMeasurement} */ (observed)
   assertProductRecordFields(
     measurement.activeView,
     ['roots', 'rendered', 'descendants', 'textLength', 'refusals'],
@@ -946,7 +1068,7 @@ export function assertProductActiveViewMounted(observed, context = {}) {
         `repair: use one of ${[...PRODUCT_UNRENDERED_MODES].join(', ')} for "mode".`,
       )
     }
-    for (const dimension of ['width', 'height']) {
+    for (const dimension of /** @type {('width' | 'height')[]} */ (['width', 'height'])) {
       assertProductCount(refusal[dimension], dimension, `producer.activeView.${part}.refusals.${dimension}`, 'record the measured box dimension of the refused root')
     }
     if (typeof refusal.intersectsStage !== 'boolean') {
@@ -983,17 +1105,10 @@ export function assertProductActiveViewMounted(observed, context = {}) {
  * container total whenever the two populations differ, so swapping the
  * recorded values back to container totals fails here before the record is
  * written.
- * @param {object} input recorded-block inputs
- * @param {object} input.record the recorded block about to be written
- * @param {object} input.accepted the triple assertProductActiveViewMounted returned
- * @param {object} input.observation the measured view the guard decided on
- * @param {string} input.part observed part the block belongs to
- * @param {string} input.path record path of the block
- * @param {string} input.descendantsField recorded field carrying the descendant count
- * @param {string} input.textField recorded field carrying the text length
+ * @param {ProductRecordedActiveViewInput} [input] recorded-block inputs
  * @returns {void}
  */
-function assertProductRecordedActiveView(input = {}) {
+function assertProductRecordedActiveView(input = /** @type {ProductRecordedActiveViewInput} */ ({})) {
   assertProductRecordFields(
     input,
     ['record', 'accepted', 'observation', 'part', 'path', 'rootField', 'renderedField', 'descendantsField', 'textField'],
@@ -1001,8 +1116,10 @@ function assertProductRecordedActiveView(input = {}) {
     'producer.recordedActiveView',
     'pass the recorded block, the accepted rendered measurement, and the four recorded field names it carries them under',
   )
-  const { record, accepted, observation, part, path } = /** @type {Record<string, any>} */ (input)
+  const { accepted, observation, part, path } = input
+  const record = /** @type {Record<string, unknown>} */ (input.record)
   const measured = observation.activeView
+  /** @type {[keyof ProductActiveViewMeasurement, string][]} */
   const fields = [
     ['roots', input.rootField],
     ['rendered', input.renderedField],
@@ -1036,13 +1153,10 @@ function assertProductRecordedActiveView(input = {}) {
  * RENDERED active-view numbers the floors were applied to; the container
  * totals stay beside them under explicitly labelled names, and the rendered
  * and total root counts are both recorded so the split is legible.
- * @param {object} input body-block inputs
- * @param {object} input.accepted triple returned by assertProductActiveViewMounted
- * @param {object} input.observation the measured view the guard decided on
- * @param {{ width: number, height: number } | null} input.box the container box
+ * @param {ProductBodyRecordInput} [input] body-block inputs
  * @returns {object} the frozen recorded body block
  */
-export function buildProductBodyRecord({ accepted, observation, box } = {}) {
+export function buildProductBodyRecord({ accepted, observation, box } = /** @type {ProductBodyRecordInput} */ ({})) {
   assertProductRecordFields({ accepted, observation, box }, ['accepted', 'observation', 'box'], 'bodyRecord', 'record.body', 'pass the accepted rendered measurement, the observed view, and the container box')
   const record = {
     selector: PRODUCT_SELECTORS.body,
@@ -1073,13 +1187,10 @@ export function buildProductBodyRecord({ accepted, observation, box } = {}) {
  * Build the record.json view block the same way as the body block: the
  * post-action unqualified counts are the rendered active view's, with the
  * container totals labelled beside them.
- * @param {object} input view-block inputs
- * @param {object} input.accepted triple returned by assertProductActiveViewMounted
- * @param {object} input.observation the measured view the guard decided on
- * @param {number} input.stageDescendantsAfter descendants of the mounted stage
+ * @param {ProductViewRecordInput} [input] view-block inputs
  * @returns {object} the frozen recorded view block
  */
-export function buildProductViewRecord({ accepted, observation, stageDescendantsAfter } = {}) {
+export function buildProductViewRecord({ accepted, observation, stageDescendantsAfter } = /** @type {ProductViewRecordInput} */ ({})) {
   assertProductRecordFields({ accepted, observation, stageDescendantsAfter }, ['accepted', 'observation', 'stageDescendantsAfter'], 'viewRecord', 'record.view', 'pass the accepted rendered measurement, the observed view, and the stage descendant count')
   const record = {
     selector: PRODUCT_SELECTORS.sectionView,
@@ -1109,7 +1220,7 @@ export function buildProductViewRecord({ accepted, observation, stageDescendants
 /**
  * Summarize one scoped product-view scan into the compact receipt the record
  * accessibility block carries beside its gate decision.
- * @param {object} scan compact scoped scan report
+ * @param {CompactAxeScan} scan compact scoped scan report
  * @returns {{ violations: number, ids: string[], incomplete: string[], passes: number }} the scoped summary
  */
 function summarizeScopedScan(scan) {
@@ -1134,14 +1245,9 @@ function summarizeScopedScan(scan) {
  * informational census only: the verdict belongs to the gate receipts, which
  * are the sole inputs to readProductAccessibilityVerdict.
  * @param {object} input assembled accessibility evidence
- * @param {object} input.pageWide compact page-wide scan report
- * @param {object} input.scopedBefore compact scoped scan before the action
- * @param {object} input.scopedAfter compact scoped scan after the action
- * @param {object} input.gateBefore gate receipt at the initial point
- * @param {object} input.gateAfter gate receipt at the after-action point
- * @returns {object} the record accessibility block
+ * @returns {ProductAccessibilityRecord} the record accessibility block
  */
-export function buildProductAccessibilityEvidence(input = {}) {
+export function buildProductAccessibilityEvidence(input = /** @type {object} */ ({})) {
   const wanted = ['pageWide', 'scopedBefore', 'scopedAfter', 'gateBefore', 'gateAfter']
   assertProductRecordFields(
     input,
@@ -1150,8 +1256,8 @@ export function buildProductAccessibilityEvidence(input = {}) {
     'record.accessibility',
     'pass the page-wide scan, both scoped scans, and both gate receipts',
   )
-  const { pageWide, scopedBefore, scopedAfter, gateBefore, gateAfter } = /** @type {Record<string, any>} */ (input)
-  const blocking = seriousViolations(pageWide)
+  const { pageWide, scopedBefore, scopedAfter, gateBefore, gateAfter } = /** @type {ProductAccessibilityEvidenceInput} */ (input)
+  const blocking = /** @type {CompactAxeScan['violations']} */ (seriousViolations(pageWide))
   return {
     policy: PRODUCT_A11Y_POLICY,
     gatedScope: PRODUCT_A11Y_SCOPES.gated,
@@ -1214,7 +1320,7 @@ export function buildProductAccessibilityEvidence(input = {}) {
  * the ambiguous shape this reader refuses: it fails closed and names the
  * field instead of guessing which population it belongs to.
  * @param {object} accessibility the record.json accessibility block
- * @returns {{ policy: string, gatedScope: string, scopeRoot: string, result: string, points: { before: object, after: object } }} the frozen verdict read from the gate receipts
+ * @returns {{ policy: string, gatedScope: string, scopeRoot: string, result: string, points: { before: import('./fairtrade-targets.mjs').ProductA11yGateReceipt, after: import('./fairtrade-targets.mjs').ProductA11yGateReceipt } }} the frozen verdict read from the gate receipts
  */
 export function readProductAccessibilityVerdict(accessibility) {
   assertProductRecordFields(
@@ -1274,7 +1380,7 @@ export function readProductAccessibilityVerdict(accessibility) {
         `repair: record the policy the gate actually ran under for "policy".`,
       )
     }
-    const declaredPoint = PRODUCT_A11Y_GATE_POINT_SLOTS[point]
+    const declaredPoint = PRODUCT_A11Y_GATE_POINT_SLOTS[/** @type {'before' | 'after'} */ (point)]
     if (!PRODUCT_A11Y_POINTS.includes(/** @type {string} */ (receipt.point))) {
       throw new Error(
         `product producer: unknown gate observation point ${JSON.stringify(receipt.point)} for field "point" at path ${slot}.point; ` +
@@ -1287,11 +1393,11 @@ export function readProductAccessibilityVerdict(accessibility) {
     // same map. What CAN contradict is the section the page actually showed
     // when the scan was taken, so that is what the reader compares, and a
     // receipt handed the other slot's scan is refused.
-    const declaredLabel = PRODUCT_A11Y_POINT_LABELS[declaredPoint]
+    const declaredLabel = PRODUCT_A11Y_POINT_LABELS[/** @type {'initial' | 'after-action'} */ (declaredPoint)]
     if (receipt.point !== declaredPoint || receipt.observedSection !== declaredLabel) {
       throw new Error(
         `product producer: mismatched gate observation point ${JSON.stringify(receipt.point)} for field "observedSection" at path ${slot}.observedSection; ` +
-        `gate.${point} carries the ${JSON.stringify(declaredPoint)} measurement, whose section ${JSON.stringify(PRODUCT_A11Y_POINT_SECTIONS[declaredPoint])} renders as ${JSON.stringify(declaredLabel)}, but the receipt names ${JSON.stringify(receipt.point)} observed as ${JSON.stringify(receipt.observedSection)}; ` +
+        `gate.${point} carries the ${JSON.stringify(declaredPoint)} measurement, whose section ${JSON.stringify(PRODUCT_A11Y_POINT_SECTIONS[/** @type {'initial' | 'after-action'} */ (declaredPoint)])} renders as ${JSON.stringify(declaredLabel)}, but the receipt names ${JSON.stringify(receipt.point)} observed as ${JSON.stringify(receipt.observedSection)}; ` +
         `repair: take the scan at the ${JSON.stringify(declaredPoint)} observation point with the ${JSON.stringify(declaredLabel)} section active, and read the active section text beside the scan.`,
       )
     }
@@ -1381,16 +1487,10 @@ export function readProductAccessibilityVerdict(accessibility) {
  * follows the theme. A row whose part times disagree with each other, or that
  * claim to have observed something at or before its own row start, is
  * synthetic and fails closed.
- * @param {object} input observation times for the row
- * @param {number} input.rowStartedAtMs clock reading when the row began
- * @param {number} input.chrome observedAtMs recorded for the chrome part
- * @param {number} input.body observedAtMs recorded for the body part
- * @param {number} input.route observedAtMs recorded for the route part
- * @param {number} input.theme observedAtMs recorded for the theme observation
- * @param {number} input.action observedAtMs recorded for the named action
+ * @param {ProductObservationTimes} [input] observation times for the row
  * @returns {void}
  */
-export function assertProductObservationTimes(input = {}) {
+export function assertProductObservationTimes(input = /** @type {ProductObservationTimes} */ ({})) {
   const wanted = ['rowStartedAtMs', ...PRODUCT_PRE_ACTION_PARTS, 'theme', 'action']
   assertProductRecordFields(
     input,
@@ -1466,7 +1566,7 @@ export function assertProductObservationTimes(input = {}) {
  * @param {string} [options.runRoot] immutable run root (defaults to FAIRTEST_RUN_ROOT)
  * @param {string} [options.baseUrl] running loopback base URL
  * @param {number} [options.createdAtMs] identity creation time in whole ms
- * @param {(observed: object, context: object) => object} [options.assertActiveViewMounted] rendered-active-view guard, defaults to the real predicate
+ * @param {(observed: object, context: ProductActiveViewGuardContext) => ProductActiveViewMeasurement} [options.assertActiveViewMounted] rendered-active-view guard, defaults to the real predicate
  * @returns {Promise<object>} row summary with proof, provenance, accessibility evidence and its verdict, real observation times, the recorded rendered measurements, the rendered-view guard call sequence, and artifact paths
  */
 export async function captureProductRow(page, theme, options = {}) {
@@ -1538,7 +1638,7 @@ export async function captureProductRow(page, theme, options = {}) {
   await requireMounted(PRODUCT_SELECTORS.body, 'body')
 
   const before = await page.evaluate((selectors) => {
-    const query = (name) => document.querySelector(selectors[name])
+    const query = (/** @type {keyof typeof PRODUCT_SELECTORS} */ name) => document.querySelector(selectors[name])
     const bar = query('chrome')
     const view = query('body')
     const stage = query('sectionView')
@@ -1754,8 +1854,8 @@ export async function captureProductRow(page, theme, options = {}) {
       // declaredSection is the label the registry predicts; observedSection is
       // what the page showed. They are named apart so a reader can never take
       // the prediction for the observation.
-      before: { declaredSection: PRODUCT_A11Y_POINT_SECTIONS[PRODUCT_A11Y_GATE_POINT_SLOTS.before], observedSection: before.activeText, ...scopedBefore },
-      after: { declaredSection: PRODUCT_A11Y_POINT_SECTIONS[PRODUCT_A11Y_GATE_POINT_SLOTS.after], observedSection: after.activeText, ...scopedAfter },
+      before: { declaredSection: PRODUCT_A11Y_POINT_SECTIONS[/** @type {'initial' | 'after-action'} */ (PRODUCT_A11Y_GATE_POINT_SLOTS.before)], observedSection: before.activeText, ...scopedBefore },
+      after: { declaredSection: PRODUCT_A11Y_POINT_SECTIONS[/** @type {'initial' | 'after-action'} */ (PRODUCT_A11Y_GATE_POINT_SLOTS.after)], observedSection: after.activeText, ...scopedAfter },
     },
     pageWide: { scope: PRODUCT_A11Y_SCOPES.page, root: PRODUCT_A11Y_SCOPES.pageRoot, ...pageWide },
   }

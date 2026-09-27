@@ -82,6 +82,7 @@ const INVENTORY_REL = 'scripts/testdata/fairtest-runner-inventory.yaml'
 const HOST_CORPUS_REL = 'scripts/fairtest/host-ownership.testdata.yaml'
 const HOST_MANIFEST_REL = 'scripts/fairtest/host-ownership.testdata.manifest.yaml'
 const HOST_OWNERS = ['runtime-constants-owner', 'app-owned-registry', 'app-owned-adapter', 'browser-bearing-host-runtime']
+/** @type {Record<string, string>} */
 const HOST_FILE_OWNERS = Object.freeze({
   'fairtest-runtime.mjs': 'runtime-constants-owner',
   'fairtrade-adapter.mjs': 'app-owned-adapter',
@@ -145,7 +146,10 @@ const contractResolution = await importFairtestSource('src/host-contract/resolut
 const corpusSource = readFileSync(resolve(ROOT, CORPUS_REL), 'utf8')
 const manifestSource = readFileSync(resolve(ROOT, MANIFEST_REL), 'utf8')
 
-/** @param {unknown} value */
+/**
+ * @param {unknown} value
+ * @returns {value is Record<string, unknown>}
+ */
 function isRecord(value) {
   return !!value && typeof value === 'object' && !Array.isArray(value)
 }
@@ -204,6 +208,7 @@ function checkCaseShape(entry, index) {
     throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing its verdict for field "expectValid" at path ${path}.expectValid; repair: set expectValid to true or false.`)
   }
   const tail = entry.expectValid ? ['expectValid', 'expectFrozen'] : ['expectValid', 'expectedErrorContains']
+  /** @type {Record<string, string[]>} */
   const fieldsByCheck = {
     'theme-row': entry.expectValid
       ? ['name', 'check', 'theme', 'renderedAttribute', 'expectTheme', ...tail]
@@ -267,7 +272,7 @@ function checkCaseShape(entry, index) {
       : ['name', 'check', 'files', 'mutateFile', 'mutateSuffix', 'expectValid', 'expectedErrorContains'],
     'driver-reset-contract': ['name', 'check', 'startFailure', 'contractRequirement', 'cleanupFailure', 'expectValid'],
   }
-  coreFixtures.checkKeys(entry, fieldsByCheck[entry.check], 'case record', CORPUS_REL, path)
+  coreFixtures.checkKeys(entry, fieldsByCheck[/** @type {string} */ (entry.check)], 'case record', CORPUS_REL, path)
   if (!entry.expectValid) {
     checkFragmentList(entry.expectedErrorContains, CORPUS_REL, `${path}.expectedErrorContains`)
   }
@@ -666,7 +671,7 @@ function checkDriverStopContractShape(entry, path) {
       throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid value ${JSON.stringify(entry[field])} for field "${field}" at path ${path}.${field}; repair: declare the non-empty ${field} the fake driver and the adapter driver surface are proven against.`)
     }
   }
-  if (!entry.startFailure.includes(' ')) {
+  if (!/** @type {string} */ (entry.startFailure).includes(' ')) {
     throw new Error(`${CORPUS_REL}: case "${name}" holds ${JSON.stringify(entry.startFailure)} for field "startFailure" at path ${path}.startFailure; repair: declare the full driver failure text so the start diagnostic can be proven to carry it.`)
   }
 }
@@ -731,6 +736,7 @@ function checkRenderedActiveViewShape(entry, path) {
   const name = /** @type {string} */ (entry.name)
   checkMeasuredViewShape(entry, path)
   const mode = /** @type {string} */ (entry.mode)
+  const activeView = /** @type {Record<string, unknown>} */ (entry.activeView)
   if (mode !== 'rendered' && !PRODUCT_UNRENDERED_MODES.includes(mode)) {
     throw new Error(`${CORPUS_REL}: case "${name}" names an unknown render mode ${JSON.stringify(mode)} for field "mode" at path ${path}.mode; repair: use rendered, or one of ${PRODUCT_UNRENDERED_MODES.join(', ')}.`)
   }
@@ -739,17 +745,17 @@ function checkRenderedActiveViewShape(entry, path) {
       throw new Error(`${CORPUS_REL}: case "${name}" holds no accepted measurement for field "expectAccepted" at path ${path}.expectAccepted; repair: declare the exact triple the rendered guard returns.`)
     }
     coreFixtures.checkKeys(entry.expectAccepted, ACCEPTED_MEASUREMENT_FIELDS, 'accepted measurement', CORPUS_REL, `${path}.expectAccepted`)
-    if (/** @type {number} */ (entry.activeView.rendered) < 1) {
+    if (/** @type {number} */ (activeView.rendered) < 1) {
       throw new Error(`${CORPUS_REL}: case "${name}" declares a passing verdict with no rendered root for field "rendered" at path ${path}.activeView.rendered; repair: a passing case must render at least one active root.`)
     }
   } else {
     if (mode === 'rendered') {
       throw new Error(`${CORPUS_REL}: case "${name}" declares a failing verdict for the healthy mode at path ${path}.mode; repair: name one declared unrendered mode for a refusal case.`)
     }
-    if (/** @type {number} */ (entry.activeView.rendered) !== 0) {
-      throw new Error(`${CORPUS_REL}: case "${name}" declares a refusing verdict with ${JSON.stringify(entry.activeView.rendered)} rendered roots for field "rendered" at path ${path}.activeView.rendered; repair: a refusal case must declare the unrendered population the guard refuses.`)
+    if (/** @type {number} */ (activeView.rendered) !== 0) {
+      throw new Error(`${CORPUS_REL}: case "${name}" declares a refusing verdict with ${JSON.stringify(activeView.rendered)} rendered roots for field "rendered" at path ${path}.activeView.rendered; repair: a refusal case must declare the unrendered population the guard refuses.`)
     }
-    const refusals = /** @type {Record<string, unknown>[]} */ (entry.activeView.refusals)
+    const refusals = /** @type {Record<string, unknown>[]} */ (activeView.refusals)
     if (refusals.length < 1 || !refusals.some((refusal) => refusal.mode === mode)) {
       throw new Error(`${CORPUS_REL}: case "${name}" declares no refusal for the ${JSON.stringify(mode)} mode at path ${path}.activeView.refusals; repair: declare the refusal the real served surface reports for this mode.`)
     }
@@ -821,10 +827,11 @@ function checkRunnerConfigShape(entry, path) {
       throw new Error(`${CORPUS_REL}: case "${name}" holds an invalid list ${JSON.stringify(value)} for field "${field}" at path ${path}.${field}; repair: declare the non-empty string list the runner shape must match.`)
     }
   }
-  if (new Set(entry.expectedProjects).size !== entry.expectedProjects.length) {
+  const projects = /** @type {string[]} */ (entry.expectedProjects)
+  if (new Set(projects).size !== projects.length) {
     throw new Error(`${CORPUS_REL}: case "${name}" repeats a project name for field "expectedProjects" at path ${path}.expectedProjects; repair: declare each project once.`)
   }
-  if (/** @type {string[]} */ (entry.expectedProjects).length !== 1) {
+  if (projects.length !== 1) {
     throw new Error(`${CORPUS_REL}: case "${name}" declares ${JSON.stringify(entry.expectedProjects).length} projects for field "expectedProjects" at path ${path}.expectedProjects; repair: the Fairtest config carries exactly one project.`)
   }
   for (const field of ['expectedRetries', 'expectedWorkers']) {
@@ -1045,7 +1052,7 @@ function runLifecycleCase(entry) {
 /** @param {Record<string, unknown>} entry */
 function runThemeInferenceCase(entry) {
   const name = /** @type {string} */ (entry.name)
-  assert.equal(typeof targets.themeFromProjectName, 'undefined', `${name}: project-name inference helper must stay absent`)
+  assert.equal(typeof /** @type {Record<string, unknown>} */ (targets).themeFromProjectName, 'undefined', `${name}: project-name inference helper must stay absent`)
   let inferred = null
   try {
     inferred = targets.normalizeRenderedTheme(entry.project)
@@ -1085,10 +1092,10 @@ function runThemeObservationCase(entry) {
   let message = null
   try {
     const observation = targets.observeProductTheme({
-      expected: entry.expected,
+      expected: /** @type {string} */ (entry.expected),
       renderedAttribute: entry.renderedAttribute,
-      source: entry.source,
-      observedAtMs: entry.observedAtMs,
+      source: /** @type {string} */ (entry.source),
+      observedAtMs: /** @type {number} */ (entry.observedAtMs),
     })
     assert.equal(observation.expected, entry.expected, `${name}: persisted expected theme must match`)
     assert.equal(observation.observed, entry.expectObserved, `${name}: normalized observed theme must match`)
@@ -1122,7 +1129,7 @@ function runProjectInferenceCase(entry) {
 /** @param {Record<string, unknown>} entry */
 function runProductProofCase(entry) {
   const name = /** @type {string} */ (entry.name)
-  const parts = {}
+  const parts = /** @type {Record<string, object>} */ ({})
   for (const [key, value] of Object.entries(/** @type {Record<string, unknown>} */ (entry.parts))) {
     parts[key] = { .../** @type {Record<string, unknown>} */ (value) }
   }
@@ -1146,13 +1153,13 @@ function runProductProofCase(entry) {
     assert.equal(proof.identity.kind, 'product', `${name}: proof identity must stay on the product branch`)
     assert.equal(proof.theme.expected, entry.rowTheme, `${name}: proof theme must match the row theme`)
     for (const part of PROOF_PARTS) {
-      assert.equal(proof[part].observed, true, `${name}: part ${part} must be separately observed`)
+      assert.equal(proof[/** @type {'chrome' | 'body' | 'route' | 'activeSection' | 'view'} */ (part)].observed, true, `${name}: part ${part} must be separately observed`)
     }
     assert.ok(Object.isFrozen(proof), `${name}: product proof must be frozen`)
     if (entry.action === null) {
       assert.ok(!('action' in proof), `${name}: proof without an action must carry no action result`)
     } else {
-      assert.equal(proof.action.name, /** @type {Record<string, unknown>} */ (entry.action).name, `${name}: proof action name must match`)
+      assert.equal(/** @type {{ name: string }} */ (proof.action).name, /** @type {Record<string, unknown>} */ (entry.action).name, `${name}: proof action name must match`)
     }
     const revalidated = contractResolution.validateProductResolution({ ...proof }, name)
     assert.deepEqual({ ...revalidated }, { ...proof }, `${name}: shared resolver must accept the assembled proof`)
@@ -1220,6 +1227,7 @@ function stripComments(source) {
  * @returns {string} the same source with comments and literal bodies blanked
  */
 function stripCommentsAndStrings(source) {
+  /** @param {unknown[]} out @param {number} from @param {number} to */
   const blank = (out, from, to) => {
     for (let index = from; index < to; index += 1) {
       out.push(source[index] === '\n' ? '\n' : ' ')
@@ -1356,6 +1364,7 @@ const APP_STRUCTURE_LITERALS = Object.freeze([
  */
 function assertNoAppStructureLiterals(source, file) {
   const code = stripComments(source)
+  /** @param {number} index */
   const lineOf = (index) => code.slice(0, index).split('\n').length
   for (const { pattern, what } of APP_STRUCTURE_LITERALS) {
     const match = pattern.exec(code)
@@ -1397,6 +1406,7 @@ function assertHostOwnerTokens(source, file, name, owner) {
  * records the selector read, so the theme wrapper is proven against the
  * read path instead of a hardcoded value.
  * @param {unknown} renderedAttribute canned raw attribute value, absent as nullish
+ * @returns {{ locator: (selector: string) => { getAttribute: (name: string) => Promise<unknown> } }} the fake tree handle
  */
 function fakeThemeTree(renderedAttribute) {
   return {
@@ -1418,7 +1428,7 @@ function fakeThemeTree(renderedAttribute) {
  * wrapper only reads the raw attribute, settles it, and hands it to that
  * contract, because the byte-vendored journey helper asserts the attribute
  * value verbatim for consumers that render an explicit dark value.
- * @param {{ locator: (selector: string) => { getAttribute: (name: string) => Promise<string|null> } }} page fake or real page handle
+ * @param {{ locator: (selector: string) => { getAttribute: (name: string) => Promise<unknown> } }} page fake or real page handle
  * @param {string} theme dark or light row theme
  * @param {{ timeoutMs?: number, pollMs?: number }} [options] bounded read budget
  */
@@ -1521,11 +1531,13 @@ function runA11yDeltaCase(entry) {
   let message = null
   try {
     const input = {
-      point: entry.point,
-      observedSection: entry.observedSection,
-      measured: /** @type {Record<string, unknown>[]} */ (entry.measured).map((item) => ({ ...item })),
+      point: /** @type {string} */ (entry.point),
+      observedSection: /** @type {string} */ (entry.observedSection),
+      measured: /** @type {{ id: string, impact: string | null, nodeCount: number }[]} */ (
+        /** @type {Record<string, unknown>[]} */ (entry.measured).map((item) => ({ ...item }))
+      ),
       artifactPath: 'fixture-probe/axe.json',
-      ...('baseline' in entry ? { baseline: structuredClone(entry.baseline) } : {}),
+      ...('baseline' in entry ? { baseline: structuredClone(/** @type {object[]} */ (entry.baseline)) } : {}),
     }
     const receipt = targets.assertProductAxeBaselineDelta(input)
     assert.equal(receipt.observedSection, entry.observedSection, `${name}: the gate must record the section the page showed verbatim, not the section it declares for the point`)
@@ -1607,7 +1619,7 @@ function runArtifactClassCase(entry) {
 function runRunRootCase(entry) {
   const name = /** @type {string} */ (entry.name)
   const declared = entry.runRootEnv
-  const declaredRunId = entry.runIdEnv ?? null
+  const declaredRunId = /** @type {string | null} */ (entry.runIdEnv ?? null)
   const previousRoot = process.env.FAIRTEST_RUN_ROOT
   const previousRunId = process.env.FAIRTEST_RUN_ID
   let seeded = null
@@ -1664,16 +1676,16 @@ function runRunRootCase(entry) {
  * seam must refuse a foreign run envelope BEFORE it touches the page or
  * creates the row directory, so reaching this object at all proves the guard
  * ran too late.
- * @type {object}
+ * @type {import('@playwright/test').Page}
  */
-const TORN_PRODUCT_PAGE = new Proxy({}, {
+const TORN_PRODUCT_PAGE = /** @type {import('@playwright/test').Page} */ (new Proxy({}, {
   get(_target, property) {
     throw new Error(
       `product producer: the run-envelope guard must run before the page is touched for field "page" at path row.page (accessed ${String(property)}); ` +
       'repair: keep requireEnvelopeForRun before prepareProductRowDir so a foreign root is refused before any browser work.',
     )
   },
-})
+}))
 
 /**
  * Run one capture-seam case through the producer's REAL capture wrapper. The
@@ -1767,7 +1779,7 @@ function runCliTargetCase(entry) {
  */
 function runA11yRecordCase(entry) {
   const name = /** @type {string} */ (entry.name)
-  const accessibility = structuredClone(entry.accessibility)
+  const accessibility = /** @type {Record<string, unknown>} */ (structuredClone(entry.accessibility))
   let message = null
   let verdict = null
   try {
@@ -1823,7 +1835,7 @@ function runRenderedActiveViewCase(entry) {
   }
   if (entry.expectValid) {
     assert.equal(message, null, `${name}: rendered active view failed: ${message}`)
-    assert.deepEqual({ ...accepted }, { ...entry.expectAccepted }, `${name}: the rendered predicate must return the declared accepted measurement`)
+    assert.deepEqual({ ...accepted }, { .../** @type {Record<string, unknown>} */ (entry.expectAccepted) }, `${name}: the rendered predicate must return the declared accepted measurement`)
     assert.ok(Object.isFrozen(accepted), `${name}: the accepted rendered measurement must be frozen`)
   } else {
     assert.ok(message, `${name}: an unrendered active view cleared the rendered predicate`)
@@ -1840,19 +1852,20 @@ function runRenderedActiveViewCase(entry) {
  */
 function runRecordTruthfulnessCase(entry) {
   const name = /** @type {string} */ (entry.name)
-  const accepted = structuredClone(entry.accepted)
-  const observation = { activeView: structuredClone(entry.activeView), container: structuredClone(entry.container) }
+  const accepted = /** @type {import('./product-producer.mjs').ProductActiveViewMeasurement} */ (structuredClone(entry.accepted))
+  const observation = /** @type {import('./product-producer.mjs').ProductViewMeasurement} */ ({ activeView: structuredClone(entry.activeView), container: structuredClone(entry.container) })
   let message = null
-  let record = null
+  let record = /** @type {Record<string, number> | null} */ (null)
   try {
-    record = entry.part === 'view'
+    record = /** @type {Record<string, number>} */ (entry.part === 'view'
       ? buildProductViewRecord({ accepted, observation, stageDescendantsAfter: 812 })
-      : buildProductBodyRecord({ accepted, observation, box: { width: 1216, height: 1653 } })
+      : buildProductBodyRecord({ accepted, observation, box: { width: 1216, height: 1653 } }))
   } catch (error) {
     message = error instanceof Error ? error.message : String(error)
   }
   if (entry.expectValid) {
     assert.equal(message, null, `${name}: a truthful record build failed: ${message}`)
+    assert.ok(record, `${name}: a truthful record build produced a record`)
     const containerField = entry.part === 'view' ? 'containerDescendantsAfter' : 'containerDescendants'
     const descendantsField = entry.part === 'view' ? 'viewDescendantsAfter' : 'descendants'
     const textField = entry.part === 'view' ? 'viewTextLengthAfter' : 'textLength'
@@ -1861,7 +1874,7 @@ function runRecordTruthfulnessCase(entry) {
     assert.equal(record[descendantsField], accepted.descendants, `${name}: the recorded descendants must be the rendered measurement the guard accepted`)
     assert.equal(record[textField], accepted.textLength, `${name}: the recorded text length must be the rendered measurement the guard accepted`)
     assert.equal(record[renderedField], accepted.rendered, `${name}: the recorded rendered-root count must be the rendered measurement the guard accepted`)
-    assert.equal(record[containerField], entry.container.descendants, `${name}: the labelled container total must stay beside the rendered numbers`)
+    assert.equal(record[containerField], /** @type {{ descendants: number }} */ (entry.container).descendants, `${name}: the labelled container total must stay beside the rendered numbers`)
     assert.ok(record[descendantsField] < record[containerField], `${name}: the rendered descendants must stay strictly below the container total they are never confused with`)
     assert.ok(record[textField] < record[containerTextField], `${name}: the rendered text must stay strictly below the container total it is never confused with`)
     assert.ok(Object.isFrozen(record), `${name}: the recorded block must be frozen`)
@@ -1889,7 +1902,7 @@ function runRowDirPreparationCase(entry) {
     writeFileSync(artifactPath, `${CORPUS_REL}: ${name} previous run\n`)
   }
   const previousBytes = artifactPath ? readFileSync(artifactPath, 'utf8') : null
-  const steps = []
+  const steps = /** @type {string[]} */ ([])
   let message = null
   let prepared = null
   try {
@@ -1934,7 +1947,7 @@ async function runRunnerConfigCase(entry) {
   for (const key of forbidden) {
     assert.ok(!new RegExp(`\\b${key}\\b`).test(source), `${CORPUS_REL}: case "${name}" found ${JSON.stringify(key)} in the config source for field "forbiddenKeys" at path cases.${name}.forbiddenKeys; repair: keep the runner-managed server controls out of the Fairtest config source.`)
   }
-  assert.deepEqual(config.projects.map((project) => project.name), /** @type {string[]} */ (entry.expectedProjects), `${CORPUS_REL}: case "${name}" declares projects ${JSON.stringify(entry.expectedProjects)} for field "expectedProjects" at path cases.${name}.expectedProjects; repair: the Fairtest config carries exactly the one fairtest project.`)
+  assert.deepEqual(config.projects.map((/** @type {{ name: string }} */ project) => project.name), /** @type {string[]} */ (entry.expectedProjects), `${CORPUS_REL}: case "${name}" declares projects ${JSON.stringify(entry.expectedProjects)} for field "expectedProjects" at path cases.${name}.expectedProjects; repair: the Fairtest config carries exactly the one fairtest project.`)
   assert.equal(config.retries, entry.expectedRetries, `${CORPUS_REL}: case "${name}" declares retries ${JSON.stringify(entry.expectedRetries)} for field "expectedRetries" at path cases.${name}.expectedRetries; repair: the mounted rows are single-attempt evidence, so retries must stay ${JSON.stringify(entry.expectedRetries)}.`)
   assert.equal(config.workers, entry.expectedWorkers, `${CORPUS_REL}: case "${name}" declares workers ${JSON.stringify(entry.expectedWorkers)} for field "expectedWorkers" at path cases.${name}.expectedWorkers; repair: the rows share one fixed loopback origin, so workers must stay ${JSON.stringify(entry.expectedWorkers)}.`)
   assert.equal(config.fullyParallel, entry.expectedFullyParallel, `${CORPUS_REL}: case "${name}" declares fullyParallel ${JSON.stringify(entry.expectedFullyParallel)} for field "expectedFullyParallel" at path cases.${name}.expectedFullyParallel; repair: the mounted rows write one immutable run subtree and must stay serial.`)
@@ -1944,7 +1957,7 @@ async function runRunnerConfigCase(entry) {
   // the single runtime owner, so a fourth declaration beside them cannot appear
   // without one of the two comparisons failing.
   const runtime = /** @type {Record<string, any>} */ (await import(pathToFileURL(resolve(ROOT, RUNTIME_REL)).href))
-  assert.deepEqual({ ...config.use.viewport }, { ...entry.expectedViewport }, `${CORPUS_REL}: case "${name}" declares viewport ${JSON.stringify(config.use.viewport)} for field "expectedViewport" at path cases.${name}.expectedViewport; repair: declare the shared render viewport for "expectedViewport".`)
+  assert.deepEqual({ ...config.use.viewport }, { .../** @type {Record<string, unknown>} */ (entry.expectedViewport) }, `${CORPUS_REL}: case "${name}" declares viewport ${JSON.stringify(config.use.viewport)} for field "expectedViewport" at path cases.${name}.expectedViewport; repair: declare the shared render viewport for "expectedViewport".`)
   assert.deepEqual({ ...config.use.viewport }, { ...runtime.PRODUCT_VIEWPORT }, `${CORPUS_REL}: case "${name}" declares viewport ${JSON.stringify(config.use.viewport)} which is not the one owner in ${RUNTIME_REL} for field "expectedViewport" at path cases.${name}.expectedViewport; repair: read the render viewport from ${RUNTIME_REL} instead of declaring it again.`)
   const matches = Array.isArray(config.testMatch) ? config.testMatch : [config.testMatch]
   assert.deepEqual(matches, /** @type {string[]} */ (entry.expectedTestMatch), `${CORPUS_REL}: case "${name}" declares testMatch ${JSON.stringify(entry.expectedTestMatch)} for field "expectedTestMatch" at path cases.${name}.expectedTestMatch; repair: the config must select exactly the declared product and component journey entries.`)
@@ -2055,7 +2068,7 @@ function runServedDigestComparisonCase(entry) {
   const name = /** @type {string} */ (entry.name)
   const scratch = mkdtempSync(join(tmpdir(), 'fairtest-served-digest-'))
   let message = null
-  let receipt = null
+  let receipt = /** @type {{ against: string, entries: readonly string[], commitCorrespondence: string } | null} */ (null)
   try {
     const distRoot = join(scratch, 'dist')
     mkdirSync(join(distRoot, 'assets'), { recursive: true })
@@ -2078,6 +2091,7 @@ function runServedDigestComparisonCase(entry) {
   }
   if (entry.expectValid) {
     assert.equal(message, null, `${CORPUS_REL}: case "${name}" refused a served tree that matches the run build: ${message}`)
+    assert.ok(receipt, `${name}: the served-digest comparison produced a receipt`)
     // The comparison has to be REACHED, not merely exist: a function nobody
     // calls would leave every one of these behavioural cases green while the
     // written provenance described bytes nothing had compared.
@@ -2389,13 +2403,13 @@ function runAxeReportShapeCase(entry) {
  * @param {Record<string, unknown>} entry
  */
 function runObservationTimeCase(entry) {  const name = /** @type {string} */ (entry.name)
-  const input = {}
+  const input = /** @type {Record<string, number>} */ ({})
   for (const field of ['rowStartedAtMs', ...PRODUCT_PRE_ACTION_PARTS, 'theme', 'action']) {
-    input[field] = entry[field]
+    input[field] = /** @type {number} */ (entry[field])
   }
   let message = null
   try {
-    assertProductObservationTimes(input)
+    assertProductObservationTimes(/** @type {import('./product-producer.mjs').ProductObservationTimes} */ (input))
   } catch (error) {
     message = error instanceof Error ? error.message : String(error)
   }
@@ -2423,7 +2437,7 @@ function readLoopbackResponse(url) {
       res.setEncoding('utf8')
       let body = ''
       res.on('data', (chunk) => { body += chunk })
-      res.on('end', () => responseResolve({ status: res.statusCode, body }))
+      res.on('end', () => responseResolve({ status: /** @type {number} */ (res.statusCode), body }))
     }).on('error', responseReject)
   })
 }
@@ -2551,7 +2565,7 @@ async function runDriverStopContractCase(entry) {
   try {
     await createAdapter({
       runId: 'adapter-probe-no-stop',
-      driver: { start: async () => {}, reset: async () => {}, isRunning: () => false },
+      driver: /** @type {import('./fairtrade-adapter.mjs').LifecycleDriver} */ (/** @type {unknown} */ ({ start: async () => {}, reset: async () => {}, isRunning: () => false })),
       createdAtMs: 1000,
     })
   } catch (error) {
@@ -2620,7 +2634,7 @@ async function runDriverResetContractCase(entry) {
   try {
     await createAdapter({
       runId: 'adapter-probe-no-reset',
-      driver: { start: async () => {}, stop: async () => {}, isRunning: () => false },
+      driver: /** @type {import('./fairtrade-adapter.mjs').LifecycleDriver} */ (/** @type {unknown} */ ({ start: async () => {}, stop: async () => {}, isRunning: () => false })),
       createdAtMs: 1000,
     })
   } catch (error) {
@@ -2681,6 +2695,7 @@ async function runDriverResetContractCase(entry) {
   assert.deepEqual(repeat, { released: true, noop: true, stops: 1 }, `${name}: the repeated teardown must stay a no-op reporting the same stop count`)
 }
 
+/** @type {Record<string, (entry: Record<string, unknown>) => Promise<void> | void>} */
 const RUNNERS = {
   'theme-row': runThemeRowCase,
   route: runRouteCase,
@@ -2723,7 +2738,7 @@ const RUNNERS = {
 
 /** @param {Record<string, unknown>} entry */
 async function runCase(entry) {
-  const runner = RUNNERS[entry.check]
+  const runner = RUNNERS[/** @type {string} */ (entry.check)]
   assert.ok(runner, `${CORPUS_REL}: case "${entry.name}" names an unknown check ${JSON.stringify(entry.check)}`)
   await runner(entry)
 }
@@ -2770,13 +2785,13 @@ function applyMutation(cases, mutation) {
   if (mutation.kind === 'delete-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    delete node[segments.at(-1)]
+    delete node[/** @type {string} */ (segments.at(-1))]
     return
   }
   if (mutation.kind === 'rename-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    const last = segments.at(-1)
+    const last = /** @type {string} */ (segments.at(-1))
     const value = node[last]
     delete node[last]
     node[/** @type {string} */ (mutation.newField)] = value
@@ -2790,7 +2805,7 @@ function applyMutation(cases, mutation) {
     if (node[segment] === null || typeof node[segment] !== 'object') node[segment] = {}
     node = /** @type {Record<string, unknown>} */ (node[segment])
   }
-  node[segments.at(-1)] = structuredClone(mutation.value)
+  node[/** @type {string} */ (segments.at(-1))] = structuredClone(mutation.value)
 }
 
 /**
@@ -2859,11 +2874,11 @@ function createFakeDriver(behavior = {}) {
  * the real driver unchanged; the observer only records the ordered calls, so
  * the reset-before-stop guarantee can be observed on the real driver whose
  * own reset and stop are otherwise indistinguishable no-ops.
- * @param {object} driver the real injected driver
- * @returns {object} the delegating observed driver
+ * @param {{ start: (...args: unknown[]) => Promise<unknown>, reset: (...args: unknown[]) => Promise<unknown>, stop: (...args: unknown[]) => Promise<unknown>, isRunning: () => boolean, readiness: () => Promise<object>, stats: () => unknown }} driver the real injected driver
+ * @returns {{ calls: string[], start: (...args: unknown[]) => Promise<unknown>, reset: (...args: unknown[]) => Promise<unknown>, stop: (...args: unknown[]) => Promise<unknown>, isRunning: () => boolean, readiness: () => Promise<object>, stats: () => unknown }} the delegating observed driver
  */
 function observeDriverCalls(driver) {
-  const calls = []
+  const calls = /** @type {string[]} */ ([])
   return {
     calls,
     start: (...args) => {
@@ -2913,7 +2928,7 @@ function createAbsentStaticRoot(scratchRoot) {
  * Bind a real loopback server on a scratch port so the real driver's own
  * listen fails with a genuine address-in-use error, and release it on demand.
  * @param {number} port scratch loopback port
- * @returns {object} the squatter handle
+ * @returns {{ bind: () => Promise<void>, release: () => Promise<void> }} the squatter handle
  */
 function squatOnPort(port) {
   const server = http.createServer((_request, response) => {
@@ -2980,14 +2995,14 @@ async function assertPortReleased(port) {
  * @param {number} input.port scratch loopback port handed to the driver
  * @param {boolean} input.holdPort bind a real squatter on the scratch port first
  * @param {(scratchRoot: string) => string} input.distRoot builds the driver distRoot from the scratch root
- * @returns {Promise<object>} the observed failure record
+ * @returns {Promise<{ message: string, calls: string[], driverRoot: string, driverPort: number }>} the observed failure record
  */
 async function driveRealStaticDriverStartFailure({ runId, port, holdPort, distRoot }) {
   const scratch = mkdtempSync(join(tmpdir(), 'fairtest-adapter-lifecycle-'))
   const squatter = squatOnPort(port)
   let driver = null
   let squatterBound = false
-  let failureRecord = null
+  let failureRecord = /** @type {{ message: string, calls: string[], driverRoot: string, driverPort: number } | null} */ (null)
   try {
     if (holdPort) {
       await squatter.bind()
@@ -3042,6 +3057,7 @@ async function driveRealStaticDriverStartFailure({ runId, port, holdPort, distRo
     }
     rmSync(scratch, { recursive: true, force: true })
   }
+  assert.ok(failureRecord, `${runId}: the driver start failure produced a record`)
   assert.equal(existsSync(failureRecord.driverRoot), false, `${runId}: the throwaway static root must be removed once the case finishes`)
   return failureRecord
 }
@@ -3240,7 +3256,7 @@ describe('verifier-facing record accessibility evidence', () => {
    * gate never sees. Shared by the reader wiring proofs in this family.
    * @param {object} [input] receipt overrides
    * @param {string} [input.gateAfterResult] after-action gate result
-   * @returns {object} producer accessibility inputs
+   * @returns {{ pageWide: import('./product-producer.mjs').CompactAxeScan, scopedBefore: import('./product-producer.mjs').CompactAxeScan, scopedAfter: import('./product-producer.mjs').CompactAxeScan, gateBefore: import('./fairtrade-targets.mjs').ProductA11yGateReceipt, gateAfter: import('./fairtrade-targets.mjs').ProductA11yGateReceipt }} producer accessibility inputs
    */
   function producerAccessibilityInputs({ gateAfterResult = 'pass' } = {}) {
     const tags = ['wcag2a', 'wcag2aa']
@@ -3276,8 +3292,8 @@ describe('verifier-facing record accessibility evidence', () => {
     assert.equal(record.pageWide.root, 'document', 'the page-wide census must name its own root')
     assert.equal(record.pageWide.blocking, 1, 'the page-wide census reports the serious-or-worse population')
     assert.deepEqual(Object.keys(record.gate).sort(), [...PRODUCT_A11Y_GATE_POINTS].sort(), 'the gate must carry one receipt per observation point')
-    assert.equal(record.blocking, undefined, 'an unqualified blocking count must not sit beside the gate receipts')
-    assert.equal(record.violations, undefined, 'an unqualified violations count must not sit beside the gate receipts')
+    assert.equal(/** @type {Record<string, unknown>} */ (record).blocking, undefined, 'an unqualified blocking count must not sit beside the gate receipts')
+    assert.equal(/** @type {Record<string, unknown>} */ (record).violations, undefined, 'an unqualified violations count must not sit beside the gate receipts')
     assert.deepEqual(Object.keys(record.pageWide).sort(), [...PRODUCT_A11Y_PAGE_WIDE_FIELDS].sort(), 'the page-wide block must carry exactly the declared fields')
   })
 
@@ -3305,7 +3321,7 @@ describe('verifier-facing record accessibility evidence', () => {
   it('refuses an ambiguous record carrying unqualified page-wide counts', () => {
     const record = buildProductAccessibilityEvidence(producerAccessibilityInputs())
     for (const field of PRODUCT_A11Y_PAGE_WIDE_FIELDS) {
-      const ambiguous = { ...record, [field]: record.pageWide[field] }
+      const ambiguous = { ...record, [field]: /** @type {Record<string, unknown>} */ (record.pageWide)[field] }
       assert.throws(
         () => readProductAccessibilityVerdict(ambiguous),
         new RegExp(`unknown field ${JSON.stringify(field)}.*at path record\\.accessibility.*repair:`, 's'),
@@ -3317,7 +3333,7 @@ describe('verifier-facing record accessibility evidence', () => {
   it('refuses a record that drops the gate receipts or the informational marker', () => {
     const record = buildProductAccessibilityEvidence(producerAccessibilityInputs())
     for (const field of ['gatedScope', 'scopeRoot', 'scopedBefore', 'scopedAfter', 'gate', 'pageWide']) {
-      const { [field]: dropped, ...rest } = record
+      const { [field]: dropped, ...rest } = /** @type {Record<string, unknown>} */ (record)
       assert.throws(
         () => readProductAccessibilityVerdict(rest),
         new RegExp(`missing required field ${JSON.stringify(field)}.*at path record\\.accessibility.*repair:`, 's'),
@@ -3454,8 +3470,9 @@ describe('product row observation times', () => {
         `a ${later} reading before the ${earlier} reading must be refused`,
       )
     }
+    const invalidTimes = /** @type {unknown} */ ({ rowStartedAtMs: 1, chrome: 'later', body: 2, route: 2, theme: 3, action: 4 })
     assert.throws(
-      () => assertProductObservationTimes({ rowStartedAtMs: 1, chrome: 'later', body: 2, route: 2, theme: 3, action: 4 }),
+      () => assertProductObservationTimes(/** @type {import('./product-producer.mjs').ProductObservationTimes} */ (invalidTimes)),
       /invalid observation time.*at path producer\.observationTimes\.chrome.*repair:/s,
       'a non-integer reading must be refused',
     )
@@ -3477,7 +3494,7 @@ describe('journey compatibility and import resolution', () => {
       'the declared axe result shape must cover exactly the compact report the producer writes into its artifact',
     )
     assert.deepEqual(
-      assertions.seriousViolations({ violations: [{ impact: 'critical' }, { impact: 'minor' }] }).map((entry) => entry.impact),
+      assertions.seriousViolations({ violations: [{ impact: 'critical' }, { impact: 'minor' }] }).map((/** @type {{ impact: string }} */ entry) => entry.impact),
       ['critical'],
       'serious violations must still filter critical and serious impact only',
     )
@@ -3513,7 +3530,8 @@ describe('shared journey theme assertion contract', () => {
    * Build a fake page whose rendered theme settles after a bounded number
    * of reads, modelling a consumer theme toggle that writes data-theme
    * asynchronously after the click.
-   * @param {object} [input] settling behavior
+   * @param {{ darkReads?: number, settledValue?: string }} [input] settling behavior
+   * @returns {{ calls: () => number, locator: (selector: string) => { getAttribute: (name: string) => Promise<string | null> } }} the fake page
    */
   function fakeSettlingThemePage({ darkReads = 3, settledValue = 'light' } = {}) {
     let calls = 0
@@ -3675,7 +3693,7 @@ describe('fairtest host export ownership', async () => {
   // host module — for example the component producer the config header
   // anticipates — therefore has to declare an owner before every gate is
   // green again, rather than sitting silently ungoverned.
-  const hostFiles = [...new Set(hostParsed.exports.map((entry) => String(entry.file)))].sort()
+  const hostFiles = [...new Set(/** @type {{ file: string }[]} */ (hostParsed.exports).map((entry) => String(entry.file)))].sort()
   const directoryModules = readdirSync(HERE).filter((name) => name.endsWith('.mjs')).sort()
   const declaredUnclassifiedFiles = Object.freeze([
     'product-adapter.test.mjs',
@@ -3702,7 +3720,7 @@ describe('fairtest host export ownership', async () => {
     'assert-target-dispatch.mjs',
     'fairtrade-targets.type-test.mjs',
   ])
-  const hostModules = {}
+  const hostModules = /** @type {Record<string, Record<string, unknown>>} */ ({})
   for (const file of hostFiles) {
     hostModules[file] = await import(pathToFileURL(resolve(HERE, file)).href)
   }
@@ -3971,13 +3989,13 @@ function applyHostMutation(rows, mutation) {
   if (mutation.kind === 'delete-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    delete node[segments.at(-1)]
+    delete node[/** @type {string} */ (segments.at(-1))]
     return
   }
   if (mutation.kind === 'rename-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    const last = segments.at(-1)
+    const last = /** @type {string} */ (segments.at(-1))
     const value = node[last]
     delete node[last]
     node[String(mutation.newField)] = value
@@ -3988,7 +4006,7 @@ function applyHostMutation(rows, mutation) {
     if (node[segment] === null || typeof node[segment] !== 'object') node[segment] = {}
     node = /** @type {Record<string, unknown>} */ (node[segment])
   }
-  node[segments.at(-1)] = structuredClone(mutation.value)
+  node[/** @type {string} */ (segments.at(-1))] = structuredClone(mutation.value)
 }
 
 describe('target-value composition, external target parsing, and dispatch guard', () => {

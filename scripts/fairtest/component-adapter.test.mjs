@@ -129,6 +129,7 @@ function checkCaseShape(entry, index) {
     throw new Error(`${CORPUS_REL}: case "${entry.name}" is missing its verdict for field "expectValid" at path ${path}.expectValid; repair: set expectValid to true or false.`)
   }
   const tail = entry.expectValid ? ['expectValid', 'expectFrozen'] : ['expectValid', 'expectedErrorContains']
+  /** @type {Record<string, string[]>} */
   const fieldsByCheck = {
     'component-row': entry.expectValid
       ? ['name', 'check', 'theme', 'renderedAttribute', 'expectTheme', ...tail]
@@ -156,7 +157,7 @@ function checkCaseShape(entry, index) {
       : ['name', 'check', 'runRootEnv', 'runIdEnv', 'seedEnvelope', 'envelopeRunId', 'expectValid', 'expectedErrorContains'],
     'component-capture-envelope': ['name', 'check', 'runRootEnv', 'runIdEnv', 'seedEnvelope', 'envelopeRunId', 'theme', 'expectValid', 'expectedErrorContains'],
   }
-  coreFixtures.checkKeys(entry, fieldsByCheck[entry.check], 'case record', CORPUS_REL, path)
+  coreFixtures.checkKeys(entry, fieldsByCheck[/** @type {string} */ (entry.check)], 'case record', CORPUS_REL, path)
   if (!entry.expectValid) {
     checkFragmentList(entry.expectedErrorContains, CORPUS_REL, `${path}.expectedErrorContains`)
   }
@@ -335,13 +336,15 @@ function runComponentProjectCase(entry) {
 /** @param {Record<string, unknown>} entry */
 function runComponentMountCase(entry) {
   const name = /** @type {string} */ (entry.name)
+  /** @type {{ rootChildCount: number, bodyClass: string, errorDisplay: string, errorStackText: string }} */
+  const observation = /** @type {{ rootChildCount: number, bodyClass: string, errorDisplay: string, errorStackText: string }} */ (entry.observation)
   if (entry.expectValid) {
-    const mounted = targets.assertComponentMounted(entry.observation)
+    const mounted = targets.assertComponentMounted(observation)
     assert.ok(Object.isFrozen(mounted), `${name}: the mount observation must be frozen`)
     assert.equal(mounted.mounted, true, `${name}: a healthy story must prove a mount`)
     return
   }
-  const message = caught(() => targets.assertComponentMounted(entry.observation))
+  const message = caught(() => targets.assertComponentMounted(observation))
   assert.ok(message, `${name}: the case must fail closed on the real mount guard`)
   expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
 }
@@ -380,12 +383,12 @@ function runComponentActionCase(entry) {
 function runComponentProofCase(entry) {
   const name = /** @type {string} */ (entry.name)
   const build = () => {
-    const input = {
+    const input = /** @type {Record<string, unknown>} */ ({
       rowTheme: entry.rowTheme,
       identity: entry.identity,
       root: entry.root,
       themeObservation: entry.themeObservation,
-    }
+    })
     if (entry.interaction !== null) input.interaction = entry.interaction
     return targets.buildComponentProof(input)
   }
@@ -441,16 +444,16 @@ async function runComponentMutationCase(entry) {
  * A page stand-in that throws on every property access. The component capture
  * seam must refuse a foreign run envelope BEFORE it touches the page, so
  * reaching this object at all proves the guard ran too late.
- * @type {object}
+ * @type {import('@playwright/test').Page}
  */
-const TORN_COMPONENT_PAGE = new Proxy({}, {
+const TORN_COMPONENT_PAGE = /** @type {import('@playwright/test').Page} */ (new Proxy({}, {
   get(_target, property) {
     throw new Error(
       `component producer: the run-envelope guard must run before the page is touched for field "page" at path row.page (accessed ${String(property)}); ` +
       'repair: keep requireEnvelopeForRun before prepareComponentRowDir so a foreign root is refused before any browser work.',
     )
   },
-})
+}))
 
 /**
  * Install the case's declared run-root environment, seed the run envelope the
@@ -600,13 +603,13 @@ function applyMutation(cases, mutation) {
   if (mutation.kind === 'delete-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    delete node[segments.at(-1)]
+    delete node[/** @type {string} */ (segments.at(-1))]
     return
   }
   if (mutation.kind === 'rename-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    const last = segments.at(-1)
+    const last = /** @type {string} */ (segments.at(-1))
     const value = node[last]
     delete node[last]
     node[String(mutation.newField)] = value
@@ -617,7 +620,7 @@ function applyMutation(cases, mutation) {
     if (node[segment] === null || typeof node[segment] !== 'object') node[segment] = {}
     node = /** @type {Record<string, unknown>} */ (node[segment])
   }
-  node[segments.at(-1)] = structuredClone(mutation.value)
+  node[/** @type {string} */ (segments.at(-1))] = structuredClone(mutation.value)
 }
 
 describe('component target fixture family', () => {
@@ -782,7 +785,7 @@ describe('component proof record schema and shared vocabulary', () => {
     assert.ok(Object.isFrozen(proof), 'proof record must be frozen')
     assert.equal(proof.kind, 'component')
     assert.deepEqual(Object.keys(proof).sort(), ['identity', 'interaction', 'kind', 'root', 'theme'])
-    assert.equal(proof.interaction.name, targets.COMPONENT_ACTION_NAME)
+    assert.equal(/** @type {{ name: string }} */ (proof.interaction).name, targets.COMPONENT_ACTION_NAME)
     assert.deepEqual(contractResolution.validateComponentResolution(proof, 'component-target-test'), proof, 'the component resolver must accept the built proof')
   })
 })
@@ -791,7 +794,7 @@ describe('shared adapter kind selection', () => {
   /**
    * Minimal fake lifecycle driver: enough surface for the adapter contract, no
    * browser or service.
-   * @returns {object} the fake driver
+   * @returns {import('./fairtrade-adapter.mjs').LifecycleDriver} the fake driver
    */
   function fakeDriver() {
     let running = false

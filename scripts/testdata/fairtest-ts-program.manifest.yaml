@@ -23,7 +23,7 @@ requiredRootScripts:
   - scripts/fairtest-source.mjs
   - scripts/fairtest-surface-manifest.mjs
 expectedAnyFileCount: 9
-expectedAnyOccurrenceCount: 47
+expectedAnyOccurrenceCount: 46
 requiredAnyFiles:
   - packages/fairtest/test/bridge-contract.test.mjs
   - packages/fairtest/test/evidence-mutations.mjs
