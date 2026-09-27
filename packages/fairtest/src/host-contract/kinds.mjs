@@ -1,3 +1,5 @@
+// @ts-check
+
 // Closed host-kind vocabulary and the shared theme observation shape.
 //
 // Targets, resolutions, and later evidence records share one

@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @ts-check
+
 // The one required command that runs the whole Fairtest host contract.
 //
 // Seven suites carry that contract, and before this command existed none of them

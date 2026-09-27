@@ -1,3 +1,5 @@
+// @ts-check
+
 // Fairtest source-isolation guard. This is the authoritative child-level
 // check that the core and host contract stay inside one root: it asserts
 // realpath containment, rejects root-relative and symlink escapes, proves

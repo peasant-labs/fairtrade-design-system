@@ -1,3 +1,5 @@
+// @ts-check
+
 // Validator for the journey helper-ownership inventory.
 //
 // Assigns every exported helper of scripts/journey/lib/ to exactly one

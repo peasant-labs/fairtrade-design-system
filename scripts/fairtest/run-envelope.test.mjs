@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @ts-check
+
 // Fairtest run-envelope fixture executor.
 //
 // Loads scripts/testdata/fairtest-run-envelope.yaml and its required-name

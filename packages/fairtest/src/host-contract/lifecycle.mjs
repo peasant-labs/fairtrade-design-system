@@ -1,3 +1,5 @@
+// @ts-check
+
 // Host lifecycle traces. A trace is the ordered stage list one host reports
 // for a single target: declared, then acquired, then ready, then released.
 // Traces must follow that canonical order from the opening stage with no

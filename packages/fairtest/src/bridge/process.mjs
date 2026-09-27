@@ -1,3 +1,5 @@
+// @ts-check
+
 // Neutral process invocation contract for the Fairtest CI process supervisor.
 //
 // A process invocation identity names one supervised process case before any

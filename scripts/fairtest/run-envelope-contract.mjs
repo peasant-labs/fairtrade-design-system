@@ -1,3 +1,5 @@
+// @ts-check
+
 // The single declaration of the Fairtest run envelope.
 //
 // One immutable run root carries exactly four exclusive subtrees. Each subtree

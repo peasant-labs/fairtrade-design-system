@@ -1,3 +1,5 @@
+// @ts-check
+
 // Observed resolution records: the closed product/component proof union.
 //
 // A product resolution requires separately observed persistent chrome,

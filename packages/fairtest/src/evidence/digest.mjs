@@ -1,3 +1,5 @@
+// @ts-check
+
 // Neutral SHA-256 integrity helpers for evidence artifacts. Bytes are hashed
 // with the shared core digest primitive, never a second hashing path, and a
 // recorded digest is validated to a lowercase 64-character hex shape before it

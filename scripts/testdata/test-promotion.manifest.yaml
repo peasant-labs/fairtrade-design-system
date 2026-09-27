@@ -1,8 +1,9 @@
-expectedRecordCount: 3
+expectedRecordCount: 4
 requiredRecordNames:
   - example-mounted-product-proof
   - example-mounted-component-proof
   - example-browser-free-boundary
+  - fairtest-type-program-coverage-guard
 expectedMutationCount: 13
 requiredMutationNames:
   - missing-answer-subject

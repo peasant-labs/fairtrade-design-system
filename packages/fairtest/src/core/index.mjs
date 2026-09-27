@@ -1,3 +1,5 @@
+// @ts-check
+
 // Neutral core barrel. Re-exports the browser-neutral validation primitives
 // only. No runner, viewport, route, label set, or caller threshold is added
 // at this layer.

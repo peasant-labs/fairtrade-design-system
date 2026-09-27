@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @ts-check
+
 // Fairtest CI process supervisor: the sole process-lifecycle owner.
 //
 // Invocation contract (required CI or an explicit local reproduction):

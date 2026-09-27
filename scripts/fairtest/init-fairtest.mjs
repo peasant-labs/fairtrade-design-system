@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @ts-check
+
 // Fairtest run-envelope initializer: the first Fairtest command in a run.
 //
 // It proves the run root is fresh, creates the owned guards/ directory, and

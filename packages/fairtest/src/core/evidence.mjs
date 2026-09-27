@@ -1,3 +1,5 @@
+// @ts-check
+
 // Duplicate and freshness primitives for portable evidence. A duplicate set
 // tracks observed digests inside one caller-chosen scope id so two scopes
 // never share duplicate state. Freshness compares whole-millisecond clocks

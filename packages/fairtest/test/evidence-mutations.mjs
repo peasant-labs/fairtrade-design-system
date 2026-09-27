@@ -1,3 +1,5 @@
+// @ts-check
+
 // Executable fail-closed evidence mutation family.
 //
 // Every required mutation disposition lives in the named case table

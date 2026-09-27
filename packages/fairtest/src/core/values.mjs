@@ -1,3 +1,5 @@
+// @ts-check
+
 // Strict typed value checks for neutral validation helpers.
 //
 // Every check throws an actionable Error that names the failing field, the

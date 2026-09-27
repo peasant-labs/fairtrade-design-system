@@ -1,3 +1,5 @@
+// @ts-check
+
 // Neutral evidence verifier. Independently reloads a run model and checks run
 // identity, the single-capture mode, the required row inventory, each row's
 // kind, theme, theme observation, proof, provenance, artifact set, artifact

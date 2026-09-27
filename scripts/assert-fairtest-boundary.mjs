@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @ts-check
+
 // Fairtest package, pack, and source-isolation boundary guard.
 //
 // Proves the published root package stays free of Fairtest coupling, the

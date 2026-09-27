@@ -1,3 +1,5 @@
+// @ts-check
+
 // Neutral duplicate-scope evaluation for evidence rows. Three scopes are
 // supported, each disjoint:
 //

@@ -1,3 +1,5 @@
+// @ts-check
+
 // Host-contract tests. Every behavioral case lives in a named YAML fixture
 // family with a required-name manifest; this file owns no case data except
 // small structural unit asserts. Imports the real child source and runs

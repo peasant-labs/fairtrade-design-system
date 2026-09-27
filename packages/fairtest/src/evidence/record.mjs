@@ -1,3 +1,5 @@
+// @ts-check
+
 // Neutral evidence run model: a run identity, one single-capture mode, and the
 // mounted rows a verifier reads. A row binds one caller-owned row key to the
 // shared host kind, the shared rendered theme name, the shared identity and

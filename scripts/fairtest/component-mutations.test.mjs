@@ -1,3 +1,5 @@
+// @ts-check
+
 // Executable suite for the named negative component mutations and the
 // verifier-facing component evidence corpus.
 //

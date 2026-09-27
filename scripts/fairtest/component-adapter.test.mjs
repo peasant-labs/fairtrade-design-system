@@ -1,3 +1,5 @@
+// @ts-check
+
 // Fairtrade component target contract test.
 //
 // Browser-free. Consumes scripts/fairtest/component-target.testdata.yaml (the

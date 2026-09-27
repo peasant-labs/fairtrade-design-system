@@ -1,3 +1,5 @@
+// @ts-check
+
 // Fairtrade-owned product target metadata for the mounted graph surface.
 //
 // Plain data plus pure functions only. This module names the single built

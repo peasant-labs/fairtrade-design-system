@@ -1,3 +1,5 @@
+// @ts-check
+
 // App-owned Fairtrade evidence policy values. This is the one place the
 // Fairtrade-specific ids, roots, and thresholds live; the neutral child
 // verifier receives them as caller-owned input and names none of them itself.

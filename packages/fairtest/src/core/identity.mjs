@@ -1,3 +1,5 @@
+// @ts-check
+
 // Immutable identity helpers. An identity names one run, record, or set with a
 // caller-chosen kind, a stable id, and a creation timestamp. Identities are
 // frozen at creation so sharing a reference can never mutate the named entry.

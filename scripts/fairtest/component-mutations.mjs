@@ -1,3 +1,5 @@
+// @ts-check
+
 // Fairtrade-owned named negative component mutations for the mounted
 // Storybook story.
 //

@@ -1,3 +1,5 @@
+// @ts-check
+
 // Generic caller-owned measurement policy. The caller supplies every numeric
 // bound; this module validates the policy shape once and evaluates observed
 // measurements against it. No default bound, floor, ratio, or count lives

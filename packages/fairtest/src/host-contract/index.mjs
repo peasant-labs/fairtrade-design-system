@@ -1,3 +1,5 @@
+// @ts-check
+
 // Host-contract barrel. Re-exports the type-only and value-validation seam
 // for later app-owned adapters: closed kind and theme vocabulary, target
 // declarations, lifecycle traces, the resolution proof union, opaque

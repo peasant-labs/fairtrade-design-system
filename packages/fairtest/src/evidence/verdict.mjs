@@ -1,3 +1,5 @@
+// @ts-check
+
 // Neutral evidence verdict and report. A report carries the run id, the mode,
 // the typed failures, the sorted unique failure codes, the per-row duplicate
 // outcomes, and a `complete` flag that is true only when the failure list is

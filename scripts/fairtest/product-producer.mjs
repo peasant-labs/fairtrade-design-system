@@ -1,3 +1,5 @@
+// @ts-check
+
 // Fairtrade-owned mounted product producer: browser-bearing host runtime and
 // durable raw artifact writer for the built graph product target.
 //

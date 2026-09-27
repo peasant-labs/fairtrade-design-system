@@ -1,3 +1,5 @@
+// @ts-check
+
 // Adapter-seam target declarations: kind, identity branch, capabilities,
 // named fixtures, and named actions.
 //

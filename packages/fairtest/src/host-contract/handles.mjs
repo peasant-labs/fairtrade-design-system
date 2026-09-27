@@ -1,3 +1,5 @@
+// @ts-check
+
 // Opaque host handles. A handle is an uninterpreted token plus a revoked
 // flag. The contract never dereferences the token: it carries no reference,
 // callback, instance, or document node, only a caller-opaque string the host

@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @ts-check
+
 // Fairtest independent selector: writes selection/expected-selection.json.
 //
 // The selector runs after the inventory/list guards and before the producer. It

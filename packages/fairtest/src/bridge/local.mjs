@@ -1,3 +1,5 @@
+// @ts-check
+
 // Neutral local invocation contract for the optional local bridge handoff.
 //
 // A local invocation identity names one already-served local participant

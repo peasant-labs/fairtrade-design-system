@@ -1,3 +1,5 @@
+// @ts-check
+
 /* Fairtest mounted component journey: one suite with exactly two row-scoped rows.
  *
  * Each row drives the built storybook-static/ direct iframe through the one

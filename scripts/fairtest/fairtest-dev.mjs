@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @ts-check
+
 // Fairtest local dev bridge: the optional, local-only `fairtest dev` command.
 //
 // Invocation: pnpm fairtest dev -- --target=product [--theme=dark|light] [--attach] [--once]

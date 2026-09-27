@@ -1,3 +1,5 @@
+// @ts-check
+
 // Strict single-document fixture helpers. Every fixture family is one YAML
 // document with unique keys, an exact declared field set, and a required-name
 // inventory held by a sibling manifest. Diagnostics name the field, the value

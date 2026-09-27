@@ -1,3 +1,5 @@
+// @ts-check
+
 /* Journey fixtures: the deterministic, theme-pinned page every journey starts
  * from. Overrides Playwright's context fixture so determinism is installed
  * BEFORE the first navigation, never inside a test body.

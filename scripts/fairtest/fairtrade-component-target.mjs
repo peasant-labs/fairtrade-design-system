@@ -1,3 +1,5 @@
+// @ts-check
+
 // Fairtrade-owned component target metadata for the mounted Storybook story.
 //
 // Plain data plus pure functions only. This module names the single direct

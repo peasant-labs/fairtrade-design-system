@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @ts-check
+
 // Browser-neutral Fairtest evidence verifier CLI. It reloads the run root a
 // maintainer points at with FAIRTEST_RUN_ROOT, rebuilds the neutral run model
 // from the producer records and artifact bytes, verifies it against the

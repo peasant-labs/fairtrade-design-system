@@ -1,3 +1,5 @@
+// @ts-check
+
 // Generic caller-owned evidence policy. The caller supplies the expected run
 // id, the closed mode, the artifact class set, the required row inventory with
 // each row's kind, theme, and built-tree root, the duplicate scopes to check,

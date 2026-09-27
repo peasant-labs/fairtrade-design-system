@@ -1,3 +1,5 @@
+// @ts-check
+
 // Local bridge and process lifecycle contract records: identity,
 // readiness, and cleanup receipts.
 //

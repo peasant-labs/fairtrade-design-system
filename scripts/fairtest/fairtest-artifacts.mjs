@@ -1,3 +1,5 @@
+// @ts-check
+
 // App-owned, kind-neutral Fairtest artifact contract.
 //
 // This module holds the values BOTH the product and the component mounted rows

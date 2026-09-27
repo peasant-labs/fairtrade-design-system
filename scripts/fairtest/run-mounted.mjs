@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @ts-check
+
 // Minimal CLI for the ratified mounted command:
 // FAIRTEST_RUN_ROOT=<run-root> pnpm test:fairtest:mounted -- --target=product
 // FAIRTEST_RUN_ROOT=<run-root> pnpm test:fairtest:mounted -- --target=component

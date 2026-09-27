@@ -1,3 +1,5 @@
+// @ts-check
+
 // Compatibility proof for the existing journey surface.
 //
 // The broad legacy validation path keeps working exactly as before: this

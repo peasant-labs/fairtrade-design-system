@@ -1,3 +1,5 @@
+// @ts-check
+
 // Fairtrade-owned named negative product mutations for the mounted graph surface.
 //
 // Each mutation proves one real defect fails at its OWNING product boundary

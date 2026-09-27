@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @ts-check
+
 // Fairtest inventory command: the first browser-phase Fairtest command.
 //
 // It proves the exact project-qualified key set for one selection mode before

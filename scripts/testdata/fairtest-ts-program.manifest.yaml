@@ -1,0 +1,90 @@
+# Required-name inventory and executable mutations for fairtest-ts-program.yaml.
+#
+# The guard (scripts/fairtest/assert-ts-check-coverage.mjs) owns no case data;
+# every covered root, root script, vendored body, acknowledged `any` count, and
+# mutation lives here. Each mutation is applied to the in-memory model and must
+# fail the named rule for its intended reason, so the guard proves the invariant
+# rather than its own private helper shape.
+expectedVendoredCount: 3
+requiredVendoredBodies:
+  - scripts/journey/lib/assertions.mjs
+  - scripts/journey/lib/determinism-constants.mjs
+  - scripts/journey/lib/determinism.mjs
+requiredCoveredRoots:
+  - packages/fairtest/src
+  - packages/fairtest/test
+  - scripts/fairtest
+  - scripts/journey/lib
+requiredRootScripts:
+  - scripts/assert-fairtest-boundary.mjs
+  - scripts/assert-test-promotion.mjs
+  - scripts/fairtest-runner-inventory.mjs
+  - scripts/fairtest-single-document.mjs
+  - scripts/fairtest-source.mjs
+  - scripts/fairtest-surface-manifest.mjs
+expectedAnyFileCount: 10
+expectedAnyOccurrenceCount: 50
+requiredAnyFiles:
+  - packages/fairtest/test/bridge-contract.test.mjs
+  - packages/fairtest/test/evidence-mutations.mjs
+  - scripts/fairtest/component-producer.mjs
+  - scripts/fairtest/preflight-fairtest.mjs
+  - scripts/fairtest/product-adapter.test.mjs
+  - scripts/fairtest/product-producer.mjs
+  - scripts/fairtest/run-envelope-contract.mjs
+  - scripts/fairtest/run-envelope.test.mjs
+  - scripts/fairtest/selection-receipt.mjs
+  - scripts/fairtest/verify-fairtest.mjs
+expectedMutationCount: 8
+requiredMutationNames:
+  - missing-pragma
+  - added-vendored-banner
+  - removed-vendored-banner
+  - planted-ts-nocheck
+  - planted-ts-ignore
+  - planted-explicit-any
+  - dropped-any-justification
+  - dropped-from-program
+mutations:
+  - name: missing-pragma
+    rule: pragma
+    kind: remove-pragma
+    target: scripts/fairtest/fairtest-runtime.mjs
+    expectedDiagnostic: scripts/fairtest/fairtest-runtime.mjs
+  - name: added-vendored-banner
+    rule: vendored
+    kind: add-vendored-banner
+    target: scripts/journey/lib/fixtures.mjs
+    expectedDiagnostic: scripts/journey/lib/fixtures.mjs
+  - name: removed-vendored-banner
+    rule: vendored
+    kind: remove-vendored-banner
+    target: scripts/journey/lib/assertions.mjs
+    expectedDiagnostic: scripts/journey/lib/assertions.mjs
+  - name: planted-ts-nocheck
+    rule: escape
+    kind: plant-directive
+    target: scripts/journey/lib/fixtures.mjs
+    value: '@ts-nocheck'
+    expectedDiagnostic: '@ts-nocheck'
+  - name: planted-ts-ignore
+    rule: escape
+    kind: plant-directive
+    target: scripts/journey/lib/fixtures.mjs
+    value: '@ts-ignore'
+    expectedDiagnostic: '@ts-ignore'
+  - name: planted-explicit-any
+    rule: escape
+    kind: plant-any
+    target: scripts/fairtest/product-producer.mjs
+    expectedDiagnostic: scripts/fairtest/product-producer.mjs
+  - name: dropped-any-justification
+    rule: escape
+    kind: drop-any-count
+    target: scripts/fairtest/product-producer.mjs
+    expectedDiagnostic: scripts/fairtest/product-producer.mjs
+  - name: dropped-from-program
+    rule: program
+    kind: drop-from-program
+    target: scripts/fairtest/fairtest-runtime.mjs
+    expectedDiagnostic: scripts/fairtest/fairtest-runtime.mjs

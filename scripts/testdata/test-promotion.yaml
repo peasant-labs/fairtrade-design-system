@@ -68,3 +68,26 @@ records:
       budget: Seconds of local compute inside the existing browser-free phase.
       cleanup: Scratch directories are removed in a finally step on every exit path.
     exitCondition: Remove this record family if the boundary moves into a lower-level package check that proves the same invariant.
+  - name: fairtest-type-program-coverage-guard
+    answers:
+      subject: The Fairtest type program must cover exactly the intended files, and no covered file may carry a suppression directive or an unrecorded explicit-any type position.
+      necessity: A pragma-presence check alone cannot see a file that carries both the pragma and a refused suppression directive, and it cannot see the include globs narrowed underneath it; only a metadata scan plus a comparison against the compiler's own file list observes the real program membership.
+      productionPath: node scripts/fairtest/assert-ts-check-coverage.mjs over the real tree, spawning the pinned tsc -p tsconfig.fairtest.json --listFiles for the program comparison.
+      cost: One browser-free node process plus one tsc --listFiles invocation over the covered roots; no service, browser, network, or durable output.
+      lifetime: No temporary files or directories are created; the tsc subprocess is bounded by spawnSync and exits before the guard returns.
+      concurrency: Read-only over the tree; the tsc invocation writes nothing because the program sets noEmit true, so two runs cannot interfere.
+      ciParity: The exact command pnpm test:fairtest:type-coverage runs from a clean checkout with the pinned typescript and yaml devDependencies; it is declared here and not yet wired into required CI.
+      evidence: A machine-readable pass line reporting walked, checked, and vendored counts, the acknowledged-any totals, and the parity result, plus named diagnostics for every rule.
+      mutation: Eight named mutations (missing pragma, vendored banner added and removed, planted suppression directives, planted and dropped explicit any, dropped-from-program) each fail the named rule for the intended file or token.
+      exitCondition: Fold the checks into a lower-level program or compiler integration if one can observe program membership and suppression metadata directly.
+    lowerLayer:
+      result: promote
+      detail: A plain unit test cannot observe the compiler's actual program membership or a suppression directive the compiler honors silently, so the metadata comparison is justified.
+    decision:
+      verdict: approve
+      rationale: The guard protects the type program's whole payoff, the lower layer cannot observe the same invariant, and its cost is one bounded browser-free process.
+    executionPolicy:
+      runner: Plain node command with the pinned typescript spawned as a child; no service, browser, or network access.
+      budget: Seconds of local compute inside the existing browser-free phase; one tsc --listFiles over the covered roots.
+      cleanup: No temporary state is created; the child process is bounded and reaped by spawnSync on every exit path.
+    exitCondition: Fold the checks into a lower-level program or compiler integration if one can observe program membership and suppression metadata directly.

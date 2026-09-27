@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-// Shared strict single-document YAML loader for the S1 Fairtest guardrails.
+// @ts-check
+
+// Shared strict single-document YAML loader for the Fairtest guardrails.
 //
 // Parses exactly one YAML document: a legal leading `---` start marker is
 // accepted, while any trailing document (`---` or `...` end-marker followed

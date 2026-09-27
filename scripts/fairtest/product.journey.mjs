@@ -1,3 +1,5 @@
+// @ts-check
+
 /* Fairtest mounted product journey: one suite with exactly two row-scoped rows.
  *
  * Each row drives the real built app from dist/ through the Fairtrade adapter

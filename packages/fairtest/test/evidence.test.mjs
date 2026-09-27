@@ -1,3 +1,5 @@
+// @ts-check
+
 // Evidence contract tests. Every behavioral case lives in the named
 // evidence-contract YAML family with a required-name manifest; this file
 // owns no case data except small structural unit asserts. Composes the real

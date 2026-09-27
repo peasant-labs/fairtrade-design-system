@@ -1,3 +1,5 @@
+// @ts-check
+
 // Neutral evidence barrel. Re-exports the browser-neutral evidence run model,
 // typed failures, the caller-owned policy, the duplicate scopes, the report
 // verdict, and the verifier. It reuses the shared host kind and theme

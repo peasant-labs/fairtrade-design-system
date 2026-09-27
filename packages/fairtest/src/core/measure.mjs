@@ -1,3 +1,5 @@
+// @ts-check
+
 // Generic measurement helpers. Measurements describe observed bytes, digests,
 // and counted samples without deciding what counts as passing. Passing is a
 // caller-owned policy applied later. Uses node:crypto and language builtins.

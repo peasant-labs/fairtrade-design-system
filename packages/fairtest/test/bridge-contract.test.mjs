@@ -1,3 +1,5 @@
+// @ts-check
+
 // Bridge contract tests. Every behavioral case lives in the named
 // bridge-contract YAML family with a required-name manifest; this file owns
 // no case data except small structural unit asserts. Imports the real child

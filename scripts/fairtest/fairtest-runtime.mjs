@@ -1,3 +1,5 @@
+// @ts-check
+
 // Fairtest runtime constants: the single owner of every runtime value the
 // Fairtest host shares.
 //

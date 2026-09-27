@@ -1,3 +1,5 @@
+// @ts-check
+
 // Local bridge contract tests. Every behavioral case lives in the named
 // local-bridge YAML family with a required-name manifest; this file owns no
 // case data except the small structural units and their named source

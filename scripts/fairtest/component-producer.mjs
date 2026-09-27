@@ -1,3 +1,5 @@
+// @ts-check
+
 // Fairtrade-owned mounted component producer: browser-bearing host runtime and
 // durable artifact writer for the built Storybook story target.
 //

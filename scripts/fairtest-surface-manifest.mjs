@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @ts-check
+
 // Exact SurfaceGate / GraphThemeGate consumer and export manifest guard.
 //
 // scripts/surface-gate.mjs is a protected tool with live importer families. This

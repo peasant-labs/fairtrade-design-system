@@ -1,3 +1,5 @@
+// @ts-check
+
 // Process bridge tests: the four real OS process cases for the CI process
 // supervisor, plus the neutral process contract and its named fixture family.
 //

@@ -1,3 +1,5 @@
+// @ts-check
+
 // Focused contract test for the Fairtrade product adapter and target
 // registry. Every behavioral row lives in product-target.testdata.yaml with
 // its required-name manifest; this module owns no row tables, only the fake

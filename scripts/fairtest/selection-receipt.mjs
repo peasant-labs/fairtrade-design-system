@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @ts-check
+
 // Fairtest selection receipt: the distinct validator of the expected selection.
 //
 // This is deliberately NOT the selector. The selector writes only

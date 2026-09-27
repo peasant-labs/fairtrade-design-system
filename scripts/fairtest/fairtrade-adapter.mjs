@@ -1,3 +1,5 @@
+// @ts-check
+
 // Fairtrade-owned adapter factory with one injected lifecycle driver.
 //
 // The adapter wraps a single caller-supplied driver, never a hardcoded host:

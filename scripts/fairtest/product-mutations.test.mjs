@@ -1,3 +1,5 @@
+// @ts-check
+
 // Executable suite for the negative product mutations.
 //
 // The ten named mutations have exactly ONE diagnostics table and ONE execution

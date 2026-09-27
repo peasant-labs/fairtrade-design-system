@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @ts-check
+
 // Fairtest durable-evidence preflight: the always-run completeness check.
 //
 // It runs after the verifier (and after a producer failure, because CI runs it

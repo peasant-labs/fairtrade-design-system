@@ -1,3 +1,5 @@
+// @ts-check
+
 // Typed evidence failures. A failure names one closed code, the value path it
 // was raised at, the expected and observed values, and an actionable repair
 // hint. The code vocabulary is declared once here so a verifier report, a

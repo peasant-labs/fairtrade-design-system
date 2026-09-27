@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @ts-check
+
 // Sole repository-local route from Fairtrade app scripts to the private
 // workspace source package. Every app-side import of child source goes
 // through resolveFairtestSource or importFairtestSource; no other relative

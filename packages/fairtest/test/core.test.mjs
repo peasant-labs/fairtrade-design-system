@@ -1,3 +1,5 @@
+// @ts-check
+
 // Browser-neutral core tests. Every behavioral case lives in a named YAML
 // fixture family with a required-name manifest; this file owns no case data
 // except small structural unit asserts. Runs with node builtins plus the

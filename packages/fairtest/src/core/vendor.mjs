@@ -1,3 +1,5 @@
+// @ts-check
+
 // Source-vendoring and import policy. A vendor record pins one vendored
 // source by name, version, content digest, and origin note. Import policy
 // decides which module specifiers a neutral module may name: node builtins
