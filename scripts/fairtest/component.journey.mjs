@@ -20,9 +20,9 @@
  * Fairtest config, so no project name is read here.
  */
 import { test, expect } from '@playwright/test'
-import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
+import { createAdapter } from './fairtrade-adapter.mjs'
 import { FAIRTEST_APP_HOST, FAIRTEST_STORYBOOK_PORT } from './fairtest-runtime.mjs'
-import { COMPONENT_STORY_ID, COMPONENT_TARGET_ID, COMPONENT_PROVENANCE_SOURCE } from './fairtrade-component-target.mjs'
+import { COMPONENT_STORY_ID, COMPONENT_TARGET, COMPONENT_TARGET_ID, COMPONENT_PROVENANCE_SOURCE } from './fairtrade-component-target.mjs'
 import {
   COMPONENT_ARTIFACT_CLASSES,
   captureComponentRow,
@@ -50,11 +50,10 @@ test.describe('fairtest mounted component', () => {
   test.beforeAll(async () => {
     runRoot = resolveComponentRunRoot()
     driver = createComponentStaticDriver({ port: FAIRTEST_STORYBOOK_PORT, host: FAIRTEST_APP_HOST })
-    adapter = await createFairtradeAdapter({
+    adapter = await createAdapter({
       runId: sanitizeRunId(runRoot),
       driver,
-      kind: 'component',
-      targetId: COMPONENT_TARGET_ID,
+      target: COMPONENT_TARGET,
       createdAtMs: Date.now(),
     })
     await adapter.start()

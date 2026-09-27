@@ -14,6 +14,13 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = resolve(HERE, '..')
 
+// Type-only re-exports of the shared resolution contract. The child package
+// exposes these typedefs and app modules name their builder return types
+// through this sole route, so no app module needs a second relative path into
+// the private child. These are JSDoc types: no runtime import is added.
+/** @typedef {import('../packages/fairtest/src/host-contract/resolution.mjs').ProductResolution} ProductResolution */
+/** @typedef {import('../packages/fairtest/src/host-contract/resolution.mjs').ComponentResolution} ComponentResolution */
+
 export const FAIRTEST_PACKAGE_NAME = '@peasant-labs/fairtest'
 export const FAIRTEST_PACKAGE_ROOT = resolve(REPO_ROOT, 'packages', 'fairtest')
 const ALLOWED_EXTENSIONS = new Set(['.mjs', '.js', '.cjs', '.json'])

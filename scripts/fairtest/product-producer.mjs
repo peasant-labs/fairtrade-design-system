@@ -104,7 +104,7 @@ const valuesContract = await importFairtestSource('src/core/values.mjs')
  * array lives in fairtest-artifacts.mjs (the app-owned, kind-neutral artifact
  * contract) and is re-exported under the product name so every product consumer
  * reads the same shared set the component row writes.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const PRODUCT_ARTIFACT_CLASSES = ARTIFACT_CLASSES
 

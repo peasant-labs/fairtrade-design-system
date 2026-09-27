@@ -99,7 +99,7 @@ export function assertLocalInvocationNotProducer(value, label) {
       )
     }
     const record = /** @type {Record<string, unknown>} */ (value)
-    if (HOST_KINDS.includes(/** @type {string} */ (record.kind)) || 'key' in record || 'theme' in record || 'artifacts' in record) {
+    if (/** @type {readonly string[]} */ (HOST_KINDS).includes(/** @type {string} */ (record.kind)) || 'key' in record || 'theme' in record || 'artifacts' in record) {
       throw new Error(
         `${label}: refused producer evidence identity for field "purpose" at path local.identity.purpose; ` +
         'repair: pass a local invocation identity carrying purpose "local" here; producer rows are read only by the evidence verifier.',

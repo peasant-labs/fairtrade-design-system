@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { storyUrl } from '../journey/lib/fixtures.mjs'
 import { normalizeRenderedTheme } from './fairtrade-targets.mjs'
-import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
+import { createAdapter } from './fairtrade-adapter.mjs'
 import { captureComponentRow, resolveComponentRunRoot } from './component-producer.mjs'
 import * as targets from './fairtrade-component-target.mjs'
 import { COMPONENT_MUTATION_NAMES, runComponentMutation } from './component-mutations.mjs'
@@ -804,9 +804,9 @@ describe('shared adapter kind selection', () => {
     }
   }
 
-  it('selects the component target, capabilities, and action for kind component', async () => {
-    const adapter = await createFairtradeAdapter({ runId: 'component-adapter-probe', driver: fakeDriver(), kind: 'component', createdAtMs: 1000 })
-    assert.equal(adapter.targetId, targets.COMPONENT_TARGET_ID, 'kind component must select the component target')
+  it('selects the component target, capabilities, and action from the target value', async () => {
+    const adapter = await createAdapter({ runId: 'component-adapter-probe', driver: fakeDriver(), target: targets.COMPONENT_TARGET, createdAtMs: 1000 })
+    assert.equal(adapter.targetId, targets.COMPONENT_TARGET_ID, 'the component target value must select the component target')
     assert.equal(adapter.declaration.kind, 'component', 'the declaration must stay on the component branch')
     for (const required of contractTargets.COMPONENT_REQUIRED_CAPABILITIES) {
       assert.ok(adapter.capabilities.includes(required), `component capabilities must include ${required}`)
@@ -822,13 +822,18 @@ describe('shared adapter kind selection', () => {
     await adapter.teardown()
   })
 
-  it('still defaults to the product target and refuses an unknown kind', async () => {
-    const adapter = await createFairtradeAdapter({ runId: 'product-adapter-probe-default', driver: fakeDriver(), createdAtMs: 1000 })
-    assert.equal(adapter.declaration.kind, 'product', 'an omitted kind must stay product')
+  it('still defaults to the product target and refuses a target missing a required capability', async () => {
+    const adapter = await createAdapter({ runId: 'product-adapter-probe-default', driver: fakeDriver(), createdAtMs: 1000 })
+    assert.equal(adapter.declaration.kind, 'product', 'an omitted target must stay the product target')
     await assert.rejects(
-      () => createFairtradeAdapter({ runId: 'bad-kind-probe', driver: fakeDriver(), kind: 'widget', createdAtMs: 1000 }),
-      /unknown host kind "widget".*field "kind".*at path adapter\.kind.*repair:/s,
-      'an unknown kind must fail closed',
+      () => createAdapter({
+        runId: 'bad-target-probe',
+        driver: fakeDriver(),
+        target: { kind: 'product', id: 'bad-target', capabilities: ['observe-chrome'], fixtures: ['product-theme-rows'], actions: [] },
+        createdAtMs: 1000,
+      }),
+      /missing required capability.*at path target\.capabilities.*repair:/s,
+      'a target missing a required capability must fail closed',
     )
   })
 })

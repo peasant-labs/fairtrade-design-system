@@ -16,6 +16,7 @@
 // --target=component) after the clean app and Storybook builds, so the mounted
 // product and component rows are now enforced rather than merely declared.
 import { spawnSync } from 'node:child_process'
+import { parseTarget } from './fairtrade-adapter.mjs'
 
 /**
  * The declared targets and the exact describe-title prefix each one selects.
@@ -67,16 +68,16 @@ function main() {
     )
     return 2
   }
-  if (!Object.hasOwn(MOUNTED_TARGET_GREPS, target)) {
-    console.error(
-      `fairtest mounted: unknown target ${JSON.stringify(target)} for field "target" at path cli.target; ` +
-      'repair: use --target=product or --target=component.',
-    )
+  let kind = null
+  try {
+    kind = parseTarget(target, 'cli.target').kind
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error))
     return 2
   }
   for (const line of [
-    `fairtest mounted: running the ${target} rows through the one-project Playwright config`,
-    target === 'product'
+    `fairtest mounted: running the ${kind} rows through the one-project Playwright config`,
+    kind === 'product'
       ? '  precondition: pnpm build first and FAIRTEST_RUN_ROOT set, so dist/ holds the exact built app'
       : '  precondition: pnpm build-storybook first and FAIRTEST_RUN_ROOT set, so storybook-static/ holds the exact built story',
     `  required-ci mount: ${MOUNTED_REQUIRED_CI_MOUNT.status} (${MOUNTED_REQUIRED_CI_MOUNT.reason})`,
@@ -85,7 +86,7 @@ function main() {
   }
   const result = spawnSync(
     'pnpm',
-    ['exec', 'playwright', 'test', '--config', 'playwright.fairtest.config.mjs', '--grep', MOUNTED_TARGET_GREPS[target]],
+    ['exec', 'playwright', 'test', '--config', 'playwright.fairtest.config.mjs', '--grep', MOUNTED_TARGET_GREPS[kind]],
     { stdio: 'inherit' },
   )
   return result.status ?? 1

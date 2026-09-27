@@ -24,18 +24,49 @@
 // what a maintainer still reads.
 
 import { importFairtestSource } from '../fairtest-source.mjs'
-import {
-  PRODUCT_ACTION_NAME,
-  PRODUCT_TARGET_ID,
-  productDeclarationInput,
-  selectProductTarget,
-} from './fairtrade-targets.mjs'
-import {
-  COMPONENT_ACTION_NAME,
-  COMPONENT_TARGET_ID,
-  componentDeclarationInput,
-  selectComponentTarget,
-} from './fairtrade-component-target.mjs'
+import { PRODUCT_TARGET } from './fairtrade-targets.mjs'
+import { COMPONENT_TARGET } from './fairtrade-component-target.mjs'
+
+/**
+ * The registered target values keyed by host kind. The adapter selects one of
+ * these (or any validated target value) and reads behaviour from its own
+ * fields; there is no independent kind string to disagree with the target.
+ * @type {Readonly<Record<string, object>>}
+ */
+export const TARGETS = Object.freeze({
+  product: PRODUCT_TARGET,
+  component: COMPONENT_TARGET,
+})
+
+/**
+ * Resolve an external target string (the CLI `--target` flag) to a registered
+ * target value. A host kind name or a registered target id is accepted; an
+ * unknown value fails with an actionable diagnostic. External string input is
+ * the only place a target is parsed; every internal caller passes the value.
+ * @param {unknown} value external target string
+ * @param {string} [path] value path used in diagnostics
+ * @returns {object} the registered target value
+ */
+export function parseTarget(value, path = 'target') {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error(
+      `fairtrade adapter: invalid value ${JSON.stringify(value)} for field "target" at path ${path}; ` +
+      'repair: use one of product, component or a registered target id for "target".',
+    )
+  }
+  if (Object.hasOwn(TARGETS, value)) {
+    return TARGETS[value]
+  }
+  for (const target of Object.values(TARGETS)) {
+    if (/** @type {Record<string, unknown>} */ (target).id === value) {
+      return target
+    }
+  }
+  throw new Error(
+    `fairtrade adapter: unknown target ${JSON.stringify(value)} for field "target" at path ${path}; ` +
+    'repair: use one of product, component or a registered target id for "target".',
+  )
+}
 
 const RUN_ID_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/
 
@@ -129,28 +160,27 @@ function runWithTimeout(promise, timeoutMs, message) {
 
 /**
  * Create a Fairtrade adapter around one injected lifecycle driver. One adapter
- * serves both host kinds: `kind` selects the product or component target and
- * capability vocabulary, and the lifecycle, handle, and teardown logic is the
- * same for both.
+ * serves both host kinds: the `target` value is the discriminator, and its own
+ * fields carry the kind, id, capability inventory, fixtures, actions, and
+ * registered action, so there is no independent kind string to disagree with
+ * the target. The lifecycle, handle, and teardown logic is the same for both.
  * @param {object} [options] adapter options
  * @param {string} options.runId owning run id used for handle membership
  * @param {object} options.driver injected lifecycle driver
- * @param {string} [options.kind] host kind, product or component
- * @param {string} [options.targetId] registered target id for the kind
+ * @param {object} [options.target] validated target value, defaults to the product target
  * @param {number} [options.createdAtMs] identity creation time in whole ms
- * @param {string[]} [options.capabilities] declared capability inventory
- * @param {string[]} [options.fixtures] named fixtures served
- * @param {string[]} [options.actions] named actions offered
+ * @param {string[]} [options.capabilities] declared capability inventory override
+ * @param {string[]} [options.fixtures] named fixtures served override
+ * @param {string[]} [options.actions] named actions offered override
  * @returns {Promise<object>} the frozen adapter
  */
-export async function createFairtradeAdapter(options = {}) {
+export async function createAdapter(options = {}) {
   const contract = await loadContract()
   const settings = options ?? {}
   const {
     runId,
     driver,
-    kind = 'product',
-    targetId,
+    target = PRODUCT_TARGET,
     createdAtMs = Date.now(),
     capabilities,
     fixtures,
@@ -159,33 +189,33 @@ export async function createFairtradeAdapter(options = {}) {
   assertRunId(runId)
   assertDriver(driver)
 
-  if (kind !== 'product' && kind !== 'component') {
-    throw new Error(
-      `fairtrade adapter: unknown host kind ${JSON.stringify(kind)} for field "kind" at path adapter.kind; ` +
-      'repair: use one of product, component for "kind".',
-    )
-  }
-  const isComponent = kind === 'component'
-  const target = isComponent
-    ? selectComponentTarget(targetId ?? COMPONENT_TARGET_ID)
-    : selectProductTarget(targetId ?? PRODUCT_TARGET_ID)
-  const declarationInput = isComponent ? componentDeclarationInput : productDeclarationInput
-  const registeredAction = isComponent ? COMPONENT_ACTION_NAME : PRODUCT_ACTION_NAME
-  const declaredCapabilities = capabilities ?? [...(isComponent ? contract.targets.COMPONENT_CAPABILITIES : contract.targets.PRODUCT_CAPABILITIES)]
+  // Validate the target's own declaration fields against the shared contract
+  // so a required capability for its kind cannot be missing, then read every
+  // behaviour off the validated value instead of branching on the kind.
+  const targetRecord = /** @type {Record<string, unknown>} */ (target)
+  const targetValue = contract.targets.createTargetValue({
+    kind: targetRecord.kind,
+    id: targetRecord.id,
+    capabilities: targetRecord.capabilities,
+    fixtures: targetRecord.fixtures,
+    actions: targetRecord.actions,
+  }, 'fairtrade adapter')
+  const kind = targetValue.kind
+  const declaredCapabilities = capabilities ?? [...targetValue.capabilities]
   const validatedCapabilities = contract.targets.validateCapabilityList(
     [...declaredCapabilities],
     kind,
     'fairtrade adapter',
     'adapter.capabilities',
   )
-  const declaration = contract.targets.createTargetDeclaration(
-    declarationInput({
-      createdAtMs,
-      capabilities: [...validatedCapabilities],
-      ...(fixtures === undefined ? {} : { fixtures }),
-      ...(actions === undefined ? {} : { actions }),
-    }),
-  )
+  const declaration = contract.targets.createTargetDeclaration({
+    kind,
+    identity: { kind, id: targetValue.id, createdAtMs },
+    capabilities: [...validatedCapabilities],
+    fixtures: [...(fixtures ?? targetValue.fixtures)],
+    actions: [...(actions ?? targetValue.actions)],
+  })
+  const registeredAction = targetValue.actions[0]
 
   const stages = ['declared']
   const state = {
@@ -290,7 +320,7 @@ export async function createFairtradeAdapter(options = {}) {
     }
     state.started = true
     stages.push('acquired')
-    return Object.freeze({ started: true, runId, targetId: target.id })
+    return Object.freeze({ started: true, runId, targetId: targetValue.id })
   }
 
   /**
@@ -315,7 +345,7 @@ export async function createFairtradeAdapter(options = {}) {
       state.ready = true
       stages.push('ready')
     }
-    return Object.freeze({ ready: true, runId, targetId: target.id, detail })
+    return Object.freeze({ ready: true, runId, targetId: targetValue.id, detail })
   }
 
   /**
@@ -437,7 +467,7 @@ export async function createFairtradeAdapter(options = {}) {
 
   return Object.freeze({
     runId,
-    targetId: target.id,
+    targetId: targetValue.id,
     declaration,
     capabilities: validatedCapabilities,
     start,

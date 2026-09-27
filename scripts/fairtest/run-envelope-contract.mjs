@@ -41,9 +41,10 @@ export const FAIRTEST_PROJECT = 'fairtest'
 /**
  * The four exclusive run subtrees, in ownership order. Exactly these, no
  * extras: an undeclared sibling directory is not part of the envelope.
- * @type {string[]}
  */
-export const RUN_SUBTREES = Object.freeze(['guards', 'selection', 'producer', 'evidence'])
+export const RUN_SUBTREES = Object.freeze(/** @type {const} */ (['guards', 'selection', 'producer', 'evidence']))
+
+/** @typedef {(typeof RUN_SUBTREES)[number]} RunSubtree */
 
 /** @type {string} */
 export const GUARDS_DIR = 'guards'
@@ -141,9 +142,10 @@ export const MODE_KEYS = Object.freeze({ ci: CI_ROW_KEYS, local: LOCAL_ROW_KEYS 
 
 /**
  * The closed selection modes.
- * @type {string[]}
  */
-export const SELECTION_MODES = Object.freeze(['ci', 'local'])
+export const SELECTION_MODES = Object.freeze(/** @type {const} */ (['ci', 'local']))
+
+/** @typedef {(typeof SELECTION_MODES)[number]} SelectionMode */
 
 /**
  * The Fairtest budget, recorded in the run envelope rather than inferred from
@@ -208,7 +210,7 @@ export function producerRowDirRel(key) {
  * @returns {void}
  */
 export function assertSelectionMode(mode, label) {
-  if (typeof mode !== 'string' || !SELECTION_MODES.includes(mode)) {
+  if (typeof mode !== 'string' || !/** @type {readonly string[]} */ (SELECTION_MODES).includes(mode)) {
     throw new Error(
       `${label}: invalid selection mode ${JSON.stringify(mode)} for field "mode" at path selection.mode; ` +
       `repair: use one of ${SELECTION_MODES.join(', ')} for "mode".`,

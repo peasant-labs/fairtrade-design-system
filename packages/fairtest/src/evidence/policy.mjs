@@ -68,7 +68,7 @@ function validateRequiredRow(value, index) {
     )
   }
   assertHostKind(row.kind, `${path}.kind`)
-  if (!THEME_NAMES.includes(/** @type {string} */ (row.theme))) {
+  if (!/** @type {readonly string[]} */ (THEME_NAMES).includes(/** @type {string} */ (row.theme))) {
     throw new Error(
       `invalid value ${JSON.stringify(row.theme)} for field "theme" at path ${path}.theme; ` +
       `repair: use one of ${THEME_NAMES.join(', ')} for "theme".`,
@@ -100,7 +100,7 @@ export function createEvidencePolicy(input) {
       'repair: use a lowercase run id up to 64 characters for "runId".',
     )
   }
-  if (!EVIDENCE_MODES.includes(/** @type {string} */ (record.mode))) {
+  if (!/** @type {readonly string[]} */ (EVIDENCE_MODES).includes(/** @type {string} */ (record.mode))) {
     throw new Error(
       `invalid value ${JSON.stringify(record.mode)} for field "mode" at path policy.mode; ` +
       `repair: use one of ${EVIDENCE_MODES.join(', ')} for "mode".`,

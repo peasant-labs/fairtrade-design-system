@@ -217,12 +217,31 @@ const COMPONENT_TARGET_RECORD = Object.freeze({
 })
 
 /**
+ * The one component target as a validated value: its kind, id, capability
+ * inventory, fixtures, and actions, plus the app-owned surface metadata. The
+ * capability inventory is validated against the shared component vocabulary
+ * and required subset at declaration, so a component target missing a required
+ * capability cannot be constructed. The adapter reads the declaration input
+ * and the registered action from these fields rather than branching on kind.
+ */
+export const COMPONENT_TARGET = Object.freeze({
+  ...COMPONENT_TARGET_RECORD,
+  ...targetsContract.createTargetValue({
+    kind: 'component',
+    id: COMPONENT_TARGET_ID,
+    capabilities: [...targetsContract.COMPONENT_CAPABILITIES],
+    fixtures: COMPONENT_FIXTURES,
+    actions: COMPONENT_ACTIONS,
+  }, 'fairtrade component targets'),
+})
+
+/**
  * Target registry keyed by target id. This module declares exactly one
  * component target.
  * @type {object}
  */
 export const COMPONENT_TARGET_REGISTRY = Object.freeze({
-  [COMPONENT_TARGET_ID]: COMPONENT_TARGET_RECORD,
+  [COMPONENT_TARGET_ID]: COMPONENT_TARGET,
 })
 
 /**
@@ -471,7 +490,7 @@ export const COMPONENT_PROOF_RECORD_SCHEMA = Object.freeze({
  * @param {object} input.root separately observed mounted root
  * @param {object} input.themeObservation validated theme observation
  * @param {object} [input.interaction] optional completed named interaction result
- * @returns {object} the frozen validated component resolution
+ * @returns {import('../fairtest-source.mjs').ComponentResolution} the frozen validated component resolution
  */
 export function buildComponentProof(input = {}) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {

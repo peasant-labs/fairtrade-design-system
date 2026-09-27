@@ -21,7 +21,9 @@ import { artifactByteLength, assertArtifactDigest } from './digest.mjs'
  * reference, or baseline record belongs to no supported mode and is refused.
  * @type {string[]}
  */
-export const EVIDENCE_MODES = freezeRecord(['single-capture'])
+export const EVIDENCE_MODES = freezeRecord(/** @type {const} */ (['single-capture']))
+
+/** @typedef {(typeof EVIDENCE_MODES)[number]} EvidenceMode */
 
 const KEY_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/
 const MAX_SAFE = 9007199254740991
@@ -146,7 +148,7 @@ export function createEvidenceRow(input) {
   const record = /** @type {Record<string, unknown>} */ (input)
   assertRowKey(record.key, 'row.key')
   assertHostKind(record.kind, 'row.kind')
-  if (!THEME_NAMES.includes(/** @type {string} */ (record.theme))) {
+  if (!/** @type {readonly string[]} */ (THEME_NAMES).includes(/** @type {string} */ (record.theme))) {
     throw new Error(
       `invalid value ${JSON.stringify(record.theme)} for field "theme" at path row.theme; ` +
       `repair: use one of ${THEME_NAMES.join(', ')} for "theme".`,

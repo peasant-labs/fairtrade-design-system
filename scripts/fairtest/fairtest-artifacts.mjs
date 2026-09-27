@@ -25,16 +25,17 @@ const resolutionContract = await importFairtestSource('src/host-contract/resolut
  * The six durable artifact classes every mounted row writes. Exact set, no
  * silent extras. The verifier owns completeness against this list, and both
  * kinds alias this one frozen array so the two can never diverge.
- * @type {string[]}
  */
-export const ARTIFACT_CLASSES = Object.freeze([
+export const ARTIFACT_CLASSES = Object.freeze(/** @type {const} */ ([
   'record.json',
   'aria.json',
   'axe.json',
   'screenshot.png',
   'provenance.json',
   'resolution.json',
-])
+]))
+
+/** @typedef {(typeof ARTIFACT_CLASSES)[number]} ArtifactClass */
 
 /**
  * The product-only shell fields the shared host contract refuses on the

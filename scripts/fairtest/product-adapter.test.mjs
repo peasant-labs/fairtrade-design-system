@@ -33,7 +33,8 @@ import { fileURLToPath } from 'node:url'
 import { pathToFileURL } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { AXE_RESULT_FIELDS, expectTheme } from '../journey/lib/assertions.mjs'
-import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
+import { createAdapter, parseTarget, TARGETS } from './fairtrade-adapter.mjs'
+import { assertNoTargetKindDispatch } from './assert-target-dispatch.mjs'
 import {
   FAIRTEST_APP_BASE_URL,
   FAIRTEST_APP_HOST,
@@ -2548,7 +2549,7 @@ async function runDriverStopContractCase(entry) {
   const name = /** @type {string} */ (entry.name)
   let declared = null
   try {
-    await createFairtradeAdapter({
+    await createAdapter({
       runId: 'adapter-probe-no-stop',
       driver: { start: async () => {}, reset: async () => {}, isRunning: () => false },
       createdAtMs: 1000,
@@ -2574,7 +2575,7 @@ async function runDriverStopContractCase(entry) {
     startFailure: /** @type {string} */ (entry.startFailure),
     failStopWhenIdle: true,
   })
-  const adapter = await createFairtradeAdapter({ runId: 'adapter-probe-idle-stop', driver, createdAtMs: 1000 })
+  const adapter = await createAdapter({ runId: 'adapter-probe-idle-stop', driver, createdAtMs: 1000 })
   let startMessage = null
   try {
     await adapter.start()
@@ -2617,7 +2618,7 @@ async function runDriverResetContractCase(entry) {
   const name = /** @type {string} */ (entry.name)
   let declared = null
   try {
-    await createFairtradeAdapter({
+    await createAdapter({
       runId: 'adapter-probe-no-reset',
       driver: { start: async () => {}, stop: async () => {}, isRunning: () => false },
       createdAtMs: 1000,
@@ -2643,7 +2644,7 @@ async function runDriverResetContractCase(entry) {
     startFailure: /** @type {string} */ (entry.startFailure),
     failResetWhenIdle: true,
   })
-  const adapter = await createFairtradeAdapter({ runId: 'adapter-probe-idle-reset', driver, createdAtMs: 1000 })
+  const adapter = await createAdapter({ runId: 'adapter-probe-idle-reset', driver, createdAtMs: 1000 })
   let startMessage = null
   try {
     await adapter.start()
@@ -2994,7 +2995,7 @@ async function driveRealStaticDriverStartFailure({ runId, port, holdPort, distRo
     }
     driver = createProductStaticDriver({ port, host: FAIRTEST_APP_HOST, distRoot: distRoot(scratch) })
     const observed = observeDriverCalls(driver)
-    const adapter = await createFairtradeAdapter({ runId, driver: observed, createdAtMs: 1000 })
+    const adapter = await createAdapter({ runId, driver: observed, createdAtMs: 1000 })
     let message = null
     try {
       await adapter.start()
@@ -3557,7 +3558,7 @@ describe('shared journey theme assertion contract', () => {
 describe('product adapter lifecycle with a fake driver', () => {
   it('runs reset before stop on partial start failure and leaves no service', async () => {
     const driver = createFakeDriver({ failStart: true })
-    const adapter = await createFairtradeAdapter({ runId: 'adapter-probe-1', driver, createdAtMs: 1000 })
+    const adapter = await createAdapter({ runId: 'adapter-probe-1', driver, createdAtMs: 1000 })
     await assert.rejects(() => adapter.start(), /driver start failed.*field "driver".*at path adapter\.start.*repair:/s)
     assert.equal(driver.calls.resets, 1, 'partial start must reset once')
     assert.equal(driver.calls.stops, 1, 'partial start must stop once')
@@ -3572,7 +3573,7 @@ describe('product adapter lifecycle with a fake driver', () => {
 
   it('cleans reset before stop on the timeout path', async () => {
     const driver = createFakeDriver({ hangStart: true })
-    const adapter = await createFairtradeAdapter({ runId: 'adapter-probe-2', driver, createdAtMs: 1000 })
+    const adapter = await createAdapter({ runId: 'adapter-probe-2', driver, createdAtMs: 1000 })
     await assert.rejects(() => adapter.start({ timeoutMs: 25 }), /timed out.*field "timeoutMs".*at path adapter\.start.*repair:/s)
     assert.equal(driver.calls.resets, 1, 'timed-out start must reset once')
     assert.equal(driver.calls.stops, 1, 'timed-out start must stop once')
@@ -3581,7 +3582,7 @@ describe('product adapter lifecycle with a fake driver', () => {
 
   it('marks ready once and tears down idempotently with exactly one stop', async () => {
     const driver = createFakeDriver()
-    const adapter = await createFairtradeAdapter({ runId: 'adapter-probe-3', driver, createdAtMs: 1000 })
+    const adapter = await createAdapter({ runId: 'adapter-probe-3', driver, createdAtMs: 1000 })
     const started = await adapter.start()
     assert.equal(started.started, true)
     assert.deepEqual([...adapter.lifecycleTrace().stages], ['declared', 'acquired'])
@@ -3599,7 +3600,7 @@ describe('product adapter lifecycle with a fake driver', () => {
 
   it('still releases handles and records release when stop fails', async () => {
     const driver = createFakeDriver({ failStop: true })
-    const adapter = await createFairtradeAdapter({ runId: 'adapter-probe-4', driver, createdAtMs: 1000 })
+    const adapter = await createAdapter({ runId: 'adapter-probe-4', driver, createdAtMs: 1000 })
     await adapter.start()
     await adapter.readiness()
     const handle = adapter.mintHandle()
@@ -3616,7 +3617,7 @@ describe('product adapter lifecycle with a fake driver', () => {
 
   it('rejects unknown actions and capabilities with actionable diagnostics', async () => {
     const driver = createFakeDriver()
-    const adapter = await createFairtradeAdapter({ runId: 'adapter-probe-5', driver, createdAtMs: 1000 })
+    const adapter = await createAdapter({ runId: 'adapter-probe-5', driver, createdAtMs: 1000 })
     await adapter.start()
     await assert.rejects(
       () => adapter.performAction('select-changes-section'),
@@ -3626,7 +3627,7 @@ describe('product adapter lifecycle with a fake driver', () => {
     const result = await adapter.performAction(targets.PRODUCT_ACTION_NAME, { observedAtMs: 2000 })
     assert.deepEqual(result, { name: targets.PRODUCT_ACTION_NAME, completed: true, observedAtMs: 2000 })
     await assert.rejects(
-      () => createFairtradeAdapter({
+      () => createAdapter({
         runId: 'adapter-probe-6',
         driver: createFakeDriver(),
         createdAtMs: 1000,
@@ -3640,7 +3641,7 @@ describe('product adapter lifecycle with a fake driver', () => {
 
   it('enforces exact opaque handle membership and revocation', async () => {
     const driver = createFakeDriver()
-    const adapter = await createFairtradeAdapter({ runId: 'adapter-probe-7', driver, createdAtMs: 1000 })
+    const adapter = await createAdapter({ runId: 'adapter-probe-7', driver, createdAtMs: 1000 })
     await adapter.start()
     const handle = adapter.mintHandle()
     assert.ok(Object.isFrozen(handle), 'minted handle must be frozen')
@@ -3697,6 +3698,9 @@ describe('fairtest host export ownership', async () => {
     'fairtest-dev.mjs',
     'local-bridge.test.mjs',
     'process-supervisor.mjs',
+    'assert-ts-check-coverage.mjs',
+    'assert-target-dispatch.mjs',
+    'fairtrade-targets.type-test.mjs',
   ])
   const hostModules = {}
   for (const file of hostFiles) {
@@ -3986,6 +3990,72 @@ function applyHostMutation(rows, mutation) {
   }
   node[segments.at(-1)] = structuredClone(mutation.value)
 }
+
+describe('target-value composition, external target parsing, and dispatch guard', () => {
+  it('composes exactly the observations a target declares', async () => {
+    const subsetTarget = contractTargets.createTargetValue({
+      kind: 'product',
+      id: targets.PRODUCT_TARGET_ID,
+      capabilities: [...contractTargets.PRODUCT_REQUIRED_CAPABILITIES],
+      fixtures: ['product-theme-rows'],
+      actions: [],
+    }, 'composition test')
+    const subsetAdapter = await createAdapter({ runId: 'compose-subset', driver: createFakeDriver(), target: subsetTarget, createdAtMs: 1000 })
+    assert.deepEqual(
+      [...subsetAdapter.capabilities].sort(),
+      [...contractTargets.PRODUCT_REQUIRED_CAPABILITIES].sort(),
+      'a target declaring the required subset must compose exactly that subset, with no default full inventory leaking in',
+    )
+    assert.deepEqual([...subsetAdapter.declaration.actions], [], 'a target without perform-action must declare no actions')
+    assert.equal(subsetAdapter.declaration.kind, 'product', 'the declaration kind comes from the target value')
+
+    const fullAdapter = await createAdapter({ runId: 'compose-full', driver: createFakeDriver(), target: targets.PRODUCT_TARGET, createdAtMs: 1000 })
+    assert.deepEqual(
+      [...fullAdapter.capabilities].sort(),
+      [...contractTargets.PRODUCT_CAPABILITIES].sort(),
+      'the full product target must compose the full product vocabulary',
+    )
+    assert.deepEqual([...fullAdapter.declaration.actions], [targets.PRODUCT_ACTION_NAME], 'the full product target must declare its registered action')
+  })
+
+  it('parses external target strings and refuses unknown ones', () => {
+    assert.equal(parseTarget('product'), TARGETS.product)
+    assert.equal(parseTarget('component'), TARGETS.component)
+    assert.equal(parseTarget(targets.PRODUCT_TARGET_ID), TARGETS.product)
+    assert.throws(
+      () => parseTarget('widget', 'cli.target'),
+      /unknown target "widget".*field "target".*at path cli\.target.*repair:/s,
+      'an unknown external target must fail closed',
+    )
+  })
+
+  it('refuses a host-kind branch outside the declaration and view-construction modules', () => {
+    assert.doesNotThrow(
+      () => assertNoTargetKindDispatch(HERE),
+      'the real app tree must hold no host-kind dispatch outside the allowed declaration and view-construction modules',
+    )
+    const scratch = mkdtempSync(join(tmpdir(), 'fairtest-dispatch-mutation-'))
+    try {
+      writeFileSync(
+        join(scratch, 'adapter-branches-on-target-kind.mjs'),
+        "export function pick(target) {\n  if (target.kind === 'product') return 'product'\n  return 'component'\n}\n",
+      )
+      let message = null
+      try {
+        assertNoTargetKindDispatch(scratch)
+      } catch (error) {
+        message = error instanceof Error ? error.message : String(error)
+      }
+      assert.ok(message, 'adapter-branches-on-target-kind: the planted host-kind branch passed the guard instead of failing')
+      assert.ok(message.includes('adapter-branches-on-target-kind.mjs'), 'the diagnostic must name the offending module')
+      assert.ok(message.includes("kind === 'product'"), 'the diagnostic must name the branch')
+      assert.ok(message.includes('at path'), 'the diagnostic must carry path context')
+      assert.ok(message.includes('repair:'), 'the diagnostic must carry repair guidance')
+    } finally {
+      rmSync(scratch, { recursive: true, force: true })
+    }
+  })
+})
 
 describe('product adapter lifecycle with the real static driver', () => {
   it('cleans a squatted real static-driver start with reset before stop and no listener residue', { timeout: 30000 }, async () => {

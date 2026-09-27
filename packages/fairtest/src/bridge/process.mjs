@@ -183,7 +183,7 @@ export function assertProcessInvocationNotProducer(value, label) {
       )
     }
     const record = /** @type {Record<string, unknown>} */ (value)
-    if (HOST_KINDS.includes(/** @type {string} */ (record.kind)) || 'key' in record || 'theme' in record || 'artifacts' in record) {
+    if (/** @type {readonly string[]} */ (HOST_KINDS).includes(/** @type {string} */ (record.kind)) || 'key' in record || 'theme' in record || 'artifacts' in record) {
       throw new Error(
         `${label}: refused producer evidence identity for field "purpose" at path process.identity.purpose; ` +
         'repair: pass a process invocation identity carrying purpose "process" here; producer rows are read only by the evidence verifier.',

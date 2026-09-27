@@ -457,8 +457,8 @@ function buildRow(entry, templates) {
     identity: { kind: /** @type {string} */ (spec.kind), id: /** @type {string} */ (spec.identityId), createdAtMs: 1000 },
     proof: spec.proof === 'absent' ? null : buildProof(spec),
     themeObservation: {
-      expected: /** @type {Record<string, string>} */ (spec.themeObservation).expected,
-      observed: /** @type {Record<string, string>} */ (spec.themeObservation).observed,
+      expected: /** @type {import('../src/host-contract/kinds.mjs').ThemeName} */ (/** @type {Record<string, string>} */ (spec.themeObservation).expected),
+      observed: /** @type {import('../src/host-contract/kinds.mjs').ThemeName} */ (/** @type {Record<string, string>} */ (spec.themeObservation).observed),
       source: 'fixture',
       observedAtMs: /** @type {number} */ (spec.observedAtMs),
     },

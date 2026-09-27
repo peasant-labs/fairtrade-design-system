@@ -68,7 +68,7 @@ export function listRunRootFiles(root) {
  */
 export function validateRunSubtrees(root) {
   const entries = existsSync(root) ? readdirSync(root, { withFileTypes: true }) : []
-  const expected = [...RUN_SUBTREES]
+  const expected = /** @type {string[]} */ ([...RUN_SUBTREES])
   const observed = entries.map((entry) => entry.name).sort()
   const missing = expected.filter((name) => !entries.some((entry) => entry.name === name && entry.isDirectory()))
   const extra = observed.filter((name) => !expected.includes(name))

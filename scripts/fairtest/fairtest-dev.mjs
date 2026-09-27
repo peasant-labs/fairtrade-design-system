@@ -24,9 +24,9 @@ import { createServer } from 'node:net'
 import { join } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, FAIRTEST_REPO_ROOT, FAIRTEST_STORYBOOK_PORT } from './fairtest-runtime.mjs'
-import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
-import { PRODUCT_TARGET_ID, productThemeRow } from './fairtrade-targets.mjs'
-import { COMPONENT_TARGET_ID, componentThemeRow } from './fairtrade-component-target.mjs'
+import { createAdapter } from './fairtrade-adapter.mjs'
+import { PRODUCT_TARGET, productThemeRow } from './fairtrade-targets.mjs'
+import { COMPONENT_TARGET, componentThemeRow } from './fairtrade-component-target.mjs'
 import { FAIRTEST_PROJECT } from './run-envelope-contract.mjs'
 
 const localBridge = await importFairtestSource('src/bridge/local.mjs')
@@ -69,13 +69,14 @@ export const DEV_REQUIRED_CI_MOUNT = Object.freeze({
  * provenance source come from the exact target module the mounted proof uses,
  * so the local bridge and the mounted row can never select different targets.
  * @param {unknown} target product or component
- * @returns {{ kind: string, targetId: string, source: string, root: string, route: string, port: number, driverImport: string, driverFactory: string }}
+ * @returns {{ target: object, kind: string, targetId: string, source: string, root: string, route: string, port: number, driverImport: string, driverFactory: string }}
  */
 export function devTargetSpec(target) {
   if (target === DEV_TARGETS.product) {
     return Object.freeze({
-      kind: 'product',
-      targetId: PRODUCT_TARGET_ID,
+      target: PRODUCT_TARGET,
+      kind: PRODUCT_TARGET.kind,
+      targetId: PRODUCT_TARGET.id,
       source: 'dist',
       root: join(FAIRTEST_REPO_ROOT, 'dist'),
       route: productThemeRow('dark').route,
@@ -86,8 +87,9 @@ export function devTargetSpec(target) {
   }
   if (target === DEV_TARGETS.component) {
     return Object.freeze({
-      kind: 'component',
-      targetId: COMPONENT_TARGET_ID,
+      target: COMPONENT_TARGET,
+      kind: COMPONENT_TARGET.kind,
+      targetId: COMPONENT_TARGET.id,
       source: 'storybook-static',
       root: join(FAIRTEST_REPO_ROOT, 'storybook-static'),
       route: componentThemeRow('dark').url,
@@ -302,11 +304,10 @@ async function main() {
   const runId = generateLocalId('local')
   const invocationId = generateLocalId('local')
   const createdAtMs = Date.now()
-  const adapter = await createFairtradeAdapter({
+  const adapter = await createAdapter({
     runId,
     driver,
-    kind: spec.kind,
-    targetId: spec.targetId,
+    target: spec.target,
     createdAtMs,
   })
   const identity = localBridge.createLocalInvocationIdentity({

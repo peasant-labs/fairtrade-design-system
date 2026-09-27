@@ -14,6 +14,7 @@ export {
   PRODUCT_REQUIRED_CAPABILITIES,
   capabilitiesFor,
   createTargetDeclaration,
+  createTargetValue,
   requiredCapabilitiesFor,
   requiresCapability,
   validateCapabilityList,

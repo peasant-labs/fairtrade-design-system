@@ -68,7 +68,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
-import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
+import { createAdapter } from './fairtrade-adapter.mjs'
 import { FAIRTEST_APP_HOST, FAIRTEST_REPO_ROOT, PRODUCT_VIEWPORT, claimScratchPort } from './fairtest-runtime.mjs'
 import {
   PRODUCT_SELECTORS,
@@ -467,7 +467,7 @@ function inertDriver() {
  */
 async function mutateUnregisteredAction() {
   getProductAction('select-changes-section')
-  const adapter = await createFairtradeAdapter({
+  const adapter = await createAdapter({
     runId: 'mutation-probe-action',
     driver: inertDriver(),
     createdAtMs: 1000,

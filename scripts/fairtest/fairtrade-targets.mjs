@@ -217,12 +217,31 @@ const PRODUCT_TARGET_RECORD = Object.freeze({
 })
 
 /**
+ * The one product target as a validated value: its kind, id, capability
+ * inventory, fixtures, and actions, plus the app-owned surface metadata. The
+ * capability inventory is validated against the shared product vocabulary and
+ * required subset at declaration, so a product target missing a required
+ * capability cannot be constructed. The adapter reads the declaration input
+ * and the registered action from these fields rather than branching on kind.
+ */
+export const PRODUCT_TARGET = Object.freeze({
+  ...PRODUCT_TARGET_RECORD,
+  ...targetsContract.createTargetValue({
+    kind: PRODUCT_TARGET_KIND,
+    id: PRODUCT_TARGET_ID,
+    capabilities: [...targetsContract.PRODUCT_CAPABILITIES],
+    fixtures: PRODUCT_FIXTURES,
+    actions: PRODUCT_ACTIONS,
+  }, 'fairtrade targets'),
+})
+
+/**
  * Target registry keyed by target id. This module declares exactly one
  * product target.
  * @type {object}
  */
 export const PRODUCT_TARGET_REGISTRY = Object.freeze({
-  [PRODUCT_TARGET_ID]: PRODUCT_TARGET_RECORD,
+  [PRODUCT_TARGET_ID]: PRODUCT_TARGET,
 })
 
 /**
@@ -507,7 +526,7 @@ export const PRODUCT_PROOF_RECORD_SCHEMA = Object.freeze({
  * @param {string} input.initialSection section rendered before any action
  * @param {string} input.activeSectionId section id active when the proof completes
  * @param {object} [input.action] optional completed named action result
- * @returns {object} the frozen validated product resolution
+ * @returns {import('../fairtest-source.mjs').ProductResolution} the frozen validated product resolution
  */
 export function buildProductProof(input = {}) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {

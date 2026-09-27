@@ -70,7 +70,7 @@ const STORYBOOK_ROOT = join(FAIRTEST_REPO_ROOT, 'storybook-static')
  * constant the product row writes, re-declared under the component name so a
  * consumer of the component module reads the one shared set rather than a
  * second six-element literal.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const COMPONENT_ARTIFACT_CLASSES = ARTIFACT_CLASSES
 

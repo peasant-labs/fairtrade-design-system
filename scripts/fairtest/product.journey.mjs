@@ -19,9 +19,9 @@
  * Fairtest config, so no project name is read here.
  */
 import { test, expect } from '@playwright/test'
-import { createFairtradeAdapter } from './fairtrade-adapter.mjs'
+import { createAdapter } from './fairtrade-adapter.mjs'
 import { FAIRTEST_APP_HOST, FAIRTEST_APP_PORT } from './fairtest-runtime.mjs'
-import { PRODUCT_A11Y_GATE_POINT_SLOTS, PRODUCT_A11Y_POINT_LABELS, PRODUCT_TARGET_ID } from './fairtrade-targets.mjs'
+import { PRODUCT_A11Y_GATE_POINT_SLOTS, PRODUCT_A11Y_POINT_LABELS, PRODUCT_TARGET, PRODUCT_TARGET_ID } from './fairtrade-targets.mjs'
 import {
   PRODUCT_ARTIFACT_CLASSES,
   PRODUCT_PRE_ACTION_PARTS,
@@ -51,10 +51,10 @@ test.describe('fairtest mounted product', () => {
   test.beforeAll(async () => {
     runRoot = resolveProductRunRoot()
     driver = createProductStaticDriver({ port: FAIRTEST_APP_PORT, host: FAIRTEST_APP_HOST })
-    adapter = await createFairtradeAdapter({
+    adapter = await createAdapter({
       runId: sanitizeRunId(runRoot),
       driver,
-      targetId: PRODUCT_TARGET_ID,
+      target: PRODUCT_TARGET,
       createdAtMs: Date.now(),
     })
     await adapter.start()

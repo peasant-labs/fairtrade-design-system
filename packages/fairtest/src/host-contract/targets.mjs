@@ -26,9 +26,8 @@ import { assertHostKind } from './kinds.mjs'
 
 /**
  * Closed capability vocabulary for product targets.
- * @type {string[]}
  */
-export const PRODUCT_CAPABILITIES = freezeRecord([
+export const PRODUCT_CAPABILITIES = freezeRecord(/** @type {const} */ ([
   'observe-chrome',
   'observe-body',
   'observe-route',
@@ -36,44 +35,58 @@ export const PRODUCT_CAPABILITIES = freezeRecord([
   'observe-view',
   'observe-theme',
   'perform-action',
-])
+]))
+
+/** @typedef {(typeof PRODUCT_CAPABILITIES)[number]} ProductCapability */
 
 /**
  * Closed capability vocabulary for component targets.
- * @type {string[]}
  */
-export const COMPONENT_CAPABILITIES = freezeRecord([
+export const COMPONENT_CAPABILITIES = freezeRecord(/** @type {const} */ ([
   'observe-root',
   'observe-interaction',
   'observe-theme',
   'perform-action',
-])
+]))
+
+/** @typedef {(typeof COMPONENT_CAPABILITIES)[number]} ComponentCapability */
 
 /**
  * Capabilities a product target must declare.
- * @type {string[]}
  */
-export const PRODUCT_REQUIRED_CAPABILITIES = freezeRecord([
+export const PRODUCT_REQUIRED_CAPABILITIES = freezeRecord(/** @type {const} */ ([
   'observe-chrome',
   'observe-body',
   'observe-route',
   'observe-section',
   'observe-view',
   'observe-theme',
-])
+]))
+
+/** @typedef {(typeof PRODUCT_REQUIRED_CAPABILITIES)[number]} ProductRequiredCapability */
 
 /**
  * Capabilities a component target must declare.
- * @type {string[]}
  */
-export const COMPONENT_REQUIRED_CAPABILITIES = freezeRecord(['observe-root', 'observe-theme'])
+export const COMPONENT_REQUIRED_CAPABILITIES = freezeRecord(/** @type {const} */ (['observe-root', 'observe-theme']))
+
+/** @typedef {(typeof COMPONENT_REQUIRED_CAPABILITIES)[number]} ComponentRequiredCapability */
+
+/**
+ * @typedef {object} TargetValue
+ * @property {import('./kinds.mjs').HostKind} kind host kind the target declares
+ * @property {string} id caller-owned target id
+ * @property {string[]} capabilities declared capability inventory for the kind
+ * @property {string[]} fixtures named fixtures the target serves
+ * @property {string[]} actions named actions the target offers, possibly none
+ */
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/
 
 /**
  * Return the closed capability vocabulary for a host kind.
  * @param {string} kind
- * @returns {string[]}
+ * @returns {readonly string[]}
  */
 export function capabilitiesFor(kind) {
   assertHostKind(kind, 'target.kind')
@@ -83,7 +96,7 @@ export function capabilitiesFor(kind) {
 /**
  * Return the required capabilities for a host kind.
  * @param {string} kind
- * @returns {string[]}
+ * @returns {readonly string[]}
  */
 export function requiredCapabilitiesFor(kind) {
   assertHostKind(kind, 'target.kind')
@@ -170,6 +183,27 @@ export function validateNameList(value, field, label, path, allowEmpty) {
     seen.add(entry)
   }
   return freezeRecord([...value])
+}
+
+/**
+ * Create a frozen target value: the declaration-time identity of a target,
+ * independent of any run. The capability inventory is validated against the
+ * closed per-kind vocabulary and the required subset for the declared kind, so
+ * a target missing a required capability cannot be constructed. Fixtures are
+ * caller-owned names and must be non-empty; actions may be empty.
+ * @param {unknown} input
+ * @param {string} label owning document used in diagnostics
+ * @returns {TargetValue}
+ */
+export function createTargetValue(input, label) {
+  assertExactFields(input, ['kind', 'id', 'capabilities', 'fixtures', 'actions'], label, 'target')
+  const record = /** @type {Record<string, unknown>} */ (input)
+  assertHostKind(record.kind, 'target.kind')
+  assertNonEmptyString(record.id, 'id', 'target.id')
+  const capabilities = validateCapabilityList(record.capabilities, record.kind, label, 'target.capabilities')
+  const fixtures = validateNameList(record.fixtures, 'fixture', label, 'target.fixtures', false)
+  const actions = validateNameList(record.actions, 'action', label, 'target.actions', true)
+  return freezeRecord({ kind: record.kind, id: record.id, capabilities, fixtures, actions })
 }
 
 /**

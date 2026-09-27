@@ -37,7 +37,7 @@ import { validateTargetIdentity } from './targets.mjs'
 
 /**
  * @typedef {object} ProductResolution
- * @property {string} kind always product
+ * @property {'product'} kind always product
  * @property {import('../core/identity.mjs').Identity} identity identity on the product branch
  * @property {ObservedPart} chrome separately observed persistent chrome
  * @property {ObservedPart} body separately observed representative body
@@ -50,7 +50,7 @@ import { validateTargetIdentity } from './targets.mjs'
 
 /**
  * @typedef {object} ComponentResolution
- * @property {string} kind always component
+ * @property {'component'} kind always component
  * @property {import('../core/identity.mjs').Identity} identity identity on the component branch
  * @property {MountedRoot} root mounted component root
  * @property {import('./kinds.mjs').ThemeObservation} theme normalized theme observation
@@ -130,8 +130,9 @@ export function validateNamedResult(value, label, path) {
  * @returns {ProductResolution}
  */
 export function validateProductResolution(value, label) {
-  if (isPlainRecord(value) && 'kind' in value && value.kind !== 'product') {
-    throw new Error(`${label}: cross-kind resolution ${JSON.stringify(value.kind)} at path resolution.kind; repair: validate component records with the component resolver and product records with the product resolver.`)
+  const candidate = /** @type {Record<string, unknown>} */ (value)
+  if (isPlainRecord(value) && 'kind' in value && candidate.kind !== 'product') {
+    throw new Error(`${label}: cross-kind resolution ${JSON.stringify(candidate.kind)} at path resolution.kind; repair: validate component records with the component resolver and product records with the product resolver.`)
   }
   const fields = isPlainRecord(value) && 'action' in value
     ? ['kind', 'identity', ...PRODUCT_ONLY_FIELDS, 'theme', 'action']
@@ -142,16 +143,17 @@ export function validateProductResolution(value, label) {
     throw new Error(`${label}: cross-kind resolution ${JSON.stringify(record.kind)} at path resolution.kind; repair: validate component records with the component resolver and product records with the product resolver.`)
   }
   const identity = validateTargetIdentity(record.identity, 'product', label)
+  /** @type {Record<string, ObservedPart>} */
   const parts = {}
   for (const part of PRODUCT_ONLY_FIELDS) {
     parts[part] = validateObservedPart(record[part], label, `resolution.${part}`)
   }
   const theme = validateThemeObservation(record.theme, label)
-  const resolved = { kind: 'product', identity, ...parts, theme }
+  const resolved = /** @type {Record<string, unknown>} */ ({ kind: 'product', identity, ...parts, theme })
   if ('action' in record) {
     resolved.action = validateNamedResult(record.action, label, 'resolution.action')
   }
-  return freezeRecord(resolved)
+  return /** @type {ProductResolution} */ (freezeRecord(resolved))
 }
 
 /**
@@ -163,14 +165,15 @@ export function validateProductResolution(value, label) {
  * @returns {ComponentResolution}
  */
 export function validateComponentResolution(value, label) {
+  const candidate = /** @type {Record<string, unknown>} */ (value)
   if (isPlainRecord(value)) {
     for (const field of PRODUCT_ONLY_FIELDS) {
-      if (field in value) {
+      if (field in candidate) {
         throw new Error(`${label}: product-only field "${field}" at path resolution.${field}; repair: remove "${field}" from the component record or validate it with the product resolver.`)
       }
     }
-    if ('kind' in value && value.kind !== 'component') {
-      throw new Error(`${label}: cross-kind resolution ${JSON.stringify(value.kind)} at path resolution.kind; repair: validate product records with the product resolver and component records with the component resolver.`)
+    if ('kind' in candidate && candidate.kind !== 'component') {
+      throw new Error(`${label}: cross-kind resolution ${JSON.stringify(candidate.kind)} at path resolution.kind; repair: validate product records with the product resolver and component records with the component resolver.`)
     }
   }
   const fields = isPlainRecord(value) && 'interaction' in value
@@ -184,11 +187,11 @@ export function validateComponentResolution(value, label) {
   const identity = validateTargetIdentity(record.identity, 'component', label)
   const root = validateMountedRoot(record.root, label, 'resolution.root')
   const theme = validateThemeObservation(record.theme, label)
-  const resolved = { kind: 'component', identity, root, theme }
+  const resolved = /** @type {Record<string, unknown>} */ ({ kind: 'component', identity, root, theme })
   if ('interaction' in record) {
     resolved.interaction = validateNamedResult(record.interaction, label, 'resolution.interaction')
   }
-  return freezeRecord(resolved)
+  return /** @type {ComponentResolution} */ (freezeRecord(resolved))
 }
 
 /**
@@ -202,7 +205,8 @@ export function validateResolution(value, label) {
   if (!isPlainRecord(value)) {
     throw new Error(`${label}: expected a resolution record at path resolution; repair: restore the product or component record in ${label}.`)
   }
-  if (value.kind === 'product') return validateProductResolution(value, label)
-  if (value.kind === 'component') return validateComponentResolution(value, label)
-  throw new Error(`${label}: cross-kind resolution ${JSON.stringify(value.kind)} at path resolution.kind; repair: use one of product, component for the resolution kind.`)
+  const record = /** @type {Record<string, unknown>} */ (value)
+  if (record.kind === 'product') return validateProductResolution(value, label)
+  if (record.kind === 'component') return validateComponentResolution(value, label)
+  throw new Error(`${label}: cross-kind resolution ${JSON.stringify(record.kind)} at path resolution.kind; repair: use one of product, component for the resolution kind.`)
 }

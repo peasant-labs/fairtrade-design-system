@@ -26,7 +26,7 @@
 #                                  declaring one.
 #
 # Runs with node --test inside the declared Fairtest product-contract command.
-expectedExportCount: 129
+expectedExportCount: 133
 exports:
   - name: fairtest-runtime-fairtest_repo_root
     file: fairtest-runtime.mjs
@@ -64,10 +64,22 @@ exports:
     file: fairtest-runtime.mjs
     symbol: claimScratchPort
     owner: runtime-constants-owner
-  - name: fairtrade-adapter-create-fairtrade-adapter
+  - name: fairtrade-adapter-create-adapter
     file: fairtrade-adapter.mjs
-    symbol: createFairtradeAdapter
+    symbol: createAdapter
     owner: app-owned-adapter
+  - name: fairtrade-adapter-targets
+    file: fairtrade-adapter.mjs
+    symbol: TARGETS
+    owner: app-owned-adapter
+  - name: fairtrade-adapter-parse-target
+    file: fairtrade-adapter.mjs
+    symbol: parseTarget
+    owner: app-owned-adapter
+  - name: fairtrade-targets-product_target
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_TARGET
+    owner: app-owned-registry
   - name: fairtrade-targets-product_target_id
     file: fairtrade-targets.mjs
     symbol: PRODUCT_TARGET_ID
@@ -391,6 +403,10 @@ exports:
   - name: fairtrade-component-target-component-story-id
     file: fairtrade-component-target.mjs
     symbol: COMPONENT_STORY_ID
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component_target
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_TARGET
     owner: app-owned-registry
   - name: fairtrade-component-target-component-target-id
     file: fairtrade-component-target.mjs
