@@ -27,6 +27,8 @@ import {
   writeJsonAtomic,
 } from './run-envelope-contract.mjs'
 
+/** @typedef {import('./run-envelope-contract.mjs').SelectionRecord} SelectionRecord */
+
 /**
  * Parse the `--mode=` flag. Only the two declared modes are accepted.
  * @param {string[]} args command arguments
@@ -70,7 +72,7 @@ export function projectQualifiedKey(key) {
 /**
  * Build the inventory receipt record.
  * @param {{ root: string, runId: string, mode: string, completedAtMs: number }} input receipt inputs
- * @returns {Record<string, unknown>} the receipt record
+ * @returns {SelectionRecord} the receipt record
  */
 export function createInventoryReceipt(input) {
   const { root, runId, mode, completedAtMs } = input

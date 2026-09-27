@@ -39,13 +39,25 @@ export const TARGETS = Object.freeze({
 })
 
 /**
+ * The validated target value parseTarget returns: the declaration-time fields
+ * the adapter reads by name. The two registered targets are the only producers,
+ * so the kind is the closed host-kind union the contract validated them against.
+ * @typedef {object} ParsedTarget
+ * @property {'product' | 'component'} kind host kind the target declares
+ * @property {string} id caller-owned target id
+ * @property {string[]} capabilities declared capability inventory for the kind
+ * @property {string[]} fixtures named fixtures the target serves
+ * @property {string[]} actions named actions the target offers
+ */
+
+/**
  * Resolve an external target string (the CLI `--target` flag) to a registered
  * target value. A host kind name or a registered target id is accepted; an
  * unknown value fails with an actionable diagnostic. External string input is
  * the only place a target is parsed; every internal caller passes the value.
  * @param {unknown} value external target string
  * @param {string} [path] value path used in diagnostics
- * @returns {object} the registered target value
+ * @returns {ParsedTarget} the registered target value
  */
 export function parseTarget(value, path = 'target') {
   if (typeof value !== 'string' || value.length === 0) {
@@ -55,11 +67,11 @@ export function parseTarget(value, path = 'target') {
     )
   }
   if (Object.hasOwn(TARGETS, value)) {
-    return TARGETS[value]
+    return /** @type {ParsedTarget} */ (TARGETS[value])
   }
   for (const target of Object.values(TARGETS)) {
     if (/** @type {Record<string, unknown>} */ (target).id === value) {
-      return target
+      return /** @type {ParsedTarget} */ (target)
     }
   }
   throw new Error(
@@ -70,11 +82,50 @@ export function parseTarget(value, path = 'target') {
 
 const RUN_ID_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/
 
+/**
+ * The injected lifecycle driver contract: async start, stop, and reset plus a
+ * sync isRunning probe, with an optional readiness detail probe. `baseUrl` is
+ * read by the local dev command from the driver the producer returns.
+ * @typedef {object} LifecycleDriver
+ * @property {() => Promise<unknown>} start
+ * @property {() => Promise<unknown>} stop
+ * @property {() => Promise<unknown>} reset
+ * @property {() => boolean} isRunning
+ * @property {() => Promise<object>} [readiness]
+ * @property {string} [baseUrl]
+ */
+
+/**
+ * The shared host-contract modules, loaded through the sole source route. Each
+ * module carries functions whose results the contract itself validates; the
+ * adapter reads the returned records structurally.
+ * @typedef {Record<string, Record<string, Function>>} LoadedContract
+ */
+
+/**
+ * The frozen adapter createAdapter returns.
+ * @typedef {object} LifecycleAdapter
+ * @property {string} runId
+ * @property {string} targetId
+ * @property {{ capabilities: string[], fixtures: string[], actions: string[] }} declaration
+ * @property {string[]} capabilities
+ * @property {(options?: { timeoutMs?: number }) => Promise<object>} start
+ * @property {() => Promise<object>} readiness
+ * @property {() => Promise<object>} teardown
+ * @property {() => object} mintHandle
+ * @property {(handle: unknown) => object} requireHandle
+ * @property {(name: unknown, options?: { observedAtMs?: number }) => Promise<object>} performAction
+ * @property {() => object} lifecycleTrace
+ * @property {() => boolean} isRunning
+ * @property {() => { stops: number, resets: number }} stats
+ */
+
+/** @type {LoadedContract | null} */
 let contractCache = null
 
 /**
  * Load the shared host-contract modules through the sole source route.
- * @returns {Promise<object>} targets, lifecycle, handles, kinds, resolution
+ * @returns {Promise<LoadedContract>} targets, lifecycle, handles, kinds, resolution
  */
 async function loadContract() {
   if (!contractCache) {
@@ -120,8 +171,9 @@ function assertDriver(driver) {
       'stop and reset must be safe to call when the driver is not running.',
     )
   }
+  const candidate = /** @type {Record<string, unknown>} */ (driver)
   for (const method of ['start', 'stop', 'reset', 'isRunning']) {
-    if (typeof driver[method] !== 'function') {
+    if (typeof candidate[method] !== 'function') {
       throw new Error(
         `fairtrade adapter: driver is missing "${method}" for field "driver" at path adapter.driver.${method}; ` +
         `repair: provide async start, stop, reset and a sync isRunning probe on "driver"; ` +
@@ -140,10 +192,11 @@ function assertDriver(driver) {
  * @returns {Promise<unknown>} the driver result before the deadline
  */
 function runWithTimeout(promise, timeoutMs, message) {
+  /** @type {ReturnType<typeof setTimeout> | null} */
   let timer = null
   const guard = new Promise((_, reject) => {
     timer = setTimeout(() => {
-      const error = new Error(message)
+      const error = /** @type {Error & { isAdapterTimeout?: boolean }} */ (new Error(message))
       error.isAdapterTimeout = true
       reject(error)
     }, timeoutMs)
@@ -164,17 +217,17 @@ function runWithTimeout(promise, timeoutMs, message) {
  * fields carry the kind, id, capability inventory, fixtures, actions, and
  * registered action, so there is no independent kind string to disagree with
  * the target. The lifecycle, handle, and teardown logic is the same for both.
- * @param {object} [options] adapter options
+ * @param {object} options adapter options
  * @param {string} options.runId owning run id used for handle membership
- * @param {object} options.driver injected lifecycle driver
+ * @param {LifecycleDriver} options.driver injected lifecycle driver
  * @param {object} [options.target] validated target value, defaults to the product target
  * @param {number} [options.createdAtMs] identity creation time in whole ms
  * @param {string[]} [options.capabilities] declared capability inventory override
- * @param {string[]} [options.fixtures] named fixtures served override
- * @param {string[]} [options.actions] named actions offered override
- * @returns {Promise<object>} the frozen adapter
+ * @param {readonly string[]} [options.fixtures] named fixtures served override
+ * @param {readonly string[]} [options.actions] named actions offered override
+ * @returns {Promise<LifecycleAdapter>} the frozen adapter
  */
-export async function createAdapter(options = {}) {
+export async function createAdapter(options) {
   const contract = await loadContract()
   const settings = options ?? {}
   const {
@@ -307,8 +360,8 @@ export async function createAdapter(options = {}) {
       const cleanupNote = cleanup === undefined
         ? ''
         : `; cleanup after the failed start also failed for field "driver" at path adapter.start, caused by ${cleanup instanceof Error ? cleanup.message : String(cleanup)}`
-      if (error && error.isAdapterTimeout) {
-        const timeout = new Error(`${error.message}${cleanupNote}`)
+      if (error && /** @type {Error & { isAdapterTimeout?: boolean }} */ (error).isAdapterTimeout) {
+        const timeout = /** @type {Error & { isAdapterTimeout?: boolean }} */ (new Error(`${/** @type {Error} */ (error).message}${cleanupNote}`))
         timeout.isAdapterTimeout = true
         throw timeout
       }

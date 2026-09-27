@@ -15,7 +15,7 @@ import { COMPONENT_PROVENANCE_SOURCE } from './fairtrade-component-target.mjs'
  * Expected mounted row keys, one per producer theme row. The key is the
  * producer row directory name, so the verifier and the producer agree on the
  * run shape without a second mapping.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const FAIRTEST_EVIDENCE_ROW_KEYS = Object.freeze([
   'product-dark',

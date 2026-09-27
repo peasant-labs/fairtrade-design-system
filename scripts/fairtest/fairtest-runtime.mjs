@@ -92,7 +92,7 @@ export const PRODUCT_VIEWPORT = Object.freeze({ width: 1280, height: 720 })
  * fixed order. A purpose is a named scratch-port slot, not a free-form label:
  * an unknown purpose is refused instead of silently taking an offset nobody
  * reserved.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const FAIRTEST_SCRATCH_PURPOSES = Object.freeze([
   'adapter-squatter',

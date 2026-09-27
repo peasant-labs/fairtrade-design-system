@@ -28,6 +28,8 @@ import {
   writeJsonAtomic,
 } from './run-envelope-contract.mjs'
 
+/** @typedef {import('./run-envelope-contract.mjs').SelectionRecord} SelectionRecord */
+
 /**
  * Resolve the selection mode. The default is CI; an explicit `--mode` may
  * select local exploration, which the producer never accepts as evidence.
@@ -53,7 +55,7 @@ export function parseSelectionMode(args) {
  * digest is a canonical digest of the identity fields, so the record and the
  * receipt can be compared without depending on JSON formatting.
  * @param {{ root: string, runId: string, mode: string, createdAtMs: number }} input selector inputs
- * @returns {Record<string, unknown>} the selection record
+ * @returns {SelectionRecord} the selection record
  */
 export function createExpectedSelection(input) {
   const { root, runId, mode, createdAtMs } = input

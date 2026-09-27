@@ -22,8 +22,8 @@ requiredRootScripts:
   - scripts/fairtest-single-document.mjs
   - scripts/fairtest-source.mjs
   - scripts/fairtest-surface-manifest.mjs
-expectedAnyFileCount: 10
-expectedAnyOccurrenceCount: 50
+expectedAnyFileCount: 9
+expectedAnyOccurrenceCount: 47
 requiredAnyFiles:
   - packages/fairtest/test/bridge-contract.test.mjs
   - packages/fairtest/test/evidence-mutations.mjs
@@ -33,7 +33,6 @@ requiredAnyFiles:
   - scripts/fairtest/product-producer.mjs
   - scripts/fairtest/run-envelope-contract.mjs
   - scripts/fairtest/run-envelope.test.mjs
-  - scripts/fairtest/selection-receipt.mjs
   - scripts/fairtest/verify-fairtest.mjs
 expectedMutationCount: 8
 requiredMutationNames:

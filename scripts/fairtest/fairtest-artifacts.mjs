@@ -41,7 +41,7 @@ export const ARTIFACT_CLASSES = Object.freeze(/** @type {const} */ ([
  * The product-only shell fields the shared host contract refuses on the
  * component branch, re-exported from the contract so component modules read one
  * source instead of re-spelling the list.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const PRODUCT_ONLY_FIELDS = Object.freeze([...resolutionContract.PRODUCT_ONLY_FIELDS])
 
@@ -76,9 +76,9 @@ function sha256(data) {
  * @param {string} input.distRoot the run's built tree on disk
  * @param {string} [input.label] owning producer used in the diagnostic, defaults to the product producer
  * @param {string} [input.against] the tree label the receipt names as compared, defaults to the product run root
- * @returns {object} the comparison receipt naming what was compared
+ * @returns {{ against: string, entries: readonly string[], commitCorrespondence: string }} the comparison receipt naming what was compared
  */
-export function assertServedDigestsMatchRunRoot({ assetDigests, distRoot, label = 'product producer', against = 'run-root-dist' } = {}) {
+export function assertServedDigestsMatchRunRoot({ assetDigests, distRoot, label = 'product producer', against = 'run-root-dist' }) {
   if (typeof against !== 'string' || against.length === 0) {
     throw new Error(
       `${label}: missing served-tree label for field "servedFrom" at path provenance.servedFrom; ` +

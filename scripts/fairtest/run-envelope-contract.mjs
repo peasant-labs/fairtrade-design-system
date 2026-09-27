@@ -112,7 +112,7 @@ export const EVIDENCE_REL = `${EVIDENCE_DIR}/evidence.json`
  * verifier report against. It is the ONE shared constant, imported from its
  * owner in fairtest-artifacts.mjs so the preflight and the producers can never
  * read two different lists.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const PRODUCER_ARTIFACT_CLASSES = ARTIFACT_CLASSES
 
@@ -120,7 +120,7 @@ export const PRODUCER_ARTIFACT_CLASSES = ARTIFACT_CLASSES
  * The exact one-theme CI row keys. Derived, not re-spelled: the evidence policy
  * owns the required producer rows, and the inventory command must select
  * exactly those. A drift between the two fails at the envelope test.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const CI_ROW_KEYS = Object.freeze([...FAIRTEST_EVIDENCE_ROW_KEYS])
 
@@ -129,7 +129,7 @@ export const CI_ROW_KEYS = Object.freeze([...FAIRTEST_EVIDENCE_ROW_KEYS])
  * never selected as producer evidence; `fairtest dev` (a later slice) generates
  * its own local identity. Declared here so the local list command can prove the
  * exact set and that no local key leaks into CI.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const LOCAL_ROW_KEYS = Object.freeze(['local-product-dark', 'local-product-light'])
 
@@ -146,6 +146,24 @@ export const MODE_KEYS = Object.freeze({ ci: CI_ROW_KEYS, local: LOCAL_ROW_KEYS 
 export const SELECTION_MODES = Object.freeze(/** @type {const} */ (['ci', 'local']))
 
 /** @typedef {(typeof SELECTION_MODES)[number]} SelectionMode */
+
+/**
+ * The shared shape of the expected-selection record and the inventory receipt:
+ * the identity fields, the raw key list, and its project-qualified form. The
+ * timestamp field differs by owner, so both are optional here.
+ * @typedef {object} SelectionRecord
+ * @property {number} version
+ * @property {string} runId
+ * @property {string} project
+ * @property {string} mode
+ * @property {string[]} keys
+ * @property {number} keyCount
+ * @property {string[]} qualifiedKeys
+ * @property {string} runEnvelope
+ * @property {string | null} runEnvelopeDigest
+ * @property {number} [createdAtMs]
+ * @property {number} [completedAtMs]
+ */
 
 /**
  * The Fairtest budget, recorded in the run envelope rather than inferred from

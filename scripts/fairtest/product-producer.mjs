@@ -163,7 +163,7 @@ const PRODUCT_A11Y_SCOPES = Object.freeze({
  * Exact field set of the record.json accessibility block. The page-wide
  * census is never one of these names: it lives under `pageWide`, so an
  * unqualified `blocking` or `violations` count cannot be read as a verdict.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const PRODUCT_A11Y_RECORD_FIELDS = Object.freeze([
   'policy',
@@ -178,7 +178,7 @@ export const PRODUCT_A11Y_RECORD_FIELDS = Object.freeze([
 /**
  * Exact field set of the informational page-wide census inside the record
  * accessibility block, mirroring the axe.json pageWide nesting.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const PRODUCT_A11Y_PAGE_WIDE_FIELDS = Object.freeze([
   'scope',
@@ -193,14 +193,14 @@ export const PRODUCT_A11Y_PAGE_WIDE_FIELDS = Object.freeze([
 
 /**
  * Observation points carrying a gate receipt, in record order.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const PRODUCT_A11Y_GATE_POINTS = Object.freeze(['before', 'after'])
 
 /**
  * The product parts whose observedAtMs is one captured reading of the single
  * pre-interaction evaluate, in record order.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const PRODUCT_PRE_ACTION_PARTS = Object.freeze(['chrome', 'body', 'route'])
 
@@ -325,11 +325,36 @@ export function prepareProductRowDir(input = {}) {
  * driver contract: stop is safe to call when the driver is not running,
  * which is how a start that failed before the server listened is cleaned up
  * and released.
+ * The loopback static app driver createProductStaticDriver returns: the
+ * adapter lifecycle surface plus the served base URL and tree metadata.
+ * @typedef {object} StaticProductDriver
+ * @property {() => Promise<void>} start
+ * @property {() => Promise<void>} stop
+ * @property {() => Promise<void>} reset
+ * @property {() => boolean} isRunning
+ * @property {() => Promise<{ ready: boolean, host: string, port: number }>} readiness
+ * @property {() => { stops: number }} stats
+ * @property {string} baseUrl
+ * @property {number} port
+ * @property {string} host
+ * @property {string} distRoot
+ */
+
+/**
+ * Create a loopback static driver serving the exact built app from dist/.
+ * The driver starts one http server on the fixed loopback port owned by
+ * fairtest-runtime.mjs and reports readiness over real HTTP. It refuses to
+ * serve any resolved path outside distRoot (403) and refuses to bind a
+ * non-loopback host, so the validation origin is loopback-only and can never
+ * read a file beyond the served root. It satisfies the adapter's declared
+ * driver contract: stop is safe to call when the driver is not running,
+ * which is how a start that failed before the server listened is cleaned up
+ * and released.
  * @param {object} [options] driver options
  * @param {number} [options.port] fixed loopback port
  * @param {string} [options.host] loopback host, always the declared owner
  * @param {string} [options.distRoot] built app root served over HTTP
- * @returns {object} the injected lifecycle driver for createFairtradeAdapter
+ * @returns {StaticProductDriver} the injected lifecycle driver for createFairtradeAdapter
  */
 export function createProductStaticDriver(options = {}) {
   const port = options.port ?? FAIRTEST_APP_PORT
@@ -763,8 +788,14 @@ function assertProductCount(value, field, path, repair) {
  * Both halves are returned because the guard needs the container totals to
  * say plainly why they are not the measurement the floors apply to, and the
  * record needs the rendered/total split to stay legible.
+ * @typedef {object} ProductViewMeasurement
+ * @property {{ roots: number, rendered: number, descendants: number, textLength: number, refusals: { mode: string, display: string, visibility: string, opacity: number, width: number, height: number, intersectsStage: boolean }[] }} activeView the rendered population and per-root refusals
+ * @property {{ descendants: number, textLength: number }} container the container totals
+ */
+
+/**
  * @param {{ container: string, activeView: string, stage: string }} selectors app-owned view selectors
- * @returns {object} the measured view with the rendered population, the per-root refusals, and the container totals
+ * @returns {ProductViewMeasurement} the measured view with the rendered population, the per-root refusals, and the container totals
  */
 export function measureProductView(selectors) {
   const container = document.querySelector(selectors.container)

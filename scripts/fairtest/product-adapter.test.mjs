@@ -1296,7 +1296,7 @@ function stripCommentsAndStrings(source) {
  * The host-global and runner tokens no app-owned registry module may execute.
  * Matched against comment- and literal-stripped source, so each pattern is a
  * whole-token match on real code.
- * @type {{ token: string, pattern: RegExp }[]}
+ * @type {readonly { token: string, pattern: RegExp }[]}
  */
 const HOST_GLOBAL_TOKENS = Object.freeze(
   ['playwright', 'puppeteer', 'jsdom', 'storybook', 'agent-browser', 'window', 'document', 'locator', 'globalThis', 'querySelector', 'createElement']
@@ -1332,7 +1332,7 @@ function assertNoHostGlobalTokens(source, file) {
  * component patterns mirror the product ones: the component registry declares
  * `#storybook-root`, the `.sgd-*` classes, and the Storybook chrome selectors,
  * so a producer that re-spells one is a second owner.
- * @type {{ pattern: RegExp, what: string }[]}
+ * @type {readonly { pattern: RegExp, what: string }[]}
  */
 const APP_STRUCTURE_LITERALS = Object.freeze([
   { pattern: /#inuse[\w-]*/, what: 'product selector literal' },

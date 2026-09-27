@@ -45,8 +45,8 @@ const processContract = await importFairtestSource('src/bridge/process.mjs')
  * @returns {string[]} sorted root-relative file paths
  */
 export function listRunRootFiles(root) {
-  const found = []
-  const walk = (directory) => {
+  const found = /** @type {string[]} */ ([])
+  const walk = (/** @type {string} */ directory) => {
     for (const name of readdirSync(directory).sort()) {
       const absolute = join(directory, name)
       if (statSync(absolute).isDirectory()) walk(absolute)
@@ -99,7 +99,7 @@ export function validateBudget(envelope, nowMs) {
       'repair: rebuild the run envelope so it records the declared Fairtest budget.',
     )
   }
-  const stages = Array.isArray(budget.stages) ? budget.stages : []
+  const stages = Array.isArray(budget.stages) ? /** @type {{ minutes?: number }[]} */ (budget.stages) : []
   const sum = stages.reduce((total, stage) => total + (typeof stage?.minutes === 'number' ? stage.minutes : 0), 0)
   if (Math.round(sum * 10) !== Math.round(FAIRTEST_BUDGET.totalMinutes * 10)) {
     throw new Error(

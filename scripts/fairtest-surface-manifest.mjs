@@ -39,12 +39,17 @@ const REQUIRED_GATE = 'required-gate'
 const PROTECTED_SPECIALIZED = 'protected-specialized'
 const CLASSIFICATIONS = [REQUIRED_GATE, PROTECTED_SPECIALIZED]
 const REQUIRED_CI_REL = '.github/workflows/ci.yml'
+/** @type {Record<string, string>} */
 const THRESHOLD_EXPORTS = { 'min-nonbg-ratio': 'MIN_NONBG_RATIO', 'min-distinct-colors': 'MIN_DISTINCT_COLORS' }
 const LUSH = { w: 800, h: 600, pixels: 480000, nonbgRatio: 0.05, bgShare: 0.9, distinctColors: 20 }
 const IMPORT_RE = /from\s+'\.\/surface-gate\.mjs'/
 const BINDING_RE = /import\s*\{([^}]*)\}\s*from\s+'\.\/surface-gate\.mjs'/
 
-/** @param {unknown} value */
+/** @typedef {{ measure: (file: string) => Promise<Record<string, unknown>>, assert: (name: string, file: string, options?: { where?: string }) => Promise<void> }} SurfaceGateInstance */
+/** @typedef {new (page: unknown) => SurfaceGateInstance} SurfaceGateConstructor */
+/** @typedef {new (page: unknown) => { surface: unknown }} GraphThemeGateConstructor */
+
+/** @param {unknown} value @returns {value is Record<string, unknown>} */
 const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value)
 
 /** @param {string} message @returns {never} */
@@ -234,7 +239,7 @@ function assertImporterBinding(path, expectedBinding, label) {
 
 /** @param {Record<string, unknown>[]} importers @param {string[]} requiredGate @param {string} label */
 function assertRequiredGateSet(importers, requiredGate, label) {
-  const actual = importers.filter((entry) => entry.classification === REQUIRED_GATE).map((entry) => entry.path)
+  const actual = importers.filter((entry) => entry.classification === REQUIRED_GATE).map((entry) => /** @type {string} */ (entry.path))
   const unknown = actual.filter((path) => !requiredGate.includes(path))
   if (unknown.length > 0) {
     fail(`${label}: consumer ${JSON.stringify(unknown[0])} is classified required-gate at path importers.classification; repair: classify the expensive specialized consumer as ${PROTECTED_SPECIALIZED}, or add it to the manifest required-gate paths.`)
@@ -307,12 +312,13 @@ export function inspectConsumerClassification(input) {
 
 /** @param {object} mod @param {string} label @param {Record<string, unknown>} corpus */
 function inspectSurfaceExports(mod, label, corpus) {
-  const expected = /** @type {string[]} */ (corpus.exports.map((entry) => entry.name)).sort()
-  const actual = Object.keys(mod).sort()
+  const view = /** @type {Record<string, unknown>} */ (mod)
+  const expected = (/** @type {Record<string, unknown>[]} */ (corpus.exports)).map((entry) => /** @type {string} */ (entry.name)).sort()
+  const actual = Object.keys(view).sort()
   assert.deepEqual(actual, expected, `${label}: SurfaceGate export set drifted at path surface-gate.exports; got [${actual.join(', ')}] want [${expected.join(', ')}]; repair: restore the exact named export set.`)
   for (const entry of /** @type {Record<string, unknown>[]} */ (corpus.exports)) {
     const kind = entry.kind === 'function' ? 'function' : entry.kind === 'class' ? 'function' : 'undefined'
-    const value = /** @type {Record<string, unknown>} */ (mod)[/** @type {string} */ (entry.name)]
+    const value = view[/** @type {string} */ (entry.name)]
     if ((kind === 'function' && typeof value !== 'function') || (kind === 'undefined' && value === undefined)) {
       fail(`${label}: export "${entry.name}" must stay a ${entry.kind} at path surface-gate.exports.${entry.name}; repair: restore the ${entry.kind} export.`)
     }
@@ -321,17 +327,20 @@ function inspectSurfaceExports(mod, label, corpus) {
 
 /** @param {object} mod @param {string} label @param {Record<string, unknown>} corpus */
 function inspectSurfaceFloors(mod, label, corpus) {
-  const floorNames = /** @type {Record<string, unknown>[]} */ (corpus.floors).map((entry) => entry.name)
-  for (const entry of /** @type {Record<string, unknown>[]} */ (corpus.floors)) {
+  const view = /** @type {Record<string, unknown>} */ (mod)
+  const floorEntries = /** @type {Record<string, unknown>[]} */ (corpus.floors)
+  const floorNames = floorEntries.map((entry) => /** @type {string} */ (entry.name))
+  const byteFloors = /** @type {Record<string, number>} */ (view.BYTE_FLOORS)
+  for (const entry of floorEntries) {
     if (entry.name === 'default') {
-      if (mod.DEFAULT_MIN_BYTES !== entry.bytes) {
-        fail(`${label}: default byte floor drifted at path surface-gate.DEFAULT_MIN_BYTES; expected ${entry.bytes}, observed ${mod.DEFAULT_MIN_BYTES}; repair: restore DEFAULT_MIN_BYTES to ${entry.bytes}.`)
+      if (view.DEFAULT_MIN_BYTES !== entry.bytes) {
+        fail(`${label}: default byte floor drifted at path surface-gate.DEFAULT_MIN_BYTES; expected ${entry.bytes}, observed ${view.DEFAULT_MIN_BYTES}; repair: restore DEFAULT_MIN_BYTES to ${entry.bytes}.`)
       }
-    } else if (mod.BYTE_FLOORS[entry.name] !== entry.bytes) {
-      fail(`${label}: per-surface floor "${entry.name}" drifted at path surface-gate.BYTE_FLOORS.${entry.name}; expected ${entry.bytes}, observed ${mod.BYTE_FLOORS[entry.name]}; repair: restore the "${entry.name}" byte floor to ${entry.bytes}.`)
+    } else if (byteFloors[/** @type {string} */ (entry.name)] !== entry.bytes) {
+      fail(`${label}: per-surface floor "${entry.name}" drifted at path surface-gate.BYTE_FLOORS.${entry.name}; expected ${entry.bytes}, observed ${byteFloors[/** @type {string} */ (entry.name)]}; repair: restore the "${entry.name}" byte floor to ${entry.bytes}.`)
     }
   }
-  const extra = Object.keys(mod.BYTE_FLOORS).filter((name) => !floorNames.includes(name))
+  const extra = Object.keys(byteFloors).filter((name) => !floorNames.includes(name))
   if (extra.length > 0) {
     fail(`${label}: unexpected per-surface floor ${JSON.stringify(extra[0])} at path surface-gate.BYTE_FLOORS.${extra[0]}; repair: remove the "${extra[0]}" floor or register it in the manifest required floor names.`)
   }
@@ -339,24 +348,27 @@ function inspectSurfaceFloors(mod, label, corpus) {
 
 /** @param {object} mod @param {string} label @param {Record<string, unknown>} corpus */
 function inspectSurfaceThresholds(mod, label, corpus) {
+  const view = /** @type {Record<string, unknown>} */ (mod)
   for (const entry of /** @type {Record<string, unknown>[]} */ (corpus.thresholds)) {
     const exportName = THRESHOLD_EXPORTS[/** @type {string} */ (entry.name)]
-    if (mod[exportName] !== entry.value) {
-      fail(`${label}: threshold "${entry.name}" drifted at path surface-gate.${exportName}; expected ${entry.value}, observed ${mod[exportName]}; repair: restore ${exportName} to ${entry.value}.`)
+    if (view[exportName] !== entry.value) {
+      fail(`${label}: threshold "${entry.name}" drifted at path surface-gate.${exportName}; expected ${entry.value}, observed ${view[exportName]}; repair: restore ${exportName} to ${entry.value}.`)
     }
   }
 }
 
 /** @param {object} mod @param {string} label @param {Record<string, unknown>} corpus */
 async function inspectSurfaceRuntime(mod, label, corpus) {
+  const view = /** @type {Record<string, unknown>} */ (mod)
+  const SurfaceGate = /** @type {SurfaceGateConstructor} */ (view.SurfaceGate)
   const dir = mkdtempSync(join(tmpdir(), 'fairtest-surface-manifest-'))
+  /** @param {Record<string, unknown>} measured */
   const decode = (measured) => ({ evaluate: async () => ({ ...measured }) })
   try {
     const file = join(dir, 'real.png')
     const bytes = Buffer.alloc(20 * 1024, 7)
     writeFileSync(file, bytes)
-    const module = mod
-    const gate = new module.SurfaceGate(decode(LUSH))
+    const gate = new SurfaceGate(decode(LUSH))
     const measured = await gate.measure(file)
     const expectedMd5 = createHash('md5').update(bytes).digest('hex')
     if (measured.md5 !== expectedMd5) {
@@ -368,21 +380,21 @@ async function inspectSurfaceRuntime(mod, label, corpus) {
     const tiny = join(dir, 'tiny.png')
     writeFileSync(tiny, Buffer.alloc(100, 7))
     await assert.rejects(
-      () => new module.SurfaceGate(decode(LUSH)).assert('real', tiny, { where: 'surface-manifest' }),
+      () => new SurfaceGate(decode(LUSH)).assert('real', tiny, { where: 'surface-manifest' }),
       /bytes.*floor/,
       `${label}: byte floor no longer rejects a tiny capture at path surface-gate.assert; repair: restore the per-surface byte floor check.`,
     )
     await assert.rejects(
-      () => new module.SurfaceGate(decode({ ...LUSH, nonbgRatio: 0, bgShare: 1 })).assert('blank', file, { where: 'surface-manifest' }),
+      () => new SurfaceGate(decode({ ...LUSH, nonbgRatio: 0, bgShare: 1 })).assert('blank', file, { where: 'surface-manifest' }),
       /differ from the background/,
       `${label}: non-background ratio no longer rejects a blank capture at path surface-gate.assert; repair: restore the fraction bound.`,
     )
     await assert.rejects(
-      () => new module.SurfaceGate(decode({ ...LUSH, distinctColors: 2 })).assert('flat', file, { where: 'surface-manifest' }),
+      () => new SurfaceGate(decode({ ...LUSH, distinctColors: 2 })).assert('flat', file, { where: 'surface-manifest' }),
       /distinct colours/,
       `${label}: distinct-colour bound no longer rejects a flat capture at path surface-gate.assert; repair: restore the distinct-sample bound.`,
     )
-    const dup = new module.SurfaceGate(decode(LUSH))
+    const dup = new SurfaceGate(decode(LUSH))
     await dup.assert('first', file, { where: 'surface-manifest' })
     await assert.rejects(
       () => dup.assert('second', file, { where: 'surface-manifest' }),
@@ -406,18 +418,23 @@ function inspectSurfaceSource(source, label) {
 
 /** @param {object} mod @param {object} surfaceModule @param {string} label @param {Record<string, unknown>} corpus */
 function inspectGraphModule(mod, surfaceModule, label, corpus) {
-  const expected = /** @type {string[]} */ (/** @type {Record<string, unknown>} */ (corpus.graphGate).exports).slice().sort()
-  const actual = Object.keys(mod).sort()
-  assert.deepEqual(actual, expected, `${label}: graph oracle export set drifted at path ${/** @type {Record<string, unknown>} */ (corpus.graphGate).path}.exports; got [${actual.join(', ')}] want [${expected.join(', ')}]; repair: restore the exact named graph export set.`)
-  if (/** @type {Record<string, unknown>} */ (corpus.graphGate).requiresSurfaceGate) {
-    const gate = new mod.GraphThemeGate({ evaluate: async () => ({ ...LUSH }) })
-    if (!(gate.surface instanceof surfaceModule.SurfaceGate)) {
+  const view = /** @type {Record<string, unknown>} */ (mod)
+  const surfaceView = /** @type {Record<string, unknown>} */ (surfaceModule)
+  const graphGate = /** @type {Record<string, unknown>} */ (corpus.graphGate)
+  const expected = /** @type {string[]} */ (graphGate.exports).slice().sort()
+  const actual = Object.keys(view).sort()
+  assert.deepEqual(actual, expected, `${label}: graph oracle export set drifted at path ${graphGate.path}.exports; got [${actual.join(', ')}] want [${expected.join(', ')}]; repair: restore the exact named graph export set.`)
+  if (graphGate.requiresSurfaceGate) {
+    const GraphThemeGate = /** @type {GraphThemeGateConstructor} */ (view.GraphThemeGate)
+    const SurfaceGate = /** @type {new (...args: never[]) => unknown} */ (surfaceView.SurfaceGate)
+    const gate = new GraphThemeGate({ evaluate: async () => ({ ...LUSH }) })
+    if (!(gate.surface instanceof SurfaceGate)) {
       fail(`${label}: GraphThemeGate no longer wraps a SurfaceGate at path graph-oracle.GraphThemeGate.surface; repair: construct one SurfaceGate inside the GraphThemeGate constructor.`)
     }
   }
 }
 
-/** @param {object} manifest @param {Record<string, unknown>} corpus @param {string} source */
+/** @param {Record<string, unknown>} manifest @param {Record<string, unknown>} corpus @param {string} source */
 async function runMutations(manifest, corpus, source) {
   const requiredImporterPaths = /** @type {string[]} */ (manifest.requiredImporterPaths)
   const importerBindings = Object.fromEntries(/** @type {Record<string, unknown>[]} */ (corpus.importers).map((entry) => [entry.path, entry.binding]))
@@ -519,10 +536,10 @@ async function main() {
   // A legal leading `---` start marker is still exactly one document.
   loadSingleDocument(`---\n${corpusSource}`, CORPUS_REL)
 
-  const exportNames = /** @type {Record<string, unknown>[]} */ (corpus.exports).map((entry) => entry.name)
-  const floorNames = /** @type {Record<string, unknown>[]} */ (corpus.floors).map((entry) => entry.name)
-  const thresholdNames = /** @type {Record<string, unknown>[]} */ (corpus.thresholds).map((entry) => entry.name)
-  const importerPaths = /** @type {Record<string, unknown>[]} */ (corpus.importers).map((entry) => entry.path)
+  const exportNames = /** @type {Record<string, unknown>[]} */ (corpus.exports).map((entry) => /** @type {string} */ (entry.name))
+  const floorNames = /** @type {Record<string, unknown>[]} */ (corpus.floors).map((entry) => /** @type {string} */ (entry.name))
+  const thresholdNames = /** @type {Record<string, unknown>[]} */ (corpus.thresholds).map((entry) => /** @type {string} */ (entry.name))
+  const importerPaths = /** @type {Record<string, unknown>[]} */ (corpus.importers).map((entry) => /** @type {string} */ (entry.path))
   checkRequiredNames(exportNames, /** @type {string[]} */ (manifest.requiredExportNames), CORPUS_REL, 'export', 'exports')
   checkRequiredNames(floorNames, /** @type {string[]} */ (manifest.requiredFloorNames), CORPUS_REL, 'floor', 'floors')
   checkRequiredNames(thresholdNames, /** @type {string[]} */ (manifest.requiredThresholdNames), CORPUS_REL, 'threshold', 'thresholds')

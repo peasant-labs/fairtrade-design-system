@@ -22,11 +22,21 @@ const GUIDANCE_TOPICS = ['promotion', 'runner-inventory', 'terminology', 'workfl
 const CI_ORACLES = ['fairtest-mounted-rows', 'playwright-required-catalog']
 const MUTATION_KINDS = ['delete-field', 'rename-field', 'unknown-field', 'bad-enum', 'stale-name', 'duplicate-name', 'delete-record', 'trailing-document', 'stale-guidance-content']
 
+/**
+ * @typedef {{ name: string, kind: string, target: string, expectedField: string, field?: string, newField?: string, value?: string, style?: string, fragment?: string }} InventoryMutation
+ * @typedef {{ name: string, invocation: string, owner: string, stage: string, runner: string }} CommandRecord
+ * @typedef {{ name: string, owner: string, model: string, themeBinding: string, ciOracle: boolean }} RunnerRecord
+ * @typedef {{ path: string, owner: string, topic: string }} GuidanceRecord
+ * @typedef {{ name: string, fragment: string }} GuidanceFragmentRecord
+ * @typedef {{ commands: CommandRecord[], runners: RunnerRecord[], guidance: GuidanceRecord[], forbiddenGuidanceFragments: GuidanceFragmentRecord[] }} InventoryCorpus
+ * @typedef {{ expectedCommandCount: number, requiredCommandNames: string[], expectedRunnerCount: number, requiredRunnerNames: string[], expectedGuidanceCount: number, requiredGuidancePaths: string[], expectedGuidanceFragmentCount: number, requiredGuidanceFragmentNames: string[], expectedMutationCount: number, requiredMutationNames: string[], mutations: InventoryMutation[] }} InventoryManifest
+ */
+
 const corpusSource = readFileSync(resolve(ROOT, CORPUS_REL), 'utf8')
 const manifestSource = readFileSync(resolve(ROOT, MANIFEST_REL), 'utf8')
-const manifest = loadSingleDocument(manifestSource, MANIFEST_REL)
+const manifest = /** @type {InventoryManifest} */ (loadSingleDocument(manifestSource, MANIFEST_REL))
 validateManifest(manifest)
-const corpus = loadSingleDocument(corpusSource, CORPUS_REL)
+const corpus = /** @type {InventoryCorpus} */ (loadSingleDocument(corpusSource, CORPUS_REL))
 validateInventory(corpus, CORPUS_REL)
 checkRequiredNames(corpus.commands.map((command) => command.name), manifest.requiredCommandNames, CORPUS_REL, 'command')
 checkRequiredNames(corpus.runners.map((runner) => runner.name), manifest.requiredRunnerNames, CORPUS_REL, 'runner')
@@ -46,6 +56,7 @@ export const REQUIRED_MUTATION_NAMES = manifest.requiredMutationNames
 export const ALLOWED_COMMAND_OWNERS = ALLOWED_OWNERS
 export const INVENTORY = corpus
 
+/** @param {string} source @param {InventoryCorpus} parsed @param {InventoryManifest} manifestValue */
 function runMutations(source, parsed, manifestValue) {
   const fragments = parsed.forbiddenGuidanceFragments
   for (const mutation of manifestValue.mutations) {
@@ -80,10 +91,11 @@ function runMutations(source, parsed, manifestValue) {
   }
 }
 
+/** @param {Record<string, unknown>} inventory @param {InventoryMutation} mutation */
 function applyMutation(inventory, mutation) {
   const [family, identity] = splitTarget(mutation)
   if (mutation.kind === 'duplicate-name') {
-    const records = inventory[family]
+    const records = /** @type {Record<string, unknown>[]} */ (inventory[family])
     const donor = records.find((record) => identityOf(family, record) !== identity) ?? records[0]
     const copy = structuredClone(donor)
     setIdentity(family, copy, identity)
@@ -91,19 +103,19 @@ function applyMutation(inventory, mutation) {
     return
   }
   if (mutation.kind === 'delete-record') {
-    const records = inventory[family]
+    const records = /** @type {Record<string, unknown>[]} */ (inventory[family])
     const index = records.findIndex((record) => identityOf(family, record) === identity)
     assert.notEqual(index, -1, `${mutation.name}: unknown mutation target ${mutation.target}`)
     records.splice(index, 1)
     return
   }
-  const record = inventory[family].find((item) => identityOf(family, item) === identity)
+  const record = /** @type {Record<string, unknown>[]} */ (inventory[family]).find((item) => identityOf(family, item) === identity)
   assert.ok(record, `${mutation.name}: unknown mutation target ${mutation.target}`)
   if (mutation.kind === 'stale-name') {
-    setIdentity(family, record, mutation.value)
+    setIdentity(family, record, /** @type {string} */ (mutation.value))
     return
   }
-  const segments = mutation.field.split('.')
+  const segments = /** @type {string} */ (mutation.field).split('.')
   if (mutation.kind === 'delete-field') {
     deletePath(record, segments, mutation)
     return
@@ -111,7 +123,7 @@ function applyMutation(inventory, mutation) {
   if (mutation.kind === 'rename-field') {
     const value = getPath(record, segments, mutation)
     deletePath(record, segments, mutation)
-    setPath(record, mutation.newField.split('.'), value, mutation)
+    setPath(record, /** @type {string} */ (mutation.newField).split('.'), value, mutation)
     return
   }
   if (mutation.kind === 'unknown-field' || mutation.kind === 'bad-enum') {
@@ -121,26 +133,31 @@ function applyMutation(inventory, mutation) {
   throw new Error(`${mutation.name}: unsupported mutation kind ${mutation.kind}`)
 }
 
+/** @param {InventoryMutation} mutation @param {string} family @returns {string[]} */
 function segmentsFor(mutation, family) {
   if (mutation.kind === 'stale-name') return [family === 'guidance' ? 'path' : 'name']
-  return mutation.field.split('.')
+  return /** @type {string} */ (mutation.field).split('.')
 }
 
+/** @param {InventoryMutation} mutation @returns {[string, string]} */
 function splitTarget(mutation) {
   const index = mutation.target.indexOf(':')
   assert.notEqual(index, -1, `${mutation.name}: mutation target ${mutation.target} must use family:identity form`)
   return [mutation.target.slice(0, index), mutation.target.slice(index + 1)]
 }
 
+/** @param {string} family @param {Record<string, unknown>} record @returns {unknown} */
 function identityOf(family, record) {
   return family === 'guidance' ? record.path : record.name
 }
 
+/** @param {string} family @param {Record<string, unknown>} record @param {string} identity */
 function setIdentity(family, record, identity) {
   if (family === 'guidance') record.path = identity
   else record.name = identity
 }
 
+/** @param {InventoryManifest} value */
 function validateManifest(value) {
   checkKeys(value, ['expectedCommandCount', 'requiredCommandNames', 'expectedRunnerCount', 'requiredRunnerNames', 'expectedGuidanceCount', 'requiredGuidancePaths', 'expectedGuidanceFragmentCount', 'requiredGuidanceFragmentNames', 'expectedMutationCount', 'requiredMutationNames', 'mutations'], 'manifest', MANIFEST_REL)
   assert.equal(value.expectedCommandCount, 20, 'manifest: expectedCommandCount guard')
@@ -184,6 +201,7 @@ function validateManifest(value) {
   }
 }
 
+/** @param {InventoryCorpus} value @param {string} label */
 function validateInventory(value, label) {
   checkKeys(value, ['commands', 'runners', 'guidance', 'forbiddenGuidanceFragments'], 'document', label)
   assert.ok(Array.isArray(value.commands) && value.commands.length, `${label}: document holds no commands at path commands; repair: restore the named command list in ${CORPUS_REL}.`)
@@ -258,6 +276,7 @@ function validateInventory(value, label) {
   validateGuidanceFragments(value.forbiddenGuidanceFragments, label)
 }
 
+/** @param {GuidanceFragmentRecord[]} fragments @param {string} label */
 function validateGuidanceFragments(fragments, label) {
   if (!Array.isArray(fragments) || fragments.length === 0) {
     fail(`${label}: document holds no forbidden guidance fragments at path forbiddenGuidanceFragments; repair: restore the named stale-guidance fragment list in ${CORPUS_REL}.`)
@@ -273,16 +292,19 @@ function validateGuidanceFragments(fragments, label) {
   }
 }
 
+/** @param {InventoryCorpus} corpus @param {InventoryManifest} manifestValue */
 function checkGuidanceFragmentRefs(corpus, manifestValue) {
   checkRequiredNames(corpus.forbiddenGuidanceFragments.map((entry) => entry.name), manifestValue.requiredGuidanceFragmentNames, CORPUS_REL, 'guidance fragment')
   const fragments = new Map(corpus.forbiddenGuidanceFragments.map((entry) => [entry.name, entry.fragment]))
   for (const mutation of manifestValue.mutations) {
     if (mutation.kind !== 'stale-guidance-content') continue
-    assert.ok(fragments.has(mutation.fragment), `${mutation.name}: unknown guidance fragment ${mutation.fragment}`)
-    assert.equal(mutation.expectedField, fragments.get(mutation.fragment), `${mutation.name}: expectedField must equal the forbidden fragment text`)
+    const fragment = /** @type {string} */ (mutation.fragment)
+    assert.ok(fragments.has(fragment), `${mutation.name}: unknown guidance fragment ${mutation.fragment}`)
+    assert.equal(mutation.expectedField, fragments.get(fragment), `${mutation.name}: expectedField must equal the forbidden fragment text`)
   }
 }
 
+/** @param {string} root @param {InventoryCorpus} corpus @returns {{ path: string, text: string }[]} */
 function readGuidanceEntries(root, corpus) {
   return corpus.guidance.map((guide) => {
     try {
@@ -293,6 +315,7 @@ function readGuidanceEntries(root, corpus) {
   })
 }
 
+/** @param {{ path: string, text: string }[]} entries @param {GuidanceFragmentRecord[]} fragments @param {string} label */
 function checkGuidanceContent(entries, fragments, label) {
   for (const { path, text } of entries) {
     const lower = text.toLowerCase()
@@ -304,12 +327,14 @@ function checkGuidanceContent(entries, fragments, label) {
   }
 }
 
+/** @param {unknown} value @param {string[]} fields @param {string} tag @param {string} label @param {string} [path] @param {string} [prefix] */
 function checkKeys(value, fields, tag, label, path = '', prefix = '') {
   const where = path ? ` at path ${path}` : ''
   const named = prefix ? `${prefix} ` : ''
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     fail(`${tag}: ${named}object is missing or malformed${where} in ${label}; repair: restore the ${named}object with exactly: ${fields.join(', ')}.`)
   }
+  /** @param {string} field @returns {string} */
   const dotted = (field) => (prefix ? `${prefix}.${field}` : field)
   for (const field of fields) {
     if (!(field in value)) fail(`${tag}: missing required field "${dotted(field)}"${where}; repair: restore "${dotted(field)}" in ${label}.`)
@@ -319,12 +344,14 @@ function checkKeys(value, fields, tag, label, path = '', prefix = '') {
   }
 }
 
+/** @param {unknown} value @param {string} tag @param {string} field @param {string} path @param {string} repair */
 function checkText(value, tag, field, path, repair) {
   if (typeof value !== 'string' || !value.trim()) {
     fail(`${tag}: missing or invalid field "${field}" at path ${path}; repair: ${repair}.`)
   }
 }
 
+/** @param {string[]} actual @param {string[]} required @param {string} label @param {string} kind */
 function checkRequiredNames(actual, required, label, kind) {
   assert.equal(new Set(actual).size, actual.length, `${label}: ${kind} names unique`)
   assert.equal(new Set(required).size, required.length, `${label}: required ${kind} names unique`)
@@ -336,31 +363,35 @@ function checkRequiredNames(actual, required, label, kind) {
   }
 }
 
+/** @param {Record<string, unknown>} root @param {string[]} segments @param {InventoryMutation} mutation @returns {unknown} */
 function getPath(root, segments, mutation) {
   let node = root
   for (const segment of segments) {
     if (!node || typeof node !== 'object' || !(segment in node)) {
       throw new Error(`${mutation.name}: mutation field ${mutation.field} is absent from ${mutation.target}`)
     }
-    node = node[segment]
+    node = /** @type {Record<string, unknown>} */ (node[segment])
   }
   return node
 }
 
+/** @param {Record<string, unknown>} root @param {string[]} segments @param {unknown} value @param {InventoryMutation} mutation */
 function setPath(root, segments, value, mutation) {
   let node = root
   for (const segment of segments.slice(0, -1)) {
     if (!node[segment] || typeof node[segment] !== 'object') node[segment] = {}
-    node = node[segment]
+    node = /** @type {Record<string, unknown>} */ (node[segment])
   }
-  node[segments.at(-1)] = value
+  node[segments[segments.length - 1]] = value
 }
 
+/** @param {Record<string, unknown>} root @param {string[]} segments @param {InventoryMutation} mutation */
 function deletePath(root, segments, mutation) {
   const parent = segments.length === 1 ? root : getPath(root, segments.slice(0, -1), mutation)
-  delete parent[segments.at(-1)]
+  delete /** @type {Record<string, unknown>} */ (parent)[segments[segments.length - 1]]
 }
 
+/** @param {string} message @returns {never} */
 function fail(message) {
   throw new Error(message)
 }

@@ -59,7 +59,7 @@ import { FAIRTEST_REPO_ROOT } from './fairtest-runtime.mjs'
  * banner, by the node argument list, and by the product fixture family case
  * that proves the command is reachable, so the declaration cannot drift from
  * what actually runs.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const PRODUCT_CONTRACT_SUITES = Object.freeze([
   'scripts/fairtest/product-adapter.test.mjs',
@@ -76,7 +76,7 @@ export const PRODUCT_CONTRACT_SUITES = Object.freeze([
  * invocation, one file at a time. `--test-concurrency=1` is the reason the two
  * browser-backed suites can share a single invocation instead of colliding on
  * scratch ports.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const PRODUCT_CONTRACT_NODE_ARGS = Object.freeze([
   '--test',

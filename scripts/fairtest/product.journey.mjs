@@ -36,6 +36,21 @@ const ROW_THEMES = ['dark', 'light']
 const GATE_POINT_SLOTS = PRODUCT_A11Y_GATE_POINT_SLOTS
 const POINT_LABELS = PRODUCT_A11Y_POINT_LABELS
 
+/**
+ * The captured product row summary the mounted journey asserts against.
+ * @typedef {object} ProductRowSummary
+ * @property {{ kind: string, theme: { expected: string, observed: string, observedAtMs: number }, action: { name: string, completed: boolean, observedAtMs: number } }} proof the written product resolution
+ * @property {string[]} activeViewGuards the rendered-view guard call sequence
+ * @property {{ rendered: number, descendants: number, textLength: number }} body the accepted body measurement
+ * @property {{ rendered: number, descendants: number, textLength: number }} view the accepted view measurement
+ * @property {{ rowStartedAtMs: number, parts: number, theme: number, action: number }} observationTimes the observed reading times
+ * @property {{ viewport: object }} provenance the recorded provenance
+ */
+
+/**
+ * @param {unknown} value candidate run identity
+ * @returns {string} the sanitized run id
+ */
 function sanitizeRunId(value) {
   const base = String(value || '').split('/').filter(Boolean).pop() || 'fairtest-product-run'
   const cleaned = base.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '')
@@ -43,9 +58,13 @@ function sanitizeRunId(value) {
 }
 
 test.describe('fairtest mounted product', () => {
+  /** @type {string | null} */
   let runRoot = null
+  /** @type {string | null} */
   let baseUrl = null
+  /** @type {import('./fairtrade-adapter.mjs').LifecycleAdapter | null} */
   let adapter = null
+  /** @type {import('./product-producer.mjs').StaticProductDriver | null} */
   let driver = null
 
   test.beforeAll(async () => {
@@ -77,7 +96,7 @@ test.describe('fairtest mounted product', () => {
           'repair: keep beforeAll start and readiness intact so every row drives the running loopback service.',
         )
       }
-      const summary = await captureProductRow(page, theme, { runRoot, baseUrl })
+      const summary = /** @type {ProductRowSummary} */ (await captureProductRow(page, theme, { runRoot, baseUrl }))
       expect(summary.proof.kind).toBe('product')
       expect(summary.proof.theme.expected).toBe(theme)
       expect(summary.proof.theme.observed).toBe(theme)
@@ -172,8 +191,8 @@ test.describe('fairtest mounted product', () => {
       // instead of producing two receipts that agree with each other and not
       // with the row.
       const axe = JSON.parse(readFileSync(join(rowDir, 'axe.json'), 'utf8'))
-      for (const point of ['before', 'after']) {
-        const slot = GATE_POINT_SLOTS[point]
+      for (const point of /** @type {const} */ (['before', 'after'])) {
+        const slot = /** @type {'initial' | 'after-action'} */ (GATE_POINT_SLOTS[point])
         expect(axe.scoped[point].observedSection, `row ${theme} ${slot} scan must be gated with the ${axe.scoped[point].declaredSection} section active`).toBe(POINT_LABELS[slot])
         expect(record.accessibility.gate[point].observedSection, `row ${theme} gate.${point} must carry the section the page showed`).toBe(axe.scoped[point].observedSection)
         expect(record.accessibility.gate[point].point, `row ${theme} gate.${point} must name its declared observation point`).toBe(slot)

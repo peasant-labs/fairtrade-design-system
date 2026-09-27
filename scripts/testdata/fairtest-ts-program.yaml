@@ -66,7 +66,5 @@ acknowledgedAny:
     count: 3
   - file: scripts/fairtest/run-envelope.test.mjs
     count: 14
-  - file: scripts/fairtest/selection-receipt.mjs
-    count: 3
   - file: scripts/fairtest/verify-fairtest.mjs
     count: 2

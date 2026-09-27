@@ -35,6 +35,18 @@ import { PRODUCT_ONLY_FIELDS } from './fairtest-artifacts.mjs'
 
 const ROW_THEMES = ['dark', 'light']
 
+/**
+ * The captured component row summary the mounted journey asserts against.
+ * @typedef {object} ComponentRowSummary
+ * @property {{ kind: string, theme: { expected: string, observed: string, observedAtMs: number }, root: { mounted: boolean, observedAtMs: number }, interaction: { name: string, completed: boolean, observedAtMs: number } }} proof the written component resolution
+ * @property {{ rowStartedAtMs: number, mount: number, theme: number, interaction: number }} observationTimes the observed reading times
+ * @property {{ viewport: object }} provenance the recorded provenance
+ */
+
+/**
+ * @param {unknown} value candidate run identity
+ * @returns {string} the sanitized run id
+ */
 function sanitizeRunId(value) {
   const base = String(value || '').split('/').filter(Boolean).pop() || 'fairtest-component-run'
   const cleaned = base.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '')
@@ -42,9 +54,13 @@ function sanitizeRunId(value) {
 }
 
 test.describe('fairtest mounted component', () => {
+  /** @type {string | null} */
   let runRoot = null
+  /** @type {string | null} */
   let baseUrl = null
+  /** @type {import('./fairtrade-adapter.mjs').LifecycleAdapter | null} */
   let adapter = null
+  /** @type {import('./component-producer.mjs').StaticComponentDriver | null} */
   let driver = null
 
   test.beforeAll(async () => {
@@ -76,7 +92,7 @@ test.describe('fairtest mounted component', () => {
           'repair: keep beforeAll start and readiness intact so every row drives the running loopback service.',
         )
       }
-      const summary = await captureComponentRow(page, theme, { runRoot, baseUrl })
+      const summary = /** @type {ComponentRowSummary} */ (await captureComponentRow(page, theme, { runRoot, baseUrl }))
       expect(adapter.targetId, 'the running adapter must select the component target').toBe(COMPONENT_TARGET_ID)
       expect(summary.proof.kind).toBe('component')
       expect(summary.proof.theme.expected).toBe(theme)

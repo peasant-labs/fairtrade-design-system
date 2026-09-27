@@ -16,11 +16,18 @@ const LOWER_LAYER_RESULTS = ['promote', 'retain']
 const DECISION_VERDICTS = ['approve', 'reject']
 const MUTATION_KINDS = ['delete-field', 'blank-field', 'rename-field', 'unknown-field', 'bad-enum', 'duplicate-name', 'delete-record', 'trailing-document']
 
+/**
+ * @typedef {{ name: string, kind: string, target: string, expectedField: string, field?: string, newField?: string, value?: string, style?: string }} PromotionMutation
+ * @typedef {{ name: string, answers: Record<string, string>, lowerLayer: { result: string, detail: string }, decision: { verdict: string, rationale: string }, executionPolicy: Record<string, string>, exitCondition: string }} PromotionRecord
+ * @typedef {{ records: PromotionRecord[] }} PromotionCorpus
+ * @typedef {{ expectedRecordCount: number, requiredRecordNames: string[], expectedMutationCount: number, requiredMutationNames: string[], mutations: PromotionMutation[] }} PromotionManifest
+ */
+
 const corpusSource = readFileSync(resolve(ROOT, CORPUS_REL), 'utf8')
 const manifestSource = readFileSync(resolve(ROOT, MANIFEST_REL), 'utf8')
-const manifest = loadSingleDocument(manifestSource, MANIFEST_REL)
+const manifest = /** @type {PromotionManifest} */ (loadSingleDocument(manifestSource, MANIFEST_REL))
 validateManifest(manifest)
-const corpus = loadSingleDocument(corpusSource, CORPUS_REL)
+const corpus = /** @type {PromotionCorpus} */ (loadSingleDocument(corpusSource, CORPUS_REL))
 validateRecords(corpus, CORPUS_REL)
 checkRequiredNames(corpus.records.map((record) => record.name), manifest.requiredRecordNames, CORPUS_REL)
 // A legal leading `---` start marker is still exactly one document.
@@ -29,6 +36,7 @@ runMutations(corpusSource, corpus, manifest)
 
 console.log(`promotion records: all ${corpus.records.length} named records passed and all ${manifest.mutations.length} named mutations failed for their intended field.`)
 
+/** @param {string} source @param {PromotionCorpus} parsed @param {PromotionManifest} manifestValue */
 function runMutations(source, parsed, manifestValue) {
   for (const mutation of manifestValue.mutations) {
     let message = null
@@ -54,6 +62,7 @@ function runMutations(source, parsed, manifestValue) {
   }
 }
 
+/** @param {PromotionRecord[]} records @param {PromotionMutation} mutation */
 function applyMutation(records, mutation) {
   if (mutation.kind === 'duplicate-name') {
     const donor = records.find((record) => record.name !== mutation.target) ?? records[0]
@@ -70,7 +79,7 @@ function applyMutation(records, mutation) {
   }
   const record = records.find((item) => item.name === mutation.target)
   assert.ok(record, `${mutation.name}: unknown mutation target ${mutation.target}`)
-  const segments = mutation.field.split('.')
+  const segments = /** @type {string} */ (mutation.field).split('.')
   if (mutation.kind === 'delete-field') {
     deletePath(record, segments, mutation)
     return
@@ -82,7 +91,7 @@ function applyMutation(records, mutation) {
   if (mutation.kind === 'rename-field') {
     const value = getPath(record, segments, mutation)
     deletePath(record, segments, mutation)
-    setPath(record, mutation.newField.split('.'), value, mutation)
+    setPath(record, /** @type {string} */ (mutation.newField).split('.'), value, mutation)
     return
   }
   if (mutation.kind === 'unknown-field' || mutation.kind === 'bad-enum') {
@@ -92,6 +101,7 @@ function applyMutation(records, mutation) {
   throw new Error(`${mutation.name}: unsupported mutation kind ${mutation.kind}`)
 }
 
+/** @param {PromotionManifest} value */
 function validateManifest(value) {
   checkKeys(value, ['expectedRecordCount', 'requiredRecordNames', 'expectedMutationCount', 'requiredMutationNames', 'mutations'], 'manifest', MANIFEST_REL)
   assert.equal(value.expectedRecordCount, 5, 'manifest: expectedRecordCount guard')
@@ -119,6 +129,7 @@ function validateManifest(value) {
   }
 }
 
+/** @param {PromotionCorpus} value @param {string} label */
 function validateRecords(value, label) {
   checkKeys(value, ['records'], 'document', label)
   assert.ok(Array.isArray(value.records) && value.records.length, `${label}: document holds no promotion records at path records; repair: restore the named records list in ${CORPUS_REL}.`)
@@ -152,12 +163,14 @@ function validateRecords(value, label) {
   }
 }
 
+/** @param {unknown} value @param {string[]} fields @param {string} tag @param {string} label @param {string} [path] @param {string} [prefix] */
 function checkKeys(value, fields, tag, label, path = '', prefix = '') {
   const where = path ? ` at path ${path}` : ''
   const named = prefix ? `${prefix} ` : ''
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     fail(`${tag}: ${named}object is missing or malformed${where} in ${label}; repair: restore the ${named}object with exactly: ${fields.join(', ')}.`)
   }
+  /** @param {string} field @returns {string} */
   const dotted = (field) => (prefix ? `${prefix}.${field}` : field)
   for (const field of fields) {
     if (!(field in value)) fail(`${tag}: missing required field "${dotted(field)}"${where}; repair: restore "${dotted(field)}" in ${label}.`)
@@ -167,12 +180,14 @@ function checkKeys(value, fields, tag, label, path = '', prefix = '') {
   }
 }
 
+/** @param {unknown} value @param {string} tag @param {string} field @param {string} path @param {string} repair */
 function checkText(value, tag, field, path, repair) {
   if (typeof value !== 'string' || !value.trim()) {
     fail(`${tag}: missing or invalid field "${field}" at path ${path}; repair: ${repair}.`)
   }
 }
 
+/** @param {string[]} actual @param {string[]} required @param {string} label */
 function checkRequiredNames(actual, required, label) {
   assert.equal(new Set(actual).size, actual.length, `${label}: record names unique`)
   assert.equal(new Set(required).size, required.length, `${label}: required names unique`)
@@ -184,31 +199,35 @@ function checkRequiredNames(actual, required, label) {
   }
 }
 
+/** @param {Record<string, unknown>} root @param {string[]} segments @param {PromotionMutation} mutation @returns {unknown} */
 function getPath(root, segments, mutation) {
   let node = root
   for (const segment of segments) {
     if (!node || typeof node !== 'object' || !(segment in node)) {
       throw new Error(`${mutation.name}: mutation field ${mutation.field} is absent from ${mutation.target}`)
     }
-    node = node[segment]
+    node = /** @type {Record<string, unknown>} */ (node[segment])
   }
   return node
 }
 
+/** @param {Record<string, unknown>} root @param {string[]} segments @param {unknown} value @param {PromotionMutation} mutation */
 function setPath(root, segments, value, mutation) {
   let node = root
   for (const segment of segments.slice(0, -1)) {
     if (!node[segment] || typeof node[segment] !== 'object') node[segment] = {}
-    node = node[segment]
+    node = /** @type {Record<string, unknown>} */ (node[segment])
   }
-  node[segments.at(-1)] = value
+  node[segments[segments.length - 1]] = value
 }
 
+/** @param {Record<string, unknown>} root @param {string[]} segments @param {PromotionMutation} mutation */
 function deletePath(root, segments, mutation) {
   const parent = segments.length === 1 ? root : getPath(root, segments.slice(0, -1), mutation)
-  delete parent[segments.at(-1)]
+  delete /** @type {Record<string, unknown>} */ (parent)[segments[segments.length - 1]]
 }
 
+/** @param {string} message @returns {never} */
 function fail(message) {
   throw new Error(message)
 }

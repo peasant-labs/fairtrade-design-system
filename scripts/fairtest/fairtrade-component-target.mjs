@@ -50,7 +50,6 @@ export const COMPONENT_ACTION_NAME = 'expand-disclosure'
  * bundle is the single declared source of component structure: the producer
  * derives every component selector it touches from these keys and holds no
  * sgd class, root id, or Storybook chrome selector literal of its own.
- * @type {object}
  */
 export const COMPONENT_SELECTORS = Object.freeze({
   // The Storybook story root. It exists statically and empty, so attachment
@@ -74,7 +73,7 @@ export const COMPONENT_SELECTORS = Object.freeze({
  * `.sb-show-main.sb-main-centered`, so this pair is the rendered marker the
  * static and error states do not carry. Declared here, never repeated in a
  * producer.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const COMPONENT_MOUNT_BODY_CLASSES = Object.freeze(['sb-main-centered', 'sb-show-main'])
 
@@ -88,7 +87,7 @@ export const COMPONENT_COLLAPSED_LABEL = 'orphan sessions 2'
 /**
  * The rows the disclosure reveals, in render order. The one action must leave
  * exactly these rows; the row count and the texts are both asserted.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const COMPONENT_ROW_TEXTS = Object.freeze([
   'Recover the unreadable parent chain',
@@ -156,7 +155,6 @@ export const COMPONENT_ACTION_TIMEOUT_MS = 10000
  * producer reads commit, dirtiness, asset digests, viewport, target identity,
  * theme observations, and the story id from; the producer fills the values per
  * run. Mirrors the product provenance source, plus `storyId`.
- * @type {object}
  */
 export const COMPONENT_PROVENANCE_SOURCE = Object.freeze({
   source: 'built-storybook',
@@ -175,7 +173,7 @@ export const COMPONENT_A11Y_POLICY = 'component-serious-violations-gate'
 
 /**
  * The single observation point carrying a component gate receipt.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const COMPONENT_A11Y_POINTS = Object.freeze(['after-interaction'])
 
@@ -184,19 +182,19 @@ export const COMPONENT_A11Y_POINTS = Object.freeze(['after-interaction'])
  * never hardcodes a second copy of the record shape. `observedTheme` and
  * `ariaExpanded` are the receipt's observed ties to the moment the scan was
  * taken: the theme the page rendered and the expanded state the click left.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const COMPONENT_A11Y_GATE_RECEIPT_FIELDS = Object.freeze(['policy', 'point', 'observedTheme', 'ariaExpanded', 'result', 'measured'])
 
 /**
  * Named fixtures the component target serves.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 const COMPONENT_FIXTURES = Object.freeze(['component-theme-rows', 'component-disclosure-expand'])
 
 /**
  * Named actions the component target offers.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 const COMPONENT_ACTIONS = Object.freeze([COMPONENT_ACTION_NAME])
 
@@ -238,7 +236,6 @@ export const COMPONENT_TARGET = Object.freeze({
 /**
  * Target registry keyed by target id. This module declares exactly one
  * component target.
- * @type {object}
  */
 export const COMPONENT_TARGET_REGISTRY = Object.freeze({
   [COMPONENT_TARGET_ID]: COMPONENT_TARGET,
@@ -262,7 +259,7 @@ export function selectComponentTarget(id) {
 /**
  * Return the frozen named action for a registered action name.
  * @param {unknown} name action name requested by the caller
- * @returns {object} the frozen component action record
+ * @returns {{ name: string, storyId: string }} the frozen component action record
  */
 export function getComponentAction(name) {
   if (name !== COMPONENT_ACTION_NAME) {
@@ -306,7 +303,7 @@ export function componentStoryUrl(story, theme) {
  * componentThemeSetup; this row record only adds the story id, so the two can
  * never describe different URLs or expected attributes.
  * @param {unknown} theme dark or light row theme
- * @returns {object} the frozen theme row record
+ * @returns {{ theme: string, expectedAttribute: string, url: string, storyId: string }} the frozen theme row record
  */
 export function componentThemeRow(theme) {
   return Object.freeze({ ...componentThemeSetup(theme), storyId: COMPONENT_STORY_ID })
@@ -317,7 +314,7 @@ export function componentThemeRow(theme) {
  * expected raw attribute; reduced motion is inherited from the one-project
  * runner config and is deliberately not re-declared here.
  * @param {unknown} theme dark or light row theme
- * @returns {object} the frozen setup descriptor for the row
+ * @returns {{ theme: string, expectedAttribute: string, url: string }} the frozen setup descriptor for the row
  */
 export function componentThemeSetup(theme) {
   if (theme !== 'dark' && theme !== 'light') {
@@ -351,14 +348,14 @@ export function componentThemeFromProjectName(projectName) {
  * Fail-closed mount-signal guard. A statically present but empty root is not a
  * mount; a Storybook load-error page writes its message into the root, so a
  * non-empty root is not a mount either. Both are refused by name.
- * @param {object} [input] raw mount observations read from the iframe
+ * @param {object} input raw mount observations read from the iframe
  * @param {number} input.rootChildCount story root childElementCount
  * @param {string} input.bodyClass current body className
  * @param {string} input.errorDisplay computed display of the error display
  * @param {string} input.errorStackText trimmed #error-stack text
  * @returns {object} the frozen mount observation
  */
-export function assertComponentMounted(input = {}) {
+export function assertComponentMounted(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new Error(
       'fairtrade component targets: missing mount observation for field "mount" at path mount; ' +
@@ -404,14 +401,14 @@ export function assertComponentMounted(input = {}) {
  * Build the raw target declaration input for the component target. Capability
  * contents stay caller-owned: pass the shared component inventory so the
  * closed vocabulary is never duplicated here.
- * @param {object} [input] declaration inputs
+ * @param {object} input declaration inputs
  * @param {number} input.createdAtMs creation time in whole milliseconds
  * @param {string[]} input.capabilities declared capability inventory
- * @param {string[]} [input.fixtures] named fixtures served
- * @param {string[]} [input.actions] named actions offered
+ * @param {readonly string[]} [input.fixtures] named fixtures served
+ * @param {readonly string[]} [input.actions] named actions offered
  * @returns {object} the frozen declaration input
  */
-export function componentDeclarationInput({ createdAtMs, capabilities, fixtures = COMPONENT_FIXTURES, actions = COMPONENT_ACTIONS } = {}) {
+export function componentDeclarationInput({ createdAtMs, capabilities, fixtures = COMPONENT_FIXTURES, actions = COMPONENT_ACTIONS }) {
   if (!Number.isInteger(createdAtMs) || createdAtMs < 0 || createdAtMs > 9007199254740991) {
     throw new Error(
       `fairtrade component targets: invalid value ${JSON.stringify(createdAtMs)} for field "createdAtMs" at path target.identity.createdAtMs; ` +
@@ -437,11 +434,11 @@ export function componentDeclarationInput({ createdAtMs, capabilities, fixtures 
  * Prove the component target against the shared contract through the sole
  * source route: kind membership in the closed vocabulary, capability inventory
  * validation on the component branch, and declaration validation.
- * @param {object} [input] validation inputs
+ * @param {object} input validation inputs
  * @param {number} input.createdAtMs creation time in whole milliseconds
  * @returns {Promise<object>} the frozen contract receipt
  */
-export async function validateComponentTargetContract({ createdAtMs } = {}) {
+export async function validateComponentTargetContract({ createdAtMs }) {
   if (!kindsContract.HOST_KINDS.includes('component')) {
     throw new Error(
       'fairtrade component targets: kind "component" is outside the shared vocabulary for field "kind" at path target.kind; ' +
@@ -484,7 +481,7 @@ export const COMPONENT_PROOF_RECORD_SCHEMA = Object.freeze({
  * (a blanket mounted boolean with no observation is refused); a completed named
  * interaction must come from the app-owned action registry. A product-shaped
  * record fails through the shared validator. The returned record is frozen.
- * @param {object} [input] proof inputs
+ * @param {object} input proof inputs
  * @param {string} input.rowTheme dark or light row theme
  * @param {object} input.identity component-branch identity
  * @param {object} input.root separately observed mounted root
@@ -492,7 +489,7 @@ export const COMPONENT_PROOF_RECORD_SCHEMA = Object.freeze({
  * @param {object} [input.interaction] optional completed named interaction result
  * @returns {import('../fairtest-source.mjs').ComponentResolution} the frozen validated component resolution
  */
-export function buildComponentProof(input = {}) {
+export function buildComponentProof(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new Error(
       'fairtrade component targets: missing component proof input for field "proof" at path proof; ' +
@@ -526,13 +523,14 @@ export function buildComponentProof(input = {}) {
     )
   }
   const root = resolutionContract.validateMountedRoot(record.root, 'fairtrade component targets', 'resolution.root')
-  const candidate = { kind: 'component', identity, root, theme }
+  const candidate = /** @type {Record<string, unknown>} */ ({ kind: 'component', identity, root, theme })
   if (Object.hasOwn(input, 'interaction')) {
     const registered = getComponentAction(/** @type {Record<string, unknown>} */ (record.interaction)?.name)
-    candidate.interaction = resolutionContract.validateNamedResult(record.interaction, 'fairtrade component targets', 'resolution.interaction')
-    if (candidate.interaction.name !== registered.name) {
+    const interaction = resolutionContract.validateNamedResult(record.interaction, 'fairtrade component targets', 'resolution.interaction')
+    candidate.interaction = interaction
+    if (interaction.name !== registered.name) {
       throw new Error(
-        `fairtrade component targets: interaction ${JSON.stringify(candidate.interaction.name)} is not the registered ${JSON.stringify(registered.name)} for field "name" at path resolution.interaction.name; ` +
+        `fairtrade component targets: interaction ${JSON.stringify(interaction.name)} is not the registered ${JSON.stringify(registered.name)} for field "name" at path resolution.interaction.name; ` +
         'repair: complete the registered component interaction before building the proof.',
       )
     }

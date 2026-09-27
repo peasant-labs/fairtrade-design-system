@@ -46,6 +46,52 @@ const processContract = await importFairtestSource('src/bridge/process.mjs')
 const core = await importFairtestSource('src/core/index.mjs')
 
 /**
+ * One validated process case deadline limits record.
+ * @typedef {object} ProcessCaseLimits
+ * @property {number} readinessDeadlineMs readiness wait in whole milliseconds
+ * @property {number} supervisorDeadlineMs internal supervisor deadline in whole milliseconds
+ * @property {number} outerDeadlineMs caller-owned outer fail-safe in whole milliseconds
+ * @property {number} graceMs observed cleanup grace in whole milliseconds
+ */
+
+/**
+ * One validated process case spec, as the neutral contract returns it.
+ * @typedef {object} ProcessCaseSpec
+ * @property {string} name one of the named process cases
+ * @property {string} scenario one of the closed process scenarios
+ * @property {ProcessCaseLimits} limits case deadline limits
+ * @property {string} outcome one of the closed process outcomes
+ * @property {boolean} expectReady whether the case is expected to report ready
+ * @property {boolean} deadlineExceeded whether the case is expected to outlive its deadline
+ */
+
+/**
+ * One validated case entry inside a durable cleanup receipt.
+ * @typedef {object} ProcessCaseReceipt
+ * @property {string} caseId one of the named process cases
+ * @property {string} scenario one of the closed process scenarios
+ * @property {string} outcome one of the closed process outcomes
+ * @property {string} signal one of the closed bridge stop signals
+ * @property {boolean} reaped whether the case child was reaped
+ * @property {boolean} portReleased whether the case channel was released
+ * @property {number} pid observed child process id
+ * @property {number} port observed listener port
+ * @property {string} processGroup observed process group note
+ * @property {boolean} deadlineExceeded whether the case outlived its deadline
+ * @property {number} observedAtMs observation time in whole milliseconds
+ */
+
+/**
+ * The run context one supervised case needs, plus the optional arm callback
+ * that lets the outer fail-safe adopt the case's isolated process group.
+ * @typedef {object} ProcessRunContext
+ * @property {string} fixtureRoot throwaway fixture directory for one run
+ * @property {string} childScript generated fixture child script path
+ * @property {boolean} awaitInterrupt whether the interruption case waits for SIGTERM
+ * @property {(pgid: number) => void} [onArmed] adopt the case's process group
+ */
+
+/**
  * The run-root-relative process case fixture family this supervisor reads.
  * @type {string}
  */
@@ -168,7 +214,7 @@ export function parseProcessArgs(args) {
  * the neutral contract and the observed case set must equal the declared four,
  * so a missing or extra case fails before any child starts.
  * @param {string} repoRoot repository root
- * @returns {object[]} the four validated, frozen case specs
+ * @returns {ProcessCaseSpec[]} the four validated, frozen case specs
  */
 export function loadProcessCases(repoRoot) {
   const path = join(repoRoot, PROCESS_CASES_REL)
@@ -189,9 +235,10 @@ export function loadProcessCases(repoRoot) {
       'repair: restore the four named process case records.',
     )
   }
-  const specs = document.cases.map((entry, index) => processContract.validateProcessCaseSpec(entry, `${PROCESS_CASES_REL} cases[${index}]`))
+  const rawCases = /** @type {unknown[]} */ (document.cases)
+  const specs = rawCases.map((entry, index) => processContract.validateProcessCaseSpec(entry, `${PROCESS_CASES_REL} cases[${index}]`))
   const ids = specs.map((spec) => spec.name)
-  const missing = processContract.PROCESS_CASE_IDS.filter((id) => !ids.includes(id))
+  const missing = processContract.PROCESS_CASE_IDS.filter((/** @type {string} */ id) => !ids.includes(id))
   if (missing.length > 0 || ids.length !== processContract.PROCESS_CASE_IDS.length) {
     throw new Error(
       `fairtest process: incomplete process case set for field "cases" at path ${PROCESS_CASES_REL}.cases; ` +
@@ -272,7 +319,7 @@ function waitForExit(child, deadlineMs) {
   if (child.exitCode !== null || child.signalCode !== null) return Promise.resolve(true)
   return new Promise((settle) => {
     const timer = setTimeout(() => finish(false), deadlineMs)
-    const finish = (exited) => {
+    const finish = (/** @type {boolean} */ exited) => {
       clearTimeout(timer)
       child.off('exit', onExit)
       settle(exited)
@@ -327,7 +374,7 @@ setInterval(() => {}, 1 << 30)
  */
 async function waitForReady(child, port, deadlineMs) {
   let tokenSeen = false
-  const onData = (chunk) => {
+  const onData = (/** @type {unknown} */ chunk) => {
     if (String(chunk).includes(PROCESS_READY_TOKEN)) tokenSeen = true
   }
   child.stdout?.on('data', onData)
@@ -402,9 +449,9 @@ function waitForInterrupt(deadlineMs) {
  * and deadline are enforced, it is stopped with TERM then KILL after the grace
  * window, and its PID, descendant, process group, and port postconditions are
  * checked. Temporary files are always removed in a finally step.
- * @param {object} spec validated case spec
- * @param {{ fixtureRoot: string, childScript: string, awaitInterrupt: boolean }} context run context
- * @returns {Promise<object>} the observed case receipt entry
+ * @param {ProcessCaseSpec} spec validated case spec
+ * @param {ProcessRunContext} context run context
+ * @returns {Promise<ProcessCaseReceipt>} the observed case receipt entry
  */
 export async function runProcessCase(spec, context) {
   const port = await claimIsolatedPort()
@@ -420,7 +467,7 @@ export async function runProcessCase(spec, context) {
       FAIRTEST_PROCESS_GRANDCHILD_PID_FILE: grandchildPidFile,
     },
   })
-  const pgid = child.pid
+  const pgid = /** @type {number} */ (child.pid)
   console.log(`${PROCESS_STDOUT_MARKERS.armed} ${spec.name} ${pgid} ${port}`)
   context.onArmed?.(pgid)
   const spawnedAtMs = Date.now()
@@ -488,9 +535,9 @@ export async function runProcessCase(spec, context) {
  * Run one case under the outer fail-safe deadline, which must stay strictly
  * longer than the case's internal supervisor deadline. The fail-safe force-kills
  * the isolated group if the internal deadline somehow failed to bound the case.
- * @param {object} spec validated case spec
- * @param {{ fixtureRoot: string, childScript: string, awaitInterrupt: boolean }} context run context
- * @returns {Promise<object>} the observed case receipt entry
+ * @param {ProcessCaseSpec} spec validated case spec
+ * @param {ProcessRunContext} context run context
+ * @returns {Promise<ProcessCaseReceipt>} the observed case receipt entry
  */
 async function runCaseUnderFailSafe(spec, context) {
   let activeGroup = 0
@@ -498,7 +545,7 @@ async function runCaseUnderFailSafe(spec, context) {
     if (activeGroup > 0) signalGroup(activeGroup, 'SIGKILL')
   }, spec.limits.outerDeadlineMs)
   try {
-    return await runProcessCase(spec, { ...context, onArmed: (pgid) => { activeGroup = pgid } })
+    return await runProcessCase(spec, { ...context, onArmed: (/** @type {number} */ pgid) => { activeGroup = pgid } })
   } finally {
     clearTimeout(failSafe)
   }
@@ -507,8 +554,8 @@ async function runCaseUnderFailSafe(spec, context) {
 /**
  * Build, validate, and write the durable cleanup receipt for one run. The
  * receipt is written atomically and only after every case was observed.
- * @param {{ root: string, runId: string, invocationId: string, cases: object[] }} input receipt inputs
- * @returns {object} the frozen receipt
+ * @param {{ root: string, runId: string, invocationId: string, cases: ProcessCaseReceipt[] }} input receipt inputs
+ * @returns {{ cases: ProcessCaseReceipt[] }} the frozen receipt
  */
 export function writeProcessCleanupReceipt(input) {
   const receipt = processContract.createProcessCleanupReceipt({
@@ -526,8 +573,8 @@ export function writeProcessCleanupReceipt(input) {
 
 /**
  * Report whether every observed case met its declared postcondition.
- * @param {object[]} records observed case receipt entries
- * @param {object[]} specs declared case specs
+ * @param {ProcessCaseReceipt[]} records observed case receipt entries
+ * @param {ProcessCaseSpec[]} specs declared case specs
  * @returns {string[]} one diagnostic per unmet postcondition
  */
 export function checkPostconditions(records, specs) {

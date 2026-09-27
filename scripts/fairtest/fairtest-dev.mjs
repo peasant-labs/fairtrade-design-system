@@ -48,7 +48,7 @@ export const DEV_TARGETS = Object.freeze({ product: 'product', component: 'compo
 
 /**
  * The declared themes this command accepts for the single local row.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const DEV_THEMES = Object.freeze(['dark', 'light'])
 
@@ -240,7 +240,7 @@ export function attachInstruction(url) {
 
 /**
  * Format the readout lines the command prints.
- * @param {object} readout validated local readout
+ * @param {{ identity: { invocationId: string, runId: string, project: string, purpose: string, targetId: string }, url: string, scenario: { route: string, fixture: string, action: string }, provenance: { source: string, root: string, commit: string, dirty: boolean } }} readout validated local readout
  * @param {{ kind: string, port: number }} context target context
  * @returns {string[]} the banner lines
  */
@@ -264,7 +264,7 @@ export function readoutLines(readout, context) {
  */
 function waitForSignal() {
   return new Promise((settle) => {
-    const onSignal = (name) => {
+    const onSignal = (/** @type {string} */ name) => {
       process.removeListener('SIGINT', onSignal)
       process.removeListener('SIGTERM', onSignal)
       settle(name)

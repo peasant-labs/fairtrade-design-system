@@ -219,15 +219,16 @@ describe('named negative product mutations', () => {
       'zero-size': { display: 'flex', visibility: 'visible', opacity: 1, width: 0, height: 0, intersectsStage: true },
       clipped: { display: 'flex', visibility: 'visible', opacity: 1, width: 1184, height: 1621, intersectsStage: false },
     }
+    const refusalByMode = /** @type {Record<string, object>} */ (refusals)
     for (const mode of PRODUCT_UNRENDERED_MODES) {
       assert.deepEqual(
-        Object.keys(/** @type {Record<string, unknown>} */ (refusals[mode])).sort(),
+        Object.keys(/** @type {Record<string, unknown>} */ (refusalByMode[mode])).sort(),
         [...PRODUCT_UNRENDERED_REFUSAL_FIELDS].filter((field) => field !== 'mode').sort(),
         `${mode}: the refusal must carry the declared measured field set`,
       )
       assert.throws(
         () => assertProductActiveViewMounted({
-          activeView: { roots: 1, rendered: 0, descendants: 0, textLength: 0, refusals: [{ mode, ...refusals[mode] }] },
+          activeView: { roots: 1, rendered: 0, descendants: 0, textLength: 0, refusals: [{ mode, ...refusalByMode[mode] }] },
           container: { descendants: 834, textLength: 2027 },
         }, context),
         new RegExp(`unrendered representative body.*at path proof\\.body.*1 roots of which 0 render.*${mode}.*repair:`, 's'),

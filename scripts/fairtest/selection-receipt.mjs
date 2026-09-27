@@ -31,11 +31,13 @@ import {
   writeJsonAtomic,
 } from './run-envelope-contract.mjs'
 
+/** @typedef {import('./run-envelope-contract.mjs').SelectionRecord} SelectionRecord */
+
 /**
  * Independently validate one expected-selection record against the envelope
  * and the closed key policy. Returns the validated record or throws.
- * @param {{ root: string, runId: string, selection: Record<string, any>, envelopeDigest: string | null }} input validation inputs
- * @returns {Record<string, any>} the validated selection
+ * @param {{ root: string, runId: string, selection: SelectionRecord, envelopeDigest: string | null }} input validation inputs
+ * @returns {SelectionRecord} the validated selection
  */
 export function validateExpectedSelection(input) {
   const { runId, selection, envelopeDigest } = input
@@ -82,7 +84,7 @@ export function validateExpectedSelection(input) {
 
 /**
  * Build the guard receipt for one validated selection.
- * @param {{ runId: string, selection: Record<string, any>, envelopeDigest: string | null, completedAtMs: number }} input receipt inputs
+ * @param {{ runId: string, selection: SelectionRecord, envelopeDigest: string | null, completedAtMs: number }} input receipt inputs
  * @returns {Record<string, unknown>} the receipt record
  */
 export function createSelectionReceipt(input) {
@@ -132,7 +134,7 @@ function main() {
   const selection = validateExpectedSelection({
     root,
     runId,
-    selection: readJsonFile(selectionPath, 'expected-selection'),
+    selection: /** @type {SelectionRecord} */ (readJsonFile(selectionPath, 'expected-selection')),
     envelopeDigest,
   })
   const receipt = createSelectionReceipt({ runId, selection, envelopeDigest, completedAtMs: Date.now() })

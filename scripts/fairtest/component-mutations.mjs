@@ -94,7 +94,7 @@ const resolutionContract = await importFairtestSource('src/host-contract/resolut
 
 /**
  * The named negative component mutations. Exact set, frozen.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const COMPONENT_MUTATION_NAMES = Object.freeze([
   'missing-root',
@@ -147,10 +147,19 @@ export const COMPONENT_MUTATION_BOUNDARIES = Object.freeze({
  * The exact journeys the one-project Fairtest config may match. Two explicit
  * journey paths, never the broad catalog. Declared once so the config guard
  * and the mutation suite read the same list.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const COMPONENT_CONFIG_TEST_MATCH = Object.freeze(['**/product.journey.mjs', '**/component.journey.mjs'])
 
+/**
+ * The raw mount observation the mount guard reads, shared by the healthy
+ * fixture and the live read so both name the same four fields.
+ * @typedef {{ rootChildCount: number, bodyClass: string, errorDisplay: string, errorStackText: string }} MountObservation
+ */
+
+/** @typedef {import('./component-producer.mjs').StaticComponentDriver} StaticComponentDriver */
+
+/** @type {MountObservation} */
 const HEALTHY_MOUNT = Object.freeze({
   rootChildCount: 1,
   bodyClass: 'sb-main-centered sb-show-main',
@@ -166,9 +175,20 @@ const HEALTHY_THEME = Object.freeze({
 })
 
 /**
+ * A complete valid component proof input the proof-level mutations subtract
+ * from, matching the component proof builder's declared input.
+ * @typedef {object} ComponentProofInput
+ * @property {string} rowTheme
+ * @property {object} identity
+ * @property {object} root
+ * @property {object} themeObservation
+ * @property {object} [interaction]
+ */
+
+/**
  * A valid component proof input the proof-level mutations subtract from.
  * @param {object} [overrides] fields to replace
- * @returns {object} a complete valid component proof input
+ * @returns {ComponentProofInput} a complete valid component proof input
  */
 function validComponentProofInput(overrides = {}) {
   return {
@@ -218,7 +238,7 @@ function validProductRecord() {
  * Run the static-empty root mutation: the built iframe ships an empty
  * #storybook-root, so attachment is not a mount. The owning mount guard
  * refuses zero children by name.
- * @returns {never} always throws
+ * @returns {object} the boundary return value; the mutation must throw at the owning boundary
  */
 function mutateEmptyRoot() {
   return assertComponentMounted({ ...HEALTHY_MOUNT, rootChildCount: 0 })
@@ -227,10 +247,10 @@ function mutateEmptyRoot() {
 /**
  * Run the missing root mutation: no mount observation at all. A blanket
  * mounted flag or an unobserved root cannot satisfy the guard.
- * @returns {never} always throws
+ * @returns {object} the boundary return value; the mutation must throw at the owning boundary
  */
 function mutateMissingRoot() {
-  return assertComponentMounted(null)
+  return assertComponentMounted(/** @type {MountObservation} */ (/** @type {unknown} */ (null)))
 }
 
 /**
@@ -238,7 +258,7 @@ function mutateMissingRoot() {
  * its message into the story root and reveals the error display, so a
  * non-empty root alone is not a mount. The owning guard refuses the visible
  * error display.
- * @returns {never} always throws
+ * @returns {object} the boundary return value; the mutation must throw at the owning boundary
  */
 function mutateErrorDisplayRoot() {
   return assertComponentMounted({ ...HEALTHY_MOUNT, rootChildCount: 1, errorDisplay: 'block', errorStackText: 'Error: could not load story' })
@@ -247,7 +267,7 @@ function mutateErrorDisplayRoot() {
 /**
  * Run the wrong-theme mutation: a literal rendered value outside the closed
  * theme vocabulary is refused by the shared normalization.
- * @returns {never} always throws
+ * @returns {object} the boundary return value; the mutation must throw at the owning boundary
  */
 function mutateWrongTheme() {
   return observeProductTheme({ expected: 'dark', renderedAttribute: 'dark', source: 'component-mutations:wrong-theme', observedAtMs: 1000 })
@@ -256,7 +276,7 @@ function mutateWrongTheme() {
 /**
  * Run the contradictory-theme mutation: the light row renders the dark value,
  * so the theme observation rejects the contradiction before evidence work.
- * @returns {never} always throws
+ * @returns {object} the boundary return value; the mutation must throw at the owning boundary
  */
 function mutateContradictoryTheme() {
   return observeProductTheme({ expected: 'light', renderedAttribute: '', source: 'component-mutations:contradictory-theme', observedAtMs: 1000 })
@@ -265,7 +285,7 @@ function mutateContradictoryTheme() {
 /**
  * Run the missing-interaction mutation: the named action is absent, so the
  * app-owned action registry rejects it before the result is validated.
- * @returns {never} always throws
+ * @returns {object} the boundary return value; the mutation must throw at the owning boundary
  */
 function mutateMissingInteraction() {
   return buildComponentProof(validComponentProofInput({ interaction: { name: undefined, completed: true, observedAtMs: 3000 } }))
@@ -275,7 +295,7 @@ function mutateMissingInteraction() {
  * Run the non-completing-interaction mutation: the named action reached no
  * terminal state, so the shared component resolver rejects the incomplete
  * result.
- * @returns {never} always throws
+ * @returns {object} the boundary return value; the mutation must throw at the owning boundary
  */
 function mutateNonCompletingInteraction() {
   return buildComponentProof(validComponentProofInput({ interaction: { name: COMPONENT_ACTION_NAME, completed: false, observedAtMs: 3000 } }))
@@ -285,7 +305,7 @@ function mutateNonCompletingInteraction() {
  * Run the product-shaped-record mutation: a product-only field on the
  * app-owned component proof input is refused by the shared exact-field
  * membership.
- * @returns {never} always throws
+ * @returns {object} the boundary return value; the mutation must throw at the owning boundary
  */
 function mutateProductShapedRecord() {
   return buildComponentProof(validComponentProofInput({ view: { observed: true, observedAtMs: 4000 } }))
@@ -295,7 +315,7 @@ function mutateProductShapedRecord() {
  * Run the cross-kind product-shell mutation: a valid component record handed
  * to the product full-shell resolver is a cross-kind resolution and fails
  * through the real shared contract.
- * @returns {never} always throws
+ * @returns {object} the boundary return value; the mutation must throw at the owning boundary
  */
 function mutateCrossKindProductShell() {
   return resolutionContract.validateProductResolution(validComponentRecord(), 'component mutations')
@@ -305,7 +325,7 @@ function mutateCrossKindProductShell() {
  * Run the cross-kind product-record mutation: a valid product record handed
  * to the component resolver carries product-only fields and fails through the
  * real shared contract.
- * @returns {never} always throws
+ * @returns {object} the boundary return value; the mutation must throw at the owning boundary
  */
 function mutateCrossKindProductRecord() {
   return resolutionContract.validateComponentResolution(validProductRecord(), 'component mutations')
@@ -323,7 +343,7 @@ function scratchDir() {
 /**
  * Run the stale-run-root mutation: a fresh component row refuses a run root
  * that already carries a previous run subtree, before any artifact write.
- * @returns {never} always throws
+ * @returns {object} the boundary return value; the mutation must throw at the owning boundary
  */
 function mutateStaleRunRoot() {
   const scratch = scratchDir()
@@ -341,7 +361,7 @@ function mutateStaleRunRoot() {
  * Run the stale-artifact mutation: one of the shared six classes surviving
  * from a previous run makes the run root stale and the freshness guard refuses
  * it by the artifact name.
- * @returns {never} always throws
+ * @returns {object} the boundary return value; the mutation must throw at the owning boundary
  */
 function mutateStaleArtifact() {
   const scratch = scratchDir()
@@ -358,7 +378,7 @@ function mutateStaleArtifact() {
 /**
  * Run the missing-artifact mutation: a row directory that lost one of the
  * shared six classes is refused by the completeness guard.
- * @returns {never} always throws
+ * @returns {void} the mutation must throw at the owning boundary
  */
 function mutateMissingArtifact() {
   const scratch = scratchDir()
@@ -406,7 +426,7 @@ function fetchServedText(url) {
  * driver and the scratch tree are released by the caller.
  * @param {string} iframeHtml served iframe.html body
  * @param {number} port loopback port
- * @returns {{ driver: object, scratch: { root: string, cleanup: () => void } }} the driver and scratch handle
+ * @returns {{ driver: StaticComponentDriver, scratch: { root: string, cleanup: () => void } }} the driver and scratch handle
  */
 function serveIframeBytes(iframeHtml, port) {
   const scratch = scratchDir()
@@ -423,7 +443,7 @@ function serveIframeBytes(iframeHtml, port) {
  * boundary.
  * @param {object} [options] mutation options
  * @param {number} [options.port] loopback port override
- * @returns {Promise<never>} always throws
+ * @returns {Promise<object>} the boundary return value; the mutation must throw at the owning boundary
  */
 async function mutateProvenanceRelativeUnresolved({ port } = {}) {
   const loopback = await (port === undefined ? claimScratchPort('mutation-component-provenance') : { port })
@@ -450,7 +470,7 @@ async function mutateProvenanceRelativeUnresolved({ port } = {}) {
  * collector fails closed instead of pulling a documentation URL in.
  * @param {object} [options] mutation options
  * @param {number} [options.port] loopback port override
- * @returns {Promise<never>} always throws
+ * @returns {Promise<object>} the boundary return value; the mutation must throw at the owning boundary
  */
 async function mutateProvenanceExternalLink({ port } = {}) {
   const loopback = await (port === undefined ? claimScratchPort('mutation-component-provenance') : { port })
@@ -478,7 +498,7 @@ async function mutateProvenanceExternalLink({ port } = {}) {
  * Run the screenshot-floor mutation: the measured collapsed element capture
  * (3233 bytes) is below the component floor and is refused. The product's
  * 8000-byte full-page floor is deliberately not consulted.
- * @returns {never} always throws
+ * @returns {void} the mutation must throw at the owning boundary
  */
 function mutateScreenshotFloor() {
   return assertComponentScreenshotFloor(3233, 'screenshot.png')
@@ -488,7 +508,7 @@ function mutateScreenshotFloor() {
  * Run the aria-floor mutation: the folded snapshot (33 characters) is below
  * the component floor and is refused. The product's 50-character shell floor
  * is deliberately not consulted.
- * @returns {never} always throws
+ * @returns {void} the mutation must throw at the owning boundary
  */
 function mutateAriaFloor() {
   return assertComponentAriaFloor('- button "orphan sessions 2 show"')
@@ -497,7 +517,7 @@ function mutateAriaFloor() {
 /**
  * Run the digest-mismatch mutation: recorded provenance digests that disagree
  * with the run's own built Storybook tree fail closed over the real comparison.
- * @returns {never} always throws
+ * @returns {object} the boundary return value; the mutation must throw at the owning boundary
  */
 function mutateDigestMismatch() {
   return assertServedDigestsMatchRunRoot({
@@ -511,11 +531,11 @@ function mutateDigestMismatch() {
  * Assert the one-project Fairtest config matches exactly the product and
  * component journeys and never the full catalog. Shared by the mutation suite
  * and the verifier-facing evidence reader.
- * @param {object} config parsed Playwright config
+ * @param {{ testMatch?: unknown, webServer?: unknown, projects?: unknown }} config parsed Playwright config
  * @returns {object} the frozen receipt
  */
 export function assertComponentRunnerConfigMatchesJourneys(config) {
-  const testMatch = config?.testMatch
+  const testMatch = /** @type {string[]} */ (config?.testMatch)
   if (JSON.stringify(testMatch) !== JSON.stringify([...COMPONENT_CONFIG_TEST_MATCH])) {
     throw new Error(
       `component mutations: runner config testMatch ${JSON.stringify(testMatch)} for field "testMatch" at path ${CONFIG_REL}.testMatch; ` +
@@ -612,7 +632,7 @@ export async function runComponentMutation(name, options = {}) {
 /**
  * Read the mount observation the row reads on the live served story.
  * @param {import('@playwright/test').Page} page live page
- * @returns {Promise<object>} the raw mount observation
+ * @returns {Promise<MountObservation>} the raw mount observation
  */
 async function readMountObservation(page) {
   return page.evaluate((selectors) => {
@@ -706,7 +726,7 @@ export async function proveComponentRootStatesRealPath({ port } = {}) {
       await page.evaluate((selectors) => {
         const root = document.querySelector(selectors.root)
         if (root) root.innerHTML = '<p style="color: red">Could not load story</p>'
-        const errEl = document.querySelector(selectors.errorDisplay)
+        const errEl = /** @type {HTMLElement | null} */ (document.querySelector(selectors.errorDisplay))
         if (errEl) errEl.style.display = 'block'
         const stack = document.querySelector(selectors.errorStack)
         if (stack) stack.textContent = 'Error: could not load story'
@@ -742,7 +762,7 @@ export async function proveComponentRootStatesRealPath({ port } = {}) {
  * fail, so the check is against this declared contract. A renamed or
  * substituted class (same length, same reference) passes the import-time
  * length/reference guard in component-producer.mjs but fails here.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 const EXPECTED_ARTIFACT_CLASSES = Object.freeze([
   'record.json',

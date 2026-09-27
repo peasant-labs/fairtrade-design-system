@@ -89,7 +89,7 @@ if (COMPONENT_ARTIFACT_CLASSES !== ARTIFACT_CLASSES || COMPONENT_ARTIFACT_CLASSE
  * Exact field set of the record.json accessibility block. The page-wide census
  * is never one of these names: it lives under `pageWide`, so an unqualified
  * `blocking` or `violations` count cannot be read as a verdict.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const COMPONENT_A11Y_RECORD_FIELDS = Object.freeze([
   'policy',
@@ -103,7 +103,7 @@ export const COMPONENT_A11Y_RECORD_FIELDS = Object.freeze([
 /**
  * Exact field set of the informational page-wide census inside the record
  * accessibility block, mirroring the product record shape.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const COMPONENT_A11Y_PAGE_WIDE_FIELDS = Object.freeze([
   'scope',
@@ -187,7 +187,7 @@ function refuseStaleComponentSubtree(rowDir) {
  * @param {string} input.theme dark or light row theme
  * @returns {{ runRoot: string, rowDir: string }} the prepared paths for the row
  */
-export function prepareComponentRowDir(input = {}) {
+export function prepareComponentRowDir(input) {
   valuesContract.assertExactFields(input, ['runRoot', 'theme'], 'component producer', 'producer.rowPreparation')
   const { runRoot, theme } = /** @type {Record<string, string>} */ (input)
   const rowDir = componentRowDir(runRoot, theme)
@@ -195,6 +195,22 @@ export function prepareComponentRowDir(input = {}) {
   mkdirSync(rowDir, { recursive: true })
   return Object.freeze({ runRoot: resolve(runRoot), rowDir })
 }
+
+/**
+ * The loopback static Storybook driver createComponentStaticDriver returns:
+ * the adapter lifecycle surface plus the served base URL and tree metadata.
+ * @typedef {object} StaticComponentDriver
+ * @property {() => Promise<void>} start
+ * @property {() => Promise<void>} stop
+ * @property {() => Promise<void>} reset
+ * @property {() => boolean} isRunning
+ * @property {() => Promise<{ ready: boolean, host: string, port: number }>} readiness
+ * @property {() => { stops: number }} stats
+ * @property {string} baseUrl
+ * @property {number} port
+ * @property {string} host
+ * @property {string} staticRoot
+ */
 
 /**
  * Create a loopback static driver serving the exact built Storybook artifact
@@ -206,7 +222,7 @@ export function prepareComponentRowDir(input = {}) {
  * @param {number} [options.port] fixed loopback port
  * @param {string} [options.host] loopback host, always the declared owner
  * @param {string} [options.staticRoot] built Storybook root served over HTTP
- * @returns {object} the injected lifecycle driver for createFairtradeAdapter
+ * @returns {StaticComponentDriver} the injected lifecycle driver for createFairtradeAdapter
  */
 export function createComponentStaticDriver(options = {}) {
   const port = options.port ?? FAIRTEST_STORYBOOK_PORT
@@ -224,6 +240,7 @@ export function createComponentStaticDriver(options = {}) {
       `repair: bind the built Storybook artifact to ${FAIRTEST_APP_HOST} for "host".`,
     )
   }
+  /** @type {Record<string, string>} */
   const MIME = {
     '.html': 'text/html; charset=utf-8',
     '.js': 'text/javascript; charset=utf-8',
@@ -238,6 +255,7 @@ export function createComponentStaticDriver(options = {}) {
     '.woff2': 'font/woff2',
     '.map': 'application/json; charset=utf-8',
   }
+  /** @type {import('node:http').Server | null} */
   let server = null
   let running = false
   let stops = 0
@@ -278,9 +296,10 @@ export function createComponentStaticDriver(options = {}) {
       }
     })
     await new Promise((responseResolve, responseReject) => {
-      server.on('error', responseReject)
-      server.listen(port, host, () => {
-        server.removeListener('error', responseReject)
+      const activeServer = /** @type {import('node:http').Server} */ (server)
+      activeServer.on('error', responseReject)
+      activeServer.listen(port, host, () => {
+        activeServer.removeListener('error', responseReject)
         responseResolve(undefined)
       })
     }).catch((error) => {
@@ -378,7 +397,7 @@ function fetchBytes(url) {
         res.resume()
         return
       }
-      const chunks = []
+      const chunks = /** @type {Buffer[]} */ ([])
       res.on('data', (chunk) => chunks.push(chunk))
       res.on('end', () => responseResolve(Buffer.concat(chunks)))
     }).on('error', responseReject)
@@ -439,8 +458,8 @@ function assertComponentAxeScanShape(scan, path) {
 /**
  * Summarize one scoped scan into the compact receipt the record accessibility
  * block carries beside its gate decision.
- * @param {object} scan compact scoped scan report
- * @returns {{ violations: number, ids: string[], incomplete: string[], passes: number }} the scoped summary
+ * @param {{ violations: { id: string }[], incomplete: unknown[], passes: number }} scan compact scoped scan report
+ * @returns {{ violations: number, ids: string[], incomplete: unknown[], passes: number }} the scoped summary
  */
 function summarizeScopedScan(scan) {
   return {
@@ -457,12 +476,12 @@ function summarizeScopedScan(scan) {
  * the scoped scan reports no serious or critical violation. `observedTheme` and
  * `ariaExpanded` are the observed ties to the moment the scan was taken.
  * @param {object} input receipt inputs
- * @param {object} input.scan compact scoped scan report
+ * @param {{ violations: { id: string }[] }} input.scan compact scoped scan report
  * @param {string} input.observedTheme theme the page rendered when the scan ran
  * @param {boolean} input.ariaExpanded expanded state the click left
- * @returns {object} the frozen gate receipt
+ * @returns {{ policy: string, point: string, observedTheme: string, ariaExpanded: boolean, result: string, measured: number }} the frozen gate receipt
  */
-function buildComponentGateReceipt({ scan, observedTheme, ariaExpanded } = {}) {
+function buildComponentGateReceipt({ scan, observedTheme, ariaExpanded }) {
   valuesContract.assertExactFields({ scan, observedTheme, ariaExpanded }, ['scan', 'observedTheme', 'ariaExpanded'], 'component producer', 'a11y.gate')
   const serious = seriousViolations(scan)
   return Object.freeze({
@@ -487,7 +506,7 @@ function buildComponentGateReceipt({ scan, observedTheme, ariaExpanded } = {}) {
  * @param {object} input.gate gate receipt
  * @returns {object} the record accessibility block
  */
-export function buildComponentAccessibilityEvidence(input = {}) {
+export function buildComponentAccessibilityEvidence(input) {
   valuesContract.assertExactFields(input, ['pageWide', 'scoped', 'gate'], 'component producer', 'record.accessibility')
   const { pageWide, scoped, gate } = /** @type {Record<string, any>} */ (input)
   const blocking = seriousViolations(pageWide)
@@ -503,7 +522,7 @@ export function buildComponentAccessibilityEvidence(input = {}) {
       informational: true,
       violations: pageWide.violations.length,
       blocking: blocking.length,
-      blockingIds: blocking.map((entry) => entry.id),
+      blockingIds: blocking.map((/** @type {{ id: string }} */ entry) => entry.id),
       incomplete: [...pageWide.incomplete],
       passes: pageWide.passes,
     },
@@ -652,8 +671,8 @@ export function resolveComponentProvenanceRefs(servedHtml) {
  * @param {string} [input.label] owning producer used in diagnostics
  * @returns {Promise<{ refs: string[], assetDigests: Record<string, string> }>} the resolved refs and their digests
  */
-export async function collectComponentServedAssets({ baseUrl, servedHtml, label = 'component producer' } = {}) {
-  const assetDigests = {}
+export async function collectComponentServedAssets({ baseUrl, servedHtml, label = 'component producer' }) {
+  const assetDigests = /** @type {Record<string, string>} */ ({})
   assetDigests['iframe.html'] = sha256(servedHtml)
   const refs = resolveComponentProvenanceRefs(servedHtml)
   if (refs.length === 0) {
@@ -663,6 +682,7 @@ export async function collectComponentServedAssets({ baseUrl, servedHtml, label 
     )
   }
   for (const ref of refs) {
+    /** @type {Buffer | null} */
     let bytes = null
     try {
       bytes = await fetchBytes(`${baseUrl}/${ref}`)
@@ -743,7 +763,7 @@ async function collectComponentProvenance({ baseUrl, servedHtml, viewport, targe
  * @param {number} input.interaction observedAtMs recorded for the named interaction
  * @returns {void}
  */
-export function assertComponentObservationTimes(input = {}) {
+export function assertComponentObservationTimes(input) {
   valuesContract.assertExactFields(input, ['rowStartedAtMs', 'mount', 'theme', 'interaction'], 'component producer', 'producer.observationTimes')
   const times = /** @type {Record<string, number>} */ (/** @type {unknown} */ (input))
   for (const key of ['rowStartedAtMs', 'mount', 'theme', 'interaction']) {
@@ -792,7 +812,7 @@ export function assertComponentAriaFloor(snapshot) {
  * @returns {void}
  */
 export function assertComponentScreenshotFloor(bytes, path = 'screenshot.png') {
-  if (!Number.isInteger(bytes) || bytes < COMPONENT_MIN_SCREENSHOT_BYTES) {
+  if (!Number.isInteger(bytes) || /** @type {number} */ (bytes) < COMPONENT_MIN_SCREENSHOT_BYTES) {
     throw new Error(
       'component producer: blank screenshot for field "screenshot" at path evidence.screenshot; ' +
       `wrote ${JSON.stringify(bytes)} bytes to ${JSON.stringify(path)}, below the component floor ${COMPONENT_MIN_SCREENSHOT_BYTES}; ` +
@@ -808,7 +828,7 @@ export function assertComponentScreenshotFloor(bytes, path = 'screenshot.png') {
  * alone never saw, because a presence loop over the six cannot notice an
  * unexpected member. The returned set is the declared six, in declared order.
  * @param {string} rowDir row directory
- * @returns {string[]} the frozen declared artifact class list
+ * @returns {readonly string[]} the frozen declared artifact class list
  */
 export function readComponentArtifactSet(rowDir) {
   const entries = readdirSync(rowDir, { withFileTypes: true })

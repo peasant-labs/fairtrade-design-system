@@ -25,10 +25,12 @@ export const FAIRTEST_PACKAGE_NAME = '@peasant-labs/fairtest'
 export const FAIRTEST_PACKAGE_ROOT = resolve(REPO_ROOT, 'packages', 'fairtest')
 const ALLOWED_EXTENSIONS = new Set(['.mjs', '.js', '.cjs', '.json'])
 
+/** @param {unknown} spec @param {string} reason @returns {never} */
 function reject(spec, reason) {
   throw new Error(`fairtest source route: rejected ${JSON.stringify(spec)}: ${reason} at path spec; repair: use a child-relative .mjs path inside packages/fairtest such as src/core/values.mjs.`)
 }
 
+/** @param {unknown} spec @returns {string} */
 export function resolveFairtestSource(spec) {
   if (typeof spec !== 'string' || spec.length === 0) reject(spec, 'module path must be a non-empty relative path')
   if (spec.includes('\0')) reject(spec, 'null bytes are not allowed')
@@ -68,15 +70,18 @@ export function resolveFairtestSource(spec) {
   return target
 }
 
+/** @param {string} spec */
 export function importFairtestSource(spec) {
   return import(pathToFileURL(resolveFairtestSource(spec)).href)
 }
 
+/** @returns {Record<string, unknown>} */
 export function readFairtestManifest() {
   const path = resolveFairtestSource('package.json')
   return JSON.parse(readFileSync(path, 'utf8'))
 }
 
+/** @template T @param {string} name @param {() => T} fn @param {boolean} expectPass @returns {{ behaved: boolean, value: T }} */
 function check(name, fn, expectPass) {
   let message = null
   let value = null
@@ -87,7 +92,7 @@ function check(name, fn, expectPass) {
   }
   const behaved = expectPass ? message === null : message !== null
   console.log(`${behaved ? 'PASS' : 'FAIL'} ${name}${message ? ` :: ${message}` : ''}`)
-  return { behaved, value }
+  return { behaved, value: /** @type {T} */ (value) }
 }
 
 function runSmoke() {

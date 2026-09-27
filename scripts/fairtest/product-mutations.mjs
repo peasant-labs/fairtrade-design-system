@@ -93,7 +93,7 @@ const resolutionContract = await importFairtestSource('src/host-contract/resolut
 
 /**
  * The ten named negative product mutations. Exact set, frozen.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const PRODUCT_MUTATION_NAMES = Object.freeze([
   'missing-chrome',
@@ -111,7 +111,7 @@ export const PRODUCT_MUTATION_NAMES = Object.freeze([
 /**
  * Owning boundary each mutation must fail at. The boundary names the module
  * and field that reject the defect, never a blanket gate.
- * @type {object}
+ * @type {Record<string, string>}
  */
 export const PRODUCT_MUTATION_BOUNDARIES = Object.freeze({
   'missing-chrome': 'fairtrade-targets.buildProductProof at proof.chrome through resolution.chrome',
@@ -145,10 +145,27 @@ export const PRODUCT_UNRENDERED_RULES = Object.freeze({
 })
 
 /**
+ * A complete valid product proof input the mutations subtract from, matching
+ * the product proof builder's declared input fields.
+ * @typedef {object} ProductProofInput
+ * @property {string} rowTheme
+ * @property {object} identity
+ * @property {object} chrome
+ * @property {object} body
+ * @property {object} route
+ * @property {object} activeSection
+ * @property {object} view
+ * @property {object} themeObservation
+ * @property {string} initialSection
+ * @property {string} activeSectionId
+ * @property {object} [action]
+ */
+
+/**
  * Build a valid proof input the mutations subtract from. Times are fixed so
  * the mutation diagnostics stay deterministic.
  * @param {object} [overrides] fields to replace on the valid input
- * @returns {object} a complete valid proof input
+ * @returns {ProductProofInput} a complete valid proof input
  */
 function validMutationProofInput(overrides = {}) {
   return {
@@ -193,7 +210,7 @@ function fetchBytes(url) {
         res.resume()
         return
       }
-      const chunks = []
+      const chunks = /** @type {Buffer[]} */ ([])
       res.on('data', (chunk) => chunks.push(chunk))
       res.on('end', () => responseResolve(Buffer.concat(chunks)))
     }).on('error', responseReject)
@@ -226,9 +243,9 @@ function digestRecordedIndexHtml(root) {
  * @param {string} input.recordedDigest digest recorded from the built tree
  * @param {string} input.servedDigest digest read over HTTP from the served tree
  * @param {string} input.servedUrl serving origin the bytes were read from
- * @returns {object} frozen pass receipt when the digests match
+ * @returns {{ result: string, servedUrl: string }} frozen pass receipt when the digests match
  */
-export function servedProvenanceDigestMatch({ recordedDigest, servedDigest, servedUrl } = {}) {
+export function servedProvenanceDigestMatch({ recordedDigest, servedDigest, servedUrl }) {
   if (typeof recordedDigest !== 'string' || recordedDigest.length === 0) {
     throw new Error(
       'product mutations: missing recorded digest for field "recordedDigest" at path provenance.assetDigests; ' +
@@ -252,9 +269,9 @@ export function servedProvenanceDigestMatch({ recordedDigest, servedDigest, serv
  * it. Never a blanket mounted flag: the diagnostic names the chrome part.
  */
 function mutateMissingChrome() {
-  const input = validMutationProofInput()
+  const input = /** @type {Record<string, unknown>} */ (validMutationProofInput())
   delete input.chrome
-  return buildProductProof(input)
+  return buildProductProof(/** @type {Parameters<typeof buildProductProof>[0]} */ (input))
 }
 
 /**
@@ -263,9 +280,9 @@ function mutateMissingChrome() {
  * a blanket mounted boolean could never satisfy this boundary.
  */
 function mutateMissingBody() {
-  const input = validMutationProofInput()
+  const input = /** @type {Record<string, unknown>} */ (validMutationProofInput())
   delete input.body
-  return buildProductProof(input)
+  return buildProductProof(/** @type {Parameters<typeof buildProductProof>[0]} */ (input))
 }
 
 /**
@@ -274,9 +291,9 @@ function mutateMissingBody() {
  * it.
  */
 function mutateMissingSection() {
-  const input = validMutationProofInput()
+  const input = /** @type {Record<string, unknown>} */ (validMutationProofInput())
   delete input.activeSection
-  return buildProductProof(input)
+  return buildProductProof(/** @type {Parameters<typeof buildProductProof>[0]} */ (input))
 }
 
 /**
@@ -284,9 +301,9 @@ function mutateMissingSection() {
  * before the proof is built, so the owning proof boundary rejects it.
  */
 function mutateMissingView() {
-  const input = validMutationProofInput()
+  const input = /** @type {Record<string, unknown>} */ (validMutationProofInput())
   delete input.view
-  return buildProductProof(input)
+  return buildProductProof(/** @type {Parameters<typeof buildProductProof>[0]} */ (input))
 }
 
 /**
@@ -449,7 +466,7 @@ function mutateWrongTheme() {
  * Create a never-started lifecycle driver. The unregistered-action mutation
  * fails in the adapter registry before any lifecycle call, so this driver
  * only satisfies the adapter's shape check and is never started.
- * @returns {object} the inert injected driver
+ * @returns {import('./fairtrade-adapter.mjs').LifecycleDriver} the inert injected driver
  */
 function inertDriver() {
   return {
@@ -463,7 +480,7 @@ function inertDriver() {
 /**
  * Run the unregistered-action mutation against the real adapter and the
  * real target registry. Both reject the name outside the app-owned registry.
- * @returns {Promise<never>} always throws
+ * @returns {Promise<void>} the mutation must throw at the owning boundary
  */
 async function mutateUnregisteredAction() {
   getProductAction('select-changes-section')
@@ -547,7 +564,7 @@ export async function runProductMutation(name, options = {}) {
     case 'wrong-theme':
       return mutateWrongTheme()
     case 'unregistered-action':
-      return mutateUnregisteredAction(options)
+      return mutateUnregisteredAction()
     case 'cross-kind-proof':
       return mutateCrossKindProof()
     case 'stale-served-asset':
@@ -561,6 +578,17 @@ export async function runProductMutation(name, options = {}) {
 }
 
 /**
+ * One per-part absence proof entry: the removed selector and the producer wait
+ * diagnostic that reports the absence.
+ * @typedef {object} DomAbsenceEvidence
+ * @property {string} part observed part name
+ * @property {string} selector app-owned selector that was removed
+ * @property {boolean} attachedBefore whether the selector attached before removal
+ * @property {boolean} attachedAfter whether the selector still attached after removal
+ * @property {string} waitDiagnostic the producer wait diagnostic
+ */
+
+/**
  * Prove the real DOM path fails when a part element is genuinely absent.
  * Serves the real dist/ on a throwaway loopback port, attaches each product
  * selector on the live tree, removes the element in place, and shows the
@@ -569,7 +597,7 @@ export async function runProductMutation(name, options = {}) {
  * no tracked source or dist/ byte is modified.
  * @param {object} [options] proof options
  * @param {number} [options.port] loopback port override, defaults to the scratch port the runtime owner claims
- * @returns {Promise<object[]>} per-part absence evidence
+ * @returns {Promise<DomAbsenceEvidence[]>} per-part absence evidence
  */
 export async function proveDomAbsenceRealPath({ port } = {}) {
   const { chromium } = await import('@playwright/test')
@@ -577,7 +605,7 @@ export async function proveDomAbsenceRealPath({ port } = {}) {
   const driver = createProductStaticDriver({ port: loopback.port, host: FAIRTEST_APP_HOST, distRoot: DIST_ROOT })
   await driver.start()
   const browser = await chromium.launch()
-  const evidence = []
+  const evidence = /** @type {DomAbsenceEvidence[]} */ ([])
   try {
     const parts = [
       ['chrome', PRODUCT_SELECTORS.chrome],

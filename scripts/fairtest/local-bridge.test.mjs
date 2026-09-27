@@ -163,13 +163,13 @@ function applyMutation(cases, mutation) {
   if (mutation.kind === 'delete-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    delete node[segments.at(-1)]
+    delete node[/** @type {string} */ (segments.at(-1))]
     return
   }
   if (mutation.kind === 'rename-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    const last = segments.at(-1)
+    const last = /** @type {string} */ (segments.at(-1))
     const value = node[last]
     delete node[last]
     node[/** @type {string} */ (mutation.newField)] = value
@@ -180,7 +180,7 @@ function applyMutation(cases, mutation) {
     if (!isRecord(node[segment])) node[segment] = {}
     node = /** @type {Record<string, unknown>} */ (node[segment])
   }
-  node[segments.at(-1)] = structuredClone(mutation.value)
+  node[/** @type {string} */ (segments.at(-1))] = structuredClone(mutation.value)
 }
 
 describe('local bridge contract fixture family', () => {
@@ -268,7 +268,7 @@ describe('local bridge command declaration', () => {
 
 describe('local bridge source isolation', () => {
   const devSource = readSource('fairtest-dev.mjs')
-  const localSource = readFileSync(resolveFairtestSource(LOCAL_SOURCE_REL), 'utf8')
+  const localSource = readFileSync(/** @type {string} */ (resolveFairtestSource(LOCAL_SOURCE_REL)), 'utf8')
 
   it('keeps the command loopback-only and free of an agent-browser import or invocation', () => {
     assert.ok(devSource.includes('host: FAIRTEST_APP_HOST'), 'the dev command must bind the shared loopback host')
@@ -298,7 +298,7 @@ describe('local bridge source isolation', () => {
         name: 'moving the dev command out of the local-only stage breaks the local-only guard',
         run: () => {
           const mutated = structuredClone(devInventory())
-          const row = /** @type {Record<string, unknown>[]} */ (mutated.commands).find((entry) => entry.name === 'fairtest dev')
+          const row = /** @type {Record<string, unknown>} */ (/** @type {Record<string, unknown>[]} */ (mutated.commands).find((entry) => entry.name === 'fairtest dev'))
           row.stage = 'mounted'
           guardInventoryDeclaration(mutated)
         },
@@ -342,6 +342,7 @@ describe('local bridge source isolation', () => {
     return /** @type {Record<string, unknown>} */ (core.loadSingleDocument(readSource('../testdata/fairtest-runner-inventory.yaml'), 'fairtest-runner-inventory.yaml'))
   }
 
+  /** @param {{ scripts?: Record<string, string> }} pkg parsed package.json */
   function guardPackageDeclaration(pkg) {
     if (pkg.scripts?.fairtest !== DEV_COMMAND) {
       throw new Error(`package.json: missing dev command for field "scripts.fairtest" at path package.json.scripts.fairtest; observed ${JSON.stringify(pkg.scripts?.fairtest)}; repair: declare "fairtest" as ${JSON.stringify(DEV_COMMAND)}.`)
@@ -351,6 +352,7 @@ describe('local bridge source isolation', () => {
     }
   }
 
+  /** @param {Record<string, unknown>} inventory parsed runner inventory */
   function guardInventoryDeclaration(inventory) {
     const row = /** @type {Record<string, unknown>[]} */ (inventory.commands).find((entry) => entry.name === 'fairtest dev')
     if (!row) {
@@ -361,12 +363,14 @@ describe('local bridge source isolation', () => {
     }
   }
 
+  /** @param {string} text source text to scan */
   function guardNoAgentBrowserInvocation(text) {
     if (/(?:spawn|spawnSync|exec|execFile|execFileSync|execSync)\s*\([^)]*agent-browser/.test(text)) {
       throw new Error(`${DEV_COMMAND_REL}: the dev command invokes agent-browser for field "agent-browser" at path ${DEV_COMMAND_REL}; repair: never spawn, import, or install agent-browser from Fairtest.`)
     }
   }
 
+  /** @param {string} text source text to scan */
   function guardLoopbackOnly(text) {
     if (/0\.0\.0\.0|['"]::['"]/.test(text)) {
       throw new Error(`${DEV_COMMAND_REL}: non-loopback host for field "host" at path ${DEV_COMMAND_REL}; repair: bind FAIRTEST_APP_HOST only.`)
@@ -376,6 +380,7 @@ describe('local bridge source isolation', () => {
     }
   }
 
+  /** @param {string} text source text to scan */
   function guardNeutralLocalSource(text) {
     if (/https?:\/\/|localhost|127\.0\.0\.1/.test(text)) {
       throw new Error(`local.mjs: endpoint literal for field "endpoint literal" at path ${LOCAL_SOURCE_REL}; repair: keep hosts and URLs caller-owned in the app-owned command.`)

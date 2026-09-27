@@ -68,7 +68,6 @@ export const PRODUCT_ACTION_LABEL = 'code map'
  * bundle is the single declared source of app structure: the producer derives
  * every product selector it touches from these keys and holds no `iu-` class
  * or `#inuse` selector literal of its own.
- * @type {object}
  */
 export const PRODUCT_SELECTORS = Object.freeze({
   // The in-use shell root. The ARIA snapshot the row records is taken from
@@ -127,19 +126,19 @@ const PRODUCT_HANDLES = Object.freeze({
 
 /**
  * Section ids the graph surface may report as active.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 const PRODUCT_SECTIONS = Object.freeze(['analytics', 'changes', 'map'])
 
 /**
  * Named fixtures the product target serves.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 const PRODUCT_FIXTURES = Object.freeze(['product-theme-rows', 'product-section-select'])
 
 /**
  * Named actions the product target offers.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 const PRODUCT_ACTIONS = Object.freeze([PRODUCT_ACTION_NAME])
 
@@ -147,7 +146,6 @@ const PRODUCT_ACTIONS = Object.freeze([PRODUCT_ACTION_NAME])
  * Served-build provenance source contract. Declares where the row-scoped
  * producer reads commit, dirtiness, asset digests, viewport, target identity,
  * and theme observations from; the producer fills the values per run.
- * @type {object}
  */
 export const PRODUCT_PROVENANCE_SOURCE = Object.freeze({
   source: 'built-app',
@@ -177,7 +175,7 @@ const PRODUCT_ACTION = Object.freeze({
  * the app-owned registry because the modes are named product evidence
  * vocabulary: the in-page measurement reports them, the guard refuses on
  * them, and the record carries the rendered/total split beside them.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const PRODUCT_UNRENDERED_MODES = Object.freeze([
   'display-none',
@@ -191,7 +189,7 @@ export const PRODUCT_UNRENDERED_MODES = Object.freeze([
  * Exact field set of one per-root unrendered refusal the in-page measurement
  * reports. The measured computed style and box travel with the mode, so a
  * verifier reads why a root was excluded and not only that it was.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const PRODUCT_UNRENDERED_REFUSAL_FIELDS = Object.freeze([
   'mode',
@@ -238,7 +236,6 @@ export const PRODUCT_TARGET = Object.freeze({
 /**
  * Target registry keyed by target id. This module declares exactly one
  * product target.
- * @type {object}
  */
 export const PRODUCT_TARGET_REGISTRY = Object.freeze({
   [PRODUCT_TARGET_ID]: PRODUCT_TARGET,
@@ -262,7 +259,7 @@ export function selectProductTarget(id) {
 /**
  * Return the frozen named action for a registered action name.
  * @param {unknown} name action name requested by the caller
- * @returns {object} the frozen product action record
+ * @returns {{ name: string, from: string, to: string, label: string }} the frozen product action record
  */
 export function getProductAction(name) {
   if (name !== PRODUCT_ACTION_NAME) {
@@ -318,7 +315,7 @@ export function productRouteForTheme(theme) {
  * Return the normalized row record for a theme: theme name, route, expected
  * rendered attribute marker, and initial section.
  * @param {unknown} theme dark or light row theme
- * @returns {object} the frozen theme row record
+ * @returns {{ theme: string, route: string, expectedAttribute: string, initialSection: string }} the frozen theme row record
  */
 export function productThemeRow(theme) {
   if (theme !== 'dark' && theme !== 'light') {
@@ -339,14 +336,14 @@ export function productThemeRow(theme) {
  * Build the raw target declaration input for the product target. Capability
  * contents stay caller-owned: pass the shared product inventory so the closed
  * vocabulary is never duplicated here.
- * @param {object} [input] declaration inputs
+ * @param {object} input declaration inputs
  * @param {number} input.createdAtMs creation time in whole milliseconds
  * @param {string[]} input.capabilities declared capability inventory
- * @param {string[]} [input.fixtures] named fixtures served
- * @param {string[]} [input.actions] named actions offered
+ * @param {readonly string[]} [input.fixtures] named fixtures served
+ * @param {readonly string[]} [input.actions] named actions offered
  * @returns {object} the frozen declaration input
  */
-export function productDeclarationInput({ createdAtMs, capabilities, fixtures = PRODUCT_FIXTURES, actions = PRODUCT_ACTIONS } = {}) {
+export function productDeclarationInput({ createdAtMs, capabilities, fixtures = PRODUCT_FIXTURES, actions = PRODUCT_ACTIONS }) {
   if (!Number.isInteger(createdAtMs) || createdAtMs < 0 || createdAtMs > 9007199254740991) {
     throw new Error(
       `fairtrade targets: invalid value ${JSON.stringify(createdAtMs)} for field "createdAtMs" at path target.identity.createdAtMs; ` +
@@ -372,11 +369,11 @@ export function productDeclarationInput({ createdAtMs, capabilities, fixtures = 
  * Prove the product target against the shared contract through the sole
  * source route: kind membership in the closed vocabulary, capability
  * inventory validation, and declaration validation.
- * @param {object} [input] validation inputs
+ * @param {object} input validation inputs
  * @param {number} input.createdAtMs creation time in whole milliseconds
  * @returns {Promise<object>} the frozen contract receipt
  */
-export async function validateProductTargetContract({ createdAtMs } = {}) {
+export async function validateProductTargetContract({ createdAtMs }) {
   if (!kindsContract.HOST_KINDS.includes(PRODUCT_TARGET_KIND)) {
     throw new Error(
       `fairtrade targets: kind ${JSON.stringify(PRODUCT_TARGET_KIND)} is outside the shared vocabulary for field "kind" at path target.kind; ` +
@@ -436,12 +433,22 @@ export function productThemeFromProjectName(projectName) {
 }
 
 /**
+ * The validated theme observation both observeProductTheme and
+ * assertProductThemeObservation return.
+ * @typedef {object} ProductThemeObservation
+ * @property {string} expected theme the row was asked to render
+ * @property {string} observed theme the host reports as rendered
+ * @property {string} source note naming where the read came from
+ * @property {number} observedAtMs observation time in whole milliseconds
+ */
+
+/**
  * Validate a theme observation and reject contradictions. Both names must
  * be known theme names and the rendered name must equal the expected one;
  * a missing record, an unknown name, or an expected/observed mismatch
  * fails here, before any capture or evidence work.
  * @param {unknown} observation candidate theme observation
- * @returns {object} the frozen validated theme observation
+ * @returns {import('./fairtrade-targets.mjs').ProductThemeObservation} the frozen validated theme observation
  */
 export function assertProductThemeObservation(observation) {
   if (observation === null || observation === undefined) {
@@ -468,14 +475,14 @@ export function assertProductThemeObservation(observation) {
  * dark, the light value is light) and persisted with the expected theme,
  * the source note, and the read time. Contradictions fail before the
  * record is built.
- * @param {object} [input] observation inputs
+ * @param {object} input observation inputs
  * @param {string} input.expected theme the row was asked to render
  * @param {unknown} input.renderedAttribute raw rendered attribute value, absent as nullish
  * @param {string} input.source caller-owned note naming where the read came from
  * @param {number} input.observedAtMs read time in whole milliseconds
- * @returns {object} the frozen validated theme observation
+ * @returns {import('./fairtrade-targets.mjs').ProductThemeObservation} the frozen validated theme observation
  */
-export function observeProductTheme(input = {}) {
+export function observeProductTheme(input) {
   valuesContract.assertExactFields(input, ['expected', 'renderedAttribute', 'source', 'observedAtMs'], 'fairtrade targets', 'theme')
   const { expected, renderedAttribute, source, observedAtMs } = /** @type {Record<string, unknown>} */ (input)
   if (expected !== 'dark' && expected !== 'light') {
@@ -514,7 +521,7 @@ export const PRODUCT_PROOF_RECORD_SCHEMA = Object.freeze({
  * action must come from the app-owned action registry with the active
  * section on the action target. Component-shaped and cross-kind records
  * fail through the shared validator. The returned record is frozen.
- * @param {object} [input] proof inputs
+ * @param {object} input proof inputs
  * @param {string} input.rowTheme dark or light row theme
  * @param {object} input.identity product-branch identity
  * @param {object} input.chrome separately observed persistent chrome
@@ -528,7 +535,7 @@ export const PRODUCT_PROOF_RECORD_SCHEMA = Object.freeze({
  * @param {object} [input.action] optional completed named action result
  * @returns {import('../fairtest-source.mjs').ProductResolution} the frozen validated product resolution
  */
-export function buildProductProof(input = {}) {
+export function buildProductProof(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new Error(
       'fairtrade targets: missing product proof input for field "proof" at path proof; ' +
@@ -561,7 +568,7 @@ export function buildProductProof(input = {}) {
       'repair: serve the row route for the observed theme before building the proof.',
     )
   }
-  const parts = {}
+  const parts = /** @type {Record<string, object>} */ ({})
   for (const part of resolutionContract.PRODUCT_ONLY_FIELDS) {
     parts[part] = resolutionContract.validateObservedPart(record[part], 'fairtrade targets', `resolution.${part}`)
   }
@@ -596,7 +603,7 @@ export function buildProductProof(input = {}) {
       `repair: keep the active section on ${JSON.stringify(record.initialSection)} until the named action completes.`,
     )
   }
-  const candidate = { kind: 'product', identity, ...parts, theme }
+  const candidate = /** @type {Record<string, unknown>} */ ({ kind: 'product', identity, ...parts, theme })
   if (action) {
     candidate.action = action
   }
@@ -624,7 +631,7 @@ export const PRODUCT_A11Y_SCOPE_ROOT = PRODUCT_SELECTORS.sectionView
  * Observation points carrying a scoped product-view scan: after the
  * initial mount (section analytics) and after the named map interaction
  * completes (section map).
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const PRODUCT_A11Y_POINTS = Object.freeze(['initial', 'after-action'])
 
@@ -638,7 +645,7 @@ export const PRODUCT_A11Y_POINTS = Object.freeze(['initial', 'after-action'])
  * the receipt's only OBSERVED tie to a moment in the row: `point` names which
  * slot the receipt fills, and only the section the page actually showed can
  * prove the scan came from that slot.
- * @type {string[]}
+ * @type {readonly string[]}
  */
 export const PRODUCT_A11Y_GATE_RECEIPT_FIELDS = Object.freeze(['policy', 'point', 'observedSection', 'result', 'measured', 'baseline'])
 
@@ -647,7 +654,6 @@ export const PRODUCT_A11Y_GATE_RECEIPT_FIELDS = Object.freeze(['policy', 'point'
  * carries, in record order. A verifier reading gate.before is reading the
  * initial measurement and gate.after the after-action measurement; the reader
  * refuses a receipt that claims a different point for its slot.
- * @type {object}
  */
 export const PRODUCT_A11Y_GATE_POINT_SLOTS = Object.freeze({
   before: PRODUCT_A11Y_POINTS[0],
@@ -656,7 +662,6 @@ export const PRODUCT_A11Y_GATE_POINT_SLOTS = Object.freeze({
 
 /**
  * Section id rendered at each scoped observation point.
- * @type {object}
  */
 export const PRODUCT_A11Y_POINT_SECTIONS = Object.freeze({
   initial: PRODUCT_INITIAL_SECTION,
@@ -669,7 +674,6 @@ export const PRODUCT_A11Y_POINT_SECTIONS = Object.freeze({
  * beside the section ids because the two are not the same string: the rendered
  * map button reads "code map" while the section it activates is "map", so a
  * comparison against the section id would refuse a correct row.
- * @type {object}
  */
 export const PRODUCT_A11Y_POINT_LABELS = Object.freeze({
   initial: PRODUCT_INITIAL_SECTION,
@@ -679,7 +683,7 @@ export const PRODUCT_A11Y_POINT_LABELS = Object.freeze({
 /**
  * Axe impact severity rank, least to most severe. A measured impact above
  * the declared rank for the same violation id fails the row closed.
- * @type {object}
+ * @type {Record<string, number>}
  */
 const PRODUCT_A11Y_IMPACT_RANK = Object.freeze({
   minor: 1,
@@ -689,13 +693,30 @@ const PRODUCT_A11Y_IMPACT_RANK = Object.freeze({
 })
 
 /**
+ * One declared accessibility baseline violation entry.
+ * @typedef {object} ProductA11yBaselineEntry
+ * @property {string} id axe rule id observed on the real built surface
+ * @property {string} impact declared axe impact name
+ * @property {number} nodes declared violating node count
+ * @property {readonly string[]} themes row themes the entry was observed in
+ */
+
+/**
+ * Declared product-view accessibility baseline, keyed by observation point.
+ * @typedef {object} ProductA11yBaseline
+ * @property {string} policy baseline policy name
+ * @property {string} scopeRoot selector root the scan is scoped to
+ * @property {Record<string, readonly ProductA11yBaselineEntry[]>} points declared entries keyed by observation point
+ */
+
+/**
  * Declared product-view violation baseline, measured on the real built
  * dist/ in both row themes (dark and light reported identical sets):
  * the analytics point scans clean, the map point carries the one
  * pre-existing critical aria-required-children violation over three
  * nodes inside the product view. Improvement (a violation that
  * disappears) never fails; anything beyond this baseline does.
- * @type {object}
+ * @type {ProductA11yBaseline}
  */
 export const PRODUCT_A11Y_BASELINE = Object.freeze({
   policy: PRODUCT_A11Y_POLICY,
@@ -719,7 +740,7 @@ export const PRODUCT_A11Y_BASELINE = Object.freeze({
  * from the closed row vocabulary.
  * @param {unknown} entry candidate baseline entry
  * @param {string} point observation point the entry belongs to
- * @returns {object} the validated entry
+ * @returns {ProductA11yBaselineEntry} the validated entry
  */
 function validateProductAxeBaselineEntry(entry, point) {
   if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
@@ -754,7 +775,7 @@ function validateProductAxeBaselineEntry(entry, point) {
       'repair: list every row theme the entry was observed in using dark and light for "themes".',
     )
   }
-  return candidate
+  return /** @type {ProductA11yBaselineEntry} */ (candidate)
 }
 
 /**
@@ -765,7 +786,7 @@ function validateProductAxeBaselineEntry(entry, point) {
  * diagnostic naming the rule, the observed triple, the declared
  * baseline, the artifact path, and the repair. A baseline violation
  * that disappears (improvement) never fails.
- * @param {object} [input] gate inputs
+ * @param {object} input gate inputs
  * @param {string} input.point observation point the measurement belongs to
  * @param {{ id: string, impact: string, nodeCount: number }[]} input.measured scoped violations just observed
  * @param {object[]} [input.baseline] declared entries, defaults to the app-owned baseline for the point
@@ -773,7 +794,7 @@ function validateProductAxeBaselineEntry(entry, point) {
  * @param {string} input.artifactPath row axe.json path the full result was written to
  * @returns {object} the frozen gate receipt on pass
  */
-export function assertProductAxeBaselineDelta(input = {}) {
+export function assertProductAxeBaselineDelta(input) {
   const wantsBaseline = !!input && typeof input === 'object' && Object.hasOwn(input, 'baseline')
   valuesContract.assertExactFields(
     input,
