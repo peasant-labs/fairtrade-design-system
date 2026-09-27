@@ -41,11 +41,12 @@ const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field
 const CORPUS = 'evidence-contract.yaml'
 const MANIFEST = 'evidence-contract.manifest.yaml'
 
-/** @returns {Record<string, unknown>} */
+/** @param {string} relative @returns {Record<string, unknown>} */
 function readFamily(relative) {
   return /** @type {Record<string, unknown>} */ (loadSingleDocument(readFileSync(new URL(relative, TESTDATA), 'utf8'), relative))
 }
 
+/** @param {string} relative @returns {string} */
 function readSource(relative) {
   return readFileSync(new URL(relative, TESTDATA), 'utf8')
 }
@@ -63,7 +64,7 @@ function validateManifest(manifest, label) {
   assert.equal(new Set(cases).size, cases.length, `${label}: required case names must be unique`)
   assert.equal(manifest.expectedCaseCount, cases.length, `${label}: case count must equal the required-name inventory`)
   assert.equal(manifest.expectedMutationCount, mutations.length, `${label}: mutation count must equal the mutation inventory`)
-  checkRequiredNames(mutations.map((entry) => entry.name), /** @type {string[]} */ (manifest.requiredMutationNames), label)
+  checkRequiredNames(mutations.map((entry) => /** @type {string} */ (entry.name)), /** @type {string[]} */ (manifest.requiredMutationNames), label)
   for (const [index, mutation] of mutations.entries()) {
     const fields = ['name', 'kind', 'target', 'expectedField']
     if (['delete-field', 'unknown-field', 'bad-value'].includes(/** @type {string} */ (mutation.kind))) fields.push('field')
@@ -180,13 +181,13 @@ function applyMutation(cases, mutation) {
   if (mutation.kind === 'delete-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    delete node[segments.at(-1)]
+    delete node[segments[segments.length - 1]]
     return
   }
   if (mutation.kind === 'rename-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    const last = segments.at(-1)
+    const last = segments[segments.length - 1]
     const value = node[last]
     delete node[last]
     node[/** @type {string} */ (mutation.newField)] = value
@@ -197,7 +198,7 @@ function applyMutation(cases, mutation) {
     if (!isRecord(node[segment])) node[segment] = {}
     node = /** @type {Record<string, unknown>} */ (node[segment])
   }
-  node[segments.at(-1)] = structuredClone(mutation.value)
+  node[segments[segments.length - 1]] = structuredClone(mutation.value)
 }
 
 describe('evidence contract fixture family', () => {
@@ -253,7 +254,7 @@ describe('evidence contract structural units', () => {
   })
 
   it('binds stale clocks to assertFresh with actionable diagnostics', () => {
-    const stale = /** @type {Record<string, unknown>} */ (readFamily(CORPUS).cases.find((entry) => /** @type {Record<string, unknown>} */ (entry).name === 'fresh-stale-clock'))
+    const stale = /** @type {Record<string, unknown>} */ (/** @type {Record<string, unknown>[]} */ (readFamily(CORPUS).cases).find((entry) => entry.name === 'fresh-stale-clock'))
     assert.throws(
       () => assertFresh(/** @type {number} */ (stale.observedAtMs), /** @type {number} */ (stale.nowMs), /** @type {number} */ (stale.maxAgeMs), 'probe'),
       /observedAtMs.*repair:/s,
@@ -328,8 +329,8 @@ function validateEvidenceManifest(value) {
   assert.equal(value.expectedCaseCount, cases.length, `${label}: case count must equal the required-name inventory`)
   assert.equal(value.expectedGuardCount, guards.length, `${label}: guard count must equal the guard inventory`)
   assert.equal(value.expectedMutationCount, mutations.length, `${label}: mutation count must equal the mutation inventory`)
-  checkRequiredNames(guards.map((entry) => entry.name), /** @type {string[]} */ (value.requiredGuardNames), label)
-  checkRequiredNames(mutations.map((entry) => entry.name), /** @type {string[]} */ (value.requiredMutationNames), label)
+  checkRequiredNames(guards.map((entry) => /** @type {string} */ (entry.name)), /** @type {string[]} */ (value.requiredGuardNames), label)
+  checkRequiredNames(mutations.map((entry) => /** @type {string} */ (entry.name)), /** @type {string[]} */ (value.requiredMutationNames), label)
   for (const [index, guard] of guards.entries()) {
     assertExactFields(guard, ['name', 'case', 'code'], label, `manifest.guards[${index}]`)
     assert.ok(cases.includes(/** @type {string} */ (guard.case)), `${label}: guard ${index} names an unknown case`)
@@ -355,7 +356,7 @@ function validateEvidenceManifest(value) {
   }
 }
 
-/** @param {Record<string, unknown>} value @param {string} label */
+/** @param {unknown} value @param {string} label @param {string} path */
 function assertStringArray(value, label, path) {
   if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string' || entry.length === 0)) {
     throw new Error(`${label}: expected a string list at path ${path}; repair: restore the list of closed failure codes at ${path}.`)
@@ -415,7 +416,30 @@ function validateEvidenceFamilyShape(value) {
   }
 }
 
-/** @param {Record<string, unknown>} spec @returns {Record<string, unknown>} */
+/**
+ * The evidence report the neutral verifier returns. `complete` and `verdict`
+ * are the readable outcome; `failureCodes` is the sorted unique code list.
+ * @typedef {object} EvidenceReport
+ * @property {boolean} complete
+ * @property {string} verdict
+ * @property {string[]} failureCodes
+ */
+
+/**
+ * The caller-owned verifier policy the evidence-cases family supplies.
+ * @typedef {object} EvidencePolicySpec
+ * @property {number} version
+ * @property {string[]} artifactClasses
+ * @property {import('../src/evidence/policy.mjs').RequiredRow[]} requiredRows
+ * @property {string[]} duplicateScopes
+ * @property {number} maxAgeMs
+ * @property {number} maxOutputBytes
+ */
+
+/**
+ * @param {Record<string, unknown>} spec
+ * @returns {import('../src/host-contract/resolution.mjs').ProductResolution | import('../src/host-contract/resolution.mjs').ComponentResolution}
+ */
 function buildProof(spec) {
   const kind = spec.proofKind ?? spec.kind
   const identity = { kind, id: spec.proofIdentityId ?? spec.identityId, createdAtMs: 1000 }
@@ -427,7 +451,7 @@ function buildProof(spec) {
     ? { expected: proofTheme.expected, observed: proofTheme.observed, source: 'fixture-proof', observedAtMs: spec.observedAtMs }
     : { expected: spec.theme, observed: spec.theme, source: 'fixture-proof', observedAtMs: spec.observedAtMs }
   if (kind === 'product') {
-    return {
+    return /** @type {import('../src/host-contract/resolution.mjs').ProductResolution} */ ({
       kind: 'product',
       identity,
       chrome: { ...observed },
@@ -436,14 +460,14 @@ function buildProof(spec) {
       activeSection: { ...observed },
       view: { ...observed },
       theme,
-    }
+    })
   }
-  return { kind: 'component', identity, root: { mounted: true, observedAtMs: spec.observedAtMs }, theme }
+  return /** @type {import('../src/host-contract/resolution.mjs').ComponentResolution} */ ({ kind: 'component', identity, root: { mounted: true, observedAtMs: spec.observedAtMs }, theme })
 }
 
 /** @param {Record<string, unknown>} entry @param {Record<string, Record<string, unknown>>} templates */
 function buildRow(entry, templates) {
-  const use = entry.use
+  const use = /** @type {string | undefined} */ (entry.use)
   const spec = use
     ? { ...structuredClone(templates[use]), ...(entry.patch ?? {}) }
     : { ...entry }
@@ -511,12 +535,12 @@ function applyCaseMutation(base, mutation, templates, label) {
     return
   }
   if (kind === 'add-row') {
-    /** @type {Record<string, unknown>[]} */ (spec.rows).push(structuredClone(mutation.row))
+    /** @type {Record<string, unknown>[]} */ (spec.rows).push(structuredClone(/** @type {Record<string, unknown>} */ (mutation.row)))
     return
   }
   if (kind === 'patch-row') {
     const row = findRow(spec, /** @type {string} */ (mutation.target), templates)
-    row.patch = { .../** @type {Record<string, unknown>} */ (row.patch ?? {}), ...structuredClone(mutation.patch) }
+    row.patch = { .../** @type {Record<string, unknown>} */ (row.patch ?? {}), ...structuredClone(/** @type {Record<string, unknown>} */ (mutation.patch)) }
     return
   }
   const row = findRow(spec, /** @type {string} */ (mutation.target), templates)
@@ -552,10 +576,10 @@ function materializeRun(base, templates, label) {
     mode: spec.mode,
     rows,
   }
-  const policySpec = /** @type {Record<string, unknown>} */ (spec.policy)
+  const policySpec = /** @type {EvidencePolicySpec} */ (spec.policy)
   const policy = createEvidencePolicy({
     version: policySpec.version,
-    runId: spec.runId,
+    runId: /** @type {string} */ (spec.runId),
     mode: EVIDENCE_MODES[0],
     artifactClasses: policySpec.artifactClasses,
     requiredRows: policySpec.requiredRows,
@@ -563,7 +587,7 @@ function materializeRun(base, templates, label) {
     maxAgeMs: policySpec.maxAgeMs,
     maxOutputBytes: policySpec.maxOutputBytes,
   })
-  return { run, policy, nowMs: spec.nowMs }
+  return { run, policy, nowMs: /** @type {number} */ (spec.nowMs) }
 }
 
 /** @param {Record<string, unknown>} entry @param {Record<string, unknown>} family */
@@ -590,7 +614,7 @@ function executeEvidenceCase(entry, family) {
     applyCaseMutation(spec, mutation, templates, `${entry.name}.mutations[${index}]`)
   }
   const { run, policy, nowMs } = materializeRun(spec, templates, /** @type {string} */ (entry.name))
-  const report = verifyEvidenceRun(run, policy, { nowMs })
+  const report = /** @type {EvidenceReport} */ (verifyEvidenceRun(run, policy, { nowMs }))
   validateEvidenceReport(report, /** @type {string} */ (entry.name))
   assert.equal(
     report.complete,

@@ -54,11 +54,12 @@ const FAMILIES = [
   { id: 'vendor', corpus: 'core-vendor.yaml', manifest: 'core-vendor.manifest.yaml' },
 ]
 
-/** @returns {Record<string, unknown>} */
+/** @param {string} relative @returns {Record<string, unknown>} */
 function readFamily(relative) {
   return /** @type {Record<string, unknown>} */ (loadSingleDocument(readFileSync(new URL(relative, TESTDATA), 'utf8'), relative))
 }
 
+/** @param {string} relative @returns {string} */
 function readSource(relative) {
   return readFileSync(new URL(relative, TESTDATA), 'utf8')
 }
@@ -92,7 +93,7 @@ function validateManifest(manifest, label) {
   assert.equal(new Set(cases).size, cases.length, `${label}: required case names must be unique`)
   assert.equal(manifest.expectedCaseCount, cases.length, `${label}: case count must equal the required-name inventory`)
   assert.equal(manifest.expectedMutationCount, mutations.length, `${label}: mutation count must equal the mutation inventory`)
-  const mutationNames = mutations.map((entry) => entry.name)
+  const mutationNames = mutations.map((entry) => /** @type {string} */ (entry.name))
   checkRequiredNames(mutationNames, /** @type {string[]} */ (manifest.requiredMutationNames), label)
   for (const [index, mutation] of mutations.entries()) {
     const fields = ['name', 'kind', 'target', 'expectedField']
@@ -122,14 +123,14 @@ function validateFamily(cases, manifest, label, validateCase) {
   cases.forEach(validateCase)
 }
 
-/** @param {Record<string, unknown>} value */
+/** @param {Record<string, unknown>} value @param {string} label @param {number} index */
 function checkCaseName(value, label, index) {
   if (typeof value.name !== 'string' || value.name.trim().length === 0) {
     throw new Error(`${label}: case ${index} is missing its required name at path cases[${index}].name; repair: restore the required case name.`)
   }
 }
 
-/** @param {Record<string, unknown>} value @param {string} key */
+/** @param {Record<string, unknown>} value @param {string} key @param {string[]} kinds @param {string} label @param {number} index */
 function checkDiscriminator(value, key, kinds, label, index) {
   const actual = value[key]
   if (!kinds.includes(/** @type {string} */ (actual))) {
@@ -159,13 +160,13 @@ function applyMutation(cases, mutation) {
   if (mutation.kind === 'delete-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    delete node[segments.at(-1)]
+    delete node[segments[segments.length - 1]]
     return
   }
   if (mutation.kind === 'rename-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    const last = segments.at(-1)
+    const last = segments[segments.length - 1]
     const value = node[last]
     delete node[last]
     node[/** @type {string} */ (mutation.newField)] = value
@@ -176,7 +177,7 @@ function applyMutation(cases, mutation) {
     if (!isRecord(node[segment])) node[segment] = {}
     node = /** @type {Record<string, unknown>} */ (node[segment])
   }
-  node[segments.at(-1)] = structuredClone(mutation.value)
+  node[segments[segments.length - 1]] = structuredClone(mutation.value)
 }
 
 /**
@@ -516,20 +517,20 @@ function runVendorCase(entry) {
 
 // ── family wiring ────────────────────────────────────────────────────────────
 
-const VALIDATORS = {
+const VALIDATORS = /** @type {Record<string, (value: Record<string, unknown>) => void>} */ ({
   values: validateValuesFamily,
   identity: validateIdentityFamily,
   measurement: validateMeasurementFamily,
   evidence: validateEvidenceFamily,
   vendor: validateVendorFamily,
-}
-const RUNNERS = {
+})
+const RUNNERS = /** @type {Record<string, (entry: Record<string, unknown>) => void>} */ ({
   values: runValuesCase,
   identity: runIdentityCase,
   measurement: runMeasurementCase,
   evidence: runEvidenceCase,
   vendor: runVendorCase,
-}
+})
 
 for (const family of FAMILIES) {
   describe(`core fixture family ${family.id}`, () => {
@@ -538,7 +539,7 @@ for (const family of FAMILIES) {
     const parsed = readFamily(family.corpus)
     const validateShape = VALIDATORS[family.id]
     const runCase = RUNNERS[family.id]
-    const validate = (value) => {
+    const validate = /** @param {Record<string, unknown>} value */ (value) => {
       validateShape(value)
       for (const entry of /** @type {Record<string, unknown>[]} */ (value.cases)) runCase(entry)
     }
@@ -710,7 +711,7 @@ describe('core external root', () => {
         '',
       ].join('\n'))
       const stdout = execFileSync('node', [join(external, 'smoke.mjs')], { cwd: external, encoding: 'utf8' })
-      const receipt = JSON.parse(stdout.trim().split('\n').at(-1))
+      const receipt = JSON.parse(/** @type {string} */ (stdout.trim().split('\n').at(-1)))
       assert.equal(receipt.ok, true, 'external smoke must pass from the temporary root')
       assert.ok(receipt.here.startsWith(realpathSync(external) + sep), `external module resolved to ${receipt.here}, outside ${external}`)
     } finally {

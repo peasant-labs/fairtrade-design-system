@@ -59,12 +59,33 @@ if (typeof OUTER_RUN_ROOT !== 'string' || OUTER_RUN_ROOT.length === 0) {
 }
 const OUTER_RUN_ID = (process.env.FAIRTEST_RUN_ID || basename(resolve(OUTER_RUN_ROOT))).trim()
 
+/**
+ * One validated case entry inside the durable cleanup receipt.
+ * @typedef {object} ProcessCaseReceipt
+ * @property {string} caseId
+ * @property {string} outcome
+ * @property {string} signal
+ * @property {boolean} reaped
+ * @property {boolean} portReleased
+ * @property {boolean} deadlineExceeded
+ * @property {number} pid
+ * @property {number} port
+ * @property {string} processGroup
+ */
+
+/**
+ * One validated durable cleanup receipt.
+ * @typedef {object} ProcessCleanupReceipt
+ * @property {string} runId
+ * @property {ProcessCaseReceipt[]} cases
+ */
+
 /** @param {string} relative @returns {string} */
 function readRepo(relative) {
   return readFileSync(join(REPO_ROOT, relative), 'utf8')
 }
 
-/** @returns {Record<string, unknown>} */
+/** @param {string} path @returns {Record<string, unknown>} */
 function readFamily(path) {
   return /** @type {Record<string, unknown>} */ (loadSingleDocument(readFileSync(path, 'utf8'), basename(path)))
 }
@@ -89,7 +110,7 @@ function validateManifest(manifest, label) {
   assert.equal(new Set(cases).size, cases.length, `${label}: required case names must be unique at path manifest.requiredCaseNames; repair: list every name once.`)
   assert.equal(manifest.expectedCaseCount, cases.length, `${label}: case count must equal the required-name inventory at path manifest.expectedCaseCount; repair: align it with requiredCaseNames.`)
   assert.equal(manifest.expectedMutationCount, mutations.length, `${label}: mutation count must equal the mutation inventory at path manifest.expectedMutationCount; repair: align it with mutations.`)
-  checkRequiredNames(mutations.map((entry) => entry.name), /** @type {string[]} */ (manifest.requiredMutationNames), label)
+  checkRequiredNames(mutations.map((entry) => /** @type {string} */ (entry.name)), /** @type {string[]} */ (manifest.requiredMutationNames), label)
   for (const [index, mutation] of mutations.entries()) {
     const fields = ['name', 'kind', 'target', 'expectedField']
     if (['delete-field', 'unknown-field', 'bad-value'].includes(/** @type {string} */ (mutation.kind))) fields.push('field')
@@ -148,13 +169,13 @@ function applyMutation(cases, mutation) {
   if (mutation.kind === 'delete-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    delete node[segments.at(-1)]
+    delete node[segments[segments.length - 1]]
     return
   }
   if (mutation.kind === 'rename-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    const last = segments.at(-1)
+    const last = segments[segments.length - 1]
     const value = node[last]
     delete node[last]
     node[/** @type {string} */ (mutation.newField)] = value
@@ -165,7 +186,7 @@ function applyMutation(cases, mutation) {
     if (!isRecord(node[segment])) node[segment] = {}
     node = /** @type {Record<string, unknown>} */ (node[segment])
   }
-  node[segments.at(-1)] = structuredClone(mutation.value)
+  node[segments[segments.length - 1]] = structuredClone(mutation.value)
 }
 
 /** @param {number} pid @returns {boolean} */
@@ -279,7 +300,7 @@ async function ensureEnvelope(runRoot, runId) {
 describe('process supervisor real OS cases', () => {
   it('supervises the four real process cases and writes a complete durable receipt', async () => {
     await ensureEnvelope(resolve(OUTER_RUN_ROOT), OUTER_RUN_ID)
-    const armedGroups = []
+    const armedGroups = /** @type {number[]} */ ([])
     const result = await spawnNode(SUPERVISOR, {
       args: ['--all', '--await-interrupt'],
       env: supervisorEnv({ runRoot: resolve(OUTER_RUN_ROOT), runId: OUTER_RUN_ID }),
@@ -295,7 +316,7 @@ describe('process supervisor real OS cases', () => {
       const receiptPath = join(resolve(OUTER_RUN_ROOT), RECEIPT_REL)
       assert.ok(existsSync(receiptPath), `the durable receipt must exist at ${RECEIPT_REL}`)
       const parsed = JSON.parse(readFileSync(receiptPath, 'utf8'))
-      const receipt = processContract.validateProcessCleanupReceipt(parsed, 'process receipt')
+      const receipt = /** @type {ProcessCleanupReceipt} */ (processContract.validateProcessCleanupReceipt(parsed, 'process receipt'))
       assert.equal(receipt.runId, OUTER_RUN_ID, 'the receipt must name the run id the root carries')
       assert.deepEqual(
         receipt.cases.map((entry) => entry.caseId).sort(),
@@ -436,13 +457,13 @@ describe('neutral process contract', () => {
   })
 
   it('declares a process bridge and binds readiness and cleanup to it', () => {
-    const declaration = processContract.createProcessBridgeDeclaration(validIdentity, ['report-readiness', 'cleanup-process'])
+    const declaration = /** @type {{ kind: string }} */ (processContract.createProcessBridgeDeclaration(validIdentity, ['report-readiness', 'cleanup-process']))
     assert.equal(declaration.kind, 'process', 'the declaration must be on the process branch')
-    const readiness = processContract.validateProcessReadiness(
+    const readiness = /** @type {{ identityId: string }} */ (processContract.validateProcessReadiness(
       { identityId: 'process-invoke-a', host: 'synthetic-loopback', port: 5311, ready: true, observedAtMs: 2000 },
       validIdentity,
       'probe',
-    )
+    ))
     assert.equal(readiness.identityId, 'process-invoke-a')
     assert.throws(
       () => processContract.validateProcessReadiness(
@@ -453,11 +474,11 @@ describe('neutral process contract', () => {
       /identityId.*at path.*repair:/s,
       'a readiness record for another participant must be refused',
     )
-    const cleanup = processContract.validateProcessCleanup(
+    const cleanup = /** @type {{ signal: string }} */ (processContract.validateProcessCleanup(
       { identityId: 'process-invoke-a', signal: 'interrupted', reaped: true, portReleased: true, observedAtMs: 3000 },
       validIdentity,
       'probe',
-    )
+    ))
     assert.equal(cleanup.signal, 'interrupted')
   })
 
@@ -477,7 +498,7 @@ describe('neutral process contract', () => {
   })
 
   it('refuses a partial case set or an unknown field in a durable receipt', () => {
-    const full = processContract.createProcessCleanupReceipt({
+    const full = /** @type {ProcessCleanupReceipt} */ (processContract.createProcessCleanupReceipt({
       version: 1,
       runId: 'process-run-a',
       project: 'fairtest',
@@ -485,7 +506,7 @@ describe('neutral process contract', () => {
       invocationId: 'process-invoke-a',
       cases: processContract.PROCESS_CASE_IDS.map((caseId) => ({ ...validRecord, caseId })),
       observedAtMs: 9000,
-    })
+    }))
     assert.equal(full.cases.length, 4)
     assert.throws(
       () => processContract.validateProcessCleanupReceipt({ ...full, cases: full.cases.slice(0, 3) }, 'probe'),
@@ -625,12 +646,14 @@ describe('process supervisor declaration and isolation', () => {
     }
   })
 
+  /** @param {string} text @returns {void} */
   function guardNoAgentBrowserInvocation(text) {
     if (/(?:spawn|spawnSync|exec|execFile|execFileSync|execSync)\s*\([^)]*agent-browser/.test(text)) {
       throw new Error(`${SUPERVISOR_SOURCE_REL}: the supervisor invokes agent-browser for field "agent-browser" at path ${SUPERVISOR_SOURCE_REL}; repair: never spawn, import, or install agent-browser from Fairtest.`)
     }
   }
 
+  /** @param {string} text @returns {void} */
   function guardLoopbackOnly(text) {
     if (/0\.0\.0\.0|['"]::['"]/.test(text)) {
       throw new Error(`${SUPERVISOR_SOURCE_REL}: non-loopback host for field "host" at path ${SUPERVISOR_SOURCE_REL}; repair: bind PROCESS_HOST only.`)
@@ -640,18 +663,21 @@ describe('process supervisor declaration and isolation', () => {
     }
   }
 
+  /** @param {string} text @returns {void} */
   function guardCiProcessCall(text) {
     if (!text.includes('assertCiProcess(process.env)')) {
       throw new Error(`${SUPERVISOR_SOURCE_REL}: missing CI-process refusal for field "FAIRTEST_CI_PROCESS" at path ${SUPERVISOR_SOURCE_REL}; repair: call assertCiProcess before resolving the run root.`)
     }
   }
 
+  /** @param {string} text @returns {void} */
   function guardProtectedRun(text) {
     if (!text.includes('requireEnvelopeForRun(root, runId')) {
       throw new Error(`${SUPERVISOR_SOURCE_REL}: missing protected-run check for field "run-envelope" at path ${SUPERVISOR_SOURCE_REL}; repair: require the run envelope before starting any child.`)
     }
   }
 
+  /** @param {string} text @returns {void} */
   function guardNeutralProcessSource(text) {
     if (/\bwindow\b|\bnavigator\b|\bglobalThis\b/.test(text)) {
       throw new Error(`${NEUTRAL_SOURCE_REL}: page global for field "page global" at path ${NEUTRAL_SOURCE_REL}; repair: keep page globals out of the neutral contract.`)

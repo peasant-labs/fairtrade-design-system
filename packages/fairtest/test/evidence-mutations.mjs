@@ -57,6 +57,28 @@ const CLASSIFICATION_MUTATION_KINDS = ['none', 'invoke-specialized-in-ci', 'recl
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
 const STALE_DIGEST = '0'.repeat(64)
 
+/**
+ * The caller-owned policy a mutation fixture supplies to the verifier.
+ * @typedef {object} MutationPolicy
+ * @property {number} version
+ * @property {string[]} artifactClasses
+ * @property {string[]} duplicateScopes
+ * @property {number} maxAgeMs
+ * @property {number} maxOutputBytes
+ */
+
+/**
+ * The synthetic run fixture a mutation case materializes.
+ * @typedef {object} MutationRun
+ * @property {string} runId
+ * @property {number} nowMs
+ * @property {string} servedFrom
+ * @property {Record<string, string>} identity
+ * @property {Record<string, string>} roots
+ * @property {MutationPolicy} policy
+ * @property {Record<string, unknown>[]} rows
+ */
+
 const corpusSource = readFileSync(resolve(ROOT, CORPUS_REL), 'utf8')
 const manifestSource = readFileSync(resolve(ROOT, MANIFEST_REL), 'utf8')
 const corpus = loadSingleDocument(corpusSource, CORPUS_REL)
@@ -231,26 +253,29 @@ function checkFamilyCoverage(cases, requiredFamilies) {
 
 /* ── run materialization and mutations ────────────────────────────────── */
 
-/** @param {string} kind @param {Record<string, unknown>} run */
+/** @param {string} kind @param {MutationRun} run */
 function identityIdFor(kind, run) {
   return kind === 'product' ? /** @type {string} */ (run.identity.product) : /** @type {string} */ (run.identity.component)
 }
 
-/** @param {string} kind @param {string} theme @param {string} identityId @param {number} observedAtMs */
+/**
+ * @param {string} kind @param {string} theme @param {string} identityId @param {number} observedAtMs
+ * @returns {import('../src/host-contract/resolution.mjs').ProductResolution | import('../src/host-contract/resolution.mjs').ComponentResolution}
+ */
 function buildProof(kind, theme, identityId, observedAtMs) {
   const themeObservation = { expected: theme, observed: theme, source: 'mutation-fixture', observedAtMs }
   const identity = { kind, id: identityId, createdAtMs: 0 }
   if (kind === 'product') {
     const part = { observed: true, observedAtMs }
-    return { kind, identity, chrome: { ...part }, body: { ...part }, route: { ...part }, activeSection: { ...part }, view: { ...part }, theme: themeObservation }
+    return /** @type {import('../src/host-contract/resolution.mjs').ProductResolution} */ ({ kind, identity, chrome: { ...part }, body: { ...part }, route: { ...part }, activeSection: { ...part }, view: { ...part }, theme: themeObservation })
   }
-  return { kind, identity, root: { mounted: true, observedAtMs }, theme: themeObservation }
+  return /** @type {import('../src/host-contract/resolution.mjs').ComponentResolution} */ ({ kind, identity, root: { mounted: true, observedAtMs }, theme: themeObservation })
 }
 
-/** @param {Record<string, unknown>} corpusValue @param {Record<string, unknown>} run */
+/** @param {Record<string, unknown>} corpusValue @param {MutationRun} run */
 function makeSpec(corpusValue, run) {
   const templates = /** @type {Record<string, string>} */ (corpusValue.artifactTemplates)
-  const requiredRoot = (kind) => kind === 'product' ? /** @type {string} */ (run.roots.product) : /** @type {string} */ (run.roots.component)
+  const requiredRoot = /** @param {string} kind @returns {string} */ (kind) => kind === 'product' ? /** @type {string} */ (run.roots.product) : /** @type {string} */ (run.roots.component)
   return {
     policy: { .../** @type {Record<string, unknown>} */ (run.policy) },
     rows: /** @type {Record<string, unknown>[]} */ (run.rows).map((row) => ({
@@ -298,7 +323,7 @@ function applyEvidenceMutation(spec, mutation) {
   fail(`${CORPUS_REL}: unsupported evidence mutation kind ${kind} at path case.mutation.kind; repair: use a declared evidence mutation kind.`)
 }
 
-/** @param {Record<string, unknown>} spec @param {Record<string, unknown>} run */
+/** @param {Record<string, unknown>} spec @param {MutationRun} run */
 function writeRunRoot(spec, run) {
   const parent = mkdtempSync(join(tmpdir(), 'fairtest-evidence-mutations-'))
   const root = join(parent, /** @type {string} */ (run.runId))
@@ -311,7 +336,7 @@ function writeRunRoot(spec, run) {
     mkdirSync(dir, { recursive: true })
     const observedAtMs = Date.now()
     const identityId = identityIdFor(row.kind, run)
-    const record = { target: row.key, kind: row.kind, rowTheme: row.theme, theme: { expected: row.theme, observed: row.theme, source: 'mutation-fixture', observedAtMs } }
+    const record = /** @type {Record<string, unknown>} */ ({ target: row.key, kind: row.kind, rowTheme: row.theme, theme: { expected: row.theme, observed: row.theme, source: 'mutation-fixture', observedAtMs } })
     if (row.dropProducedAt !== true) record.producedAtMs = observedAtMs
     writeFileSync(join(dir, 'record.json'), `${JSON.stringify(record, null, 2)}\n`)
     writeFileSync(join(dir, 'resolution.json'), `${JSON.stringify(buildProof(row.kind, row.theme, identityId, observedAtMs), null, 2)}\n`)
@@ -321,7 +346,7 @@ function writeRunRoot(spec, run) {
   return { parent, root }
 }
 
-/** @param {Record<string, any>} row @param {Record<string, unknown>} run */
+/** @param {Record<string, any>} row @param {MutationRun} run */
 function derivedArtifacts(row, run) {
   const observedAtMs = Date.now()
   const identityId = identityIdFor(row.kind, run)
@@ -332,7 +357,7 @@ function derivedArtifacts(row, run) {
   }
 }
 
-/** @param {Record<string, unknown>} spec @param {Record<string, unknown>} run */
+/** @param {Record<string, unknown>} spec @param {MutationRun} run */
 function buildRunModel(spec, run) {
   const observedAtMs = /** @type {number} */ (run.nowMs) - 1000
   const rows = /** @type {Record<string, any>[]} */ (spec.rows)
@@ -361,9 +386,9 @@ function buildRunModel(spec, run) {
   return createEvidenceRun({ identity: { kind: 'run', id: run.runId, createdAtMs: 0 }, mode: 'single-capture', rows })
 }
 
-/** @param {Record<string, unknown>} spec @param {Record<string, unknown>} run */
+/** @param {Record<string, unknown>} spec @param {MutationRun} run */
 function buildPolicy(spec, run) {
-  const policy = /** @type {Record<string, unknown>} */ (spec.policy)
+  const policy = /** @type {MutationPolicy} */ (spec.policy)
   return createEvidencePolicy({
     version: policy.version,
     runId: run.runId,
@@ -407,7 +432,7 @@ function assertReport(report, entry) {
 
 /* ── case execution ───────────────────────────────────────────────────── */
 
-/** @param {Record<string, unknown>} entry @param {Record<string, unknown>} run */
+/** @param {Record<string, unknown>} entry @param {MutationRun} run */
 function runEvidenceCase(entry, run) {
   const spec = makeSpec(corpus, run)
   applyEvidenceMutation(spec, /** @type {Record<string, unknown>} */ (entry.mutation))
@@ -443,24 +468,24 @@ function runEvidenceCase(entry, run) {
 /** @param {Record<string, unknown>} mutation @param {Record<string, unknown>[]} importers */
 function applyClassificationMutation(mutation, importers) {
   const kind = /** @type {string} */ (mutation.kind)
-  if (kind === 'none') return { importers, workflowText: workflowSource, requiredGate: consumerManifest.requiredGateImporterPaths, specializedPresent: (path) => existsSync(join(ROOT, path)) }
+  if (kind === 'none') return { importers, workflowText: workflowSource, requiredGate: /** @type {string[]} */ (consumerManifest.requiredGateImporterPaths), specializedPresent: /** @param {string} path @returns {boolean} */ (path) => existsSync(join(ROOT, path)) }
   if (kind === 'invoke-specialized-in-ci') {
     return {
       importers,
       workflowText: `${workflowSource}\n      - name: borrowed specialized probe\n        run: node ${mutation.consumer}\n`,
-      requiredGate: consumerManifest.requiredGateImporterPaths,
-      specializedPresent: (path) => existsSync(join(ROOT, path)),
+      requiredGate: /** @type {string[]} */ (consumerManifest.requiredGateImporterPaths),
+      specializedPresent: /** @param {string} path @returns {boolean} */ (path) => existsSync(join(ROOT, path)),
     }
   }
   if (kind === 'reclassify-importer') {
     const target = importers.find((entry) => entry.path === mutation.target)
     assert.ok(target, `${CORPUS_REL}: reclassify-importer target ${JSON.stringify(mutation.target)} is not a declared consumer; repair: target a declared consumer path.`)
     target.classification = mutation.value
-    return { importers, workflowText: workflowSource, requiredGate: consumerManifest.requiredGateImporterPaths, specializedPresent: (path) => existsSync(join(ROOT, path)) }
+    return { importers, workflowText: workflowSource, requiredGate: /** @type {string[]} */ (consumerManifest.requiredGateImporterPaths), specializedPresent: /** @param {string} path @returns {boolean} */ (path) => existsSync(join(ROOT, path)) }
   }
   if (kind === 'require-all-consumers') {
     for (const entry of importers) entry.classification = 'required-gate'
-    return { importers, workflowText: workflowSource, requiredGate: importers.map((entry) => entry.path), specializedPresent: (path) => existsSync(join(ROOT, path)) }
+    return { importers, workflowText: workflowSource, requiredGate: /** @type {string[]} */ (importers.map((entry) => entry.path)), specializedPresent: /** @param {string} path @returns {boolean} */ (path) => existsSync(join(ROOT, path)) }
   }
   fail(`${CORPUS_REL}: unsupported classification mutation ${kind} at path case.mutation.kind; repair: use a declared classification mutation kind.`)
 }
@@ -491,7 +516,7 @@ function runClassificationCase(entry) {
   assert.ok(message.includes('repair:'), `${entry.name}: diagnostic is missing repair guidance: ${message}`)
 }
 
-/** @param {Record<string, unknown>} entry @param {Record<string, unknown>} run */
+/** @param {Record<string, unknown>} entry @param {MutationRun} run */
 function runCase(entry, run) {
   if (entry.owner === 'surface-manifest') runClassificationCase(entry)
   else runEvidenceCase(entry, run)
@@ -517,25 +542,25 @@ function applyFixtureMutation(cases, mutation) {
   const segments = /** @type {string} */ (mutation.field).split('.')
   if (mutation.kind === 'delete-field') {
     const node = segments.length === 1 ? target : segments.slice(0, -1).reduce((acc, segment) => /** @type {Record<string, unknown>} */ (acc[segment]), target)
-    delete node[segments.at(-1)]
+    delete node[segments[segments.length - 1]]
     return
   }
   if (mutation.kind === 'rename-field') {
     const node = segments.length === 1 ? target : segments.slice(0, -1).reduce((acc, segment) => /** @type {Record<string, unknown>} */ (acc[segment]), target)
-    const last = segments.at(-1)
+    const last = segments[segments.length - 1]
     const value = node[last]
     delete node[last]
     node[/** @type {string} */ (mutation.newField)] = value
     return
   }
   const node = segments.length === 1 ? target : segments.slice(0, -1).reduce((acc, segment) => /** @type {Record<string, unknown>} */ (acc[segment]), target)
-  node[segments.at(-1)] = structuredClone(mutation.value)
+  node[segments[segments.length - 1]] = structuredClone(mutation.value)
 }
 
 /* ── tests ────────────────────────────────────────────────────────────── */
 
 describe('fairtest evidence mutations', () => {
-  const run = /** @type {Record<string, unknown>} */ (corpus.run)
+  const run = /** @type {MutationRun} */ (corpus.run)
   const cases = /** @type {Record<string, unknown>[]} */ (corpus.cases)
 
   it('holds a valid manifest inventory', () => {

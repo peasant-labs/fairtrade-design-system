@@ -232,7 +232,7 @@ describe('fairtest isolation leakage probes', () => {
     const boundary = readBoundary()
     const fragments = /** @type {string[]} */ (boundary.forbiddenPackFragments)
     assert.ok(Array.isArray(fragments) && fragments.length > 0, 'boundary fixture must declare forbidden packed-path fragments')
-    const forbidden = (path) => fragments.some((fragment) => path.includes(fragment))
+    const forbidden = /** @param {string} path @returns {boolean} */ (path) => fragments.some((fragment) => path.includes(fragment))
     assert.equal(forbidden('dist/lib/ui.js'), false, 'a packed surface entry must stay allowed')
     for (const path of ['packages/fairtest/src/core/values.mjs', 'packages/fairtest/test/core.test.mjs', 'packages/fairtest/package.json']) {
       assert.equal(forbidden(path), true, `${path} must be rejected by the forbidden manifest`)
@@ -301,7 +301,7 @@ describe('fairtest isolation external root', () => {
       const smokePath = join(external, 'smoke.mjs')
       writeFileSync(smokePath, smokeLines.join('\n'))
       const stdout = execFileSync('node', [smokePath], { cwd: external, encoding: 'utf8' })
-      const receipt = JSON.parse(stdout.trim().split('\n').at(-1))
+      const receipt = JSON.parse(/** @type {string} */ (stdout.trim().split('\n').at(-1)))
       assert.equal(receipt.ok, true, 'external smoke must pass from the temporary root')
       assert.ok(receipt.here.startsWith(realpathSync(external) + sep), `external module resolved to ${receipt.here}, outside ${external}`)
     } finally {

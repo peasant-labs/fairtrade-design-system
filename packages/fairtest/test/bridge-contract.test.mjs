@@ -55,11 +55,12 @@ const CHECK_FIELDS = Object.freeze({
 })
 const CHECKS = Object.keys(CHECK_FIELDS)
 
-/** @returns {Record<string, unknown>} */
+/** @param {string} relative @returns {Record<string, unknown>} */
 function readFamily(relative) {
   return /** @type {Record<string, unknown>} */ (loadSingleDocument(readFileSync(new URL(relative, TESTDATA), 'utf8'), relative))
 }
 
+/** @param {string} relative @returns {string} */
 function readSource(relative) {
   return readFileSync(new URL(relative, TESTDATA), 'utf8')
 }
@@ -77,7 +78,7 @@ function validateManifest(manifest, label) {
   assert.equal(new Set(cases).size, cases.length, `${label}: required case names must be unique`)
   assert.equal(manifest.expectedCaseCount, cases.length, `${label}: case count must equal the required-name inventory`)
   assert.equal(manifest.expectedMutationCount, mutations.length, `${label}: mutation count must equal the mutation inventory`)
-  checkRequiredNames(mutations.map((entry) => entry.name), /** @type {string[]} */ (manifest.requiredMutationNames), label)
+  checkRequiredNames(mutations.map((entry) => /** @type {string} */ (entry.name)), /** @type {string[]} */ (manifest.requiredMutationNames), label)
   for (const [index, mutation] of mutations.entries()) {
     const fields = ['name', 'kind', 'target', 'expectedField']
     if (['delete-field', 'unknown-field', 'bad-value'].includes(/** @type {string} */ (mutation.kind))) fields.push('field')
@@ -192,13 +193,13 @@ function applyMutation(cases, mutation) {
   if (mutation.kind === 'delete-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    delete node[segments.at(-1)]
+    delete node[segments[segments.length - 1]]
     return
   }
   if (mutation.kind === 'rename-field') {
     let node = target
     for (const segment of segments.slice(0, -1)) node = /** @type {Record<string, unknown>} */ (node[segment])
-    const last = segments.at(-1)
+    const last = segments[segments.length - 1]
     const value = node[last]
     delete node[last]
     node[/** @type {string} */ (mutation.newField)] = value
@@ -209,7 +210,7 @@ function applyMutation(cases, mutation) {
     if (!isRecord(node[segment])) node[segment] = {}
     node = /** @type {Record<string, unknown>} */ (node[segment])
   }
-  node[segments.at(-1)] = structuredClone(mutation.value)
+  node[segments[segments.length - 1]] = structuredClone(mutation.value)
 }
 
 describe('bridge contract fixture family', () => {
@@ -331,7 +332,7 @@ const PROCESS_ENV_FIELD = 'FAIRTEST_CI_PROCESS'
  * Forbidden interactive or attach fragments a required workflow must never
  * carry. The dev command, its attach hint, and any agent-browser path all stay
  * local-only.
- * @type {Array<{ name: string, pattern: RegExp }>}
+ * @type {readonly { name: string, pattern: RegExp }[]}
  */
 const FORBIDDEN_WORKFLOW_PATTERNS = Object.freeze([
   Object.freeze({ name: 'interactive-dev-command', pattern: /fairtest dev\b/ }),
@@ -483,7 +484,8 @@ describe('bridge CI wiring', () => {
     const clone = /** @type {Record<string, any>} */ (structuredClone(doc))
     const steps = gatesSteps(clone, 'mutation')
     const processStep = steps[stepIndex(steps, PROCESS_STEP_NAME)]
-    if (processStep?.env) delete processStep.env[PROCESS_ENV_FIELD]
+    const env = /** @type {Record<string, string> | undefined} */ (processStep?.env)
+    if (env) delete env[PROCESS_ENV_FIELD]
     return clone
   }
 })
