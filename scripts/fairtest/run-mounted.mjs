@@ -2,8 +2,16 @@
 // @ts-check
 
 // Minimal CLI for the ratified mounted command:
-// FAIRTEST_RUN_ROOT=<run-root> pnpm test:fairtest:mounted -- --target=product
-// FAIRTEST_RUN_ROOT=<run-root> pnpm test:fairtest:mounted -- --target=component
+// FAIRTEST_RUN_ROOT=<absolute-root> FAIRTEST_RUN_ID=<run-id> \
+//   pnpm test:fairtest:mounted -- --target=product
+// FAIRTEST_RUN_ROOT=<absolute-root> FAIRTEST_RUN_ID=<run-id> \
+//   pnpm test:fairtest:mounted -- --target=component
+//
+// Both variables name the same run, and the run envelope must already exist for
+// that root: run `FAIRTEST_RUN_ROOT=<absolute-root> FAIRTEST_RUN_ID=<run-id>
+// pnpm test:fairtest:init` first. The producer reads the envelope and refuses a
+// root whose final path segment is not the run id, so a fresh root fails closed
+// with that diagnostic rather than writing an unowned subtree.
 //
 // Playwright rejects unknown flags such as --target, so this shim consumes
 // the target flag, validates it fail-closed, and then runs the one-project
@@ -78,8 +86,8 @@ function main() {
   for (const line of [
     `fairtest mounted: running the ${kind} rows through the one-project Playwright config`,
     kind === 'product'
-      ? '  precondition: pnpm build first and FAIRTEST_RUN_ROOT set, so dist/ holds the exact built app'
-      : '  precondition: pnpm build-storybook first and FAIRTEST_RUN_ROOT set, so storybook-static/ holds the exact built story',
+      ? '  precondition: pnpm build first, then pnpm test:fairtest:init for this FAIRTEST_RUN_ROOT and FAIRTEST_RUN_ID, so dist/ holds the exact built app'
+      : '  precondition: pnpm build-storybook first, then pnpm test:fairtest:init for this FAIRTEST_RUN_ROOT and FAIRTEST_RUN_ID, so storybook-static/ holds the exact built story',
     `  required-ci mount: ${MOUNTED_REQUIRED_CI_MOUNT.status} (${MOUNTED_REQUIRED_CI_MOUNT.reason})`,
   ]) {
     console.log(line)
