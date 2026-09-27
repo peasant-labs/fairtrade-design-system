@@ -108,6 +108,7 @@ const model = buildModel(corpus)
 checkVendored(model)
 checkPragma(model)
 checkEscapeHatches(model)
+checkAnyTotals(model, manifest)
 model.program = listProgramFiles(corpus, ROOT)
 checkProgramParity(model)
 runMutations(model, manifest)
@@ -325,35 +326,36 @@ function checkEscapeHatches(model) {
 /**
  * Count explicit `any` tokens inside JSDoc type expressions, balancing braces so
  * nested object types are read whole. Prose `any` (e.g. "any file") is ignored.
+ * The scan runs over the whole source rather than line by line, so a type
+ * expression whose braces and `any` token are split across comment lines is
+ * still counted.
  * @param {string} source
  * @returns {number}
  */
 function countExplicitAny(source) {
   let count = 0
-  for (const line of source.split('\n')) {
-    let tag
-    ANY_TAGS.lastIndex = 0
-    while ((tag = ANY_TAGS.exec(line)) !== null) {
-      const brace = line.indexOf('{', tag.index + tag[0].length)
-      if (brace === -1) continue
-      let depth = 0
-      let end = -1
-      for (let index = brace; index < line.length; index += 1) {
-        if (line[index] === '{') depth += 1
-        else if (line[index] === '}') {
-          depth -= 1
-          if (depth === 0) {
-            end = index
-            break
-          }
+  ANY_TAGS.lastIndex = 0
+  let tag
+  while ((tag = ANY_TAGS.exec(source)) !== null) {
+    const brace = source.indexOf('{', tag.index + tag[0].length)
+    if (brace === -1) continue
+    let depth = 0
+    let end = -1
+    for (let index = brace; index < source.length; index += 1) {
+      if (source[index] === '{') depth += 1
+      else if (source[index] === '}') {
+        depth -= 1
+        if (depth === 0) {
+          end = index
+          break
         }
       }
-      if (end === -1) continue
-      const expression = line.slice(brace + 1, end)
-      const hits = expression.match(/\bany\b/g)
-      if (hits) count += hits.length
-      ANY_TAGS.lastIndex = end
     }
+    if (end === -1) continue
+    const expression = source.slice(brace + 1, end)
+    const hits = expression.match(/\bany\b/g)
+    if (hits) count += hits.length
+    ANY_TAGS.lastIndex = end
   }
   return count
 }
@@ -505,6 +507,21 @@ function totalAcknowledgedAny(model) {
   let total = 0
   for (const count of model.anyLedger.values()) total += count
   return total
+}
+
+/**
+ * Assert the declared acknowledged-any total equals the recorded ledger sum, so
+ * the manifest cannot carry a count that no file supports.
+ * @param {Model} model
+ * @param {Manifest} manifestValue
+ */
+function checkAnyTotals(model, manifestValue) {
+  const total = totalAcknowledgedAny(model)
+  assert.equal(
+    total,
+    manifestValue.expectedAnyOccurrenceCount,
+    `${MANIFEST_REL}: expectedAnyOccurrenceCount must equal the acknowledged ledger sum for field "expectedAnyOccurrenceCount" at path manifest.expectedAnyOccurrenceCount; observed ${total}; repair: set expectedAnyOccurrenceCount to the recorded total or restore the ledger.`,
+  )
 }
 
 /**

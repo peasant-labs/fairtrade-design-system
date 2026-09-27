@@ -126,9 +126,9 @@ export const CI_ROW_KEYS = Object.freeze([...FAIRTEST_EVIDENCE_ROW_KEYS])
 
 /**
  * The local exploration keys. They are a distinct set from the CI keys and are
- * never selected as producer evidence; `fairtest dev` (a later slice) generates
- * its own local identity. Declared here so the local list command can prove the
- * exact set and that no local key leaks into CI.
+ * never selected as producer evidence; `fairtest dev` generates its own local
+ * identity. Declared here so the local list command can prove the exact set and
+ * that no local key leaks into CI.
  * @type {readonly string[]}
  */
 export const LOCAL_ROW_KEYS = Object.freeze(['local-product-dark', 'local-product-light'])

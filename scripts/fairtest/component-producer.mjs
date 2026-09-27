@@ -223,7 +223,7 @@ export function prepareComponentRowDir(input) {
  * @param {number} [options.port] fixed loopback port
  * @param {string} [options.host] loopback host, always the declared owner
  * @param {string} [options.staticRoot] built Storybook root served over HTTP
- * @returns {StaticComponentDriver} the injected lifecycle driver for createFairtradeAdapter
+ * @returns {StaticComponentDriver} the injected lifecycle driver for createAdapter
  */
 export function createComponentStaticDriver(options = {}) {
   const port = options.port ?? FAIRTEST_STORYBOOK_PORT

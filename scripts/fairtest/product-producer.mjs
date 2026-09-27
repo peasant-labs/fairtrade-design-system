@@ -481,7 +481,7 @@ export function prepareProductRowDir(input = /** @type {ProductRowDirInput} */ (
  * @param {number} [options.port] fixed loopback port
  * @param {string} [options.host] loopback host, always the declared owner
  * @param {string} [options.distRoot] built app root served over HTTP
- * @returns {StaticProductDriver} the injected lifecycle driver for createFairtradeAdapter
+ * @returns {StaticProductDriver} the injected lifecycle driver for createAdapter
  */
 export function createProductStaticDriver(options = {}) {
   const port = options.port ?? FAIRTEST_APP_PORT

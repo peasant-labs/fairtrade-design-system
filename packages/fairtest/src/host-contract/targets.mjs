@@ -17,7 +17,7 @@ import { assertHostKind } from './kinds.mjs'
 
 /**
  * @typedef {object} TargetDeclaration
- * @property {string} kind host kind, product or component
+ * @property {import('./kinds.mjs').HostKind} kind host kind, product or component
  * @property {import('../core/identity.mjs').Identity} identity identity on the matching kind branch
  * @property {string[]} capabilities non-empty capability inventory for the kind
  * @property {string[]} fixtures named fixtures the target serves
@@ -85,7 +85,7 @@ const NAME_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/
 
 /**
  * Return the closed capability vocabulary for a host kind.
- * @param {string} kind
+ * @param {import('./kinds.mjs').HostKind} kind
  * @returns {readonly string[]}
  */
 export function capabilitiesFor(kind) {
@@ -95,7 +95,7 @@ export function capabilitiesFor(kind) {
 
 /**
  * Return the required capabilities for a host kind.
- * @param {string} kind
+ * @param {import('./kinds.mjs').HostKind} kind
  * @returns {readonly string[]}
  */
 export function requiredCapabilitiesFor(kind) {
@@ -107,7 +107,7 @@ export function requiredCapabilitiesFor(kind) {
  * Validate an unknown value as an identity on the expected kind branch and
  * return a frozen copy. A kind mismatch fails: identities never cross kinds.
  * @param {unknown} value
- * @param {string} expectedKind product or component
+ * @param {import('./kinds.mjs').HostKind} expectedKind product or component
  * @param {string} label owning document used in diagnostics
  * @returns {import('../core/identity.mjs').Identity}
  */
@@ -125,7 +125,7 @@ export function validateTargetIdentity(value, expectedKind, label) {
  * The list must be non-empty, unique, drawn from the kind vocabulary, and
  * must include every required capability.
  * @param {unknown} value
- * @param {string} kind product or component
+ * @param {import('./kinds.mjs').HostKind} kind product or component
  * @param {string} label owning document used in diagnostics
  * @param {string} path value path used in diagnostics
  * @returns {string[]}
@@ -214,8 +214,8 @@ export function createTargetValue(input, label) {
 export function createTargetDeclaration(input) {
   assertExactFields(input, ['kind', 'identity', 'capabilities', 'fixtures', 'actions'], 'target', 'target')
   assertHostKind(input.kind, 'target.kind')
-  const identity = validateTargetIdentity(input.identity, /** @type {string} */ (input.kind), 'target')
-  const capabilities = validateCapabilityList(input.capabilities, /** @type {string} */ (input.kind), 'target', 'target.capabilities')
+  const identity = validateTargetIdentity(input.identity, input.kind, 'target')
+  const capabilities = validateCapabilityList(input.capabilities, input.kind, 'target', 'target.capabilities')
   const fixtures = validateNameList(input.fixtures, 'fixture', 'target', 'target.fixtures', false)
   const actions = validateNameList(input.actions, 'action', 'target', 'target.actions', true)
   return freezeRecord({ kind: input.kind, identity, capabilities, fixtures, actions })

@@ -154,7 +154,7 @@ export function createEvidenceRow(input) {
       `repair: use one of ${THEME_NAMES.join(', ')} for "theme".`,
     )
   }
-  const identity = validateTargetIdentity(record.identity, /** @type {string} */ (record.kind), 'row')
+  const identity = validateTargetIdentity(record.identity, record.kind, 'row')
   const themeObservation = validateThemeObservation(record.themeObservation, 'row')
   const proof = record.proof === null ? null : validateResolution(record.proof, 'row.proof')
   const provenance = record.provenance === null ? null : validateEvidenceProvenance(record.provenance, 'row.provenance')

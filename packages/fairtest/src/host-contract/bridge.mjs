@@ -18,14 +18,14 @@ import { validateIdentity } from '../core/identity.mjs'
 
 /**
  * @typedef {object} BridgeIdentity
- * @property {string} kind bridge participant kind, local or process
+ * @property {BridgeKind} kind bridge participant kind, local or process
  * @property {string} id participant id
  * @property {number} createdAtMs creation time in whole milliseconds
  */
 
 /**
  * @typedef {object} BridgeDeclaration
- * @property {string} kind bridge participant kind, local or process
+ * @property {BridgeKind} kind bridge participant kind, local or process
  * @property {BridgeIdentity} identity identity on the matching kind branch
  * @property {string[]} capabilities non-empty capability inventory for the kind
  */
@@ -49,10 +49,13 @@ import { validateIdentity } from '../core/identity.mjs'
  */
 
 /**
- * Closed bridge participant kinds.
- * @type {string[]}
+ * Closed bridge participant kinds. The literal-union typedef is derived from
+ * this one declaration, so a wrong literal fails to compile and no second
+ * vocabulary can drift.
  */
-export const BRIDGE_IDENTITY_KINDS = freezeRecord(['local', 'process'])
+export const BRIDGE_IDENTITY_KINDS = freezeRecord(/** @type {const} */ (['local', 'process']))
+
+/** @typedef {(typeof BRIDGE_IDENTITY_KINDS)[number]} BridgeKind */
 
 /**
  * Closed capability vocabulary every bridge participant shares.
@@ -81,10 +84,10 @@ const MAX_PORT = 65535
  * Assert the value names a known bridge participant kind.
  * @param {unknown} value
  * @param {string} path value path used in diagnostics
- * @returns {asserts value is string}
+ * @returns {asserts value is BridgeKind}
  */
 export function assertBridgeKind(value, path) {
-  if (!BRIDGE_IDENTITY_KINDS.includes(/** @type {string} */ (value))) {
+  if (!/** @type {readonly string[]} */ (BRIDGE_IDENTITY_KINDS).includes(/** @type {string} */ (value))) {
     throw new Error(`invalid bridge kind ${JSON.stringify(value)} at path ${path}; repair: use one of ${BRIDGE_IDENTITY_KINDS.join(', ')} for the bridge kind.`)
   }
 }

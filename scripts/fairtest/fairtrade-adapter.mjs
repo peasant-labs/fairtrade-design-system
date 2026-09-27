@@ -268,7 +268,7 @@ export async function createAdapter(options) {
     fixtures: [...(fixtures ?? targetValue.fixtures)],
     actions: [...(actions ?? targetValue.actions)],
   })
-  const registeredAction = targetValue.actions[0]
+  const registeredActions = declaration.actions
 
   const stages = ['declared']
   const state = {
@@ -492,10 +492,10 @@ export async function createAdapter(options) {
    * @returns {Promise<object>} the frozen named action result
    */
   async function performAction(name, actionOptions = {}) {
-    if (name !== registeredAction) {
+    if (!registeredActions.includes(/** @type {string} */ (name))) {
       throw new Error(
         `fairtrade adapter: unknown action ${JSON.stringify(name)} for field "action" at path adapter.action; ` +
-        `repair: use one of ${registeredAction} for "action".`,
+        `repair: use one of ${registeredActions.join(', ')} for "action".`,
       )
     }
     if (!state.started) {

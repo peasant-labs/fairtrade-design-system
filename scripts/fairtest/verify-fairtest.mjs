@@ -80,6 +80,16 @@ function readJson(path, label) {
  * Resolve the run identity id the produce run actually belongs to. The run
  * envelope is authoritative when present; otherwise the caller-supplied
  * FAIRTEST_RUN_ID names it.
+ *
+ * The verifier is the one owner that may fall back to FAIRTEST_RUN_ID when no
+ * envelope is present. The fallback is safe because resolveVerifyRunRoot has
+ * already required a run root whose final path segment equals FAIRTEST_RUN_ID,
+ * so the root and the identity still agree even without an envelope, and the
+ * verifier reads its freshness guarantee from each producer record rather than
+ * from the envelope. In required CI the envelope is always present, and the
+ * always-running preflight re-requires it, so the fallback only serves a local
+ * verification of a run root a producer wrote without an init envelope and can
+ * never make a mounted CI run pass without one.
  * @param {string} root resolved run root
  * @returns {string | null} the envelope run id, or null when no envelope exists
  */

@@ -2276,13 +2276,12 @@ async function runProductContractCommandCase(entry) {
 }
 
 /**
- * Run one mounted-command case. The mounted evidence command carries the same
- * declared-not-ci standard the product-contract command carries: its package
- * script, its runner-inventory row, and its declared required-CI mount status
- * must all agree, and while the status is declared-not-ci no required CI
- * workflow may invoke the command, so "declared" can never be misread as
- * "enforced". The mount lands in a later slice and must flip this status and
- * the case's ciMountStatus in the same change.
+ * Run one mounted-command case. The mounted evidence command's package script,
+ * its runner-inventory row, and its declared required-CI mount status must all
+ * agree: while the status is declared-not-ci no required CI workflow may invoke
+ * the command, and when it is mounted at least one workflow must, so "declared"
+ * can never be misread as "enforced" and a mount cannot be declared without the
+ * workflow that enforces it.
  * @param {Record<string, unknown>} entry
  */
 async function runMountedCommandCase(entry) {

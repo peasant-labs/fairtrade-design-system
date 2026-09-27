@@ -7,7 +7,7 @@ records:
       cost: Two bounded theme rows, one browser and service lifecycle, one named map-section action, and six small artifacts per row, inside the existing job budget with no retries.
       lifetime: One immutable run root created fresh per run plus one loopback service, cleaned up in finally on success, failure, timeout, and interruption.
       concurrency: One product row at a time; row identity plus the immutable run root prevent stale or cross-run output.
-      ciParity: The exact command runs after a clean build in the pinned Playwright container; no local demo or external service is assumed. Its required-CI mount is still deferred (the command prints declared-not-ci on every run), so a green CI run does not yet prove it.
+      ciParity: The exact command runs after a clean build in the pinned Playwright container; no local demo or external service is assumed. The pinned job's mounted steps invoke it for both targets, so a green CI run proves the rows ran.
       evidence: Computed styles, ARIA tree, axe report, screenshot, resolution, normalized theme observation, and served-build provenance with asset digests.
       mutation: A wrong theme, missing selector or part, unregistered action, missing artifact, or stale served asset kills the row for the intended reason.
       exitCondition: Remove or simplify the mounted row when a lower-level gate or an existing journey proves the same named risk.
@@ -65,7 +65,7 @@ records:
       rationale: The lower layer observes the risk, so promoting an elaborate test is refused under the lower-layer-first rule.
     executionPolicy:
       runner: Plain node command with no service, browser, or network access.
-      budget: Seconds of local compute inside the existing browser-free phase.
+      budget: Seconds of local compute inside the existing browser-free contracts step.
       cleanup: Scratch directories are removed in a finally step on every exit path.
     exitCondition: Remove this record family if the boundary moves into a lower-level package check that proves the same invariant.
   - name: fairtest-type-program-coverage-guard
@@ -88,7 +88,7 @@ records:
       rationale: The guard protects the type program's whole payoff, the lower layer cannot observe the same invariant, and its cost is one bounded browser-free process.
     executionPolicy:
       runner: Plain node command with the pinned typescript spawned as a child; no service, browser, or network access.
-      budget: Seconds of local compute inside the existing browser-free phase; one tsc --listFiles over the covered roots.
+      budget: Seconds of local compute inside the existing browser-free contracts step; one tsc --listFiles over the covered roots.
       cleanup: No temporary state is created; the child process is bounded and reaped by spawnSync on every exit path.
     exitCondition: Fold the checks into a lower-level program or compiler integration if one can observe program membership and suppression metadata directly.
   - name: fairtest-target-dispatch-guard
@@ -134,7 +134,7 @@ records:
       rationale: All ten answers are present, the lower layer cannot observe a stray literal in another module's source, and the guard is bounded to one browser-free scan with a uniquely named mutation.
     executionPolicy:
       runner: Browser-free node command scanning scripts/fairtest and the four root guards; no service, browser, or network access.
-      budget: One source scan of the harness modules plus one scratch-directory mutation inside the existing browser-free phase.
+      budget: One source scan of the harness modules plus one scratch-directory mutation inside the existing browser-free contracts step.
       cleanup: The mutation scratch directory is removed with rmSync in a finally step on every exit path; the passing path leaves no state.
     exitCondition: Fold the rule into a compiler or lint constraint, or delete the guard once a lower-level package check observes the same repository-path-literal boundary.
   - name: fairtest-path-resolution-guard
@@ -157,6 +157,6 @@ records:
       rationale: All ten answers are present, the lower layer cannot observe resolution containment or a refusal, and the guard is bounded to one browser-free process over an in-memory inventory.
     executionPolicy:
       runner: Browser-free node command resolving the declared inventory and the corpus cases; no service, browser, or network access.
-      budget: Seconds of local compute inside the existing browser-free phase; one pass over the declared inventory plus nine cases.
+      budget: Seconds of local compute inside the existing browser-free contracts step; one pass over the declared inventory plus nine cases.
       cleanup: No temporary state is created; the mutation runs in memory and the process exits before the guard returns.
     exitCondition: Fold the rule into a package path helper or delete the guard once a lower-level package or compiler check proves the same containment invariant.

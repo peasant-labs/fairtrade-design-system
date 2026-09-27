@@ -521,20 +521,24 @@ export function assertProductThemeObservation(observation) {
 }
 
 /**
+ * @typedef {object} ProductThemeObservationInput
+ * @property {string} expected theme the row was asked to render
+ * @property {unknown} renderedAttribute raw rendered attribute value, absent as nullish
+ * @property {string} source caller-owned note naming where the read came from
+ * @property {number} observedAtMs read time in whole milliseconds
+ */
+
+/**
  * Observe the rendered theme for a row. The raw attribute value is read
  * from the mounted tree after mount and before any interaction, then
  * normalized through the shared rendered-theme rule (absent or empty is
  * dark, the light value is light) and persisted with the expected theme,
  * the source note, and the read time. Contradictions fail before the
  * record is built.
- * @param {object} input observation inputs
- * @param {string} input.expected theme the row was asked to render
- * @param {unknown} input.renderedAttribute raw rendered attribute value, absent as nullish
- * @param {string} input.source caller-owned note naming where the read came from
- * @param {number} input.observedAtMs read time in whole milliseconds
+ * @param {object} input observation inputs, validated field by field at runtime
  * @returns {import('./fairtrade-targets.mjs').ProductThemeObservation} the frozen validated theme observation
  */
-export function observeProductTheme(input) {
+export function observeProductTheme(input = /** @type {ProductThemeObservationInput} */ ({})) {
   valuesContract.assertExactFields(input, ['expected', 'renderedAttribute', 'source', 'observedAtMs'], 'fairtrade targets', 'theme')
   const { expected, renderedAttribute, source, observedAtMs } = /** @type {Record<string, unknown>} */ (input)
   if (expected !== 'dark' && expected !== 'light') {
@@ -576,8 +580,8 @@ export const PRODUCT_PROOF_RECORD_SCHEMA = Object.freeze({
  * @param {object} input proof inputs, validated field by field at runtime
  * @returns {import('../fairtest-source.mjs').ProductResolution} the frozen validated product resolution
  */
-export function buildProductProof(input) {
-  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+export function buildProductProof(input = /** @type {object} */ ({})) {
+  if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).length === 0) {
     throw new Error(
       'fairtrade targets: missing product proof input for field "proof" at path proof; ' +
       'repair: observe chrome, body, route, active section, view, and theme before building the proof.',

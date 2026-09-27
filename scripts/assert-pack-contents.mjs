@@ -65,7 +65,7 @@ if (fileCount < FLOOR) {
   problems.push(`packed fileCount ${fileCount} is below the floor ${FLOOR} — dist/lib is likely missing (the 0.0.1 dist-less failure class)`)
 }
 
-// ── Fairtest packed-path manifest (S2 source-only boundary) ────────────────
+// ── Fairtest packed-path manifest (source-only boundary) ───────────────────
 // The private workspace child is source-only: no Fairtest path may reach the
 // published tarball. The forbidden fragments are owned by the named fixture
 // scripts/testdata/fairtest-boundary.yaml (single source with the boundary

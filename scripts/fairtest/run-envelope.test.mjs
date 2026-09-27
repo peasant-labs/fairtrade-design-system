@@ -598,6 +598,10 @@ function inspectWorkflowOrder(text) {
   // wiring guard, and the SurfaceGate compatibility gate are required gates, so
   // dropping any command turns this guard red.
   const browserFree = stepByName(steps, 'Fairtest browser-free contracts')
+  const browserFreeCommands = String(browserFree.run ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
   for (const command of [
     'pnpm test:fairtest:types',
     'pnpm test:fairtest:type-coverage',
@@ -606,7 +610,7 @@ function inspectWorkflowOrder(text) {
     'pnpm test:fairtest:envelope',
     'pnpm test:fairtest:compat',
   ]) {
-    if (!String(browserFree.run ?? '').includes(command)) {
+    if (!browserFreeCommands.includes(command)) {
       workflowFail(command, `the browser-free contracts step must run ${command}, observed ${JSON.stringify(browserFree.run)}`)
     }
   }

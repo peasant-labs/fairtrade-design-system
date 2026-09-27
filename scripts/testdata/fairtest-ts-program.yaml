@@ -48,7 +48,7 @@ vendoredBodies:
 refusedDirectives:
   - '@ts-nocheck'
   - '@ts-ignore'
-anyProbe: '/** @type {any} */'
+anyProbe: "/** @type {Array<\n *   any\n * >} */"
 acknowledgedAny:
   - file: packages/fairtest/test/bridge-contract.test.mjs
     count: 5
