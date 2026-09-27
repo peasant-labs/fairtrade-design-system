@@ -91,7 +91,7 @@ export function validateEvidenceFailure(value, label) {
 /**
  * Return the sorted unique failure codes present in a failure list.
  * @param {EvidenceFailure[]} failures
- * @returns {string[]}
+ * @returns {readonly string[]}
  */
 export function uniqueFailureCodes(failures) {
   if (!Array.isArray(failures)) {

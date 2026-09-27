@@ -236,13 +236,13 @@ export function validateBridgeCleanup(value, label) {
     }
   }
   assertIntegerInRange(record.observedAtMs, 'observedAtMs', 'bridge.cleanup.observedAtMs', { min: 0, max: MAX_SAFE })
-  return freezeRecord({
+  return /** @type {BridgeCleanup} */ (freezeRecord({
     identityId: record.identityId,
     signal: record.signal,
     reaped: record.reaped,
     portReleased: record.portReleased,
     observedAtMs: record.observedAtMs,
-  })
+  }))
 }
 
 /**

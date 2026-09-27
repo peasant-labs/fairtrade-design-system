@@ -41,6 +41,53 @@ const MIN_PORT = 1
 const MAX_PORT = 65535
 
 /**
+ * One validated process invocation identity.
+ * @typedef {object} ProcessInvocationIdentity
+ * @property {string} purpose always the process purpose
+ * @property {string} runId owning run identity id
+ * @property {string} invocationId distinct process invocation id
+ * @property {string} project caller-owned project label
+ * @property {string} processCaseId one of the named process cases
+ * @property {number} createdAtMs creation time in whole milliseconds
+ */
+
+/**
+ * One validated process case deadline limits record.
+ * @typedef {object} ProcessLimits
+ * @property {number} readinessDeadlineMs readiness wait in whole milliseconds
+ * @property {number} supervisorDeadlineMs internal supervisor deadline in whole milliseconds
+ * @property {number} outerDeadlineMs caller-owned outer fail-safe in whole milliseconds
+ * @property {number} graceMs observed cleanup grace in whole milliseconds
+ */
+
+/**
+ * One validated process case spec.
+ * @typedef {object} ProcessCaseSpec
+ * @property {string} name one of the named process cases
+ * @property {string} scenario one of the closed process scenarios
+ * @property {ProcessLimits} limits case deadline limits
+ * @property {string} outcome one of the closed process outcomes
+ * @property {boolean} expectReady whether the case is expected to report ready
+ * @property {boolean} deadlineExceeded whether the case is expected to outlive its deadline
+ */
+
+/**
+ * One validated case entry inside a durable cleanup receipt.
+ * @typedef {object} ProcessCaseReceipt
+ * @property {string} caseId one of the named process cases
+ * @property {string} scenario one of the closed process scenarios
+ * @property {string} outcome one of the closed process outcomes
+ * @property {string} signal one of the closed bridge stop signals
+ * @property {boolean} reaped whether the case child was reaped
+ * @property {boolean} portReleased whether the case channel was released
+ * @property {number} pid observed child process id
+ * @property {number} port observed listener port
+ * @property {string} processGroup observed process group note
+ * @property {boolean} deadlineExceeded whether the case outlived its deadline
+ * @property {number} observedAtMs observation time in whole milliseconds
+ */
+
+/**
  * The one purpose a process invocation identity may carry. Any other purpose
  * is a local or producer identity and is refused before service startup.
  * @type {string}
@@ -201,7 +248,7 @@ export function assertProcessInvocationNotProducer(value, label) {
  * shape.
  * @param {unknown} value
  * @param {string} label owning record used in diagnostics
- * @returns {{ purpose: string, runId: string, invocationId: string, project: string, processCaseId: string, createdAtMs: number }}
+ * @returns {ProcessInvocationIdentity}
  */
 export function validateProcessInvocationIdentity(value, label) {
   assertProcessInvocationNotProducer(value, label)
@@ -234,20 +281,20 @@ export function validateProcessInvocationIdentity(value, label) {
   // Reuse the shared bridge identity on the process branch so the id shape and
   // kind membership are the host contract's, not a second process copy.
   validateBridgeIdentity({ kind: 'process', id: record.invocationId, createdAtMs: record.createdAtMs }, label)
-  return freezeRecord({
+  return /** @type {ProcessInvocationIdentity} */ (freezeRecord({
     purpose: PROCESS_INVOCATION_PURPOSE,
     runId: record.runId,
     invocationId: record.invocationId,
     project: record.project,
     processCaseId: record.processCaseId,
     createdAtMs: record.createdAtMs,
-  })
+  }))
 }
 
 /**
  * Create a frozen process invocation identity from an explicit input.
  * @param {object} input identity fields
- * @returns {{ purpose: string, runId: string, invocationId: string, project: string, processCaseId: string, createdAtMs: number }}
+ * @returns {ProcessInvocationIdentity}
  */
 export function createProcessInvocationIdentity(input) {
   return validateProcessInvocationIdentity(input, 'process invocation')
@@ -324,7 +371,7 @@ export function validateProcessCleanup(value, identity, label) {
  * supervisor always has room to observe cleanup before the outer bound fires.
  * @param {unknown} value candidate limits record
  * @param {string} label owning record used in diagnostics
- * @returns {{ readinessDeadlineMs: number, supervisorDeadlineMs: number, outerDeadlineMs: number, graceMs: number }}
+ * @returns {ProcessLimits}
  */
 export function validateProcessLimits(value, label) {
   assertExactFields(value, [...PROCESS_LIMITS_FIELDS], label, 'process.limits')
@@ -362,7 +409,7 @@ export function validateProcessLimits(value, label) {
  * booleans so a case can never leave its postcondition unstated.
  * @param {unknown} value candidate case spec
  * @param {string} label owning record used in diagnostics
- * @returns {{ name: string, scenario: string, limits: object, outcome: string, expectReady: boolean, deadlineExceeded: boolean }}
+ * @returns {ProcessCaseSpec}
  */
 export function validateProcessCaseSpec(value, label) {
   assertExactFields(value, [...PROCESS_CASE_SPEC_FIELDS], label, 'process.caseSpec')
@@ -395,21 +442,21 @@ export function validateProcessCaseSpec(value, label) {
       )
     }
   }
-  return freezeRecord({
+  return /** @type {ProcessCaseSpec} */ (freezeRecord({
     name: record.name,
     scenario: record.scenario,
     limits,
     outcome: record.outcome,
     expectReady: record.expectReady,
     deadlineExceeded: record.deadlineExceeded,
-  })
+  }))
 }
 
 /**
  * Validate one case entry inside a durable receipt and return a frozen copy.
  * @param {unknown} value candidate case entry
  * @param {string} label owning record used in diagnostics
- * @returns {object} the frozen case entry
+ * @returns {ProcessCaseReceipt} the frozen case entry
  */
 export function validateProcessCaseReceipt(value, label) {
   assertExactFields(value, [...PROCESS_CASE_RECEIPT_FIELDS], label, 'process.case')
@@ -450,7 +497,7 @@ export function validateProcessCaseReceipt(value, label) {
   assertIntegerInRange(record.port, 'port', 'process.case.port', { min: MIN_PORT, max: MAX_PORT })
   assertNonEmptyString(record.processGroup, 'processGroup', 'process.case.processGroup')
   assertIntegerInRange(record.observedAtMs, 'observedAtMs', 'process.case.observedAtMs', { min: 0, max: MAX_SAFE })
-  return freezeRecord({
+  return /** @type {ProcessCaseReceipt} */ (freezeRecord({
     caseId: record.caseId,
     scenario: record.scenario,
     outcome: record.outcome,
@@ -462,7 +509,7 @@ export function validateProcessCaseReceipt(value, label) {
     processGroup: record.processGroup,
     deadlineExceeded: record.deadlineExceeded,
     observedAtMs: record.observedAtMs,
-  })
+  }))
 }
 
 /**

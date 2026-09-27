@@ -32,6 +32,35 @@ const ID_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/
 const MAX_SAFE = 9007199254740991
 
 /**
+ * One validated local invocation identity.
+ * @typedef {object} LocalInvocationIdentity
+ * @property {string} purpose always the local purpose
+ * @property {string} runId owning run identity id
+ * @property {string} invocationId distinct local invocation id
+ * @property {string} project caller-owned project label
+ * @property {string} targetId adapter-selected target id
+ * @property {number} createdAtMs creation time in whole milliseconds
+ */
+
+/**
+ * One validated local scenario.
+ * @typedef {object} LocalScenario
+ * @property {string} route caller-owned served route name
+ * @property {string} fixture caller-owned named fixture
+ * @property {string} action caller-owned named action
+ */
+
+/**
+ * One validated local provenance record.
+ * @typedef {object} LocalProvenance
+ * @property {string} source caller-owned provenance source note
+ * @property {string} root built tree the participant serves
+ * @property {string} commit recorded commit for the built tree
+ * @property {boolean} dirty whether the built tree carried uncommitted changes
+ * @property {number} producedAtMs provenance creation time in whole milliseconds
+ */
+
+/**
  * The one purpose a local invocation identity may carry. Any other purpose is
  * a producer or process identity and is refused before service startup.
  * @type {string}
@@ -116,7 +145,7 @@ export function assertLocalInvocationNotProducer(value, label) {
  * readiness, and cleanup validators without a second identity shape.
  * @param {unknown} value
  * @param {string} label owning record used in diagnostics
- * @returns {{ purpose: string, runId: string, invocationId: string, project: string, targetId: string, createdAtMs: number }}
+ * @returns {LocalInvocationIdentity}
  */
 export function validateLocalInvocationIdentity(value, label) {
   assertLocalInvocationNotProducer(value, label)
@@ -143,20 +172,20 @@ export function validateLocalInvocationIdentity(value, label) {
   // Reuse the shared bridge identity on the local branch so the id shape and
   // kind membership are the host contract's, not a second local copy.
   validateBridgeIdentity({ kind: 'local', id: record.invocationId, createdAtMs: record.createdAtMs }, label)
-  return freezeRecord({
+  return /** @type {LocalInvocationIdentity} */ (freezeRecord({
     purpose: LOCAL_INVOCATION_PURPOSE,
     runId: record.runId,
     invocationId: record.invocationId,
     project: record.project,
     targetId: record.targetId,
     createdAtMs: record.createdAtMs,
-  })
+  }))
 }
 
 /**
  * Create a frozen local invocation identity from an explicit input.
  * @param {object} input identity fields
- * @returns {{ purpose: string, runId: string, invocationId: string, project: string, targetId: string, createdAtMs: number }}
+ * @returns {LocalInvocationIdentity}
  */
 export function createLocalInvocationIdentity(input) {
   return validateLocalInvocationIdentity(input, 'local invocation')
@@ -185,7 +214,7 @@ export function createLocalBridgeDeclaration(identity, capabilities) {
  * Validate an unknown value as a local scenario and return a frozen copy.
  * @param {unknown} value
  * @param {string} label owning record used in diagnostics
- * @returns {{ route: string, fixture: string, action: string }}
+ * @returns {LocalScenario}
  */
 export function validateLocalScenario(value, label) {
   assertExactFields(value, [...LOCAL_SCENARIO_FIELDS], label, 'local.scenario')
@@ -193,13 +222,13 @@ export function validateLocalScenario(value, label) {
   for (const field of LOCAL_SCENARIO_FIELDS) {
     assertNonEmptyString(record[field], field, `local.scenario.${field}`)
   }
-  return freezeRecord({ route: record.route, fixture: record.fixture, action: record.action })
+  return /** @type {LocalScenario} */ (freezeRecord({ route: record.route, fixture: record.fixture, action: record.action }))
 }
 
 /**
  * Create a frozen local scenario from an explicit input.
  * @param {object} input scenario fields
- * @returns {{ route: string, fixture: string, action: string }}
+ * @returns {LocalScenario}
  */
 export function createLocalScenario(input) {
   return validateLocalScenario(input, 'local scenario')
@@ -211,7 +240,7 @@ export function createLocalScenario(input) {
  * command, or served byte.
  * @param {unknown} value
  * @param {string} label owning record used in diagnostics
- * @returns {{ source: string, root: string, commit: string, dirty: boolean, producedAtMs: number }}
+ * @returns {LocalProvenance}
  */
 export function validateLocalProvenance(value, label) {
   assertExactFields(value, [...LOCAL_PROVENANCE_FIELDS], label, 'local.provenance')
@@ -226,19 +255,19 @@ export function validateLocalProvenance(value, label) {
     )
   }
   assertIntegerInRange(record.producedAtMs, 'producedAtMs', 'local.provenance.producedAtMs', { min: 0, max: MAX_SAFE })
-  return freezeRecord({
+  return /** @type {LocalProvenance} */ (freezeRecord({
     source: record.source,
     root: record.root,
     commit: record.commit,
     dirty: record.dirty,
     producedAtMs: record.producedAtMs,
-  })
+  }))
 }
 
 /**
  * Create a frozen local provenance record from an explicit input.
  * @param {object} input provenance fields
- * @returns {{ source: string, root: string, commit: string, dirty: boolean, producedAtMs: number }}
+ * @returns {LocalProvenance}
  */
 export function createLocalProvenance(input) {
   return validateLocalProvenance(input, 'local provenance')

@@ -179,7 +179,7 @@ export function createEvidenceRow(input) {
   return freezeRecord({
     key: record.key,
     kind: record.kind,
-    theme: record.theme,
+    theme: /** @type {import('../host-contract/kinds.mjs').ThemeName} */ (record.theme),
     identity,
     proof,
     themeObservation,

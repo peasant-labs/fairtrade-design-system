@@ -20,8 +20,8 @@ import { createEvidenceReport } from './verdict.mjs'
 /**
  * Compare the proof identity to the row identity. Both are shared identity
  * records; the proof proves the row only when both the kind and the id match.
- * @param {object} proof resolution proof
- * @param {object} identity row identity
+ * @param {import('../host-contract/resolution.mjs').ProductResolution | import('../host-contract/resolution.mjs').ComponentResolution} proof resolution proof
+ * @param {import('../core/identity.mjs').Identity} identity row identity
  * @returns {boolean}
  */
 function sameProofIdentity(proof, identity) {
@@ -31,7 +31,7 @@ function sameProofIdentity(proof, identity) {
 /**
  * Assert every required artifact class is present and every present class is
  * declared, and that every recorded digest matches its content.
- * @param {object} row evidence row
+ * @param {import('./record.mjs').EvidenceRowInput} row evidence row
  * @param {import('./policy.mjs').EvidencePolicyInput} policy caller-owned policy
  * @param {string} label row label used in diagnostics
  * @returns {import('./failure.mjs').EvidenceFailure[]}
@@ -81,7 +81,7 @@ function verifyArtifacts(row, policy, label) {
  * @param {{ nowMs: number }} options caller-owned reference clock for freshness
  * @returns {object} the frozen evidence report
  */
-export function verifyEvidenceRun(run, policy, options = {}) {
+export function verifyEvidenceRun(run, policy, options = /** @type {{ nowMs: number }} */ ({})) {
   const validatedRun = validateEvidenceRun(run, 'run')
   const validatedPolicy = validateEvidencePolicy(policy, 'policy')
   const nowMs = options.nowMs

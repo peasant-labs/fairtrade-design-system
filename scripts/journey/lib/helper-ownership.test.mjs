@@ -55,6 +55,7 @@ const coreFixtures = await importFairtestSource('src/core/fixtures.mjs')
 const corpusSource = readFileSync(join(ROOT, CORPUS_REL), 'utf8')
 const manifestSource = readFileSync(join(ROOT, MANIFEST_REL), 'utf8')
 
+/** @type {Record<string, Record<string, unknown>>} */
 const libModules = {}
 for (const file of LIB_FILES) {
   libModules[file] = await import(`./${file}`)
@@ -144,7 +145,9 @@ function checkRowOwnership(entry) {
 /** List every source file under the private child package. */
 function listChildSources() {
   const roots = [join(ROOT, 'packages', 'fairtest', 'src'), join(ROOT, 'packages', 'fairtest', 'test')]
+  /** @type {string[]} */
   const found = []
+  /** @param {string} dir */
   const walk = (dir) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const full = join(dir, entry.name)
@@ -156,7 +159,11 @@ function listChildSources() {
   return found
 }
 
-/** Every static and dynamic module specifier named by one helper body. */
+/**
+ * Every static and dynamic module specifier named by one helper body.
+ * @param {string} text one helper body
+ * @returns {string[]} the distinct module specifiers it names
+ */
 function importSpecifiers(text) {
   const specifiers = [...text.matchAll(/(?:\bfrom\s*|\bimport\s*|\brequire\s*\(\s*)['"]([^'"]+)['"]/g)].map((match) => match[1])
   return [...new Set(specifiers)]

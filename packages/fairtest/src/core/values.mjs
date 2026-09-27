@@ -26,7 +26,7 @@ function fail(message) {
  * Return true when the value is a plain record with no prototype behavior.
  * Arrays, null, class instances, and primitives return false.
  * @param {unknown} value
- * @returns {boolean}
+ * @returns {value is Record<string, unknown>}
  */
 export function isPlainRecord(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false

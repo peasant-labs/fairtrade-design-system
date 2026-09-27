@@ -15,19 +15,26 @@
 import { test as base, expect } from '@playwright/test'
 import { installDeterminism } from './determinism.mjs'
 
-export const test = base.extend({
-  theme: async ({}, use, testInfo) => {
-    await use(testInfo.project.name)
-  },
-  context: async ({ context }, use) => {
-    await installDeterminism(context)
-    await use(context)
-  },
-})
+export const test = base.extend(
+  /** @type {import('@playwright/test').Fixtures<{ theme: string }, {}, import('@playwright/test').PlaywrightTestArgs & import('@playwright/test').PlaywrightTestOptions, import('@playwright/test').PlaywrightWorkerArgs & import('@playwright/test').PlaywrightWorkerOptions>} */ ({
+    theme: async ({}, use, testInfo) => {
+      await use(testInfo.project.name)
+    },
+    context: async ({ context }, use) => {
+      await installDeterminism(context)
+      await use(context)
+    },
+  }),
+)
 
 export { expect }
 
-/** Story iframe URL for a story id under the active theme. */
+/**
+ * Story iframe URL for a story id under the active theme.
+ * @param {string} id story id
+ * @param {string} theme active theme name
+ * @returns {string} the story iframe URL
+ */
 export function storyUrl(id, theme) {
   const globals = theme === 'light' ? '&globals=theme:light' : ''
   return `/iframe.html?id=${id}&viewMode=story${globals}`

@@ -91,3 +91,26 @@ records:
       budget: Seconds of local compute inside the existing browser-free phase; one tsc --listFiles over the covered roots.
       cleanup: No temporary state is created; the child process is bounded and reaped by spawnSync on every exit path.
     exitCondition: Fold the checks into a lower-level program or compiler integration if one can observe program membership and suppression metadata directly.
+  - name: fairtest-target-dispatch-guard
+    answers:
+      subject: No app module outside the target-declaration and view-construction modules may branch on the host kind; every other module must read the kind, id, capabilities, fixtures, and actions from the target value's own fields.
+      necessity: A value, contract, or fixture test observes the target object's shape and the adapter's behaviour, but it cannot see the source of an arbitrary app module; only a source scan over the real tree catches a new kind === 'product' / kind === 'component' branch that would become a second, disagreeing discriminator.
+      productionPath: pnpm test:fairtest:product-contract (node scripts/fairtest/run-product-contract.mjs) runs scripts/fairtest/product-adapter.test.mjs, whose "refuses a host-kind branch outside the declaration and view-construction modules" case calls assertNoTargetKindDispatch over the real scripts/fairtest directory and then over a scratch tree carrying the planted mutation.
+      cost: The guard is one browser-free source scan with one readdir plus one readFile per scanned .mjs module; no service, browser, network, or durable output.
+      lifetime: No temporary state on the passing path; the mutation branch creates one mkdtemp directory under the OS temp dir and removes it with rmSync in a finally step on every exit path.
+      concurrency: Read-only over the shared tree; the mutation scratch directory is mkdtemp-unique, so parallel runs cannot share a path, and no port or identity is claimed.
+      ciParity: The exact command pnpm test:fairtest:product-contract runs from a clean checkout under the pinned Node toolchain; the runner inventory records it as the required local contract but as DEFERRED from required CI, so a green CI run does not yet prove the guard ran.
+      evidence: A machine-readable node --test pass line plus, on refusal, a diagnostic naming the offending module, the matched branch expression, path context, and repair guidance; the mutation asserts each of those substrings.
+      mutation: adapter-branches-on-target-kind plants a scratch module whose pick() does `if (target.kind === 'product')`, calls the guard on the scratch directory, and asserts the guard names the module and the branch instead of passing it.
+      exitCondition: Fold the rule into a compiler or lint constraint, or delete the guard once a lower-level package check observes the same host-kind branch boundary.
+    lowerLayer:
+      result: promote
+      detail: The value and contract suites pin target shape and adapter composition, but none reads the source of an arbitrary app module, so only this source scan observes a stray host-kind branch; the elaborate check is justified.
+    decision:
+      verdict: approve
+      rationale: All ten answers are present, the value layer cannot observe a branch in another module's source, and the guard is bounded to one browser-free scan with a uniquely named mutation.
+    executionPolicy:
+      runner: Browser-free node --test case inside the product-contract suite; readdir/readFile over scripts/fairtest only.
+      budget: One source scan of the app modules plus one scratch-directory mutation inside the existing product-contract run; no added rows, retries, or services.
+      cleanup: The mutation scratch directory is removed with rmSync in a finally step on every exit path; the passing path leaves no state.
+    exitCondition: Fold the rule into a compiler or lint constraint, or delete the guard once a lower-level package check observes the same host-kind branch boundary.

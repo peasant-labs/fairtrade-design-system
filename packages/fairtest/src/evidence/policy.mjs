@@ -75,7 +75,12 @@ function validateRequiredRow(value, index) {
     )
   }
   assertNonEmptyString(row.root, 'root', `${path}.root`)
-  return freezeRecord({ key: row.key, kind: row.kind, theme: row.theme, root: row.root })
+  return freezeRecord({
+    key: row.key,
+    kind: row.kind,
+    theme: /** @type {import('../host-contract/kinds.mjs').ThemeName} */ (row.theme),
+    root: row.root,
+  })
 }
 
 /**
@@ -172,7 +177,7 @@ export function createEvidencePolicy(input) {
   return freezeRecord({
     version: EVIDENCE_POLICY_VERSION,
     runId: record.runId,
-    mode: record.mode,
+    mode: /** @type {string} */ (record.mode),
     artifactClasses: [...classes],
     requiredRows: rows,
     duplicateScopes: [...scopes],

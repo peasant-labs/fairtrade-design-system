@@ -44,7 +44,52 @@ const VENDORED_FILES = ['assertions.mjs', 'determinism.mjs', 'determinism-consta
 /** Exact fields every call-shape inventory row carries. */
 const SHAPE_FIELDS = ['name', 'shape', 'accepted', 'expected_tags', 'expected_root', 'expected_shape_phrase']
 
-/** Parse exactly one YAML document, refusing trailing documents and non-record roots. */
+/**
+ * One poll recorded by the runner double.
+ * @typedef {object} VendoredPoll
+ * @property {string} name polled attribute name
+ * @property {string} wanted expected attribute value
+ */
+
+/**
+ * One axe builder recorded by the axe double.
+ * @typedef {object} VendoredAxeBuilder
+ * @property {string[]} [tags] tags the builder was given
+ * @property {string} [root] root selector the builder was scoped to
+ */
+
+/**
+ * One compact axe scan result.
+ * @typedef {object} AxeScanResult
+ * @property {unknown} tags tags the scan ran
+ * @property {Array<Record<string, unknown>>} violations compact violations
+ * @property {unknown[]} incomplete incomplete rule ids
+ * @property {number} passes passing rule count
+ */
+
+/**
+ * The exported surface of the loaded vendored copy under test.
+ * @typedef {object} VendoredLoaded
+ * @property {(page: object, options?: unknown) => Promise<AxeScanResult>} scanAxe the vendored axe scan helper
+ * @property {(page: object, theme: string) => Promise<unknown>} expectTheme the vendored theme assertion
+ * @property {readonly string[]} AXE_RESULT_FIELDS the declared compact axe result shape
+ * @property {readonly string[]} DEFAULT_AXE_TAGS the pinned default axe tags
+ */
+
+/**
+ * The loaded vendored copy plus its double-side recorders.
+ * @typedef {object} VendoredCopy
+ * @property {string} scratch temporary consumer tree root
+ * @property {VendoredLoaded} loaded the loaded vendored copy
+ * @property {{ polls: VendoredPoll[] }} runner the runner double recorder
+ * @property {{ builders: VendoredAxeBuilder[] }} axe the axe double recorder
+ */
+
+/**
+ * Parse exactly one YAML document, refusing trailing documents and non-record roots.
+ * @param {string} source
+ * @param {string} label
+ */
 function loadSingleDocument(source, label) {
   const documents = YAML.parseAllDocuments(source, { strict: true, uniqueKeys: true })
   if (documents.length !== 1) {
@@ -61,7 +106,14 @@ function loadSingleDocument(source, label) {
   return value
 }
 
-/** Assert the record holds exactly the declared fields. */
+/**
+ * Assert the record holds exactly the declared fields.
+ * @param {unknown} value
+ * @param {string[]} fields
+ * @param {string} tag
+ * @param {string} label
+ * @param {string} [path]
+ */
 function checkKeys(value, fields, tag, label, path) {
   const where = path ? ` at path ${path}` : ''
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -79,7 +131,12 @@ function checkKeys(value, fields, tag, label, path) {
   }
 }
 
-/** Assert the actual names match the required inventory exactly, with no duplicates. */
+/**
+ * Assert the actual names match the required inventory exactly, with no duplicates.
+ * @param {unknown[]} actual
+ * @param {string[]} required
+ * @param {string} label
+ */
 function checkRequiredNames(actual, required, label) {
   if (new Set(actual).size !== actual.length) {
     throw new Error(`${label}: duplicate record name at path records; repair: give every record a unique required name.`)
@@ -90,7 +147,7 @@ function checkRequiredNames(actual, required, label) {
     }
   }
   for (const name of actual) {
-    if (!required.includes(name)) {
+    if (!required.includes(/** @type {string} */ (name))) {
       throw new Error(`${label}: required record inventory mismatch at path records; unknown record "${name}"; repair: remove the "${name}" record or register it in the manifest required names.`)
     }
   }
@@ -99,8 +156,8 @@ function checkRequiredNames(actual, required, label) {
 /**
  * Materialize one inventory row as the exact call a consumer would write.
  * @param {Record<string, unknown>} row one call-shape inventory row
- * @param {(page: object) => Promise<unknown>} scanAxe the vendored helper under test
- * @returns {Promise<unknown>} the helper's promise for that call
+ * @param {Function} scanAxe the vendored helper under test
+ * @returns {Promise<AxeScanResult>} the helper's promise for that call
  */
 function callShape(row, scanAxe) {
   const page = {}
@@ -131,7 +188,7 @@ function callShape(row, scanAxe) {
  * a polling `toHaveAttribute` and a recording axe builder. A vendored body
  * importing an app module, a target registry, or a private workspace package
  * cannot resolve here, which is the property being proven.
- * @returns {Promise<object>} the loaded copy plus its double-side recorders
+ * @returns {Promise<VendoredCopy>} the loaded copy plus its double-side recorders
  */
 async function loadVendoredCopy() {
   const scratch = mkdtempSync(join(tmpdir(), 'journey-vendored-load-'))
@@ -213,15 +270,17 @@ async function loadVendoredCopy() {
 describe('journey helper compatibility', () => {
   it('keeps every helper module loadable with its current exports', async () => {
     assert.deepEqual(assertions.DEFAULT_AXE_TAGS, ['wcag2a', 'wcag2aa'], 'axe tags must stay pinned')
+    const assertionExports = /** @type {Record<string, unknown>} */ (assertions)
     for (const symbol of ['scanAxe', 'seriousViolations', 'expectTheme', 'expectComputedTokens']) {
-      assert.equal(typeof assertions[symbol], 'function', `${symbol} must stay exported from assertions.mjs`)
+      assert.equal(typeof assertionExports[symbol], 'function', `${symbol} must stay exported from assertions.mjs`)
     }
     assert.ok(Object.isFrozen(assertions.AXE_RESULT_FIELDS), 'the declared axe result shape must stay frozen')
     assert.equal(typeof determinism.installDeterminism, 'function', 'installDeterminism must stay exported from determinism.mjs')
     assert.equal(typeof fixtures.test, 'function', 'test must stay exported from fixtures.mjs')
     assert.equal(typeof fixtures.storyUrl, 'function', 'storyUrl must stay exported from fixtures.mjs')
+    const serious = /** @type {Array<{ impact: string }>} */ (assertions.seriousViolations({ violations: [{ impact: 'critical' }, { impact: 'minor' }] }))
     assert.deepEqual(
-      assertions.seriousViolations({ violations: [{ impact: 'critical' }, { impact: 'minor' }] }).map((entry) => entry.impact),
+      serious.map((entry) => entry.impact),
       ['critical'],
       'serious violations must still filter critical and serious impact only',
     )
@@ -239,8 +298,9 @@ describe('journey helper compatibility', () => {
   it('loads the byte-vendored copy in a tree holding only the shared bodies', async () => {
     const { scratch, loaded } = await loadVendoredCopy()
     try {
+      const loadedExports = /** @type {Record<string, unknown>} */ (loaded)
       for (const symbol of ['scanAxe', 'seriousViolations', 'expectTheme', 'expectComputedTokens']) {
-        assert.equal(typeof loaded[symbol], 'function', `${symbol} must load from a vendored tree that has no app module`)
+        assert.equal(typeof loadedExports[symbol], 'function', `${symbol} must load from a vendored tree that has no app module`)
       }
       assert.deepEqual([...loaded.AXE_RESULT_FIELDS], [...assertions.AXE_RESULT_FIELDS], 'the vendored copy must carry the same declared axe result shape')
     } finally {
@@ -298,7 +358,7 @@ describe('journey helper compatibility', () => {
       const pageWide = await loaded.scanAxe({})
       const scoped = await loaded.scanAxe({}, { root: '#view' })
       assert.deepEqual([...loaded.AXE_RESULT_FIELDS], ['tags', 'violations', 'incomplete', 'passes'], 'the declared axe result shape must stay pinned')
-      for (const [label, scan] of [['page-wide', pageWide], ['scoped', scoped]]) {
+      for (const [label, scan] of /** @type {Array<[string, AxeScanResult]>} */ ([['page-wide', pageWide], ['scoped', scoped]])) {
         assert.deepEqual(Object.keys(scan), [...loaded.AXE_RESULT_FIELDS], `the ${label} scan must carry exactly the declared result fields`)
         assert.deepEqual(
           Object.keys(scan.violations[0]),
@@ -361,7 +421,7 @@ describe('journey helper compatibility', () => {
         if (row.accepted) {
           const scan = await callShape(row, loaded.scanAxe)
           assert.deepEqual(Object.keys(scan), [...loaded.AXE_RESULT_FIELDS], `row "${row.name}": an accepted shape must still return the declared axe result shape`)
-          const builder = axe.builders.at(-1)
+          const builder = /** @type {VendoredAxeBuilder} */ (axe.builders[axe.builders.length - 1])
           assert.deepEqual(builder.tags, row.expected_tags, `row "${row.name}": the accepted shape must run its own tags`)
           assert.equal(builder.root ?? null, row.expected_root, `row "${row.name}": the accepted shape must scope the run to its own root`)
           assert.equal(axe.builders.length, buildersBefore + 1, `row "${row.name}": an accepted shape must construct exactly one axe run`)
@@ -397,7 +457,7 @@ describe('journey helper compatibility', () => {
       checkRequiredNames(mutations.map((entry) => entry.name), manifest.requiredMutationNames, SHAPE_MANIFEST_REL)
       for (const mutation of mutations) {
         checkKeys(mutation, mutation.kind === 'bad-value' ? ['name', 'kind', 'target', 'field', 'value', 'expectedDiagnostic'] : ['name', 'kind', 'target', 'expectedDiagnostic'], 'mutation record', SHAPE_MANIFEST_REL, `manifest.mutations.${mutation.name}`)
-        const rows = structuredClone(corpus.shapes)
+        const rows = /** @type {Record<string, unknown>[]} */ (structuredClone(corpus.shapes))
         let message = null
         try {
           if (mutation.kind === 'delete-record') {
