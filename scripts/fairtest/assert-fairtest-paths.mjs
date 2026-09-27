@@ -6,12 +6,15 @@
 // Two guards keep scripts/fairtest/fairtest-paths.mjs the single owner of the
 // repo-relative locations the harness names:
 //
-//   1. the raw-literal path guard walks every non-test module under
-//      scripts/fairtest/ and the Fairtest root guards, and refuses a bare
-//      string literal that equals a declared root or a repo-relative path
-//      under one, outside the owner. The scanner lexes the module so a path
-//      mentioned inside a template literal's text or a comment is not a bare
-//      literal; a new hardcoded path under a declared root is caught.
+//   1. the raw-literal path guard walks every module under scripts/fairtest/
+//      and the Fairtest root guards, and refuses a bare string literal that
+//      equals a declared root or a repo-relative path under one, outside the
+//      owner. Test modules are covered too, except the fixture carriers the
+//      owner declares in FAIRTEST_FIXTURE_TEST_MODULES. The scanner lexes the
+//      module so a path mentioned inside a comment is not a bare literal, and
+//      it treats a substitution-free template as its text, so a path cannot
+//      hide behind a backtick either; a new hardcoded path under a declared
+//      root is caught.
 //   2. the path-resolution guard proves every declared location resolves to an
 //      absolute path inside FAIRTEST_REPO_ROOT, and that traversal, absolute,
 //      empty, dot-segment, windows, and unknown-name inputs are refused with
@@ -30,6 +33,7 @@ import { basename, isAbsolute, join, relative as relativePath, resolve, sep } fr
 import { loadSingleDocument } from '../fairtest-single-document.mjs'
 import { FAIRTEST_REPO_ROOT } from './fairtest-runtime.mjs'
 import {
+  FAIRTEST_FIXTURE_TEST_MODULES,
   FAIRTEST_PATHS,
   FAIRTEST_PATH_ROOTS,
   assertFairtestPathInside,
@@ -53,7 +57,7 @@ const MANIFEST_REL = fairtestRelative('pathsManifest')
 const LITERAL_EXPECT = ['detected', 'clean']
 const RESOLUTION_OPERATIONS = ['resolve-name', 'resolve-candidate']
 const RESOLUTION_EXPECT = ['inside', 'refused']
-const MUTATION_KINDS = ['plant-raw-literal', 'plant-escape']
+const MUTATION_KINDS = ['plant-raw-literal', 'plant-test-literal', 'plant-escape']
 
 /**
  * @typedef {object} LiteralCase
@@ -107,7 +111,11 @@ const MUTATION_KINDS = ['plant-raw-literal', 'plant-escape']
 /**
  * Find every string literal in a module source. The scanner tracks code,
  * comments, and template literals (including nested `${...}` expressions), so
- * a path named inside template text or a comment is not returned.
+ * a path named inside a comment is not returned. A substitution-free template
+ * is treated as its text: `` `scripts/testdata/x.yaml` `` is one literal just
+ * like `'scripts/testdata/x.yaml'`, so a path cannot hide behind a backtick. A
+ * template that carries a substitution keeps its text opaque and only its
+ * `${...}` expressions are scanned as code.
  * @param {string} source module source
  * @returns {StringLiteral[]} the string literals in source order
  */
@@ -117,16 +125,27 @@ export function findStringLiterals(source) {
   let index = 0
   let line = 1
   const length = source.length
-  /** @type {Array<{ kind: 'code', braces: number } | { kind: 'template' }>} */
+  /** @type {Array<{ kind: 'code', braces: number } | { kind: 'template', text: string, substituted: boolean, startLine: number }>} */
   const contexts = [{ kind: 'code', braces: 0 }]
   while (index < length) {
     const character = source[index]
     const top = contexts[contexts.length - 1]
     if (top.kind === 'template') {
-      if (character === '\\') { index += 2; continue }
-      if (character === '\n') { line += 1; index += 1; continue }
-      if (character === '`') { contexts.pop(); index += 1; continue }
-      if (character === '$' && source[index + 1] === '{') { contexts.push({ kind: 'code', braces: 0 }); index += 2; continue }
+      if (character === '\\') { top.text += source[index + 1] ?? ''; index += 2; continue }
+      if (character === '\n') { line += 1; top.text += '\n'; index += 1; continue }
+      if (character === '`') {
+        contexts.pop()
+        if (!top.substituted) found.push({ line: top.startLine, value: top.text })
+        index += 1
+        continue
+      }
+      if (character === '$' && source[index + 1] === '{') {
+        top.substituted = true
+        contexts.push({ kind: 'code', braces: 0 })
+        index += 2
+        continue
+      }
+      top.text += character
       index += 1
       continue
     }
@@ -159,7 +178,7 @@ export function findStringLiterals(source) {
       found.push({ line: startLine, value })
       continue
     }
-    if (character === '`') { contexts.push({ kind: 'template' }); index += 1; continue }
+    if (character === '`') { contexts.push({ kind: 'template', text: '', substituted: false, startLine: line }); index += 1; continue }
     if (character === '{') { top.braces += 1; index += 1; continue }
     if (character === '}') {
       if (top.braces > 0) top.braces -= 1
@@ -193,8 +212,10 @@ export function findRawPathLiterals(source) {
 
 /**
  * Assert none of the named files carries a raw inventory path literal outside
- * the owner. Test and type-test modules are skipped: their literals are
- * fixture-mutation data, matching the target-dispatch guard's convention.
+ * the owner. `*.test.mjs` and `*.type-test.mjs` modules are scanned too, so a
+ * new test that hardcodes a location under a declared root fails here; the only
+ * exempt test modules are the fixture carriers the owner declares in
+ * FAIRTEST_FIXTURE_TEST_MODULES.
  * @param {string[]} files absolute module paths
  * @returns {number} the number of modules scanned
  */
@@ -205,7 +226,7 @@ export function assertNoRawPathLiteralsIn(files) {
   for (const file of files) {
     const name = basename(file)
     if (OWNED_MODULES.includes(name)) continue
-    if (name.endsWith('.test.mjs') || name.endsWith('.type-test.mjs')) continue
+    if (FAIRTEST_FIXTURE_TEST_MODULES.includes(name)) continue
     scanned += 1
     for (const hit of findRawPathLiterals(readFileSync(file, 'utf8'))) {
       violations.push(`${relativePath(FAIRTEST_REPO_ROOT, file).split(sep).join('/')}:${hit.line} ${JSON.stringify(hit.value)}`)
@@ -332,13 +353,13 @@ function validateManifest(value) {
   assert.equal(value.expectedMutationCount, value.mutations.length, `${MANIFEST_REL}: mutation count must equal expectedMutationCount`)
   for (const [index, mutation] of value.mutations.entries()) {
     const fields = ['name', 'kind', 'expectedDiagnostic']
-    if (mutation.kind === 'plant-raw-literal') fields.push('literal')
+    if (mutation.kind === 'plant-raw-literal' || mutation.kind === 'plant-test-literal') fields.push('literal')
     if (mutation.kind === 'plant-escape') fields.push('candidate')
     checkKeys(mutation, fields, `manifest mutation ${index}`, MANIFEST_REL)
     if (!MUTATION_KINDS.includes(mutation.kind)) {
       fail(`${MANIFEST_REL}: unknown mutation kind ${JSON.stringify(mutation.kind)} at path manifest.mutations[${index}].kind; repair: use one of ${MUTATION_KINDS.join(', ')}.`)
     }
-    if (mutation.kind === 'plant-raw-literal') {
+    if (mutation.kind === 'plant-raw-literal' || mutation.kind === 'plant-test-literal') {
       assert.equal(mutation.expectedDiagnostic, mutation.literal, `${MANIFEST_REL}: mutation ${mutation.name} expectedDiagnostic must equal the planted literal`)
     }
   }
@@ -390,10 +411,11 @@ function runMutations(manifestValue) {
   for (const mutation of manifestValue.mutations) {
     let message = null
     try {
-      if (mutation.kind === 'plant-raw-literal') {
+      if (mutation.kind === 'plant-raw-literal' || mutation.kind === 'plant-test-literal') {
         const directory = mkdtempSync(join(tmpdir(), 'fairtest-paths-literal-'))
         try {
-          writeFileSync(join(directory, 'planted.mjs'), `const DIST_ROOT = join(FAIRTEST_REPO_ROOT, '${mutation.literal}')\n`)
+          const file = mutation.kind === 'plant-test-literal' ? 'planted.test.mjs' : 'planted.mjs'
+          writeFileSync(join(directory, file), `const DIST_ROOT = join(FAIRTEST_REPO_ROOT, '${mutation.literal}')\n`)
           assertNoRawPathLiterals(directory)
         } finally {
           rmSync(directory, { recursive: true, force: true })

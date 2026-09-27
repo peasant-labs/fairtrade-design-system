@@ -50,8 +50,20 @@ const BINDING_RE = /import\s*\{([^}]*)\}\s*from\s+'\.\/surface-gate\.mjs'/
 /** @typedef {new (page: unknown) => SurfaceGateInstance} SurfaceGateConstructor */
 /** @typedef {new (page: unknown) => { surface: unknown }} GraphThemeGateConstructor */
 
-/** @param {unknown} value @returns {value is Record<string, unknown>} */
-const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value)
+/**
+ * Report whether a value is a plain record, not merely any object. Class
+ * instances (a `Date`, a constructed gate) must not satisfy a predicate that
+ * claims `Record<string, unknown>`: reading them with `in` and `Object.keys`
+ * would treat prototype members as record fields. A plain object literal and a
+ * null-prototype mapping (what the YAML loader returns) are the only records.
+ * @param {unknown} value
+ * @returns {value is Record<string, unknown>}
+ */
+const isRecord = (value) => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
+  const prototype = Object.getPrototypeOf(value)
+  return prototype === Object.prototype || prototype === null
+}
 
 /** @param {string} message @returns {never} */
 function fail(message) {

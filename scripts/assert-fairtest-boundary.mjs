@@ -21,6 +21,7 @@ import { dirname, extname, join, relative as relativePath, resolve, sep } from '
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
 import { resolveFairtestSource } from './fairtest-source.mjs'
+import { assertBoundaryChainsDispatch } from './fairtest/assert-target-dispatch.mjs'
 import { FAIRTEST_PATHS, fairtestRelative } from './fairtest/fairtest-paths.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -358,6 +359,11 @@ function main() {
   // Executable boundary cases against the real tree.
   const rootManifest = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
   const childManifest = JSON.parse(readFileSync(join(ROOT, CHILD_REL, 'package.json'), 'utf8'))
+  // The required-CI mount for the dispatch guard is the body of the
+  // `test:fairtest:boundary` command. Bind the chain here, in the guard that
+  // runs first, so deleting the chained dispatch call turns required CI red
+  // instead of silently dropping the guard.
+  assertBoundaryChainsDispatch(rootManifest.scripts ?? {}, 'package.json')
   cases.forEach((entry, index) => {
     const path = `cases[${index}]`
     if (entry.check === 'root-package') {

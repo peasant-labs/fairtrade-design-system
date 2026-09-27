@@ -7,11 +7,16 @@
 // harness-scoped guards live in `scripts/fairtest/`. This module is the single
 // owner of the repo-relative locations the harness names: the two build roots,
 // the private child package and its manifest, installed packages, the
-// required-CI workflow, and the `scripts/testdata` corpora and required-name
-// manifests. A module that needs one of these values reads it here instead of
-// spelling the path as a bare string literal, and the raw-literal path guard
-// (scripts/fairtest/assert-fairtest-paths.mjs) refuses a new bare literal
-// equal to, or under, any declared root.
+// required-CI workflow, and the declared subset of the `scripts/testdata`
+// corpora and required-name manifests it resolves (boundary, ts-program,
+// surface-consumers, runner-inventory, process-cases, promotion, paths,
+// dispatch). Both this list and FAIRTEST_PATH_ROOTS are the whole claim:
+// no module may read a location from here that this record cannot resolve, and
+// a corpus a guard reads but this module does not declare is owned by that
+// guard, not by this header. A module that needs one of these values reads it
+// here instead of spelling the path as a bare string literal, and the
+// raw-literal path guard (scripts/fairtest/assert-fairtest-paths.mjs) refuses a
+// new bare literal equal to, or under, any declared root.
 //
 // Plain data plus pure functions only: a frozen record of named repo-relative
 // locations, a frozen list of the directory roots the guard treats as
@@ -48,6 +53,8 @@ export const FAIRTEST_PATHS = Object.freeze({
   promotionManifest: 'scripts/testdata/test-promotion.manifest.yaml',
   pathsCorpus: 'scripts/testdata/fairtest-paths.yaml',
   pathsManifest: 'scripts/testdata/fairtest-paths.manifest.yaml',
+  dispatchCorpus: 'scripts/testdata/fairtest-dispatch.yaml',
+  dispatchManifest: 'scripts/testdata/fairtest-dispatch.manifest.yaml',
 })
 
 /**
@@ -64,6 +71,24 @@ export const FAIRTEST_PATH_ROOTS = Object.freeze([
   'scripts/testdata',
   'node_modules',
   'dist',
+])
+
+/**
+ * Test modules the raw-literal path guard exempts from its no-bare-literal
+ * rule. Every other `*.test.mjs` and `*.type-test.mjs` under the harness
+ * directory IS scanned, so a new test that hardcodes a location under a
+ * declared root fails the guard. These four carry an inventory literal
+ * deliberately as fixture-mutation data (a corpus path they load, or an app
+ * root they pass to the code under test); each is a migration candidate to read
+ * the location from this owner instead of repeating it. The exemption lives
+ * here, in the owner, rather than as a second list inside the guard.
+ * @type {readonly string[]}
+ */
+export const FAIRTEST_FIXTURE_TEST_MODULES = Object.freeze([
+  'component-mutations.test.mjs',
+  'product-adapter.test.mjs',
+  'product-mutations.test.mjs',
+  'run-envelope.test.mjs',
 ])
 
 /**
