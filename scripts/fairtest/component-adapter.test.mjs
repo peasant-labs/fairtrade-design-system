@@ -723,7 +723,7 @@ describe('component target registry and theme rows', () => {
       errorDisplay: '.sb-errordisplay',
       errorStack: '#error-stack',
     })
-    assert.deepEqual([...selected.actions], ['expand-disclosure', 'open-transcript-search', 'retry-local-connection', 'select-next-session'])
+    assert.deepEqual([...selected.actions], ['expand-disclosure', 'open-transcript-search', 'retry-local-connection', 'select-next-session', 'open-collapsed-group'])
     assert.deepEqual([...targets.COMPONENT_MOUNT_BODY_CLASSES], ['sb-main-centered', 'sb-show-main'])
   })
 
@@ -736,6 +736,9 @@ describe('component target registry and theme rows', () => {
       ['offline-banner', 'component-offline-banner', 'in-use-connectionstate--offline-banner', 'fullscreen', 'retry-local-connection'],
       ['digest-split', 'component-digest-split', 'components-promptdigest--split', 'centered', 'select-next-session'],
       ['stats-strip', 'component-stats-strip', 'components-statsstrip--many-pairs', 'centered', null],
+      ['publish-bar', 'component-publish-bar', 'in-use-publish--bar-states', 'centered', null],
+      ['access-list', 'component-access-list', 'in-use-publish--access', 'centered', null],
+      ['setting-groups', 'component-setting-groups', 'in-use-settings--groups', 'centered', 'open-collapsed-group'],
     ])
     assert.equal(targets.COMPONENT_DEFAULT_STORY, targets.COMPONENT_STORIES[0], 'the disclosure story must stay the default entry')
     assert.equal(targets.COMPONENT_DEFAULT_STORY.targetId, targets.COMPONENT_TARGET_ID, 'the disclosure story keeps the component target identity')
@@ -743,8 +746,8 @@ describe('component target registry and theme rows', () => {
     // The disclosure receipt keeps its declared shape; every other story names
     // its own tie field in the same place.
     assert.deepEqual([...targets.componentGateReceiptFields()], [...targets.COMPONENT_A11Y_GATE_RECEIPT_FIELDS])
-    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => story.gateTie.field), ['ariaExpanded', 'searchOpen', 'retryBusy', 'nextOptionSelected', 'pairsRendered'])
-    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => targets.componentA11yPoint(story)), ['after-interaction', 'after-interaction', 'after-interaction', 'after-interaction', 'after-mount'])
+    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => story.gateTie.field), ['ariaExpanded', 'searchOpen', 'retryBusy', 'nextOptionSelected', 'pairsRendered', 'barActions', 'namedRemove', 'bothGroupsOpen'])
+    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => targets.componentA11yPoint(story)), ['after-interaction', 'after-interaction', 'after-interaction', 'after-interaction', 'after-mount', 'after-mount', 'after-mount', 'after-interaction'])
     for (const story of targets.COMPONENT_STORIES) {
       assert.ok(Object.isFrozen(story), `${story.key}: the story entry must be frozen`)
       assert.equal(targets.selectComponentStory(story.key), story, `${story.key}: the lookup must return the registry entry`)
@@ -791,7 +794,7 @@ describe('component target registry and theme rows', () => {
       assert.equal(contractTargets.requiresCapability(receipt.declaration, required), true)
     }
     assert.equal(receipt.declaration.kind, 'component')
-    assert.deepEqual([...receipt.declaration.actions], ['expand-disclosure', 'open-transcript-search', 'retry-local-connection', 'select-next-session'])
+    assert.deepEqual([...receipt.declaration.actions], ['expand-disclosure', 'open-transcript-search', 'retry-local-connection', 'select-next-session', 'open-collapsed-group'])
   })
 })
 
