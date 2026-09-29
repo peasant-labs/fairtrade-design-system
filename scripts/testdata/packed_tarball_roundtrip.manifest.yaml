@@ -11,6 +11,13 @@ requiredImportables:
   - HelperGroup
   - HelperGroupListItem
   - HelperThreadRow
+  - PromptDigest
+  - LocalOfflineBanner
+  - StatsStrip
+  - LOCAL_APP_SECTIONS
+  - GRAPH_APP_SECTIONS
+  - GraphAppShell
+  - GraphSectionNav
 requiredRefusalNames:
   - relationship-carries-a-cooked-field
   - durable-payload-embeds-read-metadata

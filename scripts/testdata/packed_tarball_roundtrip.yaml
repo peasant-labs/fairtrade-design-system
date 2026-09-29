@@ -103,7 +103,9 @@ cases:
 # subpath is the exports-map key; names must resolve as live exports.
 importables:
   - subpath: ui
-    names: [adaptTranscript, prefilterTurns, TranscriptViewer, HelperGroup, HelperGroupListItem, HelperThreadRow]
+    names: [adaptTranscript, prefilterTurns, TranscriptViewer, HelperGroup, HelperGroupListItem, HelperThreadRow, PromptDigest, LocalOfflineBanner, StatsStrip]
+  - subpath: graph
+    names: [LOCAL_APP_SECTIONS, GRAPH_APP_SECTIONS, GraphAppShell, GraphSectionNav]
 # Fail-closed evidence. Each overlay is merged onto the named case payload and
 # the packed adapter MUST throw with expectedError rather than strip the field
 # or return a degraded transcript.

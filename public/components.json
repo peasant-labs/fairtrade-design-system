@@ -1,7 +1,7 @@
 {
   "$description": "fairtrade component manifest, generated from src/ui. import from the barrel: import { Button } from \"src/ui\". every component is token-styled (classes in src/index.css) and works in both themes. props shows the Storybook-controllable props; full prop docs are the JSDoc in each file.",
   "import": "src/ui (barrel: src/ui/index.js)",
-  "count": 54,
+  "count": 55,
   "components": [
     {
       "name": "Accordion",
@@ -429,7 +429,8 @@
       "exports": [
         "ConnectionPill",
         "DataState",
-        "TeachingEmptyState"
+        "TeachingEmptyState",
+        "LocalOfflineBanner"
       ],
       "doc": "a tiny inline copy button — navigator.clipboard with a guard for environments where it is",
       "props": {
@@ -452,7 +453,14 @@
         "TeachingEmpty",
         "TeachingStandalone",
         "Loading",
-        "LightTheme"
+        "LightTheme",
+        "OfflineBanner",
+        "OfflineBannerDefault",
+        "OfflineBannerChecked",
+        "OfflineBannerRetrying",
+        "OfflineBannerCommand",
+        "OfflineBannerNoRetry",
+        "OfflineBannerNoClipboard"
       ]
     },
     {
@@ -1039,6 +1047,7 @@
       "stories": [
         "Playground",
         "Aligned",
+        "IconOnly",
         "Providers",
         "WithDangerItem",
         "Empty",
@@ -1211,7 +1220,12 @@
         "ExpandedWithCommit",
         "Expanded",
         "WithoutLinks",
-        "ManyCommitsAndSkills"
+        "ManyCommitsAndSkills",
+        "Split",
+        "SplitCollapsed",
+        "SplitBeforeFirstBoundary",
+        "SplitEmpty",
+        "SplitControlled"
       ]
     },
     {
@@ -1403,6 +1417,22 @@
         "Governance",
         "ProviderDistribution",
         "SingleTile"
+      ]
+    },
+    {
+      "name": "StatsStrip",
+      "category": "components",
+      "title": "components/StatsStrip",
+      "file": "src/ui/StatsStrip.jsx",
+      "exports": [
+        "StatsStrip"
+      ],
+      "doc": "@property {string} label - lowercase chrome naming the value (\"sessions\", \"longest streak\").",
+      "props": {},
+      "stories": [
+        "ManyPairs",
+        "OnePair",
+        "Empty"
       ]
     },
     {

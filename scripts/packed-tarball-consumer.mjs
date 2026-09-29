@@ -28,7 +28,9 @@ for (const group of input.importGroups) {
   const mod = await import(specifier)
   for (const name of group.names) {
     assert.ok(name in mod, `${specifier} is missing the ${name} export in the packed package`)
-    assert.ok(typeof mod[name] === 'function', `${specifier}.${name} is ${typeof mod[name]}, expected a callable export`)
+    // a component or helper is callable; a registry (a section list) is a frozen data array
+    const value = mod[name]
+    assert.ok(typeof value === 'function' || (Array.isArray(value) && value.length > 0 && Object.isFrozen(value)), `${specifier}.${name} is ${typeof value}, expected a callable export or a non-empty frozen registry`)
     resolved.set(name, mod[name])
   }
 }
