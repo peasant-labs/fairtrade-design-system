@@ -23,6 +23,7 @@ import {
   CircleDot,
   Lock,
   ArrowRight,
+  Terminal,
 } from 'lucide-react'
 import { providerLabel } from '../../ui/commons/providers.js'
 import {
@@ -42,6 +43,7 @@ import {
   ConfirmInline,
   Tag,
   ProviderIcon,
+  Breadcrumb,
 } from '../../ui'
 
 /* ============================================================================
@@ -124,7 +126,7 @@ export function PublishView() {
         </div>
         <header className="cmg-head">
           <div>
-            <h2 className="cmg-title">publishing dashboard</h2>
+            <h2 className="cmg-title" data-chrome-heading>publishing dashboard</h2>
             <p className="cmg-deck">push transcripts from the peasant cli to the village.</p>
           </div>
         </header>
@@ -174,7 +176,7 @@ export function PublishView() {
             <ul className="cmg-pub-list">
               {RECENT_PUBLISHES.map((p) => (
                 <li key={p.id} className="cmg-pub-row">
-                  <span className="cmg-pub-prov"><ProviderMark id={p.provider} /></span>
+                  <span className="cmg-pub-prov"><ProviderIcon harness={p.provider} size={14} /></span>
                   <span className="cmg-pub-title">{p.title}</span>
                   <span className="cmg-pub-meta mono">{p.project}</span>
                   <span className="cmg-pub-meta mono tnum"><Hash size={13} aria-hidden="true" /> {p.turns}</span>
@@ -550,8 +552,14 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
       <div className="cmg-detail">
         {/* hero + action cluster */}
         <header className="cmg-d-hero">
-          <div className="crumb cmg-crumb">
-            village <ChevronRight size={13} aria-hidden="true" /> collectives <ChevronRight size={13} aria-hidden="true" /> <span className="cur">{collective.name}</span>
+          <div className="cmg-crumb">
+            <Breadcrumb
+              items={[
+                { label: 'village', href: '#village', chrome: true },
+                { label: 'collectives', href: '#collectives', chrome: true },
+                { label: collective.name },
+              ]}
+            />
           </div>
           <div className="cmg-d-hero-row">
             <div>
@@ -896,7 +904,7 @@ export function CollectiveSettingsView() {
 const PROJECTS = [
   {
     id: 'village',
-    name: 'village',
+    name: 'Village Core',
     branch: 'fix/auth-middleware',
     transcripts: [
       { id: 'v1', provider: 'claude-code', title: 'Debugging auth middleware with Claude Code', date: 'Jun 15', visibility: 'public' },
@@ -1018,7 +1026,7 @@ export function ContributeView() {
                             aria-label={`select ${t.title}`}
                           />
                         </label>
-                        <span className="cmg-pub-prov"><ProviderMark id={t.provider} /></span>
+                        <span className="cmg-pub-prov"><ProviderIcon harness={t.provider} size={14} /></span>
                         <span className="cmg-tx-title">{t.title}</span>
                         <VisibilityEye v={t.visibility} />
                         <span className="cmg-tx-date mono tnum">{t.date}</span>
@@ -1083,7 +1091,7 @@ export function ContributeView() {
         <ul className="cmg-confirm-list">
           {selectedList.slice(0, 5).map((t) => (
             <li key={t.id} className="cmg-confirm-tx">
-              <ProviderMark id={t.provider} />
+              <ProviderIcon harness={t.provider} size={14} />
               <span className="cmg-confirm-title">{t.title}</span>
               <VisibilityEye v={t.visibility} />
             </li>

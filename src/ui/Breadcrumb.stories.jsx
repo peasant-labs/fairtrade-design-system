@@ -1,3 +1,4 @@
+import { expect, within } from 'storybook/test'
 import Breadcrumb, { Steps } from './Breadcrumb.jsx'
 import { frame } from './story-frame.jsx'
 import { Home, Users, FileText } from 'lucide-react'
@@ -26,7 +27,48 @@ const meta = {
 }
 export default meta
 
+function ForwardingLink({ href, className, children, ...rest }) {
+  return <a {...rest} href={href} className={className} data-custom-link="custom-link">{children}</a>
+}
+
 export const Playground = {}
+
+export const MixedCaseContent = {
+  args: {
+    items: [
+      { label: 'Village', href: '#village' },
+      { label: 'Collectives', href: '#collectives' },
+      { label: 'AI Research Team' },
+    ],
+  },
+}
+
+export const ChromeItems = {
+  args: {
+    items: [
+      { label: 'Village', href: '#village', chrome: true },
+      { label: 'Collectives', href: '#collectives', chrome: true },
+      { label: 'AI Research Team' },
+    ],
+  },
+}
+
+export const CustomLinkForwarding = {
+  args: {
+    LinkComponent: ForwardingLink,
+    items: [
+      { label: 'village', href: '#village' },
+      { label: 'collectives', href: '#collectives' },
+      { label: 'AI Research Team' },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const link = within(canvasElement).getByRole('link', { name: 'collectives' })
+    expect(link).toHaveAttribute('href', '#collectives')
+    expect(link).toHaveAttribute('class', 'link')
+    expect(link).toHaveAttribute('data-custom-link', 'custom-link')
+  },
+}
 
 export const WithIcons = {
   args: {

@@ -1,0 +1,140 @@
+cases:
+  - name: default-anchor-item
+    owner: source
+    items:
+      - label: village
+        href: "#village"
+      - label: AI Research Team
+    expected:
+      navLabel: breadcrumb
+      linkTag: a
+      linkClass: link
+      linkHref: "#village"
+      finalTag: span
+      finalClass: cur
+      finalAriaCurrent: page
+  - name: custom-link-forwarding
+    owner: source
+    linkComponent: forwarding
+    items:
+      - label: village
+        href: "#village"
+      - label: AI Research Team
+    expected:
+      linkTag: a
+      linkClass: link
+      linkHref: "#village"
+      customMarker: custom-link
+      forwardedChildren: village
+  - name: icon-and-separator-preserved
+    owner: source
+    items:
+      - label: village
+        href: "#village"
+        icon: Folder
+      - label: collectives
+      - label: AI Research Team
+        icon: FileText
+    expected:
+      itemCount: 3
+      linkedItemSelector: ".crumb-item"
+      linkedIconName: Folder
+      linkedIconClass: lucide-folder
+      linkedIconAriaHidden: "true"
+      finalIconName: FileText
+      finalIconClass: lucide-file-text
+      finalIconAriaHidden: "true"
+      separatorName: ChevronRight
+      separatorClass: lucide-chevron-right
+      separatorCount: 2
+      separatorAfterEveryNonFinal: true
+      separatorAfterFinal: false
+  - name: content-default-case
+    owner: source
+    items:
+      - label: MixedCaseContent
+        href: "#mixed"
+      - label: AI Research Team
+    expected:
+      contentSelector: ".crumb-item"
+      contentClass: crumb-item
+      computedTextTransform: none
+  - name: chrome-item-case
+    owner: source
+    items:
+      - label: MixedCaseChrome
+        href: "#chrome"
+        chrome: true
+      - label: AI Research Team
+    expected:
+      contentSelector: ".crumb-item"
+      contentClass: crumb-item
+      chromeClass: crumb-item-chrome
+      chromeComputedTextTransform: lowercase
+      siblingComputedTextTransform: none
+  - name: non-linked-intermediate-item
+    owner: source
+    items:
+      - label: no-target
+      - label: AI Research Team
+    expected:
+      nonLinkSelector: ".crumb-item"
+      nonLinkTag: span
+      nonLinkHref: null
+  - name: final-item-current-and-href-ignored
+    owner: source
+    items:
+      - label: village
+        href: "#village"
+      - label: AI Research Team
+        href: "#ignored"
+    expected:
+      finalTag: span
+      finalClass: cur
+      finalAriaCurrent: page
+      finalHref: null
+      finalLinkCount: 0
+  - name: nav-label-preserved
+    owner: source
+    items:
+      - label: village
+        href: "#village"
+      - label: AI Research Team
+    expected:
+      navLabel: custom breadcrumb label
+  - name: commons-detail-dark
+    owner: mounted
+    theme: dark
+    expected:
+      rootSelector: "#inuse"
+      detailSelector: .cmg-detail
+      breadcrumbSelector: ".cmg-crumb nav[aria-label=\"breadcrumb\"]"
+      breadcrumbLabel: breadcrumb
+      linkHrefs:
+        - "#village"
+        - "#collectives"
+      collectiveTitle: AI Research Team
+      currentSelector: ".cmg-crumb .cur"
+      contentSelector: ".cmg-crumb .cur .crumb-item"
+      chromeSelector: ".cmg-crumb .crumb-item-chrome"
+      defaultLinkSelector: ".cmg-crumb a.link"
+      contentComputedTextTransform: none
+      chromeComputedTextTransform: lowercase
+  - name: commons-detail-light
+    owner: mounted
+    theme: light
+    expected:
+      rootSelector: "#inuse"
+      detailSelector: .cmg-detail
+      breadcrumbSelector: ".cmg-crumb nav[aria-label=\"breadcrumb\"]"
+      breadcrumbLabel: breadcrumb
+      linkHrefs:
+        - "#village"
+        - "#collectives"
+      collectiveTitle: AI Research Team
+      currentSelector: ".cmg-crumb .cur"
+      contentSelector: ".cmg-crumb .cur .crumb-item"
+      chromeSelector: ".cmg-crumb .crumb-item-chrome"
+      defaultLinkSelector: ".cmg-crumb a.link"
+      contentComputedTextTransform: none
+      chromeComputedTextTransform: lowercase

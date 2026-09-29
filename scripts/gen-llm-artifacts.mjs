@@ -155,8 +155,10 @@ function buildBaseCss() {
     '  font-family: var(--font-display);\n' +
     '  font-weight: 700;\n' +
     '  line-height: var(--lh-tight);\n' +
-    '  text-transform: lowercase;\n' +
     '}\n' +
+    'h1[data-chrome-heading],\n' +
+    'h2[data-chrome-heading],\n' +
+    'h3[data-chrome-heading] { text-transform: lowercase; }\n' +
     'p { margin: 0; }\n' +
     'p, .turn .body, .empty p, .prose {\n' +
     '  letter-spacing: var(--tracking-prose);\n' +
@@ -172,7 +174,7 @@ function buildBaseCss() {
     'a { color: var(--amber); text-decoration: none; }\n' +
     'a.link, .prose a { text-decoration: underline dotted; text-underline-offset: 3px; }\n' +
     'a.link:hover, a.link:focus-visible, .prose a:hover { text-decoration-style: solid; }\n' +
-    'section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }\n' +
+    'section.band { max-width: var(--maxw); margin: 0 auto; }\n' +
     '@media (prefers-reduced-motion: reduce) {\n' +
     '  html { scroll-behavior: auto; }\n' +
     '  *, *::before, *::after {\n' +
