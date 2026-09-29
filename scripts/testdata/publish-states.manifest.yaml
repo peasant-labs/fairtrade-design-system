@@ -1,0 +1,49 @@
+# Required-NAME manifest for publish-states.yaml: deletion protection, one list per family.
+requiredLabelNames:
+  - not published
+  - publishing
+  - published and up to date
+  - new turns
+  - auto-publish on
+  - outside your saved lists
+requiredPopupNames:
+  - connect to village first
+  - waiting for github
+  - checking for sensitive content
+  - the scan failed
+  - not in a collective yet
+  - ready to publish
+  - publishing
+  - stopped at a named step
+  - done
+  - waits for approval
+requiredUpdateNames:
+  - update adds one collective
+  - update removes one collective
+
+requiredMutationNames:
+  - a failed scan leaves publish on
+  - a failed scan turns re-scan off
+  - the remove button loses the collective's name
+  - auto-publish claims how it was published
+mutations:
+  - name: a failed scan leaves publish on
+    file: src/ui/Publish.jsx
+    find: "const blocked = state === 'checking' || state === 'scan-failed' || "
+    replace: "const blocked = state === 'checking' || "
+    expectedDiagnostic: "the scan failed: the primary button must be disabled"
+  - name: a failed scan turns re-scan off
+    file: src/ui/Publish.jsx
+    find: "onClick={onRescan} disabled={checking}"
+    replace: "onClick={onRescan} disabled={checking || failed}"
+    expectedDiagnostic: "the scan failed: re-scan must be enabled"
+  - name: the remove button loses the collective's name
+    file: src/ui/Publish.jsx
+    find: "aria-label={`remove ${item.name}`}"
+    replace: "aria-label=\"remove\""
+    expectedDiagnostic: "every access row's remove button is named remove <collective>"
+  - name: auto-publish claims how it was published
+    file: src/ui/Publish.jsx
+    find: "`auto-publish on · ${collective}`"
+    replace: "`auto-published on git push · ${collective}`"
+    expectedDiagnostic: "auto-publish on: the label must read"

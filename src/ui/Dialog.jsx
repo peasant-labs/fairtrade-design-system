@@ -3,8 +3,9 @@ import { X } from 'lucide-react'
 
 /* a real, accessible modal dialog. role=dialog + aria-modal + aria-labelledby;
    focus is trapped while open; Escape and a scrim click close it; focus returns
-   to the opener; background scroll is locked. */
-export default function Dialog({ open, onClose, title, labelId = 'dlg-title', children, footer, returnFocusRef }) {
+   to the opener; background scroll is locked. `size="wide"` uses --dialog-w-wide
+   and becomes a full-width bottom sheet below the md breakpoint. */
+export default function Dialog({ open, onClose, title, labelId = 'dlg-title', children, footer, returnFocusRef, size = 'default', className = '' }) {
   const dialogRef = useRef(null)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
@@ -60,7 +61,7 @@ export default function Dialog({ open, onClose, title, labelId = 'dlg-title', ch
   return (
     <div className="dlg-overlay" onMouseDown={(e) => { if (e.target.classList.contains('scrim')) onClose() }}>
       <div className="scrim" />
-      <div className="dialog framed" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={labelId} tabIndex={-1}>
+      <div className={['dialog', 'framed', size === 'wide' ? 'dialog-wide' : '', className].filter(Boolean).join(' ')} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={labelId} tabIndex={-1}>
         <div className="dlg-head">
           <h3 id={labelId}>{title}</h3>
           <button className="btn btn-ghost btn-icon" aria-label="close dialog" onClick={onClose}>

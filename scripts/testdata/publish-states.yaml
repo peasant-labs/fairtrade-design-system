@@ -1,0 +1,111 @@
+# Every publish state label value and every publish popup state (src/ui/Publish.jsx).
+# scripts/publish-states.test.mjs mounts the REAL parts for each case: PublishBar for a label
+# value (its words, its icon, and the one action), PublishDialog for a popup state (the heading,
+# the primary button's label and whether it is enabled, the re-scan button, and the lines a user
+# reads). The session, collectives and urls are demo data.
+session: Fix flaky ingest test
+access:
+  - {id: platform, name: Acme Platform, members: 12, note: suggested · repo acme/ingest-api is linked}
+  - {id: company, name: Acme Company, members: 87, note: suggested · github org acme}
+scan:
+  matches:
+    - {id: m1, category: CREDENTIAL, confidence: 0.99, before: AKIAIOSFODNN7EXAMPLE, after: <AWS_ACCESS_KEY>}
+    - {id: m2, category: PII, confidence: 0.97, before: alice@acme.dev, after: <EMAIL>}
+    - {id: m3, category: PATH, confidence: 0.91, before: /Users/alice/work/acme/ingest-api, after: /Users/<USER>/work/acme/ingest-api}
+done:
+  url: https://village.peasantlabs.org/transcripts/3f9c0a17
+  collectives: [Acme Platform, Acme Company]
+  pullRequest: {number: 42, branch: fix/flaky-ingest}
+
+labels:
+  - {name: not published, state: not-published, props: {}, text: not published, icon: lucide-circle-dashed, action: publish}
+  - {name: publishing, state: publishing, props: {collectives: 2}, text: publishing to 2 collectives, icon: lucide-loader, action: publish, busy: true}
+  - {name: published and up to date, state: published, props: {collectives: 2}, text: published · 2 collectives · up to date, icon: lucide-circle-check, action: manage}
+  - {name: new turns, state: new-turns, props: {collectives: 2, newTurns: 6}, text: published · 2 collectives · 6 new turns, icon: lucide-circle-fading-arrow-up, action: update}
+  - {name: auto-publish on, state: auto-publish, props: {collective: Acme Platform}, text: auto-publish on · Acme Platform, icon: lucide-repeat, action: manage}
+  - {name: outside your saved lists, state: outside-lists, props: {}, text: not published · outside your saved lists, icon: lucide-list-x, action: publish}
+
+# primary: the primary button's label and whether it is enabled (null: no primary button).
+# rescan: whether a re-scan button renders and is enabled (null: none).
+# lines: text that must appear in the popup; alert: text in a role=alert element.
+popup:
+  - name: connect to village first
+    state: connect
+    heading: publish “Fix flaky ingest test”
+    primary: null
+    rescan: null
+    lines: [connect this computer to village once to publish., continue with GitHub]
+  - name: waiting for github
+    state: waiting-github
+    heading: publish “Fix flaky ingest test”
+    primary: null
+    rescan: null
+    lines: [waiting for github in your browser]
+  - name: checking for sensitive content
+    state: checking
+    heading: publish “Fix flaky ingest test”
+    primary: {label: publish to 2 collectives, enabled: false}
+    rescan: {enabled: false}
+    lines: [checking for sensitive content, who can read it, nothing leaves your machine until you publish.]
+  - name: the scan failed
+    state: scan-failed
+    heading: publish “Fix flaky ingest test”
+    primary: {label: publish to 2 collectives, enabled: false}
+    rescan: {enabled: true}
+    alert: the scan failed, so publish is off. re-scan to try again.
+    lines: [what leaves your machine]
+  - name: not in a collective yet
+    state: no-collective
+    access: []
+    heading: publish “Fix flaky ingest test”
+    primary: {label: publish, enabled: false}
+    rescan: {enabled: true}
+    lines: [you are not in a collective yet., create or join one on village]
+  - name: ready to publish
+    state: ready
+    heading: publish “Fix flaky ingest test”
+    primary: {label: publish to 2 collectives, enabled: true}
+    rescan: {enabled: true}
+    lines: [3 matches · all redacted, Acme Platform, Acme Company, publish this repo automatically on git push, same collectives · change it in settings]
+  - name: publishing
+    state: publishing
+    heading: publish “Fix flaky ingest test”
+    primary: {label: publish to 2 collectives, enabled: false}
+    rescan: {enabled: true}
+    lines: [publishing to 2 collectives]
+  - name: stopped at a named step
+    state: stopped
+    heading: publish “Fix flaky ingest test”
+    primary: {label: retry, enabled: true}
+    rescan: {enabled: true}
+    alert: stopped while setting who can read it. nothing changed on village.
+    lines: []
+  - name: done
+    state: done
+    heading: published to Acme Platform and Acme Company
+    primary: {label: done, enabled: true}
+    rescan: null
+    lines: [village.peasantlabs.org/transcripts/3f9c0a17, is open for fix/flaky-ingest. comment /peasant attach on it to link this transcript.]
+  - name: waits for approval
+    state: waits-approval
+    heading: published to Acme Platform and Acme Company
+    pending: [ML Reading Group]
+    primary: {label: done, enabled: true}
+    rescan: null
+    lines: [ML Reading Group shows it once its owner approves.]
+
+# The update popup keeps the audience unless the developer changes it there.
+update:
+  - name: update adds one collective
+    access:
+      - {id: platform, name: Acme Platform, members: 12}
+      - {id: company, name: Acme Company, members: 87}
+      - {id: ml, name: ML Reading Group, members: 21, pending: approval}
+    primary: update and add 1 collective
+    lines: [6 new turns since you published · 1 new match, redacted, adding · waits for approval, removing a collective takes the transcript back from it.]
+  - name: update removes one collective
+    access:
+      - {id: platform, name: Acme Platform, members: 12}
+      - {id: company, name: Acme Company, members: 87, pending: removal}
+    primary: update and remove 1 collective
+    lines: [removing · loses access when you update]
