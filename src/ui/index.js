@@ -64,6 +64,11 @@ export { default as CliSteps, CommandBlock, GettingStarted } from './CliOnboard.
 export { default as FacetRail } from './FacetRail.jsx'
 export { StatTile, StatGrid, GovTile, ProviderBars } from './StatTiles.jsx'
 export { default as StatsStrip } from './StatsStrip.jsx'
+export { default as CopyIconButton } from './CopyIconButton.jsx'
+export { default as OverflowList } from './OverflowList.jsx'
+export { PublishStateLabel, PublishBar, AccessList, CollectivePicker, PublishDialog, PUBLISH_STATES, PUBLISH_DIALOG_STATES } from './Publish.jsx'
+export { SettingRow, SettingGroup, SETTING_ROW_STATES } from './Settings.jsx'
+export { default as RepoPicker } from './RepoPicker.jsx'
 export { default as VisibilitySegmented, VisibilityEye, ScopeChip, FocusedModeToggle } from './VisibilityControl.jsx'
 export { default as InUseShell, GraphAppShell, GraphSectionNav, IN_USE_APPS, LOCAL_APP_SECTIONS, GRAPH_APP_SECTIONS } from './inuse/InUseShell.jsx'
 /* transcript family: the schema-backed wire contract + cooked TranscriptViewModel, plus the lifted
