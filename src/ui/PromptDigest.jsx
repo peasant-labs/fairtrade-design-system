@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { ChevronDown, ChevronRight, CornerDownRight, GitCommitHorizontal, Layers, User } from 'lucide-react'
 import Avatar from './Avatar.jsx'
 import BrandMark from './BrandMark.jsx'
@@ -343,7 +343,8 @@ function SplitChain({ items, itemHref, author, selected, onSelect }) {
     onSelect?.(clamped, entries[clamped].session)
   }
 
-  useEffect(() => {
+  // a layout effect, so j and k work from the first frame the list is on screen
+  useLayoutEffect(() => {
     if (typeof window === 'undefined') return undefined
     const onKey = (event) => {
       if (event.defaultPrevented || hasModifier(event) || isTextEntry(document.activeElement)) return
