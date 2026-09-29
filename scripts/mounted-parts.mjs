@@ -12,7 +12,6 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import React, { act } from 'react'
-import { createRoot } from 'react-dom/client'
 import { JSDOM } from 'jsdom'
 import react from '@vitejs/plugin-react'
 import { createServer } from 'vite'
@@ -96,9 +95,6 @@ function mutationPlugin() {
  */
 export async function withMountedSource(run, { url = 'https://fairtrade.invalid/' } = {}) {
   const dom = new JSDOM('<!doctype html><html><body></body></html>', { url, pretendToBeVisual: true })
-  // React's legacy input-event polyfill probes these IE-era hooks on focus changes.
-  dom.window.HTMLElement.prototype.attachEvent = function attachEvent() {}
-  dom.window.HTMLElement.prototype.detachEvent = function detachEvent() {}
   dom.window.HTMLElement.prototype.scrollIntoView = function scrollIntoView() {}
   dom.window.HTMLElement.prototype.scrollTo = function scrollTo() {}
   const globals = {
@@ -117,6 +113,9 @@ export async function withMountedSource(run, { url = 'https://fairtrade.invalid/
     Object.defineProperty(globalThis, key, { configurable: true, writable: true, value })
   }
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  // react-dom reads the DOM's capabilities (input events and the like) when it first loads, so it
+  // loads only after the jsdom globals exist; loaded earlier it falls back to legacy event paths.
+  const { createRoot } = await import('react-dom/client')
   const server = await createServer({ appType: 'custom', configFile: false, logLevel: 'silent', plugins: [mutationPlugin(), react()], root: ROOT, server: { middlewareMode: true } })
   const roots = []
   try {
