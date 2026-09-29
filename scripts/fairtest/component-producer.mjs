@@ -5,21 +5,24 @@
 //
 // This module never invents selectors, theme semantics, or proof vocabulary.
 // Every one of those comes from fairtrade-component-target.mjs (app-owned
-// component registry), from fairtest-runtime.mjs (the single loopback owner
-// this module and the runner config read), and from the shared host contract
-// through the sole source route. It writes exactly the SAME six artifact class
-// names the product row writes, from the one shared constant in
-// fairtest-artifacts.mjs (which product-producer.mjs only re-exports), into a
-// `producer/component-<theme>/` row directory so one verifier reads both kinds
-// with one closed set.
+// component registry and its story entries), from fairtest-runtime.mjs (the
+// single loopback owner this module and the runner config read), and from the
+// shared host contract through the sole source route. It holds no story
+// knowledge of its own: a story row is a COMPONENT_STORIES entry. It writes
+// exactly the SAME six artifact class names the product row writes, from the
+// one shared constant in fairtest-artifacts.mjs (which product-producer.mjs only
+// re-exports), into a `producer/<rowPrefix>-<theme>/` row directory so one
+// verifier reads both kinds with one closed set.
 //
-// Row sequence per theme (dark, light): serve the direct iframe, wait for a
-// genuine mount (real root children, the ready-state body classes, a hidden
-// error display, and an empty error stack), observe the normalized theme,
-// perform ONE trusted click on the disclosure control, verify the expanded
-// count/rows/ARIA and the computed tokens, run a plain serious-violations axe
-// gate, snapshot the ARIA tree, capture the mounted root, and collect the
-// iframe.html served-build provenance.
+// Row sequence per story entry and theme (dark, light): serve the direct
+// iframe, wait for a genuine mount (real root children, a settled render
+// lifecycle with no error phase, the layout's ready-state body classes, a
+// hidden error display, and an empty error stack), observe the normalized
+// theme, wait for the declared before-facts, read the declared computed
+// styles, perform the story's ONE trusted action when it has one, wait for the
+// declared after-facts and the measured floors, capture the mounted root,
+// snapshot the ARIA tree, run a plain serious-violations axe gate tied to the
+// proven state, and collect the iframe.html served-build provenance.
 //
 // Fail-closed: any missing, contradictory, or unproven part throws an
 // actionable error naming the missing part, the selector or path, and the
@@ -36,25 +39,21 @@ import { fairtestPath } from './fairtest-paths.mjs'
 import { assertProductThemeObservation, observeProductTheme } from './fairtrade-targets.mjs'
 import { AXE_RESULT_FIELDS, scanAxe, seriousViolations } from '../journey/lib/assertions.mjs'
 import {
-  COMPONENT_A11Y_GATE_RECEIPT_FIELDS,
-  COMPONENT_A11Y_POINTS,
   COMPONENT_A11Y_POLICY,
-  COMPONENT_ACTION_NAME,
   COMPONENT_ACTION_TIMEOUT_MS,
-  COMPONENT_COLLAPSED_LABEL,
+  COMPONENT_DEFAULT_STORY,
+  COMPONENT_LAYOUT_BODY_CLASSES,
   COMPONENT_MIN_ARIA_CHARS,
-  COMPONENT_MIN_ROOT_DESCENDANTS,
-  COMPONENT_MIN_ROOT_TEXT_LENGTH,
   COMPONENT_MIN_SCREENSHOT_BYTES,
   COMPONENT_MOUNT_TIMEOUT_MS,
   COMPONENT_PROVENANCE_SOURCE,
-  COMPONENT_ROW_COUNT,
-  COMPONENT_ROW_TEXTS,
+  COMPONENT_RENDER_PHASES,
   COMPONENT_SELECTORS,
-  COMPONENT_STORY_ID,
-  COMPONENT_TARGET_ID,
+  COMPONENT_STORIES,
   assertComponentMounted,
   buildComponentProof,
+  componentA11yPoint,
+  componentGateReceiptFields,
   componentThemeSetup,
 } from './fairtrade-component-target.mjs'
 import { ARTIFACT_CLASSES, PRODUCT_ONLY_FIELDS, assertServedDigestsMatchRunRoot } from './fairtest-artifacts.mjs'
@@ -143,19 +142,27 @@ export function resolveComponentRunRoot() {
 }
 
 /**
- * Row directory for a component theme row inside a run root.
+ * Row directory for a component theme row inside a run root. The directory
+ * name is the row key: the story entry's row prefix and the theme.
  * @param {string} runRoot immutable run root
  * @param {string} theme dark or light row theme
+ * @param {import('./fairtrade-component-target.mjs').ComponentStory} [story] story entry, defaults to the disclosure story
  * @returns {string} the row directory path
  */
-export function componentRowDir(runRoot, theme) {
+export function componentRowDir(runRoot, theme, story = COMPONENT_DEFAULT_STORY) {
   if (!ROW_THEMES.includes(theme)) {
     throw new Error(
       `component producer: unknown row theme ${JSON.stringify(theme)} for field "theme" at path row.theme; ` +
       'repair: use one of dark, light for "theme".',
     )
   }
-  return join(runRoot, 'producer', `component-${theme}`)
+  if (!COMPONENT_STORIES.includes(story)) {
+    throw new Error(
+      `component producer: unregistered story ${JSON.stringify(story && story.key)} for field "story" at path row.story; ` +
+      `repair: pass one of the registered component stories ${COMPONENT_STORIES.map((entry) => entry.key).join(', ')}.`,
+    )
+  }
+  return join(runRoot, 'producer', `${story.rowPrefix}-${theme}`)
 }
 
 /**
@@ -186,12 +193,14 @@ function refuseStaleComponentSubtree(rowDir) {
  * @param {object} input preparation inputs
  * @param {string} input.runRoot immutable run root
  * @param {string} input.theme dark or light row theme
+ * @param {import('./fairtrade-component-target.mjs').ComponentStory} [input.story] story entry, defaults to the disclosure story
  * @returns {{ runRoot: string, rowDir: string }} the prepared paths for the row
  */
 export function prepareComponentRowDir(input) {
-  valuesContract.assertExactFields(input, ['runRoot', 'theme'], 'component producer', 'producer.rowPreparation')
-  const { runRoot, theme } = /** @type {Record<string, string>} */ (input)
-  const rowDir = componentRowDir(runRoot, theme)
+  const hasStory = !!input && typeof input === 'object' && Object.hasOwn(input, 'story')
+  valuesContract.assertExactFields(input, hasStory ? ['runRoot', 'theme', 'story'] : ['runRoot', 'theme'], 'component producer', 'producer.rowPreparation')
+  const { runRoot, theme, story = COMPONENT_DEFAULT_STORY } = /** @type {{ runRoot: string, theme: string, story?: import('./fairtrade-component-target.mjs').ComponentStory }} */ (input)
+  const rowDir = componentRowDir(runRoot, theme, story)
   refuseStaleComponentSubtree(rowDir)
   mkdirSync(rowDir, { recursive: true })
   return Object.freeze({ runRoot: resolve(runRoot), rowDir })
@@ -477,28 +486,27 @@ function summarizeScopedScan(scan) {
  * @typedef {object} ComponentGateReceiptInput
  * @property {{ violations: { id: string }[] }} scan compact scoped scan report
  * @property {string} observedTheme theme the page rendered when the scan ran
- * @property {boolean} ariaExpanded expanded state the click left
+ * @property {import('./fairtrade-component-target.mjs').ComponentStory} story story entry the scan belongs to
+ * @property {boolean} tie whether the story's gate tie fact held when the scan finished
  */
 
 /**
  * Build the plain serious-violations gate receipt for the mounted component
  * scope. There is no baseline and no delta: the receipt is a pass exactly when
  * the scoped scan reports no serious or critical violation. `observedTheme` and
- * `ariaExpanded` are the observed ties to the moment the scan was taken.
- * @param {object} input receipt inputs
- * @param {{ violations: { id: string }[] }} input.scan compact scoped scan report
- * @param {string} input.observedTheme theme the page rendered when the scan ran
- * @param {boolean} input.ariaExpanded expanded state the click left
- * @returns {{ policy: string, point: string, observedTheme: string, ariaExpanded: boolean, result: string, measured: number }} the frozen gate receipt
+ * the story's tie field (`ariaExpanded` for the disclosure story) are the
+ * observed ties to the moment the scan was taken.
+ * @param {ComponentGateReceiptInput} input receipt inputs
+ * @returns {Readonly<Record<string, string | number | boolean>>} the frozen gate receipt
  */
-function buildComponentGateReceipt({ scan, observedTheme, ariaExpanded } = /** @type {ComponentGateReceiptInput} */ ({})) {
-  valuesContract.assertExactFields({ scan, observedTheme, ariaExpanded }, ['scan', 'observedTheme', 'ariaExpanded'], 'component producer', 'a11y.gate')
+function buildComponentGateReceipt({ scan, observedTheme, story, tie } = /** @type {ComponentGateReceiptInput} */ ({})) {
+  valuesContract.assertExactFields({ scan, observedTheme, story, tie }, ['scan', 'observedTheme', 'story', 'tie'], 'component producer', 'a11y.gate')
   const serious = seriousViolations(scan)
   return Object.freeze({
     policy: COMPONENT_A11Y_POLICY,
-    point: COMPONENT_A11Y_POINTS[0],
+    point: componentA11yPoint(story),
     observedTheme,
-    ariaExpanded,
+    [story.gateTie.field]: tie,
     result: serious.length === 0 ? 'pass' : 'fail',
     measured: scan.violations.length,
   })
@@ -547,9 +555,10 @@ export function buildComponentAccessibilityEvidence(input) {
  * collapsed state, or a scoped count contradicting its own receipt all fail
  * closed.
  * @param {object} accessibility the record.json accessibility block
+ * @param {import('./fairtrade-component-target.mjs').ComponentStory} [story] story entry the row drove, defaults to the disclosure story; it names the receipt's point and tie field
  * @returns {{ policy: string, gatedScope: string, scopeRoot: string, result: string, gate: object }} the frozen verdict read from the gate receipt
  */
-export function readComponentAccessibilityVerdict(accessibility) {
+export function readComponentAccessibilityVerdict(accessibility, story = COMPONENT_DEFAULT_STORY) {
   valuesContract.assertExactFields(accessibility, COMPONENT_A11Y_RECORD_FIELDS, 'component producer', 'record.accessibility')
   const record = /** @type {Record<string, any>} */ (accessibility)
   if (record.policy !== COMPONENT_A11Y_POLICY) {
@@ -573,14 +582,14 @@ export function readComponentAccessibilityVerdict(accessibility) {
     )
   }
   const receipt = record.gate
-  valuesContract.assertExactFields(receipt, COMPONENT_A11Y_GATE_RECEIPT_FIELDS, 'component producer', 'record.accessibility.gate')
+  valuesContract.assertExactFields(receipt, componentGateReceiptFields(story), 'component producer', 'record.accessibility.gate')
   if (receipt.policy !== COMPONENT_A11Y_POLICY) {
     throw new Error(
       `component producer: foreign gate receipt policy ${JSON.stringify(receipt.policy)} for field "policy" at path record.accessibility.gate.policy; ` +
       `repair: record the policy the gate actually ran under for "policy".`,
     )
   }
-  if (receipt.point !== COMPONENT_A11Y_POINTS[0]) {
+  if (receipt.point !== componentA11yPoint(story)) {
     throw new Error(
       `component producer: unknown gate observation point ${JSON.stringify(receipt.point)} for field "point" at path record.accessibility.gate.point; ` +
       `repair: name the declared component observation point for the receipt.`,
@@ -592,11 +601,12 @@ export function readComponentAccessibilityVerdict(accessibility) {
       'repair: record the theme the page rendered when the scan was taken.',
     )
   }
-  if (receipt.ariaExpanded !== true) {
+  const tieField = story.gateTie.field
+  if (receipt[tieField] !== true) {
     throw new Error(
-      `component producer: accessibility scan was not taken on the expanded disclosure for field "ariaExpanded" at path record.accessibility.gate.ariaExpanded; ` +
-      `got ${JSON.stringify(receipt.ariaExpanded)}; ` +
-      'repair: scan the component after the disclosure expands.',
+      `component producer: accessibility scan was not taken on the proven ${JSON.stringify(story.gateTie.expectation.name)} state for field "${tieField}" at path record.accessibility.gate.${tieField}; ` +
+      `got ${JSON.stringify(receipt[tieField])}; ` +
+      `repair: scan the component while ${JSON.stringify(story.gateTie.expectation.name)} holds.`,
     )
   }
   if (receipt.result !== 'pass' && receipt.result !== 'fail') {
@@ -729,9 +739,10 @@ export async function collectComponentServedAssets({ baseUrl, servedHtml, label 
  * @param {{ width: number, height: number }} input.viewport explicit viewport
  * @param {object} input.targetIdentity component-branch target identity
  * @param {object[]} input.themeObservations normalized theme observations covered by the run
+ * @param {string} input.storyId story id the row mounted
  * @returns {Promise<object>} the provenance record
  */
-async function collectComponentProvenance({ baseUrl, servedHtml, viewport, targetIdentity, themeObservations }) {
+async function collectComponentProvenance({ baseUrl, servedHtml, viewport, targetIdentity, themeObservations, storyId }) {
   const { assetDigests } = await collectComponentServedAssets({ baseUrl, servedHtml })
   const { commit, dirty } = readWorktreeState()
   // The comparison reads storybook-static/, so the receipt names that tree, not
@@ -753,7 +764,7 @@ async function collectComponentProvenance({ baseUrl, servedHtml, viewport, targe
     viewport: { ...viewport },
     targetIdentity: { ...targetIdentity },
     themeObservations: themeObservations.map((entry) => ({ ...entry })),
-    storyId: COMPONENT_STORY_ID,
+    storyId,
     servedUrl: baseUrl,
     producedAtMs: Date.now(),
   }
@@ -779,13 +790,15 @@ async function collectComponentProvenance({ baseUrl, servedHtml, viewport, targe
  * @param {number} input.rowStartedAtMs clock reading when the row began
  * @param {number} input.mount observedAtMs recorded for the mounted root
  * @param {number} input.theme observedAtMs recorded for the theme observation
- * @param {number} input.interaction observedAtMs recorded for the named interaction
+ * @param {number} [input.interaction] observedAtMs recorded for the named interaction; a story row without an action records none
  * @returns {void}
  */
 export function assertComponentObservationTimes(input) {
-  valuesContract.assertExactFields(input, ['rowStartedAtMs', 'mount', 'theme', 'interaction'], 'component producer', 'producer.observationTimes')
+  const withInteraction = !!input && typeof input === 'object' && Object.hasOwn(input, 'interaction')
+  const wanted = withInteraction ? ['rowStartedAtMs', 'mount', 'theme', 'interaction'] : ['rowStartedAtMs', 'mount', 'theme']
+  valuesContract.assertExactFields(input, wanted, 'component producer', 'producer.observationTimes')
   const times = /** @type {Record<string, number>} */ (/** @type {unknown} */ (input))
-  for (const key of ['rowStartedAtMs', 'mount', 'theme', 'interaction']) {
+  for (const key of wanted) {
     if (!Number.isInteger(times[key]) || times[key] < 0) {
       throw new Error(
         `component producer: invalid observation time ${JSON.stringify(times[key])} for field "${key}" at path producer.observationTimes.${key}; ` +
@@ -793,7 +806,8 @@ export function assertComponentObservationTimes(input) {
       )
     }
   }
-  const { rowStartedAtMs, mount, theme, interaction } = times
+  const { rowStartedAtMs, mount, theme } = times
+  const interaction = withInteraction ? times.interaction : theme
   if (!(rowStartedAtMs < mount && mount <= theme && theme <= interaction)) {
     throw new Error(
       'component producer: observation times are not in observation order for field "observationTimes" at path producer.observationTimes; ' +
@@ -809,13 +823,14 @@ export function assertComponentObservationTimes(input) {
  * component floor from the target registry. The one guard the producer calls
  * and the negative mutation suite drives.
  * @param {unknown} snapshot mounted-root aria snapshot text
+ * @param {number} [floor] the story's measured floor, defaults to the disclosure story's
  * @returns {void}
  */
-export function assertComponentAriaFloor(snapshot) {
-  if (typeof snapshot !== 'string' || snapshot.trim().length < COMPONENT_MIN_ARIA_CHARS) {
+export function assertComponentAriaFloor(snapshot, floor = COMPONENT_MIN_ARIA_CHARS) {
+  if (typeof snapshot !== 'string' || snapshot.trim().length < floor) {
     throw new Error(
       'component producer: empty ARIA snapshot for field "aria" at path evidence.aria; ' +
-      `snapshot holds ${(typeof snapshot === 'string' ? snapshot.trim().length : 0)} characters, below the component floor ${COMPONENT_MIN_ARIA_CHARS}; ` +
+      `snapshot holds ${(typeof snapshot === 'string' ? snapshot.trim().length : 0)} characters, below the component floor ${floor}; ` +
       'repair: keep the mounted component expanded so its accessible tree is non-trivial.',
     )
   }
@@ -828,13 +843,14 @@ export function assertComponentAriaFloor(snapshot) {
  * The one guard the producer calls and the negative mutation suite drives.
  * @param {unknown} bytes screenshot byte count
  * @param {string} [path] screenshot path used in the diagnostic
+ * @param {number} [floor] the story's measured floor, defaults to the disclosure story's
  * @returns {void}
  */
-export function assertComponentScreenshotFloor(bytes, path = 'screenshot.png') {
-  if (!Number.isInteger(bytes) || /** @type {number} */ (bytes) < COMPONENT_MIN_SCREENSHOT_BYTES) {
+export function assertComponentScreenshotFloor(bytes, path = 'screenshot.png', floor = COMPONENT_MIN_SCREENSHOT_BYTES) {
+  if (!Number.isInteger(bytes) || /** @type {number} */ (bytes) < floor) {
     throw new Error(
       'component producer: blank screenshot for field "screenshot" at path evidence.screenshot; ' +
-      `wrote ${JSON.stringify(bytes)} bytes to ${JSON.stringify(path)}, below the component floor ${COMPONENT_MIN_SCREENSHOT_BYTES}; ` +
+      `wrote ${JSON.stringify(bytes)} bytes to ${JSON.stringify(path)}, below the component floor ${floor}; ` +
       'repair: keep the mounted component expanded and rendered so the capture is non-blank.',
     )
   }
@@ -915,15 +931,274 @@ export async function requireComponentMountedRoot(page, url, timeout = COMPONENT
 }
 
 /**
- * Capture one component theme row on the real built Storybook artifact and
+ * Record the Storybook render lifecycle phases in the page, from before any
+ * story script runs. Installed as an init script, so it runs in the page and
+ * references nothing outside its argument: it waits for the preview channel,
+ * then appends every render phase the channel reports to one array the row
+ * reads back.
+ * @param {{ channelGlobal: string, event: string, recorderGlobal: string }} signal the declared render lifecycle signal
+ * @returns {void}
+ */
+function recordComponentRenderPhases(signal) {
+  const host = /** @type {Record<string, unknown>} */ (/** @type {unknown} */ (globalThis))
+  const phases = /** @type {string[]} */ ([])
+  host[signal.recorderGlobal] = phases
+  const hook = () => {
+    const channel = /** @type {{ on: (event: string, listener: (payload: { newPhase?: string }) => void) => void } | undefined} */ (host[signal.channelGlobal])
+    if (!channel) {
+      setTimeout(hook, 10)
+      return
+    }
+    channel.on(signal.event, (event) => phases.push(String(event && event.newPhase)))
+  }
+  hook()
+}
+
+/**
+ * Wait until the story's render lifecycle settles (its play function, when it
+ * has one, has finished) and refuse a story whose lifecycle reported an error
+ * phase on the way: a play function that threw leaves a mounted root behind,
+ * so the root alone cannot tell a finished story from a broken one.
+ * @param {import('@playwright/test').Page} page live page
+ * @param {import('./fairtrade-component-target.mjs').ComponentStory} story story entry
+ * @returns {Promise<string[]>} the recorded render phases
+ */
+async function requireComponentRenderSettled(page, story) {
+  try {
+    await page.waitForFunction(
+      (signal) => {
+        const phases = /** @type {string[] | undefined} */ ((/** @type {Record<string, unknown>} */ (/** @type {unknown} */ (globalThis)))[signal.recorderGlobal])
+        return !!phases && (phases.includes(signal.settled) || phases.some((phase) => signal.errors.includes(phase)))
+      },
+      { recorderGlobal: COMPONENT_RENDER_PHASES.recorderGlobal, settled: COMPONENT_RENDER_PHASES.settled, errors: [...COMPONENT_RENDER_PHASES.errors] },
+      { timeout: COMPONENT_MOUNT_TIMEOUT_MS },
+    )
+  } catch {
+    throw new Error(
+      `component producer: story ${JSON.stringify(story.storyId)} never finished rendering for field "renderPhases" at path proof.root; ` +
+      `the ${JSON.stringify(COMPONENT_RENDER_PHASES.event)} channel reported no ${JSON.stringify(COMPONENT_RENDER_PHASES.settled)} phase within ${COMPONENT_MOUNT_TIMEOUT_MS}ms; ` +
+      'repair: rebuild storybook-static/ and keep the story render and its play function terminating.',
+    )
+  }
+  const phases = await page.evaluate((recorderGlobal) => [.../** @type {string[]} */ ((/** @type {Record<string, unknown>} */ (/** @type {unknown} */ (globalThis)))[recorderGlobal] || [])], COMPONENT_RENDER_PHASES.recorderGlobal)
+  const errored = phases.filter((phase) => COMPONENT_RENDER_PHASES.errors.includes(phase))
+  if (errored.length > 0) {
+    throw new Error(
+      `component producer: story ${JSON.stringify(story.storyId)} reported the render phase ${JSON.stringify(errored[0])} for field "renderPhases" at path proof.root; ` +
+      `recorded phases ${JSON.stringify(phases)}; ` +
+      'repair: fix the story or its play function so it renders without throwing; a mounted root left behind by a failed play is not a mounted story.',
+    )
+  }
+  return phases
+}
+
+/**
+ * One observed fact: its declared name, whether it held, and what was read.
+ * @typedef {object} ComponentFactObservation
+ * @property {string} name
+ * @property {boolean} holds
+ * @property {Record<string, unknown>} observed
+ */
+
+/**
+ * Read one declared fact inside the story root through the runner's own
+ * locators: the element a selector finds, or the element an accessible role
+ * and name finds, then the declared count, selector match, attribute value,
+ * text, texts, or focus. The fact holds when every declared part matches.
+ * @param {import('@playwright/test').Page} page live page
+ * @param {import('./fairtrade-component-target.mjs').ComponentExpectation} expectation declared fact
+ * @returns {Promise<ComponentFactObservation>} the observation
+ */
+async function readComponentFact(page, expectation) {
+  const root = page.locator(COMPONENT_SELECTORS.root)
+  const role = expectation.role
+  const found = role
+    ? root.getByRole(/** @type {Parameters<import('@playwright/test').Locator['getByRole']>[0]} */ (role.role), { name: role.name, exact: role.exact !== false })
+    : root.locator(/** @type {string} */ (expectation.selector))
+  const count = await found.count()
+  const first = found.first()
+  /** @type {Record<string, unknown>} */
+  const observed = { count }
+  let holds = expectation.count === undefined || count === expectation.count
+  const needsElement = expectation.matches !== undefined || expectation.attribute !== undefined || expectation.text !== undefined || expectation.focused !== undefined
+  if (needsElement && count === 0) {
+    return { name: expectation.name, holds: false, observed }
+  }
+  if (expectation.matches !== undefined) {
+    observed.matches = await first.evaluate((element, selector) => element.matches(selector), expectation.matches)
+    holds = holds && observed.matches === true
+  }
+  if (expectation.attribute !== undefined) {
+    observed.value = await first.getAttribute(expectation.attribute)
+    holds = holds && observed.value === expectation.value
+  }
+  if (expectation.text !== undefined) {
+    observed.text = ((await first.textContent()) || '').trim()
+    holds = holds && observed.text === expectation.text
+  }
+  if (expectation.texts !== undefined) {
+    observed.texts = (await found.allTextContents()).map((text) => text.trim())
+    holds = holds && JSON.stringify(observed.texts) === JSON.stringify([...expectation.texts])
+  }
+  if (expectation.focused !== undefined) {
+    observed.focused = await first.evaluate((element) => element === element.ownerDocument.activeElement)
+    holds = holds && observed.focused === expectation.focused
+  }
+  return { name: expectation.name, holds, observed }
+}
+
+/**
+ * Wait for each declared fact in order, polling until it holds or the action
+ * budget runs out, and refuse the row naming the first fact that never held,
+ * what it declared, and what was read.
+ * @param {import('@playwright/test').Page} page live page
+ * @param {import('./fairtrade-component-target.mjs').ComponentStory} story story entry
+ * @param {readonly import('./fairtrade-component-target.mjs').ComponentExpectation[]} expectations declared facts
+ * @param {string} phase before or after, used in the record path
+ * @returns {Promise<ComponentFactObservation[]>} the observations, in declared order
+ */
+async function requireComponentFacts(page, story, expectations, phase) {
+  const observations = []
+  for (const expectation of expectations) {
+    const deadline = Date.now() + COMPONENT_ACTION_TIMEOUT_MS
+    let reading = await readComponentFact(page, expectation)
+    while (!reading.holds && Date.now() < deadline) {
+      await page.waitForTimeout(50)
+      reading = await readComponentFact(page, expectation)
+    }
+    if (!reading.holds) {
+      const { name, ...declared } = expectation
+      throw new Error(
+        `component producer: story ${JSON.stringify(story.storyId)} fact ${JSON.stringify(name)} did not hold ${phase} the interaction for field "${phase}" at path record.facts.${phase}.${name}; ` +
+        `declared ${JSON.stringify(declared)} observed ${JSON.stringify(reading.observed)}; ` +
+        `repair: keep the story showing ${JSON.stringify(name)} as the story registry declares it, or re-measure the story and update its registry entry.`,
+      )
+    }
+    observations.push(reading)
+  }
+  return observations
+}
+
+/**
+ * Normalize a computed style or token value for comparison: one quote style
+ * and one separator spacing.
+ * @param {unknown} value raw value
+ * @returns {string} the normalized value
+ */
+function normalizeComponentStyleValue(value) {
+  return String(value ?? '').replace(/'/g, '"').replace(/\s*,\s*/g, ', ').trim()
+}
+
+/**
+ * Read and assert a story's declared computed-style probes plus the two theme
+ * tokens every story row records, refusing an unthemed or off-token value by
+ * name.
+ * @param {import('@playwright/test').Page} page live page
+ * @param {import('./fairtrade-component-target.mjs').ComponentStory} story story entry
+ * @returns {Promise<Record<string, string | null>>} the recorded computed styles
+ */
+async function requireComponentStyles(page, story) {
+  const readings = await page.evaluate(({ root, probes }) => {
+    const scope = document.querySelector(root)
+    const rootStyle = getComputedStyle(document.documentElement)
+    return {
+      probes: probes.map((probe) => {
+        const element = scope ? scope.querySelector(probe.selector) : null
+        return {
+          value: element ? String((/** @type {Record<string, unknown>} */ (/** @type {unknown} */ (getComputedStyle(element))))[probe.property]) : null,
+          token: probe.token ? rootStyle.getPropertyValue(probe.token).trim() : null,
+        }
+      }),
+      ink: (rootStyle.getPropertyValue('--ink') || '').trim(),
+      canvas: (rootStyle.getPropertyValue('--canvas') || '').trim(),
+    }
+  }, { root: COMPONENT_SELECTORS.root, probes: story.computed.map((probe) => ({ selector: probe.selector, property: probe.property, token: probe.token ?? null })) })
+  /** @type {Record<string, string | null>} */
+  const computedStyles = {}
+  story.computed.forEach((probe, index) => {
+    const { value, token } = readings.probes[index]
+    computedStyles[probe.name] = value
+    const refuse = (/** @type {string} */ what) => {
+      throw new Error(
+        `component producer: story ${JSON.stringify(story.storyId)} ${what} for field "computedStyles.${probe.name}" at path evidence.computedStyles.${probe.name}; ` +
+        `selector ${JSON.stringify(probe.selector)} resolved ${probe.property} ${JSON.stringify(value)}; ` +
+        'repair: keep the mounted component themed by design tokens so the recorded computed styles are real.',
+      )
+    }
+    if (!value) refuse('carries an unthemed computed style')
+    if (probe.equals !== undefined && value !== probe.equals) refuse(`resolves a computed style other than ${JSON.stringify(probe.equals)}`)
+    if (probe.includes !== undefined && !String(value).includes(probe.includes)) refuse(`resolves a computed style without ${JSON.stringify(probe.includes)}`)
+    if (probe.token !== undefined && (!token || normalizeComponentStyleValue(value) !== normalizeComponentStyleValue(token))) refuse(`resolves a computed style other than the ${probe.token} token ${JSON.stringify(token)}`)
+  })
+  if (!readings.ink || !readings.canvas) {
+    throw new Error(
+      'component producer: unthemed computed tokens for field "computedStyles" at path evidence.computedStyles; ' +
+      `resolved --ink ${JSON.stringify(readings.ink)} --canvas ${JSON.stringify(readings.canvas)}; ` +
+      'repair: keep the mounted surface themed by design tokens so the resolved custom properties are non-empty.',
+    )
+  }
+  return { ...computedStyles, ink: readings.ink, canvas: readings.canvas }
+}
+
+/**
+ * Perform a story's one named action with trusted input: a click on the
+ * declared target, or focus on the declared target and one key press.
+ * @param {import('@playwright/test').Page} page live page
+ * @param {import('./fairtrade-component-target.mjs').ComponentStory} story story entry
+ * @param {NonNullable<import('./fairtrade-component-target.mjs').ComponentStory['action']>} action the named action
+ * @returns {Promise<void>}
+ */
+async function performComponentAction(page, story, action) {
+  const target = await readComponentFact(page, action.target)
+  if (!target.holds) {
+    throw new Error(
+      `component producer: named interaction target is missing for field "interaction" at path proof.interaction; ` +
+      `story ${JSON.stringify(story.storyId)} action ${JSON.stringify(action.name)} target ${JSON.stringify(action.target.name)} observed ${JSON.stringify(target.observed)}; ` +
+      'repair: keep the action target rendered exactly once inside the story root.',
+    )
+  }
+  const root = page.locator(COMPONENT_SELECTORS.root)
+  const role = action.target.role
+  const locator = (role
+    ? root.getByRole(/** @type {Parameters<import('@playwright/test').Locator['getByRole']>[0]} */ (role.role), { name: role.name, exact: role.exact !== false })
+    : root.locator(/** @type {string} */ (action.target.selector))).first()
+  try {
+    if (action.kind === 'key') {
+      await locator.focus({ timeout: COMPONENT_ACTION_TIMEOUT_MS })
+      await page.keyboard.press(action.key)
+    } else {
+      await locator.click({ timeout: COMPONENT_ACTION_TIMEOUT_MS })
+    }
+  } catch (error) {
+    const cause = error instanceof Error ? error.message : String(error)
+    throw new Error(
+      `component producer: named interaction did not complete for field "interaction" at path proof.interaction; ` +
+      `${action.kind} on ${JSON.stringify(action.target.name)} in story ${JSON.stringify(story.storyId)} failed: ${cause}; ` +
+      'repair: keep the action target reachable and interactive in the mounted component.',
+    )
+  }
+}
+
+/**
+ * Capture one component story row on the real built Storybook artifact and
  * write its six durable artifacts. The page must already belong to a browser
  * owned by the Playwright runner; the loopback service must already be ready.
+ *
+ * Row sequence: serve the direct iframe, wait for real root children and for
+ * the render lifecycle to settle, prove the mount for the story's layout,
+ * observe the normalized theme, wait for the declared before-facts, read the
+ * declared computed styles, perform the one named action when the story has
+ * one, wait for the declared after-facts, apply the story's measured floors,
+ * then read the gate tie, capture the root, snapshot its ARIA tree, run the
+ * scoped serious-violations scan, and read the tie again, so the receipt is
+ * tied to the state the scan saw.
  * @param {import('@playwright/test').Page} page Playwright page for the row
  * @param {string} theme dark or light row theme
  * @param {object} [options] row options
  * @param {string} [options.runRoot] immutable run root (defaults to FAIRTEST_RUN_ROOT)
  * @param {string} [options.baseUrl] running loopback base URL
  * @param {number} [options.createdAtMs] identity creation time in whole ms
+ * @param {import('./fairtrade-component-target.mjs').ComponentStory} [options.story] registered story entry, defaults to the disclosure story
  * @returns {Promise<object>} row summary with proof, provenance, accessibility evidence and its verdict, observation times, the recorded root measurement, and artifact paths
  */
 export async function captureComponentRow(page, theme, options = {}) {
@@ -933,6 +1208,7 @@ export async function captureComponentRow(page, theme, options = {}) {
       'repair: use one of dark, light for "theme".',
     )
   }
+  const story = options.story ?? COMPONENT_DEFAULT_STORY
   const runRoot = resolve(options.runRoot ?? resolveComponentRunRoot())
   const baseUrl = options.baseUrl || `http://${FAIRTEST_APP_HOST}:${FAIRTEST_STORYBOOK_PORT}`
   const createdAtMs = options.createdAtMs ?? Date.now()
@@ -942,9 +1218,9 @@ export async function captureComponentRow(page, theme, options = {}) {
       'repair: use whole milliseconds since the epoch for "createdAtMs".',
     )
   }
-  const setup = componentThemeSetup(theme)
+  const setup = componentThemeSetup(theme, story)
   requireEnvelopeForRun(runRoot, resolveRunId(), 'component producer')
-  const { rowDir } = prepareComponentRowDir({ runRoot, theme })
+  const { rowDir } = prepareComponentRowDir({ runRoot, theme, story })
   if (!existsSync(join(STORYBOOK_ROOT, 'iframe.html'))) {
     throw new Error(
       'component producer: built Storybook artifact is missing for field "storybook" at path row.storybook; ' +
@@ -955,40 +1231,30 @@ export async function captureComponentRow(page, theme, options = {}) {
 
   const rowStartedAtMs = Date.now()
   await page.setViewportSize({ ...PRODUCT_VIEWPORT })
+  await page.addInitScript(recordComponentRenderPhases, {
+    channelGlobal: COMPONENT_RENDER_PHASES.channelGlobal,
+    event: COMPONENT_RENDER_PHASES.event,
+    recorderGlobal: COMPONENT_RENDER_PHASES.recorderGlobal,
+  })
   const url = `${baseUrl}${setup.url}`
   await page.goto(url, { waitUntil: 'networkidle' })
 
   // Wait for real children in the story root. Attachment is not a mount: the
-  // static iframe ships an empty #storybook-root.
+  // static iframe ships an empty #storybook-root. Then wait for the render
+  // lifecycle to settle, so a play function has finished before any reading.
   await requireComponentMountedRoot(page, url)
+  const renderPhases = await requireComponentRenderSettled(page, story)
 
   const observedBefore = await page.evaluate((selectors) => {
     const root = document.querySelector(selectors.root)
     const errEl = document.querySelector(selectors.errorDisplay)
     const stack = document.querySelector(selectors.errorStack)
-    const trigger = document.querySelector(selectors.trigger)
-    const toggle = document.querySelector(selectors.toggle)
-    const label = document.querySelector(selectors.label)
-    const style = trigger ? getComputedStyle(trigger) : null
-    const countStyle = document.querySelector(selectors.count)
     return {
       rootChildCount: root ? root.childElementCount : 0,
       bodyClass: document.body.className,
       errorDisplay: errEl ? getComputedStyle(errEl).display : 'none',
       errorStackText: ((stack ? stack.textContent : '') || '').trim(),
       rawTheme: document.documentElement.getAttribute('data-theme'),
-      ariaExpanded: toggle ? toggle.getAttribute('aria-expanded') : null,
-      labelText: label ? (label.textContent || '').trim() : null,
-      rowsPresent: !!document.querySelector(selectors.rows),
-      computed: {
-        fontFamily: style ? style.fontFamily : null,
-        fontSize: style ? style.fontSize : null,
-        borderRadius: style ? style.borderRadius : null,
-        minHeight: style ? style.minHeight : null,
-      },
-      tokenInk: (getComputedStyle(document.documentElement).getPropertyValue('--ink') || '').trim(),
-      tokenCanvas: (getComputedStyle(document.documentElement).getPropertyValue('--canvas') || '').trim(),
-      tabularNumbers: countStyle ? getComputedStyle(countStyle).fontVariantNumeric : null,
     }
   }, COMPONENT_SELECTORS)
 
@@ -997,7 +1263,7 @@ export async function captureComponentRow(page, theme, options = {}) {
     bodyClass: observedBefore.bodyClass,
     errorDisplay: observedBefore.errorDisplay,
     errorStackText: observedBefore.errorStackText,
-  })
+  }, COMPONENT_LAYOUT_BODY_CLASSES[story.layout])
   const mountObservedAtMs = Date.now()
 
   const themeObservation = observeProductTheme({
@@ -1010,119 +1276,35 @@ export async function captureComponentRow(page, theme, options = {}) {
   kindsContract.validateThemeObservation(themeObservation, 'component producer')
   const themeObservedAtMs = themeObservation.observedAtMs
 
-  if (observedBefore.ariaExpanded !== 'false' || observedBefore.rowsPresent) {
-    throw new Error(
-      `component producer: disclosure did not start collapsed for field "interaction" at path proof.interaction; ` +
-      `aria-expanded ${JSON.stringify(observedBefore.ariaExpanded)} and rows present ${JSON.stringify(observedBefore.rowsPresent)}; ` +
-      'repair: keep the story collapsed before the named interaction and render the rows only while expanded.',
-    )
-  }
-  if (observedBefore.labelText !== COMPONENT_COLLAPSED_LABEL) {
-    throw new Error(
-      `component producer: unexpected collapsed label ${JSON.stringify(observedBefore.labelText)} for field "label" at path proof.interaction; ` +
-      `repair: keep ${JSON.stringify(COMPONENT_COLLAPSED_LABEL)} on the collapsed control.`,
-    )
-  }
-  if (!observedBefore.computed.fontFamily || !observedBefore.computed.fontSize || !observedBefore.computed.borderRadius || !observedBefore.computed.minHeight) {
-    throw new Error(
-      'component producer: unthemed computed tokens for field "computedStyles" at path evidence.computedStyles; ' +
-      `resolved fontFamily ${JSON.stringify(observedBefore.computed.fontFamily)} fontSize ${JSON.stringify(observedBefore.computed.fontSize)} radius ${JSON.stringify(observedBefore.computed.borderRadius)} minHeight ${JSON.stringify(observedBefore.computed.minHeight)}; ` +
-      'repair: keep the mounted component themed by design tokens so the resolved computed styles are non-empty.',
-    )
-  }
-  if (!observedBefore.tokenInk || !observedBefore.tokenCanvas) {
-    throw new Error(
-      'component producer: unthemed computed tokens for field "computedStyles" at path evidence.computedStyles; ' +
-      `resolved --ink ${JSON.stringify(observedBefore.tokenInk)} --canvas ${JSON.stringify(observedBefore.tokenCanvas)}; ` +
-      'repair: keep the mounted surface themed by design tokens so the resolved custom properties are non-empty.',
-    )
-  }
-  // Tabular numbers on counts are a design-system invariant the record carries.
-  // Asserting it here means a drift in the count selector (which would null the
-  // reading) or a dropped tabular rule fails the row instead of shipping a
-  // blank token field under a green run.
-  if (typeof observedBefore.tabularNumbers !== 'string' || !observedBefore.tabularNumbers.includes('tabular-nums')) {
-    throw new Error(
-      'component producer: non-tabular count for field "computedStyles.fontVariantNumeric" at path evidence.computedStyles.fontVariantNumeric; ' +
-      `selector ${JSON.stringify(COMPONENT_SELECTORS.count)} resolved font-variant-numeric ${JSON.stringify(observedBefore.tabularNumbers)}; ` +
-      'repair: keep the count element tabular so counts align and the recorded token evidence is real.',
-    )
-  }
+  const factsBefore = await requireComponentFacts(page, story, story.before, 'before')
+  const computedStyles = await requireComponentStyles(page, story)
 
-  const toggle = page.locator(COMPONENT_SELECTORS.toggle)
-  try {
-    await toggle.first().click({ timeout: COMPONENT_ACTION_TIMEOUT_MS })
-  } catch (error) {
-    const cause = error instanceof Error ? error.message : String(error)
-    throw new Error(
-      `component producer: named interaction did not complete for field "interaction" at path proof.interaction; ` +
-      `click on ${JSON.stringify(COMPONENT_SELECTORS.toggle)} failed: ${cause}; ` +
-      'repair: keep the disclosure toggle clickable in the mounted component.',
-    )
+  if (story.action) {
+    await performComponentAction(page, story, story.action)
   }
-  try {
-    await page.waitForFunction(
-      (toggleSelector) => {
-        const el = document.querySelector(toggleSelector)
-        return !!el && el.getAttribute('aria-expanded') === 'true'
-      },
-      COMPONENT_SELECTORS.toggle,
-      { timeout: COMPONENT_ACTION_TIMEOUT_MS },
-    )
-  } catch {
-    throw new Error(
-      `component producer: disclosure did not expand for field "interaction" at path proof.interaction; ` +
-      'repair: the named interaction must flip aria-expanded to true on the toggle.',
-    )
-  }
+  const factsAfter = await requireComponentFacts(page, story, story.after, 'after')
 
   const observedAfter = await page.evaluate((selectors) => {
     const root = document.querySelector(selectors.root)
-    const toggle = document.querySelector(selectors.toggle)
-    const rows = document.querySelector(selectors.rows)
-    const rowTexts = rows ? [...document.querySelectorAll(selectors.rowItem)].map((item) => (item.textContent || '').trim()) : []
     const rect = root ? root.getBoundingClientRect() : null
     return {
-      ariaExpanded: toggle ? toggle.getAttribute('aria-expanded') : null,
-      rowsPresent: !!rows,
-      rowCount: rowTexts.length,
-      rowTexts,
       descendants: root ? root.querySelectorAll('*').length : -1,
       textLength: root ? (root.textContent || '').trim().length : -1,
       box: rect ? { width: Math.round(rect.width), height: Math.round(rect.height) } : null,
     }
   }, COMPONENT_SELECTORS)
-
-  if (observedAfter.ariaExpanded !== 'true') {
-    throw new Error(
-      `component producer: aria wiring did not flip for field "interaction" at path proof.interaction; aria-expanded is ${JSON.stringify(observedAfter.ariaExpanded)}; ` +
-      'repair: the named interaction must leave the toggle expanded.',
-    )
-  }
-  if (!observedAfter.rowsPresent) {
-    throw new Error(
-      `component producer: revealed rows are absent for field "interaction" at path proof.interaction; selector ${JSON.stringify(COMPONENT_SELECTORS.rows)} is missing after the interaction; ` +
-      'repair: render the rows while expanded under the declared rows id.',
-    )
-  }
-  if (observedAfter.rowCount !== COMPONENT_ROW_COUNT || JSON.stringify(observedAfter.rowTexts) !== JSON.stringify([...COMPONENT_ROW_TEXTS])) {
-    throw new Error(
-      `component producer: revealed rows drifted for field "interaction" at path proof.interaction; ` +
-      `observed ${observedAfter.rowCount} rows ${JSON.stringify(observedAfter.rowTexts)}; expected ${COMPONENT_ROW_COUNT} rows ${JSON.stringify([...COMPONENT_ROW_TEXTS])}; ` +
-      'repair: keep the disclosed rows exactly as the component declares them.',
-    )
-  }
-  if (observedAfter.descendants < COMPONENT_MIN_ROOT_DESCENDANTS) {
+  const moment = story.action ? 'after the interaction' : 'after the mount'
+  if (observedAfter.descendants < story.floors.descendants) {
     throw new Error(
       `component producer: blank mounted component for field "root" at path proof.root; ` +
-      `the mounted root holds ${observedAfter.descendants} descendants after the interaction, below the component floor ${COMPONENT_MIN_ROOT_DESCENDANTS}; ` +
+      `the mounted root holds ${observedAfter.descendants} descendants ${moment}, below the component floor ${story.floors.descendants}; ` +
       'repair: keep the mounted component non-blank so the root carries real descendants.',
     )
   }
-  if (observedAfter.textLength < COMPONENT_MIN_ROOT_TEXT_LENGTH) {
+  if (observedAfter.textLength < story.floors.textLength) {
     throw new Error(
       `component producer: blank mounted component for field "root" at path proof.root; ` +
-      `the mounted root holds ${observedAfter.textLength} text characters after the interaction, below the component floor ${COMPONENT_MIN_ROOT_TEXT_LENGTH}; ` +
+      `the mounted root holds ${observedAfter.textLength} text characters ${moment}, below the component floor ${story.floors.textLength}; ` +
       'repair: keep the mounted component non-blank so the root carries real text.',
     )
   }
@@ -1134,37 +1316,50 @@ export async function captureComponentRow(page, theme, options = {}) {
   }
 
   const interactionObservedAtMs = Date.now()
-  assertComponentObservationTimes({ rowStartedAtMs, mount: mountObservedAtMs, theme: themeObservedAtMs, interaction: interactionObservedAtMs })
+  assertComponentObservationTimes(story.action
+    ? { rowStartedAtMs, mount: mountObservedAtMs, theme: themeObservedAtMs, interaction: interactionObservedAtMs }
+    : { rowStartedAtMs, mount: mountObservedAtMs, theme: themeObservedAtMs })
 
-  const scopedAfter = await scanAxe(page, { root: COMPONENT_SELECTORS.root })
-  assertComponentAxeScanShape(scopedAfter, 'evidence.axe.scopedAfter')
-  const pageWide = await scanAxe(page)
-  assertComponentAxeScanShape(pageWide, 'evidence.axe.pageWide')
-  const gate = buildComponentGateReceipt({ scan: scopedAfter, observedTheme: themeObservation.observed, ariaExpanded: observedAfter.ariaExpanded === 'true' })
-
-  const ariaSnapshot = await page.locator(COMPONENT_SELECTORS.root).ariaSnapshot()
-  assertComponentAriaFloor(ariaSnapshot)
-
+  // The capture, the snapshot, and the gated scan all belong to the state the
+  // after-facts proved, so the tie is read on both sides of them: a state that
+  // ends before the scan finishes is refused instead of recorded.
+  const tieBefore = await readComponentFact(page, story.gateTie.expectation)
   const screenshotPath = join(rowDir, 'screenshot.png')
   await page.locator(COMPONENT_SELECTORS.root).screenshot({ path: screenshotPath })
-  assertComponentScreenshotFloor(statSync(screenshotPath).size, screenshotPath)
+  const ariaSnapshot = await page.locator(COMPONENT_SELECTORS.root).ariaSnapshot()
+  const scopedAfter = await scanAxe(page, { root: COMPONENT_SELECTORS.root })
+  assertComponentAxeScanShape(scopedAfter, 'evidence.axe.scopedAfter')
+  const tieAfter = await readComponentFact(page, story.gateTie.expectation)
+  if (!tieBefore.holds || !tieAfter.holds) {
+    throw new Error(
+      `component producer: story ${JSON.stringify(story.storyId)} left the ${JSON.stringify(story.gateTie.expectation.name)} state during the evidence capture for field ${JSON.stringify(story.gateTie.field)} at path record.accessibility.gate.${story.gateTie.field}; ` +
+      `observed ${JSON.stringify(tieBefore.observed)} before and ${JSON.stringify(tieAfter.observed)} after the capture; ` +
+      'repair: keep the proven state stable for the capture, the snapshot, and the scan.',
+    )
+  }
+  const pageWide = await scanAxe(page)
+  assertComponentAxeScanShape(pageWide, 'evidence.axe.pageWide')
+  const gate = buildComponentGateReceipt({ scan: scopedAfter, observedTheme: themeObservation.observed, story, tie: tieAfter.holds })
+
+  assertComponentAriaFloor(ariaSnapshot, story.floors.ariaChars)
+  assertComponentScreenshotFloor(statSync(screenshotPath).size, screenshotPath, story.floors.screenshotBytes)
 
   const accessibility = buildComponentAccessibilityEvidence({ pageWide, scoped: scopedAfter, gate })
-  const accessibilityVerdict = readComponentAccessibilityVerdict(accessibility)
+  const accessibilityVerdict = readComponentAccessibilityVerdict(accessibility, story)
   if (accessibilityVerdict.result !== 'pass') {
     throw new Error(
       `component producer: accessibility verdict reads ${JSON.stringify(accessibilityVerdict.result)} for field "accessibility" at path record.accessibility.gate; ` +
-      `the scoped scan reports ${gate.measured} violations over ${JSON.stringify(COMPONENT_SELECTORS.root)}; ` +
+      `the scoped scan over ${JSON.stringify(COMPONENT_SELECTORS.root)} in story ${JSON.stringify(story.storyId)} reports ${gate.measured} violations: ${JSON.stringify(seriousViolations(scopedAfter).map((/** @type {{ id: string, impact: string | null, nodes: unknown }} */ entry) => `${entry.id} (${entry.impact}) at ${JSON.stringify(entry.nodes)}`))}; ` +
       'repair: fix the scoped component violation instead of relying on the informational page-wide census.',
     )
   }
 
   const proof = buildComponentProof({
     rowTheme: theme,
-    identity: { kind: 'component', id: COMPONENT_TARGET_ID, createdAtMs },
+    identity: { kind: 'component', id: story.targetId, createdAtMs },
     root: { mounted: true, observedAtMs: mountObservedAtMs },
     themeObservation: { ...themeObservation },
-    interaction: { name: COMPONENT_ACTION_NAME, completed: true, observedAtMs: interactionObservedAtMs },
+    ...(story.action ? { interaction: { name: story.action.name, completed: true, observedAtMs: interactionObservedAtMs } } : {}),
   })
 
   const servedHtml = await fetchText(`${baseUrl}/iframe.html`)
@@ -1172,15 +1367,17 @@ export async function captureComponentRow(page, theme, options = {}) {
     baseUrl,
     servedHtml,
     viewport: { ...PRODUCT_VIEWPORT },
-    targetIdentity: { kind: 'component', id: COMPONENT_TARGET_ID, createdAtMs },
+    targetIdentity: { kind: 'component', id: story.targetId, createdAtMs },
     themeObservations: [{ ...themeObservation }],
+    storyId: story.storyId,
   })
 
   const record = {
-    target: COMPONENT_TARGET_ID,
+    target: story.targetId,
+    story: story.key,
     kind: 'component',
     rowTheme: theme,
-    storyId: COMPONENT_STORY_ID,
+    storyId: story.storyId,
     url: setup.url,
     root: {
       selector: COMPONENT_SELECTORS.root,
@@ -1189,27 +1386,16 @@ export async function captureComponentRow(page, theme, options = {}) {
       textLength: observedAfter.textLength,
       box: observedAfter.box,
     },
-    interaction: {
-      name: COMPONENT_ACTION_NAME,
-      from: 'collapsed',
-      to: 'expanded',
-      completed: true,
-      observedAtMs: interactionObservedAtMs,
-      ariaExpandedBefore: observedBefore.ariaExpanded,
-      ariaExpandedAfter: observedAfter.ariaExpanded,
-      rowCount: observedAfter.rowCount,
-      rowTexts: [...observedAfter.rowTexts],
+    renderPhases: [...renderPhases],
+    interaction: story.action
+      ? { name: story.action.name, kind: story.action.kind, completed: true, observedAtMs: interactionObservedAtMs }
+      : null,
+    facts: {
+      before: factsBefore.map((entry) => ({ name: entry.name, observed: entry.observed })),
+      after: factsAfter.map((entry) => ({ name: entry.name, observed: entry.observed })),
     },
     theme: { ...themeObservation },
-    computedStyles: {
-      fontFamily: observedBefore.computed.fontFamily,
-      fontSize: observedBefore.computed.fontSize,
-      borderRadius: observedBefore.computed.borderRadius,
-      minHeight: observedBefore.computed.minHeight,
-      fontVariantNumeric: observedBefore.tabularNumbers,
-      ink: observedBefore.tokenInk,
-      canvas: observedBefore.tokenCanvas,
-    },
+    computedStyles,
     viewport: { ...PRODUCT_VIEWPORT },
     accessibility,
     producedAtMs: Date.now(),
@@ -1229,8 +1415,8 @@ export async function captureComponentRow(page, theme, options = {}) {
   }
 
   writeFileSync(join(rowDir, 'record.json'), `${JSON.stringify(record, null, 2)}\n`)
-  writeFileSync(join(rowDir, 'aria.json'), `${JSON.stringify({ target: COMPONENT_TARGET_ID, rowTheme: theme, storyId: COMPONENT_STORY_ID, snapshot: ariaSnapshot }, null, 2)}\n`)
-  writeFileSync(join(rowDir, 'axe.json'), `${JSON.stringify({ target: COMPONENT_TARGET_ID, rowTheme: theme, policy: COMPONENT_A11Y_POLICY, scopeRoot: COMPONENT_SELECTORS.root, gate: { ...gate }, pageWide: { scope: COMPONENT_A11Y_SCOPES.page, root: COMPONENT_A11Y_SCOPES.pageRoot, informational: true, ...pageWide } }, null, 2)}\n`)
+  writeFileSync(join(rowDir, 'aria.json'), `${JSON.stringify({ target: story.targetId, rowTheme: theme, storyId: story.storyId, snapshot: ariaSnapshot }, null, 2)}\n`)
+  writeFileSync(join(rowDir, 'axe.json'), `${JSON.stringify({ target: story.targetId, rowTheme: theme, policy: COMPONENT_A11Y_POLICY, scopeRoot: COMPONENT_SELECTORS.root, gate: { ...gate }, pageWide: { scope: COMPONENT_A11Y_SCOPES.page, root: COMPONENT_A11Y_SCOPES.pageRoot, informational: true, ...pageWide } }, null, 2)}\n`)
   writeFileSync(join(rowDir, 'provenance.json'), `${JSON.stringify(provenance, null, 2)}\n`)
   writeFileSync(join(rowDir, 'resolution.json'), `${JSON.stringify(proof, null, 2)}\n`)
 
@@ -1238,6 +1424,7 @@ export async function captureComponentRow(page, theme, options = {}) {
 
   return {
     theme,
+    story: story.key,
     rowDir,
     proof,
     provenance,

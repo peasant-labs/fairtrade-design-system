@@ -36,7 +36,7 @@ const coreFixtures = await importFairtestSource('src/core/fixtures.mjs')
 const contractTargets = await importFairtestSource('src/host-contract/targets.mjs')
 const contractResolution = await importFairtestSource('src/host-contract/resolution.mjs')
 
-const CHECKS = ['component-row', 'component-url', 'component-setup', 'component-project', 'component-mount', 'component-declaration', 'component-action', 'component-proof', 'component-proof-blanket', 'component-cross-kind', 'component-mutation', 'component-run-root', 'component-capture-envelope']
+const CHECKS = ['component-row', 'component-url', 'component-story-url', 'component-setup', 'component-project', 'component-mount', 'component-declaration', 'component-action', 'component-proof', 'component-proof-blanket', 'component-cross-kind', 'component-mutation', 'component-run-root', 'component-capture-envelope']
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'stale-name', 'trailing-document'])
 const ROW_THEMES = ['dark', 'light']
 
@@ -135,13 +135,14 @@ function checkCaseShape(entry, index) {
       ? ['name', 'check', 'theme', 'renderedAttribute', 'expectTheme', ...tail]
       : ['name', 'check', 'theme', 'renderedAttribute', ...tail],
     'component-url': ['name', 'check', 'theme', 'url', 'expectValid', 'expectFrozen'],
+    'component-story-url': entry.expectValid
+      ? ['name', 'check', 'story', 'theme', 'url', 'rowKey', ...tail]
+      : ['name', 'check', 'story', 'theme', ...tail],
     'component-setup': entry.expectValid
       ? ['name', 'check', 'theme', 'expectedAttribute', 'url', ...tail]
       : ['name', 'check', 'theme', ...tail],
     'component-project': ['name', 'check', 'project', 'expectValid', 'expectedErrorContains'],
-    'component-mount': entry.expectValid
-      ? ['name', 'check', 'observation', ...tail]
-      : ['name', 'check', 'observation', ...tail],
+    'component-mount': ['name', 'check', ...('layout' in entry ? ['layout'] : []), 'observation', ...tail],
     'component-declaration': entry.expectValid
       ? ['name', 'check', 'capabilities', ...tail]
       : ['name', 'check', 'capabilities', ...tail],
@@ -252,6 +253,8 @@ function runCase(entry) {
       return runComponentRowCase(entry)
     case 'component-url':
       return runComponentUrlCase(entry)
+    case 'component-story-url':
+      return runComponentStoryUrlCase(entry)
     case 'component-setup':
       return runComponentSetupCase(entry)
     case 'component-project':
@@ -310,6 +313,27 @@ function runComponentUrlCase(entry) {
   assert.ok(Object.isFrozen(targets.componentThemeRow(entry.theme)), `${name}: the row record must be frozen`)
 }
 
+/**
+ * A registered story's direct iframe URL and row key, resolved through the
+ * registry lookup, or the lookup's refusal for an unregistered story.
+ * @param {Record<string, unknown>} entry case record
+ */
+function runComponentStoryUrlCase(entry) {
+  const name = /** @type {string} */ (entry.name)
+  if (entry.expectValid) {
+    const story = targets.selectComponentStory(entry.story)
+    const row = targets.componentThemeRow(entry.theme, story)
+    assert.ok(Object.isFrozen(row), `${name}: the row record must be frozen`)
+    assert.equal(row.url, entry.url, `${name}: the direct iframe URL must match the declared shape`)
+    assert.equal(row.url, storyUrl(story.storyId, /** @type {string} */ (entry.theme)), `${name}: the story URL must match the shared journey story URL`)
+    assert.equal(`${story.rowPrefix}-${entry.theme}`, entry.rowKey, `${name}: the row key must be the story row prefix and the theme`)
+    return
+  }
+  const message = caught(() => targets.componentThemeRow(entry.theme, targets.selectComponentStory(entry.story)))
+  assert.ok(message, `${name}: the case must fail closed on the real story registry`)
+  expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
+}
+
 /** @param {Record<string, unknown>} entry */
 function runComponentSetupCase(entry) {
   const name = /** @type {string} */ (entry.name)
@@ -338,13 +362,18 @@ function runComponentMountCase(entry) {
   const name = /** @type {string} */ (entry.name)
   /** @type {{ rootChildCount: number, bodyClass: string, errorDisplay: string, errorStackText: string }} */
   const observation = /** @type {{ rootChildCount: number, bodyClass: string, errorDisplay: string, errorStackText: string }} */ (entry.observation)
+  // A case naming a layout proves the mount against that layout's ready-state
+  // classes; a case without one reads the default centered layout.
+  const guard = () => ('layout' in entry
+    ? targets.assertComponentMounted(observation, targets.COMPONENT_LAYOUT_BODY_CLASSES[/** @type {string} */ (entry.layout)])
+    : targets.assertComponentMounted(observation))
   if (entry.expectValid) {
-    const mounted = targets.assertComponentMounted(observation)
+    const mounted = guard()
     assert.ok(Object.isFrozen(mounted), `${name}: the mount observation must be frozen`)
     assert.equal(mounted.mounted, true, `${name}: a healthy story must prove a mount`)
     return
   }
-  const message = caught(() => targets.assertComponentMounted(observation))
+  const message = caught(guard)
   assert.ok(message, `${name}: the case must fail closed on the real mount guard`)
   expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
 }
@@ -694,8 +723,33 @@ describe('component target registry and theme rows', () => {
       errorDisplay: '.sb-errordisplay',
       errorStack: '#error-stack',
     })
-    assert.deepEqual([...selected.actions], [targets.COMPONENT_ACTION_NAME])
+    assert.deepEqual([...selected.actions], ['expand-disclosure', 'open-transcript-search', 'retry-local-connection', 'select-next-session'])
     assert.deepEqual([...targets.COMPONENT_MOUNT_BODY_CLASSES], ['sb-main-centered', 'sb-show-main'])
+  })
+
+  it('declares the component story registry with exact membership', () => {
+    // A closed set: the component row keys the evidence policy requires are
+    // derived from these entries, so membership is pinned exactly.
+    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => [story.key, story.rowPrefix, story.storyId, story.layout, story.action ? story.action.name : null]), [
+      ['session-group-disclosure', 'component', 'components-sessiongroupdisclosure--playground', 'centered', 'expand-disclosure'],
+      ['transcript-header', 'component-transcript-header', 'in-use-transcript-transcriptviewer--host-owned-header', 'fullscreen', 'open-transcript-search'],
+      ['offline-banner', 'component-offline-banner', 'in-use-connectionstate--offline-banner', 'fullscreen', 'retry-local-connection'],
+      ['digest-split', 'component-digest-split', 'components-promptdigest--split', 'centered', 'select-next-session'],
+      ['stats-strip', 'component-stats-strip', 'components-statsstrip--many-pairs', 'centered', null],
+    ])
+    assert.equal(targets.COMPONENT_DEFAULT_STORY, targets.COMPONENT_STORIES[0], 'the disclosure story must stay the default entry')
+    assert.equal(targets.COMPONENT_DEFAULT_STORY.targetId, targets.COMPONENT_TARGET_ID, 'the disclosure story keeps the component target identity')
+    assert.deepEqual([...targets.COMPONENT_LAYOUT_BODY_CLASSES.fullscreen], ['sb-main-fullscreen', 'sb-show-main'])
+    // The disclosure receipt keeps its declared shape; every other story names
+    // its own tie field in the same place.
+    assert.deepEqual([...targets.componentGateReceiptFields()], [...targets.COMPONENT_A11Y_GATE_RECEIPT_FIELDS])
+    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => story.gateTie.field), ['ariaExpanded', 'searchOpen', 'retryBusy', 'nextOptionSelected', 'pairsRendered'])
+    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => targets.componentA11yPoint(story)), ['after-interaction', 'after-interaction', 'after-interaction', 'after-interaction', 'after-mount'])
+    for (const story of targets.COMPONENT_STORIES) {
+      assert.ok(Object.isFrozen(story), `${story.key}: the story entry must be frozen`)
+      assert.equal(targets.selectComponentStory(story.key), story, `${story.key}: the lookup must return the registry entry`)
+      if (story.action) assert.deepEqual({ ...targets.getComponentAction(story.action.name) }, { name: story.action.name, storyId: story.storyId }, `${story.key}: the action must be registered on its own story`)
+    }
   })
 
   it('rejects unknown target ids with an actionable diagnostic', () => {
@@ -737,7 +791,7 @@ describe('component target registry and theme rows', () => {
       assert.equal(contractTargets.requiresCapability(receipt.declaration, required), true)
     }
     assert.equal(receipt.declaration.kind, 'component')
-    assert.deepEqual([...receipt.declaration.actions], [targets.COMPONENT_ACTION_NAME])
+    assert.deepEqual([...receipt.declaration.actions], ['expand-disclosure', 'open-transcript-search', 'retry-local-connection', 'select-next-session'])
   })
 })
 

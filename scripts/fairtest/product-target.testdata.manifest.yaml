@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # product-target.testdata.yaml.
-expectedCaseCount: 121
+expectedCaseCount: 124
 requiredCaseNames:
   - theme-row-dark-absent-passes
   - theme-row-dark-empty-passes
@@ -8,7 +8,10 @@ requiredCaseNames:
   - wrong-theme-value-fails
   - route-dark-passes
   - route-light-passes
-  - section-select-analytics-to-map-passes
+  - route-offline-dark-passes
+  - route-offline-light-passes
+  - route-unregistered-key-fails
+  - section-select-home-to-settings-passes
   - unregistered-action-fails
   - product-capabilities-pass
   - unknown-capability-fails
@@ -28,7 +31,7 @@ requiredCaseNames:
   - observation-contradiction-dark-expected-fails
   - project-name-inference-rejected
   - proof-dark-initial-passes
-  - proof-light-with-map-action-passes
+  - proof-light-with-settings-action-passes
   - proof-missing-observation-fails
   - proof-contradictory-observation-fails
   - proof-row-theme-mismatch-fails
@@ -41,7 +44,7 @@ requiredCaseNames:
   - proof-missing-active-section-fails
   - proof-missing-view-fails
   - proof-wrong-initial-section-fails
-  - proof-action-without-map-fails
+  - proof-action-without-settings-fails
   - mutation-missing-chrome-fails
   - mutation-missing-body-fails
   - mutation-missing-section-fails
@@ -153,7 +156,7 @@ requiredMutationNames:
   - duplicating a provenance name breaks uniqueness
   - inventing an artifact class breaks the closed set
   - declaring a new violation id breaks the declared baseline
-  - raising the declared node count breaks the declared baseline
+  - declaring an extra violation breaks the empty declared baseline
   - removing the after-action baseline breaks the required inventory
   - duplicating the initial baseline name breaks uniqueness
   - removing the stale-asset mutation breaks the required inventory
@@ -271,7 +274,7 @@ mutations:
     expectedField: check
   - name: deleting the action breaks the case shape
     kind: delete-field
-    target: section-select-analytics-to-map-passes
+    target: section-select-home-to-settings-passes
     field: action
     expectedField: action
   - name: adding an unknown case field breaks exact membership
@@ -292,8 +295,8 @@ mutations:
     expectedField: document
   - name: removing the light proof breaks the required inventory
     kind: delete-record
-    target: proof-light-with-map-action-passes
-    expectedField: proof-light-with-map-action-passes
+    target: proof-light-with-settings-action-passes
+    expectedField: proof-light-with-settings-action-passes
   - name: duplicating a wrapper name breaks uniqueness
     kind: duplicate-name
     target: wrapper-dark-absent-passes
@@ -347,12 +350,12 @@ mutations:
     field: violations
     value: [{id: color-contrast, impact: serious, nodes: 1, themes: [dark]}]
     expectedField: id
-  - name: raising the declared node count breaks the declared baseline
+  - name: declaring an extra violation breaks the empty declared baseline
     kind: bad-value
     target: a11y-baseline-after-action-declared
     field: violations
     value: [{id: aria-required-children, impact: critical, nodes: 4, themes: [dark, light]}]
-    expectedField: nodes
+    expectedField: violations
   - name: removing the after-action baseline breaks the required inventory
     kind: delete-record
     target: a11y-baseline-after-action-declared

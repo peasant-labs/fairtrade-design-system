@@ -4,10 +4,11 @@
 # product adapter contract test; the test module owns no row data.
 #
 # The third family declares the app-owned product-view accessibility
-# baseline (per observation point: clean at analytics, one pre-existing
-# critical violation at map, observed in both themes) and probes the
-# baseline-delta gate: at-baseline and improved measurements pass, while a
-# new violation id, an increased node count, or an escalated impact fail.
+# baseline (per observation point: clean at home and clean at settings,
+# observed in both themes on every registered route) and probes the
+# baseline-delta gate against a declared baseline: at-baseline and improved
+# measurements pass, while a new violation id, an increased node count, or an
+# escalated impact fail.
 #
 # The second family covers the row-scoped theme setup descriptor, the
 # normalized rendered-theme observation with its contradiction guard, the
@@ -70,7 +71,7 @@
 # owner both the config and the producer read, and the single owner of the
 # compact axe report shape. The driver contract family also proves reset is
 # safe to call when the driver is not running.
-expectedCaseCount: 118
+expectedCaseCount: 121
 cases:
   - name: theme-row-dark-absent-passes
     check: theme-row
@@ -111,11 +112,31 @@ cases:
     route: '/?app=graph&fb=off&theme=light#inuse'
     expectValid: true
     expectFrozen: true
-  - name: section-select-analytics-to-map-passes
+  - name: route-offline-dark-passes
+    check: route
+    routeKey: product-offline
+    theme: dark
+    route: '/?app=graph&fb=off&theme=none&local=offline#inuse'
+    expectValid: true
+    expectFrozen: true
+  - name: route-offline-light-passes
+    check: route
+    routeKey: product-offline
+    theme: light
+    route: '/?app=graph&fb=off&theme=light&local=offline#inuse'
+    expectValid: true
+    expectFrozen: true
+  - name: route-unregistered-key-fails
+    check: route
+    routeKey: commons
+    theme: dark
+    expectValid: false
+    expectedErrorContains: ['unknown product route', '"commons"', 'field "route"', 'at path row.route', 'repair:']
+  - name: section-select-home-to-settings-passes
     check: section-action
-    action: select-map-section
-    fromSection: analytics
-    toSection: map
+    action: select-settings-section
+    fromSection: home
+    toSection: settings
     expectValid: true
     expectFrozen: true
   - name: unregistered-action-fails
@@ -238,14 +259,14 @@ cases:
       activeSection: {observed: true, observedAtMs: 1003}
       view: {observed: true, observedAtMs: 1004}
     themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
-    initialSection: analytics
-    activeSectionId: analytics
+    initialSection: home
+    activeSectionId: home
     action: null
     omitPart: none
     mounted: false
     expectValid: true
     expectFrozen: true
-  - name: proof-light-with-map-action-passes
+  - name: proof-light-with-settings-action-passes
     check: product-proof
     rowTheme: light
     identity: {kind: product, id: proof-light, createdAtMs: 1000}
@@ -256,9 +277,9 @@ cases:
       activeSection: {observed: true, observedAtMs: 1003}
       view: {observed: true, observedAtMs: 1004}
     themeObservation: {expected: light, observed: light, source: product-theme-observer, observedAtMs: 1000}
-    initialSection: analytics
-    activeSectionId: map
-    action: {name: select-map-section, completed: true, observedAtMs: 2000}
+    initialSection: home
+    activeSectionId: settings
+    action: {name: select-settings-section, completed: true, observedAtMs: 2000}
     omitPart: none
     mounted: false
     expectValid: true
@@ -274,8 +295,8 @@ cases:
       activeSection: {observed: true, observedAtMs: 1003}
       view: {observed: true, observedAtMs: 1004}
     themeObservation: null
-    initialSection: analytics
-    activeSectionId: analytics
+    initialSection: home
+    activeSectionId: home
     action: null
     omitPart: none
     mounted: false
@@ -292,8 +313,8 @@ cases:
       activeSection: {observed: true, observedAtMs: 1003}
       view: {observed: true, observedAtMs: 1004}
     themeObservation: {expected: light, observed: dark, source: product-theme-observer, observedAtMs: 1000}
-    initialSection: analytics
-    activeSectionId: analytics
+    initialSection: home
+    activeSectionId: home
     action: null
     omitPart: none
     mounted: false
@@ -310,8 +331,8 @@ cases:
       activeSection: {observed: true, observedAtMs: 1003}
       view: {observed: true, observedAtMs: 1004}
     themeObservation: {expected: light, observed: light, source: product-theme-observer, observedAtMs: 1000}
-    initialSection: analytics
-    activeSectionId: analytics
+    initialSection: home
+    activeSectionId: home
     action: null
     omitPart: none
     mounted: false
@@ -328,7 +349,7 @@ cases:
       activeSection: {observed: true, observedAtMs: 1003}
       view: {observed: true, observedAtMs: 1004}
     themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
-    initialSection: analytics
+    initialSection: home
     activeSectionId: map
     action: {name: select-changes-section, completed: true, observedAtMs: 2000}
     omitPart: none
@@ -346,8 +367,8 @@ cases:
       activeSection: {observed: true, observedAtMs: 1003}
       view: {observed: true, observedAtMs: 1004}
     themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
-    initialSection: analytics
-    activeSectionId: analytics
+    initialSection: home
+    activeSectionId: home
     action: null
     omitPart: none
     mounted: false
@@ -364,8 +385,8 @@ cases:
       activeSection: {observed: true, observedAtMs: 1003}
       view: {observed: true, observedAtMs: 1004}
     themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
-    initialSection: analytics
-    activeSectionId: analytics
+    initialSection: home
+    activeSectionId: home
     action: null
     omitPart: none
     mounted: true
@@ -382,8 +403,8 @@ cases:
       activeSection: {observed: true, observedAtMs: 1003}
       view: {observed: true, observedAtMs: 1004}
     themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
-    initialSection: analytics
-    activeSectionId: analytics
+    initialSection: home
+    activeSectionId: home
     action: null
     omitPart: chrome
     mounted: false
@@ -400,8 +421,8 @@ cases:
       activeSection: {observed: true, observedAtMs: 1003}
       view: {observed: true, observedAtMs: 1004}
     themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
-    initialSection: analytics
-    activeSectionId: analytics
+    initialSection: home
+    activeSectionId: home
     action: null
     omitPart: body
     mounted: false
@@ -418,8 +439,8 @@ cases:
       activeSection: {observed: true, observedAtMs: 1003}
       view: {observed: true, observedAtMs: 1004}
     themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
-    initialSection: analytics
-    activeSectionId: analytics
+    initialSection: home
+    activeSectionId: home
     action: null
     omitPart: route
     mounted: false
@@ -436,8 +457,8 @@ cases:
       activeSection: {observed: true, observedAtMs: 1003}
       view: {observed: true, observedAtMs: 1004}
     themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
-    initialSection: analytics
-    activeSectionId: analytics
+    initialSection: home
+    activeSectionId: home
     action: null
     omitPart: activeSection
     mounted: false
@@ -454,8 +475,8 @@ cases:
       activeSection: {observed: true, observedAtMs: 1003}
       view: {observed: true, observedAtMs: 1004}
     themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
-    initialSection: analytics
-    activeSectionId: analytics
+    initialSection: home
+    activeSectionId: home
     action: null
     omitPart: view
     mounted: false
@@ -479,7 +500,7 @@ cases:
     mounted: false
     expectValid: false
     expectedErrorContains: ['"changes"', 'initialSection', 'at path', 'repair:']
-  - name: proof-action-without-map-fails
+  - name: proof-action-without-settings-fails
     check: product-proof
     rowTheme: light
     identity: {kind: product, id: proof-light, createdAtMs: 1000}
@@ -490,13 +511,13 @@ cases:
       activeSection: {observed: true, observedAtMs: 1003}
       view: {observed: true, observedAtMs: 1004}
     themeObservation: {expected: light, observed: light, source: product-theme-observer, observedAtMs: 1000}
-    initialSection: analytics
-    activeSectionId: analytics
-    action: {name: select-map-section, completed: true, observedAtMs: 2000}
+    initialSection: home
+    activeSectionId: home
+    action: {name: select-settings-section, completed: true, observedAtMs: 2000}
     omitPart: none
     mounted: false
     expectValid: false
-    expectedErrorContains: ['"map"', '"analytics"', 'at path', 'repair:']
+    expectedErrorContains: ['"settings"', '"home"', 'at path', 'repair:']
   - name: mutation-missing-chrome-fails
     check: product-mutation
     mutation: missing-chrome
@@ -566,8 +587,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, observedSection: analytics, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: home, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: home, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -579,7 +600,7 @@ cases:
         passes: 120
     expectVerdict: none
     expectValid: false
-    expectedErrorContains: ['mismatched gate observation point', 'field "observedSection"', 'at path record.accessibility.gate.after.observedSection', 'analytics', 'repair:']
+    expectedErrorContains: ['mismatched gate observation point', 'field "observedSection"', 'at path record.accessibility.gate.after.observedSection', 'home', 'repair:']
   - name: wrapper-dark-absent-passes
     check: wrapper-theme
     theme: dark
@@ -659,14 +680,15 @@ cases:
     check: a11y-baseline
     policy: product-view-baseline-delta
     point: after-action
-    violations:
-      - {id: aria-required-children, impact: critical, nodes: 3, themes: [dark, light]}
+    violations: []
     expectValid: true
     expectFrozen: true
   - name: a11y-delta-at-baseline-passes
     check: a11y-delta
     point: after-action
-    observedSection: code map
+    observedSection: settings
+    baseline:
+      - {id: aria-required-children, impact: critical, nodes: 3, themes: [dark, light]}
     measured:
       - {id: aria-required-children, impact: critical, nodeCount: 3}
     expectValid: true
@@ -674,28 +696,32 @@ cases:
   - name: a11y-delta-records-the-observed-section-verbatim
     check: a11y-delta
     point: after-action
-    observedSection: analytics
+    observedSection: home
     measured: []
     expectValid: true
     expectFrozen: true
   - name: a11y-delta-improved-passes
     check: a11y-delta
     point: after-action
-    observedSection: code map
+    observedSection: settings
+    baseline:
+      - {id: aria-required-children, impact: critical, nodes: 3, themes: [dark, light]}
     measured: []
     expectValid: true
     expectFrozen: true
   - name: a11y-delta-initial-clean-passes
     check: a11y-delta
     point: initial
-    observedSection: analytics
+    observedSection: home
     measured: []
     expectValid: true
     expectFrozen: true
   - name: a11y-delta-new-violation-fails
     check: a11y-delta
     point: after-action
-    observedSection: code map
+    observedSection: settings
+    baseline:
+      - {id: aria-required-children, impact: critical, nodes: 3, themes: [dark, light]}
     measured:
       - {id: aria-required-children, impact: critical, nodeCount: 3}
       - {id: color-contrast, impact: serious, nodeCount: 1}
@@ -704,7 +730,9 @@ cases:
   - name: a11y-delta-increased-nodes-fails
     check: a11y-delta
     point: after-action
-    observedSection: code map
+    observedSection: settings
+    baseline:
+      - {id: aria-required-children, impact: critical, nodes: 3, themes: [dark, light]}
     measured:
       - {id: aria-required-children, impact: critical, nodeCount: 4}
     expectValid: false
@@ -712,7 +740,7 @@ cases:
   - name: a11y-delta-escalated-impact-fails
     check: a11y-delta
     point: after-action
-    observedSection: code map
+    observedSection: settings
     baseline:
       - {id: label, impact: serious, nodes: 2, themes: [dark]}
     measured:
@@ -728,8 +756,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: home, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: settings, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -752,8 +780,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 2, ids: [aria-required-children, color-contrast], incomplete: [], passes: 37}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: fail, measured: 2, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: home, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: settings, result: fail, measured: 2, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -781,8 +809,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: home, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: settings, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -803,8 +831,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: home, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: settings, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -826,8 +854,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: home, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: settings, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -849,8 +877,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: home, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: settings, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -872,8 +900,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
-        after: {policy: page-wide-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: home, result: pass, measured: 0, baseline: 0}
+        after: {policy: page-wide-baseline-delta, point: after-action, observedSection: settings, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -895,8 +923,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: after-action, observedSection: settings, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: settings, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document
@@ -918,8 +946,8 @@ cases:
       scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
       scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 38}
       gate:
-        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
-        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: home, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: settings, result: pass, measured: 1, baseline: 1}
       pageWide:
         scope: page
         root: document

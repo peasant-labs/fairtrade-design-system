@@ -1,13 +1,14 @@
 // @ts-check
 
-/* Fairtest mounted product journey: one suite with exactly two row-scoped rows.
+/* Fairtest mounted product journey: one suite with one row-scoped row per
+ * registered product route and theme.
  *
  * Each row drives the real built app from dist/ through the Fairtrade adapter
  * lifecycle on the fixed loopback port, observes the complete product tuple
- * (chrome, body, exact route, initial analytics section, mounted view,
- * normalized theme), performs the one named map-section interaction with a
- * trusted click, and writes the six durable artifact classes into the
- * immutable run root. A row fails, never skips, when the app is not built
+ * (chrome, body, exact route, the route's initial section, mounted view,
+ * normalized theme, and the route's page-level notice when it declares one),
+ * performs the route's named section action with a trusted click, and writes
+ * the six durable artifact classes into the immutable run root. A row fails, never skips, when the app is not built
  * or any part of the tuple cannot be observed. The written artifacts are then
  * read back and asserted: six classes present, an accessibility record the
  * verifier-facing reader resolves to a pass from its gate receipts alone, a
@@ -21,7 +22,7 @@
 import { test, expect } from '@playwright/test'
 import { createAdapter } from './fairtrade-adapter.mjs'
 import { FAIRTEST_APP_HOST, FAIRTEST_APP_PORT } from './fairtest-runtime.mjs'
-import { PRODUCT_A11Y_GATE_POINT_SLOTS, PRODUCT_A11Y_POINT_LABELS, PRODUCT_TARGET, PRODUCT_TARGET_ID } from './fairtrade-targets.mjs'
+import { PRODUCT_A11Y_GATE_POINT_SLOTS, PRODUCT_ROUTES, PRODUCT_TARGET, PRODUCT_TARGET_ID, productA11yPointLabels } from './fairtrade-targets.mjs'
 import {
   PRODUCT_ARTIFACT_CLASSES,
   PRODUCT_PRE_ACTION_PARTS,
@@ -34,7 +35,6 @@ import {
 
 const ROW_THEMES = ['dark', 'light']
 const GATE_POINT_SLOTS = PRODUCT_A11Y_GATE_POINT_SLOTS
-const POINT_LABELS = PRODUCT_A11Y_POINT_LABELS
 
 /**
  * The captured product row summary the mounted journey asserts against.
@@ -88,19 +88,21 @@ test.describe('fairtest mounted product', () => {
     }
   })
 
-  for (const theme of ROW_THEMES) {
-    test(`product row ${theme} proves shell, theme, interaction, and artifacts`, async ({ page }, testInfo) => {
+  for (const route of PRODUCT_ROUTES) for (const theme of ROW_THEMES) {
+    const POINT_LABELS = productA11yPointLabels(route)
+    test(`product row ${route.key}-${theme} proves shell, theme, interaction, and artifacts`, async ({ page }, testInfo) => {
       if (!adapter || !baseUrl || !runRoot) {
         throw new Error(
           'product journey: adapter service is not running for field "adapter" at path journey.lifecycle; ' +
           'repair: keep beforeAll start and readiness intact so every row drives the running loopback service.',
         )
       }
-      const summary = /** @type {ProductRowSummary} */ (await captureProductRow(page, theme, { runRoot, baseUrl }))
+      const summary = /** @type {ProductRowSummary} */ (await captureProductRow(page, theme, { runRoot, baseUrl, route }))
+      expect(adapter.targetId, 'the running adapter must select the product target').toBe(PRODUCT_TARGET_ID)
       expect(summary.proof.kind).toBe('product')
       expect(summary.proof.theme.expected).toBe(theme)
       expect(summary.proof.theme.observed).toBe(theme)
-      expect(summary.proof.action.name).toBe('select-map-section')
+      expect(summary.proof.action.name).toBe(route.action.name)
       expect(summary.proof.action.completed).toBe(true)
       const { readFileSync, existsSync } = await import('node:fs')
       const { join } = await import('node:path')
@@ -110,9 +112,9 @@ test.describe('fairtest mounted product', () => {
       // shortens this sequence and fails the row here.
       expect(summary.activeViewGuards, `row ${theme} must invoke the rendered-view guard at both declared points`).toEqual(['body@proof.body', 'view@proof.view'])
       for (const name of PRODUCT_ARTIFACT_CLASSES) {
-        const path = join(productRowDir(runRoot, theme), name)
+        const path = join(productRowDir(runRoot, theme, route), name)
         expect(existsSync(path), `row artifact ${name} must exist at ${path}`).toBe(true)
-        await testInfo.attach(`${theme}-${name}`, { path })
+        await testInfo.attach(`${route.key}-${theme}-${name}`, { path })
         expect(readFileSync(path).length > 0, `row artifact ${name} must be non-empty`).toBe(true)
       }
 
@@ -120,9 +122,10 @@ test.describe('fairtest mounted product', () => {
       // verdict comes from the gate receipts over the gated scope, and the
       // page-wide census stays nested and informational, so a verifier keying
       // off a bare `blocking` count finds nothing.
-      const rowDir = productRowDir(runRoot, theme)
+      const rowDir = productRowDir(runRoot, theme, route)
       const record = JSON.parse(readFileSync(join(rowDir, 'record.json'), 'utf8'))
-      const verdict = readProductAccessibilityVerdict(record.accessibility)
+      expect(record.routeKey, `row ${theme} record must name the route it drove`).toBe(route.key)
+      const verdict = readProductAccessibilityVerdict(record.accessibility, route)
       expect(verdict.result, `row ${theme} gate verdict must pass`).toBe('pass')
       expect(verdict.gatedScope, `row ${theme} verdict must stay attributed to the gated scope`).toBe('product-view')
       expect(record.accessibility.pageWide.informational, `row ${theme} page-wide census must be informational`).toBe(true)
@@ -171,6 +174,23 @@ test.describe('fairtest mounted product', () => {
         expect(block[fields.textLength], `row ${theme} ${part} text length must be the rendered active-view count`).toBe(accepted.textLength)
         expect(block[fields.descendants], `row ${theme} ${part} rendered descendants must stay below the container total`).toBeLessThan(block[fields.containerDescendants])
         expect(block[fields.textLength], `row ${theme} ${part} rendered text must stay below the container total`).toBeLessThan(block[fields.containerTextLength])
+      }
+
+      // A route that declares a page-level notice must have recorded it at both
+      // observation points: rendered outside the view container, with a live
+      // message and none of its forbidden elements. A route without one records
+      // none.
+      if (route.notice) {
+        expect(record.notice?.name, `row ${theme} must record the ${route.notice.name} notice`).toBe(route.notice.name)
+        for (const point of /** @type {const} */ (['before', 'after'])) {
+          const block = record.notice[point]
+          expect(block.insideBody, `row ${theme} ${point} notice must sit outside the view container`).toBe(false)
+          expect(block.statusText.length, `row ${theme} ${point} notice must carry a live-region message`).toBeGreaterThan(0)
+          expect(block.forbiddenRendered, `row ${theme} ${point} notice must render none of its forbidden elements`).toEqual([])
+          expect(Object.keys(block.computedStyles).sort(), `row ${theme} ${point} notice must record every declared style probe`).toEqual(route.notice.computed.map((probe) => probe.name).sort())
+        }
+      } else {
+        expect(record.notice, `row ${theme} must record no notice on a route that declares none`).toBeNull()
       }
 
       // The written proof must carry the real readings the row took: one

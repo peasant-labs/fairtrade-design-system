@@ -5,7 +5,7 @@
 # manifest), and the mutation the suite applies before running that boundary.
 #
 # The run description below is the one valid single-capture run every evidence
-# case starts from: four caller-owned rows, one artifact class set, one
+# case starts from: the caller-owned rows the run-root verifier requires, one artifact class set, one
 # freshness/output policy. Caller-owned ids, roots, class names, and thresholds
 # are fixture values only; no Fairtrade route, selector, port, or product
 # threshold appears here. The specialized capture consumers are classified as
@@ -26,12 +26,22 @@ run:
     artifactClasses: [record.json, aria.json, axe.json, screenshot.png, provenance.json, resolution.json]
     duplicateScopes: [same-key, cross-row, cross-theme]
     maxAgeMs: 50000
-    maxOutputBytes: 4096
+    maxOutputBytes: 16384
   rows:
     - {key: product-dark, kind: product, theme: dark}
     - {key: product-light, kind: product, theme: light}
     - {key: component-dark, kind: component, theme: dark}
     - {key: component-light, kind: component, theme: light}
+    - {key: product-offline-dark, kind: product, theme: dark}
+    - {key: product-offline-light, kind: product, theme: light}
+    - {key: component-transcript-header-dark, kind: component, theme: dark}
+    - {key: component-transcript-header-light, kind: component, theme: light}
+    - {key: component-offline-banner-dark, kind: component, theme: dark}
+    - {key: component-offline-banner-light, kind: component, theme: light}
+    - {key: component-digest-split-dark, kind: component, theme: dark}
+    - {key: component-digest-split-light, kind: component, theme: light}
+    - {key: component-stats-strip-dark, kind: component, theme: dark}
+    - {key: component-stats-strip-light, kind: component, theme: light}
 artifactTemplates:
   aria.json: '{"row":"{row}","artifact":"aria"}'
   axe.json: '{"row":"{row}","artifact":"axe"}'

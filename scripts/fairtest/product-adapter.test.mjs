@@ -121,7 +121,7 @@ const RENDER_GUARD_CONTEXT = Object.freeze({
   label: 'unrendered representative body',
   part: 'body',
   path: 'proof.body',
-  repair: 'keep the analytics dashboard laid out and rendered instead of present but invisible',
+  repair: 'keep the home section laid out and rendered instead of present but invisible',
 })
 const ACCEPTED_MEASUREMENT_FIELDS = ['roots', 'rendered', 'descendants', 'textLength']
 // No suite holds a scratch-port literal. Each real-driver case names the
@@ -213,7 +213,14 @@ function checkCaseShape(entry, index) {
     'theme-row': entry.expectValid
       ? ['name', 'check', 'theme', 'renderedAttribute', 'expectTheme', ...tail]
       : ['name', 'check', 'theme', 'renderedAttribute', ...tail],
-    route: ['name', 'check', 'theme', 'route', ...tail],
+    route: [
+      'name',
+      'check',
+      ...('routeKey' in entry ? ['routeKey'] : []),
+      'theme',
+      ...(entry.expectValid ? ['route'] : []),
+      ...tail,
+    ],
     'section-action': entry.expectValid
       ? ['name', 'check', 'action', 'fromSection', 'toSection', ...tail]
       : ['name', 'check', 'action', ...tail],
@@ -950,7 +957,24 @@ function runThemeRowCase(entry) {
 /** @param {Record<string, unknown>} entry */
 function runRouteCase(entry) {
   const name = /** @type {string} */ (entry.name)
-  assert.equal(targets.productRouteForTheme(entry.theme), entry.route, `${name}: row route must equal the declared route`)
+  // A case without a route key reads the default route through the one-argument
+  // form, so the default stays pinned to its byte-identical route; a case with
+  // a key resolves the entry through the registry lookup first.
+  const build = () => ('routeKey' in entry
+    ? targets.productRouteForTheme(entry.theme, targets.selectProductRoute(entry.routeKey))
+    : targets.productRouteForTheme(entry.theme))
+  if (entry.expectValid) {
+    assert.equal(build(), entry.route, `${name}: row route must equal the declared route`)
+    return
+  }
+  let message = null
+  try {
+    build()
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error)
+  }
+  assert.ok(message, `${name}: an unregistered route passed instead of failing`)
+  expectFragments(/** @type {string[]} */ (entry.expectedErrorContains), message, name)
 }
 
 /** @param {Record<string, unknown>} entry */
@@ -3141,7 +3165,7 @@ describe('product target registry and theme rows', () => {
       activeSection: 'nav[aria-label="peasant sections"] .iu-subnav-item[aria-current="page"]',
       sectionView: '#inuse-stage[role="tabpanel"]',
     })
-    assert.equal(selected.initialSection, 'analytics')
+    assert.equal(selected.initialSection, 'home')
     // Membership, not order: PRODUCT_SECTIONS is read only through .includes()
     // (the row navigates by label and aria-current, never by index), so a
     // behavior-preserving nav reorder must not turn this red. The comparison
@@ -3149,9 +3173,44 @@ describe('product target registry and theme rows', () => {
     // deliberate red that names the vocabulary.
     assert.deepEqual(
       [...selected.sections].sort(),
-      ['analytics', 'changes', 'map'],
-      'the section vocabulary must stay exactly analytics, changes, and map at path target.sections; repair: keep the section ids in PRODUCT_SECTIONS; their order is deliberately not pinned.',
+      ['analytics', 'changes', 'home', 'map', 'settings'],
+      'the section vocabulary must stay exactly home, settings, analytics, changes, and map at path target.sections; repair: keep the section ids in PRODUCT_SECTIONS; their order is deliberately not pinned.',
     )
+  })
+
+  it('declares the product route registry with exact membership', () => {
+    // A closed set: the row keys the evidence policy requires are derived from
+    // these entries, so membership is pinned exactly and each entry's app,
+    // navigation, sections, action, and notice are read back from the registry.
+    assert.deepEqual(targets.PRODUCT_ROUTES.map((route) => route.key), ['product', 'product-offline'])
+    assert.equal(targets.PRODUCT_DEFAULT_ROUTE, targets.PRODUCT_ROUTES[0], 'the default route must be the first registry entry')
+    for (const route of targets.PRODUCT_ROUTES) {
+      assert.ok(Object.isFrozen(route), `${route.key}: the route entry must be frozen`)
+      assert.equal(route.app, 'graph', `${route.key}: the route must serve the graph demo app`)
+      assert.equal(route.navLabel, 'peasant sections', `${route.key}: the route must name the graph section navigation`)
+      assert.deepEqual({ ...route.selectors }, { ...targets.PRODUCT_SELECTORS }, `${route.key}: the selector bundle must derive from the navigation label`)
+      assert.equal(route.initialSection, 'home', `${route.key}: the route must open on home`)
+      assert.equal(route.action, targets.getProductAction(targets.PRODUCT_ACTION_NAME), `${route.key}: the route must carry the registered action`)
+      assert.equal(targets.selectProductRoute(route.key), route, `${route.key}: the lookup must return the registry entry`)
+    }
+    assert.equal(targets.PRODUCT_ROUTES[0].notice, null, 'the default route renders no page-level notice')
+    assert.equal(targets.PRODUCT_ROUTES[1].notice, targets.PRODUCT_OFFLINE_NOTICE, 'the offline route renders the offline notice')
+    assert.deepEqual({ ...targets.PRODUCT_OFFLINE_NOTICE, absent: [...targets.PRODUCT_OFFLINE_NOTICE.absent], computed: targets.PRODUCT_OFFLINE_NOTICE.computed.map((probe) => ({ ...probe })) }, {
+      name: 'local-offline',
+      selector: 'section.cx-offline',
+      status: '[role="status"]',
+      absent: ['.lucide-wifi-off'],
+      computed: [
+        { name: 'commandFontFamily', selector: 'code.cx-cmd-code', property: 'fontFamily', token: '--font-mono' },
+        { name: 'commandTextTransform', selector: 'code.cx-cmd-code', property: 'textTransform', equals: 'none' },
+      ],
+    })
+    // Another demo app is data: a navigation label builds the same bundle with
+    // only the navigation scoped to it.
+    const commons = targets.productSelectorsFor('village sections')
+    assert.equal(commons.sectionNav, 'nav[aria-label="village sections"]')
+    assert.equal(commons.activeSection, 'nav[aria-label="village sections"] .iu-subnav-item[aria-current="page"]')
+    assert.throws(() => targets.productSelectorsFor(''), /field "navLabel".*at path route\.navLabel.*repair:/s, 'an empty navigation label must fail')
   })
 
   it('rejects unknown target ids with an actionable diagnostic', () => {
@@ -3188,7 +3247,7 @@ describe('product target registry and theme rows', () => {
       theme: 'dark',
       route: '/?app=graph&fb=off&theme=none#inuse',
       expectedAttribute: '',
-      initialSection: 'analytics',
+      initialSection: 'home',
     })
   })
 
@@ -3386,7 +3445,7 @@ describe('verifier-facing record accessibility evidence', () => {
         ...record,
         gate: { ...record.gate, after: { ...record.gate.after, observedSection: targets.PRODUCT_INITIAL_SECTION } },
       }),
-      /mismatched gate observation point.*at path record\.accessibility\.gate\.after\.observedSection.*observed as "analytics".*repair:/s,
+      /mismatched gate observation point.*at path record\.accessibility\.gate\.after\.observedSection.*observed as "home".*repair:/s,
       'a receipt whose observed section belongs to the other slot must be refused',
     )
   })

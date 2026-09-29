@@ -20,8 +20,8 @@ export const productProof = buildProductProof({
   activeSection: { observed: true, observedAtMs: 1 },
   view: { observed: true, observedAtMs: 1 },
   themeObservation: { expected: 'dark', observed: 'dark', source: 'type-test', observedAtMs: 1 },
-  initialSection: 'analytics',
-  activeSectionId: 'analytics',
+  initialSection: 'home',
+  activeSectionId: 'home',
 })
 
 /** @type {import('../fairtest-source.mjs').ComponentResolution} */

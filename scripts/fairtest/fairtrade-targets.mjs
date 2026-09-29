@@ -2,12 +2,14 @@
 
 // Fairtrade-owned product target metadata for the mounted graph surface.
 //
-// Plain data plus pure functions only. This module names the single built
-// product route per theme row, the persistent chrome and representative body
-// selectors, the section navigation model, the one named section action, the
-// normalized theme rows, and the served-build provenance source contract.
-// Nothing here starts a service, reads host state, or touches host globals,
-// so every export stays inspectable without a run.
+// Plain data plus pure functions only. This module names the product route
+// registry (one entry per demo route a mounted row drives, each with its app,
+// query, section navigation, initial section, named action, and optional
+// page-level notice), the persistent chrome and representative body selectors,
+// the section navigation model, the registered section actions, the normalized
+// theme rows, and the served-build provenance source contract. Nothing here
+// starts a service, reads host state, or touches host globals, so every export
+// stays inspectable without a run.
 
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { fairtestRelative } from './fairtest-paths.mjs'
@@ -31,67 +33,95 @@ export const PRODUCT_TARGET_ID = 'fairtrade-graph-product'
 const PRODUCT_TARGET_KIND = 'product'
 
 /**
- * Section the graph surface renders before any action.
+ * Section the graph surface renders before any action. The local app's
+ * section registry opens on home.
  * @type {string}
  */
-export const PRODUCT_INITIAL_SECTION = 'analytics'
+export const PRODUCT_INITIAL_SECTION = 'home'
 
 /**
- * The single named action the product target offers.
+ * The named action the graph routes offer: one press on the settings item in
+ * the section navigation.
  * @type {string}
  */
-export const PRODUCT_ACTION_NAME = 'select-map-section'
+export const PRODUCT_ACTION_NAME = 'select-settings-section'
 
 /**
  * Section the named action starts from.
  * @type {string}
  */
-const PRODUCT_ACTION_FROM_SECTION = 'analytics'
+const PRODUCT_ACTION_FROM_SECTION = 'home'
 
 /**
  * Section the named action selects.
  * @type {string}
  */
-export const PRODUCT_ACTION_TO_SECTION = 'map'
+export const PRODUCT_ACTION_TO_SECTION = 'settings'
 
 /**
  * Display label the section navigation renders for PRODUCT_ACTION_TO_SECTION.
- * The section id and its rendered label are different strings on the real
- * surface (the map section reads "code map"), so the row carries the rendered
- * label from here instead of repeating the product copy in the producer.
+ * A section id and its rendered label may be different strings on the real
+ * surface (the route-only map section reads "code map"), so the row carries
+ * the rendered label from here instead of repeating the product copy in the
+ * producer.
  * @type {string}
  */
-export const PRODUCT_ACTION_LABEL = 'code map'
+export const PRODUCT_ACTION_LABEL = 'settings'
 
 /**
- * Product-only selector bundle. Keys name the observed part, values are the
- * selectors the row-scoped producer queries on the real built surface. This
- * bundle is the single declared source of app structure: the producer derives
- * every product selector it touches from these keys and holds no `iu-` class
- * or `#inuse` selector literal of its own.
+ * Accessible name of the graph app's section navigation.
+ * @type {string}
  */
-export const PRODUCT_SELECTORS = Object.freeze({
-  // The in-use shell root. The ARIA snapshot the row records is taken from
-  // this root so the snapshot covers the whole product shell, not one part.
-  shell: '#inuse',
-  chrome: '.iu-bar',
-  body: '.iu-view',
-  // The active view inside the view container. The container also holds the
-  // permanently mounted hidden changes view, so the container alone can never
-  // stand in for the active view: only the children the shell is not hiding
-  // carry the section the row is proving. One selector, summed over every
-  // active child, so a section rendering more than one root is measured whole.
-  activeView: '.iu-view > :not([hidden])',
-  sectionNav: 'nav[aria-label="peasant sections"]',
-  // The section-item class and the active-state class the shell toggles, kept
-  // as their own keys so the row never re-spells them inline. activeSection is
-  // derived from the two so the nav-scoped active query and the two class
-  // probes cannot drift apart.
-  sectionItem: '.iu-subnav-item',
-  activeSectionItem: '.iu-subnav-item.active',
-  activeSection: 'nav[aria-label="peasant sections"] .iu-subnav-item[aria-current="page"]',
-  sectionView: '#inuse-stage[role="tabpanel"]',
-})
+const PRODUCT_NAV_LABEL = 'peasant sections'
+
+/**
+ * Build the product-only selector bundle for one demo app's section
+ * navigation. Keys name the observed part, values are the selectors the
+ * row-scoped producer queries on the real built surface. The bundle is the
+ * single declared source of app structure: the producer derives every product
+ * selector it touches from these keys and holds no `iu-` class or `#inuse`
+ * selector literal of its own. Only the navigation's accessible name differs
+ * between demo apps, so a route entry names it and the rest is shared.
+ * @param {unknown} navLabel accessible name of the section navigation
+ * @returns {Readonly<{ shell: string, chrome: string, body: string, activeView: string, sectionNav: string, sectionItem: string, activeSectionItem: string, activeSection: string, sectionView: string }>} the frozen selector bundle
+ */
+export function productSelectorsFor(navLabel) {
+  if (typeof navLabel !== 'string' || navLabel.trim().length === 0 || navLabel.includes('"')) {
+    throw new Error(
+      `fairtrade targets: invalid section navigation label ${JSON.stringify(navLabel)} for field "navLabel" at path route.navLabel; ` +
+      'repair: name the accessible label the section navigation renders, without quotes, for "navLabel".',
+    )
+  }
+  const sectionNav = `nav[aria-label="${navLabel}"]`
+  const sectionItem = '.iu-subnav-item'
+  return Object.freeze({
+    // The in-use shell root. The ARIA snapshot the row records is taken from
+    // this root so the snapshot covers the whole product shell, not one part.
+    shell: '#inuse',
+    chrome: '.iu-bar',
+    body: '.iu-view',
+    // The active view inside the view container. The container also holds the
+    // permanently mounted hidden changes view, so the container alone can never
+    // stand in for the active view: only the children the shell is not hiding
+    // carry the section the row is proving. One selector, summed over every
+    // active child, so a section rendering more than one root is measured whole.
+    activeView: '.iu-view > :not([hidden])',
+    sectionNav,
+    // The section-item class and the active-state class the shell toggles, kept
+    // as their own keys so the row never re-spells them inline. activeSection is
+    // derived from the two so the nav-scoped active query and the two class
+    // probes cannot drift apart.
+    sectionItem,
+    activeSectionItem: `${sectionItem}.active`,
+    activeSection: `${sectionNav} ${sectionItem}[aria-current="page"]`,
+    sectionView: '#inuse-stage[role="tabpanel"]',
+  })
+}
+
+/**
+ * The graph app's selector bundle.
+ */
+export const PRODUCT_SELECTORS = productSelectorsFor(PRODUCT_NAV_LABEL)
 
 /**
  * Drift guard: the nav-scoped active-section query is assembled from the nav,
@@ -126,10 +156,12 @@ const PRODUCT_HANDLES = Object.freeze({
 })
 
 /**
- * Section ids the graph surface may report as active.
+ * Section ids the graph surface may report as active: the local app's section
+ * registry, home and settings in the navigation, analytics, changes, and the
+ * code map by route only.
  * @type {readonly string[]}
  */
-const PRODUCT_SECTIONS = Object.freeze(['analytics', 'changes', 'map'])
+const PRODUCT_SECTIONS = Object.freeze(['home', 'settings', 'analytics', 'changes', 'map'])
 
 /**
  * Named fixtures the product target serves.
@@ -166,6 +198,163 @@ const PRODUCT_ACTION = Object.freeze({
   to: PRODUCT_ACTION_TO_SECTION,
   label: PRODUCT_ACTION_LABEL,
 })
+
+/**
+ * Every registered section action keyed by name. A route entry names one of
+ * these; the proof builder and the adapter accept only a registered name.
+ * @type {Readonly<Record<string, { name: string, from: string, to: string, label: string }>>}
+ */
+const PRODUCT_ACTION_REGISTRY = Object.freeze({
+  [PRODUCT_ACTION_NAME]: PRODUCT_ACTION,
+})
+
+if (JSON.stringify(Object.keys(PRODUCT_ACTION_REGISTRY)) !== JSON.stringify([...PRODUCT_ACTIONS])) {
+  throw new Error(
+    'fairtrade targets: action registry drifted from the declared actions for field "actions" at path target.actions; ' +
+    'repair: register exactly the declared product actions.',
+  )
+}
+
+/**
+ * One page-level notice a route renders between the section navigation and
+ * the view container, and the evidence the row records for it.
+ * @typedef {object} ProductNotice
+ * @property {string} name notice name recorded in the row
+ * @property {string} selector the notice root
+ * @property {string} status the live-region message inside the notice root
+ * @property {readonly string[]} absent selectors that must not render inside the notice root
+ * @property {readonly { name: string, selector: string, property: string, equals?: string, token?: string }[]} computed computed-style evidence read inside the notice root
+ */
+
+/**
+ * The local app's offline banner: a section with a role=status message, the
+ * start command in a mono code chip, and no wifi glyph (the internet is fine;
+ * the local app is not running). The command's font family must resolve to
+ * the mono token and its text keeps its case.
+ * @type {ProductNotice}
+ */
+export const PRODUCT_OFFLINE_NOTICE = Object.freeze({
+  name: 'local-offline',
+  selector: 'section.cx-offline',
+  status: '[role="status"]',
+  absent: Object.freeze(['.lucide-wifi-off']),
+  computed: Object.freeze([
+    Object.freeze({ name: 'commandFontFamily', selector: 'code.cx-cmd-code', property: 'fontFamily', token: '--font-mono' }),
+    Object.freeze({ name: 'commandTextTransform', selector: 'code.cx-cmd-code', property: 'textTransform', equals: 'none' }),
+  ]),
+})
+
+/**
+ * One product route a mounted row drives: the row-key prefix, the demo app and
+ * extra query parameters, the section navigation's accessible name and the
+ * selector bundle derived from it, the section vocabulary, the initial section
+ * and its rendered label, the registered action, and an optional page-level
+ * notice. Another demo app is one more entry with its own app id and
+ * navigation label; nothing in the producer changes.
+ * @typedef {object} ProductRoute
+ * @property {string} key row-key prefix; rows are `<key>-<theme>`
+ * @property {string} app demo app id served in the `app` query parameter
+ * @property {readonly (readonly [string, string])[]} params extra query parameters, in order
+ * @property {string} navLabel accessible name of the section navigation
+ * @property {ReturnType<typeof productSelectorsFor>} selectors selector bundle for this navigation
+ * @property {readonly string[]} sections section ids the route may report as active
+ * @property {string} initialSection section the route opens on
+ * @property {string} initialLabel label the navigation renders for the initial section
+ * @property {{ name: string, from: string, to: string, label: string }} action the registered named action
+ * @property {ProductNotice | null} notice page-level notice the route renders, or null
+ */
+
+/**
+ * Declare one product route, deriving the selector bundle from the navigation
+ * label and resolving the action through the registry, so an entry that names
+ * an unregistered action or an initial section the action does not start from
+ * cannot be constructed.
+ * @param {{ key: string, app: string, params?: (readonly [string, string])[], navLabel: string, sections: readonly string[], initialSection: string, initialLabel: string, action: string, notice?: ProductNotice | null }} input route declaration
+ * @returns {ProductRoute} the frozen route entry
+ */
+function defineProductRoute(input) {
+  const action = getProductAction(input.action)
+  if (action.from !== input.initialSection || !input.sections.includes(input.initialSection) || !input.sections.includes(action.to)) {
+    throw new Error(
+      `fairtrade targets: route ${JSON.stringify(input.key)} does not start where its action starts for field "initialSection" at path route.initialSection; ` +
+      `the route opens on ${JSON.stringify(input.initialSection)} and action ${JSON.stringify(action.name)} goes from ${JSON.stringify(action.from)} to ${JSON.stringify(action.to)}; ` +
+      'repair: open the route on the section its action starts from, and list both sections in the route vocabulary.',
+    )
+  }
+  return Object.freeze({
+    key: input.key,
+    app: input.app,
+    params: Object.freeze((input.params ?? []).map((pair) => /** @type {readonly [string, string]} */ (Object.freeze([pair[0], pair[1]])))),
+    navLabel: input.navLabel,
+    selectors: productSelectorsFor(input.navLabel),
+    sections: Object.freeze([...input.sections]),
+    initialSection: input.initialSection,
+    initialLabel: input.initialLabel,
+    action,
+    notice: input.notice ?? null,
+  })
+}
+
+/**
+ * The product routes the mounted product rows drive, in row order. The first
+ * entry is the default route: the graph app opens on home and the named action
+ * selects settings. The second is the same app with the local offline banner
+ * rendered above the home body.
+ * @type {readonly ProductRoute[]}
+ */
+export const PRODUCT_ROUTES = Object.freeze([
+  defineProductRoute({
+    key: 'product',
+    app: 'graph',
+    navLabel: PRODUCT_NAV_LABEL,
+    sections: PRODUCT_SECTIONS,
+    initialSection: PRODUCT_INITIAL_SECTION,
+    initialLabel: PRODUCT_INITIAL_SECTION,
+    action: PRODUCT_ACTION_NAME,
+  }),
+  defineProductRoute({
+    key: 'product-offline',
+    app: 'graph',
+    params: [['local', 'offline']],
+    navLabel: PRODUCT_NAV_LABEL,
+    sections: PRODUCT_SECTIONS,
+    initialSection: PRODUCT_INITIAL_SECTION,
+    initialLabel: PRODUCT_INITIAL_SECTION,
+    action: PRODUCT_ACTION_NAME,
+    notice: PRODUCT_OFFLINE_NOTICE,
+  }),
+])
+
+/**
+ * The default product route: the first registry entry.
+ * @type {ProductRoute}
+ */
+export const PRODUCT_DEFAULT_ROUTE = PRODUCT_ROUTES[0]
+
+// Drift guard: the default route's selector bundle is the exported bundle, so
+// the registry and the row can never read two different graph navigations.
+if (PRODUCT_DEFAULT_ROUTE.selectors.sectionNav !== PRODUCT_SELECTORS.sectionNav || new Set(PRODUCT_ROUTES.map((route) => route.key)).size !== PRODUCT_ROUTES.length) {
+  throw new Error(
+    'fairtrade targets: product route registry drifted for field "routes" at path target.routes; ' +
+    'repair: keep the first route on the graph navigation and give every route its own key.',
+  )
+}
+
+/**
+ * Return the registered product route for a key.
+ * @param {unknown} key route key requested by the caller
+ * @returns {ProductRoute} the frozen route entry
+ */
+export function selectProductRoute(key) {
+  const route = PRODUCT_ROUTES.find((entry) => entry.key === key)
+  if (!route) {
+    throw new Error(
+      `fairtrade targets: unknown product route ${JSON.stringify(key)} for field "route" at path row.route; ` +
+      `repair: use one of ${PRODUCT_ROUTES.map((entry) => entry.key).join(', ')} for "route".`,
+    )
+  }
+  return route
+}
 
 /**
  * The ways an active view can be PRESENT in the DOM and still not RENDERED.
@@ -314,13 +503,13 @@ export function selectProductTarget(id) {
  * @returns {{ name: string, from: string, to: string, label: string }} the frozen product action record
  */
 export function getProductAction(name) {
-  if (name !== PRODUCT_ACTION_NAME) {
+  if (typeof name !== 'string' || !Object.hasOwn(PRODUCT_ACTION_REGISTRY, name)) {
     throw new Error(
       `fairtrade targets: unknown action ${JSON.stringify(name)} for field "action" at path target.action; ` +
-      `repair: use one of ${PRODUCT_ACTION_NAME} for "action".`,
+      `repair: use one of ${Object.keys(PRODUCT_ACTION_REGISTRY).join(', ')} for "action".`,
     )
   }
-  return PRODUCT_ACTION
+  return PRODUCT_ACTION_REGISTRY[name]
 }
 
 /**
@@ -345,31 +534,32 @@ export function normalizeRenderedTheme(rawAttributeValue) {
 
 /**
  * Build the product route for a theme row. Dark rows request the bare theme
- * value; light rows request the light value. The query and hash stay
- * app-owned data in this layer.
+ * value; light rows request the light value; the route entry's own query
+ * parameters follow the theme. The query and hash stay app-owned data in this
+ * layer.
  * @param {unknown} theme dark or light row theme
+ * @param {ProductRoute} [route] route entry, defaults to the default route
  * @returns {string} the product route for the row
  */
-export function productRouteForTheme(theme) {
-  if (theme === 'dark') {
-    return '/?app=graph&fb=off&theme=none#inuse'
+export function productRouteForTheme(theme, route = PRODUCT_DEFAULT_ROUTE) {
+  if (theme !== 'dark' && theme !== 'light') {
+    throw new Error(
+      `fairtrade targets: unknown row theme ${JSON.stringify(theme)} for field "theme" at path route.theme; ` +
+      'repair: use one of dark, light for "theme".',
+    )
   }
-  if (theme === 'light') {
-    return '/?app=graph&fb=off&theme=light#inuse'
-  }
-  throw new Error(
-    `fairtrade targets: unknown row theme ${JSON.stringify(theme)} for field "theme" at path route.theme; ` +
-    'repair: use one of dark, light for "theme".',
-  )
+  const extra = route.params.map(([name, value]) => `&${name}=${value}`).join('')
+  return `/?app=${route.app}&fb=off&theme=${theme === 'light' ? 'light' : 'none'}${extra}#inuse`
 }
 
 /**
  * Return the normalized row record for a theme: theme name, route, expected
  * rendered attribute marker, and initial section.
  * @param {unknown} theme dark or light row theme
+ * @param {ProductRoute} [route] route entry, defaults to the default route
  * @returns {{ theme: string, route: string, expectedAttribute: string, initialSection: string }} the frozen theme row record
  */
-export function productThemeRow(theme) {
+export function productThemeRow(theme, route = PRODUCT_DEFAULT_ROUTE) {
   if (theme !== 'dark' && theme !== 'light') {
     throw new Error(
       `fairtrade targets: unknown row theme ${JSON.stringify(theme)} for field "theme" at path row.theme; ` +
@@ -378,9 +568,9 @@ export function productThemeRow(theme) {
   }
   return Object.freeze({
     theme,
-    route: productRouteForTheme(theme),
+    route: productRouteForTheme(theme, route),
     expectedAttribute: theme === 'light' ? 'light' : '',
-    initialSection: PRODUCT_INITIAL_SECTION,
+    initialSection: route.initialSection,
   })
 }
 
@@ -573,9 +763,9 @@ export const PRODUCT_PROOF_RECORD_SCHEMA = Object.freeze({
  * parts and validate it through the shared product resolver. The row
  * theme must equal the observed theme, every one of the five parts must
  * be separately observed (a blanket mounted flag is rejected), the
- * initial section must be the analytics section, and a completed named
- * action must come from the app-owned action registry with the active
- * section on the action target. Component-shaped and cross-kind records
+ * initial section must be one a registered route opens on, and a completed
+ * named action must come from the app-owned action registry, start from that
+ * initial section, and leave the active section on the action target. Component-shaped and cross-kind records
  * fail through the shared validator. The returned record is frozen.
  * @param {object} input proof inputs, validated field by field at runtime
  * @returns {import('../fairtest-source.mjs').ProductResolution} the frozen validated product resolution
@@ -617,16 +807,18 @@ export function buildProductProof(input = /** @type {object} */ ({})) {
   for (const part of resolutionContract.PRODUCT_ONLY_FIELDS) {
     parts[part] = resolutionContract.validateObservedPart(record[part], 'fairtrade targets', `resolution.${part}`)
   }
-  if (record.initialSection !== PRODUCT_INITIAL_SECTION) {
+  const initialSections = [...new Set(PRODUCT_ROUTES.map((route) => route.initialSection))]
+  if (!initialSections.includes(/** @type {string} */ (record.initialSection))) {
     throw new Error(
       `fairtrade targets: unexpected initial section ${JSON.stringify(record.initialSection)} for field "initialSection" at path proof.initialSection; ` +
-      `repair: start the proof from ${JSON.stringify(PRODUCT_INITIAL_SECTION)} for "initialSection".`,
+      `repair: start the proof from ${initialSections.map((section) => JSON.stringify(section)).join(', ')} for "initialSection".`,
     )
   }
-  if (!PRODUCT_SECTIONS.includes(/** @type {string} */ (record.activeSectionId))) {
+  const sections = [...new Set(PRODUCT_ROUTES.flatMap((route) => route.sections))]
+  if (!sections.includes(/** @type {string} */ (record.activeSectionId))) {
     throw new Error(
       `fairtrade targets: unknown active section ${JSON.stringify(record.activeSectionId)} for field "activeSectionId" at path proof.activeSectionId; ` +
-      `repair: use one of ${[...PRODUCT_SECTIONS].join(', ')} for "activeSectionId".`,
+      `repair: use one of ${sections.join(', ')} for "activeSectionId".`,
     )
   }
   let action = null
@@ -634,6 +826,13 @@ export function buildProductProof(input = /** @type {object} */ ({})) {
     const candidate = /** @type {Record<string, unknown>} */ (record.action)
     const registered = getProductAction(candidate?.name)
     action = resolutionContract.validateNamedResult(record.action, 'fairtrade targets', 'resolution.action')
+    if (record.initialSection !== registered.from) {
+      throw new Error(
+        `fairtrade targets: action ${JSON.stringify(registered.name)} starts from ${JSON.stringify(registered.from)} for field "initialSection" at path proof.initialSection; ` +
+        `got ${JSON.stringify(record.initialSection)}; ` +
+        `repair: open the row on the ${JSON.stringify(registered.from)} section before completing the named action.`,
+      )
+    }
     if (record.activeSectionId !== registered.to) {
       throw new Error(
         `fairtrade targets: action ${JSON.stringify(registered.name)} expects the active section ${JSON.stringify(registered.to)} for field "activeSectionId" at path proof.activeSectionId; ` +
@@ -674,8 +873,8 @@ export const PRODUCT_A11Y_SCOPE_ROOT = PRODUCT_SELECTORS.sectionView
 
 /**
  * Observation points carrying a scoped product-view scan: after the
- * initial mount (section analytics) and after the named map interaction
- * completes (section map).
+ * initial mount (the route's initial section) and after the named section
+ * action completes (the action's target section).
  * @type {readonly string[]}
  */
 export const PRODUCT_A11Y_POINTS = Object.freeze(['initial', 'after-action'])
@@ -706,24 +905,38 @@ export const PRODUCT_A11Y_GATE_POINT_SLOTS = Object.freeze({
 })
 
 /**
- * Section id rendered at each scoped observation point.
+ * Section id rendered at each scoped observation point of one route.
+ * @param {ProductRoute} [route] route entry, defaults to the default route
+ * @returns {Readonly<{ initial: string, 'after-action': string }>} the section id per point
  */
-export const PRODUCT_A11Y_POINT_SECTIONS = Object.freeze({
-  initial: PRODUCT_INITIAL_SECTION,
-  'after-action': PRODUCT_ACTION_TO_SECTION,
-})
+export function productA11yPointSections(route = PRODUCT_DEFAULT_ROUTE) {
+  return Object.freeze({ initial: route.initialSection, 'after-action': route.action.to })
+}
 
 /**
- * The active-section TEXT the live page shows at each scoped observation point,
- * which is what a gate receipt's observedSection is read from. It is declared
- * beside the section ids because the two are not the same string: the rendered
- * map button reads "code map" while the section it activates is "map", so a
- * comparison against the section id would refuse a correct row.
+ * The active-section TEXT the live page shows at each scoped observation point
+ * of one route, which is what a gate receipt's observedSection is read from.
+ * It is declared beside the section ids because the two need not be the same
+ * string: the route-only map section's item reads "code map" while the
+ * section it activates is "map", so a comparison against the section id would
+ * refuse a correct row.
+ * @param {ProductRoute} [route] route entry, defaults to the default route
+ * @returns {Readonly<{ initial: string, 'after-action': string }>} the rendered label per point
  */
-export const PRODUCT_A11Y_POINT_LABELS = Object.freeze({
-  initial: PRODUCT_INITIAL_SECTION,
-  'after-action': PRODUCT_ACTION_LABEL,
-})
+export function productA11yPointLabels(route = PRODUCT_DEFAULT_ROUTE) {
+  return Object.freeze({ initial: route.initialLabel, 'after-action': route.action.label })
+}
+
+/**
+ * Section id rendered at each scoped observation point of the default route.
+ */
+export const PRODUCT_A11Y_POINT_SECTIONS = productA11yPointSections()
+
+/**
+ * The active-section text the live page shows at each scoped observation point
+ * of the default route.
+ */
+export const PRODUCT_A11Y_POINT_LABELS = productA11yPointLabels()
 
 /**
  * Axe impact severity rank, least to most severe. A measured impact above
@@ -756,11 +969,11 @@ const PRODUCT_A11Y_IMPACT_RANK = Object.freeze({
 
 /**
  * Declared product-view violation baseline, measured on the real built
- * dist/ in both row themes (dark and light reported identical sets):
- * the analytics point scans clean, the map point carries the one
- * pre-existing critical aria-required-children violation over three
- * nodes inside the product view. Improvement (a violation that
- * disappears) never fails; anything beyond this baseline does.
+ * dist/ in both row themes and on every registered route (the default graph
+ * route and the offline-banner route reported identical sets): the home
+ * point and the settings point both scan clean inside the product view, the
+ * offline banner included. Improvement (a violation that disappears) never
+ * fails; anything beyond this baseline does.
  * @type {ProductA11yBaseline}
  */
 export const PRODUCT_A11Y_BASELINE = Object.freeze({
@@ -768,14 +981,7 @@ export const PRODUCT_A11Y_BASELINE = Object.freeze({
   scopeRoot: PRODUCT_A11Y_SCOPE_ROOT,
   points: Object.freeze({
     initial: Object.freeze([]),
-    'after-action': Object.freeze([
-      Object.freeze({
-        id: 'aria-required-children',
-        impact: 'critical',
-        nodes: 3,
-        themes: Object.freeze(['dark', 'light']),
-      }),
-    ]),
+    'after-action': Object.freeze([]),
   }),
 })
 

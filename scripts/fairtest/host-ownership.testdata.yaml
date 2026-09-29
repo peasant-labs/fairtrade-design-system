@@ -26,7 +26,7 @@
 #                                  declaring one.
 #
 # Runs with node --test inside the declared Fairtest product-contract command.
-expectedExportCount: 133
+expectedExportCount: 147
 exports:
   - name: fairtest-runtime-fairtest_repo_root
     file: fairtest-runtime.mjs
@@ -207,6 +207,34 @@ exports:
   - name: fairtrade-targets-assert-product-axe-baseline-delta
     file: fairtrade-targets.mjs
     symbol: assertProductAxeBaselineDelta
+    owner: app-owned-registry
+  - name: fairtrade-targets-product-selectors-for
+    file: fairtrade-targets.mjs
+    symbol: productSelectorsFor
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_offline_notice
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_OFFLINE_NOTICE
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_routes
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_ROUTES
+    owner: app-owned-registry
+  - name: fairtrade-targets-product_default_route
+    file: fairtrade-targets.mjs
+    symbol: PRODUCT_DEFAULT_ROUTE
+    owner: app-owned-registry
+  - name: fairtrade-targets-select-product-route
+    file: fairtrade-targets.mjs
+    symbol: selectProductRoute
+    owner: app-owned-registry
+  - name: fairtrade-targets-product-a11y-point-sections
+    file: fairtrade-targets.mjs
+    symbol: productA11yPointSections
+    owner: app-owned-registry
+  - name: fairtrade-targets-product-a11y-point-labels
+    file: fairtrade-targets.mjs
+    symbol: productA11yPointLabels
     owner: app-owned-registry
   - name: product-producer-product_artifact_classes
     file: product-producer.mjs
@@ -455,6 +483,34 @@ exports:
   - name: fairtrade-component-target-validatecomponenttargetcontract
     file: fairtrade-component-target.mjs
     symbol: validateComponentTargetContract
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component_layout_body_classes
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_LAYOUT_BODY_CLASSES
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component_render_phases
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_RENDER_PHASES
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component_stories
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_STORIES
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component_default_story
+    file: fairtrade-component-target.mjs
+    symbol: COMPONENT_DEFAULT_STORY
+    owner: app-owned-registry
+  - name: fairtrade-component-target-select-component-story
+    file: fairtrade-component-target.mjs
+    symbol: selectComponentStory
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-a11y-point
+    file: fairtrade-component-target.mjs
+    symbol: componentA11yPoint
+    owner: app-owned-registry
+  - name: fairtrade-component-target-component-gate-receipt-fields
+    file: fairtrade-component-target.mjs
+    symbol: componentGateReceiptFields
     owner: app-owned-registry
   - name: component-producer-component-a11y-page-wide-fields
     file: component-producer.mjs

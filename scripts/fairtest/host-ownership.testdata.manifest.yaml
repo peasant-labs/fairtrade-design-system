@@ -1,7 +1,7 @@
 # Required-name inventory and executable mutations for
 # host-ownership.testdata.yaml. Every row name must appear exactly once, and
 # every mutation must fail for its intended field.
-expectedExportCount: 133
+expectedExportCount: 147
 requiredExportNames:
   - fairtest-runtime-fairtest_repo_root
   - fairtest-runtime-fairtest_app_host
@@ -48,6 +48,13 @@ requiredExportNames:
   - fairtrade-targets-product_a11-y_point_sections
   - fairtrade-targets-product_a11-y_baseline
   - fairtrade-targets-assert-product-axe-baseline-delta
+  - fairtrade-targets-product-selectors-for
+  - fairtrade-targets-product_offline_notice
+  - fairtrade-targets-product_routes
+  - fairtrade-targets-product_default_route
+  - fairtrade-targets-select-product-route
+  - fairtrade-targets-product-a11y-point-sections
+  - fairtrade-targets-product-a11y-point-labels
   - product-producer-product_artifact_classes
   - product-producer-product_min_body_descendants
   - product-producer-product_min_body_text_length
@@ -110,6 +117,13 @@ requiredExportNames:
   - fairtrade-component-target-getcomponentaction
   - fairtrade-component-target-selectcomponenttarget
   - fairtrade-component-target-validatecomponenttargetcontract
+  - fairtrade-component-target-component_layout_body_classes
+  - fairtrade-component-target-component_render_phases
+  - fairtrade-component-target-component_stories
+  - fairtrade-component-target-component_default_story
+  - fairtrade-component-target-select-component-story
+  - fairtrade-component-target-component-a11y-point
+  - fairtrade-component-target-component-gate-receipt-fields
   - component-producer-component-a11y-page-wide-fields
   - component-producer-component-a11y-record-fields
   - component-producer-component-artifact-classes
