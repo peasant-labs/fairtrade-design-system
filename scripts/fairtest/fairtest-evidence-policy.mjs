@@ -33,6 +33,12 @@ export const FAIRTEST_EVIDENCE_ROW_KEYS = Object.freeze([
   'component-digest-split-light',
   'component-stats-strip-dark',
   'component-stats-strip-light',
+  'component-publish-bar-dark',
+  'component-publish-bar-light',
+  'component-access-list-dark',
+  'component-access-list-light',
+  'component-setting-groups-dark',
+  'component-setting-groups-light',
 ])
 
 /**
@@ -93,6 +99,12 @@ export function fairtestEvidencePolicyInput(runId) {
       { key: 'component-digest-split-light', kind: 'component', theme: 'light', root: COMPONENT_PROVENANCE_SOURCE.root },
       { key: 'component-stats-strip-dark', kind: 'component', theme: 'dark', root: COMPONENT_PROVENANCE_SOURCE.root },
       { key: 'component-stats-strip-light', kind: 'component', theme: 'light', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-publish-bar-dark', kind: 'component', theme: 'dark', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-publish-bar-light', kind: 'component', theme: 'light', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-access-list-dark', kind: 'component', theme: 'dark', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-access-list-light', kind: 'component', theme: 'light', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-setting-groups-dark', kind: 'component', theme: 'dark', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-setting-groups-light', kind: 'component', theme: 'light', root: COMPONENT_PROVENANCE_SOURCE.root },
     ],
     duplicateScopes: ['same-key', 'cross-row', 'cross-theme'],
     maxAgeMs: FAIRTEST_EVIDENCE_MAX_AGE_MS,

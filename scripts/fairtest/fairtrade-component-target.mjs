@@ -314,6 +314,12 @@ const OFFLINE_RETRY_BUSY = Object.freeze({ name: 'retry-busy', selector: '.cx-of
 const DIGEST_LIST = 'ul[role="listbox"][aria-label="sessions"]'
 const DIGEST_SECOND_SELECTED = Object.freeze({ name: 'second-option-selected', selector: `${DIGEST_LIST} > li[role="option"]:nth-of-type(2)`, attribute: 'aria-selected', value: 'true' })
 const STATS_PAIRS = Object.freeze({ name: 'pairs', selector: 'ul.sst[aria-label="your sessions in numbers"] > li.sst-pair', count: 6 })
+const PUBLISH_BAR_ACTIONS = Object.freeze({ name: 'bar-actions', selector: '.pub-bar .pub-bar-action', count: 6 })
+const PUBLISH_BAR_UPDATE = Object.freeze({ name: 'update-action', role: Object.freeze({ role: 'button', name: 'update' }), matches: '.pub-bar-action', count: 1 })
+const ACCESS_NAMED_REMOVE = Object.freeze({ name: 'named-remove', role: Object.freeze({ role: 'button', name: 'remove Acme Platform' }), matches: '.pub-access-remove', count: 1 })
+const ACCESS_KEEP = Object.freeze({ name: 'keep-pending-removal', role: Object.freeze({ role: 'button', name: 'keep ML Reading Group' }), matches: '.pub-access-keep', count: 1 })
+const SETTING_GROUPS_ONE_OPEN = Object.freeze({ name: 'one-open-group', selector: 'details.srow-group[open]', count: 1 })
+const SETTING_GROUPS_BOTH_OPEN = Object.freeze({ name: 'both-groups-open', selector: 'details.srow-group[open]', count: 2 })
 
 /**
  * The mounted story rows, in row order. Floors are measured on the real built
@@ -413,6 +419,52 @@ export const COMPONENT_STORIES = Object.freeze([
     // one short line of text: a blank capture of this box compresses to about 430 bytes, and the
     // real strip measures about 5 KB on the CI renderer and 10 KB on macOS.
     floors: Object.freeze({ descendants: 15, textLength: 60, ariaChars: 150, screenshotBytes: 2500 }),
+  }),
+  Object.freeze({
+    key: 'publish-bar',
+    rowPrefix: 'component-publish-bar',
+    targetId: 'fairtrade-publish-bar-story',
+    storyId: 'in-use-publish--bar-states',
+    layout: 'centered',
+    before: Object.freeze([PUBLISH_BAR_ACTIONS, PUBLISH_BAR_UPDATE]),
+    action: null,
+    after: Object.freeze([]),
+    gateTie: Object.freeze({ field: 'barActions', expectation: PUBLISH_BAR_ACTIONS }),
+    computed: Object.freeze([
+      Object.freeze({ name: 'labelFontFamily', selector: '.pub-state', property: 'fontFamily', token: '--font-mono' }),
+      Object.freeze({ name: 'actionBorderRadius', selector: '.pub-bar-action', property: 'borderRadius', equals: '0px' }),
+    ]),
+    floors: Object.freeze({ descendants: 30, textLength: 150, ariaChars: 200, screenshotBytes: 6000 }),
+  }),
+  Object.freeze({
+    key: 'access-list',
+    rowPrefix: 'component-access-list',
+    targetId: 'fairtrade-access-list-story',
+    storyId: 'in-use-publish--access',
+    layout: 'centered',
+    before: Object.freeze([ACCESS_NAMED_REMOVE, ACCESS_KEEP]),
+    action: null,
+    after: Object.freeze([]),
+    gateTie: Object.freeze({ field: 'namedRemove', expectation: ACCESS_NAMED_REMOVE }),
+    computed: Object.freeze([
+      Object.freeze({ name: 'nameFontSize', selector: '.pub-access-name', property: 'fontSize', equals: '16px' }),
+    ]),
+    floors: Object.freeze({ descendants: 15, textLength: 80, ariaChars: 150, screenshotBytes: 6000 }),
+  }),
+  Object.freeze({
+    key: 'setting-groups',
+    rowPrefix: 'component-setting-groups',
+    targetId: 'fairtrade-setting-groups-story',
+    storyId: 'in-use-settings--groups',
+    layout: 'centered',
+    before: Object.freeze([SETTING_GROUPS_ONE_OPEN]),
+    action: Object.freeze({ name: 'open-collapsed-group', kind: 'click', target: Object.freeze({ name: 'collapsed-summary', selector: 'details.srow-group:not([open]) > summary', count: 1 }) }),
+    after: Object.freeze([SETTING_GROUPS_BOTH_OPEN]),
+    gateTie: Object.freeze({ field: 'bothGroupsOpen', expectation: SETTING_GROUPS_BOTH_OPEN }),
+    computed: Object.freeze([
+      Object.freeze({ name: 'helpFontSize', selector: '.srow-label', property: 'fontFamily', token: '--font-mono' }),
+    ]),
+    floors: Object.freeze({ descendants: 20, textLength: 60, ariaChars: 100, screenshotBytes: 6000 }),
   }),
 ])
 

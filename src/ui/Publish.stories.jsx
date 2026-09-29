@@ -59,7 +59,7 @@ function Popup({ state, mode = 'publish', access = ACCESS, done = DONE, ...rest 
 export const BarStates = {
   name: 'bar, every state',
   decorators: frame('wide'),
-  parameters: { layout: 'padded' },
+  parameters: { layout: 'centered' },
   render: () => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 'var(--sp-4)' }}>
       {PUBLISH_STATES.map((state) => (
@@ -132,7 +132,7 @@ export const PopupUpdate = {
 export const Access = {
   name: 'access list',
   decorators: frame('panel'),
-  parameters: { layout: 'padded' },
+  parameters: { layout: 'centered' },
   render: () => (
     <AccessList
       items={[...ACCESS, { id: 'ml', name: 'ML Reading Group', members: 21, pending: 'removal' }]}
