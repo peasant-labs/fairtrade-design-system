@@ -10,14 +10,17 @@
 //      and the Fairtest root guards, and refuses a bare string literal that
 //      equals a declared root or a repo-relative path under one, outside the
 //      owner. Test modules are covered too, except the fixture carriers the
-//      owner declares in FAIRTEST_FIXTURE_TEST_MODULES. The scanner lexes the
-//      module so a path mentioned inside a comment is not a bare literal, and
-//      it treats a substitution-free template as its text, so a path cannot
-//      hide behind a backtick either; a new hardcoded path under a declared
-//      root is caught. The reach stops at a whole literal: a `./`-prefixed
-//      spelling (`./dist`), a segment-assembled path (`'dist/' + name`), and
-//      text inside a substituted template (`` `${root}/x` ``) are not refused,
-//      because the scanner reads only whole literals.
+//      owner declares in FAIRTEST_FIXTURE_TEST_MODULES.
+//
+//      What the scanner refuses is mechanical, not descriptive: it lexes the
+//      module (so a path mentioned inside a comment is not a bare literal, and
+//      a substitution-free template is read as its text) and flags any whole
+//      string literal whose value equals a declared root or begins with
+//      `<root>/`. The corpus in scripts/testdata/fairtest-paths.yaml is the
+//      authoritative list of the forms it catches and the forms it does not;
+//      for example it does not refuse a `./`-prefixed spelling (`./dist`) or a
+//      root split across a concatenation (`'dis' + 't'`), because neither
+//      literal matches that rule.
 //   2. the path-resolution guard proves every declared location resolves to an
 //      absolute path inside FAIRTEST_REPO_ROOT, and that traversal, absolute,
 //      empty, dot-segment, windows, and unknown-name inputs are refused with

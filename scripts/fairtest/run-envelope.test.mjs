@@ -594,9 +594,9 @@ function inspectWorkflowOrder(text) {
     }
   }
   // The cheap browser-free guards must actually run in the contracts step: the
-  // type program and its coverage, path, and boundary guards, the run-envelope
-  // wiring guard, and the SurfaceGate compatibility gate are required gates, so
-  // dropping any command turns this guard red.
+  // type program and its coverage, path, boundary, and dispatch guards, the
+  // run-envelope wiring guard, and the SurfaceGate compatibility gate are
+  // required gates, so dropping any of these commands turns this guard red.
   const browserFree = stepByName(steps, 'Fairtest browser-free contracts')
   const browserFreeCommands = String(browserFree.run ?? '')
     .split('\n')

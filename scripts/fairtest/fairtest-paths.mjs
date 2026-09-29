@@ -13,16 +13,16 @@
 // dispatch). Both this list and FAIRTEST_PATH_ROOTS are the claim for the
 // locations named here: the raw-literal path guard
 // (scripts/fairtest/assert-fairtest-paths.mjs) refuses a bare literal equal to,
-// or under, any declared root, so a guard cannot take private ownership of a
-// declared corpus by spelling its path. A module that needs one of these values
-// reads it here instead of spelling the path as a bare string literal.
+// or under, any declared root in every scanned module except the fixture
+// carriers the owner declares, so no other module can take private ownership of
+// a declared corpus by spelling its path. A module that needs one of these
+// values reads it here instead of spelling the path as a bare string literal.
 //
 // The declared set is not exhaustive of every location an in-scope guard
 // reads. The root package.json read by the root boundary guard
 // (scripts/assert-fairtest-boundary.mjs) and the in-tree testdata reads in
 // scripts/fairtest/component-adapter.test.mjs and
-// scripts/fairtest/local-bridge.test.mjs sit outside the declared roots, so the
-// raw-literal rule neither declares nor covers them.
+// scripts/fairtest/local-bridge.test.mjs are not among the declared locations.
 //
 // Plain data plus pure functions only: a frozen record of named repo-relative
 // locations, a frozen list of the directory roots the guard treats as

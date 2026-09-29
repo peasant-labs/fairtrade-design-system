@@ -93,7 +93,7 @@ records:
     exitCondition: Fold the checks into a lower-level program or compiler integration if one can observe program membership and suppression metadata directly.
   - name: fairtest-target-dispatch-guard
     answers:
-      subject: No module under scripts/fairtest/ outside the target-declaration and view-construction modules may branch on the host kind; every other module must read the kind, id, capabilities, fixtures, and actions from the target value's own fields.
+      subject: No scanned module under scripts/fairtest/ may branch on the host kind, except the two target-declaration modules and the mounted CLI dispatcher; the scan skips test modules. Every scanned module must read the kind, id, capabilities, fixtures, and actions from the target value's own fields.
       necessity: A value, contract, or fixture test observes the target object's shape and the adapter's behaviour, but it cannot see the source of an arbitrary app module; only a source scan over the real tree catches a new kind === 'product' / kind === 'component' branch that would become a second, disagreeing discriminator.
       productionPath: pnpm test:fairtest:dispatch (node scripts/fairtest/assert-target-dispatch.mjs) runs the guard as its own CLI command over the real scripts/fairtest directory, refusing a host-kind branch outside the declaration and view-construction modules.
       cost: The guard is one browser-free source scan with one readdir plus one readFile per scanned .mjs module; no service, browser, network, or durable output.
@@ -116,12 +116,12 @@ records:
     exitCondition: Fold the rule into a compiler or lint constraint, or delete the guard once a lower-level package check observes the same host-kind branch boundary.
   - name: fairtest-raw-path-literal-guard
     answers:
-      subject: No module under scripts/fairtest/ or the Fairtest root guards may carry a bare repository-path literal outside scripts/fairtest/fairtest-paths.mjs.
+      subject: No module under scripts/fairtest/ or the Fairtest root guards may carry a bare repository-path literal equal to, or under, a declared root, outside scripts/fairtest/fairtest-paths.mjs and the fixture carriers the owner declares.
       necessity: A value or contract test observes the path values the harness reads but cannot see the source of an arbitrary module; only a source scan over the real tree catches a new hardcoded build root, child path, or testdata corpus that would drift from the single owner.
       productionPath: pnpm test:fairtest:paths (node scripts/fairtest/assert-fairtest-paths.mjs) scans the real scripts/fairtest tree including its test modules plus the Fairtest root guards with a lexer that skips comments and treats a substitution-free template literal as its text, then applies three named mutations in scratch modules.
-      cost: One browser-free node process, one readdir plus one readFile per scanned .mjs module, and one scratch directory for the mutation; no service, browser, network, or durable output.
-      lifetime: No temporary state on the passing path; the mutation creates one mkdtemp directory under the OS temp dir and removes it with rmSync in a finally step on every exit path.
-      concurrency: Read-only over the shared tree; the mutation scratch directory is mkdtemp-unique, so parallel runs cannot share a path and no port or identity is claimed.
+      cost: One browser-free node process, one readdir plus one readFile per scanned .mjs module, and one scratch directory per named mutation (three); no service, browser, network, or durable output.
+      lifetime: No temporary state on the passing path; each mutation creates one mkdtemp directory under the OS temp dir and removes it with rmSync in a finally step on every exit path.
+      concurrency: Read-only over the shared tree; each mutation scratch directory is mkdtemp-unique, so parallel runs cannot share a path and no port or identity is claimed.
       ciParity: The exact command pnpm test:fairtest:paths runs from a clean checkout under the pinned Node toolchain with the pinned yaml devDependency in the browser-free contracts step of the pinned Fairtest CI job, so a stray hardcoded build root or testdata corpus turns required CI red.
       evidence: A machine-readable pass line naming the scanned module count, plus, on refusal, a diagnostic naming the module, line, literal, path context, and repair guidance; the named mutation asserts the literal and the repair substring.
       mutation: raw-literal-plant writes const DIST_ROOT = join(FAIRTEST_REPO_ROOT, 'dist') into a scratch module; test-file-literal-plant plants the same literal in a scratch test module; and path-escape-plant feeds a parent-directory traversal. Each runs the guard and asserts it names the literal or the refusal with the repair instead of passing.
