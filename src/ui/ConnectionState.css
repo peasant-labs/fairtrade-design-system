@@ -314,3 +314,71 @@
   flex: none;
   color: var(--teal);
 }
+
+/* ── local offline banner ───────────────────────────────────────────────────
+   the page-level notice for "the local peasant app stopped". a flat second
+   surface under the app header with a strong rule beneath it; the unplug icon,
+   the plain-language message (body face, 16px, capped measure), then one row of
+   actions: the command chip, `try again`, and the quiet `last checked` time. */
+.cx-offline {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--surface-2);
+  border-bottom: var(--bd-strong);
+  color: var(--ink);
+}
+.cx-offline-icon {
+  width: var(--ic-md);
+  height: var(--ic-md);
+  flex: none;
+  margin-top: var(--sp-1);
+  color: var(--ink-2);
+}
+.cx-offline-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.cx-offline-msg {
+  margin: 0;
+  max-width: var(--measure-prose);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  letter-spacing: var(--tracking-prose);
+  word-spacing: var(--word-spacing-prose);
+  color: var(--ink);
+}
+.cx-offline-msg strong {
+  font-weight: 700;
+  color: var(--ink-strong);
+}
+.cx-offline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+}
+.cx-offline-actions .cx-cmd { margin-top: 0; }
+.cx-offline-hint,
+.cx-offline-checked {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1.3;
+  text-transform: lowercase;
+  color: var(--ink-3);
+  letter-spacing: 0;
+}
+.cx-offline-checked time { color: var(--ink-2); }
+.cx-offline-retry[aria-busy="true"] { cursor: progress; }
+.cx-offline-retry .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .cx-offline-spin { animation: cx-spin 1.1s linear infinite; }
+}
+@media (max-width: 480px) {
+  .cx-offline { padding: var(--sp-3) var(--sp-4); }
+}

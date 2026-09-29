@@ -97,6 +97,23 @@ function CopyChipButton({ value, label = 'copy' }) {
 }
 
 /**
+ * the copy-able command chip the teaching empty state and the offline banner share. the command
+ * is CODE: mono, never lowercased by us. the `$` is a decorative prompt glyph; only the command
+ * itself is copied, so a paste runs cleanly.
+ */
+function CommandChip({ command }) {
+  return (
+    <div className="cx-cmd">
+      <code className="cx-cmd-code">
+        <span className="cx-cmd-prompt" aria-hidden="true">$</span>
+        <span className="cx-cmd-text">{command}</span>
+      </code>
+      <CopyChipButton value={command} />
+    </div>
+  )
+}
+
+/**
  * ConnectionPill — the small, glanceable connection indicator. a square hairline pill carrying an
  * icon and the word; the note ("on this computer · no internet") sits beside it as quiet mono
  * chrome. the state never rides on color alone: the icon and the word both encode it (no status
@@ -268,17 +285,7 @@ export function TeachingEmptyState({
       <Heading className="cx-teach-title">{title}</Heading>
       {body && <p className="cx-teach-body">{body}</p>}
 
-      {command && (
-        <div className="cx-cmd">
-          {/* the command is CODE → mono, not lowercased by us. the `$` is a decorative prompt
-              glyph; only the command itself is copied, so a paste runs cleanly. */}
-          <code className="cx-cmd-code">
-            <span className="cx-cmd-prompt" aria-hidden="true">$</span>
-            <span className="cx-cmd-text">{command}</span>
-          </code>
-          <CopyChipButton value={command} />
-        </div>
-      )}
+      {command && <CommandChip command={command} />}
 
       {privacy && (
         <p className="cx-teach-privacy">
@@ -287,6 +294,70 @@ export function TeachingEmptyState({
         </p>
       )}
     </div>
+  )
+}
+
+/* hh:mm:ss in 24-hour time, the page's own clock. an unparseable input renders nothing rather
+   than "Invalid Date". */
+function formatCheckedAt(checkedAt) {
+  const date = checkedAt instanceof Date ? checkedAt : new Date(checkedAt)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+}
+
+/**
+ * LocalOfflineBanner — the page-level notice for "the peasant app on this computer stopped". It
+ * says what is wrong in plain words (the local program, not the internet), gives the command that
+ * starts it again in the existing copy-able command chip, and offers `try again`. There is no
+ * wifi glyph: the icon is the same unplug the lost-connection panel uses.
+ *
+ * The message is the `role="status"` live region. The command, the button and the `last checked`
+ * time sit outside it, so a retry that only moves the time never re-announces the whole banner.
+ * The command is code: mono, never lowercased. Everything else is lowercase chrome.
+ *
+ * @param {object} props
+ * @param {() => void} [props.onRetry] - `try again`; omit it and no button renders.
+ * @param {boolean} [props.retrying=false] - a retry is in flight: the button reports busy and
+ *        ignores further presses until the host clears it.
+ * @param {Date | string | number} [props.checkedAt] - when the host last checked; shown as
+ *        hh:mm:ss with tabular numbers. omitted, no time renders.
+ * @param {string} [props.command='peasant web start'] - the command that starts the local app.
+ * @param {string} [props.className]
+ */
+export function LocalOfflineBanner({ onRetry, retrying = false, checkedAt, command = 'peasant web start', className = '', ...rest }) {
+  const cls = ['cx-offline', className].filter(Boolean).join(' ')
+  const time = checkedAt == null ? null : formatCheckedAt(checkedAt)
+  return (
+    <section className={cls} aria-label="peasant is not running" {...rest}>
+      <Plug className="cx-offline-icon" aria-hidden="true" />
+      <div className="cx-offline-main">
+        <p className="cx-offline-msg" role="status">
+          <strong>peasant isn&apos;t running on this computer.</strong>{' '}
+          your internet is fine: this page talks to the peasant app on your machine.
+        </p>
+        <div className="cx-offline-actions">
+          <span className="cx-offline-hint">start it in a terminal</span>
+          <CommandChip command={command} />
+          {onRetry && (
+            <button
+              type="button"
+              className="btn btn-primary btn-sm cx-offline-retry"
+              aria-busy={retrying ? 'true' : undefined}
+              aria-disabled={retrying ? 'true' : undefined}
+              onClick={() => { if (!retrying) onRetry() }}
+            >
+              {retrying ? <Loader className="cx-offline-spin" aria-hidden="true" /> : <RotateCw aria-hidden="true" />}
+              <span>{retrying ? 'trying again' : 'try again'}</span>
+            </button>
+          )}
+          {time && (
+            <span className="cx-offline-checked">
+              last checked <time className="tnum" dateTime={new Date(checkedAt).toISOString()}>{time}</time>
+            </span>
+          )}
+        </div>
+      </div>
+    </section>
   )
 }
 
