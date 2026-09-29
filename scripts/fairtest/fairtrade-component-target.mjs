@@ -410,7 +410,9 @@ export const COMPONENT_STORIES = Object.freeze([
     computed: Object.freeze([
       Object.freeze({ name: 'valueFontVariantNumeric', selector: 'ul.sst .sst-value', property: 'fontVariantNumeric', includes: 'tabular-nums' }),
     ]),
-    floors: Object.freeze({ descendants: 15, textLength: 60, ariaChars: 150, screenshotBytes: 6000 }),
+    // one short line of text: a blank capture of this box compresses to about 430 bytes, and the
+    // real strip measures about 5 KB on the CI renderer and 10 KB on macOS.
+    floors: Object.freeze({ descendants: 15, textLength: 60, ariaChars: 150, screenshotBytes: 2500 }),
   }),
 ])
 
