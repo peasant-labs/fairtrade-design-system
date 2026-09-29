@@ -550,7 +550,7 @@
   .subtask-head .lucide { @apply text-mauve; width: var(--ic-sm); height: var(--ic-sm); }
   .subtask-head .who { @apply text-mauve; }
   .subtask-foot { @apply font-mono text-label lowercase text-ink-4; padding: var(--sp-2) var(--sp-4); border-top: var(--bd); }
-  .elbow { @apply text-ink-5; }
+  .elbow { @apply text-ink-4; } /* text, so the faintest text-safe ink */
   .phase { @apply flex items-center justify-between gap-3 font-mono text-label lowercase bg-surface-2; padding: var(--sp-2) var(--sp-4); border-bottom: var(--bd); }
   .phase .lbl { @apply inline-flex items-center gap-2 text-ink-2; }
   .phase .lbl .lucide { @apply text-amber; width: var(--ic-sm); height: var(--ic-sm); }
