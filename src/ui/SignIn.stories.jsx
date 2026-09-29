@@ -26,7 +26,7 @@ export const SplitButton = {
   name: 'SplitButton',
   decorators: frame('panel'),
   args: { onSignIn: fn() },
-  render: (args) => <SignInProviders {...args} />,
+  render: (args) => <SignInProviders {...args} providers={PROVIDERS} />,
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     // the primary action names GitHub and is immediately clickable.
@@ -44,6 +44,22 @@ export const SplitButton = {
     await userEvent.click(within(menu).getByText('continue with Codeberg'))
     await expect(args.onSignIn).toHaveBeenCalledWith('codeberg')
     await waitFor(() => expect(caret).toHaveAttribute('aria-expanded', 'false'))
+  },
+}
+
+/* ── GitHubOnly — the default: sign-in is GitHub only for now ─────────────────
+   with no `providers`, the split button is one "continue with GitHub" action and
+   no chevron; the other providers stay in PROVIDERS for a host that passes them. */
+export const GitHubOnly = {
+  name: 'GitHub only (default)',
+  decorators: frame('panel'),
+  args: { onSignIn: fn() },
+  render: (args) => <SignInProviders {...args} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'continue with GitHub' }))
+    await expect(args.onSignIn).toHaveBeenCalledWith('github')
+    await expect(canvas.queryByRole('button', { name: 'more sign-in providers' })).toBeNull()
   },
 }
 

@@ -1,0 +1,38 @@
+/* OverflowList styles — namespaced ovl-, tokens only. The items sit inline, separated by a comma
+   drawn in the quiet ink; the +N button is a compact mono control with a 24px target. */
+.ovl {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+  min-width: 0;
+}
+.ovl-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ovl-item { display: inline; }
+.ovl-item + .ovl-item::before {
+  content: ",";
+  margin-inline-end: var(--sp-1);
+  color: var(--ink-3);
+}
+.ovl-more {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-min);
+  min-width: var(--target-min);
+  padding: 0 var(--sp-1);
+  border: var(--bd-strong);
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1;
+  cursor: pointer;
+}
+.ovl-more:hover { color: var(--ink-strong); border-color: var(--amber-dim); }

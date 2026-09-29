@@ -1,0 +1,56 @@
+# The village pages of the in-use commons demo (src/mockups/inuse/CommonsApp.jsx) and the facts
+# each must show. scripts/commons-demo-pages.test.mjs mounts the REAL demo at ?commons=<view> and
+# checks every fact:
+#   nav            the section nav's items, in order (the account link is checked by `account`)
+#   text           text the page must contain
+#   absentText     text the page must not contain (anywhere, options included)
+#   buttons        accessible names of buttons that must exist
+#   absentButtons  accessible names of buttons that must not exist
+#   providers      the sign-in provider set, exactly
+#   switches       the page's switches (role=switch) by accessible name, exactly
+#   selectOptions  every option label of every select on the page must avoid these
+#   open           a button to press before the checks (e.g. to open the create form)
+pages:
+  - name: home
+    view: home
+    nav: [home, collectives]
+    account: '@alice-dev'
+    text: [your transcripts, '38 transcripts', '3 collectives', '9 pull requests', your collectives, waiting for approval]
+    buttons: [show 2 more pull requests, view all]
+  - name: sign-in
+    view: signin
+    providers: [github]
+    text: [the agent sessions behind your team's pull requests, your handle is your GitHub login]
+    absentButtons: [more sign-in providers]
+  - name: collectives
+    view: collectives
+    nav: [home, collectives]
+    open: new collective
+    text: [your collectives, find a collective, in a curated collective]
+    selectOptions: [public]
+  - name: a collective
+    view: collective-detail
+    nav: [home, collectives]
+    text: [Acme Platform, who can read, who can publish, your role, '248 transcripts', '12 members', github orgs, a collective links one github org today., '1 owner · 7 members · 4 contributors']
+    absentText: [public]
+    buttons: [settings, more, manage]
+  - name: collective settings
+    view: collective-settings
+    nav: [home, collectives]
+    text: [changes save right away., github orgs, danger zone]
+    switches: [show transcripts on pull requests]
+    selectOptions: [public]
+    absentText: [automatic linking when a pull request opens]
+  - name: account settings
+    view: account
+    text: [your settings, switches apply right away.]
+    switches: [discoverable profile, link my transcripts to my pull requests automatically]
+    buttons: [sign out, sign out everywhere, delete account]
+  - name: transcript page
+    view: transcript-detail
+    text: [Fix flaky ingest test, village.peasantlabs.org/transcripts/3f9c0a17, pull requests, show all 5]
+    buttons: [copy link, more]
+    absentButtons: [share, chat with trace]
+  - name: pull request prompts
+    view: pull-request
+    text: [acme/ingest-api, attach 2 transcripts, 3 of 4 commits have a transcript]

@@ -3,10 +3,21 @@ requiredStatsStripNames:
   - StatsStrip with no pairs renders nothing
   - StatsStrip with one pair
   - StatsStrip with many pairs, both reading orders
+requiredCopyIconButtonNames:
+  - CopyIconButton idle
+  - CopyIconButton copied
+  - CopyIconButton without a clipboard
+requiredOverflowListNames:
+  - OverflowList with zero items
+  - OverflowList with one item
+  - OverflowList at the limit
+  - OverflowList over the limit
 
 requiredMutationNames:
   - the strip ignores label-first
   - the strip drops thousands grouping
+  - the copy button shows without a clipboard
+  - the overflow button loses its count
 mutations:
   - name: the strip ignores label-first
     file: src/ui/StatsStrip.jsx
@@ -18,3 +29,13 @@ mutations:
     find: "value.toLocaleString('en-US')"
     replace: "String(value)"
     expectedDiagnostic: "StatsStrip with many pairs, both reading orders: pairs"
+  - name: the copy button shows without a clipboard
+    file: src/ui/CopyIconButton.jsx
+    find: "  if (!canCopy) return null\n"
+    replace: "\n"
+    expectedDiagnostic: "CopyIconButton without a clipboard: rendered"
+  - name: the overflow button loses its count
+    file: src/ui/OverflowList.jsx
+    find: "aria-label={`show ${hidden} more ${hidden === 1 ? noun[0] : noun[1]}`}"
+    replace: "aria-label=\"show more\""
+    expectedDiagnostic: "OverflowList over the limit: the +N button"
