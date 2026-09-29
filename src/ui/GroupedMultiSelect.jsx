@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react'
-import { Check, Minus, ChevronRight } from 'lucide-react'
+import { useCallback, useId, useMemo, useState } from 'react'
+import { Check, Minus, ChevronRight, Search } from 'lucide-react'
+import { matchesQuery } from './match-query.js'
 import './GroupedMultiSelect.css'
 
 /* GroupedMultiSelect — a project-grouped tri-state multi-select tree, modelled on peasant's
@@ -31,6 +32,7 @@ import './GroupedMultiSelect.css'
  * @property {import('react').ReactNode} label  the item title — user content, rendered verbatim.
  * @property {import('react').ReactNode} [meta]  one-line secondary metadata (e.g. "42 turns · jun 3").
  * @property {number} [tokens]                token count for the running tally; defaults to 0.
+ * @property {string} [searchText]            the text a search matches; defaults to a string `label`.
  */
 
 /**
@@ -49,6 +51,10 @@ import './GroupedMultiSelect.css'
  * @property {string} [tokenLabel='tokens']   noun for the tally (chrome, lowercased in display).
  * @property {string[]} [defaultOpen]         ids of groups expanded on first render (uncontrolled).
  * @property {string} [ariaLabel]             accessible name for the tree container.
+ * @property {boolean} [searchable=false]     adds a search field and a clear button: the search
+ *           filters items (by `searchText`, else a string `label`), hides groups left empty,
+ *           opens the groups that match, and select all / clear act on the visible items only.
+ * @property {string} [searchLabel='search']  the search field's label.
  */
 
 /* compact numeric formatter for the token tallies: 8120 -> "8.1k", 1_200_000 -> "1.2m". keeps the
@@ -83,8 +89,21 @@ export default function GroupedMultiSelect({
   tokenLabel = 'tokens',
   defaultOpen = [],
   ariaLabel = 'grouped multi-select',
+  searchable = false,
+  searchLabel = 'search',
 }) {
   const isControlled = value !== undefined
+  const [query, setQuery] = useState('')
+  const searchId = useId()
+  const searching = searchable && query.trim() !== ''
+  const itemText = (item) => item.searchText ?? (typeof item.label === 'string' ? item.label : '')
+  const visibleGroups = useMemo(
+    () => (searching
+      ? groups.map((g) => ({ ...g, items: g.items.filter((it) => matchesQuery(itemText(it), query)) })).filter((g) => g.items.length > 0)
+      : groups),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [groups, query, searching],
+  )
   const [internal, setInternal] = useState(() => new Set(defaultValue ?? []))
   const selected = isControlled ? value : internal
 
@@ -98,10 +117,11 @@ export default function GroupedMultiSelect({
     [isControlled, onChange],
   )
 
-  // every selectable id across all groups — the target of the toolbar select-all.
+  // every VISIBLE selectable id — the target of the toolbar select-all and clear. without a search
+  // this is every item; with one, only the items the search shows.
   const allIds = useMemo(
-    () => groups.flatMap((g) => g.items.map((it) => it.id)),
-    [groups],
+    () => visibleGroups.flatMap((g) => g.items.map((it) => it.id)),
+    [visibleGroups],
   )
 
   // running tallies: selected item count + summed tokens of the selected set.
@@ -120,7 +140,7 @@ export default function GroupedMultiSelect({
   }, [groups, selected])
 
   const allSelected = allIds.length > 0 && allIds.every((id) => selected.has(id))
-  const noneSelected = selectedCount === 0
+  const noneSelected = !allIds.some((id) => selected.has(id))
   const toolbarState = allSelected ? 'all' : noneSelected ? 'none' : 'some'
 
   const toggleItem = useCallback(
@@ -149,9 +169,22 @@ export default function GroupedMultiSelect({
     [selected, commit],
   )
 
+  // select all / deselect all over the visible ids, keeping any selection the search hides.
   const toggleSelectAll = useCallback(() => {
-    commit(allSelected ? new Set() : new Set(allIds))
-  }, [allSelected, allIds, commit])
+    if (!searching) {
+      commit(allSelected ? new Set() : new Set(allIds))
+      return
+    }
+    const next = new Set(selected)
+    for (const id of allIds) allSelected ? next.delete(id) : next.add(id)
+    commit(next)
+  }, [allSelected, allIds, commit, selected, searching])
+
+  const clearVisible = useCallback(() => {
+    const next = new Set(selected)
+    for (const id of allIds) next.delete(id)
+    commit(next)
+  }, [allIds, commit, selected])
 
   const toggleOpen = useCallback((id) => {
     setOpen((prev) => {
@@ -164,6 +197,15 @@ export default function GroupedMultiSelect({
 
   return (
     <div className="gms" role="group" aria-label={ariaLabel}>
+      {searchable && (
+        <div className="gms-search">
+          <label className="gms-search-label" htmlFor={searchId}>{searchLabel}</label>
+          <div className="input-ico">
+            <Search className="lucide" aria-hidden="true" />
+            <input id={searchId} className="input is-input" type="search" autoComplete="off" value={query} onChange={(e) => setQuery(e.target.value)} />
+          </div>
+        </div>
+      )}
       {/* sticky toolbar — select-all tri-box + the running selected/token tally (tabular) */}
       <div className="gms-toolbar">
         <button
@@ -176,6 +218,9 @@ export default function GroupedMultiSelect({
           <TriBox state={toolbarState} />
           <span className="gms-selectall-text">select all</span>
         </button>
+        {searchable && (
+          <button type="button" className="gms-clear" onClick={clearVisible} disabled={noneSelected}>clear</button>
+        )}
         <span className="gms-tally" aria-live="polite">
           <span className="gms-tally-count gms-num">{selectedCount}</span>
           <span className="gms-tally-sep"> selected</span>
@@ -186,8 +231,9 @@ export default function GroupedMultiSelect({
       </div>
 
       {/* group list */}
+      {searching && visibleGroups.length === 0 && <p className="gms-empty">nothing matches “{query.trim()}”.</p>}
       <ul className="gms-groups">
-        {groups.map((group) => {
+        {visibleGroups.map((group) => {
           const ids = group.items.map((it) => it.id)
           const selInGroup = ids.filter((id) => selected.has(id)).length
           const groupState =
@@ -197,7 +243,7 @@ export default function GroupedMultiSelect({
                 ? 'some'
                 : 'none'
           const groupTokens = group.items.reduce((sum, it) => sum + (it.tokens ?? 0), 0)
-          const isOpen = open.has(group.id)
+          const isOpen = searching || open.has(group.id)
           const panelId = `gms-${group.id}-items`
 
           return (

@@ -51,8 +51,19 @@ export const SETTINGS_GROUPS = Object.freeze([
     label: 'village',
     open: true,
     rows: [
-      { id: 'village-account', kind: 'text', label: 'connected as', value: '@alice-dev', help: 'signed in with github on village.peasantlabs.org', notInConfig: true, readOnly: true },
+      { id: 'village-account', kind: 'readonly', label: 'connected as', value: '@alice-dev', help: 'signed in with github on village.peasantlabs.org', notInConfig: true, action: 'disconnect' },
       { id: 'village-plan', kind: 'select', label: 'publishing plan', help: 'picked at setup. it never publishes on its own.', value: 'keep-local', options: [{ value: 'keep-local', label: 'keep local' }, { value: 'publish-later', label: 'publish later' }] },
+    ],
+  },
+  {
+    id: 'auto-publish',
+    label: 'auto-publish',
+    open: true,
+    description: 'these folders publish redacted on git push. you agree once.',
+    rows: [
+      { id: 'auto-acme-work', kind: 'switch', label: '~/work/acme/**', help: 'publishes to Acme Platform on git push. active.', value: true, notInConfig: true },
+      { id: 'auto-acme-repos', kind: 'switch', label: 'github.com:acme/*', help: 'publishes to Acme Company. blocked: acme/worker already has its own pre-push hook, and peasant never overwrites one.', value: true, notInConfig: true },
+      { id: 'auto-personal', kind: 'switch', label: '~/personal/**', help: 'never publishes.', value: false, notInConfig: true },
     ],
   },
   {

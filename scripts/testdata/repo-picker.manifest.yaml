@@ -1,0 +1,37 @@
+# Required-NAME manifest for repo-picker.yaml: deletion protection.
+requiredCaseNames:
+  - the count
+  - search
+  - select all on a filtered list
+  - clear
+  - clear leaves the hidden selection alone
+  - both identity kinds
+  - an empty search result
+  - the saved difference
+requiredGroupedNames:
+  - without a search select all takes every item
+  - the search filters items and opens their groups
+  - the search hides groups it leaves empty
+  - select all takes only the visible items
+  - clear drops only the visible items
+
+requiredMutationNames:
+  - select all takes every repository
+  - save reports the whole selection
+  - the grouped search keeps empty groups
+mutations:
+  - name: select all takes every repository
+    file: src/ui/RepoPicker.jsx
+    find: "onClick={() => setMany(visible.map((repo) => repo.id), true)}"
+    replace: "onClick={() => setMany(all.map((repo) => repo.id), true)}"
+    expectedDiagnostic: "select all on a filtered list: count"
+  - name: save reports the whole selection
+    file: src/ui/RepoPicker.jsx
+    find: "onClick={() => onSave({ add, remove })}"
+    replace: "onClick={() => onSave({ add: [...selected], remove })}"
+    expectedDiagnostic: "the saved difference: saved"
+  - name: the grouped search keeps empty groups
+    file: src/ui/GroupedMultiSelect.jsx
+    find: ".filter((g) => g.items.length > 0)"
+    replace: ""
+    expectedDiagnostic: "the search hides groups it leaves empty: groups"
