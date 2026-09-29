@@ -16,13 +16,21 @@ export const Copied = {
   },
 }
 
+/* without a clipboard the button leaves and the link beside it stays the way to copy by hand */
 export const NoClipboard = {
   name: 'no clipboard',
+  render: (args) => (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+      <a className="mono" href={args.value}>{args.value.replace(/^https:\/\//, '')}</a>
+      <CopyIconButton {...args} />
+    </span>
+  ),
   beforeEach: () => {
     Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true })
     return () => { delete navigator.clipboard }
   },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).queryByRole('button')).toBeNull()
+    await expect(within(canvasElement).getByRole('link')).toBeVisible()
   },
 }

@@ -38,10 +38,11 @@ export const Default = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
-    await expect(canvas.getByText('2 of 7 selected')).toBeVisible()
+    const count = canvasElement.ownerDocument.querySelector('.rpk-count')
+    await expect(count).toHaveTextContent('2 of 7 selected')
     await userEvent.type(canvas.getByRole('searchbox', { name: 'search repos' }), 'sdk')
     await userEvent.click(canvas.getByRole('button', { name: 'select all' }))
-    await expect(canvas.getByText('4 of 7 selected')).toBeVisible()
+    await expect(count).toHaveTextContent('4 of 7 selected')
     await expect(canvas.getByRole('button', { name: 'save: link 2 repositories' })).toBeEnabled()
   },
 }
