@@ -88,6 +88,7 @@
     "test:timeline-a11y": "node scripts/timeline-a11y.test.mjs",
     "test:timeline-rendered": "node scripts/timeline-rendered-probe.mjs",
     "test:timeline-session-route:mutations": "node scripts/timeline-session-route.mutations.mjs",
+    "test:timeline-heading-case:mutations": "node scripts/timeline-heading-case.mutations.mjs",
     "test:timeline-ghosts": "node scripts/timeline-ghosts.test.mjs",
     "test:insight-panel": "node scripts/insight-panel.test.mjs",
     "test:code-map-interactions": "node scripts/code-map-interactions.test.mjs",
