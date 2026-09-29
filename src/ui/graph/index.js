@@ -22,7 +22,7 @@ export { default as CodeMapComposition, DefaultMapLegend } from './CodeMapCompos
 export { default as CodeMapNavigator } from './CodeMapNavigator.jsx'
 export { CODE_MAP_STATE_VERSION, CODE_MAP_VIEWPORT_SCALE, isCodeMapViewportScale, codeMapStatesEqual, createCodeMapState, reduceCodeMapState, deriveCodeMapView, deriveTimelineHighlight, resolveEscapeAction } from './codeMapState.js'
 export { assertTimelineNavigationAction } from './timelineNavigation.js'
-export { GraphAppShell, GraphSectionNav, GRAPH_APP_SECTIONS } from '../inuse/InUseShell.jsx'
+export { GraphAppShell, GraphSectionNav, LOCAL_APP_SECTIONS, GRAPH_APP_SECTIONS } from '../inuse/InUseShell.jsx'
 
 /* ── derivation helper (runtime) — ChangesPayload → kit CommitGraph dataset ────── */
 export { buildChangesGraph, humanizeAge } from './changeGraph.js'

@@ -1,0 +1,26 @@
+# Required-NAME manifest for app-sections.yaml: deletion protection. The gate asserts the entry
+# and body names equal these lists exactly, as sets.
+requiredCaseNames: [home, settings, analytics, changes, code map]
+requiredBodyNames: [home body, settings body, analytics body, changes body, code map body]
+requiredAliasIds: [analytics, changes, map]
+
+requiredMutationNames:
+  - the nav lists route-only sections
+  - settings leaves the nav
+  - the demo opens on the first route-only section
+mutations:
+  - name: the nav lists route-only sections
+    file: src/ui/inuse/InUseShell.jsx
+    find: "return sections.filter((section) => section.inNav !== false)"
+    replace: "return sections"
+    expectedDiagnostic: "GraphSectionNav must list exactly the inNav entries"
+  - name: settings leaves the nav
+    file: src/ui/inuse/InUseShell.jsx
+    find: "Object.freeze({ id: 'settings', label: 'settings', inNav: true }),"
+    replace: "Object.freeze({ id: 'settings', label: 'settings', inNav: false }),"
+    expectedDiagnostic: "LOCAL_APP_SECTIONS entry settings"
+  - name: the demo opens on the first route-only section
+    file: src/mockups/inuse/GraphApp.jsx
+    find: "return requested && SECTION_IDS.has(requested) ? requested : SECTIONS[0].id"
+    replace: "return requested && SECTION_IDS.has(requested) ? requested : SECTIONS[2].id"
+    expectedDiagnostic: "the demo must open on home"

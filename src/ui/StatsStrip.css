@@ -1,0 +1,31 @@
+/* StatsStrip styles — tokens only, radius 0, namespaced sst-. One inline row that wraps; pairs
+   are separated by spacing alone, so a wrapped line still starts on the shared left edge. The
+   value is the ink figure, the label the quieter chrome; both mono so tabular values line up. */
+.sst {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-body);
+  color: var(--ink-3);
+}
+.sst-pair {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  white-space: nowrap;
+}
+.sst-value {
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.sst-label {
+  text-transform: lowercase;
+  letter-spacing: 0;
+}

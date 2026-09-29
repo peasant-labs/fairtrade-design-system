@@ -2228,6 +2228,55 @@
   .iu-subnav-back:hover { color: var(--ink); border-color: var(--amber-dim); }
   .iu-view { flex: 1; min-width: 0; padding: var(--sp-4); }
 
+  /* ---- demo page body: one left-aligned column (title, sub, then the page's parts) ---- */
+  .iu-page { display: flex; flex-direction: column; gap: var(--sp-5); width: 100%; max-width: 1184px; margin-inline: auto; padding: var(--sp-5) var(--sp-4) var(--sp-7); min-width: 0; }
+  .iu-page-head { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .iu-page-title { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: var(--fs-xl); line-height: 1.25; color: var(--ink-strong); text-transform: lowercase; }
+  .iu-page-sub { margin: 0; font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-2); }
+  .iu-page-sub.mono { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
+  /* a page whose title is recorded content (a pull request, a collective, a transcript) keeps its case */
+  .iu-page-title-content { text-transform: none; }
+  .iu-page-titlerow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
+  .iu-page-context { margin: 0; display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
+  .iu-page-context .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+  .iu-page-callout { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-4); border: var(--bd-strong); background: var(--surface-2); }
+  .iu-page-callout-text { margin: 0; font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); }
+  .iu-page-callout-text strong { color: var(--ink-strong); }
+  .iu-page-callout-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-1); }
+  .iu-page-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3) var(--sp-5); padding: var(--sp-3) var(--sp-4); border: var(--bd); background: var(--surface); }
+  .iu-page-trend { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); text-transform: lowercase; }
+  .iu-page-tip { margin: 0; font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-2); }
+  .iu-page-tip code { font-size: var(--fs-sm); color: var(--ink-strong); }
+  .iu-page-search { display: block; }
+  .iu-page-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+  .iu-page-toolbar .is-field { margin: 0; }
+  .iu-page-toolbar .bs-seg { max-width: 100%; overflow-x: auto; }
+  .iu-page-toolbar .bs-seg-opt { flex: none; white-space: nowrap; }
+  .iu-page-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+  .iu-page-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
+
+  /* a session cell: the provider mark, the recorded title (kept in its case), the quiet sub line */
+  .iu-session { display: inline-flex; align-items: flex-start; gap: var(--sp-2); min-width: 0; }
+  .iu-session .pv-icon { margin-top: var(--sp-1); }
+  .iu-session-text, .iu-session-where { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .iu-session-title { font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); text-decoration: underline dotted var(--ink-4); text-underline-offset: 3px; overflow-wrap: anywhere; }
+  .iu-session-title:hover, .iu-session-title:focus-visible { color: var(--amber); }
+  .iu-session-sub { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
+  .iu-state-text { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); white-space: nowrap; }
+
+  /* the demo settings groups */
+  .iu-setting-group { display: flex; flex-direction: column; border: var(--bd); background: var(--surface); }
+  .iu-setting-group-title { margin: 0; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); font-family: var(--font-display); font-size: var(--fs-md); font-weight: 700; color: var(--ink-strong); text-transform: lowercase; }
+  .iu-setting-rows { list-style: none; margin: 0; padding: 0; }
+  .iu-setting-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); }
+  .iu-setting-row + .iu-setting-row { border-top: var(--bd); }
+  .iu-setting-row .is-field { margin: 0; min-width: 12rem; }
+  .iu-setting-text { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-1); min-width: 0; flex: 1 1 18rem; }
+  .iu-setting-label { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink); text-transform: lowercase; }
+  .iu-setting-help { font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-3); overflow-wrap: anywhere; }
+  code.iu-setting-help { font-family: var(--font-mono); font-size: var(--fs-sm); }
+  .iu-setting-value { color: var(--ink); overflow-wrap: anywhere; }
+
   /* ---- tablet: keep the app labels, but drop the expand label + tighten the banner so it fits ---- */
   @media (max-width: 900px) {
     .iu-bar { gap: var(--sp-3); padding: 0 var(--sp-4); }
@@ -2326,6 +2375,15 @@
 
   /* ---- tab strip ---- */
   .txn-tabs { flex: none; gap: var(--sp-5); padding: 0 var(--sp-4); position: sticky; top: 0; z-index: 10; background: var(--surface); }
+  /* the optional search trigger: the strip and the trigger share one row, the strip's hairline
+     moves to the row so the trigger sits on the same rule as the tabs. */
+  .txn-tabbar { flex: none; display: flex; align-items: stretch; gap: var(--sp-3); padding-right: var(--sp-4); border-bottom: var(--bd); background: var(--surface); }
+  .txn-tabbar > .txn-tabs { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
+  .txn-search-trigger { align-self: center; flex: none; }
+  .txn-search-trigger .kbd-key { font-size: var(--fs-label); }
+  /* the host's pull request list sits under the meta row and leaves with it on condense. */
+  .txn-prs { margin-top: var(--sp-3); min-width: 0; }
+  .txn-app-condensed > .txn-header .txn-prs { display: none; }
   .txn-tab { padding: var(--sp-3) 2px; }
   .txn-tab .cnt { font-variant-numeric: tabular-nums; }
 
@@ -2363,15 +2421,6 @@
   .txn-viewtoggle .bs-seg-opt { height: var(--control-h-sm); }
 
   .txn-stream { flex: 1; min-height: 0; overflow: auto; padding: var(--sp-3) var(--sp-4) var(--sp-7); }
-  /* the optional search trigger: the strip and the trigger share one row, the strip's hairline
-     moves to the row so the trigger sits on the same rule as the tabs. */
-  .txn-tabbar { flex: none; display: flex; align-items: stretch; gap: var(--sp-3); padding-right: var(--sp-4); border-bottom: var(--bd); background: var(--surface); }
-  .txn-tabbar > .txn-tabs { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
-  .txn-search-trigger { align-self: center; flex: none; }
-  .txn-search-trigger .kbd-key { font-size: var(--fs-label); }
-  /* the host's pull request list sits under the meta row and leaves with it on condense. */
-  .txn-prs { margin-top: var(--sp-3); min-width: 0; }
-  .txn-app-condensed > .txn-header .txn-prs { display: none; }
   .txn-stream-prelude { margin-bottom: var(--sp-4); }
 
   /* phase divider (tier 3) sticks to the top of the scroller. the scroller already
@@ -2883,6 +2932,10 @@
   .txn-meta > * { flex: none; }
   .txn-tabs { gap: var(--sp-4); overflow-x: auto; }
   .txn-tab { padding: var(--sp-2) 2px; }
+  .txn-tabbar { padding-right: var(--sp-3); }
+  /* beside the trigger the tabs keep one row and scroll sideways, as the bare strip does */
+  .txn-tabbar > .txn-tabs { flex-wrap: nowrap; }
+  .txn-tabbar .txn-tab { flex: none; }
   /* the "N turns / list·graph toggle" bar above the stream — same treatment
      as .txn-header: less padding buys the scrollable stream more of the
      viewport without hiding or removing anything. */
@@ -2896,6 +2949,8 @@
   .txn-checkpoint .mkc { max-width: calc(100% - 2rem); overflow: hidden; min-width: 0; }
   .txn-cp-msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 16ch; }
   .txn-cp-stat { display: none; }
+  /* the trigger keeps its icon and shortcut; its words stay in the accessible name only. */
+  .txn-search-trigger-text { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 }/* ======================================================================
    CommonsExplore (in-use mockup): browse/discovery + embedded viewer +
    profile. namespace .cex-* only; existing tokens only; square, hairline,
@@ -2920,7 +2975,6 @@
   .cex-explore-body { display: grid; grid-template-columns: minmax(0, 16rem) minmax(0, 1fr); column-gap: var(--sp-5); align-items: start; min-height: 0; flex: 1; }
   .cex-rail { align-self: start; position: sticky; top: 0; }
   .cex-rail .cex-topics { display: flex; flex-wrap: wrap; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); }
-  .txn-tabbar { padding-right: var(--sp-3); }
   /* topic chips: single-line pills. the label flexes and truncates so a long
      topic (#iterative-refinement) can't wrap inside the fixed-height chip and
      break its centering; the count stays pinned to the end with tabular nums. */
@@ -2934,8 +2988,6 @@
 
   .cex-results { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-4); }
   .cex-results-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
-  /* the trigger keeps its icon and shortcut; its words stay in the accessible name only. */
-  .txn-search-trigger-text { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
   .cex-eyebrow { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); display: inline-flex; align-items: baseline; gap: var(--sp-2); }
   .cex-count { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
   .cex-viewseg .bs-seg-opt { height: var(--control-h-sm); }
@@ -3185,6 +3237,9 @@
   /* ---- phone: prevent card overflow and tighten padding ---- */
   @media (max-width: 480px) {
     .iu-view { padding: var(--sp-3); }
+    .iu-page { padding: var(--sp-3) 0 var(--sp-6); gap: var(--sp-4); }
+    .iu-page-summary { padding: var(--sp-3); }
+    .iu-setting-row { padding: var(--sp-3); }
     .cex-results, .cex-grid { min-width: 0; }
     .cex-tcard { min-width: 0; width: 100%; }
     /* profile project sections */

@@ -1,0 +1,20 @@
+# Required-NAME manifest for village-parts.yaml: deletion protection, one list per part family.
+requiredStatsStripNames:
+  - StatsStrip with no pairs renders nothing
+  - StatsStrip with one pair
+  - StatsStrip with many pairs, both reading orders
+
+requiredMutationNames:
+  - the strip ignores label-first
+  - the strip drops thousands grouping
+mutations:
+  - name: the strip ignores label-first
+    file: src/ui/StatsStrip.jsx
+    find: "{item.order === 'label-first' ? <>{name} {value}</> : <>{value} {name}</>}"
+    replace: "<>{value} {name}</>"
+    expectedDiagnostic: "StatsStrip with many pairs, both reading orders: pairs"
+  - name: the strip drops thousands grouping
+    file: src/ui/StatsStrip.jsx
+    find: "value.toLocaleString('en-US')"
+    replace: "String(value)"
+    expectedDiagnostic: "StatsStrip with many pairs, both reading orders: pairs"

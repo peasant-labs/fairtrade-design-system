@@ -1,0 +1,21 @@
+# Cases for the small page parts the local and village pages share. scripts/village-parts.test.mjs
+# mounts the REAL component for each case and checks what renders.
+#
+# StatsStrip (src/ui/StatsStrip.jsx): one inline row of stat pairs. expected.pairs lists each
+# pair's text in reading order; a number value is grouped with the en-US separator; an empty list
+# renders nothing.
+statsStrip:
+  - name: StatsStrip with no pairs renders nothing
+    items: []
+    expected: {rendered: false, pairs: []}
+  - name: StatsStrip with one pair
+    items: [{value: 248, label: transcripts}]
+    expected: {rendered: true, pairs: [248 transcripts]}
+  - name: StatsStrip with many pairs, both reading orders
+    items:
+      - {value: 1284, label: sessions}
+      - {value: 7, label: projects}
+      - {value: '19.1M', label: tokens}
+      - {label: longest streak, value: 3 wk, order: label-first}
+      - {label: median session, value: 34m, order: label-first}
+    expected: {rendered: true, pairs: ['1,284 sessions', 7 projects, 19.1M tokens, longest streak 3 wk, median session 34m]}
