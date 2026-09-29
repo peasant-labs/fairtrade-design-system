@@ -1,0 +1,85 @@
+# Required-name manifest for the process supervisor case family.
+# Every case name below must appear exactly once in
+# scripts/testdata/fairtest-process-cases.yaml. Each mutation deletes, renames,
+# duplicates, or corrupts one record or deadline value so the owning guard is
+# proven to fail for its intended field. Combinatorial cases live here, never
+# inline in the test.
+expectedCaseCount: 4
+requiredCaseNames:
+  - process-normal-stop
+  - process-partial-start
+  - process-bounded-timeout
+  - process-sigterm-interruption
+expectedMutationCount: 11
+requiredMutationNames:
+  - deleted-required-case
+  - duplicate-case-name
+  - renamed-case-name-field
+  - removed-deadline-limits
+  - unknown-case-field
+  - unknown-scenario
+  - unknown-outcome
+  - non-boolean-readiness-expectation
+  - weak-outer-failsafe
+  - oversized-readiness-window
+  - trailing-document
+mutations:
+  - name: deleted-required-case
+    kind: delete-record
+    target: process-partial-start
+    expectedField: process-partial-start
+  - name: duplicate-case-name
+    kind: duplicate-name
+    target: process-normal-stop
+    expectedField: process-normal-stop
+  - name: renamed-case-name-field
+    kind: rename-field
+    target: process-bounded-timeout
+    field: name
+    newField: id
+    expectedField: name
+  - name: removed-deadline-limits
+    kind: delete-field
+    target: process-sigterm-interruption
+    field: limits
+    expectedField: limits
+  - name: unknown-case-field
+    kind: unknown-field
+    target: process-normal-stop
+    field: runner
+    value: node
+    expectedField: runner
+  - name: unknown-scenario
+    kind: bad-value
+    target: process-normal-stop
+    field: scenario
+    value: nightly
+    expectedField: scenario
+  - name: unknown-outcome
+    kind: bad-value
+    target: process-partial-start
+    field: outcome
+    value: exploded
+    expectedField: outcome
+  - name: non-boolean-readiness-expectation
+    kind: bad-value
+    target: process-normal-stop
+    field: expectReady
+    value: "yes"
+    expectedField: expectReady
+  - name: weak-outer-failsafe
+    kind: bad-value
+    target: process-bounded-timeout
+    field: limits.outerDeadlineMs
+    value: 1000
+    expectedField: outerDeadlineMs
+  - name: oversized-readiness-window
+    kind: bad-value
+    target: process-normal-stop
+    field: limits.readinessDeadlineMs
+    value: 999999
+    expectedField: readinessDeadlineMs
+  - name: trailing-document
+    kind: trailing-document
+    target: document
+    expectedField: document[1]

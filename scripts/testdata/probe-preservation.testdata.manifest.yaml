@@ -1,0 +1,26 @@
+# Required-name inventory and executable mutations for
+# probe-preservation.testdata.yaml.
+expectedProbeCount: 9
+requiredProbeNames:
+  - scripts/check-graph-oracle.mjs
+  - scripts/check-surface-gate.mjs
+  - scripts/graph-oracle.mjs
+  - scripts/helper-groups.probe.mjs
+  - scripts/pi-transcript.probe.mjs
+  - scripts/shootdemo.mjs
+  - scripts/shootmanage.mjs
+  - scripts/timeline-rendered-probe.mjs
+  - scripts/transcript-provenance-retention.probe.mjs
+expectedMutationCount: 2
+requiredMutationNames:
+  - deleted-probe-record-breaks-required-inventory
+  - planted-unclassified-probe-breaks-directory-closure
+mutations:
+  - name: deleted-probe-record-breaks-required-inventory
+    kind: delete-record
+    target: scripts/graph-oracle.mjs
+    expectedField: scripts/graph-oracle.mjs
+  - name: planted-unclassified-probe-breaks-directory-closure
+    kind: planted-probe-file
+    value: scratch-uncatalogued-probe.probe.mjs
+    expectedField: scratch-uncatalogued-probe.probe.mjs

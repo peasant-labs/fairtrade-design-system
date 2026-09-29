@@ -1,0 +1,1247 @@
+# Fairtrade product target cases: theme rows, route per theme, section
+# selection, capability and cross-kind negatives, project-name inference
+# rejection, and lifecycle traces. This record is the single source for the
+# product adapter contract test; the test module owns no row data.
+#
+# The third family declares the app-owned product-view accessibility
+# baseline (per observation point: clean at analytics, one pre-existing
+# critical violation at map, observed in both themes) and probes the
+# baseline-delta gate: at-baseline and improved measurements pass, while a
+# new violation id, an increased node count, or an escalated impact fail.
+#
+# The second family covers the row-scoped theme setup descriptor, the
+# normalized rendered-theme observation with its contradiction guard, the
+# project-name inference rejection, the assembled product proof record
+# with its per-part and action negatives, and the journey compatibility
+# wrapper behavior.
+#
+# The fourth family names the ten negative product mutations
+# (missing chrome/body/section/view, blank active view, unrendered active
+# view, wrong theme, unregistered action, cross-kind proof, stale served
+# asset). Each names its owning boundary and the diagnostic fragments the real
+# producer path must fail with; the executable runners live in
+# product-mutations.mjs, proven browser-free plus real-DOM absence,
+# blank-view, and unrendered-view proofs over the served bytes and one
+# throwaway-copy stale-asset proof.
+#
+# The fifth family carries the record.json accessibility block as a
+# verifier-facing reading: the verdict is read from the gate receipts over the
+# gated product-view scope, the page-wide census stays nested and explicitly
+# informational, and churning that informational count never moves the
+# verdict. The unqualified page-wide shape, the missing gated scope, a
+# mislabeled scope or root, a foreign gate policy, a mismatched gate point,
+# and a scoped count contradicting its own gate receipt are held as refusals,
+# not as passes.
+#
+# The sixth family carries the row observation times: real readings in
+# observation order, never assembly-order offsets off the row start.
+#
+# The seventh family covers the two cheap pure guards that keep the run
+# subtree immutable and the mounted command honest: the run-root resolver
+# (missing, relative, absolute) and the mounted CLI target flag (missing,
+# unknown). Both fail closed at their own boundary, and the CLI cases are run
+# as real subprocesses of the shim.
+#
+# It also carries the real static driver's two fail-closed listener controls and
+# the adapter's declared driver contract. The real driver is started on a
+# scratch loopback port against a throwaway root whose parent holds a marker
+# file, and every encoded traversal form must be refused with the declared
+# status while the marker bytes stay out of the response; a non-loopback host
+# must be refused at construction while the loopback host is still accepted. A
+# fake driver whose stop rejects when it is not running must still leave the
+# original start diagnostic as the failure a maintainer reads, and the adapter
+# must declare that stop requirement on its driver surface.
+#
+# The eighth family carries the RENDERED active view: the healthy population
+# must clear the floors and return the accepted triple, while one case per
+# declared unrendered mode (display none, hidden visibility, zero opacity, an
+# empty box, and a box clipped away from the mounted stage) must be refused by
+# name with the measured computed style and box. The ninth family pins record
+# truthfulness: the recorded body and view numbers must be the rendered
+# measurement the guard accepted, and swapping them back to the container
+# totals must fail.
+#
+# The tenth family carries the run-subtree ordering contract observed through
+# the real preparation seam (validated before created, and a stale row
+# directory refused with no step observed and its previous bytes untouched),
+# the Fairtest Playwright config runner shape (exactly one project, the exact
+# product/component journey matches, retries 0, workers 1, reducedMotion
+# reduce, no webServer or reuseExistingServer), the single loopback host/port
+# owner both the config and the producer read, and the single owner of the
+# compact axe report shape. The driver contract family also proves reset is
+# safe to call when the driver is not running.
+expectedCaseCount: 118
+cases:
+  - name: theme-row-dark-absent-passes
+    check: theme-row
+    theme: dark
+    renderedAttribute: null
+    expectTheme: dark
+    expectValid: true
+    expectFrozen: true
+  - name: theme-row-dark-empty-passes
+    check: theme-row
+    theme: dark
+    renderedAttribute: ''
+    expectTheme: dark
+    expectValid: true
+    expectFrozen: true
+  - name: theme-row-light-attribute-passes
+    check: theme-row
+    theme: light
+    renderedAttribute: 'light'
+    expectTheme: light
+    expectValid: true
+    expectFrozen: true
+  - name: wrong-theme-value-fails
+    check: theme-row
+    theme: dark
+    renderedAttribute: 'dark'
+    expectValid: false
+    expectedErrorContains: ['"dark"', 'at path', 'repair:']
+  - name: route-dark-passes
+    check: route
+    theme: dark
+    route: '/?app=graph&fb=off&theme=none#inuse'
+    expectValid: true
+    expectFrozen: true
+  - name: route-light-passes
+    check: route
+    theme: light
+    route: '/?app=graph&fb=off&theme=light#inuse'
+    expectValid: true
+    expectFrozen: true
+  - name: section-select-analytics-to-map-passes
+    check: section-action
+    action: select-map-section
+    fromSection: analytics
+    toSection: map
+    expectValid: true
+    expectFrozen: true
+  - name: unregistered-action-fails
+    check: section-action
+    action: select-changes-section
+    expectValid: false
+    expectedErrorContains: ['select-changes-section', 'at path', 'repair:']
+  - name: product-capabilities-pass
+    check: capability
+    capabilities: [observe-chrome, observe-body, observe-route, observe-section, observe-view, observe-theme, perform-action]
+    expectValid: true
+    expectFrozen: true
+  - name: unknown-capability-fails
+    check: capability
+    capabilities: [observe-chrome, observe-body, observe-route, observe-section, observe-view, observe-theme, observe-screenshot]
+    expectValid: false
+    expectedErrorContains: ['observe-screenshot', 'at path', 'repair:']
+  - name: cross-kind-record-fails
+    check: cross-kind
+    kind: product
+    identityKind: component
+    expectValid: false
+    expectedErrorContains: ['identity', 'at path', 'repair:']
+  - name: lifecycle-valid-leading-run-passes
+    check: lifecycle
+    stages: [declared, acquired, ready]
+    expectValid: true
+    expectFrozen: true
+  - name: lifecycle-skipped-stage-fails
+    check: lifecycle
+    stages: [declared, ready]
+    expectValid: false
+    expectedErrorContains: ['"ready"', 'at path', 'repair:']
+  - name: lifecycle-out-of-order-fails
+    check: lifecycle
+    stages: [acquired, declared]
+    expectValid: false
+    expectedErrorContains: ['"acquired"', 'at path', 'repair:']
+  - name: lifecycle-duplicate-stage-fails
+    check: lifecycle
+    stages: [declared, declared]
+    expectValid: false
+    expectedErrorContains: ['"declared"', 'at path', 'repair:']
+  - name: lifecycle-empty-trace-fails
+    check: lifecycle
+    stages: []
+    expectValid: false
+    expectedErrorContains: ['stages', 'at path', 'repair:']
+  - name: project-name-theme-inference-fails
+    check: theme-inference
+    project: product-dark
+    expectValid: false
+    expectedErrorContains: ['project', 'at path', 'repair:']
+  - name: setup-dark-passes
+    check: theme-setup
+    theme: dark
+    expectedAttribute: ''
+    route: '/?app=graph&fb=off&theme=none#inuse'
+    expectValid: true
+    expectFrozen: true
+  - name: setup-light-passes
+    check: theme-setup
+    theme: light
+    expectedAttribute: 'light'
+    route: '/?app=graph&fb=off&theme=light#inuse'
+    expectValid: true
+    expectFrozen: true
+  - name: setup-unknown-theme-fails
+    check: theme-setup
+    theme: dusk
+    expectValid: false
+    expectedErrorContains: ['"dusk"', 'at path', 'repair:']
+  - name: observation-dark-absent-passes
+    check: theme-observation
+    expected: dark
+    renderedAttribute: null
+    source: product-theme-observer
+    observedAtMs: 1000
+    expectObserved: dark
+    expectValid: true
+    expectFrozen: true
+  - name: observation-light-attribute-passes
+    check: theme-observation
+    expected: light
+    renderedAttribute: 'light'
+    source: product-theme-observer
+    observedAtMs: 1000
+    expectObserved: light
+    expectValid: true
+    expectFrozen: true
+  - name: observation-contradiction-light-expected-fails
+    check: theme-observation
+    expected: light
+    renderedAttribute: ''
+    source: product-theme-observer
+    observedAtMs: 1000
+    expectValid: false
+    expectedErrorContains: ['"light"', '"dark"', 'at path', 'repair:']
+  - name: observation-contradiction-dark-expected-fails
+    check: theme-observation
+    expected: dark
+    renderedAttribute: 'light'
+    source: product-theme-observer
+    observedAtMs: 1000
+    expectValid: false
+    expectedErrorContains: ['"dark"', '"light"', 'at path', 'repair:']
+  - name: project-name-inference-rejected
+    check: project-inference
+    project: product-dark
+    expectValid: false
+    expectedErrorContains: ['project', '"product-dark"', 'at path', 'repair:']
+  - name: proof-dark-initial-passes
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: none
+    mounted: false
+    expectValid: true
+    expectFrozen: true
+  - name: proof-light-with-map-action-passes
+    check: product-proof
+    rowTheme: light
+    identity: {kind: product, id: proof-light, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: light, observed: light, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: map
+    action: {name: select-map-section, completed: true, observedAtMs: 2000}
+    omitPart: none
+    mounted: false
+    expectValid: true
+    expectFrozen: true
+  - name: proof-missing-observation-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: null
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: none
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['themeObservation', 'at path', 'repair:']
+  - name: proof-contradictory-observation-fails
+    check: product-proof
+    rowTheme: light
+    identity: {kind: product, id: proof-light, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: light, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: none
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['"light"', '"dark"', 'at path', 'repair:']
+  - name: proof-row-theme-mismatch-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: light, observed: light, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: none
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['rowTheme', 'at path', 'repair:']
+  - name: proof-unregistered-action-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: map
+    action: {name: select-changes-section, completed: true, observedAtMs: 2000}
+    omitPart: none
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['select-changes-section', 'at path', 'repair:']
+  - name: proof-cross-kind-identity-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: component, id: proof-cross-kind, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: none
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['identity', 'at path', 'repair:']
+  - name: proof-blanket-mounted-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: none
+    mounted: true
+    expectValid: false
+    expectedErrorContains: ['mounted', 'at path', 'repair:']
+  - name: proof-missing-chrome-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: chrome
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['chrome', 'at path', 'repair:']
+  - name: proof-missing-body-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: body
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['body', 'at path', 'repair:']
+  - name: proof-missing-route-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: route
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['route', 'at path', 'repair:']
+  - name: proof-missing-active-section-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: activeSection
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['activeSection', 'at path', 'repair:']
+  - name: proof-missing-view-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: null
+    omitPart: view
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['view', 'at path', 'repair:']
+  - name: proof-wrong-initial-section-fails
+    check: product-proof
+    rowTheme: dark
+    identity: {kind: product, id: proof-dark, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: dark, observed: dark, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: changes
+    activeSectionId: changes
+    action: null
+    omitPart: none
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['"changes"', 'initialSection', 'at path', 'repair:']
+  - name: proof-action-without-map-fails
+    check: product-proof
+    rowTheme: light
+    identity: {kind: product, id: proof-light, createdAtMs: 1000}
+    parts:
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1001}
+      route: {observed: true, observedAtMs: 1002}
+      activeSection: {observed: true, observedAtMs: 1003}
+      view: {observed: true, observedAtMs: 1004}
+    themeObservation: {expected: light, observed: light, source: product-theme-observer, observedAtMs: 1000}
+    initialSection: analytics
+    activeSectionId: analytics
+    action: {name: select-map-section, completed: true, observedAtMs: 2000}
+    omitPart: none
+    mounted: false
+    expectValid: false
+    expectedErrorContains: ['"map"', '"analytics"', 'at path', 'repair:']
+  - name: mutation-missing-chrome-fails
+    check: product-mutation
+    mutation: missing-chrome
+    boundary: proof.chrome
+    expectValid: false
+    expectedErrorContains: ['chrome', 'at path', 'repair:']
+  - name: mutation-missing-body-fails
+    check: product-mutation
+    mutation: missing-body
+    boundary: proof.body
+    expectValid: false
+    expectedErrorContains: ['body', 'at path', 'repair:']
+  - name: mutation-missing-section-fails
+    check: product-mutation
+    mutation: missing-section
+    boundary: proof.activeSection
+    expectValid: false
+    expectedErrorContains: ['activeSection', 'at path', 'repair:']
+  - name: mutation-missing-view-fails
+    check: product-mutation
+    mutation: missing-view
+    boundary: proof.view
+    expectValid: false
+    expectedErrorContains: ['view', 'at path', 'repair:']
+  - name: mutation-blank-active-view-fails
+    check: product-mutation
+    mutation: blank-active-view
+    boundary: producer.activeView.body
+    expectValid: false
+    expectedErrorContains: ['blank representative body', 'proof.body', 'active view', 'hidden changes view', 'repair:']
+  - name: mutation-unrendered-active-view-fails
+    check: product-mutation
+    mutation: unrendered-active-view
+    boundary: producer.activeView.body.refusals
+    expectValid: false
+    expectedErrorContains: ['unrendered active view refused', 'field "mode"', 'at path producer.activeView.body.refusals', 'display-none', 'visibility-hidden', 'opacity-zero', 'zero-size', 'clipped', 'repair:']
+  - name: mutation-wrong-theme-fails
+    check: product-mutation
+    mutation: wrong-theme
+    boundary: theme.observed
+    expectValid: false
+    expectedErrorContains: ['"light"', '"dark"', 'at path', 'repair:']
+  - name: mutation-unregistered-action-fails
+    check: product-mutation
+    mutation: unregistered-action
+    boundary: adapter.action
+    expectValid: false
+    expectedErrorContains: ['select-changes-section', 'at path', 'repair:']
+  - name: mutation-cross-kind-proof-fails
+    check: product-mutation
+    mutation: cross-kind-proof
+    boundary: proof.identity
+    expectValid: false
+    expectedErrorContains: ['identity', 'at path', 'repair:']
+  - name: mutation-stale-served-asset-fails
+    check: product-mutation
+    mutation: stale-served-asset
+    boundary: provenance.assetDigests
+    expectValid: false
+    expectedErrorContains: ['assetDigests', 'at path', 'repair:']
+  - name: a11y-record-observed-point-swap-fails
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: product-view
+      scopeRoot: '#inuse-stage[role="tabpanel"]'
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: analytics, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [aria-required-children, color-contrast, heading-order, link-name, list, region, scrollable-region-focusable]
+        incomplete: [color-contrast]
+        passes: 120
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['mismatched gate observation point', 'field "observedSection"', 'at path record.accessibility.gate.after.observedSection', 'analytics', 'repair:']
+  - name: wrapper-dark-absent-passes
+    check: wrapper-theme
+    theme: dark
+    renderedAttribute: null
+    expectValid: true
+  - name: wrapper-dark-empty-passes
+    check: wrapper-theme
+    theme: dark
+    renderedAttribute: ''
+    expectValid: true
+  - name: wrapper-light-attribute-passes
+    check: wrapper-theme
+    theme: light
+    renderedAttribute: 'light'
+    expectValid: true
+  - name: wrapper-contradiction-fails
+    check: wrapper-theme
+    theme: light
+    renderedAttribute: null
+    expectValid: false
+    expectedErrorContains: ['"light"', '"dark"', 'at path', 'repair:']
+  - name: wrapper-wrong-value-fails
+    check: wrapper-theme
+    theme: dark
+    renderedAttribute: 'dark'
+    expectValid: false
+    expectedErrorContains: ['"dark"', 'renderedAttribute', 'at path', 'repair:']
+  - name: artifact-record-required
+    check: artifact-class
+    artifact: record.json
+    expectValid: true
+    expectFrozen: true
+  - name: artifact-aria-required
+    check: artifact-class
+    artifact: aria.json
+    expectValid: true
+    expectFrozen: true
+  - name: artifact-axe-required
+    check: artifact-class
+    artifact: axe.json
+    expectValid: true
+    expectFrozen: true
+  - name: artifact-screenshot-required
+    check: artifact-class
+    artifact: screenshot.png
+    expectValid: true
+    expectFrozen: true
+  - name: artifact-provenance-required
+    check: artifact-class
+    artifact: provenance.json
+    expectValid: true
+    expectFrozen: true
+  - name: artifact-resolution-required
+    check: artifact-class
+    artifact: resolution.json
+    expectValid: true
+    expectFrozen: true
+  - name: artifact-missing-fails
+    check: artifact-class
+    artifact: evidence.json
+    expectValid: false
+    expectedErrorContains: ['evidence.json', 'at path', 'repair:']
+  - name: artifact-stale-duplicate-fails
+    check: artifact-class
+    artifact: record.json
+    stale: true
+    expectValid: false
+    expectedErrorContains: ['stale', 'at path', 'repair:']
+  - name: a11y-baseline-initial-clean
+    check: a11y-baseline
+    policy: product-view-baseline-delta
+    point: initial
+    violations: []
+    expectValid: true
+    expectFrozen: true
+  - name: a11y-baseline-after-action-declared
+    check: a11y-baseline
+    policy: product-view-baseline-delta
+    point: after-action
+    violations:
+      - {id: aria-required-children, impact: critical, nodes: 3, themes: [dark, light]}
+    expectValid: true
+    expectFrozen: true
+  - name: a11y-delta-at-baseline-passes
+    check: a11y-delta
+    point: after-action
+    observedSection: code map
+    measured:
+      - {id: aria-required-children, impact: critical, nodeCount: 3}
+    expectValid: true
+    expectFrozen: true
+  - name: a11y-delta-records-the-observed-section-verbatim
+    check: a11y-delta
+    point: after-action
+    observedSection: analytics
+    measured: []
+    expectValid: true
+    expectFrozen: true
+  - name: a11y-delta-improved-passes
+    check: a11y-delta
+    point: after-action
+    observedSection: code map
+    measured: []
+    expectValid: true
+    expectFrozen: true
+  - name: a11y-delta-initial-clean-passes
+    check: a11y-delta
+    point: initial
+    observedSection: analytics
+    measured: []
+    expectValid: true
+    expectFrozen: true
+  - name: a11y-delta-new-violation-fails
+    check: a11y-delta
+    point: after-action
+    observedSection: code map
+    measured:
+      - {id: aria-required-children, impact: critical, nodeCount: 3}
+      - {id: color-contrast, impact: serious, nodeCount: 1}
+    expectValid: false
+    expectedErrorContains: ['new-violation', 'color-contrast', 'at path', 'repair:']
+  - name: a11y-delta-increased-nodes-fails
+    check: a11y-delta
+    point: after-action
+    observedSection: code map
+    measured:
+      - {id: aria-required-children, impact: critical, nodeCount: 4}
+    expectValid: false
+    expectedErrorContains: ['increased-nodes', 'aria-required-children', 'at path', 'repair:']
+  - name: a11y-delta-escalated-impact-fails
+    check: a11y-delta
+    point: after-action
+    observedSection: code map
+    baseline:
+      - {id: label, impact: serious, nodes: 2, themes: [dark]}
+    measured:
+      - {id: label, impact: critical, nodeCount: 2}
+    expectValid: false
+    expectedErrorContains: ['escalated-impact', '"label"', 'at path', 'repair:']
+  - name: a11y-record-gate-verdict-passes
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: product-view
+      scopeRoot: '#inuse-stage[role="tabpanel"]'
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [aria-required-children, color-contrast, heading-order, link-name, list, region, scrollable-region-focusable]
+        incomplete: [color-contrast]
+        passes: 120
+    informationalChurn: {field: blocking, value: 999}
+    expectVerdict: pass
+    expectValid: true
+    expectFrozen: true
+  - name: a11y-record-gate-failure-reads-fail
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: product-view
+      scopeRoot: '#inuse-stage[role="tabpanel"]'
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 2, ids: [aria-required-children, color-contrast], incomplete: [], passes: 37}
+      gate:
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: fail, measured: 2, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 0
+        blocking: 0
+        blockingIds: []
+        incomplete: []
+        passes: 127
+    informationalChurn: {field: blocking, value: 0}
+    expectVerdict: fail
+    expectValid: true
+    expectFrozen: true
+  - name: a11y-record-unqualified-blocking-fails
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: product-view
+      scopeRoot: '#inuse-stage[role="tabpanel"]'
+      blocking: 7
+      violations: 7
+      blockingIds: [color-contrast]
+      incomplete: [color-contrast]
+      passes: 120
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [color-contrast]
+        incomplete: [color-contrast]
+        passes: 120
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['"blocking"', 'record.accessibility', 'at path', 'repair:']
+  - name: a11y-record-missing-gated-scope-fails
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      scopeRoot: '#inuse-stage[role="tabpanel"]'
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [color-contrast]
+        incomplete: [color-contrast]
+        passes: 120
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['gatedScope', 'record.accessibility', 'at path', 'repair:']
+  - name: a11y-record-mislabeled-gated-scope-fails
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: page
+      scopeRoot: '#inuse-stage[role="tabpanel"]'
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [color-required-children, color-contrast]
+        incomplete: [color-contrast]
+        passes: 120
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['mislabeled gated scope', 'gatedScope', 'record.accessibility.gatedScope', 'product-view', 'repair:']
+  - name: a11y-record-mislabeled-scope-root-fails
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: product-view
+      scopeRoot: body
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [aria-required-children, color-contrast]
+        incomplete: [color-contrast]
+        passes: 120
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['mislabeled scope root', 'scopeRoot', 'record.accessibility.scopeRoot', 'inuse-stage', 'repair:']
+  - name: a11y-record-foreign-gate-policy-fails
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: product-view
+      scopeRoot: '#inuse-stage[role="tabpanel"]'
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: page-wide-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [aria-required-children, color-contrast]
+        incomplete: [color-contrast]
+        passes: 120
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['foreign gate receipt policy', 'record.accessibility.gate.after.policy', 'product-view-baseline-delta', 'repair:']
+  - name: a11y-record-mislabeled-gate-point-fails
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: product-view
+      scopeRoot: '#inuse-stage[role="tabpanel"]'
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [aria-required-children, color-contrast]
+        incomplete: [color-contrast]
+        passes: 120
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['mismatched gate observation point', 'field "observedSection"', 'record.accessibility.gate.before.observedSection', 'after-action', 'repair:']
+  - name: a11y-record-scoped-count-contradiction-fails
+    check: a11y-record
+    accessibility:
+      policy: product-view-baseline-delta
+      gatedScope: product-view
+      scopeRoot: '#inuse-stage[role="tabpanel"]'
+      scopedBefore: {violations: 0, ids: [], incomplete: [], passes: 41}
+      scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 38}
+      gate:
+        before: {policy: product-view-baseline-delta, point: initial, observedSection: analytics, result: pass, measured: 0, baseline: 0}
+        after: {policy: product-view-baseline-delta, point: after-action, observedSection: code map, result: pass, measured: 1, baseline: 1}
+      pageWide:
+        scope: page
+        root: document
+        informational: true
+        violations: 7
+        blocking: 7
+        blockingIds: [aria-required-children, color-contrast]
+        incomplete: [color-contrast]
+        passes: 120
+    expectVerdict: none
+    expectValid: false
+    expectedErrorContains: ['contradicts the gate receipt', 'record.accessibility.scopedAfter.violations', 'gate.after.measured', 'repair:']
+  - name: obs-time-real-observation-passes
+    check: observation-time
+    rowStartedAtMs: 1790353572800
+    chrome: 1790353589111
+    body: 1790353589111
+    route: 1790353589111
+    theme: 1790353589115
+    action: 1790353590386
+    expectValid: true
+  - name: obs-time-synthetic-offsets-fail
+    check: observation-time
+    rowStartedAtMs: 1790353572800
+    chrome: 1790353572800
+    body: 1790353572801
+    route: 1790353572802
+    theme: 1790353589115
+    action: 1790353590386
+    expectValid: false
+    expectedErrorContains: ['per-part offsets', 'resolution.body.observedAtMs', 'at path', 'repair:']
+  - name: obs-time-parts-at-row-start-fail
+    check: observation-time
+    rowStartedAtMs: 1790353572800
+    chrome: 1790353572800
+    body: 1790353572800
+    route: 1790353572800
+    theme: 1790353589115
+    action: 1790353590386
+    expectValid: false
+    expectedErrorContains: ['row start', 'resolution.chrome.observedAtMs', 'at path', 'repair:']
+  - name: obs-time-out-of-order-fails
+    check: observation-time
+    rowStartedAtMs: 1790353572800
+    chrome: 1790353589111
+    body: 1790353589111
+    route: 1790353589111
+    theme: 1790353580000
+    action: 1790353590386
+    expectValid: false
+    expectedErrorContains: ['observation order', 'resolution.theme.observedAtMs', 'at path', 'repair:']
+  - name: run-root-absolute-passes
+    check: run-root
+    runRootEnv: /tmp/opencode/fairtest-fixture-run-root
+    runIdEnv: fairtest-fixture-run-root
+    seedEnvelope: true
+    expectRoot: /tmp/opencode/fairtest-fixture-run-root
+    expectValid: true
+  - name: run-root-missing-fails
+    check: run-root
+    runRootEnv: null
+    expectValid: false
+    expectedErrorContains: ['missing run root', 'FAIRTEST_RUN_ROOT', 'run.root', 'repair:']
+  - name: run-root-relative-fails
+    check: run-root
+    runRootEnv: relative/run/root
+    expectValid: false
+    expectedErrorContains: ['invalid run root', 'FAIRTEST_RUN_ROOT', 'run.root', 'repair:']
+  - name: run-root-envelope-mismatch-fails
+    check: run-root
+    runRootEnv: /tmp/opencode/fairtest-fixture-run-root-other
+    runIdEnv: fairtest-fixture-run-root-other
+    seedEnvelope: true
+    envelopeRunId: some-other-run
+    expectValid: false
+    expectedErrorContains: ['another run', 'guards/run-envelope.json', 'repair:']
+  - name: product-capture-envelope-mismatch-fails
+    check: product-capture-envelope
+    runRootEnv: /tmp/opencode/fairtest-fixture-product-capture-root
+    runIdEnv: fairtest-fixture-product-capture-root
+    seedEnvelope: true
+    envelopeRunId: some-other-run
+    theme: dark
+    expectValid: false
+    expectedErrorContains: ['belongs to another run', 'field "runId"', 'guards/run-envelope.json', 'repair:']
+  - name: cli-target-missing-fails
+    check: cli-target
+    args: []
+    expectValid: false
+    expectExitCode: 2
+    expectedErrorContains: ['missing target', 'cli.target', 'repair:', '-- --target=product']
+  - name: cli-target-unknown-fails
+    check: cli-target
+    args: ['--target', 'dusk']
+    expectValid: false
+    expectExitCode: 2
+    expectedErrorContains: ['unknown target', 'dusk', 'cli.target', 'repair:']
+  - name: driver-out-of-root-request-refused
+    check: driver-out-of-root
+    servedRoot: dist
+    markerFile: out-of-root-marker.txt
+    markerBody: 'FAIRTEST-OUT-OF-ROOT-MARKER-7c41'
+    traversalPrefixes: ['/..%2f', '/%2e%2e%2f']
+    refusedStatus: 403
+    inRootRequest: /index.html
+    inRootStatus: 200
+    expectValid: true
+  - name: driver-non-loopback-host-refused
+    check: driver-host-refusal
+    rejectedHosts: ['0.0.0.0', 'localhost']
+    loopbackHost: 127.0.0.1
+    expectValid: true
+  - name: driver-idle-stop-keeps-start-diagnostic
+    check: driver-stop-contract
+    startFailure: fake start failed before readiness
+    contractRequirement: stop and reset must be safe to call when the driver is not running
+    expectValid: true
+  - name: driver-idle-reset-keeps-start-diagnostic
+    check: driver-reset-contract
+    startFailure: fake start failed before the service came up
+    contractRequirement: stop and reset must be safe to call when the driver is not running
+    cleanupFailure: 'fake reset refused: the driver is not running'
+    expectValid: true
+  - name: rendered-active-view-healthy-passes
+    check: rendered-active-view
+    mode: rendered
+    activeView: {roots: 1, rendered: 1, descendants: 646, textLength: 1223, refusals: []}
+    container: {descendants: 834, textLength: 2027}
+    expectAccepted: {roots: 1, rendered: 1, descendants: 646, textLength: 1223}
+    expectValid: true
+    expectFrozen: true
+  - name: rendered-active-view-display-none-fails
+    check: rendered-active-view
+    mode: display-none
+    activeView:
+      roots: 1
+      rendered: 0
+      descendants: 0
+      textLength: 0
+      refusals:
+        - {mode: display-none, display: none, visibility: visible, opacity: 1, width: 0, height: 0, intersectsStage: false}
+    container: {descendants: 834, textLength: 2027}
+    expectValid: false
+    expectedErrorContains: ['unrendered representative body', 'at path proof.body', '1 roots of which 0 render', 'display none', 'floor is one rendering root', 'repair:']
+  - name: rendered-active-view-visibility-hidden-fails
+    check: rendered-active-view
+    mode: visibility-hidden
+    activeView:
+      roots: 1
+      rendered: 0
+      descendants: 0
+      textLength: 0
+      refusals:
+        - {mode: visibility-hidden, display: flex, visibility: hidden, opacity: 1, width: 1184, height: 1621, intersectsStage: true}
+    container: {descendants: 834, textLength: 2027}
+    expectValid: false
+    expectedErrorContains: ['unrendered representative body', 'visibility hidden', '1 roots of which 0 render', 'repair:']
+  - name: rendered-active-view-opacity-zero-fails
+    check: rendered-active-view
+    mode: opacity-zero
+    activeView:
+      roots: 1
+      rendered: 0
+      descendants: 0
+      textLength: 0
+      refusals:
+        - {mode: opacity-zero, display: flex, visibility: visible, opacity: 0, width: 1184, height: 1621, intersectsStage: true}
+    container: {descendants: 834, textLength: 2027}
+    expectValid: false
+    expectedErrorContains: ['unrendered representative body', 'opacity 0', '1 roots of which 0 render', 'repair:']
+  - name: rendered-active-view-zero-size-fails
+    check: rendered-active-view
+    mode: zero-size
+    activeView:
+      roots: 1
+      rendered: 0
+      descendants: 0
+      textLength: 0
+      refusals:
+        - {mode: zero-size, display: flex, visibility: visible, opacity: 1, width: 0, height: 0, intersectsStage: true}
+    container: {descendants: 834, textLength: 2027}
+    expectValid: false
+    expectedErrorContains: ['unrendered representative body', 'box 0x0', '1 roots of which 0 render', 'repair:']
+  - name: rendered-active-view-clipped-fails
+    check: rendered-active-view
+    mode: clipped
+    activeView:
+      roots: 1
+      rendered: 0
+      descendants: 0
+      textLength: 0
+      refusals:
+        - {mode: clipped, display: flex, visibility: visible, opacity: 1, width: 1088, height: 1621, intersectsStage: false}
+    container: {descendants: 834, textLength: 2027}
+    expectValid: false
+    expectedErrorContains: ['unrendered representative body', 'intersects the mounted stage false', '1 roots of which 0 render', 'repair:']
+  - name: record-body-tracks-rendered-active-view
+    check: record-truthfulness
+    part: body
+    accepted: {roots: 1, rendered: 1, descendants: 646, textLength: 1223}
+    activeView: {roots: 1, rendered: 1, descendants: 646, textLength: 1223, refusals: []}
+    container: {descendants: 834, textLength: 2027}
+    expectValid: true
+    expectFrozen: true
+  - name: record-view-tracks-rendered-active-view
+    check: record-truthfulness
+    part: view
+    accepted: {roots: 2, rendered: 2, descendants: 564, textLength: 3217}
+    activeView: {roots: 2, rendered: 2, descendants: 564, textLength: 3217, refusals: []}
+    container: {descendants: 752, textLength: 4021}
+    expectValid: true
+    expectFrozen: true
+  - name: record-body-container-swap-fails
+    check: record-truthfulness
+    part: body
+    accepted: {roots: 1, rendered: 1, descendants: 646, textLength: 1223}
+    activeView: {roots: 1, rendered: 1, descendants: 834, textLength: 2027, refusals: []}
+    container: {descendants: 834, textLength: 2027}
+    expectValid: false
+    expectedErrorContains: ['recorded body measurement contradicts the rendered guard', 'field "descendants"', 'at path record.body.descendants', 'container totals', 'repair:']
+  - name: record-view-container-swap-fails
+    check: record-truthfulness
+    part: view
+    accepted: {roots: 2, rendered: 2, descendants: 564, textLength: 3217}
+    activeView: {roots: 2, rendered: 2, descendants: 752, textLength: 4021, refusals: []}
+    container: {descendants: 752, textLength: 4021}
+    expectValid: false
+    expectedErrorContains: ['recorded view measurement contradicts the rendered guard', 'field "viewDescendantsAfter"', 'at path record.view.viewDescendantsAfter', 'container totals', 'repair:']
+  - name: row-dir-prepares-after-validating
+    check: row-dir-preparation
+    existingArtifact: null
+    expectedSteps: [validated, created]
+    expectPrepared: true
+    expectValid: true
+  - name: row-dir-stale-refuses-before-any-mutation
+    check: row-dir-preparation
+    existingArtifact: record.json
+    expectedSteps: []
+    expectPrepared: false
+    expectValid: false
+    expectedErrorContains: ['stale artifact', 'field "artifact"', 'at path run.rowDir/record.json', 'repair:']
+  - name: runner-config-shape-pinned
+    check: runner-config
+    configFile: playwright.fairtest.config.mjs
+    expectedProjects: [fairtest]
+    expectedTestMatch: ['**/product.journey.mjs', '**/component.journey.mjs']
+    expectedTestDir: ./scripts/fairtest
+    expectedRetries: 0
+    expectedWorkers: 1
+    expectedFullyParallel: false
+    expectedReducedMotion: reduce
+    expectedViewport: {width: 1280, height: 720}
+    forbiddenKeys: [webServer, reuseExistingServer]
+    expectValid: true
+  - name: config-port-owner-single-declaration
+    check: port-owner
+    ownerModule: scripts/fairtest/fairtest-runtime.mjs
+    consumerModules: [playwright.fairtest.config.mjs, scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.mjs, scripts/fairtest/product-producer.mjs, scripts/fairtest/product.journey.mjs, scripts/fairtest/component-producer.mjs, scripts/fairtest/component.journey.mjs, scripts/fairtest/component-mutations.mjs, scripts/fairtest/fairtest-dev.mjs, scripts/fairtest/local-bridge.test.mjs]
+    portEnvName: FAIRTEST_APP_PORT
+    expectValid: true
+  - name: served-digests-match-the-run-build-tree
+    check: served-digest-comparison
+    files: [[index.html, '<!doctype html><html></html>\n'], [assets/app.js, 'console.log(1)\n']]
+    mutateFile: null
+    mutateSuffix: ''
+    wiredInto: collectServedProvenance
+    expectValid: true
+  - name: served-digests-differ-from-the-run-build-tree-fails
+    check: served-digest-comparison
+    files: [[index.html, '<!doctype html><html></html>\n'], [assets/app.js, 'console.log(1)\n']]
+    mutateFile: assets/app.js
+    mutateSuffix: ' served by something else'
+    expectValid: false
+    expectedErrorContains: ['served bytes differ from the run build tree', 'field "assetDigests"', 'at path provenance.assetDigests', 'assets/app.js', 'repair:']
+  - name: served-asset-missing-from-the-run-build-tree-fails
+    check: served-digest-comparison
+    files: [[index.html, '<!doctype html><html></html>\n'], [assets/app.js, 'console.log(1)\n']]
+    mutateFile: assets/gone.js
+    mutateSuffix: ''
+    expectValid: false
+    expectedErrorContains: ['is missing from the run build tree', 'field "assetDigests"', 'at path provenance.assetDigests', 'repair:']
+  - name: axe-report-shape-one-owner
+    check: axe-report-shape
+    expectValid: true
+  - name: mounted-row-guard-calls-cover-the-pre-action-point
+    check: mounted-row-guard-calls
+    producerModule: product-producer.mjs
+    expectedGuardPoints: ['body@proof.body', 'view@proof.view']
+    deletedCallPoint: body@proof.body
+    expectValid: true
+  - name: mounted-row-guard-calls-cover-the-post-action-point
+    check: mounted-row-guard-calls
+    producerModule: product-producer.mjs
+    expectedGuardPoints: ['body@proof.body', 'view@proof.view']
+    deletedCallPoint: view@proof.view
+    expectValid: true
+  - name: product-contract-command-runs-every-suite
+    check: product-contract-command
+    commandName: test:fairtest:product-contract
+    expectedScript: node scripts/fairtest/run-product-contract.mjs
+    expectedSuites: [scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/fairtest/component-adapter.test.mjs, scripts/fairtest/component-mutations.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
+    expectedNodeArgs: ['--test', '--test-concurrency=1', scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs, scripts/fairtest/component-adapter.test.mjs, scripts/fairtest/component-mutations.test.mjs, scripts/journey/lib/helper-ownership.test.mjs, scripts/journey/lib/journey-compat.test.mjs, scripts/surface-preservation.test.mjs]
+    ciMountStatus: declared-not-ci
+    workflowDir: .github/workflows
+    expectValid: true
+  - name: mounted-command-declares-its-ci-mount
+    check: mounted-command
+    commandName: test:fairtest:mounted
+    expectedScript: node scripts/fairtest/run-mounted.mjs
+    ciMountStatus: mounted
+    workflowDir: .github/workflows
+    expectValid: true
+  - name: combined-suite-invocation-runs-both-browser-suites
+    check: combined-suite-invocation
+    suites: [scripts/fairtest/product-adapter.test.mjs, scripts/fairtest/product-mutations.test.mjs]
+    selectedCases: ['holds exact fields and required names', 'proves the real DOM path fails when each part element is genuinely absent']
+    expectValid: true
+  - name: host-literal-guard-sees-template-literal-selectors
+    check: host-literal-guard
+    hostFiles: [product-producer.mjs, product-mutations.mjs, product.journey.mjs]
+    mutatedLiteral:
+      file: product-producer.mjs
+      from: 'viewport: { ...PRODUCT_VIEWPORT }'
+      to: 'viewport: { ...PRODUCT_VIEWPORT }, probe: `${"#inuse"}`'
+    expectValid: true

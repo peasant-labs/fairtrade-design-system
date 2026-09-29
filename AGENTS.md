@@ -48,10 +48,11 @@ themes (`scripts/sbshot.mjs`) and look at them. Keep every gate green.
 
 ## visual / screenshot harness
 
-`scripts/` — the DS's OWN capture + fidelity tooling (the source of truth the consumer harnesses
+`scripts/` holds the DS's own capture and fidelity tooling (the source of truth the consumer harnesses
 mirror). Element journeys (`scripts/journey/`, Playwright, run in CI in the official Playwright
-container): story smoke over the whole catalog, the twenty built-app checks, focused component
-interactions. Puppeteer capture: `shoot.mjs` / `shootdemo.mjs` / `shootmanage.mjs`. Storybook:
+container): Playwright is the required repeatable runner and the sole required full-catalog path
+(story smoke over the whole catalog), plus the twenty built-app checks and focused component
+interactions. Bind mounted theme by row key, not by project name. Puppeteer capture: `shoot.mjs` / `shootdemo.mjs` / `shootmanage.mjs` for focused compatibility and local evidence only, never an unfiltered full catalog. Storybook:
 `sbshot.mjs` / `sbsmoke.mjs` (local use; CI runs the journey ports). Regression: `imgdiff.mjs` / `png-diff.mjs`. Gates: `surface-gate.mjs`
 / `check-surface-gate.mjs`. Graph SxS oracle: `graph-oracle.mjs` / `check-graph-oracle.mjs`. WCAG
 contrast gate: `contrast.mjs`. Smokes: `smoke-{lib,map,transcript,transcript-ui,tarball}.mjs`. The
@@ -59,6 +60,11 @@ in-use **demo** (`#inuse` at fairtrade.peasantlabs.org) is the fidelity oracle c
 against — when a DS component changes, consumers re-shoot their surfaces SxS against it. Consumers
 (peasant/village) each carry a PARALLEL harness mirroring these primitives; consolidating them into
 one shared parameterized toolkit is a tracked follow-up.
+
+fairtest, when present, is a private workspace source package, never published runtime code and
+never part of the root exports, dependencies, or packed files. An optional local attach target
+(agent-browser, when installed) is local-only exploration, never a dependency, install step, CI
+oracle, or evidence path.
 
 ## release & npm publication
 

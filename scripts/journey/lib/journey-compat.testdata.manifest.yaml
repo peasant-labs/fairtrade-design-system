@@ -1,0 +1,36 @@
+# Required-name inventory and executable mutations for
+# journey-compat.testdata.yaml.
+#
+# The refusal rows are the contract: a future edit that absorbs a stale
+# positional call instead of failing it, or a manifest that quietly drops a
+# refused shape, must go red here rather than leave a consumer scanning the
+# whole page inside an accessibility gate.
+expectedShapeCount: 7
+requiredShapeNames:
+  - omitted options scan page-wide with the pinned default tags
+  - an empty options object still scans page-wide with the pinned default tags
+  - an options tag list is honored instead of replaced by the default
+  - an options root selector scopes the run
+  - a positional tag array is refused instead of scanned page-wide
+  - a positional root selector is refused instead of scanned page-wide
+  - an explicit null options argument is refused instead of scanned page-wide
+expectedMutationCount: 3
+requiredMutationNames:
+  - removing the refused positional array shape breaks the required inventory
+  - removing the refused positional root shape breaks the required inventory
+  - marking a refused positional shape accepted breaks the refusal rule
+mutations:
+  - name: removing the refused positional array shape breaks the required inventory
+    kind: delete-record
+    target: a positional tag array is refused instead of scanned page-wide
+    expectedDiagnostic: a positional tag array is refused instead of scanned page-wide
+  - name: removing the refused positional root shape breaks the required inventory
+    kind: delete-record
+    target: a positional root selector is refused instead of scanned page-wide
+    expectedDiagnostic: a positional root selector is refused instead of scanned page-wide
+  - name: marking a refused positional shape accepted breaks the refusal rule
+    kind: bad-value
+    target: a positional tag array is refused instead of scanned page-wide
+    field: accepted
+    value: true
+    expectedDiagnostic: a positional tag array is refused instead of scanned page-wide

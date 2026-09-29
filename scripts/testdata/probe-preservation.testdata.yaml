@@ -1,0 +1,24 @@
+# Specialized probe files under surface preservation.
+#
+# The set is closed in both directions against the scripts/ directory: every
+# scripts/*.probe.mjs or scripts/*-probe.mjs file on disk is REQUIRED to be
+# declared here, and every declared name must exist on disk. A planted or
+# renamed probe file therefore has to be classified rather than sitting
+# unchecked beside the guarded copies, and deleting a declared row is a
+# required-name failure, never a silent one.
+#
+# The declared set is wider than the derived name patterns alone: the
+# Puppeteer capture scripts and the gate and graph self-checks are specialized
+# probes by curation, not by name. The regression diff utilities (imgdiff.mjs,
+# png-diff.mjs) are a different family and are deliberately not guarded here.
+expectedProbeCount: 9
+requiredProbeNames:
+  - scripts/check-graph-oracle.mjs
+  - scripts/check-surface-gate.mjs
+  - scripts/graph-oracle.mjs
+  - scripts/helper-groups.probe.mjs
+  - scripts/pi-transcript.probe.mjs
+  - scripts/shootdemo.mjs
+  - scripts/shootmanage.mjs
+  - scripts/timeline-rendered-probe.mjs
+  - scripts/transcript-provenance-retention.probe.mjs

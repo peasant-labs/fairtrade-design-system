@@ -1,0 +1,75 @@
+# Required-name inventory and executable mutations for local-bridge.testdata.yaml.
+# Every case name below must appear exactly once in the corpus. Each mutation
+# deletes, renames, duplicates, or corrupts one record so the owning guard is
+# proven to fail for its intended field. Combinatorial cases live here, never
+# inline in the test.
+expectedCaseCount: 16
+requiredCaseNames:
+  - local-identity-valid
+  - local-identity-producer-purpose
+  - producer-row-rejected-as-local
+  - local-identity-bad-invocation-id
+  - local-declaration-valid
+  - local-declaration-missing-capability
+  - local-scenario-valid
+  - local-scenario-empty-route
+  - local-provenance-valid
+  - local-provenance-bad-dirty
+  - local-readout-valid
+  - local-readout-foreign-declaration
+  - local-readiness-valid
+  - local-readiness-foreign-owner
+  - local-cleanup-valid
+  - local-cleanup-bad-signal
+expectedMutationCount: 8
+requiredMutationNames:
+  - removing the local-declaration-valid record breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the check discriminator breaks the case shape
+  - deleting the identity payload breaks the case shape
+  - flipping the readiness channel breaks the behavioral runner
+  - adding an unknown case field breaks exact membership
+  - inventing a check kind breaks the closed vocabulary
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing the local-declaration-valid record breaks the required inventory
+    kind: delete-record
+    target: local-declaration-valid
+    expectedField: local-declaration-valid
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: local-identity-valid
+    expectedField: local-identity-valid
+  - name: renaming the check discriminator breaks the case shape
+    kind: rename-field
+    target: local-readiness-valid
+    field: check
+    newField: kind
+    expectedField: check
+  - name: deleting the identity payload breaks the case shape
+    kind: delete-field
+    target: local-identity-valid
+    field: identity
+    expectedField: identity
+  - name: flipping the readiness channel breaks the behavioral runner
+    kind: bad-value
+    target: local-readiness-valid
+    field: readiness.port
+    value: 0
+    expectedField: port
+  - name: adding an unknown case field breaks exact membership
+    kind: unknown-field
+    target: local-identity-valid
+    field: theme
+    value: light
+    expectedField: theme
+  - name: inventing a check kind breaks the closed vocabulary
+    kind: bad-value
+    target: local-cleanup-valid
+    field: check
+    value: invented-check
+    expectedField: check
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document

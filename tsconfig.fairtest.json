@@ -1,0 +1,48 @@
+{
+  // The Fairtest type program. Unlike tsconfig.contract.json / tsconfig.lib.json
+  // (both scoped to src/ui), this program covers the browser-neutral Fairtest
+  // core, its tests, the app-side Fairtest harness, the shared journey helper
+  // library, and the Fairtest root scripts.
+  //
+  // checkJs is OFF and every covered file opts back in with a per-file
+  // `// @ts-check` pragma. That is the repo's own idiom, and it is the only
+  // legal exception mechanism: tsconfig.exclude does NOT remove an imported
+  // file from a checkJs:true program, so a byte-vendored body cannot be excluded
+  // that way. Under checkJs:false a file without the pragma is simply not
+  // checked, which is the documented exception for the vendored bodies. The
+  // coverage guard (scripts/fairtest/assert-ts-check-coverage.mjs) proves every
+  // other covered file carries the pragma and that the vendored allowlist is
+  // exactly the byte-vendored set.
+  //
+  // `types: ["node"]` is set here only. tsc 6 gates automatic @types inclusion
+  // to `options.types ?? []` unless `"types": ["*"]`, so this program is the
+  // only one that sees @types/node; tsconfig.contract.json and
+  // tsconfig.lib.json set no `types` and are unaffected.
+  //
+  // noEmit is true: unlike tsconfig.lib.json this program never emits beside
+  // the sources.
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true,
+    "noImplicitAny": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2022"
+  },
+  "include": [
+    "packages/fairtest/src/**/*.mjs",
+    "packages/fairtest/test/**/*.mjs",
+    "scripts/fairtest/**/*.mjs",
+    "scripts/journey/lib/**/*.mjs",
+    "scripts/assert-fairtest-boundary.mjs",
+    "scripts/assert-test-promotion.mjs",
+    "scripts/fairtest-runner-inventory.mjs",
+    "scripts/fairtest-single-document.mjs",
+    "scripts/fairtest-source.mjs",
+    "scripts/fairtest-surface-manifest.mjs"
+  ]
+}

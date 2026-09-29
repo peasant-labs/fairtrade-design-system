@@ -1,0 +1,47 @@
+# Evidence contract cases. Each bound record pairs a validated core identity
+# with one evidence record so the record identity id must equal the identity
+# id. Duplicate and freshness cases use synthetic caller-owned scopes,
+# digests, clocks, and ceilings. No runner, live handle, route, selector,
+# or caller threshold literal appears here.
+expectedCaseCount: 7
+cases:
+  - name: bound-record-valid
+    check: bound-record
+    identity: {kind: "run", id: "contract-row-a", createdAtMs: 1000}
+    record: {identityId: "contract-row-a", digest: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", observedAtMs: 1000, scopeId: "contract-scope-a"}
+    expectValid: true
+  - name: bound-record-bad-identity
+    check: bound-record
+    identity: {kind: "run", id: "contract-row-a", createdAtMs: -5}
+    record: {identityId: "contract-row-a", digest: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", observedAtMs: 1000, scopeId: "contract-scope-a"}
+    expectValid: false
+    expectedErrorContains: ["createdAtMs", "at path", "repair:"]
+  - name: bound-record-identity-mismatch
+    check: bound-record
+    identity: {kind: "run", id: "contract-row-a", createdAtMs: 1000}
+    record: {identityId: "contract-row-b", digest: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", observedAtMs: 1000, scopeId: "contract-scope-a"}
+    expectValid: false
+    expectedErrorContains: ["identityId", "at path", "repair:"]
+  - name: bound-record-bad-digest
+    check: bound-record
+    identity: {kind: "run", id: "contract-row-a", createdAtMs: 1000}
+    record: {identityId: "contract-row-a", digest: "NOT-HEX", observedAtMs: 1000, scopeId: "contract-scope-a"}
+    expectValid: false
+    expectedErrorContains: ["digest", "at path", "repair:"]
+  - name: duplicate-repeat-in-scope
+    check: duplicate
+    scope: contract-scope-a
+    digests: ["bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "cccccccccccccccccccccccccccccccc", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"]
+    expectDuplicates: [false, false, true]
+  - name: fresh-within-ceiling
+    check: fresh
+    observedAtMs: 4000
+    nowMs: 5000
+    maxAgeMs: 1000
+    expectFresh: true
+  - name: fresh-stale-clock
+    check: fresh
+    observedAtMs: 0
+    nowMs: 5000
+    maxAgeMs: 1000
+    expectFresh: false

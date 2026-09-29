@@ -1,0 +1,529 @@
+# Fairtrade component target cases: direct Storybook component theme rows, the
+# direct iframe URL per theme, the row-scoped theme setup descriptor, the real
+# mount signals, the component capability/action vocabulary, the assembled
+# component proof record with its negatives, and the cross-kind refusals that
+# keep a component record from claiming product-only shell fields.
+#
+# This record is the single source for the component adapter contract test; the
+# test module owns no row data. Cases live here, never inline.
+#
+# Family A (component-row): the rendered data-theme value is normalized through
+# the shared rule. A dark row is an ABSENT or an EMPTY attribute (the measured
+# Storybook dark state is present-and-empty, unlike the product app's absent
+# value); a light row carries the light value. A literal "dark" value, or an
+# unknown row theme, fails closed.
+#
+# Family B (component-url / component-setup): the direct iframe URL carries no
+# globals for dark and the light global for light, and the setup descriptor
+# owns the URL and the expected raw attribute.
+#
+# Family C (component-project): project-name theme inference always fails.
+#
+# Family D (component-mount): a real mount needs children in #storybook-root,
+# the ready-state body classes, a hidden error display, and an empty error
+# stack. Each of the static, not-ready, error-display, and error-stack states
+# is refused by name.
+#
+# Family E (component-declaration / component-action): capability membership is
+# checked against the shared component vocabulary; the one action is the
+# registered expand-disclosure.
+#
+# Family F (component-proof): the proof record is the shared component branch,
+# with the mounted root, the theme observation, and an optional completed
+# interaction. Missing root, mismatched row theme, unregistered or incomplete
+# interaction, a blanket mounted flag, and a missing theme observation all fail.
+#
+# Family G (component-cross-kind): a component record carrying any product-only
+# field is refused, a product kind is refused, a product identity is refused,
+# and a component record cannot satisfy the product full-shell resolver. The
+# product record presented to the component resolver is refused in the other
+# direction.
+#
+# Family H (component-mutation): the named negative component mutations. Each
+# drives the real producer/registry boundary and must fail with the owning
+# diagnostic; the component adapter test executes every one through
+# runComponentMutation and the component-mutations suite proves the single
+# owner of the diagnostics table.
+expectedCaseCount: 62
+cases:
+  # ---- Family A: theme rows ----
+  - name: component-row-dark-absent-theme-passes
+    check: component-row
+    theme: dark
+    renderedAttribute: null
+    expectTheme: dark
+    expectValid: true
+    expectFrozen: true
+  - name: component-row-dark-empty-theme-passes
+    check: component-row
+    theme: dark
+    renderedAttribute: ''
+    expectTheme: dark
+    expectValid: true
+    expectFrozen: true
+  - name: component-row-light-attribute-passes
+    check: component-row
+    theme: light
+    renderedAttribute: 'light'
+    expectTheme: light
+    expectValid: true
+    expectFrozen: true
+  - name: component-row-literal-dark-value-fails
+    check: component-row
+    theme: dark
+    renderedAttribute: 'dark'
+    expectValid: false
+    expectedErrorContains: ['unexpected rendered theme', 'field "renderedAttribute"', 'at path', 'repair:']
+  - name: component-row-unknown-theme-fails
+    check: component-row
+    theme: dusk
+    renderedAttribute: null
+    expectValid: false
+    expectedErrorContains: ['unknown row theme', 'field "theme"', 'at path', 'repair:']
+
+  # ---- Family B: URL and setup ----
+  - name: component-url-dark-passes
+    check: component-url
+    theme: dark
+    url: '/iframe.html?id=components-sessiongroupdisclosure--playground&viewMode=story'
+    expectValid: true
+    expectFrozen: true
+  - name: component-url-light-passes
+    check: component-url
+    theme: light
+    url: '/iframe.html?id=components-sessiongroupdisclosure--playground&viewMode=story&globals=theme:light'
+    expectValid: true
+    expectFrozen: true
+  - name: component-setup-dark-passes
+    check: component-setup
+    theme: dark
+    expectedAttribute: ''
+    url: '/iframe.html?id=components-sessiongroupdisclosure--playground&viewMode=story'
+    expectValid: true
+    expectFrozen: true
+  - name: component-setup-light-passes
+    check: component-setup
+    theme: light
+    expectedAttribute: 'light'
+    url: '/iframe.html?id=components-sessiongroupdisclosure--playground&viewMode=story&globals=theme:light'
+    expectValid: true
+    expectFrozen: true
+  - name: component-setup-unknown-theme-fails
+    check: component-setup
+    theme: dusk
+    expectValid: false
+    expectedErrorContains: ['unknown row theme', 'field "theme"', 'at path', 'repair:']
+
+  # ---- Family C: project-name inference ----
+  - name: component-project-name-inference-fails
+    check: component-project
+    project: fairtest
+    expectValid: false
+    expectedErrorContains: ['project-name theme inference', 'field "project"', 'at path', 'repair:']
+
+  # ---- Family D: mount signals ----
+  - name: component-mount-healthy-passes
+    check: component-mount
+    observation:
+      rootChildCount: 1
+      bodyClass: 'sb-main-centered sb-show-main'
+      errorDisplay: none
+      errorStackText: ''
+    expectValid: true
+    expectFrozen: true
+  - name: component-mount-empty-root-fails
+    check: component-mount
+    observation:
+      rootChildCount: 0
+      bodyClass: 'sb-main-centered sb-show-main'
+      errorDisplay: none
+      errorStackText: ''
+    expectValid: false
+    expectedErrorContains: ['empty mounted root', 'field "rootChildCount"', 'at path', 'repair:']
+  - name: component-mount-not-ready-body-fails
+    check: component-mount
+    observation:
+      rootChildCount: 1
+      bodyClass: 'sb-show-main'
+      errorDisplay: none
+      errorStackText: ''
+    expectValid: false
+    expectedErrorContains: ['not in its ready state', 'field "bodyClass"', 'at path', 'repair:']
+  - name: component-mount-error-display-fails
+    check: component-mount
+    observation:
+      rootChildCount: 1
+      bodyClass: 'sb-main-centered sb-show-main'
+      errorDisplay: block
+      errorStackText: ''
+    expectValid: false
+    expectedErrorContains: ['error display is visible', 'field "errorDisplay"', 'at path', 'repair:']
+  - name: component-mount-error-stack-fails
+    check: component-mount
+    observation:
+      rootChildCount: 1
+      bodyClass: 'sb-main-centered sb-show-main'
+      errorDisplay: none
+      errorStackText: 'Error: could not load story'
+    expectValid: false
+    expectedErrorContains: ['story load error is present', 'field "errorStackText"', 'at path', 'repair:']
+
+  # ---- Family E: capability and action ----
+  - name: component-capabilities-pass
+    check: component-declaration
+    capabilities: [observe-root, observe-interaction, observe-theme, perform-action]
+    expectValid: true
+    expectFrozen: true
+  - name: component-minimal-capabilities-pass
+    check: component-declaration
+    capabilities: [observe-root, observe-theme]
+    expectValid: true
+    expectFrozen: true
+  - name: component-unknown-capability-fails
+    check: component-declaration
+    capabilities: [observe-root, observe-theme, observe-screenshot]
+    expectValid: false
+    expectedErrorContains: ['observe-screenshot', 'at path', 'repair:']
+  - name: component-product-capability-fails
+    check: component-declaration
+    capabilities: [observe-root, observe-theme, observe-chrome]
+    expectValid: false
+    expectedErrorContains: ['observe-chrome', 'at path', 'repair:']
+  - name: component-missing-required-capability-fails
+    check: component-declaration
+    capabilities: [observe-interaction]
+    expectValid: false
+    expectedErrorContains: ['missing required capability', 'observe-root', 'at path', 'repair:']
+  - name: component-action-registered-passes
+    check: component-action
+    action: expand-disclosure
+    expectValid: true
+    expectFrozen: true
+  - name: component-action-unregistered-fails
+    check: component-action
+    action: expand-disclosure-v2
+    expectValid: false
+    expectedErrorContains: ['expand-disclosure-v2', 'field "action"', 'at path', 'repair:']
+
+  # ---- Family F: component proof ----
+  - name: component-proof-dark-expanded-passes
+    check: component-proof
+    rowTheme: dark
+    identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+    root: {mounted: true, observedAtMs: 2000}
+    themeObservation: {expected: dark, observed: dark, source: 'component-target-fixture:documentElement:data-theme', observedAtMs: 2100}
+    interaction: {name: expand-disclosure, completed: true, observedAtMs: 3000}
+    expectValid: true
+    expectFrozen: true
+  - name: component-proof-light-expanded-passes
+    check: component-proof
+    rowTheme: light
+    identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+    root: {mounted: true, observedAtMs: 2000}
+    themeObservation: {expected: light, observed: light, source: 'component-target-fixture:documentElement:data-theme', observedAtMs: 2100}
+    interaction: {name: expand-disclosure, completed: true, observedAtMs: 3000}
+    expectValid: true
+    expectFrozen: true
+  - name: component-proof-without-interaction-passes
+    check: component-proof
+    rowTheme: dark
+    identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+    root: {mounted: true, observedAtMs: 2000}
+    themeObservation: {expected: dark, observed: dark, source: 'component-target-fixture:documentElement:data-theme', observedAtMs: 2100}
+    interaction: null
+    expectValid: true
+    expectFrozen: true
+  - name: component-proof-row-theme-mismatch-fails
+    check: component-proof
+    rowTheme: dark
+    identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+    root: {mounted: true, observedAtMs: 2000}
+    themeObservation: {expected: light, observed: light, source: 'component-target-fixture:documentElement:data-theme', observedAtMs: 2100}
+    interaction: null
+    expectValid: false
+    expectedErrorContains: ['row setup does not match the theme observation', 'field "rowTheme"', 'at path', 'repair:']
+  - name: component-proof-missing-root-fails
+    check: component-proof
+    rowTheme: dark
+    identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+    root: {mounted: false, observedAtMs: 2000}
+    themeObservation: {expected: dark, observed: dark, source: 'component-target-fixture:documentElement:data-theme', observedAtMs: 2100}
+    interaction: null
+    expectValid: false
+    expectedErrorContains: ['unmounted root', 'at path', 'repair:']
+  - name: component-proof-unregistered-interaction-fails
+    check: component-proof
+    rowTheme: dark
+    identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+    root: {mounted: true, observedAtMs: 2000}
+    themeObservation: {expected: dark, observed: dark, source: 'component-target-fixture:documentElement:data-theme', observedAtMs: 2100}
+    interaction: {name: expand-disclosure-v2, completed: true, observedAtMs: 3000}
+    expectValid: false
+    expectedErrorContains: ['expand-disclosure-v2', 'field "action"', 'at path', 'repair:']
+  - name: component-proof-incomplete-interaction-fails
+    check: component-proof
+    rowTheme: dark
+    identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+    root: {mounted: true, observedAtMs: 2000}
+    themeObservation: {expected: dark, observed: dark, source: 'component-target-fixture:documentElement:data-theme', observedAtMs: 2100}
+    interaction: {name: expand-disclosure, completed: false, observedAtMs: 3000}
+    expectValid: false
+    expectedErrorContains: ['incomplete result', 'at path', 'repair:']
+  - name: component-proof-missing-theme-fails
+    check: component-proof
+    rowTheme: dark
+    identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+    root: {mounted: true, observedAtMs: 2000}
+    themeObservation: null
+    interaction: null
+    expectValid: false
+    expectedErrorContains: ['missing theme observation', 'at path', 'repair:']
+  - name: component-proof-blanket-mounted-fails
+    check: component-proof-blanket
+    mounted: true
+    expectValid: false
+    expectedErrorContains: ['blanket mounted flag', 'field "mounted"', 'at path', 'repair:']
+
+  # ---- Family G: cross-kind ----
+  - name: component-record-product-route-rejected
+    check: component-cross-kind
+    presentedTo: component
+    record:
+      kind: component
+      identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+      root: {mounted: true, observedAtMs: 2000}
+      theme: {expected: dark, observed: dark, source: 'component-target-fixture', observedAtMs: 2100}
+      route: {observed: true, observedAtMs: 2200}
+    expectValid: false
+    expectedErrorContains: ['product-only field "route"', 'at path resolution.route', 'repair:']
+  - name: component-record-product-chrome-rejected
+    check: component-cross-kind
+    presentedTo: component
+    record:
+      kind: component
+      identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+      root: {mounted: true, observedAtMs: 2000}
+      theme: {expected: dark, observed: dark, source: 'component-target-fixture', observedAtMs: 2100}
+      chrome: {observed: true, observedAtMs: 2200}
+    expectValid: false
+    expectedErrorContains: ['product-only field "chrome"', 'at path resolution.chrome', 'repair:']
+  - name: component-record-product-body-rejected
+    check: component-cross-kind
+    presentedTo: component
+    record:
+      kind: component
+      identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+      root: {mounted: true, observedAtMs: 2000}
+      theme: {expected: dark, observed: dark, source: 'component-target-fixture', observedAtMs: 2100}
+      body: {observed: true, observedAtMs: 2200}
+    expectValid: false
+    expectedErrorContains: ['product-only field "body"', 'at path resolution.body', 'repair:']
+  - name: component-record-product-active-section-rejected
+    check: component-cross-kind
+    presentedTo: component
+    record:
+      kind: component
+      identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+      root: {mounted: true, observedAtMs: 2000}
+      theme: {expected: dark, observed: dark, source: 'component-target-fixture', observedAtMs: 2100}
+      activeSection: {observed: true, observedAtMs: 2200}
+    expectValid: false
+    expectedErrorContains: ['product-only field "activeSection"', 'at path resolution.activeSection', 'repair:']
+  - name: component-record-product-view-rejected
+    check: component-cross-kind
+    presentedTo: component
+    record:
+      kind: component
+      identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+      root: {mounted: true, observedAtMs: 2000}
+      theme: {expected: dark, observed: dark, source: 'component-target-fixture', observedAtMs: 2100}
+      view: {observed: true, observedAtMs: 2200}
+    expectValid: false
+    expectedErrorContains: ['product-only field "view"', 'at path resolution.view', 'repair:']
+  - name: component-record-product-kind-rejected
+    check: component-cross-kind
+    presentedTo: component
+    record:
+      kind: product
+      identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+      root: {mounted: true, observedAtMs: 2000}
+      theme: {expected: dark, observed: dark, source: 'component-target-fixture', observedAtMs: 2100}
+    expectValid: false
+    expectedErrorContains: ['cross-kind resolution', 'at path resolution.kind', 'repair:']
+  - name: component-record-product-identity-rejected
+    check: component-cross-kind
+    presentedTo: component
+    record:
+      kind: component
+      identity: {kind: product, id: fairtrade-sgd-story, createdAtMs: 1000}
+      root: {mounted: true, observedAtMs: 2000}
+      theme: {expected: dark, observed: dark, source: 'component-target-fixture', observedAtMs: 2100}
+    expectValid: false
+    expectedErrorContains: ['identity branch', 'at path', 'repair:']
+  - name: component-cannot-satisfy-product-shell-fails
+    check: component-cross-kind
+    presentedTo: product
+    record:
+      kind: component
+      identity: {kind: component, id: fairtrade-sgd-story, createdAtMs: 1000}
+      root: {mounted: true, observedAtMs: 2000}
+      theme: {expected: dark, observed: dark, source: 'component-target-fixture', observedAtMs: 2100}
+    expectValid: false
+    expectedErrorContains: ['at path', 'repair:']
+  - name: product-record-rejected-as-component-fails
+    check: component-cross-kind
+    presentedTo: component
+    record:
+      kind: product
+      identity: {kind: product, id: fairtrade-graph-product, createdAtMs: 1000}
+      chrome: {observed: true, observedAtMs: 2000}
+      body: {observed: true, observedAtMs: 2000}
+      route: {observed: true, observedAtMs: 2000}
+      activeSection: {observed: true, observedAtMs: 2000}
+      view: {observed: true, observedAtMs: 2000}
+      theme: {expected: dark, observed: dark, source: 'component-target-fixture', observedAtMs: 2100}
+    expectValid: false
+    expectedErrorContains: ['at path', 'repair:']
+
+  # ---- Family H: named negative component mutations ----
+  - name: component-mutation-missing-root-fails
+    check: component-mutation
+    mutation: missing-root
+    boundary: fairtrade-component-target.assertComponentMounted at mount.root
+    expectValid: false
+    expectedErrorContains: ['missing mount observation', 'field "mount"', 'at path mount', 'repair:']
+  - name: component-mutation-empty-root-fails
+    check: component-mutation
+    mutation: empty-root
+    boundary: fairtrade-component-target.assertComponentMounted at mount.rootChildCount
+    expectValid: false
+    expectedErrorContains: ['empty mounted root', 'field "rootChildCount"', 'at path mount.rootChildCount', 'repair:']
+  - name: component-mutation-error-display-root-fails
+    check: component-mutation
+    mutation: error-display-root
+    boundary: fairtrade-component-target.assertComponentMounted at mount.errorDisplay
+    expectValid: false
+    expectedErrorContains: ['error display is visible', 'field "errorDisplay"', 'at path mount.errorDisplay', 'repair:']
+  - name: component-mutation-wrong-theme-fails
+    check: component-mutation
+    mutation: wrong-theme
+    boundary: fairtrade-targets.observeProductTheme at theme.renderedAttribute
+    expectValid: false
+    expectedErrorContains: ['unexpected rendered theme', 'field "renderedAttribute"', 'at path theme.renderedAttribute', 'repair:']
+  - name: component-mutation-contradictory-theme-fails
+    check: component-mutation
+    mutation: contradictory-theme
+    boundary: fairtrade-targets.observeProductTheme at theme.observed
+    expectValid: false
+    expectedErrorContains: ['contradictory theme observation', 'field "observed"', 'at path theme.observed', 'repair:']
+  - name: component-mutation-missing-interaction-fails
+    check: component-mutation
+    mutation: missing-interaction
+    boundary: fairtrade-component-target.getComponentAction at target.action
+    expectValid: false
+    expectedErrorContains: ['unknown action', 'field "action"', 'at path target.action', 'repair:']
+  - name: component-mutation-non-completing-interaction-fails
+    check: component-mutation
+    mutation: non-completing-interaction
+    boundary: shared host contract through fairtrade-component-target.buildComponentProof at resolution.interaction.completed
+    expectValid: false
+    expectedErrorContains: ['incomplete result', 'at path resolution.interaction.completed', 'repair:']
+  - name: component-mutation-product-shaped-record-fails
+    check: component-mutation
+    mutation: product-shaped-record
+    boundary: fairtrade-component-target.buildComponentProof at proof.view
+    expectValid: false
+    expectedErrorContains: ['unknown field "view"', 'at path proof', 'repair:']
+  - name: component-mutation-cross-kind-product-shell-fails
+    check: component-mutation
+    mutation: cross-kind-product-shell
+    boundary: shared host contract through resolution.validateProductResolution at resolution.kind
+    expectValid: false
+    expectedErrorContains: ['cross-kind resolution', 'at path resolution.kind', 'repair:']
+  - name: component-mutation-cross-kind-product-record-fails
+    check: component-mutation
+    mutation: cross-kind-product-record
+    boundary: shared host contract through resolution.validateComponentResolution at resolution.chrome
+    expectValid: false
+    expectedErrorContains: ['product-only field "chrome"', 'at path resolution.chrome', 'repair:']
+  - name: component-mutation-stale-run-root-fails
+    check: component-mutation
+    mutation: stale-run-root
+    boundary: component-producer.prepareComponentRowDir at run.rowDir
+    expectValid: false
+    expectedErrorContains: ['stale artifact', 'record.json', 'at path run.rowDir', 'repair:']
+  - name: component-mutation-stale-artifact-fails
+    check: component-mutation
+    mutation: stale-artifact
+    boundary: component-producer.prepareComponentRowDir at run.rowDir
+    expectValid: false
+    expectedErrorContains: ['stale artifact', 'screenshot.png', 'at path run.rowDir', 'repair:']
+  - name: component-mutation-missing-artifact-fails
+    check: component-mutation
+    mutation: missing-artifact
+    boundary: component-producer.assertComponentArtifactSet at run.rowDir
+    expectValid: false
+    expectedErrorContains: ['missing artifact', '"aria.json"', 'at path run.rowDir', 'repair:']
+  - name: component-mutation-provenance-relative-unresolved-fails
+    check: component-mutation
+    mutation: provenance-relative-unresolved
+    boundary: component-producer.collectComponentServedAssets at provenance.assetDigests
+    expectValid: false
+    expectedErrorContains: ['cannot read served asset', 'missing-relative-asset.js', 'at path provenance.assetDigests', 'repair:']
+  - name: component-mutation-provenance-external-link-fails
+    check: component-mutation
+    mutation: provenance-external-link
+    boundary: component-producer.resolveComponentProvenanceRefs at provenance.assetDigests
+    expectValid: false
+    expectedErrorContains: ['references no asset files', 'field "assetDigests"', 'at path provenance.assetDigests', 'repair:']
+  - name: component-mutation-screenshot-floor-fails
+    check: component-mutation
+    mutation: screenshot-floor
+    boundary: component-producer.assertComponentScreenshotFloor at evidence.screenshot
+    expectValid: false
+    expectedErrorContains: ['blank screenshot', 'field "screenshot"', 'at path evidence.screenshot', 'repair:']
+  - name: component-mutation-aria-floor-fails
+    check: component-mutation
+    mutation: aria-floor
+    boundary: component-producer.assertComponentAriaFloor at evidence.aria
+    expectValid: false
+    expectedErrorContains: ['empty ARIA snapshot', 'field "aria"', 'at path evidence.aria', 'repair:']
+  - name: component-mutation-digest-mismatch-fails
+    check: component-mutation
+    mutation: digest-mismatch
+    boundary: fairtest-artifacts.assertServedDigestsMatchRunRoot at provenance.assetDigests
+    expectValid: false
+    expectedErrorContains: ['assetDigests', 'at path provenance.assetDigests', 'repair:']
+
+  # ---- Family I: producer run-envelope enforcement ----
+  # The component producer checks the run envelope at two seams: the root
+  # resolver before any row work, and the capture seam before the row
+  # directory. These cases drive the real resolver and the real capture
+  # wrapper against a seeded envelope. A matching envelope resolves; an
+  # envelope belonging to another run is refused by name. Deleting either
+  # requireEnvelopeForRun call turns its named case red while the product
+  # run-root case stays green.
+  - name: component-run-root-matching-envelope-passes
+    check: component-run-root
+    runRootEnv: /tmp/opencode/fairtest-fixture-component-run-root
+    runIdEnv: fairtest-fixture-component-run-root
+    seedEnvelope: true
+    expectRoot: /tmp/opencode/fairtest-fixture-component-run-root
+    expectValid: true
+  - name: component-run-root-envelope-mismatch-fails
+    check: component-run-root
+    runRootEnv: /tmp/opencode/fairtest-fixture-component-run-root
+    runIdEnv: fairtest-fixture-component-run-root
+    seedEnvelope: true
+    envelopeRunId: some-other-run
+    expectValid: false
+    expectedErrorContains: ['belongs to another run', 'field "runId"', 'guards/run-envelope.json', 'repair:']
+  - name: component-capture-envelope-mismatch-fails
+    check: component-capture-envelope
+    runRootEnv: /tmp/opencode/fairtest-fixture-component-run-root
+    runIdEnv: fairtest-fixture-component-run-root
+    seedEnvelope: true
+    envelopeRunId: some-other-run
+    theme: dark
+    expectValid: false
+    expectedErrorContains: ['belongs to another run', 'field "runId"', 'guards/run-envelope.json', 'repair:']

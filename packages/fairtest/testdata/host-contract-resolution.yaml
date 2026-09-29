@@ -1,0 +1,150 @@
+# Host-contract resolution records. Parts, themes, names, clocks, and results
+# are synthetic caller-owned test data. Product records carry every observed
+# part; component records carry only root, theme, and an optional
+# interaction. No runner, route, selector, or product meaning is pinned here.
+expectedCaseCount: 12
+cases:
+  - name: product resolution with action result passes
+    check: resolution-product
+    record:
+      kind: product
+      identity: {kind: product, id: product-row-a, createdAtMs: 1000}
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1000}
+      route: {observed: true, observedAtMs: 1000}
+      activeSection: {observed: true, observedAtMs: 1000}
+      view: {observed: true, observedAtMs: 1000}
+      theme: {expected: dark, observed: dark, source: synthetic-host-a, observedAtMs: 1000}
+      action: {name: synthetic-action-a, completed: true, observedAtMs: 2000}
+    expectValid: true
+    expectFrozen: true
+  - name: product resolution without action passes
+    check: resolution-product
+    record:
+      kind: product
+      identity: {kind: product, id: product-row-b, createdAtMs: 1000}
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1000}
+      route: {observed: true, observedAtMs: 1000}
+      activeSection: {observed: true, observedAtMs: 1000}
+      view: {observed: true, observedAtMs: 1000}
+      theme: {expected: light, observed: light, source: synthetic-host-a, observedAtMs: 1000}
+    expectValid: true
+    expectFrozen: true
+  - name: component resolution with interaction passes
+    check: resolution-component
+    record:
+      kind: component
+      identity: {kind: component, id: component-row-a, createdAtMs: 1000}
+      root: {mounted: true, observedAtMs: 1000}
+      theme: {expected: dark, observed: dark, source: synthetic-host-a, observedAtMs: 1000}
+      interaction: {name: synthetic-action-a, completed: true, observedAtMs: 2000}
+    expectValid: true
+    expectFrozen: true
+  - name: component resolution without interaction passes
+    check: resolution-component
+    record:
+      kind: component
+      identity: {kind: component, id: component-row-b, createdAtMs: 2000}
+      root: {mounted: true, observedAtMs: 2000}
+      theme: {expected: light, observed: light, source: synthetic-host-a, observedAtMs: 2000}
+    expectValid: true
+    expectFrozen: true
+  - name: component record resolved as product fails
+    check: resolution-product
+    record:
+      kind: component
+      identity: {kind: component, id: component-row-a, createdAtMs: 1000}
+      root: {mounted: true, observedAtMs: 1000}
+      theme: {expected: dark, observed: dark, source: synthetic-host-a, observedAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["kind", "at path", "repair:"]
+  - name: product record resolved as component fails
+    check: resolution-component
+    record:
+      kind: product
+      identity: {kind: product, id: product-row-a, createdAtMs: 1000}
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1000}
+      route: {observed: true, observedAtMs: 1000}
+      activeSection: {observed: true, observedAtMs: 1000}
+      view: {observed: true, observedAtMs: 1000}
+      theme: {expected: dark, observed: dark, source: synthetic-host-a, observedAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["chrome", "at path", "repair:"]
+  - name: component resolution with product-only field fails
+    check: resolution-component
+    record:
+      kind: component
+      identity: {kind: component, id: component-row-c, createdAtMs: 1000}
+      root: {mounted: true, observedAtMs: 1000}
+      chrome: {observed: true, observedAtMs: 1000}
+      theme: {expected: dark, observed: dark, source: synthetic-host-a, observedAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["chrome", "at path", "repair:"]
+  - name: product resolution with unobserved part fails
+    check: resolution-product
+    record:
+      kind: product
+      identity: {kind: product, id: product-row-c, createdAtMs: 1000}
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1000}
+      route: {observed: true, observedAtMs: 1000}
+      activeSection: {observed: true, observedAtMs: 1000}
+      view: {observed: false, observedAtMs: 1000}
+      theme: {expected: dark, observed: dark, source: synthetic-host-a, observedAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["view", "at path", "repair:"]
+  - name: product resolution with invalid theme fails
+    check: resolution-product
+    record:
+      kind: product
+      identity: {kind: product, id: product-row-d, createdAtMs: 1000}
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1000}
+      route: {observed: true, observedAtMs: 1000}
+      activeSection: {observed: true, observedAtMs: 1000}
+      view: {observed: true, observedAtMs: 1000}
+      theme: {expected: dark, observed: dusk, source: synthetic-host-a, observedAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["theme", "at path", "repair:"]
+  - name: resolution with mismatched identity branch fails
+    check: resolution-product
+    record:
+      kind: product
+      identity: {kind: component, id: component-row-a, createdAtMs: 1000}
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1000}
+      route: {observed: true, observedAtMs: 1000}
+      activeSection: {observed: true, observedAtMs: 1000}
+      view: {observed: true, observedAtMs: 1000}
+      theme: {expected: dark, observed: dark, source: synthetic-host-a, observedAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["identity", "at path", "repair:"]
+  - name: resolution with unknown field fails
+    check: resolution-product
+    record:
+      kind: product
+      identity: {kind: product, id: product-row-e, createdAtMs: 1000}
+      chrome: {observed: true, observedAtMs: 1000}
+      body: {observed: true, observedAtMs: 1000}
+      route: {observed: true, observedAtMs: 1000}
+      activeSection: {observed: true, observedAtMs: 1000}
+      view: {observed: true, observedAtMs: 1000}
+      theme: {expected: dark, observed: dark, source: synthetic-host-a, observedAtMs: 1000}
+      unlisted: unlisted-value
+    expectValid: false
+    expectedErrorContains: ["unlisted", "at path", "repair:"]
+  - name: resolution with malformed clock fails
+    check: resolution-product
+    record:
+      kind: product
+      identity: {kind: product, id: product-row-f, createdAtMs: 1000}
+      chrome: {observed: true, observedAtMs: -1}
+      body: {observed: true, observedAtMs: 1000}
+      route: {observed: true, observedAtMs: 1000}
+      activeSection: {observed: true, observedAtMs: 1000}
+      view: {observed: true, observedAtMs: 1000}
+      theme: {expected: dark, observed: dark, source: synthetic-host-a, observedAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["observedAtMs", "at path", "repair:"]

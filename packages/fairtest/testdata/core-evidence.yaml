@@ -1,0 +1,43 @@
+# Duplicate and freshness cases. Digests, scopes, clocks, and ceilings are
+# synthetic caller-owned test data. Scope ids never cross: the same digest is
+# new in a second scope.
+expectedCaseCount: 7
+cases:
+  - name: first observation is new
+    check: duplicates
+    scope: scope-a
+    digests: ["11111111111111111111111111111111"]
+    expectDuplicates: [false]
+  - name: repeat in scope is duplicate
+    check: duplicates
+    scope: scope-a
+    digests: ["11111111111111111111111111111111", "22222222222222222222222222222222", "11111111111111111111111111111111"]
+    expectDuplicates: [false, false, true]
+  - name: scopes stay independent
+    check: duplicates
+    scope: scope-b
+    digests: ["11111111111111111111111111111111"]
+    expectDuplicates: [false]
+  - name: fresh within ceiling
+    check: fresh
+    observedAtMs: 4000
+    nowMs: 5000
+    maxAgeMs: 1000
+    expectFresh: true
+  - name: stale beyond ceiling
+    check: fresh
+    observedAtMs: 0
+    nowMs: 5000
+    maxAgeMs: 1000
+    expectFresh: false
+  - name: future observation reads stale
+    check: fresh
+    observedAtMs: 6000
+    nowMs: 5000
+    maxAgeMs: 1000
+    expectFresh: false
+  - name: record rejects malformed digest
+    check: record
+    record: {identityId: "run-7", digest: "NOT-HEX", observedAtMs: 1000, scopeId: "scope-a"}
+    expectValid: false
+    expectedErrorContains: ["digest", "at path", "repair:"]

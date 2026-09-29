@@ -1,0 +1,55 @@
+# Required-name inventory and executable mutations for core-evidence.yaml.
+expectedCaseCount: 7
+requiredCaseNames:
+  - first observation is new
+  - repeat in scope is duplicate
+  - scopes stay independent
+  - fresh within ceiling
+  - stale beyond ceiling
+  - future observation reads stale
+  - record rejects malformed digest
+expectedMutationCount: 7
+requiredMutationNames:
+  - removing the repeat-is-duplicate record breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the check discriminator breaks the case shape
+  - deleting the digests breaks the case shape
+  - adding an unknown case field breaks exact membership
+  - inventing a check kind breaks the closed vocabulary
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing the repeat-is-duplicate record breaks the required inventory
+    kind: delete-record
+    target: repeat in scope is duplicate
+    expectedField: repeat in scope is duplicate
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: first observation is new
+    expectedField: first observation is new
+  - name: renaming the check discriminator breaks the case shape
+    kind: rename-field
+    target: fresh within ceiling
+    field: check
+    newField: kind
+    expectedField: check
+  - name: deleting the digests breaks the case shape
+    kind: delete-field
+    target: repeat in scope is duplicate
+    field: digests
+    expectedField: digests
+  - name: adding an unknown case field breaks exact membership
+    kind: unknown-field
+    target: first observation is new
+    field: theme
+    value: light
+    expectedField: theme
+  - name: inventing a check kind breaks the closed vocabulary
+    kind: bad-value
+    target: stale beyond ceiling
+    field: check
+    value: invented-check
+    expectedField: check
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document

@@ -1,0 +1,100 @@
+# Local bridge contract cases for the optional local bridge handoff.
+# A local invocation identity carries the closed local purpose, an owning run,
+# a distinct invocation id, the project, the exact adapter-selected target, and
+# a creation time. A producer purpose, a process purpose, or a producer evidence
+# row is refused before service startup. Declarations pair the local identity
+# with the shared bridge capability inventory; scenarios, provenance, and
+# readouts carry caller-owned names and values only. Readiness and cleanup
+# receipts must name the owning local invocation. Host notes and URLs are
+# synthetic; no endpoint, port, runner name, or app literal appears here.
+expectedCaseCount: 16
+cases:
+  - name: local-identity-valid
+    check: identity
+    identity: {purpose: "local", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+    expectValid: true
+  - name: local-identity-producer-purpose
+    check: identity
+    identity: {purpose: "producer", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["purpose", "at path", "repair:"]
+  - name: producer-row-rejected-as-local
+    check: identity
+    identity: {key: "product-dark", kind: "product", theme: "dark", identity: {kind: "product", id: "product-target-a", createdAtMs: 1000}, observedAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["purpose", "at path", "repair:"]
+  - name: local-identity-bad-invocation-id
+    check: identity
+    identity: {purpose: "local", runId: "local-run-a", invocationId: "Bad Invocation", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["invocationId", "at path", "repair:"]
+  - name: local-declaration-valid
+    check: declaration
+    identity: {purpose: "local", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+    capabilities: ["describe-target", "report-readiness", "cleanup-process"]
+    expectValid: true
+  - name: local-declaration-missing-capability
+    check: declaration
+    identity: {purpose: "local", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+    capabilities: ["describe-target"]
+    expectValid: false
+    expectedErrorContains: ["capabilities", "at path", "repair:"]
+  - name: local-scenario-valid
+    check: scenario
+    scenario: {route: "synthetic/route", fixture: "product-theme-rows", action: "select-map-section"}
+    expectValid: true
+  - name: local-scenario-empty-route
+    check: scenario
+    scenario: {route: "", fixture: "product-theme-rows", action: "select-map-section"}
+    expectValid: false
+    expectedErrorContains: ["route", "at path", "repair:"]
+  - name: local-provenance-valid
+    check: provenance
+    provenance: {source: "dist", root: "synthetic/dist", commit: "abc123", dirty: false, producedAtMs: 5000}
+    expectValid: true
+  - name: local-provenance-bad-dirty
+    check: provenance
+    provenance: {source: "dist", root: "synthetic/dist", commit: "abc123", dirty: "yes", producedAtMs: 5000}
+    expectValid: false
+    expectedErrorContains: ["dirty", "at path", "repair:"]
+  - name: local-readout-valid
+    check: readout
+    readout:
+      identity: {purpose: "local", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+      declaration: {kind: "local", identity: {kind: "local", id: "local-invoke-a", createdAtMs: 1000}, capabilities: ["report-readiness", "cleanup-process"]}
+      scenario: {route: "synthetic/route", fixture: "product-theme-rows", action: "select-map-section"}
+      provenance: {source: "dist", root: "synthetic/dist", commit: "abc123", dirty: false, producedAtMs: 5000}
+      url: "synthetic/route"
+    expectValid: true
+  - name: local-readout-foreign-declaration
+    check: readout
+    readout:
+      identity: {purpose: "local", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+      declaration: {kind: "local", identity: {kind: "local", id: "local-other", createdAtMs: 1000}, capabilities: ["report-readiness", "cleanup-process"]}
+      scenario: {route: "synthetic/route", fixture: "product-theme-rows", action: "select-map-section"}
+      provenance: {source: "dist", root: "synthetic/dist", commit: "abc123", dirty: false, producedAtMs: 5000}
+      url: "synthetic/route"
+    expectValid: false
+    expectedErrorContains: ["declaration", "at path", "repair:"]
+  - name: local-readiness-valid
+    check: readiness
+    identity: {purpose: "local", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+    readiness: {identityId: "local-invoke-a", host: "synthetic-loopback", port: 4311, ready: true, observedAtMs: 3000}
+    expectValid: true
+  - name: local-readiness-foreign-owner
+    check: readiness
+    identity: {purpose: "local", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+    readiness: {identityId: "local-other", host: "synthetic-loopback", port: 4311, ready: true, observedAtMs: 3000}
+    expectValid: false
+    expectedErrorContains: ["identityId", "at path", "repair:"]
+  - name: local-cleanup-valid
+    check: cleanup
+    identity: {purpose: "local", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+    cleanup: {identityId: "local-invoke-a", signal: "interrupted", reaped: true, portReleased: true, observedAtMs: 4000}
+    expectValid: true
+  - name: local-cleanup-bad-signal
+    check: cleanup
+    identity: {purpose: "local", runId: "local-run-a", invocationId: "local-invoke-a", project: "fairtest", targetId: "fairtest-graph-product", createdAtMs: 1000}
+    cleanup: {identityId: "local-invoke-a", signal: "exploded", reaped: true, portReleased: true, observedAtMs: 4000}
+    expectValid: false
+    expectedErrorContains: ["signal", "at path", "repair:"]

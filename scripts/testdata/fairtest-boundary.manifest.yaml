@@ -1,0 +1,56 @@
+# Required-name inventory and executable mutations for fairtest-boundary.yaml.
+expectedCaseCount: 8
+requiredCaseNames:
+  - root-package-pinned
+  - child-package-private
+  - packed-ui-entry-allowed
+  - packed-fairtest-source-rejected
+  - packed-fairtest-test-rejected
+  - child-core-source-allowed
+  - root-relative-escape-rejected
+  - bare-runner-specifier-rejected
+expectedMutationCount: 7
+requiredMutationNames:
+  - removing the packed-fairtest-source-rejected record breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the check discriminator breaks the case shape
+  - deleting the pack path breaks the case shape
+  - adding an unknown case field breaks exact membership
+  - inventing a check kind breaks the closed vocabulary
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing the packed-fairtest-source-rejected record breaks the required inventory
+    kind: delete-record
+    target: packed-fairtest-source-rejected
+    expectedField: packed-fairtest-source-rejected
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: root-package-pinned
+    expectedField: root-package-pinned
+  - name: renaming the check discriminator breaks the case shape
+    kind: rename-field
+    target: packed-ui-entry-allowed
+    field: check
+    newField: kind
+    expectedField: check
+  - name: deleting the pack path breaks the case shape
+    kind: delete-field
+    target: packed-ui-entry-allowed
+    field: path
+    expectedField: path
+  - name: adding an unknown case field breaks exact membership
+    kind: unknown-field
+    target: child-core-source-allowed
+    field: theme
+    value: light
+    expectedField: theme
+  - name: inventing a check kind breaks the closed vocabulary
+    kind: bad-value
+    target: child-package-private
+    field: check
+    value: invented-check
+    expectedField: check
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document

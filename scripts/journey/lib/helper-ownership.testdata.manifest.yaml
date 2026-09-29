@@ -1,0 +1,52 @@
+# Required-name inventory and executable mutations for
+# helper-ownership.testdata.yaml.
+expectedCaseCount: 14
+requiredCaseNames:
+  - helper-constants-frozen-epoch
+  - helper-constants-prng-seed
+  - helper-determinism-install
+  - helper-determinism-frozen-epoch-reexport
+  - helper-determinism-prng-seed-reexport
+  - helper-assertions-axe-tags
+  - helper-assertions-axe-result-fields
+  - helper-assertions-scan-axe
+  - helper-assertions-serious-violations
+  - helper-assertions-expect-theme
+  - helper-assertions-expect-computed-tokens
+  - helper-fixtures-test
+  - helper-fixtures-expect
+  - helper-fixtures-story-url
+expectedMutationCount: 5
+requiredMutationNames:
+  - duplicating the expect-theme name breaks uniqueness
+  - renaming the owner field breaks the case shape
+  - adding an unknown helper field breaks exact membership
+  - assigning browser behavior to the core breaks the owner rule
+  - dropping the declared axe result shape breaks the required inventory
+mutations:
+  - name: duplicating the expect-theme name breaks uniqueness
+    kind: duplicate-name
+    target: helper-assertions-expect-theme
+    expectedField: helper-assertions-expect-theme
+  - name: renaming the owner field breaks the case shape
+    kind: rename-field
+    target: helper-determinism-install
+    field: owner
+    newField: group
+    expectedField: owner
+  - name: adding an unknown helper field breaks exact membership
+    kind: unknown-field
+    target: helper-constants-prng-seed
+    field: budget
+    value: low
+    expectedField: budget
+  - name: assigning browser behavior to the core breaks the owner rule
+    kind: bad-value
+    target: helper-determinism-install
+    field: owner
+    value: browser-neutral-core-policy
+    expectedField: owner
+  - name: dropping the declared axe result shape breaks the required inventory
+    kind: delete-record
+    target: helper-assertions-axe-result-fields
+    expectedField: helper-assertions-axe-result-fields

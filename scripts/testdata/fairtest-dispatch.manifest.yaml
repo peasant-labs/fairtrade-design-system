@@ -1,0 +1,111 @@
+# Required-name inventory and executable mutations for fairtest-dispatch.yaml.
+#
+# The guard (scripts/fairtest/assert-target-dispatch.mjs) owns no case data;
+# every detection case and mutation lives here. Each mutation writes a scratch
+# module carrying one evasion form and proves the guard refuses it, naming the
+# offending expression; one plants its module in a scratch subdirectory to pin
+# the recursive walk. Each mutation must fail for its intended diagnostic.
+expectedDetectionCaseCount: 14
+requiredDetectionCaseNames:
+  - direct-equality
+  - reversed-equality
+  - bracket-equality
+  - parenthesized-equality
+  - switch-case
+  - includes-array
+  - aliased-equality
+  - destructured-equality
+  - kind-read-clean
+  - comment-mention-clean
+  - string-mention-clean
+  - unrelated-switch-clean
+  - proof-assertion-clean
+  - object-literal-clean
+expectedMutationCount: 9
+requiredMutationNames:
+  - plant-direct-equality
+  - plant-reversed-equality
+  - plant-bracket-equality
+  - plant-parenthesized-equality
+  - plant-switch-case
+  - plant-includes-array
+  - plant-aliased-equality
+  - plant-destructured-equality
+  - plant-nested-direct-equality
+mutations:
+  - name: plant-direct-equality
+    kind: plant-source
+    source: |
+      export function pick(target) {
+        if (target.kind === 'product') return 'product'
+        return 'component'
+      }
+    expectedDiagnostic: kind === 'product'
+  - name: plant-reversed-equality
+    kind: plant-source
+    source: |
+      export function pick(target) {
+        if ('product' === target.kind) return 'product'
+        return 'component'
+      }
+    expectedDiagnostic: "'product' === target.kind"
+  - name: plant-bracket-equality
+    kind: plant-source
+    source: |
+      export function pick(target) {
+        if (target['kind'] === 'component') return 1
+        return 2
+      }
+    expectedDiagnostic: "target['kind'] === 'component'"
+  - name: plant-parenthesized-equality
+    kind: plant-source
+    source: |
+      export function pick(target) {
+        if ((target.kind) === 'product') return 'product'
+        return 'component'
+      }
+    expectedDiagnostic: "(target.kind) === 'product'"
+  - name: plant-switch-case
+    kind: plant-source
+    source: |
+      export function pick(target) {
+        switch (target.kind) {
+          case 'product':
+            return 1
+          default:
+            return 2
+        }
+      }
+    expectedDiagnostic: "case 'product'"
+  - name: plant-includes-array
+    kind: plant-source
+    source: |
+      export function pick(target) {
+        return ['product', 'component'].includes(target.kind)
+      }
+    expectedDiagnostic: .includes(target.kind)
+  - name: plant-aliased-equality
+    kind: plant-source
+    source: |
+      export function pick(target) {
+        const k = target.kind
+        return k === 'product'
+      }
+    expectedDiagnostic: k === 'product'
+  - name: plant-destructured-equality
+    kind: plant-source
+    source: |
+      export function pick(target) {
+        const { kind: k } = target
+        return k === 'product'
+      }
+    expectedDiagnostic: k === 'product'
+  - name: plant-nested-direct-equality
+    kind: plant-source
+    nested: true
+    source: |
+      export function pick(target) {
+        if (target.kind === 'component') return 'component'
+        return 'product'
+      }
+    expectedDiagnostic: kind === 'component'

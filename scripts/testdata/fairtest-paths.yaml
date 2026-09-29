@@ -1,0 +1,143 @@
+# Fairtest path-owner guard corpus.
+#
+# The path owner (scripts/fairtest/fairtest-paths.mjs) is the single place the
+# repo-relative locations the harness names are declared. Two guards keep it
+# that way:
+#
+#   1. the raw-literal path guard refuses a bare string literal that equals a
+#      declared root or a repo-relative path under one, in any module under
+#      scripts/fairtest/ (test modules included, except the fixture carriers
+#      the owner declares) or in the Fairtest root guards, outside the owner.
+#      A substitution-free template literal is treated as its text, so a path
+#      cannot hide behind a backtick; a template that carries a substitution
+#      keeps its text opaque and only its ${...} expressions are scanned; and
+#   2. the path-resolution guard proves every declared location resolves to an
+#      absolute path inside FAIRTEST_REPO_ROOT and that a traversal or escape
+#      input is refused with the repository's path-context repair idiom.
+#
+# This corpus holds the guard validation cases as data. `literalCases` feed the
+# raw-literal scanner a source snippet and expect either a detection naming the
+# offending literal or a clean result (the owner read, a relative module
+# import, a MIME type, a child-relative source spec, a comment mention, or a
+# substituted-template text). `resolutionCases` exercise the resolver: a
+# declared name resolves inside the root, and traversal, absolute, empty,
+# dot-segment, windows, and unknown-name inputs are refused with the diagnostic
+# fragment the case names. Every mutation lives in the manifest beside this
+# file; the guard owns no case data.
+literalCases:
+  - name: raw-dist-root
+    source: |
+      const DIST_ROOT = join(FAIRTEST_REPO_ROOT, 'dist')
+    expect: detected
+    expectedLiteral: dist
+  - name: raw-storybook-root
+    source: |
+      root: 'storybook-static',
+    expect: detected
+    expectedLiteral: storybook-static
+  - name: raw-child-package
+    source: |
+      const ROUTE_MARKER = 'packages/fairtest'
+    expect: detected
+    expectedLiteral: packages/fairtest
+  - name: raw-node-modules
+    source: |
+      if (entry.name === 'node_modules') continue
+    expect: detected
+    expectedLiteral: node_modules
+  - name: raw-testdata-corpus
+    source: |
+      const CORPUS_REL = 'scripts/testdata/fairtest-new.yaml'
+    expect: detected
+    expectedLiteral: scripts/testdata/fairtest-new.yaml
+  - name: raw-ci-workflow
+    source: |
+      const REQUIRED_CI_REL = '.github/workflows/ci.yml'
+    expect: detected
+    expectedLiteral: .github/workflows/ci.yml
+  - name: owner-member-read
+    source: |
+      const root = FAIRTEST_PATHS.storybookRoot
+    expect: clean
+    expectedLiteral: ""
+  - name: owner-resolver-call
+    source: |
+      const root = fairtestPath('distRoot')
+    expect: clean
+    expectedLiteral: ""
+  - name: relative-module-import
+    source: |
+      import { x } from './fairtrade-targets.mjs'
+    expect: clean
+    expectedLiteral: ""
+  - name: mime-type-literal
+    source: |
+      const type = 'image/png'
+    expect: clean
+    expectedLiteral: ""
+  - name: child-relative-spec
+    source: |
+      await importFairtestSource('src/core/values.mjs')
+    expect: clean
+    expectedLiteral: ""
+  - name: template-text-mention
+    source: |
+      const message = `field "dist" at path driver.distRoot`
+    expect: clean
+    expectedLiteral: ""
+  - name: template-literal-path
+    source: |
+      const DIST_ROOT = `scripts/testdata/fairtest-new.yaml`
+    expect: detected
+    expectedLiteral: scripts/testdata/fairtest-new.yaml
+  - name: template-substitution-kept
+    source: |
+      const DIST_ROOT = `scripts/testdata/${name}.yaml`
+    expect: clean
+    expectedLiteral: ""
+resolutionCases:
+  - name: declared-dist-inside
+    operation: resolve-name
+    target: distRoot
+    expect: inside
+    expectedDiagnostic: ""
+  - name: declared-corpus-inside
+    operation: resolve-name
+    target: boundaryCorpus
+    expect: inside
+    expectedDiagnostic: ""
+  - name: traversal-refused
+    operation: resolve-candidate
+    target: ../escape
+    expect: refused
+    expectedDiagnostic: parent-directory
+  - name: absolute-refused
+    operation: resolve-candidate
+    target: /etc/hostname
+    expect: refused
+    expectedDiagnostic: absolute
+  - name: nested-traversal-refused
+    operation: resolve-candidate
+    target: scripts/../escape
+    expect: refused
+    expectedDiagnostic: parent-directory
+  - name: backslash-refused
+    operation: resolve-candidate
+    target: 'scripts\fairtest'
+    expect: refused
+    expectedDiagnostic: windows separators
+  - name: empty-refused
+    operation: resolve-candidate
+    target: ""
+    expect: refused
+    expectedDiagnostic: non-empty
+  - name: dot-segment-refused
+    operation: resolve-candidate
+    target: scripts/./testdata
+    expect: refused
+    expectedDiagnostic: current-directory
+  - name: unknown-name-refused
+    operation: resolve-name
+    target: noSuchLocation
+    expect: refused
+    expectedDiagnostic: unknown location

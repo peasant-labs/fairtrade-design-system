@@ -1,0 +1,52 @@
+# Host-contract opaque handle cases. Tokens and flags are synthetic
+# caller-owned test data. Live references cannot be expressed in YAML, so the
+# executable cases cover structured, path-shaped, scheme-shaped, and blank
+# tokens; the test file adds small structural asserts for function and
+# instance tokens. No runner, route, selector, or product meaning is pinned.
+expectedCaseCount: 9
+cases:
+  - name: opaque handle passes
+    check: handle
+    record: {token: synthetic-handle-a, revoked: false}
+    expectValid: true
+    expectFrozen: true
+  - name: revoked opaque handle passes
+    check: handle
+    record: {token: synthetic-handle-b, revoked: true}
+    expectValid: true
+    expectFrozen: true
+  - name: handle with object token fails
+    check: handle
+    record: {token: {nested: synthetic-handle-a}, revoked: false}
+    expectValid: false
+    expectedErrorContains: ["token", "at path", "repair:"]
+  - name: handle with traversal token fails
+    check: handle
+    record: {token: ../escape, revoked: false}
+    expectValid: false
+    expectedErrorContains: ["token", "at path", "repair:"]
+  - name: handle with scheme token fails
+    check: handle
+    record: {token: "host:handle", revoked: false}
+    expectValid: false
+    expectedErrorContains: ["token", "at path", "repair:"]
+  - name: handle with empty token fails
+    check: handle
+    record: {token: "", revoked: false}
+    expectValid: false
+    expectedErrorContains: ["token", "at path", "repair:"]
+  - name: handle missing revoked fails
+    check: handle
+    record: {token: synthetic-handle-c}
+    expectValid: false
+    expectedErrorContains: ["revoked", "at path", "repair:"]
+  - name: handle with unknown dereference field fails
+    check: handle
+    record: {token: synthetic-handle-d, revoked: false, dereference: true}
+    expectValid: false
+    expectedErrorContains: ["dereference", "at path", "repair:"]
+  - name: handle with non-boolean revoked fails
+    check: handle
+    record: {token: synthetic-handle-e, revoked: later}
+    expectValid: false
+    expectedErrorContains: ["revoked", "at path", "repair:"]

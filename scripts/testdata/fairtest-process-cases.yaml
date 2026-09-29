@@ -1,0 +1,36 @@
+# Process supervisor case family for the CI process entry point.
+#
+# Each case names one real OS child lifecycle the supervisor drives in its own
+# process group: a clean stop, a partial start that never reports readiness, a
+# bounded timeout that outlives its internal deadline, and a signal
+# interruption. The limits carry the deadline invariant the receipt relies on:
+# the readiness window fits inside the internal supervisor deadline and the
+# outer fail-safe stays strictly longer than it, so the supervisor always has
+# room to observe cleanup first. Ports, temporary roots, and child commands are
+# chosen at run time and never appear here.
+expectedCaseCount: 4
+cases:
+  - name: process-normal-stop
+    scenario: normal
+    limits: {readinessDeadlineMs: 5000, supervisorDeadlineMs: 12000, outerDeadlineMs: 20000, graceMs: 500}
+    outcome: stopped
+    expectReady: true
+    deadlineExceeded: false
+  - name: process-partial-start
+    scenario: partial-start
+    limits: {readinessDeadlineMs: 1200, supervisorDeadlineMs: 8000, outerDeadlineMs: 20000, graceMs: 500}
+    outcome: readiness-failed
+    expectReady: false
+    deadlineExceeded: false
+  - name: process-bounded-timeout
+    scenario: timeout
+    limits: {readinessDeadlineMs: 1500, supervisorDeadlineMs: 1800, outerDeadlineMs: 20000, graceMs: 600}
+    outcome: deadline-exceeded
+    expectReady: true
+    deadlineExceeded: true
+  - name: process-sigterm-interruption
+    scenario: interruption
+    limits: {readinessDeadlineMs: 5000, supervisorDeadlineMs: 12000, outerDeadlineMs: 20000, graceMs: 500}
+    outcome: interrupted
+    expectReady: true
+    deadlineExceeded: false

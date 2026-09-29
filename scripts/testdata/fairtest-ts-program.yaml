@@ -1,0 +1,70 @@
+# Fairtest type-program coverage corpus.
+#
+# The type program (tsconfig.fairtest.json) uses `checkJs: false` plus a
+# per-file `// @ts-check` pragma, because tsconfig.exclude does NOT remove an
+# imported file from a checkJs:true program: the only legal exception is a file
+# that carries no pragma. This corpus is the closed record of what is covered,
+# what is exempt, and what pre-existing escape hatches are acknowledged, so a
+# coverage reduction or a new escape hatch cannot pass silently.
+#
+# `coveredRoots` are directories walked recursively for `*.mjs`; `rootScripts`
+# are the Fairtest root scripts enumerated one by one (never an ambiguous
+# pattern). The guard asserts the walked set equals the file set this program
+# actually contains under those roots, compared against `tsc --listFiles`, so a
+# narrowed include glob cannot shrink coverage unnoticed.
+#
+# The vendored bodies are byte-frozen copies that consumers vendor from this
+# repository. On the CONSUMER side they open with a `VENDORED from ...` banner
+# (verified in village's journey vendor guard). On the SOURCE side in this
+# repository they instead carry the canonical-copy sentence below, which is the
+# marker the guard detects. The guard derives the vendored set from the files
+# carrying that marker and asserts EXACT membership (not a count) against
+# `vendoredBodies`, so the allowlist can neither silently grow nor shrink.
+#
+# `acknowledgedAny` is the recorded justification for explicit `any` type
+# positions that predate this program. The count per file IS the contract: no
+# new explicit `any` may appear and none may silently disappear. A later
+# conformance pass removes these and drops each file from the ledger when its
+# count reaches zero.
+compilerConfig: tsconfig.fairtest.json
+pragmaMarker: // @ts-check
+coveredRoots:
+  - packages/fairtest/src
+  - packages/fairtest/test
+  - scripts/fairtest
+  - scripts/journey/lib
+rootScripts:
+  - scripts/assert-fairtest-boundary.mjs
+  - scripts/assert-test-promotion.mjs
+  - scripts/fairtest-runner-inventory.mjs
+  - scripts/fairtest-single-document.mjs
+  - scripts/fairtest-source.mjs
+  - scripts/fairtest-surface-manifest.mjs
+vendoredMarker: canonical copy consumers vendor
+vendoredBodies:
+  - scripts/journey/lib/assertions.mjs
+  - scripts/journey/lib/determinism-constants.mjs
+  - scripts/journey/lib/determinism.mjs
+refusedDirectives:
+  - '@ts-nocheck'
+  - '@ts-ignore'
+anyProbe: "/** @type {Array<\n *   any\n * >} */"
+acknowledgedAny:
+  - file: packages/fairtest/test/bridge-contract.test.mjs
+    count: 5
+  - file: packages/fairtest/test/evidence-mutations.mjs
+    count: 10
+  - file: scripts/fairtest/component-producer.mjs
+    count: 3
+  - file: scripts/fairtest/preflight-fairtest.mjs
+    count: 1
+  - file: scripts/fairtest/product-adapter.test.mjs
+    count: 4
+  - file: scripts/fairtest/product-producer.mjs
+    count: 2
+  - file: scripts/fairtest/run-envelope-contract.mjs
+    count: 3
+  - file: scripts/fairtest/run-envelope.test.mjs
+    count: 16
+  - file: scripts/fairtest/verify-fairtest.mjs
+    count: 2

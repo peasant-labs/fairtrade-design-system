@@ -1,0 +1,39 @@
+# Immutable identity cases. Kinds, ids, and clocks are synthetic caller-owned
+# test data. No caller kind list is pinned by the core.
+expectedCaseCount: 7
+cases:
+  - name: create accepts frozen run identity
+    action: create
+    input: {kind: "run", id: "run-7", createdAtMs: 1000}
+    expectValid: true
+    expectFrozen: true
+  - name: create rejects uppercase id
+    action: create
+    input: {kind: "run", id: "Run-7", createdAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["id", "at path", "repair:"]
+  - name: create rejects negative clock
+    action: create
+    input: {kind: "run", id: "run-7", createdAtMs: -1}
+    expectValid: false
+    expectedErrorContains: ["createdAtMs", "at path", "repair:"]
+  - name: create rejects unknown field
+    action: create
+    input: {kind: "run", id: "run-7", createdAtMs: 1000, label: "extra"}
+    expectValid: false
+    expectedErrorContains: ["label", "at path", "repair:"]
+  - name: same identity matches kind and id
+    action: same
+    first: {kind: "run", id: "run-7", createdAtMs: 1000}
+    second: {kind: "run", id: "run-7", createdAtMs: 2000}
+    expectSame: true
+  - name: same identity differs across kind
+    action: same
+    first: {kind: "run", id: "run-7", createdAtMs: 1000}
+    second: {kind: "record", id: "run-7", createdAtMs: 1000}
+    expectSame: false
+  - name: validate rejects blank kind
+    action: create
+    input: {kind: "   ", id: "run-7", createdAtMs: 1000}
+    expectValid: false
+    expectedErrorContains: ["kind", "at path", "repair:"]

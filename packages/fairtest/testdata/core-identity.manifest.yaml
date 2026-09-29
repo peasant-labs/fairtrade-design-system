@@ -1,0 +1,55 @@
+# Required-name inventory and executable mutations for core-identity.yaml.
+expectedCaseCount: 7
+requiredCaseNames:
+  - create accepts frozen run identity
+  - create rejects uppercase id
+  - create rejects negative clock
+  - create rejects unknown field
+  - same identity matches kind and id
+  - same identity differs across kind
+  - validate rejects blank kind
+expectedMutationCount: 7
+requiredMutationNames:
+  - removing the frozen-identity record breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the action discriminator breaks the case shape
+  - deleting the input breaks the case shape
+  - adding an unknown case field breaks exact membership
+  - inventing an action breaks the closed vocabulary
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing the frozen-identity record breaks the required inventory
+    kind: delete-record
+    target: create accepts frozen run identity
+    expectedField: create accepts frozen run identity
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: same identity matches kind and id
+    expectedField: same identity matches kind and id
+  - name: renaming the action discriminator breaks the case shape
+    kind: rename-field
+    target: create rejects uppercase id
+    field: action
+    newField: operation
+    expectedField: action
+  - name: deleting the input breaks the case shape
+    kind: delete-field
+    target: create rejects negative clock
+    field: input
+    expectedField: input
+  - name: adding an unknown case field breaks exact membership
+    kind: unknown-field
+    target: create accepts frozen run identity
+    field: route
+    value: "/?app=graph"
+    expectedField: route
+  - name: inventing an action breaks the closed vocabulary
+    kind: bad-value
+    target: same identity differs across kind
+    field: action
+    value: invented-action
+    expectedField: action
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document

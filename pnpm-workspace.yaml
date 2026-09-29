@@ -1,6 +1,8 @@
-# pnpm workspace. The root (.) is the publishable private design-system package
-# plus the local presentation app. packages/* can hold generated artifact folders,
-# but package publication now happens from the root @peasant-labs/fairtrade-lib.
+# pnpm workspace. The root (.) is the publishable @peasant-labs/fairtrade runtime
+# package plus the local presentation app. packages/* enrolls workspace children;
+# packages/tokens is a generated artifact directory, not a package. A fairtest
+# private workspace source package, if added, stays unpublished and outside the
+# runtime exports, dependencies, and packed files.
 packages:
   - '.'
   - 'packages/*'
@@ -23,3 +25,13 @@ allowBuilds:
 minimumReleaseAge: 4320
 minimumReleaseAgeExclude:
   - '@peasant-labs/*'
+
+# Node engine enforcement: pnpm 11 enforces a project's declared `engines` at
+# install time (ERR_PNPM_UNSUPPORTED_ENGINE), so an out-of-contract Node fails
+# the install instead of only warning. Install-time only: this does NOT gate
+# test execution on an already-installed tree, so a Fairtest command run under
+# an out-of-contract Node with dependencies present still produces a confusing
+# partial-suite result. The setting lives here because pnpm 11 reads non-auth
+# settings from pnpm-workspace.yaml, not from .npmrc.
+# https://pnpm.io/settings/cli#enginestrict
+engineStrict: true
