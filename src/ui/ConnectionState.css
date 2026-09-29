@@ -321,6 +321,9 @@
    the plain-language message (body face, 16px, capped measure), then one row of
    actions: the command chip, `try again`, and the quiet `last checked` time. */
 .cx-offline {
+  /* a full-width page notice: the base layer's centred <section> width does not apply */
+  max-width: none;
+  margin: 0;
   display: flex;
   align-items: flex-start;
   gap: var(--sp-3);

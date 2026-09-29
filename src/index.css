@@ -2239,7 +2239,7 @@
   .iu-page-titlerow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
   .iu-page-context { margin: 0; display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .iu-page-context .lucide { width: var(--ic-sm); height: var(--ic-sm); }
-  .iu-page-callout { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-4); border: var(--bd-strong); background: var(--surface-2); }
+  .iu-page-callout { max-width: none; margin: 0; display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-4); border: var(--bd-strong); background: var(--surface-2); }
   .iu-page-callout-text { margin: 0; font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); }
   .iu-page-callout-text strong { color: var(--ink-strong); }
   .iu-page-callout-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-1); }
