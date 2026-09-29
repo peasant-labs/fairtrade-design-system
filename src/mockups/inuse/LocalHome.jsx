@@ -82,7 +82,7 @@ export function HomeView({ renderState = renderPublishState }) {
   return (
     <div className="iu-page">
       <header className="iu-page-head">
-        <h2 className="iu-page-title">your sessions</h2>
+        <h2 className="iu-page-title" data-chrome-heading>your sessions</h2>
         <p className="iu-page-sub"><span className="tnum">{HOME_SUMMARY.published}</span> of <span className="tnum">{HOME_SUMMARY.total.toLocaleString('en-US')}</span> published. the rest stay on this machine.</p>
       </header>
 
@@ -171,7 +171,7 @@ export function SettingsView() {
   return (
     <div className="iu-page">
       <header className="iu-page-head">
-        <h2 className="iu-page-title">settings</h2>
+        <h2 className="iu-page-title" data-chrome-heading>settings</h2>
         <p className="iu-page-sub">changes save right away. anything tagged not in peasant config can only be changed on this page.</p>
       </header>
       <StatsStrip items={SETTINGS_SUMMARY} label="settings summary" />

@@ -80,29 +80,29 @@ headingCase:
   graphSession:
     name: graph user heading
     app: graph
-    section: changes
+    section: home
     targetSelector: '#gmp-session-destination-title'
     expectedText: Verify map session links
     expectedTextTransform: none
     bodySelector: .gmp-session-destination
-  publish:
-    name: publish chrome heading
+  home:
+    name: home chrome heading
     app: commons
-    section: publish
-    targetSelector: h2.cmg-title
-    expectedText: publishing dashboard
+    section: home
+    targetSelector: h2.iu-page-title
+    expectedText: your transcripts
     expectedTextTransform: lowercase
     expectedAttribute: data-chrome-heading
     requireAriaCurrent: true
-    bodySelector: .cmg-page
+    bodySelector: .cmg-home
   detail:
-    name: manage detail mixed heading
+    name: collective mixed heading
     app: commons
     section: collectives
-    targetSelector: h2.cmg-title
-    expectedText: AI Research Team
+    targetSelector: h2.iu-page-title
+    expectedText: Acme Platform
     expectedTextTransform: none
-    bodySelector: .cmg-detail
+    bodySelector: .cmg-policies
   contribute:
     name: manage contribute mixed headings
     app: commons
@@ -117,14 +117,12 @@ fullShell:
     - iu-tab-commons
     - iu-tab-graph
   graphSections:
-    - analytics
-    - changes
-    - code map
+    - home
+    - settings
   villageSections:
-    - explore
+    - home
     - collectives
-    - publish
-    - profile
+    - '@alice-dev'
   barSelector: .iu-bar
   stageSelector: '#inuse-stage'
   rootSelector: '#inuse'
@@ -136,15 +134,15 @@ mutations:
   expectedMutationCount: 2
   requiredMutationNames:
     - restore global lowercase
-    - remove publish chrome annotation
+    - remove home chrome annotation
   cases:
     - name: restore global lowercase
       file: src/index.css
       find: '@apply font-display text-ink-strong;'
       replace: '@apply font-display text-ink-strong lowercase;'
       expectedFailure: user heading computed transform
-    - name: remove publish chrome annotation
-      file: src/mockups/inuse/CommonsManage.jsx
-      find: '<h2 className="cmg-title" data-chrome-heading>publishing dashboard</h2>'
-      replace: '<h2 className="cmg-title">publishing dashboard</h2>'
+    - name: remove home chrome annotation
+      file: src/mockups/inuse/CommonsPages.jsx
+      find: '<h2 className="iu-page-title" data-chrome-heading>your transcripts</h2>'
+      replace: '<h2 className="iu-page-title">your transcripts</h2>'
       expectedFailure: chrome heading computed transform

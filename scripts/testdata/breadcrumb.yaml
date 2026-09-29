@@ -107,13 +107,18 @@ cases:
     theme: dark
     expected:
       rootSelector: "#inuse"
-      detailSelector: .cmg-detail
+      collectiveLinkSelector: .cmg-table-link
+      detailSelector: ".iu-page:has(.cmg-policies)"
+      detailMarkers:
+        - .cmg-policies
+        - .cmg-home-main
       breadcrumbSelector: ".cmg-crumb nav[aria-label=\"breadcrumb\"]"
       breadcrumbLabel: breadcrumb
+      itemCount: 2
+      chromeItemCount: 1
       linkHrefs:
-        - "#village"
-        - "#collectives"
-      collectiveTitle: AI Research Team
+        - "?app=commons&commons=collectives#inuse"
+      collectiveTitle: Acme Platform
       currentSelector: ".cmg-crumb .cur"
       contentSelector: ".cmg-crumb .cur .crumb-item"
       chromeSelector: ".cmg-crumb .crumb-item-chrome"
@@ -125,13 +130,18 @@ cases:
     theme: light
     expected:
       rootSelector: "#inuse"
-      detailSelector: .cmg-detail
+      collectiveLinkSelector: .cmg-table-link
+      detailSelector: ".iu-page:has(.cmg-policies)"
+      detailMarkers:
+        - .cmg-policies
+        - .cmg-home-main
       breadcrumbSelector: ".cmg-crumb nav[aria-label=\"breadcrumb\"]"
       breadcrumbLabel: breadcrumb
+      itemCount: 2
+      chromeItemCount: 1
       linkHrefs:
-        - "#village"
-        - "#collectives"
-      collectiveTitle: AI Research Team
+        - "?app=commons&commons=collectives#inuse"
+      collectiveTitle: Acme Platform
       currentSelector: ".cmg-crumb .cur"
       contentSelector: ".cmg-crumb .cur .crumb-item"
       chromeSelector: ".cmg-crumb .crumb-item-chrome"

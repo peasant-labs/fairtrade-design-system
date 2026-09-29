@@ -55,7 +55,7 @@ export function SignInPage({ onSignIn }) {
     <div className="iu-page cmg-signin">
       <div className="cmg-signin-card">
         <p className="cmg-signin-brand mono">village</p>
-        <h2 className="iu-page-title">the agent sessions behind your team&apos;s pull requests</h2>
+        <h2 className="iu-page-title" data-chrome-heading>the agent sessions behind your team&apos;s pull requests</h2>
         <p className="iu-page-sub">peasant records your AI coding sessions on your machine. village keeps the ones you publish, shared with your collectives, and links them to pull requests.</p>
         <SignInProviders onSignIn={onSignIn} />
         <ul className="cmg-signin-notes">
@@ -97,7 +97,7 @@ export function VillageHome({ onNavigate }) {
   return (
     <div className="iu-page">
       <header className="iu-page-head">
-        <h2 className="iu-page-title">your transcripts</h2>
+        <h2 className="iu-page-title" data-chrome-heading>your transcripts</h2>
         <p className="iu-page-sub">sessions you published from peasant. only the collectives you picked can read each one.</p>
       </header>
       <StatsStrip items={HOME_STATS} label="your transcripts in numbers" />
@@ -200,7 +200,7 @@ export function AccountSettingsView({ actions = {} } = {}) {
     <>
       <div className="iu-page cmg-settings">
         <header className="iu-page-head">
-          <h2 className="iu-page-title">your settings</h2>
+          <h2 className="iu-page-title" data-chrome-heading>your settings</h2>
           <p className="iu-page-sub">switches apply right away. text changes when you press edit.</p>
         </header>
         <SettingGroup label="profile" defaultOpen>

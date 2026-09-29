@@ -6,7 +6,8 @@
  *
  * The existing live-compositor SurfaceGate is used for every image. Navigation
  * follows the same mounted controls as the product: app tabs, section tabs,
- * collective cards, role controls, and action buttons. */
+ * the collectives table, overflow menus, and action buttons. Surfaces that left
+ * the nav but kept their routes are opened by route. */
 import assert from 'node:assert/strict'
 import puppeteer from 'puppeteer-core'
 import { existsSync, mkdirSync } from 'node:fs'
@@ -178,7 +179,9 @@ const assertFullShell = async ({ app, section, targetSelector, targetText, bodyS
       bodyIntersectsShell: intersects(bodyBox, rootBox),
     }
   }, { app, section, targetSelector, targetText, bodySelector, requireAriaCurrent })
-  const expectedSections = app === 'graph' ? ['analytics', 'changes', 'code map'] : ['explore', 'collectives', 'publish', 'profile']
+  // the home-first registries: peasant shows home and settings (analytics, changes and code map open by
+  // route), village shows home and collectives with the account link at the end of its nav
+  const expectedSections = app === 'graph' ? ['home', 'settings'] : ['home', 'collectives', '@alice-dev']
   const shellMessage = (property, expected, observed) => actionableMessage({
     what: `${app}/${section} full-shell ${property} is invalid`,
     why: 'the capture must prove the mounted app chrome and target body before saving a production-path image',
@@ -222,89 +225,66 @@ const prove = async () => {
   await assertServedBuildProvenance({ mode: 'feature', origin: url, distRoot: DIST_ROOT, observedJavaScriptPaths: [...observer.paths], observedForeignOrigins: [...observer.foreignOrigins], marker: 'crumb-item-chrome', base: featureIdentity.base, expectedHead: featureIdentity.expectedHead, expectedBranch: featureIdentity.expectedBranch })
 }
 
-const gotoApp = async (app, navLabel) => {
-  await page.goto(`${url}&app=${app}`, { waitUntil: 'networkidle0' })
+const gotoApp = async (app, navLabel, query = '') => {
+  await page.goto(`${url}&app=${app}${query}`, { waitUntil: 'networkidle0' })
   await waitForApp(app, navLabel)
 }
 
+const openCollective = async (purpose) => {
+  await gotoApp('commons', 'village sections')
+  await clickNavItem('village sections', 'collectives')
+  await page.waitForSelector('.cmg-table-link', { timeout: 15000 })
+  const link = await page.evaluateHandle(() => [...document.querySelectorAll('.cmg-table-link')].find((candidate) => candidate.textContent.trim() === 'Acme Platform') ?? null)
+  const linkElement = link.asElement()
+  assert.ok(linkElement, actionableMessage({
+    what: `exact Acme Platform collective link is missing for the ${purpose} capture`,
+    why: 'the capture must follow the production link a user clicks in the collectives table',
+    where: `shootmanage.mjs ${purpose} capture`,
+    when: 'after the collectives section is active',
+    impact: 'the requested collective surface cannot be captured from the production shell',
+    remedy: 'verify the exact feature preview and update the capture only if the production collective fixture changed',
+    expected: 'a visible .cmg-table-link with exact text Acme Platform',
+    observed: 'no matching .cmg-table-link was mounted',
+  }))
+  await linkElement.click()
+  await page.waitForSelector('.cmg-policies', { timeout: 15000 })
+}
+
 try {
-  await gotoApp('graph', 'peasant sections')
-  await clickNavItem('peasant sections', 'changes')
+  // changes is route-only in the home-first registry, so the session destination is reached by route
+  await gotoApp('graph', 'peasant sections', '&section=changes')
   await page.waitForSelector('.cg-history-row[data-commit-hash="c1d4a3"] .tlp-overflow-toggle', { timeout: 15000 })
   await page.click('.cg-history-row[data-commit-hash="c1d4a3"] .tlp-overflow-toggle')
   await page.waitForFunction(() => [...document.querySelectorAll('.cg-history-row[data-commit-hash="c1d4a3"] .tlp-overflow-item')].some((item) => item.textContent.trim() === 'Verify map session links'), { timeout: 15000 })
   await clickExactText('.cg-history-row[data-commit-hash="c1d4a3"] .tlp-overflow-item', 'Verify map session links')
   await page.waitForSelector('#gmp-session-destination-title', { timeout: 15000 })
-  await shot('graph-session-heading', { app: 'graph', section: 'changes', targetSelector: '#gmp-session-destination-title', targetText: 'Verify map session links', bodySelector: '.gmp-session-destination' })
+  await shot('graph-session-heading', { app: 'graph', section: 'home', targetSelector: '#gmp-session-destination-title', targetText: 'Verify map session links', bodySelector: '.gmp-session-destination' })
 
   await gotoApp('commons', 'village sections')
+  await page.waitForSelector('.cmg-home', { timeout: 15000 })
+  await shot('village-home', { app: 'commons', section: 'home', targetSelector: 'h2.iu-page-title', targetText: 'your transcripts', bodySelector: '.cmg-home', requireAriaCurrent: true })
+
   await clickNavItem('village sections', 'collectives')
-  await page.waitForSelector('.cmg-col-card', { timeout: 15000 })
-  await shot('manage-collectives', { app: 'commons', section: 'collectives', targetSelector: 'h2.cmg-title', targetText: 'collectives', bodySelector: '.cmg-grid' })
+  await page.waitForSelector('.cmg-table-link', { timeout: 15000 })
+  await shot('manage-collectives', { app: 'commons', section: 'collectives', targetSelector: 'h2.iu-page-title', targetText: 'collectives', bodySelector: '.iu-page', requireAriaCurrent: true })
 
-  const collectiveCard = await page.evaluateHandle(() => [...document.querySelectorAll('.cmg-col-card')].find((card) => [...card.querySelectorAll('.cmg-col-name')].some((name) => name.textContent.trim() === 'AI Research Team')) ?? null)
-  const collectiveCardElement = collectiveCard.asElement()
-  assert.ok(collectiveCardElement, actionableMessage({
-    what: 'exact AI Research Team collective card is missing',
-    why: 'the detail capture must follow the production card a user clicks',
-    where: 'shootmanage.mjs Manage detail capture',
-    when: 'after the collectives section is active',
-    impact: 'the requested detail surface cannot be captured from the production shell',
-    remedy: 'verify the exact feature preview and update the capture only if the production collective fixture changed',
-    expected: 'a visible .cmg-col-card containing exact name AI Research Team',
-    observed: collectiveCardElement ? 'the matching card was found' : 'no matching .cmg-col-card containing AI Research Team was mounted',
-  }))
-  await collectiveCardElement.click()
-  await page.waitForSelector('.cmg-detail', { timeout: 15000 })
-  await shot('manage-detail', { app: 'commons', section: 'collectives', targetSelector: 'h2.cmg-title', targetText: 'AI Research Team', bodySelector: '.cmg-detail' })
+  await openCollective('detail')
+  await shot('manage-detail', { app: 'commons', section: 'collectives', targetSelector: 'h2.iu-page-title', targetText: 'Acme Platform', bodySelector: '.cmg-policies' })
 
-  await page.click('#iu-tab-commons')
-  await waitForApp('commons', 'village sections')
-  await clickNavItem('village sections', 'publish')
+  // the publishing dashboard left the nav but keeps its route
+  await gotoApp('commons', 'village sections', '&commons=publish')
   await page.waitForFunction(() => [...document.querySelectorAll('h2.cmg-title')].some((heading) => heading.textContent.trim() === 'publishing dashboard'), { timeout: 15000 })
-  await shot('manage-publish', { app: 'commons', section: 'publish', targetSelector: 'h2.cmg-title', targetText: 'publishing dashboard', bodySelector: '.cmg-page', requireAriaCurrent: true })
+  await shot('manage-publish', { app: 'commons', section: 'home', targetSelector: 'h2.cmg-title', targetText: 'publishing dashboard', bodySelector: '.cmg-page' })
 
-  await gotoApp('commons', 'village sections')
-  await clickNavItem('village sections', 'collectives')
-  await page.waitForSelector('.cmg-col-card', { timeout: 15000 })
-  const contributeCard = await page.evaluateHandle(() => [...document.querySelectorAll('.cmg-col-card')].find((card) => [...card.querySelectorAll('.cmg-col-name')].some((name) => name.textContent.trim() === 'AI Research Team')) ?? null)
-  const contributeCardElement = contributeCard.asElement()
-  assert.ok(contributeCardElement, actionableMessage({
-    what: 'exact AI Research Team collective card is missing for Contribute capture',
-    why: 'the Contribute capture must follow the production card a user clicks before selecting a role',
-    where: 'shootmanage.mjs Manage Contribute capture',
-    when: 'after the collectives section is active for the Contribute path',
-    impact: 'the Contributor-to-Contribute production path cannot be captured',
-    remedy: 'verify the exact feature preview and update the capture only if the production collective fixture changed',
-    expected: 'a visible .cmg-col-card containing exact name AI Research Team',
-    observed: contributeCardElement ? 'the matching card was found' : 'no matching .cmg-col-card containing AI Research Team was mounted',
-  }))
-  await contributeCardElement.click()
-  await page.waitForSelector('.cmg-detail', { timeout: 15000 })
-  await clickExactText('.cmg-roleseg', 'contributor')
-  await page.waitForFunction(() => [...document.querySelectorAll('.cmg-roleseg')].find((button) => button.textContent.trim() === 'contributor')?.getAttribute('aria-pressed') === 'true', { timeout: 15000 })
-  await clickExactText('.cmg-d-actions button', 'contribute')
+  // bulk contribute moved into the collective's overflow menu
+  await openCollective('contribute')
+  await page.click('.cmg-actions .menu-trigger')
+  await clickExactText('[role="menuitem"]', 'publish several transcripts')
   await page.waitForSelector('.cmg-contribute', { timeout: 15000 })
   await shot('manage-contribute', { app: 'commons', section: 'collectives', targetSelector: 'h2.cmg-title', targetText: 'contribute to AI Research Team', bodySelector: '.cmg-page' })
 
-  await gotoApp('commons', 'village sections')
-  await clickNavItem('village sections', 'collectives')
-  await page.waitForSelector('.cmg-col-card', { timeout: 15000 })
-  const settingsCard = await page.evaluateHandle(() => [...document.querySelectorAll('.cmg-col-card')].find((card) => [...card.querySelectorAll('.cmg-col-name')].some((name) => name.textContent.trim() === 'AI Research Team')) ?? null)
-  const settingsCardElement = settingsCard.asElement()
-  assert.ok(settingsCardElement, actionableMessage({
-    what: 'exact AI Research Team collective card is missing for Settings capture',
-    why: 'the settings capture must follow the production card a user clicks before opening the settings action',
-    where: 'shootmanage.mjs Manage settings capture',
-    when: 'after the collectives section is active for the settings path',
-    impact: 'the full settings surface cannot be captured from the production shell',
-    remedy: 'verify the exact feature preview and update the capture only if the production collective fixture changed',
-    expected: 'a visible .cmg-col-card containing exact name AI Research Team',
-    observed: settingsCardElement ? 'the matching card was found' : 'no matching .cmg-col-card containing AI Research Team was mounted',
-  }))
-  await settingsCardElement.click()
-  await page.waitForSelector('.cmg-detail', { timeout: 15000 })
-  await clickExactText('.cmg-d-actions button', 'settings')
+  await openCollective('settings')
+  await clickExactText('.cmg-actions button', 'settings')
   await page.waitForSelector('.cmg-settings', { timeout: 15000 })
   {
     const stageHeight = await page.evaluate(() => {

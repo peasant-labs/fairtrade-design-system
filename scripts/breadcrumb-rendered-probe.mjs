@@ -56,17 +56,18 @@ try {
     page.on('console', (message) => { if (message.type() === 'error' && !/favicon/.test(message.text())) errors.push(message.text()) })
     page.on('pageerror', (error) => errors.push(error.message))
     try {
+      const expected = testCase.expected
       await page.goto(`${origin}/?fb=off${testCase.theme === 'light' ? '&theme=light' : ''}`, { waitUntil: 'networkidle0' })
       await clickText(page, '[role="tab"]', 'village')
       await page.waitForSelector('#inuse-stage .iu-subnav')
       await clickText(page, '#inuse-stage .iu-subnav-item', 'collectives')
-      await page.waitForSelector('#inuse-stage .cmg-grid')
-      await clickText(page, '#inuse-stage .cmg-col-card', 'AI Research Team')
-      await page.waitForSelector('#inuse-stage .cmg-detail')
+      // a collective opens from its name in the collectives table
+      await page.waitForSelector(`#inuse-stage ${expected.collectiveLinkSelector}`)
+      await clickText(page, `#inuse-stage ${expected.collectiveLinkSelector}`, expected.collectiveTitle)
+      await page.waitForSelector(`#inuse-stage ${expected.detailSelector}`)
       observer.stop()
 
       const provenance = await assertServedBuildProvenance({ mode: 'feature', origin, distRoot: DIST_ROOT, observedJavaScriptPaths: [...observer.paths], observedForeignOrigins: [...observer.foreignOrigins], marker: 'crumb-item-chrome', base: featureIdentity.base, expectedHead: featureIdentity.expectedHead, expectedBranch: featureIdentity.expectedBranch, mutationArtifactManifest: process.env.BREADCRUMB_MUTATION_ARTIFACT_MANIFEST })
-      const expected = testCase.expected
       const result = await page.evaluate((expected) => {
         const root = document.querySelector(expected.rootSelector)
         const detail = document.querySelector(expected.detailSelector)
@@ -84,7 +85,7 @@ try {
           shell: Boolean(root?.querySelector('.iu-bar') && root?.querySelector('.iu-stage') && root?.querySelector('.iu-subnav')),
           breadcrumbFound: Boolean(breadcrumb),
           activeSections: [...document.querySelectorAll('#inuse-stage .iu-subnav-item.active')].map((item) => item.textContent.trim()),
-          detail: Boolean(detail && detail.querySelector('.cmg-tiles') && detail.querySelector('.cmg-d-grid')),
+          detail: Boolean(detail && expected.detailMarkers.every((marker) => detail.querySelector(marker))),
           shellWidth: box?.width ?? 0,
           shellHeight: box?.height ?? 0,
           stageWidth: stageBox?.width ?? 0,
@@ -121,12 +122,12 @@ try {
       assert.equal(result.currentIsAnchor, false, `${testCase.name}: current element must not be an anchor`)
       assert.equal(result.currentLinks, 0, `${testCase.name}: current element must contain no descendant anchors`)
       if (result.contentTransform !== 'none') throw new Error(`${testCase.name}: logical case content-default-case; breadcrumb content computed transform: expected none, observed ${result.contentTransform ?? 'missing'}`)
-      assert.deepEqual(result.chromeTransforms, ['lowercase', 'lowercase'], `${testCase.name}: chrome computed transforms`)
+      assert.deepEqual(result.chromeTransforms, Array(expected.chromeItemCount).fill(expected.chromeComputedTextTransform), `${testCase.name}: chrome computed transforms`)
       assert.deepEqual(result.links.map((link) => [link.href, link.className]), expected.linkHrefs.map((href) => [href, 'link']), `${testCase.name}: default link forwarding`)
-      assert.equal(result.separatorCount, 2, `${testCase.name}: exact n-1 separator count`)
+      assert.equal(result.separatorCount, expected.itemCount - 1, `${testCase.name}: exact n-1 separator count`)
       assert.ok(result.separatorClasses.every((className) => className?.includes('lucide-chevron-right')), `${testCase.name}: real ChevronRight separators`)
-      assert.deepEqual(result.separatorAria, ['true', 'true'], `${testCase.name}: separator accessibility`)
-      assert.deepEqual(result.separatorPlacement, [true, true, false], `${testCase.name}: separator placement`)
+      assert.deepEqual(result.separatorAria, Array(expected.itemCount - 1).fill('true'), `${testCase.name}: separator accessibility`)
+      assert.deepEqual(result.separatorPlacement, [...Array(expected.itemCount - 1).fill(true), false], `${testCase.name}: separator placement`)
 
       const focus = await focusBreadcrumb(page)
       assert.equal(focus.isBreadcrumbLink, true, `${testCase.name} (${testCase.theme}): actual Tab reaches breadcrumb link`)
@@ -250,6 +251,11 @@ function mountedFixtureError(what, where) {
 function loadFixture(path) {
   const value = loadDocument(path)
   if (!value || typeof value !== 'object' || !Array.isArray(value.cases)) throw new Error(`breadcrumb mounted fixture root must contain a cases array`)
+  for (const testCase of value.cases.filter((candidate) => candidate.owner === 'mounted')) {
+    const expected = testCase.expected ?? {}
+    if (typeof expected.collectiveLinkSelector !== 'string' || typeof expected.detailSelector !== 'string' || !Array.isArray(expected.detailMarkers) || expected.detailMarkers.length === 0) throw new Error(`breadcrumb mounted fixture ${testCase.name} must name the collective link, the detail page and its body markers`)
+    if (!Number.isInteger(expected.itemCount) || expected.itemCount < 2 || !Number.isInteger(expected.chromeItemCount) || expected.chromeItemCount < 1 || expected.chromeItemCount >= expected.itemCount) throw new Error(`breadcrumb mounted fixture ${testCase.name} must give an item count of at least two and a chrome item count below it`)
+  }
   return value
 }
 

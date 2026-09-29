@@ -13,7 +13,7 @@ export function PullRequestView() {
       <header className="iu-page-head">
         <p className="iu-page-context"><GitPullRequest aria-hidden="true" /> <span className="mono">acme/ingest-api</span> <span className="tnum">#42</span></p>
         <div className="iu-page-titlerow">
-          <h2 className="iu-page-title iu-page-title-content">Fix flaky ingest test</h2>
+          <h2 className="iu-page-title">Fix flaky ingest test</h2>
           <Button as="a" href="https://github.com/acme/ingest-api/pull/42" variant="secondary" size="sm" iconRight={ExternalLink}>view on github</Button>
         </div>
         <p className="iu-page-sub mono">@alice-dev · fix/flaky-ingest · <span className="tnum">4</span> commits</p>

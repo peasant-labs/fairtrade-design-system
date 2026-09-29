@@ -17,7 +17,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..')
 const CHROME = process.env.CHROME_PATH
 const fixture = loadFixture(resolve(HERE, 'testdata/timeline-rendered-probe.yaml'))
-const SOURCE_PATHS = [resolve(ROOT, 'src/index.css'), resolve(ROOT, 'src/mockups/inuse/CommonsManage.jsx')]
+const SOURCE_PATHS = [resolve(ROOT, 'src/index.css'), resolve(ROOT, 'src/mockups/inuse/CommonsPages.jsx')]
 const MIME = {
   '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml',
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.mp4': 'video/mp4',

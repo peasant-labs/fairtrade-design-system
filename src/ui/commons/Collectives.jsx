@@ -162,10 +162,10 @@ export function CollectivesView({ data = {}, actions = {} } = {}) {
 
   return (
     <div className="iu-page">
-      {crumb ? <div className="cmg-crumb"><Breadcrumb items={[{ label: crumb }]} /></div> : null}
+      {crumb ? <div className="cmg-crumb"><Breadcrumb items={[{ label: crumb, chrome: true }]} /></div> : null}
       <header className="iu-page-head">
         <div className="iu-page-titlerow">
-          <h2 className="iu-page-title">{title}</h2>
+          <h2 className="iu-page-title" data-chrome-heading>{title}</h2>
           <button type="button" className={'btn btn-sm ' + (showForm ? 'btn-secondary' : 'btn-primary')} aria-expanded={showForm} onClick={() => setShowForm((open) => !open)}>
             <Plus size={14} aria-hidden="true" /> {showForm ? 'close' : createLabel}
           </button>
@@ -326,10 +326,10 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
   return (
     <>
       <div className="iu-page">
-        <div className="cmg-crumb-content"><Breadcrumb items={[{ label: 'collectives', href: hrefFor?.('collectives') }, { label: collective.name }]} /></div>
+        <div className="cmg-crumb"><Breadcrumb items={[{ label: 'collectives', href: hrefFor?.('collectives'), chrome: true }, { label: collective.name }]} /></div>
         <header className="iu-page-head">
           <div className="iu-page-titlerow">
-            <h2 className="iu-page-title iu-page-title-content" id={titleId}>{collective.name}</h2>
+            <h2 className="iu-page-title" id={titleId}>{collective.name}</h2>
             <span className="cmg-actions">
               {collective.role === 'owner' && onSettings && <button type="button" className="btn btn-secondary btn-sm" onClick={() => onSettings()}><Settings size={14} aria-hidden="true" /> settings</button>}
               {(onContribute || onReview) && (
@@ -457,9 +457,9 @@ export function CollectiveSettingsView({ data = {}, actions = {} } = {}) {
   return (
     <>
       <div className="iu-page cmg-settings">
-        <div className="cmg-crumb-content"><Breadcrumb items={[{ label: 'collectives', href: hrefFor?.('collectives') }, { label: collective.name, href: hrefFor?.('collective', collective.id) }, { label: 'settings' }]} /></div>
+        <div className="cmg-crumb"><Breadcrumb items={[{ label: 'collectives', href: hrefFor?.('collectives'), chrome: true }, { label: collective.name, href: hrefFor?.('collective', collective.id) }, { label: 'settings', chrome: true }]} /></div>
         <header className="iu-page-head">
-          <h2 className="iu-page-title"><span className="iu-page-title-content">{collective.name}</span> · settings</h2>
+          <h2 className="iu-page-title">{collective.name} · settings</h2>
           <p className="iu-page-sub">changes save right away.</p>
         </header>
         <nav className="cmg-settings-nav" aria-label="settings sections">

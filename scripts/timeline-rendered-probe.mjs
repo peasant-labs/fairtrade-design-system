@@ -280,26 +280,24 @@ try {
 
     await page.click('#iu-tab-commons')
     await waitForApp(page, 'commons', 'village sections')
-    await clickNavItem(page, 'village sections', 'publish')
-    await page.waitForFunction((expectedText) => [...document.querySelectorAll('h2.cmg-title')].some((heading) => heading.textContent.trim() === expectedText), { timeout: 15000 }, fixture.headingCase.publish.expectedText)
-    await assertComputedHeading(page, fixture.headingCase.publish, testCase.name)
-    await assertFullShell(page, fixture, fixture.headingCase.publish, testCase.name)
+    // the village demo opens on home, whose page title is annotated chrome
+    await page.waitForFunction((expectedText) => [...document.querySelectorAll('h2.iu-page-title')].some((heading) => heading.textContent.trim() === expectedText), { timeout: 15000 }, fixture.headingCase.home.expectedText)
+    await assertComputedHeading(page, fixture.headingCase.home, testCase.name)
+    await assertFullShell(page, fixture, fixture.headingCase.home, testCase.name)
 
+    // a collective is reached from the collectives table; its name is user content
     await clickNavItem(page, 'village sections', 'collectives')
-    await page.waitForSelector('.cmg-col-card', { timeout: 15000 })
-    const collectiveCard = await page.evaluateHandle((name) => [...document.querySelectorAll('.cmg-col-card')].find((card) => [...card.querySelectorAll('.cmg-col-name')].some((item) => item.textContent.trim() === name)) ?? null, fixture.headingCase.detail.expectedText)
-    const collectiveCardElement = collectiveCard.asElement()
-    assert.ok(collectiveCardElement, `${testCase.name}: exact AI Research Team collective card is missing`)
-    await collectiveCardElement.click()
-    await page.waitForSelector('.cmg-detail', { timeout: 15000 })
+    await page.waitForSelector('.cmg-table-link', { timeout: 15000 })
+    await clickExactText(page, '.cmg-table-link', fixture.headingCase.detail.expectedText)
+    await page.waitForSelector('.cmg-policies', { timeout: 15000 })
     await assertComputedHeading(page, fixture.headingCase.detail, testCase.name)
-    const providerShare = await readExactTextInfo(page, '.cmg-sub', 'provider share')
-    assert.equal(providerShare.textTransform, 'lowercase', `${testCase.name}: provider share computed transform`)
+    const policyTitle = await readExactTextInfo(page, '.cmg-policy-title', 'who can read')
+    assert.equal(policyTitle.textTransform, 'lowercase', `${testCase.name}: who can read computed transform`)
     await assertFullShell(page, fixture, fixture.headingCase.detail, testCase.name)
 
-    await clickExactText(page, '.cmg-roleseg', 'contributor')
-    await page.waitForFunction(() => [...document.querySelectorAll('.cmg-roleseg')].find((button) => button.textContent.trim() === 'contributor')?.getAttribute('aria-pressed') === 'true', { timeout: 15000 })
-    await clickExactText(page, '.cmg-d-actions button', 'contribute')
+    // bulk contribute moved into the collective's overflow menu
+    await page.click('.cmg-actions .menu-trigger')
+    await clickExactText(page, '[role="menuitem"]', 'publish several transcripts')
     await page.waitForSelector('.cmg-contribute', { timeout: 15000 })
     await assertComputedHeading(page, fixture.headingCase.contribute, testCase.name)
     const projectName = await readExactTextInfo(page, '.cmg-proj-name', 'Village Core')
@@ -593,8 +591,8 @@ function loadFixture(path) {
   if (value.cases.some((testCase) => !['desktop', 'mobile'].includes(testCase.viewport) || !['dark', 'light'].includes(testCase.theme) || !['no-preference', 'reduce'].includes(testCase.motion) || !['tlp-glow', 'none'].includes(testCase.expectedAnimationName))) throw new Error('timeline rendered probe fixture contains an unsupported viewport, theme, motion mode, or animation')
   if (!Array.isArray(value.expectedCommitHashes) || value.expectedCommitHashes.length === 0 || new Set(value.expectedCommitHashes).size !== value.expectedCommitHashes.length) throw new Error('timeline rendered probe expectedCommitHashes must be unique and nonempty')
   if (!value.changesOverflow || typeof value.changesOverflow !== 'object' || !['commitHash', 'toggleLabel', 'thirdSessionTitle', 'sessionId', 'sourceText', 'providerHarness'].every((key) => typeof value.changesOverflow[key] === 'string' && value.changesOverflow[key].length > 0) || !Array.isArray(value.changesOverflow.expectedHistoryHashes) || value.changesOverflow.expectedHistoryHashes.length === 0 || value.changesOverflow.expectedHistoryHashes.some((hash) => typeof hash !== 'string' || hash.length === 0) || typeof value.changesOverflow.returnedExpanded !== 'boolean') throw new Error('timeline rendered probe changesOverflow must identify its branded destination and exact Changes return state')
-  const headingCases = ['graphSession', 'publish', 'detail', 'contribute']
-  if (!value.headingCase || headingCases.some((key) => !value.headingCase[key] || typeof value.headingCase[key] !== 'object')) throw new Error('timeline rendered probe headingCase must name graph, publish, detail, and contribute surfaces')
+  const headingCases = ['graphSession', 'home', 'detail', 'contribute']
+  if (!value.headingCase || headingCases.some((key) => !value.headingCase[key] || typeof value.headingCase[key] !== 'object')) throw new Error('timeline rendered probe headingCase must name graph, home, detail, and contribute surfaces')
   for (const key of headingCases) {
     const headingCase = value.headingCase[key]
     for (const field of ['name', 'app', 'section', 'targetSelector', 'expectedText', 'expectedTextTransform', 'bodySelector']) {
@@ -602,7 +600,7 @@ function loadFixture(path) {
     }
     if (!['graph', 'commons'].includes(headingCase.app) || !['none', 'lowercase'].includes(headingCase.expectedTextTransform)) throw new Error(`timeline rendered probe headingCase.${key} has unsupported app or transform`)
   }
-  if (value.headingCase.publish.expectedAttribute !== 'data-chrome-heading' || value.headingCase.publish.requireAriaCurrent !== true) throw new Error('timeline rendered probe publish heading must require the public chrome annotation and aria-current')
+  if (value.headingCase.home.expectedAttribute !== 'data-chrome-heading' || value.headingCase.home.requireAriaCurrent !== true) throw new Error('timeline rendered probe home heading must require the public chrome annotation and aria-current')
   if (!value.fullShell || !['rootSelector', 'barSelector', 'stageSelector'].every((key) => typeof value.fullShell[key] === 'string' && value.fullShell[key].length > 0) || !Array.isArray(value.fullShell.appTabs) || value.fullShell.appTabs.length !== 3 || !Array.isArray(value.fullShell.graphSections) || !Array.isArray(value.fullShell.villageSections)) throw new Error('timeline rendered probe fullShell contract is incomplete')
   if (!value.fullShell.provenance || !Array.isArray(value.fullShell.provenance.requiredMarkers) || value.fullShell.provenance.requiredMarkers.length !== 2 || value.fullShell.provenance.requiredMarkers.includes('data-chrome-heading')) throw new Error('timeline rendered probe provenance must require two independent markers and never data-chrome-heading')
   if (!value.mutations || value.mutations.expectedMutationCount !== 2 || !Array.isArray(value.mutations.requiredMutationNames) || value.mutations.requiredMutationNames.length !== 2 || !Array.isArray(value.mutations.cases) || value.mutations.cases.length !== 2) throw new Error('timeline rendered probe mutation inventory is incomplete')

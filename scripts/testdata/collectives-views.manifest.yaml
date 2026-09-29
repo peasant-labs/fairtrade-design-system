@@ -31,7 +31,7 @@ mutations:
     expectedDiagnostic: "list with rows a host sends: columns expected"
   - name: the crumb is dropped
     file: src/ui/commons/Collectives.jsx
-    find: "{crumb ? <div className=\"cmg-crumb\"><Breadcrumb items={[{ label: crumb }]} /></div> : null}"
+    find: "{crumb ? <div className=\"cmg-crumb\"><Breadcrumb items={[{ label: crumb, chrome: true }]} /></div> : null}"
     replace: "{null}"
     expectedDiagnostic: "list with rows a host sends: the view must show \"village\""
   - name: settings show a fixed join policy
