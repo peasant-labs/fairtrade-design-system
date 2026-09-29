@@ -169,6 +169,10 @@
  * @property {(turnIndex: number) => string} [anchorHref]              host permalink for a turn's copy-anchor action; a root-relative return is absolutized against the page origin. Omitted, the demo copies its bare '#turn-N' placeholder
  * @property {unknown} [headerActions]                                 host session-level actions rendered at the head of the hero action row (attest etc.); the composite's own actions stay the shared tail
  * @property {unknown} [streamPrelude]                                 host controls or context rendered at the start of the list-mode transcript scroller; omitted in graph mode
+ * @property {boolean} [showTail]                                      default true: render the composite's share and more menus after `headerActions`; false removes both so the host's own actions stand alone
+ * @property {boolean} [showOutcome]                                   default true: render the session outcome chip in the meta row when the session carries an outcome
+ * @property {boolean} [showSearchTrigger]                             default false: render a `search this transcript` button at the end of the tab strip that opens search exactly as ⌘F does; independent of `showTail`
+ * @property {unknown} [pullRequests]                                  host-owned node rendered under the meta row (a pull request list and its own "show all" control); omitted renders nothing
  */
 
 /**

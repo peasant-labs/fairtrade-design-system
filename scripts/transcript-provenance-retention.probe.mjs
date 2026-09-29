@@ -17,6 +17,8 @@ const dirty = execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' 
 assert.ok(!dirty || process.env.ALLOW_DIRTY_CAPTURE === '1', 'Commit the verified sources before final capture; dirty captures are development evidence only.')
 const output = resolve(process.env.CONTEXT_CAPTURE_DIR ?? `/tmp/opencode/context-fairtrade-${revision.slice(0, 8)}${dirty ? '-dirty' : ''}`)
 await mkdir(output, { recursive: true })
+// The header meta row names the count `prompts`, singular for exactly one; absent stays `unknown`.
+const promptsLabel = (count) => `${count} ${String(count) === '1' ? 'prompt' : 'prompts'}`
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json', '.mp4': 'video/mp4' }
 const server = createServer(async (req, res) => {
   try {
@@ -104,7 +106,7 @@ try {
           }
         }
         if (testCase.name === 'pi-native-attachments') assert.ok((await page.$eval('.txn-stream', node => node.textContent)).includes('NativeAttachmentRetained'))
-        assert.ok((await page.$eval('.txn-header', node => node.textContent)).includes(`${input.inputSubmissionCount ?? 'unknown'} input submissions`))
+        assert.ok((await page.$eval('.txn-header', node => node.textContent)).includes(promptsLabel(input.inputSubmissionCount ?? 'unknown')))
         if (partition === 'both' && fixture.captures.includes(testCase.name)) {
           await page.evaluate(() => document.getElementById('inuse-stage').scrollIntoView({ block: 'center' }))
           const viewer = await page.$('.txn-app')
@@ -155,7 +157,7 @@ try {
     }
     for (const testCase of fixture.countCases) {
       await open({ contextCount: testCase.name })
-      assert.ok((await page.$eval('.txn-header', node => node.textContent)).includes(`${testCase.expected} input submissions`))
+      assert.ok((await page.$eval('.txn-header', node => node.textContent)).includes(promptsLabel(testCase.expected)))
     }
     await open()
     const styles = await page.evaluate(() => {

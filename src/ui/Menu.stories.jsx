@@ -1,7 +1,7 @@
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import Menu from './Menu.jsx'
 import { frame } from './story-frame.jsx'
-import { Copy, Download, Share2, Eye, EyeOff, Trash2, Archive, FilePen } from 'lucide-react'
+import { Copy, Download, Share2, Eye, EyeOff, Trash2, Archive, FilePen, MoreHorizontal } from 'lucide-react'
 
 /* overlays/Menu - a self-contained accessible dropdown. the trigger is a .btn.menu-trigger
    with aria-haspopup="menu"; the popout is a role="menu" list of role="menuitem" rows. items
@@ -37,6 +37,35 @@ export const Playground = {}
 
 export const Aligned = {
   args: { align: 'end', label: 'aligned end' },
+}
+
+/* an icon-only overflow trigger (a header row's "more"): the glyph replaces label and caret, and
+   ariaLabel names both the trigger and the menu. */
+export const IconOnly = {
+  name: 'icon only',
+  args: {
+    label: undefined,
+    icon: MoreHorizontal,
+    ariaLabel: 'more',
+    size: 'sm',
+    align: 'end',
+    defaultOpen: false,
+    items: [
+      { label: 'copy as markdown', icon: Copy },
+      { label: 'copy link', icon: Share2 },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: 'more' })
+    await expect(trigger).toHaveClass('btn-icon')
+    await userEvent.click(trigger)
+    const menu = await canvas.findByRole('menu', { name: 'more' })
+    await expect(menu).toBeInTheDocument()
+    await waitFor(() => expect(canvas.getByRole('menuitem', { name: /copy as markdown/ })).toHaveFocus())
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(trigger).toHaveFocus())
+  },
 }
 
 export const Providers = {

@@ -58,9 +58,10 @@ receives a general current-source link and the viewer explains the unverified ea
 map for host Back restoration. Default is closed. Hosts scope that saved map to the session.
 Earlier turns deliberately do not invoke legacy numeric main-turn label/copy-link callbacks.
 
-`session.inputSubmissionCount` preserves optional presence exactly. The metadata label is
-`input submissions`; omitted displays `unknown`, present zero displays `0`. Filtering, expanding
-and navigation never recount it. `session.turnCount` remains the producer's main-record count,
+`session.inputSubmissionCount` preserves optional presence exactly. The header meta row labels it
+`prompts` (`prompt` for exactly one); omitted displays `unknown`, present zero displays `0`.
+Helper-group rows keep their own `input submissions` wording. Filtering, expanding and navigation
+never recount it. `session.turnCount` remains the producer's main-record count,
 and helper-thread counts remain the independent saved-identity metric. Normalized evidence also
 disables the viewer's legacy first-prompt title guess; hosts may supply their already-authoritative
 title through `vm.session.title` without lowercasing it.
@@ -73,6 +74,22 @@ build the production app and run `pnpm test:transcript-provenance:mounted` for k
 disclosures, current-target callbacks, Back restoration, both-theme style probes and captures.
 The mounted gate refuses a build without this renderer and fixture; it records exact served
 asset hashes and the source revision. These fixtures are not native harness decoders.
+
+## header chrome a host controls
+
+The header's action row always starts with the host's `headerActions`. Four optional props shape
+the rest; each default keeps the long-standing header.
+
+| prop | default | effect |
+|---|---|---|
+| `showTail` | `true` | renders the composite's `share` menu and its `more actions` menu after `headerActions`. `false` removes both, so a host with its own publish and overflow controls owns the row. The `more actions` menu renders only when `canEdit` or `canExport` gives it an item. |
+| `showOutcome` | `true` | renders the outcome chip when `session.outcome` is present. `false` hides it without touching the cooked outcome. |
+| `showSearchTrigger` | `false` | renders a `search this transcript` button with its `⌘F` hint at the end of the tab strip. It opens the search bar exactly as the shortcut does, and it stays when `showTail` is `false`. |
+| `pullRequests` | omitted | a host node rendered under the meta row. The host owns the list, its data and any "show all" control; the composite renders nothing when it is omitted and hides it with the title while the header is condensed. |
+
+The combinations and the controls each one must show or omit are fixtured in
+`scripts/testdata/transcript-viewer-chrome.yaml`; `pnpm test:transcript-viewer-chrome` mounts
+the real viewer for every case. No wire field is involved.
 
 ## observed model resolution
 

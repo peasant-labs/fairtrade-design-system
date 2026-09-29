@@ -2363,6 +2363,15 @@
   .txn-viewtoggle .bs-seg-opt { height: var(--control-h-sm); }
 
   .txn-stream { flex: 1; min-height: 0; overflow: auto; padding: var(--sp-3) var(--sp-4) var(--sp-7); }
+  /* the optional search trigger: the strip and the trigger share one row, the strip's hairline
+     moves to the row so the trigger sits on the same rule as the tabs. */
+  .txn-tabbar { flex: none; display: flex; align-items: stretch; gap: var(--sp-3); padding-right: var(--sp-4); border-bottom: var(--bd); background: var(--surface); }
+  .txn-tabbar > .txn-tabs { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
+  .txn-search-trigger { align-self: center; flex: none; }
+  .txn-search-trigger .kbd-key { font-size: var(--fs-label); }
+  /* the host's pull request list sits under the meta row and leaves with it on condense. */
+  .txn-prs { margin-top: var(--sp-3); min-width: 0; }
+  .txn-app-condensed > .txn-header .txn-prs { display: none; }
   .txn-stream-prelude { margin-bottom: var(--sp-4); }
 
   /* phase divider (tier 3) sticks to the top of the scroller. the scroller already
@@ -2911,6 +2920,7 @@
   .cex-explore-body { display: grid; grid-template-columns: minmax(0, 16rem) minmax(0, 1fr); column-gap: var(--sp-5); align-items: start; min-height: 0; flex: 1; }
   .cex-rail { align-self: start; position: sticky; top: 0; }
   .cex-rail .cex-topics { display: flex; flex-wrap: wrap; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); }
+  .txn-tabbar { padding-right: var(--sp-3); }
   /* topic chips: single-line pills. the label flexes and truncates so a long
      topic (#iterative-refinement) can't wrap inside the fixed-height chip and
      break its centering; the count stays pinned to the end with tabular nums. */
@@ -2924,6 +2934,8 @@
 
   .cex-results { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-4); }
   .cex-results-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
+  /* the trigger keeps its icon and shortcut; its words stay in the accessible name only. */
+  .txn-search-trigger-text { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
   .cex-eyebrow { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); display: inline-flex; align-items: baseline; gap: var(--sp-2); }
   .cex-count { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
   .cex-viewseg .bs-seg-opt { height: var(--control-h-sm); }

@@ -95,6 +95,10 @@ const controlled = {
   moreOpen: false,
   onMoreOpenChange: (open) => void open,
   streamPrelude: 'host transcript controls',
+  showTail: false,
+  showOutcome: false,
+  showSearchTrigger: true,
+  pullRequests: 'host pull request list',
 }
 void controlled
 
@@ -134,6 +138,17 @@ _acceptInitialPosition({ kind: 'turn', turnIndex: '42' })
 
 // @ts-expect-error — the initial-position union is closed
 _acceptInitialPosition({ kind: 'middle', turnIndex: 42 })
+
+/* ── (5b) NEGATIVE: the header chrome switches are booleans ───────────────────────
+   A stringly "false" would render the tail (truthy), so the switches stay typed. */
+// @ts-expect-error — showTail is a boolean, not the string 'false'
+_acceptViewerProps({ viewModel: vm, capabilities: caps, showTail: 'false' })
+
+// @ts-expect-error — showSearchTrigger is a boolean, not a number
+_acceptViewerProps({ viewModel: vm, capabilities: caps, showSearchTrigger: 1 })
+
+// @ts-expect-error — showOutcome is a boolean, not null
+_acceptViewerProps({ viewModel: vm, capabilities: caps, showOutcome: null })
 
 /* ── (6) POSITIVE: a capability flag is genuinely boolean ─────────────────────────
    A bare read does not bite under strictNullChecks, so dereference through a use. */
