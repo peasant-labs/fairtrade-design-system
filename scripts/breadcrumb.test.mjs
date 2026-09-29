@@ -150,7 +150,16 @@ function verifyProvenanceNegativeCases() {
   assert.throws(() => assertFeatureGitIdentity({ sourceRoot: ROOT, base: 'not-a-commit', expectedHead: head }), /does not resolve to a commit/)
   assert.throws(() => assertFeatureGitIdentity({ sourceRoot: ROOT, base, expectedHead: head, expectedBranch: 'not-a-real-feature-branch' }), /repository branch is .*expected/)
 
-  const unrelated = gitOutput('rev-list', '--all', '--not', head).split('\n').filter(Boolean)[0]
+  // a commit off HEAD's history that still shares an ancestor with it; orphan branches (the
+  // screenshot side branches) have no merge-base at all and would fail for a different reason
+  const unrelated = gitOutput('rev-list', '--all', '--not', head).split('\n').filter(Boolean).find((commit) => {
+    try {
+      gitOutput('merge-base', commit, head)
+      return true
+    } catch {
+      return false
+    }
+  })
   if (unrelated) assert.throws(() => assertFeatureGitIdentity({ sourceRoot: ROOT, base: unrelated, expectedHead: head }), /not the actual merge-base/)
 
   const dirtyPath = resolve(ROOT, `.breadcrumb-provenance-dirty-${process.pid}`)
