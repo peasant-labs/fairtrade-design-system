@@ -1,0 +1,38 @@
+# Required-NAME manifest for prompt-digest-split.yaml: deletion protection.
+requiredCaseNames:
+  - one session
+  - many sessions
+  - a collapsed session
+  - items before the first boundary
+  - an empty chain
+  - a controlled selection
+  - j and k at both ends
+  - j inside a text field
+  - a held modifier
+
+requiredMutationNames:
+  - the selection wraps past the last entry
+  - j acts inside a text field
+  - items before the first boundary are dropped
+  - the stacked chain gains the split wrapper
+mutations:
+  - name: the selection wraps past the last entry
+    file: src/ui/PromptDigest.jsx
+    find: "const clamped = Math.min(Math.max(0, next), last)"
+    replace: "const clamped = ((next % entries.length) + entries.length) % entries.length"
+    expectedDiagnostic: "j and k at both ends: selection trail"
+  - name: j acts inside a text field
+    file: src/ui/PromptDigest.jsx
+    find: "if (event.defaultPrevented || hasModifier(event) || isTextEntry(document.activeElement)) return"
+    replace: "if (event.defaultPrevented || hasModifier(event)) return"
+    expectedDiagnostic: "j inside a text field: selection trail"
+  - name: items before the first boundary are dropped
+    file: src/ui/PromptDigest.jsx
+    find: "      if (!current) {\n        current = { session: null, items: [] }\n        entries.push(current)\n      }\n      current.items.push(item)"
+    replace: "      if (!current) continue\n      current.items.push(item)"
+    expectedDiagnostic: "items before the first boundary: options"
+  - name: the stacked chain gains the split wrapper
+    file: src/ui/PromptDigest.jsx
+    find: "{layout === 'split' ? ("
+    replace: "{layout !== 'nope' ? ("
+    expectedDiagnostic: "the stacked layout must render the one chain unchanged"

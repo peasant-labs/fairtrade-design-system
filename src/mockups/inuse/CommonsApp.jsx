@@ -4,6 +4,7 @@ import { TranscriptDetailView, ProfileView, getExploreFixture } from './CommonsE
 import { Explore } from '../../ui/commons/index.js'
 import { PublishView, CollectivesView, CollectiveDetailView, CollectiveSettingsView, ContributeView } from './CommonsManage.jsx'
 import HelperGroupsDemo from './HelperGroupsDemo.jsx'
+import { PullRequestView } from './CommonsPullRequest.jsx'
 
 /* village (commons) demo parent: an internal nav over the browse + governance views built by the team.
    primary tabs reach the top-level surfaces; detail/contribute views open via onNavigate from clicks and
@@ -21,6 +22,7 @@ const BACK_TO = {
   'collective-detail': 'collectives',
   'collective-settings': 'collective-detail',
   contribute: 'collectives',
+  'pull-request': 'explore',
 }
 
 export default function CommonsApp({ theme }) {
@@ -29,6 +31,7 @@ export default function CommonsApp({ theme }) {
     const initial = new URLSearchParams(window.location.search).get('commons')
     if (initial === 'collectives') return 'collectives'
     if (initial === 'collective-detail') return 'collective-detail'
+    if (initial === 'pull-request') return 'pull-request'
     return initial === 'collective-settings' ? 'collective-settings' : 'explore'
   })
   const onNavigate = (v) => setView(v)
@@ -80,6 +83,7 @@ export default function CommonsApp({ theme }) {
         )}
         {view === 'collective-settings' && <CollectiveSettingsView theme={theme} onNavigate={onNavigate} />}
         {view === 'contribute' && <ContributeView theme={theme} onNavigate={onNavigate} />}
+        {view === 'pull-request' && <PullRequestView />}
       </div>
     </div>
   )

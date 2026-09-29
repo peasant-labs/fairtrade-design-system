@@ -1,5 +1,5 @@
-import { useId, useState } from 'react'
-import { ChevronDown, CornerDownRight, GitCommitHorizontal, Layers, User } from 'lucide-react'
+import { useEffect, useId, useRef, useState } from 'react'
+import { ChevronDown, ChevronRight, CornerDownRight, GitCommitHorizontal, Layers, User } from 'lucide-react'
 import Avatar from './Avatar.jsx'
 import BrandMark from './BrandMark.jsx'
 import Chip, { CountBadge } from './Chip.jsx'
@@ -278,6 +278,178 @@ function PromptRow({ entry, href, itemHref, author }) {
 }
 
 /**
+ * groups the flat wire chain into the split layout's entries, in chain order: a session boundary
+ * opens an entry and every following item up to the next boundary belongs to it. items that come
+ * before the first boundary open a leading entry with no boundary of its own. every item lands in
+ * exactly one entry, so nothing Village sent is dropped or shown twice.
+ */
+function splitEntries(items) {
+  const entries = []
+  let current = null
+  for (const item of items) {
+    if (item.kind === 'session') {
+      current = { session: item, items: [] }
+      entries.push(current)
+    } else {
+      if (!current) {
+        current = { session: null, items: [] }
+        entries.push(current)
+      }
+      current.items.push(item)
+    }
+  }
+  return entries
+}
+
+/* the viewer's key rule: j/k never act while the user types in a field or holds a modifier. */
+function isTextEntry(node) {
+  return !!node && (/^(INPUT|TEXTAREA|SELECT)$/.test(node.tagName ?? '') || node.isContentEditable === true)
+}
+function hasModifier(event) {
+  return event.metaKey || event.ctrlKey || event.altKey || event.shiftKey
+}
+
+/* an entry's prompt count: a boundary states its own recorded count; the leading entry, which has
+   no boundary, counts the prompt rows it holds. */
+function entryPromptCount(entry) {
+  return entry.session ? entry.session.promptCount ?? 0 : entry.items.filter((item) => item.kind === 'prompt').length
+}
+
+/**
+ * the split layout: a list of the chain's sessions on the left, the selected session's prompts on
+ * the right. the list is one tab stop (a listbox whose options are reached by keys, not Tab); j/k
+ * anywhere on the page, and the arrow keys on the list, move the selection and stop at either end.
+ * selection is controlled by `selected` + `onSelect`, or kept here when `selected` is omitted.
+ */
+function SplitChain({ items, itemHref, author, selected, onSelect }) {
+  const entries = splitEntries(items)
+  const [internal, setInternal] = useState(0)
+  const controlled = selected !== undefined
+  const last = entries.length - 1
+  const index = entries.length === 0 ? -1 : Math.min(Math.max(0, controlled ? selected : internal), last)
+  const listRef = useRef(null)
+  const baseId = useId()
+  const optionId = (i) => `${baseId}-session-${i}`
+  const hintId = `${baseId}-hint`
+
+  const indexRef = useRef(index)
+  indexRef.current = index
+  const selectRef = useRef(null)
+  selectRef.current = (next) => {
+    if (entries.length === 0) return
+    const clamped = Math.min(Math.max(0, next), last)
+    if (clamped === indexRef.current) return
+    if (!controlled) setInternal(clamped)
+    onSelect?.(clamped, entries[clamped].session)
+  }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const onKey = (event) => {
+      if (event.defaultPrevented || hasModifier(event) || isTextEntry(document.activeElement)) return
+      if (event.key === 'j') { event.preventDefault(); selectRef.current(indexRef.current + 1) }
+      else if (event.key === 'k') { event.preventDefault(); selectRef.current(indexRef.current - 1) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  useEffect(() => {
+    if (index < 0 || typeof document === 'undefined' || document.activeElement !== listRef.current) return
+    document.getElementById(optionId(index))?.scrollIntoView?.({ block: 'nearest' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index])
+
+  if (entries.length === 0) {
+    return <p className="pd-split-empty">no sessions in this digest yet.</p>
+  }
+
+  const onListKey = (event) => {
+    if (hasModifier(event)) return
+    if (event.key === 'ArrowDown') { event.preventDefault(); selectRef.current(index + 1) }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); selectRef.current(index - 1) }
+    else if (event.key === 'Home') { event.preventDefault(); selectRef.current(0) }
+    else if (event.key === 'End') { event.preventDefault(); selectRef.current(last) }
+  }
+
+  const entry = entries[index]
+  const label = entry.session ? entry.session.text : 'before the first session'
+  const sessionHref = entry.session ? itemHref?.(entry.session) : undefined
+  const groups = groupChainItems(entry.items)
+  const shownPrompts = entry.items.filter((item) => item.kind === 'prompt').length
+  const collapsed = entry.session != null && shownPrompts === 0 && entryPromptCount(entry) > 0
+  const paneTitleId = `${baseId}-pane-title`
+
+  return (
+    <div className="pd-split">
+      <div className="pd-split-side">
+        <p className="pd-split-hint" id={hintId}>
+          <span className="tnum">{entries.length}</span> {entries.length === 1 ? 'session' : 'sessions'}
+          {entries.length > 1 && <>, <kbd className="kbd-key">j</kbd> and <kbd className="kbd-key">k</kbd> move</>}
+        </p>
+        <ul
+          ref={listRef}
+          className="pd-split-list"
+          role="listbox"
+          aria-label="sessions"
+          aria-describedby={hintId}
+          aria-activedescendant={optionId(index)}
+          tabIndex={0}
+          onKeyDown={onListKey}
+        >
+          {entries.map((option, i) => {
+            const on = i === index
+            const count = entryPromptCount(option)
+            return (
+              <li
+                key={option.session ? `session-${i}-${option.session.transcriptId}` : 'leading'}
+                id={optionId(i)}
+                role="option"
+                aria-selected={on}
+                className={on ? 'pd-split-option pd-split-option-on' : 'pd-split-option'}
+                onClick={() => selectRef.current(i)}
+              >
+                <ChevronRight className="pd-split-mark" aria-hidden="true" />
+                <span className="pd-split-option-label">{option.session ? option.session.text : 'before the first session'}</span>
+                <span className="pd-split-option-count">
+                  <span className="tnum">{count}</span> {count === 1 ? 'prompt' : 'prompts'}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+
+      <section className="pd-split-pane" aria-labelledby={paneTitleId}>
+        <header className="pd-split-pane-head">
+          <h3 className="pd-split-pane-title" id={paneTitleId}>{label}</h3>
+          {sessionHref && <a className="link pd-split-open" href={sessionHref}>open the transcript</a>}
+        </header>
+        {collapsed && (
+          <p className="pd-split-collapsed">
+            <span className="tnum">{entryPromptCount(entry)}</span> {entryPromptCount(entry) === 1 ? 'prompt' : 'prompts'} in this session, not listed in this digest.
+            {sessionHref ? ' open the transcript to read them.' : ''}
+          </p>
+        )}
+        {!collapsed && groups.length === 0 && <p className="pd-split-collapsed">no prompts in this session.</p>}
+        {/* whatever the entry carries still renders, a collapsed session's commit anchors included */}
+        {groups.length > 0 && (
+          <ul className="pd-chain">
+            {groups.map((group, i) =>
+              group.type === 'prompt' ? (
+                <PromptRow key={`prompt-${index}-${i}`} entry={group} href={itemHref?.(group.item)} itemHref={itemHref} author={author} />
+              ) : (
+                <ChainRow key={`${group.item.kind}-${index}-${i}`} item={group.item} href={itemHref?.(group.item)} />
+              ),
+            )}
+          </ul>
+        )}
+      </section>
+    </div>
+  )
+}
+
+/**
  * PromptDigest — the prompts behind a pull request, rendered read-only from the schema type.
  *
  * @param {object} props
@@ -293,11 +465,19 @@ function PromptRow({ entry, href, itemHref, author }) {
  *        wire data). when given, every prompt row's avatar renders the writer's GitHub profile
  *        photo via the existing `Avatar` family; when omitted, prompt rows keep today's generic
  *        glyph.
+ * @param {'stacked' | 'split'} [props.layout='stacked'] - `stacked` renders the one chain with its
+ *        session boundaries as separators; `split` lists the sessions beside a reading pane that
+ *        shows the selected session's prompts.
+ * @param {number} [props.selected] - split layout only: the selected session's index in the list
+ *        (controlled). omit it and the component keeps its own selection, starting at the first.
+ * @param {(index: number, session: PromptDigestItemPayload | null) => void} [props.onSelect] - split
+ *        layout only: called with the next index and its session boundary item (null for the
+ *        leading entry of items that precede every boundary).
  * @param {string} [props.className] - extra classes appended after `.pd`
  */
-export default function PromptDigest({ digest, itemHref, author, className = '', ...rest }) {
+export default function PromptDigest({ digest, itemHref, author, layout = 'stacked', selected, onSelect, className = '', ...rest }) {
   const { header, skills, items } = digest
-  const cls = ['pd', className].filter(Boolean).join(' ')
+  const cls = ['pd', layout === 'split' ? 'pd-layout-split' : '', className].filter(Boolean).join(' ')
   const groups = groupChainItems(items)
 
   return (
@@ -351,6 +531,9 @@ export default function PromptDigest({ digest, itemHref, author, className = '',
         </div>
       )}
 
+      {layout === 'split' ? (
+        <SplitChain items={items} itemHref={itemHref} author={author} selected={selected} onSelect={onSelect} />
+      ) : (
       <ul className="pd-chain">
         {groups.map((entry, index) =>
           entry.type === 'prompt' ? (
@@ -366,6 +549,7 @@ export default function PromptDigest({ digest, itemHref, author, className = '',
           ),
         )}
       </ul>
+      )}
     </section>
   )
 }

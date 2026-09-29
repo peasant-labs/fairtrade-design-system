@@ -437,3 +437,155 @@ a.pd-row-link:focus-visible {
   letter-spacing: 0;
   color: var(--ink-3);
 }
+
+/* ── split layout: sessions beside a reading pane ─────────────────────────────
+   the list is a listbox with one tab stop; the selected option carries three
+   non-colour cues together (the chevron mark, the bolder label, aria-selected)
+   plus the system's selection treatment: a surface tint and a 2px amber left
+   rule. below the md breakpoint the list stacks above the pane; nothing scrolls
+   sideways. */
+.pd-split {
+  display: grid;
+  grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: start;
+  min-width: 0;
+}
+
+.pd-split-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.pd-split-hint {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  text-transform: lowercase;
+  color: var(--ink-3);
+}
+
+.pd-split-hint .kbd-key { font-size: var(--fs-label); }
+
+.pd-split-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: var(--bd);
+}
+
+.pd-split-list:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.pd-split-option {
+  display: grid;
+  grid-template-columns: var(--ic-sm) minmax(0, 1fr);
+  column-gap: var(--sp-2);
+  row-gap: var(--sp-1);
+  align-items: baseline;
+  min-height: var(--target-comfortable);
+  padding: var(--sp-2) var(--sp-3);
+  border-top: var(--bd);
+  cursor: pointer;
+  color: var(--ink-2);
+}
+
+.pd-split-option:first-child { border-top: 0; }
+
+.pd-split-option:hover { background: var(--surface-hover); }
+
+.pd-split-mark {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  align-self: center;
+  color: var(--ink);
+  visibility: hidden;
+}
+
+/* a session label is recorded text: body face, no text-transform. */
+.pd-split-option-label {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.pd-split-option-count {
+  grid-column: 2;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  color: var(--ink-3);
+}
+
+.pd-split-option-on {
+  background: var(--surface-hover);
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+
+.pd-split-option-on .pd-split-mark { visibility: visible; }
+
+.pd-split-option-on .pd-split-option-label {
+  font-weight: 700;
+  color: var(--ink-strong);
+}
+
+.pd-split-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border: var(--bd);
+}
+
+.pd-split-pane-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2) var(--sp-4);
+  padding-bottom: var(--sp-2);
+  border-bottom: var(--bd);
+}
+
+/* the selected session's label: recorded text, so the global heading lowercase never applies. */
+.pd-split-pane-title {
+  margin: 0;
+  text-transform: none;
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ink-strong);
+  overflow-wrap: anywhere;
+}
+
+.pd-split-open {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+}
+
+.pd-split-collapsed,
+.pd-split-empty {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink-2);
+}
+
+@media (max-width: 767px) {
+  .pd-split { grid-template-columns: minmax(0, 1fr); }
+}
