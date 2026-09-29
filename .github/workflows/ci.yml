@@ -178,6 +178,7 @@ jobs:
           pnpm test:fairtest:type-coverage
           pnpm test:fairtest:paths
           pnpm test:fairtest:boundary
+          pnpm test:fairtest:dispatch
           pnpm test:fairtest:promotion
           pnpm --filter @peasant-labs/fairtest test:core
           pnpm --filter @peasant-labs/fairtest test:adapter

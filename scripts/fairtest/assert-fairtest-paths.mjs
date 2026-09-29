@@ -14,7 +14,10 @@
 //      module so a path mentioned inside a comment is not a bare literal, and
 //      it treats a substitution-free template as its text, so a path cannot
 //      hide behind a backtick either; a new hardcoded path under a declared
-//      root is caught.
+//      root is caught. The reach stops at a whole literal: a `./`-prefixed
+//      spelling (`./dist`), a segment-assembled path (`'dist/' + name`), and
+//      text inside a substituted template (`` `${root}/x` ``) are not refused,
+//      because the scanner reads only whole literals.
 //   2. the path-resolution guard proves every declared location resolves to an
 //      absolute path inside FAIRTEST_REPO_ROOT, and that traversal, absolute,
 //      empty, dot-segment, windows, and unknown-name inputs are refused with

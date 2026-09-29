@@ -1,15 +1,10 @@
 # Required-name inventory and executable mutations for fairtest-dispatch.yaml.
 #
 # The guard (scripts/fairtest/assert-target-dispatch.mjs) owns no case data;
-# every detection case and mutation lives here. Each `plant-source` mutation
-# writes a scratch module carrying one evasion form and proves the guard refuses
-# it, naming the offending expression; one plants its module in a scratch
-# subdirectory to pin the recursive walk. Each `boundary-body` mutation feeds a
-# copy of the required-CI boundary command body to the chain binding: one
-# deletes the chained dispatch call, one replaces it with an `echo` text
-# mention, and one leaves it only inside a shell comment. All three prove the
-# binding refuses a body that does not run the guard as its own `&&` segment.
-# Each mutation must fail for its intended diagnostic.
+# every detection case and mutation lives here. Each mutation writes a scratch
+# module carrying one evasion form and proves the guard refuses it, naming the
+# offending expression; one plants its module in a scratch subdirectory to pin
+# the recursive walk. Each mutation must fail for its intended diagnostic.
 expectedDetectionCaseCount: 14
 requiredDetectionCaseNames:
   - direct-equality
@@ -26,7 +21,7 @@ requiredDetectionCaseNames:
   - unrelated-switch-clean
   - proof-assertion-clean
   - object-literal-clean
-expectedMutationCount: 12
+expectedMutationCount: 9
 requiredMutationNames:
   - plant-direct-equality
   - plant-reversed-equality
@@ -37,9 +32,6 @@ requiredMutationNames:
   - plant-aliased-equality
   - plant-destructured-equality
   - plant-nested-direct-equality
-  - drop-boundary-chain
-  - echo-boundary-chain
-  - comment-boundary-chain
 mutations:
   - name: plant-direct-equality
     kind: plant-source
@@ -117,15 +109,3 @@ mutations:
         return 'product'
       }
     expectedDiagnostic: kind === 'component'
-  - name: drop-boundary-chain
-    kind: boundary-body
-    body: "node scripts/assert-fairtest-boundary.mjs && node scripts/fairtest-source.mjs --smoke"
-    expectedDiagnostic: assert-target-dispatch.mjs
-  - name: echo-boundary-chain
-    kind: boundary-body
-    body: "node scripts/assert-fairtest-boundary.mjs && node scripts/fairtest-source.mjs --smoke && echo node scripts/fairtest/assert-target-dispatch.mjs"
-    expectedDiagnostic: assert-target-dispatch.mjs
-  - name: comment-boundary-chain
-    kind: boundary-body
-    body: "node scripts/assert-fairtest-boundary.mjs && node scripts/fairtest-source.mjs --smoke && # node scripts/fairtest/assert-target-dispatch.mjs"
-    expectedDiagnostic: assert-target-dispatch.mjs

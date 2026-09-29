@@ -607,6 +607,7 @@ function inspectWorkflowOrder(text) {
     'pnpm test:fairtest:type-coverage',
     'pnpm test:fairtest:paths',
     'pnpm test:fairtest:boundary',
+    'pnpm test:fairtest:dispatch',
     'pnpm test:fairtest:envelope',
     'pnpm test:fairtest:compat',
   ]) {

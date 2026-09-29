@@ -93,7 +93,7 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document[1]
-expectedWorkflowMutationCount: 13
+expectedWorkflowMutationCount: 14
 requiredWorkflowMutationNames:
   - workflow-upload-pin-becomes-a-tag
   - workflow-upload-drops-no-files-error
@@ -108,6 +108,7 @@ requiredWorkflowMutationNames:
   - workflow-drops-the-type-coverage-gate
   - workflow-drops-the-paths-gate
   - workflow-drops-the-boundary-gate
+  - workflow-drops-the-dispatch-gate
 workflowMutations:
   - name: workflow-upload-pin-becomes-a-tag
     find: "      - name: Fairtest evidence upload\n        if: always()\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2\n"
@@ -161,6 +162,10 @@ workflowMutations:
     find: "          pnpm test:fairtest:boundary\n"
     replace: ''
     expectedField: test:fairtest:boundary
+  - name: workflow-drops-the-dispatch-gate
+    find: "          pnpm test:fairtest:dispatch\n"
+    replace: ''
+    expectedField: test:fairtest:dispatch
 expectedSourceMutationCount: 5
 requiredSourceMutationNames:
   - dropped-process-receipt-requirement

@@ -28,10 +28,18 @@ commands:
     runner: none
   # REQUIRED-CI MOUNT: ENFORCED. The Fairtest required-CI job runs this
   # browser-free boundary guard in its contracts step, so a browser or app
-  # import injected into the guarded surface, and a host-kind branch outside the
-  # declaration and view-construction modules, turn required CI red.
+  # import injected into the guarded surface turns required CI red.
   - name: test:fairtest:boundary
     invocation: pnpm test:fairtest:boundary
+    owner: promotion-guardrails
+    stage: browser-free
+    runner: none
+  # REQUIRED-CI MOUNT: ENFORCED. The Fairtest required-CI job runs this
+  # browser-free source guard as its own command in the contracts step, so a
+  # host-kind branch outside the declaration and view-construction modules
+  # turns required CI red.
+  - name: test:fairtest:dispatch
+    invocation: pnpm test:fairtest:dispatch
     owner: promotion-guardrails
     stage: browser-free
     runner: none

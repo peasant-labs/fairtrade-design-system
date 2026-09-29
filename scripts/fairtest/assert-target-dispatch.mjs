@@ -24,6 +24,9 @@
 // never reads as `product`), and a kind array held in a variable and probed
 // with `.includes`/`.has`/`.indexOf` (the only recognized membership test is an
 // inline array literal of kind strings probed with `.includes`) all elude it.
+// A destructuring rename in a parameter position (`function pick({ kind: k })`)
+// also eludes it: the alias collector only follows `const`/`let`/`var`
+// bindings, so a name bound in a parameter list is not tracked as `kind`.
 // Narrowing the guarantee is the honest claim: it catches the ordinary
 // evasions, not an adversarial rewrite.
 //
@@ -36,9 +39,10 @@
 //
 // Browser-free: node builtins plus the declared yaml dependency. The named
 // mutations live in scripts/testdata/fairtest-dispatch.yaml plus its
-// required-name manifest; this file owns no case data. The guard is chained
-// into `pnpm test:fairtest:boundary`, and assertBoundaryChainsDispatch binds
-// that chain so deleting the chained call cannot stay green.
+// required-name manifest; this file owns no case data. Required CI names this
+// guard as its own command (`pnpm test:fairtest:dispatch`) in the browser-free
+// contracts step, so the mount is the workflow line itself rather than a shell
+// chain this file has to parse.
 
 import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
@@ -46,7 +50,6 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, join, relative as relativePath, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadSingleDocument } from '../fairtest-single-document.mjs'
-import { FAIRTEST_REPO_ROOT } from './fairtest-runtime.mjs'
 import { fairtestPath, fairtestRelative } from './fairtest-paths.mjs'
 
 /**
@@ -60,20 +63,6 @@ export const DISPATCH_ALLOWED_MODULES = Object.freeze([
   'fairtrade-targets.mjs',
   'fairtrade-component-target.mjs',
   'run-mounted.mjs',
-])
-
-/**
- * The required-CI boundary command whose body must chain this guard. The name
- * is what package.json declares; the required steps are the exact invocations
- * the chain is documented to carry.
- */
-export const BOUNDARY_SCRIPT_NAME = 'test:fairtest:boundary'
-
-/** @type {readonly string[]} */
-export const BOUNDARY_REQUIRED_STEPS = Object.freeze([
-  'node scripts/assert-fairtest-boundary.mjs',
-  'node scripts/fairtest-source.mjs --smoke',
-  'node scripts/fairtest/assert-target-dispatch.mjs',
 ])
 
 const KIND_LITERALS = Object.freeze(['product', 'component'])
@@ -505,61 +494,17 @@ function walkModules(directory) {
   return found.sort()
 }
 
-/**
- * Assert the required-CI boundary command body actually chains the dispatch
- * guard. Without this, deleting the chained call stays green: the guard would
- * simply never run from required CI. Membership is exact per `&&` segment, so a
- * text mention (`echo <step>`) or a shell comment naming the step does not
- * satisfy it.
- * @param {Record<string, unknown>} scripts package.json scripts mapping
- * @param {string} label owning file used in diagnostics
- * @returns {string} the command body
- */
-export function assertBoundaryChainsDispatch(scripts, label) {
-  const body = scripts[BOUNDARY_SCRIPT_NAME]
-  if (typeof body !== 'string' || body.trim().length === 0) {
-    throw new Error(
-      `${label}: required-CI boundary command is missing for field "chain" at path package.json.scripts["${BOUNDARY_SCRIPT_NAME}"]; ` +
-      'repair: restore the chained boundary command that runs the dispatch guard.',
-    )
-  }
-  for (const step of BOUNDARY_REQUIRED_STEPS) {
-    if (!boundarySegments(body).includes(step)) {
-      throw new Error(
-        `${label}: required-CI boundary command does not chain ${JSON.stringify(step)} for field "chain" at path package.json.scripts["${BOUNDARY_SCRIPT_NAME}"]; ` +
-        `repair: chain ${step} as its own && segment so the guard's required-CI mount is bound.`,
-      )
-    }
-  }
-  return body
-}
-
-/**
- * The `&&`-separated command segments of a package.json script body, trimmed.
- * Membership is exact per segment, not a substring test: a mention inside a
- * longer command (`echo <step>`), a shell comment that names the step without
- * running it, or any other text that merely contains the step string does not
- * count as chaining it.
- * @param {string} body script command body
- * @returns {string[]} the trimmed command segments
- */
-function boundarySegments(body) {
-  return body.split('&&').map((segment) => segment.trim())
-}
-
 /** @typedef {object} DispatchMutation
  * @property {string} name
  * @property {string} kind
  * @property {string} [source]
- * @property {string} [body]
  * @property {boolean} [nested]
  * @property {string} expectedDiagnostic */
 
 /**
- * Load the reach corpus and prove each detection form, each evasion mutation,
- * and the boundary-chain binding. The guard owns no case data; every case and
- * mutation comes from scripts/testdata/fairtest-dispatch.yaml plus its
- * required-name manifest.
+ * Load the reach corpus and prove each detection form and each evasion
+ * mutation. The guard owns no case data; every case and mutation comes from
+ * scripts/testdata/fairtest-dispatch.yaml plus its required-name manifest.
  */
 function runDispatchReach() {
   const corpusRel = fairtestRelative('dispatchCorpus')
@@ -582,26 +527,20 @@ function runDispatchReach() {
       assert.equal(hits.length, 0, `${corpusRel}: detection case "${entry.name}" is expected clean but reported ${JSON.stringify(hits)}`)
     }
   }
-  const rootManifest = JSON.parse(readFileSync(join(FAIRTEST_REPO_ROOT, 'package.json'), 'utf8'))
-  assertBoundaryChainsDispatch(rootManifest.scripts ?? {}, 'package.json')
   for (const mutation of manifest.mutations) {
     let message = null
     try {
-      if (mutation.kind === 'plant-source') {
-        const directory = mkdtempSync(join(tmpdir(), 'fairtest-dispatch-mutation-'))
-        try {
-          let target = directory
-          if (mutation.nested) {
-            target = join(directory, 'nested')
-            mkdirSync(target, { recursive: true })
-          }
-          writeFileSync(join(target, 'planted.mjs'), /** @type {string} */ (mutation.source))
-          assertNoTargetKindDispatch(directory)
-        } finally {
-          rmSync(directory, { recursive: true, force: true })
+      const directory = mkdtempSync(join(tmpdir(), 'fairtest-dispatch-mutation-'))
+      try {
+        let target = directory
+        if (mutation.nested) {
+          target = join(directory, 'nested')
+          mkdirSync(target, { recursive: true })
         }
-      } else {
-        assertBoundaryChainsDispatch({ [BOUNDARY_SCRIPT_NAME]: /** @type {string} */ (mutation.body) }, 'package.json')
+        writeFileSync(join(target, 'planted.mjs'), /** @type {string} */ (mutation.source))
+        assertNoTargetKindDispatch(directory)
+      } finally {
+        rmSync(directory, { recursive: true, force: true })
       }
     } catch (error) {
       message = error instanceof Error ? error.message : String(error)
@@ -648,20 +587,20 @@ function validateManifest(value, label) {
   assert.deepEqual(mutations.map((entry) => entry.name).sort(), [.../** @type {string[]} */ (record.requiredMutationNames)].sort(), `${label}: mutation name inventory mismatch`)
   for (const [index, mutation] of mutations.entries()) {
     const path = `mutations[${index}]`
-    const fields = mutation.kind === 'plant-source' ? ['name', 'kind', 'source', 'expectedDiagnostic'] : ['name', 'kind', 'body', 'expectedDiagnostic']
+    const fields = ['name', 'kind', 'source', 'expectedDiagnostic']
     if (mutation.nested) fields.push('nested')
     assert.deepEqual(Object.keys(mutation).sort(), [...fields].sort(), `${label}: mutation ${index} exact field mismatch at path ${path}`)
-    assert.ok(['plant-source', 'boundary-body'].includes(mutation.kind), `${label}: mutation "${mutation.name}" has an unknown kind at path ${path}.kind`)
+    assert.equal(mutation.kind, 'plant-source', `${label}: mutation "${mutation.name}" has an unknown kind at path ${path}.kind`)
     assert.ok(typeof mutation.expectedDiagnostic === 'string' && mutation.expectedDiagnostic.length > 0, `${label}: mutation "${mutation.name}" must name its diagnostic at path ${path}.expectedDiagnostic`)
   }
 }
 
-// CLI entry: required CI chains `node scripts/fairtest/assert-target-dispatch.mjs`
-// into `pnpm test:fairtest:boundary`, so the guard runs over its own harness
-// directory from a clean checkout instead of only inside the product-contract
-// suite. It exits non-zero on a forbidden host-kind branch, carrying the
-// repository's `at path` context and `repair:` guidance, and it exercises the
-// reach corpus and the boundary-chain binding on every run.
+// CLI entry: required CI names `node scripts/fairtest/assert-target-dispatch.mjs`
+// as its own `pnpm test:fairtest:dispatch` command, so the guard runs over its
+// own harness directory from a clean checkout instead of only inside the
+// product-contract suite. It exits non-zero on a forbidden host-kind branch,
+// carrying the repository's `at path` context and `repair:` guidance, and it
+// exercises the reach corpus on every run.
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
   try {
     const { scanned } = assertNoTargetKindDispatch(dirname(fileURLToPath(import.meta.url)))

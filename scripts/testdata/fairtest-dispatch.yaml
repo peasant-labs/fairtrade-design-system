@@ -12,9 +12,8 @@
 # array-membership test, a comparison through an alias, and the same through a
 # destructuring rename. A clean case proves a comment, a string, an unrelated
 # switch, an assertion call, and an object literal do not trip it.
-# The executable mutations live in the manifest beside this file; one plants a
-# scratch module per evasion form, and the boundary-body mutations remove the
-# guard from the required-CI boundary chain or replace it with a text mention.
+# The executable mutations live in the manifest beside this file; each plants a
+# scratch module carrying one evasion form.
 detectionCases:
   - name: direct-equality
     source: |
