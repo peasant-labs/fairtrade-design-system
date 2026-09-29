@@ -34,3 +34,5 @@ storybook-static/
 # every `pnpm run build:lib`/`pnpm run test:contract`), not a one-off accident. Not consumed by
 # anything (dist/lib/types/ is the real published output); ignored rather than tracked.
 src/mockups/inuse/CommonsManage.d.ts
+src/mockups/inuse/CommonsPages.d.ts
+src/mockups/inuse/village-fixture.d.ts
