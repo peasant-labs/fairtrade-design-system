@@ -726,7 +726,8 @@ function buildMockupVM() {
 
   return {
     ...base,
-    session: { ...base.session, title: 'Port the transcript canvas into the shared package' },
+    // the recorded prompt count the header's meta row names (the fixture's two user turns)
+    session: { ...base.session, title: 'Port the transcript canvas into the shared package', inputSubmissionCount: base.turns.filter((turn) => turn.role === 'user').length },
     turns,
     files,
     diffs,
