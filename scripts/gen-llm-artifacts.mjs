@@ -194,13 +194,15 @@ function buildBaseCss() {
 /* ---------- DESIGN.md frontmatter ----------
    DESIGN.md (repo root) is the one design record. Its YAML frontmatter follows the DESIGN.md format
    (name, description, colors, typography, rounded, spacing, components) and is GENERATED here from
-   the same two token blocks, so the record can never state a value that src/index.css does not ship.
-   Only the frontmatter is rewritten; the authored body below it is kept byte for byte. Colors are the
-   hex tokens (the same set as the tokens.json color group) in source order, dark first, each followed
-   by a `-light` key when the light theme overrides it. The typography roles and component entries are
-   the record's own vocabulary; every value in them resolves from a token (or is a literal weight or
-   zero), and an unknown token or reference throws, so a renamed token fails the build instead of
-   leaving a stale record. */
+   the same two token blocks, so every token VALUE in it is the value src/index.css ships. Only the
+   frontmatter is rewritten; the authored body below it is kept byte for byte. Colors are the hex
+   tokens (the same set as the tokens.json color group) in source order, dark first, each followed by
+   a `-light` key when the light theme overrides it (a `-light` key is a frontmatter name, not a CSS
+   custom property). The description, the typography roles (TYPE_ROLES) and the component entries
+   (COMPONENTS) are AUTHORED here: they say which tokens a role or component uses, so a restyle in
+   src/index.css must update them by hand. What the generator does guarantee is that each value
+   resolves from a token (or is a literal weight or zero) and that every {group.name} reference
+   resolves, so a renamed token or a dangling reference fails the build. */
 const DESIGN = join(ROOT, 'DESIGN.md')
 const tok = (name) => ({ token: name })
 const TYPE_ROLES = [
@@ -208,19 +210,21 @@ const TYPE_ROLES = [
   ['headline', { fontFamily: tok('font-display'), fontSize: tok('fs-xl'), fontWeight: 700, lineHeight: tok('lh-tight') }],
   ['title', { fontFamily: tok('font-display'), fontSize: tok('fs-lg'), fontWeight: 700, lineHeight: tok('lh-tight') }],
   ['body', { fontFamily: tok('font-body'), fontSize: tok('fs-body'), fontWeight: 400, lineHeight: tok('lh-body'), letterSpacing: tok('tracking-prose') }],
-  ['label', { fontFamily: tok('font-mono'), fontSize: tok('fs-label'), fontWeight: 400, letterSpacing: '0' }],
-  ['code', { fontFamily: tok('font-mono'), fontSize: tok('fs-body'), fontWeight: 400, lineHeight: tok('lh-mono'), letterSpacing: '0' }],
+  ['label', { fontFamily: tok('font-mono'), fontSize: tok('fs-label'), fontWeight: 400, letterSpacing: '0px' }],
+  ['label-strong', { fontFamily: tok('font-mono'), fontSize: tok('fs-label'), fontWeight: 600, letterSpacing: '0px' }],
+  ['field', { fontFamily: tok('font-body'), fontSize: tok('fs-body'), fontWeight: 400 }],
+  ['code', { fontFamily: tok('font-mono'), fontSize: tok('fs-body'), fontWeight: 400, lineHeight: tok('lh-mono'), letterSpacing: '0px' }],
 ]
 const control = { rounded: '{rounded.none}', height: tok('control-h') }
 const COMPONENTS = [
-  ['button-primary', { backgroundColor: '{colors.amber}', textColor: '{colors.on-amber}', typography: '{typography.label}', ...control, padding: ['0', tok('sp-4')] }],
+  ['button-primary', { backgroundColor: '{colors.amber}', textColor: '{colors.on-amber}', typography: '{typography.label-strong}', ...control, padding: ['0', tok('sp-4')] }],
   ['button-primary-hover', { backgroundColor: '{colors.amber-bright}' }],
   ['button-secondary', { backgroundColor: 'transparent', textColor: '{colors.ink}', typography: '{typography.label}', ...control, padding: ['0', tok('sp-4')] }],
   ['button-secondary-hover', { textColor: '{colors.amber-bright}' }],
   ['button-ghost', { backgroundColor: 'transparent', textColor: '{colors.ink-3}', typography: '{typography.label}', ...control, padding: ['0', tok('sp-4')] }],
   ['button-ghost-hover', { backgroundColor: '{colors.surface-hover}', textColor: '{colors.ink}' }],
   ['button-danger', { backgroundColor: 'transparent', textColor: '{colors.clay}', typography: '{typography.label}', ...control, padding: ['0', tok('sp-4')] }],
-  ['input', { backgroundColor: '{colors.canvas}', textColor: '{colors.ink}', typography: '{typography.body}', ...control, padding: ['0', tok('sp-3')] }],
+  ['input', { backgroundColor: '{colors.canvas}', textColor: '{colors.ink}', typography: '{typography.field}', ...control, padding: ['0', tok('sp-3')] }],
   ['chip', { textColor: '{colors.ink-2}', typography: '{typography.label}', rounded: '{rounded.none}', height: tok('control-h-sm'), padding: ['0', tok('sp-3')] }],
   ['card', { backgroundColor: '{colors.surface}', rounded: '{rounded.none}', padding: tok('sp-4') }],
   ['dialog', { backgroundColor: '{colors.surface}', rounded: '{rounded.none}', width: tok('dialog-w') }],
@@ -247,15 +251,22 @@ function buildDesignFrontmatter() {
   for (const [name, value] of Object.entries(dark)) {
     if (!isHex(value)) continue
     colors.push([name, value])
-    if (light[name] && light[name] !== value) colors.push([name + '-light', light[name]])
+    if (light[name] && light[name] !== value) {
+      if (name + '-light' in dark) throw new Error(`DESIGN.md frontmatter: --${name}-light is a token, so its light-theme key would collide`)
+      colors.push([name + '-light', light[name]])
+    }
   }
-  const colorNames = new Set(colors.map(([n]) => n))
-  const roleNames = new Set(TYPE_ROLES.map(([n]) => n))
+  const spacingNames = Object.keys(dark).filter((n) => /^sp-\d+$/.test(n))
+  const known = {
+    colors: new Set(colors.map(([n]) => n)),
+    typography: new Set(TYPE_ROLES.map(([n]) => n)),
+    rounded: new Set(['none']),
+    spacing: new Set(spacingNames),
+  }
   const checkRef = (v) => {
-    const m = typeof v === 'string' && v.match(/^\{(colors|typography|rounded)\.([\w-]+)\}$/)
-    if (!m) return
-    const ok = m[1] === 'colors' ? colorNames.has(m[2]) : m[1] === 'typography' ? roleNames.has(m[2]) : m[2] === 'none'
-    if (!ok) throw new Error(`DESIGN.md frontmatter: unknown reference ${v}`)
+    if (typeof v !== 'string' || !v.includes('{')) return
+    const m = v.match(/^\{([\w-]+)\.([\w-]+)\}$/)
+    if (!m || !known[m[1]]?.has(m[2])) throw new Error(`DESIGN.md frontmatter: unknown reference ${v}`)
   }
   const lines = [
     '# GENERATED from src/index.css by scripts/gen-llm-artifacts.mjs. Do not edit this block by hand:',
@@ -272,7 +283,7 @@ function buildDesignFrontmatter() {
     for (const [k, v] of Object.entries(props)) lines.push(`    ${k}: ${yamlScalar(resolve(v))}`)
   }
   lines.push('rounded:', `  none: ${yamlScalar('0px')}`, 'spacing:')
-  for (const name of Object.keys(dark).filter((n) => /^sp-\d+$/.test(n))) lines.push(`  ${name}: ${yamlScalar(dark[name])}`)
+  for (const name of spacingNames) lines.push(`  ${name}: ${yamlScalar(dark[name])}`)
   lines.push('components:')
   for (const [name, props] of COMPONENTS) {
     lines.push(`  ${name}:`)

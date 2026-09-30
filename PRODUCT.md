@@ -26,19 +26,26 @@ Fairtrade is a design system built around one job: rendering an AI coding transc
 
 ## Operating Context
 
-- **Exports.** The package exports token, base, and component CSS, `/icons`, and `/ui` (primitives, composites, and the adapter).
+- **Exports.** The package exports:
+  - token, base, font, and component CSS, and the token JSON;
+  - `/icons`;
+  - `/ui`: primitives, composites, and the adapter;
+  - the surface entry points `/graph`, `/commons`, and `/analytics`, each with its CSS.
+
+  `package.json` is the list of record.
 - **The in-use demo is the fidelity oracle.** Consuming apps are held to it element for element.
 - **Visual gates.** They compare the demo (on the left) with the consuming app (on the right), capture both themes, and probe computed styles.
-- **Section order.** The graph app sections run `analytics | changes | code map` (`GRAPH_APP_SECTIONS`). They stay binding until a user-ratified replacement lands here first.
+- **Section registry.** The local app's sections come from `LOCAL_APP_SECTIONS`.
+  - `home` and `settings` are in the nav.
+  - `analytics`, `changes`, and `code map` are reached by route only.
+  - Consumers derive their nav and routes from the registry.
+  - `GRAPH_APP_SECTIONS` is a deprecated alias for the older three-section shape.
+  - A replacement is ratified here first.
 
 ## Capabilities and Constraints
 
-- **Fonts.** Atkinson Hyperlegible for body text and Atkinson Hyperlegible Mono for chrome. Load both with a `<link>` in the head, never a remote `@import`.
-- **Case.** All UI chrome is lowercase. User content is never lowercased.
-- **Shape and color.** Radius 0. Tokens only. Amber is a scarce accent.
-- **Themes.** There are two themes, and both meet WCAG AA.
-- **Type.** A 16px body floor, mono-14 chrome, and tabular numbers on counts and durations.
-- **Brand marks.** Provider names lead with `<BrandMark>`.
+- **Visual rules.** Every binding visual rule lives in `DESIGN.md`. This file does not restate them.
+- **Source.** The library is JavaScript and JSX only, with no TypeScript.
 - **Highlighting.** Syntax highlighting returns structured output only (`codeToHast` or `codeToTokens`), rendered through React. Raw HTML injection is never allowed.
 - **Order of change.** A new visual pattern needed by a consuming app lands here before the app uses it.
 
@@ -61,4 +68,4 @@ Fairtrade is a design system built around one job: rendering an AI coding transc
 
 ## Accessibility & Inclusion
 
-WCAG AA in both themes. The neuroinclusive defaults are set in `DESIGN.md`, including at most five primary actions per view and static-first motion.
+WCAG AA in both themes, with the neuroinclusive defaults set in `DESIGN.md`.

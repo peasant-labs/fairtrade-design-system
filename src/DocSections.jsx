@@ -69,7 +69,7 @@ export function MotionSection() {
   )
 }
 
-/* 20-principles: seven icon tiles, mirroring the philosophy in llm/DESIGN.md.
+/* 20-principles: seven icon tiles, mirroring the philosophy in DESIGN.md.
    <i data-lucide> -> lucide-react; CSS (.pi .lucide) sizes them. */
 export function PrinciplesSection() {
   const items = [

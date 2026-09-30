@@ -1,10 +1,14 @@
 # neuroinclusive by default
 
-> **Authority.** The binding rules and token values live in [`../DESIGN.md`](../DESIGN.md), the one
-> design record (its token values are generated from `src/index.css`). This file keeps the research
-> behind those rules, how they were reconciled with the locked identity, and the review checklist.
-> If this file and `DESIGN.md` disagree, `DESIGN.md` wins and the disagreement is a bug: fix both in
-> the same commit.
+> **Authority.**
+> - The binding rules live in [`../DESIGN.md`](../DESIGN.md), the one design record.
+> - Token values live in `src/index.css`. `DESIGN.md`'s frontmatter and `public/tokens.json` are
+>   generated from it.
+> - This file keeps three things: the research behind the rules, how the rules were reconciled
+>   with the locked identity, and the review checklist.
+> - The values in its tables explain the rules. They are not a second source of truth.
+> - If this file and `DESIGN.md` disagree, `DESIGN.md` wins. The disagreement is a bug: fix both
+>   files in the same commit.
 
 This is not an "accessibility settings" page. These are the **default** rules of the fairtrade
 design system, because the product is a **data-heavy** application (long transcripts, tables,
@@ -38,8 +42,8 @@ These are baked into `src/index.css` and reach every consuming app through the p
 | `--measure-prose` / `--measure-read` / `--measure-code` | **66ch / 60ch / 80ch** | cap running-prose line length; never cap tables/code (give each its own `overflow-x:auto`) |
 | `--focus-ring` | amber (dark) / near-black (light) | global `:focus-visible{outline:3px solid;outline-offset:2px}`; never bare `outline:none` |
 | `--target-min` / `--target-comfortable` | **24px / 44px** | every interactive box ≥24px (WCAG 2.5.8), primary ≥44px |
-| `--row-h-compact/standard/comfortable` | **32 / 40 / 48px** | comfortable 40px default, persistent density toggle |
-| `--motion-base` | **0ms default**, 150–200ms only under `prefers-reduced-motion:no-preference` | static-first |
+| `--row-h-compact/standard/comfortable` | **32 / 40 / 48px** | standard 40px default, persistent density toggle |
+| `--motion-base` | **0ms default**, 120–200ms (`--dur-1` to `--dur-3`) only under `prefers-reduced-motion:no-preference` | static-first |
 
 Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:justify`; no
 `outline:none` without a stronger replacement; no infinite animation; no color-only meaning.
@@ -176,7 +180,7 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
   `position:sticky`; the frozen first column is a human-readable label, never an opaque ID; order
   columns by importance. Compensate for lowercase headers with weight 600 + a rule under the header.
   *(NN/g; Adrian Roselli)*
-- **Comfortable ~40px rows by default** (≈12px vertical padding), with persistent compact (32px) /
+- **Standard ~40px rows by default** (≈12px vertical padding), with persistent compact (32px) /
   comfortable (48px) density; in-row controls get ≥24px (≥44px touch) hit boxes even when the glyph
   is 14–16px. *(BDA 2023; MUI X; WCAG 2.5.8)*
 - **Maximize data-ink.** No 3D, gradients, drop shadows (beyond one functional sticky-edge), textures,
@@ -232,7 +236,7 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
    (600–700), amber accent, whitespace, and a hairline under section headers. Allow sentence-case for
    multi-line literal copy; keep short labels lowercase.
 5. **Underline-free amber links vs "links must look different".** → In-prose links get a secondary
-   non-color cue (dotted underline on hover/focus + the existing `> ` marker vocabulary) without
+   non-color cue (a dotted underline at rest, solid on hover and focus; no `>` marker) without
    undoing the global underline-free aesthetic.
 6. **cp437/Qud texture & glow vs flat-background/halation rules.** → Confine texture/glow to non-text
    chrome; every region with running text or data stays a flat single fill; the `.hl` glow is single
