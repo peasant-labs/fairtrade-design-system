@@ -221,10 +221,12 @@
     html { scroll-behavior: auto; }
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   }
-  /* reduced transparency: no backdrop blur anywhere, and the sticky chrome that reading content
-     scrolls under turns opaque. !important, like the reduced-motion kill above: a normal
-     declaration here in @layer base loses to every blurred rule in the components layer, which
-     is how an earlier .nav-only fallback in this spot never applied. */
+  /* reduced transparency: no backdrop blur anywhere. !important, like the reduced-motion kill
+     above: a normal declaration here in @layer base loses to every blurred rule in the components
+     layer, which is how an earlier .nav-only fallback in this spot never applied. Removing the
+     blur is not enough for a translucent sticky bar that reading content scrolls under: each one
+     also needs an opaque background under reduce. The two --nav-bg bars get it here. The glass
+     bars in TranscriptMarkers.css get it beside their own rules. A new translucent bar needs one. */
   @media (prefers-reduced-transparency: reduce) {
     *, *::before, *::after { backdrop-filter: none !important; }
     .nav, .txn-sticky { background: var(--surface) !important; }

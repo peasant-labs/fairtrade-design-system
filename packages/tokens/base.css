@@ -51,4 +51,7 @@ section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
     transition-duration: .01ms !important;
   }
 }
+@media (prefers-reduced-transparency: reduce) {
+  *, *::before, *::after { backdrop-filter: none !important; }
+}
 }
