@@ -18,6 +18,7 @@ requiredMutationNames:
   - the strip drops thousands grouping
   - the copy button shows without a clipboard
   - the overflow button loses its count
+  - the overflow button drops focus
 mutations:
   - name: the strip ignores label-first
     file: src/ui/StatsStrip.jsx
@@ -39,3 +40,8 @@ mutations:
     find: "aria-label={`show ${hidden} more ${hidden === 1 ? noun[0] : noun[1]}`}"
     replace: "aria-label=\"show more\""
     expectedDiagnostic: "OverflowList over the limit: the +N button"
+  - name: the overflow button drops focus
+    file: src/ui/OverflowList.jsx
+    find: "onClick={() => { revealRef.current = true; setOpen(true) }}"
+    replace: "onClick={() => setOpen(true)}"
+    expectedDiagnostic: "after +N, focus lands on"

@@ -97,6 +97,10 @@ export const PROVIDERS = [
   { id: 'sourcehut', label: 'SourceHut' },
 ]
 
+/* sign-in offers GitHub alone unless a host passes its own list. declared above the component's
+   doc block so the block stays attached to the component in the emitted types. */
+const DEFAULT_PROVIDERS = Object.freeze([PROVIDERS[0]])
+
 /**
  * SignInProviders — a multi-provider OAuth split button.
  *
@@ -110,8 +114,6 @@ export const PROVIDERS = [
  * @param {string} [props.className]
  * @returns {JSX.Element|null}
  */
-const DEFAULT_PROVIDERS = Object.freeze([PROVIDERS[0]])
-
 export function SignInProviders({ providers = DEFAULT_PROVIDERS, onSignIn, className = '', ...rest }) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)

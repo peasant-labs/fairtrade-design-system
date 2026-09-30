@@ -4,6 +4,9 @@
 #   commit: resolve (the write lands), reject (the write fails with `error`), hold (never settles)
 #   steps: toggle | pick:<value> | check | edit | type:<text> | enter | escape | save | cancel
 #   expected.status: idle (no word), saving, saved or not saved
+# statusWords maps every exported row state (SETTING_ROW_STATES) to the word a user reads; the
+# gate holds its keys to the exported set and requires a case for every word.
+statusWords: {idle: idle, pending: saving, settled: saved, failed: not saved}
 rows:
   - name: idle
     control: switch

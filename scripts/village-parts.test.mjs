@@ -61,6 +61,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!more && text(more) === row.expected.more.text && more.getAttribute('aria-label') === row.expected.more.name, `${row.name}: the +N button must read ${JSON.stringify(row.expected.more.text)} and be named ${JSON.stringify(row.expected.more.name)}`)
       if (more) await mounted.act(() => click(window, more))
       report.check(JSON.stringify(shown()) === JSON.stringify(row.expected.more.after), `${row.name}: after +N expected ${JSON.stringify(row.expected.more.after)}, received ${JSON.stringify(shown())}`)
+      const focused = window.document.activeElement
+      report.check(text(focused) === row.expected.more.focus, `${row.name}: after +N, focus lands on ${JSON.stringify(row.expected.more.focus)}, received ${JSON.stringify(text(focused) ?? focused?.tagName)}`)
     }
     if (row.expected.empty) report.check(text(mounted.container) === row.expected.empty, `${row.name}: no items renders the empty node`)
     await mounted.unmount()

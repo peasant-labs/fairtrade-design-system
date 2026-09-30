@@ -25,7 +25,8 @@
   font-size: var(--fs-label);
   line-height: var(--lh-mono);
   letter-spacing: 0;
-  text-transform: lowercase;
+  /* no case transform: a label can be user content (a folder glob, a login), and chrome labels
+     are written lowercase at the source */
   color: var(--ink);
 }
 .srow-help {

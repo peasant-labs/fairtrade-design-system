@@ -27,9 +27,10 @@ copyIconButton:
   - {name: CopyIconButton copied, clipboard: true, press: true, expected: {rendered: true, name: copied, status: copied, written: ['https://village.peasantlabs.org/transcripts/3f9c0a17']}}
   - {name: CopyIconButton without a clipboard, clipboard: false, press: false, expected: {rendered: false, written: []}}
 
-# OverflowList (src/ui/OverflowList.jsx) with limit 2: the first items, then +N for the rest.
+# OverflowList (src/ui/OverflowList.jsx) with limit 2: the first items, then +N for the rest;
+# pressing +N moves focus to the first item it revealed.
 overflowList:
   - {name: OverflowList with zero items, items: [], expected: {items: [], more: null, empty: none}}
   - {name: OverflowList with one item, items: ['#42'], expected: {items: ['#42'], more: null}}
   - {name: OverflowList at the limit, items: ['#42', '#45'], expected: {items: ['#42', '#45'], more: null}}
-  - {name: OverflowList over the limit, items: ['#42', '#45', '#51', '#60'], expected: {items: ['#42', '#45'], more: {text: '+2', name: show 2 more pull requests, after: ['#42', '#45', '#51', '#60']}}}
+  - {name: OverflowList over the limit, items: ['#42', '#45', '#51', '#60'], expected: {items: ['#42', '#45'], more: {text: '+2', name: show 2 more pull requests, after: ['#42', '#45', '#51', '#60'], focus: '#51'}}}

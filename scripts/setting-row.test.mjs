@@ -4,7 +4,7 @@
    checkbox, text edit with save, Enter, cancel and Escape (one write per save), the tag, and an
    open and a collapsed group. Cases: scripts/testdata/setting-row.yaml (+ .manifest.yaml).
    Run: pnpm test:setting-row; mutations: pnpm test:setting-row:mutations. */
-import { loadFixturePair, withMountedSource, click, keydown, createReport } from './mounted-parts.mjs'
+import { loadFixturePair, withMountedSource, click, keydown, createReport, assertExactNames } from './mounted-parts.mjs'
 
 const FIXTURE = 'scripts/testdata/setting-row.yaml'
 const MANIFEST = 'scripts/testdata/setting-row.manifest.yaml'
@@ -13,7 +13,10 @@ const report = createReport('setting row')
 const text = (node) => node?.textContent.replace(/\s+/g, ' ').trim() ?? ''
 
 await withMountedSource(async ({ load, mount, window, React }) => {
-  const { SettingRow, SettingGroup } = await load('/src/ui/index.js')
+  const { SettingRow, SettingGroup, SETTING_ROW_STATES } = await load('/src/ui/index.js')
+  // every exported row state has a word, and a case reads every word
+  assertExactNames(Object.keys(fixture.statusWords), [...SETTING_ROW_STATES], 'setting row: status words against SETTING_ROW_STATES')
+  assertExactNames([...new Set(fixture.rows.map((row) => row.expected.status))], Object.values(fixture.statusWords), 'setting row: the statuses the cases read')
   const setInputValue = (input, value) => {
     const proto = input.tagName === 'SELECT' ? window.HTMLSelectElement.prototype : window.HTMLInputElement.prototype
     Object.getOwnPropertyDescriptor(proto, 'value').set.call(input, value)

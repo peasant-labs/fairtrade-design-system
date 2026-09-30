@@ -21,8 +21,11 @@ requiredImportables:
   - AccessList
   - CollectivePicker
   - PublishDialog
+  - PUBLISH_STATES
+  - PUBLISH_DIALOG_STATES
   - SettingRow
   - SettingGroup
+  - SETTING_ROW_STATES
   - RepoPicker
   - GroupedMultiSelect
   - RedactionReview
