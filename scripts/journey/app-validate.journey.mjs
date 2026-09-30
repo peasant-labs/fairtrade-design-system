@@ -4,7 +4,8 @@
  * (vite preview on :5180, started by the journey config) and asserts the
  * rules the contrast gate cannot see — a11y wiring, interactions, console
  * health, reduced-motion, heading hierarchy, and overflow breakpoints. A
- * separate check proves reduced transparency removes every backdrop blur.
+ * separate check proves that under reduced transparency no mounted element,
+ * and no fresh unclassed element, computes a backdrop blur.
  * Runs against the live clock with no determinism shim, exactly like the
  * script it replaces.
  */

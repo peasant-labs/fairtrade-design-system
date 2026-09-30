@@ -165,12 +165,12 @@ records:
       subject: Under prefers-reduced-transparency reduce, no element on the built demo computes a backdrop blur, and the sticky nav computes the opaque --surface, in each theme.
       necessity: The incident was a cascade-layer loss. A normal fallback in @layer base lost to the blurred rules in the components layer, so it never applied. A source-text row sees the declaration and passes; only a computed read of the mounted page shows which layer wins.
       productionPath: The production build served by the vite preview that playwright.journey.config.mjs starts, at /?fb=off (with &theme=light in the light project), with the media feature set through CDP Emulation.setEmulatedMedia because Playwright's emulateMedia has no reduced-transparency option.
-      cost: One browser context and one page load per theme project inside the existing journey step, under a second in CI, with a 30-second test timeout; no new service, port, or artifact on success.
+      cost: One browser context and one page load per theme project inside the existing journey step, under a second in CI, with a 30-second test timeout; no new service or port, and no uploaded artifact.
       lifetime: One browser context closed in finally, which ends the CDP session with it; failure artifacts go to the gitignored scripts/journey/.artifacts.
       concurrency: The journey runs with one worker and no full parallelism; the check shares the journey's fixed app port and its local server reuse.
       ciParity: pnpm journey:ci in the gates job of the pinned Playwright container, after pnpm build.
       evidence: Every run prints the media match, the rendered theme, the resolved --surface, the nav background, a fresh probe element's blur, and the list of elements that still blur to the CI log; a failing assertion carries the same object.
-      mutation: Deleting the global !important rule, replacing it with a normal .nav rule in @layer base, narrowing it to any list of selectors (the fresh probe element keeps its blur), or dropping the opaque nav background fails the check for the intended reason.
+      mutation: Deleting the global !important rule, replacing it with a normal .nav rule in @layer base, narrowing it to a list of class selectors (the fresh unclassed probe element keeps its blur), or dropping the opaque nav background fails the check for the intended reason.
       exitCondition: Switch to page.emulateMedia when Playwright supports reduced transparency, and delete the check if the base UI stops using backdrop blur.
     lowerLayer:
       result: promote

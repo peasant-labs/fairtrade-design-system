@@ -78,11 +78,12 @@ invariants:
       dialog at 390px.
     mustContainAll:
       - ".dlg-head h3 { @apply text-md; min-width: 0; overflow-wrap: anywhere; }"
-  - id: dialog-head-title-is-an-h3
+  - id: dialog-head-markup-is-pinned
     file: src/ui/Dialog.jsx
     description: >-
       the two dialog-head rows target .dlg-head h3 and .dlg-head > .btn-icon, so
-      the markup they style is pinned too. If the title stopped being an h3, the
-      wrap rule would match nothing while its row stayed green.
+      the markup they style is pinned too: the head div, its h3 title and the
+      close button's btn-icon class, in order. If any of them changed, a rule
+      would match nothing while its row stayed green.
     mustContainAll:
-      - "<h3 id={labelId}>"
+      - "<div className=\"dlg-head\">\n          <h3 id={labelId}>{title}</h3>\n          <button className=\"btn btn-ghost btn-icon\""
