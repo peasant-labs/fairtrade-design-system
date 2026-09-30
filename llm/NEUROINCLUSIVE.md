@@ -12,8 +12,9 @@
 
 This is not an "accessibility settings" page. It records the research behind fairtrade's
 neuroinclusive defaults. `DESIGN.md` sets each rule's status: binding, or a known conflict with the
-demo (`#136/N`). This file sets no status. A bullet here that `DESIGN.md` does not state is research
-guidance that the library does not ship yet. The defaults exist because the product is a
+demo (`#136/N`), as its Status note says. This file sets no status. A bullet here that `DESIGN.md`
+does not state is research guidance that the library does not ship yet, and where a bullet says
+more than `DESIGN.md`, the extra is guidance too. The defaults exist because the product is a
 **data-heavy** application (long transcripts, tables, code, dashboards) and our users include people
 who are dyslexic, have ADHD, or are autistic. Designing for them by default makes the product
 calmer, faster to scan, and less fatiguing for **everyone**, and none of it is an opt-in toggle.
@@ -29,10 +30,11 @@ is stated.
 
 ---
 
-## the defaults that ship in the tokens
+## the tokens behind the defaults
 
-These are baked into `src/index.css` and reach every consuming app through the package's
-`@peasant-labs/fairtrade/tokens.css` and `base.css` exports:
+These tokens live in `src/index.css` and reach every consuming app through the package's
+`@peasant-labs/fairtrade/tokens.css` and `base.css` exports. The rule column is research;
+`DESIGN.md` sets each rule's status:
 
 | token | value | rule |
 |---|---|---|
@@ -46,7 +48,7 @@ These are baked into `src/index.css` and reach every consuming app through the p
 | `--row-h-compact/standard/comfortable` | **32 / 40 / 48px** | standard 40px default, persistent density toggle |
 | `--motion-base` | **0ms default**, 120 to 200ms (`--dur-1` to `--dur-3`) only under `prefers-reduced-motion:no-preference` | static-first |
 
-Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:justify`; no
+Hard floors (checked in review, not by a lint): no text `<16px` in reading contexts; no `text-align:justify`; no
 `outline:none` without a stronger replacement; no infinite animation; no color-only meaning.
 
 ---
@@ -139,7 +141,7 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
 
 ## 5. cognitive load & orientation
 
-- **≤5 primary actions per view.** One primary CTA, ≤5 first-class secondary actions, the rest under
+- **One primary action and ≤5 first-class actions per view.** One primary CTA, ≤5 first-class secondary actions, the rest under
   a `…` overflow. Table rows default to a single kebab, not inline button rows. *(COGA Manageable Quantity)*
 - **Progressive disclosure by default.** Lead with a summary, defer detail to expand-on-demand:
   collapsed transcript turns (speaker + first line), essential columns + column-picker, headline
@@ -260,7 +262,8 @@ The automated gates that cover these rules (CI runs them in `.github/workflows/c
   painted, one h1, heading outline, copy-token labels, decorative icons aria-hidden, scroll-spy, ZONE
   header gating, cmd-k palette, dialog focus-trap, theme toggle, 0 overflow at 360/390/768/1024/1440,
   reduced-motion, no console errors), plus a separate check that under `prefers-reduced-transparency:
-  reduce` no element computes a backdrop blur and the sticky nav is the opaque `--surface`, in each
+  reduce` no mounted element and no fresh unclassed div computes a backdrop blur, and the nav and a
+  `.txn-sticky` bar compute the opaque `--surface`, in each
   theme.
 - **storybook build** (`pnpm build-storybook`): the type/parse gate for `src/ui/*`.
 - **storybook smoke** (`scripts/journey/storybook-smoke.journey.mjs`, run by `pnpm journey:ci`): loads

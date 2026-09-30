@@ -47,7 +47,7 @@ Fairtrade is a design system built around one job: rendering an AI coding transc
 ## Brand Commitments
 
 - **Name.** fairtrade.
-- **Design record.** The design language and the neuroinclusive rules live in `DESIGN.md`. They are binding, except where `DESIGN.md` lists a known conflict with the demo. Token values live in `src/index.css`. `llm/NEUROINCLUSIVE.md` keeps the research behind the rules.
+- **Design record.** The design language and the neuroinclusive rules live in `DESIGN.md`. They are binding, except for the known conflicts with the demo that its Status note describes. Token values live in `src/index.css`. `llm/NEUROINCLUSIVE.md` keeps the research behind the rules.
 
 ## Evidence on Hand
 

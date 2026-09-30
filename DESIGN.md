@@ -208,9 +208,13 @@ components:
 >   ratification issue (today #136, so pointers read `(#136/N)`), add one line under "Known
 >   conflicts with the demo", and mark every sentence that states the rule with the pointer. A
 >   ratified change resolves it.
-> - **Status.** A rule here is binding unless it carries a `(#136/N)` pointer, in which case the
->   demo wins until the item is decided. The Overview and Key Characteristics summarize the named
->   rules and carry no pointers. Research guidance that the library does not ship yet stays in
+> - **Status.** A pointer, `(#<issue>/N)`, marks the clause it follows. That clause is a known
+>   conflict: which side changes stays open until the item is decided. Everything else here is
+>   binding, including the rest of a rule that carries a pointer. Where a prose clause is pointed,
+>   the matching frontmatter role is a known conflict too. A demo that breaks a binding rule has a
+>   defect, filed on its own issue. Either way, consumers match the demo until the fix or the
+>   decision lands here first. The Overview and Key Characteristics summarize the named rules,
+>   whose pointers govern. Research guidance that the library does not ship yet stays in
 >   `llm/NEUROINCLUSIVE.md` until the PR that ships it adds it here.
 
 ## Overview
@@ -300,8 +304,8 @@ text, rail).
   border.
 
 ### Named Rules
-**The Scarce Amber Rule (#136/4).** Amber marks at most one focal point per region: the primary action, the
-active marker, a link, the focus ring. Large fills stay low-chroma earth; amber is never small body
+**The Scarce Amber Rule.** Amber marks at most one focal point per region (#136/4): the primary
+action, the active marker, a link, the focus ring. Large fills stay low-chroma earth; amber is never small body
 text on light and never a large saturated panel. Never combine color emphasis, bold and motion on one
 element.
 
@@ -349,9 +353,9 @@ and italic 400.
   and transcript reading panes use `--measure-read`: about 45 to 66 characters a line, never beyond
   about 80 (#136/11). Text is left-aligned in a single column and never justified.
 - **Label** (400 to 600, `--fs-label`, mono, letter-spacing 0): chrome. Nav, buttons, chips, tabs,
-  table headers, metadata.
-- **Code** (400, `--fs-body`, mono, `--lh-mono`, letter-spacing 0): code, logs, IDs and tool output,
-  each in its own horizontal scroller, never capped by the prose measure.
+  table headers, metadata (#136/3).
+- **Code** (400, `--fs-body`, mono, `--lh-mono`, letter-spacing 0): code, logs, IDs and tool output
+  (#136/3), each in its own horizontal scroller, never capped by the prose measure.
 
 The presentation site also uses a locked three-tier heading ladder (`--fs-group`, `--fs-section`,
 `--fs-sub`) that does not drift down the page.
@@ -361,12 +365,12 @@ The presentation site also uses a locked three-tier heading ladder (`--fs-group`
 log lines, tooltips and metadata included. Chrome labels are mono 14 (`--fs-label`). Gain density
 through row height and padding, never smaller glyphs.
 
-**The Mono Is Chrome Rule (#136/6).** Mono is for code, IDs, timecodes, tabular data and chrome. Paragraphs
-and transcript speech are never set in mono. Prose gets tracking, word spacing, 1.5 leading and a
+**The Mono Is Chrome Rule.** Mono is for code, IDs, timecodes, tabular data and chrome. Paragraphs
+and transcript speech are never set in mono (#136/6). Prose gets tracking, word spacing, 1.5 leading and a
 capped measure; mono gets letter-spacing 0 so columns stay aligned.
 
-**The Lowercase Chrome Rule (#136/14).** UI chrome is all lowercase (nav, labels, buttons, headings, tabs,
-table headers). User content is never lowercased: names, transcript text, collective names, code,
+**The Lowercase Chrome Rule.** UI chrome is all lowercase (nav, labels, buttons, headings, tabs,
+table headers) (#136/14). User content is never lowercased: names, transcript text, collective names, code,
 hashes and data values keep their case. Multi-line literal copy (error bodies, help, tooltips) may
 use sentence case so sentences stay parseable. Never `text-transform: uppercase` on multi-word text.
 
@@ -389,7 +393,7 @@ Row heights come in three density tokens (`--row-h-compact`, `--row-h-standard`,
 
 Breakpoints are one scale (`--bp-sm`, `--bp-md`, `--bp-lg`, `--bp-xl`): phone below 480, large phone
 480 to 767, tablet 768 to 1023, laptop 1024 to 1439, desktop from 1440. Desktop is the canonical
-layout and narrower widths adapt down with `max-width` queries. Mobile complements desktop: it stays
+layout and narrower widths adapt down with `max-width` queries (#136/26). Mobile complements desktop: it stays
 overflow-free, legible and tappable from 320px up (WCAG 1.4.10 reflow at 400% zoom), and the desktop
 layout is never compromised to serve it. Each table and code block gets its own `overflow-x: auto`.
 
@@ -404,8 +408,8 @@ rest go under an overflow menu. Table rows default to one kebab, not a row of bu
 stable breadcrumb, a sticky context header naming the current transcript or dataset, a definite
 active nav state, position indicators in long flows ("turn 312 of 1,840"), and anchor-linkable rows.
 
-**The Progressive Disclosure Rule (#136/5).** Lead with a summary and defer detail: collapsed turns and tool
-calls, headline metrics with drill-down. Calm by default; the user opts into density.
+**The Progressive Disclosure Rule.** Lead with a summary and defer detail: collapsed turns and tool
+calls, headline metrics with drill-down. Calm by default; the user opts into density (#136/5).
 
 **The Target Rule.** Every interactive box is at least 24 by 24 (`--target-min`); dense controls
 may instead meet the WCAG 2.5.8 spacing exception. Primary actions aim for 44
@@ -414,6 +418,9 @@ may instead meet the WCAG 2.5.8 spacing exception. Primary actions aim for 44
 **The Text Spacing Rule.** A user stylesheet with WCAG 1.4.12 spacing (line-height 1.5, paragraph
 spacing 2x, letter 0.12em, word 0.16em) clips nothing: no fixed px heights on text containers, and
 no `overflow: hidden` or truncation of transcript lines (#136/20).
+
+**The Help In Place Rule.** Help at the point of use (column headers, metrics, jargon) opens on
+hover and on keyboard focus (`Tooltip`, `Term`), and `Term` also opens on tap.
 
 **The Same Place Rule.** The same controls sit in the same place on every view, and identical
 actions carry identical labels and icons. Nothing reflows, reorders or submits without an explicit
@@ -433,16 +440,17 @@ opaque surfaces (#136/16).
   theme only: the light theme sets both to `none`.
 - **Overlay lift**: in the dark theme, dialogs, floating menus and popovers separate from the page
   with the glow plus one soft drop shadow (#136/10).
-- **Selection inset**: an inset 2 to 3px amber bar (`box-shadow: inset 2px 0 0 var(--amber)`)
+- **Selection inset**: an inset 2 to 3px amber bar (#136/15; `box-shadow: inset 2px 0 0 var(--amber)`)
   marks the active turn, outline item or palette row without shifting layout.
 
 ### Named Rules
-**The Opaque Chrome Rule.** No glass or blur in the base UI. Any `backdrop-filter` sits behind
+**The Opaque Chrome Rule.** No glass or blur in the base UI (#136/16). Any `backdrop-filter` sits behind
 `prefers-reduced-transparency: no-preference` with an opaque fallback (#136/16). Under
 `prefers-reduced-transparency: reduce`, nothing blurs and the sticky chrome is opaque.
 
-**The Texture Stays Out Rule.** ASCII texture and glow live on non-text chrome and display surfaces
-only (hero art, thumbnails, empty states), never behind prose or data.
+**The Texture Stays Out Rule.** ASCII texture lives on non-text chrome and display surfaces only
+(hero art, thumbnails, empty states), never behind prose or data. Glow follows the Shadow
+Vocabulary above.
 
 ## Shapes
 
@@ -450,7 +458,7 @@ Square and editorial. Radius is 0 on every box: cards, controls, chips, tags, in
 menus, tooltips, graph nodes. The only curves are true circles whose shape is the meaning: status
 dots, radio marks and busy spinners. Borders are 1px (`--stroke-hairline`); 2px
 (`--stroke-emphasis`) is reserved for active and selected emphasis such as the tab underline and
-role rails (#136/15). The focus ring is a 3px outline offset 2px.
+role rails (#136/15). The focus ring is a 3px outline offset 2px (#136/25).
 
 ## Components
 
@@ -494,7 +502,7 @@ render the same system.
 
 ### Navigation
 - **Top nav:** fixed and sticky with the brand stalk, mono 14 lowercase links in `--ink-3`, the
-  active link in amber led by the one permitted `>` marker (in `--amber-dim`), a search affordance
+  active link in amber led by the one permitted `>` marker (#136/2, in `--amber-dim`), a search affordance
   (cmd-k), the storybook link and the theme toggle.
 - **Tabs:** mono lowercase, `--ink-3` at rest, the active tab in `--ink` with a 2px amber underline;
   counts are tabular in `--ink-4`.
@@ -548,7 +556,7 @@ The data families are the data table, pagination, accordion, timeline, toast and
 
 ### Icons and brand marks
 - **Functional icons** are Lucide only (`lucide-react`), one stroke family at `--ic-sm`, `--ic-md`
-  or `--ic-lg`. Tools, states, roles, breadcrumbs, controls and nav all lead with a real glyph
+  or `--ic-lg` (#136/24). Tools, states, roles, breadcrumbs, controls and nav all lead with a real glyph
   (#136/22).
 - **Brand marks:** when the UI names a company or provider, it leads with that provider's real mark
   (`<BrandMark name="claude" />`; aliases resolve anthropic to claude, google to gemini, codex to
@@ -575,11 +583,11 @@ vector chrome and ASCII never mix on one element.
   in `src/index.css` and ship as `@peasant-labs/fairtrade/tokens.css`.
 - **Do** keep both themes at WCAG AA and re-theme only by swapping tokens on `[data-theme]`.
 - **Do** keep reading text at 16px or more and chrome at mono 14 (#136/3).
-- **Do** write chrome in lowercase and keep user content in its own case.
+- **Do** write chrome in lowercase (#136/14) and keep user content in its own case.
 - **Do** use tabular numbers on every count, duration and numeric column.
 - **Do** lead every provider name with its `<BrandMark>`.
-- **Do** keep 1.5 prose leading, 24px targets, the global `:focus-visible` ring (3px, offset 2px)
-  and a reduced-motion path for anything that moves.
+- **Do** keep 1.5 prose leading, 24px targets, the global `:focus-visible` ring (3px, offset 2px,
+  #136/25) and a reduced-motion path for anything that moves.
 - **Do** land a new visual pattern here, in the demo first, before a consuming app uses it.
 - **Do** keep chrome copy plain, literal and short, with verb and object on buttons
   ("export transcript", not "ok"); errors say what happened and what to do.
@@ -641,3 +649,6 @@ their own issues are tracked there, not here.
 - **#136/22, glyphs on navigation**: the section nav, tabs, breadcrumbs and top-nav links are text only.
 - **#136/23, link underlines in chrome**: breadcrumb links and home session titles carry the dotted
   underline.
+- **#136/24, icon sizes**: badges, chips, legends and gutters render Lucide icons at 9 to 13px.
+- **#136/25, focus ring offset**: segmented and tight controls draw the ring inset, at -2 to -4px.
+- **#136/26, query direction**: four rules adapt with `min-width` queries.

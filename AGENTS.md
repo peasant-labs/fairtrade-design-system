@@ -35,6 +35,8 @@ manager: **pnpm**. Source is **JS/JSX only - no TypeScript**. Icons: `lucide-rea
 - `node scripts/sbshot.mjs both shots/x <story-id-substr>` - screenshot stories (both themes) for QA.
 
 ## hard invariants (do not violate; the build gate enforces contrast)
+Where the demo and one of these disagree, the Status note at the top of `DESIGN.md` says which
+side a consumer matches.
 - **Tokens only.** Never hardcode a hex/px - reference a token (`var(--amber)`, `var(--sp-4)`).
   Spacing is the 4/8 scale (`--sp-1..8`); icon sizes are `--ic-sm/md/lg`; controls share `--control-h`.
 - **Radius 0** everywhere (square). **Amber is a scarce accent.** Palette is desaturated/earthy.
