@@ -4,6 +4,89 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.22 — 2026-09-29
+
+### Added
+
+- **`PublishDialog`, `PublishBar`, `PublishStateLabel`, `AccessList`, `CollectivePicker`.**
+  The one publish popup, for a first publish and an update: what leaves the
+  machine (a read-only redaction review with re-scan), who can read it (the
+  collectives, each with a named remove button, plus search and suggestions),
+  the `publish this repo automatically on git push` checkbox, and the done state
+  with the village link and the pull request hint. Every state the flow reaches
+  is covered. A failed scan, or no scan yet, keeps publish off and re-scan on; a
+  match the host marks kept is stated as kept and sent, never as redacted.
+  `PublishBar` pairs the state label (not published, publishing, published and
+  up to date, new turns, auto-publish on, outside your saved lists) with the one
+  action for it. All parts are controlled and hold no network code. (#3, #125)
+- **`SettingRow`, `SettingGroup`, `RepoPicker`.** Settings that save per field:
+  switches, selects and checkboxes apply at once and show saving, saved, or not
+  saved with the previous value restored and the error announced; a text value is
+  read-only until `edit`. `SettingGroup` is a native `details` with its count.
+  `RepoPicker` picks many repositories under owner headings that carry the
+  owner's identity and saves only the difference. (#115, #125)
+- **`LocalOfflineBanner`.** The page-level notice for a stopped local app: the
+  internet is fine, `peasant web start` in the command chip, `try again` with a
+  busy state, and the last checked time outside the status region. No wifi
+  glyph. (#120, #124)
+- **`CopyIconButton`, `StatsStrip`, `OverflowList`.** An icon-only copy button
+  that hides without a clipboard, one inline row of stat pairs with tabular
+  numbers, and a short inline list that folds the rest behind `+N`. (#122, #124,
+  #125)
+- **`LOCAL_APP_SECTIONS`.** The home-first local app section registry: `home`
+  and `settings` in the nav, then `analytics`, `changes` and `map` by route only,
+  each entry `{ id, label, inNav }`. (#119, #124)
+- **`PUBLISH_STATES`, `PUBLISH_DIALOG_STATES`, `SETTING_ROW_STATES`.** The
+  frozen state sets the publish and settings parts accept. (#3, #115, #125)
+
+### Changed
+
+- **`TranscriptViewer`** gains `showTail` (default `true`), `showOutcome`
+  (default `true`), `showSearchTrigger` (default `false`, a `search this
+  transcript ⌘F` button at the end of the tab strip) and a `pullRequests` slot
+  under the meta row. The meta row names the count `prompts`; the dead `chat with
+  trace` item is gone, and the more menu renders only when a capability gives it
+  an item, so a host without edit or export capabilities no longer shows an
+  empty `...` button. (#118, #124)
+- **`GraphAppShell` and `GraphSectionNav`** list only entries whose `inNav` is
+  not `false`, and `GraphAppShell` gains a `notice` slot. Their `sections`
+  default changes from the three-section list to `LOCAL_APP_SECTIONS`; a host
+  that passes its own list sees no change, and any `{ id, label }` list still
+  type-checks. `GRAPH_APP_SECTIONS` stays as a deprecated alias with its earlier
+  value. (#119, #124)
+- **`PromptDigest`** gains `layout="split"`: the sessions beside a reading pane,
+  `j`/`k` and the arrow keys to move, controllable selection. Stacked stays the
+  default. (#123, #124)
+- **`RedactionReview`** gains `readOnly`; **`Dialog`** gains `size="wide"` on the
+  new `--dialog-w-wide` token (a full-width sheet below md) and `dismissible`
+  (false holds it open: Escape and the scrim do nothing and the close button is
+  disabled); **`Menu`** gains an icon-only trigger; **`GroupedMultiSelect`**
+  gains `searchable`; **`SignInProviders`** defaults to GitHub only
+  (`PROVIDERS` still lists all five). (#3, #115, #122, #124, #125)
+- **`CollectivesView`, `CollectiveDetailView`, `CollectiveSettingsView`** ship
+  the simpler village pages under their existing names, from
+  `@peasant-labs/fairtrade/commons` with typed `data` and `actions`. The list is
+  a table (cards are gone): a row's `desc` and `since` show under its name and
+  role, the github org column shows only when rows carry `org`, `crumb` still
+  renders, the caption reads `collectives N` unless `data.caption` says
+  otherwise, and the find-a-collective search shows only with
+  `onSearchCollectives`. A collective shows who can read, who can publish and
+  your role, a github orgs rail and members; the earlier
+  `{ name, description, linkedGithubOrg }` shape still renders. Settings show
+  the collective's own `mode`, `access` and `memberLeaves` (on the wire's
+  `user_choice`/`mandatory`), or `not set`, and `onCommit` receives the field it
+  writes (`mode`, `access`, `memberLeaves`, ...). One pull request toggle, no
+  public access. Links render only where `data.hrefFor` names a destination;
+  with only a callback they render as buttons. Nothing is demo data. (#122,
+  #125)
+- **`SettingRow`** labels keep their case, since a label can be a path or a
+  login, and a select option can be `disabled`. **`OverflowList`** moves focus
+  to the first item `+N` reveals. (#115, #122, #125)
+- The subagent elbow in transcript turns uses a text-safe ink. (#124)
+- Fairtest's mounted rows (the product routes and the new part stories, each
+  in both themes) come from one registry; fairtest stays private and outside the
+  npm package. (#124, #125)
+
 ## 0.0.21 — 2026-09-24
 
 ### Added
