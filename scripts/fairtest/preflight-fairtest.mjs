@@ -196,7 +196,7 @@ export function validateSelectionAndReceipt(input) {
     throw new Error(
       `${label}: expected selection is not the CI set for field "mode" at path ${SELECTION_REL}.mode; ` +
       `expected "ci" observed ${JSON.stringify(selection.mode)}; ` +
-      'repair: run pnpm test:fairtest:select in the default ci mode so the run selects the four one-theme CI rows.',
+      'repair: run pnpm test:fairtest:select in the default ci mode so the run selects the one-theme CI rows.',
     )
   }
   assertExactKeys(selection.mode, selection.keys, label)

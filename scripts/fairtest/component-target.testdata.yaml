@@ -13,16 +13,19 @@
 # value); a light row carries the light value. A literal "dark" value, or an
 # unknown row theme, fails closed.
 #
-# Family B (component-url / component-setup): the direct iframe URL carries no
-# globals for dark and the light global for light, and the setup descriptor
-# owns the URL and the expected raw attribute.
+# Family B (component-url / component-story-url / component-setup): the direct
+# iframe URL carries no globals for dark and the light global for light, the
+# setup descriptor owns the URL and the expected raw attribute, and every
+# registered story resolves its own URL and row key while an unregistered
+# story is refused.
 #
 # Family C (component-project): project-name theme inference always fails.
 #
 # Family D (component-mount): a real mount needs children in #storybook-root,
-# the ready-state body classes, a hidden error display, and an empty error
-# stack. Each of the static, not-ready, error-display, and error-stack states
-# is refused by name.
+# the ready-state body classes of the story's layout, a hidden error display,
+# and an empty error stack. Each of the static, not-ready, error-display, and
+# error-stack states is refused by name, and a fullscreen story's body does not
+# satisfy the centered layout.
 #
 # Family E (component-declaration / component-action): capability membership is
 # checked against the shared component vocabulary; the one action is the
@@ -44,7 +47,7 @@
 # diagnostic; the component adapter test executes every one through
 # runComponentMutation and the component-mutations suite proves the single
 # owner of the diagnostics table.
-expectedCaseCount: 62
+expectedCaseCount: 69
 cases:
   # ---- Family A: theme rows ----
   - name: component-row-dark-absent-theme-passes
@@ -114,6 +117,45 @@ cases:
     expectValid: false
     expectedErrorContains: ['unknown row theme', 'field "theme"', 'at path', 'repair:']
 
+  - name: component-story-url-transcript-header-dark-passes
+    check: component-story-url
+    story: transcript-header
+    theme: dark
+    url: '/iframe.html?id=in-use-transcript-transcriptviewer--host-owned-header&viewMode=story'
+    rowKey: component-transcript-header-dark
+    expectValid: true
+    expectFrozen: true
+  - name: component-story-url-offline-banner-light-passes
+    check: component-story-url
+    story: offline-banner
+    theme: light
+    url: '/iframe.html?id=in-use-connectionstate--offline-banner&viewMode=story&globals=theme:light'
+    rowKey: component-offline-banner-light
+    expectValid: true
+    expectFrozen: true
+  - name: component-story-url-digest-split-dark-passes
+    check: component-story-url
+    story: digest-split
+    theme: dark
+    url: '/iframe.html?id=components-promptdigest--split&viewMode=story'
+    rowKey: component-digest-split-dark
+    expectValid: true
+    expectFrozen: true
+  - name: component-story-url-stats-strip-light-passes
+    check: component-story-url
+    story: stats-strip
+    theme: light
+    url: '/iframe.html?id=components-statsstrip--many-pairs&viewMode=story&globals=theme:light'
+    rowKey: component-stats-strip-light
+    expectValid: true
+    expectFrozen: true
+  - name: component-story-unregistered-fails
+    check: component-story-url
+    story: invented-story
+    theme: dark
+    expectValid: false
+    expectedErrorContains: ['unknown story', '"invented-story"', 'field "story"', 'at path row.story', 'repair:']
+
   # ---- Family C: project-name inference ----
   - name: component-project-name-inference-fails
     check: component-project
@@ -131,6 +173,26 @@ cases:
       errorStackText: ''
     expectValid: true
     expectFrozen: true
+  - name: component-mount-fullscreen-healthy-passes
+    check: component-mount
+    layout: fullscreen
+    observation:
+      rootChildCount: 1
+      bodyClass: 'sb-main-fullscreen sb-show-main'
+      errorDisplay: none
+      errorStackText: ''
+    expectValid: true
+    expectFrozen: true
+  - name: component-mount-fullscreen-body-on-centered-layout-fails
+    check: component-mount
+    layout: centered
+    observation:
+      rootChildCount: 1
+      bodyClass: 'sb-main-fullscreen sb-show-main'
+      errorDisplay: none
+      errorStackText: ''
+    expectValid: false
+    expectedErrorContains: ['not in its ready state', '"sb-main-centered"', 'field "bodyClass"', 'at path', 'repair:']
   - name: component-mount-empty-root-fails
     check: component-mount
     observation:

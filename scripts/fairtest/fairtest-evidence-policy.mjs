@@ -8,21 +8,49 @@
 // host state, or touches host globals.
 
 import { ARTIFACT_CLASSES } from './fairtest-artifacts.mjs'
-import { PRODUCT_PROVENANCE_SOURCE } from './fairtrade-targets.mjs'
-import { COMPONENT_PROVENANCE_SOURCE } from './fairtrade-component-target.mjs'
+import { PRODUCT_PROVENANCE_SOURCE, PRODUCT_ROUTES } from './fairtrade-targets.mjs'
+import { COMPONENT_PROVENANCE_SOURCE, COMPONENT_STORIES } from './fairtrade-component-target.mjs'
 
 /**
- * Expected mounted row keys, one per producer theme row. The key is the
- * producer row directory name, so the verifier and the producer agree on the
- * run shape without a second mapping.
+ * Expected mounted row keys, one per producer theme row: every product route
+ * and every component story, each in both themes. The key is the producer row
+ * directory name, so the verifier and the producer agree on the run shape
+ * without a second mapping.
  * @type {readonly string[]}
  */
 export const FAIRTEST_EVIDENCE_ROW_KEYS = Object.freeze([
   'product-dark',
   'product-light',
+  'product-offline-dark',
+  'product-offline-light',
   'component-dark',
   'component-light',
+  'component-transcript-header-dark',
+  'component-transcript-header-light',
+  'component-offline-banner-dark',
+  'component-offline-banner-light',
+  'component-digest-split-dark',
+  'component-digest-split-light',
+  'component-stats-strip-dark',
+  'component-stats-strip-light',
 ])
+
+/**
+ * The rows the mounted producers write, derived from the two target
+ * registries: one row per product route and per component story, in each
+ * theme, keyed by the directory the producer names. The declared row keys and
+ * the policy's required rows are both held against this list by the run
+ * envelope suite, so a registry entry without a declared row, or a declared
+ * row no producer writes, fails there.
+ * @returns {{ key: string, kind: string, theme: string, root: string }[]} the registry-derived rows, product rows first
+ */
+export function fairtestRegistryRows() {
+  const themes = ['dark', 'light']
+  return [
+    ...PRODUCT_ROUTES.flatMap((route) => themes.map((theme) => ({ key: `${route.key}-${theme}`, kind: 'product', theme, root: PRODUCT_PROVENANCE_SOURCE.root }))),
+    ...COMPONENT_STORIES.flatMap((story) => themes.map((theme) => ({ key: `${story.rowPrefix}-${theme}`, kind: 'component', theme, root: COMPONENT_PROVENANCE_SOURCE.root }))),
+  ]
+}
 
 /**
  * Largest accepted row age for one run. A run root must be verified close to
@@ -53,8 +81,18 @@ export function fairtestEvidencePolicyInput(runId) {
     requiredRows: [
       { key: 'product-dark', kind: 'product', theme: 'dark', root: PRODUCT_PROVENANCE_SOURCE.root },
       { key: 'product-light', kind: 'product', theme: 'light', root: PRODUCT_PROVENANCE_SOURCE.root },
+      { key: 'product-offline-dark', kind: 'product', theme: 'dark', root: PRODUCT_PROVENANCE_SOURCE.root },
+      { key: 'product-offline-light', kind: 'product', theme: 'light', root: PRODUCT_PROVENANCE_SOURCE.root },
       { key: 'component-dark', kind: 'component', theme: 'dark', root: COMPONENT_PROVENANCE_SOURCE.root },
       { key: 'component-light', kind: 'component', theme: 'light', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-transcript-header-dark', kind: 'component', theme: 'dark', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-transcript-header-light', kind: 'component', theme: 'light', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-offline-banner-dark', kind: 'component', theme: 'dark', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-offline-banner-light', kind: 'component', theme: 'light', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-digest-split-dark', kind: 'component', theme: 'dark', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-digest-split-light', kind: 'component', theme: 'light', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-stats-strip-dark', kind: 'component', theme: 'dark', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-stats-strip-light', kind: 'component', theme: 'light', root: COMPONENT_PROVENANCE_SOURCE.root },
     ],
     duplicateScopes: ['same-key', 'cross-row', 'cross-theme'],
     maxAgeMs: FAIRTEST_EVIDENCE_MAX_AGE_MS,

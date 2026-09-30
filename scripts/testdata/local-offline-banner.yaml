@@ -1,0 +1,37 @@
+# Cases for LocalOfflineBanner (src/ui/ConnectionState.jsx). scripts/local-offline-banner.test.mjs
+# mounts the REAL component for each case and checks what a user meets: the plain-language
+# message in the role=status region, the command in the command chip, the copy button, the
+# `try again` button and its busy state, and the `last checked` time outside the live region.
+# Every case also checks the banner carries the unplug icon and no wifi glyph.
+# props.checkedAt is a local wall-clock instant; expected.checked is how the banner prints it.
+message: "peasant isn't running on this computer. your internet is fine: this page talks to the peasant app on your machine."
+cases:
+  - name: default
+    props: {onRetry: true}
+    clipboard: true
+    expected: {command: peasant web start, copy: true, retry: try again, busy: false, checked: null}
+  - name: with checkedAt
+    props: {onRetry: true, checkedAt: '2026-09-28T14:32:05'}
+    clipboard: true
+    expected: {command: peasant web start, copy: true, retry: try again, busy: false, checked: '14:32:05'}
+  - name: retrying
+    props: {onRetry: true, retrying: true, checkedAt: '2026-09-28T09:05:00'}
+    clipboard: true
+    expected: {command: peasant web start, copy: true, retry: trying again, busy: true, checked: '09:05:00'}
+  - name: a command override
+    props: {onRetry: true, command: PEASANT_PORT=8691 peasant web start}
+    clipboard: true
+    expected: {command: PEASANT_PORT=8691 peasant web start, copy: true, retry: try again, busy: false, checked: null}
+  - name: no onRetry
+    props: {checkedAt: '2026-09-28T14:32:05'}
+    clipboard: true
+    expected: {command: peasant web start, copy: true, retry: null, busy: false, checked: '14:32:05'}
+  - name: no clipboard
+    props: {onRetry: true}
+    clipboard: false
+    expected: {command: peasant web start, copy: false, retry: try again, busy: false, checked: null}
+
+# Behaviour: try again reports once; while busy it ignores further presses.
+interactions:
+  - {name: try again calls onRetry once per press, kind: retry-press, retrying: false, presses: 2, expectedCalls: 2}
+  - {name: a busy button ignores presses, kind: retry-press, retrying: true, presses: 2, expectedCalls: 0}

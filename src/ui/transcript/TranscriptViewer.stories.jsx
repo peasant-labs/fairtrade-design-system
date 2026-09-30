@@ -191,3 +191,40 @@ export const GraphSlot = {
     ),
   },
 }
+
+/* A host that owns its header row: the composite's share and more menus leave (showTail false),
+   the outcome chip leaves (showOutcome false), the search trigger joins the tab strip, and the
+   host's pull request list sits under the meta row. The trigger opens search by click and by
+   Enter, exactly as ⌘F does. */
+export const HostOwnedHeader = {
+  name: 'host owned header',
+  args: {
+    viewModel,
+    capabilities: fullCaps,
+    showTail: false,
+    showOutcome: false,
+    showSearchTrigger: true,
+    headerActions: <button type="button" className="btn btn-primary btn-sm">publish</button>,
+    pullRequests: (
+      <ul className="chips" aria-label="pull requests" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+        <li><a className="chip mono" href="#pr-42">acme/ingest-api #42</a></li>
+        <li><a className="chip mono" href="#pr-45">acme/ingest-api #45</a></li>
+      </ul>
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByRole('button', { name: /^share/ })).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'more actions' })).toBeNull()
+    await expect(canvas.getByRole('button', { name: 'publish' })).toBeVisible()
+    const trigger = canvas.getByRole('button', { name: 'search this transcript ⌘F' })
+    await userEvent.click(trigger)
+    await expect(canvas.getByRole('textbox', { name: 'search transcript' })).toHaveFocus()
+    await userEvent.keyboard('{Escape}')
+    await expect(canvas.queryByRole('textbox', { name: 'search transcript' })).toBeNull()
+    trigger.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(canvas.getByRole('textbox', { name: 'search transcript' })).toHaveFocus()
+    await userEvent.keyboard('{Escape}')
+  },
+}

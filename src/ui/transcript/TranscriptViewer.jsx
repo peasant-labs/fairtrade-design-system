@@ -198,6 +198,10 @@ export default function TranscriptViewer({
   anchorHref,
   headerActions,
   streamPrelude,
+  showTail = true,
+  showOutcome = true,
+  showSearchTrigger = false,
+  pullRequests,
 }) {
   const vm = viewModel
   const caps = capabilities ?? {}
@@ -622,13 +626,19 @@ export default function TranscriptViewer({
     tabRefs.current[TAB_ORDER[j]]?.focus()
   }
 
+  /* the one way search opens: the ⌘F shortcut and the optional header trigger share it, so the
+     trigger does exactly what the shortcut does (open the bar on the trace tab, focus its field). */
+  function openSearch() {
+    setSearchOpen(true); selectTab('trace')
+    setTimeout(() => searchInputRef.current?.focus(), 0)
+  }
+
   /* cmd/ctrl+F search + j/k step (browser only; no-op under static render). */
   useEffect(() => {
     function onKey(e) {
       const mod = e.metaKey || e.ctrlKey
       if (mod && (e.key === 'f' || e.key === 'F')) {
-        e.preventDefault(); setSearchOpen(true); selectTab('trace')
-        setTimeout(() => searchInputRef.current?.focus(), 0); return
+        e.preventDefault(); openSearch(); return
       }
       if (e.key === 'Escape' && searchOpen) { setSearchOpen(false); return }
       const typing = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName ?? '')
@@ -686,6 +696,39 @@ export default function TranscriptViewer({
   const cut = (rawTitle.codePointAt(158) ?? 0) > 0xffff ? 158 : 159
   const title = rawTitle.length > 160 ? rawTitle.slice(0, cut).trimEnd() + '…' : rawTitle
 
+  const tabStrip = (
+    <div className="tabs txn-tabs" role="tablist" aria-label="session views" onKeyDown={onTabKey}>
+      {TAB_ORDER.map((id) => {
+        const on = tab === id
+        const count = id === 'highlights' ? highlights.length
+          : id === 'trace' ? turns.length
+          : id === 'diffs' ? diffs.length
+          : id === 'files' ? files.length
+          : annotations.length
+        return (
+          <button
+            key={id}
+            ref={(el) => (tabRefs.current[id] = el)}
+            type="button"
+            role="tab"
+            aria-selected={on}
+            tabIndex={on ? 0 : -1}
+            className={'tab txn-tab' + (on ? ' active' : '')}
+            onMouseDown={(event) => {
+              // Capture before the browser moves focus from the stream to a
+              // clicked alternate tab. The click handler remains the
+              // fallback for programmatic activation and keyboard clicks.
+              if (event.button === 0 && id !== 'trace') captureTraceReadingPosition()
+            }}
+            onClick={() => selectTab(id)}
+          >
+            {TAB_LABEL[id]} <span className="cnt tnum">{count}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+
   return (
     <div className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (heroCondensed ? ' txn-app-condensed' : '')} data-theme={theme}>
       {/* ===================== HEADER ===================== */}
@@ -717,6 +760,7 @@ export default function TranscriptViewer({
             {/* host session-level actions (attest etc.) lead the row — the
                 composite's fixed capability set stays the shared tail */}
             {headerActions}
+            {showTail && (<>
             <div className="menu-anchor">
               <button
                 type="button"
@@ -748,6 +792,7 @@ export default function TranscriptViewer({
               )}
             </div>
 
+            {(caps.canEdit || caps.canExport) && (
             <div className="menu-anchor">
               <button
                 type="button"
@@ -774,25 +819,25 @@ export default function TranscriptViewer({
                         ))}
                       </>
                     )}
-                    <li role="separator"><hr className="menu-sep" /></li>
-                    <li><button type="button" className="menu-item" role="menuitem" onClick={() => setMoreOpen(false)}><MessageSquareText size={14} aria-hidden="true" /><span className="menu-text">chat with trace</span></button></li>
                   </ul>
                 </div>
               )}
             </div>
+            )}
+            </>)}
           </div>
         </div>
 
         <h2 className="txn-title" title={title}>{title}</h2>
 
         <div className="txn-meta chips">
-          {session.outcome && <TranscriptOutcomeChip outcome={session.outcome} />}
+          {showOutcome && session.outcome && <TranscriptOutcomeChip outcome={session.outcome} />}
           {session.harness && <span className="chip"><ProviderIcon harness={session.harness} accent /> {String(session.harness).replace(/-/g, ' ')}</span>}
           {session.model && <span className="chip mono">{session.model}</span>}
           {session.git?.author && <span className="metaitem" title="author"><User size={14} aria-hidden="true" /> {session.git.author}</span>}
           {session.durationMins != null && <span className="metaitem" title="session duration"><Clock size={14} aria-hidden="true" /> <b className="tnum">{session.durationMins}m</b></span>}
           {session.turnCount != null && <span className="metaitem"><ListTree size={14} aria-hidden="true" /> <b className="tnum">{session.turnCount}</b> turns</span>}
-          <span className="metaitem"><MessageSquareText size={14} aria-hidden="true" /> <b className="tnum">{session.inputSubmissionCount ?? 'unknown'}</b> input submissions</span>
+          <span className="metaitem"><MessageSquareText size={14} aria-hidden="true" /> <b className="tnum">{session.inputSubmissionCount ?? 'unknown'}</b> {session.inputSubmissionCount === 1 ? 'prompt' : 'prompts'}</span>
           {session.toolCallCount != null && <span className="metaitem"><Wrench size={14} aria-hidden="true" /> <b className="tnum">{session.toolCallCount}</b> tools</span>}
           {!vm.usageScopes?.length && session.totalTokens != null && <span className="metaitem" title={fmtTokens(session.tokensIn ?? 0) + ' in · ' + fmtTokens(session.tokensOut ?? 0) + ' out'}><Coins size={14} aria-hidden="true" /> <b className="tnum">{fmtTokens(session.totalTokens)}</b> tokens</span>}
           {commits.length > 0 && <span className="metaitem"><GitCommitHorizontal size={14} aria-hidden="true" /> <b className="tnum">{commits.length}</b> {commits.length === 1 ? 'commit' : 'commits'}</span>}
@@ -801,40 +846,30 @@ export default function TranscriptViewer({
             <span className="metaitem txn-churn-meta tnum"><span className="txn-churn-add">+{session.git.insertions ?? 0}</span> <span className="txn-churn-del">−{session.git.deletions ?? 0}</span></span>
           )}
         </div>
+        {/* host-owned pull request list: the host supplies the rows and any "show all" control;
+            the composite only gives it a place under the meta row. */}
+        {pullRequests != null && <div className="txn-prs">{pullRequests}</div>}
         <UsageScopes scopes={vm.usageScopes} />
       </header>
 
       {/* ===================== TAB STRIP ===================== */}
-      <div className="tabs txn-tabs" role="tablist" aria-label="session views" onKeyDown={onTabKey}>
-        {TAB_ORDER.map((id) => {
-          const on = tab === id
-          const count = id === 'highlights' ? highlights.length
-            : id === 'trace' ? turns.length
-            : id === 'diffs' ? diffs.length
-            : id === 'files' ? files.length
-            : annotations.length
-          return (
-            <button
-              key={id}
-              ref={(el) => (tabRefs.current[id] = el)}
-              type="button"
-              role="tab"
-              aria-selected={on}
-              tabIndex={on ? 0 : -1}
-              className={'tab txn-tab' + (on ? ' active' : '')}
-              onMouseDown={(event) => {
-                // Capture before the browser moves focus from the stream to a
-                // clicked alternate tab. The click handler remains the
-                // fallback for programmatic activation and keyboard clicks.
-                if (event.button === 0 && id !== 'trace') captureTraceReadingPosition()
-              }}
-              onClick={() => selectTab(id)}
-            >
-              {TAB_LABEL[id]} <span className="cnt tnum">{count}</span>
-            </button>
-          )
-        })}
-      </div>
+      {/* the optional search trigger sits at the strip's end, outside the tablist (a tablist
+          holds tabs only); without it the strip renders exactly as before, unwrapped. */}
+      {showSearchTrigger ? (
+        <div className="txn-tabbar">
+          {tabStrip}
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm txn-search-trigger"
+            aria-keyshortcuts="Meta+F Control+F"
+            onClick={openSearch}
+          >
+            <Search size={14} aria-hidden="true" />
+            <span className="txn-search-trigger-text">search this transcript</span>{' '}
+            <kbd className="kbd-key">⌘F</kbd>
+          </button>
+        </div>
+      ) : tabStrip}
 
       {/* ===================== BODY ===================== */}
       <div className="txn-body-grid" data-left-rail={leftRailOpen ? 'open' : 'closed'} data-right-rail={rightRailOpen ? 'open' : 'closed'}>

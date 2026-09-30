@@ -67,17 +67,21 @@ try {
     page.on('console', (message) => { if (message.type() === 'error' && !/favicon/.test(message.text())) errors.push(message.text()) })
     page.on('pageerror', (error) => errors.push(error.message))
     await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: testCase.motion }])
-    const query = new URLSearchParams({ fb: 'off', app: 'graph' })
-    if (testCase.theme === 'light') query.set('theme', 'light')
-    await page.goto(`${origin}/?${query}`, { waitUntil: 'networkidle0' })
+    // The code map and changes sections are reached by route only: the local
+    // app's section navigation lists home and settings, so each section opens
+    // through its `section` query and returns home through the back control.
+    const sectionUrl = (section) => {
+      const query = new URLSearchParams({ fb: 'off', app: 'graph', section })
+      if (testCase.theme === 'light') query.set('theme', 'light')
+      return `${origin}/?${query}`
+    }
+    await page.goto(sectionUrl('map'), { waitUntil: 'networkidle0' })
     await page.evaluate(() => document.getElementById('inuse-stage')?.scrollIntoView({ block: 'start' }))
     await page.waitForSelector('#inuse-stage .iu-subnav')
-    const openedMap = await page.evaluate(() => {
-      const button = [...document.querySelectorAll('#inuse-stage .iu-subnav-item')].find((candidate) => candidate.textContent.trim() === 'code map')
-      button?.click()
-      return Boolean(button)
-    })
-    assert.equal(openedMap, true, `${testCase.name}: code map navigation`)
+    const openedMap = await page.evaluate(() => Boolean(document.querySelector('[aria-label="peasant timeline demo"]'))
+      && Boolean(document.querySelector('#inuse-stage .iu-subnav-back'))
+      && ![...document.querySelectorAll('#inuse-stage .iu-subnav-item')].some((candidate) => candidate.getAttribute('aria-current') === 'page'))
+    assert.equal(openedMap, true, `${testCase.name}: code map section opens by route with a back control and no listed section current`)
     await page.waitForSelector('.tlp-session-lane')
     const selectedSession = await page.evaluate(() => {
       const lane = [...document.querySelectorAll('.tlp-session-lane')].find((candidate) => candidate.textContent.includes('Add DOI ranking to the code map'))
@@ -165,12 +169,14 @@ try {
       await new SurfaceGate(page).assert(testCase.name, shotPath, { sel: '[aria-label="peasant timeline demo"]', where: 'timeline-rendered-probe.mjs' })
     }
 
+    await page.goto(sectionUrl('changes'), { waitUntil: 'networkidle0' })
+    await page.evaluate(() => document.getElementById('inuse-stage')?.scrollIntoView({ block: 'start' }))
+    await page.waitForSelector('#inuse-stage .iu-subnav')
     const openedChanges = await page.evaluate(() => {
-      const button = [...document.querySelectorAll('#inuse-stage .iu-subnav-item')].find((candidate) => candidate.textContent.trim() === 'changes')
-      button?.click()
-      return Boolean(button)
+      const history = document.querySelector('[aria-label="default-branch commit history"]')
+      return Boolean(history) && !history.closest('[hidden]') && Boolean(document.querySelector('#inuse-stage .iu-subnav-back'))
     })
-    assert.equal(openedChanges, true, `${testCase.name}: changes navigation`)
+    assert.equal(openedChanges, true, `${testCase.name}: changes section opens by route, visible, with a back control`)
     await page.waitForSelector(`.cg-history-row[data-commit-hash="${fixture.changesOverflow.commitHash}"] .tlp-overflow-toggle`)
 
     const initialOverflow = await page.evaluate(({ commitHash, toggleLabel, thirdSessionTitle }) => {

@@ -15,12 +15,15 @@
 // and writes exactly six artifact classes per theme row into an immutable run
 // root.
 //
-// Row sequence per theme (dark, light): serve the row route, wait for genuine
-// mount (selector readiness, never a fixed sleep alone), observe chrome, body,
-// exact route, initial active section, mounted view, and normalized theme
-// AFTER mount and BEFORE interaction, perform ONE trusted click on the map
-// section, observe the active section transition analytics to map plus the
-// updated mounted view, then build the proof through buildProductProof.
+// Row sequence per route entry and theme (dark, light): serve the row route,
+// wait for genuine mount (selector readiness, never a fixed sleep alone),
+// observe chrome, body, exact route, initial active section, mounted view,
+// normalized theme, and the route's page-level notice when it declares one
+// AFTER mount and BEFORE interaction, perform ONE trusted click on the route
+// action's section, observe the active section transition (home to settings on
+// the graph routes) plus the updated mounted view and the notice again, then
+// build the proof through buildProductProof. Every route, selector, section,
+// label, and action comes from the route entry in PRODUCT_ROUTES.
 //
 // The representative body is measured on the ACTIVE view, never on the view
 // container: the graph shell keeps a permanently mounted hidden changes view
@@ -65,19 +68,15 @@ import { importFairtestSource } from '../fairtest-source.mjs'
 import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, PRODUCT_VIEWPORT } from './fairtest-runtime.mjs'
 import { fairtestPath } from './fairtest-paths.mjs'
 import {
-  PRODUCT_ACTION_LABEL,
-  PRODUCT_ACTION_NAME,
-  PRODUCT_ACTION_TO_SECTION,
   PRODUCT_A11Y_BASELINE,
   PRODUCT_A11Y_GATE_POINT_SLOTS,
   PRODUCT_A11Y_GATE_RECEIPT_FIELDS,
-  PRODUCT_A11Y_POINT_LABELS,
-  PRODUCT_A11Y_POINT_SECTIONS,
   PRODUCT_A11Y_POINTS,
   PRODUCT_A11Y_POLICY,
   PRODUCT_A11Y_SCOPE_ROOT,
-  PRODUCT_INITIAL_SECTION,
+  PRODUCT_DEFAULT_ROUTE,
   PRODUCT_PROVENANCE_SOURCE,
+  PRODUCT_ROUTES,
   PRODUCT_SELECTORS,
   PRODUCT_TARGET_ID,
   PRODUCT_UNRENDERED_MODES,
@@ -86,7 +85,8 @@ import {
   assertProductThemeObservation,
   buildProductProof,
   observeProductTheme,
-  productRouteForTheme,
+  productA11yPointLabels,
+  productA11yPointSections,
   productThemeRow,
 } from './fairtrade-targets.mjs'
 import { AXE_RESULT_FIELDS, scanAxe, seriousViolations } from '../journey/lib/assertions.mjs'
@@ -107,6 +107,7 @@ const valuesContract = await importFairtestSource('src/core/values.mjs')
  * @typedef {object} ProductRowDirInput
  * @property {string} runRoot immutable run root
  * @property {string} theme dark or light row theme
+ * @property {import('./fairtrade-targets.mjs').ProductRoute} [route] route entry the row drives, defaults to the default route
  * @property {(step: 'validated' | 'created') => void} [observe] step boundary observer
  */
 
@@ -246,18 +247,18 @@ export const PRODUCT_ARTIFACT_CLASSES = ARTIFACT_CLASSES
  * permanently mounted hidden changes view inside the container, and on the
  * real built surface that hidden sibling alone contributes 188 descendants,
  * far above this floor, so a container-scoped measurement cannot tell a blank
- * active section from a rendered one. The rendered active analytics view
- * carries 646 descendants on the real built surface and the rendered active
- * map root 298, so the floor is wide on purpose: anything below it is
- * unproven body content, not a close call.
+ * active section from a rendered one. The rendered active home view carries
+ * 319 descendants on the real built surface and the rendered active settings
+ * view 221, so the floor is wide on purpose: anything below it is unproven
+ * body content, not a close call.
  * @type {number}
  */
 export const PRODUCT_MIN_BODY_DESCENDANTS = 20
 
 /**
  * Minimum trimmed text length inside the RENDERED active view that counts as
- * non-blank body content. Observed rendered-view contributions are 1223
- * characters at analytics and 1195 at the code map; a blank or unrendered
+ * non-blank body content. Observed rendered-view contributions are 1215
+ * characters at home and 1355 at settings; a blank or unrendered
  * active section contributes near zero once the permanently mounted hidden
  * changes view and every unrendered root are excluded.
  * @type {number}
@@ -365,19 +366,27 @@ export function resolveProductRunRoot() {
 }
 
 /**
- * Row directory for a theme row inside a run root.
+ * Row directory for a theme row inside a run root. The directory name is the
+ * row key: the route entry's key and the theme.
  * @param {string} runRoot immutable run root
  * @param {string} theme dark or light row theme
+ * @param {import('./fairtrade-targets.mjs').ProductRoute} [route] route entry the row drives, defaults to the default route
  * @returns {string} the row directory path
  */
-export function productRowDir(runRoot, theme) {
+export function productRowDir(runRoot, theme, route = PRODUCT_DEFAULT_ROUTE) {
   if (!ROW_THEMES.includes(theme)) {
     throw new Error(
       `product producer: unknown row theme ${JSON.stringify(theme)} for field "theme" at path row.theme; ` +
       'repair: use one of dark, light for "theme".',
     )
   }
-  return join(runRoot, 'producer', `product-${theme}`)
+  if (!PRODUCT_ROUTES.includes(route)) {
+    throw new Error(
+      `product producer: unregistered route ${JSON.stringify(route && route.key)} for field "route" at path row.route; ` +
+      `repair: pass one of the registered product routes ${PRODUCT_ROUTES.map((entry) => entry.key).join(', ')}.`,
+    )
+  }
+  return join(runRoot, 'producer', `${route.key}-${theme}`)
 }
 
 /**
@@ -421,7 +430,12 @@ export function prepareProductRowDir(input = /** @type {ProductRowDirInput} */ (
   const observeStep = Object.hasOwn(input, 'observe') ? input.observe : null
   assertProductRecordFields(
     input,
-    observeStep === null ? ['runRoot', 'theme'] : ['runRoot', 'theme', 'observe'],
+    [
+      'runRoot',
+      'theme',
+      ...(Object.hasOwn(input, 'route') ? ['route'] : []),
+      ...(observeStep === null ? [] : ['observe']),
+    ],
     'rowPreparation',
     'producer.rowPreparation',
     'pass the immutable run root and the row theme to prepare the row directory',
@@ -433,8 +447,8 @@ export function prepareProductRowDir(input = /** @type {ProductRowDirInput} */ (
     )
   }
   const observe = observeStep ?? (() => {})
-  const { runRoot, theme } = input
-  const rowDir = productRowDir(runRoot, theme)
+  const { runRoot, theme, route = PRODUCT_DEFAULT_ROUTE } = input
+  const rowDir = productRowDir(runRoot, theme, route)
   refuseStaleRunSubtree(rowDir)
   observe('validated')
   mkdirSync(rowDir, { recursive: true })
@@ -910,10 +924,9 @@ function assertProductCount(value, field, path, repair) {
  * surface, so a root that lies entirely below the stage's fold renders
  * nothing a user or a verifier of this row can see, and counting it would put
  * a number in record.json that no capture supports. The measured rendered and
- * total root counts are both recorded, so that split stays legible: on the real
- * map section the visible root and the root below the fold are 298 and 455
- * descendants respectively, and the record says so instead of reporting one
- * unqualified total.
+ * total root counts are both recorded, so that split stays legible: a section
+ * rendering one root in view and one below the fold reports both counts
+ * instead of one unqualified total.
  *
  * Both halves are returned because the guard needs the container totals to
  * say plainly why they are not the measurement the floors apply to, and the
@@ -1321,9 +1334,12 @@ export function buildProductAccessibilityEvidence(input = /** @type {object} */ 
  * the ambiguous shape this reader refuses: it fails closed and names the
  * field instead of guessing which population it belongs to.
  * @param {object} accessibility the record.json accessibility block
+ * @param {import('./fairtrade-targets.mjs').ProductRoute} [route] route entry the row drove, defaults to the default route; its sections name what each point renders
  * @returns {{ policy: string, gatedScope: string, scopeRoot: string, result: string, points: { before: import('./fairtrade-targets.mjs').ProductA11yGateReceipt, after: import('./fairtrade-targets.mjs').ProductA11yGateReceipt } }} the frozen verdict read from the gate receipts
  */
-export function readProductAccessibilityVerdict(accessibility) {
+export function readProductAccessibilityVerdict(accessibility, route = PRODUCT_DEFAULT_ROUTE) {
+  const pointLabels = productA11yPointLabels(route)
+  const pointSections = productA11yPointSections(route)
   assertProductRecordFields(
     accessibility,
     PRODUCT_A11Y_RECORD_FIELDS,
@@ -1394,11 +1410,11 @@ export function readProductAccessibilityVerdict(accessibility) {
     // same map. What CAN contradict is the section the page actually showed
     // when the scan was taken, so that is what the reader compares, and a
     // receipt handed the other slot's scan is refused.
-    const declaredLabel = PRODUCT_A11Y_POINT_LABELS[/** @type {'initial' | 'after-action'} */ (declaredPoint)]
+    const declaredLabel = pointLabels[/** @type {'initial' | 'after-action'} */ (declaredPoint)]
     if (receipt.point !== declaredPoint || receipt.observedSection !== declaredLabel) {
       throw new Error(
         `product producer: mismatched gate observation point ${JSON.stringify(receipt.point)} for field "observedSection" at path ${slot}.observedSection; ` +
-        `gate.${point} carries the ${JSON.stringify(declaredPoint)} measurement, whose section ${JSON.stringify(PRODUCT_A11Y_POINT_SECTIONS[/** @type {'initial' | 'after-action'} */ (declaredPoint)])} renders as ${JSON.stringify(declaredLabel)}, but the receipt names ${JSON.stringify(receipt.point)} observed as ${JSON.stringify(receipt.observedSection)}; ` +
+        `gate.${point} carries the ${JSON.stringify(declaredPoint)} measurement, whose section ${JSON.stringify(pointSections[/** @type {'initial' | 'after-action'} */ (declaredPoint)])} renders as ${JSON.stringify(declaredLabel)}, but the receipt names ${JSON.stringify(receipt.point)} observed as ${JSON.stringify(receipt.observedSection)}; ` +
         `repair: take the scan at the ${JSON.stringify(declaredPoint)} observation point with the ${JSON.stringify(declaredLabel)} section active, and read the active section text beside the scan.`,
       )
     }
@@ -1537,6 +1553,96 @@ export function assertProductObservationTimes(input = /** @type {ProductObservat
 }
 
 /**
+ * Read one route's page-level notice in the live page: whether it renders,
+ * whether it sits inside the view container (it must not: the notice is
+ * page-level, between the section navigation and the body), its live-region
+ * message, the forbidden selectors that do render inside it, its computed
+ * style probes with the token each one must resolve to, and its box. Runs
+ * inside the page, so it references nothing outside its argument.
+ * @param {{ notice: import('./fairtrade-targets.mjs').ProductNotice, body: string }} input the notice declaration and the view container selector
+ * @returns {{ present: boolean, insideBody: boolean, statusText: string | null, rendered: string[], computed: Record<string, { value: string | null, token: string | null }>, box: { width: number, height: number } | null }} the notice observation
+ */
+function readProductNotice({ notice, body }) {
+  const root = document.querySelector(notice.selector)
+  if (!root) return { present: false, insideBody: false, statusText: null, rendered: [], computed: {}, box: null }
+  const status = root.querySelector(notice.status)
+  /** @type {Record<string, { value: string | null, token: string | null }>} */
+  const computed = {}
+  for (const probe of notice.computed) {
+    const element = root.querySelector(probe.selector)
+    const style = element ? /** @type {Record<string, unknown>} */ (/** @type {unknown} */ (getComputedStyle(element))) : null
+    computed[probe.name] = {
+      value: style ? String(style[probe.property]) : null,
+      token: probe.token ? getComputedStyle(document.documentElement).getPropertyValue(probe.token).trim() : null,
+    }
+  }
+  const rect = root.getBoundingClientRect()
+  return {
+    present: true,
+    insideBody: !!root.closest(body),
+    statusText: status ? (status.textContent || '').trim() : null,
+    rendered: notice.absent.filter((selector) => !!root.querySelector(selector)),
+    computed,
+    box: { width: Math.round(rect.width), height: Math.round(rect.height) },
+  }
+}
+
+/**
+ * Normalize a computed font-family or token value for comparison: one quote
+ * style and one separator spacing, so the resolved token and the computed
+ * value compare as the same family list.
+ * @param {string | null} value raw value
+ * @returns {string} the normalized value
+ */
+function normalizeStyleValue(value) {
+  return String(value ?? '').replace(/'/g, '"').replace(/\s*,\s*/g, ', ').trim()
+}
+
+/**
+ * Fail-closed guard for a route's page-level notice at one observation point.
+ * The notice must render with a non-empty box outside the view container,
+ * carry a non-empty live-region message, render none of its forbidden
+ * selectors, and resolve every computed-style probe to its declared value or
+ * token. Returns the frozen evidence block the record carries.
+ * @param {import('./fairtrade-targets.mjs').ProductNotice} notice notice declaration
+ * @param {ReturnType<typeof readProductNotice>} observed notice observation
+ * @param {string} point observation point name used in the diagnostic
+ * @returns {object} the frozen notice evidence block
+ */
+function assertProductNotice(notice, observed, point) {
+  const path = `record.notice.${point}`
+  const fail = (/** @type {string} */ what, /** @type {string} */ repair) => {
+    throw new Error(`product producer: ${what} for field "notice" at path ${path}; notice ${JSON.stringify(notice.name)} at ${JSON.stringify(notice.selector)}; repair: ${repair}.`)
+  }
+  if (!observed.present || !observed.box || observed.box.width <= 0 || observed.box.height <= 0) {
+    fail(`page-level notice is not rendered (box ${JSON.stringify(observed.box)})`, 'render the notice on this route between the section navigation and the view container')
+  }
+  if (observed.insideBody) {
+    fail('page-level notice renders inside the view container', 'render the notice at page level, outside the section body')
+  }
+  if (!observed.statusText) {
+    fail(`notice carries no live-region message at ${JSON.stringify(notice.status)}`, 'keep the notice message in a role=status region so it is announced')
+  }
+  if (observed.rendered.length > 0) {
+    fail(`notice renders forbidden ${JSON.stringify(observed.rendered)}`, 'remove the forbidden element from the notice')
+  }
+  /** @type {Record<string, string | null>} */
+  const computedStyles = {}
+  for (const probe of notice.computed) {
+    const reading = observed.computed[probe.name]
+    const value = reading ? reading.value : null
+    computedStyles[probe.name] = value
+    if (probe.token !== undefined && (!reading || !reading.token || normalizeStyleValue(value) !== normalizeStyleValue(reading.token))) {
+      fail(`computed ${probe.property} ${JSON.stringify(value)} at ${JSON.stringify(probe.selector)} is not the ${probe.token} token ${JSON.stringify(reading ? reading.token : null)}`, `style ${probe.selector} with var(${probe.token})`)
+    }
+    if (probe.equals !== undefined && value !== probe.equals) {
+      fail(`computed ${probe.property} ${JSON.stringify(value)} at ${JSON.stringify(probe.selector)} is not ${JSON.stringify(probe.equals)}`, `keep ${probe.property} ${probe.equals} on ${probe.selector}`)
+    }
+  }
+  return Object.freeze({ statusText: observed.statusText, insideBody: observed.insideBody, forbiddenRendered: [...observed.rendered], computedStyles, box: observed.box })
+}
+
+/**
  * Capture one product theme row on the real built surface and write its six
  * durable artifacts. The page must already belong to a browser owned by the
  * Playwright runner; the loopback service must already be ready.
@@ -1567,6 +1673,7 @@ export function assertProductObservationTimes(input = /** @type {ProductObservat
  * @param {string} [options.runRoot] immutable run root (defaults to FAIRTEST_RUN_ROOT)
  * @param {string} [options.baseUrl] running loopback base URL
  * @param {number} [options.createdAtMs] identity creation time in whole ms
+ * @param {import('./fairtrade-targets.mjs').ProductRoute} [options.route] registered route entry the row drives, defaults to the default route
  * @param {(observed: object, context: ProductActiveViewGuardContext) => ProductActiveViewMeasurement} [options.assertActiveViewMounted] rendered-active-view guard, defaults to the real predicate
  * @returns {Promise<object>} row summary with proof, provenance, accessibility evidence and its verdict, real observation times, the recorded rendered measurements, the rendered-view guard call sequence, and artifact paths
  */
@@ -1597,12 +1704,19 @@ export async function captureProductRow(page, theme, options = {}) {
       'repair: use whole milliseconds since the epoch for "createdAtMs".',
     )
   }
-  const row = productThemeRow(theme)
+  const route = options.route ?? PRODUCT_DEFAULT_ROUTE
+  const row = productThemeRow(theme, route)
+  // Every selector, section, label, and action below comes from the route
+  // entry, so a second demo route is one more registry entry, not new code.
+  const selectors = route.selectors
+  const viewSelectors = Object.freeze({ container: selectors.body, activeView: selectors.activeView, stage: selectors.sectionView })
+  const action = route.action
+  const pointSections = productA11yPointSections(route)
   // Freshness first, then the row directory. The run-root guard is reachable
   // only through this preparation seam, so no artifact write can land in a
   // previous run subtree before the guard has refused it.
   requireEnvelopeForRun(runRoot, resolveRunId(), 'product producer')
-  const { rowDir } = prepareProductRowDir({ runRoot, theme })
+  const { rowDir } = prepareProductRowDir({ runRoot, theme, route })
   if (!existsSync(join(DIST_ROOT, 'index.html'))) {
     throw new Error(
       'product producer: built app is missing for field "dist" at path row.dist; ' +
@@ -1633,10 +1747,10 @@ export async function captureProductRow(page, theme, options = {}) {
     }
   }
 
-  await requireMounted(PRODUCT_SELECTORS.chrome, 'chrome')
-  await requireMounted(PRODUCT_SELECTORS.sectionNav, 'section')
-  await requireMounted(PRODUCT_SELECTORS.sectionView, 'view')
-  await requireMounted(PRODUCT_SELECTORS.body, 'body')
+  await requireMounted(selectors.chrome, 'chrome')
+  await requireMounted(selectors.sectionNav, 'section')
+  await requireMounted(selectors.sectionView, 'view')
+  await requireMounted(selectors.body, 'body')
 
   const before = await page.evaluate((selectors) => {
     const query = (/** @type {keyof typeof PRODUCT_SELECTORS} */ name) => document.querySelector(selectors[name])
@@ -1664,13 +1778,14 @@ export async function captureProductRow(page, theme, options = {}) {
         canvas: (getComputedStyle(document.documentElement).getPropertyValue('--canvas') || '').trim(),
       },
     }
-  }, PRODUCT_SELECTORS)
+  }, selectors)
   // The representative body is the RENDERED active view, measured by the one
   // shared in-page measurement the named blank-active-view and
   // unrendered-active-view mutations also drive. The container totals it
   // returns include the permanently mounted hidden changes view and are
   // recorded beside the measurement for contrast only.
-  const activeBefore = await page.evaluate(measureProductView, PRODUCT_VIEW_SELECTORS)
+  const activeBefore = await page.evaluate(measureProductView, viewSelectors)
+  const noticeBefore = route.notice ? await page.evaluate(readProductNotice, { notice: route.notice, body: selectors.body }) : null
 
   // One real clock reading for everything that evaluate just read. Nothing
   // below derives a part time from the row start: the timestamp names the
@@ -1680,22 +1795,22 @@ export async function captureProductRow(page, theme, options = {}) {
   if (!before.chromeBox || before.chromeBox.width <= 0 || before.chromeBox.height <= 0 || before.chromeChildren < 1) {
     throw new Error(
       `product producer: empty persistent chrome for field "chrome" at path proof.chrome; ` +
-      `selector ${JSON.stringify(PRODUCT_SELECTORS.chrome)} has ${before.chromeChildren} children and box ${JSON.stringify(before.chromeBox)}; ` +
+      `selector ${JSON.stringify(selectors.chrome)} has ${before.chromeChildren} children and box ${JSON.stringify(before.chromeBox)}; ` +
       `repair: keep the persistent chrome mounted and non-empty on the product path.`,
     )
   }
   if (!before.bodyBox || before.bodyBox.width <= 0 || before.bodyBox.height <= 0) {
     throw new Error(
       `product producer: unrendered representative body for field "body" at path proof.body; ` +
-      `selector ${JSON.stringify(PRODUCT_SELECTORS.body)} has box ${JSON.stringify(before.bodyBox)}; ` +
-      'repair: keep the analytics dashboard laid out with a rendered box instead of a collapsed section.',
+      `selector ${JSON.stringify(selectors.body)} has box ${JSON.stringify(before.bodyBox)}; ` +
+      `repair: keep the ${route.initialSection} section laid out with a rendered box instead of a collapsed section.`,
     )
   }
   const acceptedBefore = activeViewGuard(activeBefore, {
     label: 'blank representative body',
     part: 'body',
     path: 'proof.body',
-    repair: `keep the ${PRODUCT_INITIAL_SECTION} dashboard mounted and rendered with non-trivial content instead of a blank section`,
+    repair: `keep the ${route.initialSection} section mounted and rendered with non-trivial content instead of a blank section`,
   })
   activeViewGuardCalls.push('body@proof.body')
   if (before.location !== row.route) {
@@ -1705,16 +1820,17 @@ export async function captureProductRow(page, theme, options = {}) {
       'repair: navigate to the exact row route before observing the product tuple.',
     )
   }
-  if (before.activeText !== PRODUCT_INITIAL_SECTION) {
+  if (before.activeText !== route.initialLabel || !before.activeHasClass) {
     throw new Error(
       `product producer: unexpected initial section ${JSON.stringify(before.activeText)} for field "activeSection" at path proof.activeSection; ` +
-      `repair: start the proof from ${JSON.stringify(PRODUCT_INITIAL_SECTION)} for the initial section.`,
+      `repair: start the proof from ${JSON.stringify(route.initialLabel)} for the initial section, marked active with aria-current="page".`,
     )
   }
+  const noticeRecordBefore = route.notice && noticeBefore ? assertProductNotice(route.notice, noticeBefore, 'before') : null
   if (!before.stagePresent || before.stageDescendants < 1) {
     throw new Error(
       `product producer: missing mounted view for field "view" at path proof.view; ` +
-      `selector ${JSON.stringify(PRODUCT_SELECTORS.sectionView)} present ${before.stagePresent} with ${before.stageDescendants} descendants; ` +
+      `selector ${JSON.stringify(selectors.sectionView)} present ${before.stagePresent} with ${before.stageDescendants} descendants; ` +
       'repair: keep the tabpanel mount with the active view on the product path.',
     )
   }
@@ -1742,15 +1858,15 @@ export async function captureProductRow(page, theme, options = {}) {
   // re-check after it could only ever be unreachable.
   const scopedBefore = await scanProductViewAxe(page, 'scopedBefore')
 
-  const mapButton = page.locator(`${PRODUCT_SELECTORS.sectionNav} ${PRODUCT_SELECTORS.sectionItem}`, { hasText: PRODUCT_ACTION_LABEL })
+  const sectionButton = page.locator(`${selectors.sectionNav} ${selectors.sectionItem}`, { hasText: action.label })
   try {
-    await mapButton.first().click({ timeout: PRODUCT_ACTION_TIMEOUT_MS })
+    await sectionButton.first().click({ timeout: PRODUCT_ACTION_TIMEOUT_MS })
   } catch (error) {
     const cause = error instanceof Error ? error.message : String(error)
     throw new Error(
       `product producer: named action did not complete for field "action" at path proof.action; ` +
-      `click on the ${JSON.stringify(PRODUCT_ACTION_LABEL)} section failed: ${cause}; ` +
-      `repair: keep the ${JSON.stringify(PRODUCT_ACTION_TO_SECTION)} section button clickable in ${JSON.stringify(PRODUCT_SELECTORS.sectionNav)}.`,
+      `click on the ${JSON.stringify(action.label)} section failed: ${cause}; ` +
+      `repair: keep the ${JSON.stringify(action.to)} section button clickable in ${JSON.stringify(selectors.sectionNav)}.`,
     )
   }
   try {
@@ -1759,13 +1875,13 @@ export async function captureProductRow(page, theme, options = {}) {
         const el = document.querySelector(selectors.activeSection);
         return !!el && el.textContent.trim().toLowerCase().includes(selectors.actionLabel);
       },
-      { activeSection: PRODUCT_SELECTORS.activeSection, actionLabel: PRODUCT_ACTION_LABEL.toLowerCase() },
+      { activeSection: selectors.activeSection, actionLabel: action.label.toLowerCase() },
       { timeout: PRODUCT_ACTION_TIMEOUT_MS },
     )
   } catch {
     throw new Error(
-      `product producer: active section did not become ${JSON.stringify(PRODUCT_ACTION_TO_SECTION)} for field "activeSection" at path proof.activeSection; ` +
-      'repair: selecting the map section must mark its button with the shell active class and aria-current="page".',
+      `product producer: active section did not become ${JSON.stringify(action.to)} for field "activeSection" at path proof.activeSection; ` +
+      `repair: selecting the ${action.to} section must mark its button with the shell active class and aria-current="page".`,
     )
   }
 
@@ -1778,31 +1894,33 @@ export async function captureProductRow(page, theme, options = {}) {
       stageDescendants: stage ? stage.querySelectorAll('*').length : -1,
       location: location.pathname + location.search + location.hash,
     }
-  }, PRODUCT_SELECTORS)
+  }, selectors)
   // Same shared rendered active-view measurement and the same single rendered
   // predicate as the pre-interaction read, so the post-action floor is never
-  // satisfied by the hidden changes view or by an unrendered map view.
-  const activeAfter = await page.evaluate(measureProductView, PRODUCT_VIEW_SELECTORS)
+  // satisfied by the hidden changes view or by an unrendered target view.
+  const activeAfter = await page.evaluate(measureProductView, viewSelectors)
+  const noticeAfter = route.notice ? await page.evaluate(readProductNotice, { notice: route.notice, body: selectors.body }) : null
 
-  if (!after.activeText || !after.activeText.toLowerCase().includes(PRODUCT_ACTION_LABEL) || !after.activeHasClass) {
+  if (!after.activeText || !after.activeText.toLowerCase().includes(action.label) || !after.activeHasClass) {
     throw new Error(
       `product producer: unproven section transition for field "activeSection" at path proof.activeSection; ` +
       `active button reads ${JSON.stringify(after.activeText)} with active class ${after.activeHasClass}; ` +
-      'repair: the named action must leave the map button active with aria-current="page".',
+      `repair: the named action must leave the ${action.to} button active with aria-current="page".`,
     )
   }
+  const noticeRecordAfter = route.notice && noticeAfter ? assertProductNotice(route.notice, noticeAfter, 'after') : null
   if (activeAfter.container.descendants < 1) {
     throw new Error(
       `product producer: unmounted view container after the action for field "view" at path proof.view; ` +
-      `selector ${JSON.stringify(PRODUCT_SELECTORS.body)} carries ${activeAfter.container.descendants} descendants; ` +
-      'repair: keep the map view mounted inside the view container after the section switch.',
+      `selector ${JSON.stringify(selectors.body)} carries ${activeAfter.container.descendants} descendants; ` +
+      `repair: keep the ${action.to} view mounted inside the view container after the section switch.`,
     )
   }
   const acceptedAfter = activeViewGuard(activeAfter, {
     label: 'blank mounted view after the action',
     part: 'view',
     path: 'proof.view',
-    repair: `keep the ${PRODUCT_ACTION_TO_SECTION} view mounted and rendered with non-trivial content after the section switch`,
+    repair: `keep the ${action.to} view mounted and rendered with non-trivial content after the section switch`,
   })
   activeViewGuardCalls.push('view@proof.view')
 
@@ -1824,9 +1942,9 @@ export async function captureProductRow(page, theme, options = {}) {
     activeSection: { observed: true, observedAtMs: actionObservedAtMs },
     view: { observed: true, observedAtMs: actionObservedAtMs },
     themeObservation: { ...themeObservation },
-    initialSection: PRODUCT_INITIAL_SECTION,
-    activeSectionId: PRODUCT_ACTION_TO_SECTION,
-    action: { name: PRODUCT_ACTION_NAME, completed: true, observedAtMs: actionObservedAtMs },
+    initialSection: route.initialSection,
+    activeSectionId: action.to,
+    action: { name: action.name, completed: true, observedAtMs: actionObservedAtMs },
   })
 
   const pageWide = await scanAxe(page)
@@ -1855,8 +1973,8 @@ export async function captureProductRow(page, theme, options = {}) {
       // declaredSection is the label the registry predicts; observedSection is
       // what the page showed. They are named apart so a reader can never take
       // the prediction for the observation.
-      before: { declaredSection: PRODUCT_A11Y_POINT_SECTIONS[/** @type {'initial' | 'after-action'} */ (PRODUCT_A11Y_GATE_POINT_SLOTS.before)], observedSection: before.activeText, ...scopedBefore },
-      after: { declaredSection: PRODUCT_A11Y_POINT_SECTIONS[/** @type {'initial' | 'after-action'} */ (PRODUCT_A11Y_GATE_POINT_SLOTS.after)], observedSection: after.activeText, ...scopedAfter },
+      before: { declaredSection: pointSections[/** @type {'initial' | 'after-action'} */ (PRODUCT_A11Y_GATE_POINT_SLOTS.before)], observedSection: before.activeText, ...scopedBefore },
+      after: { declaredSection: pointSections[/** @type {'initial' | 'after-action'} */ (PRODUCT_A11Y_GATE_POINT_SLOTS.after)], observedSection: after.activeText, ...scopedAfter },
     },
     pageWide: { scope: PRODUCT_A11Y_SCOPES.page, root: PRODUCT_A11Y_SCOPES.pageRoot, ...pageWide },
   }
@@ -1883,7 +2001,7 @@ export async function captureProductRow(page, theme, options = {}) {
     artifactPath: axePath,
   })
 
-  const ariaSnapshot = await page.locator(PRODUCT_SELECTORS.shell).ariaSnapshot()
+  const ariaSnapshot = await page.locator(selectors.shell).ariaSnapshot()
   if (!ariaSnapshot || ariaSnapshot.trim().length < 50) {
     throw new Error(
       'product producer: empty ARIA snapshot for field "aria" at path evidence.aria; ' +
@@ -1912,7 +2030,7 @@ export async function captureProductRow(page, theme, options = {}) {
     gateBefore,
     gateAfter,
   })
-  const accessibilityVerdict = readProductAccessibilityVerdict(accessibility)
+  const accessibilityVerdict = readProductAccessibilityVerdict(accessibility, route)
   if (accessibilityVerdict.result !== 'pass') {
     throw new Error(
       `product producer: accessibility verdict reads ${JSON.stringify(accessibilityVerdict.result)} for field "accessibility" at path record.accessibility.gate; ` +
@@ -1934,21 +2052,27 @@ export async function captureProductRow(page, theme, options = {}) {
     target: PRODUCT_TARGET_ID,
     kind: 'product',
     rowTheme: theme,
+    routeKey: route.key,
     route: row.route,
     observedRoute: before.location,
-    initialSection: PRODUCT_INITIAL_SECTION,
+    initialSection: route.initialSection,
     activeSectionBefore: before.activeText,
     activeSectionAfter: after.activeText,
     interaction: {
-      name: PRODUCT_ACTION_NAME,
-      from: PRODUCT_INITIAL_SECTION,
-      to: PRODUCT_ACTION_TO_SECTION,
+      name: action.name,
+      from: action.from,
+      to: action.to,
       completed: true,
       observedAtMs: actionObservedAtMs,
     },
     theme: { ...themeObservation },
+    // The route's page-level notice, observed at both points, or null when the
+    // route renders none.
+    notice: route.notice && noticeRecordBefore && noticeRecordAfter
+      ? { name: route.notice.name, selector: route.notice.selector, before: noticeRecordBefore, after: noticeRecordAfter }
+      : null,
     chrome: {
-      selector: PRODUCT_SELECTORS.chrome,
+      selector: selectors.chrome,
       children: before.chromeChildren,
       box: before.chromeBox,
     },

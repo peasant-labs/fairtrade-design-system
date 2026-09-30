@@ -1,0 +1,106 @@
+# Mounted-viewer cases for the TranscriptViewer header chrome a host controls. Every case
+# mounts the REAL TranscriptViewer (scripts/transcript-viewer-chrome.test.mjs) with a host
+# action in headerActions and states, for each named control, whether it must be present or
+# absent. The control names are a closed set the gate resolves to DOM:
+#   host-actions      the host's own headerActions node
+#   share-menu        the composite's share menu trigger
+#   more-menu         the composite's more actions menu trigger
+#   outcome-chip      the session outcome chip in the meta row
+#   search-trigger    the "search this transcript" button at the end of the tab strip
+#   pull-request-slot the host's pullRequests node under the meta row
+# Every case lists every control exactly once, across present and absent.
+
+# The session under test carries an outcome, so outcome-chip depends only on showOutcome.
+# capabilities give the more menu an item (canExport), so more-menu depends only on showTail.
+defaultsCase:
+  name: no chrome props keeps the long-standing header
+  present: [host-actions, share-menu, more-menu, outcome-chip]
+  absent: [search-trigger, pull-request-slot]
+
+cases:
+  - name: tail on, outcome on, search trigger on, pull requests given
+    props: {showTail: true, showOutcome: true, showSearchTrigger: true, pullRequests: true}
+    present: [host-actions, share-menu, more-menu, outcome-chip, search-trigger, pull-request-slot]
+    absent: []
+  - name: tail on, outcome on, search trigger on, pull requests omitted
+    props: {showTail: true, showOutcome: true, showSearchTrigger: true, pullRequests: false}
+    present: [host-actions, share-menu, more-menu, outcome-chip, search-trigger]
+    absent: [pull-request-slot]
+  - name: tail on, outcome on, search trigger off, pull requests given
+    props: {showTail: true, showOutcome: true, showSearchTrigger: false, pullRequests: true}
+    present: [host-actions, share-menu, more-menu, outcome-chip, pull-request-slot]
+    absent: [search-trigger]
+  - name: tail on, outcome on, search trigger off, pull requests omitted
+    props: {showTail: true, showOutcome: true, showSearchTrigger: false, pullRequests: false}
+    present: [host-actions, share-menu, more-menu, outcome-chip]
+    absent: [search-trigger, pull-request-slot]
+  - name: tail on, outcome off, search trigger on, pull requests given
+    props: {showTail: true, showOutcome: false, showSearchTrigger: true, pullRequests: true}
+    present: [host-actions, share-menu, more-menu, search-trigger, pull-request-slot]
+    absent: [outcome-chip]
+  - name: tail on, outcome off, search trigger on, pull requests omitted
+    props: {showTail: true, showOutcome: false, showSearchTrigger: true, pullRequests: false}
+    present: [host-actions, share-menu, more-menu, search-trigger]
+    absent: [outcome-chip, pull-request-slot]
+  - name: tail on, outcome off, search trigger off, pull requests given
+    props: {showTail: true, showOutcome: false, showSearchTrigger: false, pullRequests: true}
+    present: [host-actions, share-menu, more-menu, pull-request-slot]
+    absent: [outcome-chip, search-trigger]
+  - name: tail on, outcome off, search trigger off, pull requests omitted
+    props: {showTail: true, showOutcome: false, showSearchTrigger: false, pullRequests: false}
+    present: [host-actions, share-menu, more-menu]
+    absent: [outcome-chip, search-trigger, pull-request-slot]
+  - name: tail off, outcome on, search trigger on, pull requests given
+    props: {showTail: false, showOutcome: true, showSearchTrigger: true, pullRequests: true}
+    present: [host-actions, outcome-chip, search-trigger, pull-request-slot]
+    absent: [share-menu, more-menu]
+  - name: tail off, outcome on, search trigger on, pull requests omitted
+    props: {showTail: false, showOutcome: true, showSearchTrigger: true, pullRequests: false}
+    present: [host-actions, outcome-chip, search-trigger]
+    absent: [share-menu, more-menu, pull-request-slot]
+  - name: tail off, outcome on, search trigger off, pull requests given
+    props: {showTail: false, showOutcome: true, showSearchTrigger: false, pullRequests: true}
+    present: [host-actions, outcome-chip, pull-request-slot]
+    absent: [share-menu, more-menu, search-trigger]
+  - name: tail off, outcome on, search trigger off, pull requests omitted
+    props: {showTail: false, showOutcome: true, showSearchTrigger: false, pullRequests: false}
+    present: [host-actions, outcome-chip]
+    absent: [share-menu, more-menu, search-trigger, pull-request-slot]
+  - name: tail off, outcome off, search trigger on, pull requests given
+    props: {showTail: false, showOutcome: false, showSearchTrigger: true, pullRequests: true}
+    present: [host-actions, search-trigger, pull-request-slot]
+    absent: [share-menu, more-menu, outcome-chip]
+  - name: tail off, outcome off, search trigger on, pull requests omitted
+    props: {showTail: false, showOutcome: false, showSearchTrigger: true, pullRequests: false}
+    present: [host-actions, search-trigger]
+    absent: [share-menu, more-menu, outcome-chip, pull-request-slot]
+  - name: tail off, outcome off, search trigger off, pull requests given
+    props: {showTail: false, showOutcome: false, showSearchTrigger: false, pullRequests: true}
+    present: [host-actions, pull-request-slot]
+    absent: [share-menu, more-menu, outcome-chip, search-trigger]
+  - name: tail off, outcome off, search trigger off, pull requests omitted
+    props: {showTail: false, showOutcome: false, showSearchTrigger: false, pullRequests: false}
+    present: [host-actions]
+    absent: [share-menu, more-menu, outcome-chip, search-trigger, pull-request-slot]
+
+# Behaviour a host relies on, beyond presence.
+interactions:
+  - name: clicking the search trigger opens the search bar and focuses its field
+    kind: trigger-click
+  - name: the search trigger's accessible name includes the shortcut
+    kind: trigger-name
+    expectedName: search this transcript ⌘F
+  - name: the more menu no longer offers chat with trace
+    kind: more-menu-items
+    capabilities: {canEdit: true, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: true}
+    expectedItems: [edit, json, jsonl, markdown]
+  - name: the more menu is absent when no capability gives it an item
+    kind: more-menu-absent
+    capabilities: {canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false}
+
+# The meta row names the count prompts. Absent reads unknown and a recorded zero reads 0.
+promptLabels:
+  - {name: an unmeasured count reads unknown prompts, absent: true, expected: unknown prompts}
+  - {name: a recorded zero reads 0 prompts, value: 0, expected: 0 prompts}
+  - {name: one prompt reads singular, value: 1, expected: 1 prompt}
+  - {name: several prompts read plural, value: 4, expected: 4 prompts}

@@ -58,13 +58,14 @@ export { default as PromptDigest } from './PromptDigest.jsx'
 export { PhaseDivider, Phase, TaskBoundary, CheckpointMarker, TurnContextBar } from './TranscriptMarkers.jsx'
 export { default as ToolCallRenderer } from './ToolRenderers.jsx' // distinct from Timeline's ToolCall
 export { default as Tour } from './Tour.jsx'
-export { default as ConnectionPill, DataState, TeachingEmptyState } from './ConnectionState.jsx'
+export { default as ConnectionPill, DataState, TeachingEmptyState, LocalOfflineBanner } from './ConnectionState.jsx'
 export { default as SignInProviders, HandleClaim, OnboardingCard } from './SignIn.jsx'
 export { default as CliSteps, CommandBlock, GettingStarted } from './CliOnboard.jsx'
 export { default as FacetRail } from './FacetRail.jsx'
 export { StatTile, StatGrid, GovTile, ProviderBars } from './StatTiles.jsx'
+export { default as StatsStrip } from './StatsStrip.jsx'
 export { default as VisibilitySegmented, VisibilityEye, ScopeChip, FocusedModeToggle } from './VisibilityControl.jsx'
-export { default as InUseShell, GraphAppShell, GraphSectionNav, IN_USE_APPS, GRAPH_APP_SECTIONS } from './inuse/InUseShell.jsx'
+export { default as InUseShell, GraphAppShell, GraphSectionNav, IN_USE_APPS, LOCAL_APP_SECTIONS, GRAPH_APP_SECTIONS } from './inuse/InUseShell.jsx'
 /* transcript family: the schema-backed wire contract + cooked TranscriptViewModel, plus the lifted
    single-transcript components (composite + primitives) and the graph node visuals. The two
    sub-barrels carry the actual surface, so additions land in those files rather than on this

@@ -4,9 +4,11 @@
 # protect the family record; the workflow mutations protect the CI guard by
 # editing the real .github/workflows/ci.yml text and requiring the guard to
 # fail for its intended field.
-expectedCaseCount: 36
+expectedCaseCount: 38
 requiredCaseNames:
   - ci-key-set-is-exact
+  - ci-key-set-equals-the-evidence-policy-rows
+  - policy-rows-reject-a-dropped-required-row
   - ci-key-set-rejects-a-missing-key
   - ci-key-set-rejects-an-extra-key
   - ci-key-set-rejects-a-local-key

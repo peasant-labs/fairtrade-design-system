@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import PromptDigest from './PromptDigest.jsx'
+import { PR_DIGEST, prDigestHref } from '../mockups/inuse/pr-digest-fixture.js'
 
 /* PromptDigest stories. CSF3: a Playground driven by meta.args plus one named story per
    meaningful state — the collapsed default chain, the collapsed-boundary chain, a chain with no
@@ -527,5 +529,89 @@ export const ManyCommitsAndSkills = {
     // prompt 2 stays closed and its long text is still clamped to two lines
     const promptTwoPreview = canvas.getByText(MANY_LINE_PROMPT)
     await expect(promptTwoPreview).toHaveClass('pd-prompt-clamp')
+  },
+}
+
+
+/* ── split layout ────────────────────────────────────────────────────────────
+   sessions on the left, the selected session's prompts on the right. j and k (and the arrow keys
+   on the list) move the selection and stop at the ends; the list is one tab stop. */
+
+/* a chain whose first items arrive before any session boundary: they get a leading entry. */
+const leadingItemsChain = {
+  ...shortChain,
+  items: [
+    { kind: 'prompt', transcriptId: TRANSCRIPT_C, timestamp: '2026-09-05T08:00:00Z', text: 'Recorded before the first boundary.', turnIndex: 1, ordinal: 1 },
+    ...shortChain.items,
+  ],
+}
+
+const splitMeta = { layout: 'split', itemHref: prDigestHref }
+
+export const Split = {
+  name: 'split',
+  args: { ...splitMeta, digest: PR_DIGEST },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const list = canvas.getByRole('listbox', { name: 'sessions' })
+    const options = within(list).getAllByRole('option')
+    await expect(options).toHaveLength(2)
+    await expect(options[0]).toHaveAttribute('aria-selected', 'true')
+    await expect(canvas.getByRole('heading', { name: 'Fix flaky ingest test' })).toBeVisible()
+    list.focus()
+    await userEvent.keyboard('j')
+    await waitFor(() => expect(options[1]).toHaveAttribute('aria-selected', 'true'))
+    await expect(canvas.getByRole('heading', { name: 'Guard empty turns in the digest' })).toBeVisible()
+    await expect(canvas.getByText(/in this session, not listed in this digest/)).toBeVisible()
+    // stops at the last entry
+    await userEvent.keyboard('j')
+    await expect(options[1]).toHaveAttribute('aria-selected', 'true')
+    await userEvent.keyboard('{ArrowUp}')
+    await waitFor(() => expect(options[0]).toHaveAttribute('aria-selected', 'true'))
+    // stops at the first entry
+    await userEvent.keyboard('k')
+    await expect(options[0]).toHaveAttribute('aria-selected', 'true')
+    // one tab stop: Tab leaves the list for the pane
+    await userEvent.tab()
+    await expect(canvas.getByRole('link', { name: 'open the transcript' })).toHaveFocus()
+  },
+}
+
+export const SplitCollapsed = {
+  name: 'split, collapsed sessions',
+  args: { ...splitMeta, digest: collapsedChain, itemHref },
+}
+
+export const SplitBeforeFirstBoundary = {
+  name: 'split, items before the first boundary',
+  args: { ...splitMeta, digest: leadingItemsChain, itemHref },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const options = within(canvas.getByRole('listbox')).getAllByRole('option')
+    await expect(options).toHaveLength(3)
+    await expect(options[0]).toHaveTextContent('before the first session')
+    await expect(canvas.getByText('Recorded before the first boundary.')).toBeVisible()
+  },
+}
+
+export const SplitEmpty = {
+  name: 'split, empty chain',
+  args: { ...splitMeta, digest: single({}, []) },
+}
+
+/* the host owns the selection: the story keeps it in state, as a page keeping it in the url would. */
+export const SplitControlled = {
+  name: 'split, controlled selection',
+  args: { ...splitMeta, digest: PR_DIGEST },
+  render: function ControlledSplit(args) {
+    const [selected, setSelected] = useState(1)
+    return <PromptDigest {...args} selected={selected} onSelect={(next) => setSelected(next)} />
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const options = within(canvas.getByRole('listbox')).getAllByRole('option')
+    await expect(options[1]).toHaveAttribute('aria-selected', 'true')
+    await userEvent.click(options[0])
+    await waitFor(() => expect(options[0]).toHaveAttribute('aria-selected', 'true'))
   },
 }

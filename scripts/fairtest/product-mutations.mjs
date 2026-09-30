@@ -141,7 +141,7 @@ export const PRODUCT_UNRENDERED_RULES = Object.freeze({
   'display-none': `${PRODUCT_SELECTORS.activeView} { display: none !important; }`,
   'visibility-hidden': `${PRODUCT_SELECTORS.activeView} { visibility: hidden !important; }`,
   'opacity-zero': `${PRODUCT_SELECTORS.activeView} { opacity: 0 !important; }`,
-  'zero-size': `${PRODUCT_SELECTORS.activeView} { width: 0 !important; height: 0 !important; overflow: hidden !important; }`,
+  'zero-size': `${PRODUCT_SELECTORS.activeView} { width: 0 !important; height: 0 !important; min-width: 0 !important; min-height: 0 !important; padding: 0 !important; border-width: 0 !important; overflow: hidden !important; }`,
   clipped: `${PRODUCT_SELECTORS.body} { position: absolute !important; top: -4000px !important; }`,
 })
 
@@ -178,8 +178,8 @@ function validMutationProofInput(overrides = {}) {
     activeSection: { observed: true, observedAtMs: 1003 },
     view: { observed: true, observedAtMs: 1004 },
     themeObservation: { expected: 'dark', observed: 'dark', source: 'product-mutations', observedAtMs: 1000 },
-    initialSection: 'analytics',
-    activeSectionId: 'analytics',
+    initialSection: 'home',
+    activeSectionId: 'home',
     ...overrides,
   }
 }
@@ -340,7 +340,7 @@ async function mutateBlankActiveView({ port } = {}) {
     label: 'blank representative body',
     part: 'body',
     path: 'proof.body',
-    repair: 'keep the analytics dashboard mounted with non-trivial content instead of a blank section',
+    repair: 'keep the home section mounted with non-trivial content instead of a blank section',
   }
   try {
     const page = await browser.newPage({ viewport: { ...PRODUCT_VIEWPORT } })
@@ -400,7 +400,7 @@ async function mutateUnrenderedActiveView({ port } = {}) {
     label: 'unrendered representative body',
     part: 'body',
     path: 'proof.body',
-    repair: 'keep the analytics dashboard laid out and rendered instead of present but invisible',
+    repair: 'keep the home section laid out and rendered instead of present but invisible',
   }
   const refused = []
   try {

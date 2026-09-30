@@ -7,11 +7,41 @@ export const IN_USE_APPS = Object.freeze([
   { id: 'graph', mark: 'peasant', icon: Waypoints },
 ])
 
+/**
+ * One entry of a section list. `inNav: false` keeps a section out of the section navigation; an
+ * entry without `inNav` is listed. A consumer's own list may carry more fields (an `href`).
+ * @typedef {{ id: string, label: string, inNav?: boolean, title?: string }} AppSection
+ */
+
+/* The local app's section registry, in canonical order. `inNav` says whether a section is
+   listed in the section navigation: home and settings are; analytics, changes and code map keep
+   their ids, labels and routes, and are reached by route only. A consumer derives its nav and
+   routes from this list and fails loudly on an id it does not map. The declared type keeps the
+   components' `sections` prop open to any AppSection list, not only these five entries. */
+/** @type {ReadonlyArray<Readonly<AppSection>>} */
+export const LOCAL_APP_SECTIONS = Object.freeze([
+  Object.freeze({ id: 'home', label: 'home', inNav: true }),
+  Object.freeze({ id: 'settings', label: 'settings', inNav: true }),
+  Object.freeze({ id: 'analytics', label: 'analytics', inNav: false }),
+  Object.freeze({ id: 'changes', label: 'changes', inNav: false }),
+  Object.freeze({ id: 'map', label: 'code map', inNav: false }),
+])
+
+/**
+ * @deprecated use LOCAL_APP_SECTIONS. The earlier three-section registry, kept with its original
+ * value so a consumer on the old shape keeps working until it re-pins.
+ */
 export const GRAPH_APP_SECTIONS = Object.freeze([
   { id: 'analytics', label: 'analytics' },
   { id: 'changes', label: 'changes' },
   { id: 'map', label: 'code map' },
 ])
+
+/* The entries a section navigation lists: every entry not marked `inNav: false`. An entry with no
+   `inNav` field (the deprecated registry, or a consumer's own list) keeps rendering. */
+export function navSectionsOf(sections) {
+  return sections.filter((section) => section.inNav !== false)
+}
 
 function isTextEntry(target) {
   return target && (/(INPUT|TEXTAREA|SELECT)/.test(target.tagName) || target.isContentEditable)
@@ -101,12 +131,13 @@ export default function InUseShell({
 }
 
 export function GraphAppShell({
-  sections = GRAPH_APP_SECTIONS,
+  sections = LOCAL_APP_SECTIONS,
   activeId,
   activePrimaryId,
   onSectionChange,
   backTo,
   onBack,
+  notice = null,
   children,
   ariaLabel = 'peasant sections',
 }) {
@@ -119,7 +150,7 @@ export function GraphAppShell({
             <ChevronLeft size={14} aria-hidden="true" /> back
           </button>
         ) : null}
-        {sections.map((p) => (
+        {navSectionsOf(sections).map((p) => (
           <button
             key={p.id}
             type="button"
@@ -131,13 +162,15 @@ export function GraphAppShell({
           </button>
         ))}
       </nav>
+      {/* a page-level notice (e.g. the local offline banner) sits between the nav and the body */}
+      {notice}
       <div className="iu-view">{children}</div>
     </div>
   )
 }
 
 export function GraphSectionNav({
-  sections = GRAPH_APP_SECTIONS,
+  sections = LOCAL_APP_SECTIONS,
   activeId = undefined,
   hrefFor = undefined,
   LinkComponent = undefined,
@@ -150,7 +183,7 @@ export function GraphSectionNav({
 }) {
   return (
     <nav className={className} aria-label={ariaLabel}>
-      {sections.map((p) => {
+      {navSectionsOf(sections).map((p) => {
         const active = activeId === p.id
         const itemClasses = itemClassName + (active && activeItemClassName ? ' ' + activeItemClassName : '')
         const body = <>{p.label}{active ? activeMarker : null}</>

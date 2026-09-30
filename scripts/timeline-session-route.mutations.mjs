@@ -90,14 +90,15 @@ function inMemoryGraphAppMutation(mutatedSource) {
 
 async function captureRouteFailure(page, origin, routeCase) {
   try {
-    await page.goto(`${origin}/?fb=off&app=graph`, { waitUntil: 'networkidle0' })
+    // The changes section is reached by route only: the local app's section
+    // navigation lists home and settings.
+    await page.goto(`${origin}/?fb=off&app=graph&section=changes`, { waitUntil: 'networkidle0' })
     await page.waitForSelector('#inuse-stage .iu-subnav')
     const openedChanges = await page.evaluate(() => {
-      const button = [...document.querySelectorAll('#inuse-stage .iu-subnav-item')].find((candidate) => candidate.textContent.trim() === 'changes')
-      button?.click()
-      return Boolean(button)
+      const history = document.querySelector('[aria-label="default-branch commit history"]')
+      return Boolean(history) && !history.closest('[hidden]')
     })
-    assert.equal(openedChanges, true, 'session return route: changes navigation')
+    assert.equal(openedChanges, true, 'session return route: changes section opens by route')
     await page.waitForSelector(`.cg-history-row[data-commit-hash="${routeCase.commitHash}"] .tlp-overflow-toggle`)
     const openedDestination = await page.evaluate(async ({ commitHash, toggleLabel, thirdSessionTitle }) => {
       const row = document.querySelector(`.cg-history-row[data-commit-hash="${CSS.escape(commitHash)}"]`)

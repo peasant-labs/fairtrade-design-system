@@ -131,7 +131,9 @@ const sampleProps = {
     caption: 'sample table',
   },
   DiffView: { file: 'sample.diff', hunks: diffHunks },
-  PromptDigest: { digest: promptDigest, itemHref: (item) => `https://village.example/items/${item.transcriptId}` },
+  PromptDigest: { digest: promptDigest, itemHref: (item) => `https://village.example/items/${item.transcriptId}`, layout: 'split' },
+  StatsStrip: { items: [{ value: 1284, label: 'sessions' }, { label: 'longest streak', value: '3 wk', order: 'label-first' }] },
+  LocalOfflineBanner: { onRetry: () => {}, checkedAt: new Date('2026-09-28T14:32:05Z') },
   ProviderIcon: { harness: 'antigravity', label: true },
   ProviderName: { harness: 'antigravity' },
   ProviderTag: { harness: 'antigravity' },
@@ -205,6 +207,9 @@ const expectedExports = [
   'TranscriptScrubber',
   'TranscriptScorecard',
   'TranscriptLabelPopover',
+  'PromptDigest',
+  'LocalOfflineBanner',
+  'StatsStrip',
 ]
 
 const failures = []
@@ -241,7 +246,7 @@ if (iconCount < 100) {
 // and surfaces its canonical enum-value arrays (the runtime exports that anchor
 // the contract). Empty here would mean a broken per-surface entry import.
 const surfaceChecks = [
-  ['graph', graph, ['MAP_NODE_KINDS', 'CHANGE_BINDINGS', 'EDGE_VIOLATION_KINDS', 'FILE_CHANGE_STATUSES', 'DIFF_LINE_KINDS']],
+  ['graph', graph, ['MAP_NODE_KINDS', 'CHANGE_BINDINGS', 'EDGE_VIOLATION_KINDS', 'FILE_CHANGE_STATUSES', 'DIFF_LINE_KINDS', 'LOCAL_APP_SECTIONS', 'GRAPH_APP_SECTIONS']],
   ['commons', commons, ['TRANSCRIPT_VISIBILITIES', 'ACCEPTANCE_MODES', 'DATA_ACCESS_POLICIES', 'TRANSCRIPT_DELETION_POLICIES', 'COLLECTIVE_ROLES']],
   ['analytics', analytics, ['ANALYTICS_SESSION_OUTCOMES', 'PROJECT_OVERVIEW_SECTION_KEYS']],
 ]

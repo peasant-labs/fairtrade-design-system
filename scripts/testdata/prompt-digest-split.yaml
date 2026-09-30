@@ -1,0 +1,135 @@
+# Cases for PromptDigest's split layout (src/ui/PromptDigest.jsx, layout="split").
+# scripts/prompt-digest-split.test.mjs mounts the REAL component with each chain, drives the
+# keys, and checks the session list, the selection (aria-selected plus the marker class) and the
+# reading pane. Chains are shaped as the schema PromptDigest; the header is shared.
+#
+# keys: each step is a key pressed on `target` (list = the focused listbox, page = document body,
+#   field = a focused text input outside the digest) with optional held modifiers.
+# trail: the selected option index after each step.
+header:
+  sessionCount: 3
+  promptCount: 5
+  commitsCovered: 1
+  commitsTotal: 1
+  harness: claude-code
+  redactionLevel: standard
+  villageUrl: https://village.example/pulls/acme/ingest-api/42
+
+chains:
+  one-session:
+    - {kind: session, transcriptId: 7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13, timestamp: '2026-09-06T14:00:00Z', text: Fix flaky ingest test, promptCount: 2, commitCount: 1}
+    - {kind: prompt, transcriptId: 7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13, timestamp: '2026-09-06T14:01:00Z', text: The ingest test flakes on CI, turnIndex: 1, ordinal: 1}
+    - {kind: prompt, transcriptId: 7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13, timestamp: '2026-09-06T14:05:00Z', text: Check the retry backoff, turnIndex: 4, ordinal: 2}
+    - {kind: commit, transcriptId: 7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13, timestamp: '2026-09-06T14:30:00Z', text: '', commitSha: a1b2c3d4e5f60718293a4b5c6d7e8f9012345678}
+  many-sessions:
+    - {kind: session, transcriptId: 7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13, timestamp: '2026-09-06T14:00:00Z', text: Fix flaky ingest test, promptCount: 2, commitCount: 1}
+    - {kind: prompt, transcriptId: 7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13, timestamp: '2026-09-06T14:01:00Z', text: The ingest test flakes on CI, turnIndex: 1, ordinal: 1}
+    - {kind: skill, transcriptId: 7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13, timestamp: '2026-09-06T14:01:30Z', text: /toolkit:write-plan, turnIndex: 2}
+    - {kind: prompt, transcriptId: 7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13, timestamp: '2026-09-06T14:05:00Z', text: Check the retry backoff, turnIndex: 4, ordinal: 2}
+    - {kind: session, transcriptId: c4e51f08-6a2b-4d97-8f30-1b7de254a9c6, timestamp: '2026-09-07T09:00:00Z', text: Guard empty turns in the digest, promptCount: 1, commitCount: 0}
+    - {kind: prompt, transcriptId: c4e51f08-6a2b-4d97-8f30-1b7de254a9c6, timestamp: '2026-09-07T09:02:00Z', text: Guard the empty turn case, turnIndex: 2, ordinal: 3}
+    - {kind: session, transcriptId: 1d9a7c35-8e42-4b60-9f18-3a5c7e20d4b8, timestamp: '2026-09-08T11:00:00Z', text: Paginate the collectives list, promptCount: 2, commitCount: 1}
+    - {kind: prompt, transcriptId: 1d9a7c35-8e42-4b60-9f18-3a5c7e20d4b8, timestamp: '2026-09-08T11:01:00Z', text: Add a cursor to the collectives query, turnIndex: 1, ordinal: 4}
+    - {kind: prompt, transcriptId: 1d9a7c35-8e42-4b60-9f18-3a5c7e20d4b8, timestamp: '2026-09-08T11:20:00Z', text: Keep page size at fifty, turnIndex: 9, ordinal: 5}
+    - {kind: commit, transcriptId: 1d9a7c35-8e42-4b60-9f18-3a5c7e20d4b8, timestamp: '2026-09-08T11:40:00Z', text: '', commitSha: b2c3d4e5f60718293a4b5c6d7e8f901234567890}
+  collapsed:
+    - {kind: session, transcriptId: 7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13, timestamp: '2026-09-06T14:00:00Z', text: Fix flaky ingest test, promptCount: 1, commitCount: 0}
+    - {kind: prompt, transcriptId: 7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13, timestamp: '2026-09-06T14:01:00Z', text: The ingest test flakes on CI, turnIndex: 1, ordinal: 1}
+    - {kind: session, transcriptId: c4e51f08-6a2b-4d97-8f30-1b7de254a9c6, timestamp: '2026-09-07T09:00:00Z', text: Guard empty turns in the digest, promptCount: 10, commitCount: 1}
+    - {kind: commit, transcriptId: c4e51f08-6a2b-4d97-8f30-1b7de254a9c6, timestamp: '2026-09-07T09:40:00Z', text: '', commitSha: c3d4e5f60718293a4b5c6d7e8f90123456789012}
+  leading-items:
+    - {kind: prompt, transcriptId: 1d9a7c35-8e42-4b60-9f18-3a5c7e20d4b8, timestamp: '2026-09-05T08:00:00Z', text: Recorded before any boundary, turnIndex: 1, ordinal: 1}
+    - {kind: commit, transcriptId: 1d9a7c35-8e42-4b60-9f18-3a5c7e20d4b8, timestamp: '2026-09-05T08:10:00Z', text: '', commitSha: d4e5f60718293a4b5c6d7e8f90123456789012a3}
+    - {kind: session, transcriptId: 7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13, timestamp: '2026-09-06T14:00:00Z', text: Fix flaky ingest test, promptCount: 1, commitCount: 0}
+    - {kind: prompt, transcriptId: 7b1e4d2a-9c3f-4e8b-a1d6-2f5c8e9a0b13, timestamp: '2026-09-06T14:01:00Z', text: The ingest test flakes on CI, turnIndex: 1, ordinal: 2}
+  empty: []
+
+cases:
+  - name: one session
+    chain: one-session
+    options: [{label: Fix flaky ingest test, count: 2 prompts}]
+    selected: 0
+    pane: {title: Fix flaky ingest test, prompts: [The ingest test flakes on CI, Check the retry backoff]}
+  - name: many sessions
+    chain: many-sessions
+    options:
+      - {label: Fix flaky ingest test, count: 2 prompts}
+      - {label: Guard empty turns in the digest, count: 1 prompt}
+      - {label: Paginate the collectives list, count: 2 prompts}
+    selected: 0
+    pane: {title: Fix flaky ingest test, prompts: [The ingest test flakes on CI, Check the retry backoff]}
+  - name: a collapsed session
+    chain: collapsed
+    keys: [{target: list, key: j}]
+    trail: [1]
+    options:
+      - {label: Fix flaky ingest test, count: 1 prompt}
+      - {label: Guard empty turns in the digest, count: 10 prompts}
+    selected: 1
+    pane: {title: Guard empty turns in the digest, prompts: [], collapsed: 10 prompts in this session, link: open the transcript}
+  - name: items before the first boundary
+    chain: leading-items
+    options:
+      - {label: before the first session, count: 1 prompt}
+      - {label: Fix flaky ingest test, count: 1 prompt}
+    selected: 0
+    pane: {title: before the first session, prompts: [Recorded before any boundary]}
+  - name: an empty chain
+    chain: empty
+    options: []
+    selected: null
+    empty: no sessions in this digest yet.
+  - name: a controlled selection
+    chain: many-sessions
+    props: {selected: 2}
+    keys: [{target: list, key: k}, {target: page, key: j}]
+    trail: [2, 2]
+    expectedSelectCalls: [1]
+    options:
+      - {label: Fix flaky ingest test, count: 2 prompts}
+      - {label: Guard empty turns in the digest, count: 1 prompt}
+      - {label: Paginate the collectives list, count: 2 prompts}
+    selected: 2
+    pane: {title: Paginate the collectives list, prompts: [Add a cursor to the collectives query, Keep page size at fifty]}
+  - name: j and k at both ends
+    chain: many-sessions
+    keys:
+      - {target: page, key: k}
+      - {target: page, key: j}
+      - {target: page, key: j}
+      - {target: page, key: j}
+      - {target: list, key: ArrowUp}
+      - {target: list, key: Home}
+      - {target: list, key: End}
+      - {target: list, key: ArrowDown}
+    trail: [0, 1, 2, 2, 1, 0, 2, 2]
+    options:
+      - {label: Fix flaky ingest test, count: 2 prompts}
+      - {label: Guard empty turns in the digest, count: 1 prompt}
+      - {label: Paginate the collectives list, count: 2 prompts}
+    selected: 2
+    pane: {title: Paginate the collectives list, prompts: [Add a cursor to the collectives query, Keep page size at fifty]}
+  - name: j inside a text field
+    chain: many-sessions
+    keys: [{target: field, key: j}, {target: field, key: k}]
+    trail: [0, 0]
+    options:
+      - {label: Fix flaky ingest test, count: 2 prompts}
+      - {label: Guard empty turns in the digest, count: 1 prompt}
+      - {label: Paginate the collectives list, count: 2 prompts}
+    selected: 0
+    pane: {title: Fix flaky ingest test, prompts: [The ingest test flakes on CI, Check the retry backoff]}
+  - name: a held modifier
+    chain: many-sessions
+    keys:
+      - {target: page, key: j, modifiers: [ctrlKey]}
+      - {target: page, key: j, modifiers: [metaKey]}
+      - {target: list, key: ArrowDown, modifiers: [altKey]}
+      - {target: page, key: J, modifiers: [shiftKey]}
+    trail: [0, 0, 0, 0]
+    options:
+      - {label: Fix flaky ingest test, count: 2 prompts}
+      - {label: Guard empty turns in the digest, count: 1 prompt}
+      - {label: Paginate the collectives list, count: 2 prompts}
+    selected: 0
+    pane: {title: Fix flaky ingest test, prompts: [The ingest test flakes on CI, Check the retry backoff]}

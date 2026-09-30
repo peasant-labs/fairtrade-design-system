@@ -1,13 +1,15 @@
 // @ts-check
 
-/* Fairtest mounted component journey: one suite with exactly two row-scoped rows.
+/* Fairtest mounted component journey: one suite with one row-scoped row per
+ * registered story and theme.
  *
  * Each row drives the built storybook-static/ direct iframe through the one
  * Fairtrade adapter lifecycle on the fixed loopback Storybook port, proves a
- * real mounted component (root children, ready-state body classes, hidden
- * error display, empty error stack), observes the normalized theme, expands
- * the disclosure with a trusted click, verifies the count/rows/ARIA and the
- * computed tokens, runs a plain serious-violations axe gate, and writes the
+ * real mounted component (root children, a settled render lifecycle, the
+ * layout's ready-state body classes, hidden error display, empty error stack),
+ * observes the normalized theme, performs the story's named action with
+ * trusted input when it has one, verifies the story's declared facts, computed
+ * styles, and floors, runs a plain serious-violations axe gate, and writes the
  * SAME six durable artifact classes the product row writes into the immutable
  * run root. A row fails, never skips, when the Storybook artifact is not built
  * or any part of the component tuple cannot be observed. The written artifacts
@@ -23,7 +25,7 @@ import { test, expect } from '@playwright/test'
 import { createAdapter } from './fairtrade-adapter.mjs'
 import { FAIRTEST_APP_HOST, FAIRTEST_STORYBOOK_PORT } from './fairtest-runtime.mjs'
 import { fairtestRelative } from './fairtest-paths.mjs'
-import { COMPONENT_STORY_ID, COMPONENT_TARGET, COMPONENT_TARGET_ID, COMPONENT_PROVENANCE_SOURCE } from './fairtrade-component-target.mjs'
+import { COMPONENT_STORIES, COMPONENT_TARGET, COMPONENT_TARGET_ID, COMPONENT_PROVENANCE_SOURCE, componentA11yPoint } from './fairtrade-component-target.mjs'
 import {
   COMPONENT_ARTIFACT_CLASSES,
   captureComponentRow,
@@ -39,7 +41,7 @@ const ROW_THEMES = ['dark', 'light']
 /**
  * The captured component row summary the mounted journey asserts against.
  * @typedef {object} ComponentRowSummary
- * @property {{ kind: string, theme: { expected: string, observed: string, observedAtMs: number }, root: { mounted: boolean, observedAtMs: number }, interaction: { name: string, completed: boolean, observedAtMs: number } }} proof the written component resolution
+ * @property {{ kind: string, theme: { expected: string, observed: string, observedAtMs: number }, root: { mounted: boolean, observedAtMs: number }, interaction?: { name: string, completed: boolean, observedAtMs: number } }} proof the written component resolution
  * @property {{ rowStartedAtMs: number, mount: number, theme: number, interaction: number }} observationTimes the observed reading times
  * @property {{ viewport: object }} provenance the recorded provenance
  */
@@ -85,44 +87,54 @@ test.describe('fairtest mounted component', () => {
     }
   })
 
-  for (const theme of ROW_THEMES) {
-    test(`component row ${theme} proves mount, interaction, and artifacts`, async ({ page }, testInfo) => {
+  for (const story of COMPONENT_STORIES) for (const theme of ROW_THEMES) {
+    test(`component row ${story.rowPrefix}-${theme} proves mount, interaction, and artifacts`, async ({ page }, testInfo) => {
       if (!adapter || !baseUrl || !runRoot) {
         throw new Error(
           'component journey: adapter service is not running for field "adapter" at path journey.lifecycle; ' +
           'repair: keep beforeAll start and readiness intact so every row drives the running loopback service.',
         )
       }
-      const summary = /** @type {ComponentRowSummary} */ (await captureComponentRow(page, theme, { runRoot, baseUrl }))
+      const summary = /** @type {ComponentRowSummary} */ (await captureComponentRow(page, theme, { runRoot, baseUrl, story }))
       expect(adapter.targetId, 'the running adapter must select the component target').toBe(COMPONENT_TARGET_ID)
       expect(summary.proof.kind).toBe('component')
       expect(summary.proof.theme.expected).toBe(theme)
       expect(summary.proof.theme.observed).toBe(theme)
       expect(summary.proof.root.mounted).toBe(true)
-      expect(summary.proof.interaction.name).toBe('expand-disclosure')
-      expect(summary.proof.interaction.completed).toBe(true)
+      if (story.action) {
+        expect(summary.proof.interaction?.name).toBe(story.action.name)
+        expect(summary.proof.interaction?.completed).toBe(true)
+      } else {
+        expect(summary.proof.interaction, `row ${theme} of a story without an action must claim no interaction`).toBeUndefined()
+      }
 
       const { readFileSync, existsSync } = await import('node:fs')
       const { join } = await import('node:path')
       for (const name of COMPONENT_ARTIFACT_CLASSES) {
-        const path = join(componentRowDir(runRoot, theme), name)
+        const path = join(componentRowDir(runRoot, theme, story), name)
         expect(existsSync(path), `row artifact ${name} must exist at ${path}`).toBe(true)
-        await testInfo.attach(`${theme}-${name}`, { path })
+        await testInfo.attach(`${story.rowPrefix}-${theme}-${name}`, { path })
         expect(readFileSync(path).length > 0, `row artifact ${name} must be non-empty`).toBe(true)
       }
 
       // The written record must be readable by the one supported reader: the
       // verdict comes from the gate receipt over the gated component scope, and
       // the page-wide census stays nested and informational.
-      const rowDir = componentRowDir(runRoot, theme)
+      const rowDir = componentRowDir(runRoot, theme, story)
       const record = JSON.parse(readFileSync(join(rowDir, 'record.json'), 'utf8'))
       expect(record.kind).toBe('component')
-      expect(record.storyId).toBe(COMPONENT_STORY_ID)
+      expect(record.storyId).toBe(story.storyId)
+      expect(record.story).toBe(story.key)
+      // Every declared computed-style probe was read and recorded, beside the
+      // two theme tokens every story row carries.
+      expect(Object.keys(record.computedStyles).sort(), `row ${theme} must record every declared style probe`).toEqual([...story.computed.map((probe) => probe.name), 'canvas', 'ink'].sort())
       for (const productOnly of PRODUCT_ONLY_FIELDS) {
         expect(record[productOnly], `row ${theme} component record must not claim the product-only field ${productOnly}`).toBeUndefined()
       }
-      const verdict = readComponentAccessibilityVerdict(record.accessibility)
+      const verdict = readComponentAccessibilityVerdict(record.accessibility, story)
       expect(verdict.result, `row ${theme} gate verdict must pass`).toBe('pass')
+      expect(record.accessibility.gate.point, `row ${theme} receipt must name the story's observation point`).toBe(componentA11yPoint(story))
+      expect(record.accessibility.gate[story.gateTie.field], `row ${theme} receipt must be tied to the proven state`).toBe(true)
       expect(verdict.gatedScope, `row ${theme} verdict must stay attributed to the gated component scope`).toBe('component-root')
       expect(record.accessibility.pageWide.informational, `row ${theme} page-wide census must be informational`).toBe(true)
       expect(record.accessibility.blocking, `row ${theme} must carry no unqualified blocking count`).toBeUndefined()
@@ -134,7 +146,9 @@ test.describe('fairtest mounted component', () => {
       expect(times.mount, `row ${theme} mount must be observed after the row starts`).toBeGreaterThan(times.rowStartedAtMs)
       expect(proof.root.observedAtMs, `row ${theme} root must carry the mount reading`).toBe(times.mount)
       expect(proof.theme.observedAtMs, `row ${theme} theme must be read at or after the mount`).toBeGreaterThanOrEqual(times.mount)
-      expect(proof.interaction.observedAtMs, `row ${theme} interaction must be read at or after the theme`).toBeGreaterThanOrEqual(times.theme)
+      if (story.action) {
+        expect(proof.interaction.observedAtMs, `row ${theme} interaction must be read at or after the theme`).toBeGreaterThanOrEqual(times.theme)
+      }
 
       // The written axe artifact carries the plain gate receipt and the
       // scoped measurement it was computed from.
@@ -149,7 +163,7 @@ test.describe('fairtest mounted component', () => {
       expect(provenance.servedFrom, `row ${theme} provenance must name the tree its digests were compared against`).toBe(COMPONENT_PROVENANCE_SOURCE.root)
       expect(provenance.servedFrom, `row ${theme} provenance must name the storybook-static tree, not the product run root`).toBe(fairtestRelative('storybookRoot'))
       expect(provenance.commitCorrespondence, `row ${theme} provenance must name who owns the commit correspondence`).toBe('verifier-owned')
-      expect(provenance.storyId, `row ${theme} provenance must name the story id`).toBe(COMPONENT_STORY_ID)
+      expect(provenance.storyId, `row ${theme} provenance must name the story id`).toBe(story.storyId)
       expect(provenance.viewport, `row ${theme} provenance must record the shared render viewport`).toEqual(summary.provenance.viewport)
     })
   }

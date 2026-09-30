@@ -1,0 +1,65 @@
+# Required-NAME manifest for transcript-viewer-chrome.yaml: deletion protection. The gate
+# (scripts/transcript-viewer-chrome.test.mjs) asserts each family's names equal these lists
+# exactly, as sets. Membership is asserted, never a bare count.
+requiredDefaultsCase: no chrome props keeps the long-standing header
+requiredCaseNames:
+  - tail on, outcome on, search trigger on, pull requests given
+  - tail on, outcome on, search trigger on, pull requests omitted
+  - tail on, outcome on, search trigger off, pull requests given
+  - tail on, outcome on, search trigger off, pull requests omitted
+  - tail on, outcome off, search trigger on, pull requests given
+  - tail on, outcome off, search trigger on, pull requests omitted
+  - tail on, outcome off, search trigger off, pull requests given
+  - tail on, outcome off, search trigger off, pull requests omitted
+  - tail off, outcome on, search trigger on, pull requests given
+  - tail off, outcome on, search trigger on, pull requests omitted
+  - tail off, outcome on, search trigger off, pull requests given
+  - tail off, outcome on, search trigger off, pull requests omitted
+  - tail off, outcome off, search trigger on, pull requests given
+  - tail off, outcome off, search trigger on, pull requests omitted
+  - tail off, outcome off, search trigger off, pull requests given
+  - tail off, outcome off, search trigger off, pull requests omitted
+requiredInteractionNames:
+  - clicking the search trigger opens the search bar and focuses its field
+  - the search trigger's accessible name includes the shortcut
+  - the more menu no longer offers chat with trace
+  - the more menu is absent when no capability gives it an item
+requiredPromptLabelNames:
+  - an unmeasured count reads unknown prompts
+  - a recorded zero reads 0 prompts
+  - one prompt reads singular
+  - several prompts read plural
+
+# Production mutations the gate must kill (scripts/parts-mutations.mjs).
+requiredMutationNames:
+  - the tail ignores showTail
+  - the outcome chip ignores showOutcome
+  - the pull request slot is dropped
+  - the search trigger does not open search
+  - the meta row reverts to input submissions
+mutations:
+  - name: the tail ignores showTail
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "{showTail && (<>"
+    replace: "{(showTail || true) && (<>"
+    expectedDiagnostic: "tail off, outcome on, search trigger off, pull requests omitted: share-menu must be absent"
+  - name: the outcome chip ignores showOutcome
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "{showOutcome && session.outcome && "
+    replace: "{session.outcome && "
+    expectedDiagnostic: "tail on, outcome off, search trigger off, pull requests omitted: outcome-chip must be absent"
+  - name: the pull request slot is dropped
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "{pullRequests != null && <div className=\"txn-prs\">{pullRequests}</div>}"
+    replace: "{null}"
+    expectedDiagnostic: "tail on, outcome on, search trigger off, pull requests given: pull-request-slot must be present"
+  - name: the search trigger does not open search
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "            onClick={openSearch}"
+    replace: "            onClick={() => {}}"
+    expectedDiagnostic: "clicking the search trigger opens the search bar and focuses its field"
+  - name: the meta row reverts to input submissions
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "{session.inputSubmissionCount === 1 ? 'prompt' : 'prompts'}"
+    replace: "input submissions"
+    expectedDiagnostic: "several prompts read plural"

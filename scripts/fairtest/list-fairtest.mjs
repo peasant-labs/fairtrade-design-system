@@ -5,8 +5,8 @@
 //
 // It proves the exact project-qualified key set for one selection mode before
 // any service starts, then writes its own receipt under guards/. The CI
-// invocation (`--mode=ci`) must contain exactly the four one-theme producer
-// keys and no local identity; the local invocation (`--mode=local`) must
+// invocation (`--mode=ci`) must contain exactly the one-theme producer keys
+// the evidence policy declares and no local identity; the local invocation (`--mode=local`) must
 // contain exactly the local exploration keys and no CI identity. It writes no
 // producer output and starts no service.
 //

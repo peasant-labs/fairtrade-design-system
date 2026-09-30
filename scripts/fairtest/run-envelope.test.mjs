@@ -21,7 +21,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import YAML from 'yaml'
 import { loadSingleDocument } from '../fairtest-single-document.mjs'
 import { importFairtestSource } from '../fairtest-source.mjs'
-import { fairtestEvidencePolicyInput } from './fairtest-evidence-policy.mjs'
+import { FAIRTEST_EVIDENCE_ROW_KEYS, fairtestEvidencePolicyInput, fairtestRegistryRows } from './fairtest-evidence-policy.mjs'
 import {
   CI_ROW_KEYS,
   EVIDENCE_REL,
@@ -51,7 +51,7 @@ const MANIFEST_REL = 'scripts/testdata/fairtest-run-envelope.manifest.yaml'
 const WORKFLOW_REL = '.github/workflows/ci.yml'
 
 const CHECKS = [
-  'key-set', 'pre-service-flow', 'init-missing-root', 'init-wrong-root', 'init-prior-root',
+  'key-set', 'policy-rows', 'pre-service-flow', 'init-missing-root', 'init-wrong-root', 'init-prior-root',
   'select-prior-selection', 'select-run-id-mismatch', 'receipt-missing-selection', 'receipt-tampered-envelope',
   'preflight-missing-root', 'preflight-missing-envelope', 'preflight-missing-inventory-receipt',
   'preflight-missing-selection-receipt', 'preflight-missing-process-receipt', 'preflight-malformed-process-receipt',
@@ -63,7 +63,7 @@ const CHECKS = [
   'workflow', 'workflow-order', 'workflow-budget',
 ]
 const CASE_FIELDS = ['name', 'check']
-const CASE_OPTIONAL_FIELDS = new Set(['mode', 'keys', 'expectValid', 'expectedErrorContains', 'fragment'])
+const CASE_OPTIONAL_FIELDS = new Set(['mode', 'keys', 'expectValid', 'expectedErrorContains', 'fragment', 'dropRequiredRow'])
 const MUTATION_KINDS = ['delete-record', 'stale-name', 'duplicate-name', 'delete-field', 'rename-field', 'unknown-field', 'bad-value', 'trailing-document']
 
 const corpusSource = readFileSync(resolve(ROOT, CORPUS_REL), 'utf8')
@@ -269,6 +269,60 @@ function assertKeySetsMatchContract(value) {
     throw new Error(
       `${CORPUS_REL}: a local key appears in the CI set for field "keySets.local.keys" at path keySets.local.keys; ` +
       'repair: keep local exploration identities out of the CI evidence set.',
+    )
+  }
+}
+
+/**
+ * Hold the evidence policy's two row declarations against each other and
+ * against the rows the producers write. The declared row keys, the keys of the
+ * policy's required rows, and the rows derived from the product route and
+ * component story registries must be the same list in the same order, and
+ * every required row must carry the kind, theme, and built-tree root its
+ * registry entry implies. The optional drop removes one required row first,
+ * so a case can prove the comparison fails for the dropped key.
+ * @param {{ dropRequiredRow?: string }} [options] probe options
+ * @returns {void}
+ */
+function assertPolicyRowsAgree({ dropRequiredRow } = {}) {
+  const requiredRows = fairtestEvidencePolicyInput('run-envelope-policy-rows').requiredRows
+    .filter((row) => row.key !== dropRequiredRow)
+  const declared = [...FAIRTEST_EVIDENCE_ROW_KEYS]
+  const required = requiredRows.map((row) => row.key)
+  const registry = fairtestRegistryRows()
+  const describe = (/** @type {string[]} */ left, /** @type {string[]} */ right) =>
+    `missing ${JSON.stringify(left.filter((key) => !right.includes(key)))} extra ${JSON.stringify(right.filter((key) => !left.includes(key)))}`
+  if (JSON.stringify(required) !== JSON.stringify(declared)) {
+    throw new Error(
+      `fairtest envelope probe: evidence policy rows disagree for field "requiredRows" at path policy.requiredRows; ` +
+      `FAIRTEST_EVIDENCE_ROW_KEYS ${JSON.stringify(declared)} against requiredRows ${JSON.stringify(required)}: ${describe(declared, required)}; ` +
+      'repair: declare every row key once in both lists, in the same order.',
+    )
+  }
+  const derived = registry.map((row) => row.key)
+  if (JSON.stringify(derived) !== JSON.stringify(declared)) {
+    throw new Error(
+      `fairtest envelope probe: evidence policy rows disagree with the target registries for field "rowKeys" at path policy.rowKeys; ` +
+      `the registries produce ${JSON.stringify(derived)}: ${describe(derived, declared)}; ` +
+      'repair: declare one row per product route and component story in each theme, in registry order.',
+    )
+  }
+  for (const [index, row] of requiredRows.entries()) {
+    const want = registry[index]
+    for (const field of /** @type {const} */ (['kind', 'theme', 'root'])) {
+      if (row[field] !== want[field]) {
+        throw new Error(
+          `fairtest envelope probe: required row ${JSON.stringify(row.key)} declares ${field} ${JSON.stringify(row[field])} for field "${field}" at path policy.requiredRows[${index}].${field}; ` +
+          `its registry entry implies ${JSON.stringify(want[field])}; ` +
+          `repair: declare the ${field} the producer writes for "${row.key}".`,
+        )
+      }
+    }
+  }
+  if (JSON.stringify(declared) !== JSON.stringify([...MODE_KEYS.ci])) {
+    throw new Error(
+      `fairtest envelope probe: CI key set disagrees with the evidence policy for field "keys" at path selection.keys; ` +
+      'repair: keep the CI key set equal to the evidence policy row keys.',
     )
   }
 }
@@ -680,6 +734,17 @@ function runCase(entry) {
         message = error instanceof Error ? error.message : String(error)
       }
       if (expectValid) assert.equal(message, null, `${name}: expected a valid key set but failed: ${message}`)
+      else expectMessage(message, entry.expectedErrorContains, name)
+      return
+    }
+    case 'policy-rows': {
+      let message = null
+      try {
+        assertPolicyRowsAgree({ dropRequiredRow: entry.dropRequiredRow })
+      } catch (error) {
+        message = error instanceof Error ? error.message : String(error)
+      }
+      if (expectValid) assert.equal(message, null, `${name}: expected the policy rows to agree but failed: ${message}`)
       else expectMessage(message, entry.expectedErrorContains, name)
       return
     }

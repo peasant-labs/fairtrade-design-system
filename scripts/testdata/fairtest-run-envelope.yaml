@@ -6,27 +6,46 @@
 # real command modules. Combinatorial and negative cases live here, never
 # inline; the required-name manifest protects every case name.
 #
-# keySets: the exact expected key set per selection mode. The CI set is the four
-# one-theme producer keys and must equal the verifier's required rows; the local
-# set is exploration-only and must never enter CI evidence.
+# keySets: the exact expected key set per selection mode. The CI set is the
+# one-theme producer keys (every product route and every component story, each
+# in both themes) and must equal the verifier's required rows; the local set is
+# exploration-only and must never enter CI evidence.
 keySets:
   ci:
     keys:
       - product-dark
       - product-light
+      - product-offline-dark
+      - product-offline-light
       - component-dark
       - component-light
+      - component-transcript-header-dark
+      - component-transcript-header-light
+      - component-offline-banner-dark
+      - component-offline-banner-light
+      - component-digest-split-dark
+      - component-digest-split-light
+      - component-stats-strip-dark
+      - component-stats-strip-light
   local:
     keys:
       - local-product-dark
       - local-product-light
-expectedCaseCount: 36
+expectedCaseCount: 38
 cases:
   - name: ci-key-set-is-exact
     check: key-set
     mode: ci
-    keys: [product-dark, product-light, component-dark, component-light]
+    keys: [product-dark, product-light, product-offline-dark, product-offline-light, component-dark, component-light, component-transcript-header-dark, component-transcript-header-light, component-offline-banner-dark, component-offline-banner-light, component-digest-split-dark, component-digest-split-light, component-stats-strip-dark, component-stats-strip-light]
     expectValid: true
+  - name: ci-key-set-equals-the-evidence-policy-rows
+    check: policy-rows
+    expectValid: true
+  - name: policy-rows-reject-a-dropped-required-row
+    check: policy-rows
+    dropRequiredRow: component-stats-strip-light
+    expectValid: false
+    expectedErrorContains: ['requiredRows', 'at path policy.requiredRows', 'component-stats-strip-light', 'repair:']
   - name: ci-key-set-rejects-a-missing-key
     check: key-set
     mode: ci
@@ -36,7 +55,7 @@ cases:
   - name: ci-key-set-rejects-an-extra-key
     check: key-set
     mode: ci
-    keys: [product-dark, product-light, component-dark, component-light, extra-row]
+    keys: [product-dark, product-light, product-offline-dark, product-offline-light, component-dark, component-light, component-transcript-header-dark, component-transcript-header-light, component-offline-banner-dark, component-offline-banner-light, component-digest-split-dark, component-digest-split-light, component-stats-strip-dark, component-stats-strip-light, extra-row]
     expectValid: false
     expectedErrorContains: ['keys', 'at path selection.keys', 'extra', 'repair:']
   - name: ci-key-set-rejects-a-local-key

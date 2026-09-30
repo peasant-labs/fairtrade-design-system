@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 // the only lucide glyphs the demo itself draws are the rewired trajectory-graph zoom controls;
 // every transcript glyph now lives inside the lifted /ui components.
-import { Plus, Minus, Maximize, RefreshCw } from 'lucide-react'
+import { Plus, Minus, Maximize, RefreshCw, MoreHorizontal, Copy, Link as LinkIcon } from 'lucide-react'
 import {
+  Menu,
   TranscriptViewer,
   adaptTranscript,
   GraphTurnNode,
@@ -725,7 +726,8 @@ function buildMockupVM() {
 
   return {
     ...base,
-    session: { ...base.session, title: 'Port the transcript canvas into the shared package' },
+    // the recorded prompt count the header's meta row names (the fixture's two user turns)
+    session: { ...base.session, title: 'Port the transcript canvas into the shared package', inputSubmissionCount: base.turns.filter((turn) => turn.role === 'user').length },
     turns,
     files,
     diffs,
@@ -750,6 +752,13 @@ export default function TranscriptApp({ theme = 'dark' }) {
   return <DefaultTranscriptApp theme={theme} />
 }
 
+/* the host-owned header row: the local app's own overflow replaces the composite's share and more
+   menus (showTail off), the outcome chip stays off, and search gets a visible trigger. */
+const HOST_MORE_ITEMS = [
+  { label: 'copy as markdown', icon: Copy },
+  { label: 'copy link', icon: LinkIcon },
+]
+
 function DefaultTranscriptApp({ theme }) {
   const vm = useMemo(() => new URLSearchParams(window.location.search).get('transcript') === 'pi'
     ? adaptTranscript(piPayload) : buildMockupVM(), [])
@@ -760,6 +769,10 @@ function DefaultTranscriptApp({ theme }) {
       viewModel={vm}
       theme={theme}
       capabilities={CAPABILITIES}
+      showTail={false}
+      showOutcome={false}
+      showSearchTrigger
+      headerActions={<Menu icon={MoreHorizontal} ariaLabel="more" size="sm" align="end" items={HOST_MORE_ITEMS} />}
       openTools={openTools}
       onOpenToolsChange={setOpenTools}
       graphSlot={({ viewModel: gvm, activeTurn, onSelectTurn }) => (

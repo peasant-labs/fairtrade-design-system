@@ -1,0 +1,32 @@
+# The local app's section registry (LOCAL_APP_SECTIONS in src/ui/inuse/InUseShell.jsx), entry
+# by entry and in canonical order. inNav says whether the section navigation lists the entry:
+# home and settings are listed; analytics, changes and code map keep their ids, labels and
+# routes and are reached by route only. scripts/app-sections.test.mjs asserts the registry
+# equals this list exactly, that GraphAppShell and GraphSectionNav list only the inNav entries,
+# that the deprecated alias keeps its value, and that the demo opens on home and mounts a body
+# for every entry.
+entries:
+  - {name: home, id: home, label: home, inNav: true}
+  - {name: settings, id: settings, label: settings, inNav: true}
+  - {name: analytics, id: analytics, label: analytics, inNav: false}
+  - {name: changes, id: changes, label: changes, inNav: false}
+  - {name: code map, id: map, label: code map, inNav: false}
+
+# The deprecated three-section alias keeps its original value, so a consumer on the old shape
+# keeps working until it re-pins. Its entries carry no inNav field and keep rendering.
+deprecatedAlias:
+  - {id: analytics, label: analytics}
+  - {id: changes, label: changes}
+  - {id: map, label: code map}
+
+# What the graph demo must do with the registry.
+demo:
+  initialSection: home
+  navLabels: [home, settings]
+  # every entry mounts a non-empty body when selected by id (?section=<id> for route-only ones)
+  bodies:
+    - {name: home body, section: home, text: your sessions}
+    - {name: settings body, section: settings, text: changes save right away}
+    - {name: analytics body, section: analytics, text: project overview}
+    - {name: changes body, section: changes, text: lines of work}
+    - {name: code map body, section: map, text: spatial map}

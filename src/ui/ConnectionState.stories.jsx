@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { Compass } from 'lucide-react'
-import { expect, within } from 'storybook/test'
-import { ConnectionPill, DataState, TeachingEmptyState } from './ConnectionState.jsx'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { ConnectionPill, DataState, TeachingEmptyState, LocalOfflineBanner } from './ConnectionState.jsx'
 import { frame } from './story-frame.jsx'
 
 /* ConnectionState story. CSF3, title 'in use/ConnectionState'. the local-program connection
@@ -165,4 +166,89 @@ export const LightTheme = {
     </div>
   ),
   globals: { theme: 'light', backgrounds: { value: 'light' } },
+}
+
+
+// ── LocalOfflineBanner: the page-level notice for a stopped local app ─────────────────────────
+// one story per case the fixture names (scripts/testdata/local-offline-banner.yaml). the time is
+// a fixed local instant so every capture reads the same 14:32:05.
+const CHECKED_AT = new Date('2026-09-28T14:32:05')
+const bannerFrame = { decorators: frame('full'), parameters: { layout: 'fullscreen', controls: { include: [] } } }
+
+/* the interactive default: `try again` reports busy for a moment, then the check time moves. */
+export const OfflineBanner = {
+  ...bannerFrame,
+  name: 'offline banner',
+  render: function InteractiveOfflineBanner() {
+    const [retrying, setRetrying] = useState(false)
+    const [checkedAt, setCheckedAt] = useState(CHECKED_AT)
+    const retry = () => {
+      setRetrying(true)
+      setTimeout(() => { setRetrying(false); setCheckedAt(new Date(CHECKED_AT.getTime() + 30000)) }, 1500)
+    }
+    return <LocalOfflineBanner onRetry={retry} retrying={retrying} checkedAt={checkedAt} />
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('status')).toHaveTextContent("peasant isn't running on this computer.")
+    await expect(canvasElement.querySelector('.lucide-wifi-off')).toBeNull()
+    await expect(canvas.getByText('peasant web start')).toBeVisible()
+    const retry = canvas.getByRole('button', { name: 'try again' })
+    await userEvent.click(retry)
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'trying again' })).toHaveAttribute('aria-busy', 'true'))
+    // the time sits outside the live region, so a retry never re-announces the banner
+    await expect(canvas.getByRole('status').querySelector('time')).toBeNull()
+  },
+}
+
+export const OfflineBannerDefault = {
+  ...bannerFrame,
+  name: 'offline banner, no check time',
+  render: () => <LocalOfflineBanner onRetry={() => {}} />,
+}
+
+export const OfflineBannerChecked = {
+  ...bannerFrame,
+  name: 'offline banner, last checked',
+  render: () => <LocalOfflineBanner onRetry={() => {}} checkedAt={CHECKED_AT} />,
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText('14:32:05')).toHaveClass('tnum')
+  },
+}
+
+export const OfflineBannerRetrying = {
+  ...bannerFrame,
+  name: 'offline banner, retrying',
+  render: () => <LocalOfflineBanner onRetry={() => {}} retrying checkedAt={CHECKED_AT} />,
+}
+
+export const OfflineBannerCommand = {
+  ...bannerFrame,
+  name: 'offline banner, command override',
+  render: () => <LocalOfflineBanner onRetry={() => {}} checkedAt={CHECKED_AT} command="PEASANT_PORT=8691 peasant web start" />,
+}
+
+export const OfflineBannerNoRetry = {
+  ...bannerFrame,
+  name: 'offline banner, no retry',
+  render: () => <LocalOfflineBanner checkedAt={CHECKED_AT} />,
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryByRole('button', { name: /try again/ })).toBeNull()
+  },
+}
+
+/* no clipboard (an insecure context): the command stays visible and the copy button leaves. */
+export const OfflineBannerNoClipboard = {
+  ...bannerFrame,
+  name: 'offline banner, no clipboard',
+  beforeEach: () => {
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true })
+    return () => { delete navigator.clipboard }
+  },
+  render: () => <LocalOfflineBanner onRetry={() => {}} checkedAt={CHECKED_AT} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('peasant web start')).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: /copy/ })).toBeNull()
+  },
 }

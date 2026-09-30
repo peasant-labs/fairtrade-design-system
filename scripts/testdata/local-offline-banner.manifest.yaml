@@ -1,0 +1,38 @@
+# Required-NAME manifest for local-offline-banner.yaml: deletion protection.
+requiredCaseNames:
+  - default
+  - with checkedAt
+  - retrying
+  - a command override
+  - no onRetry
+  - no clipboard
+requiredInteractionNames:
+  - try again calls onRetry once per press
+  - a busy button ignores presses
+
+requiredMutationNames:
+  - the banner shows the wifi glyph
+  - the time joins the live region
+  - a busy button still retries
+  - the command is lowercased chrome
+mutations:
+  - name: the banner shows the wifi glyph
+    file: src/ui/ConnectionState.jsx
+    find: '<Plug className="cx-offline-icon" aria-hidden="true" />'
+    replace: '<WifiOff className="cx-offline-icon" aria-hidden="true" />'
+    expectedDiagnostic: "must carry no wifi glyph"
+  - name: the time joins the live region
+    file: src/ui/ConnectionState.jsx
+    find: '<section className={cls} aria-label="peasant is not running" {...rest}>'
+    replace: '<section className={cls} aria-label="peasant is not running" role="status" {...rest}>'
+    expectedDiagnostic: "the last checked time must sit outside the live region"
+  - name: a busy button still retries
+    file: src/ui/ConnectionState.jsx
+    find: "onClick={() => { if (!retrying) onRetry() }}"
+    replace: "onClick={() => { onRetry() }}"
+    expectedDiagnostic: "a busy button ignores presses"
+  - name: the command is lowercased chrome
+    file: src/ui/ConnectionState.jsx
+    find: '<span className="cx-cmd-text">{command}</span>'
+    replace: '<span className="cx-cmd-text">{command.toLowerCase()}</span>'
+    expectedDiagnostic: "a command override: the command chip must read"

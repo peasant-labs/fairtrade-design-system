@@ -2,11 +2,13 @@
 
 // Fairtrade-owned component target metadata for the mounted Storybook story.
 //
-// Plain data plus pure functions only. This module names the single direct
-// Storybook iframe target, the real mount signals a mounted story must show,
-// the component selector bundle, the one named component action, the normalized
-// theme rows, the measured component floors, and the served-build provenance
-// source contract. Nothing here starts a service, reads host state, or touches
+// Plain data plus pure functions only. This module names the direct Storybook
+// iframe target, the story registry (one entry per mounted story row: its row
+// key, story id, layout, the observations it must show before and after its
+// optional named action, its computed-style evidence, and its measured
+// floors), the real mount signals a mounted story must show, the component
+// selector bundle, the named component actions, the normalized theme rows, and
+// the served-build provenance source contract. Nothing here starts a service, reads host state, or touches
 // host globals, so every export stays inspectable without a run.
 //
 // The component proof record is the shared component branch of the host
@@ -173,10 +175,12 @@ export const COMPONENT_PROVENANCE_SOURCE = Object.freeze({
 export const COMPONENT_A11Y_POLICY = 'component-serious-violations-gate'
 
 /**
- * The single observation point carrying a component gate receipt.
+ * The observation points a component gate receipt may carry: after the named
+ * interaction for a story row with an action, after the mount for a story row
+ * without one.
  * @type {readonly string[]}
  */
-export const COMPONENT_A11Y_POINTS = Object.freeze(['after-interaction'])
+export const COMPONENT_A11Y_POINTS = Object.freeze(['after-interaction', 'after-mount'])
 
 /**
  * Exact field set of a component gate receipt, so the reader that consumes it
@@ -188,6 +192,287 @@ export const COMPONENT_A11Y_POINTS = Object.freeze(['after-interaction'])
 export const COMPONENT_A11Y_GATE_RECEIPT_FIELDS = Object.freeze(['policy', 'point', 'observedTheme', 'ariaExpanded', 'result', 'measured'])
 
 /**
+ * Storybook ready-state body classes per story layout. The shared show-main
+ * marker plus the layout's own main class, which the static and error states
+ * do not carry.
+ * @type {Readonly<Record<string, readonly string[]>>}
+ */
+export const COMPONENT_LAYOUT_BODY_CLASSES = Object.freeze({
+  centered: COMPONENT_MOUNT_BODY_CLASSES,
+  fullscreen: Object.freeze(['sb-main-fullscreen', 'sb-show-main']),
+})
+
+/**
+ * Storybook render lifecycle signal the row waits on before it observes a
+ * story: the preview channel's render-phase event and the phase that follows
+ * a finished play function. A story whose play function throws reports one of
+ * the error phases on the way, which the row refuses.
+ */
+export const COMPONENT_RENDER_PHASES = Object.freeze({
+  channelGlobal: '__STORYBOOK_ADDONS_CHANNEL__',
+  event: 'storyRenderPhaseChanged',
+  recorderGlobal: '__FAIRTEST_RENDER_PHASES__',
+  settled: 'completed',
+  errors: Object.freeze(['errored', 'aborted']),
+})
+
+/**
+ * One observable fact about a mounted story, read from the element a selector
+ * or an accessible role and exact name finds inside the story root. Exactly one
+ * of the value fields is declared per fact.
+ * @typedef {object} ComponentExpectation
+ * @property {string} name what the fact is, used in the record and diagnostics
+ * @property {string} [selector] element selector inside the story root
+ * @property {{ role: string, name: string, exact?: boolean }} [role] element found by role and accessible name
+ * @property {string} [matches] selector the found element must also match
+ * @property {string} [attribute] attribute read on the first match, with `value`
+ * @property {string | null} [value] expected attribute value; null means the attribute is absent
+ * @property {string} [text] expected trimmed text of the first match
+ * @property {readonly string[]} [texts] expected trimmed texts of every match, in order
+ * @property {number} [count] expected match count
+ * @property {boolean} [focused] whether the first match must hold focus
+ */
+
+/**
+ * One computed-style probe a story row records and asserts. `equals` compares
+ * the computed value exactly, `includes` requires a substring, `token` requires
+ * the value to resolve to the named design token, and `nonEmpty` requires any
+ * resolved value.
+ * @typedef {object} ComponentStyleProbe
+ * @property {string} name record field the value is written under
+ * @property {string} selector element selector inside the story root
+ * @property {string} property computed-style property name
+ * @property {string} [equals]
+ * @property {string} [includes]
+ * @property {string} [token]
+ * @property {boolean} [nonEmpty]
+ */
+
+/**
+ * One mounted story row: the row key prefix, the proof identity, the story and
+ * its layout, the facts it must show before its optional named action and
+ * after it, the fact the accessibility receipt ties to the moment of the scan,
+ * the computed-style evidence, and the measured floors. The row is data: the
+ * producer reads every field and holds no story knowledge of its own.
+ * @typedef {object} ComponentStory
+ * @property {string} key registry key
+ * @property {string} rowPrefix row-key prefix; rows are `<rowPrefix>-<theme>`
+ * @property {string} targetId proof identity id
+ * @property {string} storyId built Storybook story id
+ * @property {string} layout Storybook layout, a COMPONENT_LAYOUT_BODY_CLASSES key
+ * @property {readonly ComponentExpectation[]} before facts that hold before the action
+ * @property {{ name: string, kind: 'click', target: ComponentExpectation } | { name: string, kind: 'key', target: ComponentExpectation, key: string } | null} action the named action, or null
+ * @property {readonly ComponentExpectation[]} after facts that hold after the action, in order
+ * @property {{ field: string, expectation: ComponentExpectation }} gateTie the receipt field and the fact it reads at scan time
+ * @property {readonly ComponentStyleProbe[]} computed computed-style evidence
+ * @property {{ descendants: number, textLength: number, ariaChars: number, screenshotBytes: number }} floors measured non-blank floors after the action
+ */
+
+/**
+ * The disclosure story: collapsed with its count label, one press reveals the
+ * rows and flips the aria wiring. Its row keys stay `component-dark` and
+ * `component-light`, and its receipt keeps the `ariaExpanded` tie.
+ * @type {ComponentStory}
+ */
+const DISCLOSURE_STORY = Object.freeze({
+  key: 'session-group-disclosure',
+  rowPrefix: 'component',
+  targetId: COMPONENT_TARGET_ID,
+  storyId: COMPONENT_STORY_ID,
+  layout: 'centered',
+  before: Object.freeze([
+    Object.freeze({ name: 'toggle-collapsed', selector: COMPONENT_SELECTORS.toggle, attribute: 'aria-expanded', value: 'false' }),
+    Object.freeze({ name: 'rows-absent', selector: COMPONENT_SELECTORS.rows, count: 0 }),
+    Object.freeze({ name: 'collapsed-label', selector: COMPONENT_SELECTORS.label, text: COMPONENT_COLLAPSED_LABEL }),
+  ]),
+  action: Object.freeze({ name: COMPONENT_ACTION_NAME, kind: 'click', target: Object.freeze({ name: 'toggle', selector: COMPONENT_SELECTORS.toggle, count: 1 }) }),
+  after: Object.freeze([
+    Object.freeze({ name: 'toggle-expanded', selector: COMPONENT_SELECTORS.toggle, attribute: 'aria-expanded', value: 'true' }),
+    Object.freeze({ name: 'rows-present', selector: COMPONENT_SELECTORS.rows, count: 1 }),
+    Object.freeze({ name: 'row-texts', selector: COMPONENT_SELECTORS.rowItem, texts: COMPONENT_ROW_TEXTS }),
+  ]),
+  gateTie: Object.freeze({ field: 'ariaExpanded', expectation: Object.freeze({ name: 'toggle-expanded', selector: COMPONENT_SELECTORS.toggle, attribute: 'aria-expanded', value: 'true' }) }),
+  computed: Object.freeze([
+    Object.freeze({ name: 'fontFamily', selector: COMPONENT_SELECTORS.trigger, property: 'fontFamily', nonEmpty: true }),
+    Object.freeze({ name: 'fontSize', selector: COMPONENT_SELECTORS.trigger, property: 'fontSize', nonEmpty: true }),
+    Object.freeze({ name: 'borderRadius', selector: COMPONENT_SELECTORS.trigger, property: 'borderRadius', nonEmpty: true }),
+    Object.freeze({ name: 'minHeight', selector: COMPONENT_SELECTORS.trigger, property: 'minHeight', nonEmpty: true }),
+    // Tabular numbers on counts are a design-system invariant the record carries.
+    Object.freeze({ name: 'fontVariantNumeric', selector: COMPONENT_SELECTORS.count, property: 'fontVariantNumeric', includes: 'tabular-nums' }),
+  ]),
+  floors: Object.freeze({
+    descendants: COMPONENT_MIN_ROOT_DESCENDANTS,
+    textLength: COMPONENT_MIN_ROOT_TEXT_LENGTH,
+    ariaChars: COMPONENT_MIN_ARIA_CHARS,
+    screenshotBytes: COMPONENT_MIN_SCREENSHOT_BYTES,
+  }),
+})
+
+const TRANSCRIPT_SEARCH_TRIGGER = Object.freeze({ name: 'search-trigger', role: Object.freeze({ role: 'button', name: 'search this transcript ⌘F' }), matches: '.txn-search-trigger', count: 1 })
+const TRANSCRIPT_SEARCH_FOCUSED = Object.freeze({ name: 'search-input-focused', selector: '.txn-search-input', focused: true })
+const OFFLINE_RETRY_BUSY = Object.freeze({ name: 'retry-busy', selector: '.cx-offline-retry', attribute: 'aria-busy', value: 'true' })
+const DIGEST_LIST = 'ul[role="listbox"][aria-label="sessions"]'
+const DIGEST_SECOND_SELECTED = Object.freeze({ name: 'second-option-selected', selector: `${DIGEST_LIST} > li[role="option"]:nth-of-type(2)`, attribute: 'aria-selected', value: 'true' })
+const STATS_PAIRS = Object.freeze({ name: 'pairs', selector: 'ul.sst[aria-label="your sessions in numbers"] > li.sst-pair', count: 6 })
+
+/**
+ * The mounted story rows, in row order. Floors are measured on the real built
+ * Storybook after each row's action, in both themes, and sit below the
+ * measurement and above a blank root: the host-owned transcript header measured
+ * 552 descendants, 1577 characters, a 4225-character ARIA snapshot, and a
+ * 219151-byte capture with search open; the offline banner 35, 191, 374, and
+ * 23828 while retrying; the digest split 49, 335, 909, and 43029 with the
+ * second session selected; the stats strip 20, 85, 209, and 9884.
+ * @type {readonly ComponentStory[]}
+ */
+export const COMPONENT_STORIES = Object.freeze([
+  DISCLOSURE_STORY,
+  Object.freeze({
+    key: 'transcript-header',
+    rowPrefix: 'component-transcript-header',
+    targetId: 'fairtrade-transcript-header-story',
+    storyId: 'in-use-transcript-transcriptviewer--host-owned-header',
+    layout: 'fullscreen',
+    before: Object.freeze([
+      Object.freeze({ name: 'host-publish-action', role: Object.freeze({ role: 'button', name: 'publish' }), count: 1 }),
+      Object.freeze({ name: 'no-share-menu', role: Object.freeze({ role: 'button', name: 'share' }), count: 0 }),
+      Object.freeze({ name: 'no-more-menu', role: Object.freeze({ role: 'button', name: 'more actions' }), count: 0 }),
+      TRANSCRIPT_SEARCH_TRIGGER,
+      Object.freeze({ name: 'search-closed', selector: '.txn-search-input', count: 0 }),
+    ]),
+    action: Object.freeze({ name: 'open-transcript-search', kind: 'click', target: TRANSCRIPT_SEARCH_TRIGGER }),
+    after: Object.freeze([
+      Object.freeze({ name: 'search-textbox', role: Object.freeze({ role: 'textbox', name: 'search transcript' }), matches: '.txn-search-input', count: 1 }),
+      TRANSCRIPT_SEARCH_FOCUSED,
+    ]),
+    gateTie: Object.freeze({ field: 'searchOpen', expectation: TRANSCRIPT_SEARCH_FOCUSED }),
+    computed: Object.freeze([]),
+    floors: Object.freeze({ descendants: 400, textLength: 1200, ariaChars: 3000, screenshotBytes: 150000 }),
+  }),
+  Object.freeze({
+    key: 'offline-banner',
+    rowPrefix: 'component-offline-banner',
+    targetId: 'fairtrade-offline-banner-story',
+    storyId: 'in-use-connectionstate--offline-banner',
+    layout: 'fullscreen',
+    before: Object.freeze([
+      Object.freeze({ name: 'banner', selector: 'section.cx-offline', count: 1 }),
+      Object.freeze({ name: 'status-message', selector: 'section.cx-offline [role="status"]', count: 1 }),
+      Object.freeze({ name: 'start-command', selector: 'code.cx-cmd-code .cx-cmd-text', text: 'peasant web start' }),
+      Object.freeze({ name: 'no-wifi-glyph', selector: 'section.cx-offline .lucide-wifi-off', count: 0 }),
+      Object.freeze({ name: 'retry-idle', selector: '.cx-offline-retry', attribute: 'aria-busy', value: null }),
+      Object.freeze({ name: 'retry-label', role: Object.freeze({ role: 'button', name: 'try again' }), matches: '.cx-offline-retry', count: 1 }),
+    ]),
+    action: Object.freeze({ name: 'retry-local-connection', kind: 'click', target: Object.freeze({ name: 'retry', role: Object.freeze({ role: 'button', name: 'try again' }), matches: '.cx-offline-retry', count: 1 }) }),
+    after: Object.freeze([
+      OFFLINE_RETRY_BUSY,
+      Object.freeze({ name: 'retrying-label', role: Object.freeze({ role: 'button', name: 'trying again' }), matches: '.cx-offline-retry', count: 1 }),
+      Object.freeze({ name: 'no-wifi-glyph', selector: 'section.cx-offline .lucide-wifi-off', count: 0 }),
+    ]),
+    gateTie: Object.freeze({ field: 'retryBusy', expectation: OFFLINE_RETRY_BUSY }),
+    computed: Object.freeze([
+      Object.freeze({ name: 'commandFontFamily', selector: 'code.cx-cmd-code', property: 'fontFamily', token: '--font-mono' }),
+      Object.freeze({ name: 'commandTextTransform', selector: 'code.cx-cmd-code', property: 'textTransform', equals: 'none' }),
+    ]),
+    floors: Object.freeze({ descendants: 25, textLength: 140, ariaChars: 280, screenshotBytes: 15000 }),
+  }),
+  Object.freeze({
+    key: 'digest-split',
+    rowPrefix: 'component-digest-split',
+    targetId: 'fairtrade-digest-split-story',
+    storyId: 'components-promptdigest--split',
+    layout: 'centered',
+    before: Object.freeze([
+      Object.freeze({ name: 'session-options', selector: `${DIGEST_LIST} > li[role="option"]`, count: 2 }),
+      Object.freeze({ name: 'first-option-selected', selector: `${DIGEST_LIST} > li[role="option"]:nth-of-type(1)`, attribute: 'aria-selected', value: 'true' }),
+    ]),
+    action: Object.freeze({ name: 'select-next-session', kind: 'key', key: 'j', target: Object.freeze({ name: 'session-list', selector: DIGEST_LIST, count: 1 }) }),
+    after: Object.freeze([
+      DIGEST_SECOND_SELECTED,
+      Object.freeze({ name: 'first-option-released', selector: `${DIGEST_LIST} > li[role="option"]:nth-of-type(1)`, attribute: 'aria-selected', value: 'false' }),
+    ]),
+    gateTie: Object.freeze({ field: 'nextOptionSelected', expectation: DIGEST_SECOND_SELECTED }),
+    computed: Object.freeze([
+      Object.freeze({ name: 'optionLabelFontSize', selector: `${DIGEST_LIST} .pd-split-option-label`, property: 'fontSize', equals: '16px' }),
+    ]),
+    floors: Object.freeze({ descendants: 35, textLength: 250, ariaChars: 650, screenshotBytes: 30000 }),
+  }),
+  Object.freeze({
+    key: 'stats-strip',
+    rowPrefix: 'component-stats-strip',
+    targetId: 'fairtrade-stats-strip-story',
+    storyId: 'components-statsstrip--many-pairs',
+    layout: 'centered',
+    before: Object.freeze([STATS_PAIRS]),
+    action: null,
+    after: Object.freeze([]),
+    gateTie: Object.freeze({ field: 'pairsRendered', expectation: STATS_PAIRS }),
+    computed: Object.freeze([
+      Object.freeze({ name: 'valueFontVariantNumeric', selector: 'ul.sst .sst-value', property: 'fontVariantNumeric', includes: 'tabular-nums' }),
+    ]),
+    // one short line of text: a blank capture of this box compresses to about 430 bytes, and the
+    // real strip measures about 5 KB on the CI renderer and 10 KB on macOS.
+    floors: Object.freeze({ descendants: 15, textLength: 60, ariaChars: 150, screenshotBytes: 2500 }),
+  }),
+])
+
+/**
+ * The disclosure story, the default registry entry every single-story helper
+ * reads when no story is named.
+ * @type {ComponentStory}
+ */
+export const COMPONENT_DEFAULT_STORY = DISCLOSURE_STORY
+
+// Drift guard: row prefixes and registry keys are unique, every layout has
+// declared ready-state classes, and every story gates on one tie field.
+if (
+  new Set(COMPONENT_STORIES.map((story) => story.rowPrefix)).size !== COMPONENT_STORIES.length
+  || new Set(COMPONENT_STORIES.map((story) => story.key)).size !== COMPONENT_STORIES.length
+  || COMPONENT_STORIES.some((story) => !Object.hasOwn(COMPONENT_LAYOUT_BODY_CLASSES, story.layout))
+) {
+  throw new Error(
+    'fairtrade component targets: story registry drifted for field "stories" at path target.stories; ' +
+    'repair: give every story its own key and row prefix and a declared Storybook layout.',
+  )
+}
+
+/**
+ * Return the registered story for a key.
+ * @param {unknown} key story key requested by the caller
+ * @returns {ComponentStory} the frozen story entry
+ */
+export function selectComponentStory(key) {
+  const story = COMPONENT_STORIES.find((entry) => entry.key === key)
+  if (!story) {
+    throw new Error(
+      `fairtrade component targets: unknown story ${JSON.stringify(key)} for field "story" at path row.story; ` +
+      `repair: use one of ${COMPONENT_STORIES.map((entry) => entry.key).join(', ')} for "story".`,
+    )
+  }
+  return story
+}
+
+/**
+ * The accessibility observation point a story's gate receipt carries.
+ * @param {ComponentStory} [story] story entry, defaults to the disclosure story
+ * @returns {string} after-interaction for a story with an action, after-mount otherwise
+ */
+export function componentA11yPoint(story = COMPONENT_DEFAULT_STORY) {
+  return story.action ? COMPONENT_A11Y_POINTS[0] : COMPONENT_A11Y_POINTS[1]
+}
+
+/**
+ * Exact field set of one story's gate receipt: the shared fields with the
+ * story's own tie field in the place the disclosure story's `ariaExpanded`
+ * holds, so the disclosure receipt keeps its declared shape.
+ * @param {ComponentStory} [story] story entry, defaults to the disclosure story
+ * @returns {readonly string[]} the receipt field set
+ */
+export function componentGateReceiptFields(story = COMPONENT_DEFAULT_STORY) {
+  return Object.freeze(COMPONENT_A11Y_GATE_RECEIPT_FIELDS.map((field) => (field === 'ariaExpanded' ? story.gateTie.field : field)))
+}
+
+/**
  * Named fixtures the component target serves.
  * @type {readonly string[]}
  */
@@ -197,12 +482,18 @@ const COMPONENT_FIXTURES = Object.freeze(['component-theme-rows', 'component-dis
  * Named actions the component target offers.
  * @type {readonly string[]}
  */
-const COMPONENT_ACTIONS = Object.freeze([COMPONENT_ACTION_NAME])
+const COMPONENT_ACTIONS = Object.freeze(COMPONENT_STORIES.flatMap((story) => (story.action ? [story.action.name] : [])))
 
-const COMPONENT_ACTION = Object.freeze({
-  name: COMPONENT_ACTION_NAME,
-  storyId: COMPONENT_STORY_ID,
-})
+/**
+ * Every registered component action keyed by name, each bound to the story it
+ * runs on.
+ * @type {Readonly<Record<string, { name: string, storyId: string }>>}
+ */
+const COMPONENT_ACTION_REGISTRY = Object.freeze(Object.fromEntries(
+  COMPONENT_STORIES.flatMap((story) => (story.action ? [[story.action.name, Object.freeze({ name: story.action.name, storyId: story.storyId })]] : [])),
+))
+
+const COMPONENT_ACTION = COMPONENT_ACTION_REGISTRY[COMPONENT_ACTION_NAME]
 
 const COMPONENT_TARGET_RECORD = Object.freeze({
   id: COMPONENT_TARGET_ID,
@@ -310,13 +601,13 @@ export function selectComponentTarget(id) {
  * @returns {{ name: string, storyId: string }} the frozen component action record
  */
 export function getComponentAction(name) {
-  if (name !== COMPONENT_ACTION_NAME) {
+  if (typeof name !== 'string' || !Object.hasOwn(COMPONENT_ACTION_REGISTRY, name)) {
     throw new Error(
       `fairtrade component targets: unknown action ${JSON.stringify(name)} for field "action" at path target.action; ` +
-      `repair: use one of ${COMPONENT_ACTION_NAME} for "action".`,
+      `repair: use one of ${Object.keys(COMPONENT_ACTION_REGISTRY).join(', ')} for "action".`,
     )
   }
-  return COMPONENT_ACTION
+  return COMPONENT_ACTION_REGISTRY[name]
 }
 
 /**
@@ -351,10 +642,11 @@ export function componentStoryUrl(story, theme) {
  * componentThemeSetup; this row record only adds the story id, so the two can
  * never describe different URLs or expected attributes.
  * @param {unknown} theme dark or light row theme
+ * @param {ComponentStory} [story] story entry, defaults to the disclosure story
  * @returns {{ theme: string, expectedAttribute: string, url: string, storyId: string }} the frozen theme row record
  */
-export function componentThemeRow(theme) {
-  return Object.freeze({ ...componentThemeSetup(theme), storyId: COMPONENT_STORY_ID })
+export function componentThemeRow(theme, story = COMPONENT_DEFAULT_STORY) {
+  return Object.freeze({ ...componentThemeSetup(theme, story), storyId: story.storyId })
 }
 
 /**
@@ -362,9 +654,10 @@ export function componentThemeRow(theme) {
  * expected raw attribute; reduced motion is inherited from the one-project
  * runner config and is deliberately not re-declared here.
  * @param {unknown} theme dark or light row theme
+ * @param {ComponentStory} [story] story entry, defaults to the disclosure story
  * @returns {{ theme: string, expectedAttribute: string, url: string }} the frozen setup descriptor for the row
  */
-export function componentThemeSetup(theme) {
+export function componentThemeSetup(theme, story = COMPONENT_DEFAULT_STORY) {
   if (theme !== 'dark' && theme !== 'light') {
     throw new Error(
       `fairtrade component targets: unknown row theme ${JSON.stringify(theme)} for field "theme" at path setup.theme; ` +
@@ -374,7 +667,7 @@ export function componentThemeSetup(theme) {
   return Object.freeze({
     theme,
     expectedAttribute: theme === 'light' ? 'light' : '',
-    url: componentStoryUrl(COMPONENT_STORY_ID, theme),
+    url: componentStoryUrl(story.storyId, theme),
   })
 }
 
@@ -401,9 +694,10 @@ export function componentThemeFromProjectName(projectName) {
  * @param {string} input.bodyClass current body className
  * @param {string} input.errorDisplay computed display of the error display
  * @param {string} input.errorStackText trimmed #error-stack text
+ * @param {readonly string[]} [bodyClasses] ready-state body classes of the story layout, defaults to the centered layout
  * @returns {{ mounted: boolean, rootChildCount: number, bodyClass: string, errorDisplay: string, errorStackText: string }} the frozen mount observation
  */
-export function assertComponentMounted(input) {
+export function assertComponentMounted(input, bodyClasses = COMPONENT_MOUNT_BODY_CLASSES) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new Error(
       'fairtrade component targets: missing mount observation for field "mount" at path mount; ' +
@@ -419,7 +713,7 @@ export function assertComponentMounted(input) {
       'repair: wait for the story root to render real children before proving a mount, never accept a statically empty root.',
     )
   }
-  for (const bodyToken of COMPONENT_MOUNT_BODY_CLASSES) {
+  for (const bodyToken of bodyClasses) {
     if (typeof bodyClass !== 'string' || !bodyClass.split(/\s+/).includes(bodyToken)) {
       throw new Error(
         `fairtrade component targets: story not in its ready state for field "bodyClass" at path mount.bodyClass; ` +

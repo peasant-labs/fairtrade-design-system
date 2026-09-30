@@ -155,7 +155,7 @@ describe('named negative product mutations', () => {
       label: 'blank representative body',
       part: 'body',
       path: 'proof.body',
-      repair: 'keep the analytics dashboard mounted and rendered with non-trivial content instead of a blank section',
+      repair: 'keep the home section mounted and rendered with non-trivial content instead of a blank section',
     }
     // The healthy active view clears the declared floors and returns the
     // accepted rendered measurement the record is then built from.
@@ -210,7 +210,7 @@ describe('named negative product mutations', () => {
       label: 'unrendered representative body',
       part: 'body',
       path: 'proof.body',
-      repair: 'keep the analytics dashboard laid out and rendered instead of present but invisible',
+      repair: 'keep the home section laid out and rendered instead of present but invisible',
     }
     const refusals = {
       'display-none': { display: 'none', visibility: 'visible', opacity: 1, width: 0, height: 0, intersectsStage: false },
