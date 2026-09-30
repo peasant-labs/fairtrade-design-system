@@ -173,4 +173,42 @@ test.describe('built app', () => {
 
     expect(errors, errors.slice(0, 3).join(' | ')).toEqual([])
   })
+
+  // Reduced transparency drops every backdrop blur and makes the sticky nav opaque. The fallback
+  // is an !important rule in @layer base: a normal declaration there loses to the blurred rules in
+  // the components layer (an earlier .nav fallback never applied for that reason), and only a
+  // computed read of the mounted page sees that cascade. Playwright's emulateMedia has no
+  // reduced-transparency option, so the feature is set through CDP.
+  test('honors reduced transparency', async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } })
+    try {
+      const p = await ctx.newPage()
+      const cdp = await ctx.newCDPSession(p)
+      await cdp.send('Emulation.setEmulatedMedia', {
+        features: [{ name: 'prefers-reduced-transparency', value: 'reduce' }],
+      })
+      await p.goto(URL, { waitUntil: 'load' })
+      const seen = await p.evaluate(() => {
+        const read = (sel) => {
+          const el = document.querySelector(sel)
+          if (!el) return null
+          const cs = getComputedStyle(el)
+          return { blur: cs.backdropFilter, bg: cs.backgroundColor }
+        }
+        return {
+          matches: matchMedia('(prefers-reduced-transparency: reduce)').matches,
+          nav: read('.nav'),
+          scrim: read('.scrim'),
+        }
+      })
+      const detail = JSON.stringify(seen)
+      expect(seen.matches, detail).toBe(true)
+      expect(seen.nav?.blur, detail).toBe('none')
+      // an opaque computed colour serialises as rgb(); a translucent one as rgba()
+      expect(seen.nav?.bg, detail).toMatch(/^rgb\(/)
+      expect(seen.scrim?.blur, detail).toBe('none')
+    } finally {
+      await ctx.close()
+    }
+  })
 })
