@@ -14,7 +14,7 @@
 - [public/components.json](public/components.json): the component manifest (name, category, props, controls, stories); generated.
 
 ## design reference
-- [DESIGN.md](DESIGN.md): the one design record - a generated frontmatter (token values from src/index.css; roles and components authored in scripts/gen-llm-artifacts.mjs), philosophy, colors, typography, layout, shapes, components, voice and anti-slop rules.
+- [DESIGN.md](DESIGN.md): the one design record - a generated frontmatter (its opening note says what is generated and what is authored), philosophy, colors, typography, layout, shapes, components, voice and anti-slop rules.
 - [llm/NEUROINCLUSIVE.md](llm/NEUROINCLUSIVE.md): the research sources and review checklist behind the neuroinclusive rules in DESIGN.md (the why, with the WCAG / COGA sources).
 - [PRODUCT.md](PRODUCT.md): who the design system serves, what it owns, and its constraints.
 

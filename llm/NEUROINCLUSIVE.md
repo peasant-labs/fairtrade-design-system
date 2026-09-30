@@ -10,13 +10,13 @@
 > - If this file and `DESIGN.md` disagree, `DESIGN.md` wins. The disagreement is a bug: fix both
 >   files in the same commit.
 
-This is not an "accessibility settings" page. The rules below are the **defaults** of the fairtrade
-design system, stated as binding in `DESIGN.md`; this file records where each one comes from. Where
-a bullet here says more than `DESIGN.md`, the extra is research guidance, not a rule. They
-are defaults because the product is a **data-heavy** application (long transcripts, tables, code,
-dashboards) and our users include people who are dyslexic, have ADHD, or are autistic. Designing
-for them by default makes the product calmer, faster to scan, and less fatiguing for **everyone**.
-Every rule is a default behaviour of the base components and tokens - not an opt-in toggle.
+This is not an "accessibility settings" page. It records the research behind fairtrade's
+neuroinclusive defaults. `DESIGN.md` sets each rule's status: binding, or a known conflict with the
+demo (`#136/N`). This file sets no status. A bullet here that `DESIGN.md` does not state is research
+guidance that the library does not ship yet. The defaults exist because the product is a
+**data-heavy** application (long transcripts, tables, code, dashboards) and our users include people
+who are dyslexic, have ADHD, or are autistic. Designing for them by default makes the product
+calmer, faster to scan, and less fatiguing for **everyone**, and none of it is an opt-in toggle.
 
 Sourced from a deep review of primary research: W3C **WCAG 2.2** + the **COGA** (Cognitive &
 Learning Disabilities) task force "Making Content Usable", the **British Dyslexia Association**
@@ -44,7 +44,7 @@ These are baked into `src/index.css` and reach every consuming app through the p
 | `--focus-ring` | amber (dark) / near-black (light) | global `:focus-visible{outline:3px solid;outline-offset:2px}`; never bare `outline:none` |
 | `--target-min` / `--target-comfortable` | **24px / 44px** | every interactive box ≥24px (WCAG 2.5.8), primary ≥44px |
 | `--row-h-compact/standard/comfortable` | **32 / 40 / 48px** | standard 40px default, persistent density toggle |
-| `--motion-base` | **0ms default**, 120–200ms (`--dur-1` to `--dur-3`) only under `prefers-reduced-motion:no-preference` | static-first |
+| `--motion-base` | **0ms default**, 120 to 200ms (`--dur-1` to `--dur-3`) only under `prefers-reduced-motion:no-preference` | static-first |
 
 Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:justify`; no
 `outline:none` without a stronger replacement; no infinite animation; no color-only meaning.
@@ -89,7 +89,7 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
   **non-text chrome only** (borders, headers, empty states, hero art, thumbnails). *(BDA 2023; pattern-glare PMC4621622)*
 - **Reflow (WCAG 1.4.10):** usable at 320px / 400% zoom with no page-level horizontal scroll. Each
   table/code block gets its own `overflow-x:auto`; prose wraps at the measure. *(WCAG 1.4.10)*
-- **Honor `prefers-reduced-transparency` / `prefers-contrast`.** No glass/blur in the base UI;
+- **Honor `prefers-reduced-transparency`** (and, not implemented yet, `prefers-contrast`). No glass/blur in the base UI;
   overlays, sticky headers and command palettes use opaque surfaces; gate `backdrop-blur` behind
   `prefers-reduced-transparency:no-preference` with an opaque fallback. *(MDN; COGA)*
 
@@ -212,7 +212,7 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
   work on navigation; specific, persistent, field-adjacent plain-language error guidance (not a
   transient toast). *(COGA; WCAG 3.3.1/3.3.3)*
 - **Author the WCAG 1.4.12 text-spacing metrics as comfortable defaults** and stay resilient: no fixed
-  px heights on text containers, no `overflow:hidden`/truncation of transcript lines, so a user
+  px heights on text containers, no `overflow:hidden`/truncation of transcript lines (`#136/20`), so a user
   stylesheet (line-height 1.5 / paragraph 2× / letter 0.12em / word 0.16em) cannot clip content. *(WCAG 1.4.12)*
 - **APCA is aspirational, not implemented.** The shipping gate (`scripts/contrast.mjs`) measures pure
   WCAG 2.x ratios in both themes; it does **not** compute APCA Lc. WCAG 2.x is known to overstate
@@ -266,7 +266,8 @@ The automated gates that cover these rules (CI runs them in `.github/workflows/c
 - **storybook smoke** (`scripts/journey/storybook-smoke.journey.mjs`, run by `pnpm journey:ci`): loads
   every story incl. `play()`, expects 0 real errors. `node scripts/sbsmoke.mjs` is the local equivalent.
 
-Manual / review checks beyond the automated gates:
+Manual / review checks beyond the automated gates. A surface that matches the demo on an item
+listed under "Known conflicts with the demo" in `DESIGN.md` is not a finding.
 
 - text-spacing resilience: apply the 1.4.12 user stylesheet; nothing clips.
 - no text token <16px in reading contexts; no `text-align:justify`; no `outline:none` without replacement; no infinite animation; no color-only status.

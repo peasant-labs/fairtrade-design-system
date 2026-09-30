@@ -204,9 +204,9 @@ function buildBaseCss() {
    custom property). The description (in buildDesignFrontmatter), the typography roles (TYPE_ROLES)
    and the component entries (COMPONENTS) are AUTHORED here: they say which tokens a role or
    component uses, so a restyle in src/index.css must update them by hand. What the generator does
-   guarantee is that each value resolves from a token (or is a literal weight or zero) and that every
-   {group.name} reference resolves, at any depth of an array value, so a renamed token or a
-   dangling reference fails the build. */
+   guarantee is that each token value resolves (other values are literals written in the table)
+   and that every {group.name} reference resolves, at any depth of an array value, so a renamed
+   token or a dangling reference fails the build. */
 const DESIGN = join(ROOT, 'DESIGN.md')
 const tok = (name) => ({ token: name })
 const TYPE_ROLES = [
