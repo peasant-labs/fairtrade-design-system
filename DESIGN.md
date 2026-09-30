@@ -378,8 +378,9 @@ active nav state, position indicators in long flows ("turn 312 of 1,840"), and a
 calls, essential columns with a column picker, headline metrics with drill-down. Calm by default; the
 user opts into density, and the choice persists.
 
-**The Target Rule.** Every interactive box is at least 24 by 24 (`--target-min`), and primary
-actions reach 44 (`--target-comfortable`). The glyph stays at icon size; the box is what grows.
+**The Target Rule.** Every interactive box is at least 24 by 24 (`--target-min`); dense controls
+may instead meet the WCAG 2.5.8 spacing exception. Primary actions aim for 44
+(`--target-comfortable`). The glyph stays at icon size; the box is what grows.
 
 ## Elevation & Depth
 
@@ -392,7 +393,9 @@ opaque surfaces.
 ### Shadow Vocabulary
 - **Amber glow** (`--glow`, `--glow-soft`): a faint text glow on bold words and headings, dark theme
   only (the light theme sets both to `none`).
-- **Overlay lift**: the live dialog separates from the page with the glow plus one soft drop shadow.
+- **Overlay lift**: in the dark theme, dialogs, floating menus and popovers separate from the page
+  with the glow plus one soft drop shadow. The light theme currently renders them flat (see the
+  known conflicts below).
 - **Selection inset**: an inset 2 to 3px amber bar (`box-shadow: inset 2px 0 0 var(--amber)`) marks
   the active turn, outline item or palette row without shifting layout.
 
@@ -542,3 +545,24 @@ vector chrome and ASCII never mix on one element.
   titles, labels or bullets (the active nav marker is the one `>`), no eyebrow or kicker labels above
   a heading, no decorative captions under imagery. A section is a title and at most one subtitle.
   Form-field labels, control sub-labels and section titles are functional, not eyebrows.
+
+### Known conflicts with the demo
+The in-use demo and this record disagree in the places below. Until each is ratified, consumers
+match the demo; the decisions are tracked in #136, and the type sizes in #130.
+
+- **Middot separators**: the record bans them; the demo uses them in meta rows across most surfaces.
+- **`>` markers**: the analytics toggles and the site rail use a `>` besides the active nav marker.
+- **Type size**: an 11px `--fs-micro` token and 8 to 12px literals sit below the 16px floor and
+  mono-14 chrome in the transcript, analytics, changes and code map.
+- **Amber salience and density**: the transcript shows many amber fills and about 21 filter controls
+  by default.
+- **Prose in mono**: some village notes set multi-line sentences in mono.
+- **Looping motion**: a shimmer skeleton, a pulse and busy spinners loop while shown.
+- **Primary targets**: primaries use the 36px control height, not 44.
+- **Focus trap**: the publish popup traps focus while open, as a user-opened modal should; the
+  dialog rule above names destructive confirmations only.
+- **Overlay shadows**: the drop shadow is a literal value and disappears in the light theme.
+- **Prose measure and heading step**: 66ch holds about 82 characters, and the transcript title is
+  12.5% over body, not 20%.
+- **Font loading**: the exported `fonts.css` uses a remote `@import`; apps use the `<link>` form.
+- **Uppercase and stripe widths**: one uppercase danger word, and 3px rails beside the 2px standard.
