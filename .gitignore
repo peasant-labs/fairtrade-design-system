@@ -6,6 +6,9 @@ inspiration/
 # reference), so ignore everything under baselines/ EXCEPT baselines/prelift/.
 /baselines/*
 !/baselines/prelift/
+# local impeccable run output (critique snapshots, the live-panel sidecar) is transient; the design
+# record is DESIGN.md, and critique reports are posted on the PR or issue they belong to
+/.impeccable/
 # llm/ holds working notes; only the shipped design-reference docs are tracked
 llm/*
 !llm/DESIGN.md
