@@ -4,6 +4,7 @@ requiredLabelNames:
   - publishing
   - published and up to date
   - new turns
+  - published without a count
   - auto-publish on
   - outside your saved lists
 requiredPopupNames:
@@ -13,6 +14,8 @@ requiredPopupNames:
   - the scan failed
   - not in a collective yet
   - ready to publish
+  - ready with a match kept un-redacted
+  - ready before any scan
   - publishing
   - stopped at a named step
   - done
@@ -26,6 +29,12 @@ requiredMutationNames:
   - a failed scan turns re-scan off
   - the remove button loses the collective's name
   - auto-publish claims how it was published
+  - a kept match reads as all redacted
+  - a missing scan leaves publish on
+  - remove stays offered while publishing
+  - publishing lets the popup close
+  - re-scan calls nothing
+  - a read-only card keeps its first decision
 mutations:
   - name: a failed scan leaves publish on
     file: src/ui/Publish.jsx
@@ -47,3 +56,33 @@ mutations:
     find: "`auto-publish on · ${collective}`"
     replace: "`auto-published on git push · ${collective}`"
     expectedDiagnostic: "auto-publish on: the label must read"
+  - name: a kept match reads as all redacted
+    file: src/ui/Publish.jsx
+    find: "const kept = matches.filter((match) => match.kept).length"
+    replace: "const kept = 0"
+    expectedDiagnostic: "ready with a match kept un-redacted: the popup must read"
+  - name: a missing scan leaves publish on
+    file: src/ui/Publish.jsx
+    find: "|| readers.length === 0 || !scan"
+    replace: "|| readers.length === 0"
+    expectedDiagnostic: "ready before any scan: the primary button must be disabled"
+  - name: remove stays offered while publishing
+    file: src/ui/Publish.jsx
+    find: "onRemove={state === 'publishing' ? undefined : onRemove}"
+    replace: "onRemove={onRemove}"
+    expectedDiagnostic: "publishing: every access row's remove button is named remove <collective>"
+  - name: publishing lets the popup close
+    file: src/ui/Publish.jsx
+    find: "const close = state === 'publishing' ? () => {} : onClose"
+    replace: "const close = onClose"
+    expectedDiagnostic: "publishing: close dialog must call []"
+  - name: re-scan calls nothing
+    file: src/ui/Publish.jsx
+    find: "onClick={onRescan} disabled={checking}"
+    replace: "onClick={() => {}} disabled={checking}"
+    expectedDiagnostic: "the scan failed: re-scan must call"
+  - name: a read-only card keeps its first decision
+    file: src/ui/Redaction.jsx
+    find: "const kept = isControlled || readOnly ? Boolean(keptProp) : internalKept"
+    replace: "const kept = isControlled ? Boolean(keptProp) : internalKept"
+    expectedDiagnostic: "a read-only review follows a changed decision"

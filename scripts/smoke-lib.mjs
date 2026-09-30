@@ -140,7 +140,7 @@ const sampleProps = {
   PublishBar: { state: 'published', collectives: 2, onAction: () => {}, moreItems: [{ label: 'copy link' }] },
   AccessList: { items: [{ id: 'a', name: 'Acme Platform', members: 12 }, { id: 'b', name: 'ML Reading Group', pending: 'approval' }], onRemove: () => {} },
   CollectivePicker: { suggestions: [{ id: 'a', name: 'Acme Platform', members: 12 }], onAdd: () => {} },
-  PublishDialog: { open: true, onClose: () => {}, title: 'Fix flaky ingest test', state: 'ready', scan: { matches: [{ id: 'm1', category: 'PII', confidence: 0.97, before: 'a@b.dev', after: '<EMAIL>' }] }, access: [{ id: 'a', name: 'Acme Platform', members: 12 }], onPublish: () => {} },
+  PublishDialog: { open: true, onClose: () => {}, title: 'Fix flaky ingest test', state: 'ready', scan: { matches: [{ id: 'm1', category: 'pii', confidence: 0.97, before: 'a@b.dev', after: '<EMAIL>' }] }, access: [{ id: 'a', name: 'Acme Platform', members: 12 }], onPublish: () => {} },
   SettingRow: { label: 'include new branches automatically', control: 'switch', value: true, onCommit: async () => {}, tag: 'not in peasant config' },
   SettingGroup: { label: 'village', defaultOpen: true, children: 'rows' },
   RepoPicker: { open: true, onClose: () => {}, owners: [{ id: 'acme', login: 'acme', kind: 'org', repos: [{ id: 'acme/api', name: 'acme/api' }] }], initialSelected: ['acme/api'], onSave: () => {} },

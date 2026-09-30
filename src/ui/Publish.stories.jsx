@@ -17,9 +17,9 @@ export default meta
 const SCAN = {
   total: 37,
   matches: [
-    { id: 'm1', category: 'CREDENTIAL', confidence: 0.99, before: 'AKIAIOSFODNN7EXAMPLE', after: '<AWS_ACCESS_KEY>' },
-    { id: 'm2', category: 'PII', confidence: 0.97, before: 'alice@acme.dev', after: '<EMAIL>' },
-    { id: 'm3', category: 'PATH', confidence: 0.91, before: '/Users/alice/work/acme/ingest-api', after: '/Users/<USER>/work/acme/ingest-api' },
+    { id: 'm1', category: 'secrets', confidence: 0.99, before: 'AKIAIOSFODNN7EXAMPLE', after: '<AWS_ACCESS_KEY>' },
+    { id: 'm2', category: 'pii', confidence: 0.97, before: 'alice@acme.dev', after: '<EMAIL>' },
+    { id: 'm3', category: 'paths', confidence: 0.91, before: '/Users/alice/work/acme/ingest-api', after: '/Users/<USER>/work/acme/ingest-api' },
   ],
 }
 const ACCESS = [
@@ -106,6 +106,24 @@ export const PopupReady = {
     await expect(canvas.queryByRole('button', { name: 'keep' })).toBeNull()
     await userEvent.click(canvas.getByRole('button', { name: 'remove Acme Company' }))
     await waitFor(() => expect(canvas.getByRole('button', { name: 'publish to 1 collective' })).toBeEnabled())
+  },
+}
+export const PopupKept = {
+  name: 'popup, a match kept un-redacted',
+  render: () => <Popup state="ready" scan={{ ...SCAN, matches: SCAN.matches.map((match) => ({ ...match, kept: match.id === 'm2' })) }} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement.ownerDocument.body)
+    await expect(canvas.getByText(/kept un-redacted, will be sent/)).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'hide matches' })).toHaveAttribute('aria-expanded', 'true')
+  },
+}
+export const PopupUnscanned = {
+  name: 'popup, not scanned yet',
+  render: () => <Popup state="ready" scan={undefined} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement.ownerDocument.body)
+    await expect(canvas.getByText(/not scanned yet, so publish is off/)).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'publish to 2 collectives' })).toBeDisabled()
   },
 }
 export const PopupPublishing = { name: 'popup, publishing', render: () => <Popup state="publishing" /> }

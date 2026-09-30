@@ -2,10 +2,12 @@
 /* Mounted-source gate for the publish parts: every PublishStateLabel value through PublishBar
    (words, icon, the one action), every PublishDialog state (heading, primary button and whether it
    is enabled, re-scan, the lines and alerts a user reads), the update popup's derived action, and
-   the AccessList's named remove buttons.
+   the AccessList's named remove buttons (and none while publishing), what each button and Escape
+   call, a kept match or a missing scan stated instead of an all-clear, and a read-only review that
+   follows the host's decisions. The fixture covers exactly the exported state sets.
    Cases: scripts/testdata/publish-states.yaml (+ .manifest.yaml).
    Run: pnpm test:publish-states; mutations: pnpm test:publish-states:mutations. */
-import { loadFixturePair, withMountedSource, createReport } from './mounted-parts.mjs'
+import { loadFixturePair, withMountedSource, createReport, assertExactNames, assertFields, click, keydown } from './mounted-parts.mjs'
 
 const FIXTURE = 'scripts/testdata/publish-states.yaml'
 const MANIFEST = 'scripts/testdata/publish-states.manifest.yaml'
@@ -13,9 +15,15 @@ const { fixture } = loadFixturePair(FIXTURE, MANIFEST, { labels: 'requiredLabelN
 const report = createReport('publish states')
 const text = (node) => node?.textContent.replace(/\s+/g, ' ').trim()
 const noop = () => {}
+const POPUP_FIELDS = ['name', 'state', 'heading', 'primary', 'rescan', 'lines', 'removeButtons', 'steps']
+const POPUP_OPTIONAL = ['access', 'pending', 'alert', 'absent', 'kept', 'unscanned', 'matchesOpen']
+for (const row of fixture.popup) assertFields(row, POPUP_FIELDS, `publish states popup row ${row.name}`, POPUP_OPTIONAL)
 
 await withMountedSource(async ({ load, mount, window, React }) => {
   const ui = await load('/src/ui/index.js')
+  // the fixture covers exactly the exported state sets, so a new state cannot ship untested
+  assertExactNames([...new Set(fixture.labels.map((row) => row.state))], [...ui.PUBLISH_STATES], 'publish states: label states against PUBLISH_STATES')
+  assertExactNames([...new Set(fixture.popup.map((row) => row.state))], [...ui.PUBLISH_DIALOG_STATES], 'publish states: popup states against PUBLISH_DIALOG_STATES')
   Object.defineProperty(window.navigator, 'clipboard', { configurable: true, value: { writeText: async () => {} } })
 
   for (const row of fixture.labels) {
@@ -50,7 +58,22 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   })
 
   for (const row of fixture.popup) {
-    const props = base({ state: row.state, ...(row.access ? { access: row.access } : {}), ...(row.pending ? { done: { ...fixture.done, pending: row.pending } } : {}) })
+    const calls = []
+    // a callback records its name and its plain arguments (an id); a click event is left out
+    const record = (name) => (...args) => { calls.push([name, ...args.filter((arg) => arg === null || typeof arg !== 'object')]) }
+    const scan = row.unscanned ? undefined : { ...fixture.scan, matches: fixture.scan.matches.map((match) => ({ ...match, kept: (row.kept ?? []).includes(match.id) })) }
+    const props = base({
+      state: row.state,
+      scan,
+      onClose: record('onClose'),
+      onRescan: record('onRescan'),
+      onRemove: record('onRemove'),
+      onPublish: record('onPublish'),
+      onConnect: record('onConnect'),
+      onRetry: record('onRetry'),
+      ...(row.access ? { access: row.access } : {}),
+      ...(row.pending ? { done: { ...fixture.done, pending: row.pending } } : {}),
+    })
     const mounted = await mount(React.createElement(ui.PublishDialog, props))
     const dialog = mounted.container.querySelector('[role="dialog"]')
     report.check(!!dialog && dialog.classList.contains('dialog-wide'), `${row.name}: the popup is the wide dialog`)
@@ -69,10 +92,26 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     else report.check(!!rescan && rescan.disabled === !row.rescan.enabled, `${row.name}: re-scan must be ${row.rescan.enabled ? 'enabled' : 'disabled'}`)
     const body = text(dialog)
     for (const line of row.lines) report.check(body?.includes(line), `${row.name}: the popup must read ${JSON.stringify(line)}`)
+    for (const line of row.absent ?? []) report.check(!body?.includes(line), `${row.name}: the popup must not read ${JSON.stringify(line)}`)
     if (row.alert) report.check(text(dialog?.querySelector('[role="alert"]'))?.includes(row.alert), `${row.name}: an alert must read ${JSON.stringify(row.alert)}`)
+    if (row.matchesOpen !== undefined) {
+      const toggle = dialog?.querySelector('.pub-toggle')
+      report.check(toggle?.getAttribute('aria-expanded') === String(row.matchesOpen) && !!dialog?.querySelector('.pub-review') === row.matchesOpen, `${row.name}: the matches must be ${row.matchesOpen ? 'open' : 'closed'}`)
+    }
     const removes = [...(dialog?.querySelectorAll('.pub-access-remove') ?? [])].map((button) => button.getAttribute('aria-label'))
-    const named = (row.access ?? fixture.access).map((item) => `remove ${item.name}`)
-    if (removes.length) report.check(JSON.stringify(removes) === JSON.stringify(named), `${row.name}: every access row's remove button is named remove <collective>; received ${JSON.stringify(removes)}`)
+    report.check(JSON.stringify(removes) === JSON.stringify(row.removeButtons), `${row.name}: every access row's remove button is named remove <collective>; expected ${JSON.stringify(row.removeButtons)}, received ${JSON.stringify(removes)}`)
+    // each step presses one control (by its accessible name or text) or a key, then reads the calls
+    for (const step of row.steps) {
+      calls.length = 0
+      if (step.key) {
+        await mounted.act(() => { keydown(window, dialog, step.key) })
+      } else {
+        const control = [...(dialog?.querySelectorAll('button, a') ?? [])].find((node) => node.getAttribute('aria-label') === step.press || text(node) === step.press)
+        report.check(!!control, `${row.name}: a control named ${JSON.stringify(step.press)} must render`)
+        if (control) await mounted.act(() => { click(window, control) })
+      }
+      report.check(JSON.stringify(calls) === JSON.stringify(step.calls), `${row.name}: ${step.press ?? step.key} must call ${JSON.stringify(step.calls)}, received ${JSON.stringify(calls)}`)
+    }
     await mounted.unmount()
   }
 
@@ -83,6 +122,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     report.check(mounted.container.querySelectorAll('.rdx-card').length === fixture.scan.matches.length, 'a read-only review lists every match')
     report.check(mounted.container.querySelectorAll('.rdx-toggle').length === 0, 'a read-only review has no keep or revert button')
     await mounted.unmount()
+    // a read-only card shows the host's current decision, not the one it mounted with
+    const states = (node) => [...node.querySelectorAll('.rdx-card')].map((card) => card.classList.contains('rdx-card-kept') ? 'kept' : 'redacted')
+    const first = fixture.scan.matches.map((match) => ({ ...match, kept: false }))
+    const followed = await mount(React.createElement(ui.RedactionReview, { readOnly: true, matches: first, total: 3, availableLevels: ['standard'] }))
+    await followed.rerender(React.createElement(ui.RedactionReview, { readOnly: true, matches: first.map((match, i) => ({ ...match, kept: i === 1 })), total: 3, availableLevels: ['standard'] }))
+    report.check(JSON.stringify(states(followed.container)) === JSON.stringify(['redacted', 'kept', 'redacted']), `a read-only review follows a changed decision; received ${JSON.stringify(states(followed.container))}`)
+    await followed.unmount()
     const editable = await mount(React.createElement(ui.RedactionReview, { matches: fixture.scan.matches, total: 3, availableLevels: ['standard'] }))
     report.check(editable.container.querySelectorAll('.rdx-toggle').length === fixture.scan.matches.length, 'the default review keeps its keep/revert buttons')
     await editable.unmount()

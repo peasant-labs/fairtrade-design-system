@@ -47,12 +47,14 @@ import './Publish.css'
 export const PUBLISH_STATES = Object.freeze(['not-published', 'publishing', 'published', 'new-turns', 'auto-publish', 'outside-lists'])
 
 const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`
+/* a count the host did not give is left out rather than stated as zero */
+const countOf = (count, one, many) => (typeof count === 'number' ? plural(count, one, many) : null)
 
 const STATE_META = {
   'not-published': { icon: CircleDashed, text: () => 'not published', action: 'publish' },
   publishing: { icon: Loader, text: ({ collectives }) => (collectives ? `publishing to ${plural(collectives, 'collective', 'collectives')}` : 'publishing'), action: 'publish' },
-  published: { icon: CircleCheck, text: ({ collectives }) => `published · ${plural(collectives ?? 0, 'collective', 'collectives')} · up to date`, action: 'manage' },
-  'new-turns': { icon: CircleFadingArrowUp, text: ({ collectives, newTurns }) => `published · ${plural(collectives ?? 0, 'collective', 'collectives')} · ${plural(newTurns ?? 0, 'new turn', 'new turns')}`, action: 'update' },
+  published: { icon: CircleCheck, text: ({ collectives }) => ['published', countOf(collectives, 'collective', 'collectives'), 'up to date'].filter(Boolean).join(' · '), action: 'manage' },
+  'new-turns': { icon: CircleFadingArrowUp, text: ({ collectives, newTurns }) => ['published', countOf(collectives, 'collective', 'collectives'), countOf(newTurns, 'new turn', 'new turns') ?? 'new turns'].filter(Boolean).join(' · '), action: 'update' },
   'auto-publish': { icon: Repeat, text: ({ collective }) => (collective ? `auto-publish on · ${collective}` : 'auto-publish on'), action: 'manage' },
   'outside-lists': { icon: ListX, text: () => 'not published · outside your saved lists', action: 'publish' },
 }
@@ -69,7 +71,7 @@ function stateMeta(state) {
  *
  * @param {object} props
  * @param {'not-published'|'publishing'|'published'|'new-turns'|'auto-publish'|'outside-lists'} props.state
- * @param {number} [props.collectives] - how many collectives can read it (published, new-turns, publishing).
+ * @param {number} [props.collectives] - how many collectives can read it (published, new-turns, publishing); left out of the words when omitted.
  * @param {number} [props.newTurns] - turns recorded since the last publish (new-turns).
  * @param {string} [props.collective] - the collective(s) the project's auto-publish rule targets (auto-publish).
  * @param {string} [props.className]
@@ -92,7 +94,7 @@ export function PublishStateLabel({ state, collectives, newTurns, collective, cl
  * auto-publish on); while publishing it stays visible and busy.
  *
  * @param {object} props
- * @param {string} props.state - a PublishStateLabel state.
+ * @param {'not-published'|'publishing'|'published'|'new-turns'|'auto-publish'|'outside-lists'} props.state - a PublishStateLabel state.
  * @param {number} [props.collectives]
  * @param {number} [props.newTurns]
  * @param {string} [props.collective]
@@ -264,14 +266,19 @@ function joinNames(names) {
 }
 
 function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
-  const [open, setOpen] = useState(false)
+  const titleId = useId()
   const matches = scan?.matches ?? []
+  const kept = matches.filter((match) => match.kept).length
+  // the matches open by themselves when one will leave un-redacted; the toggle overrides that
+  const [openChoice, setOpen] = useState(null)
+  const open = openChoice ?? kept > 0
   const checking = state === 'checking'
   const failed = state === 'scan-failed'
+  const unscanned = !scan && !checking && !failed
   return (
-    <section className="pub-section" aria-labelledby="pub-leaves-title">
+    <section className="pub-section" aria-labelledby={titleId}>
       <div className="pub-section-head">
-        <h4 className="pub-section-title" id="pub-leaves-title">what leaves your machine</h4>
+        <h4 className="pub-section-title" id={titleId}>what leaves your machine</h4>
         {onRescan && (
           <button type="button" className="btn btn-ghost btn-sm pub-rescan" onClick={onRescan} disabled={checking}>
             <RotateCw aria-hidden="true" /> re-scan
@@ -284,13 +291,20 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
         <p className="pub-line pub-line-alert" role="alert">
           <AlertTriangle aria-hidden="true" /> {scan?.failure ?? 'the scan failed, so publish is off. re-scan to try again.'}
         </p>
+      ) : unscanned ? (
+        <p className="pub-line pub-line-alert">
+          <AlertTriangle aria-hidden="true" /> not scanned yet, so publish is off.{onRescan ? ' re-scan to check it.' : ''}
+        </p>
       ) : (
         <>
-          <p className="pub-line">
-            <ShieldCheck aria-hidden="true" />
-            <span><span className="tnum">{matches.length}</span> {matches.length === 1 ? 'match' : 'matches'}{matches.length ? ' · all redacted' : ' · nothing to redact'}</span>
+          <p className={kept ? 'pub-line pub-line-alert' : 'pub-line'}>
+            {kept ? <AlertTriangle aria-hidden="true" /> : <ShieldCheck aria-hidden="true" />}
+            <span>
+              <span className="tnum">{matches.length}</span> {matches.length === 1 ? 'match' : 'matches'}
+              {kept ? <> · <span className="tnum">{kept}</span> kept un-redacted, will be sent</> : matches.length ? ' · all redacted' : ' · nothing to redact'}
+            </span>
             {matches.length > 0 && (
-              <button type="button" className="btn btn-ghost btn-sm pub-toggle" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+              <button type="button" className="btn btn-ghost btn-sm pub-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
                 {open ? 'hide matches' : 'show matches'}
               </button>
             )}
@@ -321,8 +335,10 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
  * @param {() => void} props.onClose - cancel, the close button, Escape and the scrim.
  * @param {string} props.title - the session title, kept in its case.
  * @param {'publish'|'update'} [props.mode='publish']
- * @param {string} props.state - one of PUBLISH_DIALOG_STATES.
- * @param {{ matches?: object[], total?: number, failure?: string }} [props.scan] - the host's scan result.
+ * @param {'connect'|'waiting-github'|'checking'|'scan-failed'|'no-collective'|'ready'|'publishing'|'stopped'|'done'|'waits-approval'} props.state - one of PUBLISH_DIALOG_STATES.
+ * @param {{ matches?: object[], total?: number, failure?: string }} [props.scan] - the host's scan result. Until it is given, the
+ *        popup says the transcript is not scanned and keeps publish off. A match with `kept: true` leaves un-redacted, and the
+ *        popup says so and opens the matches.
  * @param {() => void} [props.onRescan]
  * @param {{ summary: string }} [props.changes] - update mode: what changed since the last publish.
  * @param {AccessItem[]} [props.access] - who can read it after this publish.
@@ -363,6 +379,7 @@ export function PublishDialog({
   done,
 }) {
   const labelId = useId()
+  const sectionId = useId()
   if (!PUBLISH_DIALOG_STATES.includes(state)) {
     throw new TypeError(`PublishDialog: unknown state ${JSON.stringify(state)}; use one of ${PUBLISH_DIALOG_STATES.join(', ')}.`)
   }
@@ -375,7 +392,9 @@ export function PublishDialog({
   const derived = mode === 'update'
     ? ['update', adds ? `add ${plural(adds, 'collective', 'collectives')}` : null, removes ? `remove ${plural(removes, 'collective', 'collectives')}` : null].filter(Boolean).join(' and ')
     : readers.length ? `publish to ${plural(readers.length, 'collective', 'collectives')}` : 'publish'
-  const blocked = state === 'checking' || state === 'scan-failed' || state === 'no-collective' || state === 'publishing' || readers.length === 0
+  const blocked = state === 'checking' || state === 'scan-failed' || state === 'no-collective' || state === 'publishing' || readers.length === 0 || !scan
+  // while publishing, cancel, the close button, Escape and the scrim all wait for the result
+  const close = state === 'publishing' ? () => {} : onClose
 
   const heading = finished
     ? <>published to <span className="pub-title-content">{joinNames(done?.collectives ?? readers.map((item) => item.name))}</span></>
@@ -415,7 +434,7 @@ export function PublishDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title={heading} labelId={labelId} size="wide" className="pub-dialog" footer={<div className="pub-foot">{footer}</div>}>
+    <Dialog open={open} onClose={close} title={heading} labelId={labelId} size="wide" className="pub-dialog" footer={<div className="pub-foot">{footer}</div>}>
       {state === 'connect' && (
         <div className="pub-gate">
           <p className="pub-line">connect this computer to village once to publish.</p>
@@ -429,15 +448,15 @@ export function PublishDialog({
       {!gate && !finished && (
         <>
           {mode === 'update' && changes && (
-            <section className="pub-section" aria-labelledby="pub-changed-title">
-              <h4 className="pub-section-title" id="pub-changed-title">what changed</h4>
+            <section className="pub-section" aria-labelledby={`${sectionId}-changed`}>
+              <h4 className="pub-section-title" id={`${sectionId}-changed`}>what changed</h4>
               <p className="pub-line">{changes.summary}</p>
             </section>
           )}
           <WhatLeaves state={state} scan={scan} onRescan={onRescan} readOnlyReview />
 
-          <section className="pub-section" aria-labelledby="pub-readers-title">
-            <h4 className="pub-section-title" id="pub-readers-title">who can read it</h4>
+          <section className="pub-section" aria-labelledby={`${sectionId}-readers`}>
+            <h4 className="pub-section-title" id={`${sectionId}-readers`}>who can read it</h4>
             {state === 'no-collective' ? (
               <p className="pub-line">
                 you are not in a collective yet.{' '}

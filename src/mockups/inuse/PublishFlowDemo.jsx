@@ -12,9 +12,9 @@ import { PublishBar, PublishDialog, PUBLISH_DIALOG_STATES, PUBLISH_STATES } from
 const SCAN = {
   total: 37,
   matches: [
-    { id: 'm1', category: 'CREDENTIAL', confidence: 0.99, before: 'AKIAIOSFODNN7EXAMPLE', after: '<AWS_ACCESS_KEY>' },
-    { id: 'm2', category: 'PII', confidence: 0.97, before: 'alice@acme.dev', after: '<EMAIL>' },
-    { id: 'm3', category: 'PATH', confidence: 0.91, before: '/Users/alice/work/acme/ingest-api', after: '/Users/<USER>/work/acme/ingest-api' },
+    { id: 'm1', category: 'secrets', confidence: 0.99, before: 'AKIAIOSFODNN7EXAMPLE', after: '<AWS_ACCESS_KEY>' },
+    { id: 'm2', category: 'pii', confidence: 0.97, before: 'alice@acme.dev', after: '<EMAIL>' },
+    { id: 'm3', category: 'paths', confidence: 0.91, before: '/Users/alice/work/acme/ingest-api', after: '/Users/<USER>/work/acme/ingest-api' },
   ],
 }
 const SUGGESTED = [

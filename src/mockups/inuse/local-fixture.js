@@ -71,7 +71,7 @@ export const SETTINGS_GROUPS = Object.freeze([
     label: 'redaction',
     open: true,
     rows: [
-      { id: 'redaction-level', kind: 'select', label: 'level', help: 'hides CREDENTIAL, PII, PATH and INTERNAL. applies to every publish, by hand or automatic.', value: 'standard', options: [{ value: 'standard', label: 'standard' }] },
+      { id: 'redaction-level', kind: 'select', label: 'level', help: 'hides secrets, pii, paths and project details. applies to every publish, by hand or automatic.', value: 'standard', options: [{ value: 'standard', label: 'standard' }] },
     ],
   },
   {

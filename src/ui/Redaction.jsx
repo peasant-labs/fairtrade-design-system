@@ -162,7 +162,8 @@ function MatchCard({ match, onToggle, readOnly = false }) {
   const { id, category, confidence, before, secret, after, kept: keptProp } = match
   const isControlled = onToggle !== undefined
   const [internalKept, setInternalKept] = useState(Boolean(keptProp))
-  const kept = isControlled ? Boolean(keptProp) : internalKept
+  // a read-only card has no toggle, so it always shows the decision it is given
+  const kept = isControlled || readOnly ? Boolean(keptProp) : internalKept
 
   const toggle = () => {
     if (isControlled) onToggle?.(id, !kept)
