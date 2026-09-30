@@ -46,6 +46,7 @@ export const COLLECTIVE = Object.freeze({
     { value: 31, label: 'pull requests linked' },
   ],
   org: { login: 'acme', linked: 2, total: 14 },
+  transcriptCount: 248,
   memberBreakdown: '1 owner · 7 members · 4 contributors',
   transcripts: [
     { id: '3f9c0a17', title: 'Fix flaky ingest test', harness: 'claude-code', turns: 37, author: '@alice-dev', pullRequests: ['#42', '#45', '#51', '#60'], repo: 'acme/ingest-api', when: '12m ago' },

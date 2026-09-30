@@ -31,7 +31,7 @@ pages:
   - name: a collective
     view: collective-detail
     nav: [home, collectives]
-    text: [Acme Platform, who can read, who can publish, your role, '248 transcripts', '12 members', github orgs, a collective links one github org today., '1 owner · 7 members · 4 contributors']
+    text: [Acme Platform, who can read, who can publish, your role, '248 transcripts', '12 members', github orgs, a collective links one github org today., '1 owner · 7 members · 4 contributors', transcripts 248, showing 5 of 248]
     absentText: [public]
     buttons: [settings, more, manage]
   - name: collective settings
