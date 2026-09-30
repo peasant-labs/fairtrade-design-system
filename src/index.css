@@ -4406,6 +4406,10 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .cmg-rail-list li { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .cmg-rail-link, .cmg-table-link { align-self: flex-start; padding: 0; border: 0; background: transparent; cursor: pointer; font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); text-align: left; text-decoration: underline dotted var(--ink-4); text-underline-offset: 3px; min-height: var(--target-min); }
   .cmg-rail-link:hover, .cmg-table-link:hover { color: var(--amber); }
+  /* a link target given only a callback renders as a button that reads as the link would */
+  .cmg-link-button { appearance: none; margin: 0; padding: 0; border: 0; background: transparent; font: inherit; text-align: start; cursor: pointer; }
+  .cmg-cell-stack { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+  .cmg-cell-sub { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .cmg-rail-name { font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); }
   .cmg-rail-meta, .cmg-none, .cmg-note { font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono); letter-spacing: 0; color: var(--ink-3); }
   .cmg-note { margin: 0; }

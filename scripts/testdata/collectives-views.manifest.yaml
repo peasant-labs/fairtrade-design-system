@@ -1,0 +1,53 @@
+# Required-NAME manifest for collectives-views.yaml: deletion protection.
+requiredCaseNames:
+  - list with rows a host sends
+  - list rows that name their github org
+  - a collective in the earlier shape
+  - a collective with its destinations
+  - a collective without destinations
+  - settings show the collective's own policy
+
+requiredMutationNames:
+  - the org column shows for rows without an org
+  - the crumb is dropped
+  - settings show a fixed join policy
+  - the earlier shape throws
+  - demo links return
+  - public returns to the read choices
+  - the default join help names a demo org
+mutations:
+  - name: the org column shows for rows without an org
+    file: src/ui/commons/Collectives.jsx
+    find: "const showOrg = collectives.some((row) => Object.hasOwn(row, 'org'))"
+    replace: "const showOrg = true"
+    expectedDiagnostic: "list with rows a host sends: columns expected"
+  - name: the crumb is dropped
+    file: src/ui/commons/Collectives.jsx
+    find: "{crumb ? <div className=\"cmg-crumb\"><Breadcrumb items={[{ label: crumb }]} /></div> : null}"
+    replace: "{null}"
+    expectedDiagnostic: "list with rows a host sends: the view must show \"village\""
+  - name: settings show a fixed join policy
+    file: src/ui/commons/Collectives.jsx
+    find: "value={collective.mode} options={whoCanPublish}"
+    replace: "value=\"open\" options={whoCanPublish}"
+    expectedDiagnostic: "who can publish must show \"curated\""
+  - name: the earlier shape throws
+    file: src/ui/commons/Collectives.jsx
+    find: "    transcripts: collective.transcripts ?? [],\n"
+    replace: "    transcripts: collective.transcripts,\n"
+    expectedDiagnostic: "a collective in the earlier shape: the view must render"
+  - name: demo links return
+    file: src/ui/commons/Collectives.jsx
+    find: "href={hrefFor?.('transcript', row.id)}"
+    replace: "href={hrefFor?.('transcript', row.id) ?? '?app=commons&commons=transcript-detail#inuse'}"
+    expectedDiagnostic: "a collective without destinations: links expected"
+  - name: public returns to the read choices
+    file: src/ui/commons/Collectives.jsx
+    find: "  { value: 'contributors', label: 'members and contributors' },\n"
+    replace: "  { value: 'contributors', label: 'members and contributors' },\n  { value: 'public', label: 'public' },\n"
+    expectedDiagnostic: "who can read values expected"
+  - name: the default join help names a demo org
+    file: src/ui/commons/Collectives.jsx
+    find: "'only members of the linked github org can join and publish.'"
+    replace: "'only members of the acme github org can join and publish.'"
+    expectedDiagnostic: "settings show the collective's own policy: the view must not show \"acme\""

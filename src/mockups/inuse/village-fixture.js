@@ -36,6 +36,9 @@ export const COLLECTIVE = Object.freeze({
   whoCanRead: 'members of Acme Platform can read every transcript published here.',
   whoCanPublish: 'anyone can join and publish. transcripts are approved automatically.',
   yourRole: 'owner: you manage settings and members.',
+  mode: 'open',
+  access: 'members_only',
+  memberLeaves: 'they-choose',
   stats: [
     { value: 248, label: 'transcripts' },
     { value: 12, label: 'members' },

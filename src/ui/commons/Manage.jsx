@@ -384,10 +384,10 @@ export {
   PublishView,
   ContributeView,
 } from '../../mockups/inuse/CommonsManage.jsx'
-/* the collectives list, a collective and its settings: the simpler village pages the in-use demo
-   renders, shipped under their existing names. */
+/* the collectives list, a collective and its settings: the simpler village pages, shipped under
+   their existing names. The in-use demo renders these with its own data. */
 export {
   CollectivesView,
   CollectiveDetailView,
   CollectiveSettingsView,
-} from '../../mockups/inuse/CommonsPages.jsx'
+} from './Collectives.jsx'

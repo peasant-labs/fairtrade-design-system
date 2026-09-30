@@ -1,0 +1,119 @@
+# The shipped collectives views (src/ui/commons/Collectives.jsx) with the data a host sends.
+# scripts/collectives-views.test.mjs mounts the REAL view for each case and checks:
+#   text / absentText  text the view must (not) show; absent text is matched without case
+#   columns            the table's column headers, exactly
+#   selects            by accessible name: the option values, exactly, and the shown value
+#   links              every link's href, in order (in-page anchors left out), exactly
+#   buttons / absentButtons  controls by accessible name
+# open presses a button first; press lists controls to press and the exact callbacks each made.
+# hrefs: true gives the view an hrefFor that returns /<kind>/<id>. The names are invented.
+cases:
+  - name: list with rows a host sends
+    view: CollectivesView
+    data:
+      collectives:
+        - {id: g1, name: Team Alpha, desc: Sharing transcripts about agents, role: owner · contributed, since: member for 5mo, mode: open, members: 12, transcripts: 248}
+        - {id: g2, name: Curated Showcase, desc: Owner-approved transcripts only, role: '', since: null, mode: curated, members: 21, transcripts: 54}
+      linkedOrgs: [acme-labs]
+      title: collectives
+      deck: groups that govern shared data together.
+      crumb: village
+      createLabel: new collective
+      createBusy: false
+    open: new collective
+    expect:
+      text: [village, Team Alpha, Sharing transcripts about agents, member for 5mo, collectives 2, groups that govern shared data together., in a curated collective]
+      absentText: [nothing linked, acme github org, your collectives, find a collective]
+      columns: [name, your role, members, transcripts, joining]
+      selects:
+        who can publish: {values: [open, verified_only, curated]}
+        who can read: {values: [members_only, contributors]}
+        github org (optional): {values: ['', acme-labs]}
+      links: []
+    press:
+      - {name: Team Alpha, calls: [[onOpenCollective, g1]]}
+  - name: list rows that name their github org
+    view: CollectivesView
+    data:
+      collectives:
+        - {id: g1, name: Team Alpha, role: owner, mode: open, members: 12, transcripts: 248, org: acme-labs, repos: 2 of 14 repos}
+        - {id: g3, name: Reading Group, role: member, mode: verified_only, members: 7, transcripts: 96, org: null}
+    expect:
+      text: [acme-labs · 2 of 14 repos open, nothing linked, verified only]
+      absentText: [in a curated collective]
+      columns: [name, your role, members, transcripts, github org, joining]
+  - name: a collective in the earlier shape
+    view: CollectiveDetailView
+    data:
+      collective: {name: AI Research Team, description: Sharing transcripts related to AI research, linkedGithubOrg: '@anthropic-labs'}
+    expect:
+      text: [AI Research Team, Sharing transcripts related to AI research, transcripts 0, nothing linked]
+      absentText: [showing]
+      links: []
+      absentButtons: [show more, settings, manage]
+  - name: a collective with its destinations
+    view: CollectiveDetailView
+    hrefs: true
+    data:
+      collective:
+        id: c1
+        name: Team Alpha
+        purpose: Transcripts behind the ingest service.
+        role: owner
+        whoCanRead: members of Team Alpha can read every transcript published here.
+        whoCanPublish: anyone can join and publish.
+        yourRole: 'owner: you manage settings and members.'
+        transcriptCount: 40
+        org: {login: acme-labs, linked: 2, total: 14}
+        transcripts:
+          - {id: t1, title: Fix flaky ingest test, harness: claude-code, turns: 37, author: '@alice-dev', pullRequests: ['#42'], repo: acme/ingest-api, when: 12m ago}
+          - {id: t2, title: Paginate the list, harness: codex, turns: 51, author: '@bob-ai', pullRequests: [], repo: null, when: yesterday}
+        members: [{handle: '@alice-dev', role: owner}]
+        memberCount: 1
+    expect:
+      text: [Team Alpha, who can read, transcripts 40, showing 2 of 40, acme-labs · 2 of 14 repos linked]
+      links: [/collectives, /transcript/t1, '/pull-request/#42', /transcript/t2]
+      buttons: [settings, more]
+      absentButtons: [show more, manage]
+    press:
+      - {name: Fix flaky ingest test, calls: [[onOpenTranscript, t1]]}
+      - {name: settings, calls: [[onSettings]]}
+  - name: a collective without destinations
+    view: CollectiveDetailView
+    data:
+      collective:
+        id: c1
+        name: Team Alpha
+        role: member
+        transcripts:
+          - {id: t1, title: Fix flaky ingest test, harness: claude-code, turns: 37, author: '@alice-dev', pullRequests: ['#42'], repo: acme/ingest-api, when: 12m ago}
+    expect:
+      text: [transcripts 1]
+      absentText: [who can read, showing]
+      links: []
+      buttons: [Fix flaky ingest test, '#42', more]
+      absentButtons: [settings]
+    press:
+      - {name: Fix flaky ingest test, calls: [[onOpenTranscript, t1]]}
+      - {name: '#42', calls: [[onOpenPullRequest, '#42']]}
+  - name: settings show the collective's own policy
+    view: CollectiveSettingsView
+    data:
+      collective:
+        id: c3
+        name: Curated Showcase
+        purpose: Owner-approved transcripts only.
+        mode: curated
+        access: contributors
+        memberLeaves: keep
+        members: [{handle: '@alice-dev', name: Alice Developer, role: owner}, {handle: '@bob-ai', role: member}]
+        memberCount: 2
+    expect:
+      text: [Curated Showcase · settings, changes save right away., no org linked, a collective links one github org today., your settings]
+      absentText: [acme]
+      selects:
+        who can publish: {values: [open, verified_only, curated], selected: curated}
+        who can read: {values: [members_only, contributors], selected: contributors}
+        when a member leaves: {selected: keep}
+      links: []
+      absentButtons: [delete collective, transfer ownership, invite, manage, 'remove @bob-ai']
