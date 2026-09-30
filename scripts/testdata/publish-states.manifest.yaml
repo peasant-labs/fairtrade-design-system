@@ -63,7 +63,7 @@ mutations:
     expectedDiagnostic: "ready with a match kept un-redacted: the popup must read"
   - name: a missing scan leaves publish on
     file: src/ui/Publish.jsx
-    find: "|| readers.length === 0 || !scan"
+    find: "|| readers.length === 0 || !Array.isArray(scan?.matches)"
     replace: "|| readers.length === 0"
     expectedDiagnostic: "ready before any scan: the primary button must be disabled"
   - name: remove stays offered while publishing
@@ -73,8 +73,8 @@ mutations:
     expectedDiagnostic: "publishing: every access row's remove button is named remove <collective>"
   - name: publishing lets the popup close
     file: src/ui/Publish.jsx
-    find: "const close = state === 'publishing' ? () => {} : onClose"
-    replace: "const close = onClose"
+    find: "const dismissible = state !== 'publishing'"
+    replace: "const dismissible = true"
     expectedDiagnostic: "publishing: close dialog must call []"
   - name: re-scan calls nothing
     file: src/ui/Publish.jsx

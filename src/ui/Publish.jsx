@@ -42,9 +42,8 @@ import './Publish.css'
    Copy is lowercase chrome; collective names, session titles, urls and commands keep their case.
    No state rides on colour alone: every state pairs an icon with words. */
 
-/* the publish state vocabulary. `auto-publish` states the rule for the project, not how this
-   transcript was published. */
-export const PUBLISH_STATES = Object.freeze(['not-published', 'publishing', 'published', 'new-turns', 'auto-publish', 'outside-lists'])
+/* the publish state vocabulary (PUBLISH_STATES and its PublishState typedef) is declared after
+   PublishBar, so this file's first doc block stays the label's. */
 
 const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`
 /* a count the host did not give is left out rather than stated as zero */
@@ -70,7 +69,7 @@ function stateMeta(state) {
  * PublishStateLabel — the transcript's publish state: an icon and its words.
  *
  * @param {object} props
- * @param {'not-published'|'publishing'|'published'|'new-turns'|'auto-publish'|'outside-lists'} props.state
+ * @param {PublishState} props.state
  * @param {number} [props.collectives] - how many collectives can read it (published, new-turns, publishing); left out of the words when omitted.
  * @param {number} [props.newTurns] - turns recorded since the last publish (new-turns).
  * @param {string} [props.collective] - the collective(s) the project's auto-publish rule targets (auto-publish).
@@ -94,7 +93,7 @@ export function PublishStateLabel({ state, collectives, newTurns, collective, cl
  * auto-publish on); while publishing it stays visible and busy.
  *
  * @param {object} props
- * @param {'not-published'|'publishing'|'published'|'new-turns'|'auto-publish'|'outside-lists'} props.state - a PublishStateLabel state.
+ * @param {PublishState} props.state - a PublishStateLabel state.
  * @param {number} [props.collectives]
  * @param {number} [props.newTurns]
  * @param {string} [props.collective]
@@ -129,6 +128,14 @@ export function PublishBar({ state, collectives, newTurns, collective, onAction,
     </div>
   )
 }
+
+/**
+ * A transcript's publish state. `auto-publish` states the rule for the project, not how this
+ * transcript was published.
+ * @typedef {'not-published'|'publishing'|'published'|'new-turns'|'auto-publish'|'outside-lists'} PublishState
+ */
+/** Every PublishState, in order. @type {ReadonlyArray<PublishState>} */
+export const PUBLISH_STATES = Object.freeze(['not-published', 'publishing', 'published', 'new-turns', 'auto-publish', 'outside-lists'])
 
 /**
  * @typedef {object} AccessItem
@@ -257,7 +264,11 @@ export function CollectivePicker({ suggestions, onAdd, query: queryProp, onQuery
 
 /* ── the popup ─────────────────────────────────────────────────────────────── */
 
-/* every state the popup reaches, in the order a first publish meets them. */
+/**
+ * A state of the publish popup.
+ * @typedef {'connect'|'waiting-github'|'checking'|'scan-failed'|'no-collective'|'ready'|'publishing'|'stopped'|'done'|'waits-approval'} PublishDialogState
+ */
+/** Every state the popup reaches, in the order a first publish meets them. @type {ReadonlyArray<PublishDialogState>} */
 export const PUBLISH_DIALOG_STATES = Object.freeze(['connect', 'waiting-github', 'checking', 'scan-failed', 'no-collective', 'ready', 'publishing', 'stopped', 'done', 'waits-approval'])
 
 function joinNames(names) {
@@ -274,7 +285,7 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
   const open = openChoice ?? kept > 0
   const checking = state === 'checking'
   const failed = state === 'scan-failed'
-  const unscanned = !scan && !checking && !failed
+  const unscanned = !Array.isArray(scan?.matches) && !checking && !failed
   return (
     <section className="pub-section" aria-labelledby={titleId}>
       <div className="pub-section-head">
@@ -335,9 +346,9 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
  * @param {() => void} props.onClose - cancel, the close button, Escape and the scrim.
  * @param {string} props.title - the session title, kept in its case.
  * @param {'publish'|'update'} [props.mode='publish']
- * @param {'connect'|'waiting-github'|'checking'|'scan-failed'|'no-collective'|'ready'|'publishing'|'stopped'|'done'|'waits-approval'} props.state - one of PUBLISH_DIALOG_STATES.
- * @param {{ matches?: object[], total?: number, failure?: string }} [props.scan] - the host's scan result. Until it is given, the
- *        popup says the transcript is not scanned and keeps publish off. A match with `kept: true` leaves un-redacted, and the
+ * @param {PublishDialogState} props.state - one of PUBLISH_DIALOG_STATES.
+ * @param {{ matches?: object[], total?: number, failure?: string }} [props.scan] - the host's scan result. Until it carries a
+ *        `matches` list, the popup says the transcript is not scanned and keeps publish off. A match with `kept: true` leaves un-redacted, and the
  *        popup says so and opens the matches.
  * @param {() => void} [props.onRescan]
  * @param {{ summary: string }} [props.changes] - update mode: what changed since the last publish.
@@ -392,9 +403,9 @@ export function PublishDialog({
   const derived = mode === 'update'
     ? ['update', adds ? `add ${plural(adds, 'collective', 'collectives')}` : null, removes ? `remove ${plural(removes, 'collective', 'collectives')}` : null].filter(Boolean).join(' and ')
     : readers.length ? `publish to ${plural(readers.length, 'collective', 'collectives')}` : 'publish'
-  const blocked = state === 'checking' || state === 'scan-failed' || state === 'no-collective' || state === 'publishing' || readers.length === 0 || !scan
+  const blocked = state === 'checking' || state === 'scan-failed' || state === 'no-collective' || state === 'publishing' || readers.length === 0 || !Array.isArray(scan?.matches)
   // while publishing, cancel, the close button, Escape and the scrim all wait for the result
-  const close = state === 'publishing' ? () => {} : onClose
+  const dismissible = state !== 'publishing'
 
   const heading = finished
     ? <>published to <span className="pub-title-content">{joinNames(done?.collectives ?? readers.map((item) => item.name))}</span></>
@@ -434,7 +445,7 @@ export function PublishDialog({
   }
 
   return (
-    <Dialog open={open} onClose={close} title={heading} labelId={labelId} size="wide" className="pub-dialog" footer={<div className="pub-foot">{footer}</div>}>
+    <Dialog open={open} onClose={onClose} dismissible={dismissible} title={heading} labelId={labelId} size="wide" className="pub-dialog" footer={<div className="pub-foot">{footer}</div>}>
       {state === 'connect' && (
         <div className="pub-gate">
           <p className="pub-line">connect this computer to village once to publish.</p>

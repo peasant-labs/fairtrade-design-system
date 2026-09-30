@@ -59,8 +59,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
 
   for (const row of fixture.popup) {
     const calls = []
-    // a callback records its name and its plain arguments (an id); a click event is left out
-    const record = (name) => (...args) => { calls.push([name, ...args.filter((arg) => arg === null || typeof arg !== 'object')]) }
+    // a callback records its name and its arguments; a DOM or React event is left out, a payload kept
+    const isEvent = (arg) => !!arg && typeof arg === 'object' && (arg instanceof window.Event || 'nativeEvent' in arg)
+    const record = (name) => (...args) => { calls.push([name, ...args.filter((arg) => !isEvent(arg))]) }
     const scan = row.unscanned ? undefined : { ...fixture.scan, matches: fixture.scan.matches.map((match) => ({ ...match, kept: (row.kept ?? []).includes(match.id) })) }
     const props = base({
       state: row.state,
