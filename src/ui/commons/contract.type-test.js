@@ -26,7 +26,10 @@ import {
   DATA_ACCESS_POLICIES,
   TRANSCRIPT_DELETION_POLICIES,
   COLLECTIVE_ROLES,
+  CollectivesView,
+  CollectiveDetailView,
 } from './index.js'
+import { SignInProviders } from '../SignIn.jsx'
 
 /* ── (1) enum-value arrays are genuine runtime exports, typed by the union ────── */
 
@@ -158,3 +161,29 @@ _takesRole('')
 function _takesMode(_m) {}
 // @ts-expect-error — "invite_only" is not an AcceptanceMode
 _takesMode('invite_only')
+
+/* ── (10) POSITIVE: the shipped collectives views take the data a host sends ──────
+   Village maps its groups to rows whose description and join date can be null, and passes the
+   create callback a destructuring handler. The earlier `{ name, description, linkedGithubOrg }`
+   collective still type-checks. The calls sit in a function that never runs. */
+/**
+ * @param {{ id: string, name: string, desc: string | null, role: string, since: string | null, mode: string, members: number, transcripts: number }[]} rows
+ * @param {string | null} description
+ */
+function collectivesViewsTakeHostData(rows, description) {
+  CollectivesView({
+    data: { collectives: rows, linkedOrgs: ['acme-labs'], title: 'collectives', deck: 'groups', crumb: 'collectives', createLabel: 'new collective', createBusy: false },
+    actions: {
+      onCreateCollective: ({ name, purpose, mode, access, org }) => { void name, purpose, mode, access, org },
+      onOpenCollective: (id) => { void id },
+    },
+  })
+  CollectiveDetailView({ data: { collective: { name: 'AI Research Team', description, linkedGithubOrg: '@anthropic-labs' } } })
+}
+void collectivesViewsTakeHostData
+
+/* ── (11) POSITIVE: sign-in renders with no props (it offers GitHub alone) ─────────── */
+function signInTakesNoProps() {
+  SignInProviders({})
+}
+void signInTakesNoProps

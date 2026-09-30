@@ -38,7 +38,7 @@ export const COLLECTIVE = Object.freeze({
   yourRole: 'owner: you manage settings and members.',
   mode: 'open',
   access: 'members_only',
-  memberLeaves: 'they-choose',
+  memberLeaves: 'user_choice',
   stats: [
     { value: 248, label: 'transcripts' },
     { value: 12, label: 'members' },

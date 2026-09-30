@@ -1,11 +1,13 @@
 # Required-NAME manifest for collectives-views.yaml: deletion protection.
 requiredCaseNames:
   - list with rows a host sends
+  - list while a collective is being created
   - list rows that name their github org
   - a collective in the earlier shape
   - a collective with its destinations
   - a collective without destinations
   - settings show the collective's own policy
+  - settings leave out what the host does not give
 
 requiredMutationNames:
   - the org column shows for rows without an org
@@ -15,10 +17,16 @@ requiredMutationNames:
   - demo links return
   - public returns to the read choices
   - the default join help names a demo org
+  - create drops the org
+  - a busy create still creates
+  - an absent policy shows the first choice
+  - the earlier org is dropped
+  - settings write the choice list's name
+  - the danger zone link stays without its group
 mutations:
   - name: the org column shows for rows without an org
     file: src/ui/commons/Collectives.jsx
-    find: "const showOrg = collectives.some((row) => Object.hasOwn(row, 'org'))"
+    find: "const showOrg = collectives.some((row) => row.org !== undefined)"
     replace: "const showOrg = true"
     expectedDiagnostic: "list with rows a host sends: columns expected"
   - name: the crumb is dropped
@@ -28,8 +36,8 @@ mutations:
     expectedDiagnostic: "list with rows a host sends: the view must show \"village\""
   - name: settings show a fixed join policy
     file: src/ui/commons/Collectives.jsx
-    find: "value={collective.mode} options={whoCanPublish}"
-    replace: "value=\"open\" options={whoCanPublish}"
+    find: "value={shownValue(collective.mode, whoCanPublish)}"
+    replace: "value=\"open\""
     expectedDiagnostic: "who can publish must show \"curated\""
   - name: the earlier shape throws
     file: src/ui/commons/Collectives.jsx
@@ -51,3 +59,33 @@ mutations:
     find: "'only members of the linked github org can join and publish.'"
     replace: "'only members of the acme github org can join and publish.'"
     expectedDiagnostic: "settings show the collective's own policy: the view must not show \"acme\""
+  - name: create drops the org
+    file: src/ui/commons/Collectives.jsx
+    find: "onCreateCollective?.({ name, purpose, mode, access, org })"
+    replace: "onCreateCollective?.({ name, purpose, mode, access })"
+    expectedDiagnostic: "list with rows a host sends: create collective must call"
+  - name: a busy create still creates
+    file: src/ui/commons/Collectives.jsx
+    find: "disabled={!name.trim() || createBusy}"
+    replace: "disabled={!name.trim()}"
+    expectedDiagnostic: "list while a collective is being created: creating must call []"
+  - name: an absent policy shows the first choice
+    file: src/ui/commons/Collectives.jsx
+    find: "options={choicesFor(collective.mode, whoCanPublish)}"
+    replace: "options={whoCanPublish}"
+    expectedDiagnostic: "settings leave out what the host does not give: who can publish values expected"
+  - name: the earlier org is dropped
+    file: src/ui/commons/Collectives.jsx
+    find: "org: collective.org !== undefined ? collective.org : earlierOrg,"
+    replace: "org: collective.org ?? null,"
+    expectedDiagnostic: "a collective in the earlier shape: the view must show \"anthropic-labs\""
+  - name: settings write the choice list's name
+    file: src/ui/commons/Collectives.jsx
+    find: "onCommit={write('mode')}"
+    replace: "onCommit={write('whoCanPublish')}"
+    expectedDiagnostic: "settings show the collective's own policy: who can publish must call"
+  - name: the danger zone link stays without its group
+    file: src/ui/commons/Collectives.jsx
+    find: "...(danger ? ['danger zone'] : [])"
+    replace: "'danger zone'"
+    expectedDiagnostic: "the in-page link \"danger zone\" must have a target"

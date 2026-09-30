@@ -137,7 +137,7 @@ function TextControl({ id, label, shown, status, commit, disabled }) {
  * @param {import('react').ReactNode} [props.help] - one line of help under the label.
  * @param {'switch'|'select'|'checkbox'|'text'} props.control
  * @param {boolean|string} props.value - the saved value.
- * @param {{ value: string, label: string }[]} [props.options] - select only.
+ * @param {{ value: string, label: string, disabled?: boolean }[]} [props.options] - select only; a disabled option shows a value that cannot be picked ("not set").
  * @param {(next: boolean|string) => Promise<void>|void} props.onCommit - the one write; reject to fail.
  * @param {string} [props.tag] - a note on the row, shown on a Chip ("not in peasant config").
  * @param {boolean} [props.disabled]
@@ -163,7 +163,7 @@ export function SettingRow({ label, help, control, value, options = [], onCommit
     controlNode = (
       <span className="select-wrap srow-select">
         <select className="select" id={id} value={String(shown)} disabled={disabled || busy} aria-labelledby={labelId} aria-describedby={helpId} onChange={(event) => commit(event.target.value)}>
-          {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          {options.map((option) => <option key={option.value} value={option.value} disabled={option.disabled}>{option.label}</option>)}
         </select>
       </span>
     )

@@ -5,7 +5,10 @@
 #   selects            by accessible name: the option values, exactly, and the shown value
 #   links              every link's href, in order (in-page anchors left out), exactly
 #   buttons / absentButtons  controls by accessible name
-# open presses a button first; press lists controls to press and the exact callbacks each made.
+# Every in-page link must land on an element in the view.
+# open presses a button first. press lists steps, each followed by the exact callbacks it made
+# (payload objects included, events left out): {name} presses a control by accessible name,
+# {type, value} types into a field by its label, {select, value} picks a select's value.
 # hrefs: true gives the view an hrefFor that returns /<kind>/<id>. The names are invented.
 cases:
   - name: list with rows a host sends
@@ -13,16 +16,16 @@ cases:
     data:
       collectives:
         - {id: g1, name: Team Alpha, desc: Sharing transcripts about agents, role: owner · contributed, since: member for 5mo, mode: open, members: 12, transcripts: 248}
-        - {id: g2, name: Curated Showcase, desc: Owner-approved transcripts only, role: '', since: null, mode: curated, members: 21, transcripts: 54}
+        - {id: g2, name: Curated Showcase, desc: null, role: '', since: null, mode: curated, members: 21, transcripts: 54}
       linkedOrgs: [acme-labs]
-      title: collectives
+      title: groups
       deck: groups that govern shared data together.
       crumb: village
-      createLabel: new collective
+      createLabel: start a group
       createBusy: false
-    open: new collective
+    open: start a group
     expect:
-      text: [village, Team Alpha, Sharing transcripts about agents, member for 5mo, collectives 2, groups that govern shared data together., in a curated collective]
+      text: [village, groups, Team Alpha, Sharing transcripts about agents, member for 5mo, collectives 2, groups that govern shared data together., in a curated collective, create collective]
       absentText: [nothing linked, acme github org, your collectives, find a collective]
       columns: [name, your role, members, transcripts, joining]
       selects:
@@ -32,6 +35,20 @@ cases:
       links: []
     press:
       - {name: Team Alpha, calls: [[onOpenCollective, g1]]}
+      - {type: name, value: Team Beta, calls: []}
+      - {select: github org (optional), value: acme-labs, calls: []}
+      - {name: create collective, calls: [[onCreateCollective, {name: Team Beta, purpose: '', mode: open, access: members_only, org: acme-labs}]]}
+  - name: list while a collective is being created
+    view: CollectivesView
+    data:
+      collectives: []
+      createBusy: true
+    open: new collective
+    expect:
+      text: [creating, collectives 0]
+    press:
+      - {type: name, value: Team Beta, calls: []}
+      - {name: creating, calls: []}
   - name: list rows that name their github org
     view: CollectivesView
     data:
@@ -47,8 +64,8 @@ cases:
     data:
       collective: {name: AI Research Team, description: Sharing transcripts related to AI research, linkedGithubOrg: '@anthropic-labs'}
     expect:
-      text: [AI Research Team, Sharing transcripts related to AI research, transcripts 0, nothing linked]
-      absentText: [showing]
+      text: [AI Research Team, Sharing transcripts related to AI research, transcripts 0, anthropic-labs]
+      absentText: [showing, nothing linked, members 0]
       links: []
       absentButtons: [show more, settings, manage]
   - name: a collective with its destinations
@@ -105,7 +122,8 @@ cases:
         purpose: Owner-approved transcripts only.
         mode: curated
         access: contributors
-        memberLeaves: keep
+        memberLeaves: mandatory
+        org: null
         members: [{handle: '@alice-dev', name: Alice Developer, role: owner}, {handle: '@bob-ai', role: member}]
         memberCount: 2
     expect:
@@ -114,6 +132,20 @@ cases:
       selects:
         who can publish: {values: [open, verified_only, curated], selected: curated}
         who can read: {values: [members_only, contributors], selected: contributors}
-        when a member leaves: {selected: keep}
+        when a member leaves: {values: [user_choice, mandatory], selected: mandatory}
       links: []
       absentButtons: [delete collective, transfer ownership, invite, manage, 'remove @bob-ai']
+    press:
+      - {select: who can publish, value: open, calls: [[onCommit, mode, open]]}
+      - {select: who can read, value: members_only, calls: [[onCommit, access, members_only]]}
+  - name: settings leave out what the host does not give
+    view: CollectiveSettingsView
+    data:
+      collective: {id: c4, name: Quiet Group, memberLeaves: keep}
+    expect:
+      text: [Quiet Group · settings, github org]
+      absentText: [no org linked, nothing linked, 0 members, danger zone]
+      selects:
+        who can publish: {values: ['', open, verified_only, curated], selected: ''}
+        who can read: {values: ['', members_only, contributors], selected: ''}
+        when a member leaves: {values: ['', user_choice, mandatory], selected: ''}

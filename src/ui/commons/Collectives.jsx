@@ -35,16 +35,21 @@ import {
  * @property {string|null} [role] - the viewer's role; empty when they only see the collective.
  * @property {number} [members]
  * @property {number|string} [transcripts]
- * @property {string|null} [org] - the linked github org; null says nothing is linked. Leave the
- *           field off every row and the github org column is left out.
+ * @property {string|null} [org] - the linked github org; null says nothing is linked. Leave it
+ *           undefined on every row and the github org column is left out.
  * @property {string|null} [repos] - beside the org ("2 of 14 repos").
  * @property {string} [mode] - how members join: `open`, `verified_only` or `curated`.
- * @property {string} [desc] - a line under the name.
+ * @property {string|null} [desc] - a line under the name.
  * @property {string|null} [since] - a line under the role ("member for 5mo").
  */
 
 /**
- * @typedef {(kind: 'collectives'|'collective'|'settings'|'transcript'|'pull-request'|'account', id?: string) => (string|undefined)} HrefFor
+ * @typedef {(kind: 'collectives'|'collective'|'transcript'|'pull-request'|'account', id?: string) => (string|undefined)} HrefFor
+ */
+
+/**
+ * The fields a settings change writes, passed to `onCommit` with the new value.
+ * @typedef {'name'|'purpose'|'mode'|'access'|'memberLeaves'|'showOnPullRequests'} CollectiveSettingKey
  */
 
 const DEFAULT_WHO_CAN_PUBLISH = Object.freeze([
@@ -63,7 +68,13 @@ const harnessName = (harness) => String(harness).replace(/-/g, ' ')
 /* a destination the host names renders as a link; a callback alone renders as a button. */
 function Target({ href, onOpen, className, children }) {
   if (href) {
-    return <a className={className} href={href} onClick={(event) => { if (onOpen) { event.preventDefault(); onOpen() } }}>{children}</a>
+    // a plain click goes through the host's callback; a modified click (a new tab) stays a link
+    const onClick = (event) => {
+      if (!onOpen || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      event.preventDefault()
+      onOpen()
+    }
+    return <a className={className} href={href} onClick={onClick}>{children}</a>
   }
   if (onOpen) return <button type="button" className={`${className} cmg-link-button`} onClick={onOpen}>{children}</button>
   return <span className={className}>{children}</span>
@@ -120,7 +131,7 @@ export function CollectivesView({ data = {}, actions = {} } = {}) {
   const [org, setOrg] = useState('')
   const [query, setQuery] = useState('')
   const hintId = useId()
-  const showOrg = collectives.some((row) => Object.hasOwn(row, 'org'))
+  const showOrg = collectives.some((row) => row.org !== undefined)
 
   const columns = [
     {
@@ -129,7 +140,7 @@ export function CollectivesView({ data = {}, actions = {} } = {}) {
       render: (_, c) => (
         <span className="cmg-cell-stack">
           <button type="button" className="cmg-table-link" onClick={() => onOpenCollective?.(c.id)}>{c.name}</button>
-          {c.desc ? <span className="cmg-cell-sub">{c.desc}</span> : null}
+          {c.desc ? <span className="cmg-cell-desc">{c.desc}</span> : null}
         </span>
       ),
     },
@@ -215,18 +226,20 @@ function MembersSummary({ members, count }) {
   return <span className="cmg-members-text">{shown.join(', ')}{others > 0 ? ` and ${others} others` : ''}</span>
 }
 
-/* a collective in the shape the views read, with every nested list defaulted; the earlier shape
-   `{ name, description }` still renders. */
+/* a collective in the shape the views read, with every nested list defaulted. The earlier shape
+   `{ name, description, linkedGithubOrg }` still renders. A count or an org the host does not give
+   stays undefined and is left out; `org: null` says nothing is linked. */
 function collectiveOf(collective = {}) {
+  const earlierOrg = typeof collective.linkedGithubOrg === 'string' && collective.linkedGithubOrg ? { login: collective.linkedGithubOrg.replace(/^@/, '') } : undefined
   return {
     ...collective,
     name: collective.name ?? '',
-    purpose: collective.purpose ?? collective.description,
+    purpose: collective.purpose ?? collective.description ?? undefined,
     stats: collective.stats ?? [],
     transcripts: collective.transcripts ?? [],
     members: collective.members ?? [],
-    memberCount: collective.memberCount ?? collective.members?.length ?? 0,
-    org: collective.org ?? null,
+    memberCount: collective.memberCount ?? collective.members?.length,
+    org: collective.org !== undefined ? collective.org : earlierOrg,
   }
 }
 
@@ -234,7 +247,9 @@ function collectiveOf(collective = {}) {
  * @typedef {object} CollectiveData
  * @property {string} [id]
  * @property {string} name - kept in its case.
- * @property {string} [purpose]
+ * @property {string|null} [purpose]
+ * @property {string|null} [description] - the earlier name for `purpose`.
+ * @property {string|null} [linkedGithubOrg] - the earlier name for `org.login`.
  * @property {string} [role] - the viewer's role; `owner` shows the settings button.
  * @property {string} [whoCanRead] - the policy in words, for the collective page.
  * @property {string} [whoCanPublish] - the policy in words, for the collective page.
@@ -244,7 +259,7 @@ function collectiveOf(collective = {}) {
  * @property {string} [memberLeaves] - what happens to a leaving member's transcripts, for settings.
  * @property {{ value: number|string, label: string }[]} [stats]
  * @property {number} [transcriptCount] - every transcript, when `transcripts` holds one page of them.
- * @property {{ login: string, linked?: number, total?: number } | null} [org]
+ * @property {{ login: string, linked?: number, total?: number } | null} [org] - null says nothing is linked; left out, the line is left out.
  * @property {string} [memberBreakdown]
  * @property {{ id: string, title: string, harness: string, turns?: number, author?: string, pullRequests?: string[], repo?: string|null, when?: string }[]} [transcripts]
  * @property {{ handle: string, name?: string, role: string }[]} [members]
@@ -276,7 +291,6 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
   const collective = collectiveOf(data.collective)
   const { onSettings, onContribute, onReview, onOpenTranscript, onOpenPullRequest, onLinkRepos, onShowMore } = actions
   const [picking, setPicking] = useState(false)
-  const [linked, setLinked] = useState(collective.org?.linked ?? 0)
   const titleId = useId()
   const total = collective.transcriptCount ?? collective.transcripts.length
   const columns = [
@@ -357,16 +371,16 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
               {collective.org ? (
                 <p className="cmg-rail-line">
                   <FolderGit2 aria-hidden="true" /> <span className="mono">{collective.org.login}</span>
-                  {typeof collective.org.total === 'number' ? <> · <span className="tnum">{linked}</span> of <span className="tnum">{collective.org.total}</span> repos linked</> : null}
+                  {typeof collective.org.total === 'number' ? <> · <span className="tnum">{collective.org.linked ?? 0}</span> of <span className="tnum">{collective.org.total}</span> repos linked</> : null}
                   {collective.role === 'owner' && onLinkRepos && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPicking(true)}>manage</button>}
                 </p>
-              ) : <p className="cmg-rail-line cmg-none">nothing linked</p>}
+              ) : collective.org === null ? <p className="cmg-rail-line cmg-none">nothing linked</p> : null}
               <p className="cmg-note">a collective links one github org today.</p>
             </section>
             <section className="cmg-rail-box">
-              <h3 className="cmg-rail-title">members <span className="tnum cmg-count">{collective.memberCount}</span></h3>
+              <h3 className="cmg-rail-title">members{typeof collective.memberCount === 'number' ? <> <span className="tnum cmg-count">{collective.memberCount}</span></> : null}</h3>
               {collective.memberBreakdown ? <p className="cmg-note">{collective.memberBreakdown}</p> : null}
-              <MembersSummary members={collective.members} count={collective.memberCount} />
+              <MembersSummary members={collective.members} count={collective.memberCount ?? collective.members.length} />
             </section>
           </aside>
         </div>
@@ -380,8 +394,8 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
           title={`link repositories from ${collective.org?.login ?? 'github'}`}
           description={`pull requests in linked repos show the transcripts published to ${collective.name}.`}
           onSave={(diff) => {
+            // the host owns the linked count; it arrives back through data.collective.org
             onLinkRepos(diff)
-            setLinked((n) => n + diff.add.length - diff.remove.length)
             setPicking(false)
           }}
         />
@@ -392,15 +406,23 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
 
 /* ── a collective's settings ──────────────────────────────────────────────── */
 
-const MEMBER_LEAVES = Object.freeze([
-  { value: 'they-choose', label: 'they choose' },
-  { value: 'keep', label: 'keep them here' },
-  { value: 'remove', label: 'take them out' },
+/* what happens to a leaving member's transcripts, on the wire's TranscriptDeletionPolicy values */
+const DEFAULT_MEMBER_LEAVES = Object.freeze([
+  { value: 'user_choice', label: 'they choose' },
+  { value: 'mandatory', label: 'take them out' },
 ])
+
+/* a select shows the host's value; a value it does not give (or one outside the choices) shows as
+   not set, never as the first choice */
+function choicesFor(value, choices) {
+  return choices.some((choice) => choice.value === value) ? choices : [{ value: '', label: 'not set', disabled: true }, ...choices]
+}
+const shownValue = (value, choices) => (choices.some((choice) => choice.value === value) ? value : '')
 
 /**
  * A collective's settings, saved per field. The selects show the collective's own `mode`,
- * `access` and `memberLeaves` values.
+ * `access` and `memberLeaves` values, or `not set` when the host does not give one. Each change
+ * calls `onCommit` with the field it writes (`mode`, `access`, `memberLeaves`, ...) and the value.
  *
  * @param {object} [props]
  * @param {object} [props.data]
@@ -410,9 +432,10 @@ const MEMBER_LEAVES = Object.freeze([
  * @param {boolean} [props.data.showOnPullRequests]
  * @param {PolicyChoice[]} [props.data.whoCanPublish]
  * @param {PolicyChoice[]} [props.data.whoCanRead]
+ * @param {PolicyChoice[]} [props.data.memberLeavesChoices] - defaults to the wire's `user_choice` and `mandatory`.
  * @param {HrefFor} [props.data.hrefFor]
  * @param {object} [props.actions]
- * @param {(key: string, value: unknown) => Promise<unknown>} [props.actions.onCommit] - the one write per change; reject to fail.
+ * @param {(key: CollectiveSettingKey, value: unknown) => Promise<unknown>} [props.actions.onCommit] - the one write per change; reject to fail.
  * @param {(handle: string) => void} [props.actions.onInvite]
  * @param {(handle: string) => void} [props.actions.onRemoveMember]
  * @param {(handle: string, role: string) => void} [props.actions.onRoleChange]
@@ -421,12 +444,13 @@ const MEMBER_LEAVES = Object.freeze([
  * @param {() => void} [props.actions.onDelete]
  */
 export function CollectiveSettingsView({ data = {}, actions = {} } = {}) {
-  const { owners = [], linkedRepos = [], showOnPullRequests = false, whoCanPublish = DEFAULT_WHO_CAN_PUBLISH, whoCanRead = DEFAULT_WHO_CAN_READ, hrefFor } = data
+  const { owners = [], linkedRepos = [], showOnPullRequests = false, whoCanPublish = DEFAULT_WHO_CAN_PUBLISH, whoCanRead = DEFAULT_WHO_CAN_READ, memberLeavesChoices = DEFAULT_MEMBER_LEAVES, hrefFor } = data
   const collective = collectiveOf(data.collective)
   const write = (key) => (value) => (actions.onCommit ? actions.onCommit(key, value) : Promise.resolve())
   const [picking, setPicking] = useState(false)
   const [invite, setInvite] = useState('')
-  const sections = ['general', 'access', 'members', 'github orgs', 'pull requests', 'danger zone']
+  const danger = Boolean(actions.onTransferOwnership || actions.onDelete)
+  const sections = ['general', 'access', 'members', 'github orgs', 'pull requests', ...(danger ? ['danger zone'] : [])]
   const anchor = (name) => `cmg-settings-${name.replace(/ /g, '-')}`
   const helpOf = (choices) => choices.filter((choice) => choice.help).map((choice) => `${choice.label}: ${choice.help}`).join(' ')
   const accountHref = hrefFor?.('account')
@@ -448,11 +472,11 @@ export function CollectiveSettingsView({ data = {}, actions = {} } = {}) {
         </SettingGroup>
 
         <SettingGroup label="access" defaultOpen id={anchor('access')}>
-          <SettingRow label="who can publish" help={helpOf(whoCanPublish)} control="select" value={collective.mode} options={whoCanPublish} onCommit={write('whoCanPublish')} />
-          <SettingRow label="who can read" help="members read and publish. contributors publish, and read only if who can read allows it." control="select" value={collective.access} options={whoCanRead} onCommit={write('whoCanRead')} />
+          <SettingRow label="who can publish" help={helpOf(whoCanPublish)} control="select" value={shownValue(collective.mode, whoCanPublish)} options={choicesFor(collective.mode, whoCanPublish)} onCommit={write('mode')} />
+          <SettingRow label="who can read" help="members read and publish. contributors publish, and read only if who can read allows it." control="select" value={shownValue(collective.access, whoCanRead)} options={choicesFor(collective.access, whoCanRead)} onCommit={write('access')} />
         </SettingGroup>
 
-        <SettingGroup label="members" defaultOpen count={collective.memberCount} noun={['member', 'members']} id={anchor('members')}>
+        <SettingGroup label="members" defaultOpen count={collective.memberCount ?? null} noun={['member', 'members']} id={anchor('members')}>
           {actions.onInvite && (
             <form className="srow cmg-invite" onSubmit={(event) => { event.preventDefault(); actions.onInvite(invite); setInvite('') }}>
               <Input label="invite by github username" value={invite} onChange={(event) => setInvite(event.target.value)} placeholder="github username" />
@@ -478,13 +502,13 @@ export function CollectiveSettingsView({ data = {}, actions = {} } = {}) {
               </li>
             ))}
           </ul>
-          <SettingRow label="when a member leaves" help="what happens to the transcripts they published here." control="select" value={collective.memberLeaves} options={MEMBER_LEAVES} onCommit={write('memberLeaves')} />
+          <SettingRow label="when a member leaves" help="what happens to the transcripts they published here." control="select" value={shownValue(collective.memberLeaves, memberLeavesChoices)} options={choicesFor(collective.memberLeaves, memberLeavesChoices)} onCommit={write('memberLeaves')} />
         </SettingGroup>
 
-        <SettingGroup label="github orgs" defaultOpen count={collective.org ? 1 : 0} noun={['org', 'orgs']} id={anchor('github orgs')}>
+        <SettingGroup label="github orgs" defaultOpen count={collective.org === undefined ? null : collective.org ? 1 : 0} noun={['org', 'orgs']} id={anchor('github orgs')}>
           <div className="srow">
             <span className="srow-text-col">
-              <span className="srow-label">{collective.org?.login ?? 'no org linked'}</span>
+              <span className="srow-label">{collective.org ? collective.org.login : collective.org === null ? 'no org linked' : 'github org'}</span>
               <span className="srow-help">
                 {typeof collective.org?.total === 'number' ? <><span className="tnum">{collective.org.linked ?? 0}</span> of <span className="tnum">{collective.org.total}</span> repos linked. </> : null}
                 a collective links one github org today.
@@ -505,7 +529,7 @@ export function CollectiveSettingsView({ data = {}, actions = {} } = {}) {
           <p className="srow-note">automatic linking is now a personal setting, in {accountHref ? <a className="link" href={accountHref}>your settings</a> : 'your settings'}.</p>
         </SettingGroup>
 
-        {(actions.onTransferOwnership || actions.onDelete) && (
+        {danger && (
           <SettingGroup label="danger zone" defaultOpen count={null} id={anchor('danger zone')}>
             {actions.onTransferOwnership && (
               <div className="srow">
@@ -515,7 +539,7 @@ export function CollectiveSettingsView({ data = {}, actions = {} } = {}) {
             )}
             {actions.onDelete && (
               <div className="srow">
-                <span className="srow-help">delete {collective.name} for all {collective.memberCount} members. this cannot be undone.</span>
+                <span className="srow-help">delete {collective.name} for {typeof collective.memberCount === 'number' ? <>all <span className="tnum">{collective.memberCount}</span> members</> : 'all its members'}. this cannot be undone.</span>
                 <button type="button" className="btn btn-danger btn-sm" onClick={() => actions.onDelete()}>delete collective</button>
               </div>
             )}

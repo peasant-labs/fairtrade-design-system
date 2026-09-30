@@ -4410,6 +4410,8 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .cmg-link-button { appearance: none; margin: 0; padding: 0; border: 0; background: transparent; font: inherit; text-align: start; cursor: pointer; }
   .cmg-cell-stack { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
   .cmg-cell-sub { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
+  /* a row's description is user prose, so it keeps the body floor */
+  .cmg-cell-desc { font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-3); }
   .cmg-rail-name { font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); }
   .cmg-rail-meta, .cmg-none, .cmg-note { font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono); letter-spacing: 0; color: var(--ink-3); }
   .cmg-note { margin: 0; }

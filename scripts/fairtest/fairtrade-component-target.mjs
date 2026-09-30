@@ -465,6 +465,7 @@ export const COMPONENT_STORIES = Object.freeze([
     gateTie: Object.freeze({ field: 'bothGroupsOpen', expectation: SETTING_GROUPS_BOTH_OPEN }),
     computed: Object.freeze([
       Object.freeze({ name: 'helpFontSize', selector: '.srow-help', property: 'fontSize', equals: '16px' }),
+      Object.freeze({ name: 'labelKeepsCase', selector: '.srow-label', property: 'textTransform', equals: 'none' }),
     ]),
     floors: Object.freeze({ descendants: 20, textLength: 60, ariaChars: 100, screenshotBytes: 6000 }),
   }),

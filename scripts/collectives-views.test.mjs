@@ -16,8 +16,16 @@ const text = (node) => node?.textContent.replace(/\s+/g, ' ').trim() ?? ''
 const VIEWS = ['CollectivesView', 'CollectiveDetailView', 'CollectiveSettingsView']
 for (const row of fixture.cases) {
   assertFields(row, ['name', 'view', 'data', 'expect'], `collectives views case ${row.name}`, ['open', 'press', 'hrefs'])
+  for (const step of row.press ?? []) assertFields(step, ['calls'], `collectives views case ${row.name} step`, ['name', 'type', 'select', 'value'])
   assertFields(row.expect, [], `collectives views case ${row.name} expect`, ['text', 'absentText', 'columns', 'selects', 'links', 'buttons', 'absentButtons'])
   if (!VIEWS.includes(row.view)) throw new Error(`collectives views case ${row.name}: unknown view ${row.view}`)
+}
+
+/* set a field's value the way React hears a user change it */
+function setValue(window, node, value) {
+  const proto = node.tagName === 'SELECT' ? window.HTMLSelectElement.prototype : node.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype
+  Object.getOwnPropertyDescriptor(proto, 'value').set.call(node, value)
+  node.dispatchEvent(new window.Event(node.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true }))
 }
 
 /* a select's accessible name: its aria-label, its aria-labelledby text, or its <label>. */
@@ -36,8 +44,11 @@ await withMountedSource(async ({ load, mount, window, React }) => {
 
   for (const row of fixture.cases) {
     const calls = []
-    const record = (name) => (...args) => { calls.push([name, ...args.filter((arg) => arg === null || typeof arg !== 'object')]) }
+    // a callback records its name and its arguments; a DOM or React event is left out, a payload kept
+    const isEvent = (arg) => !!arg && typeof arg === 'object' && (arg instanceof window.Event || 'nativeEvent' in arg)
+    const record = (name) => (...args) => { calls.push([name, ...args.filter((arg) => !isEvent(arg))]) }
     const actions = Object.fromEntries(['onCreateCollective', 'onOpenCollective', 'onOpenTranscript', 'onOpenPullRequest', 'onSettings', 'onContribute'].map((name) => [name, record(name)]))
+    actions.onCommit = (...args) => { record('onCommit')(...args); return Promise.resolve() }
     const data = row.hrefs ? { ...row.data, hrefFor: (kind, id) => `/${kind}${id === undefined ? '' : `/${id}`}` } : row.data
     let mounted
     try {
@@ -69,6 +80,11 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       if (want.values) report.check(JSON.stringify(values) === JSON.stringify(want.values), `${row.name}: ${name} values expected ${JSON.stringify(want.values)}, received ${JSON.stringify(values)}`)
       if (want.selected) report.check(select.value === want.selected, `${row.name}: ${name} must show ${JSON.stringify(want.selected)}, received ${JSON.stringify(select.value)}`)
     }
+    // every in-page link lands on something in the view
+    for (const anchor of root.querySelectorAll('a[href^="#"]')) {
+      const id = anchor.getAttribute('href').slice(1)
+      report.check(!!doc.getElementById(id), `${row.name}: the in-page link ${JSON.stringify(text(anchor))} must have a target`)
+    }
     if (expect.links) {
       const links = [...root.querySelectorAll('a[href]')].map((node) => node.getAttribute('href')).filter((href) => !href.startsWith('#'))
       report.check(JSON.stringify(links) === JSON.stringify(expect.links), `${row.name}: links expected ${JSON.stringify(expect.links)}, received ${JSON.stringify(links)}`)
@@ -76,12 +92,25 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const buttons = [...root.querySelectorAll('button')].map((node) => node.getAttribute('aria-label') ?? text(node))
     for (const name of expect.buttons ?? []) report.check(buttons.includes(name), `${row.name}: a button named ${JSON.stringify(name)} must exist`)
     for (const name of expect.absentButtons ?? []) report.check(!buttons.includes(name), `${row.name}: no button may be named ${JSON.stringify(name)}`)
+    // a step presses a control by name, types into a field by its label, or picks a select's value
     for (const step of row.press ?? []) {
       calls.length = 0
-      const control = [...root.querySelectorAll('button, a')].find((node) => (node.getAttribute('aria-label') ?? text(node)) === step.name)
-      report.check(!!control, `${row.name}: a control named ${JSON.stringify(step.name)} must render`)
-      if (control) await mounted.act(() => click(window, control))
-      report.check(JSON.stringify(calls) === JSON.stringify(step.calls), `${row.name}: ${step.name} must call ${JSON.stringify(step.calls)}, received ${JSON.stringify(calls)}`)
+      const label = step.name ?? step.type ?? step.select
+      if (step.type) {
+        const input = [...root.querySelectorAll('input, textarea')].find((node) => selectName(node, doc) === step.type)
+        report.check(!!input, `${row.name}: a field named ${JSON.stringify(step.type)} must render`)
+        if (input) await mounted.act(() => setValue(window, input, step.value))
+      } else if (step.select) {
+        const select = [...root.querySelectorAll('select')].find((node) => selectName(node, doc) === step.select)
+        report.check(!!select, `${row.name}: a select named ${JSON.stringify(step.select)} must render`)
+        if (select) await mounted.act(() => setValue(window, select, step.value))
+        await mounted.settle()
+      } else {
+        const control = [...root.querySelectorAll('button, a')].find((node) => (node.getAttribute('aria-label') ?? text(node)) === step.name)
+        report.check(!!control, `${row.name}: a control named ${JSON.stringify(step.name)} must render`)
+        if (control) await mounted.act(() => click(window, control))
+      }
+      report.check(JSON.stringify(calls) === JSON.stringify(step.calls), `${row.name}: ${label} must call ${JSON.stringify(step.calls)}, received ${JSON.stringify(calls)}`)
     }
     await mounted.unmount()
   }
