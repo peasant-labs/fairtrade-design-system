@@ -593,6 +593,11 @@
   .dialog { @apply relative bg-surface; width: min(var(--dialog-w), 100%); border: var(--bd-strong); }
   .dlg-head { @apply flex items-center justify-between; flex: none; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); }
   .dlg-head h3 { @apply text-md; }
+  /* the close button keeps its declared --control-h square: without flex:none a long title
+     shrinks it below the 24px target (19px wide at 390). the gap keeps a wrapped title clear of
+     the button and its focus ring. */
+  .dlg-head { gap: var(--sp-3); }
+  .dlg-head > .btn-icon { flex: none; }
   .dlg-body { @apply flex flex-col gap-3; padding: var(--sp-4); overflow-y: auto; min-height: 0; }
   .callout { @apply flex gap-3 text-ink-2 text-sm; padding: var(--sp-3); border: 1px solid color-mix(in srgb, var(--amber) 45%, var(--rule)); background: color-mix(in srgb, var(--amber) 10%, transparent); }
   .callout .lucide { @apply text-amber; width: var(--ic-md); height: var(--ic-md); margin-top: 2px; }
