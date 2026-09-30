@@ -93,7 +93,7 @@ export const Groups = {
   render: () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
       <SettingGroup label="village" defaultOpen>
-        <SettingRow label="publishing plan" control="select" value="keep-local" options={[{ value: 'keep-local', label: 'keep local' }, { value: 'publish-later', label: 'publish later' }]} onCommit={lands} />
+        <SettingRow label="publishing plan" help="picked at setup. it never publishes on its own." control="select" value="keep-local" options={[{ value: 'keep-local', label: 'keep local' }, { value: 'publish-later', label: 'publish later' }]} onCommit={lands} />
         <SettingRow label="track new projects automatically" control="switch" value={false} tag="not in peasant config" onCommit={lands} />
       </SettingGroup>
       <SettingGroup label="advanced">
