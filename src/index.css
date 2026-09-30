@@ -221,10 +221,6 @@
     html { scroll-behavior: auto; }
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   }
-  @media (prefers-reduced-transparency: reduce) {
-    .nav { backdrop-filter: none; }
-    .nav { background: var(--surface); }
-  }
 }
 
 @layer components {
@@ -4459,5 +4455,15 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   @media (max-width: 767px) {
     .cmg-policies { grid-template-columns: minmax(0, 1fr); }
     .cmg-signin-card { padding: var(--sp-4); }
+  }
+}
+
+/* reduced transparency (DESIGN.md opaque chrome rule): no backdrop blur anywhere, and the sticky
+   chrome that reading content scrolls under turns opaque. It lives in the components layer, after
+   every blurred rule, because a fallback in @layer base loses to them whatever its specificity. */
+@layer components {
+  @media (prefers-reduced-transparency: reduce) {
+    .nav, .txn-sticky { background: var(--surface); backdrop-filter: none; }
+    .scrim, .cp-scrim, .cmg-scrim { backdrop-filter: none; }
   }
 }
