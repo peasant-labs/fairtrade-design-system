@@ -87,6 +87,9 @@ export const PopupWaitingGithub = { name: 'popup, waiting for github', render: (
 export const PopupChecking = { name: 'popup, checking for sensitive content', render: () => <Popup state="checking" /> }
 export const PopupScanFailed = {
   name: 'popup, the scan failed',
+  /* the popup is fixed to the viewport; the root takes the viewport's height so a capture of the
+     story root holds it */
+  decorators: [(Story) => <div style={{ minHeight: '100vh' }}><Story /></div>],
   render: () => <Popup state="scan-failed" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)

@@ -33,6 +33,8 @@ keySets:
       - component-access-list-light
       - component-setting-groups-dark
       - component-setting-groups-light
+      - component-publish-dialog-dark
+      - component-publish-dialog-light
   local:
     keys:
       - local-product-dark
@@ -42,7 +44,7 @@ cases:
   - name: ci-key-set-is-exact
     check: key-set
     mode: ci
-    keys: [product-dark, product-light, product-offline-dark, product-offline-light, component-dark, component-light, component-transcript-header-dark, component-transcript-header-light, component-offline-banner-dark, component-offline-banner-light, component-digest-split-dark, component-digest-split-light, component-stats-strip-dark, component-stats-strip-light, component-publish-bar-dark, component-publish-bar-light, component-access-list-dark, component-access-list-light, component-setting-groups-dark, component-setting-groups-light]
+    keys: [product-dark, product-light, product-offline-dark, product-offline-light, component-dark, component-light, component-transcript-header-dark, component-transcript-header-light, component-offline-banner-dark, component-offline-banner-light, component-digest-split-dark, component-digest-split-light, component-stats-strip-dark, component-stats-strip-light, component-publish-bar-dark, component-publish-bar-light, component-access-list-dark, component-access-list-light, component-setting-groups-dark, component-setting-groups-light, component-publish-dialog-dark, component-publish-dialog-light]
     expectValid: true
   - name: ci-key-set-equals-the-evidence-policy-rows
     check: policy-rows
@@ -61,7 +63,7 @@ cases:
   - name: ci-key-set-rejects-an-extra-key
     check: key-set
     mode: ci
-    keys: [product-dark, product-light, product-offline-dark, product-offline-light, component-dark, component-light, component-transcript-header-dark, component-transcript-header-light, component-offline-banner-dark, component-offline-banner-light, component-digest-split-dark, component-digest-split-light, component-stats-strip-dark, component-stats-strip-light, extra-row]
+    keys: [product-dark, product-light, product-offline-dark, product-offline-light, component-dark, component-light, component-transcript-header-dark, component-transcript-header-light, component-offline-banner-dark, component-offline-banner-light, component-digest-split-dark, component-digest-split-light, component-stats-strip-dark, component-stats-strip-light, component-publish-bar-dark, component-publish-bar-light, component-access-list-dark, component-access-list-light, component-setting-groups-dark, component-setting-groups-light, component-publish-dialog-dark, component-publish-dialog-light, extra-row]
     expectValid: false
     expectedErrorContains: ['keys', 'at path selection.keys', 'extra', 'repair:']
   - name: ci-key-set-rejects-a-local-key

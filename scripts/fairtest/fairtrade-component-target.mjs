@@ -320,6 +320,8 @@ const ACCESS_NAMED_REMOVE = Object.freeze({ name: 'named-remove', role: Object.f
 const ACCESS_KEEP = Object.freeze({ name: 'keep-pending-removal', role: Object.freeze({ role: 'button', name: 'keep ML Reading Group' }), matches: '.pub-access-keep', count: 1 })
 const SETTING_GROUPS_ONE_OPEN = Object.freeze({ name: 'one-open-group', selector: 'details.srow-group[open]', count: 1 })
 const SETTING_GROUPS_BOTH_OPEN = Object.freeze({ name: 'both-groups-open', selector: 'details.srow-group[open]', count: 2 })
+const PUBLISH_DIALOG_OFF = Object.freeze({ name: 'publish-off', role: Object.freeze({ role: 'button', name: 'publish to 2 collectives' }), matches: '.pub-primary:disabled', count: 1 })
+const PUBLISH_DIALOG_RESCAN_ON = Object.freeze({ name: 'rescan-on', role: Object.freeze({ role: 'button', name: 're-scan' }), matches: '.pub-rescan:enabled', count: 1 })
 
 /**
  * The mounted story rows, in row order. Floors are measured on the real built
@@ -465,6 +467,22 @@ export const COMPONENT_STORIES = Object.freeze([
       Object.freeze({ name: 'helpFontSize', selector: '.srow-help', property: 'fontSize', equals: '16px' }),
     ]),
     floors: Object.freeze({ descendants: 20, textLength: 60, ariaChars: 100, screenshotBytes: 6000 }),
+  }),
+  Object.freeze({
+    key: 'publish-dialog',
+    rowPrefix: 'component-publish-dialog',
+    targetId: 'fairtrade-publish-dialog-story',
+    storyId: 'in-use-publish--popup-scan-failed',
+    layout: 'fullscreen',
+    before: Object.freeze([PUBLISH_DIALOG_OFF, PUBLISH_DIALOG_RESCAN_ON]),
+    action: null,
+    after: Object.freeze([]),
+    gateTie: Object.freeze({ field: 'publishOff', expectation: PUBLISH_DIALOG_OFF }),
+    computed: Object.freeze([
+      Object.freeze({ name: 'bodyLineFontSize', selector: '.pub-line', property: 'fontSize', equals: '16px' }),
+      Object.freeze({ name: 'panelBorderRadius', selector: '.dialog-wide', property: 'borderRadius', equals: '0px' }),
+    ]),
+    floors: Object.freeze({ descendants: 60, textLength: 350, ariaChars: 800, screenshotBytes: 15000 }),
   }),
 ])
 

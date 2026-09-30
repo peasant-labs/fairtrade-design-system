@@ -739,6 +739,7 @@ describe('component target registry and theme rows', () => {
       ['publish-bar', 'component-publish-bar', 'in-use-publish--bar-states', 'centered', null],
       ['access-list', 'component-access-list', 'in-use-publish--access', 'centered', null],
       ['setting-groups', 'component-setting-groups', 'in-use-settings--groups', 'centered', 'open-collapsed-group'],
+      ['publish-dialog', 'component-publish-dialog', 'in-use-publish--popup-scan-failed', 'fullscreen', null],
     ])
     assert.equal(targets.COMPONENT_DEFAULT_STORY, targets.COMPONENT_STORIES[0], 'the disclosure story must stay the default entry')
     assert.equal(targets.COMPONENT_DEFAULT_STORY.targetId, targets.COMPONENT_TARGET_ID, 'the disclosure story keeps the component target identity')
@@ -746,8 +747,8 @@ describe('component target registry and theme rows', () => {
     // The disclosure receipt keeps its declared shape; every other story names
     // its own tie field in the same place.
     assert.deepEqual([...targets.componentGateReceiptFields()], [...targets.COMPONENT_A11Y_GATE_RECEIPT_FIELDS])
-    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => story.gateTie.field), ['ariaExpanded', 'searchOpen', 'retryBusy', 'nextOptionSelected', 'pairsRendered', 'barActions', 'namedRemove', 'bothGroupsOpen'])
-    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => targets.componentA11yPoint(story)), ['after-interaction', 'after-interaction', 'after-interaction', 'after-interaction', 'after-mount', 'after-mount', 'after-mount', 'after-interaction'])
+    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => story.gateTie.field), ['ariaExpanded', 'searchOpen', 'retryBusy', 'nextOptionSelected', 'pairsRendered', 'barActions', 'namedRemove', 'bothGroupsOpen', 'publishOff'])
+    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => targets.componentA11yPoint(story)), ['after-interaction', 'after-interaction', 'after-interaction', 'after-interaction', 'after-mount', 'after-mount', 'after-mount', 'after-interaction', 'after-mount'])
     for (const story of targets.COMPONENT_STORIES) {
       assert.ok(Object.isFrozen(story), `${story.key}: the story entry must be frozen`)
       assert.equal(targets.selectComponentStory(story.key), story, `${story.key}: the lookup must return the registry entry`)
