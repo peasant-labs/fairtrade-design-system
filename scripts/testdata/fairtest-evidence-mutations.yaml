@@ -42,6 +42,14 @@ run:
     - {key: component-digest-split-light, kind: component, theme: light}
     - {key: component-stats-strip-dark, kind: component, theme: dark}
     - {key: component-stats-strip-light, kind: component, theme: light}
+    - {key: component-publish-bar-dark, kind: component, theme: dark}
+    - {key: component-publish-bar-light, kind: component, theme: light}
+    - {key: component-access-list-dark, kind: component, theme: dark}
+    - {key: component-access-list-light, kind: component, theme: light}
+    - {key: component-setting-groups-dark, kind: component, theme: dark}
+    - {key: component-setting-groups-light, kind: component, theme: light}
+    - {key: component-publish-dialog-dark, kind: component, theme: dark}
+    - {key: component-publish-dialog-light, kind: component, theme: light}
 artifactTemplates:
   aria.json: '{"row":"{row}","artifact":"aria"}'
   axe.json: '{"row":"{row}","artifact":"axe"}'

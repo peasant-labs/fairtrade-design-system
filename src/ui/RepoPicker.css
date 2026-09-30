@@ -1,0 +1,48 @@
+/* RepoPicker styles — namespaced rpk-, tokens only, radius 0. Owner headings carry the identity
+   (icon or avatar plus the word); repository rows are checkboxes with the name in the body face,
+   quiet mono notes, and the pending state in words. */
+.rpk-dialog .dlg-body { gap: var(--sp-4); }
+.rpk-description { margin: 0; font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-2); }
+.rpk-search { display: flex; flex-direction: column; gap: var(--sp-2); }
+.rpk-label { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); }
+.rpk-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.rpk-count { margin-inline-start: auto; font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); }
+.rpk-owners { display: flex; flex-direction: column; gap: var(--sp-4); }
+.rpk-owner { display: flex; flex-direction: column; margin: 0; max-width: none; padding: 0; border: var(--bd); }
+.rpk-owner-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: var(--bd);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  text-transform: none;
+  color: var(--ink-strong);
+}
+.rpk-owner-icon { width: var(--ic-md); height: var(--ic-md); flex: none; color: var(--ink-2); }
+.rpk-owner-kind { font-weight: 400; color: var(--ink-3); text-transform: lowercase; }
+.rpk-repos { margin: 0; padding: 0; list-style: none; }
+.rpk-repo + .rpk-repo { border-top: var(--bd); }
+.rpk-repo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  width: 100%;
+  min-height: var(--target-comfortable);
+  padding: var(--sp-2) var(--sp-3);
+  cursor: pointer;
+}
+.rpk-repo-name { flex: 1 1 12rem; min-width: 0; font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); overflow-wrap: anywhere; }
+.rpk-tag, .rpk-note, .rpk-state { font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: 0; color: var(--ink-3); }
+.rpk-tag { display: inline-flex; align-items: center; gap: var(--sp-1); }
+.rpk-tag .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+.rpk-state { color: var(--ink-2); }
+.rpk-state-to-link, .rpk-state-to-unlink { color: var(--ink-strong); font-weight: 600; }
+.rpk-empty { margin: 0; font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink-3); }
+.rpk-foot { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--sp-2) var(--sp-3); }
+.rpk-error { margin-inline-end: auto; font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); }

@@ -1,0 +1,124 @@
+/* Settings styles — namespaced srow-, tokens only, radius 0. A row is the label column on the
+   shared left edge and the control on the right; below md they stack. Labels and states are mono
+   chrome; help and errors are body prose at the 16px floor. The status mark keeps a fixed slot so
+   a row does not shift when "saving" becomes "saved". Motion only under no-preference. */
+.srow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3) var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+}
+.srow + .srow { border-top: var(--bd); }
+.srow-text-col {
+  display: flex;
+  flex: 1 1 20rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+.srow-label-line { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.srow-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  /* no case transform: a label can be user content (a folder glob, a login), and chrome labels
+     are written lowercase at the source */
+  color: var(--ink);
+}
+.srow-help {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink-3);
+  max-width: var(--measure-prose);
+}
+.srow-error {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink);
+  padding-inline-start: var(--sp-2);
+  border-left: var(--bd-strong);
+}
+.srow-control { display: inline-flex; align-items: center; gap: var(--sp-3); flex: none; min-width: 0; }
+.srow-control .sw-field { margin: 0; }
+.srow-select .select { min-width: 12rem; }
+.srow-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-width: 6rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--ink-3);
+}
+.srow-status-icon { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+.srow-status-settled .srow-status-icon { color: var(--olive); }
+.srow-status-failed { color: var(--ink); }
+.srow-status-failed .srow-status-icon { color: var(--clay); }
+@media (prefers-reduced-motion: no-preference) {
+  .srow-spin { animation: srow-spin 1.1s linear infinite; }
+}
+@keyframes srow-spin { to { transform: rotate(360deg); } }
+
+.srow-text { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); min-width: 0; }
+/* a text value is recorded content: body face, its own case */
+.srow-text-value { font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); overflow-wrap: anywhere; }
+.srow-input { width: min(24rem, 100%); }
+.srow-edit .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+.srow-tag { text-transform: lowercase; }
+
+/* ── the group: a native details element ───────────────────────────────── */
+.srow-group { border: var(--bd); background: var(--surface); }
+.srow-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: var(--target-comfortable);
+  padding: var(--sp-3) var(--sp-4);
+  cursor: pointer;
+  list-style: none;
+}
+.srow-summary::-webkit-details-marker { display: none; }
+.srow-caret { width: var(--ic-sm); height: var(--ic-sm); flex: none; align-self: center; color: var(--ink-3); }
+.srow-group[open] > .srow-summary .srow-caret { transform: rotate(90deg); }
+.srow-group[open] > .srow-summary { border-bottom: var(--bd); }
+.srow-summary-label {
+  flex: 1 1 auto;
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--ink-strong);
+  text-transform: lowercase;
+}
+.srow-summary-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
+.srow-group-description {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4) 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink-2);
+}
+
+@media (max-width: 767px) {
+  .srow { padding: var(--sp-3); }
+  .srow-control { flex-wrap: wrap; }
+  .srow-summary { padding: var(--sp-3); }
+}
+.srow-note {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-top: var(--bd);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink-3);
+}

@@ -158,11 +158,12 @@ function ScanProgress({ scanned, total }) {
  * whole card flips to a loud warning treatment (clay rail + wash + a "will be sent" icon+word).
  * controlled when `onToggle` is given (parent owns `kept`); otherwise self-manages local state.
  */
-function MatchCard({ match, onToggle }) {
+function MatchCard({ match, onToggle, readOnly = false }) {
   const { id, category, confidence, before, secret, after, kept: keptProp } = match
   const isControlled = onToggle !== undefined
   const [internalKept, setInternalKept] = useState(Boolean(keptProp))
-  const kept = isControlled ? Boolean(keptProp) : internalKept
+  // a read-only card has no toggle, so it always shows the decision it is given
+  const kept = isControlled || readOnly ? Boolean(keptProp) : internalKept
 
   const toggle = () => {
     if (isControlled) onToggle?.(id, !kept)
@@ -199,15 +200,19 @@ function MatchCard({ match, onToggle }) {
           </span>
         )}
 
-        <button
-          type="button"
-          className="rdx-toggle"
-          aria-pressed={kept}
-          onClick={toggle}
-        >
-          {kept ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-          {kept ? 'revert' : 'keep'}
-        </button>
+        {/* read-only review (a publish popup that only shows what leaves) has no keep/revert:
+            the card states each match's decision and nothing on it changes. */}
+        {!readOnly && (
+          <button
+            type="button"
+            className="rdx-toggle"
+            aria-pressed={kept}
+            onClick={toggle}
+          >
+            {kept ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+            {kept ? 'revert' : 'keep'}
+          </button>
+        )}
       </div>
 
       {/* before -> after on the diff chassis. the secret + its redacted form are CODE: mono, never
@@ -259,6 +264,8 @@ function MatchCard({ match, onToggle }) {
  * @param {number} [props.scanned] - sessions/files scanned so far (defaults to `total`: done).
  * @param {number} [props.total=0] - total to scan.
  * @param {string|boolean} [props.failure] - honest-failure banner text; truthy shows the banner.
+ * @param {boolean} [props.readOnly=false] - show each match's decision without the keep/revert
+ *        button; nothing in the review changes state. `onToggle` is ignored.
  * @param {string} [props.className]
  */
 export function RedactionReview({
@@ -270,6 +277,7 @@ export function RedactionReview({
   scanned,
   total = 0,
   failure,
+  readOnly = false,
   className = '',
   ...rest
 }) {
@@ -329,7 +337,7 @@ export function RedactionReview({
       ) : (
         <ul className="rdx-list">
           {matches.map((m, i) => (
-            <MatchCard key={m.id ?? i} match={m} onToggle={onToggle} />
+            <MatchCard key={m.id ?? i} match={m} onToggle={readOnly ? undefined : onToggle} readOnly={readOnly} />
           ))}
         </ul>
       )}

@@ -1,7 +1,7 @@
 {
   "$description": "fairtrade component manifest, generated from src/ui. import from the barrel: import { Button } from \"src/ui\". every component is token-styled (classes in src/index.css) and works in both themes. props shows the Storybook-controllable props; full prop docs are the JSDoc in each file.",
   "import": "src/ui (barrel: src/ui/index.js)",
-  "count": 55,
+  "count": 60,
   "components": [
     {
       "name": "Accordion",
@@ -484,6 +484,22 @@
       ]
     },
     {
+      "name": "CopyIconButton",
+      "category": "components",
+      "title": "components/CopyIconButton",
+      "file": "src/ui/CopyIconButton.jsx",
+      "exports": [
+        "CopyIconButton"
+      ],
+      "doc": "@param {string} props.value - the exact text written to the clipboard.",
+      "props": {},
+      "stories": [
+        "Idle",
+        "Copied",
+        "NoClipboard"
+      ]
+    },
+    {
       "name": "DataTable",
       "category": "misc",
       "title": "refactoring the ledger",
@@ -824,7 +840,8 @@
       "stories": [
         "Default",
         "Collapsed",
-        "TogglesCascade"
+        "TogglesCascade",
+        "Searchable"
       ]
     },
     {
@@ -1074,6 +1091,23 @@
       ]
     },
     {
+      "name": "OverflowList",
+      "category": "components",
+      "title": "components/OverflowList",
+      "file": "src/ui/OverflowList.jsx",
+      "exports": [
+        "OverflowList"
+      ],
+      "doc": "@param {import('react').ReactNode[]} props.items - the host's item nodes, in order.",
+      "props": {},
+      "stories": [
+        "OverTheLimit",
+        "AtTheLimit",
+        "One",
+        "None"
+      ]
+    },
+    {
       "name": "Pager",
       "category": "components",
       "title": "components/Pager",
@@ -1251,6 +1285,42 @@
       ]
     },
     {
+      "name": "Publish",
+      "category": "in use",
+      "title": "in use/Publish",
+      "file": "src/ui/Publish.jsx",
+      "exports": [
+        "PublishStateLabel",
+        "PublishBar",
+        "AccessList",
+        "CollectivePicker",
+        "PublishDialog",
+        "PUBLISH_STATES",
+        "PUBLISH_DIALOG_STATES"
+      ],
+      "doc": "PublishStateLabel — the transcript's publish state: an icon and its words.",
+      "props": {},
+      "stories": [
+        "BarStates",
+        "Label",
+        "PopupConnect",
+        "PopupWaitingGithub",
+        "PopupChecking",
+        "PopupScanFailed",
+        "PopupNoCollective",
+        "PopupReady",
+        "PopupKept",
+        "PopupUnscanned",
+        "PopupPublishing",
+        "PopupStopped",
+        "PopupDone",
+        "PopupWaitsApproval",
+        "PopupUpdate",
+        "Access",
+        "Picker"
+      ]
+    },
+    {
       "name": "RailShell",
       "category": "in use",
       "title": "in use/RailShell",
@@ -1318,7 +1388,23 @@
         "KeptOriginalLight",
         "NarrowReview",
         "Transparency",
-        "LightTheme"
+        "LightTheme",
+        "ReadOnly"
+      ]
+    },
+    {
+      "name": "RepoPicker",
+      "category": "in use",
+      "title": "in use/RepoPicker",
+      "file": "src/ui/RepoPicker.jsx",
+      "exports": [
+        "RepoPicker"
+      ],
+      "doc": "@property {string} login - the owner's GitHub login.",
+      "props": {},
+      "stories": [
+        "Default",
+        "EmptySearch"
       ]
     },
     {
@@ -1381,6 +1467,31 @@
       ]
     },
     {
+      "name": "Settings",
+      "category": "in use",
+      "title": "in use/Settings",
+      "file": "src/ui/Settings.jsx",
+      "exports": [
+        "SettingRow",
+        "SettingGroup",
+        "SETTING_ROW_STATES"
+      ],
+      "doc": "",
+      "props": {},
+      "stories": [
+        "Idle",
+        "Pending",
+        "Settled",
+        "Failed",
+        "Select",
+        "Checkbox",
+        "TextEdit",
+        "TextCancel",
+        "Tagged",
+        "Groups"
+      ]
+    },
+    {
       "name": "SignIn",
       "category": "in use",
       "title": "in use/SignIn",
@@ -1394,6 +1505,7 @@
       "props": {},
       "stories": [
         "SplitButton",
+        "GitHubOnly",
         "HandleClaimStory",
         "States",
         "Combined"

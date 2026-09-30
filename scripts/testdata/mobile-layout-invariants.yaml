@@ -2,7 +2,8 @@
 # (1) commit-row <button>s silently overflowing their narrow
 # container instead of shrinking to it, and (2) the mounted transcript's
 # non-scrolling chrome (title/meta chips/turns-toolbar) consuming almost the
-# entire mobile viewport before any transcript content is visible.
+# entire mobile viewport before any transcript content is visible; plus
+# (3) the wide dialog's full-width sheet below the md breakpoint.
 # Each row names the SOURCE file the fix lives in (never the built dist,
 # which may minify/reorder declarations) and a literal substring that must be
 # present — a future edit that reverts the fix (e.g. drops width:100% from a
@@ -49,3 +50,14 @@ invariants:
     description: the "N turns / list·graph toggle" bar gets reduced padding below 720px, matching .txn-header's own mobile treatment.
     mustContainAll:
       - ".txn-trace-head { padding: var(--sp-2) var(--sp-3); }"
+  - id: dialog-wide-sheet-on-mobile
+    file: src/index.css
+    description: >-
+      below the md breakpoint the wide dialog (the publish popup) is a
+      full-width sheet: its overlay drops the side padding and the panel
+      takes width 100% with no side borders, so the panel is never wider
+      than the viewport. The anchor ties the rule to the 767px media query.
+    mustContainAll:
+      - "@media (max-width: 767px) {\n    .dlg-overlay:has(> .dialog-wide) { padding: 0;"
+      - ".dlg-overlay > .dialog.dialog-wide { width: 100%;"
+      - "border-left: 0; border-right: 0;"

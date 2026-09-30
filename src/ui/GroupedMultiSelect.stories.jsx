@@ -125,3 +125,16 @@ export const TogglesCascade = {
     await expect(tokens).toHaveTextContent('0')
   },
 }
+
+/* searchable — a search field and clear: the search filters items, hides groups it leaves empty,
+   opens the rest, and select all / clear act on the visible items only. */
+export const Searchable = {
+  args: { groups: GROUPS, searchable: true, searchLabel: 'search sessions', ariaLabel: 'sessions to publish' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.type(canvas.getByRole('searchbox', { name: 'search sessions' }), 'zzz-no-match')
+    await expect(canvas.getByText(/nothing matches/)).toBeVisible()
+    await userEvent.clear(canvas.getByRole('searchbox', { name: 'search sessions' }))
+    await expect(canvas.getByRole('button', { name: 'clear' })).toBeVisible()
+  },
+}

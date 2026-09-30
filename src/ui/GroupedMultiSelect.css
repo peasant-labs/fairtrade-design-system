@@ -319,3 +319,24 @@
       transform var(--dur-2) var(--ease-out);
   }
 }
+
+/* searchable: the field above the toolbar, the clear action beside select all, and the empty line */
+.gms-search { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3) var(--sp-3) 0; }
+.gms-search-label { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); }
+.gms-clear {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-h-sm);
+  padding: 0 var(--sp-2);
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  text-transform: lowercase;
+  cursor: pointer;
+}
+.gms-clear:hover:not(:disabled) { color: var(--ink-strong); }
+.gms-clear:disabled { color: var(--ink-4); cursor: default; }
+.gms-empty { margin: 0; padding: var(--sp-3); font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink-3); }
+.gms-toolbar .gms-clear { margin-inline-end: auto; }

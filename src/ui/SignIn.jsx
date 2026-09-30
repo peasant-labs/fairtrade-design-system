@@ -86,7 +86,9 @@ const PROVIDER_PATH = {
 
 /* the canonical provider list the stories + consumers iterate. `id` is the wire
    value; `label` is the human name used in the menu rows + the primary action.
-   the primary (first) provider is GitHub by default. */
+   the primary (first) provider is GitHub. sign-in is GitHub only for now, so
+   SignInProviders defaults to that one entry; the other four stay listed here
+   (hidden, not deleted) for a host that passes PROVIDERS explicitly. */
 export const PROVIDERS = [
   { id: 'github', label: 'GitHub' },
   { id: 'gitlab', label: 'GitLab' },
@@ -94,6 +96,10 @@ export const PROVIDERS = [
   { id: 'codeberg', label: 'Codeberg' },
   { id: 'sourcehut', label: 'SourceHut' },
 ]
+
+/* sign-in offers GitHub alone unless a host passes its own list. declared above the component's
+   doc block so the block stays attached to the component in the emitted types. */
+const DEFAULT_PROVIDERS = Object.freeze([PROVIDERS[0]])
 
 /**
  * SignInProviders — a multi-provider OAuth split button.
@@ -103,12 +109,12 @@ export const PROVIDERS = [
  * primary or any menu row calls onSignIn(providerId).
  *
  * @param {object} props
- * @param {Array<{id:string,label:string}>} [props.providers] ordered; [0] is primary. defaults to PROVIDERS.
+ * @param {Array<{id:string,label:string}>} [props.providers] ordered; [0] is primary. defaults to GitHub only; pass PROVIDERS for all five.
  * @param {(id:string)=>void} [props.onSignIn] called with the chosen provider id.
  * @param {string} [props.className]
  * @returns {JSX.Element|null}
  */
-export function SignInProviders({ providers = PROVIDERS, onSignIn, className = '', ...rest }) {
+export function SignInProviders({ providers = DEFAULT_PROVIDERS, onSignIn, className = '', ...rest }) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
   const triggerRef = useRef(null)

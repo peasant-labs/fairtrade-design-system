@@ -8,10 +8,11 @@ import {
   Segmented,
   Sparkline,
   StatsStrip,
-  Switch,
   ProviderIcon,
   ProviderName,
-  Chip,
+  PublishStateLabel,
+  SettingGroup,
+  SettingRow,
 } from '../../ui'
 import {
   HOME_SUMMARY,
@@ -27,12 +28,10 @@ import {
    library parts: a stats strip, a search field, the session list, and the settings groups. Every
    value is demo data (local-fixture.js); nothing here fetches. */
 
-const PUBLISH_STATE_TEXT = {
-  'not-published': () => 'not published',
-  published: (row) => `published · ${row.collectives} ${row.collectives === 1 ? 'collective' : 'collectives'}`,
-  'new-turns': () => 'new turns',
-  'auto-publish': (row) => `auto-publish on · ${row.collective}`,
-}
+/* a row's publish state, drawn by the shared publish state label */
+const renderPublishState = (row) => (
+  <PublishStateLabel state={row.state} collectives={row.collectives} newTurns={row.newTurns ?? 6} collective={row.collective} />
+)
 
 function matchesFilter(row, filter) {
   if (filter === 'all') return true
@@ -70,7 +69,7 @@ function sessionColumns(renderState) {
  * The home section: how many sessions are published, a one-line summary with the weekly trend,
  * the search field and the session list. `renderState` draws a row's publish state.
  */
-export function HomeView({ renderState = (row) => <span className="iu-state-text">{PUBLISH_STATE_TEXT[row.state](row)}</span> }) {
+export function HomeView({ renderState = renderPublishState }) {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
   const [project, setProject] = useState('all')
@@ -135,19 +134,40 @@ export function HomeView({ renderState = (row) => <span className="iu-state-text
   )
 }
 
-function SettingControl({ row }) {
-  const [value, setValue] = useState(row.value)
-  if (row.kind === 'switch') {
-    return <Switch id={`setting-${row.id}`} checked={value} onChange={setValue} />
+const demoWrite = () => new Promise((resolve) => setTimeout(resolve, 700))
+
+/* one demo row: an instant-apply control saved per field, or a value with its one action */
+function DemoSettingRow({ row }) {
+  const tag = row.notInConfig ? 'not in peasant config' : undefined
+  if (row.kind === 'readonly') {
+    return (
+      <div className="srow">
+        <span className="srow-text-col">
+          <span className="srow-label-line"><span className="srow-label">{row.label} {row.value}</span></span>
+          {row.help && <span className="srow-help">{row.help}</span>}
+        </span>
+        {row.action && <Button variant="secondary" size="sm">{row.action}</Button>}
+      </div>
+    )
   }
-  if (row.kind === 'select') {
-    return <Select aria-label={row.label} value={value} onChange={(event) => setValue(event.target.value)} options={row.options} disabled={row.options.length === 1} />
-  }
-  return <span className="iu-setting-value mono">{value}</span>
+  // a source is a provider: its row leads with the provider's mark
+  const label = row.harness ? <ProviderName harness={row.harness} /> : row.label
+  return (
+    <SettingRow
+      label={label}
+      help={row.harness ? `${row.help} · ${row.configKey}` : row.help}
+      control={row.kind}
+      value={row.value}
+      options={row.options}
+      tag={tag}
+      disabled={row.kind === 'select' && row.options?.length === 1}
+      onCommit={demoWrite}
+    />
+  )
 }
 
 /** The settings section: every setting grouped, the summary line on top, and the files it saves to. */
-export function SettingsView({ renderGroups }) {
+export function SettingsView() {
   return (
     <div className="iu-page">
       <header className="iu-page-head">
@@ -156,40 +176,23 @@ export function SettingsView({ renderGroups }) {
       </header>
       <StatsStrip items={SETTINGS_SUMMARY} label="settings summary" />
 
-      {renderGroups ? renderGroups(SETTINGS_GROUPS) : SETTINGS_GROUPS.map((group) => (
-        <section key={group.id} className="iu-setting-group" aria-labelledby={`settings-${group.id}`}>
-          <h3 className="iu-setting-group-title" id={`settings-${group.id}`}>{group.label}</h3>
-          <ul className="iu-setting-rows">
-            {group.rows.map((row) => (
-              <li key={row.id} className="iu-setting-row">
-                <span className="iu-setting-text">
-                  {row.kind === 'switch'
-                    ? <label className="iu-setting-label" htmlFor={`setting-${row.id}`}>{row.harness ? <ProviderName harness={row.harness} /> : row.label}</label>
-                    : <span className="iu-setting-label">{row.label}</span>}
-                  {row.help && <span className="iu-setting-help">{row.help}</span>}
-                  {row.notInConfig && <Chip size="sm" className="iu-setting-tag">not in peasant config</Chip>}
-                </span>
-                <SettingControl row={row} />
-              </li>
-            ))}
-          </ul>
-        </section>
+      {SETTINGS_GROUPS.map((group) => (
+        <SettingGroup key={group.id} label={group.label} defaultOpen={group.open} description={group.description}>
+          {group.rows.map((row) => <DemoSettingRow key={row.id} row={row} />)}
+        </SettingGroup>
       ))}
 
-      <section className="iu-setting-group" aria-labelledby="settings-files">
-        <h3 className="iu-setting-group-title" id="settings-files">files</h3>
-        <ul className="iu-setting-rows">
-          {SETTINGS_FILES.map((file) => (
-            <li key={file.path} className="iu-setting-row">
-              <span className="iu-setting-text">
-                <span className="iu-setting-label">{file.label}</span>
-                <code className="iu-setting-help mono">{file.path}</code>
-              </span>
-              <Button variant="secondary" size="sm" icon={Copy}>copy path</Button>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <SettingGroup label="files" defaultOpen count={SETTINGS_FILES.length} description="where settings are saved.">
+        {SETTINGS_FILES.map((file) => (
+          <div key={file.path} className="srow">
+            <span className="srow-text-col">
+              <span className="srow-label">{file.label}</span>
+              <code className="srow-help mono">{file.path}</code>
+            </span>
+            <Button variant="secondary" size="sm" icon={Copy}>copy path</Button>
+          </div>
+        ))}
+      </SettingGroup>
     </div>
   )
 }

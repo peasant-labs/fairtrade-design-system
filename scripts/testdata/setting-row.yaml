@@ -1,0 +1,81 @@
+# Cases for SettingRow and SettingGroup (src/ui/Settings.jsx). scripts/setting-row.test.mjs mounts
+# the REAL row, performs `steps`, settles the host's write as `commit` says, and checks the value,
+# the status word (in its polite live region), the alert, and how many writes the row made.
+#   commit: resolve (the write lands), reject (the write fails with `error`), hold (never settles)
+#   steps: toggle | pick:<value> | check | edit | type:<text> | enter | escape | save | cancel
+#   expected.status: idle (no word), saving, saved or not saved
+# statusWords maps every exported row state (SETTING_ROW_STATES) to the word a user reads; the
+# gate holds its keys to the exported set and requires a case for every word.
+statusWords: {idle: idle, pending: saving, settled: saved, failed: not saved}
+rows:
+  - name: idle
+    control: switch
+    value: false
+    steps: []
+    expected: {value: false, status: idle, writes: []}
+  - name: pending
+    control: switch
+    value: false
+    commit: hold
+    steps: [toggle]
+    expected: {value: true, status: saving, writes: [true]}
+  - name: settled
+    control: switch
+    value: false
+    commit: resolve
+    steps: [toggle]
+    expected: {value: true, status: saved, writes: [true]}
+  - name: failed restores the previous value
+    control: switch
+    value: true
+    commit: reject
+    error: village did not answer. your setting is unchanged.
+    steps: [toggle]
+    expected: {value: true, status: not saved, alert: village did not answer. your setting is unchanged., writes: [false]}
+  - name: a select applies at once
+    control: select
+    value: keep-local
+    options: [{value: keep-local, label: keep local}, {value: publish-later, label: publish later}]
+    commit: resolve
+    steps: [pick:publish-later]
+    expected: {value: publish-later, status: saved, writes: [publish-later]}
+  - name: a checkbox applies at once
+    control: checkbox
+    value: false
+    commit: resolve
+    steps: [check]
+    expected: {value: true, status: saved, writes: [true]}
+  - name: text edit then Enter saves once
+    control: text
+    value: Transcripts behind the ingest service.
+    commit: resolve
+    steps: [edit, type:Transcripts behind the ingest and web services., enter]
+    expected: {value: Transcripts behind the ingest and web services., status: saved, writes: [Transcripts behind the ingest and web services.]}
+  - name: text edit then save saves once
+    control: text
+    value: alice@acme.dev
+    commit: resolve
+    steps: [edit, type:alice@acme.example, save]
+    expected: {value: alice@acme.example, status: saved, writes: [alice@acme.example]}
+  - name: text edit then Escape cancels
+    control: text
+    value: alice@acme.dev
+    commit: resolve
+    steps: [edit, type:nobody@example.com, escape]
+    expected: {value: alice@acme.dev, status: idle, writes: []}
+  - name: text edit then cancel cancels
+    control: text
+    value: alice@acme.dev
+    commit: resolve
+    steps: [edit, type:nobody@example.com, cancel]
+    expected: {value: alice@acme.dev, status: idle, writes: []}
+  - name: the tag
+    control: switch
+    value: true
+    tag: not in peasant config
+    steps: []
+    expected: {value: true, status: idle, tag: not in peasant config, writes: []}
+
+groups:
+  - {name: an open group, defaultOpen: true, rows: 3, expected: {open: true, summary: village 3 settings}}
+  - {name: a collapsed group, defaultOpen: false, rows: 1, expected: {open: false, summary: village 1 setting}}

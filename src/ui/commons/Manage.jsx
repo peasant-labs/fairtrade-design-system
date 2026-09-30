@@ -382,8 +382,12 @@ export function Manage({
 
 export {
   PublishView,
+  ContributeView,
+} from '../../mockups/inuse/CommonsManage.jsx'
+/* the collectives list, a collective and its settings: the simpler village pages, shipped under
+   their existing names. The in-use demo renders these with its own data. */
+export {
   CollectivesView,
   CollectiveDetailView,
   CollectiveSettingsView,
-  ContributeView,
-} from '../../mockups/inuse/CommonsManage.jsx'
+} from './Collectives.jsx'

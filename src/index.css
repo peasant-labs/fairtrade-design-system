@@ -59,7 +59,7 @@
      one canonical scale that the max-width queries below target): xs <480, sm 480-767, md 768-1023,
      lg 1024-1439, xl >=1440. exported to public/tokens.json so agents + consumers share one scale. */
   --bp-sm: 480px; --bp-md: 768px; --bp-lg: 1024px; --bp-xl: 1440px;
-  --dialog-w: 420px;
+  --dialog-w: 420px; --dialog-w-wide: 720px;
   --fs-label: 14px; --fs-sm: 14px; --fs-body: 16px; --fs-md: 18px; --fs-lg: 22px; --fs-xl: 28px; --fs-hero: 40px; --fs-display: 52px;
   --fs-micro: 11px;
   --menu-min-w: 256px;
@@ -1463,6 +1463,13 @@
   .dlg-overlay { position: fixed; inset: 0; z-index: var(--z-dialog); display: flex; align-items: center; justify-content: center; padding: var(--sp-5); }
   .dlg-overlay > .scrim { position: absolute; inset: 0; }
   .dlg-overlay > .dialog { position: relative; z-index: 1; width: min(var(--dialog-w), 100%); display: flex; flex-direction: column; max-height: calc(100dvh - var(--sp-8)); box-shadow: var(--glow), 0 24px 60px -20px rgba(0,0,0,.6); }
+  /* the wide size carries a two-part task (a review plus a choice); below md it becomes a full-width
+     sheet from the bottom edge, with no horizontal scroll. */
+  .dlg-overlay > .dialog.dialog-wide { width: min(var(--dialog-w-wide), 100%); }
+  @media (max-width: 767px) {
+    .dlg-overlay:has(> .dialog-wide) { padding: 0; align-items: flex-end; }
+    .dlg-overlay > .dialog.dialog-wide { width: 100%; max-height: calc(100dvh - var(--sp-6)); border-left: 0; border-right: 0; border-bottom: 0; }
+  }
   @media (prefers-reduced-motion: no-preference) {
     .dlg-overlay > .dialog { animation: cmdk-in var(--dur-2) var(--ease-out) both; }
     .dlg-overlay > .scrim { animation: cmdk-fade var(--dur-2) ease both; }
@@ -2264,18 +2271,6 @@
   .iu-session-sub { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .iu-state-text { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); white-space: nowrap; }
 
-  /* the demo settings groups */
-  .iu-setting-group { display: flex; flex-direction: column; border: var(--bd); background: var(--surface); }
-  .iu-setting-group-title { margin: 0; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); font-family: var(--font-display); font-size: var(--fs-md); font-weight: 700; color: var(--ink-strong); text-transform: lowercase; }
-  .iu-setting-rows { list-style: none; margin: 0; padding: 0; }
-  .iu-setting-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); }
-  .iu-setting-row + .iu-setting-row { border-top: var(--bd); }
-  .iu-setting-row .is-field { margin: 0; min-width: 12rem; }
-  .iu-setting-text { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-1); min-width: 0; flex: 1 1 18rem; }
-  .iu-setting-label { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink); text-transform: lowercase; }
-  .iu-setting-help { font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-3); overflow-wrap: anywhere; }
-  code.iu-setting-help { font-family: var(--font-mono); font-size: var(--fs-sm); }
-  .iu-setting-value { color: var(--ink); overflow-wrap: anywhere; }
 
   /* ---- tablet: keep the app labels, but drop the expand label + tighten the banner so it fits ---- */
   @media (max-width: 900px) {
@@ -3239,7 +3234,6 @@
     .iu-view { padding: var(--sp-3); }
     .iu-page { padding: var(--sp-3) 0 var(--sp-6); gap: var(--sp-4); }
     .iu-page-summary { padding: var(--sp-3); }
-    .iu-setting-row { padding: var(--sp-3); }
     .cex-results, .cex-grid { min-width: 0; }
     .cex-tcard { min-width: 0; width: 100%; }
     /* profile project sections */
@@ -4378,3 +4372,92 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   font-variant-numeric: tabular-nums; color: var(--ink-3);
 }
 .helper-demo-loaded { color: var(--ink-4); }
+
+/* ======================================================================
+   village pages (in-use commons demo, shipped as the collectives views):
+   sign-in, home, the collectives list, a collective, its settings, your
+   settings and the transcript page. namespace .cmg-* on the shared .iu-page
+   column; tokens only, square, hairline, lowercase chrome, recorded names in
+   their own case, amber only on the one primary action in view.
+====================================================================== */
+@layer components {
+  .iu-subnav-end { margin-inline-start: auto; display: inline-flex; align-items: center; gap: var(--sp-1); text-transform: none; }
+  .iu-subnav-end .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+  /* the base layer centres every <section>; these page sections sit on the column's own edge */
+  .cmg-home-main, .cmg-rail-box, .cmg-section, .cmg-transcript-prs, .cmg-form { margin: 0; max-width: none; }
+  .cmg-home-main, .cmg-section, .cmg-transcript-prs { padding: 0; }
+  /* collective names in the scope filter and the trail are recorded content */
+  .cmg-scope .bs-seg-opt, .cmg-crumb-content .crumb { text-transform: none; }
+
+  .cmg-signin { align-items: center; justify-content: center; min-height: 70vh; }
+  .cmg-signin-card { display: flex; flex-direction: column; gap: var(--sp-4); width: min(34rem, 100%); padding: var(--sp-6); border: var(--bd); background: var(--surface); }
+  .cmg-signin-brand { margin: 0; font-size: var(--fs-md); font-weight: 600; color: var(--ink-strong); }
+  .cmg-signin-notes { display: flex; flex-direction: column; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-3); }
+  .cmg-signin-notes code { font-size: var(--fs-sm); color: var(--ink-strong); }
+
+  .cmg-home { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem); gap: var(--sp-5); align-items: start; }
+  .cmg-home-main { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .cmg-rail { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .cmg-rail-box { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); border: var(--bd); background: var(--surface); }
+  .cmg-rail-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+  .cmg-rail-title, .cmg-section-title { margin: 0; font-family: var(--font-mono); font-size: var(--fs-label); font-weight: 600; letter-spacing: 0; text-transform: lowercase; color: var(--ink-2); }
+  .cmg-count { margin-inline-start: var(--sp-1); color: var(--ink-3); font-weight: 400; }
+  .cmg-rail-list { display: flex; flex-direction: column; gap: var(--sp-3); margin: 0; padding: 0; list-style: none; }
+  .cmg-rail-list li { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .cmg-rail-link, .cmg-table-link { align-self: flex-start; padding: 0; border: 0; background: transparent; cursor: pointer; font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); text-align: left; text-decoration: underline dotted var(--ink-4); text-underline-offset: 3px; min-height: var(--target-min); }
+  .cmg-rail-link:hover, .cmg-table-link:hover { color: var(--amber); }
+  /* a link target given only a callback renders as a button that reads as the link would */
+  .cmg-link-button { appearance: none; margin: 0; padding: 0; border: 0; background: transparent; font: inherit; text-align: start; cursor: pointer; }
+  .cmg-cell-stack { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+  .cmg-cell-sub { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
+  /* a row's description is user prose, so it keeps the body floor */
+  .cmg-cell-desc { font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-3); }
+  .cmg-rail-name { font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); }
+  .cmg-rail-meta, .cmg-none, .cmg-note { font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono); letter-spacing: 0; color: var(--ink-3); }
+  .cmg-note { margin: 0; }
+  .cmg-rail-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1) var(--sp-2); margin: 0; font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink); }
+  .cmg-rail-line .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); }
+  .cmg-shared { display: flex; flex-direction: column; gap: 2px; font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink-2); }
+  .cmg-pr-link { color: var(--ink); text-decoration: underline dotted var(--ink-4); text-underline-offset: 3px; font-family: var(--font-mono); font-size: var(--fs-label); }
+  .cmg-pr-link:hover { color: var(--amber); }
+  .cmg-prs { display: flex; flex-direction: column; gap: 2px; }
+  .cmg-section { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .cmg-find { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--sp-2); }
+  .cmg-find .is-field { flex: 1 1 18rem; margin: 0; }
+  .cmg-actions { display: inline-flex; align-items: center; gap: var(--sp-2); }
+
+  /* the three boxes that say how a collective works: one flat row of equal boxes, words only */
+  .cmg-policies { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); margin: 0; padding: 0; list-style: none; }
+  .cmg-policy { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); border: var(--bd); background: var(--surface); }
+  .cmg-policy-title { margin: 0; font-family: var(--font-mono); font-size: var(--fs-label); font-weight: 600; color: var(--ink-2); text-transform: lowercase; }
+  .cmg-policy-text { margin: 0; font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); }
+  .cmg-members { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+  .cmg-members-text { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); }
+
+  .cmg-settings-nav { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); }
+  .cmg-settings-nav a { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); text-transform: lowercase; min-height: var(--target-min); display: inline-flex; align-items: center; }
+  .cmg-settings-nav a:hover { color: var(--amber); }
+  .cmg-settings .srow-group { scroll-margin-top: var(--sp-7); }
+  .cmg-invite { align-items: flex-end; }
+  .cmg-invite .is-field { flex: 1 1 16rem; margin: 0; }
+  .cmg-member-list { margin: 0; padding: 0; list-style: none; border-top: var(--bd); }
+  .cmg-member { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); padding: var(--sp-2) var(--sp-4); }
+  .cmg-member + .cmg-member { border-top: var(--bd); }
+  .cmg-member-id { display: inline-flex; flex: 1 1 14rem; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2); min-width: 0; }
+  .cmg-member-name { font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink-2); }
+  .cmg-member-role .select { min-width: 10rem; }
+
+  .cmg-transcript-actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); min-width: 0; }
+  .cmg-transcript-link { font-size: var(--fs-sm); color: var(--ink-2); text-decoration: underline dotted var(--ink-4); text-underline-offset: 3px; overflow-wrap: anywhere; }
+  .cmg-transcript-prs { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); }
+  .cmg-pr-list { display: flex; flex-direction: column; gap: var(--sp-1); margin: 0; padding: 0; list-style: none; }
+  .cmg-pr-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-1) var(--sp-3); }
+
+  @media (max-width: 1023px) {
+    .cmg-home { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 767px) {
+    .cmg-policies { grid-template-columns: minmax(0, 1fr); }
+    .cmg-signin-card { padding: var(--sp-4); }
+  }
+}

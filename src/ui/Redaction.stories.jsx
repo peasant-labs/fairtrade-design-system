@@ -295,3 +295,15 @@ export const LightTheme = {
   },
   globals: { theme: 'light', backgrounds: { value: 'light' } },
 }
+
+/* read-only — the review a publish popup shows: every match states its decision, and there is no
+   keep or revert button, even with a toggle handler present. */
+export const ReadOnly = {
+  name: 'read only',
+  args: { matches: MATCHES, total: 3, availableLevels: ['standard'], readOnly: true, onToggle: fn() },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByRole('button', { name: 'keep' })).toBeNull()
+    await expect(canvas.getAllByText('redacted').length).toBeGreaterThan(0)
+  },
+}

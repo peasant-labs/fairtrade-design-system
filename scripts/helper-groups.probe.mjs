@@ -47,7 +47,7 @@ try {
       await page.waitForSelector(`[data-helper-demo="${fixture.name}"] .sgd-trigger`)
       await page.$eval('#inuse', (element) => element.scrollIntoView({ behavior: 'instant' }))
       await page.evaluate(() => document.fonts.ready)
-      assert.ok(await page.$eval('.iu-subnav', (el) => el.textContent.includes('explore')), 'mounted shell and navigation')
+      assert.ok(await page.$eval('.iu-subnav', (el) => el.textContent.includes('home') && el.textContent.includes('collectives')), 'mounted shell and navigation')
       const triggers = await page.$$('.sgd-trigger')
       assert.equal(triggers.length, fixture.groups.length, `${fixture.name}: one control per group`)
       // The closed control states its count, and the members it holds do not exist.

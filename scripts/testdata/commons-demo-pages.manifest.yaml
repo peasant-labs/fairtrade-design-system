@@ -1,0 +1,31 @@
+# Required-NAME manifest for commons-demo-pages.yaml: deletion protection.
+requiredPageNames:
+  - home
+  - sign-in
+  - collectives
+  - a collective
+  - collective settings
+  - account settings
+  - transcript page
+  - pull request prompts
+
+requiredMutationNames:
+  - public returns to the who can read choices
+  - the demo nav regains explore
+  - sign-in offers every provider again
+mutations:
+  - name: public returns to the who can read choices
+    file: src/mockups/inuse/village-fixture.js
+    find: "  { value: 'contributors', label: 'members and contributors' },\n"
+    replace: "  { value: 'contributors', label: 'members and contributors' },\n  { value: 'public', label: 'public' },\n"
+    expectedDiagnostic: "collectives: no select may offer"
+  - name: the demo nav regains explore
+    file: src/mockups/inuse/CommonsApp.jsx
+    find: "  { id: 'collectives', label: 'collectives' },\n]"
+    replace: "  { id: 'collectives', label: 'collectives' },\n  { id: 'explore', label: 'explore' },\n]"
+    expectedDiagnostic: "home: nav expected"
+  - name: sign-in offers every provider again
+    file: src/ui/SignIn.jsx
+    find: "const DEFAULT_PROVIDERS = Object.freeze([PROVIDERS[0]])"
+    replace: "const DEFAULT_PROVIDERS = PROVIDERS"
+    expectedDiagnostic: "sign-in: no button may be named \"more sign-in providers\""

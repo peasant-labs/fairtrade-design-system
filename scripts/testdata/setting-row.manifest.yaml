@@ -1,0 +1,37 @@
+# Required-NAME manifest for setting-row.yaml: deletion protection.
+requiredRowNames:
+  - idle
+  - pending
+  - settled
+  - failed restores the previous value
+  - a select applies at once
+  - a checkbox applies at once
+  - text edit then Enter saves once
+  - text edit then save saves once
+  - text edit then Escape cancels
+  - text edit then cancel cancels
+  - the tag
+requiredGroupNames:
+  - an open group
+  - a collapsed group
+
+requiredMutationNames:
+  - a failed write keeps the new value
+  - Escape saves instead of cancelling
+  - the failure is not announced
+mutations:
+  - name: a failed write keeps the new value
+    file: src/ui/Settings.jsx
+    find: "      setShown(previous)\n"
+    replace: "\n"
+    expectedDiagnostic: "failed restores the previous value: value"
+  - name: Escape saves instead of cancelling
+    file: src/ui/Settings.jsx
+    find: "else if (event.key === 'Escape') { event.preventDefault(); close() }"
+    replace: "else if (event.key === 'Escape') { event.preventDefault(); save() }"
+    expectedDiagnostic: "text edit then Escape cancels: writes"
+  - name: the failure is not announced
+    file: src/ui/Settings.jsx
+    find: '<span className="srow-error" role="alert">{error}</span>'
+    replace: '<span className="srow-error">{error}</span>'
+    expectedDiagnostic: "failed restores the previous value: alert"

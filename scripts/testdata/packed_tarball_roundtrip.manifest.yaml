@@ -14,10 +14,29 @@ requiredImportables:
   - PromptDigest
   - LocalOfflineBanner
   - StatsStrip
+  - CopyIconButton
+  - OverflowList
+  - PublishStateLabel
+  - PublishBar
+  - AccessList
+  - CollectivePicker
+  - PublishDialog
+  - PUBLISH_STATES
+  - PUBLISH_DIALOG_STATES
+  - SettingRow
+  - SettingGroup
+  - SETTING_ROW_STATES
+  - RepoPicker
+  - GroupedMultiSelect
+  - RedactionReview
+  - SignInProviders
   - LOCAL_APP_SECTIONS
   - GRAPH_APP_SECTIONS
   - GraphAppShell
   - GraphSectionNav
+  - CollectivesView
+  - CollectiveDetailView
+  - CollectiveSettingsView
 requiredRefusalNames:
   - relationship-carries-a-cooked-field
   - durable-payload-embeds-read-metadata
