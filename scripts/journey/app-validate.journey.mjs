@@ -5,8 +5,8 @@
  * rules the contrast gate cannot see — a11y wiring, interactions, console
  * health, reduced-motion, heading hierarchy, and overflow breakpoints. A
  * separate check proves that under reduced transparency no mounted element,
- * and no fresh unclassed div, computes a backdrop blur, and the sticky bars
- * are opaque.
+ * and no fresh unclassed div, computes a backdrop blur, and that the nav, the
+ * mounted transcript glass bars and a .txn-sticky bar are the opaque --surface.
  * Runs against the live clock with no determinism shim, exactly like the
  * script it replaces.
  */
@@ -177,8 +177,9 @@ test.describe('built app', () => {
     expect(errors, errors.slice(0, 3).join(' | ')).toEqual([])
   })
 
-  // Reduced transparency: no element on the page computes a backdrop blur, and the sticky nav is
-  // the opaque --surface, in the theme this project renders. The fallback is an !important rule in
+  // Reduced transparency: no mounted element and no fresh unclassed div computes a backdrop blur,
+  // and the nav, the mounted transcript glass bars and a .txn-sticky bar compute the opaque
+  // --surface, in the theme this project renders. The fallback is an !important rule in
   // @layer base: a normal declaration there loses to the blurred rules in the components layer
   // (an earlier .nav fallback never applied for that reason), and only a computed read of the
   // mounted page sees that cascade. The app ignores prefers-color-scheme, so the light project
@@ -218,6 +219,10 @@ test.describe('built app', () => {
         const stickyBg = getComputedStyle(sticky).backgroundColor
         sticky.remove()
         const nav = document.querySelector('.nav')
+        // the translucent sticky bars mounted on this page (the nav and the transcript's glass
+        // phase and context bars) must all turn opaque; a zero count would make this vacuous
+        const bars = [...document.querySelectorAll('.nav, .tm2-phase, .tm2-contextbar')]
+          .map((el) => ({ cls: el.className, bg: getComputedStyle(el).backgroundColor }))
         return {
           matches: matchMedia('(prefers-reduced-transparency: reduce)').matches,
           theme: document.documentElement.getAttribute('data-theme') || 'dark',
@@ -225,6 +230,7 @@ test.describe('built app', () => {
           navBg: nav ? getComputedStyle(nav).backgroundColor : null,
           probeBlur,
           stickyBg,
+          bars,
           blurred,
         }
       })
@@ -237,6 +243,8 @@ test.describe('built app', () => {
       expect(seen.probeBlur, detail).toBe('none')
       expect(seen.navBg, detail).toBe(seen.surface)
       expect(seen.stickyBg, detail).toBe(seen.surface)
+      expect(seen.bars.length, detail).toBeGreaterThan(1)
+      expect(seen.bars.filter((b) => b.bg !== seen.surface), detail).toEqual([])
     } finally {
       await ctx.close()
     }

@@ -82,10 +82,11 @@ invariants:
     file: src/ui/Dialog.jsx
     description: >-
       the two dialog-head rows target .dlg-head h3 and .dlg-head > .btn-icon, so
-      the library dialog's markup is pinned too: the head div, then its h3 title
-      and the close button's btn-icon class. If one changed, a rule would match
-      nothing while its row stayed green. An edit that keeps both selectors
-      matching but rewrites these strings fails this row too; update the row.
+      the library dialog's markup strings are pinned too: the head div, and after
+      it in the same component the h3 title and the btn-icon class. The row checks
+      that these strings exist, not that the h3 and the button stay direct
+      children of the head. An edit that keeps both selectors matching but
+      rewrites these strings fails this row too; update the row.
     mustContainAll:
       - "<div className=\"dlg-head\">"
       - "<h3 id={labelId}>"
