@@ -30,9 +30,6 @@
   background: color-mix(in srgb, var(--canvas) 55%, transparent);
   backdrop-filter: blur(2px);
 }
-@media (prefers-reduced-transparency: reduce) {
-  .cns-scrim { backdrop-filter: none; }
-}
 @media (prefers-reduced-motion: no-preference) {
   .cns-scrim { animation: cns-fade var(--dur-2) ease both; }
   @keyframes cns-fade { from { opacity: 0; } to { opacity: 1; } }
