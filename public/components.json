@@ -1309,6 +1309,8 @@
         "PopupScanFailed",
         "PopupNoCollective",
         "PopupReady",
+        "PopupKept",
+        "PopupUnscanned",
         "PopupPublishing",
         "PopupStopped",
         "PopupDone",
