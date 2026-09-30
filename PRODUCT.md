@@ -35,12 +35,7 @@ Fairtrade is a design system built around one job: rendering an AI coding transc
   `package.json` is the list of record.
 - **The in-use demo is the fidelity oracle.** Consuming apps are held to it element for element.
 - **Visual gates.** They compare the demo (on the left) with the consuming app (on the right), capture both themes, and probe computed styles.
-- **Section registry.** The local app's sections come from `LOCAL_APP_SECTIONS`.
-  - `home` and `settings` are in the nav.
-  - `analytics`, `changes`, and `code map` are reached by route only.
-  - Consumers derive their nav and routes from the registry.
-  - `GRAPH_APP_SECTIONS` is a deprecated alias for the older three-section shape.
-  - A replacement is ratified here first.
+- **Section registry.** The local app's sections come from `LOCAL_APP_SECTIONS` (see `DESIGN.md`, Navigation). A replacement is ratified here first.
 
 ## Capabilities and Constraints
 
@@ -52,7 +47,7 @@ Fairtrade is a design system built around one job: rendering an AI coding transc
 ## Brand Commitments
 
 - **Name.** fairtrade.
-- **Design record.** The design language, tokens, and neuroinclusive rules live in `DESIGN.md`, and they are binding. `llm/NEUROINCLUSIVE.md` keeps the research behind those rules.
+- **Design record.** The design language and the neuroinclusive rules live in `DESIGN.md`, and they are binding. Token values live in `src/index.css`. `llm/NEUROINCLUSIVE.md` keeps the research behind the rules.
 
 ## Evidence on Hand
 

@@ -3,7 +3,8 @@
 This file used to be fairtrade's design reference. The reference now lives in one place,
 [`../DESIGN.md`](../DESIGN.md), which carries the tokens (generated from `src/index.css`), the
 visual rules and the component language. This stub stays so that existing links keep resolving;
-it holds no rules of its own.
+it holds no rules of its own. Delete it once the workspace docs point at `DESIGN.md`
+(peasant-labs/polyrepo#27).
 
 Where the old sections went:
 

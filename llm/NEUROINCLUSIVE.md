@@ -2,20 +2,20 @@
 
 > **Authority.**
 > - The binding rules live in [`../DESIGN.md`](../DESIGN.md), the one design record.
-> - Token values live in `src/index.css`. `DESIGN.md`'s frontmatter and `public/tokens.json` are
->   generated from it.
+> - Token values live in `src/index.css`. The token values in `DESIGN.md`'s frontmatter and in
+>   `public/tokens.json` are generated from it.
 > - This file keeps three things: the research behind the rules, how the rules were reconciled
 >   with the locked identity, and the review checklist.
 > - The values in its tables explain the rules. They are not a second source of truth.
 > - If this file and `DESIGN.md` disagree, `DESIGN.md` wins. The disagreement is a bug: fix both
 >   files in the same commit.
 
-This is not an "accessibility settings" page. These are the **default** rules of the fairtrade
-design system, because the product is a **data-heavy** application (long transcripts, tables,
-code, dashboards) and our users include people who are dyslexic, have ADHD, or are autistic.
-Designing for them by default makes the product calmer, faster to scan, and less fatiguing for
-**everyone**. Every rule below is a default behaviour of the base components and tokens - not an
-opt-in toggle.
+This is not an "accessibility settings" page. The rules below are the **defaults** of the fairtrade
+design system, stated as binding in `DESIGN.md`; this file records where each one comes from. They
+are defaults because the product is a **data-heavy** application (long transcripts, tables, code,
+dashboards) and our users include people who are dyslexic, have ADHD, or are autistic. Designing
+for them by default makes the product calmer, faster to scan, and less fatiguing for **everyone**.
+Every rule is a default behaviour of the base components and tokens - not an opt-in toggle.
 
 Sourced from a deep review of primary research: W3C **WCAG 2.2** + the **COGA** (Cognitive &
 Learning Disabilities) task force "Making Content Usable", the **British Dyslexia Association**
@@ -255,7 +255,9 @@ The automated gates that cover these rules (CI runs them in `.github/workflows/c
   twenty interaction checks, ported from the older `scripts/validate.mjs` onto Playwright (icons
   painted, one h1, heading outline, copy-token labels, decorative icons aria-hidden, scroll-spy, ZONE
   header gating, cmd-k palette, dialog focus-trap, theme toggle, 0 overflow at 360/390/768/1024/1440,
-  reduced-motion, no console errors).
+  reduced-motion, no console errors), plus a separate check that under `prefers-reduced-transparency:
+  reduce` no element computes a backdrop blur and the sticky nav is the opaque `--surface`, in each
+  theme.
 - **storybook build** (`pnpm build-storybook`): the type/parse gate for `src/ui/*`.
 - **storybook smoke** (`scripts/journey/storybook-smoke.journey.mjs`, run by `pnpm journey:ci`): loads
   every story incl. `play()`, expects 0 real errors. `node scripts/sbsmoke.mjs` is the local equivalent.
@@ -264,5 +266,5 @@ Manual / review checks beyond the automated gates:
 
 - text-spacing resilience: apply the 1.4.12 user stylesheet; nothing clips.
 - no text token <16px in reading contexts; no `text-align:justify`; no `outline:none` without replacement; no infinite animation; no color-only status.
-- reflow at 320px / 400% zoom; reduced-motion and reduced-transparency honoured.
+- reflow at 320px / 400% zoom; reduced-motion honoured (reduced transparency is automated, above).
 - every interactive box ≥24px (or 24px-spacing exception); focus visible on every control including dense table cells.
