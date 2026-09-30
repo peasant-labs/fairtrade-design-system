@@ -160,3 +160,26 @@ records:
       budget: Seconds of local compute inside the existing browser-free contracts step; one pass over the declared inventory plus nine cases.
       cleanup: No temporary state is created; the mutation runs in memory and the process exits before the guard returns.
     exitCondition: Fold the rule into a package path helper or delete the guard once a lower-level package or compiler check proves the same containment invariant.
+  - name: app-reduced-transparency-computed-check
+    answers:
+      subject: Under prefers-reduced-transparency reduce, no element on the built demo computes a backdrop blur, and the sticky nav computes the opaque --surface, in each theme.
+      necessity: The incident was a cascade-layer loss. A normal fallback in @layer base lost to the blurred rules in the components layer, so it never applied. A source-text row sees the declaration and passes; only a computed read of the mounted page shows which layer wins.
+      productionPath: The production build served by the vite preview that playwright.journey.config.mjs starts, at /?fb=off (with &theme=light in the light project), with the media feature set through CDP Emulation.setEmulatedMedia because Playwright's emulateMedia has no reduced-transparency option.
+      cost: One browser context and one page load per theme project inside the existing journey step, under a second in CI, with a 30-second test timeout; no new service, port, or artifact on success.
+      lifetime: One browser context closed in finally, which ends the CDP session with it; failure artifacts go to the gitignored scripts/journey/.artifacts.
+      concurrency: The journey runs with one worker and no full parallelism; the check shares the journey's fixed app port and its local server reuse.
+      ciParity: pnpm journey:ci in the gates job of the pinned Playwright container, after pnpm build.
+      evidence: The assertion message carries the media match, the rendered theme, the resolved --surface, the nav background, and the list of elements that still blur; the JSON report and the failure screenshot add to it.
+      mutation: Deleting the global !important rule, replacing it with a normal .nav rule in @layer base, narrowing it to a few selectors, or dropping the opaque nav background fails the check for the intended reason.
+      exitCondition: Switch to page.emulateMedia when Playwright supports reduced transparency, and delete the check if the base UI stops using backdrop blur.
+    lowerLayer:
+      result: promote
+      detail: The mobile-layout source-text rows catch a deleted declaration but not a move into a losing cascade layer; a mutation that moved the rule passed every existing gate before this check.
+    decision:
+      verdict: approve
+      rationale: All ten answers are present, only a computed read observes the cascade risk, and the check adds one page load per theme to a journey that already runs.
+    executionPolicy:
+      runner: The existing Playwright journey config against the built app.
+      budget: One page load per theme project with a 30-second timeout, inside the existing gates job.
+      cleanup: The browser context is closed in finally on every exit path.
+    exitCondition: Delete the check when the base UI no longer uses backdrop blur, or replace the CDP call once Playwright emulates the feature directly.

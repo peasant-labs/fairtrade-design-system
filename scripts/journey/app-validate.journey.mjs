@@ -3,7 +3,8 @@
  * Ports scripts/validate.mjs onto Playwright: drives the production build
  * (vite preview on :5180, started by the journey config) and asserts the
  * rules the contrast gate cannot see — a11y wiring, interactions, console
- * health, reduced-motion, heading hierarchy, and overflow breakpoints.
+ * health, reduced-motion, heading hierarchy, and overflow breakpoints. A
+ * separate check proves reduced transparency removes every backdrop blur.
  * Runs against the live clock with no determinism shim, exactly like the
  * script it replaces.
  */
@@ -174,12 +175,15 @@ test.describe('built app', () => {
     expect(errors, errors.slice(0, 3).join(' | ')).toEqual([])
   })
 
-  // Reduced transparency drops every backdrop blur and makes the sticky nav opaque. The fallback
-  // is an !important rule in @layer base: a normal declaration there loses to the blurred rules in
-  // the components layer (an earlier .nav fallback never applied for that reason), and only a
-  // computed read of the mounted page sees that cascade. Playwright's emulateMedia has no
-  // reduced-transparency option, so the feature is set through CDP.
-  test('honors reduced transparency', async ({ browser }) => {
+  // Reduced transparency: no element on the page computes a backdrop blur, and the sticky nav is
+  // the opaque --surface, in the theme this project renders. The fallback is an !important rule in
+  // @layer base: a normal declaration there loses to the blurred rules in the components layer
+  // (an earlier .nav fallback never applied for that reason), and only a computed read of the
+  // mounted page sees that cascade. The app ignores prefers-color-scheme, so the light project
+  // pins ?theme=light before navigating and the check asserts the theme it sees. Playwright's
+  // emulateMedia has no reduced-transparency option, so the feature is set through CDP.
+  test('honors reduced transparency', async ({ browser, theme }) => {
+    test.setTimeout(30_000)
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } })
     try {
       const p = await ctx.newPage()
@@ -187,26 +191,30 @@ test.describe('built app', () => {
       await cdp.send('Emulation.setEmulatedMedia', {
         features: [{ name: 'prefers-reduced-transparency', value: 'reduce' }],
       })
-      await p.goto(URL, { waitUntil: 'load' })
+      await p.goto(URL + (theme === 'light' ? '&theme=light' : ''), { waitUntil: 'load' })
       const seen = await p.evaluate(() => {
-        const read = (sel) => {
-          const el = document.querySelector(sel)
-          if (!el) return null
-          const cs = getComputedStyle(el)
-          return { blur: cs.backdropFilter, bg: cs.backgroundColor }
-        }
+        const probe = document.createElement('div')
+        probe.style.background = 'var(--surface)'
+        document.body.appendChild(probe)
+        const surface = getComputedStyle(probe).backgroundColor
+        probe.remove()
+        const blurred = [...document.querySelectorAll('*')]
+          .filter((el) => getComputedStyle(el).backdropFilter !== 'none')
+          .map((el) => el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).join('.') : ''))
+        const nav = document.querySelector('.nav')
         return {
           matches: matchMedia('(prefers-reduced-transparency: reduce)').matches,
-          nav: read('.nav'),
-          scrim: read('.scrim'),
+          theme: document.documentElement.getAttribute('data-theme') || 'dark',
+          surface,
+          navBg: nav ? getComputedStyle(nav).backgroundColor : null,
+          blurred,
         }
       })
       const detail = JSON.stringify(seen)
       expect(seen.matches, detail).toBe(true)
-      expect(seen.nav?.blur, detail).toBe('none')
-      // an opaque computed colour serialises as rgb(); a translucent one as rgba()
-      expect(seen.nav?.bg, detail).toMatch(/^rgb\(/)
-      expect(seen.scrim?.blur, detail).toBe('none')
+      expect(seen.theme, detail).toBe(theme)
+      expect(seen.blurred, detail).toEqual([])
+      expect(seen.navBg, detail).toBe(seen.surface)
     } finally {
       await ctx.close()
     }
