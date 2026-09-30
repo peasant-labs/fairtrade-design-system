@@ -11,7 +11,8 @@
 >   files in the same commit.
 
 This is not an "accessibility settings" page. The rules below are the **defaults** of the fairtrade
-design system, stated as binding in `DESIGN.md`; this file records where each one comes from. They
+design system, stated as binding in `DESIGN.md`; this file records where each one comes from. Where
+a bullet here says more than `DESIGN.md`, the extra is research guidance, not a rule. They
 are defaults because the product is a **data-heavy** application (long transcripts, tables, code,
 dashboards) and our users include people who are dyslexic, have ADHD, or are autistic. Designing
 for them by default makes the product calmer, faster to scan, and less fatiguing for **everyone**.
@@ -108,12 +109,14 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
   Validate every text-on-surface pair in CI. *(WCAG 1.4.3 / 1.4.6)*
 - **Non-text contrast ≥3:1 (WCAG 1.4.11) on every functional border, input outline, focus
   ring, meaningful icon, toggle, chart series.** In dense tables the structure *is* the information.
-  **Done (verified by the contrast gate, `scripts/contrast.mjs`, run in CI via `pnpm build`):**
+  **Done for control borders and the focus ring (verified by the contrast gate, `scripts/contrast.mjs`,
+  run in CI via `pnpm build`); icons, toggles and chart series are checked in review:**
   functional control/input borders use `--rule-strong`, raised to clear 3:1 against every surface in
   both themes (dark `#6f6a5f` ~3.2 to 3.8:1, light `#8b836d` ~3.1 to 3.4:1), kept 1px thin. Structural
   hairline dividers (`--rule`) are deliberately sub-3:1 (~1.6 to 1.8:1): under 1.4.11 they are
   decorative separators between same-tone surfaces, not borders that identify a component or its state
-  (owner decision 2026-06-16). The gate enforces 3:1 on the functional set and reports the dividers. *(WCAG 1.4.11)*
+  (owner decision 2026-06-16). The gate fails on control borders and the focus ring, and only reports
+  the toggle fill, the `--amber-dim` focus tint and the dividers. *(WCAG 1.4.11)*
 - **Never color alone (WCAG 1.4.1).** Every status/diff/log-level/required-field carries a redundant
   icon + label + shape. Negative numbers get a leading minus/parentheses. Pairs perfectly with the
   locked "real icons, not glyph-dots" rule. *(WCAG 1.4.1; COGA)*
@@ -249,8 +252,9 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
 The automated gates that cover these rules (CI runs them in `.github/workflows/ci.yml`):
 
 - **contrast gate** (`scripts/contrast.mjs`, run via `pnpm build` before `vite build`): pure-JS WCAG
-  2.x ratios in both themes - every text/surface pair ≥4.5:1 (reports <7:1 primary); every functional
-  border/icon/focus ring ≥3:1; structural hairline dividers are reported, not failed. No APCA today.
+  2.x ratios in both themes - every required text/surface pair ≥4.5:1; control borders and the focus
+  ring ≥3:1; the toggle fill, the `--amber-dim` focus tint and the structural dividers are reported,
+  not failed. It has no icon or chart-series pairs. No APCA today.
 - **built-app validation** (`scripts/journey/app-validate.journey.mjs`, run by `pnpm journey:ci`): the
   twenty interaction checks, ported from the older `scripts/validate.mjs` onto Playwright (icons
   painted, one h1, heading outline, copy-token labels, decorative icons aria-hidden, scroll-spy, ZONE
@@ -268,3 +272,4 @@ Manual / review checks beyond the automated gates:
 - no text token <16px in reading contexts; no `text-align:justify`; no `outline:none` without replacement; no infinite animation; no color-only status.
 - reflow at 320px / 400% zoom; reduced-motion honoured (reduced transparency is automated, above).
 - every interactive box ≥24px (or 24px-spacing exception); focus visible on every control including dense table cells.
+- meaningful icons, toggle boundaries and chart series clear 3:1 against their surfaces (the gate does not check them).

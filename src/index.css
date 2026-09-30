@@ -177,6 +177,8 @@
 
 /* ---------------------------------------------------------------------- */
 @layer base {
+  /* the consumer-safe subset of this layer is copied by hand into packages/tokens/base.css by
+     buildBaseCss() in scripts/gen-llm-artifacts.mjs: a base rule consumers need goes in both. */
   /* section snapping is PURE CSS - never JS. the old JS wheel handler (preventDefault + per-gesture
      cooldown) owned the gesture, swallowed half of every flick and froze the page; that is gone for
      good. `mandatory` gives the firm one-section-per-flick feel (proximity was too weak to notice).
