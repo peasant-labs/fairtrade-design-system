@@ -206,14 +206,15 @@ components:
 > - **The in-use demo** (`#inuse`, fairtrade.peasantlabs.org) is the fidelity oracle. When the demo
 >   and this file disagree, match the demo. Record the conflict as a numbered item on the open
 >   ratification issue (today #136, so pointers read `(#136/N)`), add one line under "Known
->   conflicts with the demo", and mark every sentence that states the rule with the pointer. A
->   ratified change resolves it.
-> - **Status.** A pointer, `(#<issue>/N)`, marks the clause it follows. That clause is a known
->   conflict: which side changes stays open until the item is decided. Everything else here is
->   binding, including the rest of a rule that carries a pointer. Where a prose clause is pointed,
->   the matching frontmatter role is a known conflict too. A demo that breaks a binding rule has a
->   defect, filed on its own issue. Either way, consumers match the demo until the fix or the
->   decision lands here first. The Overview and Key Characteristics summarize the named rules,
+>   conflicts with the demo", and put the pointer right after the conflicting clause in every
+>   sentence that states it (see Status). A ratified change resolves it.
+> - **Status.** A pointer, `(#<issue>/N)`, marks the clause it follows. The conflict covers what
+>   the item's line under "Known conflicts with the demo" describes; there, which side changes
+>   stays open until the item is decided. Everywhere else the clause binds, new fairtrade work
+>   included, and so does the rest of the rule. Where a prose clause is pointed, the matching
+>   frontmatter role is a known conflict too. A demo that breaks a binding rule has a defect, filed
+>   on its own issue. Either way, consumers match the demo until the fix or the decision lands in
+>   fairtrade first. The Overview and Key Characteristics summarize the named rules,
 >   whose pointers govern. Research guidance that the library does not ship yet stays in
 >   `llm/NEUROINCLUSIVE.md` until the PR that ships it adds it here.
 
@@ -252,9 +253,9 @@ Seven principles, in priority order:
    states, minimal motion, WCAG AA in both themes.
 
 **The Static-First Rule.** Motion is off by default (`--motion-base`). Short transitions
-(`--dur-1` to `--dur-3`) belong inside `@media (prefers-reduced-motion: no-preference)`, and the
-reduce block zeroes every animation and transition globally, so nothing moves under reduce
-(#136/17). Nothing loops, pulses, blinks, auto-plays or auto-scrolls the reading view (#136/7);
+(`--dur-1` to `--dur-3`) belong inside `@media (prefers-reduced-motion: no-preference)` (#136/17),
+and the reduce block zeroes every animation and transition globally, so nothing moves under
+reduce. Nothing loops, pulses, blinks, auto-plays or auto-scrolls the reading view (#136/7);
 nothing flashes more than three times a second; a live table settles at most one
 change a second; the live indicator is a static filled dot. The one long entrance (`--dur-entrance`) belongs to the
 presentation site's hero, never to a product surface.
@@ -361,8 +362,9 @@ The presentation site also uses a locked three-tier heading ladder (`--fs-group`
 `--fs-sub`) that does not drift down the page.
 
 ### Named Rules
-**The 16px Floor Rule (#130, #136/3).** Nothing a person reads drops below 16px (`--fs-min`): table cells, code,
-log lines, tooltips and metadata included. Chrome labels are mono 14 (`--fs-label`). Gain density
+**The 16px Floor Rule.** Nothing a person reads drops below 16px (`--fs-min`): table cells, code,
+log lines, tooltips and metadata included (#136/3). Chrome labels are mono 14 (`--fs-label`,
+#136/3). #130 inventories the sizes below the floor. Gain density
 through row height and padding, never smaller glyphs.
 
 **The Mono Is Chrome Rule.** Mono is for code, IDs, timecodes, tabular data and chrome. Paragraphs
@@ -381,7 +383,7 @@ column.
 **The Bold, Not Italic Rule.** Emphasis is weight: `em` and `i` render at 600, upright. Underline is
 reserved for links. In prose, links carry a dotted underline (solid on hover and focus) so they
 never rely on color alone; chrome links stay clean (#136/23). Bold earns a faint amber glow in the dark theme
-only, on single accent words, never on multi-line text.
+only, on single accent words, never on multi-line text (#136/28).
 
 ## Layout
 
@@ -409,7 +411,8 @@ stable breadcrumb, a sticky context header naming the current transcript or data
 active nav state, position indicators in long flows ("turn 312 of 1,840"), and anchor-linkable rows.
 
 **The Progressive Disclosure Rule.** Lead with a summary and defer detail: collapsed turns and tool
-calls, headline metrics with drill-down. Calm by default; the user opts into density (#136/5).
+calls, headline metrics with drill-down (#136/27). Calm by default; the user opts into density
+(#136/5).
 
 **The Target Rule.** Every interactive box is at least 24 by 24 (`--target-min`); dense controls
 may instead meet the WCAG 2.5.8 spacing exception. Primary actions aim for 44
@@ -436,7 +439,7 @@ opaque surfaces (#136/16).
 
 ### Shadow Vocabulary
 - **Amber glow** (`--glow`, `--glow-soft`): a faint text glow on accent words (`.hl`) and on bold
-  text in transcript bodies, and a faint halo on floating panels and the selected graph node. Dark
+  text in transcript bodies (#136/28), and a faint halo on floating panels and the selected graph node. Dark
   theme only: the light theme sets both to `none`.
 - **Overlay lift**: in the dark theme, dialogs, floating menus and popovers separate from the page
   with the glow plus one soft drop shadow (#136/10).
@@ -616,7 +619,8 @@ vector chrome and ASCII never mix on one element.
 ### Known conflicts with the demo
 Each line is a place where the in-use demo and this record disagree, labelled with its item on
 #136, which tracks the decisions (#130 tracks the type sizes). Until an item is ratified, consumers
-match the demo. Every sentence that states an item's rule carries its `(#136/N)` pointer. The PR
+match the demo; the Status note above sets the scope. The pointer sits right after the conflicting
+clause, in every sentence that states it. The PR
 that resolves an item, whichever way it goes, deletes its line here and every pointer to it (find
 them with `grep -nw`), and amends every file that restates the rule. Demo and library fixes filed as
 their own issues are tracked there, not here.
@@ -650,5 +654,8 @@ their own issues are tracked there, not here.
 - **#136/23, link underlines in chrome**: breadcrumb links and home session titles carry the dotted
   underline.
 - **#136/24, icon sizes**: badges, chips, legends and gutters render Lucide icons at 9 to 13px.
-- **#136/25, focus ring offset**: segmented and tight controls draw the ring inset, at -2 to -4px.
+- **#136/25, focus ring offset**: segmented and tight controls draw the ring inset or at 1px.
 - **#136/26, query direction**: four rules adapt with `min-width` queries.
+- **#136/27, progressive disclosure**: turns never collapse, the demo opens some tool calls on load,
+  and the analytics tiles have no drill-down.
+- **#136/28, glow scope**: every bold span in a transcript body glows, including multi-word ones.

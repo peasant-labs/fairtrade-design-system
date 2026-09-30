@@ -102,8 +102,9 @@ Hard floors (checked in review, not by a lint): no text `<16px` in reading conte
   warm paper (`#fbfaf7`/`#fdfcfa`); body ink stays the locked off-black `#27241f`. *(BDA 2023; Rello & Bigham ASSETS 2017)*
 - **Dark theme: off-white on near-black, never `#fff` on `#000`.** Pure white on black causes
   halation (haloing) for ~1-in-3 adults with astigmatism. Body uses `--ink #e9e5db` (16:1);
-  `--ink-strong #f8f5ed` (18.5:1) only for short emphasis; the amber text-shadow glow never touches
-  multi-line text. (Already satisfied - do not "fix" to pure black/white.) *(NN/g Dark Mode; COGA)*
+  `--ink-strong #f8f5ed` (18.5:1) only for short emphasis; the amber text-shadow glow should never
+  touch multi-line text (`#136/28`). (The off-white on near-black is satisfied - do not "fix" it to
+  pure black/white.) *(NN/g Dark Mode; COGA)*
 - **Contrast floor 4.5:1, target 7:1 (AAA) for primary body.** Tune earthy hues by lightness; the
   muted `--ink-3` (≈6.5:1 dark `#9a9488` / 7:1 light) is for **secondary** text only, never primary
   body. (Raised from ≈5:1 dark on 2026-06-16: thin mono glyphs anti-alias darker, so the rendered
@@ -244,8 +245,8 @@ Hard floors (checked in review, not by a lint): no text `<16px` in reading conte
    non-color cue (a dotted underline at rest, solid on hover and focus; no `>` marker) without
    undoing the global underline-free aesthetic.
 6. **cp437/Qud texture & glow vs flat-background/halation rules.** → Confine texture/glow to non-text
-   chrome; every region with running text or data stays a flat single fill; the `.hl` glow is single
-   accent words only.
+   chrome; every region with running text or data stays a flat single fill; glow is for single
+   accent words only (`#136/28`: the demo also glows multi-word bold in transcript bodies).
 
 ---
 
@@ -262,15 +263,15 @@ The automated gates that cover these rules (CI runs them in `.github/workflows/c
   painted, one h1, heading outline, copy-token labels, decorative icons aria-hidden, scroll-spy, ZONE
   header gating, cmd-k palette, dialog focus-trap, theme toggle, 0 overflow at 360/390/768/1024/1440,
   reduced-motion, no console errors), plus a separate check that under `prefers-reduced-transparency:
-  reduce` no mounted element and no fresh unclassed div computes a backdrop blur, and the nav and a
-  `.txn-sticky` bar compute the opaque `--surface`, in each
-  theme.
+  reduce` no mounted element and no fresh unclassed div computes a backdrop blur, and the nav, the
+  mounted transcript glass bars and a `.txn-sticky` bar compute the opaque `--surface`, in each theme.
 - **storybook build** (`pnpm build-storybook`): the type/parse gate for `src/ui/*`.
 - **storybook smoke** (`scripts/journey/storybook-smoke.journey.mjs`, run by `pnpm journey:ci`): loads
   every story incl. `play()`, expects 0 real errors. `node scripts/sbsmoke.mjs` is the local equivalent.
 
-Manual / review checks beyond the automated gates. A surface that matches the demo on an item
-listed under "Known conflicts with the demo" in `DESIGN.md` is not a finding.
+Manual / review checks beyond the automated gates. A consumer surface that matches the demo is not
+a finding (see `DESIGN.md` Status). On a listed known conflict the decision is open; anywhere else
+the demo has a defect to file in fairtrade. New fairtrade work is held to the record.
 
 - text-spacing resilience: apply the 1.4.12 user stylesheet; nothing clips.
 - no text token <16px in reading contexts; no `text-align:justify`; no `outline:none` without replacement; no infinite animation; no color-only status.
