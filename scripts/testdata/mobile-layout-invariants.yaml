@@ -82,8 +82,20 @@ invariants:
     file: src/ui/Dialog.jsx
     description: >-
       the two dialog-head rows target .dlg-head h3 and .dlg-head > .btn-icon, so
-      the markup they style is pinned too: the head div, its h3 title and the
-      close button's btn-icon class, in order. If any of them changed, a rule
-      would match nothing while its row stayed green.
+      the library dialog's markup is pinned too: the head div, then its h3 title
+      and the close button's btn-icon class. If one changed, a rule would match
+      nothing while its row stayed green. An edit that keeps both selectors
+      matching but rewrites these strings fails this row too; update the row.
     mustContainAll:
-      - "<div className=\"dlg-head\">\n          <h3 id={labelId}>{title}</h3>\n          <button className=\"btn btn-ghost btn-icon\""
+      - "<div className=\"dlg-head\">"
+      - "<h3 id={labelId}>"
+      - "btn-icon\""
+  - id: site-dialog-head-markup-is-pinned
+    file: src/Dialog.jsx
+    description: >-
+      the presentation site's own dialog uses the same head markup and the same
+      two rules, so it is pinned the same way.
+    mustContainAll:
+      - "<div className=\"dlg-head\">"
+      - "<h3 id={labelId}>"
+      - "btn-icon\""

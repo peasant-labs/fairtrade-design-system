@@ -162,7 +162,7 @@ records:
     exitCondition: Fold the rule into a package path helper or delete the guard once a lower-level package or compiler check proves the same containment invariant.
   - name: app-reduced-transparency-computed-check
     answers:
-      subject: Under prefers-reduced-transparency reduce, no element on the built demo computes a backdrop blur, and the sticky nav computes the opaque --surface, in each theme.
+      subject: Under prefers-reduced-transparency reduce, no mounted element on the built demo and no fresh unclassed div computes a backdrop blur, and the nav and a .txn-sticky bar compute the opaque --surface, in each theme.
       necessity: The incident was a cascade-layer loss. A normal fallback in @layer base lost to the blurred rules in the components layer, so it never applied. A source-text row sees the declaration and passes; only a computed read of the mounted page shows which layer wins.
       productionPath: The production build served by the vite preview that playwright.journey.config.mjs starts, at /?fb=off (with &theme=light in the light project), with the media feature set through CDP Emulation.setEmulatedMedia because Playwright's emulateMedia has no reduced-transparency option.
       cost: One browser context and one page load per theme project inside the existing journey step, under a second in CI, with a 30-second test timeout; no new service or port, and no uploaded artifact.

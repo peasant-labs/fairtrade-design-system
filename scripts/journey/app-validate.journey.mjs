@@ -5,7 +5,8 @@
  * rules the contrast gate cannot see — a11y wiring, interactions, console
  * health, reduced-motion, heading hierarchy, and overflow breakpoints. A
  * separate check proves that under reduced transparency no mounted element,
- * and no fresh unclassed element, computes a backdrop blur.
+ * and no fresh unclassed div, computes a backdrop blur, and the sticky bars
+ * are opaque.
  * Runs against the live clock with no determinism shim, exactly like the
  * script it replaces.
  */
@@ -199,8 +200,8 @@ test.describe('built app', () => {
         document.body.appendChild(probe)
         const surface = getComputedStyle(probe).backgroundColor
         probe.remove()
-        // a fresh element carrying its own blur proves the rule is universal, not a list of the
-        // classes this page happens to mount (set before its first style computation)
+        // a fresh unclassed div carrying its own blur fails a rule narrowed to a list of classes,
+        // including classes this page does not mount (set before its first style computation)
         const blurProbe = document.createElement('div')
         blurProbe.style.backdropFilter = 'blur(4px)'
         document.body.appendChild(blurProbe)
@@ -209,6 +210,13 @@ test.describe('built app', () => {
         const blurred = [...document.querySelectorAll('*')]
           .filter((el) => getComputedStyle(el).backdropFilter !== 'none')
           .map((el) => el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).join('.') : ''))
+        // the transcript's sticky bar is not mounted on this page; a fresh one reads the served
+        // cascade for its opaque background under reduce
+        const sticky = document.createElement('div')
+        sticky.className = 'txn-sticky'
+        document.body.appendChild(sticky)
+        const stickyBg = getComputedStyle(sticky).backgroundColor
+        sticky.remove()
         const nav = document.querySelector('.nav')
         return {
           matches: matchMedia('(prefers-reduced-transparency: reduce)').matches,
@@ -216,6 +224,7 @@ test.describe('built app', () => {
           surface,
           navBg: nav ? getComputedStyle(nav).backgroundColor : null,
           probeBlur,
+          stickyBg,
           blurred,
         }
       })
@@ -227,6 +236,7 @@ test.describe('built app', () => {
       expect(seen.blurred, detail).toEqual([])
       expect(seen.probeBlur, detail).toBe('none')
       expect(seen.navBg, detail).toBe(seen.surface)
+      expect(seen.stickyBg, detail).toBe(seen.surface)
     } finally {
       await ctx.close()
     }
