@@ -1,5 +1,11 @@
 # neuroinclusive by default
 
+> **Authority.** The binding rules and token values live in [`../DESIGN.md`](../DESIGN.md), the one
+> design record (its token values are generated from `src/index.css`). This file keeps the research
+> behind those rules, how they were reconciled with the locked identity, and the review checklist.
+> If this file and `DESIGN.md` disagree, `DESIGN.md` wins and the disagreement is a bug: fix both in
+> the same commit.
+
 This is not an "accessibility settings" page. These are the **default** rules of the fairtrade
 design system, because the product is a **data-heavy** application (long transcripts, tables,
 code, dashboards) and our users include people who are dyslexic, have ADHD, or are autistic.
@@ -20,7 +26,8 @@ is stated.
 
 ## the defaults that ship in the tokens
 
-These are baked into `src/index.css` (and are intended to flow to every app once the multi-app rollout lands - that shared `@peasant-labs/theme` package does not exist in this repo yet):
+These are baked into `src/index.css` and reach every consuming app through the package's
+`@peasant-labs/fairtrade/tokens.css` and `base.css` exports:
 
 | token | value | rule |
 |---|---|---|
@@ -213,7 +220,8 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
 1. **Pure-white light theme vs glare.** → Shift the light *reading* canvas a few percent warm to
    paper-white (`#fbfaf7`/`#fdfcfa`); it still reads as a crisp white theme and carries a faint amber
    kinship, while removing the documented `#000`-on-`#fff` glare. If literal `#fff` is required, scope
-   it to thin chrome and make large reading surfaces the paper. *(decision pending the owner - see below)*
+   it to thin chrome and make large reading surfaces the paper. *(shipped: the light canvas and surface
+   are the warm paper values, recorded in `DESIGN.md` as the warm paper rule)*
 2. **Amber/earthy palette vs functional contrast.** → Amber = accent/link/keyword/focus/large-bold,
    never small body text on light. **Raise the rule/border tokens to clear 3:1** (thin preserved).
    Tune muted tokens by lightness to clear ≥4.5:1.
@@ -234,17 +242,19 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
 
 ## what to verify in CI / review
 
-The four gates that actually run (CI mirrors these in `.github/workflows/ci.yml`):
+The automated gates that cover these rules (CI runs them in `.github/workflows/ci.yml`):
 
 - **contrast gate** (`scripts/contrast.mjs`, run via `pnpm build` before `vite build`): pure-JS WCAG
   2.x ratios in both themes - every text/surface pair ≥4.5:1 (reports <7:1 primary); every functional
   border/icon/focus ring ≥3:1; structural hairline dividers are reported, not failed. No APCA today.
-- **validator** (`node scripts/validate.mjs`): the 20-check interactive puppeteer gate (icons painted,
-  one h1, heading outline, copy-token labels, decorative icons aria-hidden, scroll-spy, ZONE header
-  gating, cmd-k palette, dialog focus-trap, theme toggle, 0 overflow at 360/390/768/1024/1440,
+- **built-app validation** (`scripts/journey/app-validate.journey.mjs`, run by `pnpm journey:ci`): the
+  twenty interaction checks, ported from the older `scripts/validate.mjs` onto Playwright (icons
+  painted, one h1, heading outline, copy-token labels, decorative icons aria-hidden, scroll-spy, ZONE
+  header gating, cmd-k palette, dialog focus-trap, theme toggle, 0 overflow at 360/390/768/1024/1440,
   reduced-motion, no console errors).
 - **storybook build** (`pnpm build-storybook`): the type/parse gate for `src/ui/*`.
-- **storybook smoke** (`node scripts/sbsmoke.mjs`): loads every story incl. `play()`, expects 0 real errors.
+- **storybook smoke** (`scripts/journey/storybook-smoke.journey.mjs`, run by `pnpm journey:ci`): loads
+  every story incl. `play()`, expects 0 real errors. `node scripts/sbsmoke.mjs` is the local equivalent.
 
 Manual / review checks beyond the automated gates:
 

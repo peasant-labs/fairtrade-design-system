@@ -1,7 +1,8 @@
 # AGENTS.md - fairtrade design system
 
-Guidance for AI agents working in this repo. Humans: see `README.md`, plus the design reference in
-`llm/DESIGN.md` and `llm/NEUROINCLUSIVE.md`.
+Guidance for AI agents working in this repo. Humans: see `README.md`, plus the design record in
+`DESIGN.md` (with `llm/NEUROINCLUSIVE.md` for the research behind its neuroinclusive rules) and
+the product record in `PRODUCT.md`.
 
 ## what this is
 A single-page presentation site for the **fairtrade** design system plus the component library
@@ -17,8 +18,13 @@ manager: **pnpm**. Source is **JS/JSX only - no TypeScript**. Icons: `lucide-rea
 - `src/sections-react/*.jsx`, `src/App.jsx` - the presentation page (not the library).
 - `public/tokens.json`, `public/components.json` - generated machine-readable token + component
   manifests (DTCG-ish). Do not hand-edit; run `node scripts/gen-llm-artifacts.mjs`.
-- `llm/DESIGN.md` - the design system reference (tokens, principles, voice, component families).
-  `llm/NEUROINCLUSIVE.md` - the neuroinclusive defaults baked into the tokens, with their research sources.
+- `DESIGN.md` - the one design record (tokens, principles, colors, typography, layout, shapes,
+  components, voice). Its YAML frontmatter is generated from `src/index.css` by
+  `scripts/gen-llm-artifacts.mjs`; edit the tokens, never the frontmatter. The prose is authored.
+  `llm/NEUROINCLUSIVE.md` - the research sources and review checklist behind its neuroinclusive
+  rules; where the two disagree, `DESIGN.md` wins. `llm/DESIGN.md` is a pointer to `DESIGN.md`.
+- `PRODUCT.md` - who the design system serves, what it owns, and its constraints (read by the
+  `impeccable` skill before UI work here).
 
 ## commands
 - `pnpm dev` - run the page (Vite, http://localhost:5180).
@@ -35,7 +41,7 @@ manager: **pnpm**. Source is **JS/JSX only - no TypeScript**. Icons: `lucide-rea
 - **16px floor** for readable body text; chrome/labels are mono 14. **All-lowercase UI chrome**;
   never lowercase user content (names, code, data values). **Tabular numbers** on counts/durations.
 - **Neuroinclusive by default**: 1.5 line-height, >=24px hit targets, global focus ring,
-  static-first motion (guard transitions with `prefers-reduced-motion`). See `llm/NEUROINCLUSIVE.md`.
+  static-first motion (guard transitions with `prefers-reduced-motion`). See `DESIGN.md`.
 - **Semantic meaning is never carried by colour alone** - always pair an icon or text label.
 - **Real brand logos**: when naming a company/provider (claude, gemini, openai, cursor, opencode, strike),
   lead with `<BrandMark name="..." />` (or `<Tag brand="...">`), never a generic glyph.
