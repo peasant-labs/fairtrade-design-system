@@ -78,3 +78,11 @@ invariants:
       dialog at 390px.
     mustContainAll:
       - ".dlg-head h3 { @apply text-md; min-width: 0; overflow-wrap: anywhere; }"
+  - id: dialog-head-title-is-an-h3
+    file: src/ui/Dialog.jsx
+    description: >-
+      the two dialog-head rows target .dlg-head h3 and .dlg-head > .btn-icon, so
+      the markup they style is pinned too. If the title stopped being an h3, the
+      wrap rule would match nothing while its row stayed green.
+    mustContainAll:
+      - "<h3 id={labelId}>"

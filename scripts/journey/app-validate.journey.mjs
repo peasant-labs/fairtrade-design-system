@@ -198,6 +198,13 @@ test.describe('built app', () => {
         document.body.appendChild(probe)
         const surface = getComputedStyle(probe).backgroundColor
         probe.remove()
+        // a fresh element carrying its own blur proves the rule is universal, not a list of the
+        // classes this page happens to mount (set before its first style computation)
+        const blurProbe = document.createElement('div')
+        blurProbe.style.backdropFilter = 'blur(4px)'
+        document.body.appendChild(blurProbe)
+        const probeBlur = getComputedStyle(blurProbe).backdropFilter
+        blurProbe.remove()
         const blurred = [...document.querySelectorAll('*')]
           .filter((el) => getComputedStyle(el).backdropFilter !== 'none')
           .map((el) => el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).join('.') : ''))
@@ -207,13 +214,17 @@ test.describe('built app', () => {
           theme: document.documentElement.getAttribute('data-theme') || 'dark',
           surface,
           navBg: nav ? getComputedStyle(nav).backgroundColor : null,
+          probeBlur,
           blurred,
         }
       })
       const detail = JSON.stringify(seen)
+      // printed on every run so a passing CI log records the theme and values the check saw
+      console.log(`reduced transparency [${theme}]: ${detail}`)
       expect(seen.matches, detail).toBe(true)
       expect(seen.theme, detail).toBe(theme)
       expect(seen.blurred, detail).toEqual([])
+      expect(seen.probeBlur, detail).toBe('none')
       expect(seen.navBg, detail).toBe(seen.surface)
     } finally {
       await ctx.close()

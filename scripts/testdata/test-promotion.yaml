@@ -169,12 +169,12 @@ records:
       lifetime: One browser context closed in finally, which ends the CDP session with it; failure artifacts go to the gitignored scripts/journey/.artifacts.
       concurrency: The journey runs with one worker and no full parallelism; the check shares the journey's fixed app port and its local server reuse.
       ciParity: pnpm journey:ci in the gates job of the pinned Playwright container, after pnpm build.
-      evidence: The assertion message carries the media match, the rendered theme, the resolved --surface, the nav background, and the list of elements that still blur; the JSON report and the failure screenshot add to it.
-      mutation: Deleting the global !important rule, replacing it with a normal .nav rule in @layer base, narrowing it to a few selectors, or dropping the opaque nav background fails the check for the intended reason.
+      evidence: Every run prints the media match, the rendered theme, the resolved --surface, the nav background, a fresh probe element's blur, and the list of elements that still blur to the CI log; a failing assertion carries the same object.
+      mutation: Deleting the global !important rule, replacing it with a normal .nav rule in @layer base, narrowing it to any list of selectors (the fresh probe element keeps its blur), or dropping the opaque nav background fails the check for the intended reason.
       exitCondition: Switch to page.emulateMedia when Playwright supports reduced transparency, and delete the check if the base UI stops using backdrop blur.
     lowerLayer:
       result: promote
-      detail: The mobile-layout source-text rows catch a deleted declaration but not a move into a losing cascade layer; a mutation that moved the rule passed every existing gate before this check.
+      detail: A mobile-layout-style source-text row would catch a deleted declaration but not a move into a losing cascade layer; a mutation that moved the rule passed every existing gate before this check.
     decision:
       verdict: approve
       rationale: All ten answers are present, only a computed read observes the cascade risk, and the check adds one page load per theme to a journey that already runs.
