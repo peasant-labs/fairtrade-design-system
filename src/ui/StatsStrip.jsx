@@ -6,7 +6,7 @@ import './StatsStrip.css'
    widths. Values are tabular. The host formats every value (counts, durations, sizes); a bare
    number is grouped with the en-US thousands separator. Pairs read value-first by default
    ("1,284 sessions"); `order: 'label-first'` suits a phrase such as "longest streak 3 wk".
-   Separation is spacing plus a 1px hairline, never a middot glyph. Nothing renders for no pairs. */
+   Pairs are separated by spacing alone, never a middot glyph. Nothing renders for no pairs. */
 
 const formatValue = (value) => (typeof value === 'number' ? value.toLocaleString('en-US') : value)
 

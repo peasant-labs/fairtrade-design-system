@@ -27,7 +27,7 @@ import BrandMark from './BrandMark.jsx'
  * Menu - a dropdown menu controlled by a single trigger button.
  *
  * @param {Object} props
- * @param {React.ReactNode} props.label             trigger label (lowercase chrome by default)
+ * @param {React.ReactNode} [props.label]           trigger label (lowercase chrome by default); omit it with `icon`
  * @param {MenuItem[]} [props.items=[]]             menu rows
  * @param {'start'|'end'} [props.align='start']     which edge of the trigger the popout aligns to
  * @param {React.ReactNode} [props.caption]         optional .menu-cap caption rendered inside the popout before the list

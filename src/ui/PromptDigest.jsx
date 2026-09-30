@@ -469,8 +469,11 @@ function SplitChain({ items, itemHref, author, selected, onSelect }) {
  * @param {'stacked' | 'split'} [props.layout='stacked'] - `stacked` renders the one chain with its
  *        session boundaries as separators; `split` lists the sessions beside a reading pane that
  *        shows the selected session's prompts.
- * @param {number} [props.selected] - split layout only: the selected session's index in the list
- *        (controlled). omit it and the component keeps its own selection, starting at the first.
+ * @param {number} [props.selected] - split layout only: the selected entry's position in the list
+ *        (controlled). The list has one entry per session boundary, in chain order, plus a leading
+ *        entry at 0 when items precede the first boundary. It is a position, not a transcript id,
+ *        because the same transcript can open more than one entry. Keep the index `onSelect`
+ *        reports. Omit it and the component keeps its own selection, starting at the first.
  * @param {(index: number, session: PromptDigestItemPayload | null) => void} [props.onSelect] - split
  *        layout only: called with the next index and its session boundary item (null for the
  *        leading entry of items that precede every boundary).

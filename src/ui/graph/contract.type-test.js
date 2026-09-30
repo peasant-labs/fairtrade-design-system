@@ -27,6 +27,7 @@
 /** @typedef {import('./index.js').CodeMapState} CodeMapState */
 /** @typedef {import('./index.js').CodeMapAction} CodeMapAction */
 
+import { GraphAppShell, GraphSectionNav, LOCAL_APP_SECTIONS, GRAPH_APP_SECTIONS } from './index.js'
 import {
   MAP_NODE_KINDS,
   CHANGE_BINDINGS,
@@ -262,3 +263,19 @@ _takesReadStateGrade('made_up_grade')
   const msg = failed.error
   void msg
 }
+
+/* ── (12) POSITIVE: the section navigation takes any list of `{ id, label }` entries ─
+   The components' `sections` default is LOCAL_APP_SECTIONS. Its declared element type must stay
+   `{ id: string, label: string, inNav?: boolean }`, not the registry's literal entries, so a
+   consumer's own list (extra fields such as `href`) and the deprecated GRAPH_APP_SECTIONS both
+   still type-check against the prop. The calls sit in a function that never runs. */
+/** @param {{ id: string, label: string, href: string }[]} consumerSections */
+function sectionsAcceptConsumerLists(consumerSections) {
+  GraphSectionNav({ sections: consumerSections })
+  GraphSectionNav({ sections: GRAPH_APP_SECTIONS })
+  GraphSectionNav({ sections: LOCAL_APP_SECTIONS })
+  const shellProps = { activeId: 'home', activePrimaryId: undefined, onSectionChange: undefined, backTo: undefined, onBack: undefined, children: null }
+  GraphAppShell({ ...shellProps, sections: consumerSections })
+  GraphAppShell({ ...shellProps, sections: GRAPH_APP_SECTIONS })
+}
+void sectionsAcceptConsumerLists
