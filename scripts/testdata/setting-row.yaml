@@ -2,6 +2,9 @@
 # the REAL row, performs `steps`, settles the host's write as `commit` says, and checks the value,
 # the status word (in its polite live region), the alert, and how many writes the row made.
 #   commit: resolve (the write lands), reject (the write fails with `error`), hold (never settles)
+#   strictMode: true mounts the row inside React.StrictMode, which runs every effect's cleanup
+#     once and then the effect again on mount (the development double run); a guard that the
+#     cleanup clears must be set again when the effect re-runs, or the write never settles
 #   steps: toggle | pick:<value> | check | edit | type:<text> | enter | escape | save | cancel
 #   expected.status: idle (no word), saving, saved or not saved
 # statusWords maps every exported row state (SETTING_ROW_STATES) to the word a user reads; the
@@ -75,6 +78,36 @@ rows:
     tag: not in peasant config
     steps: []
     expected: {value: true, status: idle, tag: not in peasant config, writes: []}
+  - name: strict mode, a switch write that lands
+    control: switch
+    value: false
+    strictMode: true
+    commit: resolve
+    steps: [toggle]
+    expected: {value: true, status: saved, writes: [true]}
+  - name: strict mode, a switch write that fails
+    control: switch
+    value: true
+    strictMode: true
+    commit: reject
+    error: village did not answer. your setting is unchanged.
+    steps: [toggle]
+    expected: {value: true, status: not saved, alert: village did not answer. your setting is unchanged., writes: [false]}
+  - name: strict mode, a text write that lands
+    control: text
+    value: alice@acme.dev
+    strictMode: true
+    commit: resolve
+    steps: [edit, type:alice@acme.example, save]
+    expected: {value: alice@acme.example, status: saved, writes: [alice@acme.example]}
+  - name: strict mode, a text write that fails
+    control: text
+    value: alice@acme.dev
+    strictMode: true
+    commit: reject
+    error: village did not answer. your setting is unchanged.
+    steps: [edit, type:alice@acme.example, enter]
+    expected: {value: alice@acme.dev, status: not saved, alert: village did not answer. your setting is unchanged., writes: [alice@acme.example]}
 
 groups:
   - {name: an open group, defaultOpen: true, rows: 3, expected: {open: true, summary: village 3 settings}}

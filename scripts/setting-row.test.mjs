@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 /* Mounted-source gate for SettingRow and SettingGroup: each row state (idle, pending, settled,
    failed with the previous value restored and the error announced), instant-apply select and
-   checkbox, text edit with save, Enter, cancel and Escape (one write per save), the tag, and an
-   open and a collapsed group. Cases: scripts/testdata/setting-row.yaml (+ .manifest.yaml).
+   checkbox, text edit with save, Enter, cancel and Escape (one write per save), the tag, a
+   switch and a text write that land and fail under React.StrictMode (whose development double
+   effect run must not strand a row at saving), and an open and a collapsed group. Cases:
+   scripts/testdata/setting-row.yaml (+ .manifest.yaml).
    Run: pnpm test:setting-row; mutations: pnpm test:setting-row:mutations. */
-import { loadFixturePair, withMountedSource, click, keydown, createReport, assertExactNames } from './mounted-parts.mjs'
+import { loadFixturePair, withMountedSource, click, keydown, createReport, assertExactNames, assertFields } from './mounted-parts.mjs'
 
 const FIXTURE = 'scripts/testdata/setting-row.yaml'
 const MANIFEST = 'scripts/testdata/setting-row.manifest.yaml'
@@ -31,7 +33,12 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       if (row.commit === 'reject') return Promise.reject(new Error(row.error))
       return Promise.resolve()
     }
-    const mounted = await mount(React.createElement(SettingRow, { label: 'the setting', help: 'what it does', control: row.control, value: row.value, options: row.options, tag: row.tag, onCommit }))
+    // a misspelt key must fail loudly, and a case named for StrictMode must actually run inside it
+    assertFields(row, ['name', 'control', 'value', 'steps', 'expected'], `${FIXTURE} row ${row.name}`, ['commit', 'error', 'options', 'tag', 'strictMode'])
+    if (row.strictMode !== undefined && row.strictMode !== true) throw new Error(`${FIXTURE}: ${row.name}: strictMode is true or left out`)
+    if (row.name.startsWith('strict mode') !== (row.strictMode === true)) throw new Error(`${FIXTURE}: ${row.name}: strictMode: true belongs to the cases named "strict mode, ..." and to no others`)
+    const settingRow = React.createElement(SettingRow, { label: 'the setting', help: 'what it does', control: row.control, value: row.value, options: row.options, tag: row.tag, onCommit })
+    const mounted = await mount(row.strictMode ? React.createElement(React.StrictMode, null, settingRow) : settingRow)
     const root = mounted.container
     for (const step of row.steps) {
       const [kind, arg] = step.split(/:(.*)/s)

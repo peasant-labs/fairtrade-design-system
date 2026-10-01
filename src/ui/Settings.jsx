@@ -42,8 +42,13 @@ function useCommit(value, onCommit) {
   const [shown, setShown] = useState(value)
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState(null)
+  // each mount marks the row alive and each cleanup marks it gone. StrictMode runs the cleanup
+  // and then the effect again on mount, so a flag the cleanup alone clears would stay cleared.
   const alive = useRef(true)
-  useEffect(() => () => { alive.current = false }, [])
+  useEffect(() => {
+    alive.current = true
+    return () => { alive.current = false }
+  }, [])
   useEffect(() => { setShown(value) }, [value])
 
   const commit = async (next) => {
