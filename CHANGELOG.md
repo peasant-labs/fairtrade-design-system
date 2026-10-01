@@ -4,6 +4,16 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.23 — 2026-10-01
+
+### Fixed
+
+- **`SettingRow`** settles its writes under React StrictMode. Its unmount
+  flag was cleared by the effect cleanup and never set again, so StrictMode's
+  development double run left every row at `saving`: it never showed `saved`,
+  the failure, or the restored value. Production builds were not affected.
+  (#144, #145)
+
 ## 0.0.22 — 2026-09-29
 
 ### Added
