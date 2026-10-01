@@ -1,5 +1,5 @@
 /* BrandMark - the single source of truth for provider/company logos in the component
-   library. The rule (see llm/DESIGN.md): whenever the UI names a company or provider, it
+   library. The rule (see DESIGN.md): whenever the UI names a company or provider, it
    leads with that company's REAL brand mark, never a generic stand-in glyph (a robot, a
    git fork, an eye). One real mark identifies the provider at a glance; a generic glyph
    identifies nothing.

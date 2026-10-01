@@ -3,7 +3,10 @@
  * Ports scripts/validate.mjs onto Playwright: drives the production build
  * (vite preview on :5180, started by the journey config) and asserts the
  * rules the contrast gate cannot see — a11y wiring, interactions, console
- * health, reduced-motion, heading hierarchy, and overflow breakpoints.
+ * health, reduced-motion, heading hierarchy, and overflow breakpoints. A
+ * separate check proves that under reduced transparency no mounted element,
+ * and no fresh unclassed div, computes a backdrop blur, and that the nav, the
+ * mounted transcript glass bars and a .txn-sticky bar are the opaque --surface.
  * Runs against the live clock with no determinism shim, exactly like the
  * script it replaces.
  */
@@ -15,7 +18,7 @@ const test = base.extend({
   },
 })
 
-const URL = 'http://localhost:5180/?fb=off'
+const URL = `http://localhost:${process.env.JOURNEY_APP_PORT || '5180'}/?fb=off`
 
 test.describe('built app', () => {
   // One serial pass holds every check; the overflow sweep reloads per width.
@@ -172,5 +175,82 @@ test.describe('built app', () => {
     expect(parseFloat(rmDur), rmDur).toBeLessThan(0.05)
 
     expect(errors, errors.slice(0, 3).join(' | ')).toEqual([])
+  })
+
+  // Reduced transparency: no mounted element and no fresh unclassed div computes a backdrop blur,
+  // and the nav, the mounted transcript glass bars and a .txn-sticky bar compute the opaque
+  // --surface, in the theme this project renders. The fallback is an !important rule in
+  // @layer base: a normal declaration there loses to the blurred rules in the components layer
+  // (an earlier .nav fallback never applied for that reason), and only a computed read of the
+  // mounted page sees that cascade. The app ignores prefers-color-scheme, so the light project
+  // pins ?theme=light before navigating and the check asserts the theme it sees. Playwright's
+  // emulateMedia has no reduced-transparency option, so the feature is set through CDP.
+  test('honors reduced transparency', async ({ browser, theme }) => {
+    test.setTimeout(30_000)
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } })
+    try {
+      const p = await ctx.newPage()
+      const cdp = await ctx.newCDPSession(p)
+      await cdp.send('Emulation.setEmulatedMedia', {
+        features: [{ name: 'prefers-reduced-transparency', value: 'reduce' }],
+      })
+      await p.goto(URL + (theme === 'light' ? '&theme=light' : ''), { waitUntil: 'load' })
+      const seen = await p.evaluate(() => {
+        const probe = document.createElement('div')
+        probe.style.background = 'var(--surface)'
+        document.body.appendChild(probe)
+        const surface = getComputedStyle(probe).backgroundColor
+        probe.remove()
+        // a fresh unclassed div carrying its own blur fails a rule narrowed to a list of classes,
+        // including classes this page does not mount (set before its first style computation)
+        const blurProbe = document.createElement('div')
+        blurProbe.style.backdropFilter = 'blur(4px)'
+        document.body.appendChild(blurProbe)
+        const probeBlur = getComputedStyle(blurProbe).backdropFilter
+        blurProbe.remove()
+        const blurred = [...document.querySelectorAll('*')]
+          .filter((el) => getComputedStyle(el).backdropFilter !== 'none')
+          .map((el) => el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).join('.') : ''))
+        // the transcript's sticky bar is not mounted on this page; a fresh one reads the served
+        // cascade for its opaque background under reduce
+        const sticky = document.createElement('div')
+        sticky.className = 'txn-sticky'
+        document.body.appendChild(sticky)
+        const stickyBg = getComputedStyle(sticky).backgroundColor
+        sticky.remove()
+        const nav = document.querySelector('.nav')
+        // the translucent sticky bars mounted on this page (the nav and the transcript's glass
+        // phase and context bars) must all turn opaque; a zero count would make this vacuous
+        const bars = [...document.querySelectorAll('.nav, .tm2-phase, .tm2-contextbar')]
+          .map((el) => ({ cls: el.className, bg: getComputedStyle(el).backgroundColor }))
+        return {
+          matches: matchMedia('(prefers-reduced-transparency: reduce)').matches,
+          theme: document.documentElement.getAttribute('data-theme') || 'dark',
+          surface,
+          navBg: nav ? getComputedStyle(nav).backgroundColor : null,
+          probeBlur,
+          stickyBg,
+          phaseBars: document.querySelectorAll('.tm2-phase').length,
+          contextBars: document.querySelectorAll('.tm2-contextbar').length,
+          bars,
+          blurred,
+        }
+      })
+      const detail = JSON.stringify(seen)
+      // printed on every run so a passing CI log records the theme and values the check saw
+      console.log(`reduced transparency [${theme}]: ${detail}`)
+      expect(seen.matches, detail).toBe(true)
+      expect(seen.theme, detail).toBe(theme)
+      expect(seen.blurred, detail).toEqual([])
+      expect(seen.probeBlur, detail).toBe('none')
+      expect(seen.navBg, detail).toBe(seen.surface)
+      expect(seen.stickyBg, detail).toBe(seen.surface)
+      expect(seen.bars.length, detail).toBeGreaterThan(1)
+      expect(seen.phaseBars, detail).toBeGreaterThan(0)
+      expect(seen.contextBars, detail).toBeGreaterThan(0)
+      expect(seen.bars.filter((b) => b.bg !== seen.surface), detail).toEqual([])
+    } finally {
+      await ctx.close()
+    }
   })
 })

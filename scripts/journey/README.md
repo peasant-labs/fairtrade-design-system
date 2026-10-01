@@ -54,7 +54,7 @@ and no required workflow carries the dev command or its attach hint.
 | File | Replaces | Covers |
 |---|---|---|
 | `storybook-smoke.journey.mjs` | `scripts/sbsmoke.mjs` | Every story renders, play() runs, no JS errors |
-| `app-validate.journey.mjs` | `scripts/validate.mjs` | The twenty built-app interaction checks |
+| `app-validate.journey.mjs` | `scripts/validate.mjs` | The twenty built-app interaction checks, plus the reduced-transparency check |
 | `session-group-disclosure.journey.mjs` | — | The shared disclosure: expand, count, tokens, axe |
 
 The smoke journey is the sole required full-catalog path: every story renders,

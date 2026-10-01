@@ -177,6 +177,8 @@
 
 /* ---------------------------------------------------------------------- */
 @layer base {
+  /* the consumer-safe subset of this layer is copied by hand into packages/tokens/base.css by
+     buildBaseCss() in scripts/gen-llm-artifacts.mjs: a base rule consumers need goes in both. */
   /* section snapping is PURE CSS - never JS. the old JS wheel handler (preventDefault + per-gesture
      cooldown) owned the gesture, swallowed half of every flick and froze the page; that is gone for
      good. `mandatory` gives the firm one-section-per-flick feel (proximity was too weak to notice).
@@ -221,9 +223,15 @@
     html { scroll-behavior: auto; }
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   }
+  /* reduced transparency: no backdrop blur anywhere. !important, like the reduced-motion kill
+     above: a normal declaration here in @layer base loses to every blurred rule in the components
+     layer, which is how an earlier .nav-only fallback in this spot never applied. Removing the
+     blur is not enough for a translucent sticky bar that reading content scrolls under: each one
+     also needs an opaque background under reduce. The two --nav-bg bars get it here. The glass
+     bars in TranscriptMarkers.css get it beside their own rules. A new translucent bar needs one. */
   @media (prefers-reduced-transparency: reduce) {
-    .nav { backdrop-filter: none; }
-    .nav { background: var(--surface); }
+    *, *::before, *::after { backdrop-filter: none !important; }
+    .nav, .txn-sticky { background: var(--surface) !important; }
   }
 }
 
@@ -595,8 +603,14 @@
   .dlg-demo { @apply relative flex items-center justify-center bg-surface-2 overflow-hidden; min-height: 300px; padding: var(--sp-5); border: var(--bd); }
   .scrim { @apply absolute inset-0; background: color-mix(in srgb, var(--canvas) 55%, transparent); backdrop-filter: blur(2px); }
   .dialog { @apply relative bg-surface; width: min(var(--dialog-w), 100%); border: var(--bd-strong); }
-  .dlg-head { @apply flex items-center justify-between; flex: none; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); }
-  .dlg-head h3 { @apply text-md; }
+  .dlg-head { @apply flex items-center justify-between; flex: none; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); }
+  /* the title may hold user content (a session title), so a long unbroken word wraps instead of
+     pushing the close button out of the dialog */
+  .dlg-head h3 { @apply text-md; min-width: 0; overflow-wrap: anywhere; }
+  /* the close button keeps its declared --control-h square: without flex:none a long title
+     shrinks it below the 24px target (19px wide at 390). the head gap keeps a wrapped title clear
+     of the button and its focus ring. */
+  .dlg-head > .btn-icon { flex: none; }
   .dlg-body { @apply flex flex-col gap-3; padding: var(--sp-4); overflow-y: auto; min-height: 0; }
   .callout { @apply flex gap-3 text-ink-2 text-sm; padding: var(--sp-3); border: 1px solid color-mix(in srgb, var(--amber) 45%, var(--rule)); background: color-mix(in srgb, var(--amber) 10%, transparent); }
   .callout .lucide { @apply text-amber; width: var(--ic-md); height: var(--ic-md); margin-top: 2px; }

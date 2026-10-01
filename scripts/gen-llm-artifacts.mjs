@@ -19,8 +19,14 @@
      packages/tokens/tokens.json  the same DTCG document written to public/tokens.json, re-exported
                                   from the package so consumers get one token document.
 
-   Run by `pnpm build` and checked fresh in CI (re-run, then `git diff --exit-code`). It reads,
-   never authors: the CSS + the component files stay the only sources. usage: node scripts/gen-llm-artifacts.mjs */
+   And the machine-readable layer of the design record:
+
+     DESIGN.md (frontmatter only) colors, typography roles, radius, spacing and component tokens in
+                                  the DESIGN.md format, resolved from the same two blocks; the
+                                  authored prose below the frontmatter is left untouched.
+
+   Run by `pnpm build` and checked fresh in CI (re-run, then `git diff --exit-code`). It reads
+   values, never authors them: the CSS + the component files stay the only sources. usage: node scripts/gen-llm-artifacts.mjs */
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -181,8 +187,129 @@ function buildBaseCss() {
     '    transition-duration: .01ms !important;\n' +
     '  }\n' +
     '}\n' +
+    '@media (prefers-reduced-transparency: reduce) {\n' +
+    '  *, *::before, *::after { backdrop-filter: none !important; }\n' +
+    '}\n' +
     '}\n' /* close @layer base */
   )
+}
+
+/* ---------- DESIGN.md frontmatter ----------
+   DESIGN.md (repo root) is the one design record. Its YAML frontmatter follows the DESIGN.md format
+   (name, description, colors, typography, rounded, spacing, components) and is GENERATED here from
+   the same two token blocks, so every token VALUE in it is the value src/index.css ships. Only the
+   frontmatter is rewritten; the authored body below it is kept byte for byte. Colors are the hex
+   tokens (the same set as the tokens.json color group) in source order, dark first, each followed by
+   a `-light` key when the light theme overrides it (a `-light` key is a frontmatter name, not a CSS
+   custom property). The description (in buildDesignFrontmatter), the typography roles (TYPE_ROLES)
+   and the component entries (COMPONENTS) are AUTHORED here: they say which tokens a role or
+   component uses, so a restyle in src/index.css must update them by hand. What the generator does
+   guarantee is that each token value resolves (other values are literals written in the table)
+   and that every {group.name} reference resolves, at any depth of an array value, so a renamed
+   token or a dangling reference fails the build. */
+const DESIGN = join(ROOT, 'DESIGN.md')
+const tok = (name) => ({ token: name })
+const TYPE_ROLES = [
+  ['display', { fontFamily: tok('font-display'), fontSize: tok('fs-display'), fontWeight: 700, lineHeight: tok('lh-tight') }],
+  ['headline', { fontFamily: tok('font-display'), fontSize: tok('fs-xl'), fontWeight: 700, lineHeight: tok('lh-tight') }],
+  ['title', { fontFamily: tok('font-display'), fontSize: tok('fs-lg'), fontWeight: 700, lineHeight: tok('lh-tight') }],
+  ['body', { fontFamily: tok('font-body'), fontSize: tok('fs-body'), fontWeight: 400, lineHeight: tok('lh-body'), letterSpacing: tok('tracking-prose') }],
+  ['label', { fontFamily: tok('font-mono'), fontSize: tok('fs-label'), fontWeight: 400, letterSpacing: '0px' }],
+  ['label-strong', { fontFamily: tok('font-mono'), fontSize: tok('fs-label'), fontWeight: 600, letterSpacing: '0px' }],
+  ['field', { fontFamily: tok('font-body'), fontSize: tok('fs-body'), fontWeight: 400 }],
+  ['code', { fontFamily: tok('font-mono'), fontSize: tok('fs-body'), fontWeight: 400, lineHeight: tok('lh-mono'), letterSpacing: '0px' }],
+]
+const control = { rounded: '{rounded.none}', height: tok('control-h') }
+const COMPONENTS = [
+  ['button-primary', { backgroundColor: '{colors.amber}', textColor: '{colors.on-amber}', typography: '{typography.label-strong}', ...control, padding: ['0', tok('sp-4')] }],
+  ['button-primary-hover', { backgroundColor: '{colors.amber-bright}' }],
+  ['button-secondary', { backgroundColor: 'transparent', textColor: '{colors.ink}', typography: '{typography.label}', ...control, padding: ['0', tok('sp-4')] }],
+  ['button-secondary-hover', { textColor: '{colors.amber-bright}' }],
+  ['button-ghost', { backgroundColor: 'transparent', textColor: '{colors.ink-3}', typography: '{typography.label}', ...control, padding: ['0', tok('sp-4')] }],
+  ['button-ghost-hover', { backgroundColor: '{colors.surface-hover}', textColor: '{colors.ink}' }],
+  ['button-danger', { backgroundColor: 'transparent', textColor: '{colors.clay}', typography: '{typography.label}', ...control, padding: ['0', tok('sp-4')] }],
+  ['input', { backgroundColor: '{colors.canvas}', textColor: '{colors.ink}', typography: '{typography.field}', ...control, padding: ['0', tok('sp-3')] }],
+  ['chip', { textColor: '{colors.ink-2}', typography: '{typography.label}', rounded: '{rounded.none}', height: tok('control-h-sm'), padding: ['0', tok('sp-3')] }],
+  ['card', { backgroundColor: '{colors.surface}', rounded: '{rounded.none}', padding: tok('sp-4') }],
+  ['dialog', { backgroundColor: '{colors.surface}', rounded: '{rounded.none}', width: tok('dialog-w') }],
+]
+
+function yamlScalar(value) {
+  if (typeof value === 'number' || /^-?\d+(\.\d+)?$/.test(value)) return String(value)
+  return "'" + String(value).replace(/'/g, "''") + "'"
+}
+
+function buildDesignFrontmatter() {
+  const css = readFileSync(CSS, 'utf8')
+  const dark = block(css, ':root {')
+  const light = block(css, '[data-theme="light"] {')
+  const resolve = (v) => {
+    if (Array.isArray(v)) return v.map(resolve).join(' ')
+    if (v && typeof v === 'object') {
+      if (!(v.token in dark)) throw new Error(`DESIGN.md frontmatter: unknown token --${v.token}`)
+      return dark[v.token]
+    }
+    return v
+  }
+  const colors = []
+  for (const [name, value] of Object.entries(dark)) {
+    if (!isHex(value)) continue
+    colors.push([name, value])
+    if (light[name] && light[name] !== value) {
+      if (name + '-light' in dark) throw new Error(`DESIGN.md frontmatter: --${name}-light is a token, so its light-theme key would collide`)
+      colors.push([name + '-light', light[name]])
+    }
+  }
+  const spacingNames = Object.keys(dark).filter((n) => /^sp-\d+$/.test(n))
+  const known = {
+    colors: new Set(colors.map(([n]) => n)),
+    typography: new Set(TYPE_ROLES.map(([n]) => n)),
+    rounded: new Set(['none']),
+    spacing: new Set(spacingNames),
+  }
+  const checkRef = (v) => {
+    if (typeof v !== 'string' || !v.includes('{')) return
+    const m = v.match(/^\{([\w-]+)\.([\w-]+)\}$/)
+    if (!m || !known[m[1]]?.has(m[2])) throw new Error(`DESIGN.md frontmatter: unknown reference ${v}`)
+  }
+  const lines = [
+    '# GENERATED by scripts/gen-llm-artifacts.mjs; do not edit this block by hand (CI gen:check fails',
+    '# on drift). Token values come from src/index.css. The script authors the typography roles',
+    '# (TYPE_ROLES), the component entries (COMPONENTS) and this description (buildDesignFrontmatter).',
+    '# Dark is the default theme. A `-light` key carries the light value where it differs; it is not',
+    '# a CSS custom property: the light value arrives on the same --name under [data-theme="light"].',
+    'name: fairtrade',
+    'description: ' + yamlScalar('One square, token-driven design system for reading AI coding transcripts: two WCAG AA themes, neuroinclusive by default, amber as a scarce accent.'),
+    'colors:',
+    ...colors.map(([n, v]) => `  ${n}: ${yamlScalar(v)}`),
+    'typography:',
+  ]
+  for (const [role, props] of TYPE_ROLES) {
+    lines.push(`  ${role}:`)
+    for (const [k, v] of Object.entries(props)) {
+      ;[v].flat(Infinity).forEach(checkRef)
+      lines.push(`    ${k}: ${yamlScalar(resolve(v))}`)
+    }
+  }
+  lines.push('rounded:', `  none: ${yamlScalar('0px')}`, 'spacing:')
+  for (const name of spacingNames) lines.push(`  ${name}: ${yamlScalar(dark[name])}`)
+  lines.push('components:')
+  for (const [name, props] of COMPONENTS) {
+    lines.push(`  ${name}:`)
+    for (const [k, v] of Object.entries(props)) {
+      ;[v].flat(Infinity).forEach(checkRef)
+      lines.push(`    ${k}: ${yamlScalar(resolve(v))}`)
+    }
+  }
+  return '---\n' + lines.join('\n') + '\n---\n'
+}
+
+function writeDesignFrontmatter() {
+  const text = readFileSync(DESIGN, 'utf8')
+  const close = text.startsWith('---\n') ? text.indexOf('\n---\n', 3) : -1
+  if (close === -1) throw new Error('DESIGN.md must open with a YAML frontmatter block (---)')
+  const body = text.slice(close + 5)
+  writeFileSync(DESIGN, buildDesignFrontmatter() + body)
 }
 
 /* ---------- components manifest ---------- */
@@ -278,6 +405,10 @@ writeFileSync(join(TOKENS_PKG, 'tokens.css'), tokensCss)
 writeFileSync(join(TOKENS_PKG, 'tokens.json'), tokensJson)
 writeFileSync(join(TOKENS_PKG, 'base.css'), buildBaseCss())
 
+// the design record's machine-readable layer: DESIGN.md frontmatter, from the same token blocks.
+writeDesignFrontmatter()
+
 const nColor = Object.keys(tokens.color || {}).length
 console.log(`llm artifacts: public/tokens.json (${nColor} colors + space/type/motion), public/components.json (${comps.count} components)`)
 console.log(`token package: packages/tokens/tokens.css + tokens.json + base.css (from src/index.css)`)
+console.log(`design record: DESIGN.md frontmatter (token values from src/index.css)`)
