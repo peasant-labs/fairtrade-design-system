@@ -6,7 +6,7 @@
    effect run must not strand a row at saving), and an open and a collapsed group. Cases:
    scripts/testdata/setting-row.yaml (+ .manifest.yaml).
    Run: pnpm test:setting-row; mutations: pnpm test:setting-row:mutations. */
-import { loadFixturePair, withMountedSource, click, keydown, createReport, assertExactNames } from './mounted-parts.mjs'
+import { loadFixturePair, withMountedSource, click, keydown, createReport, assertExactNames, assertFields } from './mounted-parts.mjs'
 
 const FIXTURE = 'scripts/testdata/setting-row.yaml'
 const MANIFEST = 'scripts/testdata/setting-row.manifest.yaml'
@@ -33,7 +33,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       if (row.commit === 'reject') return Promise.reject(new Error(row.error))
       return Promise.resolve()
     }
+    // a misspelt key must fail loudly, and a case named for StrictMode must actually run inside it
+    assertFields(row, ['name', 'control', 'value', 'steps', 'expected'], `${FIXTURE} row ${row.name}`, ['commit', 'error', 'options', 'tag', 'strictMode'])
     if (row.strictMode !== undefined && row.strictMode !== true) throw new Error(`${FIXTURE}: ${row.name}: strictMode is true or left out`)
+    if (row.name.startsWith('strict mode') !== (row.strictMode === true)) throw new Error(`${FIXTURE}: ${row.name}: strictMode: true belongs to the cases named "strict mode, ..." and to no others`)
     const settingRow = React.createElement(SettingRow, { label: 'the setting', help: 'what it does', control: row.control, value: row.value, options: row.options, tag: row.tag, onCommit })
     const mounted = await mount(row.strictMode ? React.createElement(React.StrictMode, null, settingRow) : settingRow)
     const root = mounted.container
