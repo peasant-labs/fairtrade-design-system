@@ -230,6 +230,8 @@ test.describe('built app', () => {
           navBg: nav ? getComputedStyle(nav).backgroundColor : null,
           probeBlur,
           stickyBg,
+          phaseBars: document.querySelectorAll('.tm2-phase').length,
+          contextBars: document.querySelectorAll('.tm2-contextbar').length,
           bars,
           blurred,
         }
@@ -244,6 +246,8 @@ test.describe('built app', () => {
       expect(seen.navBg, detail).toBe(seen.surface)
       expect(seen.stickyBg, detail).toBe(seen.surface)
       expect(seen.bars.length, detail).toBeGreaterThan(1)
+      expect(seen.phaseBars, detail).toBeGreaterThan(0)
+      expect(seen.contextBars, detail).toBeGreaterThan(0)
       expect(seen.bars.filter((b) => b.bg !== seen.surface), detail).toEqual([])
     } finally {
       await ctx.close()
