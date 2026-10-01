@@ -1,0 +1,19 @@
+[
+  {
+    "heading": "join collective",
+    "active": "done",
+    "focusInside": true,
+    "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "radius": "0px",
+    "shell": true
+  },
+  {
+    "theme": "light",
+    "heading": "join collective",
+    "active": "done",
+    "focusInside": true,
+    "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "radius": "0px",
+    "shell": true
+  }
+]
