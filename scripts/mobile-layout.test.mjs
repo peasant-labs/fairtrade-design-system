@@ -33,11 +33,12 @@ function assert(id, desc, cond) {
   results.push({ id, desc, ok: !!cond })
 }
 
-if (fixture.invariants.length !== manifest.expectedInvariantCount) {
-  console.error(
-    `mobile-layout fixture drift: testdata/mobile-layout-invariants.yaml has ${fixture.invariants.length} invariant(s), ` +
-      `manifest expects ${manifest.expectedInvariantCount}. Update the manifest when adding/removing a case (row-count guard).`,
-  )
+const required = manifest.requiredNames
+const names = fixture.invariants.map((row) => row.id)
+if (!Array.isArray(required) || new Set(required).size !== required.length ||
+    new Set(names).size !== names.length || names.length !== required.length ||
+    required.some((name) => !names.includes(name))) {
+  console.error('mobile-layout fixture names must exactly match the required-name manifest')
   process.exit(1)
 }
 

@@ -1,1 +1,11 @@
-expectedInvariantCount: 10
+requiredNames:
+  - cg-row-fills-container
+  - cg-older-fills-container
+  - txn-title-clamps-on-mobile
+  - txn-meta-scrolls-not-wraps-on-mobile
+  - txn-trace-head-compact-on-mobile
+  - dialog-wide-sheet-on-mobile
+  - dialog-close-button-keeps-its-square
+  - dialog-title-wraps-long-words
+  - dialog-head-markup-is-pinned
+  - site-dialog-head-markup-is-pinned

@@ -18,7 +18,7 @@ const test = base.extend({
   },
 })
 
-const URL = 'http://localhost:5180/?fb=off'
+const URL = `http://localhost:${process.env.JOURNEY_APP_PORT || '5180'}/?fb=off`
 
 test.describe('built app', () => {
   // One serial pass holds every check; the overflow sweep reloads per width.
