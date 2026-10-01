@@ -244,7 +244,7 @@ Hard floors (checked in review, not by a lint): no text `<16px` in reading conte
 5. **Underline-free amber links vs "links must look different".** → In-prose links get a secondary
    non-color cue (a dotted underline at rest, solid on hover and focus; no `>` marker) without
    undoing the global underline-free aesthetic.
-6. **cp437/Qud texture & glow vs flat-background/halation rules.** → Confine texture/glow to non-text
+6. **cp437/Qud texture & glow vs flat-background/halation rules.** → Confine texture to non-text
    chrome; every region with running text or data stays a flat single fill; glow is for single
    accent words only (`#136/28`: the demo also glows multi-word bold in transcript bodies).
 
