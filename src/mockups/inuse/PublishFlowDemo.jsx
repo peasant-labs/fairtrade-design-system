@@ -11,6 +11,7 @@ import { PublishBar, PublishDialog, PUBLISH_DIALOG_STATES, PUBLISH_STATES } from
 
 const SCAN = {
   total: 37,
+  matchCount: 9,
   matches: [
     { id: 'm1', category: 'secrets', confidence: 0.99, before: 'AKIAIOSFODNN7EXAMPLE', after: '<AWS_ACCESS_KEY>' },
     { id: 'm2', category: 'pii', confidence: 0.97, before: 'alice@acme.dev', after: '<EMAIL>' },

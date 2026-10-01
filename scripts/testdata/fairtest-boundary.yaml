@@ -10,7 +10,7 @@ cases:
   - name: root-package-pinned
     check: root-package
     expectValid: true
-    expected: {name: "@peasant-labs/fairtrade", version: "0.0.23"}
+    expected: {name: "@peasant-labs/fairtrade", version: "0.0.24"}
   - name: child-package-private
     check: child-package
     expectValid: true

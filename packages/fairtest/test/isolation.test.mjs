@@ -106,7 +106,8 @@ describe('fairtest isolation package boundary', () => {
   it('keeps the published root free of Fairtest coupling', () => {
     const rootManifest = JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf8'))
     assert.equal(rootManifest.name, '@peasant-labs/fairtrade', 'root package name must stay exact')
-    assert.equal(rootManifest.version, '0.0.23', 'root package version must stay exact')
+    const rootCase = /** @type {Record<string, unknown>[]} */ (readBoundary().cases).find((row) => row.check === 'root-package')
+    assert.equal(rootManifest.version, /** @type {{version: string}} */ (rootCase?.expected).version, 'root package version must stay exact')
     const serialized = JSON.stringify({ exports: rootManifest.exports, files: rootManifest.files })
     assert.ok(!/fairtest/i.test(serialized), 'root exports and files must not reference Fairtest')
     for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {

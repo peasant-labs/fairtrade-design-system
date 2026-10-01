@@ -279,6 +279,8 @@ function joinNames(names) {
 function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
   const titleId = useId()
   const matches = scan?.matches ?? []
+  const matchCount = scan?.matchCount ?? matches.length
+  const sampled = matchCount > matches.length
   const kept = matches.filter((match) => match.kept).length
   // the matches open by themselves when one will leave un-redacted; the toggle overrides that
   const [openChoice, setOpen] = useState(null)
@@ -311,12 +313,12 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
           <p className={kept ? 'pub-line pub-line-alert' : 'pub-line'}>
             {kept ? <AlertTriangle aria-hidden="true" /> : <ShieldCheck aria-hidden="true" />}
             <span>
-              <span className="tnum">{matches.length}</span> {matches.length === 1 ? 'match' : 'matches'}
-              {kept ? <> · <span className="tnum">{kept}</span> kept un-redacted, will be sent</> : matches.length ? ' · all redacted' : ' · nothing to redact'}
+              <span className="tnum">{matchCount}</span> {matchCount === 1 ? 'match' : 'matches'}
+              {kept ? <> · <span className="tnum">{kept}</span> kept un-redacted, will be sent</> : matchCount ? ' · all redacted' : ' · nothing to redact'}
             </span>
             {matches.length > 0 && (
               <button type="button" className="btn btn-ghost btn-sm pub-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
-                {open ? 'hide matches' : 'show matches'}
+                {sampled ? (open ? 'hide examples' : `show ${matches.length} examples`) : (open ? 'hide matches' : 'show matches')}
               </button>
             )}
           </p>
@@ -347,7 +349,7 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
  * @param {string} props.title - the session title, kept in its case.
  * @param {'publish'|'update'} [props.mode='publish']
  * @param {PublishDialogState} props.state - one of PUBLISH_DIALOG_STATES.
- * @param {{ matches?: object[], total?: number, failure?: string }} [props.scan] - the host's scan result. Until it carries a
+ * @param {{ matches?: object[], matchCount?: number, total?: number, failure?: string }} [props.scan] - the host's scan result. `matchCount` is the full occurrence count when `matches` contains only examples. Until it carries a
  *        `matches` list, the popup says the transcript is not scanned and keeps publish off. A match with `kept: true` leaves un-redacted, and the
  *        popup says so and opens the matches.
  * @param {() => void} [props.onRescan]

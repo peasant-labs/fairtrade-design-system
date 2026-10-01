@@ -6,6 +6,8 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 
 ## 0.0.24 - 2026-10-01
 
+- Distinguish full redaction occurrence counts from representative examples in the publish dialog.
+
 ### Fixed
 
 - `PublishDialog` allows updates that revoke the final collective, while a first

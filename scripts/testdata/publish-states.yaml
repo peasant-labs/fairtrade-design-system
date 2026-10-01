@@ -205,6 +205,20 @@ popup:
     steps: [{press: publish, calls: []}]
 
 # The update popup keeps the audience unless the developer changes it there.
+  - name: full scan count with representative examples
+    state: ready
+    matchCount: 9
+    heading: publish “Fix flaky ingest test”
+    primary: {label: publish to 2 collectives, enabled: true}
+    rescan: {enabled: true}
+    lines: [9 matches · all redacted, show 3 examples]
+    absent: [nothing to redact]
+    matchesOpen: false
+    removeButtons: [remove Acme Platform, remove Acme Company]
+    steps:
+      - {press: show 3 examples, calls: []}
+      - {press: hide examples, calls: []}
+
 update:
   - name: update adds one collective
     access:

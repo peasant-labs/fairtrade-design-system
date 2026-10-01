@@ -8,6 +8,7 @@ requiredLabelNames:
   - auto-publish on
   - outside your saved lists
 requiredPopupNames:
+  - full scan count with representative examples
   - connect to village first
   - waiting for github
   - checking for sensitive content
@@ -37,6 +38,7 @@ requiredTransitionNames:
   - keyboard focus remains inside during publish and pending approval
 
 requiredMutationNames:
+  - representative examples replace the full match count
   - final collective removal never invokes the update
   - a failed scan leaves publish on
   - a failed scan turns re-scan off
@@ -128,3 +130,8 @@ mutations:
     find: "onClick={() => { if (!blocked) onPublish?.() }}"
     replace: "onClick={() => { if (!blocked && (mode !== 'update' || readers.length > 0)) onPublish?.() }}"
     expectedDiagnostic: "update revokes its final collective: update activation must call onPublish 1 times"
+  - name: representative examples replace the full match count
+    file: src/ui/Publish.jsx
+    find: "const matchCount = scan?.matchCount ?? matches.length"
+    replace: "const matchCount = matches.length"
+    expectedDiagnostic: "full scan count with representative examples: the popup must read"
