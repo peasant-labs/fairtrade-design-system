@@ -8,6 +8,7 @@ requiredLabelNames:
   - auto-publish on
   - outside your saved lists
 requiredPopupNames:
+  - full scan count with representative examples
   - connect to village first
   - waiting for github
   - checking for sensitive content
@@ -20,11 +21,25 @@ requiredPopupNames:
   - stopped at a named step
   - done
   - waits for approval
+  - stopped without an automatic recovery
+  - update done without collective readers
+  - done awaiting its only collective
+  - first publish cannot remove its only collective
 requiredUpdateNames:
   - update adds one collective
   - update removes one collective
 
+  - update revokes its final collective
+  - update without readers or removals remains off
+
+  - revoke final collective still requires a successful scan
+requiredTransitionNames:
+  - keyboard focus remains inside during publish and success
+  - keyboard focus remains inside during publish and pending approval
+
 requiredMutationNames:
+  - representative examples replace the full match count
+  - final collective removal never invokes the update
   - a failed scan leaves publish on
   - a failed scan turns re-scan off
   - the remove button loses the collective's name
@@ -35,6 +50,10 @@ requiredMutationNames:
   - publishing lets the popup close
   - re-scan calls nothing
   - a read-only card keeps its first decision
+  - final collective removal stays blocked
+  - re-scan stays live while publishing
+  - a stopped publish claims no village changes
+  - finished focus falls outside the popup
 mutations:
   - name: a failed scan leaves publish on
     file: src/ui/Publish.jsx
@@ -43,8 +62,8 @@ mutations:
     expectedDiagnostic: "the scan failed: the primary button must be disabled"
   - name: a failed scan turns re-scan off
     file: src/ui/Publish.jsx
-    find: "onClick={onRescan} disabled={checking}"
-    replace: "onClick={onRescan} disabled={checking || failed}"
+    find: "onClick={onRescan} disabled={checking || state === 'publishing'}"
+    replace: "onClick={onRescan} disabled={checking || failed || state === 'publishing'}"
     expectedDiagnostic: "the scan failed: re-scan must be enabled"
   - name: the remove button loses the collective's name
     file: src/ui/Publish.jsx
@@ -63,8 +82,8 @@ mutations:
     expectedDiagnostic: "ready with a match kept un-redacted: the popup must read"
   - name: a missing scan leaves publish on
     file: src/ui/Publish.jsx
-    find: "|| readers.length === 0 || !Array.isArray(scan?.matches)"
-    replace: "|| readers.length === 0"
+    find: "|| (readers.length === 0 && !(mode === 'update' && removes > 0)) || !Array.isArray(scan?.matches)"
+    replace: "|| (readers.length === 0 && !(mode === 'update' && removes > 0))"
     expectedDiagnostic: "ready before any scan: the primary button must be disabled"
   - name: remove stays offered while publishing
     file: src/ui/Publish.jsx
@@ -78,11 +97,41 @@ mutations:
     expectedDiagnostic: "publishing: close dialog must call []"
   - name: re-scan calls nothing
     file: src/ui/Publish.jsx
-    find: "onClick={onRescan} disabled={checking}"
-    replace: "onClick={() => {}} disabled={checking}"
+    find: "onClick={onRescan} disabled={checking || state === 'publishing'}"
+    replace: "onClick={() => {}} disabled={checking || state === 'publishing'}"
     expectedDiagnostic: "the scan failed: re-scan must call"
   - name: a read-only card keeps its first decision
     file: src/ui/Redaction.jsx
     find: "const kept = isControlled || readOnly ? Boolean(keptProp) : internalKept"
     replace: "const kept = isControlled ? Boolean(keptProp) : internalKept"
     expectedDiagnostic: "a read-only review follows a changed decision"
+  - name: final collective removal stays blocked
+    file: src/ui/Publish.jsx
+    find: "(readers.length === 0 && !(mode === 'update' && removes > 0))"
+    replace: "readers.length === 0"
+    expectedDiagnostic: "update revokes its final collective: update primary must be enabled"
+  - name: re-scan stays live while publishing
+    file: src/ui/Publish.jsx
+    find: "onClick={onRescan} disabled={checking || state === 'publishing'}"
+    replace: "onClick={onRescan} disabled={checking}"
+    expectedDiagnostic: "publishing: re-scan must be disabled"
+  - name: a stopped publish claims no village changes
+    file: src/ui/Publish.jsx
+    find: ". review who can read it."
+    replace: ". nothing changed on village."
+    expectedDiagnostic: "stopped at a named step: the popup must not read"
+  - name: finished focus falls outside the popup
+    file: src/ui/Publish.jsx
+    find: "if (!open || !finished) return"
+    replace: "if (true) return"
+    expectedDiagnostic: "finishing keeps focus inside the popup"
+  - name: final collective removal never invokes the update
+    file: src/ui/Publish.jsx
+    find: "onClick={() => { if (!blocked) onPublish?.() }}"
+    replace: "onClick={() => { if (!blocked && (mode !== 'update' || readers.length > 0)) onPublish?.() }}"
+    expectedDiagnostic: "update revokes its final collective: update activation must call onPublish 1 times"
+  - name: representative examples replace the full match count
+    file: src/ui/Publish.jsx
+    find: "const matchCount = scan?.matchCount ?? matches.length"
+    replace: "const matchCount = matches.length"
+    expectedDiagnostic: "full scan count with representative examples: the popup must read"
