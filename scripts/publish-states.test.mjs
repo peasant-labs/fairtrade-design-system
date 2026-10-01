@@ -11,12 +11,12 @@ import { loadFixturePair, withMountedSource, createReport, assertExactNames, ass
 
 const FIXTURE = 'scripts/testdata/publish-states.yaml'
 const MANIFEST = 'scripts/testdata/publish-states.manifest.yaml'
-const { fixture } = loadFixturePair(FIXTURE, MANIFEST, { labels: 'requiredLabelNames', popup: 'requiredPopupNames', update: 'requiredUpdateNames' })
+const { fixture } = loadFixturePair(FIXTURE, MANIFEST, { labels: 'requiredLabelNames', popup: 'requiredPopupNames', update: 'requiredUpdateNames', transitions: 'requiredTransitionNames' })
 const report = createReport('publish states')
 const text = (node) => node?.textContent.replace(/\s+/g, ' ').trim()
 const noop = () => {}
 const POPUP_FIELDS = ['name', 'state', 'heading', 'primary', 'rescan', 'lines', 'removeButtons', 'steps']
-const POPUP_OPTIONAL = ['access', 'pending', 'alert', 'absent', 'kept', 'unscanned', 'matchesOpen']
+const POPUP_OPTIONAL = ['access', 'pending', 'alert', 'absent', 'kept', 'unscanned', 'matchesOpen', 'mode', 'doneCollectives', 'noRetry']
 for (const row of fixture.popup) assertFields(row, POPUP_FIELDS, `publish states popup row ${row.name}`, POPUP_OPTIONAL)
 
 await withMountedSource(async ({ load, mount, window, React }) => {
@@ -65,15 +65,16 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const scan = row.unscanned ? undefined : { ...fixture.scan, matches: fixture.scan.matches.map((match) => ({ ...match, kept: (row.kept ?? []).includes(match.id) })) }
     const props = base({
       state: row.state,
+      ...(row.mode ? { mode: row.mode } : {}),
       scan,
       onClose: record('onClose'),
       onRescan: record('onRescan'),
       onRemove: record('onRemove'),
       onPublish: record('onPublish'),
       onConnect: record('onConnect'),
-      onRetry: record('onRetry'),
+      onRetry: row.noRetry ? undefined : record('onRetry'),
       ...(row.access ? { access: row.access } : {}),
-      ...(row.pending ? { done: { ...fixture.done, pending: row.pending } } : {}),
+      done: { ...fixture.done, ...(row.pending ? { pending: row.pending } : {}), ...(row.doneCollectives ? { collectives: row.doneCollectives } : {}) },
     })
     const mounted = await mount(React.createElement(ui.PublishDialog, props))
     const dialog = mounted.container.querySelector('[role="dialog"]')
@@ -86,7 +87,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!primary, `${row.name}: no primary button renders`)
     } else {
       report.check(text(primary) === row.primary.label, `${row.name}: primary expected ${JSON.stringify(row.primary.label)}, received ${JSON.stringify(text(primary))}`)
-      report.check(!!primary && primary.disabled === !row.primary.enabled, `${row.name}: the primary button must be ${row.primary.enabled ? 'enabled' : 'disabled'}`)
+      report.check(!!primary && (primary.disabled || primary.getAttribute('aria-disabled') === 'true') === !row.primary.enabled, `${row.name}: the primary button must be ${row.primary.enabled ? 'enabled' : 'disabled'}`)
     }
     const rescan = dialog?.querySelector('.pub-rescan')
     if (row.rescan === null) report.check(!rescan, `${row.name}: no re-scan button renders`)
@@ -116,6 +117,23 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     await mounted.unmount()
   }
 
+  for (const row of fixture.transitions) {
+    let calls = 0
+    const onPublish = () => { calls += 1 }
+    const mounted = await mount(React.createElement(ui.PublishDialog, base({ state: 'ready', onPublish })))
+    const primary = mounted.container.querySelector('.pub-primary')
+    await mounted.act(() => primary.focus())
+    await mounted.rerender(React.createElement(ui.PublishDialog, base({ state: 'publishing', onPublish })))
+    report.check(window.document.activeElement === primary, `${row.name}: publishing keeps the primary focused`)
+    await mounted.act(() => click(window, primary))
+    report.check(calls === 0, `${row.name}: publishing ignores a repeated activation`)
+    await mounted.rerender(React.createElement(ui.PublishDialog, base({ state: row.result, onPublish })))
+    const dialog = mounted.container.querySelector('[role="dialog"]')
+    report.check(dialog.contains(window.document.activeElement), `${row.name}: finishing keeps focus inside the popup`)
+    report.check(text(window.document.activeElement) === 'done', `${row.name}: finishing focuses done`)
+    await mounted.unmount()
+  }
+
   /* the popup's review is read-only: it states each match and offers no keep/revert, even with a
      toggle handler present. */
   {
@@ -136,10 +154,11 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   }
 
   for (const row of fixture.update) {
-    const mounted = await mount(React.createElement(ui.PublishDialog, base({ state: 'ready', mode: 'update', access: row.access, onRestore: noop, changes: { summary: '6 new turns since you published · 1 new match, redacted' } })))
+    const mounted = await mount(React.createElement(ui.PublishDialog, base({ state: row.state ?? 'ready', mode: 'update', access: row.access, onRestore: noop, changes: { summary: '6 new turns since you published · 1 new match, redacted' } })))
     const dialog = mounted.container.querySelector('[role="dialog"]')
     const primary = [...dialog.querySelectorAll('.dlg-foot .btn-primary')][0]
     report.check(text(primary) === row.primary, `${row.name}: primary expected ${JSON.stringify(row.primary)}, received ${JSON.stringify(text(primary))}`)
+    report.check(primary.disabled === !row.enabled, `${row.name}: update primary must be ${row.enabled ? 'enabled' : 'disabled'}`)
     for (const line of row.lines) report.check(text(dialog).includes(line), `${row.name}: the popup must read ${JSON.stringify(line)}`)
     for (const item of row.access.filter((entry) => entry.pending === 'removal')) {
       report.check(!!dialog.querySelector(`button[aria-label="keep ${item.name}"]`), `${row.name}: a row pending removal offers keep ${item.name}`)

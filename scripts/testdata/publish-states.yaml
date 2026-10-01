@@ -124,19 +124,23 @@ popup:
     state: publishing
     heading: publish “Fix flaky ingest test”
     primary: {label: publish to 2 collectives, enabled: false}
-    rescan: {enabled: true}
-    lines: [publishing to 2 collectives]
+    rescan: {enabled: false}
+    lines: [publishing to 2 collectives, sending your redacted transcript to village.]
+    absent: [nothing leaves your machine until]
     removeButtons: []
     steps:
       - {press: close dialog, calls: []}
       - {key: Escape, calls: []}
+      - {press: re-scan, calls: []}
+      - {press: publish to 2 collectives, calls: []}
   - name: stopped at a named step
     state: stopped
     heading: publish “Fix flaky ingest test”
     primary: {label: retry, enabled: true}
     rescan: {enabled: true}
-    alert: stopped while setting who can read it. nothing changed on village.
-    lines: []
+    alert: stopped while setting who can read it. review who can read it below.
+    lines: [review who can read it below.]
+    absent: [nothing leaves your machine until, nothing changed on village.]
     removeButtons: [remove Acme Platform, remove Acme Company]
     steps:
       - {press: retry, calls: [[onRetry]]}
@@ -159,6 +163,47 @@ popup:
     removeButtons: []
     steps: []
 
+  - name: stopped without an automatic recovery
+    state: stopped
+    noRetry: true
+    heading: publish “Fix flaky ingest test”
+    primary: null
+    rescan: {enabled: true}
+    lines: [review who can read it below.]
+    absent: [retry]
+    removeButtons: [remove Acme Platform, remove Acme Company]
+    steps: [{press: cancel, calls: [[onClose]]}]
+  - name: update done without collective readers
+    state: done
+    mode: update
+    doneCollectives: []
+    heading: updated · no collective can read it
+    primary: {label: done, enabled: true}
+    rescan: null
+    lines: [village.peasantlabs.org/transcripts/3f9c0a17]
+    absent: [published to]
+    removeButtons: []
+    steps: [{press: done, calls: [[onClose]]}]
+  - name: done awaiting its only collective
+    state: waits-approval
+    doneCollectives: []
+    pending: [ML Reading Group]
+    heading: submitted to ML Reading Group
+    primary: {label: done, enabled: true}
+    rescan: null
+    lines: [ML Reading Group shows it once its owner approves.]
+    removeButtons: []
+    steps: []
+  - name: first publish cannot remove its only collective
+    state: ready
+    access: [{id: platform, name: Acme Platform, pending: removal}]
+    heading: publish “Fix flaky ingest test”
+    primary: {label: publish, enabled: false}
+    rescan: {enabled: true}
+    lines: [who can read it]
+    removeButtons: []
+    steps: [{press: publish, calls: []}]
+
 # The update popup keeps the audience unless the developer changes it there.
 update:
   - name: update adds one collective
@@ -167,10 +212,34 @@ update:
       - {id: company, name: Acme Company, members: 87}
       - {id: ml, name: ML Reading Group, members: 21, pending: approval}
     primary: update and add 1 collective
+    enabled: true
     lines: [6 new turns since you published · 1 new match, redacted, adding · waits for approval, removing a collective takes the transcript back from it.]
   - name: update removes one collective
     access:
       - {id: platform, name: Acme Platform, members: 12}
       - {id: company, name: Acme Company, members: 87, pending: removal}
     primary: update and remove 1 collective
+    enabled: true
     lines: [removing · loses access when you update]
+  - name: update revokes its final collective
+    access: [{id: platform, name: Acme Platform, pending: removal}]
+    primary: update and remove 1 collective
+    enabled: true
+    lines: [removing · loses access when you update]
+  - name: update without readers or removals remains off
+    access: []
+    primary: update
+    enabled: false
+    lines: [who can read it]
+  - name: revoke final collective still requires a successful scan
+    state: scan-failed
+    access: [{id: platform, name: Acme Platform, pending: removal}]
+    primary: update and remove 1 collective
+    enabled: false
+    lines: [the scan failed, so publish is off. re-scan to try again.]
+
+transitions:
+  - name: keyboard focus remains inside during publish and success
+    result: done
+  - name: keyboard focus remains inside during publish and pending approval
+    result: waits-approval

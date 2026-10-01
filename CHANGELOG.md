@@ -4,6 +4,21 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.24 - 2026-10-01
+
+### Fixed
+
+- `PublishDialog` allows updates that revoke the final collective, while a first
+  publish still requires a collective and a successful scan. A completed update
+  with no collective readers states that explicitly; pending-only publications
+  name the collective awaiting approval.
+- A stopped publish no longer claims that nothing changed on village. Recovery
+  offers retry only when the host provides it. Re-scan and access changes are
+  held while publication runs, and keyboard focus stays inside the popup through
+  publication and its result.
+- `LocalOfflineBanner` reserves the busy label's width so retry does not move
+  under the pointer or change the banner's height on narrow screens.
+
 ## 0.0.23 — 2026-10-01
 
 ### Fixed

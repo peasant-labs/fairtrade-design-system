@@ -377,6 +377,10 @@
   letter-spacing: 0;
 }
 .cx-offline-checked time { color: var(--ink-2); }
+.cx-offline-retry { flex: none; white-space: nowrap; }
+.cx-offline-retry-label { display: grid; }
+.cx-offline-retry-label > span { grid-area: 1 / 1; }
+.cx-offline-retry-reserve { visibility: hidden; }
 .cx-offline-retry[aria-busy="true"] { cursor: progress; }
 .cx-offline-retry .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
 @media (prefers-reduced-motion: no-preference) {
