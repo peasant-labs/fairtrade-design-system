@@ -1,0 +1,52 @@
+[
+  {
+    "head": "4ce6e05f540e68481f3b29e6b880116d3ef9c058",
+    "theme": "dark",
+    "width": 36,
+    "height": 36,
+    "dialogWidth": 390,
+    "titleHeight": 60.46875,
+    "titleLineHeight": "20.16px",
+    "overflow": false
+  },
+  {
+    "head": "4ce6e05f540e68481f3b29e6b880116d3ef9c058",
+    "theme": "dark",
+    "width": 36,
+    "height": 36,
+    "dialogWidth": 720,
+    "titleHeight": 40.3125,
+    "titleLineHeight": "20.16px",
+    "overflow": false
+  },
+  {
+    "head": "4ce6e05f540e68481f3b29e6b880116d3ef9c058",
+    "theme": "dark",
+    "blur": "none"
+  },
+  {
+    "head": "4ce6e05f540e68481f3b29e6b880116d3ef9c058",
+    "theme": "light",
+    "width": 36,
+    "height": 36,
+    "dialogWidth": 390,
+    "titleHeight": 60.46875,
+    "titleLineHeight": "20.16px",
+    "overflow": false
+  },
+  {
+    "head": "4ce6e05f540e68481f3b29e6b880116d3ef9c058",
+    "theme": "light",
+    "width": 36,
+    "height": 36,
+    "dialogWidth": 720,
+    "titleHeight": 40.3125,
+    "titleLineHeight": "20.16px",
+    "overflow": false
+  },
+  {
+    "head": "4ce6e05f540e68481f3b29e6b880116d3ef9c058",
+    "theme": "light",
+    "blur": "none"
+  }
+]
