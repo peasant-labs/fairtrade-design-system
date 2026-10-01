@@ -438,7 +438,7 @@ export function PublishDialog({
   } else {
     footer = (
       <>
-        <span className="pub-foot-note">{state === 'publishing' ? 'sending your redacted transcript to village.' : state === 'stopped' ? 'review who can read it below.' : `nothing leaves your machine until you ${verb}.`}</span>
+        <span className="pub-foot-note">{state === 'publishing' ? 'sending your redacted transcript to village.' : state === 'stopped' ? 'review who can read it.' : `nothing leaves your machine until you ${verb}.`}</span>
         <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={state === 'publishing'}>cancel</button>
         {state === 'stopped' ? onRetry && (
           <button type="button" className="btn btn-primary btn-sm" onClick={onRetry}><RotateCw aria-hidden="true" /> retry</button>
@@ -511,7 +511,7 @@ export function PublishDialog({
           )}
           {state === 'stopped' && (
             <p className="pub-line pub-line-alert" role="alert">
-              <AlertTriangle aria-hidden="true" /> stopped while {stoppedAt ?? 'publishing'}. review who can read it below.
+              <AlertTriangle aria-hidden="true" /> stopped while {stoppedAt ?? 'publishing'}. review who can read it.
             </p>
           )}
         </>

@@ -37,6 +37,7 @@ requiredTransitionNames:
   - keyboard focus remains inside during publish and pending approval
 
 requiredMutationNames:
+  - final collective removal never invokes the update
   - a failed scan leaves publish on
   - a failed scan turns re-scan off
   - the remove button loses the collective's name
@@ -114,7 +115,7 @@ mutations:
     expectedDiagnostic: "publishing: re-scan must be disabled"
   - name: a stopped publish claims no village changes
     file: src/ui/Publish.jsx
-    find: ". review who can read it below."
+    find: ". review who can read it."
     replace: ". nothing changed on village."
     expectedDiagnostic: "stopped at a named step: the popup must not read"
   - name: finished focus falls outside the popup
@@ -122,3 +123,8 @@ mutations:
     find: "if (!open || !finished) return"
     replace: "if (true) return"
     expectedDiagnostic: "finishing keeps focus inside the popup"
+  - name: final collective removal never invokes the update
+    file: src/ui/Publish.jsx
+    find: "onClick={() => { if (!blocked) onPublish?.() }}"
+    replace: "onClick={() => { if (!blocked && (mode !== 'update' || readers.length > 0)) onPublish?.() }}"
+    expectedDiagnostic: "update revokes its final collective: update activation must call onPublish 1 times"

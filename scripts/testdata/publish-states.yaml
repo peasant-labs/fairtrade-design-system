@@ -138,8 +138,8 @@ popup:
     heading: publish “Fix flaky ingest test”
     primary: {label: retry, enabled: true}
     rescan: {enabled: true}
-    alert: stopped while setting who can read it. review who can read it below.
-    lines: [review who can read it below.]
+    alert: stopped while setting who can read it. review who can read it.
+    lines: [review who can read it.]
     absent: [nothing leaves your machine until, nothing changed on village.]
     removeButtons: [remove Acme Platform, remove Acme Company]
     steps:
@@ -169,7 +169,7 @@ popup:
     heading: publish “Fix flaky ingest test”
     primary: null
     rescan: {enabled: true}
-    lines: [review who can read it below.]
+    lines: [review who can read it.]
     absent: [retry]
     removeButtons: [remove Acme Platform, remove Acme Company]
     steps: [{press: cancel, calls: [[onClose]]}]
@@ -213,6 +213,7 @@ update:
       - {id: ml, name: ML Reading Group, members: 21, pending: approval}
     primary: update and add 1 collective
     enabled: true
+    publishCalls: 1
     lines: [6 new turns since you published · 1 new match, redacted, adding · waits for approval, removing a collective takes the transcript back from it.]
   - name: update removes one collective
     access:
@@ -220,22 +221,26 @@ update:
       - {id: company, name: Acme Company, members: 87, pending: removal}
     primary: update and remove 1 collective
     enabled: true
+    publishCalls: 1
     lines: [removing · loses access when you update]
   - name: update revokes its final collective
     access: [{id: platform, name: Acme Platform, pending: removal}]
     primary: update and remove 1 collective
     enabled: true
+    publishCalls: 1
     lines: [removing · loses access when you update]
   - name: update without readers or removals remains off
     access: []
     primary: update
     enabled: false
+    publishCalls: 0
     lines: [who can read it]
   - name: revoke final collective still requires a successful scan
     state: scan-failed
     access: [{id: platform, name: Acme Platform, pending: removal}]
     primary: update and remove 1 collective
     enabled: false
+    publishCalls: 0
     lines: [the scan failed, so publish is off. re-scan to try again.]
 
 transitions:

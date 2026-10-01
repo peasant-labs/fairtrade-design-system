@@ -154,11 +154,14 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   }
 
   for (const row of fixture.update) {
-    const mounted = await mount(React.createElement(ui.PublishDialog, base({ state: row.state ?? 'ready', mode: 'update', access: row.access, onRestore: noop, changes: { summary: '6 new turns since you published · 1 new match, redacted' } })))
+    let publishCalls = 0
+    const mounted = await mount(React.createElement(ui.PublishDialog, base({ state: row.state ?? 'ready', mode: 'update', access: row.access, onRestore: noop, onPublish: () => { publishCalls++ }, changes: { summary: '6 new turns since you published · 1 new match, redacted' } })))
     const dialog = mounted.container.querySelector('[role="dialog"]')
     const primary = [...dialog.querySelectorAll('.dlg-foot .btn-primary')][0]
     report.check(text(primary) === row.primary, `${row.name}: primary expected ${JSON.stringify(row.primary)}, received ${JSON.stringify(text(primary))}`)
     report.check(primary.disabled === !row.enabled, `${row.name}: update primary must be ${row.enabled ? 'enabled' : 'disabled'}`)
+    await mounted.act(() => click(window, primary))
+    report.check(publishCalls === row.publishCalls, `${row.name}: update activation must call onPublish ${row.publishCalls} times, received ${publishCalls}`)
     for (const line of row.lines) report.check(text(dialog).includes(line), `${row.name}: the popup must read ${JSON.stringify(line)}`)
     for (const item of row.access.filter((entry) => entry.pending === 'removal')) {
       report.check(!!dialog.querySelector(`button[aria-label="keep ${item.name}"]`), `${row.name}: a row pending removal offers keep ${item.name}`)
