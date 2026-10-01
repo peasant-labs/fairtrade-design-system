@@ -347,7 +347,7 @@ export function LocalOfflineBanner({ onRetry, retrying = false, checkedAt, comma
               onClick={() => { if (!retrying) onRetry() }}
             >
               {retrying ? <Loader className="cx-offline-spin" aria-hidden="true" /> : <RotateCw aria-hidden="true" />}
-              <span>{retrying ? 'trying again' : 'try again'}</span>
+              <span className="cx-offline-retry-label"><span aria-hidden="true" className="cx-offline-retry-reserve">trying again</span><span>{retrying ? 'trying again' : 'try again'}</span></span>
             </button>
           )}
           {time && (

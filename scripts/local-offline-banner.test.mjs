@@ -10,7 +10,12 @@ const FIXTURE = 'scripts/testdata/local-offline-banner.yaml'
 const MANIFEST = 'scripts/testdata/local-offline-banner.manifest.yaml'
 const { fixture } = loadFixturePair(FIXTURE, MANIFEST, { cases: 'requiredCaseNames', interactions: 'requiredInteractionNames' })
 const report = createReport('local offline banner')
-const text = (node) => node?.textContent.replace(/\s+/g, ' ').trim()
+const text = (node) => {
+  if (!node) return undefined
+  const copy = node.cloneNode(true)
+  copy.querySelectorAll('[aria-hidden="true"]').forEach((hidden) => hidden.remove())
+  return copy.textContent.replace(/\s+/g, ' ').trim()
+}
 
 await withMountedSource(async ({ load, mount, window, React }) => {
   const { LocalOfflineBanner } = await load('/src/ui/ConnectionState.jsx')

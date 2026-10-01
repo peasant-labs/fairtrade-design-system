@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import {
   AlertTriangle,
   CircleCheck,
@@ -279,6 +279,8 @@ function joinNames(names) {
 function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
   const titleId = useId()
   const matches = scan?.matches ?? []
+  const matchCount = scan?.matchCount ?? matches.length
+  const sampled = matchCount > matches.length
   const kept = matches.filter((match) => match.kept).length
   // the matches open by themselves when one will leave un-redacted; the toggle overrides that
   const [openChoice, setOpen] = useState(null)
@@ -291,7 +293,7 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
       <div className="pub-section-head">
         <h4 className="pub-section-title" id={titleId}>what leaves your machine</h4>
         {onRescan && (
-          <button type="button" className="btn btn-ghost btn-sm pub-rescan" onClick={onRescan} disabled={checking}>
+          <button type="button" className="btn btn-ghost btn-sm pub-rescan" onClick={onRescan} disabled={checking || state === 'publishing'}>
             <RotateCw aria-hidden="true" /> re-scan
           </button>
         )}
@@ -311,12 +313,12 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
           <p className={kept ? 'pub-line pub-line-alert' : 'pub-line'}>
             {kept ? <AlertTriangle aria-hidden="true" /> : <ShieldCheck aria-hidden="true" />}
             <span>
-              <span className="tnum">{matches.length}</span> {matches.length === 1 ? 'match' : 'matches'}
-              {kept ? <> · <span className="tnum">{kept}</span> kept un-redacted, will be sent</> : matches.length ? ' · all redacted' : ' · nothing to redact'}
+              <span className="tnum">{matchCount}</span> {matchCount === 1 ? 'match' : 'matches'}
+              {kept ? <> · <span className="tnum">{kept}</span> kept un-redacted, will be sent</> : matchCount ? ' · all redacted' : ' · nothing to redact'}
             </span>
             {matches.length > 0 && (
               <button type="button" className="btn btn-ghost btn-sm pub-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
-                {open ? 'hide matches' : 'show matches'}
+                {sampled ? (open ? 'hide examples' : `show ${matches.length} examples`) : (open ? 'hide matches' : 'show matches')}
               </button>
             )}
           </p>
@@ -338,7 +340,7 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
  * States: `connect` (this computer is not signed in to village), `waiting-github` (after continue
  * with github), `checking` (the redaction check is running), `scan-failed` (publish is off,
  * re-scan stays on), `no-collective` (signed in, in no collective), `ready`, `publishing`,
- * `stopped` (a named step failed; village keeps what it had), `done`, `waits-approval` (done, and
+ * `stopped` (a named step failed; the host names any changes already applied), `done`, `waits-approval` (done, and
  * a curated collective shows it once its owner approves).
  *
  * @param {object} props
@@ -347,7 +349,7 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
  * @param {string} props.title - the session title, kept in its case.
  * @param {'publish'|'update'} [props.mode='publish']
  * @param {PublishDialogState} props.state - one of PUBLISH_DIALOG_STATES.
- * @param {{ matches?: object[], total?: number, failure?: string }} [props.scan] - the host's scan result. Until it carries a
+ * @param {{ matches?: object[], matchCount?: number, total?: number, failure?: string }} [props.scan] - the host's scan result. `matchCount` is the full occurrence count when `matches` contains only examples. Until it carries a
  *        `matches` list, the popup says the transcript is not scanned and keeps publish off. A match with `kept: true` leaves un-redacted, and the
  *        popup says so and opens the matches.
  * @param {() => void} [props.onRescan]
@@ -403,13 +405,27 @@ export function PublishDialog({
   const derived = mode === 'update'
     ? ['update', adds ? `add ${plural(adds, 'collective', 'collectives')}` : null, removes ? `remove ${plural(removes, 'collective', 'collectives')}` : null].filter(Boolean).join(' and ')
     : readers.length ? `publish to ${plural(readers.length, 'collective', 'collectives')}` : 'publish'
-  const blocked = state === 'checking' || state === 'scan-failed' || state === 'no-collective' || state === 'publishing' || readers.length === 0 || !Array.isArray(scan?.matches)
+  const blocked = state === 'checking' || state === 'scan-failed' || state === 'no-collective' || state === 'publishing' || (readers.length === 0 && !(mode === 'update' && removes > 0)) || !Array.isArray(scan?.matches)
   // while publishing, cancel, the close button, Escape and the scrim all wait for the result
   const dismissible = state !== 'publishing'
 
+  const doneReaders = done?.collectives ?? readers.map((item) => item.name)
+  const pendingReaders = done?.pending ?? []
   const heading = finished
-    ? <>published to <span className="pub-title-content">{joinNames(done?.collectives ?? readers.map((item) => item.name))}</span></>
+    ? doneReaders.length
+      ? <>published to <span className="pub-title-content">{joinNames(doneReaders)}</span></>
+      : pendingReaders.length
+        ? <>submitted to <span className="pub-title-content">{joinNames(pendingReaders)}</span></>
+        : mode === 'update' ? 'updated · no collective can read it' : 'published privately'
     : <>{verb} <span className="pub-title-content">“{title}”</span></>
+
+  // The primary survives the publishing state; the result replaces it with done.
+  // Keep keyboard focus in the popup when that focused control is replaced.
+  useEffect(() => {
+    if (!open || !finished) return
+    const dialog = document.getElementById(labelId)?.closest('[role="dialog"]')
+    if (dialog && !dialog.contains(document.activeElement)) dialog.querySelector('.dlg-foot button')?.focus()
+  }, [open, finished, labelId])
 
   let footer
   if (finished) {
@@ -424,17 +440,18 @@ export function PublishDialog({
   } else {
     footer = (
       <>
-        <span className="pub-foot-note">nothing leaves your machine until you {verb}.</span>
+        <span className="pub-foot-note">{state === 'publishing' ? 'sending your redacted transcript to village.' : state === 'stopped' ? 'review who can read it.' : `nothing leaves your machine until you ${verb}.`}</span>
         <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={state === 'publishing'}>cancel</button>
-        {state === 'stopped' ? (
+        {state === 'stopped' ? onRetry && (
           <button type="button" className="btn btn-primary btn-sm" onClick={onRetry}><RotateCw aria-hidden="true" /> retry</button>
         ) : (
           <button
             type="button"
             className="btn btn-primary btn-sm pub-primary"
-            disabled={blocked}
+            disabled={blocked && state !== 'publishing'}
+            aria-disabled={blocked ? 'true' : undefined}
             aria-busy={state === 'publishing' ? 'true' : undefined}
-            onClick={onPublish}
+            onClick={() => { if (!blocked) onPublish?.() }}
           >
             {state === 'publishing' ? <Loader className="pub-spin" aria-hidden="true" /> : null}
             {primaryLabel ?? derived}
@@ -475,7 +492,7 @@ export function PublishDialog({
               </p>
             ) : (
               <>
-                <AccessList items={access} onRemove={state === 'publishing' ? undefined : onRemove} onRestore={onRestore} />
+                <AccessList items={access} onRemove={state === 'publishing' ? undefined : onRemove} onRestore={state === 'publishing' ? undefined : onRestore} />
                 {picker && state !== 'publishing' && <CollectivePicker {...picker} />}
                 {mode === 'update' && <p className="pub-hint">removing a collective takes the transcript back from it.</p>}
               </>
@@ -496,7 +513,7 @@ export function PublishDialog({
           )}
           {state === 'stopped' && (
             <p className="pub-line pub-line-alert" role="alert">
-              <AlertTriangle aria-hidden="true" /> stopped while {stoppedAt ?? 'publishing'}. nothing changed on village.
+              <AlertTriangle aria-hidden="true" /> stopped while {stoppedAt ?? 'publishing'}. review who can read it.
             </p>
           )}
         </>

@@ -11,6 +11,10 @@ requiredRowNames:
   - text edit then Escape cancels
   - text edit then cancel cancels
   - the tag
+  - strict mode, a switch write that lands
+  - strict mode, a switch write that fails
+  - strict mode, a text write that lands
+  - strict mode, a text write that fails
 requiredGroupNames:
   - an open group
   - a collapsed group
@@ -19,6 +23,7 @@ requiredMutationNames:
   - a failed write keeps the new value
   - Escape saves instead of cancelling
   - the failure is not announced
+  - a remount leaves the row marked gone
 mutations:
   - name: a failed write keeps the new value
     file: src/ui/Settings.jsx
@@ -35,3 +40,8 @@ mutations:
     find: '<span className="srow-error" role="alert">{error}</span>'
     replace: '<span className="srow-error">{error}</span>'
     expectedDiagnostic: "failed restores the previous value: alert"
+  - name: a remount leaves the row marked gone
+    file: src/ui/Settings.jsx
+    find: "    alive.current = true\n"
+    replace: "\n"
+    expectedDiagnostic: "strict mode, a switch write that lands: status"
