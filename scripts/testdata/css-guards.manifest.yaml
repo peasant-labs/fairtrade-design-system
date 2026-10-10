@@ -17,6 +17,7 @@ requiredPresentationSelectorNames:
   - specimen frame
   - feedback popup
   - feedback tool
+  - site nav
   - site nav links
   - site nav control
   - terminal demo
@@ -73,6 +74,7 @@ requiredIsolationCaseNames:
 
 requiredMutationNames:
   - a presentation rule ships in components.css
+  - the site nav ships in components.css
   - the bare section rule ships in base.css
   - a graph rule ships in components.css
   - a remote font import ships in base.css
@@ -96,6 +98,11 @@ mutations:
     target: dist/lib/components.css
     append: ".hero-crop{position:relative;height:100svh}"
     expectedDiagnostic: 'components.css carries presentation selector "hero"'
+  - name: the site nav ships in components.css
+    guard: isolation
+    target: dist/lib/components.css
+    append: "@layer components{.nav{background:var(--surface)!important}}"
+    expectedDiagnostic: 'components.css carries presentation selector "site nav"'
   - name: the bare section rule ships in base.css
     guard: isolation
     target: dist/lib/base.css

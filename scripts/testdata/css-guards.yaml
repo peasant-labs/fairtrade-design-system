@@ -40,6 +40,8 @@ isolation:
       class: fbk-pop
     - name: feedback tool
       classPrefix: fbk-
+    - name: site nav
+      class: nav
     - name: site nav links
       class: nav-links
     - name: site nav control

@@ -222,11 +222,11 @@
      inside @media (prefers-reduced-transparency: no-preference), so a browser that cannot report
      the preference keeps the opaque surface. This reduce block is the backstop: no backdrop blur
      anywhere, !important like the reduced-motion kill above (a normal declaration here in
-     @layer base would lose to any blurred rule in the components layer), and the two --nav-bg
-     bars forced back to the opaque surface. */
+     @layer base would lose to any blurred rule in the components layer), and the --nav-bg
+     transcript sticky bar forced back to the opaque surface. */
   @media (prefers-reduced-transparency: reduce) {
     *, *::before, *::after { backdrop-filter: none !important; }
-    .nav, .txn-sticky { background: var(--surface) !important; }
+    .txn-sticky { background: var(--surface) !important; }
   }
 }
 
