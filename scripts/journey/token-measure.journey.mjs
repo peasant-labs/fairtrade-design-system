@@ -153,17 +153,6 @@ test.describe('global tokens', () => {
         .map((r) => `${r.parent} > ${r.cls} ${r.width}x${r.height}`), spec.iconFloorPx)
     expect(small, `icons below ${spec.iconFloorPx}px`).toEqual([])
 
-    // fitted icons: exact size, wholly inside the marker before them
-    const fitted = await page.evaluate(fitInPage, { rows: spec.fittedIcons })
-    console.log(`fitted icons [${theme}]: ${JSON.stringify(fitted.map(({ name, mounted, sizes, worstMarginPx }) => ({ name, mounted, sizes, worstMarginPx })))}`)
-    expect(fitted.flatMap((r) => r.problems)).toEqual([])
-    for (const mut of spec.fitMutations) {
-      const row = spec.fittedIcons.find((r) => r.name === mut.icon)
-      const broken = await page.evaluate(fitInPage, { rows: [row], markerSizePx: mut.markerSizePx })
-      const problems = broken.flatMap((r) => r.problems)
-      expect(problems.some((p) => p.includes(mut.expectedDiagnostic)), `${mut.name}: ${JSON.stringify(problems)}`).toBe(true)
-    }
-
     // overlay shadow: dark lifts overlays, light stays flat
     const shadow = await page.evaluate(() => {
       const probe = document.createElement('div')
@@ -175,5 +164,24 @@ test.describe('global tokens', () => {
     })
     if (spec.overlayShadow[theme] === 'none') expect(shadow).toBe('none')
     else expect(shadow).not.toBe('none')
+
+    // fitted icons, last: exact size, wholly inside the marker. Rows are grouped by the page
+    // they name (query); rows without one measure the page already open. A row whose icon does
+    // not mount fails ("none mounted"), so a page that stops rendering it cannot pass.
+    const groups = Map.groupBy(spec.fittedIcons, (r) => r.query ?? '')
+    for (const [query, rows] of groups) {
+      if (query) {
+        await page.goto(`http://localhost:${process.env.JOURNEY_APP_PORT || '5180'}/?${query}${theme === 'light' ? '&theme=light' : ''}`, { waitUntil: 'networkidle' })
+      }
+      const fitted = await page.evaluate(fitInPage, { rows })
+      console.log(`fitted icons [${theme}]: ${JSON.stringify(fitted.map(({ name, mounted, sizes, worstMarginPx }) => ({ name, mounted, sizes, worstMarginPx })))}`)
+      expect(fitted.flatMap((r) => r.problems)).toEqual([])
+      for (const mut of spec.fitMutations.filter((m) => rows.some((r) => r.name === m.icon))) {
+        const row = rows.find((r) => r.name === mut.icon)
+        const broken = await page.evaluate(fitInPage, { rows: [row], markerSizePx: mut.markerSizePx })
+        const problems = broken.flatMap((r) => r.problems)
+        expect(problems.some((p) => p.includes(mut.expectedDiagnostic)), `${mut.name}: ${JSON.stringify(problems)}`).toBe(true)
+      }
+    }
   })
 })

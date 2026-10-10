@@ -58,12 +58,18 @@ iconFloorPx: 14
 
 # Icons drawn inside a marker: each mounted one renders at exactly px, and sits wholly inside
 # its marker, the element right before it or around it (fitted: the glyph never spills past the
-# marker, so no corner of the marker pokes out around it).
+# marker, so no corner of the marker pokes out around it). query, when present, names the app
+# page the row is measured on; a row without one is measured on the docs page.
 fittedIcons:
   - name: commit session star
     icon: svg.cg-spark
     marker: .cg-dot-filled
     px: 14
+  - name: changes legend session star
+    icon: .gmp-changes-legend svg.cg-spark
+    marker: .cg-dot-filled
+    px: 14
+    query: app=graph&section=changes
 
 # The overlay shadow per theme: dark lifts overlays, light stays flat.
 overlayShadow:
@@ -88,3 +94,7 @@ fitMutations:
     icon: commit session star
     markerSizePx: 9
     expectedDiagnostic: commit session star overflows its marker
+  - name: the legend session marker shrinks back to the 9px dot
+    icon: changes legend session star
+    markerSizePx: 9
+    expectedDiagnostic: changes legend session star overflows its marker
