@@ -71,17 +71,17 @@ export default meta
 export const Playground = {}
 
 function ViewExample({ hostSliced = false }) {
-  const [columnFilters, setFilters] = useState([{ id: 'title', value: 'Ledger' }])
+  const [columnFilters, setFilters] = useState(hostSliced ? [] : [{ id: 'title', value: 'Ledger' }])
   const [search, setSearch] = useState('')
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 2 })
   const [lastFilters, setLastFilters] = useState(null)
   const [lastSearch, setLastSearch] = useState(null)
   const [lastPagination, setLastPagination] = useState(null)
-  const hostRows = viewData.rows.filter((row) => row.title.toLowerCase().includes(search.toLowerCase()))
+  const hostRows = viewData.rows.filter((row) => row.title.toLowerCase().includes(search.toLowerCase()) && columnFilters.every((filter) => String(row[filter.id] ?? '').toLowerCase().includes(String(filter.value).toLowerCase())))
   const visibleRows = hostSliced ? hostRows.slice(pagination.pageIndex * pagination.pageSize, (pagination.pageIndex + 1) * pagination.pageSize) : viewData.rows
   return <>
     <DataTable columns={viewData.columns} rows={visibleRows} caption="ledger records" selectable
-      columnFilters={hostSliced ? [] : columnFilters}
+      columnFilters={columnFilters}
       onColumnFiltersChange={(next) => { setLastFilters(next); setFilters(next) }}
       {...(hostSliced ? { rowCount: hostRows.length, search, onSearchChange: (next) => { setLastSearch(next); setSearch(next) }, pagination, onPaginationChange: (next) => { setLastPagination(next); setPagination(next) } } : {})} />
     <output className="tbl-callback-filters">{JSON.stringify(lastFilters)}</output>
