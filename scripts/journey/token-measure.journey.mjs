@@ -23,6 +23,12 @@ assertExactNames(spec.lengths.map((l) => l.name), manifest.requiredLengthNames, 
 assertExactNames(spec.mutations.map((m) => m.name), manifest.requiredMutationNames, `${FIXTURE} mutations`)
 assertExactNames(spec.fittedIcons.map((e) => e.name), manifest.requiredFittedIconNames, `${FIXTURE} fittedIcons`)
 assertExactNames(spec.fitMutations.map((m) => m.name), manifest.requiredFitMutationNames, `${FIXTURE} fitMutations`)
+// every fit mutation must target a fitted-icon row; otherwise the per-page loop below would skip it
+for (const m of spec.fitMutations) {
+  if (!spec.fittedIcons.some((r) => r.name === m.icon)) {
+    throw new Error(`${FIXTURE} fitMutations: ${m.name} names no fitted icon row (${m.icon}); every fit mutation must target a fittedIcons entry, so rename its icon to an existing row or remove the mutation (and its manifest name)`)
+  }
+}
 
 const test = base.extend({
   theme: async ({}, use, testInfo) => {
