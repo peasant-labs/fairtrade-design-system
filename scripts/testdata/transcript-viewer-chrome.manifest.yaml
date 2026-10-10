@@ -1,7 +1,7 @@
 # Required-NAME manifest for transcript-viewer-chrome.yaml: deletion protection. The gate
 # (scripts/transcript-viewer-chrome.test.mjs) asserts each family's names equal these lists
 # exactly, as sets. Membership is asserted, never a bare count.
-requiredDefaultsCase: no chrome props keeps the long-standing header
+requiredDefaultsCase: no chrome props omits the legacy action tail
 requiredCaseNames:
   - tail on, outcome on, search trigger on, pull requests given
   - tail on, outcome on, search trigger on, pull requests omitted
@@ -20,6 +20,7 @@ requiredCaseNames:
   - tail off, outcome off, search trigger off, pull requests given
   - tail off, outcome off, search trigger off, pull requests omitted
 requiredInteractionNames:
+  - legacy share actions require explicit host opt-in
   - clicking the search trigger opens the search bar and focuses its field
   - the search trigger's accessible name includes the shortcut
   - the more menu no longer offers chat with trace
@@ -32,12 +33,18 @@ requiredPromptLabelNames:
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
 requiredMutationNames:
+  - legacy action tail defaults on
   - the tail ignores showTail
   - the outcome chip ignores showOutcome
   - the pull request slot is dropped
   - the search trigger does not open search
   - the meta row reverts to input submissions
 mutations:
+  - name: legacy action tail defaults on
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "showTail = false,"
+    replace: "showTail = true,"
+    expectedDiagnostic: "no chrome props omits the legacy action tail: share-menu must be absent"
   - name: the tail ignores showTail
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "{showTail && (<>"

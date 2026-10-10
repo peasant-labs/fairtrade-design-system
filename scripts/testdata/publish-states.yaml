@@ -20,11 +20,11 @@ done:
 labels:
   - {name: not published, state: not-published, props: {}, text: not published, icon: lucide-circle-dashed, action: publish}
   - {name: publishing, state: publishing, props: {collectives: 2}, text: publishing to 2 collectives, icon: lucide-loader, action: publish, busy: true}
-  - {name: published and up to date, state: published, props: {collectives: 2}, text: published · 2 collectives · up to date, icon: lucide-circle-check, action: manage}
+  - {name: published and up to date, state: published, props: {collectives: 2}, text: published · 2 collectives · up to date, icon: lucide-circle-check, action: update}
   - {name: new turns, state: new-turns, props: {collectives: 2, newTurns: 6}, text: published · 2 collectives · 6 new turns, icon: lucide-circle-fading-arrow-up, action: update}
   # a count the host does not give is left out, never stated as zero
-  - {name: published without a count, state: published, props: {}, text: published · up to date, icon: lucide-circle-check, action: manage}
-  - {name: auto-publish on, state: auto-publish, props: {collective: Acme Platform}, text: auto-publish on · Acme Platform, icon: lucide-repeat, action: manage}
+  - {name: published without a count, state: published, props: {}, text: published · up to date, icon: lucide-circle-check, action: update}
+  - {name: auto-publish on, state: auto-publish, props: {collective: Acme Platform}, text: auto-publish on · Acme Platform, icon: lucide-repeat, action: update}
   - {name: outside your saved lists, state: outside-lists, props: {}, text: not published · outside your saved lists, icon: lucide-list-x, action: publish}
 
 # primary: the primary button's label and whether it is enabled (null: no primary button).

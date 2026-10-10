@@ -158,8 +158,8 @@
 .rdx-banner-text {
   margin: 0;
   font-family: var(--font-body);
-  font-size: var(--fs-label);
-  line-height: 1.45;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
 }
 
 /* ── review: summary line ──────────────────────────────────────────────────── */
@@ -248,7 +248,7 @@
   border: var(--bd);
   background: var(--surface-2);
   color: var(--ink-2);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   min-width: 0;
 }
 .rdx-badge-cat { color: var(--ink-2); }

@@ -198,7 +198,7 @@ export default function TranscriptViewer({
   anchorHref,
   headerActions,
   streamPrelude,
-  showTail = true,
+  showTail = false,
   showOutcome = true,
   showSearchTrigger = false,
   pullRequests,

@@ -34,7 +34,7 @@ import './Publish.css'
 
      <PublishStateLabel state />   the transcript's publish state as an icon and words
      <PublishBar state onAction /> that label plus the one action for the state (publish, update
-                                   or manage) and an optional overflow menu
+                                    for an existing publish) and an optional overflow menu
      <AccessList items onRemove /> who can read it: one row per collective, each with a named
                                    remove button; the host marks rows pending in text
      <CollectivePicker ... />      search and suggestions for adding a collective; village reuses it
@@ -53,9 +53,9 @@ const countOf = (count, one, many) => (typeof count === 'number' ? plural(count,
 const STATE_META = {
   'not-published': { icon: CircleDashed, text: () => 'not published', action: 'publish' },
   publishing: { icon: Loader, text: ({ collectives }) => (collectives ? `publishing to ${plural(collectives, 'collective', 'collectives')}` : 'publishing'), action: 'publish' },
-  published: { icon: CircleCheck, text: ({ collectives }) => ['published', countOf(collectives, 'collective', 'collectives'), 'up to date'].filter(Boolean).join(' · '), action: 'manage' },
+   published: { icon: CircleCheck, text: ({ collectives }) => ['published', countOf(collectives, 'collective', 'collectives'), 'up to date'].filter(Boolean).join(' · '), action: 'update' },
   'new-turns': { icon: CircleFadingArrowUp, text: ({ collectives, newTurns }) => ['published', countOf(collectives, 'collective', 'collectives'), countOf(newTurns, 'new turn', 'new turns') ?? 'new turns'].filter(Boolean).join(' · '), action: 'update' },
-  'auto-publish': { icon: Repeat, text: ({ collective }) => (collective ? `auto-publish on · ${collective}` : 'auto-publish on'), action: 'manage' },
+   'auto-publish': { icon: Repeat, text: ({ collective }) => (collective ? `auto-publish on · ${collective}` : 'auto-publish on'), action: 'update' },
   'outside-lists': { icon: ListX, text: () => 'not published · outside your saved lists', action: 'publish' },
 }
 
@@ -90,7 +90,7 @@ export function PublishStateLabel({ state, collectives, newTurns, collective, cl
 
 /**
  * PublishBar — the status and the one action for it, for a transcript header row. The action is
- * publish (not published, outside the saved lists), update (new turns) or manage (published,
+ * publish (not published, outside the saved lists) or update (published, new turns,
  * auto-publish on); while publishing it stays visible and busy.
  *
  * @param {object} props
@@ -116,7 +116,7 @@ export function PublishBar({ state, collectives, newTurns, collective, onAction,
       {onAction && (
         <button
           type="button"
-          className={'btn btn-sm ' + (label === 'manage' ? 'btn-secondary' : 'btn-primary') + ' pub-bar-action'}
+           className={'btn btn-sm ' + (state === 'published' || state === 'auto-publish' ? 'btn-secondary' : 'btn-primary') + ' pub-bar-action'}
           aria-haspopup="dialog"
           aria-busy={busy ? 'true' : undefined}
           aria-disabled={busy ? 'true' : undefined}

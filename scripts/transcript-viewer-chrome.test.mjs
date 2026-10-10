@@ -104,14 +104,19 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(name === row.expectedName, `${row.name}: expected ${JSON.stringify(row.expectedName)}, received ${JSON.stringify(name)}`)
       report.check(trigger?.getAttribute('aria-keyshortcuts')?.includes('Meta+F'), `${row.name}: aria-keyshortcuts must name Meta+F`)
       await mounted.unmount()
+    } else if (row.kind === 'share-menu-items') {
+      const mounted = await mount(viewer({ showTail: true, shareOpen: true }))
+      const items = [...mounted.container.querySelectorAll('[role="menu"][aria-label="share"] .menu-text')].map((node) => node.textContent.trim())
+      report.check(JSON.stringify(items) === JSON.stringify(row.expectedItems), `${row.name}: expected ${JSON.stringify(row.expectedItems)}, received ${JSON.stringify(items)}`)
+      await mounted.unmount()
     } else if (row.kind === 'more-menu-items') {
-      const mounted = await mount(viewer({ capabilities: row.capabilities, moreOpen: true }))
+      const mounted = await mount(viewer({ showTail: true, capabilities: row.capabilities, moreOpen: true }))
       const items = [...mounted.container.querySelectorAll('.txn-more-pop .menu-item .menu-text')].map((node) => node.textContent.trim())
       report.check(JSON.stringify(items) === JSON.stringify(row.expectedItems), `${row.name}: expected ${JSON.stringify(row.expectedItems)}, received ${JSON.stringify(items)}`)
       report.check(!mounted.container.textContent.includes('chat with trace'), `${row.name}: chat with trace must not render`)
       await mounted.unmount()
     } else if (row.kind === 'more-menu-absent') {
-      const mounted = await mount(viewer({ capabilities: row.capabilities }))
+      const mounted = await mount(viewer({ showTail: true, capabilities: row.capabilities }))
       report.check(!CONTROLS['more-menu'](mounted.container), row.name)
       report.check(!!CONTROLS['share-menu'](mounted.container), `${row.name}: the share menu still renders`)
       await mounted.unmount()

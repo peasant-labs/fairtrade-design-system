@@ -70,8 +70,8 @@ export const BarStates = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('published · 2 collectives · 6 new turns')).toBeVisible()
-    await expect(canvas.getAllByRole('button', { name: 'update' })).toHaveLength(1)
-    await expect(canvas.getAllByRole('button', { name: 'manage' })).toHaveLength(2)
+    await expect(canvas.getAllByRole('button', { name: 'update' })).toHaveLength(3)
+    await expect(canvas.queryByRole('button', { name: 'manage' })).toBeNull()
   },
 }
 

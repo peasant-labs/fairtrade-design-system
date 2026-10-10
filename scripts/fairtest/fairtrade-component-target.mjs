@@ -315,7 +315,7 @@ const DIGEST_LIST = 'ul[role="listbox"][aria-label="sessions"]'
 const DIGEST_SECOND_SELECTED = Object.freeze({ name: 'second-option-selected', selector: `${DIGEST_LIST} > li[role="option"]:nth-of-type(2)`, attribute: 'aria-selected', value: 'true' })
 const STATS_PAIRS = Object.freeze({ name: 'pairs', selector: 'ul.sst[aria-label="your sessions in numbers"] > li.sst-pair', count: 6 })
 const PUBLISH_BAR_ACTIONS = Object.freeze({ name: 'bar-actions', selector: '.pub-bar .pub-bar-action', count: 6 })
-const PUBLISH_BAR_UPDATE = Object.freeze({ name: 'update-action', role: Object.freeze({ role: 'button', name: 'update' }), matches: '.pub-bar-action', count: 1 })
+const PUBLISH_BAR_UPDATE = Object.freeze({ name: 'update-action', role: Object.freeze({ role: 'button', name: 'update' }), matches: '.pub-bar-action', count: 3 })
 const ACCESS_NAMED_REMOVE = Object.freeze({ name: 'named-remove', role: Object.freeze({ role: 'button', name: 'remove Acme Platform' }), matches: '.pub-access-remove', count: 1 })
 const ACCESS_KEEP = Object.freeze({ name: 'keep-pending-removal', role: Object.freeze({ role: 'button', name: 'keep ML Reading Group' }), matches: '.pub-access-keep', count: 1 })
 const SETTING_GROUPS_ONE_OPEN = Object.freeze({ name: 'one-open-group', selector: 'details.srow-group[open]', count: 1 })

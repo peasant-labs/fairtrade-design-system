@@ -38,6 +38,7 @@ requiredTransitionNames:
   - keyboard focus remains inside during publish and pending approval
 
 requiredMutationNames:
+  - published action reverts to manage
   - representative examples replace the full match count
   - final collective removal never invokes the update
   - a failed scan leaves publish on
@@ -55,6 +56,11 @@ requiredMutationNames:
   - a stopped publish claims no village changes
   - finished focus falls outside the popup
 mutations:
+  - name: published action reverts to manage
+    file: src/ui/Publish.jsx
+    find: "'up to date'].filter(Boolean).join(' · '), action: 'update'"
+    replace: "'up to date'].filter(Boolean).join(' · '), action: 'manage'"
+    expectedDiagnostic: "published and up to date: the bar's action must be"
   - name: a failed scan leaves publish on
     file: src/ui/Publish.jsx
     find: "const blocked = state === 'checking' || state === 'scan-failed' || "
