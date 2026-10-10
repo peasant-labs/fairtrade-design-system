@@ -11,7 +11,7 @@
 //
 // Both are pure over text so scripts/css-guards.test.mjs can plant a mutation in the real
 // bytes and watch the same code fail.
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT, walkCss, isStyleRule, shippedSourceSheets, loadStrictYaml, assertExactNames } from './css-source.mjs'
 import { ALL_SURFACE_NAMESPACES, ANALYTICS_NAMESPACES, GRAPH_NAMESPACES, findForeignNamespaces } from './surface-namespaces.mjs'
@@ -179,5 +179,13 @@ export function checkIconSizeLiterals(overrides = {}, spec = loadGuardSpec().spe
 
 /** Read the emitted files the isolation guard scans from dist/lib. */
 export function readEmitted(spec = loadGuardSpec().spec) {
-  return Object.fromEntries(spec.isolation.files.map(({ file }) => [file, readFileSync(join(ROOT, 'dist', 'lib', file), 'utf8')]))
+  return Object.fromEntries(
+    spec.isolation.files.map(({ file }) => {
+      const path = join(ROOT, 'dist', 'lib', file)
+      if (!existsSync(path)) {
+        throw new Error(`css guards: dist/lib/${file} does not exist, so the emitted library cannot be checked. The guard reads the library build output; run pnpm build:lib (an app build empties dist/) and re-run.`)
+      }
+      return [file, readFileSync(path, 'utf8')]
+    }),
+  )
 }
