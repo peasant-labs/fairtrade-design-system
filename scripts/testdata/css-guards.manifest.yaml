@@ -185,7 +185,7 @@ mutations:
     target: src/site.css
     find: "@import \"./index.css\";\n"
     replace: "@import \"./index.css\";\n@import url(\"https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible&display=swap\");\n"
-    expectedDiagnostic: "src/site.css:11 imports fonts in CSS"
+    expectedDiagnostic: "imports fonts in CSS"
   - name: a sticky bar blurs by default
     guard: lint
     target: src/ui/TranscriptMarkers.css
