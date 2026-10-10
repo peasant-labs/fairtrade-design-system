@@ -95,12 +95,12 @@
 }
 
 .cg-dot-filled {
-  /* filled = a session is behind it. The marker is sized to fit the star icon: --ic-sm plus a
-     --stroke-emphasis margin on each side (SESSION_DOT in CommitGraph.jsx, 18px). */
+  background: var(--ink); /* filled = a session is behind it */
+  border: 1px solid var(--ink);
+  /* sized to fit the star icon: --ic-sm plus a --stroke-emphasis margin on each side
+     (SESSION_DOT in CommitGraph.jsx, 18px) */
   width: calc(var(--ic-sm) + 2 * var(--stroke-emphasis));
   height: calc(var(--ic-sm) + 2 * var(--stroke-emphasis));
-  background: var(--ink);
-  border: 1px solid var(--ink);
 }
 
 /* Selected: the scarce amber accent, on the dot (filled or hollow). */
