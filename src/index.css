@@ -2310,7 +2310,7 @@
   .txn-cp-select { position: relative; }
   .txn-cp-trigger { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); cursor: pointer; height: var(--control-h-sm); padding: 0 var(--sp-2); text-align: left; }
   .txn-cp-trigger .mono { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .txn-cp-pop { position: absolute; left: 0; right: 0; top: calc(100% + 2px); z-index: var(--z-dropdown); padding: var(--sp-1) 0; }
+  .txn-cp-pop { position: absolute; left: 0; right: 0; top: calc(100% + 2px); z-index: var(--z-dropdown); padding: var(--sp-1) 0; box-shadow: var(--overlay-shadow); }
   .txn-cp-opt { display: flex; flex-direction: column; gap: 1px; width: 100%; background: transparent; border: 0; cursor: pointer; text-align: left; padding: var(--sp-2) var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); }
   .txn-cp-opt:hover { background: var(--surface-hover); color: var(--ink); }
   .txn-cp-opt[aria-selected="true"] { color: var(--amber); }

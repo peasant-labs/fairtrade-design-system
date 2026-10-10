@@ -506,7 +506,7 @@
   .gmp-annot-add { display: inline-flex; align-items: center; gap: var(--sp-2); height: var(--control-h-sm); padding: 0 var(--sp-3); background: transparent; border: var(--bd-strong); color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; cursor: pointer; }
   .gmp-annot-add:hover { color: var(--ink); border-color: var(--amber-dim); }
   .gmp-annot-add .lucide { color: var(--amber); width: var(--ic-sm); height: var(--ic-sm); }
-  .gmp-annot-pop { position: absolute; z-index: var(--z-dropdown); top: calc(100% + 4px); left: 0; display: flex; flex-direction: column; gap: var(--sp-2); width: min(280px, 90vw); padding: var(--sp-3); background: var(--surface-elev); border: var(--bd-strong); box-shadow: var(--glow-soft); }
+  .gmp-annot-pop { position: absolute; z-index: var(--z-dropdown); top: calc(100% + 4px); left: 0; display: flex; flex-direction: column; gap: var(--sp-2); width: min(280px, 90vw); padding: var(--sp-3); background: var(--surface-elev); border: var(--bd-strong); box-shadow: var(--overlay-shadow); }
   .gmp-annot-pop .input { height: var(--control-h-sm); }
   .gmp-annot-pop-foot { display: flex; justify-content: flex-end; gap: var(--sp-2); }
 
