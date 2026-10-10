@@ -4,7 +4,8 @@ import '../src/lib-graph.css'
 import '../src/lib-analytics.css'
 import { withThemeByDataAttribute } from '@storybook/addon-themes'
 
-/* every story inherits the real tokens + classes from src/index.css. the theme toolbar flips the
+/* every story inherits the real tokens + classes from src/index.css (through src/site.css) and the graph
+   and analytics surface sheets. the theme toolbar flips the
    SAME [data-theme="light"] attribute the app uses, so components re-skin for free. the preview
    CANVAS follows that toggle too (a decorator paints html/body with var(--canvas)), so a light-theme
    story renders on the real warm-paper canvas instead of a black void - the old fixed dark background
