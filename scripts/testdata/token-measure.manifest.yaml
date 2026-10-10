@@ -14,8 +14,10 @@ requiredLengthNames:
   - focus ring width
   - focus ring offset
   - inset focus ring offset
-requiredIconFloorExemptNames:
-  - commit dot star
+requiredFittedIconNames:
+  - commit session star
+requiredFitMutationNames:
+  - the session marker shrinks back to the 9px dot
 requiredMutationNames:
   - the reading measure widens past 66 characters
   - the prose measure widens past 80 characters

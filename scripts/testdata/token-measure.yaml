@@ -53,13 +53,17 @@ lengths:
     token: --focus-ring-offset-inset
     px: -3
 
-# Every Lucide icon the app mounts renders at least this many px wide and tall (--ic-sm),
-# except the named ornaments below, which are drawn inside a marker rather than read as icons.
+# Every Lucide icon the app mounts renders at least this many px wide and tall (--ic-sm).
 iconFloorPx: 14
-iconFloorExempt:
-  - name: commit dot star
-    iconClass: cg-spark
-    reason: the star is painted inside the 9px commit dot as part of the marker, never as a standalone icon
+
+# Icons drawn inside a marker: each mounted one renders at exactly px, and sits wholly inside
+# its marker, the element right before it or around it (fitted: the glyph never spills past the
+# marker, so no corner of the marker pokes out around it).
+fittedIcons:
+  - name: commit session star
+    icon: svg.cg-spark
+    marker: .cg-dot-filled
+    px: 14
 
 # The overlay shadow per theme: dark lifts overlays, light stays flat.
 overlayShadow:
@@ -76,3 +80,11 @@ mutations:
     token: --measure-prose
     value: 66ch
     expectedDiagnostic: prose measure holds
+
+# Named mutations for the fitted icons: the probe shrinks the marker back to the old 9px dot on
+# the page and must report the star as not fitted.
+fitMutations:
+  - name: the session marker shrinks back to the 9px dot
+    icon: commit session star
+    markerSizePx: 9
+    expectedDiagnostic: commit session star overflows its marker

@@ -95,7 +95,11 @@
 }
 
 .cg-dot-filled {
-  background: var(--ink); /* filled = a session is behind it */
+  /* filled = a session is behind it. The marker is sized to fit the star icon: --ic-sm plus a
+     --stroke-emphasis margin on each side (SESSION_DOT in CommitGraph.jsx, 18px). */
+  width: calc(var(--ic-sm) + 2 * var(--stroke-emphasis));
+  height: calc(var(--ic-sm) + 2 * var(--stroke-emphasis));
+  background: var(--ink);
   border: 1px solid var(--ink);
 }
 
@@ -115,15 +119,15 @@
    outline star read solid; the colour INVERTS against the dot fill so it stays legible in both
    themes (a --surface star cuts out of the --ink dot — --ink is the high-contrast foreground in
    both themes, --surface the background, so it is always dark-on-light or light-on-dark).
-   Because the spark is centred on the dot (laneX, 50%) and sized to the 9px dot, it lives ENTIRELY
-   within the dot's footprint — it can never reach a lane line at ANY indent depth (the dot already
-   interrupts its own lane there, and the nearest neighbour lane is a full LANE_W away). As the
-   dot's NEXT sibling it paints on top. */
+   The spark is the --ic-sm icon size, centred on the filled marker (laneX, 50%), which is sized to
+   hold it with a 2px margin, so it lives ENTIRELY within the marker's footprint and can never
+   reach a lane line at ANY indent depth (the marker interrupts its own lane there, and the
+   nearest neighbour lane is a full LANE_W away). As the dot's NEXT sibling it paints on top. */
 .cg-spark {
   position: absolute;
   top: 50%;
-  width: 9px;
-  height: 9px;
+  width: var(--ic-sm);
+  height: var(--ic-sm);
   transform: translate(-50%, -50%);
   color: var(--surface);
   fill: currentColor;

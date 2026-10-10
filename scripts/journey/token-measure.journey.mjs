@@ -5,7 +5,8 @@
  *   - real characters per line at --measure-prose and --measure-read, in the body face with
  *     the paragraph tracking and word spacing (the faces must have loaded first);
  *   - every length token as a computed px value (strokes, icons, targets, focus ring);
- *   - every mounted Lucide icon renders at least the --ic-sm floor;
+ *   - every mounted Lucide icon renders at least the --ic-sm floor, and an icon drawn inside a
+ *     marker (the commit session star) renders at its exact size, wholly inside the marker;
  *   - the overlay shadow per theme (dark lifted, light flat).
  * Each named mutation overrides one token on the probe and must make the measure check report
  * its breach, so the probe is proven to fail for the intended reason.
@@ -20,7 +21,8 @@ const manifest = loadStrictYaml(MANIFEST)
 assertExactNames(spec.measures.map((m) => m.name), manifest.requiredMeasureNames, `${FIXTURE} measures`)
 assertExactNames(spec.lengths.map((l) => l.name), manifest.requiredLengthNames, `${FIXTURE} lengths`)
 assertExactNames(spec.mutations.map((m) => m.name), manifest.requiredMutationNames, `${FIXTURE} mutations`)
-assertExactNames(spec.iconFloorExempt.map((e) => e.name), manifest.requiredIconFloorExemptNames, `${FIXTURE} iconFloorExempt`)
+assertExactNames(spec.fittedIcons.map((e) => e.name), manifest.requiredFittedIconNames, `${FIXTURE} fittedIcons`)
+assertExactNames(spec.fitMutations.map((m) => m.name), manifest.requiredFitMutationNames, `${FIXTURE} fitMutations`)
 
 const test = base.extend({
   theme: async ({}, use, testInfo) => {
@@ -55,6 +57,35 @@ const measureInPage = ({ token, texts, override }) => {
   }
   return widest
 }
+
+/** In the page: each fitted icon's mounted size and its margin inside its marker.
+ *  markerSizePx (mutations only) resizes the markers inline first and restores them after. */
+const fitInPage = ({ rows, markerSizePx }) =>
+  rows.map(({ name, icon, marker, px }) => {
+    const icons = [...document.querySelectorAll(icon)].filter((el) => el.getClientRects().length)
+    const problems = icons.length ? [] : [`${name}: none mounted`]
+    const sizes = new Set()
+    let worstMarginPx = Infinity
+    for (const el of icons) {
+      // the graph paints the star over the marker as its next sibling; the legend nests it inside
+      const box = el.previousElementSibling?.matches(marker) ? el.previousElementSibling : el.parentElement?.closest(marker)
+      if (!box) { problems.push(`${name}: no ${marker} right before or around the icon`); continue }
+      const saved = box.style.cssText
+      // transition off first: the reduced-motion backstop gives every property a .01ms transition,
+      // so a resize read in the same task would still report the old size
+      if (markerSizePx) box.style.cssText += `; transition: none !important; width: ${markerSizePx}px; height: ${markerSizePx}px`
+      const cs = getComputedStyle(el)
+      sizes.add(`${parseFloat(cs.width)}x${parseFloat(cs.height)}`)
+      if (parseFloat(cs.width) !== px || parseFloat(cs.height) !== px) problems.push(`${name}: renders ${cs.width} x ${cs.height}, not ${px}px`)
+      const i = el.getBoundingClientRect()
+      const m = box.getBoundingClientRect()
+      const margin = Math.min(i.left - m.left, m.right - i.right, i.top - m.top, m.bottom - i.bottom)
+      worstMarginPx = Math.min(worstMarginPx, Math.round(margin * 100) / 100)
+      if (margin < 0) problems.push(`${name} overflows its marker by ${-margin}px`)
+      box.style.cssText = saved
+    }
+    return { name, mounted: icons.length, sizes: [...sizes], worstMarginPx, problems }
+  })
 
 /** The measure rows that break their limits, as diagnostics (empty when every limit holds). */
 const measureBreaches = (results) =>
@@ -111,16 +142,27 @@ test.describe('global tokens', () => {
     // icons: every mounted Lucide icon renders at least the floor
     // the computed CSS size, not the client rect: a zoomed map canvas scales its icons with
     // the view, which is not the size the stylesheet gives them
-    const small = await page.evaluate(({ floor, exempt }) =>
+    const small = await page.evaluate((floor) =>
       [...document.querySelectorAll('svg.lucide')]
-        .filter((svg) => svg.getClientRects().length && !exempt.some((c) => svg.classList.contains(c)))
+        .filter((svg) => svg.getClientRects().length)
         .map((svg) => {
           const cs = getComputedStyle(svg)
           return { cls: svg.getAttribute('class'), parent: svg.parentElement?.className?.toString() ?? '', width: parseFloat(cs.width), height: parseFloat(cs.height) }
         })
         .filter((r) => r.width < floor || r.height < floor)
-        .map((r) => `${r.parent} > ${r.cls} ${r.width}x${r.height}`), { floor: spec.iconFloorPx, exempt: spec.iconFloorExempt.map((e) => e.iconClass) })
+        .map((r) => `${r.parent} > ${r.cls} ${r.width}x${r.height}`), spec.iconFloorPx)
     expect(small, `icons below ${spec.iconFloorPx}px`).toEqual([])
+
+    // fitted icons: exact size, wholly inside the marker before them
+    const fitted = await page.evaluate(fitInPage, { rows: spec.fittedIcons })
+    console.log(`fitted icons [${theme}]: ${JSON.stringify(fitted.map(({ name, mounted, sizes, worstMarginPx }) => ({ name, mounted, sizes, worstMarginPx })))}`)
+    expect(fitted.flatMap((r) => r.problems)).toEqual([])
+    for (const mut of spec.fitMutations) {
+      const row = spec.fittedIcons.find((r) => r.name === mut.icon)
+      const broken = await page.evaluate(fitInPage, { rows: [row], markerSizePx: mut.markerSizePx })
+      const problems = broken.flatMap((r) => r.problems)
+      expect(problems.some((p) => p.includes(mut.expectedDiagnostic)), `${mut.name}: ${JSON.stringify(problems)}`).toBe(true)
+    }
 
     // overlay shadow: dark lifts overlays, light stays flat
     const shadow = await page.evaluate(() => {

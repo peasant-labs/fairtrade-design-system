@@ -426,6 +426,9 @@
   /* the kit .cg-dot base (CommitGraph.css, unlayered) floats the square via absolute
      placement; neutralise it here so the legend marker sits in flow next to its label. */
   .gmp-changes-legend .cg-dot { position: static !important; transform: none !important; flex: none; }
+  /* the filled legend marker holds its star in flow, centred, exactly as the graph draws it */
+  .gmp-changes-legend .cg-dot-filled { display: inline-grid; place-items: center; }
+  .gmp-changes-legend .cg-spark { position: static; transform: none; }
 
   /* below the wide layout there isn't room for floating merged chips — drop them into flow. */
   @media (max-width: 1460px) {
