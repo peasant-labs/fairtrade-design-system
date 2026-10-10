@@ -1191,7 +1191,7 @@
   .tbl-scroll { overflow: auto; max-height: calc(var(--row-h-comfortable) * 8); scroll-padding-block-start: var(--control-h); }
   .tbl-tools, .tbl-footer, .tbl-chips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); }
   .tbl-tools { margin-bottom: var(--sp-2); }
-  .tbl-tools > .input { flex: 1; min-width: 0; }
+  .tbl-tools > .input { flex: 1 1 calc(var(--sp-8) * 3); min-width: min(100%, calc(var(--sp-8) * 2)); max-width: 100%; }
   .tbl-filters summary { cursor: pointer; min-height: var(--control-h); display: flex; align-items: center; border: var(--bd-strong); padding-inline: var(--sp-3); }
   .tbl-filter-fields { display: flex; flex-wrap: wrap; gap: var(--sp-3); padding-block: var(--sp-3); }
   .tbl-filter-fields label { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }

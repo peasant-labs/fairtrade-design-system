@@ -71,13 +71,14 @@ for (const row of spec.mountedRows) {
       await page.getByRole('button', { name: 'remove title filter' }).click()
       await expect(page.getByRole('status')).toHaveText('showing 2 of 5')
     } else if (row.kind === 'host') {
-      await expect(page.getByRole('status')).toHaveText('showing 5 of 50')
+      await expect(page.getByRole('status')).toHaveText('showing 2 of 5')
       await page.getByRole('button', { name: 'next page' }).click()
       await expect(page.locator('.tbl-callback-pagination')).toHaveText('{"pageIndex":1,"pageSize":2}')
-      await page.getByRole('searchbox', { name: 'search rows' }).fill('host query')
-      await expect(page.locator('.tbl-callback-search')).toHaveText('"host query"')
+      await expect(page.locator('tbody')).toContainText('Archive C')
+      await page.getByRole('searchbox', { name: 'search rows' }).fill('Ledger')
+      await expect(page.locator('.tbl-callback-search')).toHaveText('"Ledger"')
       await expect(page.locator('.tbl-callback-pagination')).toHaveText('{"pageIndex":0,"pageSize":2}')
-      await expect(page.getByRole('status')).toHaveText('showing 5 of 50')
+      await expect(page.getByRole('status')).toHaveText('showing 2 of 2')
     } else throw new Error(`datatable.yaml: unimplemented mounted kind ${row.kind}; add its real interaction before enabling the row`)
   })
 }

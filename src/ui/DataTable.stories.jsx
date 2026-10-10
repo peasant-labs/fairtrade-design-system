@@ -77,11 +77,13 @@ function ViewExample({ hostSliced = false }) {
   const [lastFilters, setLastFilters] = useState(null)
   const [lastSearch, setLastSearch] = useState(null)
   const [lastPagination, setLastPagination] = useState(null)
+  const hostRows = viewData.rows.filter((row) => row.title.toLowerCase().includes(search.toLowerCase()))
+  const visibleRows = hostSliced ? hostRows.slice(pagination.pageIndex * pagination.pageSize, (pagination.pageIndex + 1) * pagination.pageSize) : viewData.rows
   return <>
-    <DataTable columns={viewData.columns} rows={viewData.rows} caption="ledger records" selectable
+    <DataTable columns={viewData.columns} rows={visibleRows} caption="ledger records" selectable
       columnFilters={hostSliced ? [] : columnFilters}
       onColumnFiltersChange={(next) => { setLastFilters(next); setFilters(next) }}
-      {...(hostSliced ? { rowCount: 50, search, onSearchChange: (next) => { setLastSearch(next); setSearch(next) }, pagination, onPaginationChange: (next) => { setLastPagination(next); setPagination(next) } } : {})} />
+      {...(hostSliced ? { rowCount: hostRows.length, search, onSearchChange: (next) => { setLastSearch(next); setSearch(next) }, pagination, onPaginationChange: (next) => { setLastPagination(next); setPagination(next) } } : {})} />
     <output className="tbl-callback-filters">{JSON.stringify(lastFilters)}</output>
     <output className="tbl-callback-search">{JSON.stringify(lastSearch)}</output>
     <output className="tbl-callback-pagination">{JSON.stringify(lastPagination)}</output>
