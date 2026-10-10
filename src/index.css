@@ -2927,7 +2927,7 @@
   /* ---- portal-ish dialog (publish import + confirm-contribute) ---- */
   .cmg-scrim { position: absolute; inset: 0; z-index: var(--z-dialog); display: flex; align-items: center; justify-content: center; padding: var(--sp-4); background: color-mix(in srgb, var(--canvas) 60%, transparent); }
   @media (prefers-reduced-transparency: no-preference) { .cmg-scrim { backdrop-filter: blur(2px); } }
-  .cmg-dialog { position: relative; display: flex; flex-direction: column; width: min(540px, 100%); max-height: calc(100% - var(--sp-6)); background: var(--surface); border: var(--bd-strong); box-shadow: var(--glow); }
+  .cmg-dialog { position: relative; display: flex; flex-direction: column; width: min(540px, 100%); max-height: calc(100% - var(--sp-6)); background: var(--surface); border: var(--bd-strong); box-shadow: var(--overlay-shadow); }
   .cmg-dlg-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); }
   .cmg-dlg-body { display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-4); overflow: auto; min-height: 0; }
   .cmg-dlg-intro { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.5; }
