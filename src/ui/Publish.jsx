@@ -434,7 +434,7 @@ export function PublishDialog({
      if (!wasOpen) return
      const dialog = document.getElementById(labelId)?.closest('[role="dialog"]')
      const active = document.activeElement
-     if (dialog && (!dialog.contains(active) || active?.matches(':disabled'))) {
+     if (dialog && (!dialog.contains(active) || active === dialog || active?.matches(':disabled'))) {
        const target = dialog.querySelector('.dlg-foot .btn-primary:not(:disabled)')
          ?? dialog.querySelector('button:not(:disabled)')
          ?? dialog
