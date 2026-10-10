@@ -1,0 +1,21 @@
+# Required-NAME manifest for token-measure.yaml: deletion protection.
+requiredMeasureNames:
+  - prose measure
+  - reading measure
+requiredLengthNames:
+  - emphasis stroke
+  - hairline stroke
+  - small icon
+  - medium icon
+  - large icon
+  - minimum target
+  - control height
+  - comfortable target
+  - focus ring width
+  - focus ring offset
+  - inset focus ring offset
+requiredIconFloorExemptNames:
+  - commit dot star
+requiredMutationNames:
+  - the reading measure widens past 66 characters
+  - the prose measure widens past 80 characters
