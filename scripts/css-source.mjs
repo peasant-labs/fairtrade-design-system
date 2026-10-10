@@ -121,7 +121,9 @@ export function shippedSourceSheets() {
     if (seen.has(rel)) return
     seen.add(rel)
     const abs = join(ROOT, rel)
-    if (!existsSync(abs)) throw new Error(`css-source: ${rel} is imported by a shipped bundle but does not exist; fix the @import path`)
+    if (!existsSync(abs)) {
+      throw new Error(`css-source: ${rel} does not exist but is referenced by a shipped bundle @import or a src/ui side-effect CSS import (found while collecting the shipped source sheets for the CSS guards); the guards cannot lint a missing sheet, so fix the path in the @import or import statement that names it, or restore the file`)
+    }
     out.push(rel)
     for (const { text } of walkCss(readFileSync(abs, 'utf8')).statements) {
       const m = text.match(/^@import\s+(?:url\()?\s*["']([^"']+)["']/)
