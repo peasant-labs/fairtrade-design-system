@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+import { useLayoutEffect, useId, useRef, useState } from 'react'
 import {
   AlertTriangle,
   CircleCheck,
@@ -397,6 +397,7 @@ export function PublishDialog({
 }) {
   const labelId = useId()
   const sectionId = useId()
+  const previousOpen = useRef(false)
   if (!PUBLISH_DIALOG_STATES.includes(state)) {
     throw new TypeError(`PublishDialog: unknown state ${JSON.stringify(state)}; use one of ${PUBLISH_DIALOG_STATES.join(', ')}.`)
   }
@@ -423,13 +424,23 @@ export function PublishDialog({
         : mode === 'update' ? 'updated · no collective can read it' : 'published privately'
     : <>{verb} <span className="pub-title-content">“{title}”</span></>
 
-  // The primary survives the publishing state; the result replaces it with done.
-  // Keep keyboard focus in the popup when that focused control is replaced.
-  useEffect(() => {
-    if (!open || !finished) return
-    const dialog = document.getElementById(labelId)?.closest('[role="dialog"]')
-    if (dialog && !dialog.contains(document.activeElement)) dialog.querySelector('.dlg-foot button')?.focus()
-  }, [open, finished, labelId])
+   // A state change may disable or remove the focused close, checkbox or audience control.
+   // Repair that handoff before paint; an enabled primary survives the busy state.
+   useLayoutEffect(() => {
+     const wasOpen = previousOpen.current
+     previousOpen.current = open
+     if (!open) return
+     // Dialog owns first-open focus and must capture the opener before we repair later states.
+     if (!wasOpen) return
+     const dialog = document.getElementById(labelId)?.closest('[role="dialog"]')
+     const active = document.activeElement
+     if (dialog && (!dialog.contains(active) || active?.matches(':disabled'))) {
+       const target = dialog.querySelector('.dlg-foot .btn-primary:not(:disabled)')
+         ?? dialog.querySelector('button:not(:disabled)')
+         ?? dialog
+       target.focus()
+     }
+   }, [open, state, labelId])
 
   let footer
   if (finished) {

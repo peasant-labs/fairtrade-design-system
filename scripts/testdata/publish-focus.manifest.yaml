@@ -1,0 +1,29 @@
+requiredCaseNames:
+  - publishing preserves focused primary
+  - publishing repairs disabled close focus
+  - publishing repairs disabled checkbox focus
+  - publishing repairs removed audience focus
+requiredMenuNames:
+  - Escape during first-item focus handoff
+  - Escape during last-item focus handoff
+  - Escape during click focus handoff
+requiredMutationNames:
+  - publishing handoff only repairs finished focus
+  - Escape on the opening menu trigger is ignored
+  - modal allows programmatic focus outside
+mutations:
+  - name: modal allows programmatic focus outside
+    file: src/ui/Dialog.jsx
+    find: "document.addEventListener('focusin', onFocus)"
+    replace: ""
+    expectedDiagnostic: "outside focus is contained by the modal"
+  - name: publishing handoff only repairs finished focus
+    file: src/ui/Publish.jsx
+    find: "if (!open) return"
+    replace: "if (!open || !finished) return"
+    expectedDiagnostic: "publishing repairs disabled close focus: publishing must focus an enabled control inside the dialog"
+  - name: Escape on the opening menu trigger is ignored
+    file: src/ui/Menu.jsx
+    find: "else if (e.key === 'Escape' && openRef.current)"
+    replace: "else if (false)"
+    expectedDiagnostic: "Escape during first-item focus handoff: Escape closes the opening menu"

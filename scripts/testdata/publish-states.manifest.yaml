@@ -128,7 +128,7 @@ mutations:
     expectedDiagnostic: "stopped at a named step: the popup must not read"
   - name: finished focus falls outside the popup
     file: src/ui/Publish.jsx
-    find: "if (!open || !finished) return"
+    find: "if (!open) return"
     replace: "if (true) return"
     expectedDiagnostic: "finishing keeps focus inside the popup"
   - name: final collective removal never invokes the update
