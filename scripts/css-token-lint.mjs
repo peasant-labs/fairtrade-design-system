@@ -2,8 +2,9 @@
 /* CSS-tokenization lint for every stylesheet that ships in the package.
    ────────────────────────────────────────────────────────────────────────────
    Scope is DERIVED: the four bundle entries (src/lib-components.css and
-   src/lib-<surface>.css) plus every local sheet they @import (src/index.css, the
-   colocated component sheets). A new imported sheet is linted the moment it ships.
+   src/lib-<surface>.css), every local sheet they @import (src/index.css, the colocated
+   component sheets), and every sheet a src/ui module imports for its side effect
+   (src/ui/graph/timelinePrimitives.css). A new imported sheet is linted the moment it ships.
    The presentation site's own sheet (src/site.css) never ships and is out of scope.
 
    Checks (each violation names its check id):

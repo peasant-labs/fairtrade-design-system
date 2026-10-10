@@ -6,7 +6,7 @@
 // The walker is deliberately small. It understands comments, strings, parentheses,
 // nested blocks and statements; it does not validate CSS. That is all the guards need:
 // they read selectors, property names and values, never a full syntax tree.
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
@@ -92,11 +92,24 @@ export const inMotionAllowed = (context) => context.some((p) => /^@media\b[^{]*p
 export const isStyleRule = (block) =>
   !block.prelude.startsWith('@') && !block.context.some((p) => p.startsWith('@keyframes') || p.startsWith('@font-face'))
 
+/** Every .js/.jsx file under a source directory (repo-relative paths). */
+function scriptsUnder(dir) {
+  const out = []
+  for (const name of readdirSync(join(ROOT, dir))) {
+    const rel = `${dir}/${name}`
+    if (statSync(join(ROOT, rel)).isDirectory()) out.push(...scriptsUnder(rel))
+    else if (/\.jsx?$/.test(name)) out.push(rel)
+  }
+  return out
+}
+
 /**
  * Every source stylesheet that ships in the package: the four bundle entries
- * (src/lib-components.css and src/lib-<surface>.css per SURFACE_BUNDLES) plus every
- * local sheet they reach through `@import`. Derived, not listed, so a new imported
- * sheet is scanned the moment it ships.
+ * (src/lib-components.css and src/lib-<surface>.css per SURFACE_BUNDLES), every local
+ * sheet they reach through `@import`, and every sheet a library module under src/ui pulls
+ * in with a side-effect `import './x.css'`. A JS-imported sheet has no @import to follow,
+ * yet the app and the library bundles carry its rules, so it is linted too. Derived, not
+ * listed, so a new imported sheet is scanned the moment it ships.
  *
  * @returns {string[]} repo-relative paths, entry order then import order
  */
@@ -117,6 +130,11 @@ export function shippedSourceSheets() {
     }
   }
   for (const entry of entries) visit(entry)
+  for (const file of scriptsUnder('src/ui')) {
+    for (const m of readFileSync(join(ROOT, file), 'utf8').matchAll(/^import\s+["'](\.{1,2}\/[^"']+\.css)["']/gm)) {
+      visit(relative(ROOT, resolve(dirname(join(ROOT, file)), m[1])))
+    }
+  }
   return out
 }
 

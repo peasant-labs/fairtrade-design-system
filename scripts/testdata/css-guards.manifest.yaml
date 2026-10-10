@@ -84,6 +84,7 @@ requiredMutationNames:
   - a raw length is mixed with a token
   - a focus ring is a literal width
   - a focus ring sits at a literal offset
+  - a JS-imported sheet sets a literal ring offset
   - a transition runs outside the motion query
   - a skeleton shimmer loops again
   - a rail is wider than the emphasis stroke
@@ -149,6 +150,11 @@ mutations:
     target: src/ui/Publish.css
     append: "\n.pub-planted:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: -3px; }\n"
     expectedDiagnostic: "[ring-offset] `outline-offset: -3px` in `.pub-planted:focus-visible`"
+  - name: a JS-imported sheet sets a literal ring offset
+    guard: lint
+    target: src/ui/graph/timelinePrimitives.css
+    append: "\n.tlp-planted:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 3px; }\n"
+    expectedDiagnostic: "[ring-offset] `outline-offset: 3px` in `.tlp-planted:focus-visible`"
   - name: a transition runs outside the motion query
     guard: lint
     target: src/lib-analytics.css
