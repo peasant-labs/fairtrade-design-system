@@ -20,6 +20,7 @@ for (const row of spec.mountedRows) {
     expect(await page.locator('html').getAttribute('data-theme') || 'dark').toBe(theme)
     await page.evaluate(() => document.fonts.ready)
     if (row.kind === 'decimal') {
+      await page.getByRole('button', { name: 'remove title filter' }).click()
       expect(await page.evaluate(decimalProblems)).toEqual([])
       for (const mutation of spec.mutations) {
         const style = await page.addStyleTag({ content: mutation.css })

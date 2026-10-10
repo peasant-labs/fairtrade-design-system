@@ -540,6 +540,7 @@
         "Playground",
         "ViewDefaults",
         "HostSliced",
+        "UncontrolledView",
         "ReadOnly",
         "SortedAscending",
         "SomeSelected",

@@ -64,8 +64,9 @@ cases:
     data:
       collective: {name: AI Research Team, description: Sharing transcripts related to AI research, linkedGithubOrg: '@anthropic-labs'}
     expect:
-      text: [AI Research Team, Sharing transcripts related to AI research, transcripts 0, anthropic-labs]
-      absentText: [showing, nothing linked, members 0]
+      text: [AI Research Team, Sharing transcripts related to AI research, transcripts 0, anthropic-labs, showing 0 of 0]
+      absentText: [nothing linked, members 0]
+      absentSelectors: [.iu-page-count]
       links: []
       absentButtons: [show more, settings, manage]
   - name: a collective with its destinations
@@ -105,8 +106,9 @@ cases:
         transcripts:
           - {id: t1, title: Fix flaky ingest test, harness: claude-code, turns: 37, author: '@alice-dev', pullRequests: ['#42'], repo: acme/ingest-api, when: 12m ago}
     expect:
-      text: [transcripts 1]
-      absentText: [who can read, showing]
+      text: [transcripts 1, showing 1 of 1]
+      absentText: [who can read]
+      absentSelectors: [.iu-page-count]
       links: []
       buttons: [Fix flaky ingest test, '#42', more]
       absentButtons: [settings]

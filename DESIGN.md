@@ -377,8 +377,8 @@ hashes and data values keep their case. Multi-line literal copy (error bodies, h
 use sentence case so sentences stay parseable. Never `text-transform: uppercase` on multi-word text.
 
 **The Tabular Numbers Rule.** Every count, duration, stat and numeric column uses tabular lining
-figures (`font-variant-numeric: tabular-nums`). Numeric columns right-align, with one precision per
-column.
+figures (`font-variant-numeric: tabular-nums`). Numeric columns right-align; plain mixed-precision
+DataTable columns can align on the decimal separator without changing the values' precision.
 
 **The Bold, Not Italic Rule.** Emphasis is weight: `em` and `i` render at 600, upright. Underline is
 reserved for links. In prose, links carry a dotted underline (solid on hover and focus) so they

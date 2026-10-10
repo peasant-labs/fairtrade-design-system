@@ -17,7 +17,7 @@ const VIEWS = ['CollectivesView', 'CollectiveDetailView', 'CollectiveSettingsVie
 for (const row of fixture.cases) {
   assertFields(row, ['name', 'view', 'data', 'expect'], `collectives views case ${row.name}`, ['open', 'press', 'hrefs'])
   for (const step of row.press ?? []) assertFields(step, ['calls'], `collectives views case ${row.name} step`, ['name', 'type', 'select', 'value'])
-  assertFields(row.expect, [], `collectives views case ${row.name} expect`, ['text', 'absentText', 'columns', 'selects', 'links', 'buttons', 'absentButtons'])
+  assertFields(row.expect, [], `collectives views case ${row.name} expect`, ['text', 'absentText', 'absentSelectors', 'columns', 'selects', 'links', 'buttons', 'absentButtons'])
   if (!VIEWS.includes(row.view)) throw new Error(`collectives views case ${row.name}: unknown view ${row.view}`)
 }
 
@@ -68,6 +68,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const { expect } = row
     for (const line of expect.text ?? []) report.check(body.includes(line), `${row.name}: the view must show ${JSON.stringify(line)}`)
     for (const line of expect.absentText ?? []) report.check(!body.toLowerCase().includes(line.toLowerCase()), `${row.name}: the view must not show ${JSON.stringify(line)}`)
+    for (const selector of expect.absentSelectors ?? []) report.check(!root.querySelector(selector), `${row.name}: the view must not mount ${selector}`)
     if (expect.columns) {
       const columns = [...root.querySelectorAll('table thead th')].map(text)
       report.check(JSON.stringify(columns) === JSON.stringify(expect.columns), `${row.name}: columns expected ${JSON.stringify(expect.columns)}, received ${JSON.stringify(columns)}`)
