@@ -937,7 +937,6 @@
 
   /* the menu-button keeps the trigger label visually tied to the open state */
   .menu-trigger[aria-expanded="true"] { border-color: var(--amber-dim); color: var(--amber-bright); }
-  .menu-trigger .menu-caret { }
   @media (prefers-reduced-motion: no-preference) { .menu-trigger .menu-caret { transition: transform var(--dur-1); } }
   .menu-trigger[aria-expanded="true"] .menu-caret { transform: rotate(180deg); }
   @media (prefers-reduced-motion: reduce) { .menu-trigger .menu-caret { transition: none; } }
@@ -2165,7 +2164,6 @@
   .txn-canvas { position: relative; height: 420px; max-height: 60vh; }
   .txn-graph-scroll { position: absolute; inset: 0; overflow: auto; padding: var(--sp-4); }
   .txn-graph-svg { display: block; margin: 0 auto; }
-  .txn-graph-node { }
   @media (prefers-reduced-motion: no-preference) { .txn-graph-node { transition: stroke var(--dur-1) var(--ease-standard); } }
   .txn-graph-lane { font-family: var(--font-mono); font-size: 9px; fill: var(--mauve); text-transform: lowercase; }
   .txn-graph-role { font-family: var(--font-mono); font-size: 9px; fill: var(--ink-2); text-transform: lowercase; }
