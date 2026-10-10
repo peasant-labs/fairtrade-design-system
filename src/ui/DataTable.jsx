@@ -1,13 +1,13 @@
 import { useCallback, useId, useMemo, useState } from 'react'
-import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
-import { useReactTable, getCoreRowModel, getSortedRowModel } from '@tanstack/react-table'
+import { ChevronUp, ChevronDown, ChevronsUpDown, X } from 'lucide-react'
+import { useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel, getPaginationRowModel } from '@tanstack/react-table'
 
 /**
  * a sortable + selectable data table. square, hairline, mono headers; both themes
  * via tokens. sort + selection state/logic are powered by TanStack Table
  * (@tanstack/react-table, headless) while this component still renders its own markup
- * + token classes, so the look is unchanged and growth (filtering, pagination, column
- * sizing/visibility) is a config away. sorting cycles none -> asc -> desc -> none on a
+ * + token classes. Search, column filters and pagination can each be host-controlled
+ * or seeded by defaults. Sorting cycles none -> asc -> desc -> none on a
  * sortable header (a real <button>, so it is keyboard-operable), exposes aria-sort on the
  * <th>, and shows a lucide chevron indicator. selection reuses the existing .check-box control:
  * a header checkbox selects/clears all (with an indeterminate middle state) and
@@ -22,11 +22,13 @@ import { useReactTable, getCoreRowModel, getSortedRowModel } from '@tanstack/rea
  * @property {string} key            object key this column reads from each row.
  * @property {React.ReactNode} label header text (kept as passed; not forced-lowercase).
  * @property {boolean} [sortable]    when true the header sorts; default false.
- * @property {'left'|'right'|'center'} [align] cell alignment; 'right' also gets tabular nums. default 'left'.
+ * @property {'left'|'right'|'center'|'decimal'} [align] default left. Decimal aligns plain dot-separated numbers; custom renderers and other formats fall back to right + tabular nums.
  * @property {string} [width] optional fixed column width (any css length, e.g. '12rem'); emits a <colgroup> entry so columns stay put as cell content changes.
  * @property {(value: any, row: Object) => React.ReactNode} [render] custom cell renderer; falls back to row[key].
  *
  * @typedef {{ key: string, dir: 'asc'|'desc' } | null} DataTableSort
+ * @typedef {{ id: string, value: string }[]} DataTableColumnFilters
+ * @typedef {{ pageIndex: number, pageSize: number }} DataTablePagination
  *
  * @param {Object} props
  * @param {DataTableColumn[]} props.columns                column definitions.
@@ -41,6 +43,16 @@ import { useReactTable, getCoreRowModel, getSortedRowModel } from '@tanstack/rea
  * @param {(keys: Array<string|number>) => void} [props.onSelectionChange] called with the next selection.
  * @param {string} [props.caption]                       accessible <caption> for the table (visually present, mono/quiet).
  * @param {string} [props.className]                      extra class on the scroll wrapper.
+ * @param {string} [props.search] controlled search.
+ * @param {string} [props.defaultSearch=''] initial search.
+ * @param {(next: string) => void} [props.onSearchChange] next search value.
+ * @param {DataTableColumnFilters} [props.columnFilters] controlled column filters (TanStack id/value shape).
+ * @param {DataTableColumnFilters} [props.defaultColumnFilters=[]] initial column filters.
+ * @param {(next: DataTableColumnFilters) => void} [props.onColumnFiltersChange] next filters.
+ * @param {DataTablePagination} [props.pagination] controlled pagination (zero-based pageIndex).
+ * @param {DataTablePagination} [props.defaultPagination] defaults to pageIndex 0, pageSize 10.
+ * @param {(next: DataTablePagination) => void} [props.onPaginationChange] next pagination.
+ * @param {number} [props.rowCount] total filtered rows for host-sliced data; disables local filtering and pagination, not existing sorting.
  */
 export default function DataTable({
   columns,
@@ -55,8 +67,41 @@ export default function DataTable({
   onSelectionChange,
   caption,
   className = '',
+  search: searchProp,
+  defaultSearch = '',
+  onSearchChange,
+  columnFilters: filtersProp,
+  defaultColumnFilters = [],
+  onColumnFiltersChange,
+  pagination: paginationProp,
+  defaultPagination = { pageIndex: 0, pageSize: 10 },
+  onPaginationChange,
+  rowCount,
 }) {
   const baseId = useId()
+  const [searchState, setSearchState] = useState(defaultSearch)
+  const search = searchProp !== undefined ? searchProp : searchState
+  const [filtersState, setFiltersState] = useState(defaultColumnFilters)
+  const columnFilters = filtersProp !== undefined ? filtersProp : filtersState
+  const [paginationState, setPaginationState] = useState(defaultPagination)
+  const pagination = paginationProp !== undefined ? paginationProp : paginationState
+  const setPagination = (next) => {
+    if (paginationProp === undefined) setPaginationState(next)
+    onPaginationChange?.(next)
+  }
+  const resetPage = () => {
+    if (pagination.pageIndex !== 0) setPagination({ ...pagination, pageIndex: 0 })
+  }
+  const setSearch = (next) => {
+    if (searchProp === undefined) setSearchState(next)
+    onSearchChange?.(next)
+    resetPage()
+  }
+  const setFilters = (next) => {
+    if (filtersProp === undefined) setFiltersState(next)
+    onColumnFiltersChange?.(next)
+    resetPage()
+  }
   /* stable references so TanStack doesn't treat these as changed options every render */
   const keyOf = useCallback((row, i) => (rowKey ? rowKey(row, i) : row.id ?? i), [rowKey])
   const getRowId = useCallback((row, i) => String(keyOf(row, i)), [keyOf])
@@ -90,6 +135,7 @@ export default function DataTable({
         enableSorting: !!col.sortable,
         sortingFn: nullsLast,
         sortDescFirst: false,
+        filterFn: 'includesString',
       })),
     [columns],
   )
@@ -127,7 +173,13 @@ export default function DataTable({
   const table = useReactTable({
     data: rows,
     columns: tsColumns,
-    state: { sorting, rowSelection },
+    state: { sorting, rowSelection, globalFilter: search, columnFilters, pagination },
+    globalFilterFn: 'includesString',
+    manualFiltering: rowCount !== undefined,
+    manualPagination: rowCount !== undefined,
+    rowCount,
+    autoResetPageIndex: false,
+    onPaginationChange: (updater) => setPagination(typeof updater === 'function' ? updater(pagination) : updater),
     getRowId,
     enableSortingRemoval: true, // the none-state at the end of the cycle
     enableMultiSort: false,
@@ -146,18 +198,50 @@ export default function DataTable({
     },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   })
 
-  const sortedRows = table.getSortedRowModel().rows
+  const sortedRows = table.getRowModel().rows
+  const total = rowCount ?? table.getFilteredRowModel().rows.length
+  // Reserve an equal fractional width in every plain numeric cell in a decimal column.
+  // React nodes and locale/currency strings retain the right-aligned tabular fallback.
+  const decimalWidths = new Map(columns.filter((c) => c.align === 'decimal' && !c.render).map((c) => [c.key,
+    Math.max(0, ...sortedRows.map((r) => decimalParts(r.original[c.key])?.fraction.length ?? 0)),
+  ]))
   const colCount = columns.length + (selectable ? 1 : 0)
 
   return (
-    <div className={`tbl-wrap${className ? ' ' + className : ''}`}>
+    <div className={`tbl-wrap${selectable ? ' tbl-has-selection' : ''}${className ? ' ' + className : ''}`}>
+      <div className="tbl-tools">
+        <label htmlFor={`${baseId}-search`}>search rows</label>
+        <input id={`${baseId}-search`} className="input" type="search" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <details className="tbl-filters">
+          <summary>column filters</summary>
+          <div className="tbl-filter-fields">
+            {columns.map((col) => <label key={col.key}>
+              <span>{col.label}</span>
+              <input className="input" aria-label={`filter ${typeof col.label === 'string' ? col.label : col.key}`} value={columnFilters.find((f) => f.id === col.key)?.value ?? ''} onChange={(e) => setFilters([
+                ...columnFilters.filter((f) => f.id !== col.key),
+                ...(e.target.value ? [{ id: col.key, value: e.target.value }] : []),
+              ])} />
+            </label>)}
+          </div>
+        </details>
+        {(search || columnFilters.length > 0) && <span className="tbl-filter-active">filters active</span>}
+      </div>
+      <div className="tbl-chips">
+        {search && <button type="button" className="tbl-chip" aria-label="remove search filter" onClick={() => setSearch('')}>search: {search}<X aria-hidden="true" /></button>}
+        {columnFilters.map((filter) => <button key={filter.id} type="button" className="tbl-chip" aria-label={`remove ${filter.id} filter`} onClick={() => setFilters(columnFilters.filter((f) => f.id !== filter.id))}>
+          {columns.find((c) => c.key === filter.id)?.label ?? filter.id}: {String(filter.value)}<X aria-hidden="true" />
+        </button>)}
+      </div>
+      <div className="tbl-scroll" tabIndex={0} role="region" aria-label={caption || 'data table'}>
       <table className="tbl">
         {caption && <caption className="tbl-caption">{caption}</caption>}
         {(selectable || columns.some((c) => c.width)) && (
           <colgroup>
-            {selectable && <col style={{ width: '1%' }} />}
+            {selectable && <col style={{ width: 'calc(var(--control-h-sm) + 2 * var(--sp-3))' }} />}
             {columns.map((col) => (
               <col key={col.key} style={col.width ? { width: col.width } : undefined} />
             ))}
@@ -234,9 +318,10 @@ export default function DataTable({
                   )}
                   {columns.map((col) => (
                     <td key={col.key} className={alignClass('tbl-td', col.align)}>
-                      <span className={col.align === 'right' ? 'tnum' : undefined}>
-                        {col.render ? col.render(row[col.key], row) : row[col.key]}
-                      </span>
+                      {col.align === 'decimal' && !col.render && decimalParts(row[col.key]) ? <DecimalValue value={row[col.key]} places={decimalWidths.get(col.key)} /> :
+                        <span className={col.align === 'right' || col.align === 'decimal' ? 'tnum' : undefined}>
+                          {col.render ? col.render(row[col.key], row) : row[col.key]}
+                        </span>}
                     </td>
                   ))}
                 </tr>
@@ -245,6 +330,13 @@ export default function DataTable({
           )}
         </tbody>
       </table>
+      </div>
+      <div className="tbl-footer">
+        <span className="tnum" role="status">showing {sortedRows.length} of {total}</span>
+        <button className="btn" type="button" disabled={!table.getCanPreviousPage()} onClick={() => table.previousPage()}>previous page</button>
+        <span className="tnum">page {pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}</span>
+        <button className="btn" type="button" disabled={!table.getCanNextPage()} onClick={() => table.nextPage()}>next page</button>
+      </div>
     </div>
   )
 }
@@ -258,9 +350,24 @@ function selectedKey(set) {
 
 /* align -> alignment modifier class (right cells also carry .tnum on the value span) */
 function alignClass(base, align) {
-  if (align === 'right') return `${base} tbl-right`
+  if (align === 'right' || align === 'decimal') return `${base} tbl-right`
   if (align === 'center') return `${base} tbl-center`
   return base
+}
+
+function decimalParts(value) {
+  if (typeof value !== 'number' && typeof value !== 'string') return null
+  const match = String(value).match(/^(-?\d+)(?:\.(\d+))?$/)
+  return match ? { integer: match[1], fraction: match[2] ?? '', dot: match[2] !== undefined } : null
+}
+
+function DecimalValue({ value, places }) {
+  const parts = decimalParts(value)
+  return <span className="tbl-decimal tnum">
+    <span>{parts.integer}</span>
+    <span className="tbl-decimal-point" aria-hidden={!parts.dot}>{parts.dot ? '.' : <span className="tbl-decimal-spacer">.</span>}</span>
+    <span className="tbl-decimal-fraction" style={{ width: `${places}ch` }}>{parts.fraction}</span>
+  </span>
 }
 
 /* a stable comparator: numbers numerically, everything else as locale strings;

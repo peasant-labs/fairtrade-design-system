@@ -538,6 +538,8 @@
       },
       "stories": [
         "Playground",
+        "ViewDefaults",
+        "HostSliced",
         "ReadOnly",
         "SortedAscending",
         "SomeSelected",

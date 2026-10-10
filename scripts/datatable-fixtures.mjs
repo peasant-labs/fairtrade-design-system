@@ -1,0 +1,16 @@
+import { loadStrictYaml, assertExactNames } from './css-source.mjs'
+
+/** @typedef {{name:string, props:Object, rows?:Object[], expectedTitles:string[], expectedCount:string}} TableCase */
+/** Load named data-table cases and require the independent inventory before any test runs. */
+export function loadDataTableFixtures() {
+  const data = loadStrictYaml('scripts/testdata/datatable.yaml')
+  const manifest = loadStrictYaml('scripts/testdata/datatable.manifest.yaml')
+  for (const [key, required] of Object.entries({ cases: 'requiredCaseNames', actions: 'requiredActionNames', mountedRows: 'requiredMountedNames', mutations: 'requiredMutationNames', guardMutations: 'requiredGuardMutationNames' })) {
+    if (!Array.isArray(data[key])) throw new Error(`datatable.yaml: ${key} must be an array; restore the named fixture rows before running the table checks`)
+    assertExactNames(data[key].map((r) => r.name), manifest[required], `datatable ${key}`)
+  }
+  for (const row of data.cases) {
+    if (!row.props || !Array.isArray(row.expectedTitles) || typeof row.expectedCount !== 'string') throw new Error(`datatable.yaml: ${row.name} needs props, expectedTitles and expectedCount`)
+  }
+  return data
+}

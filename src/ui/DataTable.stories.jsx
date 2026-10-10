@@ -4,6 +4,10 @@ import { expect, userEvent, within, waitFor } from 'storybook/test'
 import DataTable from './DataTable.jsx'
 import BrandMark from './BrandMark.jsx'
 import { frame } from './story-frame.jsx'
+import YAML from 'yaml'
+import viewFixture from '../../scripts/testdata/datatable.yaml?raw'
+
+const viewData = YAML.parse(viewFixture)
 
 /* lead a provider cell with the real brand mark (claude-code -> claude, gemini-cli -> gemini
    resolve inside BrandMark). the mark sits beside its visible id, so it is decorative. the
@@ -60,10 +64,33 @@ const meta = {
     onSortChange: fn(),
     onSelectionChange: fn(),
   },
+  parameters: { docs: { description: { component: `The host owns URL synchronization. Map search to q, columnFilters (TanStack id/value pairs) to repeated filter parameters, and pagination.pageIndex/pageSize to page/size. Parse and validate those parameters in the host, pass controlled values, then update the host route in onSearchChange/onColumnFiltersChange/onPaginationChange. Callbacks emit values, not TanStack updater functions. The table never accesses routing or storage. With rowCount, rows are already filtered and paginated by the host; rowCount is the filtered total. Existing sorting stays local. Without rowCount, filtering and pagination run locally. Search and column filters reset pageIndex to zero on user changes. Decimal alignment supports plain dot-separated numeric values and reserves the largest fractional width on the visible page; custom renderers, currency and locale-formatted strings fall back to right alignment with tabular figures. No values are rounded or rewritten.` } } },
 }
 export default meta
 
 export const Playground = {}
+
+function ViewExample({ hostSliced = false }) {
+  const [columnFilters, setFilters] = useState([{ id: 'title', value: 'Ledger' }])
+  const [search, setSearch] = useState('')
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 2 })
+  const [lastFilters, setLastFilters] = useState(null)
+  const [lastSearch, setLastSearch] = useState(null)
+  const [lastPagination, setLastPagination] = useState(null)
+  return <>
+    <DataTable columns={viewData.columns} rows={viewData.rows} caption="ledger records" selectable
+      columnFilters={hostSliced ? [] : columnFilters}
+      onColumnFiltersChange={(next) => { setLastFilters(next); setFilters(next) }}
+      {...(hostSliced ? { rowCount: 50, search, onSearchChange: (next) => { setLastSearch(next); setSearch(next) }, pagination, onPaginationChange: (next) => { setLastPagination(next); setPagination(next) } } : {})} />
+    <output className="tbl-callback-filters">{JSON.stringify(lastFilters)}</output>
+    <output className="tbl-callback-search">{JSON.stringify(lastSearch)}</output>
+    <output className="tbl-callback-pagination">{JSON.stringify(lastPagination)}</output>
+  </>
+}
+
+export const ViewDefaults = { render: () => <ViewExample /> }
+export const HostSliced = { render: () => <ViewExample hostSliced /> }
+export const UncontrolledView = { args: { columns: viewData.columns, rows: viewData.rows, defaultPagination: { pageIndex: 1, pageSize: 2 }, caption: 'local ledger records' } }
 
 export const ReadOnly = {
   name: 'read-only (no selection)',

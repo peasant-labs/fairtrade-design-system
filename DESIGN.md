@@ -552,6 +552,22 @@ The data families are the data table, pagination, accordion, timeline, toast and
   and a selection that pairs an amber tint with a non-color marker. Zebra striping only past five
   columns or fifteen rows. Columns are ordered by importance, and each header matches its column's
   alignment (numeric alignment is in the tabular numbers rule).
+- **DataTable defaults:** the header is sticky in its bounded scroll region; the first identifier
+  column stays frozen on horizontal scroll (beside the selection column when present). Rows use
+  `--row-h-standard` (40px), expand for wrapping content and keep readable 16px data. Search and
+  column-filter controls are discoverable without props; active filters have a text indicator and
+  individually removable chips. A persistent `showing X of N` reports visible rows and the filtered
+  total, including zero results. Local pagination starts at page 0 with 10 rows per page.
+- **DataTable state:** sort and selection retain their existing controlled/uncontrolled props.
+  Search, column filters and pagination each accept a controlled value, default seed and value
+  callback. User search/filter changes reset the page to zero. With `rowCount`, the host supplies
+  already-filtered, already-paginated rows and the filtered total; existing sorting stays local.
+  The host alone maps state to URL parameters. DataTable never reads or writes routing or storage,
+  fetches data, or requires a provider.
+- **Decimal columns:** `align: 'decimal'` aligns decimal separators for plain dot-separated numeric
+  values by reserving the visible column's largest fractional width, with tabular figures. Integers
+  reserve an invisible separator; values keep their precision. Custom renderers, currency and
+  locale-formatted strings use the right-aligned tabular fallback. Headers match the right edge.
 - **Long content** is chunked into labelled segments with stable fragments.
 - **Charts** (Recharts wrapped, never raw): square bars and lines, token series colors, a muted
   hairline grid (never amber), mono tabular ticks, direct or swatch-and-label legends, keyboard
