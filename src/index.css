@@ -307,7 +307,7 @@
     @apply w-full bg-canvas text-ink font-body;
     font-size: var(--fs-body);
     box-sizing: border-box; height: var(--control-h); border: var(--bd-strong);
-    padding: 0 var(--sp-3); outline: none; 
+    padding: 0 var(--sp-3); outline: none;
   }
   @media (prefers-reduced-motion: no-preference) { .input, .select { transition: border-color var(--dur-1); } }
   textarea.input { height: auto; min-height: var(--control-h); padding: var(--sp-3); line-height: 1.5; resize: vertical; }
@@ -855,7 +855,7 @@
     width: var(--target-min); height: var(--target-min);
     margin: 0; padding: 0; flex: none;
     background: transparent; border: 0; color: var(--ink-3);
-    cursor: pointer; 
+    cursor: pointer;
   }
   @media (prefers-reduced-motion: no-preference) { .chipx-x { transition: color var(--dur-1), background var(--dur-1); } }
   .chip-sm.chip-removable { padding-right: 0; }
@@ -868,7 +868,7 @@
      obvious at a glance (the check icon carries it too, never color alone). */
   button.chip-toggle {
     font-family: var(--font-mono); cursor: pointer;
-    background: transparent; 
+    background: transparent;
   }
   @media (prefers-reduced-motion: no-preference) { button.chip-toggle { transition: color var(--dur-1), background var(--dur-1), border-color var(--dur-1); } }
   button.chip-toggle:hover { color: var(--ink); border-color: var(--amber-dim); }
@@ -963,7 +963,7 @@
     min-height: var(--target-min); padding: var(--sp-2) var(--sp-3);
     font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase;
     color: var(--ink-2); background: transparent; border: 0; text-align: left;
-    cursor: pointer; 
+    cursor: pointer;
   }
   @media (prefers-reduced-motion: no-preference) { .menu-item { transition: background var(--dur-1), color var(--dur-1); } }
   .menu-item .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); flex: none; }
