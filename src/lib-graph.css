@@ -423,12 +423,14 @@
     padding-top: var(--sp-4);
     border-top: var(--bd);
   }
-  /* the kit .cg-dot base (CommitGraph.css, unlayered) floats the square via absolute
-     placement; neutralise it here so the legend marker sits in flow next to its label. */
+  /* the kit .cg-dot and .cg-spark bases (CommitGraph.css, unlayered) float the square and its
+     star via absolute placement; neutralise them here so the legend marker sits in flow next to
+     its label. Both resets carry !important because an unlayered rule outranks any rule in this
+     layer. */
   .gmp-changes-legend .cg-dot { position: static !important; transform: none !important; flex: none; }
   /* the filled legend marker holds its star in flow, centred, exactly as the graph draws it */
   .gmp-changes-legend .cg-dot-filled { display: inline-grid; place-items: center; }
-  .gmp-changes-legend .cg-spark { position: static; transform: none; }
+  .gmp-changes-legend .cg-spark { position: static !important; transform: none !important; }
 
   /* below the wide layout there isn't room for floating merged chips — drop them into flow. */
   @media (max-width: 1460px) {
