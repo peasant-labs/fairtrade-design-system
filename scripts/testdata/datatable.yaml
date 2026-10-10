@@ -84,6 +84,10 @@ actions:
     expectedValue: [3]
     expectedTitles: [Ledger A, Ledger B]
 mutations:
+  - name: decimal separators disappear
+    kind: decimal
+    css: '.tbl-decimal-point { display: none !important; }'
+    diagnostic: decimal separators unpainted
   - name: mixed precision loses decimal alignment
     kind: decimal
     css: '.tbl-decimal-fraction { width: auto !important; }'

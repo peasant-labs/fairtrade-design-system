@@ -20,6 +20,7 @@ requiredActionNames:
   - original sort callback keeps its public shape
   - original selection callback keeps numeric keys
 requiredMutationNames:
+  - decimal separators disappear
   - mixed precision loses decimal alignment
   - numeric cells lose tabular figures
 requiredGuardMutationNames:
