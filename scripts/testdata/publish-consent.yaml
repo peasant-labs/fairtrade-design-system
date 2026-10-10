@@ -1,0 +1,19 @@
+label: publish this repo automatically on git push
+checkedSentence: "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives."
+cases:
+  - name: unchecked default consent
+    checked: false
+    hint: null
+    expected: off, change it in settings
+  - name: checked canonical consent
+    checked: true
+    hint: null
+    expected: "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives."
+  - name: peasant hint replaces only unchecked consent
+    checked: false
+    hint: selected collectives · overlapping rules still apply · change them in settings
+    expected: selected collectives · overlapping rules still apply · change them in settings
+  - name: peasant hint cannot suppress checked consent
+    checked: true
+    hint: selected collectives · overlapping rules still apply · change them in settings
+    expected: "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives."

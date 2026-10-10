@@ -90,7 +90,7 @@ popup:
     heading: publish “Fix flaky ingest test”
     primary: {label: publish to 2 collectives, enabled: true}
     rescan: {enabled: true}
-    lines: [3 matches · all redacted, Acme Platform, Acme Company, publish this repo automatically on git push, same collectives · change it in settings]
+    lines: [3 matches · all redacted, Acme Platform, Acme Company, publish this repo automatically on git push, 'off, change it in settings']
     absent: [kept un-redacted, not scanned yet]
     matchesOpen: false
     removeButtons: [remove Acme Platform, remove Acme Company]

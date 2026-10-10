@@ -77,12 +77,12 @@ mutations:
     expectedDiagnostic: "auto-publish on: the label must read"
   - name: a kept match reads as all redacted
     file: src/ui/Publish.jsx
-    find: "const kept = matches.filter((match) => match.kept).length"
+    find: "const kept = matches.filter((match) => match?.kept).length"
     replace: "const kept = 0"
     expectedDiagnostic: "ready with a match kept un-redacted: the popup must read"
   - name: a missing scan leaves publish on
     file: src/ui/Publish.jsx
-    find: "|| (readers.length === 0 && !(mode === 'update' && removes > 0)) || !Array.isArray(scan?.matches)"
+    find: "|| (readers.length === 0 && !(mode === 'update' && removes > 0)) || !hasKnownRedactionCategories(scan?.matches)"
     replace: "|| (readers.length === 0 && !(mode === 'update' && removes > 0))"
     expectedDiagnostic: "ready before any scan: the primary button must be disabled"
   - name: remove stays offered while publishing
