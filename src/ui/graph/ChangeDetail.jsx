@@ -78,7 +78,7 @@ function DiffFile({ file, diff, open, onToggle }) {
         <span className={'chip gmp-file-status ' + (STATUS_TONE[status] ?? '')}>{STATUS_LABEL[status] ?? status}</span>
         {convos != null && convos > 0 && (
           <span className="gmp-file-convos metaitem">
-            <MessageSquare size={13} aria-hidden="true" /> <span className="tnum">{convos}</span>
+            <MessageSquare size={14} aria-hidden="true" /> <span className="tnum">{convos}</span>
           </span>
         )}
       </button>
@@ -97,7 +97,7 @@ function DiffFile({ file, diff, open, onToggle }) {
               <div key={i} className="gmp-hunk">
                 {h.sessionTitle && (
                   <div className="gmp-hunk-attrib">
-                    <CornerDownRight size={13} aria-hidden="true" />
+                    <CornerDownRight size={14} aria-hidden="true" />
                     <span className="gmp-hunk-from">from</span>
                     <span className="gmp-hunk-link">{h.sessionTitle}</span>
                     {h.sessionId && <span className="mono gmp-hunk-hash">{h.sessionId.slice(0, 7)}</span>}
@@ -186,8 +186,8 @@ export default function ChangeDetail({
     <div className="gmp-root gmp-detail-root" ref={scrollRef}>
       <div className="gmp-detail-head">
         <div className="crumb">
-          review <ChevronRight size={13} aria-hidden="true" /> {payload.defaultBranch}{' '}
-          <ChevronRight size={13} aria-hidden="true" /> <span className="cur">{payload.branch}</span>
+          review <ChevronRight size={14} aria-hidden="true" /> {payload.defaultBranch}{' '}
+          <ChevronRight size={14} aria-hidden="true" /> <span className="cur">{payload.branch}</span>
         </div>
         <div className="gmp-detail-title">{displayTitle}</div>
 
@@ -271,14 +271,14 @@ export default function ChangeDetail({
         <div className="gmp-annot">
           {annotation && (
             <span className="gmp-label-chip gmp-annot-chip">
-              <Tag size={12} aria-hidden="true" /> {annotation}
+              <Tag size={14} aria-hidden="true" /> {annotation}
               <button type="button" className="gmp-annot-x" aria-label="remove annotation" onClick={() => onRemoveAnnotation?.()}>
-                <X size={11} aria-hidden="true" />
+                <X size={14} aria-hidden="true" />
               </button>
             </span>
           )}
           <button type="button" className="gmp-annot-add" aria-expanded={annotOpen} onClick={() => setAnnotOpen((o) => !o)}>
-            <Tag size={13} aria-hidden="true" /> {annotation ? 'change label' : 'add a label'}
+            <Tag size={14} aria-hidden="true" /> {annotation ? 'change label' : 'add a label'}
           </button>
           {annotOpen && (
             <form className="gmp-annot-pop" onSubmit={saveAnnotation}>
@@ -295,7 +295,7 @@ export default function ChangeDetail({
               <div className="gmp-annot-pop-foot">
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAnnotOpen(false)}>cancel</button>
                 <button type="submit" className="btn btn-primary btn-sm">
-                  <Check size={13} aria-hidden="true" /> save
+                  <Check size={14} aria-hidden="true" /> save
                 </button>
               </div>
             </form>

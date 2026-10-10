@@ -1,4 +1,7 @@
-import '../src/index.css'
+import '../src/site.css'
+// the graph and analytics surfaces style only from their own shipped sheets (as consumers import them)
+import '../src/lib-graph.css'
+import '../src/lib-analytics.css'
 import { withThemeByDataAttribute } from '@storybook/addon-themes'
 
 /* every story inherits the real tokens + classes from src/index.css. the theme toolbar flips the

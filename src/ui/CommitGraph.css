@@ -204,14 +204,14 @@
 
 .cg-row:focus-visible,
 .cg-older:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Selected row: a hairline amber spine + slightly stronger ink. Square, no fill flood. */
 .cg-row-sel {
   color: var(--ink);
-  box-shadow: inset 2px 0 0 0 var(--amber);
+  box-shadow: inset var(--stroke-emphasis) 0 0 0 var(--amber);
 }
 
 .cg-msg {
@@ -264,8 +264,8 @@
 }
 
 .cg-merged-ic {
-  width: 12px;
-  height: 12px;
+  width: var(--ic-sm);
+  height: var(--ic-sm);
   flex: 0 0 auto;
 }
 

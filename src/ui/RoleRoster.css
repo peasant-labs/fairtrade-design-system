@@ -40,7 +40,7 @@
   cursor: pointer;
 }
 .rr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.rr-btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.rr-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 
 .rr-btn-ico {
   display: inline-flex;
@@ -379,7 +379,7 @@
   cursor: pointer;
 }
 .rr-select:focus { border-color: var(--amber-dim); }
-.rr-select:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.rr-select:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 .rr-select:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* remove action cell — shared display/alignment properties; NARROW right-aligns at its own

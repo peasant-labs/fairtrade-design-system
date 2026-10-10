@@ -174,8 +174,8 @@ a.pd-row-link:focus-visible .pd-sha {
 }
 
 a.pd-row-link:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -339,8 +339,8 @@ a.pd-row-link:focus-visible {
 }
 
 .pd-chevron:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .pd-chevron-icon {
@@ -481,8 +481,8 @@ a.pd-row-link:focus-visible {
 }
 
 .pd-split-list:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .pd-split-option {
@@ -530,7 +530,7 @@ a.pd-row-link:focus-visible {
 
 .pd-split-option-on {
   background: var(--surface-hover);
-  box-shadow: inset 2px 0 0 var(--amber);
+  box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber);
 }
 
 .pd-split-option-on .pd-split-mark { visibility: visible; }

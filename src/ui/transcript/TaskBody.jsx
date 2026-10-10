@@ -69,7 +69,7 @@ export default function TaskBody({ tool }) {
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
-        {open ? <ChevronDown size={13} aria-hidden="true" /> : <ChevronRight size={13} aria-hidden="true" />} result
+        {open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />} result
       </button>
       {open && <pre className="txn-code">{result}</pre>}
     </div>

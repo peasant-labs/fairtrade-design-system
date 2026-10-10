@@ -1,0 +1,211 @@
+# Data for the shipped-CSS guards (scripts/css-guards.mjs). Required names live in
+# css-guards.manifest.yaml; scripts/css-guards.test.mjs runs the cases and mutations.
+
+isolation:
+  # Emitted files under dist/lib, scanned by scripts/finalize-lib-build.mjs, and the surface
+  # namespaces each must not carry. tokens.css and base.css carry no surface at all.
+  files:
+    - file: tokens.css
+      forbiddenNamespaces: [gmp-, tb-, cex-, cmg-, gan-, iu-]
+    - file: base.css
+      forbiddenNamespaces: [gmp-, tb-, cex-, cmg-, gan-, iu-]
+    - file: components.css
+      forbiddenNamespaces: [gmp-, tb-, gan-]
+  # Surface namespaces components.css carries on purpose. With components.css's forbidden list
+  # above they cover every namespace in scripts/surface-namespaces.mjs exactly.
+  componentsHosted:
+    - namespace: cex-
+      reason: the commons surfaces have no rules in commons.css yet; village styles them from components.css
+    - namespace: cmg-
+      reason: the commons surfaces have no rules in commons.css yet; village styles them from components.css
+    - namespace: iu-
+      reason: the shared in-use shell chrome belongs to no single surface
+  # Presentation-site selectors (src/site.css). None may reach a shipped sheet.
+  presentationSelectors:
+    - name: hero
+      classPrefix: hero-
+    - name: philosophy art
+      class: philos-arts
+    - name: philosophy statement
+      classPrefix: philos
+    - name: docs rail link
+      class: rail-link
+    - name: docs page
+      class: docs-main
+    - name: specimen caption
+      class: specimen-cap
+    - name: specimen frame
+      classPrefix: specimen-
+    - name: feedback popup
+      class: fbk-pop
+    - name: feedback tool
+      classPrefix: fbk-
+    - name: site nav links
+      class: nav-links
+    - name: site nav control
+      class: navctl
+    - name: terminal demo
+      classPrefix: tui-
+    - name: terminal wizard demo
+      classPrefix: tuiw-
+  # The bare `section { max-width; margin: 0 auto; padding }` content column is the
+  # presentation page's; a library section fills its host. section.band is the one
+  # sanctioned opt-in to the content column.
+  bareSection:
+    element: section
+    permitted: [section.band]
+  # Apps load the fonts with a <link> in the document head, never a remote @import.
+  remoteFontImportFiles: [tokens.css, base.css, components.css]
+
+ownership:
+  # Each namespace with its own shipped sheet is declared only in that source sheet.
+  owners:
+    - namespace: gmp-
+      sheet: src/lib-graph.css
+    - namespace: tb-
+      sheet: src/lib-graph.css
+    - namespace: gan-
+      sheet: src/lib-analytics.css
+  # The rules that diverged while two copies existed. Each is declared once, outside media
+  # queries, in its owner sheet, with the value the in-use demo rendered.
+  singleSourcedRules:
+    - name: legend item
+      selector: .gmp-legend-item
+      sheet: src/lib-graph.css
+    - name: merged chip
+      selector: .gmp-merged-chip
+      sheet: src/lib-graph.css
+    - name: caption fragment
+      selector: .gmp-frag
+      sheet: src/lib-graph.css
+    - name: label chip
+      selector: .gmp-label-chip
+      sheet: src/lib-graph.css
+    - name: hunk link
+      selector: .gmp-hunk-link
+      sheet: src/lib-graph.css
+
+# JSX elements whose numeric size prop is not an icon size (checkIconSizeLiterals).
+iconSizeLiterals:
+  exemptElements:
+    - element: Background
+      reason: the @xyflow dot-grid Background takes size as the dot radius in px
+
+# Token-lint cases (scripts/css-token-lint.mjs lintCssDecls). expect lists the check ids the
+# CSS must raise, in order; [] means it passes clean.
+lintCases:
+  - name: a hex colour
+    css: ".a{color:#ff0000}"
+    expect: [colour]
+  - name: a colour function
+    css: ".a{background:oklch(0.5 0.1 200)}"
+    expect: [colour]
+  - name: a named colour
+    css: ".a{background:white}"
+    expect: [colour]
+  - name: a colour-word token name
+    css: ".a{color:var(--olive);background:var(--red-600)}"
+    expect: []
+  - name: a literal in a token block
+    css: ":root{--x:#fff} [data-theme=\"light\"]{--x:#000}"
+    expect: []
+  - name: a literal custom property outside the token blocks
+    css: ".a{--x:#fff}"
+    expect: [colour]
+  - name: raw spacing
+    css: ".a{padding:12px}"
+    expect: [spacing]
+  - name: a raw length mixed with a token
+    css: ".a{padding:3px var(--sp-3)}"
+    expect: [spacing]
+  - name: a raw length inside calc
+    css: ".a{margin:calc(var(--sp-2) + 6px)}"
+    expect: [spacing]
+  - name: tokens and hairlines
+    css: ".a{color:var(--ink);background:transparent;border:1px solid currentColor;padding:0 var(--sp-3);margin:1px;gap:var(--sp-2)}"
+    expect: []
+  - name: dimensions are not spacing
+    css: ".a{min-width:180px;width:240px;box-shadow:0 0 0 1px var(--amber)}"
+    expect: []
+  - name: a literal ring width
+    css: ".a:focus-visible{outline:3px solid var(--focus-ring);outline-offset:var(--focus-ring-offset)}"
+    expect: [ring-width]
+  - name: a spacing token as a ring width
+    css: ".a:focus-visible{outline:var(--sp-1) solid var(--focus-ring);outline-offset:var(--focus-ring-offset)}"
+    expect: [ring-width]
+  - name: a ring drawn as a box-shadow
+    css: ".a:focus-visible{box-shadow:inset 0 0 0 2px var(--focus-ring)}"
+    expect: [ring-width]
+  - name: a literal ring offset
+    css: ".a:focus-visible{outline:var(--focus-ring-width) solid var(--focus-ring);outline-offset:1px}"
+    expect: [ring-offset]
+  - name: the standard ring
+    css: ".a:focus-visible{outline:var(--focus-ring-width) solid var(--focus-ring);outline-offset:var(--focus-ring-offset)}"
+    expect: []
+  - name: the inset ring
+    css: ".a:focus-visible{outline:var(--focus-ring-width) solid var(--focus-ring);outline-offset:var(--focus-ring-offset-inset)}"
+    expect: []
+  - name: a transition outside the motion query
+    css: ".a{transition:color var(--dur-1)}"
+    expect: [motion]
+  - name: an animation outside the motion query
+    css: ".a{animation:tab-in var(--dur-2) var(--ease-out) both}"
+    expect: [motion]
+  - name: motion inside the motion query
+    css: "@media (prefers-reduced-motion: no-preference){.a{transition:color var(--dur-1);animation:busy-spin 1s linear infinite}}"
+    expect: []
+  - name: motion switched off
+    css: ".a{transition:none;animation:none}"
+    expect: []
+  - name: a looping skeleton
+    css: "@media (prefers-reduced-motion: no-preference){.a{animation:shimmer 1.4s ease infinite}}"
+    expect: [loop]
+  - name: the busy spinner loops
+    css: "@media (prefers-reduced-motion: no-preference){.a{animation:busy-spin 900ms linear infinite}}"
+    expect: []
+  - name: a wide rail
+    css: ".a{border-left:3px solid var(--mauve)}"
+    expect: [stroke]
+  - name: a spacing token as a stripe
+    css: ".a{box-shadow:inset var(--sp-1) 0 0 var(--amber-dim)}"
+    expect: [stroke]
+  - name: the emphasis stroke and the hairline
+    css: ".a{border-left:var(--stroke-emphasis) solid var(--amber);border-bottom:1px solid var(--rule);box-shadow:inset var(--stroke-emphasis) 0 0 var(--amber)}"
+    expect: []
+  - name: a literal icon size
+    css: ".a .lucide{width:12px;height:12px}"
+    expect: [icon, icon]
+  - name: the icon tokens
+    css: ".a .lucide{width:var(--ic-sm);height:var(--ic-sm)} .b .lucide-x{width:10px}"
+    expect: []
+  - name: a blur by default
+    css: ".a{background:var(--surface);backdrop-filter:blur(8px)}"
+    expect: [blur]
+  - name: a blur where transparency is welcome
+    css: "@media (prefers-reduced-transparency: no-preference){.a{backdrop-filter:blur(8px)}}"
+    expect: []
+
+# Isolation cases (checkLibIsolation over one synthetic components.css). expect lists the
+# diagnostic fragments the guard must report, in order; [] means isolated.
+isolationCases:
+  - name: a clean component sheet
+    css: "@layer components{.btn{color:var(--ink)}.iu-bar{display:flex}.cmg-root{display:block}}"
+    expect: []
+  - name: the sanctioned section opt-in
+    css: "@layer base{section.band{max-width:var(--maxw);margin:0 auto}}"
+    expect: []
+  - name: a scoped section reset
+    css: "@layer components{.iu section{max-width:none}}"
+    expect: []
+  - name: a bare section rule
+    css: "@layer base{section{max-width:var(--maxw);margin:0 auto;padding:0 var(--gutter)}}"
+    expect: [carries a bare section rule]
+  - name: a presentation class
+    css: "@layer components{.specimen-cap{display:block}}"
+    expect: ["carries presentation selector \"specimen caption\"", "carries presentation selector \"specimen frame\""]
+  - name: a graph namespace
+    css: "@layer components{.gmp-legend-item{display:inline-flex}}"
+    expect: [carries foreign surface namespace gmp-]
+  - name: a remote font import
+    css: "@import url(\"https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible\");.a{color:var(--ink)}"
+    expect: [carries a remote font @import]

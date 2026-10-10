@@ -42,8 +42,8 @@
 
 /* ── turn card ────────────────────────────────────────────────────────────────── */
 .ft-gnode-turn { cursor: pointer; }
-.ft-gnode-accented { box-shadow: inset 3px 0 0 0 var(--ft-gnode-accent, var(--rule-strong)); }
-.ft-gnode-error { border-left: 2px solid var(--clay); }
+.ft-gnode-accented { box-shadow: inset var(--stroke-emphasis) 0 0 0 var(--ft-gnode-accent, var(--rule-strong)); }
+.ft-gnode-error { border-left: var(--stroke-emphasis) solid var(--clay); }
 .ft-gnode-turn:hover { background: var(--surface-hover); border-color: var(--rule-strong); }
 
 .ft-gnode-head {

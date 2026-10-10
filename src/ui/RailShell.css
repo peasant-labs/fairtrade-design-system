@@ -183,8 +183,8 @@
   background: var(--surface-hover);
 }
 .rs-sec-head--button:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .rs-sec-icon {
@@ -326,8 +326,8 @@
   background: var(--surface-hover);
 }
 .rs-split-head:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
   /* keep the focus ring above the adjacent column's border. */
   position: relative;
   z-index: 1;
@@ -406,8 +406,8 @@
     background: var(--surface-hover);
   }
   .rs-sheet-toggle:focus-visible {
-    outline: 3px solid var(--focus-ring);
-    outline-offset: 2px;
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
   }
 
   /* the drag-handle: a short centered hairline bar that reads "grabbable". */

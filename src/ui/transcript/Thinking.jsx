@@ -23,7 +23,7 @@ export default function Thinking({ block }) {
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
-        {open ? <ChevronDown size={13} aria-hidden="true" /> : <ChevronRight size={13} aria-hidden="true" />}
+        {open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
         <Brain size={14} aria-hidden="true" />
         <i>thinking</i>
         <span className="txn-thinking-wc tnum">{block.words ?? 0}w</span>

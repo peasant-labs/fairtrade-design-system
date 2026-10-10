@@ -65,8 +65,8 @@
 .gms-toggle:focus-visible,
 .gms-group-disclosure:focus-visible,
 .gms-item-row:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* the tally: count + token sum, the numbers tabular so they don't jitter as they change */

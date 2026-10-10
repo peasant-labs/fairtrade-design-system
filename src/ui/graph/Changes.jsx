@@ -180,7 +180,7 @@ export default function Changes({
                     } else onSelectChange?.(change)
                   }}
                 >
-                  <GitMerge size={13} aria-hidden="true" /> reverted · {r.branch} · then undone · {r.when}
+                  <GitMerge size={14} aria-hidden="true" /> reverted · {r.branch} · then undone · {r.when}
                 </button>
               ))}
             </div>

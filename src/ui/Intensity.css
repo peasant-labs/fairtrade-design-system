@@ -279,8 +279,8 @@
 
 /* keyboard focus — global ring, matches index.css :focus-visible. */
 .ir-node:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* node grid helper for stories / consumers. */

@@ -3,6 +3,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, wr
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { SURFACE_BUNDLES, findForeignNamespaces } from './surface-namespaces.mjs'
+import { checkLibIsolation, readEmitted } from './css-guards.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = join(ROOT, 'dist', 'lib')
@@ -212,6 +213,28 @@ if (cssIsoProblems.length) {
       'ships the other app\'s surface selectors; a leaked namespace breaks that intra-package isolation.',
       'How to fix: ensure each surface @import-s ONLY its own colocated CSS into src/lib-<surface>.css',
       '(graph: .gmp-/.gan-; commons: .cex-/.cmg-; shared .iu- is allowed in both).',
+    ].join('\n'),
+  )
+}
+
+// ── Shared-sheet isolation (tokens.css / base.css / components.css) ───────────
+// The shared sheets every consumer imports must carry the library only: no presentation-site
+// selector (src/site.css), no bare `section` content column, no namespace owned by a surface
+// sheet (those rules have one source: graph.css / analytics.css), and no remote font @import.
+// Data and required names: scripts/testdata/css-guards.yaml (+ .manifest.yaml); the named
+// mutations in scripts/css-guards.test.mjs prove each check fails for its reason.
+const sharedIsoProblems = checkLibIsolation(readEmitted())
+if (sharedIsoProblems.length) {
+  throw new Error(
+    [
+      'fairtrade lib build failed in scripts/finalize-lib-build.mjs: shared-sheet isolation FAILED.',
+      'What went wrong (asserted on the emitted dist/lib bytes):',
+      ...sharedIsoProblems.map((p) => `  - ${p}`),
+      'Why it matters: every consumer imports tokens.css + base.css + components.css; a presentation rule or a',
+      'bare section cap changes their layout, and a second copy of a surface rule makes the winner depend on',
+      'their import order.',
+      'How to fix: keep presentation rules in src/site.css (never imported by src/lib-components.css), keep each',
+      'surface rule in its src/lib-<surface>.css only, and load fonts with a <link> in the app head.',
     ].join('\n'),
   )
 }
