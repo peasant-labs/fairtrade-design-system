@@ -25,11 +25,12 @@ import './CommitGraph.css'
 
 // A session commit's marker is SESSION_DOT wide: the --ic-sm (14px) star plus a 2px margin on
 // each side (CommitGraph.css sizes .cg-dot-filled with the same tokens). The pitch, inset and
-// tail keep 4px of clear space between that marker and a neighbouring lane line or the gutter edge.
+// tail keep 4px clear between markers on adjacent lanes and between a marker and either gutter
+// edge; a neighbouring lane line is then 13px from the marker's edge.
 const SESSION_DOT = 18 // filled commit marker side (matches .cg-dot-filled in CommitGraph.css)
-const LANE_W = 22 // horizontal pitch between lanes: SESSION_DOT + 4px clear
-const GUTTER_PAD = 13 // left inset of lane 0: half a marker + 4px clear
-const GUTTER_TAIL = 13 // room after the last lane before the content column: half a marker + 4px
+const LANE_W = SESSION_DOT + 4 // pitch: 4px clear between markers on adjacent lanes
+const GUTTER_PAD = SESSION_DOT / 2 + 4 // lane 0 inset: 4px clear to the gutter's left edge
+const GUTTER_TAIL = SESSION_DOT / 2 + 4 // after the last lane: 4px clear before the content column
 const DOT = 9 // plain (hollow) commit dot side
 const DASH = '3 3'
 
