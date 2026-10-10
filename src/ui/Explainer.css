@@ -69,8 +69,8 @@
   color: var(--ink);
 }
 .xpl-toggle:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* the square "?" badge — a hairline box housing the lucide help glyph. */
@@ -184,8 +184,8 @@
   border-bottom-color: var(--amber);
 }
 .term:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* ── term tooltip bubble ─────────────────────────────────────────────────────

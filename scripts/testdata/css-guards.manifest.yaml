@@ -1,0 +1,198 @@
+# Required-NAME manifest for css-guards.yaml: deletion protection, plus the named mutations
+# scripts/css-guards.test.mjs plants in the REAL bytes (dist/lib or the source sheets). Each
+# mutation must make its guard fail, and the failure must contain expectedDiagnostic.
+requiredIconSizeExemptElements:
+  - Background
+requiredIsolationFiles:
+  - tokens.css
+  - base.css
+  - components.css
+requiredPresentationSelectorNames:
+  - hero
+  - philosophy art
+  - philosophy statement
+  - docs rail link
+  - docs page
+  - specimen caption
+  - specimen frame
+  - feedback popup
+  - feedback tool
+  - site nav
+  - site nav links
+  - site nav control
+  - terminal demo
+  - terminal wizard demo
+requiredOwnerNamespaces:
+  - gmp-
+  - tb-
+  - gan-
+requiredSingleSourcedRuleNames:
+  - legend item
+  - merged chip
+  - caption fragment
+  - label chip
+  - hunk link
+requiredLintCaseNames:
+  - a hex colour
+  - a colour function
+  - a named colour
+  - a colour-word token name
+  - a literal in a token block
+  - a literal custom property outside the token blocks
+  - raw spacing
+  - a raw length mixed with a token
+  - a raw length inside calc
+  - tokens and hairlines
+  - dimensions are not spacing
+  - a literal ring width
+  - a spacing token as a ring width
+  - a ring drawn as a box-shadow
+  - a literal ring offset
+  - the standard ring
+  - the inset ring
+  - a transition outside the motion query
+  - an animation outside the motion query
+  - motion inside the motion query
+  - motion switched off
+  - a looping skeleton
+  - the busy spinner loops
+  - a wide rail
+  - a spacing token as a stripe
+  - the emphasis stroke and the hairline
+  - a literal icon size
+  - the icon tokens
+  - a blur by default
+  - a blur where transparency is welcome
+requiredIsolationCaseNames:
+  - a clean component sheet
+  - the sanctioned section opt-in
+  - a scoped section reset
+  - a bare section rule
+  - a presentation class
+  - a graph namespace
+  - a remote font import
+
+requiredMutationNames:
+  - a presentation rule ships in components.css
+  - the site nav ships in components.css
+  - the bare section rule ships in base.css
+  - a graph rule ships in components.css
+  - a remote font import ships in base.css
+  - a graph rule is copied back into index.css
+  - a diverged rule is declared twice in its owner
+  - index.css hardcodes a colour
+  - a raw length is mixed with a token
+  - a focus ring is a literal width
+  - a focus ring sits at a literal offset
+  - a JS-imported sheet sets a literal ring offset
+  - a transition runs outside the motion query
+  - a skeleton shimmer loops again
+  - a rail is wider than the emphasis stroke
+  - an icon renders below the icon tokens
+  - a JSX icon drops below the icon floor
+  - the app imports its fonts in CSS
+  - a sticky bar blurs by default
+  - a fixed literal stays on the allowlist
+mutations:
+  - name: a presentation rule ships in components.css
+    guard: isolation
+    target: dist/lib/components.css
+    append: ".hero-crop{position:relative;height:100svh}"
+    expectedDiagnostic: 'components.css carries presentation selector "hero"'
+  - name: the site nav ships in components.css
+    guard: isolation
+    target: dist/lib/components.css
+    append: "@layer components{.nav{background:var(--surface)!important}}"
+    expectedDiagnostic: 'components.css carries presentation selector "site nav"'
+  - name: the bare section rule ships in base.css
+    guard: isolation
+    target: dist/lib/base.css
+    find: "@layer base {\n"
+    replace: "@layer base {\nsection { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }\n"
+    expectedDiagnostic: base.css carries a bare section rule
+  - name: a graph rule ships in components.css
+    guard: isolation
+    target: dist/lib/components.css
+    append: "@layer components{.gmp-legend-item{font-size:11px}}"
+    expectedDiagnostic: components.css carries foreign surface namespace gmp-
+  - name: a remote font import ships in base.css
+    guard: isolation
+    target: dist/lib/base.css
+    prepend: "@import url(\"https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible&display=swap\");\n"
+    expectedDiagnostic: base.css carries a remote font @import
+  - name: a graph rule is copied back into index.css
+    guard: ownership
+    target: src/index.css
+    append: "\n@layer components { .gmp-legend-item { font-size: 11px; } }\n"
+    expectedDiagnostic: "declares `.gmp-legend-item`, but gmp- rules have one source: src/lib-graph.css"
+  - name: a diverged rule is declared twice in its owner
+    guard: ownership
+    target: src/lib-graph.css
+    append: "\n@layer graph { .gmp-frag { padding: 0 3px; } }\n"
+    expectedDiagnostic: "declares the caption fragment rule `.gmp-frag` 2 times"
+  - name: index.css hardcodes a colour
+    guard: lint
+    target: src/index.css
+    append: "\n@layer components { .btn-planted { color: #ffffff; } }\n"
+    expectedDiagnostic: "[colour] `color: #ffffff` in `.btn-planted`"
+  - name: a raw length is mixed with a token
+    guard: lint
+    target: src/lib-graph.css
+    append: "\n@layer graph { .gmp-planted { padding: 3px var(--sp-3); } }\n"
+    expectedDiagnostic: "[spacing] `padding: 3px var(--sp-3)` in `.gmp-planted`"
+  - name: a focus ring is a literal width
+    guard: lint
+    target: src/ui/Publish.css
+    append: "\n.pub-planted:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }\n"
+    expectedDiagnostic: "[ring-width] `outline: 3px solid var(--focus-ring)` in `.pub-planted:focus-visible`"
+  - name: a focus ring sits at a literal offset
+    guard: lint
+    target: src/ui/Publish.css
+    append: "\n.pub-planted:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: -3px; }\n"
+    expectedDiagnostic: "[ring-offset] `outline-offset: -3px` in `.pub-planted:focus-visible`"
+  - name: a JS-imported sheet sets a literal ring offset
+    guard: lint
+    target: src/ui/graph/timelinePrimitives.css
+    append: "\n.tlp-planted:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 3px; }\n"
+    expectedDiagnostic: "[ring-offset] `outline-offset: 3px` in `.tlp-planted:focus-visible`"
+  - name: a transition runs outside the motion query
+    guard: lint
+    target: src/lib-analytics.css
+    append: "\n@layer analytics { .gan-planted { transition: color var(--dur-1); } }\n"
+    expectedDiagnostic: "[motion] `transition: color var(--dur-1)` in `.gan-planted`"
+  - name: a skeleton shimmer loops again
+    guard: lint
+    target: src/index.css
+    append: "\n@media (prefers-reduced-motion: no-preference) { .fb-skel-line { animation: fbShimmer 1400ms ease infinite; } }\n"
+    expectedDiagnostic: "[loop] `animation: fbShimmer 1400ms ease infinite` in `.fb-skel-line`"
+  - name: a rail is wider than the emphasis stroke
+    guard: lint
+    target: src/ui/DiffView.css
+    append: "\n.dv-planted { border-left: 3px solid var(--del-rail); }\n"
+    expectedDiagnostic: "[stroke] `border-left: 3px solid var(--del-rail)` in `.dv-planted`"
+  - name: an icon renders below the icon tokens
+    guard: lint
+    target: src/lib-graph.css
+    append: "\n@layer graph { .gmp-planted .lucide { width: 12px; height: 12px; } }\n"
+    expectedDiagnostic: "[icon] `width: 12px` in `.gmp-planted .lucide`"
+  - name: a JSX icon drops below the icon floor
+    guard: lint
+    target: src/ui/graph/ChangeDetail.jsx
+    append: "\nexport const plantedIcon = <Loader size={12} aria-hidden=\"true\" />\n"
+    expectedDiagnostic: "sizes an icon <Loader size={12}>, below --ic-sm (14px)"
+  - name: the app imports its fonts in CSS
+    guard: lint
+    target: src/site.css
+    find: "@import \"./index.css\";\n"
+    replace: "@import \"./index.css\";\n@import url(\"https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible&display=swap\");\n"
+    expectedDiagnostic: "imports fonts in CSS"
+  - name: a sticky bar blurs by default
+    guard: lint
+    target: src/ui/TranscriptMarkers.css
+    append: "\n.tm2-planted { background: var(--glass-solid); backdrop-filter: blur(8px) saturate(1.4); }\n"
+    expectedDiagnostic: "[blur] `backdrop-filter: blur(8px) saturate(1.4)` in `.tm2-planted`"
+  - name: a fixed literal stays on the allowlist
+    guard: lint
+    target: scripts/testdata/css-token-lint.allowlist.yaml
+    allowlistEntry: {file: src/index.css, selector: .btn-fixed, prop: padding, value: 3px, check: spacing}
+    expectedDiagnostic: '  - {"file":"src/index.css","selector":".btn-fixed","prop":"padding","value":"3px","check":"spacing"}'

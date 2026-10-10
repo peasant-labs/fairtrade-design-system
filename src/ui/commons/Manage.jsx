@@ -129,8 +129,8 @@ export function Manage({
       <div className="cmg-detail">
         <header className="cmg-d-hero">
           <div className="crumb cmg-crumb">
-            village <ChevronRight size={13} aria-hidden="true" /> collectives{' '}
-            <ChevronRight size={13} aria-hidden="true" />
+            village <ChevronRight size={14} aria-hidden="true" /> collectives{' '}
+            <ChevronRight size={14} aria-hidden="true" />
             <span className="cur">{collective.name || 'collective'}</span>
           </div>
           <div className="cmg-d-hero-row">
@@ -140,7 +140,7 @@ export function Manage({
                 {collective.description || 'shared collective governance'}
               </p>
               <span className="cmg-orgpill mono">
-                <FolderGit2 size={13} aria-hidden="true" />{' '}
+                <FolderGit2 size={14} aria-hidden="true" />{' '}
                 {collective.linkedGithubOrg || 'not linked'}
               </span>
             </div>
@@ -336,7 +336,7 @@ export function Manage({
                               passes the raw slug through both fields, so trusting `row.provider`
                               directly showed "claude-code"/"gemini-cli" verbatim in this table even
                               though the provider-share box above it was already humanized. */}
-                          <FolderGit2 size={12} aria-hidden="true" /> {row.providerId ? providerLabel(row.providerId) : formatProvider(row.provider)}
+                          <FolderGit2 size={14} aria-hidden="true" /> {row.providerId ? providerLabel(row.providerId) : formatProvider(row.provider)}
                         </td>
                         <td className="cmg-num tnum">{row.turns || '0'}</td>
                         <td className="cmg-num tnum">{row.tokens || '0'}</td>

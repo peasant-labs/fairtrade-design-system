@@ -61,7 +61,7 @@ export default function Scorecard({ bands = [] }) {
               ) : null}
               {s.delta && Trend && (
                 <div className={'txn-sc-delta ' + (s.delta.dir === 'up' ? 'txn-up' : 'txn-down')}>
-                  <Trend size={13} aria-hidden="true" /> {s.delta.text}
+                  <Trend size={14} aria-hidden="true" /> {s.delta.text}
                 </div>
               )}
             </div>

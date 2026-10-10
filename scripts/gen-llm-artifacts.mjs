@@ -174,11 +174,10 @@ function buildBaseCss() {
     '  word-spacing: normal;\n' +
     '}\n' +
     'em, i { font-style: normal; font-weight: 600; }\n' +
-    ':focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }\n' +
+    ':focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }\n' +
     'a { color: var(--amber); text-decoration: none; }\n' +
     'a.link, .prose a { text-decoration: underline dotted; text-underline-offset: 3px; }\n' +
     'a.link:hover, a.link:focus-visible, .prose a:hover { text-decoration-style: solid; }\n' +
-    'section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }\n' +
     '@media (prefers-reduced-motion: reduce) {\n' +
     '  html { scroll-behavior: auto; }\n' +
     '  *, *::before, *::after {\n' +

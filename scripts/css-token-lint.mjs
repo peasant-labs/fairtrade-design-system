@@ -1,37 +1,48 @@
 #!/usr/bin/env node
-/* CSS-tokenization lint for the lifted surface stylesheets.
+/* CSS-tokenization lint for every stylesheet that ships in the package.
    ────────────────────────────────────────────────────────────────────────────
-   The HYBRID-boundary surfaces (graph: .gmp-/.gan- ; commons: .cex-/.cmg- ; the
-   shared in-use shell: .iu-) MUST drive every colour + spacing value from the
-   system tokens (var(--…)), never a hardcoded literal. Re-deriving a token value
-   inline silently breaks both-theme correctness (a hex colour can't flip with the
-   theme) and the spacing scale.
+   Scope is DERIVED: the four bundle entries (src/lib-components.css and
+   src/lib-<surface>.css), every local sheet they @import (src/index.css, the colocated
+   component sheets), and every sheet a src/ui module imports for its side effect
+   (src/ui/graph/timelinePrimitives.css). A new imported sheet is linted the moment it ships.
+   The presentation site's own sheet (src/site.css) never ships and is out of scope.
 
-   This lint fails the build when a lifted-surface stylesheet declares:
-     • a COLOUR literal — any #hex or rgb()/rgba()/hsl()/hsla()/hwb()/lab()/lch()/
-       oklab()/oklch()/color() function — in a rule declaration. (Colours must be
-       var(--…) tokens, with no exceptions; this matches the existing DS convention,
-       e.g. MapCanvas.css has zero hardcoded colours.)
-     • a raw SPACING length (px/rem/em) on a pure spacing property
-       (margin / padding / gap / row-gap / column-gap and their longhands) whose
-       absolute value exceeds the hairline allowance (2). Tokenized values (var()/calc()),
-       zero, and ≤2px optical hairlines are permitted — matching the convention
-       (one-off dimensions like width/min-width/min-height and box-shadow offsets
-       are intentionally NOT spacing-linted; they legitimately carry raw lengths).
+   Checks (each violation names its check id):
+     colour      a #hex, colour function or named colour in a declaration. Colours are
+                 var(--…) tokens; only the token blocks (:root, [data-theme], @theme) may
+                 hold literals.
+     spacing     a raw length above the 2px hairline on a spacing property (margin,
+                 padding, gap and their longhands), INCLUDING a length mixed with a token
+                 (`padding: 3px var(--sp-3)`); only the var(…) references are exempt.
+     ring-width  a focus rule (:focus, :focus-visible, :focus-within) whose outline or
+                 ring box-shadow is not var(--focus-ring-width).
+     ring-offset a focus rule whose outline-offset is not var(--focus-ring-offset) or the
+                 one inset variant var(--focus-ring-offset-inset).
+     motion      a transition or animation declared outside
+                 `@media (prefers-reduced-motion: no-preference)`. Motion is opt-in.
+     loop        an infinite animation other than the one busy spinner (busy-spin). Skeletons,
+                 pulses and live dots stay static.
+     stroke      a one-sided border (a rail, stripe or underline) or an inset stripe shadow wider
+                 than the 1px hairline that is not var(--stroke-emphasis).
+     icon        a Lucide icon (a rule whose last compound selects .lucide) sized by anything but
+                 the icon tokens --ic-sm / --ic-md / --ic-lg.
+     blur        a backdrop-filter outside `@media (prefers-reduced-transparency:
+                 no-preference)`. Bars and scrims are opaque and unblurred by default.
 
-   Scope = the per-surface bundle source (src/lib-graph.css, src/lib-commons.css)
-   plus any colocated surface stylesheet they pull in (the .css files under the
-   src/ui/graph, src/ui/commons and src/ui/inuse subtrees). The shared component
-   library (src/index.css, the existing tier-2/3 component sheets) is NOT in scope
-   — only the lifted surfaces are token-locked.
+   Known exceptions live in scripts/testdata/css-token-lint.allowlist.yaml, one entry
+   per (file, selector, property, value, check). The list only shrinks: an entry that no
+   longer matches a violation fails the lint, so a fixed literal must leave the list.
+
+   Three source guards run here too (scripts/css-guards.mjs): every surface namespace that
+   has its own shipped sheet is declared in exactly that sheet, no JSX icon is sized below
+   --ic-sm with a numeric size={n} prop, and the app loads its fonts only with the <link> in
+   index.html (no CSS @import of a remote font or of the deprecated fonts.css).
 
    Wired into `build:lib`; runnable standalone via `pnpm lint:css`. */
-import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs'
-import { dirname, join, relative } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { SURFACE_BUNDLES } from './surface-namespaces.mjs'
-
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+import { ROOT, walkCss, inMotionAllowed, isStyleRule, shippedSourceSheets, loadStrictYaml } from './css-source.mjs'
 
 // Spacing properties that must use a token (not a raw length). One-off dimension
 // properties (width/height/min-*/max-*) and box-shadow are deliberately excluded.
@@ -81,130 +92,225 @@ const NAMED_COLORS = new Set([
   'steelblue', 'tan', 'teal', 'thistle', 'tomato', 'turquoise', 'violet', 'wheat', 'white',
   'whitesmoke', 'yellow', 'yellowgreen',
 ])
-// A value contains a named colour when any bare-ident token (split on non-ident
-// chars) exactly matches a named colour and is not an allowed theme-safe keyword.
-// `var(...)` references are stripped FIRST so a token NAME that embeds a colour word
-// is never mistaken for a bare named colour — those ARE tokens. (This DS palette has
-// colour-word tokens, e.g. --olive / --teal / --clay / --mauve, and a surface may use
-// var(--red-600); none of those should fail the lint.)
-const hasNamedColor = (value) => {
-  const noVars = value.replace(/var\([^)]*\)/g, '')
-  return noVars
-    .toLowerCase()
-    .split(/[^a-z]+/)
-    .some((tok) => tok && NAMED_COLORS.has(tok) && !ALLOWED_COLOR_KEYWORDS.has(tok))
-}
 
-// Lint scope is DERIVED from the surface taxonomy so a new surface is auto-linted:
-// each surface's per-surface bundle source (src/lib-<surface>.css) + its colocated
-// source dir (src/ui/<surface>), plus the shared in-use shell source dir.
-const SHARED_SURFACE_DIR = 'src/ui/inuse'
-const SCAN_FILES = SURFACE_BUNDLES.map((b) => `src/lib-${b.surface}.css`)
-const SCAN_DIRS = [...SURFACE_BUNDLES.map((b) => `src/ui/${b.surface}`), SHARED_SURFACE_DIR]
-
-/** Recursively collect *.css under a dir (if it exists). */
-function collectCss(dir) {
-  const abs = join(ROOT, dir)
-  if (!existsSync(abs)) return []
-  const out = []
-  for (const name of readdirSync(abs)) {
-    const p = join(abs, name)
-    if (statSync(p).isDirectory()) out.push(...collectCss(join(dir, name)))
-    else if (name.endsWith('.css')) out.push(join(dir, name))
+/** Remove every var(…) reference (with nested parentheses) from a value. */
+export function stripVarRefs(value) {
+  let out = ''
+  for (let i = 0; i < value.length; i++) {
+    if (value.startsWith('var(', i) && !/[\w-]/.test(value[i - 1] ?? '')) {
+      let depth = 0
+      let j = i + 3
+      for (; j < value.length; j++) {
+        if (value[j] === '(') depth++
+        else if (value[j] === ')' && --depth === 0) break
+      }
+      out += ' '
+      i = j
+      continue
+    }
+    out += value[i]
   }
   return out
 }
 
-/** Strip CSS comments (so a hex/px quoted in a comment is never flagged). */
-const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+// A value contains a named colour when any bare-ident token (split on non-ident
+// chars) exactly matches a named colour and is not an allowed theme-safe keyword.
+// `var(...)` references are stripped FIRST so a token NAME that embeds a colour word
+// is never mistaken for a bare named colour — those ARE tokens.
+const hasNamedColor = (value) =>
+  stripVarRefs(value)
+    .toLowerCase()
+    .split(/[^a-z-]+/)
+    .some((tok) => tok && NAMED_COLORS.has(tok) && !ALLOWED_COLOR_KEYWORDS.has(tok))
 
-/** 1-based line number of a character offset. */
-const lineAt = (text, idx) => text.slice(0, idx).split('\n').length
+const isTokenBlock = (block) =>
+  block.context.some((p) => p.startsWith('@theme')) ||
+  block.prelude.split(',').every((s) => /^(?::root|\[data-theme(?:=["']?[\w-]+["']?)?\])$/.test(s.trim()))
+
+const isFocusRule = (prelude) => /:focus(?:-visible|-within)?\b/.test(prelude)
+const NO_MOTION = /^(?:none|0m?s?|initial|unset|inherit)(?:\s*!important)?$/
+const RING_OFFSETS = new Set(['var(--focus-ring-offset)', 'var(--focus-ring-offset-inset)'])
+/** The single named looping animation (src/index.css): a busy spinner while work is in progress. */
+export const BUSY_SPINNER = 'busy-spin'
+const STROKE_PROPS = /^border-(?:left|right|top|bottom|inline-start|inline-end|block-start|block-end)(?:-width)?$/
+const INSET_STRIPE = /\binset\s+(-?\d*\.?\d+px|var\(--sp-\d\))\s+0\s+0\b/
+const ICON_TOKENS = /^var\(--ic-(?:sm|md|lg)\)$/
+/** The selector list targets a Lucide icon itself (the last compound carries .lucide). */
+const targetsIcon = (prelude) => prelude.split(',').some((s) => /\.lucide(?![\w-])[^\s>+~]*$/.test(s.trim()))
+const inTransparencyAllowed = (context) => context.some((p) => /^@media\b[^{]*prefers-reduced-transparency\s*:\s*no-preference/.test(p))
 
 /**
- * The pure lint over one stylesheet's raw text → an array of violation strings.
- * Exported so the gate teeth-test (gates.test.mjs) can feed synthetic CSS and
- * assert hardcoded colour/spacing FAILS while tokenized/hairline values pass —
- * without any filesystem or build dependency.
+ * The pure lint over one stylesheet → violation objects. Exported so the gate tests
+ * (scripts/css-guards.test.mjs, gates.test.mjs) feed synthetic or mutated CSS through
+ * the same code the build runs.
  *
  * @param {string} rawText  the stylesheet source
- * @param {string} file     a label used in the violation message
- * @returns {string[]} violation messages (empty = clean)
+ * @param {string} file     a label used in the violation
+ * @returns {Array<{file: string, line: number, selector: string, prop: string, value: string, check: string, message: string}>}
  */
-export function lintCssText(rawText, file) {
-  const css = stripComments(rawText)
-  const violations = []
-  // Walk rule blocks: a selector prelude + `{ … }` body. We only inspect
-  // declarations inside a block body, so at-rule preludes (@media px breakpoints,
-  // @layer names) are never mistaken for spacing/colour declarations.
-  const blockRe = /\{([^{}]*)\}/g
-  let m
-  while ((m = blockRe.exec(css)) !== null) {
-    const body = m[1]
-    const bodyStart = m.index + 1
-    for (const decl of body.split(';')) {
-      const ci = decl.indexOf(':')
-      if (ci === -1) continue
-      const prop = decl.slice(0, ci).trim().toLowerCase()
-      const value = decl.slice(ci + 1).trim()
-      if (!prop || !value) continue
-      const declOffset = bodyStart + body.indexOf(decl)
-      const line = lineAt(css, declOffset)
+export function lintCssDecls(rawText, file) {
+  const out = []
+  const push = (block, decl, check, why) =>
+    out.push({
+      file,
+      line: decl.line,
+      selector: block.prelude,
+      prop: decl.prop,
+      value: decl.value,
+      check,
+      message: `${file}:${decl.line}  [${check}] \`${decl.prop}: ${decl.value}\` in \`${block.prelude}\`: ${why}`,
+    })
+  for (const block of walkCss(rawText).blocks) {
+    if (!isStyleRule(block)) continue
+    const tokenBlock = isTokenBlock(block)
+    const focus = isFocusRule(block.prelude)
+    const motionOk = inMotionAllowed(block.context) || block.context.some((p) => /prefers-reduced-motion\s*:\s*reduce/.test(p))
+    for (const decl of block.decls) {
+      const { prop, value } = decl
+      if (prop.startsWith('--') && tokenBlock) continue
 
-      // COLOUR: any hex, colour-function, or NAMED colour literal is forbidden.
-      if (HEX_COLOR.test(value) || COLOR_FN.test(value) || hasNamedColor(value)) {
-        violations.push(
-          `${file}:${line}  hardcoded colour in \`${prop}: ${value}\` — use a colour token (var(--…)); a literal cannot flip with the theme`,
-        )
+      if (HEX_COLOR.test(value) || COLOR_FN.test(stripVarRefs(value)) || hasNamedColor(value)) {
+        push(block, decl, 'colour', 'use a colour token (var(--…)); a literal cannot flip with the theme')
         continue
       }
 
-      // SPACING: raw length on a pure spacing property (unless tokenized/hairline).
-      if (SPACING_PROPS.has(prop) && !/var\(|calc\(/.test(value)) {
-        const overs = []
-        let lm
-        LENGTH.lastIndex = 0
-        while ((lm = LENGTH.exec(value)) !== null) {
-          if (Math.abs(parseFloat(lm[1])) > HAIRLINE_MAX) overs.push(lm[0])
+      if (SPACING_PROPS.has(prop)) {
+        const raw = stripVarRefs(value)
+        const overs = [...raw.matchAll(LENGTH)].filter((m) => Math.abs(parseFloat(m[1])) > HAIRLINE_MAX).map((m) => m[0])
+        if (overs.length) push(block, decl, 'spacing', `raw spacing ${overs.join(', ')}; use a spacing token (var(--sp-…)); only 0 and ≤${HAIRLINE_MAX}px hairlines may be raw`)
+      }
+
+      if (focus) {
+        if ((prop === 'outline' || prop === 'outline-width') && !/^(?:none|0)\b/.test(value) && !value.includes('var(--focus-ring-width)')) {
+          push(block, decl, 'ring-width', 'a focus ring is var(--focus-ring-width) wide')
         }
-        if (overs.length) {
-          violations.push(
-            `${file}:${line}  raw spacing ${overs.join(', ')} in \`${prop}: ${value}\` — use a spacing token (var(--sp-…)); only 0 and ≤${HAIRLINE_MAX}px hairlines may be raw`,
-          )
+        if (prop === 'box-shadow' && value.includes('var(--focus-ring)') && !value.includes('var(--focus-ring-width)')) {
+          push(block, decl, 'ring-width', 'a ring drawn as a box-shadow is var(--focus-ring-width) wide')
         }
+        if (prop === 'outline-offset' && !RING_OFFSETS.has(value)) {
+          push(block, decl, 'ring-offset', 'the ring sits at var(--focus-ring-offset), or var(--focus-ring-offset-inset) on an edge-to-edge control')
+        }
+      }
+
+      if (/^(?:transition|animation)(?:$|-name|-property)/.test(prop) && !NO_MOTION.test(value) && !motionOk) {
+        push(block, decl, 'motion', 'motion is opt-in: declare it inside @media (prefers-reduced-motion: no-preference)')
+      }
+
+      if ((prop === 'animation' || prop === 'animation-iteration-count') && /\binfinite\b/.test(value) && !new RegExp(`(?:^|[\\s,])${BUSY_SPINNER}(?:$|[\\s,])`).test(value)) {
+        push(block, decl, 'loop', `only the busy spinner (${BUSY_SPINNER}) loops; a skeleton, pulse or live dot is static`)
+      }
+
+      if ((prop === 'width' || prop === 'height') && targetsIcon(block.prelude) && !ICON_TOKENS.test(value)) {
+        push(block, decl, 'icon', 'a Lucide icon is var(--ic-sm), var(--ic-md) or var(--ic-lg)')
+      }
+
+      if (STROKE_PROPS.test(prop)) {
+        const wide = [...stripVarRefs(value).matchAll(LENGTH)].some((m) => Math.abs(parseFloat(m[1])) > 1) || /var\(--sp-\d\)/.test(value)
+        if (wide) push(block, decl, 'stroke', 'a rail, stripe or underline is var(--stroke-emphasis) (or the 1px hairline)')
+      }
+      if (prop === 'box-shadow') {
+        const stripe = value.match(INSET_STRIPE)
+        if (stripe && (stripe[1].startsWith('var(') || Math.abs(parseFloat(stripe[1])) > 1)) push(block, decl, 'stroke', 'an inset stripe is var(--stroke-emphasis) wide')
+      }
+
+      if (/^(?:-webkit-)?backdrop-filter$/.test(prop) && !/^none\b/.test(value) && !inTransparencyAllowed(block.context)) {
+        push(block, decl, 'blur', 'blur is opt-in: declare it inside @media (prefers-reduced-transparency: no-preference) over an opaque default')
       }
     }
   }
-  return violations
+  return out
 }
 
-// Main: only when run directly (`node scripts/css-token-lint.mjs`), NOT when
-// gates.test.mjs imports `lintCssText` — so importing the pure fn never triggers
-// the filesystem scan or the throw.
+/** Message-only form, kept for the gate teeth-tests in scripts/gates.test.mjs. */
+export const lintCssText = (rawText, file) => lintCssDecls(rawText, file).map((v) => v.message)
+
+const ALLOWLIST = 'scripts/testdata/css-token-lint.allowlist.yaml'
+const ALLOW_FIELDS = ['file', 'selector', 'prop', 'value', 'check']
+const allowKey = (v) => ALLOW_FIELDS.map((f) => v[f]).join('\u0000')
+
+/**
+ * Split violations into allowed and new ones, and report allowlist entries that no
+ * longer match anything (stale: the literal was fixed, so the entry must go).
+ */
+export function applyAllowlist(violations, entries) {
+  const allowed = new Map(entries.map((e) => [allowKey(e), e]))
+  const used = new Set()
+  const fresh = []
+  for (const v of violations) {
+    const k = allowKey(v)
+    if (allowed.has(k)) used.add(k)
+    else fresh.push(v)
+  }
+  const stale = entries.filter((e) => !used.has(allowKey(e)))
+  return { fresh, stale }
+}
+
+export function loadAllowlist() {
+  const doc = loadStrictYaml(ALLOWLIST)
+  if (!Array.isArray(doc.entries)) throw new Error(`${ALLOWLIST}: entries must be a list`)
+  const seen = new Set()
+  for (const e of doc.entries) {
+    const keys = Object.keys(e)
+    const bad = keys.filter((k) => !ALLOW_FIELDS.includes(k))
+    const missing = ALLOW_FIELDS.filter((k) => typeof e[k] !== 'string' || !e[k])
+    if (bad.length || missing.length) throw new Error(`${ALLOWLIST}: entry ${JSON.stringify(e)} unknown=${bad.join(',')} missing=${missing.join(',')}`)
+    if (seen.has(allowKey(e))) throw new Error(`${ALLOWLIST}: duplicate entry ${JSON.stringify(e)}`)
+    seen.add(allowKey(e))
+  }
+  return doc.entries
+}
+
+/** Lint every shipped source sheet (optionally with some texts replaced) against the allowlist. */
+export function lintShippedSheets(overrides = {}, extraAllowEntries = []) {
+  const files = shippedSourceSheets()
+  const violations = files.flatMap((file) => lintCssDecls(overrides[file] ?? readFileSync(join(ROOT, file), 'utf8'), file))
+  return { files, violations, ...applyAllowlist(violations, [...loadAllowlist(), ...extraAllowEntries]) }
+}
+
+/**
+ * The whole source-side CSS gate: ownership + lint + allowlist burn-down. Returns the
+ * failure report (null when clean). The build runs it with no arguments; the mutation
+ * test passes planted texts / allowlist entries through the SAME path.
+ */
+export async function runCssLint(overrides = {}, extraAllowEntries = []) {
+  const { checkSourceOwnership, checkIconSizeLiterals, checkAppFontPath } = await import('./css-guards.mjs')
+  const ownership = checkSourceOwnership(overrides)
+  const icons = checkIconSizeLiterals(overrides)
+  const fonts = checkAppFontPath(overrides)
+  const { files, violations, fresh, stale } = lintShippedSheets(overrides, extraAllowEntries)
+  const report =
+    ownership.length || icons.length || fonts.length || fresh.length || stale.length
+      ? [
+          'CSS lint FAILED in scripts/css-token-lint.mjs.',
+          ...(ownership.length
+            ? ['What went wrong: a surface rule has more than one source (keep it in its owner sheet only):', ...ownership.map((p) => `  - ${p}`)]
+            : []),
+          ...(icons.length
+            ? ['What went wrong: a JSX icon is sized below the icon tokens:', ...icons.map((p) => `  - ${p}`)]
+            : []),
+          ...(fonts.length
+            ? ['What went wrong: the app path loads fonts some other way than the <link> in index.html:', ...fonts.map((p) => `  - ${p}`)]
+            : []),
+          ...(fresh.length
+            ? ['What went wrong: a shipped stylesheet hardcodes a value the tokens own, or animates outside the motion query:', ...fresh.map((v) => `  - ${v.message}`)]
+            : []),
+          ...(stale.length
+            ? [`What went wrong: ${ALLOWLIST} lists exceptions that no longer occur (the value was fixed); delete them:`, ...stale.map((e) => `  - ${JSON.stringify(e)}`)]
+            : []),
+          'Why it matters: shipped CSS drives colour, spacing, focus rings and motion from the tokens so both themes,',
+          'the spacing scale, the ring policy and static-first motion hold for every consumer; one source per rule keeps',
+          'consumers from getting whichever copy their import order happens to favour.',
+          'How to fix: use the matching var(--…) token, move motion into @media (prefers-reduced-motion: no-preference),',
+          'or delete the duplicate rule. Add an allowlist entry only for a reviewed, deliberate exception.',
+        ].join('\n')
+      : null
+  return { report, files, violations }
+}
+
+// Main: only when run directly, NOT when a test imports the pure functions.
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]
 if (isMain) {
-  const files = [
-    ...SCAN_FILES.filter((f) => existsSync(join(ROOT, f))),
-    ...SCAN_DIRS.flatMap(collectCss),
-  ]
-  const violations = files.flatMap((file) => lintCssText(readFileSync(join(ROOT, file), 'utf8'), file))
-
-  if (violations.length) {
-    throw new Error(
-      [
-        'CSS-tokenization lint FAILED in scripts/css-token-lint.mjs.',
-        'What went wrong: a lifted-surface stylesheet hardcodes a colour or spacing value instead of a token:',
-        ...violations.map((v) => `  - ${v}`),
-        'Why it matters: lifted surfaces must drive colour/spacing from system tokens so they flip correctly',
-        'across both themes and stay on the spacing scale; an inline literal re-derives (and breaks) the token.',
-        'How to fix: replace the literal with the matching var(--…) token in the source surface stylesheet.',
-      ].join('\n'),
-    )
-  }
-
-  console.log(
-    `css-token lint: ${files.length} lifted-surface stylesheet(s) scanned${
-      files.length ? ` (${files.map((f) => relative('src', f)).join(', ')})` : ''
-    }; no hardcoded colour/spacing.`,
-  )
+  const { report, files, violations } = await runCssLint()
+  if (report) throw new Error(report)
+  console.log(`css lint: ${files.length} shipped stylesheet(s) scanned; ${violations.length} allowlisted exception(s), no new violations; one source per surface rule.`)
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Box, GitMerge } from 'lucide-react'
+import { Box, GitMerge, Star } from 'lucide-react'
 import CommitGraph from '../CommitGraph.jsx'
 import { ProviderName } from '../ProviderIcon.jsx'
 import { buildChangesGraph } from './changeGraph.js'
@@ -180,19 +180,20 @@ export default function Changes({
                     } else onSelectChange?.(change)
                   }}
                 >
-                  <GitMerge size={13} aria-hidden="true" /> reverted · {r.branch} · then undone · {r.when}
+                  <GitMerge size={14} aria-hidden="true" /> reverted · {r.branch} · then undone · {r.when}
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* legend — the kit's filled = has-session semantics. the .cg-dot marker is sized inline
-            (the kit sizes it via absolute lane geometry, which doesn't apply here); its
-            position/centering is reset in lib-graph.css (.gmp-changes-legend .cg-dot). */}
+        {/* legend: the kit's filled = has-session semantics, drawn with the same markers as the
+            graph. the hollow dot is sized inline (the kit sizes it via its lane geometry); the
+            filled marker sizes itself and carries the star; position/centering is reset in
+            lib-graph.css (.gmp-changes-legend .cg-dot). */}
         <div className="gmp-changes-legend">
           <span className="gmp-legend-item">
-            <span className="cg-dot cg-dot-filled" style={{ width: 9, height: 9 }} aria-hidden="true" /> commit with a recorded session
+            <span className="cg-dot cg-dot-filled" aria-hidden="true"><Star className="cg-spark" aria-hidden="true" /></span> commit with a recorded session
           </span>
           <span className="gmp-legend-item">
             <span className="cg-dot cg-dot-hollow" style={{ width: 9, height: 9 }} aria-hidden="true" /> no session captured

@@ -327,7 +327,7 @@
 
 /* ── task: a subagent spawn, keyed in --mauve ───────────────────────────────── */
 .trx-task {
-  border-left: 3px solid var(--mauve);
+  border-left: var(--stroke-emphasis) solid var(--mauve);
   padding-left: var(--sp-3);
 }
 .trx-task-head {
@@ -418,12 +418,12 @@
 
 /* ── focus ──────────────────────────────────────────────────────────────────── */
 .trx-row:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 .trx-webfetch-url:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* ── motion: only when the user has not asked to reduce it ───────────────────── */

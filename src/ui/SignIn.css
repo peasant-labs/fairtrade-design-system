@@ -125,7 +125,7 @@
   list-style: none;
   background: var(--surface-elev);
   border: var(--bd-strong);
-  box-shadow: var(--glow), 0 16px 40px -16px rgba(0, 0, 0, 0.55);
+  box-shadow: var(--overlay-shadow);
 }
 
 .si-menu-item {
@@ -352,12 +352,7 @@
 /* the "checking…" spinner, gated behind reduced-motion. */
 @media (prefers-reduced-motion: no-preference) {
   .si-spin {
-    animation: si-spin 800ms linear infinite;
-  }
-}
-@keyframes si-spin {
-  to {
-    transform: rotate(360deg);
+    animation: busy-spin 800ms linear infinite;
   }
 }
 

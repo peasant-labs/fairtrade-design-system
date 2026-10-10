@@ -33,9 +33,8 @@
 .pub-bar-action[aria-busy="true"] { cursor: progress; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .pub-spin { animation: pub-spin 1.1s linear infinite; }
+  .pub-spin { animation: busy-spin 1.1s linear infinite; }
 }
-@keyframes pub-spin { to { transform: rotate(360deg); } }
 
 /* ── access list + picker ───────────────────────────────────────────────── */
 .pub-access,

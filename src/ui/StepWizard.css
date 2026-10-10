@@ -51,7 +51,7 @@
 }
 .swz-step:disabled,
 .swz-step[aria-disabled='true'] { cursor: not-allowed; }
-.swz-step:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.swz-step:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 
 /* the square number marker. hairline by default (future/locked). side derives from the rail's
    --swz-mark-size so the connector's vertical offset stays locked to the marker's centre. */
@@ -148,7 +148,7 @@
   font-size: var(--fs-body);
   line-height: 1.5;
 }
-.swz-body:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
+.swz-body:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
 
 /* a small mono kicker naming the active step above its body. */
 .swz-body-kicker {

@@ -1,0 +1,100 @@
+# Measurement probes for the global tokens, run on the built app in both themes by
+# scripts/journey/token-measure.journey.mjs. Required names: token-measure.manifest.yaml.
+
+# Real characters per line (spaces included) at each measure token, set in the body face at
+# the body size with the prose tracking and word spacing the base layer gives a paragraph.
+# The faces must have loaded; a fallback face would measure a different line.
+measures:
+  - name: prose measure
+    token: --measure-prose
+    maxChars: 80
+  - name: reading measure
+    token: --measure-read
+    minChars: 45
+    maxChars: 66
+sampleTexts:
+  - The agent read the configuration file, found that the retry budget was set too low for the flaky integration suite, and proposed raising it while keeping the overall timeout unchanged. It then ran the tests twice to confirm the failures were gone and summarised what it changed so the reviewer could check each step without opening the diff.
+  - I checked the logs and the failing test only fails when the cache is cold, which means the fixture loads before the server is ready. A small wait in the setup fixes it, and I added a note in the readme explaining why the wait exists and when it can go.
+  - Refactor the session list so it groups by repository, keeps the newest first, and shows how many tool calls each session made. Then make sure the empty state explains how to record a first session in plain words, with one primary action.
+
+# Token values read back as computed lengths on a probe element, in px.
+lengths:
+  - name: emphasis stroke
+    token: --stroke-emphasis
+    px: 2
+  - name: hairline stroke
+    token: --stroke-hairline
+    px: 1
+  - name: small icon
+    token: --ic-sm
+    px: 14
+  - name: medium icon
+    token: --ic-md
+    px: 16
+  - name: large icon
+    token: --ic-lg
+    px: 18
+  - name: minimum target
+    token: --target-min
+    px: 24
+  - name: control height
+    token: --control-h
+    px: 36
+  - name: comfortable target
+    token: --target-comfortable
+    px: 44
+  - name: focus ring width
+    token: --focus-ring-width
+    px: 3
+  - name: focus ring offset
+    token: --focus-ring-offset
+    px: 2
+  - name: inset focus ring offset
+    token: --focus-ring-offset-inset
+    px: -3
+
+# Every Lucide icon the app mounts renders at least this many px wide and tall (--ic-sm).
+iconFloorPx: 14
+
+# Icons drawn inside a marker: each mounted one renders at exactly px, and sits wholly inside
+# its marker, the element right before it or around it (fitted: the glyph never spills past the
+# marker, so no corner of the marker pokes out around it). query, when present, names the app
+# page the row is measured on; a row without one is measured on the docs page.
+fittedIcons:
+  - name: commit session star
+    icon: svg.cg-spark
+    marker: .cg-dot-filled
+    px: 14
+  - name: changes legend session star
+    icon: .gmp-changes-legend svg.cg-spark
+    marker: .cg-dot-filled
+    px: 14
+    query: app=graph&section=changes
+
+# The overlay shadow per theme: dark lifts overlays, light stays flat.
+overlayShadow:
+  dark: lifted
+  light: none
+
+# Named mutations: the probe re-measures with one token overridden and must report the breach.
+mutations:
+  - name: the reading measure widens past 66 characters
+    token: --measure-read
+    value: 60ch
+    expectedDiagnostic: reading measure holds
+  - name: the prose measure widens past 80 characters
+    token: --measure-prose
+    value: 66ch
+    expectedDiagnostic: prose measure holds
+
+# Named mutations for the fitted icons: the probe shrinks the marker back to the old 9px dot on
+# the page and must report the star as not fitted.
+fitMutations:
+  - name: the session marker shrinks back to the 9px dot
+    icon: commit session star
+    markerSizePx: 9
+    expectedDiagnostic: commit session star overflows its marker
+  - name: the legend session marker shrinks back to the 9px dot
+    icon: changes legend session star
+    markerSizePx: 9
+    expectedDiagnostic: changes legend session star overflows its marker

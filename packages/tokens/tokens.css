@@ -23,6 +23,8 @@
   --stroke-hairline: 1px;
   --stroke-emphasis: 2px;
   --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+  --focus-ring-offset-inset: calc(-1 * var(--focus-ring-width));
   --ghost-node-size: 9px;
   --control-h: 36px;
   --control-h-sm: 28px;
@@ -53,8 +55,8 @@
   --fs-min: 16px;
   --tracking-prose: 0.03em;
   --word-spacing-prose: 0.16em;
-  --measure-prose: 66ch;
-  --measure-read: 60ch;
+  --measure-prose: 58ch;
+  --measure-read: 48ch;
   --measure-code: 80ch;
   --target-min: 24px;
   --target-comfortable: 44px;
@@ -119,6 +121,7 @@
   --hero-tex: .16;
   --glow: 0 0 6px rgba(203,163,92,.22);
   --glow-soft: 0 0 4px rgba(203,163,92,.13);
+  --overlay-shadow: var(--glow), 0 24px 60px -20px rgba(0,0,0,.6);
   --glass-bg: rgba(245,243,235,.06);
   --glass-solid: rgba(20,20,18,.62);
   --glass-edge: rgba(245,243,235,.18);
@@ -182,6 +185,7 @@
   --hero-tex: .06;
   --glow: none;
   --glow-soft: none;
+  --overlay-shadow: none;
   --glass-bg: rgba(255,255,255,.3);
   --glass-solid: rgba(255,255,255,.74);
   --glass-edge: rgba(20,16,9,.12);

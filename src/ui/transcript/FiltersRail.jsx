@@ -118,7 +118,7 @@ export default function FiltersRail({
         <div className="txn-toolcat">
           <CheckRow checked={categories.toolcalls} indeterminate={categories.toolcalls && umbrella === 'mixed'} onChange={() => patchToolCalls(!categories.toolcalls)} count={counts.categories.toolcalls}>
             <button type="button" className="txn-toolcat-toggle" aria-expanded={toolGroupsOpen} onClick={(e) => { e.preventDefault(); setToolGroupsOpen((o) => !o) }}>
-              tool calls {toolGroupsOpen ? <ChevronDown size={12} aria-hidden="true" /> : <ChevronRight size={12} aria-hidden="true" />}
+              tool calls {toolGroupsOpen ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
             </button>
           </CheckRow>
           {toolGroupsOpen && (
@@ -130,7 +130,7 @@ export default function FiltersRail({
                 return (
                   <label key={id} className="txn-checkrow txn-subcheck">
                     <input type="checkbox" className="check-box" checked={categories.toolcalls && toolGroups[id] !== false} disabled={count === 0} onChange={() => patchToolGroup(id)} />
-                    <span className="txn-cr-label"><Icon size={13} aria-hidden="true" /> {meta.label}</span>
+                    <span className="txn-cr-label"><Icon size={14} aria-hidden="true" /> {meta.label}</span>
                     <span className="txn-cr-count tnum">{count}</span>
                   </label>
                 )
@@ -144,13 +144,13 @@ export default function FiltersRail({
       <span className="txn-filters-cap">semantic tags</span>
       <div className="txn-catlist">
         <CheckRow checked={tags.errors} onChange={() => patchTags({ errors: !tags.errors })}>
-          <AlertTriangle size={13} aria-hidden="true" className="txn-tag-err" /> errors
+          <AlertTriangle size={14} aria-hidden="true" className="txn-tag-err" /> errors
         </CheckRow>
         <CheckRow checked={tags.retries} onChange={() => patchTags({ retries: !tags.retries })}>
-          <RefreshCw size={13} aria-hidden="true" /> retries
+          <RefreshCw size={14} aria-hidden="true" /> retries
         </CheckRow>
         <CheckRow checked={tags.revert} onChange={() => patchTags({ revert: !tags.revert })}>
-          <RotateCcw size={13} aria-hidden="true" /> re-edit
+          <RotateCcw size={14} aria-hidden="true" /> re-edit
         </CheckRow>
       </div>
 
@@ -168,7 +168,7 @@ export default function FiltersRail({
                       return sel ? `${sel.shortHash} · ${sel.message}` : checkpoint
                     })()}
               </span>
-              <ChevronDown size={13} aria-hidden="true" />
+              <ChevronDown size={14} aria-hidden="true" />
             </button>
             {checkpointOpen && (
               <div className="menu-pop txn-cp-pop" role="listbox">

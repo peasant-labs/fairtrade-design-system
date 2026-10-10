@@ -56,9 +56,9 @@ export default function ToolCall({ tool, open = false, onToggle }) {
     <div className="toolcall txn-toolcall">
       <button type="button" className="tc-head txn-tc-head" aria-expanded={open} onClick={onToggle}>
         {open ? (
-          <ChevronDown size={13} aria-hidden="true" className="txn-tc-chev" />
+          <ChevronDown size={14} aria-hidden="true" className="txn-tc-chev" />
         ) : (
-          <ChevronRight size={13} aria-hidden="true" className="txn-tc-chev" />
+          <ChevronRight size={14} aria-hidden="true" className="txn-tc-chev" />
         )}
         <span className="kind">
           <Icon size={14} aria-hidden="true" />
@@ -73,7 +73,7 @@ export default function ToolCall({ tool, open = false, onToggle }) {
           {duration && <span className="tnum txn-tc-dur">{duration}</span>}
           {failed && (
             <span className="chip chip-err txn-pill">
-              <AlertTriangle size={12} aria-hidden="true" /> {tool.exitCode != null ? `exit ${tool.exitCode}` : 'error'}
+              <AlertTriangle size={14} aria-hidden="true" /> {tool.exitCode != null ? `exit ${tool.exitCode}` : 'error'}
             </span>
           )}
         </span>

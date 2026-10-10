@@ -76,8 +76,8 @@
 }
 
 .swf-toggle:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .swf-toggle-ic {
@@ -146,19 +146,19 @@
 }
 
 .swf-row:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Longest task: the scarce amber accent — a hairline left spine + slightly stronger ink. */
 .swf-row-longest {
   color: var(--ink);
-  box-shadow: inset 2px 0 0 0 var(--amber);
+  box-shadow: inset var(--stroke-emphasis) 0 0 0 var(--amber);
 }
 
 /* Error task: a clay marker rail (paired with the "error" word + icon — never colour alone). */
 .swf-row-error {
-  box-shadow: inset 2px 0 0 0 var(--clay);
+  box-shadow: inset var(--stroke-emphasis) 0 0 0 var(--clay);
 }
 
 /* Mono task index (#1). */
@@ -200,8 +200,8 @@
 }
 
 .swf-error-ic {
-  width: 12px;
-  height: 12px;
+  width: var(--ic-sm);
+  height: var(--ic-sm);
   flex: 0 0 auto;
 }
 

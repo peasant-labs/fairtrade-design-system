@@ -50,7 +50,7 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {} }) {
         {files.filter((f) => f.edited).sort((a, b) => b.adds + b.dels - (a.adds + a.dels)).map((f) => (
           <li key={f.path}>
             <button type="button" className="txn-ol-row" onClick={() => onJump(f.turn ?? 0)}>
-              <Pencil size={13} aria-hidden="true" />
+              <Pencil size={14} aria-hidden="true" />
               <span className="txn-ol-leaf mono">{f.leaf}</span>
               <span className="txn-churn tnum"><span className="txn-churn-add">+{f.adds}</span> <span className="txn-churn-del">−{f.dels}</span></span>
             </button>
@@ -66,7 +66,7 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {} }) {
         {[...files].sort((a, b) => a.leaf.localeCompare(b.leaf)).map((f) => (
           <li key={f.path}>
             <button type="button" className="txn-ol-row" onClick={() => onJump(f.turn ?? 0)}>
-              <FileText size={13} aria-hidden="true" />
+              <FileText size={14} aria-hidden="true" />
               <span className="txn-ol-leaf mono">{f.leaf}</span>
               <span className="txn-ol-meta tnum">{f.reads}r {f.edits}e {f.writes}w</span>
             </button>
@@ -85,7 +85,7 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {} }) {
           return (
             <li key={h.id}>
               <button type="button" className="txn-ol-row" disabled={isStatic} onClick={() => !isStatic && onJump(h.turn)}>
-                <Icon size={13} aria-hidden="true" className={h.err ? 'txn-ol-err' : ''} />
+                <Icon size={14} aria-hidden="true" className={h.err ? 'txn-ol-err' : ''} />
                 <span className="txn-ol-leaf">{h.title}</span>
               </button>
             </li>
@@ -105,7 +105,7 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {} }) {
           const Icon = meta.icon
           return (
             <div key={kind} className="txn-ol-group">
-              <div className="txn-ol-grouphead" title={meta.tip}><Icon size={13} aria-hidden="true" /> {meta.label} <span className="chipx-count">{items.length}</span></div>
+              <div className="txn-ol-grouphead" title={meta.tip}><Icon size={14} aria-hidden="true" /> {meta.label} <span className="chipx-count">{items.length}</span></div>
               <ul className="txn-outline">
                 {items.map((a) => (
                   <li key={a.id}>

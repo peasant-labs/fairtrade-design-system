@@ -61,8 +61,8 @@
 }
 
 .ec-frag:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
   text-decoration-color: var(--amber);
   background: var(--surface-hover);
 }
@@ -105,8 +105,8 @@
 /* a target focused programmatically after a jump (tabIndex=-1) shows the standard focus ring, so a
    keyboard reader sees exactly where they landed. */
 .ec-target:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* the anchor eyebrow — a small mono label naming the block (the "files / diff / signals" signal

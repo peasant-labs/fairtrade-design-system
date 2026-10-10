@@ -75,7 +75,7 @@
 .mc-seg-btn[data-active='true'] {
   color: var(--ink-strong);
   background: var(--surface-elev);
-  box-shadow: inset 2px 0 0 var(--amber-dim);
+  box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber-dim);
 }
 .mc-seg-btn .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--amber); }
 
@@ -139,7 +139,7 @@
 }
 .mc-result:first-child { border-top: 0; }
 .mc-result:hover { background: var(--surface-hover); color: var(--ink); }
-.mc-result[aria-selected='true'] { box-shadow: inset 2px 0 0 var(--amber); }
+.mc-result[aria-selected='true'] { box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber); }
 .mc-result .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); flex: none; }
 .mc-result-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -199,8 +199,8 @@
 .mc-viewport:active { cursor: grabbing; }
 /* the neuroinclusive focus ring on the canvas surface itself (keyboard entry point). */
 .mc-viewport:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: -3px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-inset);
 }
 
 .mc-empty {
@@ -338,9 +338,10 @@
   cursor: pointer;
 }
 .mc-node-disclosure:hover { background: var(--surface-hover); }
-.mc-node-disclosure:focus-visible { outline: var(--sp-1) solid var(--focus-ring); outline-offset: var(--sp-1); }
+.mc-node-disclosure:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 .mc-node-disclosure[aria-expanded='true'] svg { transform: rotate(90deg); }
-.mc-node-disclosure svg { width: var(--ic-sm); height: var(--ic-sm); transition: transform var(--dur-1) var(--ease-standard); }
+.mc-node-disclosure svg { width: var(--ic-sm); height: var(--ic-sm); }
+@media (prefers-reduced-motion: no-preference) { .mc-node-disclosure svg { transition: transform var(--dur-1) var(--ease-standard); } }
 @media (prefers-reduced-motion: reduce) { .mc-node-disclosure svg { transition: none; } }
 /* the discrete selection marker: a small amber square pinned to the top-left corner
    (a SHAPE that appears — the orthogonal "selected" channel). */
@@ -387,13 +388,13 @@
   align-items: center;
   gap: 2px;
   flex: none;
-  padding: 0 4px;
+  padding: 0 var(--sp-1);
   border: 1px solid var(--clay);
   color: var(--clay);
   font-size: var(--fs-micro);
   line-height: 1.4;
 }
-.mc-node-viol .lucide { width: 11px; height: 11px; color: var(--clay); }
+.mc-node-viol .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--clay); }
 /* on the darkest fills the clay still needs to read — its own border carries it, but
    keep the ink-flip from washing the badge: pin the badge ink regardless of flip. */
 .mc-node[data-ink-flip='true'] .mc-node-viol,

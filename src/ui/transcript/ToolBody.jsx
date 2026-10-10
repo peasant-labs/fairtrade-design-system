@@ -88,7 +88,7 @@ function BashBody({ tool }) {
       {description && <div className="txn-tc-desc">{description}</div>}
       <div className="txn-term">
         <span className="txn-term-prompt">
-          <Terminal size={13} aria-hidden="true" /> $
+          <Terminal size={14} aria-hidden="true" /> $
         </span>
         <span className="mono">{command}</span>
       </div>
@@ -97,7 +97,7 @@ function BashBody({ tool }) {
         <span className="txn-out-badges">
           {duration && (
             <span className="txn-durbadge tnum">
-              <Clock size={12} aria-hidden="true" /> {duration}
+              <Clock size={14} aria-hidden="true" /> {duration}
             </span>
           )}
           <span
@@ -149,7 +149,7 @@ function WebFetchBody({ tool }) {
   return (
     <div className="txn-tcbody">
       <a className="link txn-url" href={url} target="_blank" rel="noreferrer">
-        <Globe size={13} aria-hidden="true" /> {url}
+        <Globe size={14} aria-hidden="true" /> {url}
       </a>
       {prompt && <div className="txn-tc-desc">{prompt}</div>}
       <div className="txn-fetch-md">{result}</div>

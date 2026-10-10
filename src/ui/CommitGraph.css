@@ -97,6 +97,10 @@
 .cg-dot-filled {
   background: var(--ink); /* filled = a session is behind it */
   border: 1px solid var(--ink);
+  /* sized to fit the star icon: --ic-sm plus a --stroke-emphasis margin on each side
+     (SESSION_DOT in CommitGraph.jsx, 18px) */
+  width: calc(var(--ic-sm) + 2 * var(--stroke-emphasis));
+  height: calc(var(--ic-sm) + 2 * var(--stroke-emphasis));
 }
 
 /* Selected: the scarce amber accent, on the dot (filled or hollow). */
@@ -115,15 +119,15 @@
    outline star read solid; the colour INVERTS against the dot fill so it stays legible in both
    themes (a --surface star cuts out of the --ink dot — --ink is the high-contrast foreground in
    both themes, --surface the background, so it is always dark-on-light or light-on-dark).
-   Because the spark is centred on the dot (laneX, 50%) and sized to the 9px dot, it lives ENTIRELY
-   within the dot's footprint — it can never reach a lane line at ANY indent depth (the dot already
-   interrupts its own lane there, and the nearest neighbour lane is a full LANE_W away). As the
-   dot's NEXT sibling it paints on top. */
+   The spark is the --ic-sm icon size, centred on the filled marker (laneX, 50%), which is sized to
+   hold it with a 2px margin, so it lives ENTIRELY within the marker's footprint and can never
+   reach a lane line at ANY indent depth (the marker interrupts its own lane there, and the
+   nearest neighbour lane is a full LANE_W away). As the dot's NEXT sibling it paints on top. */
 .cg-spark {
   position: absolute;
   top: 50%;
-  width: 9px;
-  height: 9px;
+  width: var(--ic-sm);
+  height: var(--ic-sm);
   transform: translate(-50%, -50%);
   color: var(--surface);
   fill: currentColor;
@@ -204,14 +208,14 @@
 
 .cg-row:focus-visible,
 .cg-older:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Selected row: a hairline amber spine + slightly stronger ink. Square, no fill flood. */
 .cg-row-sel {
   color: var(--ink);
-  box-shadow: inset 2px 0 0 0 var(--amber);
+  box-shadow: inset var(--stroke-emphasis) 0 0 0 var(--amber);
 }
 
 .cg-msg {
@@ -264,8 +268,8 @@
 }
 
 .cg-merged-ic {
-  width: 12px;
-  height: 12px;
+  width: var(--ic-sm);
+  height: var(--ic-sm);
   flex: 0 0 auto;
 }
 

@@ -65,11 +65,11 @@
   max-width: calc(100vw - var(--sp-8));
   background: var(--surface-elev);
   border: var(--bd-strong);
-  box-shadow: var(--glow), 0 24px 60px -20px rgba(0, 0, 0, .6);
+  box-shadow: var(--overlay-shadow);
 }
 .tour-coach:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 @media (prefers-reduced-motion: no-preference) {
   .tour-coach { animation: tour-rise var(--dur-2) var(--ease-out) both; }
@@ -131,7 +131,7 @@
   }
 }
 .tour-close:hover { color: var(--ink); border-color: var(--amber-dim); }
-.tour-close:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.tour-close:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 .tour-close .lucide { width: var(--ic-md); height: var(--ic-md); }
 
 /* ── body: display title + reading prose ─────────────────────────────────────── */
@@ -229,7 +229,7 @@
                 border-color var(--dur-1) var(--ease-standard);
   }
 }
-.tour-btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.tour-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 .tour-btn:disabled { opacity: .5; cursor: not-allowed; }
 .tour-btn .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
 

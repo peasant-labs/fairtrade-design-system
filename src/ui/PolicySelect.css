@@ -68,8 +68,8 @@
 }
 
 .pol-row:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .pol-row[data-checked] {
@@ -190,8 +190,8 @@
 }
 
 .pol-select:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* decorative trailing chevron; clicks fall through to the native select */
