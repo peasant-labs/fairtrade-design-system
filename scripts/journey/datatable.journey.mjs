@@ -2,6 +2,47 @@ import { test, expect, storyUrl } from './lib/fixtures.mjs'
 import { loadDataTableFixtures } from '../datatable-fixtures.mjs'
 
 const spec = loadDataTableFixtures()
+const productUrl = (query, theme) => `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}/?fb=off&${query}&theme=${theme}#inuse`
+
+for (const row of spec.consumerRows) {
+  test(row.name, async ({ page, theme }) => {
+    for (const width of spec.consumerWidths) {
+      await page.setViewportSize({ width, height: 900 })
+      await page.goto(productUrl(row.query, theme), { waitUntil: 'networkidle' })
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+      const view = page.locator('.iu-app-root')
+      await expect(view.locator('.tbl-footer [role=status]')).toHaveText(row.count)
+      await expect(view.locator('.iu-page-count')).toHaveCount(0)
+      await expect(view.getByRole('button', { name: 'next page', exact: true })).toBeDisabled()
+      await expect(view.getByRole('button', { name: 'previous page', exact: true })).toBeDisabled()
+      await expect(view.locator('.tbl-footer')).toContainText('page 1 of 1')
+      await view.locator('.tbl-footer').scrollIntoViewIfNeeded()
+    }
+  })
+}
+
+for (const row of spec.analyticsRows) {
+  test(row.name, async ({ page, theme }) => {
+    await page.setViewportSize({ width: row.width, height: 900 })
+    await page.goto(productUrl('app=graph&section=analytics', theme), { waitUntil: 'networkidle' })
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+    const wrapper = page.locator('.gan-tablecard .tbl-wrap')
+    await expect(wrapper).toBeVisible()
+    await wrapper.scrollIntoViewIfNeeded()
+    expect(await wrapper.evaluate((el) => getComputedStyle(el).overflowX)).toBe('auto')
+    const position = await wrapper.evaluate((el) => {
+      el.scrollLeft = el.scrollWidth
+      const last = el.querySelector('tbody tr td:last-child').getBoundingClientRect()
+      const bounds = el.getBoundingClientRect()
+      return { reachable: last.left >= bounds.left - 1 && last.right <= bounds.right + 1,
+        moved: el.scrollLeft > 0, overflow: el.scrollWidth > el.clientWidth }
+    })
+    expect(position.reachable).toBe(true)
+    if (position.overflow) expect(position.moved).toBe(true)
+    await page.locator('.gan-tablecard .tbl-sort').first().click()
+    await expect(page.locator('.gan-tablecard th').first()).toHaveAttribute('aria-sort', 'ascending')
+  })
+}
 
 // Read the actual rendered separators and cell typography, not an alignment prop.
 const decimalProblems = () => {

@@ -28,3 +28,12 @@ requiredGuardMutationNames:
   - planted history write
   - planted storage access
   - planted internal helper access
+requiredConsumerNames:
+  - collective host total
+  - local home host total
+  - commons home host total
+requiredAnalyticsNames:
+  - contributor phone
+  - contributor large phone
+  - contributor tablet
+  - contributor desktop
