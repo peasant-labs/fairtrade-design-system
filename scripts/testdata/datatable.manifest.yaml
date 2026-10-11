@@ -2,7 +2,10 @@ requiredCaseNames:
   - uncontrolled search filters rows
   - uncontrolled column filter seeds a removable chip
   - uncontrolled pagination slices local data
-  - host sliced data keeps its filtered total
+  - host sliced window keeps the host total
+  - host sliced window is not locally paginated
+  - host sliced window filters locally against the loaded rows
+  - host sliced window filters columns against the loaded rows
   - empty data keeps a count
   - original sorting and numeric selection keys stay intact
 requiredMountedNames:

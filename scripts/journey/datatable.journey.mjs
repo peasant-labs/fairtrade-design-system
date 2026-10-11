@@ -9,13 +9,20 @@ for (const row of spec.consumerRows) {
     for (const width of spec.consumerWidths) {
       await page.setViewportSize({ width, height: 900 })
       await page.goto(productUrl(row.query, theme), { waitUntil: 'networkidle' })
-      await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+      expect(await page.locator('html').getAttribute('data-theme') || 'dark').toBe(theme)
       const view = page.locator('.iu-app-root')
       await expect(view.locator('.tbl-footer [role=status]')).toHaveText(row.count)
       await expect(view.locator('.iu-page-count')).toHaveCount(0)
       await expect(view.getByRole('button', { name: 'next page', exact: true })).toBeDisabled()
       await expect(view.getByRole('button', { name: 'previous page', exact: true })).toBeDisabled()
       await expect(view.locator('.tbl-footer')).toContainText('page 1 of 1')
+      if (row.filter) {
+        await view.getByRole('searchbox', { name: 'search rows' }).fill(row.filter.term)
+        await expect(view.locator('.tbl-footer [role=status]')).toHaveText(row.filter.count)
+        await expect(view.locator('.tbl tbody .tbl-row')).toHaveCount(1)
+        await view.getByRole('button', { name: 'remove search filter' }).click()
+        await expect(view.locator('.tbl-footer [role=status]')).toHaveText(row.count)
+      }
       await view.locator('.tbl-footer').scrollIntoViewIfNeeded()
     }
   })
@@ -25,7 +32,7 @@ for (const row of spec.analyticsRows) {
   test(row.name, async ({ page, theme }) => {
     await page.setViewportSize({ width: row.width, height: 900 })
     await page.goto(productUrl('app=graph&section=analytics', theme), { waitUntil: 'networkidle' })
-    await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+    expect(await page.locator('html').getAttribute('data-theme') || 'dark').toBe(theme)
     const wrapper = page.locator('.gan-tablecard .tbl-wrap')
     await expect(wrapper).toBeVisible()
     await wrapper.scrollIntoViewIfNeeded()

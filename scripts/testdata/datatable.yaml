@@ -20,10 +20,22 @@ cases:
     props: { defaultPagination: { pageIndex: 1, pageSize: 2 } }
     expectedTitles: [Archive C, Archive D]
     expectedCount: showing 2 of 5
-  - name: host sliced data keeps its filtered total
-    props: { rowCount: 50, search: host query, columnFilters: [{ id: title, value: host filter }], pagination: { pageIndex: 3, pageSize: 5 } }
+  - name: host sliced window keeps the host total
+    props: { rowCount: 50 }
     expectedTitles: [Ledger A, Ledger B, Archive C, Archive D, Other E]
     expectedCount: showing 5 of 50
+  - name: host sliced window is not locally paginated
+    props: { rowCount: 50, pagination: { pageIndex: 3, pageSize: 5 } }
+    expectedTitles: [Ledger A, Ledger B, Archive C, Archive D, Other E]
+    expectedCount: showing 5 of 50
+  - name: host sliced window filters locally against the loaded rows
+    props: { rowCount: 50, defaultSearch: Ledger }
+    expectedTitles: [Ledger A, Ledger B]
+    expectedCount: showing 2 of 5 loaded
+  - name: host sliced window filters columns against the loaded rows
+    props: { rowCount: 50, defaultColumnFilters: [{ id: title, value: Archive }] }
+    expectedTitles: [Archive C, Archive D]
+    expectedCount: showing 2 of 5 loaded
   - name: empty data keeps a count
     rows: []
     props: {}
@@ -102,9 +114,9 @@ guardMutations:
   - { name: planted storage access, code: 'globalThis["localStorage"].getItem("table")', diagnostic: localStorage }
   - { name: planted internal helper access, helper: true, code: 'const { history: route } = window; void route', diagnostic: history }
 consumerRows:
-  - { name: collective host total, query: 'app=commons&commons=collective-detail', count: showing 5 of 248 }
-  - { name: local home host total, query: 'app=graph', count: showing 7 of 1284 }
-  - { name: commons home host total, query: 'app=commons&commons=home', count: showing 6 of 38 }
+  - { name: collective host total, query: 'app=commons&commons=collective-detail', count: showing 5 of 248, filter: { term: flaky, count: showing 1 of 5 loaded } }
+  - { name: local home host total, query: 'app=graph', count: showing 7 of 1284, filter: { term: flaky, count: showing 1 of 7 loaded } }
+  - { name: commons home host total, query: 'app=commons&commons=home', count: showing 6 of 38, filter: { term: flaky, count: showing 1 of 6 loaded } }
 consumerWidths: [390, 1440]
 analyticsRows:
   - { name: contributor phone, width: 320 }

@@ -52,7 +52,7 @@ import { useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel,
  * @param {DataTablePagination} [props.pagination] controlled pagination (zero-based pageIndex).
  * @param {DataTablePagination} [props.defaultPagination] defaults to pageIndex 0, pageSize 10.
  * @param {(next: DataTablePagination) => void} [props.onPaginationChange] next pagination.
- * @param {number} [props.rowCount] total filtered rows for host-sliced data; disables local filtering and pagination, not existing sorting.
+ * @param {number} [props.rowCount] host total for host-sliced data: pagination stays manual (the page count comes from rowCount) and sorting stays local, while search and column filters still apply to the rows given; with a partial window and an active filter the footer reports the loaded rows, never the host total.
  */
 export default function DataTable({
   columns,
@@ -175,7 +175,6 @@ export default function DataTable({
     columns: tsColumns,
     state: { sorting, rowSelection, globalFilter: search, columnFilters, pagination },
     globalFilterFn: 'includesString',
-    manualFiltering: rowCount !== undefined,
     manualPagination: rowCount !== undefined,
     rowCount,
     autoResetPageIndex: false,
@@ -203,7 +202,13 @@ export default function DataTable({
   })
 
   const sortedRows = table.getRowModel().rows
-  const total = rowCount ?? table.getFilteredRowModel().rows.length
+  const filteredRows = table.getFilteredRowModel().rows.length
+  const filtersActive = Boolean(search) || columnFilters.length > 0
+  const partialWindow = rowCount !== undefined && rowCount > rows.length
+  const total = rowCount ?? filteredRows
+  const countLabel = partialWindow && filtersActive
+    ? `showing ${sortedRows.length} of ${rows.length} loaded`
+    : `showing ${sortedRows.length} of ${total}`
   // Reserve an equal fractional width in every plain numeric cell in a decimal column.
   // React nodes and locale/currency strings retain the right-aligned tabular fallback.
   const decimalWidths = new Map(columns.filter((c) => c.align === 'decimal' && !c.render).map((c) => [c.key,
@@ -332,7 +337,7 @@ export default function DataTable({
       </table>
       </div>
       <div className="tbl-footer">
-        <span className="tnum" role="status">showing {sortedRows.length} of {total}</span>
+        <span className="tnum" role="status">{countLabel}</span>
         <button className="btn" type="button" disabled={!table.getCanPreviousPage()} onClick={() => table.previousPage()}>previous page</button>
         <span className="tnum">page {pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}</span>
         <button className="btn" type="button" disabled={!table.getCanNextPage()} onClick={() => table.nextPage()}>next page</button>

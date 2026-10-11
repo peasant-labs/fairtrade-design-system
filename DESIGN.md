@@ -556,12 +556,18 @@ The data families are the data table, pagination, accordion, timeline, toast and
   column stays frozen on horizontal scroll (beside the selection column when present). Rows use
   `--row-h-standard` (40px), expand for wrapping content and keep readable 16px data. Search and
   column-filter controls are discoverable without props; active filters have a text indicator and
-  individually removable chips. A persistent `showing X of N` reports visible rows and the filtered
-  total, including zero results. Local pagination starts at page 0 with 10 rows per page.
+  individually removable chips. A persistent count reports visible rows and the local filtered
+  total without `rowCount`, or the host total with `rowCount` and no active filter. With an active
+  filter on a partial host window it reports `showing X of Y loaded`, including zero results,
+  never a global match total. Local pagination starts at page 0 with 10 rows per page.
 - **DataTable state:** sort and selection retain their existing controlled/uncontrolled props.
   Search, column filters and pagination each accept a controlled value, default seed and value
-  callback. User search/filter changes reset the page to zero. With `rowCount`, the host supplies
-  already-filtered, already-paginated rows and the filtered total; existing sorting stays local.
+  callback. User search/filter changes reset the page to zero. With `rowCount`, pagination stays
+  manual: the host supplies its window and total, which sets the page count. Search and column
+  filters still apply locally to the given rows, and sorting stays local. While a filter is active
+  on a partial window the count reports `showing X of Y loaded`, never the host total; clearing
+  the filter restores the host-total count. With a fully loaded window the count keeps the host
+  total in both states.
   The host alone maps state to URL parameters. DataTable never reads or writes routing or storage,
   fetches data, or requires a provider.
   Hosts remove their duplicate count when adopting `rowCount`. A cumulative load-more window
