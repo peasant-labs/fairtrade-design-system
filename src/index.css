@@ -1187,7 +1187,7 @@
 ====================================================================== */
 @layer components {
   /* horizontal scroll on narrow viewports without breaking the table grid */
-  .tbl-wrap { margin-top: var(--sp-4); min-width: 0; }
+  .tbl-wrap { overflow-x: auto; margin-top: var(--sp-4); min-width: 0; }
   .tbl-scroll { overflow: auto; isolation: isolate; max-height: calc(var(--row-h-comfortable) * 8); scroll-padding-block-start: var(--control-h); }
   .tbl-tools, .tbl-footer, .tbl-chips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); }
   .tbl-tools { margin-bottom: var(--sp-2); }
