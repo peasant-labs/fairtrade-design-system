@@ -53,9 +53,9 @@ const countOf = (count, one, many) => (typeof count === 'number' ? plural(count,
 const STATE_META = {
   'not-published': { icon: CircleDashed, text: () => 'not published', action: 'publish' },
   publishing: { icon: Loader, text: ({ collectives }) => (collectives ? `publishing to ${plural(collectives, 'collective', 'collectives')}` : 'publishing'), action: 'publish' },
-   published: { icon: CircleCheck, text: ({ collectives }) => ['published', countOf(collectives, 'collective', 'collectives'), 'up to date'].filter(Boolean).join(' · '), action: 'update' },
+  published: { icon: CircleCheck, text: ({ collectives }) => ['published', countOf(collectives, 'collective', 'collectives'), 'up to date'].filter(Boolean).join(' · '), action: 'update' },
   'new-turns': { icon: CircleFadingArrowUp, text: ({ collectives, newTurns }) => ['published', countOf(collectives, 'collective', 'collectives'), countOf(newTurns, 'new turn', 'new turns') ?? 'new turns'].filter(Boolean).join(' · '), action: 'update' },
-   'auto-publish': { icon: Repeat, text: ({ collective }) => (collective ? `auto-publish on · ${collective}` : 'auto-publish on'), action: 'update' },
+  'auto-publish': { icon: Repeat, text: ({ collective }) => (collective ? `auto-publish on · ${collective}` : 'auto-publish on'), action: 'update' },
   'outside-lists': { icon: ListX, text: () => 'not published · outside your saved lists', action: 'publish' },
 }
 
@@ -116,7 +116,7 @@ export function PublishBar({ state, collectives, newTurns, collective, onAction,
       {onAction && (
         <button
           type="button"
-           className={'btn btn-sm ' + (state === 'published' || state === 'auto-publish' ? 'btn-secondary' : 'btn-primary') + ' pub-bar-action'}
+          className={'btn btn-sm ' + (state === 'published' || state === 'auto-publish' ? 'btn-secondary' : 'btn-primary') + ' pub-bar-action'}
           aria-haspopup="dialog"
           aria-busy={busy ? 'true' : undefined}
           aria-disabled={busy ? 'true' : undefined}
@@ -282,7 +282,7 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
   const matches = scan?.matches ?? []
   const matchCount = scan?.matchCount ?? matches.length
   const sampled = matchCount > matches.length
-   const kept = matches.filter((match) => match?.kept).length
+  const kept = matches.filter((match) => match?.kept).length
   // the matches open by themselves when one will leave un-redacted; the toggle overrides that
   const [openChoice, setOpen] = useState(null)
   const open = openChoice ?? kept > 0
@@ -306,9 +306,9 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
         <p className="pub-line pub-line-alert" role="alert">
           <AlertTriangle aria-hidden="true" /> {scan?.failure ?? 'the scan failed, so publish is off. re-scan to try again.'}
         </p>
-       ) : unsupported ? (
-         <p className="pub-line pub-line-alert" role="alert"><AlertTriangle aria-hidden="true" />the scan contains an unsupported redaction category, so publish is off. update the scanner and re-scan.</p>
-       ) : unscanned ? (
+      ) : unsupported ? (
+        <p className="pub-line pub-line-alert" role="alert"><AlertTriangle aria-hidden="true" />the scan contains an unsupported redaction category, so publish is off. update the scanner and re-scan.</p>
+      ) : unscanned ? (
         <p className="pub-line pub-line-alert">
           <AlertTriangle aria-hidden="true" /> not scanned yet, so publish is off.{onRescan ? ' re-scan to check it.' : ''}
         </p>
@@ -410,7 +410,7 @@ export function PublishDialog({
   const derived = mode === 'update'
     ? ['update', adds ? `add ${plural(adds, 'collective', 'collectives')}` : null, removes ? `remove ${plural(removes, 'collective', 'collectives')}` : null].filter(Boolean).join(' and ')
     : readers.length ? `publish to ${plural(readers.length, 'collective', 'collectives')}` : 'publish'
-   const blocked = state === 'checking' || state === 'scan-failed' || state === 'no-collective' || state === 'publishing' || (readers.length === 0 && !(mode === 'update' && removes > 0)) || !hasKnownRedactionCategories(scan?.matches)
+  const blocked = state === 'checking' || state === 'scan-failed' || state === 'no-collective' || state === 'publishing' || (readers.length === 0 && !(mode === 'update' && removes > 0)) || !hasKnownRedactionCategories(scan?.matches)
   // while publishing, cancel, the close button, Escape and the scrim all wait for the result
   const dismissible = state !== 'publishing'
 
@@ -424,23 +424,23 @@ export function PublishDialog({
         : mode === 'update' ? 'updated · no collective can read it' : 'published privately'
     : <>{verb} <span className="pub-title-content">“{title}”</span></>
 
-   // A state change may disable or remove the focused close, checkbox or audience control.
-   // Repair that handoff before paint; an enabled primary survives the busy state.
-   useLayoutEffect(() => {
-     const wasOpen = previousOpen.current
-     previousOpen.current = open
-     if (!open) return
-     // Dialog owns first-open focus and must capture the opener before we repair later states.
-     if (!wasOpen) return
-     const dialog = document.getElementById(labelId)?.closest('[role="dialog"]')
-     const active = document.activeElement
-     if (dialog && (!dialog.contains(active) || active === dialog || active?.matches(':disabled'))) {
-       const target = dialog.querySelector('.dlg-foot .btn-primary:not(:disabled)')
-         ?? dialog.querySelector('button:not(:disabled)')
-         ?? dialog
-       target.focus()
-     }
-   }, [open, state, labelId])
+  // A state change may disable or remove the focused close, checkbox or audience control.
+  // Repair that handoff before paint; an enabled primary survives the busy state.
+  useLayoutEffect(() => {
+    const wasOpen = previousOpen.current
+    previousOpen.current = open
+    if (!open) return
+    // Dialog owns first-open focus and must capture the opener before we repair later states.
+    if (!wasOpen) return
+    const dialog = document.getElementById(labelId)?.closest('[role="dialog"]')
+    const active = document.activeElement
+    if (dialog && (!dialog.contains(active) || active === dialog || active?.matches(':disabled'))) {
+      const target = dialog.querySelector('.dlg-foot .btn-primary:not(:disabled)')
+        ?? dialog.querySelector('button:not(:disabled)')
+        ?? dialog
+      target.focus()
+    }
+  }, [open, state, labelId])
 
   let footer
   if (finished) {
@@ -458,7 +458,7 @@ export function PublishDialog({
         <span className="pub-foot-note">{state === 'publishing' ? 'sending your redacted transcript to village.' : state === 'stopped' ? 'review who can read it.' : `nothing leaves your machine until you ${verb}.`}</span>
         <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={state === 'publishing'}>cancel</button>
         {state === 'stopped' ? onRetry && (
-           <button type="button" className="btn btn-primary btn-sm" disabled={blocked} onClick={() => { if (!blocked) onRetry() }}><RotateCw aria-hidden="true" /> retry</button>
+          <button type="button" className="btn btn-primary btn-sm" disabled={blocked} onClick={() => { if (!blocked) onRetry() }}><RotateCw aria-hidden="true" /> retry</button>
         ) : (
           <button
             type="button"
@@ -517,7 +517,7 @@ export function PublishDialog({
                 <Checkbox checked={autoPublish.checked} onChange={(checked) => autoPublish.onChange(checked)} disabled={state === 'publishing'}>
                   publish this repo automatically on git push
                 </Checkbox>
-                 <span className="pub-hint">{autoPublish.checked ? "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives." : autoPublish.hint ?? 'off, change it in settings'}</span>
+                <span className="pub-hint">{autoPublish.checked ? "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives." : autoPublish.hint ?? 'off, change it in settings'}</span>
               </div>
             )}
             {mode === 'update' && accessSummary && <p className="pub-line pub-delta">{accessSummary}</p>}

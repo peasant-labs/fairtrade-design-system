@@ -182,9 +182,9 @@ function MatchCard({ match, onToggle, readOnly = false }) {
       <div className="rdx-card-head">
         <span className={`rdx-badge${low ? ' rdx-badge-low' : ''}`}>
           {low && <AlertTriangle className="rdx-badge-warn" aria-hidden="true" />}
-           <span className="rdx-badge-cat">{redactionCategoryLabel(category)}</span>
+          <span className="rdx-badge-cat">{redactionCategoryLabel(category)}</span>
           <span className="rdx-badge-dot" aria-hidden="true">·</span>
-           <span className="rdx-badge-conf tnum"><Term def="how sure the scanner is that this is a real match">confidence</Term> <span className="rdx-confidence-value">{conf}</span></span>
+          <span className="rdx-badge-conf tnum"><Term def="how sure the scanner is that this is a real match">confidence</Term> <span className="rdx-confidence-value">{conf}</span></span>
           {low && <span className="rdx-sr"> (low confidence)</span>}
         </span>
 
@@ -290,7 +290,7 @@ export function RedactionReview({
     )
   }
   const scannedN = scanned ?? total
-   const cls = ['rdx', 'rdx-review', className].filter(Boolean).join(' ')
+  const cls = ['rdx', 'rdx-review', className].filter(Boolean).join(' ')
 
   if (!hasKnownRedactionCategories(matches)) {
     return (
@@ -304,7 +304,7 @@ export function RedactionReview({
   }
   const keptCount = matches.filter((m) => m.kept).length
 
-   return (
+  return (
     <section className={cls} aria-label="redaction review" {...rest}>
       {/* control bar — the constrained selector appears only when multiple levels are available;
           scan progress stays visible. safe-by-default opt-out controls never hide behind a click. */}
