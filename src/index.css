@@ -1187,7 +1187,7 @@
 ====================================================================== */
 @layer components {
   /* horizontal scroll on narrow viewports without breaking the table grid */
-  .tbl-wrap { overflow-x: auto; margin-top: var(--sp-4); min-width: 0; }
+  .tbl-wrap { --tbl-sel-w: calc(var(--control-h-sm) + 2 * var(--sp-3)); overflow-x: auto; margin-top: var(--sp-4); min-width: 0; }
   .tbl-scroll { overflow: auto; isolation: isolate; max-height: calc(var(--row-h-comfortable) * 8); scroll-padding-block-start: var(--control-h); }
   .tbl-tools, .tbl-footer, .tbl-chips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); }
   .tbl-tools { margin-bottom: var(--sp-2); }
@@ -1214,7 +1214,7 @@
   .tbl tbody td { background: var(--surface); }
   .tbl tr > :first-child { position: sticky; left: 0; z-index: var(--z-sticky); }
   .tbl thead tr > :first-child { z-index: calc(var(--z-sticky) + 2); }
-  .tbl-has-selection .tbl tr > :nth-child(2) { position: sticky; left: calc(var(--control-h-sm) + 2 * var(--sp-3)); z-index: var(--z-sticky); }
+  .tbl-has-selection .tbl tr > :nth-child(2) { position: sticky; left: var(--tbl-sel-w); z-index: var(--z-sticky); }
   .tbl-has-selection .tbl thead tr > :nth-child(2) { z-index: calc(var(--z-sticky) + 2); }
   .tbl-th-label { display: inline-block; }
 
@@ -1260,7 +1260,7 @@
   .tbl-row.is-selected:hover > .tbl-sel { background: color-mix(in srgb, var(--amber) 14%, var(--surface)); }
 
   /* selection column: narrow, centred; reuses the existing .check-box control verbatim */
-  .tbl-sel { width: calc(var(--control-h-sm) + 2 * var(--sp-3)); min-width: calc(var(--control-h-sm) + 2 * var(--sp-3)); box-sizing: border-box; white-space: nowrap; padding: var(--sp-1) var(--sp-3); text-align: center; vertical-align: middle; }
+  .tbl-sel { width: var(--tbl-sel-w); min-width: var(--tbl-sel-w); box-sizing: border-box; white-space: nowrap; padding: var(--sp-1) var(--sp-3); text-align: center; vertical-align: middle; }
   thead .tbl-sel { border-bottom: var(--bd-strong); }
   tbody .tbl-sel { border-bottom: var(--bd); }
 

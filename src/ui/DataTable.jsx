@@ -241,7 +241,7 @@ export default function DataTable({
         {caption && <caption className="tbl-caption">{caption}</caption>}
         {(selectable || columns.some((c) => c.width)) && (
           <colgroup>
-            {selectable && <col style={{ width: 'calc(var(--control-h-sm) + 2 * var(--sp-3))' }} />}
+        {selectable && <col style={{ width: 'var(--tbl-sel-w)' }} />}
             {columns.map((col) => (
               <col key={col.key} style={col.width ? { width: col.width } : undefined} />
             ))}
