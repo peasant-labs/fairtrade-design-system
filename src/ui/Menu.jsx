@@ -61,7 +61,7 @@ export default function Menu({ label, items = [], align = 'start', caption, defa
     openRef.current = true
     setOpen(true)
     // wait for the popout to render, then place focus on the first / last enabled item
-    cancelAnimationFrame(focusFrame.current)
+    if (focusFrame.current != null) cancelAnimationFrame(focusFrame.current)
     focusFrame.current = requestAnimationFrame(() => {
       focusFrame.current = null
       if (openRef.current) focusItem(which === 'last' ? lastEnabled() : firstEnabled())
@@ -69,13 +69,15 @@ export default function Menu({ label, items = [], align = 'start', caption, defa
   }
   const close = (returnFocus) => {
     openRef.current = false
-    cancelAnimationFrame(focusFrame.current)
+    if (focusFrame.current != null) cancelAnimationFrame(focusFrame.current)
     focusFrame.current = null
     setOpen(false)
     if (returnFocus) triggerRef.current?.focus()
   }
 
-  useEffect(() => () => cancelAnimationFrame(focusFrame.current), [])
+  useEffect(() => () => {
+    if (focusFrame.current != null) cancelAnimationFrame(focusFrame.current)
+  }, [])
 
   // outside-click + Tab-out dismissal (Esc is handled on the menu so it can return focus)
   useEffect(() => {
