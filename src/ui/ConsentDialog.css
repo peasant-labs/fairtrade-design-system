@@ -163,7 +163,7 @@
   padding: var(--sp-2) var(--sp-3);
   border-bottom: var(--bd);
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   letter-spacing: 0.04em;
   text-transform: lowercase;
   color: var(--ink-3);
@@ -251,7 +251,7 @@
 .cns-axis-value .cns-mono { color: var(--ink-strong); }
 .cns-axis-scope {
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   line-height: 1.4;
   text-transform: lowercase;
   color: var(--ink-4);
@@ -269,7 +269,7 @@
   padding: var(--sp-2) var(--sp-3);
   border-bottom: var(--bd);
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   letter-spacing: 0.04em;
   text-transform: lowercase;
   color: var(--ink-3);
@@ -291,14 +291,14 @@
 .cns-list-meta {
   flex: none;
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   font-variant-numeric: tabular-nums;
   color: var(--ink-3);
 }
 .cns-list-more {
   color: var(--ink-3);
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
 }
 
 /* ── the consent gate ────────────────────────────────────────────────────────

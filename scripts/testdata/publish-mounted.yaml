@@ -1,3 +1,11 @@
+mobile:
+  longRepositoryLabel: 'suggested repo Acme/PlatformInfrastructureAndTranscriptPublicationWithLongRepositoryNames is linked'
+  labelSelector: .pub-access-note
+  splitSelector: '#ds-governance .rdx-where-split'
+  columnSelector: '#ds-governance .rdx-where-col + .rdx-where-col'
+  splitBoundary: 480
+  chromeSelector: .rdx-state
+  chromeSize: 14
 cases:
   - {name: desktop dark, theme: dark, width: 1440}
   - {name: desktop light, theme: light, width: 1440}

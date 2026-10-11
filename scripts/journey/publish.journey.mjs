@@ -21,6 +21,11 @@ for (const row of spec.cases) {
     await page.goto(`${appURL}/?fb=off&theme=${row.theme}#inuse`)
     // The app's dark theme is the root default; light is an explicit override.
     await expect.poll(() => page.locator('html').evaluate((el) => el.dataset.theme || 'dark')).toBe(row.theme)
+    const split = page.locator(spec.mobile.splitSelector)
+    await expect(split).toBeVisible()
+    const columns = await split.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length)
+    expect(columns).toBe(row.width < spec.mobile.splitBoundary ? 1 : 2)
+    await expect(page.locator(spec.mobile.columnSelector)).toHaveCSS('border-left-width', row.width < spec.mobile.splitBoundary ? '0px' : '1px')
     const opener = page.locator('#inuse .pub-bar-action').first()
     await opener.press('Enter')
     const dialog = page.locator('.pub-dialog[role="dialog"]')
@@ -29,6 +34,9 @@ for (const row of spec.cases) {
     await expect(dialog.locator('.dlg-head button')).toBeFocused()
     const primary = dialog.locator('.pub-primary')
     await expect(primary).toBeEnabled()
+    // Stress the real mounted layout with a fixture repository label. The host
+    // note is text, so no alternate component or rendering implementation is used.
+    await dialog.locator(spec.mobile.labelSelector).first().evaluate((el, text) => { el.textContent = text }, spec.mobile.longRepositoryLabel)
     const target = await opener.evaluate((el) => ({ height: el.getBoundingClientRect().height, token: parseFloat(getComputedStyle(el).getPropertyValue('--control-h')) }))
     expect(target.height).toBeGreaterThanOrEqual(target.token)
     await dialog.locator('.pub-auto input').check()
@@ -38,8 +46,29 @@ for (const row of spec.cases) {
     await dialog.locator('.pub-toggle').click()
     await expect(dialog.locator('.rdx-badge-cat').first()).toHaveText('CREDENTIAL')
     await expect(dialog.getByText('confidence', { exact: true }).first()).toBeVisible()
+    await expect(dialog.locator(spec.mobile.chromeSelector).first()).toHaveCSS('font-size', `${spec.mobile.chromeSize}px`)
     await dialog.getByText('confidence', { exact: true }).first().focus()
     await expect(dialog.getByText('how sure the scanner is that this is a real match', { exact: true }).first()).toBeVisible()
+    const layout = await dialog.evaluate((el) => {
+      const label = el.querySelector('.pub-access-note')
+      const style = getComputedStyle(label)
+      const bounds = el.getBoundingClientRect()
+      return {
+        overflow: el.scrollWidth - el.clientWidth,
+        labelOverflow: label.scrollWidth - label.clientWidth,
+        nowrap: style.whiteSpace === 'nowrap',
+        clamp: style.webkitLineClamp,
+        controlsContained: [...el.querySelectorAll('button, input')].every((control) => {
+          const rect = control.getBoundingClientRect()
+          return rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1
+        }),
+      }
+    })
+    expect(layout.overflow).toBeLessThanOrEqual(1)
+    expect(layout.labelOverflow).toBeLessThanOrEqual(1)
+    expect(layout.nowrap).toBe(false)
+    expect(layout.clamp).toBe('none')
+    expect(layout.controlsContained).toBe(true)
     await primary.focus()
     await primary.press('Shift+Tab')
     await page.keyboard.press('Tab')

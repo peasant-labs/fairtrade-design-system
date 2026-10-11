@@ -22,7 +22,7 @@
 /* shared eyebrow — a small lowercased section label. */
 .rdx-eyebrow {
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   text-transform: lowercase;
   letter-spacing: 0.04em;
   color: var(--ink-3);
@@ -118,12 +118,12 @@
   gap: var(--sp-3);
 }
 .rdx-scan-label {
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   text-transform: lowercase;
   letter-spacing: 0.04em;
   color: var(--ink-3);
 }
-.rdx-scan-count { color: var(--ink-2); font-size: var(--fs-micro); }
+.rdx-scan-count { color: var(--ink-2); font-size: var(--fs-label); }
 
 /* neutral track — work completing, not a danger signal. */
 .rdx-scan-track {
@@ -278,7 +278,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   text-transform: lowercase;
 }
 .rdx-state svg { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
@@ -299,7 +299,7 @@
   background: var(--surface);
   color: var(--ink-2);
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   text-transform: lowercase;
   cursor: pointer;
 }
@@ -459,11 +459,11 @@
    (the divider flips from a left border to a top border). */
 .rdx-where-split {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   background: var(--surface);
 }
-@media (min-width: 480px) {
-  .rdx-where-split { grid-template-columns: 1fr 1fr; }
+@media (max-width: 479px) {
+  .rdx-where-split { grid-template-columns: 1fr; }
 }
 
 .rdx-where-col {
@@ -471,9 +471,9 @@
   padding: var(--sp-3) var(--sp-4);
 }
 /* the divider — top border when stacked, left border when side-by-side. */
-.rdx-where-col + .rdx-where-col { border-top: var(--bd); }
-@media (min-width: 480px) {
-  .rdx-where-col + .rdx-where-col { border-top: 0; border-left: var(--bd); }
+.rdx-where-col + .rdx-where-col { border-top: 0; border-left: var(--bd); }
+@media (max-width: 479px) {
+  .rdx-where-col + .rdx-where-col { border-top: var(--bd); border-left: 0; }
 }
 .rdx-where-col-head {
   display: flex;

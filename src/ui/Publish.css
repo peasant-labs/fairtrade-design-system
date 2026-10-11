@@ -92,6 +92,7 @@
   color: var(--ink-3);
 }
 .pub-access-members { flex: none; white-space: nowrap; }
+.pub-access-note { overflow-wrap: anywhere; }
 .pub-access-removal .pub-access-name { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--ink-4); }
 .pub-access-removal .pub-access-note { color: var(--ink-2); }
 .pub-access-remove .lucide { width: var(--ic-sm); height: var(--ic-sm); }
