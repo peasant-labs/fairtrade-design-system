@@ -64,7 +64,6 @@
   --bp-sm: 480px; --bp-md: 768px; --bp-lg: 1024px; --bp-xl: 1440px;
   --dialog-w: 420px; --dialog-w-wide: 720px;
   --fs-label: 14px; --fs-sm: 14px; --fs-body: 16px; --fs-md: 18px; --fs-lg: 22px; --fs-xl: 28px; --fs-hero: 40px; --fs-display: 52px;
-  --fs-micro: 11px;
   --menu-min-w: 256px;
   /* locked heading ladder (3 tiers): group opener > section title > subhead/deck. these do NOT
      drift down the page - every section title is one identical size, every subhead one shared size. */
