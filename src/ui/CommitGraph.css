@@ -192,7 +192,7 @@
 .cg-session:hover { background: var(--surface-hover); }
 .cg-session .pv-name { flex: 0 0 auto; white-space: nowrap; }
 .cg-session .pv-name-label { white-space: nowrap; }
-.cg-session-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cg-session-title { flex: 1 1 auto; min-width: 0; white-space: normal; overflow-wrap: anywhere; font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); }
 .cg-session-time { color: var(--ink-4); white-space: nowrap; }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -221,10 +221,10 @@
 .cg-msg {
   flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--fs-sm);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: var(--lh-body);
+  font-size: var(--fs-body);
   color: inherit;
   /* USER CONTENT — never lowercase the commit message. */
 }
@@ -236,6 +236,13 @@
   display: flex;
   align-items: center;
   gap: var(--sp-2);
+}
+@media (max-width: 560px) {
+  .cg-row { flex-wrap: wrap; gap: var(--sp-2); }
+  .cg-msg { flex-basis: 100%; }
+  .cg-meta { flex-wrap: wrap; min-width: 0; max-width: 100%; }
+  .cg-session { flex-wrap: wrap; }
+  .cg-session-title { flex-basis: 100%; white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 }
 
 /* inline-BLOCK, not inline-flex: text-overflow:ellipsis is ignored on a flex container, so the
@@ -249,7 +256,7 @@
   white-space: nowrap;
   padding: 1px var(--sp-2);
   border: var(--bd);
-  font-size: 12px;
+  font-size: var(--fs-label);
   line-height: 1.4;
   color: var(--ink-3);
   /* USER CONTENT — branch name keeps its case. */
@@ -261,7 +268,7 @@
   gap: var(--sp-1);
   padding: 1px var(--sp-2);
   border: var(--bd);
-  font-size: 11px;
+  font-size: var(--fs-label);
   line-height: 1.4;
   letter-spacing: 0.04em;
   color: var(--ink-3); /* dimmed — folded into the main line */
@@ -277,14 +284,14 @@
 .cg-tip {
   padding: 1px var(--sp-2);
   border: var(--bd-strong);
-  font-size: 10px;
+  font-size: var(--fs-label);
   letter-spacing: 0.06em;
-  text-transform: uppercase;
+  text-transform: lowercase;
   color: var(--ink-2);
 }
 
 .cg-time {
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--ink-3);
   white-space: nowrap;
 }
@@ -384,7 +391,7 @@
   text-align: left;
   color: var(--ink-3);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--fs-label);
   cursor: pointer;
 }
 

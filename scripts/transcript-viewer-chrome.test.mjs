@@ -7,6 +7,7 @@
    Cases: scripts/testdata/transcript-viewer-chrome.yaml (+ .manifest.yaml).
    Run: pnpm test:transcript-viewer-chrome; mutations: pnpm test:transcript-viewer-chrome:mutations. */
 import { loadFixturePair, assertExactNames, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
+import { loadDenseTypeFixtures } from './dense-type-fixtures.mjs'
 
 const FIXTURE = 'scripts/testdata/transcript-viewer-chrome.yaml'
 const MANIFEST = 'scripts/testdata/transcript-viewer-chrome.manifest.yaml'
@@ -61,11 +62,23 @@ const report = createReport('transcript viewer chrome')
 await withMountedSource(async ({ load, mount, window, React }) => {
   const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
+  const { CheckpointMarker } = await load('/src/ui/TranscriptMarkers.jsx')
   const hostAction = React.createElement('button', { type: 'button', 'data-host-action': '' }, 'publish')
   const hostPrs = React.createElement('ul', { 'data-host-prs': '' }, React.createElement('li', null, 'acme/ingest-api #42'))
   const viewer = (props, extra) => React.createElement(TranscriptViewer, {
     viewModel: adaptTranscript(payload(extra)), capabilities: CAPABILITIES, headerActions: hostAction, ...props,
   })
+
+  {
+    const row = loadDenseTypeFixtures().case
+    const commit = { hash: 'a1b2c3d4', message: row.text }
+    const composite = await mount(viewer({}, { gitContext: { commits: [commit] } }))
+    report.check(composite.container.querySelector(row.selector)?.textContent === row.text, `${row.name}: the composite renders the supplied message verbatim`)
+    await composite.unmount()
+    const standalone = await mount(React.createElement(CheckpointMarker, commit))
+    report.check(standalone.container.querySelector('.tm2-marker-message')?.textContent === row.text, `${row.name}: the standalone marker renders the supplied message verbatim`)
+    await standalone.unmount()
+  }
 
   const expectControls = (row, container) => {
     for (const name of row.present) report.check(!!CONTROLS[name](container), `${row.name}: ${name} must be present`)

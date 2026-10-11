@@ -148,7 +148,7 @@ function CheckpointMarker({ commit }) {
       <span className="mkc">
         <GitCommitHorizontal size={14} aria-hidden="true" />
         <span className="hash mono">{commit.shortHash ?? commit.hash}</span>
-        <span className="txn-cp-msg">{commit.message}</span>
+        <span className="txn-cp-msg mkc-msg">{commit.message}</span>
         {stat && <span className="txn-cp-stat tnum">{stat}</span>}
       </span>
       <span className="r" />
@@ -1172,18 +1172,19 @@ export default function TranscriptViewer({
         </div>
       )}
 
-      {tab === 'trace' && viewMode === 'list' && visibleTurns.length > 0 && (
-        <div className="txn-progress tnum" aria-hidden="true">{progress.cur} of {progress.total}</div>
-      )}
-
       {/* per-turn label popover — rendered ONLY when canLabel (capability-gated). */}
       {canLabel && labelFor != null && (
         <LabelPopover turnId={labelFor} current={savedLabels[labelFor]} onSave={saveLabel} onClose={() => setLabelFor(null)} />
       )}
 
-      <div className="txn-hint">
-        <kbd className="kbd-key">⌘</kbd><kbd className="kbd-key">f</kbd> search · <kbd className="kbd-key">j</kbd>/<kbd className="kbd-key">k</kbd> step turns
-      </div>
+      <footer className="txn-footer">
+        <div className="txn-hint">
+          <kbd className="kbd-key">⌘</kbd><kbd className="kbd-key">f</kbd> search · <kbd className="kbd-key">j</kbd>/<kbd className="kbd-key">k</kbd> step turns
+        </div>
+        {tab === 'trace' && viewMode === 'list' && visibleTurns.length > 0 && (
+          <div className="txn-progress tnum" aria-hidden="true">{progress.cur} of {progress.total}</div>
+        )}
+      </footer>
     </div>
   )
 }

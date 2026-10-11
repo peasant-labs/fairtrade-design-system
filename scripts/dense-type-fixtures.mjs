@@ -1,8 +1,8 @@
 import { loadStrictYaml, assertExactNames } from './css-source.mjs'
 
-/** @typedef {{name:string, query:string, selector:string, minimumPx:number, mutation:string, wrap?:boolean, reflow?:boolean, desktopOnly?:boolean}} Measurement */
+/** @typedef {{name:string, query:string, selector:string, minimumPx:number, mutation:string, wrap?:boolean, reflow?:boolean, reflowMutation?:'zero-width'|'overlay', desktopOnly?:boolean, familyToken?:string, paragraphGap?:boolean, headingGap?:boolean}} Measurement */
 /** @typedef {{name:string, file:string, selector:string, desktop:string, query:string, narrow:string}} Responsive */
-/** @typedef {{register:Record<string,{fontToken:string,familyToken:string,minimumPx:number}>, source:Array<{name:string,kind:string,mutation:string}>, deferredConsumers:string[], responsive:Responsive[], measurements:Measurement[], widths:number[], case:{name:string,query:string,selector:string,text:string,mutation:string}, publishContract:object}} DenseTypeFixture */
+/** @typedef {{register:Record<string,{fontToken:string,familyToken:string,minimumPx:number}>, source:Array<{name:string,kind:string,mutation:string}>, deferredConsumers:string[], responsive:Responsive[], measurements:Measurement[], widths:number[], themes:string[], case:{name:string,query:string,selector:string,text:string,mutation:string}, publishContract:object}} DenseTypeFixture */
 export function loadDenseTypeFixtures() {
   const path = 'scripts/testdata/dense-type.yaml'
   const spec = /** @type {DenseTypeFixture} */ (loadStrictYaml(path))

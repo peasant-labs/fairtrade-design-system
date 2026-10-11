@@ -69,7 +69,16 @@ export default function FiltersRail({
   onJumpStart = () => {},
   onJumpLatest = () => {},
 }) {
-  const [toolGroupsOpen, setToolGroupsOpen] = useState(true)
+  const [toolGroupsOpen, setToolGroupsOpen] = useState(() => {
+    try { return globalThis.localStorage?.getItem('fairtrade.transcript.tool-groups-open') === 'true' }
+    catch { return false }
+  })
+  const toggleToolGroups = () => {
+    const next = !toolGroupsOpen
+    setToolGroupsOpen(next)
+    try { globalThis.localStorage?.setItem('fairtrade.transcript.tool-groups-open', String(next)) }
+    catch { /* Storage may be denied; disclosure remains usable in memory. */ }
+  }
   const [checkpointOpen, setCheckpointOpen] = useState(false)
 
   const { categories, toolGroups, tags, views, checkpoint } = filters
@@ -117,7 +126,7 @@ export default function FiltersRail({
         <CheckRow checked={categories.thinking} onChange={() => patchCategories({ thinking: !categories.thinking })} count={counts.categories.thinking}>thinking</CheckRow>
         <div className="txn-toolcat">
           <CheckRow checked={categories.toolcalls} indeterminate={categories.toolcalls && umbrella === 'mixed'} onChange={() => patchToolCalls(!categories.toolcalls)} count={counts.categories.toolcalls}>
-            <button type="button" className="txn-toolcat-toggle" aria-expanded={toolGroupsOpen} onClick={(e) => { e.preventDefault(); setToolGroupsOpen((o) => !o) }}>
+            <button type="button" className="txn-toolcat-toggle" aria-expanded={toolGroupsOpen} onClick={(e) => { e.preventDefault(); toggleToolGroups() }}>
               tool calls {toolGroupsOpen ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
             </button>
           </CheckRow>

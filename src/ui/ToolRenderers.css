@@ -78,7 +78,7 @@
 
 .trx-tool-dur {
   color: var(--ink-4);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   flex: none;
   margin-left: auto;
 }
@@ -95,7 +95,7 @@
   height: var(--ic-lg);
   border: var(--bd);
   background: var(--surface-2);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   text-transform: lowercase;
 }
 .trx-status svg { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
@@ -117,13 +117,13 @@
 .trx-empty {
   margin: 0;
   color: var(--ink-3);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   text-transform: lowercase;
 }
 
 /* the eyebrow label that captions a sub-block (stdout / arguments / exit). */
 .trx-eyebrow {
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   text-transform: lowercase;
   letter-spacing: 0.04em;
   color: var(--ink-4);
@@ -134,6 +134,7 @@
    lowercased chrome around it. */
 .trx-code {
   font-family: var(--font-mono);
+  font-size: var(--fs-body);
   text-transform: none;
 }
 
@@ -150,7 +151,7 @@
   border: var(--bd);
   background: var(--surface-2);
   color: var(--ink);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-body);
   line-height: 1.55;
   white-space: pre;
   overflow-x: auto;
@@ -170,7 +171,7 @@
 }
 .trx-fileline-meta {
   color: var(--ink-4);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   flex: none;
   margin-left: auto;
   white-space: nowrap;
@@ -277,7 +278,7 @@
   border: var(--bd);
   background: var(--surface-2);
   color: var(--ink-3);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
 }
 .trx-exit-icon { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
 .trx-exit-num { color: var(--ink-2); }
@@ -296,7 +297,7 @@
   flex-wrap: wrap;
   gap: var(--sp-2);
 }
-.trx-grep-label { color: var(--ink-4); font-size: var(--fs-micro); text-transform: lowercase; }
+.trx-grep-label { color: var(--ink-4); font-size: var(--fs-label); text-transform: lowercase; }
 .trx-grep-pattern {
   color: var(--amber);
   background: var(--surface-2);
@@ -306,7 +307,7 @@
 .trx-grep-scope { color: var(--ink-3); }
 .trx-grep-count {
   color: var(--ink-4);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   text-transform: lowercase;
   margin-left: auto;
   flex: none;
@@ -352,7 +353,7 @@
   border: var(--bd);
   background: var(--surface-2);
   color: var(--mauve);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   text-transform: lowercase;
 }
 
@@ -367,7 +368,8 @@
   margin: 0;
   padding-left: calc(var(--ic-sm) + var(--sp-2));
   color: var(--ink-3);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-body);
+  font-family: var(--font-body);
   line-height: 1.5;
 }
 
@@ -385,18 +387,20 @@
   word-break: break-all;
   min-width: 0;
 }
-.trx-webfetch-empty { color: var(--ink-4); font-size: var(--fs-micro); text-transform: lowercase; }
+.trx-webfetch-empty { color: var(--ink-4); font-size: var(--fs-body); text-transform: none; }
 .trx-webfetch-title {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-body);
   color: var(--ink-strong);
 }
 .trx-webfetch-snippet {
   margin: 0;
   color: var(--ink-2);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-body);
+  font-family: var(--font-body);
   line-height: 1.55;
 }
 

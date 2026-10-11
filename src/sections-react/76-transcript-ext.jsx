@@ -54,7 +54,7 @@ function FillerTurn({ role, text }) {
       <div
         style={{
           fontFamily: 'var(--font-mono)',
-          fontSize: 'var(--fs-micro)',
+          fontSize: 'var(--fs-label)',
           letterSpacing: '0.06em',
           color: isUser ? 'var(--teal)' : 'var(--mauve)',
           marginBottom: 'var(--sp-2)',

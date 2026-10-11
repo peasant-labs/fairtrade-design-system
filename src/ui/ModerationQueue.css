@@ -173,7 +173,7 @@
 
 .mod-row-when {
   flex: none;
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   color: var(--ink-4);
   text-transform: lowercase;
 }

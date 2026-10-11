@@ -161,28 +161,33 @@ export default function ProjectOverview({
               label="sessions"
               value={formatNumber(data.totalSessions)}
               hint="recorded"
+              detail={data.sessionsPerWeek.map(row => `${row.week}: ${formatNumber(row.count)} sessions`).join('\n') || 'no recorded weeks'}
             />
             <StatTile
               icon={Users}
               label="contributors"
               value={formatNumber(data.totalContributors)}
               hint={contributorHint(data.perContributorBreakdown)}
+              detail={data.perContributorBreakdown.map(row => `${row.contributorId}: ${formatNumber(row.sessions)} sessions`).join('\n') || 'no recorded contributors'}
             />
             <StatTile
               icon={TrendingUp}
               label="returning rate"
               value={formatRate(data.returningContributorRate.rate)}
               hint={`${formatNumber(data.returningContributorRate.returning)} of ${formatNumber(data.returningContributorRate.total)}`}
+              detail={`${formatNumber(data.returningContributorRate.returning)} returning contributors active in two or more weeks; ${formatNumber(data.returningContributorRate.total)} contributors with dated sessions.`}
             />
             <StatTile
               icon={GitCommitHorizontal}
               label="session → commit"
               value={formatRate(data.sessionToCommitRate.rate)}
               hint={`${formatNumber(data.sessionToCommitRate.withCommit)} of ${formatNumber(data.sessionToCommitRate.total)}`}
+              detail={`${formatNumber(data.sessionToCommitRate.withCommit)} sessions linked to a commit; ${formatNumber(data.sessionToCommitRate.total - data.sessionToCommitRate.withCommit)} without a linked commit.`}
             />
             <StatTile
               icon={CircleCheck}
               label="longest streak"
+              detail={data.longestStreak.startWeek == null ? 'no recorded streak' : `${data.longestStreak.startWeek} to ${data.longestStreak.endWeek}`}
               value={`${formatNumber(data.longestStreak.weeks)} wk`}
               hint={
                 data.longestStreak.startWeek == null
@@ -195,6 +200,7 @@ export default function ProjectOverview({
               label="projects"
               value={formatNumber(data.totalProjects)}
               hint={projectHint(inputSessions, data.totalProjects)}
+              detail={[...new Set(inputSessions.map(session => session.project).filter(Boolean))].join('\n') || `${formatNumber(data.totalProjects)} projects in the supplied summary.`}
             />
           </div>
         ) : null}
@@ -414,14 +420,19 @@ function WeeklyMetricToggle({ view, canShowNew, onChange }) {
   )
 }
 
-function StatTile({ icon: Icon, label, value, hint }) {
+function StatTile({ icon: Icon, label, value, hint, detail }) {
   return (
     <div className="gan-tile" role="listitem">
-      <span className="gan-tile-lab">
-        <Icon className="lucide" aria-hidden="true" /> {label}
-      </span>
-      <span className="gan-tile-val tnum">{value}</span>
-      {hint != null ? <span className="gan-tile-hint">{hint}</span> : null}
+      <details>
+        <summary>
+          <span className="gan-tile-lab">
+            <Icon className="lucide" aria-hidden="true" /> {label}
+          </span>
+          <span className="gan-tile-val tnum">{value}</span>
+          {hint != null ? <span className="gan-tile-hint">{hint}</span> : null}
+        </summary>
+        <p className="gan-tile-detail">{detail}</p>
+      </details>
     </div>
   )
 }

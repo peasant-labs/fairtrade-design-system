@@ -11,4 +11,13 @@ requiredMeasurementNames:
   - commit subjects
   - analytics toggles
   - analytics headings
+  - transcript breadcrumbs
+  - transcript actions
+  - transcript footer
+  - analytics labels
+  - code map toolbar
+  - map navigation controls
+  - settings controls
+  - commons prose
+  - commons sections
 requiredCaseNames: [checkpoint message keeps case]

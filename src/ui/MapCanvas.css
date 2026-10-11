@@ -44,6 +44,13 @@
   border-bottom: var(--bd);
   background: var(--surface-2);
 }
+@media (max-width: 720px) {
+  .mc-toolbar { flex-wrap: wrap; height: auto; min-height: var(--control-h); padding-block: var(--sp-2); }
+  .mc .mc-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; height: auto; }
+  .mc .mc-seg-btn { min-width: 0; min-height: var(--control-h); height: auto; flex-wrap: wrap; padding: var(--sp-1) var(--sp-2); overflow-wrap: anywhere; }
+  .mc .mc-search { min-width: 0; width: 100%; }
+  .mc .mc-results { min-width: 0; width: 100%; }
+}
 
 /* segmented control: three square cells sharing seams; the active cell sits on the
    elevated surface with a strong rule + amber-dim left edge marker (not colour-only —
@@ -75,9 +82,9 @@
 .mc-seg-btn[data-active='true'] {
   color: var(--ink-strong);
   background: var(--surface-elev);
-  box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber-dim);
+  box-shadow: inset var(--stroke-emphasis) 0 0 var(--rule-strong);
 }
-.mc-seg-btn .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--amber); }
+.mc-seg-btn .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-2); }
 
 /* search combobox */
 .mc-search {
@@ -391,7 +398,7 @@
   padding: 0 var(--sp-1);
   border: 1px solid var(--clay);
   color: var(--clay);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   line-height: 1.4;
 }
 .mc-node-viol .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--clay); }
@@ -402,7 +409,7 @@
 
 .mc-node-meta {
   display: block;
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   line-height: 1.2;
   color: inherit;
   opacity: 0.72;
@@ -486,7 +493,7 @@
   border: var(--bd);
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   color: var(--ink-3);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   text-transform: lowercase;
   pointer-events: none;
 }

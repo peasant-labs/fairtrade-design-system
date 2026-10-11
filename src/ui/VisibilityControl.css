@@ -51,7 +51,7 @@
   background: var(--surface-2);
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   line-height: 1.4;
   /* the group name inside is user content → not lowercased. */
   text-transform: none;
@@ -68,7 +68,7 @@
 
 .vc-seg-label {
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   text-transform: lowercase;
   letter-spacing: 0.04em;
   color: var(--ink-3);
@@ -159,7 +159,7 @@
 }
 .vc-scope-label {
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   text-transform: lowercase;
   letter-spacing: 0.04em;
   color: var(--ink-3);

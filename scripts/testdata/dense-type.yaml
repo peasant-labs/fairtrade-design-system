@@ -58,6 +58,8 @@ measurements:
     selector: .txn-body .txn-md-prose
     minimumPx: 16
     mutation: speech shrinks
+    familyToken: --font-body
+    paragraphGap: true
   - name: transcript toolbar
     query: app=transcript
     selector: .txn-trace-head
@@ -68,29 +70,89 @@ measurements:
     query: app=transcript
     selector: .txn-filters
     minimumPx: 14
-    mutation: filter label shrinks
+    mutation: filter rail overflows
+    reflow: true
     desktopOnly: true
   - name: commit subjects
-    query: app=local&section=changes
+    query: app=graph&section=changes
     selector: .cg-msg
     minimumPx: 16
     wrap: true
     mutation: commit subject clamps
+    reflow: true
+  - name: transcript breadcrumbs
+    query: app=transcript
+    selector: .txn-crumb
+    minimumPx: 14
+    reflow: true
+    mutation: breadcrumb has zero width
+    reflowMutation: zero-width
+  - name: transcript actions
+    query: app=transcript
+    selector: .txn-actions
+    minimumPx: 14
+    reflow: true
+    mutation: actions overflow
+  - name: transcript footer
+    query: app=transcript
+    selector: .txn-footer
+    minimumPx: 14
+    reflow: true
+    mutation: footer covers the content
+    reflowMutation: overlay
+  - name: analytics labels
+    query: app=graph&section=analytics
+    selector: .gan-tile
+    minimumPx: 14
+    reflow: true
+    mutation: tile labels overflow
+  - name: code map toolbar
+    query: app=graph&section=map
+    selector: .mc-toolbar
+    minimumPx: 14
+    reflow: true
+    mutation: map toolbar overflows
+  - name: map navigation controls
+    query: app=graph&section=map
+    selector: .rs-toolbar
+    minimumPx: 14
+    reflow: true
+    mutation: navigation toolbar overflows
+  - name: settings controls
+    query: app=graph&section=settings
+    selector: .iu-view
+    minimumPx: 14
+    reflow: true
+    mutation: settings grow wider than their page
+  - name: commons prose
+    query: app=commons&commons=collectives
+    selector: .cmg-note
+    minimumPx: 16
+    familyToken: --font-body
+    mutation: commons note shrinks
+  - name: commons sections
+    query: app=commons&commons=collectives
+    selector: .cmg-section-title
+    minimumPx: 20
+    wrap: true
+    headingGap: true
+    mutation: commons heading shrinks
   - name: analytics toggles
-    query: app=local&section=analytics
+    query: app=graph&section=analytics
     selector: .gan-seg
     minimumPx: 14
     mutation: toggle shrinks
   - name: analytics headings
-    query: app=local&section=analytics
+    query: app=graph&section=analytics
     selector: .gan-card-title
     minimumPx: 20
     wrap: true
     mutation: heading shrinks
 widths: [320, 390, 1440]
+themes: [dark, light]
 case:
   name: checkpoint message keeps case
   query: app=transcript
-  selector: .tm2-marker-message
+  selector: .txn-cp-msg
   text: 'Fix OAuth API Handling Without Losing User Content'
   mutation: checkpoint inherits lowercase chrome
