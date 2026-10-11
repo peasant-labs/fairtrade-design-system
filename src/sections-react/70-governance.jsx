@@ -181,9 +181,9 @@ function FocusedModeDemo() {
   return <FocusedModeToggle on={on} onToggle={setOn} />
 }
 
-/* the redaction matches, verbatim from Redaction's Default story: an api-key + email + bearer-token,
-   the email pre-toggled "kept" (un-redacted) so the loud warning treatment is visible. the secret +
-   redacted forms are code — mono, never lowercased. */
+/* verbatim from Redaction's Default story: two CREDENTIAL matches (0.98, 0.87) and one PII match (0.91).
+   the PII match is pre-toggled "kept" (un-redacted) so the warning treatment is visible.
+   the secret + redacted forms are code, mono, never lowercased. */
 const MATCHES = [
   {
     id: 'r1',

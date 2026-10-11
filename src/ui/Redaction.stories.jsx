@@ -6,7 +6,7 @@ import { frame } from './story-frame.jsx'
 /* Redaction story. CSF3, title 'in use/Redaction'. the safe-by-default review surface +
    the transparency panel, modeled on peasant's RedactionStep + PushStep:
 
-   - Default: RedactionReview with three matches (api-key 0.98, email 0.91, bearer-token 0.87),
+   - Default: RedactionReview with two CREDENTIAL matches (0.98, 0.87) and one PII match (0.91),
      one toggled "kept" (un-redacted → flagged), level=standard, scan 12/12. controlled toggles
      so the kept state is owned by the story.
    - Transparency: the WhereDoesThisGo panel — destination + a "what gets sent / what stays
@@ -16,8 +16,8 @@ import { frame } from './story-frame.jsx'
    code (mono, never lowercased); chrome is lowercased. rdx-* rules + tokens live in
    Redaction.css (imported by the component). */
 
-// three flagged matches → placeholders. an api key + an email are high-confidence; the bearer
-// token sits a touch lower. the email is pre-toggled "kept" so the warning treatment is visible.
+// two CREDENTIAL matches (0.98, 0.87) and one PII match (0.91) use secrets/pii wire categories.
+// the PII match is pre-toggled "kept" so the warning treatment is visible.
 const MATCHES = [
   {
     id: 'r1',
