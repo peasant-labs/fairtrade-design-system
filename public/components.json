@@ -1317,7 +1317,8 @@
         "PopupWaitsApproval",
         "PopupUpdate",
         "Access",
-        "Picker"
+        "Picker",
+        "KeyboardWalk"
       ]
     },
     {

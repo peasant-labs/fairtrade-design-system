@@ -40,6 +40,8 @@ export default function Menu({ label, items = [], align = 'start', caption, defa
   const [open, setOpen] = useState(defaultOpen)
   const triggerRef = useRef(null)
   const menuRef = useRef(null)
+  const focusFrame = useRef(null)
+  const openRef = useRef(defaultOpen)
   const menuId = useId()
 
   // index of each item that is selectable (skips aria-disabled rows AND role="separator" rows),
@@ -56,14 +58,26 @@ export default function Menu({ label, items = [], align = 'start', caption, defa
   const lastEnabled = () => enabledIndexes[enabledIndexes.length - 1]
 
   const openMenu = (which) => {
+    openRef.current = true
     setOpen(true)
     // wait for the popout to render, then place focus on the first / last enabled item
-    requestAnimationFrame(() => focusItem(which === 'last' ? lastEnabled() : firstEnabled()))
+    if (focusFrame.current != null) cancelAnimationFrame(focusFrame.current)
+    focusFrame.current = requestAnimationFrame(() => {
+      focusFrame.current = null
+      if (openRef.current) focusItem(which === 'last' ? lastEnabled() : firstEnabled())
+    })
   }
   const close = (returnFocus) => {
+    openRef.current = false
+    if (focusFrame.current != null) cancelAnimationFrame(focusFrame.current)
+    focusFrame.current = null
     setOpen(false)
-    if (returnFocus) requestAnimationFrame(() => triggerRef.current?.focus())
+    if (returnFocus) triggerRef.current?.focus()
   }
+
+  useEffect(() => () => {
+    if (focusFrame.current != null) cancelAnimationFrame(focusFrame.current)
+  }, [])
 
   // outside-click + Tab-out dismissal (Esc is handled on the menu so it can return focus)
   useEffect(() => {
@@ -82,6 +96,7 @@ export default function Menu({ label, items = [], align = 'start', caption, defa
   const onTriggerKey = (e) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); openMenu('first') }
     else if (e.key === 'ArrowUp') { e.preventDefault(); openMenu('last') }
+    else if (e.key === 'Escape' && openRef.current) { e.preventDefault(); close(true) }
   }
 
   const onMenuKey = (e) => {

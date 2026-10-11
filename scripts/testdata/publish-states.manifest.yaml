@@ -38,6 +38,7 @@ requiredTransitionNames:
   - keyboard focus remains inside during publish and pending approval
 
 requiredMutationNames:
+  - published action reverts to manage
   - representative examples replace the full match count
   - final collective removal never invokes the update
   - a failed scan leaves publish on
@@ -55,6 +56,11 @@ requiredMutationNames:
   - a stopped publish claims no village changes
   - finished focus falls outside the popup
 mutations:
+  - name: published action reverts to manage
+    file: src/ui/Publish.jsx
+    find: "'up to date'].filter(Boolean).join(' · '), action: 'update'"
+    replace: "'up to date'].filter(Boolean).join(' · '), action: 'manage'"
+    expectedDiagnostic: "published and up to date: the bar's action must be"
   - name: a failed scan leaves publish on
     file: src/ui/Publish.jsx
     find: "const blocked = state === 'checking' || state === 'scan-failed' || "
@@ -77,12 +83,12 @@ mutations:
     expectedDiagnostic: "auto-publish on: the label must read"
   - name: a kept match reads as all redacted
     file: src/ui/Publish.jsx
-    find: "const kept = matches.filter((match) => match.kept).length"
+    find: "const kept = matches.filter((match) => match?.kept).length"
     replace: "const kept = 0"
     expectedDiagnostic: "ready with a match kept un-redacted: the popup must read"
   - name: a missing scan leaves publish on
     file: src/ui/Publish.jsx
-    find: "|| (readers.length === 0 && !(mode === 'update' && removes > 0)) || !Array.isArray(scan?.matches)"
+    find: "|| (readers.length === 0 && !(mode === 'update' && removes > 0)) || !hasKnownRedactionCategories(scan?.matches)"
     replace: "|| (readers.length === 0 && !(mode === 'update' && removes > 0))"
     expectedDiagnostic: "ready before any scan: the primary button must be disabled"
   - name: remove stays offered while publishing
@@ -122,7 +128,7 @@ mutations:
     expectedDiagnostic: "stopped at a named step: the popup must not read"
   - name: finished focus falls outside the popup
     file: src/ui/Publish.jsx
-    find: "if (!open || !finished) return"
+    find: "if (!open) return"
     replace: "if (true) return"
     expectedDiagnostic: "finishing keeps focus inside the popup"
   - name: final collective removal never invokes the update

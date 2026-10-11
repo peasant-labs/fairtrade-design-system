@@ -246,8 +246,8 @@ const streamPreludeFixture = YAML.parse(
   assert('CAP-label-off', 'canLabel:false removes the label affordance, so onLabel can never fire', !noLabel.includes('txn-labelbtn'))
 
   // render the relevant action menu OPEN, with the cap on vs off, and check the gated menu item.
-  const share = (cap) => composite({ viewModel: vm, capabilities: { ...allCaps, ...cap }, shareOpen: true })
-  const more = (cap) => composite({ viewModel: vm, capabilities: { ...allCaps, ...cap }, moreOpen: true })
+  const share = (cap) => composite({ viewModel: vm, showTail: true, capabilities: { ...allCaps, ...cap }, shareOpen: true })
+  const more = (cap) => composite({ viewModel: vm, showTail: true, capabilities: { ...allCaps, ...cap }, moreOpen: true })
 
   assert('CAP-contribute-on', 'canContribute:true shows the contribute action in the open share menu', share({ canContribute: true }).includes('menu-text">contribute<'))
   assert('CAP-contribute-off', 'canContribute:false removes the contribute action, so onContribute can never fire', !share({ canContribute: false }).includes('menu-text">contribute<'))

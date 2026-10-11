@@ -991,7 +991,7 @@
   .menu-sep { height: 1px; margin: var(--sp-1) 0; background: var(--rule); border: 0; }
 
   /* a quiet section caption inside the menu (e.g. who owns the transcript) */
-  .menu-cap { padding: var(--sp-2) var(--sp-3) var(--sp-1); font-family: var(--font-mono); font-size: var(--fs-micro); text-transform: lowercase; color: var(--ink-3); }
+  .menu-cap { padding: var(--sp-2) var(--sp-3) var(--sp-1); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); }
 
   .cp-scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--canvas) 62%, transparent); }
   @media (prefers-reduced-transparency: no-preference) { .cp-scrim { backdrop-filter: blur(2px); } }

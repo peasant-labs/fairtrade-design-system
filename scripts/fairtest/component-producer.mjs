@@ -1149,6 +1149,14 @@ async function requireComponentStyles(page, story) {
  * @returns {Promise<void>}
  */
 async function performComponentAction(page, story, action) {
+  if (action.kind === 'sequence') {
+    for (const step of action.steps) {
+      await performComponentAction(page, story, step)
+      await requireComponentFacts(page, story, step.after ?? [], step.name)
+    }
+    return
+  }
+  if (action.kind === 'observe') return
   const target = await readComponentFact(page, action.target)
   if (!target.holds) {
     throw new Error(

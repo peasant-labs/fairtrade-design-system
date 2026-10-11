@@ -1,0 +1,25 @@
+requiredCaseNames:
+  - unchecked default consent
+  - checked canonical consent
+  - peasant hint replaces only unchecked consent
+  - peasant hint cannot suppress checked consent
+requiredMutationNames:
+  - checked hint suppresses canonical consent
+  - checked sentence loses existing session updates
+  - unchecked default claims selected collectives
+mutations:
+  - name: checked hint suppresses canonical consent
+    file: src/ui/Publish.jsx
+    find: "autoPublish.checked ?"
+    replace: "autoPublish.checked && !autoPublish.hint ?"
+    expectedDiagnostic: "peasant hint cannot suppress checked consent: exact consent"
+  - name: checked sentence loses existing session updates
+    file: src/ui/Publish.jsx
+    find: "new sessions and updates to already-published sessions"
+    replace: "new sessions"
+    expectedDiagnostic: "checked canonical consent: exact consent"
+  - name: unchecked default claims selected collectives
+    file: src/ui/Publish.jsx
+    find: "'off, change it in settings'"
+    replace: "'same collectives · change it in settings'"
+    expectedDiagnostic: "unchecked default consent: exact consent"

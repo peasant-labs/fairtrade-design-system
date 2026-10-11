@@ -1,0 +1,66 @@
+cases:
+  - name: opener enters the ready dialog
+    kind: key
+    key: Enter
+    target: {name: publish opener, selector: .pub-bar-action, count: 1}
+    after:
+      - {name: ready dialog, selector: '.pub-dialog[role="dialog"]', count: 1}
+      - {name: initial close focus, selector: '.dlg-head button', focused: true}
+  - name: ready backward tab wraps to primary
+    kind: key
+    key: Shift+Tab
+    target: {name: close, selector: '.dlg-head button', count: 1}
+    after: [{name: ready primary focused, selector: .pub-primary, focused: true}]
+  - name: ready forward tab wraps to close
+    kind: key
+    key: Tab
+    target: {name: primary, selector: .pub-primary, count: 1}
+    after: [{name: close focused, selector: '.dlg-head button', focused: true}]
+  - name: checkbox shows component-owned checked consent
+    kind: key
+    key: Space
+    target: {name: auto publish checkbox, selector: '.pub-auto input', count: 1}
+    after:
+      - name: mandatory consent
+        selector: .pub-auto .pub-hint
+        text: "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives."
+  - name: primary enters publishing without losing focus
+    kind: key
+    key: Enter
+    target: {name: primary, selector: .pub-primary, count: 1}
+    after:
+      - {name: primary stays focused, selector: .pub-primary, focused: true}
+      - {name: busy primary, selector: .pub-primary, attribute: aria-busy, value: 'true'}
+      - {name: re-scan cannot interrupt, selector: .pub-rescan, matches: ':disabled', count: 1}
+  - name: repeated publish activation stays busy
+    kind: key
+    key: Enter
+    target: {name: primary, selector: .pub-primary, count: 1}
+    after: [{name: still busy, selector: .pub-primary, attribute: aria-busy, value: 'true'}]
+  - name: Escape cannot dismiss in-flight publishing
+    kind: key
+    key: Escape
+    target: {name: primary, selector: .pub-primary, count: 1}
+    after: [{name: busy dialog remains, selector: '.pub-dialog[role="dialog"]', count: 1}]
+  - name: publishing tabs wrap within enabled controls
+    kind: key
+    key: Tab
+    target: {name: primary, selector: .pub-primary, count: 1}
+    after: [{name: show matches focused, selector: .pub-toggle, focused: true}]
+  - name: completion transfers focus to done
+    kind: observe
+    after:
+      - {name: done focused, selector: '.dlg-foot .btn-primary', text: done, focused: true}
+      - {name: published heading, selector: '.dlg-head h3', text: published to Acme Platform and Acme Company}
+  - name: done forward tab wraps to close
+    kind: key
+    key: Tab
+    target: {name: done, selector: '.dlg-foot .btn-primary', count: 1}
+    after: [{name: done close focused, selector: '.dlg-head button', focused: true}]
+  - name: closing restores the original opener
+    kind: key
+    key: Escape
+    target: {name: close, selector: '.dlg-head button', count: 1}
+    after:
+      - {name: popup closed, selector: '.pub-dialog[role="dialog"]', count: 0}
+      - {name: opener focus restored, selector: .pub-bar-action, focused: true, text: update}

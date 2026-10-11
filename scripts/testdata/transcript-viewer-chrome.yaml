@@ -13,9 +13,9 @@
 # The session under test carries an outcome, so outcome-chip depends only on showOutcome.
 # capabilities give the more menu an item (canExport), so more-menu depends only on showTail.
 defaultsCase:
-  name: no chrome props keeps the long-standing header
-  present: [host-actions, share-menu, more-menu, outcome-chip]
-  absent: [search-trigger, pull-request-slot]
+  name: no chrome props omits the legacy action tail
+  present: [host-actions, outcome-chip]
+  absent: [share-menu, more-menu, search-trigger, pull-request-slot]
 
 cases:
   - name: tail on, outcome on, search trigger on, pull requests given
@@ -85,6 +85,9 @@ cases:
 
 # Behaviour a host relies on, beyond presence.
 interactions:
+  - name: legacy share actions require explicit host opt-in
+    kind: share-menu-items
+    expectedItems: [contribute, copy link]
   - name: clicking the search trigger opens the search bar and focuses its field
     kind: trigger-click
   - name: the search trigger's accessible name includes the shortcut

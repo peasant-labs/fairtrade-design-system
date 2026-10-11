@@ -1,0 +1,3 @@
+cases:
+  - {name: context share dark, theme: dark}
+  - {name: context share light, theme: light}

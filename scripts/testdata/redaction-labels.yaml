@@ -1,0 +1,16 @@
+# Audited projection: github.com/peasant-labs/redact/category_string.go,
+# Category.String and testdata/category_strings.yaml. Wire ids are not display labels.
+categories:
+  - {name: credential category, category: secrets, label: CREDENTIAL}
+  - {name: personal information category, category: pii, label: PII}
+  - {name: path category, category: paths, label: PATH}
+  - {name: project category, category: project, label: INTERNAL}
+confidence: 0.99
+confidenceText: confidence 0.99
+confidenceHelp: how sure the scanner is that this is a real match
+unknown:
+  - {name: unknown category, category: future-category}
+  - {name: missing category, category: null}
+  - {name: prototype property is not a category, category: constructor}
+  - {name: display label is not a wire category, category: CREDENTIAL}
+  - {name: unknown category blocks retry, category: future-category, state: stopped}
