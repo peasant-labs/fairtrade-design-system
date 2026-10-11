@@ -98,8 +98,10 @@ test('dense text, reflow and disclosure on the built product', async ({ page }, 
           const toolGroups = page.locator('.txn-toolcat-toggle')
           await expect(toolGroups).toHaveAttribute('aria-expanded', 'false')
           await toolGroups.click()
+          for (const label of spec.toolGroupLabels) await expect(page.locator('.txn-toolgroups').getByText(label, { exact: true })).toBeVisible()
           await page.reload({ waitUntil: 'networkidle' })
           await expect(toolGroups).toHaveAttribute('aria-expanded', 'true')
+          for (const label of spec.toolGroupLabels) await expect(page.locator('.txn-toolgroups').getByText(label, { exact: true })).toBeVisible()
           await toolGroups.click()
         }
       }

@@ -150,6 +150,7 @@ measurements:
     mutation: heading shrinks
 widths: [320, 390, 1440]
 themes: [dark, light]
+toolGroupLabels: [file edits, bash]
 case:
   name: checkpoint message keeps case
   query: app=transcript
