@@ -267,7 +267,7 @@ const streamPreludeFixture = YAML.parse(
   const ol = html(ui.TranscriptOutlineRail, { viewModel: vm, tab: 'highlights' })
   assert('RAIL-outline-hl', 'OutlineRail highlights tab lists vm.highlights', ol.includes('initial request'))
   const fr = html(ui.TranscriptFiltersRail, { tab: 'trace', counts: { categories: { prompts: 1, responses: 1, thinking: 1, toolcalls: 1 }, toolGroups: vm.filterIndex.toolGroupCounts } })
-  assert('RAIL-filters-groups', 'FiltersRail renders the cooked tool-call group rows', fr.includes('file edits') && fr.includes('bash'))
+  assert('RAIL-filters-groups', 'FiltersRail initially collapses secondary tool-call groups behind a disclosure', fr.includes('txn-toolcat-toggle') && fr.includes('aria-expanded="false"') && !fr.includes('txn-toolgroups'))
   const scrub = html(ui.TranscriptScrubber, { turns: vm.turns, active: 0 })
   const ticks = (scrub.match(/txn-scrub-tick/g) || []).length
   assert('RAIL-scrubber-ticks', 'Scrubber renders one tick per turn in turn-index space', ticks === vm.turns.length)

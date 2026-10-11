@@ -126,7 +126,7 @@ function Scene({ steps = STEPS, autoLabel = 'take the tour' }) {
       </button>
 
       {outcome && (
-        <p style={{ marginTop: 12, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-micro)', color: 'var(--ink-3)' }}>
+        <p style={{ marginTop: 12, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-label)', color: 'var(--ink-3)' }}>
           {outcome}
         </p>
       )}

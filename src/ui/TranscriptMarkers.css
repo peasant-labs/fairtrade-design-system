@@ -18,7 +18,7 @@
 /* shared eyebrow — the tiny mono uppercase-feel label used across all four. */
 .tm2-eyebrow {
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   line-height: 1;
   letter-spacing: 0.06em;
   text-transform: lowercase;
@@ -106,7 +106,7 @@
 .tm2-phase-range {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   color: var(--ink-4);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -147,9 +147,11 @@
   border: var(--bd);
   background: var(--surface);
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   color: var(--ink-3);
-  white-space: nowrap;
+  white-space: normal;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 .tm2-marker-icon {
   flex: none;
@@ -172,15 +174,16 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
-/* the commit message is user content: body font, natural case, may truncate. */
+/* The commit message is reading content, in its own case at every width. */
 .tm2-marker-message {
   font-family: var(--font-body);
   font-size: var(--fs-sm);
   color: var(--ink-2);
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-transform: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: var(--lh-body);
 }
 
 /* the task boundary leads with the olive "done" tick — semantic, not the only

@@ -98,7 +98,7 @@
   z-index: 3;
   pointer-events: none;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--fs-label);
   line-height: 1;
   text-transform: lowercase;
   color: var(--ink-4);

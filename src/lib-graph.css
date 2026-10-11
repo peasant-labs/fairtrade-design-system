@@ -93,7 +93,8 @@
   .gmp-navigator-note {
     max-width: var(--measure-prose);
     margin: var(--sp-1) 0 0;
-    font-size: var(--fs-sm);
+    font-family: var(--font-body);
+    font-size: var(--fs-body);
     line-height: var(--lh-body);
     color: var(--ink-3);
   }
@@ -163,7 +164,7 @@
   @media (prefers-reduced-motion: no-preference) { .gmp-navigator-chevron { transition: transform var(--dur-1) var(--ease-standard); } }
   .gmp-navigator-disclosure[aria-expanded] .gmp-navigator-chevron { visibility: visible; }
   .gmp-navigator-disclosure[aria-expanded='true'] .gmp-navigator-chevron { transform: rotate(90deg); }
-  .gmp-navigator-path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); color: var(--ink); }
+  .gmp-navigator-path { min-width: 0; white-space: normal; overflow-wrap: anywhere; font-size: var(--fs-sm); line-height: var(--lh-mono); color: var(--ink); }
   .gmp-navigator-meta {
     display: flex;
     gap: var(--sp-3);
@@ -209,7 +210,8 @@
     .gmp-navigator-search { width: 100%; }
     .gmp-navigator-body { grid-template-columns: 1fr; }
     .gmp-navigator-tree { border-right: 0; border-bottom: var(--bd); }
-    .gmp-navigator-meta { flex-direction: column; gap: 0; align-items: flex-end; }
+    .gmp-navigator-row { grid-template-columns: var(--ic-sm) minmax(0, 1fr); }
+    .gmp-navigator-meta { grid-column: 2; flex-wrap: wrap; gap: var(--sp-2); }
   }
   @media (prefers-reduced-motion: reduce) { .gmp-navigator-chevron { transition: none; } }
 
@@ -245,14 +247,14 @@
 
   /* coverage line + micro-bar */
   .gmp-coverage { display: flex; flex-direction: column; gap: var(--sp-2); }
-  .gmp-coverage-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); }
+  .gmp-coverage-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); }
   /* the "files built with ai" label takes the remaining width (and ellipsises if pinched); the percentage
      never shrinks or breaks, so "35%" stays on one line instead of dropping the "%" below "35". */
   .gmp-coverage-top > .label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .gmp-coverage-pct { flex: none; white-space: nowrap; color: var(--ink-strong); font-weight: 600; }
   .gmp-coverage-bar { height: 6px; background: var(--surface-2); border: 1px solid var(--rule); }
   .gmp-coverage-bar > span { display: block; height: 100%; background: var(--amber-dim); }
-  .gmp-coverage-sub { font-size: 11px; color: var(--ink-4); }
+  .gmp-coverage-sub { font-size: var(--fs-label); color: var(--ink-4); }
 
   /* task / conversation rows */
   /* the .gmp-tasklist section has no .gmp-rail-pad wrapper (the rows are full-width hover targets), so add
@@ -263,8 +265,8 @@
   .gmp-task-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-2) var(--sp-4); background: transparent; border: 0; border-left: var(--stroke-emphasis) solid transparent; text-align: left; cursor: pointer; min-height: var(--target-min); }
   .gmp-task-row:hover, .gmp-task-row:focus-visible { background: var(--surface-hover); border-left-color: var(--amber); outline: none; }
   .gmp-task-row:focus-visible { box-shadow: inset 0 0 0 var(--focus-ring-width) var(--focus-ring); }
-  .gmp-task-title { font-size: var(--fs-sm); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .gmp-task-when { font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); white-space: nowrap; }
+  .gmp-task-title { font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); overflow-wrap: anywhere; }
+  .gmp-task-when { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-4); white-space: nowrap; }
   .gmp-odot { display: inline-block; width: 8px; height: 8px; flex: none; }
 
   .gmp-rail-filter { margin: 0; }
@@ -294,11 +296,11 @@
   .gmp-convo-task-btn:hover { background: var(--surface-hover); }
   .gmp-convo-task-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
   .gmp-convo-task-top { display: flex; align-items: center; gap: var(--sp-2); }
-  .gmp-convo-task-title { font-size: var(--fs-sm); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gmp-convo-task-title { font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); overflow-wrap: anywhere; }
   .gmp-retry { display: inline-flex; align-items: center; color: var(--amber); flex: none; margin-left: auto; }
   .gmp-retry .lucide { width: var(--ic-sm); height: var(--ic-sm); }
-  .gmp-convo-task-sub { font-size: 11px; color: var(--ink-4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .gmp-convo-commit { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4); background: var(--surface-2); border-bottom: var(--bd); font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+  .gmp-convo-task-sub { font-size: var(--fs-label); color: var(--ink-4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gmp-convo-commit { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4); background: var(--surface-2); border-bottom: var(--bd); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .gmp-convo-commit .lucide { color: var(--ink-4); width: var(--ic-sm); height: var(--ic-sm); flex: none; }
   .gmp-commit-hash { color: var(--ink-2); flex: none; }
   .gmp-commit-msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -310,8 +312,8 @@
   .gmp-coupling-row:hover { background: var(--surface-hover); }
   .gmp-coupling-row:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
   .gmp-coupling-row .lucide { color: var(--ink-5); flex: none; }
-  .gmp-coupling-id { font-size: 11px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .gmp-coupling-shared { font-size: 11px; color: var(--ink-4); white-space: nowrap; margin-left: auto; flex: none; }
+  .gmp-coupling-id { font-size: var(--fs-label); color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gmp-coupling-shared { font-size: var(--fs-label); color: var(--ink-4); white-space: nowrap; margin-left: auto; flex: none; }
 
   /* effort totals */
   .gmp-effort { display: flex; flex-direction: column; gap: var(--sp-2); }
@@ -323,7 +325,7 @@
   .gmp-contribute .lucide:last-child { margin-left: auto; }
 
   /* ── session destination summary (the in-use changes demo) ── */
-  .gmp-session-destination-title { margin: 0; font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 700; line-height: 1.2; color: var(--ink-strong); }
+  .gmp-session-destination-title { margin: 0; font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 700; line-height: var(--lh-body); color: var(--ink-strong); overflow-wrap: anywhere; }
   .gmp-session-destination-context { margin: var(--sp-2) 0 var(--sp-4); color: var(--ink-3); font-size: var(--fs-sm); }
   .gmp-session-destination-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border: var(--bd); background: var(--surface-2); }
   .gmp-session-destination-summary > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--sp-3); align-items: baseline; min-height: var(--control-h); padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); }
@@ -355,7 +357,7 @@
     background: var(--surface);
     flex: none;
   }
-  .gmp-changes-sub { font-size: 11px; color: var(--ink-4); margin-top: var(--sp-1); }
+  .gmp-changes-sub { font-size: var(--fs-label); color: var(--ink-4); margin-top: var(--sp-1); }
   .gmp-changes-body { padding: var(--sp-4) var(--gmp-pad-x); min-width: 0; }
 
   .gmp-unlinked-sessions { margin-top: var(--sp-5); border-top: var(--bd); padding-top: var(--sp-4); }
@@ -445,15 +447,15 @@
   .gmp-detail-root { overflow: auto; padding: var(--sp-5); gap: 0; }
   .gmp-detail-head { margin-bottom: var(--sp-5); }
   .gmp-detail-title { font-family: var(--font-display); font-weight: 700; color: var(--ink-strong); font-size: var(--fs-lg); margin-top: var(--sp-2); }
-  .gmp-caption { margin-top: var(--sp-4); color: var(--ink-2); font-size: var(--fs-body); line-height: 1.6; max-width: 64ch; }
-  .gmp-frag { display: inline; padding: 0 var(--sp-1); background: transparent; border: 0; border-bottom: 1px dotted var(--amber-dim); color: var(--amber); font-family: var(--font-mono); font-size: 0.94em; cursor: pointer; }
+  .gmp-caption { margin-top: var(--sp-4); color: var(--ink-2); font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); max-width: var(--measure-prose); }
+  .gmp-frag { display: inline; padding: 0 var(--sp-1); background: transparent; border: 0; border-bottom: var(--stroke-hairline) dotted var(--amber-dim); color: var(--amber); font-family: var(--font-mono); font-size: var(--fs-body); cursor: pointer; }
   .gmp-frag:hover { color: var(--amber-bright); border-bottom-style: solid; }
   .gmp-frag-on { color: var(--amber-bright); border-bottom-style: solid; background: color-mix(in srgb, var(--amber) 12%, transparent); }
-  .gmp-caption-hint { display: block; margin-top: var(--sp-2); font-size: 11px; text-transform: lowercase; color: var(--ink-4); }
+  .gmp-caption-hint { display: block; margin-top: var(--sp-2); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-4); }
 
   /* signals band */
   .gmp-signals { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-bottom: var(--sp-4); }
-  .gmp-signal { display: inline-flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); background: var(--surface); border: var(--bd); font-family: var(--font-mono); font-size: 11px; text-transform: lowercase; color: var(--ink-3); }
+  .gmp-signal { display: inline-flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); background: var(--surface); border: var(--bd); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); }
   .gmp-signal .lucide { color: var(--ink-4); width: var(--ic-sm); height: var(--ic-sm); }
   .gmp-signal b { color: var(--ink); font-weight: 600; }
   .gmp-signal .mono { text-transform: none; color: var(--ink-2); }
@@ -470,7 +472,7 @@
   .gmp-detail-sechead { border: 0; padding: 0 0 var(--sp-3); }
 
   /* the shared mono label chip (the annotation chip extends it) */
-  .gmp-label-chip { display: inline-flex; align-items: center; gap: var(--sp-1); padding: 1px var(--sp-2); border: 1px solid var(--rule-strong); font-family: var(--font-mono); font-size: 10px; text-transform: lowercase; color: var(--ink-2); }
+  .gmp-label-chip { display: inline-flex; align-items: center; gap: var(--sp-1); padding: 0 var(--sp-2); border: var(--bd-strong); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); }
   .gmp-label-chip .lucide { color: var(--amber); width: var(--ic-sm); height: var(--ic-sm); }
 
   /* files-changed list + lazy diff */
@@ -486,11 +488,11 @@
   .gmp-file-convos { color: var(--ink-4); flex: none; }
   .gmp-file-convos .lucide { color: var(--ink-4); }
   .gmp-file-body { border-top: var(--bd); background: var(--canvas); }
-  .gmp-diff-state { padding: var(--sp-2) var(--sp-3); font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); }
+  .gmp-diff-state { padding: var(--sp-2) var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-4); }
   .gmp-diff-error { color: var(--danger); }
   .gmp-hunk { border-bottom: var(--bd); }
   .gmp-hunk:last-child { border-bottom: 0; }
-  .gmp-hunk-attrib { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); background: var(--surface-2); font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+  .gmp-hunk-attrib { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); background: var(--surface-2); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .gmp-hunk-attrib .lucide { color: var(--ink-5); flex: none; }
   .gmp-hunk-from { color: var(--ink-4); text-transform: lowercase; flex: none; }
   .gmp-hunk-link { background: transparent; border: 0; padding: 0; color: var(--amber); font: inherit; cursor: pointer; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
@@ -500,7 +502,7 @@
 
   /* annotation chip + popover */
   .gmp-annot { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
-  .gmp-annot-chip { height: 24px; padding: 0 var(--sp-1) 0 var(--sp-2); font-size: 11px; }
+  .gmp-annot-chip { min-height: var(--target-min); padding: 0 var(--sp-1) 0 var(--sp-2); font-size: var(--fs-label); }
   .gmp-annot-x { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; background: transparent; border: 0; color: var(--ink-4); cursor: pointer; margin-left: 2px; }
   .gmp-annot-x:hover { color: var(--ink); }
   .gmp-annot-add { display: inline-flex; align-items: center; gap: var(--sp-2); height: var(--control-h-sm); padding: 0 var(--sp-3); background: transparent; border: var(--bd-strong); color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; cursor: pointer; }
@@ -512,8 +514,8 @@
 
   /* exits */
   .gmp-exits { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); padding-top: var(--sp-4); border-top: var(--bd); }
-  .gmp-gitdiff { padding: 0 var(--sp-3); height: var(--control-h); display: inline-flex; align-items: center; background: var(--canvas); border: var(--bd); font-size: 12px; color: var(--ink-2); }
-  .gmp-boundary { margin-top: var(--sp-4); font-size: 11px; text-transform: lowercase; color: var(--ink-4); border-left: var(--stroke-emphasis) solid var(--rule-strong); padding-left: var(--sp-3); line-height: 1.5; }
+  .gmp-gitdiff { padding: 0 var(--sp-3); height: var(--control-h); display: inline-flex; align-items: center; background: var(--canvas); border: var(--bd); font-size: var(--fs-label); color: var(--ink-2); }
+  .gmp-boundary { margin-top: var(--sp-4); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-4); border-left: var(--stroke-emphasis) solid var(--rule-strong); padding-left: var(--sp-3); line-height: var(--lh-mono); }
 }
 
 /* The trajectory graph: the @xyflow engine surface exported from `./graph`.

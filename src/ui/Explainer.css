@@ -107,7 +107,7 @@
 .xpl-hint {
   flex: none;
   color: var(--ink-4);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
 }
 
 /* ── prose body ──────────────────────────────────────────────────────────────
