@@ -17,6 +17,7 @@ requiredMeasurementNames:
   - analytics labels
   - code map toolbar
   - map navigation controls
+  - map navigation labels
   - settings controls
   - commons prose
   - commons sections

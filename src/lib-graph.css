@@ -164,7 +164,7 @@
   @media (prefers-reduced-motion: no-preference) { .gmp-navigator-chevron { transition: transform var(--dur-1) var(--ease-standard); } }
   .gmp-navigator-disclosure[aria-expanded] .gmp-navigator-chevron { visibility: visible; }
   .gmp-navigator-disclosure[aria-expanded='true'] .gmp-navigator-chevron { transform: rotate(90deg); }
-  .gmp-navigator-path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); color: var(--ink); }
+  .gmp-navigator-path { min-width: 0; white-space: normal; overflow-wrap: anywhere; font-size: var(--fs-sm); line-height: var(--lh-mono); color: var(--ink); }
   .gmp-navigator-meta {
     display: flex;
     gap: var(--sp-3);
@@ -210,7 +210,8 @@
     .gmp-navigator-search { width: 100%; }
     .gmp-navigator-body { grid-template-columns: 1fr; }
     .gmp-navigator-tree { border-right: 0; border-bottom: var(--bd); }
-    .gmp-navigator-meta { flex-direction: column; gap: 0; align-items: flex-end; }
+    .gmp-navigator-row { grid-template-columns: var(--ic-sm) minmax(0, 1fr); }
+    .gmp-navigator-meta { grid-column: 2; flex-wrap: wrap; gap: var(--sp-2); }
   }
   @media (prefers-reduced-motion: reduce) { .gmp-navigator-chevron { transition: none; } }
 

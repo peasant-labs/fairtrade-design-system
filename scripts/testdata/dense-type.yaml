@@ -118,6 +118,12 @@ measurements:
     minimumPx: 14
     reflow: true
     mutation: navigation toolbar overflows
+  - name: map navigation labels
+    query: app=graph&section=map
+    selector: .gmp-navigator-path
+    minimumPx: 14
+    wrap: true
+    mutation: navigation path clamps
   - name: settings controls
     query: app=graph&section=settings
     selector: .iu-view
