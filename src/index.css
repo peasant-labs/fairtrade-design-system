@@ -1238,7 +1238,7 @@
   .tbl-sort-ic { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--ink-4); }
   .tbl-sort:hover .tbl-sort-ic { color: var(--ink-3); }
 
-  /* body cells: hairline rows, top-aligned, comfortable padding */
+  /* body cells: hairline standard-height rows, middle-aligned, compact padding */
   .tbl-td { height: var(--row-h-standard); box-sizing: border-box; padding: var(--sp-1) var(--sp-3); border-bottom: var(--bd); color: var(--ink-2); vertical-align: middle; }
   .tbl-td .tnum { font-variant-numeric: tabular-nums; }
   .tbl-decimal { display: inline-flex; white-space: nowrap; letter-spacing: 0; }

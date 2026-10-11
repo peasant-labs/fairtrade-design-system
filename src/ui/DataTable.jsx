@@ -348,7 +348,7 @@ function selectedKey(set) {
   return [...set].map(String).sort().join(' ')
 }
 
-/* align -> alignment modifier class (right cells also carry .tnum on the value span) */
+/* align -> alignment modifier class (right and decimal values also carry .tnum) */
 function alignClass(base, align) {
   if (align === 'right' || align === 'decimal') return `${base} tbl-right`
   if (align === 'center') return `${base} tbl-center`
