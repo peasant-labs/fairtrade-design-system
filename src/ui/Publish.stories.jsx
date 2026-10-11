@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { PublishStateLabel, PublishBar, AccessList, CollectivePicker, PublishDialog, PUBLISH_STATES } from './Publish.jsx'
 import { frame } from './story-frame.jsx'
@@ -188,5 +188,33 @@ export const Picker = {
     await userEvent.type(canvas.getByRole('searchbox', { name: 'add a collective' }), 'ml')
     await userEvent.click(canvas.getByRole('button', { name: 'add ML Reading Group' }))
     await expect(canvas.getByText('no collective matches that name.')).toBeVisible()
+  },
+}
+
+/* A host-controlled flow, driven by the mounted keyboard row rather than play(). */
+export const KeyboardWalk = {
+  render: function KeyboardWalkStory() {
+    const [open, setOpen] = useState(false)
+    const [state, setState] = useState('ready')
+    const [bar, setBar] = useState('not-published')
+    const [auto, setAuto] = useState(false)
+    const timer = useRef(null)
+    useEffect(() => () => clearTimeout(timer.current), [])
+    return (
+      <div style={{ padding: 'var(--sp-5)' }}>
+        <p>publish your redacted transcript to its collectives, then return to the transcript.</p>
+        <PublishBar state={bar} collectives={2} onAction={() => { setState('ready'); setOpen(true) }} />
+        <PublishDialog
+          open={open} onClose={() => setOpen(false)} title="Fix flaky ingest test" state={state}
+          scan={SCAN} access={ACCESS} done={DONE} onRescan={() => setState('checking')}
+          autoPublish={{ checked: auto, onChange: setAuto, hint: 'selected collectives · overlapping rules still apply · change them in settings' }}
+          onPublish={() => {
+            setState('publishing')
+            setBar('publishing')
+            timer.current = setTimeout(() => { setState('done'); setBar('published') }, 3000)
+          }}
+        />
+      </div>
+    )
   },
 }

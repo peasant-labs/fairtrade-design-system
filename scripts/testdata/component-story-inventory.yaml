@@ -1,0 +1,11 @@
+cases:
+  - {name: session-group-disclosure, rowPrefix: component, storyId: components-sessiongroupdisclosure--playground, layout: centered, action: expand-disclosure, tie: ariaExpanded}
+  - {name: publish-keyboard, rowPrefix: component-publish-keyboard, storyId: in-use-publish--keyboard-walk, layout: fullscreen, action: publish-popup-keyboard-walk, tie: returnedFocus}
+  - {name: transcript-header, rowPrefix: component-transcript-header, storyId: in-use-transcript-transcriptviewer--host-owned-header, layout: fullscreen, action: open-transcript-search, tie: searchOpen}
+  - {name: offline-banner, rowPrefix: component-offline-banner, storyId: in-use-connectionstate--offline-banner, layout: fullscreen, action: retry-local-connection, tie: retryBusy}
+  - {name: digest-split, rowPrefix: component-digest-split, storyId: components-promptdigest--split, layout: centered, action: select-next-session, tie: nextOptionSelected}
+  - {name: stats-strip, rowPrefix: component-stats-strip, storyId: components-statsstrip--many-pairs, layout: centered, action: null, tie: pairsRendered}
+  - {name: publish-bar, rowPrefix: component-publish-bar, storyId: in-use-publish--bar-states, layout: centered, action: null, tie: barActions}
+  - {name: access-list, rowPrefix: component-access-list, storyId: in-use-publish--access, layout: centered, action: null, tie: namedRemove}
+  - {name: setting-groups, rowPrefix: component-setting-groups, storyId: in-use-settings--groups, layout: centered, action: open-collapsed-group, tie: bothGroupsOpen}
+  - {name: publish-dialog, rowPrefix: component-publish-dialog, storyId: in-use-publish--popup-scan-failed, layout: fullscreen, action: null, tie: publishOff}

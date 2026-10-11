@@ -1,0 +1,11 @@
+requiredCaseNames:
+  - session-group-disclosure
+  - publish-keyboard
+  - transcript-header
+  - offline-banner
+  - digest-split
+  - stats-strip
+  - publish-bar
+  - access-list
+  - setting-groups
+  - publish-dialog
