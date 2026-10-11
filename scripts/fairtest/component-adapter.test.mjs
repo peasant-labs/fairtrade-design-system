@@ -25,9 +25,10 @@ import * as targets from './fairtrade-component-target.mjs'
 import { COMPONENT_MUTATION_NAMES, runComponentMutation } from './component-mutations.mjs'
 import { PRODUCT_ONLY_FIELDS as PROOF_PRODUCT_ONLY_FIELDS } from './fairtest-artifacts.mjs'
 import { loadFixturePair } from '../mounted-parts.mjs'
+import { fairtestRelative } from './fairtest-paths.mjs'
 
 /** @type {{ fixture: { cases: Array<{name: string, rowPrefix: string, storyId: string, layout: string, action: string | null, tie: string}> } }} */
-const { fixture: storyInventory } = loadFixturePair('scripts/testdata/component-story-inventory.yaml', 'scripts/testdata/component-story-inventory.manifest.yaml')
+const { fixture: storyInventory } = loadFixturePair(fairtestRelative('storyInventoryCorpus'), fairtestRelative('storyInventoryManifest'))
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')

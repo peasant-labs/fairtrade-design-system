@@ -25,8 +25,8 @@ import { fairtestRelative } from './fairtest-paths.mjs'
 import { loadStrictYaml, assertExactNames } from '../css-source.mjs'
 
 /** @type {{ cases: Array<ComponentAction & { after?: readonly ComponentExpectation[] }> }} */
-const publishKeyboard = loadStrictYaml('scripts/testdata/publish-keyboard.yaml')
-const publishKeyboardManifest = loadStrictYaml('scripts/testdata/publish-keyboard.manifest.yaml')
+const publishKeyboard = loadStrictYaml(fairtestRelative('publishKeyboardCorpus'))
+const publishKeyboardManifest = loadStrictYaml(fairtestRelative('publishKeyboardManifest'))
 assertExactNames(publishKeyboard.cases.map((row) => row.name), publishKeyboardManifest.requiredCaseNames, 'publish keyboard sequence')
 
 const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
