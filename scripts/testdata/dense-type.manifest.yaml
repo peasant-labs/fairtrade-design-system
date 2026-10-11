@@ -1,0 +1,14 @@
+requiredSourceNames:
+  - owned micro consumers are converted
+  - retirement never leaves a dangling consumer
+  - dense font literals meet the chrome floor
+requiredResponsiveNames: [collective grid, transcript grid]
+requiredMeasurementNames:
+  - transcript title
+  - transcript prose
+  - transcript toolbar
+  - filter rail
+  - commit subjects
+  - analytics toggles
+  - analytics headings
+requiredCaseNames: [checkpoint message keeps case]

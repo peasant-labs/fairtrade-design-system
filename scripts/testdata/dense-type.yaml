@@ -1,0 +1,96 @@
+# Chrome is mono 14; prose, code and messages are at least 16. No literal fallbacks.
+register:
+  chrome: {fontToken: --fs-label, familyToken: --font-mono, minimumPx: 14}
+  reading: {fontToken: --fs-body, familyToken: --font-body, minimumPx: 16}
+  code: {fontToken: --fs-body, familyToken: --font-mono, minimumPx: 16}
+source:
+  - name: owned micro consumers are converted
+    kind: ownedMicro
+    mutation: a micro consumer returns
+  - name: retirement never leaves a dangling consumer
+    kind: retirement
+    mutation: declaration removed before consumers
+  - name: dense font literals meet the chrome floor
+    kind: literals
+    mutation: a dense label shrinks to eleven pixels
+deferredConsumers:
+  - src/ui/Redaction.css
+  - src/ui/ConsentDialog.css
+  - src/index.css:.menu-cap
+responsive:
+  - name: collective grid
+    file: src/index.css
+    selector: .cex-coll-grid
+    desktop: 'grid-template-columns: 1fr 1fr'
+    query: '@media (max-width: 719px)'
+    narrow: 'grid-template-columns: 1fr'
+  - name: transcript grid
+    file: src/index.css
+    selector: .cex-grid
+    desktop: 'grid-template-columns: 1fr 1fr'
+    query: '@media (max-width: 759px)'
+    narrow: 'grid-template-columns: 1fr'
+publishContract:
+  # Default desktop split, with stacked columns only below the old 480px boundary.
+  query: '@media (max-width: 479px)'
+  desktopSplit: 'grid-template-columns: 1fr 1fr'
+  narrowSplit: 'grid-template-columns: 1fr'
+  desktopDivider: 'border-left: var(--bd)'
+  narrowDivider: 'border-left: 0'
+  widths: [320, 390]
+  themes: [dark, light]
+  acceptance: >-
+    Open the actual publish dialog, show the where split, and expand scanner help.
+    Primary labels and confidence help wrap with no line clamp or hidden overflow.
+    All controls remain within the dialog and reachable by keyboard. The split has
+    one column at both widths; its divider does not consume primary text space.
+    Dialog scrollWidth is no greater than clientWidth (one pixel rounding tolerance).
+    Bind and read back data-theme before measuring. Test a long repository name.
+measurements:
+  - name: transcript title
+    query: app=transcript
+    selector: .txn-title
+    minimumPx: 20
+    wrap: true
+    mutation: title shrinks and clamps
+  - name: transcript prose
+    query: app=transcript
+    selector: .txn-body .txn-md-prose
+    minimumPx: 16
+    mutation: speech shrinks
+  - name: transcript toolbar
+    query: app=transcript
+    selector: .txn-trace-head
+    minimumPx: 14
+    mutation: toolbar overflows
+    reflow: true
+  - name: filter rail
+    query: app=transcript
+    selector: .txn-filters
+    minimumPx: 14
+    mutation: filter label shrinks
+    desktopOnly: true
+  - name: commit subjects
+    query: app=local&section=changes
+    selector: .cg-msg
+    minimumPx: 16
+    wrap: true
+    mutation: commit subject clamps
+  - name: analytics toggles
+    query: app=local&section=analytics
+    selector: .gan-seg
+    minimumPx: 14
+    mutation: toggle shrinks
+  - name: analytics headings
+    query: app=local&section=analytics
+    selector: .gan-card-title
+    minimumPx: 20
+    wrap: true
+    mutation: heading shrinks
+widths: [320, 390, 1440]
+case:
+  name: checkpoint message keeps case
+  query: app=transcript
+  selector: .tm2-marker-message
+  text: 'Fix OAuth API Handling Without Losing User Content'
+  mutation: checkpoint inherits lowercase chrome
