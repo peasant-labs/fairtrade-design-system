@@ -1,11 +1,88 @@
 import { test, expect } from '@playwright/test'
-import { mkdirSync, readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 import { loadDenseTypeFixtures } from '../dense-type-fixtures.mjs'
 import { ROOT } from '../css-source.mjs'
 
 const spec = loadDenseTypeFixtures()
 const origin = `http://localhost:${process.env.JOURNEY_APP_PORT || '5180'}`
+
+async function openTranscript(page, info, row) {
+  const theme = spec.themes.find(theme => theme === info.project.name)
+  expect(theme).toBeTruthy()
+  await page.setViewportSize({ width: row.width, height: 900 })
+  await page.goto(`${origin}/?fb=off&${row.query}&theme=${theme}#inuse`, { waitUntil: 'networkidle' })
+  await page.evaluate(() => document.fonts.ready)
+  expect(await page.locator('html').getAttribute('data-theme') || 'dark').toBe(theme)
+  const assets = await page.locator('link[rel="stylesheet"][href^="/assets/"], script[type="module"][src^="/assets/"]').evaluateAll(nodes => nodes.map(el => el.getAttribute('href') || el.getAttribute('src')))
+  const provenance = []
+  for (const asset of assets) {
+    const response = await page.request.get(new URL(asset, origin).href)
+    const bytes = await response.body()
+    expect(bytes).toEqual(readFileSync(join(ROOT, 'dist', asset.replace(/^\//, ''))))
+    if (asset.endsWith('.js')) expect(bytes.toString()).toContain('revealRequest')
+    provenance.push({ asset, sha256: createHash('sha256').update(bytes).digest('hex') })
+  }
+  expect(provenance).toHaveLength(2)
+  if (process.env.DENSE_FOCUSED_CAPTURE_DIR) {
+    mkdirSync(process.env.DENSE_FOCUSED_CAPTURE_DIR, { recursive: true })
+    writeFileSync(join(process.env.DENSE_FOCUSED_CAPTURE_DIR, `provenance-${theme}.json`), JSON.stringify({ head: process.env.CAPTURE_HEAD, origin, theme, assets: provenance }, null, 2))
+  }
+  return theme
+}
+
+async function captureTranscript(page, theme, state) {
+  const capture = process.env.DENSE_FOCUSED_CAPTURE_DIR
+  if (!capture) return
+  mkdirSync(capture, { recursive: true })
+  await page.locator('#inuse').screenshot({ path: join(capture, `${state}-${theme}-390.png`) })
+}
+
+test(spec.expandedTools.name, async ({ page }, info) => {
+  const row = spec.expandedTools
+  const theme = await openTranscript(page, info, row)
+  for (const reading of row.readings) {
+    const button = page.locator('.txn-tc-head').filter({ hasText: reading.buttonText }).first()
+    await expect(button).toHaveAttribute('aria-expanded', 'false')
+    await button.click()
+    const text = button.locator('..').locator(reading.selector).filter({ hasText: reading.text }).first()
+    await expect(text).toBeVisible()
+    expect(await text.evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(reading.minimumPx)
+    await text.scrollIntoViewIfNeeded()
+    await captureTranscript(page, theme, reading.selector === '.txn-tc-desc' ? 'expanded-description' : 'expanded-task')
+  }
+})
+
+test(spec.collapsedSearch.name, async ({ page }, info) => {
+  const row = spec.collapsedSearch
+  const theme = await openTranscript(page, info, row)
+  const turn = page.locator(`#turn-${row.turn}`)
+  const disclosure = turn.locator('.txn-turn-disclosure')
+  const body = page.locator(`[id="${await disclosure.getAttribute('aria-controls')}"]`)
+  const other = page.locator(`#turn-${row.otherTurn} .txn-turn-disclosure`)
+  await disclosure.click()
+  await other.click()
+  await expect(body).toBeHidden()
+  // Passive scroll tracking can change the active turn, but must not reveal it.
+  await page.locator('.txn-stream').evaluate(el => { el.scrollTop = el.scrollHeight })
+  await expect.poll(() => page.locator('.txn-active').evaluate(el => el.closest('.txn-turnwrap').getAttribute('data-turn'))).not.toBe(String(row.turn))
+  await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
+  await expect(other).toHaveAttribute('aria-expanded', 'false')
+  await page.locator('.txn-search-trigger').click()
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(row.text)
+  await expect(page.locator('.txn-search-count')).toHaveText(row.count)
+  await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
+  await expect(body).toBeVisible()
+  await expect(body.getByText(row.text, { exact: false })).toBeVisible()
+  await expect(other).toHaveAttribute('aria-expanded', 'false')
+  // Navigating the same single result is still an explicit reveal request.
+  await disclosure.click()
+  await page.getByRole('button', { name: 'next match', exact: true }).click()
+  await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
+  await expect(other).toHaveAttribute('aria-expanded', 'false')
+  await captureTranscript(page, theme, 'search-reveal')
+})
 
 // Measure the actual mounted elements, not a synthetic stand-in for their CSS.
 function inspect({ row, mutation }) {

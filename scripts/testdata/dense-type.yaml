@@ -157,6 +157,27 @@ measurements:
 widths: [320, 390, 1440]
 themes: [dark, light]
 toolGroupLabels: [file edits, bash]
+expandedTools:
+  name: expanded tool reading font floor
+  query: app=transcript
+  width: 390
+  readings:
+    - buttonText: pnpm -r typecheck
+      selector: .txn-tc-desc
+      text: workspace-wide typescript check
+      minimumPx: 16
+    - buttonText: docs-writer
+      selector: .txn-fetch-md
+      text: 'Write the README contract section for'
+      minimumPx: 16
+collapsedSearch:
+  name: search reveals only its matching collapsed turn
+  query: app=transcript
+  width: 390
+  turn: 0
+  otherTurn: 2
+  text: Port the transcript canvas
+  count: 1/1
 case:
   name: checkpoint message keeps case
   query: app=transcript

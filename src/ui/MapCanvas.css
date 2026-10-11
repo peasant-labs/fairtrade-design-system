@@ -53,7 +53,7 @@
 }
 
 /* segmented control: three square cells sharing seams; the active cell sits on the
-   elevated surface with a strong rule + amber-dim left edge marker (not colour-only —
+   elevated surface with a strong rule + neutral strong-rule left edge marker (not colour-only;
    the active cell also carries a check glyph). */
 .mc-seg {
   display: inline-flex;

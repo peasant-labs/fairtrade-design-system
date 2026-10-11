@@ -1,5 +1,5 @@
 import { CornerDownRight, User, Wrench, Check, Link as LinkIcon, AlertTriangle, Coins } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useId, useLayoutEffect, useState } from 'react'
 import ProviderIcon from '../ProviderIcon.jsx'
 import { providerAccent, providerDisplayName } from '../provider-policy.js'
 import Markdown from './Markdown.jsx'
@@ -53,6 +53,7 @@ function formatRelative(ts) {
  * @param {{ outcome: string, flag?: string }} [props.savedLabel]
  * @param {boolean} [props.compact]
  * @param {boolean} [props.expandAll]
+ * @param {number} [props.revealRequest] explicit search navigation sequence
  */
 export default function TurnCard({
   turn,
@@ -67,9 +68,13 @@ export default function TurnCard({
   savedLabel,
   compact = false,
   expandAll = false,
+  revealRequest = 0,
 }) {
   const [expanded, setExpanded] = useState(true)
   const bodyId = useId()
+  useLayoutEffect(() => {
+    if (revealRequest) setExpanded(true)
+  }, [revealRequest])
   if (!turn) return null
   const isUser = turn.role === 'user'
   const isEarlier = !!turn.partition && turn.partition !== 'main'

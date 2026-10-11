@@ -1078,8 +1078,6 @@
      token-driven, square, hairline; both themes for free. */
 
   /* ---- avatar sizes (the base .avatar is 18px; these scale up for standalone use) ---- */
-  /* the 11px (av-sm) and 10px (base .avatar) initials are decorative glyphs, deliberately
-     below the 14 mono-chrome floor; there is no smaller type token, so these stay literal. */
   .av-sm { width: var(--sp-5); height: var(--sp-5); font-size: var(--fs-label); }
   .av-md { width: 32px; height: 32px; font-size: var(--fs-label); }
   .av-lg { width: 44px; height: 44px; font-size: var(--fs-md); }
@@ -2143,7 +2141,7 @@
   .txn-tc-dur { color: var(--ink-4); }
 
   .txn-tcbody { border-top: var(--bd); padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
-  .txn-tc-desc { font-size: var(--fs-sm); color: var(--ink-3); line-height: 1.5; }
+  .txn-tc-desc { font-size: var(--fs-body); color: var(--ink-3); line-height: 1.5; }
 
   .txn-code-head, .txn-diff-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); flex-wrap: wrap; }
   .txn-code-path { color: var(--ink-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2174,7 +2172,7 @@
 
   /* webfetch + task body */
   .txn-url { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); }
-  .txn-fetch-md { font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.55; }
+  .txn-fetch-md { font-size: var(--fs-body); color: var(--ink-2); line-height: 1.55; }
   .txn-kv { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-1) var(--sp-3); margin: 0; font-family: var(--font-mono); font-size: var(--fs-body); }
   .txn-kv > div { display: contents; }
   .txn-kv dt { color: var(--ink-4); text-transform: lowercase; }
@@ -2541,7 +2539,7 @@
   .txn-anno-row { flex-wrap: wrap; }
   .txn-anno-preview { flex-basis: 100%; }
 }
-/* ---- phone: truncate checkpoint strip so it never overflows the stage ---- */
+/* ---- phone: wrap checkpoint text to keep it readable within the stage ---- */
 @media (max-width: 480px) {
   .txn-checkpoint .mkc { max-width: 100%; min-width: 0; }
   .txn-cp-msg { white-space: normal; overflow-wrap: anywhere; text-transform: none; }

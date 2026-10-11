@@ -22,3 +22,6 @@ requiredMeasurementNames:
   - commons prose
   - commons sections
 requiredCaseNames: [checkpoint message keeps case]
+requiredInteractionNames:
+  - expanded tool reading font floor
+  - search reveals only its matching collapsed turn

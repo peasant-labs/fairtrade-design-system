@@ -243,6 +243,8 @@ export default function TranscriptViewer({
   const heroCondensed = heroHidden && tab === 'trace' && viewMode === 'list'
   const [searchOpen, setSearchOpen] = useState(false)
   const [matchIdx, setMatchIdx] = useState(0)
+  const [searchNavigation, setSearchNavigation] = useState(0)
+  const [searchReveal, setSearchReveal] = useState(null)
   const [diffMode, setDiffMode] = useState('file')
   const [diffGroupsOpen, setDiffGroupsOpen] = useState({}) // path -> open? (default open)
   const [fileSort, setFileSort] = useState({ key: 'path', dir: 'asc' })
@@ -630,7 +632,13 @@ export default function TranscriptViewer({
      trigger does exactly what the shortcut does (open the bar on the trace tab, focus its field). */
   function openSearch() {
     setSearchOpen(true); selectTab('trace')
+    setSearchNavigation(sequence => sequence + 1)
     setTimeout(() => searchInputRef.current?.focus(), 0)
+  }
+
+  function navigateSearch(delta) {
+    setMatchIdx(i => matches.length ? (i + delta + matches.length) % matches.length : 0)
+    setSearchNavigation(sequence => sequence + 1)
   }
 
   /* cmd/ctrl+F search + j/k step (browser only; no-op under static render). */
@@ -653,19 +661,26 @@ export default function TranscriptViewer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchOpen, tab, viewMode, activeTurn, visibleTurns, selectTab])
 
-  /* scroll the active match into view (browser only). */
-  useEffect(() => {
+  /* Only deliberate search input/navigation reveals a turn, never passive activation. */
+  useLayoutEffect(() => {
     if (!searchOpen || matches.length === 0) return
     const m = matches[Math.min(matchIdx, matches.length - 1)]
-    const el = turnRefs.current[m.turn]
+    setSearchReveal({ turn: m.turn, sequence: searchNavigation })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchNavigation])
+
+  /* The matching card opens in its layout effect before this scroll action. */
+  useEffect(() => {
+    if (!searchReveal) return
+    const el = turnRefs.current[searchReveal.turn]
     const sc = scrollRef.current
     if (el && sc) {
       const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
       sc.scrollTo({ top: el.offsetTop - 12, behavior: reduce ? 'auto' : 'smooth' })
-      setActiveTurn(m.turn)
+      setActiveTurn(searchReveal.turn)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchIdx, matches, searchOpen])
+  }, [searchReveal])
 
   /* files / diffs derived. */
   const sortedFiles = useMemo(() => {
@@ -960,6 +975,7 @@ export default function TranscriptViewer({
                           <TurnCard
                             turn={t}
                             active={activeTurn === t.index}
+                            revealRequest={searchReveal?.turn === t.index ? searchReveal.sequence : 0}
                             openTools={openTools}
                             toggleTool={toggleTool}
                             onCopyAnchor={copyAnchor}
@@ -1157,16 +1173,16 @@ export default function TranscriptViewer({
             className="txn-search-input"
             placeholder="search across turns, tool args, and results…"
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setMatchIdx(0) }}
+            onChange={(e) => { setQuery(e.target.value); setMatchIdx(0); setSearchNavigation(sequence => sequence + 1) }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); setMatchIdx((i) => (matches.length ? (e.shiftKey ? (i - 1 + matches.length) % matches.length : (i + 1) % matches.length) : 0)) }
+              if (e.key === 'Enter') { e.preventDefault(); navigateSearch(e.shiftKey ? -1 : 1) }
               if (e.key === 'Escape') setSearchOpen(false)
             }}
             aria-label="search transcript"
           />
           <span className="txn-search-count tnum">{matches.length ? `${matchIdx + 1}/${matches.length}` : '0 matches'}</span>
-          <button type="button" className="txn-search-nav" aria-label="previous match" disabled={!matches.length} onClick={() => setMatchIdx((i) => (i - 1 + matches.length) % matches.length)}><ChevronUp size={14} aria-hidden="true" /></button>
-          <button type="button" className="txn-search-nav" aria-label="next match" disabled={!matches.length} onClick={() => setMatchIdx((i) => (i + 1) % matches.length)}><ChevronDown size={14} aria-hidden="true" /></button>
+          <button type="button" className="txn-search-nav" aria-label="previous match" disabled={!matches.length} onClick={() => navigateSearch(-1)}><ChevronUp size={14} aria-hidden="true" /></button>
+          <button type="button" className="txn-search-nav" aria-label="next match" disabled={!matches.length} onClick={() => navigateSearch(1)}><ChevronDown size={14} aria-hidden="true" /></button>
           <kbd className="kbd-key txn-search-esc">esc</kbd>
           <button type="button" className="txn-search-x" aria-label="close search" onClick={() => setSearchOpen(false)}><X size={14} aria-hidden="true" /></button>
         </div>
