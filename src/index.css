@@ -1186,22 +1186,42 @@
 ====================================================================== */
 @layer components {
   /* horizontal scroll on narrow viewports without breaking the table grid */
-  .tbl-wrap { overflow-x: auto; margin-top: var(--sp-4); }
+  .tbl-wrap { --tbl-sel-w: calc(var(--control-h-sm) + 2 * var(--sp-3)); overflow-x: auto; margin-top: var(--sp-4); min-width: 0; }
+  .tbl-scroll { overflow: auto; isolation: isolate; max-height: calc(var(--row-h-comfortable) * 8); scroll-padding-block-start: var(--control-h); }
+  .tbl-tools, .tbl-footer, .tbl-chips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); }
+  .tbl-tools { margin-bottom: var(--sp-2); }
+  .tbl-tools > .input { flex: 1 1 calc(var(--sp-8) * 3); min-width: min(100%, calc(var(--sp-8) * 2)); max-width: 100%; }
+  .tbl-filters summary { cursor: pointer; min-height: var(--control-h); display: flex; align-items: center; border: var(--bd-strong); padding-inline: var(--sp-3); }
+  .tbl-filter-fields { display: flex; flex-wrap: wrap; gap: var(--sp-3); padding-block: var(--sp-3); }
+  .tbl-filter-fields label { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+  .tbl-filter-fields .input { max-width: 100%; }
+  .tbl-filter-active { color: var(--ink-2); }
+  .tbl-chips:not(:empty) { margin-bottom: var(--sp-2); }
+  .tbl-chip { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--control-h); padding: var(--sp-1) var(--sp-2); border: var(--bd-strong); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; overflow-wrap: anywhere; text-align: left; }
+  .tbl-chip svg { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+  .tbl-footer { padding-block: var(--sp-3); }
+  .tbl-footer > [role=status] { margin-inline-end: auto; }
 
-  .tbl { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: var(--fs-sm); }
+  .tbl { width: 100%; border-collapse: separate; border-spacing: 0; font-family: var(--font-mono); font-size: var(--fs-body); line-height: var(--lh-body); }
 
   /* a quiet caption above the table (mono, lowercase, ink-3) */
   .tbl-caption { caption-side: top; text-align: left; font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); padding-bottom: var(--sp-2); }
 
   /* header cells: lowercase mono, quiet ink, a strong hairline beneath the row */
-  .tbl-th { text-align: left; font-weight: 600; color: var(--ink-3); text-transform: lowercase; padding: var(--sp-2) var(--sp-3); border-bottom: var(--bd-strong); white-space: nowrap; vertical-align: bottom; }
+  .tbl-th { text-align: left; font-size: var(--fs-label); font-weight: 600; color: var(--ink-3); padding: var(--sp-2) var(--sp-3); border-bottom: var(--bd-strong); white-space: nowrap; vertical-align: bottom; }
+  .tbl thead th { position: sticky; top: 0; z-index: calc(var(--z-sticky) + 1); background: var(--surface); }
+  .tbl tbody td { background: var(--surface); }
+  .tbl tr > :first-child { position: sticky; left: 0; z-index: var(--z-sticky); }
+  .tbl thead tr > :first-child { z-index: calc(var(--z-sticky) + 2); }
+  .tbl-has-selection .tbl tr > :nth-child(2) { position: sticky; left: var(--tbl-sel-w); z-index: var(--z-sticky); }
+  .tbl-has-selection .tbl thead tr > :nth-child(2) { z-index: calc(var(--z-sticky) + 2); }
   .tbl-th-label { display: inline-block; }
 
   /* the sort affordance IS a real button so it is keyboard-operable; it fills the
      header cell, carries the chevron, and never relies on colour alone */
   .tbl-sort {
     display: inline-flex; align-items: center; gap: var(--sp-1);
-    width: 100%; margin: 0; padding: 0;
+    width: 100%; min-height: var(--target-min); margin: 0; padding: 0;
     font: inherit; color: inherit; text-transform: inherit;
     background: transparent; border: 0; cursor: pointer; text-align: inherit;
   }
@@ -1217,9 +1237,12 @@
   .tbl-sort-ic { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--ink-4); }
   .tbl-sort:hover .tbl-sort-ic { color: var(--ink-3); }
 
-  /* body cells: hairline rows, top-aligned, comfortable padding */
-  .tbl-td { padding: var(--sp-3); border-bottom: var(--bd); color: var(--ink-2); vertical-align: top; }
+  /* body cells: hairline standard-height rows, middle-aligned, compact padding */
+  .tbl-td { height: var(--row-h-standard); box-sizing: border-box; padding: var(--sp-1) var(--sp-3); border-bottom: var(--bd); color: var(--ink-2); vertical-align: middle; }
   .tbl-td .tnum { font-variant-numeric: tabular-nums; }
+  .tbl-decimal { display: inline-flex; white-space: nowrap; letter-spacing: 0; }
+  .tbl-decimal-fraction { text-align: left; }
+  .tbl-decimal-spacer { visibility: hidden; }
 
   /* alignment modifiers (shared by th + td) */
   .tbl-right { text-align: right; }
@@ -1236,13 +1259,13 @@
   .tbl-row.is-selected:hover > .tbl-sel { background: color-mix(in srgb, var(--amber) 14%, var(--surface)); }
 
   /* selection column: narrow, centred; reuses the existing .check-box control verbatim */
-  .tbl-sel { width: 1%; white-space: nowrap; padding: var(--sp-2) var(--sp-3); text-align: center; vertical-align: middle; }
+  .tbl-sel { width: var(--tbl-sel-w); min-width: var(--tbl-sel-w); box-sizing: border-box; white-space: nowrap; padding: var(--sp-1) var(--sp-3); text-align: center; vertical-align: middle; }
   thead .tbl-sel { border-bottom: var(--bd-strong); }
   tbody .tbl-sel { border-bottom: var(--bd); }
 
   /* selection hit target: the label fills the padded cell so the clickable area meets the
      >=24px (here --control-h-sm = 28px) floor, not just the 18px .check-box itself */
-  .tbl-sel-hit { display: flex; align-items: center; justify-content: center; min-height: var(--control-h-sm); margin: calc(-1 * var(--sp-2)) calc(-1 * var(--sp-3)); padding: var(--sp-2) var(--sp-3); cursor: pointer; }
+  .tbl-sel-hit { display: flex; align-items: center; justify-content: center; min-height: var(--control-h-sm); cursor: pointer; }
 
   /* empty state row */
   .tbl-empty { padding: var(--sp-5) var(--sp-3); text-align: center; color: var(--ink-3); font-style: normal; }

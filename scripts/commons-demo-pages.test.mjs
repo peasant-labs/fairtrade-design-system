@@ -46,6 +46,12 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     if (page.account) report.check(text(root.querySelector('nav[aria-label="village sections"] .iu-subnav-end')) === page.account, `${page.name}: the nav ends with the account link ${page.account}`)
     for (const line of page.text ?? []) report.check(body.includes(line), `${page.name}: the page must show ${JSON.stringify(line)}`)
     for (const line of page.absentText ?? []) report.check(!body.toLowerCase().includes(line.toLowerCase()), `${page.name}: the page must not show ${JSON.stringify(line)}`)
+    if (page.tableCounts) {
+      const counts = [...root.querySelectorAll('.tbl-footer [role=status]')].map(text)
+      report.check(JSON.stringify(counts) === JSON.stringify(page.tableCounts), `${page.name}: table counts must equal ${JSON.stringify(page.tableCounts)}, received ${JSON.stringify(counts)}`)
+      report.check(!root.querySelector('.iu-page-count'), `${page.name}: no duplicate host count may render`)
+      report.check([...root.querySelectorAll('.tbl-footer button')].every((button) => button.disabled), `${page.name}: cumulative host rows must not offer unbacked page navigation`)
+    }
     for (const name of page.buttons ?? []) report.check(buttons().some((label) => label === name || label.startsWith(name)), `${page.name}: a button named ${JSON.stringify(name)} must exist`)
     for (const name of page.absentButtons ?? []) report.check(!buttons().some((label) => label.toLowerCase().startsWith(name)), `${page.name}: no button may be named ${JSON.stringify(name)}`)
     if (page.providers) {

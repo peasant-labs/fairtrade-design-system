@@ -377,8 +377,8 @@ hashes and data values keep their case. Multi-line literal copy (error bodies, h
 use sentence case so sentences stay parseable. Never `text-transform: uppercase` on multi-word text.
 
 **The Tabular Numbers Rule.** Every count, duration, stat and numeric column uses tabular lining
-figures (`font-variant-numeric: tabular-nums`). Numeric columns right-align, with one precision per
-column.
+figures (`font-variant-numeric: tabular-nums`). Numeric columns right-align; plain mixed-precision
+DataTable columns can align on the decimal separator without changing the values' precision.
 
 **The Bold, Not Italic Rule.** Emphasis is weight: `em` and `i` render at 600, upright. Underline is
 reserved for links. In prose, links carry a dotted underline (solid on hover and focus) so they
@@ -552,6 +552,32 @@ The data families are the data table, pagination, accordion, timeline, toast and
   and a selection that pairs an amber tint with a non-color marker. Zebra striping only past five
   columns or fifteen rows. Columns are ordered by importance, and each header matches its column's
   alignment (numeric alignment is in the tabular numbers rule).
+- **DataTable defaults:** the header is sticky in its bounded scroll region; the first identifier
+  column stays frozen on horizontal scroll (beside the selection column when present). Rows use
+  `--row-h-standard` (40px), expand for wrapping content and keep readable 16px data. Search and
+  column-filter controls are discoverable without props; active filters have a text indicator and
+  individually removable chips. A persistent count reports visible rows and the local filtered
+  total without `rowCount`, or the host total with `rowCount` and no active filter. With an active
+  filter on a partial host window it reports `showing X of Y loaded`, including zero results,
+  never a global match total. Local pagination starts at page 0 with 10 rows per page.
+- **DataTable state:** sort and selection retain their existing controlled/uncontrolled props.
+  Search, column filters and pagination each accept a controlled value, default seed and value
+  callback. User search/filter changes reset the page to zero. With `rowCount`, pagination stays
+  manual: the host supplies its window and total, which sets the page count. Search and column
+  filters still apply locally to the given rows, and sorting stays local. While a filter is active
+  on a partial window the count reports `showing X of Y loaded`, never the host total; clearing
+  the filter restores the host-total count. With a fully loaded window the count keeps the host
+  total in both states.
+  The host alone maps state to URL parameters. DataTable never reads or writes routing or storage,
+  fetches data, or requires a provider.
+  Hosts remove their duplicate count when adopting `rowCount`. A cumulative load-more window
+  can hold pagination at page 0 with pageSize equal to the host total (at least 1); its page
+  buttons stay disabled and the host's load-more action appends rows. Page-based hosts instead
+  provide `pagination` and `onPaginationChange` and supply the requested slice.
+- **Decimal columns:** `align: 'decimal'` aligns decimal separators for plain dot-separated numeric
+  values by reserving the visible column's largest fractional width, with tabular figures. Integers
+  reserve an invisible separator; values keep their precision. Custom renderers, currency and
+  locale-formatted strings use the right-aligned tabular fallback. Headers match the right edge.
 - **Long content** is chunked into labelled segments with stable fragments.
 - **Charts** (Recharts wrapped, never raw): square bars and lines, token series colors, a muted
   hairline grid (never amber), mono tabular ticks, direct or swatch-and-label legends, keyboard

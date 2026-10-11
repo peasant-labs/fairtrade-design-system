@@ -1,0 +1,42 @@
+requiredCaseNames:
+  - uncontrolled search filters rows
+  - uncontrolled column filter seeds a removable chip
+  - uncontrolled pagination slices local data
+  - host sliced window keeps the host total
+  - host sliced window is not locally paginated
+  - host sliced window filters locally against the loaded rows
+  - host sliced window filters columns against the loaded rows
+  - empty data keeps a count
+  - original sorting and numeric selection keys stay intact
+requiredMountedNames:
+  - decimal separators share an x position
+  - unsupported decimal values fall back to right tabular
+  - removing the last chip calls the host and clears active state
+  - sticky header frozen identifier and standard rows are defaults
+  - host pagination and search emit value callbacks
+  - uncontrolled search and column inputs change the local view
+requiredActionNames:
+  - uncontrolled chip removal changes the rendered rows
+  - controlled chip removal emits without changing host state
+  - uncontrolled next page changes the local slice
+  - controlled next page emits without changing host state
+  - original sort callback keeps its public shape
+  - original selection callback keeps numeric keys
+requiredMutationNames:
+  - decimal separators disappear
+  - mixed precision loses decimal alignment
+  - numeric cells lose tabular figures
+requiredGuardMutationNames:
+  - planted location read
+  - planted history write
+  - planted storage access
+  - planted internal helper access
+requiredConsumerNames:
+  - collective host total
+  - local home host total
+  - commons home host total
+requiredAnalyticsNames:
+  - contributor phone
+  - contributor large phone
+  - contributor tablet
+  - contributor desktop
