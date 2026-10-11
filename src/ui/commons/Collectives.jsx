@@ -357,11 +357,11 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
 
         <div className="cmg-home">
           <div className="cmg-home-main">
-            <DataTable caption={`transcripts ${total}`} columns={columns} rows={collective.transcripts} rowKey={(row) => row.id} />
-            {total > collective.transcripts.length && (
+            {/* The host appends rows through show more; this cumulative window has no page navigation. */}
+            <DataTable caption={`transcripts ${total}`} columns={columns} rows={collective.transcripts} rowKey={(row) => row.id} rowCount={total} pagination={{ pageIndex: 0, pageSize: Math.max(1, total) }} />
+            {total > collective.transcripts.length && onShowMore && (
               <div className="iu-page-foot">
-                <span className="iu-page-count">showing <span className="tnum">{collective.transcripts.length}</span> of <span className="tnum">{total}</span></span>
-                {onShowMore && <button type="button" className="btn btn-secondary btn-sm" onClick={() => onShowMore()}>show more</button>}
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => onShowMore()}>show more</button>
               </div>
             )}
           </div>

@@ -564,6 +564,10 @@ The data families are the data table, pagination, accordion, timeline, toast and
   already-filtered, already-paginated rows and the filtered total; existing sorting stays local.
   The host alone maps state to URL parameters. DataTable never reads or writes routing or storage,
   fetches data, or requires a provider.
+  Hosts remove their duplicate count when adopting `rowCount`. A cumulative load-more window
+  can hold pagination at page 0 with pageSize equal to the host total (at least 1); its page
+  buttons stay disabled and the host's load-more action appends rows. Page-based hosts instead
+  provide `pagination` and `onPaginationChange` and supply the requested slice.
 - **Decimal columns:** `align: 'decimal'` aligns decimal separators for plain dot-separated numeric
   values by reserving the visible column's largest fractional width, with tabular figures. Integers
   reserve an invisible separator; values keep their precision. Custom renderers, currency and
