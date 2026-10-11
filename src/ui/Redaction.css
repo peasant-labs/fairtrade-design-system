@@ -240,7 +240,9 @@
 
 /* category · confidence badge — square, hairline, mono, tabular confidence. */
 .rdx-badge {
+  position: relative;
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-1);
   padding: 0 var(--sp-2);
@@ -250,10 +252,14 @@
   color: var(--ink-2);
   font-size: var(--fs-label);
   min-width: 0;
+  max-width: 100%;
 }
 .rdx-badge-cat { color: var(--ink-2); }
 .rdx-badge-dot { color: var(--ink-4); }
 .rdx-badge-conf { color: var(--ink-3); }
+/* Keep confidence help inside the badge's bounds on a narrow review. */
+.rdx-badge-conf .term-anchor { position: static; }
+.rdx-badge-conf .term-bubble { max-width: 100%; }
 
 /* a low-confidence match (< 0.70) earns the amber caution treatment + a warning glyph, so the
    "verify me" cue is not color-only. */

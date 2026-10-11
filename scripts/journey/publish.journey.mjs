@@ -28,6 +28,7 @@ for (const row of spec.cases) {
     await expect(dialog.locator('.pub-primary')).toBeVisible()
     await expect(dialog.locator('.dlg-head button')).toBeFocused()
     const primary = dialog.locator('.pub-primary')
+    await expect(primary).toBeEnabled()
     const target = await opener.evaluate((el) => ({ height: el.getBoundingClientRect().height, token: parseFloat(getComputedStyle(el).getPropertyValue('--control-h')) }))
     expect(target.height).toBeGreaterThanOrEqual(target.token)
     await dialog.locator('.pub-auto input').check()
