@@ -97,9 +97,11 @@ function ViewExample({ hostSliced = false }) {
       columnFilters={columnFilters}
       onColumnFiltersChange={(next) => { setLastFilters(next); setFilters(next) }}
       {...(hostSliced ? { rowCount: hostRows.length, search, onSearchChange: (next) => { setLastSearch(next); setSearch(next) }, pagination, onPaginationChange: (next) => { setLastPagination(next); setPagination(next) } } : {})} />
-    <output className="tbl-callback-filters">{JSON.stringify(lastFilters)}</output>
-    <output className="tbl-callback-search">{JSON.stringify(lastSearch)}</output>
-    <output className="tbl-callback-pagination">{JSON.stringify(lastPagination)}</output>
+    <div style={{ display: 'grid', gap: 'var(--sp-2)', marginTop: 'var(--sp-3)', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-label)', color: 'var(--ink-3)' }}>
+      <span>column filters: <output className="tbl-callback-filters">{lastFilters === null ? 'no change' : JSON.stringify(lastFilters)}</output></span>
+      <span>search: <output className="tbl-callback-search">{lastSearch === null ? 'no change' : JSON.stringify(lastSearch)}</output></span>
+      <span>pagination: <output className="tbl-callback-pagination">{lastPagination === null ? 'no change' : JSON.stringify(lastPagination)}</output></span>
+    </div>
   </>
 }
 
