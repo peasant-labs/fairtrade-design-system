@@ -845,7 +845,7 @@ export default function TranscriptViewer({
 
         <h2 className="txn-title" title={title}>{title}</h2>
 
-        <div className="txn-meta chips">
+        <div className="txn-meta chips" tabIndex={0} role="region" aria-label="session metadata">
           {showOutcome && session.outcome && <TranscriptOutcomeChip outcome={session.outcome} />}
           {session.harness && <span className="chip"><ProviderIcon harness={session.harness} accent /> {String(session.harness).replace(/-/g, ' ')}</span>}
           {session.model && <span className="chip mono">{session.model}</span>}
@@ -866,6 +866,30 @@ export default function TranscriptViewer({
         {pullRequests != null && <div className="txn-prs">{pullRequests}</div>}
         <UsageScopes scopes={vm.usageScopes} />
       </header>
+
+      {/* Search is anchored after the context header on narrow screens. */}
+      {searchOpen && (
+        <div className="txn-search">
+          <Search size={15} aria-hidden="true" className="txn-search-ico" />
+          <input
+            ref={searchInputRef}
+            className="txn-search-input"
+            placeholder="search across turns, tool args, and results…"
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setMatchIdx(0); setSearchNavigation(sequence => sequence + 1) }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') { e.preventDefault(); navigateSearch(e.shiftKey ? -1 : 1) }
+              if (e.key === 'Escape') setSearchOpen(false)
+            }}
+            aria-label="search transcript"
+          />
+          <span className="txn-search-count tnum">{matches.length ? `${matchIdx + 1}/${matches.length}` : '0 matches'}</span>
+          <button type="button" className="txn-search-nav" aria-label="previous match" disabled={!matches.length} onClick={() => navigateSearch(-1)}><ChevronUp size={14} aria-hidden="true" /></button>
+          <button type="button" className="txn-search-nav" aria-label="next match" disabled={!matches.length} onClick={() => navigateSearch(1)}><ChevronDown size={14} aria-hidden="true" /></button>
+          <kbd className="kbd-key txn-search-esc">esc</kbd>
+          <button type="button" className="txn-search-x" aria-label="close search" onClick={() => setSearchOpen(false)}><X size={14} aria-hidden="true" /></button>
+        </div>
+      )}
 
       {/* ===================== TAB STRIP ===================== */}
       {/* the optional search trigger sits at the strip's end, outside the tablist (a tablist
@@ -1165,29 +1189,6 @@ export default function TranscriptViewer({
       </div>
 
       {/* ===================== OVERLAYS ===================== */}
-      {searchOpen && (
-        <div className="txn-search">
-          <Search size={15} aria-hidden="true" className="txn-search-ico" />
-          <input
-            ref={searchInputRef}
-            className="txn-search-input"
-            placeholder="search across turns, tool args, and results…"
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); setMatchIdx(0); setSearchNavigation(sequence => sequence + 1) }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); navigateSearch(e.shiftKey ? -1 : 1) }
-              if (e.key === 'Escape') setSearchOpen(false)
-            }}
-            aria-label="search transcript"
-          />
-          <span className="txn-search-count tnum">{matches.length ? `${matchIdx + 1}/${matches.length}` : '0 matches'}</span>
-          <button type="button" className="txn-search-nav" aria-label="previous match" disabled={!matches.length} onClick={() => navigateSearch(-1)}><ChevronUp size={14} aria-hidden="true" /></button>
-          <button type="button" className="txn-search-nav" aria-label="next match" disabled={!matches.length} onClick={() => navigateSearch(1)}><ChevronDown size={14} aria-hidden="true" /></button>
-          <kbd className="kbd-key txn-search-esc">esc</kbd>
-          <button type="button" className="txn-search-x" aria-label="close search" onClick={() => setSearchOpen(false)}><X size={14} aria-hidden="true" /></button>
-        </div>
-      )}
-
       {/* per-turn label popover — rendered ONLY when canLabel (capability-gated). */}
       {canLabel && labelFor != null && (
         <LabelPopover turnId={labelFor} current={savedLabels[labelFor]} onSave={saveLabel} onClose={() => setLabelFor(null)} />

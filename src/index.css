@@ -1875,11 +1875,10 @@
   @media (max-width: 900px) {
     .iu-bar { gap: var(--sp-3); padding: 0 var(--sp-4); }
   }
-  /* Narrow selectors keep the app names, with taller wrapped buttons. */
+  /* Compact tiles retain their names for assistive technology. */
   @media (max-width: 720px) {
-    .iu-bar { gap: var(--sp-2); padding: var(--sp-1) var(--sp-3); height: auto; flex: none; }
-    .iu-switch { margin-inline: 0; flex: 1; height: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .iu-opt { min-width: 0; padding: var(--sp-1) var(--sp-2); flex-wrap: wrap; gap: var(--sp-1); white-space: normal; line-height: var(--lh-mono); }
+    .iu-bar { gap: var(--sp-2); padding: var(--sp-1) var(--sp-4); flex: none; }
+    .iu-opt-label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
   }
   @media (max-width: 480px) {
     .iu-bar-brand span { display: none; }
@@ -2504,8 +2503,8 @@
   .txn-app-condensed > .txn-header .txn-header-top { flex-wrap: wrap; }
   .txn-app-condensed > .txn-header .txn-crumb { flex-wrap: wrap; overflow: visible; white-space: normal; }
   .txn-trace-head { flex-wrap: wrap; }
-  .txn-header .chip { min-height: var(--target-min); height: auto; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
-  .iu .btn { min-height: var(--control-h); height: auto; padding-block: var(--sp-2); line-height: var(--lh-mono); }
+  .txn-header .chip:not(button):not(a) { min-height: 0; }
+  .iu .btn:not(.btn-sm) { min-height: var(--control-h); height: auto; padding-block: var(--sp-2); line-height: var(--lh-mono); }
   .iu .btn .lucide { flex: none; }
   .txn-title {
     font-size: var(--fs-lg);
@@ -2514,10 +2513,11 @@
     display: block;
     overflow-wrap: anywhere;
   }
-  /* Identity and metadata remain visible rather than clipping at the edge. */
+  /* Secondary metadata stays in one keyboard-scrollable row. */
   .txn-meta {
-    flex-wrap: wrap;
-    overflow-wrap: anywhere;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    overflow-x: auto;
     padding-bottom: var(--sp-1);
     margin-top: var(--sp-2);
   }
@@ -2526,11 +2526,21 @@
      title while condensed. */
   .txn-app-condensed > .txn-header .txn-title, .txn-app-condensed > .txn-header .txn-meta { display: none; }
   .txn-meta > * { flex: none; }
-  .txn-tabs { gap: var(--sp-2) var(--sp-4); flex-wrap: wrap; }
+  .txn-tabs { gap: var(--sp-4); flex-wrap: nowrap; overflow-x: auto; }
   .txn-tab { padding: var(--sp-2) 2px; }
   .txn-tabbar { padding-right: var(--sp-3); }
-  .txn-tabbar > .txn-tabs { flex-wrap: wrap; }
+  .txn-tabbar > .txn-tabs { flex-wrap: nowrap; }
   .txn-tabbar .txn-tab { flex: none; }
+  .txn-search { position: relative; top: auto; left: auto; transform: none; flex: none; align-self: center; margin-block: var(--sp-2); }
+  .tbl-tools { position: relative; flex-wrap: nowrap; align-items: flex-start; }
+  .tbl-tools > .input { min-width: 0; flex: 1 1 0; }
+  .tbl-filters { flex: none; }
+  .tbl-tools > label, .tbl-filter-active { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .tbl-filter-fields { position: absolute; left: 0; right: 0; z-index: var(--z-dropdown); background: var(--surface); border: var(--bd-strong); padding: var(--sp-3); }
+  .tbl-footer { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
+  .tbl-footer > * { flex: none; }
+  .tbl-footer:has(> button:first-of-type:disabled):has(> button:last-of-type:disabled) > :not([role=status]) { display: none; }
+  .tbl-td { padding-block: var(--sp-2); }
   /* the "N turns / list·graph toggle" bar above the stream — same treatment
      as .txn-header: less padding buys the scrollable stream more of the
      viewport without hiding or removing anything. */
@@ -2539,6 +2549,8 @@
   .txn-anno-row { flex-wrap: wrap; }
   .txn-anno-preview { flex-basis: 100%; }
 }
+/* Keep consent prose distinct from the checkbox row without changing sheet insets. */
+.pub-dialog .pub-auto { gap: var(--sp-2); }
 /* ---- phone: wrap checkpoint text to keep it readable within the stage ---- */
 @media (max-width: 480px) {
   .txn-checkpoint .mkc { max-width: 100%; min-width: 0; }
