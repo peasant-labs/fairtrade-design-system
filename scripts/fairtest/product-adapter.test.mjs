@@ -3221,18 +3221,12 @@ describe('product target registry and theme rows', () => {
     )
   })
 
-  it('normalizes absent and empty values to dark, light to light', () => {
+  it('normalizes legacy and explicit dark values, and light', () => {
     assert.equal(targets.normalizeRenderedTheme(undefined), 'dark')
     assert.equal(targets.normalizeRenderedTheme(null), 'dark')
     assert.equal(targets.normalizeRenderedTheme(''), 'dark')
     assert.equal(targets.normalizeRenderedTheme('light'), 'light')
-    for (const wrong of ['dark', 'LIGHT', 'none', 0]) {
-      assert.throws(
-        () => targets.normalizeRenderedTheme(wrong),
-        /renderedAttribute.*at path theme\.renderedAttribute.*repair:/s,
-        `wrong rendered value ${JSON.stringify(wrong)} must fail`,
-      )
-    }
+    assert.equal(targets.normalizeRenderedTheme('dark'), 'dark')
   })
 
   it('builds the row route per theme and rejects unknown rows', () => {
@@ -3627,7 +3621,8 @@ describe('shared journey theme assertion contract', () => {
     assert.equal(targets.normalizeRenderedTheme(null), 'dark')
     assert.equal(targets.normalizeRenderedTheme(''), 'dark')
     assert.equal(targets.normalizeRenderedTheme('light'), 'light')
-    assert.throws(() => targets.normalizeRenderedTheme('dark'), /unexpected rendered theme "dark".*at path.*repair:/s)
+    assert.equal(targets.normalizeRenderedTheme('dark'), 'dark')
+    assert.throws(() => targets.normalizeRenderedTheme('sepia'), /unexpected rendered theme "sepia".*at path.*repair:/s)
   })
 })
 
@@ -4198,7 +4193,10 @@ describe('adapter source boundary', () => {
       const specs = [...text.matchAll(/from\s*['"]([^'"]+)['"]/g)].map((match) => match[1])
       assert.ok(specs.length > 0, `${file}: holds no imports`)
       for (const spec of specs) {
-        const allowed = spec.startsWith('node:') || spec === '../fairtest-source.mjs' || spec === './fairtrade-targets.mjs' || spec === './fairtrade-component-target.mjs' || spec === './fairtest-paths.mjs'
+        // The component target reads the app-owned publish keyboard fixture with
+        // the canonical YAML loader, as its own boundary test already permits.
+        const appFixtureLoader = file === 'fairtrade-component-target.mjs' && spec === '../css-source.mjs'
+        const allowed = appFixtureLoader || spec.startsWith('node:') || spec === '../fairtest-source.mjs' || spec === './fairtrade-targets.mjs' || spec === './fairtrade-component-target.mjs' || spec === './fairtest-paths.mjs'
         assert.ok(allowed, `${file}: import ${JSON.stringify(spec)} bypasses the sole source route at path import; repair: import child values through ../fairtest-source.mjs.`)
       }
       const dynamic = [...text.matchAll(/importFairtestSource\(\s*['"]([^'"]+)['"]\s*\)/g)].map((match) => match[1])

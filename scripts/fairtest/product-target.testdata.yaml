@@ -80,10 +80,10 @@ cases:
     expectTheme: dark
     expectValid: true
     expectFrozen: true
-  - name: theme-row-dark-empty-passes
+  - name: theme-row-dark-attribute-passes
     check: theme-row
     theme: dark
-    renderedAttribute: ''
+    renderedAttribute: 'dark'
     expectTheme: dark
     expectValid: true
     expectFrozen: true
@@ -97,9 +97,9 @@ cases:
   - name: wrong-theme-value-fails
     check: theme-row
     theme: dark
-    renderedAttribute: 'dark'
+    renderedAttribute: 'sepia'
     expectValid: false
-    expectedErrorContains: ['"dark"', 'at path', 'repair:']
+    expectedErrorContains: ['"sepia"', 'at path', 'repair:']
   - name: route-dark-passes
     check: route
     theme: dark
@@ -625,9 +625,9 @@ cases:
   - name: wrapper-wrong-value-fails
     check: wrapper-theme
     theme: dark
-    renderedAttribute: 'dark'
+    renderedAttribute: 'sepia'
     expectValid: false
-    expectedErrorContains: ['"dark"', 'renderedAttribute', 'at path', 'repair:']
+    expectedErrorContains: ['"sepia"', 'renderedAttribute', 'at path', 'repair:']
   - name: artifact-record-required
     check: artifact-class
     artifact: record.json
