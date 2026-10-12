@@ -1,0 +1,15 @@
+{
+  "head": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+  "origin": "http://localhost:5198",
+  "theme": "dark",
+  "assets": [
+    {
+      "asset": "/assets/index-jqFBAjdl.js",
+      "sha256": "940f11c9580e9e656c3178f13df24dfbf626517a953cdb43789a06954ea9a04e"
+    },
+    {
+      "asset": "/assets/index-C5JqVQCH.css",
+      "sha256": "9c7a1f034c41101cbdef3186a00ea8dca31d2718b7365bdb145289b78e38ce24"
+    }
+  ]
+}

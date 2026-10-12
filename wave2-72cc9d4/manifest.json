@@ -1,0 +1,1067 @@
+{
+  "baseline": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+  "candidate": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+  "viewportHeight": 900,
+  "determinism": "existing journey frozen clock and seeded randomness; reduced motion",
+  "assets": [
+    {
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "origin": "http://localhost:5267",
+      "asset": "/assets/index-C3B_lMwA.js",
+      "sha256": "75fd7bbd665e41a1387c9ca5a4248b5db8384f654d873bc95052f89e31066615"
+    },
+    {
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "origin": "http://localhost:5267",
+      "asset": "/assets/index-BvWbVsRz.css",
+      "sha256": "64a671bc362bc9471982bcab181de8cd1aa3ed350f1a708831b876600c23012d"
+    },
+    {
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "origin": "http://localhost:5268",
+      "asset": "/assets/index-jqFBAjdl.js",
+      "sha256": "940f11c9580e9e656c3178f13df24dfbf626517a953cdb43789a06954ea9a04e"
+    },
+    {
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "origin": "http://localhost:5268",
+      "asset": "/assets/index-C5JqVQCH.css",
+      "sha256": "9c7a1f034c41101cbdef3186a00ea8dca31d2718b7365bdb145289b78e38ce24"
+    }
+  ],
+  "captures": [
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-tool-before-dark-390.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "dark",
+      "width": 390,
+      "state": "transcript-tool",
+      "url": "http://localhost:5267/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 14,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 103239,
+        "stream": 1903
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-task-before-dark-390.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "dark",
+      "width": 390,
+      "state": "transcript-task",
+      "url": "http://localhost:5267/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 14,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 103239,
+        "stream": 3287
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-initial-before-dark-390.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "dark",
+      "width": 390,
+      "state": "table-initial",
+      "url": "http://localhost:5267/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "count": [],
+      "rows": 5,
+      "scroll": {
+        "window": 103239,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-filter-before-dark-390.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "dark",
+      "width": 390,
+      "state": "table-filter",
+      "url": "http://localhost:5267/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "filterSupported": false,
+      "filterTerm": "flaky",
+      "count": [],
+      "rows": 5,
+      "note": "Search/filter absent in published baseline; unchanged real initial table, not a fabricated filtered state.",
+      "scroll": {
+        "window": 103239,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-tool-after-dark-390.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 390,
+      "state": "transcript-tool",
+      "url": "http://localhost:5268/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 104777,
+        "stream": 1946
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-task-after-dark-390.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 390,
+      "state": "transcript-task",
+      "url": "http://localhost:5268/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 104777,
+        "stream": 3655
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-initial-after-dark-390.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 390,
+      "state": "table-initial",
+      "url": "http://localhost:5268/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 104777,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-filter-after-dark-390.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 390,
+      "state": "table-filter",
+      "url": "http://localhost:5268/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 104777,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-tool-before-light-390.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "light",
+      "width": 390,
+      "state": "transcript-tool",
+      "url": "http://localhost:5267/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 14,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 103239,
+        "stream": 1903
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-task-before-light-390.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "light",
+      "width": 390,
+      "state": "transcript-task",
+      "url": "http://localhost:5267/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 14,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 103239,
+        "stream": 3287
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-initial-before-light-390.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "light",
+      "width": 390,
+      "state": "table-initial",
+      "url": "http://localhost:5267/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "count": [],
+      "rows": 5,
+      "scroll": {
+        "window": 103239,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-filter-before-light-390.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "light",
+      "width": 390,
+      "state": "table-filter",
+      "url": "http://localhost:5267/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "filterSupported": false,
+      "filterTerm": "flaky",
+      "count": [],
+      "rows": 5,
+      "note": "Search/filter absent in published baseline; unchanged real initial table, not a fabricated filtered state.",
+      "scroll": {
+        "window": 103239,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-tool-after-light-390.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 390,
+      "state": "transcript-tool",
+      "url": "http://localhost:5268/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 104777,
+        "stream": 1946
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-task-after-light-390.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 390,
+      "state": "transcript-task",
+      "url": "http://localhost:5268/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 104777,
+        "stream": 3655
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-initial-after-light-390.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 390,
+      "state": "table-initial",
+      "url": "http://localhost:5268/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 104777,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-filter-after-light-390.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 390,
+      "state": "table-filter",
+      "url": "http://localhost:5268/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 104777,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-tool-before-dark-1440.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "dark",
+      "width": 1440,
+      "state": "transcript-tool",
+      "url": "http://localhost:5267/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 14,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 73329,
+        "stream": 1377
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-task-before-dark-1440.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "dark",
+      "width": 1440,
+      "state": "transcript-task",
+      "url": "http://localhost:5267/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 14,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 73329,
+        "stream": 2440
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-initial-before-dark-1440.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "dark",
+      "width": 1440,
+      "state": "table-initial",
+      "url": "http://localhost:5267/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "count": [],
+      "rows": 5,
+      "scroll": {
+        "window": 73329,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-filter-before-dark-1440.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "dark",
+      "width": 1440,
+      "state": "table-filter",
+      "url": "http://localhost:5267/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "filterSupported": false,
+      "filterTerm": "flaky",
+      "count": [],
+      "rows": 5,
+      "note": "Search/filter absent in published baseline; unchanged real initial table, not a fabricated filtered state.",
+      "scroll": {
+        "window": 73329,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-tool-after-dark-1440.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 1440,
+      "state": "transcript-tool",
+      "url": "http://localhost:5268/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 73653,
+        "stream": 1195
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-task-after-dark-1440.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 1440,
+      "state": "transcript-task",
+      "url": "http://localhost:5268/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 73653,
+        "stream": 2270
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-initial-after-dark-1440.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 1440,
+      "state": "table-initial",
+      "url": "http://localhost:5268/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-filter-after-dark-1440.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 1440,
+      "state": "table-filter",
+      "url": "http://localhost:5268/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-tool-before-light-1440.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "light",
+      "width": 1440,
+      "state": "transcript-tool",
+      "url": "http://localhost:5267/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 14,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 73329,
+        "stream": 1377
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-task-before-light-1440.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "light",
+      "width": 1440,
+      "state": "transcript-task",
+      "url": "http://localhost:5267/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 14,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 73329,
+        "stream": 2440
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-initial-before-light-1440.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "light",
+      "width": 1440,
+      "state": "table-initial",
+      "url": "http://localhost:5267/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "count": [],
+      "rows": 5,
+      "scroll": {
+        "window": 73329,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-filter-before-light-1440.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "light",
+      "width": 1440,
+      "state": "table-filter",
+      "url": "http://localhost:5267/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "filterSupported": false,
+      "filterTerm": "flaky",
+      "count": [],
+      "rows": 5,
+      "note": "Search/filter absent in published baseline; unchanged real initial table, not a fabricated filtered state.",
+      "scroll": {
+        "window": 73329,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-tool-after-light-1440.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 1440,
+      "state": "transcript-tool",
+      "url": "http://localhost:5268/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 73653,
+        "stream": 1195
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-task-after-light-1440.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 1440,
+      "state": "transcript-task",
+      "url": "http://localhost:5268/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 73653,
+        "stream": 2270
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-initial-after-light-1440.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 1440,
+      "state": "table-initial",
+      "url": "http://localhost:5268/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-filter-after-light-1440.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 1440,
+      "state": "table-filter",
+      "url": "http://localhost:5268/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/publish-consent-before-dark-390.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "dark",
+      "width": 390,
+      "state": "publish-consent",
+      "url": "http://localhost:5267/?fb=off&&theme=dark#inuse",
+      "checked": true,
+      "consent": "same collectives \u00b7 change it in settings",
+      "scroll": {
+        "window": 103239,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "pub-hint",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+          "text": "same collectives \u00b7 change it in settings"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/publish-consent-after-dark-390.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 390,
+      "state": "publish-consent",
+      "url": "http://localhost:5268/?fb=off&&theme=dark#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 104777,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/publish-consent-before-light-390.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "light",
+      "width": 390,
+      "state": "publish-consent",
+      "url": "http://localhost:5267/?fb=off&&theme=light#inuse",
+      "checked": true,
+      "consent": "same collectives \u00b7 change it in settings",
+      "scroll": {
+        "window": 103239,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "pub-hint",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+          "text": "same collectives \u00b7 change it in settings"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/publish-consent-after-light-390.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 390,
+      "state": "publish-consent",
+      "url": "http://localhost:5268/?fb=off&&theme=light#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 104777,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/publish-consent-before-dark-1440.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "dark",
+      "width": 1440,
+      "state": "publish-consent",
+      "url": "http://localhost:5267/?fb=off&&theme=dark#inuse",
+      "checked": true,
+      "consent": "same collectives \u00b7 change it in settings",
+      "scroll": {
+        "window": 73329,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "pub-hint",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+          "text": "same collectives \u00b7 change it in settings"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/publish-consent-after-dark-1440.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 1440,
+      "state": "publish-consent",
+      "url": "http://localhost:5268/?fb=off&&theme=dark#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 73653,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/publish-consent-before-light-1440.png",
+      "version": "before",
+      "sha": "4ee5362e0e53942675d7ced8bfb778b447a17531",
+      "theme": "light",
+      "width": 1440,
+      "state": "publish-consent",
+      "url": "http://localhost:5267/?fb=off&&theme=light#inuse",
+      "checked": true,
+      "consent": "same collectives \u00b7 change it in settings",
+      "scroll": {
+        "window": 73329,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "pub-hint",
+          "fontSize": "14px",
+          "fontFamily": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+          "text": "same collectives \u00b7 change it in settings"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/publish-consent-after-light-1440.png",
+      "version": "after",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 1440,
+      "state": "publish-consent",
+      "url": "http://localhost:5268/?fb=off&&theme=light#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 73653,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Before has no DataTable search/filter controls; its filtered comparison intentionally retains the real initial state, no DOM alteration.",
+    "Focused representative evidence only; not the full catalog."
+  ],
+  "inspection": {
+    "allFinalPairsIndividuallyInspected": true,
+    "pairCount": 20,
+    "filterAbsentLabelsReinspected": true,
+    "scrollAlignment": "same semantic reading/table anchor; numerical offsets differ with real reflow",
+    "notes": "SUMMARY.md"
+  },
+  "pairArtifacts": [
+    {
+      "path": "/tmp/opencode/wave2-before-after/publish-consent-pair-dark-1440.png",
+      "sha256": "00374f37d27e8e55b40a1cfaf4b0097a1820054815d8e583518bb1cb6e45c42e"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/publish-consent-pair-dark-390.png",
+      "sha256": "6772ee9fc0b066858338eac0219230b7c512ea47c562c141fbc2eded2b11584d"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/publish-consent-pair-light-1440.png",
+      "sha256": "c29dc58d475b1b4c122e4e7dbae8357036a6aa959a54e2478a718151bfd0716e"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/publish-consent-pair-light-390.png",
+      "sha256": "48280de518371140e529aaa38b91754bb44297162190ec37f2b2a628f40478bd"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-filter-pair-dark-1440.png",
+      "sha256": "606dc9bae2d1360bbafb73e8fa107e84de14dbe9a9884d894b9ba4534a24f1e8"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-filter-pair-dark-390.png",
+      "sha256": "4b0d1de376c246d57f52c9bee3f1edbb0aa297b9a58181f88f4294238bfe6e00"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-filter-pair-light-1440.png",
+      "sha256": "421662b865146974c6c55f5d5078b1b00b83ec9b30f3fa81af67753dc3e7cb9b"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-filter-pair-light-390.png",
+      "sha256": "c6c22f2c0854805be959149f0c82b7ab6425bfa4cde54f1907f4f996dec4715b"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-initial-pair-dark-1440.png",
+      "sha256": "931c2ea612cc91f01c0bcfe9aa6d3f89706ba3a17134d825a78abc168ade4398"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-initial-pair-dark-390.png",
+      "sha256": "ef10873e2c3c6f04564a81f5c58d6765e3a8962a93e78fad988687bd3393daa8"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-initial-pair-light-1440.png",
+      "sha256": "ba4866e700d05327b0047c246d5df91cbab3d8540f9d5ed059191e78c1e7abcd"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/table-initial-pair-light-390.png",
+      "sha256": "e0592d666cf7ebd63615646466bbf11d00b098d0f7d94308f70ff8689997a96b"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-task-pair-dark-1440.png",
+      "sha256": "433c774da73baae315d7e656cb99930247b6803bc22cf66af902705aef314c43"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-task-pair-dark-390.png",
+      "sha256": "f6ed6653d5d9674c195ed4233ffd7aa7e556d30f4fd28b5d8fb78c0197dd589c"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-task-pair-light-1440.png",
+      "sha256": "a85aa2566ee0babd7ca52f1c98fa42e9cda325f2e7a98826b0adac9a72ff5942"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-task-pair-light-390.png",
+      "sha256": "576e7c38d27339c75a637982c081277e8c56d78b90212d2a29685bae8f6cc8cb"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-tool-pair-dark-1440.png",
+      "sha256": "c8c73c2a59e0edfad27271a6861ed7debd705072d19b75abae0d31248ae05202"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-tool-pair-dark-390.png",
+      "sha256": "2676599d4783bf217ec6c0619fa21e0c403c1bc1da4a9ddf61e0dc6d95f3043a"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-tool-pair-light-1440.png",
+      "sha256": "f4a37cf6ab823b05760c490d1af0dea352fc75a4e1f98927f47cc1316fafa68a"
+    },
+    {
+      "path": "/tmp/opencode/wave2-before-after/transcript-tool-pair-light-390.png",
+      "sha256": "2f5cb88653a386ed5bf58a0ae0503a50e15dc31cdbddef2d664cae6f78d4f60a"
+    }
+  ]
+}
