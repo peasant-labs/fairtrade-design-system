@@ -2551,6 +2551,12 @@
 }
 /* Keep consent prose distinct from the checkbox row without changing sheet insets. */
 .pub-dialog .pub-auto { gap: var(--sp-2); }
+@media (max-width: 720px) {
+  .mc .mc-toolbar { flex-wrap: nowrap; height: var(--control-h); padding-block: 0; }
+  .mc .mc-seg { display: flex; flex: 1; min-width: 0; width: auto; height: var(--control-h-sm); overflow-x: auto; }
+  .mc .mc-seg-btn { flex: none; min-height: var(--target-min); height: 100%; flex-wrap: nowrap; padding: 0 var(--sp-3); white-space: nowrap; overflow-wrap: normal; }
+  .mc .mc-search { flex: none; width: calc(var(--sp-8) * 2); }
+}
 /* ---- phone: wrap checkpoint text to keep it readable within the stage ---- */
 @media (max-width: 480px) {
   .txn-checkpoint .mkc { max-width: 100%; min-width: 0; }
