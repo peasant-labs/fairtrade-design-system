@@ -36,14 +36,30 @@ invariants:
       - ".txn-title {"
       - "display: block;"
       - "overflow-wrap: anywhere;"
-  - id: txn-meta-wraps-on-mobile
+  - id: txn-meta-scrolls-on-mobile
     file: src/index.css
     description: >-
-      Identity and metadata wrap below 720px rather than disappearing off screen.
-      This implements the readable, taller-row phone layout.
+      Metadata stays in a single horizontal scroll row below 720px, without shrinking text.
     mustContainAll:
       - ".txn-meta {"
-      - ".txn-meta {\n    flex-wrap: wrap;\n    overflow-wrap: anywhere;"
+      - ".txn-meta {\n    flex-wrap: nowrap;\n    white-space: nowrap;\n    overflow-x: auto;"
+  - id: txn-meta-keyboard-scroll-region
+    file: src/ui/transcript/TranscriptViewer.jsx
+    description: The metadata scroller is focusable and named for keyboard and screen-reader users.
+    mustContainAll:
+      - '<div className="txn-meta chips"'
+      - 'tabIndex={0} role="region" aria-label="session metadata"'
+  - id: txn-tabs-scroll-on-mobile
+    file: src/index.css
+    description: Session tabs remain a single sideways-scrollable row below 720px.
+    mustContainAll:
+      - ".txn-tabs { gap: var(--sp-4); flex-wrap: nowrap; overflow-x: auto; }"
+  - id: txn-tabs-keyboard-navigation
+    file: src/ui/transcript/TranscriptViewer.jsx
+    description: Session views keep a named tablist and keyboard tab navigation.
+    mustContainAll:
+      - '<div className="tabs txn-tabs"'
+      - 'role="tablist" aria-label="session views" onKeyDown={onTabKey}'
   - id: txn-trace-head-compact-on-mobile
     file: src/index.css
     description: the "N turns / list·graph toggle" bar gets reduced padding below 720px, matching .txn-header's own mobile treatment.

@@ -13,9 +13,18 @@ for (const row of spec.consumerRows) {
       const view = page.locator('.iu-app-root')
       await expect(view.locator('.tbl-footer [role=status]')).toHaveText(row.count)
       await expect(view.locator('.iu-page-count')).toHaveCount(0)
-      await expect(view.getByRole('button', { name: 'next page', exact: true })).toBeDisabled()
-      await expect(view.getByRole('button', { name: 'previous page', exact: true })).toBeDisabled()
+      await expect(view.getByRole('button', { name: 'next page', exact: true, includeHidden: true })).toBeDisabled()
+      await expect(view.getByRole('button', { name: 'previous page', exact: true, includeHidden: true })).toBeDisabled()
       await expect(view.locator('.tbl-footer')).toContainText('page 1 of 1')
+      if (width <= 720) {
+        await expect(view.locator('.tbl-footer > :visible')).toHaveCount(1)
+        await expect(view.locator('.tbl-footer > :visible')).toHaveAttribute('role', 'status')
+        await expect(view.getByRole('button', { name: 'next page', exact: true })).toHaveCount(0)
+        await expect(view.getByRole('button', { name: 'previous page', exact: true })).toHaveCount(0)
+      } else {
+        await expect(view.getByRole('button', { name: 'next page', exact: true })).toBeVisible()
+        await expect(view.getByRole('button', { name: 'previous page', exact: true })).toBeVisible()
+      }
       if (row.filter) {
         await view.getByRole('searchbox', { name: 'search rows' }).fill(row.filter.term)
         await expect(view.locator('.tbl-footer [role=status]')).toHaveText(row.filter.count)
