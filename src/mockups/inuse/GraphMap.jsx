@@ -256,7 +256,7 @@ const SPARK_BUCKETS = SPARK.map((lvl, i) => ({
 }))
 
 function OutcomeDot({ outcome }) {
-  return <OutcomeChip outcome={outcome} />
+  return <OutcomeChip outcome={outcome} className="gmp-outcome" />
 }
 
 export function MapView({ theme }) {

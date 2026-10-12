@@ -45,6 +45,11 @@ for (const surface of spec.surfaces) for (const width of spec.widths) {
     expect(PRODUCT_A11Y_BASELINE.points.initial).toEqual(spec.baseline)
     expect(PRODUCT_A11Y_BASELINE.points['after-action']).toEqual(spec.baseline)
     expect(seriousViolations(scan), `${surface.name}/${width}/${theme} has a zero critical/serious baseline`).toEqual(spec.baseline)
+    if (surface.outcomeSelector && width === 1440) {
+      const outcome = page.locator(surface.outcomeSelector).first()
+      await expect(outcome).toHaveCSS('white-space', 'nowrap')
+      await expect(outcome).toHaveCSS('flex-shrink', '0')
+    }
     const evidence = {surface:surface.name, width, theme, url:page.url(), head:process.env.CAPTURE_HEAD, provenance, baseline:spec.baseline, scan}
     await info.attach('accessibility.json', {body:JSON.stringify(evidence, null, 2), contentType:'application/json'})
 
@@ -141,6 +146,12 @@ test('accessibility mutations fail for their declared reason', async ({ page }, 
       await page.locator('html').evaluate((el, theme) => el.setAttribute('data-theme',theme === 'dark' ? 'light' : 'dark'),theme)
       await expect(assertPinnedTheme(page,theme),mutation.name).rejects.toThrow(/actual rendered theme/)
       await page.locator('html').evaluate((el,theme) => el.setAttribute('data-theme',theme),theme)
+    } else if (mutation.kind === 'outcome-wrap') {
+      const outcome = page.locator('.gmp-outcome').first()
+      await outcome.evaluate(el => { el.style.whiteSpace = 'normal'; el.style.flexShrink = '1' })
+      await expect(expect(outcome).toHaveCSS('white-space', 'nowrap', { timeout: 100 })).rejects.toThrow()
+      await expect(expect(outcome).toHaveCSS('flex-shrink', '0', { timeout: 100 })).rejects.toThrow()
+      await outcome.evaluate(el => el.removeAttribute('style'))
     } else if (mutation.kind === 'minimum-target') {
       await page.goto(`${origin}/?fb=off&app=transcript&theme=${theme}#inuse`, { waitUntil: 'networkidle' })
       const anchor = page.locator('.txn-anchor').first()

@@ -1,6 +1,6 @@
 import { loadStrictYaml, assertExactNames } from './css-source.mjs'
 
-/** @typedef {{name:string, query:string, mounted:string, root:string, keyboard:'tree'|'drilldown'|'turn'|'settings', prose?:string[]}} Surface */
+/** @typedef {{name:string, query:string, mounted:string, root:string, keyboard:'tree'|'drilldown'|'turn'|'settings', prose?:string[], outcomeSelector?:string}} Surface */
 /** @typedef {{widths:number[], themes:string[], baseline:object[], surfaces:Surface[], mutations:Array<{name:string,kind:string,violation?:string}>, targets:Array<{name:string,query:string,selector:string,desktopOnly?:boolean}>}} MountedAccessibility */
 export function loadAccessibilityMountedFixtures() {
   const path = 'scripts/testdata/accessibility-mounted.yaml'

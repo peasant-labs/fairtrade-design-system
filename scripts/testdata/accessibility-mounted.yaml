@@ -2,7 +2,7 @@ widths: [320, 390, 1440]
 themes: [dark, light]
 baseline: []
 surfaces:
-  - {name: code map, query: 'app=graph&section=map', mounted: .gmp-navigator-tree, root: .iu-view, keyboard: tree, prose: [.tlp-insight-title, .tlp-insight-summary]}
+  - {name: code map, query: 'app=graph&section=map', mounted: .gmp-navigator-tree, root: .iu-view, keyboard: tree, prose: [.tlp-insight-title, .tlp-insight-summary], outcomeSelector: .gmp-outcome}
   - {name: analytics, query: 'app=graph&section=analytics', mounted: .gan-tile, root: .iu-view, keyboard: drilldown}
   - {name: transcript, query: app=transcript, mounted: article.txn-turnwrap, root: .txn-app, keyboard: turn}
   - {name: settings, query: 'app=graph&section=settings', mounted: .srow, root: .iu-view, keyboard: settings, prose: [.srow-help]}
@@ -11,6 +11,7 @@ mutations:
   - {name: wrong rendered theme is refused, kind: rendered-theme}
   - {name: visible tree disclosure fails zero baseline, kind: tree-children, violation: aria-required-children}
   - {name: unnamed button fails zero baseline, kind: button-name, violation: button-name}
+  - {name: outcome word cannot shrink and split, kind: outcome-wrap}
   - {name: undersized turn anchor fails minimum target, kind: minimum-target}
 targets:
   - {name: turn anchor, query: app=transcript, selector: .txn-anchor}
