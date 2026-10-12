@@ -117,7 +117,7 @@ consumerRows:
   - { name: collective host total, query: 'app=commons&commons=collective-detail', count: showing 5 of 248, filter: { term: flaky, count: showing 1 of 5 loaded } }
   - { name: local home host total, query: 'app=graph', count: showing 7 of 1284, filter: { term: flaky, count: showing 1 of 7 loaded } }
   - { name: commons home host total, query: 'app=commons&commons=home', count: showing 6 of 38, filter: { term: flaky, count: showing 1 of 6 loaded } }
-consumerWidths: [390, 1440]
+consumerWidths: [320, 390, 1440]
 analyticsRows:
   - { name: contributor phone, width: 320 }
   - { name: contributor large phone, width: 390 }

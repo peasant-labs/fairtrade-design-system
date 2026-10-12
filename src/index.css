@@ -2532,10 +2532,11 @@
   .txn-tabbar > .txn-tabs { flex-wrap: nowrap; }
   .txn-tabbar .txn-tab { flex: none; }
   .txn-search { position: relative; top: auto; left: auto; transform: none; flex: none; align-self: center; margin-block: var(--sp-2); }
-  .tbl-tools { position: relative; flex-wrap: nowrap; align-items: flex-start; }
+  .tbl-tools { position: relative; flex-wrap: nowrap; align-items: flex-start; padding-top: calc(var(--fs-label) * var(--lh-body) + var(--sp-1)); }
+  .tbl-tools > label { position: absolute; top: 0; left: 0; }
   .tbl-tools > .input { min-width: 0; flex: 1 1 0; }
   .tbl-filters { flex: none; }
-  .tbl-tools > label, .tbl-filter-active { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .tbl-filter-active { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
   .tbl-filter-fields { position: absolute; left: 0; right: 0; z-index: var(--z-dropdown); background: var(--surface); border: var(--bd-strong); padding: var(--sp-3); }
   .tbl-footer { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
   .tbl-footer > * { flex: none; }

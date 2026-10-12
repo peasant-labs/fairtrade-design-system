@@ -11,6 +11,33 @@ for (const row of spec.consumerRows) {
       await page.goto(productUrl(row.query, theme), { waitUntil: 'networkidle' })
       expect(await page.locator('html').getAttribute('data-theme') || 'dark').toBe(theme)
       const view = page.locator('.iu-app-root')
+      const search = view.getByRole('searchbox', { name: 'search rows', exact: true })
+      const searchLabel = view.locator('.tbl-tools > label')
+      const assertSearchCue = async () => {
+        await expect(search).toHaveAccessibleName('search rows')
+        await expect(searchLabel).toHaveText('search rows')
+        await expect(searchLabel).toBeVisible()
+        const cue = await searchLabel.evaluate((el) => {
+          const css = getComputedStyle(el), bounds = el.getBoundingClientRect()
+          return { clip: css.clipPath, width: bounds.width, height: bounds.height,
+            font: parseFloat(css.fontSize), family: css.fontFamily }
+        })
+        expect(cue.clip).toBe('none')
+        expect(cue.width).toBeGreaterThan(1)
+        expect(cue.height).toBeGreaterThan(1)
+        expect(cue.font).toBeGreaterThanOrEqual(14)
+        expect(cue.family).toContain('Atkinson Hyperlegible Mono')
+        if (width <= 720) {
+          const labelBounds = await searchLabel.boundingBox()
+          const inputBounds = await search.boundingBox()
+          const filterBounds = await view.locator('.tbl-filters summary').boundingBox()
+          expect(labelBounds.y + labelBounds.height).toBeLessThanOrEqual(inputBounds.y)
+          expect(inputBounds.y).toBe(filterBounds.y)
+          expect(labelBounds.x).toBeGreaterThanOrEqual(0)
+          expect(labelBounds.x + labelBounds.width).toBeLessThanOrEqual(width)
+        }
+      }
+      await assertSearchCue()
       await expect(view.locator('.tbl-footer [role=status]')).toHaveText(row.count)
       await expect(view.locator('.iu-page-count')).toHaveCount(0)
       await expect(view.getByRole('button', { name: 'next page', exact: true, includeHidden: true })).toBeDisabled()
@@ -29,8 +56,10 @@ for (const row of spec.consumerRows) {
         await view.getByRole('searchbox', { name: 'search rows' }).fill(row.filter.term)
         await expect(view.locator('.tbl-footer [role=status]')).toHaveText(row.filter.count)
         await expect(view.locator('.tbl tbody .tbl-row')).toHaveCount(1)
+        await assertSearchCue()
         await view.getByRole('button', { name: 'remove search filter' }).click()
         await expect(view.locator('.tbl-footer [role=status]')).toHaveText(row.count)
+        await assertSearchCue()
       }
       await view.locator('.tbl-footer').scrollIntoViewIfNeeded()
     }
