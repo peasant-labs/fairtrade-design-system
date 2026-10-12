@@ -71,7 +71,7 @@ for (const surface of spec.surfaces) for (const width of spec.widths) {
       await tool.press('Enter')
       const code = page.locator('pre.txn-code').first()
       await expect(code).toBeVisible()
-      await code.focus()
+      await tool.press('Tab')
       await expect(code).toBeFocused()
       await page.keyboard.press('ArrowRight')
     } else if (surface.keyboard === 'drilldown') {
