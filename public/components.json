@@ -1502,6 +1502,7 @@
       "exports": [
         "SettingRow",
         "SettingGroup",
+        "SettingStatus",
         "SETTING_ROW_STATES"
       ],
       "doc": "",

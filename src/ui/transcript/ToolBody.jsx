@@ -52,7 +52,7 @@ function ReadBody({ tool }) {
         <span className="mono txn-code-path">{path}</span>
         {lineMeta && <span className="txn-code-meta tnum">lines {lineMeta}</span>}
       </div>
-      <pre className="txn-code">{excerpt}</pre>
+      <pre className="txn-code" tabIndex={0} aria-label="file excerpt">{excerpt}</pre>
     </div>
   )
 }
@@ -108,7 +108,7 @@ function BashBody({ tool }) {
           </span>
         </span>
       </div>
-      <pre className="txn-code">{stdout}</pre>
+      <pre className="txn-code" tabIndex={0} aria-label="command output">{stdout}</pre>
     </div>
   )
 }
@@ -135,7 +135,7 @@ function GrepBody({ tool }) {
         {glob && <span className="txn-grep-type tnum">type={glob}</span>}
         <span className="txn-grep-n tnum">{matches} matches</span>
       </div>
-      <pre className="txn-code">{results}</pre>
+      <pre className="txn-code" tabIndex={0} aria-label="search results">{results}</pre>
     </div>
   )
 }
@@ -165,14 +165,14 @@ function DefaultBody({ tool }) {
       <div className="txn-out-eyebrow">
         <span>arguments</span>
       </div>
-      <pre className="txn-code">{JSON.stringify(tool.args ?? {}, null, 2)}</pre>
+      <pre className="txn-code" tabIndex={0} aria-label="tool arguments">{JSON.stringify(tool.args ?? {}, null, 2)}</pre>
       <div className="txn-out-eyebrow">
         <span>{tool.pending ? 'result pending' : tool.isError ? 'error result' : 'result'}</span>
       </div>
-      <pre className="txn-code">{tool.pending ? 'no result recorded' : result}</pre>
+      <pre className="txn-code" tabIndex={0} aria-label="tool result">{tool.pending ? 'no result recorded' : result}</pre>
       {tool.nativeMetadata?.map(record => <details className="txn-native-details" key={record.id}>
         <summary>recorded tool details</summary>
-        <pre className="txn-code">{JSON.stringify(record.data, null, 2)}</pre>
+        <pre className="txn-code" tabIndex={0} aria-label="recorded tool details">{JSON.stringify(record.data, null, 2)}</pre>
       </details>)}
     </div>
   )

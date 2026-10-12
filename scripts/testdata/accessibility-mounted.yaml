@@ -1,0 +1,22 @@
+widths: [320, 390, 1440]
+themes: [dark, light]
+baseline: []
+surfaces:
+  - {name: code map, query: 'app=graph&section=map', mounted: .gmp-navigator-tree, root: .iu-view, keyboard: tree, prose: [.tlp-insight-title, .tlp-insight-summary]}
+  - {name: analytics, query: 'app=graph&section=analytics', mounted: .gan-tile, root: .iu-view, keyboard: drilldown}
+  - {name: transcript, query: app=transcript, mounted: article.txn-turnwrap, root: .txn-app, keyboard: turn}
+  - {name: settings, query: 'app=graph&section=settings', mounted: .srow, root: .iu-view, keyboard: settings, prose: [.srow-help]}
+mutations:
+  - {name: unpinned theme is refused, kind: theme-pin}
+  - {name: wrong rendered theme is refused, kind: rendered-theme}
+  - {name: visible tree disclosure fails zero baseline, kind: tree-children, violation: aria-required-children}
+  - {name: unnamed button fails zero baseline, kind: button-name, violation: button-name}
+  - {name: undersized turn anchor fails minimum target, kind: minimum-target}
+targets:
+  - {name: turn anchor, query: app=transcript, selector: .txn-anchor}
+  - {name: turn label, query: app=transcript, selector: .txn-labelbtn}
+  - {name: thinking disclosure, query: app=transcript, selector: .txn-thinking-toggle}
+  - {name: tool subgroup, query: app=transcript, selector: .txn-toolcat-toggle, desktopOnly: true}
+  - {name: trace view switch, query: app=transcript, selector: '.txn-viewsw .sw', desktopOnly: true}
+  - {name: collective annotation, query: 'app=commons&commons=explore-transcript', selector: .cex-label-btn}
+  - {name: pull request link, query: 'app=commons&commons=transcript-detail', selector: .cmg-pr-link}

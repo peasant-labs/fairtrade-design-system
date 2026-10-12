@@ -479,8 +479,7 @@ function AppShell() {
     document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'
   )
   useEffect(() => {
-    if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light')
-    else document.documentElement.removeAttribute('data-theme')
+    document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
 
   /* icon a11y on mount. the page now renders entirely from components with lucide-react, so

@@ -33,7 +33,8 @@
 .txn-usage-note { font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); max-width: var(--measure-prose); margin-block: var(--sp-3); }
 .txn-usage-scopes { margin-inline: var(--sp-4); }
 .txn-usage-scopes[open] { max-height: var(--measure-read); overflow: auto; }
-.txn-usage-scopes h3 { font-size: var(--fs-md); margin-block: var(--sp-3); }
+.txn-usage-scope-label { font-size: var(--fs-label); margin-block: var(--sp-3); }
+.txn-turn-heading { position: absolute; width: var(--stroke-hairline); height: var(--stroke-hairline); overflow: hidden; clip-path: inset(50%); margin: 0; font-size: var(--fs-lg); }
 .txn-generic .txn-code { font-size: var(--fs-body); }
 .txn-generic .txn-out-eyebrow { font-size: var(--fs-sm); }
 .txn-tc-head .kind, .txn-tc-head .path, .txn-title, .txn-crumb { text-transform: none; }
@@ -2026,6 +2027,9 @@
      flush at the scroller's BORDER-box top — i.e. flush against the turns-bar bottom,
      no gap. (in normal flow the --sp-3 still spaces the first phase off the top.) */
   .txn-phase { position: sticky; top: calc(-1 * var(--sp-3)); z-index: 2; margin: var(--sp-3) calc(var(--sp-4) * -1) var(--sp-2); }
+  .txn-phase h3.lbl { margin: 0; font-size: var(--fs-lg); line-height: var(--lh-mono); }
+  .txn-thinking-toggle, .txn-toolcat-toggle, .cmg-pr-link { min-height: var(--target-min); }
+  .cmg-pr-link { display: inline-flex; align-items: center; }
   /* the first phase sits snug under the trace head: the stream's own top padding
      already separates it, so drop this phase's leading margin to remove the
      doubled gap. spacing between later phases is untouched. */
@@ -2065,7 +2069,7 @@
 
   /* the copy-anchor + label buttons in the header */
   .txn-anchor, .txn-labelbtn { display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 1px solid transparent; color: var(--ink-4); cursor: pointer; font-family: var(--font-mono); }
-  .txn-anchor { width: 22px; height: 22px; }
+  .txn-anchor { width: var(--target-min); height: var(--target-min); }
   .txn-anchor:hover { color: var(--ink-2); border-color: var(--rule-strong); }
   .txn-labelbtn { min-height: var(--target-min); padding: 0 var(--sp-2); font-size: var(--fs-label); text-transform: lowercase; border-color: var(--rule-strong); }
   .txn-labelbtn:hover { color: var(--amber-bright); border-color: var(--amber-dim); }
@@ -2341,7 +2345,7 @@
   /* view switches (reuse .sw) */
   .txn-views { display: flex; flex-direction: column; gap: var(--sp-3); }
   .txn-viewsw { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--sp-2); }
-  .txn-viewsw .sw { width: 40px; height: 22px; padding: 2px; }
+  .txn-viewsw .sw { width: var(--row-h-standard); height: var(--target-min); padding: var(--stroke-emphasis); }
   .txn-viewsw .sw::before { width: 16px; height: 16px; }
   .txn-viewsw .sw[aria-checked="true"]::before { transform: translateX(18px); }
   .txn-viewsw-label { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); min-width: 0; }
@@ -2680,7 +2684,7 @@
   .cex-turn-wrap.cex-sel > .turn, .cex-turn-wrap.cex-sel > .subtask { box-shadow: inset var(--stroke-emphasis) 0 0 0 var(--amber); }
   .cex-turn-tools { margin-left: auto; display: inline-flex; align-items: center; gap: var(--sp-1); }
   .cex-label-anchor { position: relative; display: inline-flex; }
-  .cex-label-btn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border: var(--bd); background: transparent; color: var(--ink-3); cursor: pointer; }
+  .cex-label-btn { display: inline-flex; align-items: center; justify-content: center; width: var(--target-min); height: var(--target-min); border: var(--bd); background: transparent; color: var(--ink-3); cursor: pointer; }
   .cex-label-btn:hover, .cex-label-btn[aria-expanded="true"] { color: var(--amber); border-color: var(--amber-dim); }
   .cex-label-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
   .cex-turn-labels { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
