@@ -1,0 +1,1939 @@
+{
+  "baseline": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+  "candidate": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+  "stylingOracle": "4ee5362e0e53942675d7ced8bfb778b447a17531 (separate /tmp/opencode/wave2-before-after pairs)",
+  "viewportHeight": 900,
+  "determinism": "existing journey frozen clock and seeded randomness; reduced motion",
+  "assets": [
+    {
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "origin": "http://localhost:5277",
+      "asset": "/assets/index-jqFBAjdl.js",
+      "sha256": "940f11c9580e9e656c3178f13df24dfbf626517a953cdb43789a06954ea9a04e"
+    },
+    {
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "origin": "http://localhost:5277",
+      "asset": "/assets/index-C5JqVQCH.css",
+      "sha256": "9c7a1f034c41101cbdef3186a00ea8dca31d2718b7365bdb145289b78e38ce24"
+    },
+    {
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "origin": "http://localhost:5278",
+      "asset": "/assets/index-B4-t6gxA.js",
+      "sha256": "b0ec90998463288a801ea6923997f66b202bd96fcd12d970cee97cd9898b83ae"
+    },
+    {
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "origin": "http://localhost:5278",
+      "asset": "/assets/index-BmDeHOUU.css",
+      "sha256": "c97ac8c0c5e8c0e0b73131e2e6cd21acb9705c2f2c6d743ac819456f1b5663e6"
+    }
+  ],
+  "captures": [
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-tool-before-dark-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 320,
+      "state": "transcript-tool",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 114248,
+        "stream": 2321
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-task-before-dark-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 320,
+      "state": "transcript-task",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 114248,
+        "stream": 4348
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-search-before-dark-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 320,
+      "state": "transcript-search",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=dark#inuse",
+      "scroll": {
+        "window": 114248,
+        "stream": 118
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-header-before-dark-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 320,
+      "state": "transcript-header",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=dark#inuse",
+      "scroll": {
+        "window": 114248,
+        "stream": 0
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/publish-consent-before-dark-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 320,
+      "state": "publish-consent",
+      "url": "http://localhost:5277/?fb=off&&theme=dark#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 114248,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-initial-before-dark-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 320,
+      "state": "table-initial",
+      "url": "http://localhost:5277/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 114248,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-filter-before-dark-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 320,
+      "state": "table-filter",
+      "url": "http://localhost:5277/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 114248,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/map-spatial-before-dark-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 320,
+      "state": "map-spatial",
+      "url": "http://localhost:5277/?fb=off&app=graph&section=map&theme=dark#inuse",
+      "scroll": {
+        "window": 114248,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-tool-after-dark-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 320,
+      "state": "transcript-tool",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 114087,
+        "stream": 2173
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-task-after-dark-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 320,
+      "state": "transcript-task",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 114087,
+        "stream": 4116
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-search-after-dark-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 320,
+      "state": "transcript-search",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=dark#inuse",
+      "scroll": {
+        "window": 114087,
+        "stream": 118
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-header-after-dark-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 320,
+      "state": "transcript-header",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=dark#inuse",
+      "scroll": {
+        "window": 114087,
+        "stream": 0
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/publish-consent-after-dark-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 320,
+      "state": "publish-consent",
+      "url": "http://localhost:5278/?fb=off&&theme=dark#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 114087,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-initial-after-dark-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 320,
+      "state": "table-initial",
+      "url": "http://localhost:5278/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 114087,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-filter-after-dark-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 320,
+      "state": "table-filter",
+      "url": "http://localhost:5278/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 114087,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/map-spatial-after-dark-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 320,
+      "state": "map-spatial",
+      "url": "http://localhost:5278/?fb=off&app=graph&section=map&theme=dark#inuse",
+      "scroll": {
+        "window": 114087,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-tool-before-light-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 320,
+      "state": "transcript-tool",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 114248,
+        "stream": 2321
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-task-before-light-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 320,
+      "state": "transcript-task",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 114248,
+        "stream": 4348
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-search-before-light-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 320,
+      "state": "transcript-search",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=light#inuse",
+      "scroll": {
+        "window": 114248,
+        "stream": 118
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-header-before-light-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 320,
+      "state": "transcript-header",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=light#inuse",
+      "scroll": {
+        "window": 114248,
+        "stream": 0
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/publish-consent-before-light-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 320,
+      "state": "publish-consent",
+      "url": "http://localhost:5277/?fb=off&&theme=light#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 114248,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-initial-before-light-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 320,
+      "state": "table-initial",
+      "url": "http://localhost:5277/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 114248,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-filter-before-light-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 320,
+      "state": "table-filter",
+      "url": "http://localhost:5277/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 114248,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/map-spatial-before-light-320.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 320,
+      "state": "map-spatial",
+      "url": "http://localhost:5277/?fb=off&app=graph&section=map&theme=light#inuse",
+      "scroll": {
+        "window": 114248,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-tool-after-light-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 320,
+      "state": "transcript-tool",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 114087,
+        "stream": 2173
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-task-after-light-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 320,
+      "state": "transcript-task",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 114087,
+        "stream": 4116
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-search-after-light-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 320,
+      "state": "transcript-search",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=light#inuse",
+      "scroll": {
+        "window": 114087,
+        "stream": 118
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-header-after-light-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 320,
+      "state": "transcript-header",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=light#inuse",
+      "scroll": {
+        "window": 114087,
+        "stream": 0
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/publish-consent-after-light-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 320,
+      "state": "publish-consent",
+      "url": "http://localhost:5278/?fb=off&&theme=light#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 114087,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-initial-after-light-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 320,
+      "state": "table-initial",
+      "url": "http://localhost:5278/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 114087,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-filter-after-light-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 320,
+      "state": "table-filter",
+      "url": "http://localhost:5278/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 114087,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/map-spatial-after-light-320.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 320,
+      "state": "map-spatial",
+      "url": "http://localhost:5278/?fb=off&app=graph&section=map&theme=light#inuse",
+      "scroll": {
+        "window": 114087,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-tool-before-dark-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 390,
+      "state": "transcript-tool",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 104777,
+        "stream": 1946
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-task-before-dark-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 390,
+      "state": "transcript-task",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 104777,
+        "stream": 3655
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-search-before-dark-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 390,
+      "state": "transcript-search",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=dark#inuse",
+      "scroll": {
+        "window": 104777,
+        "stream": 118
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-header-before-dark-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 390,
+      "state": "transcript-header",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=dark#inuse",
+      "scroll": {
+        "window": 104777,
+        "stream": 0
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/publish-consent-before-dark-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 390,
+      "state": "publish-consent",
+      "url": "http://localhost:5277/?fb=off&&theme=dark#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 104777,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-initial-before-dark-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 390,
+      "state": "table-initial",
+      "url": "http://localhost:5277/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 104777,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-filter-before-dark-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 390,
+      "state": "table-filter",
+      "url": "http://localhost:5277/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 104777,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/map-spatial-before-dark-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 390,
+      "state": "map-spatial",
+      "url": "http://localhost:5277/?fb=off&app=graph&section=map&theme=dark#inuse",
+      "scroll": {
+        "window": 104777,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-tool-after-dark-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 390,
+      "state": "transcript-tool",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 104674,
+        "stream": 1817
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-task-after-dark-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 390,
+      "state": "transcript-task",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 104674,
+        "stream": 3403
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-search-after-dark-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 390,
+      "state": "transcript-search",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=dark#inuse",
+      "scroll": {
+        "window": 104674,
+        "stream": 118
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-header-after-dark-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 390,
+      "state": "transcript-header",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=dark#inuse",
+      "scroll": {
+        "window": 104674,
+        "stream": 0
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/publish-consent-after-dark-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 390,
+      "state": "publish-consent",
+      "url": "http://localhost:5278/?fb=off&&theme=dark#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 104674,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-initial-after-dark-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 390,
+      "state": "table-initial",
+      "url": "http://localhost:5278/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 104674,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-filter-after-dark-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 390,
+      "state": "table-filter",
+      "url": "http://localhost:5278/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 104674,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/map-spatial-after-dark-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 390,
+      "state": "map-spatial",
+      "url": "http://localhost:5278/?fb=off&app=graph&section=map&theme=dark#inuse",
+      "scroll": {
+        "window": 104674,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-tool-before-light-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 390,
+      "state": "transcript-tool",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 104777,
+        "stream": 1946
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-task-before-light-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 390,
+      "state": "transcript-task",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 104777,
+        "stream": 3655
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-search-before-light-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 390,
+      "state": "transcript-search",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=light#inuse",
+      "scroll": {
+        "window": 104777,
+        "stream": 118
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-header-before-light-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 390,
+      "state": "transcript-header",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=light#inuse",
+      "scroll": {
+        "window": 104777,
+        "stream": 0
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/publish-consent-before-light-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 390,
+      "state": "publish-consent",
+      "url": "http://localhost:5277/?fb=off&&theme=light#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 104777,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-initial-before-light-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 390,
+      "state": "table-initial",
+      "url": "http://localhost:5277/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 104777,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-filter-before-light-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 390,
+      "state": "table-filter",
+      "url": "http://localhost:5277/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 104777,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/map-spatial-before-light-390.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 390,
+      "state": "map-spatial",
+      "url": "http://localhost:5277/?fb=off&app=graph&section=map&theme=light#inuse",
+      "scroll": {
+        "window": 104777,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-tool-after-light-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 390,
+      "state": "transcript-tool",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 104674,
+        "stream": 1817
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-task-after-light-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 390,
+      "state": "transcript-task",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 104674,
+        "stream": 3403
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-search-after-light-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 390,
+      "state": "transcript-search",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=light#inuse",
+      "scroll": {
+        "window": 104674,
+        "stream": 118
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-header-after-light-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 390,
+      "state": "transcript-header",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=light#inuse",
+      "scroll": {
+        "window": 104674,
+        "stream": 0
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/publish-consent-after-light-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 390,
+      "state": "publish-consent",
+      "url": "http://localhost:5278/?fb=off&&theme=light#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 104674,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-initial-after-light-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 390,
+      "state": "table-initial",
+      "url": "http://localhost:5278/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 104674,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-filter-after-light-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 390,
+      "state": "table-filter",
+      "url": "http://localhost:5278/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 104674,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/map-spatial-after-light-390.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 390,
+      "state": "map-spatial",
+      "url": "http://localhost:5278/?fb=off&app=graph&section=map&theme=light#inuse",
+      "scroll": {
+        "window": 104674,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-tool-before-dark-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 1440,
+      "state": "transcript-tool",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 73653,
+        "stream": 1195
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-task-before-dark-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 1440,
+      "state": "transcript-task",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 73653,
+        "stream": 2270
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-search-before-dark-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 1440,
+      "state": "transcript-search",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=dark#inuse",
+      "scroll": {
+        "window": 73653,
+        "stream": 97
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-header-before-dark-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 1440,
+      "state": "transcript-header",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=dark#inuse",
+      "scroll": {
+        "window": 73653,
+        "stream": 0
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/publish-consent-before-dark-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 1440,
+      "state": "publish-consent",
+      "url": "http://localhost:5277/?fb=off&&theme=dark#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 73653,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-initial-before-dark-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 1440,
+      "state": "table-initial",
+      "url": "http://localhost:5277/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-filter-before-dark-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 1440,
+      "state": "table-filter",
+      "url": "http://localhost:5277/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/map-spatial-before-dark-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "dark",
+      "width": 1440,
+      "state": "map-spatial",
+      "url": "http://localhost:5277/?fb=off&app=graph&section=map&theme=dark#inuse",
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-tool-after-dark-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 1440,
+      "state": "transcript-tool",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 73653,
+        "stream": 1195
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-task-after-dark-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 1440,
+      "state": "transcript-task",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=dark#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 73653,
+        "stream": 2270
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-search-after-dark-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 1440,
+      "state": "transcript-search",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=dark#inuse",
+      "scroll": {
+        "window": 73653,
+        "stream": 97
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-header-after-dark-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 1440,
+      "state": "transcript-header",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=dark#inuse",
+      "scroll": {
+        "window": 73653,
+        "stream": 0
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/publish-consent-after-dark-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 1440,
+      "state": "publish-consent",
+      "url": "http://localhost:5278/?fb=off&&theme=dark#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 73653,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-initial-after-dark-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 1440,
+      "state": "table-initial",
+      "url": "http://localhost:5278/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-filter-after-dark-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 1440,
+      "state": "table-filter",
+      "url": "http://localhost:5278/?fb=off&app=commons&commons=collective-detail&theme=dark#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/map-spatial-after-dark-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "dark",
+      "width": 1440,
+      "state": "map-spatial",
+      "url": "http://localhost:5278/?fb=off&app=graph&section=map&theme=dark#inuse",
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-tool-before-light-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 1440,
+      "state": "transcript-tool",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 73653,
+        "stream": 1195
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-task-before-light-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 1440,
+      "state": "transcript-task",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 73653,
+        "stream": 2270
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-search-before-light-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 1440,
+      "state": "transcript-search",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=light#inuse",
+      "scroll": {
+        "window": 73653,
+        "stream": 97
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-header-before-light-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 1440,
+      "state": "transcript-header",
+      "url": "http://localhost:5277/?fb=off&app=transcript&theme=light#inuse",
+      "scroll": {
+        "window": 73653,
+        "stream": 0
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/publish-consent-before-light-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 1440,
+      "state": "publish-consent",
+      "url": "http://localhost:5277/?fb=off&&theme=light#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 73653,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-initial-before-light-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 1440,
+      "state": "table-initial",
+      "url": "http://localhost:5277/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-filter-before-light-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 1440,
+      "state": "table-filter",
+      "url": "http://localhost:5277/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/map-spatial-before-light-1440.png",
+      "version": "before",
+      "sha": "72cc9d4a71d39f7f6968e669b13efa463b02f8b2",
+      "theme": "light",
+      "width": 1440,
+      "state": "map-spatial",
+      "url": "http://localhost:5277/?fb=off&app=graph&section=map&theme=light#inuse",
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-tool-after-light-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 1440,
+      "state": "transcript-tool",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "workspace-wide typescript check",
+      "scroll": {
+        "window": 73653,
+        "stream": 1195
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-task-after-light-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 1440,
+      "state": "transcript-task",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=light#inuse",
+      "readingFontPx": 16,
+      "expanded": "true",
+      "readingText": "Write the README contract section for",
+      "scroll": {
+        "window": 73653,
+        "stream": 2270
+      },
+      "fonts": [
+        {
+          "class": "txn-tc-desc",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "workspace-wide typescript check"
+        },
+        {
+          "class": "txn-fetch-md",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-search-after-light-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 1440,
+      "state": "transcript-search",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=light#inuse",
+      "scroll": {
+        "window": 73653,
+        "stream": 97
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/transcript-header-after-light-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 1440,
+      "state": "transcript-header",
+      "url": "http://localhost:5278/?fb=off&app=transcript&theme=light#inuse",
+      "scroll": {
+        "window": 73653,
+        "stream": 0
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/publish-consent-after-light-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 1440,
+      "state": "publish-consent",
+      "url": "http://localhost:5278/?fb=off&&theme=light#inuse",
+      "checked": true,
+      "consent": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.",
+      "scroll": {
+        "window": 73653,
+        "stream": 0
+      },
+      "fonts": [
+        {
+          "class": "pub-hint",
+          "fontSize": "16px",
+          "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+          "text": "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacte"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-initial-after-light-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 1440,
+      "state": "table-initial",
+      "url": "http://localhost:5278/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "count": [
+        "showing 5 of 248"
+      ],
+      "rows": 5,
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/table-filter-after-light-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 1440,
+      "state": "table-filter",
+      "url": "http://localhost:5278/?fb=off&app=commons&commons=collective-detail&theme=light#inuse",
+      "filterSupported": true,
+      "filterTerm": "flaky",
+      "count": [
+        "showing 1 of 5 loaded"
+      ],
+      "rows": 1,
+      "note": "real loaded-window filter interaction",
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    },
+    {
+      "path": "/tmp/opencode/phone-composition/map-spatial-after-light-1440.png",
+      "version": "after",
+      "sha": "cc0fee0378cd14262cc12a9cd4cedb592f124941",
+      "theme": "light",
+      "width": 1440,
+      "state": "map-spatial",
+      "url": "http://localhost:5278/?fb=off&app=graph&section=map&theme=light#inuse",
+      "scroll": {
+        "window": 73653,
+        "stream": null
+      },
+      "fonts": []
+    }
+  ],
+  "limits": [
+    "Focused representative evidence only; not the full catalog.",
+    "Chromium emulation, not physical-device or Safari proof."
+  ]
+}
