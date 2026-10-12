@@ -4,7 +4,7 @@ baseline: []
 surfaces:
   - {name: code map, query: 'app=graph&section=map', mounted: .gmp-navigator-tree, root: .iu-view, keyboard: tree, prose: [.tlp-insight-title, .tlp-insight-summary], outcomeSelector: .gmp-outcome}
   - {name: analytics, query: 'app=graph&section=analytics', mounted: .gan-tile, root: .iu-view, keyboard: drilldown}
-  - {name: transcript, query: app=transcript, mounted: article.txn-turnwrap, root: .txn-app, keyboard: turn}
+  - {name: transcript, query: app=transcript, mounted: article.txn-turnwrap, root: .txn-app, keyboard: turn, passiveStickySelector: .txn-phase}
   - {name: settings, query: 'app=graph&section=settings', mounted: .srow, root: .iu-view, keyboard: settings, prose: [.srow-help]}
 mutations:
   - {name: unpinned theme is refused, kind: theme-pin}
@@ -12,6 +12,7 @@ mutations:
   - {name: visible tree disclosure fails zero baseline, kind: tree-children, violation: aria-required-children}
   - {name: unnamed button fails zero baseline, kind: button-name, violation: button-name}
   - {name: outcome word cannot shrink and split, kind: outcome-wrap}
+  - {name: informational sticky phase cannot intercept turn controls, kind: sticky-pointer}
   - {name: undersized turn anchor fails minimum target, kind: minimum-target}
 targets:
   - {name: turn anchor, query: app=transcript, selector: .txn-anchor}

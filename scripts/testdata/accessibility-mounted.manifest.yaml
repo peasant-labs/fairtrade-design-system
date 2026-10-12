@@ -1,3 +1,3 @@
 requiredSurfaceNames: [code map, analytics, transcript, settings]
-requiredMutationNames: [unpinned theme is refused, wrong rendered theme is refused, visible tree disclosure fails zero baseline, unnamed button fails zero baseline, outcome word cannot shrink and split, undersized turn anchor fails minimum target]
+requiredMutationNames: [unpinned theme is refused, wrong rendered theme is refused, visible tree disclosure fails zero baseline, unnamed button fails zero baseline, outcome word cannot shrink and split, informational sticky phase cannot intercept turn controls, undersized turn anchor fails minimum target]
 requiredTargetNames: [turn anchor, turn label, thinking disclosure, tool subgroup, trace view switch, collective annotation, pull request link]

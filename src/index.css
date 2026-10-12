@@ -2026,7 +2026,8 @@
      sticky `top` is measured from the content box, so a negative top pins the phase
      flush at the scroller's BORDER-box top — i.e. flush against the turns-bar bottom,
      no gap. (in normal flow the --sp-3 still spaces the first phase off the top.) */
-  .txn-phase { position: sticky; top: calc(-1 * var(--sp-3)); z-index: 2; margin: var(--sp-3) calc(var(--sp-4) * -1) var(--sp-2); }
+  /* Phase headings are informational: their sticky surface must not block turn controls. */
+  .txn-phase { position: sticky; top: calc(-1 * var(--sp-3)); z-index: 2; margin: var(--sp-3) calc(var(--sp-4) * -1) var(--sp-2); pointer-events: none; }
   .txn-phase h3.lbl { margin: 0; font-size: var(--fs-lg); line-height: var(--lh-mono); }
   .txn-stream { scroll-padding-top: calc(var(--fs-lg) * var(--lh-mono) + var(--sp-4)); }
   .txn-thinking-toggle, .txn-toolcat-toggle, .cmg-pr-link { min-height: var(--target-min); }

@@ -29,6 +29,10 @@ for (const surface of spec.surfaces) for (const width of spec.widths) for (const
     await page.goto(`${origin}/?fb=off&${surface.query}&theme=${theme}#inuse`, {waitUntil:'networkidle'})
     await assertPinnedTheme(page, theme)
     await expect(page.locator(surface.mounted).first()).toBeVisible()
+    if (surface.passiveStickySelector) {
+      const sticky = page.locator(surface.passiveStickySelector).first()
+      await expect(sticky).toHaveCSS('pointer-events', 'none')
+    }
     await page.evaluate(() => document.fonts.ready)
     // A different worktree's server must not supply this row's evidence.
     const assets = await page.locator('link[rel="stylesheet"][href^="/assets/"], script[type="module"][src^="/assets/"]').evaluateAll(nodes => nodes.map(node => node.getAttribute('href') || node.getAttribute('src')))
@@ -152,6 +156,13 @@ for (const theme of spec.themes) test(`accessibility mutations fail for their de
       await expect(expect(outcome).toHaveCSS('white-space', 'nowrap', { timeout: 100 })).rejects.toThrow()
       await expect(expect(outcome).toHaveCSS('flex-shrink', '0', { timeout: 100 })).rejects.toThrow()
       await outcome.evaluate(el => el.removeAttribute('style'))
+    } else if (mutation.kind === 'sticky-pointer') {
+      await page.goto(`${origin}/?fb=off&app=transcript&theme=${theme}#inuse`, { waitUntil: 'networkidle' })
+      const sticky = page.locator('.txn-phase').first()
+      await expect(sticky).toHaveCSS('pointer-events', 'none')
+      await sticky.evaluate(el => { el.style.pointerEvents = 'auto' })
+      await expect(expect(sticky).toHaveCSS('pointer-events', 'none', { timeout: 100 })).rejects.toThrow()
+      await sticky.evaluate(el => el.style.removeProperty('pointer-events'))
     } else if (mutation.kind === 'minimum-target') {
       await page.goto(`${origin}/?fb=off&app=transcript&theme=${theme}#inuse`, { waitUntil: 'networkidle' })
       const anchor = page.locator('.txn-anchor').first()
