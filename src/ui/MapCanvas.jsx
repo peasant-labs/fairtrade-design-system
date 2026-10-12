@@ -1340,9 +1340,10 @@ export default function MapCanvas({
       aria-label={ariaLabel}
       aria-roledescription="code structure map"
     >
-      {/* visually-hidden live region: announces the roving-focus node. */}
+      {/* One region owns focus and folder-change feedback. */}
       <div id={liveId} className="mc-sr" role="status" aria-live="polite">
-        {focusedAnnounce}
+        <span data-focus-announcement>{focusedAnnounce}</span>{' '}
+        <span data-descent-announcement>{descentAnnounce}</span>
       </div>
 
       {/* ---- toolbar: grain segmented control + node search combobox ---- */}
@@ -1428,14 +1429,6 @@ export default function MapCanvas({
             </ul>
           )}
         </div>
-      </div>
-
-      {/* visually-hidden live region: announces folder open/close, distinct
-          from the roving-focus announcement above so "what changed" (a
-          discrete event) never gets lost inside "what's focused" (ambient
-          state that updates on every arrow-key move). */}
-      <div className="mc-sr" role="status" aria-live="polite">
-        {descentAnnounce}
       </div>
 
       {/* ---- breadcrumb: "where am I" feedback for the folder you've drilled

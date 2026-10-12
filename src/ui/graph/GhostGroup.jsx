@@ -31,7 +31,6 @@ export default function GhostGroup({ successorHash, ghosts, expanded, onToggle, 
         </span>
         <span className="tnum tlp-ghost-group-count">{ghosts.length}</span>
         <span className="tlp-ghost-group-label">{label}</span>
-        <span className="tlp-sr" role="status" aria-live="polite">{expanded ? `${label} expanded` : `${label} collapsed`}</span>
       </button>
       {expanded && (
         <ul className="tlp-ghost-group-list">

@@ -31,7 +31,7 @@ export default function RankedRow({ row, loc = 0, selected = false, onSelect, cl
           Intensity.jsx's own Heatmap/RampLegend do). Without this wrapper the
           fill + text colors resolve to `initial` (invisible text). */}
       <IntensityScope className="tlp-ranked-doi-scope">
-        <MapNode label={row.name} loc={loc} recorded={row.doi} total={1} selected={selected} as="span" className="tlp-ranked-doi" />
+        <MapNode label={row.name} loc={loc} recorded={Number(row.doi.toFixed(2))} total={1} selected={selected} as="span" className="tlp-ranked-doi" />
       </IntensityScope>
       <span className="tlp-ranked-name" title={row.name}>{row.name}</span>
       <span className="tlp-ranked-tags" aria-label="comprehension signals">

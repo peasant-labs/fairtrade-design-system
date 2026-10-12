@@ -232,7 +232,7 @@ export default function CommitGraph({
   return (
     <div ref={rootRef} className={cls} role="list" aria-label={label} {...rest}>
       {sessionLanes && sessionLanes.length > 0 && (
-        <div className="cg-session-spine" role="group" aria-label="recorded sessions" style={{ gridTemplateColumns: `repeat(${sessionLanes.length}, minmax(0, 1fr))` }}>
+        <div className="cg-session-spine" role="listitem" aria-label="recorded sessions" style={{ gridTemplateColumns: `repeat(${sessionLanes.length}, minmax(0, 1fr))` }}>
           {sessionLanes.map((session) => (
             <SessionLane
               key={session.sessionId}
@@ -267,7 +267,7 @@ export default function CommitGraph({
           </svg>
         )}
         {rows.map((row) => (
-          <div key={row.commit.id} className="cg-history-row" data-commit-hash={row.commit.id}>
+          <div key={row.commit.id} className="cg-history-row" role="listitem" data-commit-hash={row.commit.id}>
             <CommitRow
               row={row}
               width={width}
@@ -297,7 +297,7 @@ export default function CommitGraph({
       </div>
 
       {hasMore && (
-        <div className="cg-older-band">
+        <div className="cg-older-band" role="listitem">
           <span className="cg-gutter cg-gutter-older" style={{ width }} aria-hidden="true">
             <svg className="cg-svg" width={width} height="100%" preserveAspectRatio="none">
               <line
@@ -350,7 +350,7 @@ function CommitRow({ row, width, selected, onNavigate, onSelect, onOpenSession, 
   const rowCls = ['cg-row', selected && 'cg-row-sel'].filter(Boolean).join(' ')
 
   return (
-    <div className="cg-band" role="listitem">
+    <div className="cg-band">
       {/* Lane gutter: SVG draws lines only; the dot is an HTML square positioned over lane X. */}
       <span className="cg-gutter" style={{ width }} aria-hidden="true">
         <svg className="cg-svg" width={width} height="100%" preserveAspectRatio="none">
