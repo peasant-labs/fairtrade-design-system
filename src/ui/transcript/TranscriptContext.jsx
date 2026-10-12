@@ -24,7 +24,7 @@ export default function TranscriptContext({ relationships = [], earlierHistory =
         <LinkIcon aria-hidden="true" />
         <span>{relation.label}</span>
         {relation.navigation && onNavigate
-          ? <button type="button" className="txn-context-link" onClick={() => onNavigate(relation.navigation)}>open current session</button>
+          ? <button type="button" className="txn-context-link" aria-label={`open current session: ${relation.label}`} onClick={() => onNavigate(relation.navigation)}>open current session</button>
           : <span className="txn-context-status">{relation.navigation ? 'navigation unavailable' : relation.statusLabel}</span>}
       </div>
       {relation.note && <p className="txn-context-note">{relation.note}</p>}

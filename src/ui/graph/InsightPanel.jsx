@@ -30,7 +30,7 @@ export default function InsightPanel({ insights, onOpenEvidence, className = '',
     <div className={`tlp-insight-panel${className ? ` ${className}` : ''}`} {...rest}>
       {[...groups.entries()].map(([kind, group]) => (
         <section key={kind} className="tlp-insight-group" aria-label={INSIGHT_KIND_LABELS[kind]}>
-          <h3 className="tlp-insight-group-title">{INSIGHT_KIND_LABELS[kind]}</h3>
+          <p className="tlp-insight-group-title">{INSIGHT_KIND_LABELS[kind]}</p>
           <ul className="tlp-insight-list">
             {group.map((insight, index) => (
               <li key={index} className="tlp-insight-item">

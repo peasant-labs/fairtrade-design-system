@@ -293,7 +293,7 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
   return (
     <section className="pub-section" aria-labelledby={titleId}>
       <div className="pub-section-head">
-        <h4 className="pub-section-title" id={titleId}>what leaves your machine</h4>
+        <p className="pub-section-title" id={titleId}>what leaves your machine</p>
         {onRescan && (
           <button type="button" className="btn btn-ghost btn-sm pub-rescan" onClick={onRescan} disabled={checking || state === 'publishing'}>
             <RotateCw aria-hidden="true" /> re-scan
@@ -492,14 +492,14 @@ export function PublishDialog({
         <>
           {mode === 'update' && changes && (
             <section className="pub-section" aria-labelledby={`${sectionId}-changed`}>
-              <h4 className="pub-section-title" id={`${sectionId}-changed`}>what changed</h4>
+              <p className="pub-section-title" id={`${sectionId}-changed`}>what changed</p>
               <p className="pub-line">{changes.summary}</p>
             </section>
           )}
           <WhatLeaves state={state} scan={scan} onRescan={onRescan} readOnlyReview />
 
           <section className="pub-section" aria-labelledby={`${sectionId}-readers`}>
-            <h4 className="pub-section-title" id={`${sectionId}-readers`}>who can read it</h4>
+            <p className="pub-section-title" id={`${sectionId}-readers`}>who can read it</p>
             {state === 'no-collective' ? (
               <p className="pub-line">
                 you are not in a collective yet.{' '}

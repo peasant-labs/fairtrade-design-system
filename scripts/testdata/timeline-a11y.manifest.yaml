@@ -1,10 +1,10 @@
 expectedCaseCount: 5
 caseNames:
-  - session lane has an accessible name, native activation and an announcement on selection
-  - ghost-group toggle exposes aria-expanded, an accessible name, and an expand/collapse announcement
-  - session overflow disclosure exposes aria-expanded and an expand announcement
-  - rank-mode control exposes aria-checked per option and announces the active mode
-  - scent-filter tag exposes aria-pressed and announces the active filter
+  - session lane has an accessible name and native pressed state
+  - ghost-group toggle exposes named expanded state
+  - session overflow disclosure exposes expanded state
+  - rank-mode control exposes checked state per option
+  - scent-filter tag exposes pressed state
 expectedEventCaseCount: 6
 eventCaseNames:
   - ArrowRight moves focus and activates the next rank mode
@@ -24,37 +24,37 @@ demoCaseNames:
   - mounted GraphMap pins honesty tooltips on every debt state
 mutationCases:
   - name: dropping aria-pressed from the selected SessionLane reddens the accessible-name/activation case
-    case: session lane has an accessible name, native activation and an announcement on selection
+    case: session lane has an accessible name and native pressed state
     file: SessionLane.jsx
     find: 'aria-pressed={selected}'
     replace: ''
   - name: dropping aria-expanded from GhostGroup's toggle reddens the ghost-group case
-    case: ghost-group toggle exposes aria-expanded, an accessible name, and an expand/collapse announcement
+    case: ghost-group toggle exposes named expanded state
     file: GhostGroup.jsx
     find: 'aria-expanded={expanded}'
     replace: ''
-  - name: dropping the announcement text from SessionOverflowDisclosure reddens the overflow-disclosure case
-    case: session overflow disclosure exposes aria-expanded and an expand announcement
+  - name: dropping expanded state from SessionOverflowDisclosure reddens the overflow-disclosure case
+    case: session overflow disclosure exposes expanded state
     file: SessionOverflowDisclosure.jsx
-    find: "{expanded ? `${overflow.length} more ${itemLabel} expanded` : ''}"
-    replace: "''"
+    find: 'aria-expanded={expanded}'
+    replace: ''
   - name: dropping aria-checked from RankModeControl reddens the rank-mode case
-    case: rank-mode control exposes aria-checked per option and announces the active mode
+    case: rank-mode control exposes checked state per option
     file: RankModeControl.jsx
     find: 'aria-checked={rankMode === mode}'
     replace: ''
   - name: dropping aria-pressed from the interactive ScentTag reddens the scent-filter case
-    case: scent-filter tag exposes aria-pressed and announces the active filter
+    case: scent-filter tag exposes pressed state
     file: ScentTag.jsx
     find: 'aria-pressed={active}'
     replace: ''
   - name: dropping the provider label from SessionLane reddens compact provider identity
-    case: session lane has an accessible name, native activation and an announcement on selection
+    case: session lane has an accessible name and native pressed state
     file: SessionLane.jsx
     find: '<ProviderIcon harness={harness} label />'
     replace: '<ProviderIcon harness={harness} />'
   - name: dropping provider labels from overflow items reddens compact provider identity
-    case: session overflow disclosure exposes aria-expanded and an expand announcement
+    case: session overflow disclosure exposes expanded state
     file: SessionOverflowDisclosure.jsx
     find: '<ProviderIcon harness={item.harness} label />'
     replace: '<ProviderIcon harness={item.harness} />'

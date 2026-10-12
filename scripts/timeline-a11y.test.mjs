@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /* Per-new-control keyboard/aria parity guard: an
    accessible name, native (Enter/Space) activation, aria-expanded/aria-pressed/
-   aria-checked where applicable, and an aria-live announcement on state
-   change. Renders the REAL production components from dist/lib/graph.js
+   aria-checked where applicable, without duplicate live announcements.
+   Renders the REAL production components from dist/lib/graph.js
    (renderToStaticMarkup, same convention as smoke-map.mjs) at two controlled
    prop states per control, so "on state change" is asserted as a genuine
    before/after comparison, not a single snapshot.
@@ -346,7 +346,9 @@ async function assertMountedDemoCase(TimelineView, testCase) {
       for (const [file, tooltip] of Object.entries(testCase.expectations)) {
         const row = [...list.children].find((candidate) => candidate.textContent.includes(file))
         if (!row) throw new Error(`${testCase.name}: mounted ranked list is missing ${file}`)
-        assert.equal(row.querySelector('.tlp-scent')?.getAttribute('title'), tooltip, `${testCase.name}: ${file}`)
+        const trigger = row.querySelector('.tlp-scent')
+        await act(async () => trigger.focus())
+        assert.equal(row.querySelector('[role="tooltip"]')?.textContent, tooltip, `${testCase.name}: ${file}`)
       }
       return
     }

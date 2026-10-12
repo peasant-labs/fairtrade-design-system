@@ -1,0 +1,55 @@
+cases:
+  - {name: navigator disclosure is redundant to the tree item, component: navigator, selector: .gmp-navigator-disclosure, attribute: aria-hidden, expected: 'true'}
+  - {name: session spine is a list item, component: commits, selector: .cg-session-spine, attribute: role, expected: listitem}
+  - {name: ranked intensity has bounded precision, component: ranked, selector: .tlp-ranked-doi, attribute: aria-label, expected: 'api · 0.74 of 1 recorded · 200 loc'}
+  - {name: session selection does not duplicate pressed state, component: session, selector: '[aria-live], [role="status"]', absent: true}
+  - {name: ghost disclosure does not duplicate expanded state, component: ghosts, selector: '[aria-live], [role="status"]', absent: true}
+  - {name: scent filter does not duplicate pressed state, component: scent, selector: '[aria-live], [role="status"]', absent: true}
+  - {name: rank mode does not duplicate checked state, component: rank, selector: '[aria-live], [role="status"]', absent: true}
+  - {name: overflow does not duplicate expanded state, component: overflow, selector: '[aria-live], [role="status"]', absent: true}
+  - {name: ghost explanation is keyboard reachable, component: ghost, selector: .tlp-ghost-node, attribute: tabindex, expected: '0'}
+  - {name: turn is an article named by its heading, component: turn, selector: article.txn-turnwrap, attribute: aria-labelledby, reference: h4.txn-turn-heading}
+  - {name: token badge names its unit, component: turn, selector: .txn-tokbadge, text: tokens}
+  - {name: tool output is keyboard reachable, component: tool, selector: pre.txn-code, attribute: tabindex, expected: '0'}
+  - {name: task result is keyboard reachable, component: task, click: .txn-details-toggle, selector: pre.txn-code, attribute: tabindex, expected: '0'}
+  - {name: markdown code is keyboard reachable, component: markdown, selector: .txn-md-code-wrap, attribute: tabindex, expected: '0'}
+  - {name: markdown table is keyboard reachable, component: markdown, selector: .txn-md-table-wrap, attribute: tabindex, expected: '0'}
+  - {name: relationship actions have distinct names, component: context, selector: .txn-context-link, distinct: true}
+  - {name: usage scope is a label not a heading, component: usage, selector: h3, absent: true}
+  - {name: phase is a navigable heading, component: viewer, selector: h3.lbl, text: exploration}
+  - {name: metadata is keyboard reachable, component: viewer, selector: .txn-meta, attribute: tabindex, expected: '0'}
+  - {name: tab names its panel, component: viewer, selector: '[role="tab"][aria-selected="true"]', attribute: aria-controls, documentReference: '[role="tabpanel"]'}
+  - {name: author help has a tap trigger, component: viewer, selector: '.txn-meta .term', attribute: aria-describedby, documentReference: '.txn-meta [role="tooltip"]'}
+  - {name: settings share one save announcement, component: settings, selector: '[aria-live="polite"]', count: 1}
+  - {name: settings announce the edited row, component: settings, click: .sw, selector: .srow-announcement, text: 'first: saved'}
+  - {name: facet captions are not headings, component: facets, selector: 'h3.fr-heading', absent: true}
+  - {name: insight group captions are not headings, component: insights, selector: 'h4', absent: true}
+  - {name: scent explanation is keyboard reachable, component: scent, focus: .tlp-scent-filter, selector: .tlp-scent-filter, attribute: aria-describedby, documentReference: '[role="tooltip"]'}
+  - {name: outline explanation has a tap trigger, component: outline, selector: '.txn-ol-grouphead .term', attribute: aria-describedby, documentReference: '[role="tooltip"]'}
+input:
+  facets: {topics: [{tag: testing, count: 2}]}
+  insights: {insights: [{kind: decision, provenance: mechanical, title: decision, summary: summary, evidence: []}]}
+  annotations: [{id: note, kind: error, turn: 0, label: recorded error}]
+  markdown: "```js\nconst value = 1\n```\n\n| a | b |\n| - | - |\n| c | d |"
+  turn: {index: 0, label: '1', role: user, content: hello, tokens: {in: 200, out: 80}}
+  tool: {id: read, group: read, output: content, args: {path: api.js}}
+  task: {id: task, group: tasks, output: result, args: {description: investigate}}
+  ghost: {ghostHash: abcdef0123, resolution: unresolved, method: none, confidence: low}
+  navigator: {payload: {repoFound: true, nodes: [{id: api, name: api, kind: package}, {id: api/file, name: file, kind: file, parent: api}], structureEdges: [], violations: []}}
+  commits: {commits: [{id: abcdef, parents: [], message: change, author: author}], sessionLanes: [{sessionId: session, title: session}]}
+  ranked: {row: {id: api, name: api, doi: 0.744199101, scentTags: []}, loc: 200}
+  session: {sessionId: session, title: session, selected: true}
+  ghosts: {successorHash: abcdef, ghosts: [], expanded: false}
+  scent: {tag: heavy churn, active: true, hoverText: prompt to look not a verdict}
+  rank: {rankMode: debt}
+  overflow: {commitHash: abcdef, overflow: [{sessionId: s, title: session}], expanded: false}
+  context: {relationships: [{kind: inherited, label: context inherited from, navigation: {}}, {kind: started, label: started by, navigation: {}}], open: {}}
+  usage: {scopes: [{scope: session, ownerCount: 1, tokens: [], cost: []}]}
+  viewer:
+    id: semantics
+    title: recorded session
+    harness: claude-code
+    gitContext: {user: alice}
+    turns: [{index: 0, role: user, content: hello}]
+  phases: [{id: exploration, label: exploration, from: 0, to: 0}]
+  settings: [{label: first, control: switch, value: false}, {label: second, control: switch, value: false}]

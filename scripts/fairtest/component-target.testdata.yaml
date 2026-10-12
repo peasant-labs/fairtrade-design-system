@@ -71,10 +71,10 @@ cases:
     expectTheme: light
     expectValid: true
     expectFrozen: true
-  - name: component-row-literal-dark-value-fails
+  - name: component-row-unknown-value-fails
     check: component-row
     theme: dark
-    renderedAttribute: 'dark'
+    renderedAttribute: 'sepia'
     expectValid: false
     expectedErrorContains: ['unexpected rendered theme', 'field "renderedAttribute"', 'at path', 'repair:']
   - name: component-row-unknown-theme-fails

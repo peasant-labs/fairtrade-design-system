@@ -1,0 +1,84 @@
+requiredCaseNames:
+  - facet captions are not headings
+  - insight group captions are not headings
+  - scent explanation is keyboard reachable
+  - outline explanation has a tap trigger
+  - navigator disclosure is redundant to the tree item
+  - session spine is a list item
+  - ranked intensity has bounded precision
+  - session selection does not duplicate pressed state
+  - ghost disclosure does not duplicate expanded state
+  - scent filter does not duplicate pressed state
+  - rank mode does not duplicate checked state
+  - overflow does not duplicate expanded state
+  - ghost explanation is keyboard reachable
+  - turn is an article named by its heading
+  - token badge names its unit
+  - tool output is keyboard reachable
+  - task result is keyboard reachable
+  - markdown code is keyboard reachable
+  - markdown table is keyboard reachable
+  - relationship actions have distinct names
+  - usage scope is a label not a heading
+  - phase is a navigable heading
+  - metadata is keyboard reachable
+  - tab names its panel
+  - author help has a tap trigger
+  - settings share one save announcement
+  - settings announce the edited row
+requiredMutationNames:
+  - facets regain heading semantics
+  - insights regain heading semantics
+  - scent loses help trigger
+  - outline loses help trigger
+  - tree disclosure returns to accessibility tree
+  - session spine loses list item
+  - intensity regains raw precision
+  - session duplicates live state
+  - ghosts duplicate live state
+  - scent duplicates live state
+  - rank duplicates live state
+  - overflow duplicates live state
+  - ghost loses keyboard access
+  - turn loses article name
+  - tokens lose unit
+  - file output loses keyboard access
+  - task result loses keyboard access
+  - message code loses keyboard access
+  - message table loses keyboard access
+  - relationships regain identical names
+  - usage label regains heading
+  - phase loses heading
+  - metadata loses keyboard access
+  - tab loses panel link
+  - author loses help trigger
+  - settings regain per-row regions
+  - settings lose save announcement
+mutations:
+  - {name: facets regain heading semantics, file: src/ui/FacetRail.jsx, find: '<p className="fr-heading"><Cpu className="lucide fr-heading-ico" aria-hidden="true" /><span className="fr-heading-text">provider</span></p>', replace: '<h3 className="fr-heading">provider</h3>', expectedDiagnostic: facet captions are not headings}
+  - {name: insights regain heading semantics, file: src/ui/graph/InsightPanel.jsx, find: '<p className="tlp-insight-group-title">{INSIGHT_KIND_LABELS[kind]}</p>', replace: '<h4>{INSIGHT_KIND_LABELS[kind]}</h4>', expectedDiagnostic: insight group captions are not headings}
+  - {name: scent loses help trigger, file: src/ui/graph/ScentTag.jsx, find: '<Tooltip content={hoverText}>{control}</Tooltip>', replace: control, expectedDiagnostic: scent explanation is keyboard reachable}
+  - {name: outline loses help trigger, file: src/ui/transcript/OutlineRail.jsx, find: '<Term def={meta.tip}><Icon size={14} aria-hidden="true" /> {meta.label} <span className="chipx-count">{items.length}</span></Term>', replace: '<span>{meta.label}</span>', expectedDiagnostic: outline explanation has a tap trigger}
+  - {name: tree disclosure returns to accessibility tree, file: src/ui/graph/CodeMapNavigator.jsx, find: "aria-hidden=\"true\"\n          aria-label=", replace: "aria-hidden=\"false\"\n          aria-label=", expectedDiagnostic: navigator disclosure is redundant}
+  - {name: session spine loses list item, file: src/ui/CommitGraph.jsx, find: 'className="cg-session-spine" role="listitem"', replace: 'className="cg-session-spine" role="group"', expectedDiagnostic: session spine is a list item}
+  - {name: intensity regains raw precision, file: src/ui/graph/RankedRow.jsx, find: 'Number(row.doi.toFixed(2))', replace: row.doi, expectedDiagnostic: ranked intensity has bounded precision}
+  - {name: session duplicates live state, file: src/ui/graph/SessionLane.jsx, find: 'className="tlp-session-lane-group"', replace: 'className="tlp-session-lane-group" aria-live="polite"', expectedDiagnostic: session selection does not duplicate}
+  - {name: ghosts duplicate live state, file: src/ui/graph/GhostGroup.jsx, find: 'className="tlp-ghost-group-toggle"', replace: 'className="tlp-ghost-group-toggle" aria-live="polite"', expectedDiagnostic: ghost disclosure does not duplicate}
+  - {name: scent duplicates live state, file: src/ui/graph/ScentTag.jsx, find: 'aria-pressed={active}', replace: 'aria-pressed={active} aria-live="polite"', expectedDiagnostic: scent filter does not duplicate}
+  - {name: rank duplicates live state, file: src/ui/graph/RankModeControl.jsx, find: 'aria-label="rank mode"', replace: 'aria-label="rank mode" aria-live="polite"', expectedDiagnostic: rank mode does not duplicate}
+  - {name: overflow duplicates live state, file: src/ui/graph/SessionOverflowDisclosure.jsx, find: 'className="tlp-overflow-toggle"', replace: 'className="tlp-overflow-toggle" aria-live="polite"', expectedDiagnostic: overflow does not duplicate}
+  - {name: ghost loses keyboard access, file: src/ui/graph/GhostCommitNode.jsx, find: 'tabIndex={0}', replace: 'tabIndex={-1}', expectedDiagnostic: ghost explanation is keyboard reachable}
+  - {name: turn loses article name, file: src/ui/transcript/TurnCard.jsx, find: 'aria-labelledby={headingId}', replace: '', expectedDiagnostic: turn is an article named}
+  - {name: tokens lose unit, file: src/ui/transcript/TurnCard.jsx, find: '{fmtTokens(turn.tokens.in + turn.tokens.out)} tokens', replace: '{fmtTokens(turn.tokens.in + turn.tokens.out)}', expectedDiagnostic: token badge names its unit}
+  - {name: file output loses keyboard access, file: src/ui/transcript/ToolBody.jsx, find: 'tabIndex={0} aria-label="file excerpt"', replace: 'tabIndex={-1} aria-label="file excerpt"', expectedDiagnostic: tool output is keyboard reachable}
+  - {name: task result loses keyboard access, file: src/ui/transcript/TaskBody.jsx, find: 'tabIndex={0}', replace: 'tabIndex={-1}', expectedDiagnostic: task result is keyboard reachable}
+  - {name: message code loses keyboard access, file: src/ui/transcript/Markdown.jsx, find: 'className="txn-md-code-wrap" tabIndex={0}', replace: 'className="txn-md-code-wrap" tabIndex={-1}', expectedDiagnostic: markdown code is keyboard reachable}
+  - {name: message table loses keyboard access, file: src/ui/transcript/Markdown.jsx, find: 'className="txn-md-table-wrap" tabIndex={0}', replace: 'className="txn-md-table-wrap" tabIndex={-1}', expectedDiagnostic: markdown table is keyboard reachable}
+  - {name: relationships regain identical names, file: src/ui/transcript/TranscriptContext.jsx, find: 'aria-label={`open current session: ${relation.label}`}', replace: '', expectedDiagnostic: relationship actions have distinct names}
+  - {name: usage label regains heading, file: src/ui/transcript/UsageDisclosure.jsx, find: '<p className="txn-usage-scope-label">{scope.scope} <span className="tnum">{scope.ownerCount}</span> {scope.ownerCount === 1 ? ''owner'' : ''owners''}</p>', replace: '<h3>{scope.scope}</h3>', expectedDiagnostic: usage scope is a label not a heading}
+  - {name: phase loses heading, file: src/ui/transcript/TranscriptViewer.jsx, find: '<h3 className="lbl"><Icon size={14} aria-hidden="true" /> {phase.label}</h3>', replace: '<span className="lbl">{phase.label}</span>', expectedDiagnostic: phase is a navigable heading}
+  - {name: metadata loses keyboard access, file: src/ui/transcript/TranscriptViewer.jsx, find: 'className="txn-meta chips" tabIndex={0}', replace: 'className="txn-meta chips" tabIndex={-1}', expectedDiagnostic: metadata is keyboard reachable}
+  - {name: tab loses panel link, file: src/ui/transcript/TranscriptViewer.jsx, find: 'aria-controls={`${tabsId}-panel`}', replace: '', expectedDiagnostic: tab names its panel}
+  - {name: author loses help trigger, file: src/ui/transcript/TranscriptViewer.jsx, find: '<Term className="metaitem" def="git author"><User size={14} aria-hidden="true" /> {session.git.author}</Term>', replace: '<span className="metaitem">{session.git.author}</span>', expectedDiagnostic: author help has a tap trigger}
+  - {name: settings regain per-row regions, file: src/ui/Settings.jsx, find: 'aria-live={announce ? undefined : ''polite''}', replace: 'aria-live="polite"', expectedDiagnostic: settings share one save announcement}
+  - {name: settings lose save announcement, file: src/ui/Settings.jsx, find: "status === 'pending' || status === 'settled'", replace: "status === 'pending'", expectedDiagnostic: settings announce the edited row}

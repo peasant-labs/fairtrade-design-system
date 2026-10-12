@@ -70,7 +70,7 @@ const markdownComponents = {
   blockquote: ({ children, node: _node, ...props }) => <blockquote className="txn-md-blockquote" {...props}>{children}</blockquote>,
   /** @param {object} props */
   table: ({ children, node: _node, ...props }) => (
-    <div className="txn-md-table-wrap">
+    <div className="txn-md-table-wrap" tabIndex={0} role="region" aria-label="message table">
       <table className="txn-md-table" {...props}>{children}</table>
     </div>
   ),
@@ -86,7 +86,7 @@ const markdownComponents = {
   td: ({ children, node: _node, ...props }) => <td {...props}>{children}</td>,
   /** @param {object} props */
   pre: ({ children, node: _node, ...props }) => (
-    <div className="txn-md-code-wrap">
+    <div className="txn-md-code-wrap" tabIndex={0} role="region" aria-label="message code">
       <pre className="txn-md-code" {...props}>{children}</pre>
     </div>
   ),

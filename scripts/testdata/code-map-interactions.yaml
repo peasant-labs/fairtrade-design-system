@@ -269,10 +269,10 @@ cases:
         disclosureExpandedIds: []
         transform: 'translate(10px, 20px) scale(1)'
         status: &empty_status {role: status, ariaLive: polite, text: ''}
-        # MapCanvas renders TWO aria-live role="status" regions: the roving-focus
-        # announce (id `*-live`) and a distinct folder-descent announce for the
-        # canvas breadcrumb feature (see MapCanvas.jsx) — so statusCount is 2.
-        structure: &canvas_structure {applicationRole: application, applicationLabel: code map, roleDescription: code structure map, statusCount: 2}
+        # MapCanvas shares one aria-live role="status" region between roving-focus
+        # and folder-descent feedback, with separate spans for the
+        # canvas breadcrumb feature (see MapCanvas.jsx).
+        structure: &canvas_structure {applicationRole: application, applicationLabel: code map, roleDescription: code structure map, statusCount: 1}
     action: {type: click, targets: [internal], keys: []}
     expectedStates:
       - {version: 1, presentation: canvas, selectedId: internal, grain: project, expandedIds: [], navigatorFilter: '', navigatorFocusedId: internal, viewport: {scale: 1, panX: 10, panY: 20}, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}

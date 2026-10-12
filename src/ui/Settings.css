@@ -30,6 +30,8 @@
   color: var(--ink);
 }
 .srow-help {
+  letter-spacing: var(--tracking-prose);
+  word-spacing: var(--word-spacing-prose);
   font-family: var(--font-body);
   font-size: var(--fs-body);
   line-height: var(--lh-body);
@@ -59,6 +61,7 @@
   color: var(--ink-3);
 }
 .srow-status-icon { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+.srow-announcement { position: absolute; width: var(--stroke-hairline); height: var(--stroke-hairline); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .srow-status-settled .srow-status-icon { color: var(--olive); }
 .srow-status-failed { color: var(--ink); }
 .srow-status-failed .srow-status-icon { color: var(--clay); }

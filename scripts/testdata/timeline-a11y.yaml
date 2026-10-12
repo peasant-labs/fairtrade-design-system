@@ -9,44 +9,49 @@ expectedDemoCaseCount: 7
 # the requirement is a real before/after comparison, not a single snapshot.
 
 cases:
-  - name: session lane has an accessible name, native activation and an announcement on selection
+  - name: session lane has an accessible name and native pressed state
     control: session-lane
     unselected:
       mustContain: ['<button', 'aria-pressed="false"', 'aria-label="Claude Code"', 'Add DOI ranking to the code map']
       mustNotContain: ['Add DOI ranking to the code map selected']
     selected:
-      mustContain: ['<button', 'aria-pressed="true"', 'Add DOI ranking to the code map selected']
+      mustContain: ['<button', 'aria-pressed="true"', 'Add DOI ranking to the code map']
+      mustNotContain: ['aria-live', 'role="status"']
 
-  - name: ghost-group toggle exposes aria-expanded, an accessible name, and an expand/collapse announcement
+  - name: ghost-group toggle exposes named expanded state
     control: ghost-group
     collapsed:
       mustContain: ['<button', 'aria-expanded="false"', 'aria-label="2 session-era commits, mapped to a1b2c3d4"']
       mustNotContain: ['2 session-era commits expanded']
     expanded:
-      mustContain: ['<button', 'aria-expanded="true"', '2 session-era commits expanded']
+      mustContain: ['<button', 'aria-expanded="true"', '2 session-era commits']
+      mustNotContain: ['aria-live', 'role="status"']
 
-  - name: session overflow disclosure exposes aria-expanded and an expand announcement
+  - name: session overflow disclosure exposes expanded state
     control: session-overflow-disclosure
     collapsed:
       mustContain: ['<button', 'aria-expanded="false"', 'aria-label="2 more sessions"']
       mustNotContain: ['2 more sessions expanded']
     expanded:
-      mustContain: ['<button', 'aria-expanded="true"', 'aria-label="Gemini CLI"', 'aria-label="Codex"', '2 more sessions expanded']
+      mustContain: ['<button', 'aria-expanded="true"', 'aria-label="Gemini CLI"', 'aria-label="Codex"']
+      mustNotContain: ['aria-live', 'role="status"']
 
-  - name: rank-mode control exposes aria-checked per option and announces the active mode
+  - name: rank-mode control exposes checked state per option
     control: rank-mode-control
     relevance:
-      mustContain: ['role="radiogroup"', 'role="radio"', 'aria-checked="true"', 'tabindex="0"', 'tabindex="-1"', 'rank mode: relevance']
+      mustContain: ['role="radiogroup"', 'role="radio"', 'aria-checked="true"', 'tabindex="0"', 'tabindex="-1"', 'relevance']
     debt:
-      mustContain: ['aria-checked="true"', 'rank mode: debt']
+      mustContain: ['aria-checked="true"', 'debt']
+      mustNotContain: ['aria-live', 'role="status"']
 
-  - name: scent-filter tag exposes aria-pressed and announces the active filter
+  - name: scent-filter tag exposes pressed state
     control: scent-tag-filter
     inactive:
       mustContain: ['<button', 'aria-pressed="false"']
       mustNotContain: ['filtering by']
     active:
-      mustContain: ['<button', 'aria-pressed="true"', 'filtering by heavy churn']
+      mustContain: ['<button', 'aria-pressed="true"', 'heavy churn']
+      mustNotContain: ['aria-live', 'role="status"']
 
 eventCases:
   - name: ArrowRight moves focus and activates the next rank mode

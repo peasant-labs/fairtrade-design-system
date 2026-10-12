@@ -1,9 +1,10 @@
 import { SCENT_TAGS } from './ranking.js'
+import Tooltip from '../Tooltip.jsx'
 import './timelinePrimitives.css'
 
 /* ScentTag is one closed-set comprehension-debt/relevance label. tokens only;
    the copy is a "prompt to look, not a verdict" and says so via the accessible
-   `title`/aria-describedby-style hover text passed in.
+   focus/tap tooltip passed in as hoverText.
 
    `onToggle` (optional) turns the SAME label into the ranked-list's scent
     filter control (a toggle button wired to the frozen `set-scent-filter`
@@ -27,23 +28,23 @@ export default function ScentTag({ tag, hoverText, active = false, onToggle, cla
     )
   }
   if (!onToggle) {
-    return (
-      <span className={`tlp-scent${className ? ` ${className}` : ''}`} title={hoverText || undefined} {...rest}>
+    const label = (
+      <span className={`tlp-scent${className ? ` ${className}` : ''}`} tabIndex={hoverText ? 0 : undefined} {...rest}>
         {tag}
       </span>
     )
+    return hoverText ? <Tooltip content={hoverText}>{label}</Tooltip> : label
   }
-  return (
+  const control = (
     <button
       type="button"
       className={`tlp-scent tlp-scent-filter${active ? ' tlp-scent-filter-active' : ''}${className ? ` ${className}` : ''}`}
-      title={hoverText || undefined}
       aria-pressed={active}
       onClick={() => onToggle(active ? null : tag)}
       {...rest}
     >
       {tag}
-      <span className="tlp-sr" role="status" aria-live="polite">{active ? `filtering by ${tag}` : ''}</span>
     </button>
   )
+  return hoverText ? <Tooltip content={hoverText}>{control}</Tooltip> : control
 }

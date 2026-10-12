@@ -1,4 +1,5 @@
 import './timelinePrimitives.css'
+import Tooltip from '../Tooltip.jsx'
 
 /* GhostCommitNode represents a rewritten-away commit. Identity is carried by
    node shape (a rotated-square diamond at --ink-3), never dash. Dash stays
@@ -33,16 +34,16 @@ export default function GhostCommitNode({ ghostHash, subject, resolution, method
     ? 'session-era commit, no longer in history; not enough recorded metadata to map it'
     : `${METHOD_WORDS[method] ?? method}, ${confidence} confidence`
   return (
-    <span
+    <Tooltip content={explanation}><span
       className={`tlp-ghost-node tlp-terminal-${confidence}${className ? ` ${className}` : ''}`}
       role="img"
       aria-label={`rewritten commit ${ghostHash.slice(0, 8)}${subject ? `: ${subject}` : ''}: ${explanation}`}
-      title={explanation}
+      tabIndex={0}
       {...rest}
     >
       <svg className="tlp-ghost-diamond" viewBox="0 0 9 9" width="9" height="9" aria-hidden="true">
         <rect x="1.3" y="1.3" width="6.4" height="6.4" transform="rotate(45 4.5 4.5)" />
       </svg>
-    </span>
+    </span></Tooltip>
   )
 }

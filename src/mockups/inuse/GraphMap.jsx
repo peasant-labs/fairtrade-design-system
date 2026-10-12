@@ -17,6 +17,7 @@ import {
   Layers,
 } from 'lucide-react'
 import { RailSection, TimeStrip, ConnectionPill, DataState, TeachingEmptyState, CommitGraph, ProviderName } from '../../ui'
+import OutcomeChip from '../../ui/transcript/OutcomeChip.jsx'
 import {
   Changes, ChangeDetail, CodeMap, CodeMapComposition, CodeMapNavigator, createCodeMapState, reduceCodeMapState,
   deriveTimelineHighlight, resolveEscapeAction, rankMapNodesIntrinsic, deriveRankedRows, gateRankedRows, RankedRow, InsightPanel,
@@ -255,16 +256,7 @@ const SPARK_BUCKETS = SPARK.map((lvl, i) => ({
 }))
 
 function OutcomeDot({ outcome }) {
-  const tone =
-    outcome === 'resolved' ? 'var(--olive)' : outcome === 'partial' ? 'var(--amber)' : 'var(--clay)'
-  return (
-    <span
-      className="gmp-odot"
-      style={{ background: tone }}
-      aria-label={outcome}
-      title={outcome}
-    />
-  )
+  return <OutcomeChip outcome={outcome} className="gmp-outcome" />
 }
 
 export function MapView({ theme }) {
@@ -644,13 +636,14 @@ export function TimelineView({ theme }) {
         </div>
         <div id="timeline-ranked-files" role="list" aria-label="ranked files">
           {gated.visible.map((row) => (
-            <RankedRow
-              key={row.id}
-              row={row}
-              loc={200}
-              selected={state.selectedId === row.id}
-              onSelect={(id) => dispatch({ type: 'select', id })}
-            />
+            <div role="listitem" key={row.id}>
+              <RankedRow
+                row={row}
+                loc={200}
+                selected={state.selectedId === row.id}
+                onSelect={(id) => dispatch({ type: 'select', id })}
+              />
+            </div>
           ))}
         </div>
         {(gated.overflowCount > 0 || rankExpanded) && (
@@ -662,7 +655,6 @@ export function TimelineView({ theme }) {
             onClick={() => dispatch({ type: 'set-rank-expanded', expanded: !rankExpanded })}
           >
             {rankExpanded ? 'collapse ranked files' : `show all ${gated.total} files (+${gated.overflowCount})`}
-            <span className="tlp-sr" role="status" aria-live="polite">{rankExpanded ? `all ${gated.total} ranked files shown` : ''}</span>
           </button>
         )}
       </RailSection>

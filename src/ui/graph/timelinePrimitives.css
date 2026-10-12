@@ -198,8 +198,8 @@ button.tlp-scent-filter:focus-visible { outline: var(--focus-ring-width) solid v
 .tlp-insight-provenance { width: var(--sp-2); height: var(--sp-2); flex: 0 0 auto; border: var(--stroke-hairline) solid var(--ink-3); }
 .tlp-insight-provenance-mechanical { background: var(--surface); }
 .tlp-insight-provenance-mined { background: var(--ink-3); }
-.tlp-insight-title { font-size: var(--fs-sm); color: var(--ink); }
-.tlp-insight-summary { color: var(--ink-3); font-size: var(--fs-label); flex-basis: 100%; }
+.tlp-insight-title { font-size: var(--fs-body); color: var(--ink); letter-spacing: var(--tracking-prose); word-spacing: var(--word-spacing-prose); }
+.tlp-insight-summary { color: var(--ink-3); font-size: var(--fs-body); flex-basis: 100%; letter-spacing: var(--tracking-prose); word-spacing: var(--word-spacing-prose); }
 .tlp-insight-evidence { display: inline-flex; flex-wrap: wrap; gap: var(--sp-1); }
 .tlp-insight-evidence-link {
   min-height: var(--target-min);
