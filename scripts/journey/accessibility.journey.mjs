@@ -54,7 +54,52 @@ for (const surface of spec.surfaces) for (const width of spec.widths) for (const
       await expect(outcome).toHaveCSS('white-space', 'nowrap')
       await expect(outcome).toHaveCSS('flex-shrink', '0')
     }
-    const evidence = {surface:surface.name, width, theme, url:page.url(), head:process.env.CAPTURE_HEAD, provenance, baseline:spec.baseline, scan}
+    const insightReadings = []
+    for (const row of spec.insightReadings.filter(row => row.surface === surface.name)) {
+      const readings = page.locator(row.selector)
+      expect(await readings.count(), `${row.name}: nonempty production mount`).toBeGreaterThan(0)
+      for (const reading of await readings.all()) {
+        await expect(reading, row.name).toBeVisible()
+        expect((await reading.textContent()).trim(), `${row.name}: nonempty reading text`).not.toBe('')
+        const measure = () => reading.evaluate((el, row) => {
+          const style = getComputedStyle(el)
+          const panel = el.closest(row.panel)
+          const item = el.closest(row.item)
+          const bounds = node => {
+            const box = node.getBoundingClientRect()
+            return {left:box.left, right:box.right, top:box.top, bottom:box.bottom, width:box.width, height:box.height}
+          }
+          const reference = document.createElement('span')
+          reference.style.fontSize = `var(${row.fontToken})`
+          el.appendChild(reference)
+          const tokenPx = parseFloat(getComputedStyle(reference).fontSize)
+          reference.remove()
+          const range = document.createRange()
+          range.selectNodeContents(el)
+          const textRects = [...range.getClientRects()].map(box => ({left:box.left, right:box.right, top:box.top, bottom:box.bottom}))
+          return {fontPx:parseFloat(style.fontSize), tokenPx, lineHeight:parseFloat(style.lineHeight), whiteSpace:style.whiteSpace, lineClamp:style.webkitLineClamp, panel:bounds(panel), item:bounds(item), panelClientWidth:panel.clientWidth, panelScrollWidth:panel.scrollWidth, panelClientHeight:panel.clientHeight, panelScrollHeight:panel.scrollHeight, textRects}
+        }, row)
+        const observed = await measure()
+        expect(observed.fontPx, `${row.name}: canonical body token`).toBe(observed.tokenPx)
+        expect(observed.fontPx, `${row.name}: reading floor`).toBe(row.expectedPx)
+        expect(observed.lineHeight / observed.fontPx, `${row.name}: wrapping leading`).toBeGreaterThanOrEqual(row.minimumLeading)
+        expect(observed.whiteSpace, `${row.name}: no forced single line`).not.toBe('nowrap')
+        expect(observed.lineClamp, `${row.name}: no clipped lines`).toBe('none')
+        expect(observed.panel.width, `${row.name}: nonzero panel`).toBeGreaterThan(0)
+        expect(observed.panelScrollWidth, `${row.name}: panel horizontal reflow`).toBeLessThanOrEqual(observed.panelClientWidth + row.tolerancePx)
+        expect(observed.panelScrollHeight, `${row.name}: panel vertical reflow`).toBeLessThanOrEqual(observed.panelClientHeight + row.tolerancePx)
+        expect(observed.textRects.length, `${row.name}: painted text geometry`).toBeGreaterThan(0)
+        for (const rect of observed.textRects) {
+          expect(rect.left, `${row.name}: text inside item left`).toBeGreaterThanOrEqual(observed.item.left - row.tolerancePx)
+          expect(rect.right, `${row.name}: text inside item right`).toBeLessThanOrEqual(observed.item.right + row.tolerancePx)
+          expect(rect.top, `${row.name}: text inside item top`).toBeGreaterThanOrEqual(observed.item.top - row.tolerancePx)
+          expect(rect.bottom, `${row.name}: text inside item bottom`).toBeLessThanOrEqual(observed.item.bottom + row.tolerancePx)
+        }
+        expect(await measure(), `${row.name}: stable mounted panel and text geometry`).toEqual(observed)
+        insightReadings.push({name:row.name, selector:row.selector, ...observed})
+      }
+    }
+    const evidence = {surface:surface.name, width, theme, url:page.url(), head:process.env.CAPTURE_HEAD, provenance, insightReadings, baseline:spec.baseline, scan}
     await info.attach('accessibility.json', {body:JSON.stringify(evidence, null, 2), contentType:'application/json'})
 
     if (surface.keyboard === 'tree') {
@@ -117,6 +162,7 @@ for (const surface of spec.surfaces) for (const width of spec.widths) for (const
       mkdirSync(dir, {recursive:true})
       const name = `${surface.name.replaceAll(' ','-')}-${theme}-${width}`
       await page.locator('#inuse').screenshot({path:join(dir, `${name}.png`)})
+      if (insightReadings.length) await page.locator(spec.insightReadings.find(row => row.surface === surface.name).panel).first().screenshot({path:join(dir, `${name}-insights.png`)})
       writeFileSync(join(dir, `${name}.json`), JSON.stringify(evidence, null, 2))
     }
   })

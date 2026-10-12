@@ -1,6 +1,9 @@
 widths: [320, 390, 1440]
 themes: [dark, light]
 baseline: []
+insightReadings:
+  - {name: insight title body size and panel reflow, surface: code map, selector: .tlp-insight-title, panel: .tlp-insight-panel, item: .tlp-insight-item, fontToken: --fs-body, expectedPx: 16, minimumLeading: 1.4, tolerancePx: 1}
+  - {name: insight summary body size and panel reflow, surface: code map, selector: .tlp-insight-summary, panel: .tlp-insight-panel, item: .tlp-insight-item, fontToken: --fs-body, expectedPx: 16, minimumLeading: 1.4, tolerancePx: 1}
 surfaces:
   - {name: code map, query: 'app=graph&section=map', mounted: .gmp-navigator-tree, root: .iu-view, keyboard: tree, prose: [.tlp-insight-title, .tlp-insight-summary], outcomeSelector: .gmp-outcome}
   - {name: analytics, query: 'app=graph&section=analytics', mounted: .gan-tile, root: .iu-view, keyboard: drilldown}
