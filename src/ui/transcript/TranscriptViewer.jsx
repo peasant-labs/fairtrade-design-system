@@ -112,6 +112,12 @@ const DEFAULT_FILTERS = Object.freeze({
 /* ── between-turn markers (lifted from the mockup's inline trace markup so the .txn-* CSS matches
    exactly; the composite draws them, not the per-turn TurnCard) ─────────────────────────────── */
 
+// Native focus and explicit turn navigation reserve the same sticky-heading space.
+function turnScrollTop(scroller, turn) {
+  const padding = Number.parseFloat(getComputedStyle(scroller).scrollPaddingTop)
+  return turn.offsetTop - (Number.isFinite(padding) ? padding : 12)
+}
+
 function PhaseDivider({ phase }) {
   const Icon = PHASE_ICON[phase.icon] ?? PHASE_ICON[phase.id] ?? Flag
   return (
@@ -530,7 +536,7 @@ export default function TranscriptViewer({
         const sc = scrollRef.current
         if (el && sc) {
           const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-          sc.scrollTo({ top: el.offsetTop - 12, behavior: reduce ? 'auto' : 'smooth' })
+          sc.scrollTo({ top: turnScrollTop(sc, el), behavior: reduce ? 'auto' : 'smooth' })
         }
       })
     }
@@ -614,7 +620,7 @@ export default function TranscriptViewer({
     if (!t) return
     const el = turnRefs.current[t.index]
     const sc = scrollRef.current
-    if (el && sc) { sc.scrollTo({ top: el.offsetTop - 12, behavior: 'auto' }); setActiveTurn(t.index) }
+    if (el && sc) { sc.scrollTo({ top: turnScrollTop(sc, el), behavior: 'auto' }); setActiveTurn(t.index) }
   }
   const onTabKey = (e) => {
     const i = TAB_ORDER.indexOf(tab)
@@ -679,7 +685,7 @@ export default function TranscriptViewer({
     const sc = scrollRef.current
     if (el && sc) {
       const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      sc.scrollTo({ top: el.offsetTop - 12, behavior: reduce ? 'auto' : 'smooth' })
+      sc.scrollTo({ top: turnScrollTop(sc, el), behavior: reduce ? 'auto' : 'smooth' })
       setActiveTurn(searchReveal.turn)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -21,10 +21,10 @@ async function assertMinimumTarget(control, name) {
   expect(bounds.width, `${name}: minimum target width`).toBeGreaterThanOrEqual(bounds.minimum)
 }
 
-for (const surface of spec.surfaces) for (const width of spec.widths) {
-  test(`accessibility ${surface.name} ${width}`, async ({ page }, info) => {
-    const theme = info.project.name
-    expect(spec.themes).toContain(theme)
+for (const surface of spec.surfaces) for (const width of spec.widths) for (const theme of spec.themes) {
+  test(`accessibility ${surface.name} ${width} ${theme}`, async ({ page }, info) => {
+    // The fixture row owns theme meaning; the project only selects its matching row.
+    test.skip(info.project.name !== theme)
     await page.setViewportSize({width, height:900})
     await page.goto(`${origin}/?fb=off&${surface.query}&theme=${theme}#inuse`, {waitUntil:'networkidle'})
     await assertPinnedTheme(page, theme)
@@ -118,9 +118,9 @@ for (const surface of spec.surfaces) for (const width of spec.widths) {
   })
 }
 
-for (const width of spec.widths) {
-  test(`accessibility minimum targets ${width}`, async ({ page }, info) => {
-    const theme = info.project.name
+for (const width of spec.widths) for (const theme of spec.themes) {
+  test(`accessibility minimum targets ${width} ${theme}`, async ({ page }, info) => {
+    test.skip(info.project.name !== theme)
     for (const target of spec.targets) {
       if (target.desktopOnly && width < 1440) continue
       await page.setViewportSize({ width, height: 900 })
@@ -133,8 +133,8 @@ for (const width of spec.widths) {
   })
 }
 
-test('accessibility mutations fail for their declared reason', async ({ page }, info) => {
-  const theme = info.project.name
+for (const theme of spec.themes) test(`accessibility mutations fail for their declared reason ${theme}`, async ({ page }, info) => {
+  test.skip(info.project.name !== theme)
   await page.goto(`${origin}/?fb=off&app=graph&section=map&theme=${theme}#inuse`, {waitUntil:'networkidle'})
   await expect(page.locator('.gmp-navigator-tree')).toBeVisible()
   for (const mutation of spec.mutations) {

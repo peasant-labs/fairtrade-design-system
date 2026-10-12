@@ -2028,6 +2028,7 @@
      no gap. (in normal flow the --sp-3 still spaces the first phase off the top.) */
   .txn-phase { position: sticky; top: calc(-1 * var(--sp-3)); z-index: 2; margin: var(--sp-3) calc(var(--sp-4) * -1) var(--sp-2); }
   .txn-phase h3.lbl { margin: 0; font-size: var(--fs-lg); line-height: var(--lh-mono); }
+  .txn-stream { scroll-padding-top: calc(var(--fs-lg) * var(--lh-mono) + var(--sp-4)); }
   .txn-thinking-toggle, .txn-toolcat-toggle, .cmg-pr-link { min-height: var(--target-min); }
   .cmg-pr-link { display: inline-flex; align-items: center; }
   /* the first phase sits snug under the trace head: the stream's own top padding
