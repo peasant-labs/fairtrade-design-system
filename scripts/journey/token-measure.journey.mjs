@@ -119,9 +119,10 @@ test.describe('global tokens', () => {
         elements.map(el => el.getAttribute('src') || el.getAttribute('href')).filter(path => path?.startsWith('/assets/')))
       expect(assets.length).toBeGreaterThan(0)
       const provenance = []
+      const appOrigin = `http://localhost:${process.env.JOURNEY_APP_PORT || '5180'}`
       for (const path of assets) {
         const expected = readFileSync(`dist${path}`)
-        const response = await page.request.get(new URL(path, URL).href)
+        const response = await page.request.get(`${appOrigin}${path}`)
         expect(await response.body(), `served ${path}`).toEqual(expected)
         provenance.push({ path, sha256: createHash('sha256').update(expected).digest('hex') })
       }
