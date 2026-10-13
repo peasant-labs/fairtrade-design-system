@@ -21,8 +21,23 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { findForeignNamespaces, GRAPH_NAMESPACES, COMMONS_NAMESPACES, ANALYTICS_NAMESPACES } from './surface-namespaces.mjs'
 import { lintCssText } from './css-token-lint.mjs'
+import { LIB_EXTERNALS } from './lib-externals.mjs'
+import { loadStrictYaml, assertExactNames } from './css-source.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+
+/** @type {{requiredNames: string[], externals: {name: string, package: string, mutation: string, dependencyMutation: string}[]}} */
+const externalSpec = loadStrictYaml('scripts/testdata/library-externals.yaml')
+assertExactNames(externalSpec.externals.map(row => row.name), externalSpec.requiredNames, 'library externals')
+const packageManifest = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
+for (const row of externalSpec.externals) {
+  const assertExternal = (externals) => assert.ok(externals.includes(row.package), `${row.name} must remain external`)
+  assertExternal(LIB_EXTERNALS)
+  const assertDependency = dependencies => assert.ok(dependencies[row.package], `${row.name} must be installable by consumers`)
+  assertDependency(packageManifest.dependencies)
+  assert.throws(() => assertDependency({...packageManifest.dependencies, [row.package]: undefined}), /must be installable/, row.dependencyMutation)
+  assert.throws(() => assertExternal(LIB_EXTERNALS.filter(name => name !== row.package)), /must remain external/, row.mutation)
+}
 
 let failed = 0
 const check = (name, fn) => {
