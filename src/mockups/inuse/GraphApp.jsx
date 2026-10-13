@@ -64,7 +64,7 @@ export default function GraphApp({ theme }) {
       onSectionChange={setView}
       notice={offline ? <OfflineNotice /> : null}
     >
-      {view === 'home' && <HomeView />}
+      {view === 'home' && <HomeView offline={offline} />}
       {view === 'settings' && <SettingsView />}
       {view === 'map' && (
         <>

@@ -10,7 +10,7 @@ export const HOME_SUMMARY = Object.freeze({
     { value: 7, label: 'projects' },
     { value: 38, label: 'published' },
     { value: 23, label: 'this week' },
-    { label: 'longest streak', value: '3 wk', order: 'label-first' },
+    { label: 'weeks with sessions', value: '8 wk', order: 'label-first' },
     { label: 'median session', value: '34m', order: 'label-first' },
   ],
   weekly: [13, 19, 10, 23, 18, 28, 20, 25],
@@ -52,7 +52,7 @@ export const SETTINGS_GROUPS = Object.freeze([
     open: true,
     rows: [
       { id: 'village-account', kind: 'readonly', label: 'connected as', value: '@alice-dev', help: 'signed in with github on village.peasantlabs.org', notInConfig: true, action: 'disconnect' },
-      { id: 'village-plan', kind: 'select', label: 'publishing plan', help: 'picked at setup. it never publishes on its own.', value: 'keep-local', options: [{ value: 'keep-local', label: 'keep local' }, { value: 'publish-later', label: 'publish later' }] },
+      { id: 'village-plan', kind: 'select', label: 'publishing plan', help: 'picked at setup. automatic publishing is controlled by the folder rules below.', value: 'keep-local', options: [{ value: 'keep-local', label: 'keep local' }, { value: 'publish-later', label: 'publish later' }] },
     ],
   },
   {
@@ -62,7 +62,7 @@ export const SETTINGS_GROUPS = Object.freeze([
     description: 'these folders publish redacted on git push. you agree once.',
     rows: [
       { id: 'auto-acme-work', kind: 'switch', label: '~/work/acme/**', help: 'publishes to Acme Platform on git push. active.', value: true, notInConfig: true },
-      { id: 'auto-acme-repos', kind: 'switch', label: 'github.com:acme/*', help: 'publishes to Acme Company. blocked: acme/worker already has its own pre-push hook, and peasant never overwrites one.', value: true, notInConfig: true },
+      { id: 'auto-acme-repos', kind: 'switch', label: 'github.com:acme/*', help: 'publishes to Acme Company, except acme/worker: its existing pre-push hook blocks publishing there. peasant never overwrites one.', value: true, notInConfig: true },
       { id: 'auto-personal', kind: 'switch', label: '~/personal/**', help: 'never publishes.', value: false, notInConfig: true },
     ],
   },

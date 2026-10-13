@@ -124,7 +124,7 @@ function PhaseDivider({ phase }) {
   return (
     <div className="phase txn-phase">
       <h3 className="lbl"><Icon size={14} aria-hidden="true" /> {phase.label}</h3>
-      <span className="rng tnum">turns {phase.from}–{phase.to}{phase.errors ? ` · ${phase.errors} error` : ''}</span>
+      <span className="rng tnum">turns {phase.from + 1}–{phase.to + 1}{phase.errors ? ` · ${phase.errors} error` : ''}</span>
     </div>
   )
 }

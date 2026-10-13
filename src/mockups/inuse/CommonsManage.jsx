@@ -523,16 +523,16 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
     members = MEMBERS,
     redactions = REDACTIONS,
     browseRows = [
-      { title: 'Building a REST API from scratch', contributor: '@alice-dev', providerId: 'claude-code', provider: 'Claude Code', turns: '64', tokens: '182K', date: 'Jun 15' },
-      { title: 'Debugging auth middleware', contributor: 'anon', providerId: 'gemini-cli', provider: 'Gemini', turns: '31', tokens: '94K', date: 'Jun 14' },
-      { title: 'Greenfield React app setup', contributor: '@bob-ai', providerId: 'opencode', provider: 'OpenCode', turns: '47', tokens: '121K', date: 'Jun 12' },
+      { title: 'Building a REST API from scratch', contributor: '@alice-dev', providerId: 'claude-code', provider: 'Claude Code', turns: '64', tokens: '182k', date: 'jun 15, 2026' },
+      { title: 'Debugging auth middleware', contributor: 'anon', providerId: 'gemini-cli', provider: 'Gemini', turns: '31', tokens: '94k', date: 'jun 14, 2026' },
+      { title: 'Greenfield React app setup', contributor: '@bob-ai', providerId: 'opencode', provider: 'OpenCode', turns: '47', tokens: '121k', date: 'jun 12, 2026' },
     ],
     roleOptions = ROLES,
     initialRole = 'owner',
     initialShowRedaction = true,
     initialBrowseGated = false,
     targetCollective = TARGET_COLLECTIVE,
-    stats = { transcripts: '248', projects: '31 projects', tokens: '4.2M', turns: '18.4K turns', contributors: '12', hours: '63h total' },
+    stats = { transcripts: '248', projects: '31 projects', tokens: '4.2m', turns: '18.4k turns', contributors: '12', hours: '63h total' },
   } = data
   const { onRoleChange, onJoin, onLeave, onSettings, onToggleBrowse, onContribute } = actions
 

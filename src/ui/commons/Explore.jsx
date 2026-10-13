@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { formatCount, formatDate } from '../format.js'
 import { Compass, FileText, LayoutGrid, List, SearchX, User } from 'lucide-react'
 import FacetRail from '../FacetRail.jsx'
 import { StatGrid } from '../StatTiles.jsx'
@@ -128,17 +129,12 @@ const FALLBACK_EXPLORE_DATA = Object.freeze({
   ],
 })
 
-const fmtTokens = (n) => n.toLocaleString('en-US')
+const fmtTokens = formatCount
 const fmtDur = (ms) => {
   const mins = Math.max(0, Math.round(ms / 60000))
   return mins >= 60 ? `${Math.floor(mins / 60)}h ${String(mins % 60).padStart(2, '0')}m` : `${mins}min`
 }
-const fmtDate = (iso) => {
-  const date = new Date(iso)
-  return Number.isNaN(date.getTime())
-    ? ''
-    : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
+const fmtDate = formatDate
 const initials = (name = '') =>
   name
     .split(/[\s-]+/)

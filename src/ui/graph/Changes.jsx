@@ -198,7 +198,7 @@ export default function Changes({
           <span className="gmp-legend-item">
             <span className="cg-dot cg-dot-hollow" style={{ width: 9, height: 9 }} aria-hidden="true" /> no session captured
           </span>
-          <span className="gmp-legend-item gmp-legend-dim">a filled dot also flies a sparkle · select a commit to open it</span>
+          <span className="gmp-legend-item gmp-legend-dim">a star marks a recorded session · select a commit to open it</span>
         </div>
       </div>
     </div>

@@ -18,16 +18,17 @@ import './timelinePrimitives.css'
  */
 export default function SessionOverflowDisclosure({ commitHash, overflow, expanded, onToggle, onSelect, itemLabel = 'sessions', className = '', ...rest }) {
   if (overflow.length === 0) return null
+  const countLabel = overflow.length === 1 ? ({ sessions: 'session', files: 'file' }[itemLabel] ?? itemLabel) : itemLabel
   return (
     <span className={`tlp-overflow${className ? ` ${className}` : ''}`} {...rest}>
       <button
         type="button"
         className="tlp-overflow-toggle"
         aria-expanded={expanded}
-        aria-label={`${overflow.length} more ${itemLabel}`}
+        aria-label={`${overflow.length} more ${countLabel}`}
         onClick={() => onToggle(commitHash)}
       >
-        <span className="tnum">+{overflow.length}</span> more {itemLabel}
+        <span className="tnum">+{overflow.length}</span> more {countLabel}
       </button>
       {expanded && (
         <span className="tlp-overflow-list" role="group" aria-label={`all ${itemLabel}`}>
