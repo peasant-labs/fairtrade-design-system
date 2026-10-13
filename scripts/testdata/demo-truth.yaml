@@ -71,6 +71,9 @@ cases:
     probes:
       - {selector: '.txn-app', text: 9 turns, absent: 8 turns}
       - {selector: '.rng', text: turns 1–3, absent: turns 0–2}
+      - {selector: '.txn-app .subtask-foot', text: returned to claude}
+      - {selector: '.txn-app .subtask-foot [data-brand="claude"]', count: 1}
+      - {selector: '.txn-app .subtask-foot .lucide-corner-down-right', count: 1}
   - name: changes legend is literal
     module: /src/mockups/inuse/GraphMap.jsx
     component: ChangesView
@@ -89,6 +92,9 @@ cases:
     query: '?commons=transcript-detail'
     probes:
       - {selector: '.txn-app', text: Port the transcript canvas into the shared package, absent: Fix flaky ingest test}
+      - {selector: '.txn-app .subtask-foot', text: returned to claude}
+      - {selector: '.txn-app .subtask-foot [data-brand="claude"]', count: 1}
+      - {selector: '.txn-app .subtask-foot .lucide-corner-down-right', count: 1}
   - name: direct publish success also sets published bar
     module: /src/mockups/inuse/TranscriptApp.jsx
     component: default

@@ -22,6 +22,7 @@ requiredMutationNames:
   - uppercase calendar month
   - plural single overflow
   - missing returning provider mark
+  - missing canonical returning provider mark
   - missing github mark
   - offline controls stay enabled
   - contradictory settings copy
@@ -66,6 +67,11 @@ mutations:
     find: 'returned to <BrandMark name="claude" /> claude'
     replace: 'returned to claude'
     expectedDiagnostic: returning provider has its mark
+  - name: missing canonical returning provider mark
+    file: src/ui/transcript/TurnCard.jsx
+    find: 'returned to <BrandMark name="claude" /> claude'
+    replace: 'returned to claude'
+    expectedDiagnostic: transcript turn totals and phases agree
   - name: missing github mark
     file: src/mockups/inuse/CommonsPages.jsx
     find: '<BrandMark name="github" /> github'

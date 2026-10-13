@@ -1,6 +1,7 @@
 import { CornerDownRight, User, Wrench, Check, Link as LinkIcon, AlertTriangle, Coins } from 'lucide-react'
 import { useId, useLayoutEffect, useState } from 'react'
 import ProviderIcon from '../ProviderIcon.jsx'
+import BrandMark from '../BrandMark.jsx'
 import { providerAccent, providerDisplayName } from '../provider-policy.js'
 import Markdown from './Markdown.jsx'
 import Thinking from './Thinking.jsx'
@@ -215,7 +216,7 @@ export default function TurnCard({
           </div>
           <div className="subtask-foot">
             <span className="elbow">
-              <CornerDownRight size={14} aria-hidden="true" /> returned to claude
+              <CornerDownRight size={14} aria-hidden="true" /> returned to <BrandMark name="claude" /> claude
             </span>
           </div>
         </div>
