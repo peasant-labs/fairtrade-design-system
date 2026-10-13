@@ -161,10 +161,10 @@ export default function TurnCard({
               'chip ' +
               (savedLabel.outcome === 'bad' ? 'chip-err' : savedLabel.outcome === 'good' ? 'chip-ok' : '')
             }
-            title={'saved label · ' + savedLabel.outcome}
+            title={'saved label, ' + savedLabel.outcome}
           >
             {savedLabel.outcome}
-            {savedLabel.flag ? ' · ' + savedLabel.flag : ''}
+            {savedLabel.flag ? ', ' + savedLabel.flag : ''}
           </span>
         </div>
       )}

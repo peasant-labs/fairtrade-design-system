@@ -56,7 +56,7 @@ cases:
         - {id: g1, name: Team Alpha, role: owner, mode: open, members: 12, transcripts: 248, org: acme-labs, repos: 2 of 14 repos}
         - {id: g3, name: Reading Group, role: member, mode: verified_only, members: 7, transcripts: 96, org: null}
     expect:
-      text: [acme-labs · 2 of 14 repos open, nothing linked, verified only]
+      text: ['acme-labs, 2 of 14 repos open', nothing linked, verified only]
       absentText: [in a curated collective]
       columns: [name, your role, members, transcripts, github org, joining]
   - name: a collective in the earlier shape
@@ -90,7 +90,7 @@ cases:
         members: [{handle: '@alice-dev', role: owner}]
         memberCount: 1
     expect:
-      text: [Team Alpha, who can read, transcripts 40, showing 2 of 40, acme-labs · 2 of 14 repos linked]
+      text: [Team Alpha, who can read, transcripts 40, showing 2 of 40, 'acme-labs, 2 of 14 repos linked']
       absentText: [showing 2 of 2]
       absentSelectors: [.iu-page-count]
       tableCounts: [showing 2 of 40]
@@ -134,7 +134,7 @@ cases:
         members: [{handle: '@alice-dev', name: Alice Developer, role: owner}, {handle: '@bob-ai', role: member}]
         memberCount: 2
     expect:
-      text: [Curated Showcase · settings, changes save right away., no org linked, a collective links one github org today., your settings]
+      text: ['Curated Showcase, settings', changes save right away., no org linked, a collective links one github org today., your settings]
       absentText: [acme]
       selects:
         who can publish: {values: [open, verified_only, curated], selected: curated}
@@ -150,7 +150,7 @@ cases:
     data:
       collective: {id: c4, name: Quiet Group, memberLeaves: keep}
     expect:
-      text: [Quiet Group · settings, github org]
+      text: ['Quiet Group, settings', github org]
       absentText: [no org linked, nothing linked, 0 members, danger zone]
       selects:
         who can publish: {values: ['', open, verified_only, curated], selected: ''}

@@ -70,9 +70,9 @@ export function shortWeek(week) {
 }
 
 /**
- * Format a median·p90 pair of plain numbers with MATCHED precision (the
- * identical-precision rule: "8.0 · 19.2", never "8 · 19.2"; two integers stay
- * "12 · 27"). Nulls render "—" individually.
+ * Format a median/p90 pair of plain numbers with MATCHED precision (the
+ * identical-precision rule: "8.0, 19.2", never "8, 19.2"; two integers stay
+ * "12, 27"). Nulls render "—" individually.
  * @param {number | null | undefined} a
  * @param {number | null | undefined} b
  * @returns {[string, string]}
@@ -91,8 +91,8 @@ export function formatNumberPair(a, b) {
 }
 
 /**
- * Format a median·p90 pair of token counts with a SHARED unit and matched
- * precision ("10.5k · 23.0k", "62k · 106k"). Unit is picked from the larger
+ * Format a median/p90 pair of token counts with a SHARED unit and matched
+ * precision ("10.5k, 23.0k", "62k, 106k"). Unit is picked from the larger
  * value; nulls render "—" individually.
  * @param {number | null | undefined} a
  * @param {number | null | undefined} b

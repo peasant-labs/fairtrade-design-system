@@ -95,7 +95,7 @@ export const Nodes = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     // selection rides aria-pressed (border + marker are the visible, non-colour cues).
-    const sel = canvas.getByRole('button', { name: /ingest\/stream\.go .* selected/ })
+    const sel = canvas.getByRole('button', { name: 'ingest/stream.go, coverage 3 of 4, 420 loc, selected' })
     await expect(sel).toHaveAttribute('aria-pressed', 'true')
     // violation count surfaces in the accessible name, not colour alone.
     await expect(
@@ -133,7 +133,7 @@ export const HeatmapRow = {
             textTransform: 'lowercase',
           }}
         >
-          commits / day · store/
+          commits / day, store/
         </span>
         <Heatmap
           values={SESSIONS}
@@ -151,7 +151,7 @@ export const HeatmapRow = {
             textTransform: 'lowercase',
           }}
         >
-          pre-baked levels · api/handlers.go
+          pre-baked levels, api/handlers.go
         </span>
         <Heatmap levels={[0, 1, 2, 3, 4, 4, 3, 2, 1, 0]} ariaLabel="coverage trend" />
       </div>

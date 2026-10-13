@@ -17,7 +17,7 @@ import SessionGroupDisclosure from './SessionGroupDisclosure.jsx'
  * member rows those groups hold. The count chip sits ONE indent step inside the
  * tree, between the owner row and the members it discloses, and carries no
  * checkbox of its own. Members render only while the chip is open, each as a
- * row like the owner's: title, middot facts, an individual checkbox, and
+ * row like the owner's: title, comma-separated facts, an individual checkbox, and
  * host-authorized navigation.
  *
  * One continuous connector traces the centre of every MOUNTED row checkbox:
@@ -494,7 +494,7 @@ export function HelperGroupListItem({ owner, ownerStatus, children }) {
 
 /**
  * One helper member drawn as the ordinary list row it is: title, a facts line
- * with middot separators, an optional individual checkbox, and host-authorized
+ * with comma separators, an optional individual checkbox, and host-authorized
  * navigation. Display-only when selection and navigation are both absent. The
  * two optional behaviors are individual-only: a per-thread checkbox and
  * host-authorized open navigation. No aggregate selection, no self-built links,
@@ -510,7 +510,7 @@ export function HelperGroupListItem({ owner, ownerStatus, children }) {
  * Facts that have no measured value state that honestly ("unknown input
  * submissions"), and a count of one singularizes: a row never claims "1 input
  * submissions" or "1 turns". The separator falls BETWEEN facts that survive, so
- * a row cannot open or end its facts line with a stray middot.
+ * a row cannot open or end its facts line with a stray separator.
  * @param {object} props
  * @param {string} props.id - individual transcript identity, never a group ID
  * @param {string} props.title - verbatim user content
@@ -555,7 +555,7 @@ export function HelperThreadRow({ id, title, provider, inputSubmissionCount, tur
         </div>
         <div className="helper-thread-facts">
           {facts.map(({ key, node }, index) => <Fragment key={key}>
-            {index > 0 && <span className="helper-thread-sep" aria-hidden="true">&middot;</span>}
+            {index > 0 && <span className="helper-thread-sep" aria-hidden="true">,</span>}
             {node}
           </Fragment>)}
         </div>

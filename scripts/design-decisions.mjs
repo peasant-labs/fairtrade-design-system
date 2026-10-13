@@ -32,7 +32,7 @@ export function assertNoMiddots(sources, allowed) {
   const violations = []
   for (const [file, source] of Object.entries(sources)) {
     source.split('\n').forEach((line, index) => {
-      if (line.includes('\u00b7')) violations.push(`${file}:${index + 1}`)
+      if (/(?:\u00b7|&(?:middot|#0*183|#x0*b7);|\\u00b7)/i.test(line)) violations.push(`${file}:${index + 1}`)
     })
   }
   assert.equal(violations.length, 0, `middot forbidden during source audit at ${violations.join(', ')}; replace separators in the final source sweep before enabling this gate`)
@@ -46,7 +46,10 @@ export function assertDecisionResolved(row, sources, restatingFiles) {
     assert.ok(reference && typeof reference.file === 'string' && typeof reference.contains === 'string' && reference.contains.trim(), `${row.name}: ${kind} evidence requires a file and nonempty source excerpt`)
     assert.ok(sources[reference.file]?.includes(reference.contains), `${row.name}: ${kind} reference missing at ${reference.file}; record evidence only after its source exists`)
   }
-  assert.ok(typeof binding.codeReference?.file === 'string' && binding.codeReference.file.startsWith('src/'), `${row.name}: code evidence must reference src/`)
+  const codeFile = binding.codeReference?.file
+  assert.ok(typeof codeFile === 'string' && !codeFile.split('/').includes('..') &&
+    (codeFile.startsWith('src/') || ['index.html', 'packages/tokens/fonts.css'].includes(codeFile)),
+  `${row.name}: code evidence must reference implementation source or the app/font entry point`)
   verifyReference(binding.codeReference, 'code')
   assert.equal(binding.pointerRemoved, `#136/${row.id}`, `${row.name}: pointer identity`)
   assert.ok((typeof binding.lineRemoved === 'string' && binding.lineRemoved.includes(binding.pointerRemoved)) ||
@@ -86,7 +89,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const {register, guards} = loadDecisionFixtures()
   const sourceTrees = readSources(guards.sourceRoots)
   const sources = {...sourceTrees}
-  for (const file of guards.restatingFiles) sources[file] = readFileSync(join(ROOT, file), 'utf8')
+  const evidenceFiles = new Set([
+    ...guards.restatingFiles,
+    ...register.decisions.flatMap(row => row.binding ? [row.binding.codeReference.file] : []),
+  ])
+  for (const file of evidenceFiles) sources[file] = readFileSync(join(ROOT, file), 'utf8')
   const failures = []
   try { assertNoMiddots(sourceTrees, guards.allowedMiddots) } catch (error) { failures.push(error.message) }
   for (const row of register.decisions) {

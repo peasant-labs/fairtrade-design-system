@@ -156,7 +156,7 @@ export function CollectivesView({ data = {}, actions = {} } = {}) {
     },
     { key: 'members', label: 'members', align: 'right' },
     { key: 'transcripts', label: 'transcripts', align: 'right', render: (value) => (typeof value === 'number' ? value.toLocaleString('en-US') : value) },
-    ...(showOrg ? [{ key: 'org', label: 'github org', render: (_, c) => (c.org ? <span className="mono">{c.org}{c.repos ? ` · ${c.repos} open` : ''}</span> : <span className="cmg-none">nothing linked</span>) }] : []),
+    ...(showOrg ? [{ key: 'org', label: 'github org', render: (_, c) => (c.org ? <span className="mono">{c.org}{c.repos ? `, ${c.repos} open` : ''}</span> : <span className="cmg-none">nothing linked</span>) }] : []),
     { key: 'mode', label: 'joining', render: (value) => JOINING_LABEL[value] ?? value },
   ]
 
@@ -303,7 +303,7 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
           <ProviderIcon harness={row.harness} accent />
           <span className="iu-session-text">
             <Target className="iu-session-title" href={hrefFor?.('transcript', row.id)} onOpen={onOpenTranscript ? () => onOpenTranscript(row.id) : undefined}>{row.title}</Target>
-            <span className="iu-session-sub">{harnessName(row.harness)}{typeof row.turns === 'number' ? <> · <span className="tnum">{row.turns}</span> turns</> : null}</span>
+            <span className="iu-session-sub">{harnessName(row.harness)}{typeof row.turns === 'number' ? <>, <span className="tnum">{row.turns}</span> turns</> : null}</span>
           </span>
         </span>
       ),
@@ -371,7 +371,7 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
               {collective.org ? (
                 <p className="cmg-rail-line">
                   <FolderGit2 aria-hidden="true" /> <span className="mono">{collective.org.login}</span>
-                  {typeof collective.org.total === 'number' ? <> · <span className="tnum">{collective.org.linked ?? 0}</span> of <span className="tnum">{collective.org.total}</span> repos linked</> : null}
+                  {typeof collective.org.total === 'number' ? <>, <span className="tnum">{collective.org.linked ?? 0}</span> of <span className="tnum">{collective.org.total}</span> repos linked</> : null}
                   {collective.role === 'owner' && onLinkRepos && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPicking(true)}>manage</button>}
                 </p>
               ) : collective.org === null ? <p className="cmg-rail-line cmg-none">nothing linked</p> : null}
@@ -459,7 +459,7 @@ export function CollectiveSettingsView({ data = {}, actions = {} } = {}) {
       <div className="iu-page cmg-settings">
         <div className="cmg-crumb-content"><Breadcrumb items={[{ label: 'collectives', href: hrefFor?.('collectives') }, { label: collective.name, href: hrefFor?.('collective', collective.id) }, { label: 'settings' }]} /></div>
         <header className="iu-page-head">
-          <h2 className="iu-page-title"><span className="iu-page-title-content">{collective.name}</span> · settings</h2>
+          <h2 className="iu-page-title"><span className="iu-page-title-content">{collective.name}</span>, settings</h2>
           <p className="iu-page-sub">changes save right away.</p>
         </header>
         <nav className="cmg-settings-nav" aria-label="settings sections">

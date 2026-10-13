@@ -12,7 +12,7 @@
 
 This is not an "accessibility settings" page. It records the research behind fairtrade's
 neuroinclusive defaults. `DESIGN.md` sets each rule's status: binding, or a known conflict with the
-demo (`#136/N`), as its Status note says. This file sets no status. A bullet here that `DESIGN.md`
+demo, as its Status note says. This file sets no status. A bullet here that `DESIGN.md`
 does not state is research guidance that the library does not ship yet, and where a bullet says
 more than `DESIGN.md`, the extra is guidance too. The defaults exist because the product is a
 **data-heavy** application (long transcripts, tables, code, dashboards) and our users include people
@@ -42,14 +42,14 @@ These tokens live in `src/index.css` and reach every consuming app through the p
 | `--lh-body` | **1.5** | prose leading 1.5; `--lh-mono` 1.4 for code/transcript lines; tight leading (≤1.25) only on single-line display headings |
 | `--tracking-prose` | **0.03em** | extra tracking on proportional prose only; **mono/code/.tnum get `letter-spacing:0`** (keeps columns aligned) |
 | `--word-spacing-prose` | **0.16em** | word-space ≥ 3.5× letter-space so words don't fuse (prose only) |
-| `--measure-prose` / `--measure-read` / `--measure-code` | **66ch / 60ch / 80ch** | cap running-prose line length; never cap tables/code (give each its own `overflow-x:auto`) |
-| `--focus-ring` | amber (dark) / near-black (light) | global `:focus-visible{outline:3px solid;outline-offset:2px}`; never bare `outline:none` |
-| `--target-min` / `--target-comfortable` | **24px / 44px** | every interactive box ≥24px (WCAG 2.5.8), primary ≥44px |
+| `--measure-prose` / `--measure-read` / `--measure-code` | **58ch / 48ch / 80ch** | probe-verified prose <=80 actual characters and reading panes 45–66; never cap tables/code (give each its own `overflow-x:auto`) |
+| `--focus-ring` | amber (dark) / near-black (light) | global 3px ring offset 2px; one -3px inset variant where the outside ring would clip or collide; never bare `outline:none` |
+| `--target-min` / `--target-comfortable` | **24px / 44px** | every interactive box ≥24px or the WCAG spacing exception; primary publish actions 36px desktop / 44px coarse-pointer touch |
 | `--row-h-compact/standard/comfortable` | **32 / 40 / 48px** | standard 40px default, persistent density toggle |
 | `--motion-base` | **0ms default**, 120 to 200ms (`--dur-1` to `--dur-3`) only under `prefers-reduced-motion:no-preference` | static-first |
 
 Hard floors (checked in review, not by a lint): no text `<16px` in reading contexts; no `text-align:justify`; no
-`outline:none` without a stronger replacement; no infinite animation; no color-only meaning.
+`outline:none` without a stronger replacement; no infinite animation except the named busy-spinner while work is in progress and motion is allowed; no color-only meaning.
 
 ---
 
@@ -65,7 +65,8 @@ Hard floors (checked in review, not by a lint): no text `<16px` in reading conte
 - **+0.03em tracking and 0.16em word-spacing on proportional prose only.** Extra tracking reduces
   letter "crowding" (Rello: +7–14% faster reading). **Monospace gets `letter-spacing:0`** - added
   tracking breaks the tabular grid. Keep word-space ≥3.5× letter-space. *(BDA 2023; WCAG 1.4.12)*
-- **Cap prose measure at 66ch** (45–66ch for transcript reading panes); never beyond ~80ch.
+- **Cap prose measure at ~80 actual characters** (45–66 for transcript reading panes),
+  probe-verified with prose tracking and word spacing; the tokens are 58ch / 48ch.
   Over-long lines cause return-sweep failures (landing on the wrong next line) that hit
   dyslexic/ADHD readers hardest. **Do not cap tables/code/logs** - full width or horizontal scroll
   in their own container. *(BDA 2023; Schneps et al. PMC3734020)*
@@ -103,7 +104,7 @@ Hard floors (checked in review, not by a lint): no text `<16px` in reading conte
 - **Dark theme: off-white on near-black, never `#fff` on `#000`.** Pure white on black causes
   halation (haloing) for ~1-in-3 adults with astigmatism. Body uses `--ink #e9e5db` (16:1);
   `--ink-strong #f8f5ed` (18.5:1) only for short emphasis; the amber text-shadow glow should never
-  touch multi-line text (`#136/28`). (The off-white on near-black is satisfied - do not "fix" it to
+  touch multi-line text. Only single accent words marked `.hl` receive text glow, not generic bold. (The off-white on near-black is satisfied - do not "fix" it to
   pure black/white.) *(NN/g Dark Mode; COGA)*
 - **Contrast floor 4.5:1, target 7:1 (AAA) for primary body.** Tune earthy hues by lightness; the
   muted `--ink-3` (≈6.5:1 dark `#9a9488` / 7:1 light) is for **secondary** text only, never primary
@@ -138,18 +139,22 @@ Hard floors (checked in review, not by a lint): no text `<16px` in reading conte
   rules, so nothing motion-bearing slips through. *(W3C C39; WCAG 2.3.3)*
 - **No autoplay/loop/blink by default.** Nothing flashes >3×/sec (WCAG 2.3.1); the recording/live
   indicator is a **static** filled dot, not a pulse; live tables coalesce repaints to ≤1 change/sec
-  as a brief non-looping settle; never auto-scroll the viewport while reading. *(WCAG 2.2.2 / 2.3.1; COGA)*
+  as a brief non-looping settle; never auto-scroll the viewport while reading. Skeletons stay static.
+  The single `busy-spin` exception is shown only during work, only with motion allowed;
+  under reduced motion it remains a static ring or glyph. *(WCAG 2.2.2 / 2.3.1; COGA)*
 
 ## 5. cognitive load & orientation
 
 - **One primary action and ≤5 first-class actions per view.** One primary CTA, ≤5 first-class secondary actions, the rest under
   a `…` overflow. Table rows default to a single kebab, not inline button rows. *(COGA Manageable Quantity)*
 - **Progressive disclosure by default.** Lead with a summary, defer detail to expand-on-demand:
-  collapsed transcript turns (speaker + first line), essential columns + column-picker, headline
-  metrics with drill-down. Calm by default; the user opts *into* density (persisted). *(NN/g; COGA Obj. 8)*
+  expanded but collapsible transcript turns, initially collapsed tool details, essential columns +
+  column-picker, headline metrics with drill-down. The tool-type filter subgroup starts collapsed
+  and persists its disclosure choice. Calm by default; the user opts *into* density. *(NN/g; COGA Obj. 8)*
 - **No interruptions during focused work.** No surprise modals, no focus-stealing toasts, no
   animating badges. Routine messages go to one fixed `aria-live="polite"` region. Only explicit
-  destructive confirmations may focus-trap. *(COGA Limit Interruptions)*
+  user-opened modals, including publish, trap focus and restore it to their opener on close
+  under the APG dialog pattern. *(COGA Limit Interruptions; WAI-ARIA APG Dialog Modal Pattern)*
 - **Persistent orientation everywhere** ("where am I / what is this / how did I get here"): stable
   breadcrumb, sticky context header naming the current dataset/transcript, definite active nav-state,
   position indicators in long flows ("turn 312 of 1,840"), anchor-linkable rows (`#turn-312`). The
@@ -179,7 +184,7 @@ Hard floors (checked in review, not by a lint): no text `<16px` in reading conte
   right + `tnum` + fixed-precision fallback). *(A List Apart)*
 - **Hairline rows + full-row hover, not heavy gridlines or default zebra.** Reserve ultra-low-contrast
   zebra for >5 columns or >15 rows. Selection = distinct higher-alpha amber tint **plus** a non-color
-  marker (2 to 3px amber left-border / bold first cell), separable from hover. The selection marker
+  marker (`--stroke-emphasis`, 2px, or bold first cell), separable from hover. The selection marker
   (not the hairline row rule) is the affordance that must clear 3:1; row dividers stay subtle.
   *(NN/g; A List Apart; WCAG 1.4.11)*
 - **Freeze the header row** (and the first identifier column on horizontal scroll) with
@@ -204,19 +209,24 @@ Hard floors (checked in review, not by a lint): no text `<16px` in reading conte
 ## 7. technical / WCAG baseline
 
 - **Global focus indicator** (WCAG 2.4.13): `:focus-visible{outline:3px solid var(--focus-ring);
-  outline-offset:2px}`, ring clears ≥3:1 against both component and background; never bare
+  outline-offset:2px}`, or the one -3px inset variant where an outside ring clips or collides;
+  the ring clears ≥3:1 against both component and background; never bare
   `outline:none`. **Defect fixed:** there was no global `:focus-visible` - only a color-only input
   border. *(WCAG 2.4.13)*
 - **Focus never hidden by sticky chrome** (WCAG 2.4.11): `scroll-padding-top:var(--nav-h)` (+
   `scroll-padding-bottom` for a player bar) so tab-into-view never tucks focus under the nav. *(WCAG 2.4.11/2.4.12)*
-- **Hit targets ≥24×24px** (WCAG 2.5.8), ≥44 for primary; dense controls satisfy the 24px-spacing
+- **Hit targets ≥24×24px** (WCAG 2.5.8), primary publish actions 36px desktop / 44px coarse-pointer touch; dense controls satisfy the 24px-spacing
   exception. The glyph stays at `--ic-sm`/`--ic-md`; the *box* is ≥24px. *(WCAG 2.5.8/2.5.5)*
 - **Reversible by default** (COGA Obj. 4): undo/confirm for delete/edit/bulk; preserve in-progress
   work on navigation; specific, persistent, field-adjacent plain-language error guidance (not a
   transient toast). *(COGA; WCAG 3.3.1/3.3.3)*
 - **Author the WCAG 1.4.12 text-spacing metrics as comfortable defaults** and stay resilient: no fixed
-  px heights on text containers, no `overflow:hidden`/truncation of transcript lines (`#136/20`), so a user
+  px heights on text containers, no truncation of message content, so a user
   stylesheet (line-height 1.5 / paragraph 2× / letter 0.12em / word 0.16em) cannot clip content. *(WCAG 1.4.12)*
+  Primary titles and labels wrap; paths and prompt previews may ellipsize with full text available
+  through a title or detail view. Provider accents belong to assistant turns, teal to users,
+  mauve to sub-agents and neutral `--ink-3` to system turns; navigation remains text-first,
+  while named providers and companies, including github, lead with real brand marks.
 - **APCA is aspirational, not implemented.** The shipping gate (`scripts/contrast.mjs`) measures pure
   WCAG 2.x ratios in both themes; it does **not** compute APCA Lc. WCAG 2.x is known to overstate
   contrast near black, so the long-term aim is to add an APCA backstop (target Lc 90 fluent body / 75
@@ -236,7 +246,7 @@ Hard floors (checked in review, not by a lint): no text `<16px` in reading conte
    never small body text on light. **Raise the rule/border tokens to clear 3:1** (thin preserved).
    Tune muted tokens by lightness to clear ≥4.5:1.
 3. **Mono typeface vs prose-spacing rules.** → No real conflict: proportional Atkinson for all
-   prose/speech (gets tracking/word-spacing/1.5/66ch); Mono only for code/IDs/tabular/chrome (gets
+   prose/speech (gets tracking/word-spacing/1.5/probe-verified measure); Mono only for code/IDs/tabular/chrome (gets
    `letter-spacing:0`, 1.4, 80ch, tabular figures).
 4. **All-lowercase chrome vs heading hierarchy.** → Carry hierarchy through size (≥20% steps), weight
    (600–700), amber accent, whitespace, and a hairline under section headers. Allow sentence-case for
@@ -246,7 +256,7 @@ Hard floors (checked in review, not by a lint): no text `<16px` in reading conte
    undoing the global underline-free aesthetic.
 6. **cp437/Qud texture & glow vs flat-background/halation rules.** → Confine texture to non-text
    chrome; every region with running text or data stays a flat single fill; glow is for single
-   accent words only (`#136/28`: the demo also glows multi-word bold in transcript bodies).
+   accent words marked `.hl` only, never generic bold transcript spans.
 
 ---
 
@@ -274,7 +284,7 @@ a finding (see `DESIGN.md` Status). On a listed known conflict the decision is o
 the demo has a defect to file in fairtrade. New fairtrade work is held to the record.
 
 - text-spacing resilience: apply the 1.4.12 user stylesheet; nothing clips.
-- no text token <16px in reading contexts; no `text-align:justify`; no `outline:none` without replacement; no infinite animation; no color-only status.
+- no text token <16px in reading contexts; no `text-align:justify`; no `outline:none` without replacement; no infinite animation outside the named busy-spinner exception; no color-only status.
 - reflow at 320px / 400% zoom; reduced-motion honoured (reduced transparency is automated, above).
 - every interactive box ≥24px (or 24px-spacing exception); focus visible on every control including dense table cells.
 - meaningful icons, toggle boundaries and chart series clear 3:1 against their surfaces (the gate does not check them).

@@ -6,7 +6,7 @@
    Each item carries a `kind` (which selects the swatch accent) and a `label`
    (the word). Assistant items may pass a `provider` so the swatch matches the
    per-provider accent used on the turn cards. The default set mirrors the
-   mockup: you · agent · subagent · tool · error. */
+   mockup: you, agent, subagent, tool, error. */
 
 import { providerAccent } from '../../provider-policy.js'
 

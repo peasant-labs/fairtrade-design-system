@@ -456,7 +456,7 @@ function TranscriptCard({ t, onOpen }) {
       </div>
       {t.collectives.length > 0 && (
         <div className="cex-coll-line">
-          <Layers size={14} aria-hidden="true" /> {t.collectives.slice(0, 3).join(' · ')}
+          <Layers size={14} aria-hidden="true" /> {t.collectives.slice(0, 3).join(', ')}
         </div>
       )}
       <div className="card-foot cex-foot">
@@ -521,7 +521,7 @@ function CollectiveCard({ c }) {
       </div>
       <p className="desc cex-desc">{c.desc}</p>
       <div className="cex-cfoot mono tnum">
-        {c.members} members · {c.transcripts} transcripts
+        {c.members} members, {c.transcripts} transcripts
       </div>
     </button>
   )
@@ -1319,7 +1319,7 @@ export function TranscriptDetailView({ theme, seedId = 'd41a8e', embedded = fals
               <Hash size={14} aria-hidden="true" /> <b className="tnum">{fmtTokens(meta.tokens)}</b> tokens
             </span>
             <span className="metaitem cex-meta-faint">
-              <span className="tnum">{fmtTokens(meta.tokensIn)} in</span> · <span className="tnum">{fmtTokens(meta.tokensOut)} out</span>
+              <span className="tnum">{fmtTokens(meta.tokensIn)} in</span>, <span className="tnum">{fmtTokens(meta.tokensOut)} out</span>
             </span>
             <span className="metaitem">
               <GitBranch size={14} aria-hidden="true" /> <b className="tnum">{meta.turns}</b> turns
@@ -1474,7 +1474,7 @@ export function TranscriptDetailView({ theme, seedId = 'd41a8e', embedded = fals
 
             {tab === 'diffs' && (
               <div className="cex-curated-block">
-                <div className="cex-diff-anchor mono">internal/api/handlers.go · turn 8 · +3 -1</div>
+                <div className="cex-diff-anchor mono">internal/api/handlers.go, turn 8, +3 -1</div>
                 <div className="toolcall">
                   <div className="diff">
                     {DETAIL_TURNS.find((t) => t.n === 8).tools.find((x) => x.body.type === 'diff').body.hunk.map((d, i) => (
@@ -1720,7 +1720,7 @@ function DetailTurn({ turn, selected, openTools, toggleTool, registerRef, labels
           <span className="r" />
           <span className="mkc">
             <GitCommitHorizontal size={14} aria-hidden="true" /> commit <span className="hash mono">{turn.commit.hash}</span> <span className="mkc-msg">{turn.commit.msg}</span>
-            <span className="cex-commit-stat tnum"> · {turn.commit.files} file · +{turn.commit.ins} −{turn.commit.del}</span>
+            <span className="cex-commit-stat tnum">, {turn.commit.files} file, +{turn.commit.ins} −{turn.commit.del}</span>
           </span>
           <span className="r" />
         </div>

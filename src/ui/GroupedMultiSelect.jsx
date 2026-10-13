@@ -9,12 +9,12 @@ import './GroupedMultiSelect.css'
 
    shape:
      ┌ toolbar ───────────────────────────────────── sticky ┐
-     │ [☑] select all      N selected · 12.3k tokens         │
+     │ [☑] select all      N selected, 12.3k tokens         │
      ├──────────────────────────────────────────────────────┤
-     │ [☑] ingest-pipeline      4 · 8.1k tokens          [v] │   ← group row
+     │ [☑] ingest-pipeline      4, 8.1k tokens          [v] │   ← group row
      │     [☑] parse raw events           42 turns  2.0k     │   ← item rows (when open)
      │     [☐] backfill historical        18 turns  1.1k     │
-     │ [~] auth-service         3 · 4.2k tokens          [>] │   ← partial group
+     │ [~] auth-service         3, 4.2k tokens          [>] │   ← partial group
      └──────────────────────────────────────────────────────┘
 
    tri-state is icon-SHAPED, never colour-only (neuroinclusive / WCAG 1.4.1): a drawn check when
@@ -30,7 +30,7 @@ import './GroupedMultiSelect.css'
  * @typedef {Object} GMSItem
  * @property {string} id                      unique selection id (what lands in the value Set).
  * @property {import('react').ReactNode} label  the item title — user content, rendered verbatim.
- * @property {import('react').ReactNode} [meta]  one-line secondary metadata (e.g. "42 turns · jun 3").
+ * @property {import('react').ReactNode} [meta]  one-line secondary metadata (e.g. "42 turns, jun 3").
  * @property {number} [tokens]                token count for the running tally; defaults to 0.
  * @property {string} [searchText]            the text a search matches; defaults to a string `label`.
  */
@@ -224,7 +224,7 @@ export default function GroupedMultiSelect({
         <span className="gms-tally" aria-live="polite">
           <span className="gms-tally-count gms-num">{selectedCount}</span>
           <span className="gms-tally-sep"> selected</span>
-          <span className="gms-tally-dot" aria-hidden="true">·</span>
+          <span className="gms-tally-dot" aria-hidden="true">,</span>
           <span className="gms-tally-tokens gms-num">{formatTokens(selectedTokens)}</span>
           <span className="gms-tally-unit"> {tokenLabel}</span>
         </span>
@@ -276,7 +276,7 @@ export default function GroupedMultiSelect({
                   <span className="gms-group-label">{group.label}</span>
                   <span className="gms-group-meta">
                     <span className="gms-group-count gms-num">{ids.length}</span>
-                    <span className="gms-group-dot" aria-hidden="true">·</span>
+                    <span className="gms-group-dot" aria-hidden="true">,</span>
                     <span className="gms-group-tokens gms-num">{formatTokens(groupTokens)}</span>
                     <span className="gms-group-unit"> {tokenLabel}</span>
                   </span>

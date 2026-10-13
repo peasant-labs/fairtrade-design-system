@@ -38,7 +38,7 @@ const TURNS = [
     label: '1',
     userTurn: 1,
     time: '8m ago',
-    longTime: 'jun 17, 2026 · 09:12',
+    longTime: 'jun 17, 2026, 09:12',
     tokens: { in: 280, out: 0 },
     body:
       'Port the transcript canvas into the shared package. Start by reading the existing renderer before extracting it.',
@@ -49,7 +49,7 @@ const TURNS = [
     label: '1a',
     observedModel: ROOT_MODEL,
     time: '8m ago',
-    longTime: 'jun 17, 2026 · 09:12',
+    longTime: 'jun 17, 2026, 09:12',
     tokens: { in: 1840, out: 920 },
     thinking: {
       words: 84,
@@ -88,7 +88,7 @@ return renderer(tool)
     role: 'assistant',
     label: '1b',
     time: '8m ago',
-    longTime: 'jun 17, 2026 · 09:13',
+    longTime: 'jun 17, 2026, 09:13',
     tokens: { in: 2100, out: 640 },
     body: 'Now locate every call site of `rendererFor` so the dispatch table comes across intact.',
     tools: [
@@ -96,7 +96,7 @@ return renderer(tool)
         id: 't2a',
         kind: 'grep',
         name: 'Grep',
-        preview: "rendererFor  ·  web/src  ·  4 matches",
+        preview: "rendererFor, web/src, 4 matches",
         pattern: 'rendererFor',
         scope: 'web/src',
         glob: '*.ts',
@@ -112,7 +112,7 @@ return renderer(tool)
     label: '2',
     userTurn: 2,
     time: '6m ago',
-    longTime: 'jun 17, 2026 · 09:15',
+    longTime: 'jun 17, 2026, 09:15',
     tokens: { in: 90, out: 0 },
     body: 'Looks right. Run a typecheck across the workspace before you start moving files.',
   },
@@ -122,7 +122,7 @@ return renderer(tool)
     label: '2a',
     observedModel: CHANGED_MODEL,
     time: '6m ago',
-    longTime: 'jun 17, 2026 · 09:15',
+    longTime: 'jun 17, 2026, 09:15',
     error: true,
     tokens: { in: 2400, out: 1180 },
     body: 'Running the workspace typecheck first. It surfaces a strict-mode error in the tasks helper.',
@@ -147,7 +147,7 @@ return renderer(tool)
     label: '2b',
     observedModel: CHANGED_MODEL,
     time: '5m ago',
-    longTime: 'jun 17, 2026 · 09:16',
+    longTime: 'jun 17, 2026, 09:16',
     tokens: { in: 2600, out: 1320 },
     thinking: {
       words: 41,
@@ -180,7 +180,7 @@ return renderer(tool)
     role: 'assistant',
     label: '2c',
     time: '4m ago',
-    longTime: 'jun 17, 2026 · 09:17',
+    longTime: 'jun 17, 2026, 09:17',
     tokens: { in: 1900, out: 980 },
     body: 'Verifying the fix: the workspace typechecks clean now, so I will commit the canvas port.',
     tools: [
@@ -212,7 +212,7 @@ return renderer(tool)
     observedModel: CHANGED_MODEL,
     subagent: 'docs-writer',
     time: '3m ago',
-    longTime: 'jun 17, 2026 · 09:18',
+    longTime: 'jun 17, 2026, 09:18',
     tokens: { in: 1700, out: 1140 },
     body: 'Spawned a subagent to document the props/callback/capability contract for the extracted package.',
     tools: [
@@ -220,7 +220,7 @@ return renderer(tool)
         id: 't7a',
         kind: 'task',
         name: 'Task',
-        preview: 'docs-writer · document the props/callback contract',
+        preview: 'docs-writer, document the props/callback contract',
         agent: 'docs-writer',
         status: 'completed',
         task: 'Document the props/callback/capability contract',
@@ -236,7 +236,7 @@ return renderer(tool)
     role: 'assistant',
     label: '2e',
     time: 'just now',
-    longTime: 'jun 17, 2026 · 09:19',
+    longTime: 'jun 17, 2026, 09:19',
     final: true,
     tokens: { in: 980, out: 720 },
     body:
@@ -292,17 +292,17 @@ const FILES = [
 
 /* auto-detected annotations (errors / retries / reverts / subagents) */
 const ANNOTATIONS = [
-  { id: 'a1', turn: 4, role: 'assistant', type: 'error', label: 'pnpm -r typecheck · exit 2', preview: "src/lib/tasks.ts(48,9): error TS2532: Object is possibly 'undefined'." },
+  { id: 'a1', turn: 4, role: 'assistant', type: 'error', label: 'pnpm -r typecheck, exit 2', preview: "src/lib/tasks.ts(48,9): error TS2532: Object is possibly 'undefined'." },
   { id: 'a2', turn: 5, role: 'assistant', type: 'revert', label: 'tasks.ts edited after a failed run', preview: 'strict-mode index guard added to the same file the typecheck flagged' },
-  { id: 'a3', turn: 7, role: 'assistant', type: 'subagent', label: 'docs-writer · depth 1', preview: 'Task spawned a subagent to document the package contract' },
+  { id: 'a3', turn: 7, role: 'assistant', type: 'subagent', label: 'docs-writer, depth 1', preview: 'Task spawned a subagent to document the package contract' },
 ]
 
 /* highlights = curated key moments */
 const HIGHLIGHTS = [
   { id: 'h1', kind: 'request', turn: 0, title: 'initial request', sub: 'Port the transcript canvas into the shared package…', time: '8m ago' },
-  { id: 'h2', kind: 'phase', turn: 3, title: 'debugging begins', sub: 'turn 2 · 1 error in this phase', tag: 'debugging' },
-  { id: 'h3', kind: 'error', turn: 4, title: 'pnpm -r typecheck failed', sub: '1 failed · exit 2', err: true },
-  { id: 'h4', kind: 'checkpoint', turn: 6, title: '9f3c1ad', sub: 'feat(canvas): port TurnRow + tool renderers', stat: '+312 −24 · 7 files' },
+  { id: 'h2', kind: 'phase', turn: 3, title: 'debugging begins', sub: 'turn 2, 1 error in this phase', tag: 'debugging' },
+  { id: 'h3', kind: 'error', turn: 4, title: 'pnpm -r typecheck failed', sub: '1 failed, exit 2', err: true },
+  { id: 'h4', kind: 'checkpoint', turn: 6, title: '9f3c1ad', sub: 'feat(canvas): port TurnRow + tool renderers', stat: '+312 −24, 7 files' },
   { id: 'h5', kind: 'final', turn: 8, title: 'final response', sub: 'All packages typecheck and build…', tokens: '1.7k' },
 ]
 
@@ -621,7 +621,7 @@ function buildAnalytics() {
       tools: t.tools,
       outcome: t.outcome,
       // the editorial per-task churn/file summary the task boundary chip shows
-      stat: t.index === 1 ? '5 files' : '2 files · +316 −25',
+      stat: t.index === 1 ? '5 files' : '2 files, +316 −25',
     }
     if (t.error) vm.error = t.error
     return vm
@@ -645,7 +645,7 @@ function mkDiffLine(d) {
      • title         — no wire title field (the composite derives a fallback from the first prompt).
      • turn time     — "Nm ago" is non-deterministic; the demo pins a stable label (TurnCard derives
                        it from the timestamp for a real app).
-     • task preview  — a curated shortening of the wire description (makePreview derives "agent · description").
+     • task preview  — a curated shortening of the wire description (makePreview derives "agent, description").
      • diff hunk     — the demo draws the rewritten line as del+add; the adapter's LCS (run on the real
                        reconstructed args) renders it as context, so a real app shows the LCS hunk.
      • files         — the demo's index includes grep-result + attributed files NO tool call carries a

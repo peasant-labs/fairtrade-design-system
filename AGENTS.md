@@ -30,6 +30,7 @@ manager: **pnpm**. Source is **JS/JSX only - no TypeScript**. Icons: `lucide-rea
 ## commands
 - `pnpm dev` - run the page (Vite, http://localhost:5180).
 - `pnpm build` - generate llm artifacts + contrast gate (WCAG, both themes) + Vite build. Must pass.
+- `pnpm test:design-decisions` / `pnpm audit:design-decisions` - named mutation tests and real-source decision/record audit; required by the library build.
 - `pnpm storybook` / `pnpm build-storybook` - the component reference.
 - `node scripts/sbsmoke.mjs` - load every story incl. `play()`; 0 real errors required.
 - `node scripts/sbshot.mjs both shots/x <story-id-substr>` - screenshot stories (both themes) for QA.
@@ -44,12 +45,15 @@ side a consumer matches.
 - **16px floor** for readable body text; chrome/labels are mono 14. **All-lowercase UI chrome**;
   never lowercase user content (names, code, data values). **Tabular numbers** on counts/durations.
 - **Neuroinclusive by default**: 1.5 line-height, >=24px hit targets, global focus ring,
-  static-first motion (guard transitions with `prefers-reduced-motion`). See `DESIGN.md`.
+  static-first motion (guard transitions with `prefers-reduced-motion`). Primary publish actions
+  are 36px desktop / 44px coarse-pointer touch. The standard focus ring has one inset variant.
+  Only the named busy-spinner may loop during work when motion is allowed. See `DESIGN.md`.
 - **Semantic meaning is never carried by colour alone** - always pair an icon or text label.
 - **Real brand logos**: when naming a company/provider (claude, gemini, openai, cursor, opencode, strike),
   lead with `<BrandMark name="..." />` (or `<Tag brand="...">`), never a generic glyph.
+  The github account row also leads with its brand mark; navigation itself is text-first.
 - **No AI-slop** in copy or UI: no em dashes, no buzzwords, no `//` markers, no eyebrow labels,
-  no `>` prefixes (except the nav active marker). Namespaced classes; no generic collisions.
+  no middot separators, no `>` prefixes (except the nav active marker). Namespaced classes; no generic collisions.
 
 ## before declaring done
 Run `pnpm build`, `pnpm journey:ci`, and screenshot the changed components in BOTH

@@ -1,31 +1,293 @@
-# Approved dispositions are not completion claims. Bindings require existing code,
-# removed record lines/pointers, and verified restating-file amendments.
+# Bindings were reconciled only after the owning implementations existed on the stack.
+# Excerpts protect the evidence/remnant contract; mounted behavior has its own gates.
 decisions:
-  - {name: middot-separators, id: 1, disposition: DEMO, binding: null}
-  - {name: active-markers, id: 2, disposition: DEMO, binding: null}
-  - {name: type-floor, id: 3, disposition: DEMO, binding: null}
-  - {name: amber-salience, id: 4, disposition: DEMO, binding: null}
-  - {name: filter-density, id: 5, disposition: DEMO, binding: null}
-  - {name: proportional-prose, id: 6, disposition: DEMO, binding: null}
-  - {name: static-motion, id: 7, disposition: SPLIT, binding: null}
-  - {name: primary-targets, id: 8, disposition: RECORD, binding: null}
-  - {name: modal-focus, id: 9, disposition: RECORD, binding: null}
-  - {name: overlay-shadows, id: 10, disposition: SPLIT, binding: null}
-  - {name: prose-measure, id: 11, disposition: DEMO, binding: null}
-  - {name: heading-hierarchy, id: 12, disposition: DEMO, binding: null}
-  - {name: font-loading, id: 13, disposition: SPLIT, binding: null}
-  - {name: lowercase-chrome, id: 14, disposition: DEMO, binding: null}
-  - {name: stripe-widths, id: 15, disposition: DEMO, binding: null}
-  - {name: opaque-chrome, id: 16, disposition: DEMO, binding: null}
-  - {name: guarded-transitions, id: 17, disposition: DEMO, binding: null}
-  - {name: paragraph-spacing, id: 18, disposition: DEMO, binding: null}
-  - {name: wrapping-leading, id: 19, disposition: DEMO, binding: null}
-  - {name: content-truncation, id: 20, disposition: RECORD, binding: null}
-  - {name: role-accents, id: 21, disposition: RECORD, binding: null}
-  - {name: navigation-glyphs, id: 22, disposition: SPLIT, binding: null}
-  - {name: chrome-links, id: 23, disposition: DEMO, binding: null}
-  - {name: icon-sizes, id: 24, disposition: DEMO, binding: null}
-  - {name: focus-ring, id: 25, disposition: SPLIT, binding: null}
-  - {name: responsive-queries, id: 26, disposition: DEMO, binding: null}
-  - {name: progressive-disclosure, id: 27, disposition: SPLIT, binding: null}
-  - {name: accent-glow, id: 28, disposition: DEMO, binding: null}
+  - name: middot-separators
+    id: 1
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/ui/Publish.jsx, contains: "'up to date'].filter(Boolean).join(', ')"}
+      pointerRemoved: '#136/1'
+      lineRemoved: '- **#136/1, middots**: the demo uses middot separators in meta rows.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: "use em dashes, middot separators or buzzwords"}
+        - {file: AGENTS.md, contains: "no middot separators"}
+        - {file: CONTRIBUTING.md, contains: "middot separators or AI-slop"}
+        - {file: llms.txt, contains: "Never use middot separators."}
+  - name: active-markers
+    id: 2
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/ui/analytics/ProjectOverview.jsx, contains: "aria-pressed={view === 'active'}"}
+      pointerRemoved: '#136/2'
+      lineRemoved: '- **#136/2, `>` markers**: the analytics toggles and the site rail use a `>` other than the active nav marker.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: '`aria-pressed`, never a decorative `>` prefix.'}
+  - name: type-floor
+    id: 3
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/index.css, contains: '--fs-label: 14px; --fs-sm: 14px; --fs-body: 16px;'}
+      pointerRemoved: '#136/3'
+      lineRemoved: '- **#136/3, type size**: `--fs-micro` and literal sizes below 14px sit under the 16px floor and mono-14 chrome.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: '`--fs-micro` is retired; no smaller-type exception exists.'}
+        - {file: llms.txt, contains: 'Chrome is mono 14; reading content is at least 16px.'}
+  - name: amber-salience
+    id: 4
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/index.css, contains: '.check-box:checked { background: var(--surface-2); border-color: var(--rule-strong); }'}
+      pointerRemoved: '#136/4'
+      lineRemoved: '- **#136/4, amber salience**: the transcript shows many amber fills above the fold.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'checked inputs and active toggles use neutral surfaces and ink, not amber fills.'}
+  - name: filter-density
+    id: 5
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/ui/transcript/FiltersRail.jsx, contains: "globalThis.localStorage?.getItem('fairtrade.transcript.tool-groups-open') === 'true'"}
+      pointerRemoved: '#136/5'
+      lineRemoved: '- **#136/5, density**: the transcript filter rail opens dense by default.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: "tool-type filter subgroup starts collapsed and persists the user's disclosure choice."}
+        - {file: llm/NEUROINCLUSIVE.md, contains: 'column-picker, headline metrics with drill-down. The tool-type filter subgroup starts collapsed'}
+        - {file: CONTRIBUTING.md, contains: 'tool details and the tool-type filter subgroup initially collapsed'}
+        - {file: llms.txt, contains: 'the persisted tool-type filter subgroup start collapsed.'}
+  - name: proportional-prose
+    id: 6
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/index.css, contains: '.cmg-note { margin: 0; font-family: var(--font-body); font-size: var(--fs-body);'}
+      pointerRemoved: '#136/6'
+      lineRemoved: '- **#136/6, prose in mono**: some village notes set sentences in mono.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'and transcript speech are never set in mono.'}
+  - name: static-motion
+    id: 7
+    disposition: SPLIT
+    binding:
+      codeReference: {file: src/index.css, contains: '/* skeleton placeholder: static blocks, never a shimmer (nothing loops but a busy spinner) */'}
+      pointerRemoved: '#136/7'
+      lineRemoved: '- **#136/7, looping motion**: a shimmer skeleton, a pulse and busy spinners loop while shown.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'Skeletons and live dots stay static; nothing pulses, blinks, auto-plays or auto-scrolls'}
+        - {file: llm/NEUROINCLUSIVE.md, contains: 'under reduced motion it remains a static ring or glyph.'}
+        - {file: AGENTS.md, contains: 'Only the named busy-spinner may loop during work when motion is allowed.'}
+        - {file: CONTRIBUTING.md, contains: 'keep skeletons and live dots static; only the named busy-spinner loops during work with motion allowed'}
+        - {file: llms.txt, contains: 'Motion is static-first, with only the named busy-spinner exception'}
+  - name: primary-targets
+    id: 8
+    disposition: RECORD
+    binding:
+      codeReference: {file: src/ui/Publish.css, contains: '.pub-foot .btn-primary { min-height: var(--target-comfortable); }'}
+      pointerRemoved: '#136/8'
+      lineRemoved: '- **#136/8, primary targets**: primary actions use `--control-h`, not `--target-comfortable`.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'Primary publish actions use 36px on desktop'}
+        - {file: llm/NEUROINCLUSIVE.md, contains: 'primary publish actions 36px desktop / 44px coarse-pointer touch'}
+        - {file: AGENTS.md, contains: 'are 36px desktop / 44px coarse-pointer touch.'}
+        - {file: CONTRIBUTING.md, contains: 'primary publish actions are 36px desktop and 44px on coarse-pointer touch'}
+        - {file: llms.txt, contains: 'Primary publish actions are 36px desktop / 44px coarse-pointer touch.'}
+        - {file: scripts/gen-llm-artifacts.mjs, contains: "['publish-primary', { ...control, touchMinHeight: tok('target-comfortable')"}
+  - name: modal-focus
+    id: 9
+    disposition: RECORD
+    binding:
+      codeReference: {file: src/ui/Dialog.jsx, contains: "document.addEventListener('focusin', onFocus)"}
+      pointerRemoved: '#136/9'
+      lineRemoved: '- **#136/9, focus trap**: the publish popup, a modal the user opened, traps focus.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'User-opened modals, including publish, trap focus under the APG dialog pattern'}
+        - {file: llm/NEUROINCLUSIVE.md, contains: 'user-opened modals, including publish, trap focus and restore it to their opener on close'}
+        - {file: CONTRIBUTING.md, contains: 'user-opened modals trap focus and restore it to their opener'}
+        - {file: llms.txt, contains: 'User-opened modals trap and restore focus.'}
+  - name: overlay-shadows
+    id: 10
+    disposition: SPLIT
+    binding:
+      codeReference: {file: src/index.css, contains: '--glow: none; --glow-soft: none; --overlay-shadow: none;'}
+      pointerRemoved: '#136/10'
+      lineRemoved: '- **#136/10, overlay shadows**: the drop shadow is a literal value and is absent in the light theme.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'with the one `--overlay-shadow` token; the light theme sets it to `none`.'}
+        - {file: scripts/gen-llm-artifacts.mjs, contains: "['overlay', { shadow: tok('overlay-shadow') }]"}
+  - name: prose-measure
+    id: 11
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/index.css, contains: '--measure-prose: 58ch; --measure-read: 48ch; --measure-code: 80ch;'}
+      pointerRemoved: '#136/11'
+      lineRemoved: '- **#136/11, prose measure**: `--measure-prose` holds more characters than the rule intends.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'their nominal `ch` values are not character-count guarantees.'}
+        - {file: llm/NEUROINCLUSIVE.md, contains: '**58ch / 48ch / 80ch**'}
+  - name: heading-hierarchy
+    id: 12
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/index.css, contains: '.cmg-rail-title, .cmg-section-title { margin: 2em 0 var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-lg);'}
+      pointerRemoved: '#136/12'
+      lineRemoved: null
+      lineRemovalNote: 'The original Known conflicts list had no heading-hierarchy entry or pointer.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'Compact toolbar labels are not headings and are demoted'}
+  - name: font-loading
+    id: 13
+    disposition: SPLIT
+    binding:
+      codeReference: {file: packages/tokens/fonts.css, contains: 'DEPRECATED for apps. Do not import it from an app.'}
+      pointerRemoved: '#136/13'
+      lineRemoved: '- **#136/13, font loading**: the exported `fonts.css` uses a remote `@import`.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'for non-app compatibility; apps must use the head links.'}
+  - name: lowercase-chrome
+    id: 14
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/ui/Redaction.css, contains: 'text-transform: lowercase;'}
+      pointerRemoved: '#136/14'
+      lineRemoved: '- **#136/14, uppercase**: one uppercase danger word.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'table headers). User content is never lowercased:'}
+  - name: stripe-widths
+    id: 15
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/index.css, contains: '--stroke-hairline: 1px; --stroke-emphasis: 2px;'}
+      pointerRemoved: '#136/15'
+      lineRemoved: '- **#136/15, stripe widths**: some rails are wider than `--stroke-emphasis`.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: '**Selection inset**: an inset `--stroke-emphasis` (2px) amber bar'}
+        - {file: llm/NEUROINCLUSIVE.md, contains: 'marker (`--stroke-emphasis`, 2px, or bold first cell)'}
+  - name: opaque-chrome
+    id: 16
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/index.css, contains: '@media (prefers-reduced-transparency: no-preference) { .txn-sticky'}
+      pointerRemoved: '#136/16'
+      lineRemoved: '- **#136/16, blur by default**: the nav, the transcript''s sticky header and phase bars, and the'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: '**The Opaque Chrome Rule.** No glass or blur in the base UI.'}
+  - name: guarded-transitions
+    id: 17
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/index.css, contains: '@media (prefers-reduced-motion: no-preference) { .btn { transition: background var(--dur-1), color var(--dur-1), border-color var(--dur-1); } }'}
+      pointerRemoved: '#136/17'
+      lineRemoved: '- **#136/17, transitions outside the motion query**: some older rules declare transitions outside'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: '(`--dur-1` to `--dur-3`) belong inside `@media (prefers-reduced-motion: no-preference)`,'}
+  - name: paragraph-spacing
+    id: 18
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/index.css, contains: '.txn-body .txn-md-prose { margin-block: calc(var(--fs-body) * var(--lh-body)) 0; }'}
+      pointerRemoved: '#136/18'
+      lineRemoved: '- **#136/18, paragraph and heading spacing**: transcript markdown and the in-use headings sit closer'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'descriptions and transcript speech. Paragraphs are separated by at least one line-height.'}
+  - name: wrapping-leading
+    id: 19
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/index.css, contains: '.txn-title { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); color: var(--ink-strong); line-height: var(--lh-body);'}
+      pointerRemoved: '#136/19'
+      lineRemoved: '- **#136/19, leading on wrapping headings**: headings keep `--lh-tight` when they wrap.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'text that wraps gets at least 1.4.'}
+  - name: content-truncation
+    id: 20
+    disposition: RECORD
+    binding:
+      codeReference: {file: src/index.css, contains: '.txn-body { inline-size: 100%; max-inline-size: none; min-width: 0; line-height: var(--lh-body);'}
+      pointerRemoved: '#136/20'
+      lineRemoved: '- **#136/20, truncation**: the transcript clips its title, prompt previews and tool paths.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'message content never truncates. Primary labels and titles wrap; paths and prompt previews'}
+        - {file: llm/NEUROINCLUSIVE.md, contains: 'Primary titles and labels wrap; paths and prompt previews may ellipsize with full text available'}
+  - name: role-accents
+    id: 21
+    disposition: RECORD
+    binding:
+      codeReference: {file: src/ui/transcript/TurnCard.jsx, contains: "const accentName = provider === undefined ? 'amber' : providerAccent(provider)"}
+      pointerRemoved: '#136/21'
+      lineRemoved: '- **#136/21, role accents**: the assistant takes its provider''s accent, and system turns render in'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'sub-agents in mauve, system in `--ink-3`.'}
+        - {file: llm/NEUROINCLUSIVE.md, contains: 'mauve to sub-agents and neutral `--ink-3` to system turns; navigation remains text-first,'}
+  - name: navigation-glyphs
+    id: 22
+    disposition: SPLIT
+    binding:
+      codeReference: {file: src/mockups/inuse/CommonsPages.jsx, contains: '<BrandMark name="github" /> github,'}
+      pointerRemoved: '#136/22'
+      lineRemoved: '- **#136/22, glyphs on navigation**: the section nav, tabs, breadcrumbs and top-nav links are text only.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'Navigation is text-first: section links, tabs and breadcrumbs need no decorative glyph.'}
+        - {file: llm/NEUROINCLUSIVE.md, contains: 'while named providers and companies, including github, lead with real brand marks.'}
+        - {file: AGENTS.md, contains: 'The github account row also leads with its brand mark; navigation itself is text-first.'}
+        - {file: CONTRIBUTING.md, contains: 'navigation is text-first, named providers and companies lead with brand marks'}
+        - {file: llms.txt, contains: 'Navigation is text-first; the github account row still leads with its real brand mark.'}
+  - name: chrome-links
+    id: 23
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/index.css, contains: '.iu-session-title { font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); text-decoration: none;'}
+      pointerRemoved: '#136/23'
+      lineRemoved: '- **#136/23, link underlines in chrome**: breadcrumb links and home session titles carry the dotted'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'never rely on color alone; chrome links stay clean.'}
+  - name: icon-sizes
+    id: 24
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/index.css, contains: '--ic-sm: 14px; --ic-md: 16px; --ic-lg: 18px;'}
+      pointerRemoved: '#136/24'
+      lineRemoved: '- **#136/24, icon sizes**: badges, chips, legends and gutters render Lucide icons at 9 to 13px.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'or `--ic-lg`. Tools, states and roles use functional icons; navigation is text-first.'}
+  - name: focus-ring
+    id: 25
+    disposition: SPLIT
+    binding:
+      codeReference: {file: src/index.css, contains: '--focus-ring-width: 3px; --focus-ring-offset: 2px; --focus-ring-offset-inset: calc(-1 * var(--focus-ring-width));'}
+      pointerRemoved: '#136/25'
+      lineRemoved: '- **#136/25, focus ring offset**: segmented and tight controls draw the ring inset or at 1px.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'The one inset variant uses `--focus-ring-offset-inset` (-3px), only where an outside ring'}
+        - {file: llm/NEUROINCLUSIVE.md, contains: 'global 3px ring offset 2px; one -3px inset variant'}
+        - {file: AGENTS.md, contains: 'The standard focus ring has one inset variant.'}
+        - {file: CONTRIBUTING.md, contains: 'the standard ring has one inset variant'}
+        - {file: llms.txt, contains: 'the standard ring has one inset variant.'}
+        - {file: scripts/gen-llm-artifacts.mjs, contains: "insetOffset: tok('focus-ring-offset-inset')"}
+  - name: responsive-queries
+    id: 26
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/index.css, contains: '@media (max-width: 719px) { .cex-coll-grid { grid-template-columns: 1fr; } }'}
+      pointerRemoved: '#136/26'
+      lineRemoved: '- **#136/26, query direction**: four rules adapt with `min-width` queries.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'layout and narrower widths adapt down with `max-width` queries.'}
+  - name: progressive-disclosure
+    id: 27
+    disposition: SPLIT
+    binding:
+      codeReference: {file: src/ui/transcript/TurnCard.jsx, contains: 'const [expanded, setExpanded] = useState(true)'}
+      pointerRemoved: '#136/27'
+      lineRemoved: '- **#136/27, progressive disclosure**: turns never collapse, the demo opens some tool calls on load,'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'Transcript turns start expanded and remain collapsible;'}
+        - {file: llm/NEUROINCLUSIVE.md, contains: 'expanded but collapsible transcript turns, initially collapsed tool details'}
+        - {file: CONTRIBUTING.md, contains: 'keep turns expanded but collapsible'}
+        - {file: llms.txt, contains: 'Turns start expanded but collapsible; tool details'}
+  - name: accent-glow
+    id: 28
+    disposition: DEMO
+    binding:
+      codeReference: {file: src/index.css, contains: '.txn-body b { color: var(--amber-bright); font-weight: 700; }'}
+      pointerRemoved: '#136/28'
+      lineRemoved: '- **#136/28, glow scope**: every bold span in a transcript body glows, including multi-word ones.'
+      restatingFilesAmended:
+        - {file: DESIGN.md, contains: 'single accent words explicitly marked `.hl` in the dark theme, never to generic bold spans or multi-line text.'}
+        - {file: llm/NEUROINCLUSIVE.md, contains: 'accent words marked `.hl` only, never generic bold transcript spans.'}

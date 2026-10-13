@@ -82,7 +82,7 @@ export function PhaseDivider({
         type="button"
         className="tm2-phase-btn"
         onClick={onClick}
-        title={range ? `${label} · ${range}` : label}
+        title={range ? `${label}, ${range}` : label}
         data-active={active ? 'true' : undefined}
         aria-current={active ? 'true' : undefined}
       >
@@ -260,7 +260,7 @@ export function TurnContextBar({
           )}
           {text && (
             <>
-              <span className="tm2-contextbar-dot" aria-hidden="true">·</span>
+              <span className="tm2-contextbar-dot" aria-hidden="true">,</span>
               {/* the prompt is user content — NOT lowercased. */}
               <span className="tm2-contextbar-prompt">{text}</span>
             </>

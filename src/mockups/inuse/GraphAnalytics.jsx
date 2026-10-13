@@ -27,7 +27,7 @@ export function AnalyticsView({ theme }) {
     <ProjectOverview
       payload={ANALYTICS_PAYLOAD}
       title="project overview"
-      subtitle="peasant-labs/peasant · 3 contributors · 8 sessions across 3 weeks"
+      subtitle="peasant-labs/peasant, 3 contributors, 8 sessions across 3 weeks"
       contributorLimit={10}
     />
   )

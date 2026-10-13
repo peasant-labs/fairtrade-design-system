@@ -231,6 +231,9 @@ const COMPONENTS = [
   ['chip', { textColor: '{colors.ink-2}', typography: '{typography.label}', rounded: '{rounded.none}', height: tok('control-h-sm'), padding: ['0', tok('sp-3')] }],
   ['card', { backgroundColor: '{colors.surface}', rounded: '{rounded.none}', padding: tok('sp-4') }],
   ['dialog', { backgroundColor: '{colors.surface}', rounded: '{rounded.none}', width: tok('dialog-w') }],
+  ['publish-primary', { ...control, touchMinHeight: tok('target-comfortable'), typography: '{typography.label-strong}' }],
+  ['overlay', { shadow: tok('overlay-shadow') }],
+  ['focus-ring', { width: tok('focus-ring-width'), offset: tok('focus-ring-offset'), insetOffset: tok('focus-ring-offset-inset') }],
 ]
 
 function yamlScalar(value) {

@@ -155,7 +155,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
 
   for (const row of fixture.update) {
     let publishCalls = 0
-    const mounted = await mount(React.createElement(ui.PublishDialog, base({ state: row.state ?? 'ready', mode: 'update', access: row.access, onRestore: noop, onPublish: () => { publishCalls++ }, changes: { summary: '6 new turns since you published · 1 new match, redacted' } })))
+    const mounted = await mount(React.createElement(ui.PublishDialog, base({ state: row.state ?? 'ready', mode: 'update', access: row.access, onRestore: noop, onPublish: () => { publishCalls++ }, changes: { summary: '6 new turns since you published, 1 new match, redacted' } })))
     const dialog = mounted.container.querySelector('[role="dialog"]')
     const primary = [...dialog.querySelectorAll('.dlg-foot .btn-primary')][0]
     report.check(text(primary) === row.primary, `${row.name}: primary expected ${JSON.stringify(row.primary)}, received ${JSON.stringify(text(primary))}`)

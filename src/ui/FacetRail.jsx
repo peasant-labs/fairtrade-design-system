@@ -80,7 +80,7 @@ function TopicChip({ tag, count, active, onToggle }) {
 }
 
 /* ── the rail ─────────────────────────────────────────────────────────────────
-   order (radiogroup) · provider (checklist of aria-pressed rows) · topics (a
+   order (radiogroup), provider (checklist of aria-pressed rows), topics (a
    tag-cloud). a sticky footer surfaces the running active count and a "clear
    all" that only appears when something is active. */
 export default function FacetRail({

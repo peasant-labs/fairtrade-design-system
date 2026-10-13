@@ -174,7 +174,7 @@ export default function FiltersRail({
                   ? `all checkpoints (${checkpoints.length})`
                   : (() => {
                       const sel = checkpoints.find((c) => c.hash === checkpoint || c.shortHash === checkpoint)
-                      return sel ? `${sel.shortHash} · ${sel.message}` : checkpoint
+                      return sel ? `${sel.shortHash}, ${sel.message}` : checkpoint
                     })()}
               </span>
               <ChevronDown size={14} aria-hidden="true" />

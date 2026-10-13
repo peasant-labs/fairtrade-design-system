@@ -133,7 +133,7 @@ export const Default = {
   render: () => (
     <div style={{ padding: 'var(--sp-5)' }}>
       <RailShell
-        toolbar={<span>node · src/ui/RailShell.jsx</span>}
+        toolbar={<span>node, src/ui/RailShell.jsx</span>}
         rail={<NodeRail />}
         sheetTitle="node details"
         sheetMeta="3"
@@ -218,7 +218,7 @@ export const SplitInShell = {
   render: () => (
     <div style={{ padding: 'var(--sp-5)' }}>
       <RailShell
-        toolbar={<span>graph · 42 nodes</span>}
+        toolbar={<span>graph, 42 nodes</span>}
         sheetTitle="panels"
         rail={
           <SplitRail

@@ -10,7 +10,7 @@ import './DiffView.css'
 
    the redaction variant (variant="redaction") reads the same chassis as a before→after: a
    "del" line carries the original secret, the paired "add" line its redacted form, with a
-   small category·confidence badge and a per-match keep/revert affordance. classes are
+   small category/confidence badge and a per-match keep/revert affordance. classes are
    namespaced dv-; tokens + the dv-* rules live in DiffView.css. */
 
 const SIGN = { add: '+', del: '−', ctx: ' ' }
@@ -58,14 +58,14 @@ function DiffLine({ line }) {
 
 /**
  * a redaction match rendered as a del→add pair on the unified chassis: the original secret
- * (del) struck through, its redacted replacement (add), a category·confidence badge, and a
+ * (del) struck through, its redacted replacement (add), a category/confidence badge, and a
  * keep/revert button. "kept" un-redacts the match (the original leaves as-is) and is flagged.
  */
 function RedactionMatch({ match }) {
   const { category, confidence, original, replacement, oldNo, newNo } = match
   const [kept, setKept] = useState(false)
   const low = confidence < 0.7
-  // 0.98 -> "0.98"; keep two decimals, tabular, mono — matches the "api-key · 0.98" spec.
+  // 0.98 -> "0.98"; keep two decimals, tabular, mono — matches the "api-key, 0.98" spec.
   const conf = confidence.toFixed(2)
 
   return (
@@ -73,7 +73,7 @@ function RedactionMatch({ match }) {
       <div className="dv-match-head">
         <span className={`dv-badge${low ? ' dv-badge-low' : ''}`}>
           <span className="dv-badge-cat">{category}</span>
-          <span className="dv-badge-dot" aria-hidden="true">·</span>
+          <span className="dv-badge-dot" aria-hidden="true">,</span>
           <span className="dv-badge-conf tnum">{conf}</span>
         </span>
         {kept && (
@@ -128,7 +128,7 @@ function RedactionMatch({ match }) {
  *              renders a file header (path + +N/−N churn) then each hunk's `@@` row and lines.
  *
  *  redaction:  variant="redaction", pass `matches` = [{ category, confidence, original,
- *              replacement, oldNo, newNo }]. each match is a del→add pair with a category·
+ *              replacement, oldNo, newNo }]. each match is a del→add pair with a category/
  *              confidence badge and a per-match keep/revert button.
  *
  * @param {object} props

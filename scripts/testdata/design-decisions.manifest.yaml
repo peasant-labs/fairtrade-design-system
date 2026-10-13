@@ -27,5 +27,5 @@ requiredNames:
   - responsive-queries
   - progressive-disclosure
   - accent-glow
-requiredMutations: [planted-middot, unresolved-decision, missing-code, retained-pointer]
+requiredMutations: [planted-middot, encoded-middot, escaped-middot, unresolved-decision, missing-code, retained-pointer]
 requiredCases: [clean-separators, bound-decision, no-original-conflict-line]

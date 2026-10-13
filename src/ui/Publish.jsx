@@ -53,10 +53,10 @@ const countOf = (count, one, many) => (typeof count === 'number' ? plural(count,
 const STATE_META = {
   'not-published': { icon: CircleDashed, text: () => 'not published', action: 'publish' },
   publishing: { icon: Loader, text: ({ collectives }) => (collectives ? `publishing to ${plural(collectives, 'collective', 'collectives')}` : 'publishing'), action: 'publish' },
-  published: { icon: CircleCheck, text: ({ collectives }) => ['published', countOf(collectives, 'collective', 'collectives'), 'up to date'].filter(Boolean).join(' · '), action: 'update' },
-  'new-turns': { icon: CircleFadingArrowUp, text: ({ collectives, newTurns }) => ['published', countOf(collectives, 'collective', 'collectives'), countOf(newTurns, 'new turn', 'new turns') ?? 'new turns'].filter(Boolean).join(' · '), action: 'update' },
-  'auto-publish': { icon: Repeat, text: ({ collective }) => (collective ? `auto-publish on · ${collective}` : 'auto-publish on'), action: 'update' },
-  'outside-lists': { icon: ListX, text: () => 'not published · outside your saved lists', action: 'publish' },
+  published: { icon: CircleCheck, text: ({ collectives }) => ['published', countOf(collectives, 'collective', 'collectives'), 'up to date'].filter(Boolean).join(', '), action: 'update' },
+  'new-turns': { icon: CircleFadingArrowUp, text: ({ collectives, newTurns }) => ['published', countOf(collectives, 'collective', 'collectives'), countOf(newTurns, 'new turn', 'new turns') ?? 'new turns'].filter(Boolean).join(', '), action: 'update' },
+  'auto-publish': { icon: Repeat, text: ({ collective }) => (collective ? `auto-publish on, ${collective}` : 'auto-publish on'), action: 'update' },
+  'outside-lists': { icon: ListX, text: () => 'not published, outside your saved lists', action: 'publish' },
 }
 
 function stateMeta(state) {
@@ -143,7 +143,7 @@ export const PUBLISH_STATES = Object.freeze(['not-published', 'publishing', 'pub
  * @property {string} id
  * @property {string} name - the collective's name, kept in its case.
  * @property {number} [members]
- * @property {string} [note] - why it is here ("suggested · repo acme/ingest-api is linked").
+ * @property {string} [note] - why it is here ("suggested, repo acme/ingest-api is linked").
  * @property {'adding'|'approval'|'removal'} [pending] - a change the next publish or update makes:
  *           `adding` (joins on publish), `approval` (joins once its owner approves), `removal`
  *           (loses access on update). stated in words on the row.
@@ -151,8 +151,8 @@ export const PUBLISH_STATES = Object.freeze(['not-published', 'publishing', 'pub
 
 const PENDING_TEXT = {
   adding: 'adding',
-  approval: 'adding · waits for approval',
-  removal: 'removing · loses access when you update',
+  approval: 'adding, waits for approval',
+  removal: 'removing, loses access when you update',
 }
 
 /**
@@ -181,7 +181,7 @@ export function AccessList({ items, onRemove, onRestore, empty = 'no collective 
               <span className="pub-access-name">{item.name}</span>
               {(item.note || item.pending) && (
                 <span className="pub-access-note">
-                  {[item.note, item.pending ? PENDING_TEXT[item.pending] : null].filter(Boolean).join(' · ')}
+                  {[item.note, item.pending ? PENDING_TEXT[item.pending] : null].filter(Boolean).join(', ')}
                 </span>
               )}
             </span>
@@ -318,7 +318,7 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
             {kept ? <AlertTriangle aria-hidden="true" /> : <ShieldCheck aria-hidden="true" />}
             <span>
               <span className="tnum">{matchCount}</span> {matchCount === 1 ? 'match' : 'matches'}
-              {kept ? <> · <span className="tnum">{kept}</span> kept un-redacted, will be sent</> : matchCount ? ' · all redacted' : ' · nothing to redact'}
+              {kept ? <>, <span className="tnum">{kept}</span> kept un-redacted, will be sent</> : matchCount ? ', all redacted' : ', nothing to redact'}
             </span>
             {matches.length > 0 && (
               <button type="button" className="btn btn-ghost btn-sm pub-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
@@ -363,7 +363,7 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
  * @param {(id: string) => void} [props.onRestore]
  * @param {object} [props.picker] - CollectivePicker props (suggestions, onAdd, query, onQueryChange).
  * @param {{ checked: boolean, onChange: (checked: boolean) => void, hint?: string }} [props.autoPublish] - hint replaces only the unchecked line; checked consent is always component-owned.
- * @param {string} [props.accessSummary] - update mode: the access change in words ("adds ML Reading Group · removes nothing").
+ * @param {string} [props.accessSummary] - update mode: the access change in words ("adds ML Reading Group, removes nothing").
  * @param {string} [props.primaryLabel] - replaces the derived primary label.
  * @param {() => void} [props.onPublish]
  * @param {() => void} [props.onConnect] - `continue with github`.
@@ -421,7 +421,7 @@ export function PublishDialog({
       ? <>published to <span className="pub-title-content">{joinNames(doneReaders)}</span></>
       : pendingReaders.length
         ? <>submitted to <span className="pub-title-content">{joinNames(pendingReaders)}</span></>
-        : mode === 'update' ? 'updated · no collective can read it' : 'published privately'
+        : mode === 'update' ? 'updated, no collective can read it' : 'published privately'
     : <>{verb} <span className="pub-title-content">“{title}”</span></>
 
   // A state change may disable or remove the focused close, checkbox or audience control.

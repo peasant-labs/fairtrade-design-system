@@ -53,12 +53,12 @@ function sessionColumns(renderState) {
           <ProviderIcon harness={row.harness} accent />
           <span className="iu-session-text">
             <a className="iu-session-title" href={`#session-${row.id}`}>{row.title}</a>
-            <span className="iu-session-sub">{row.untitled ? 'untitled · ' : ''}{String(row.harness).replace(/-/g, ' ')} · <span className="tnum">{row.tokens}</span> tokens</span>
+            <span className="iu-session-sub">{row.untitled ? 'untitled, ' : ''}{String(row.harness).replace(/-/g, ' ')}, <span className="tnum">{row.tokens}</span> tokens</span>
           </span>
         </span>
       ),
     },
-    { key: 'project', label: 'project · branch', render: (_, row) => <span className="iu-session-where"><span>{row.project}</span><span className="iu-session-sub mono">{row.branch}</span></span> },
+    { key: 'project', label: 'project, branch', render: (_, row) => <span className="iu-session-where"><span>{row.project}</span><span className="iu-session-sub mono">{row.branch}</span></span> },
     { key: 'turns', label: 'turns', align: 'right' },
     { key: 'duration', label: 'duration', align: 'right' },
     { key: 'when', label: 'when' },
@@ -161,7 +161,7 @@ function DemoSettingRow({ row }) {
   return (
     <SettingRow
       label={label}
-      help={row.harness ? `${row.help} · ${row.configKey}` : row.help}
+      help={row.harness ? `${row.help}, ${row.configKey}` : row.help}
       control={row.kind}
       value={row.value}
       options={row.options}
