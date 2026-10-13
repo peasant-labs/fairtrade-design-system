@@ -13,13 +13,13 @@ cases:
     viewport: desktop
     theme: dark
     motion: no-preference
-    expectedThemeAttribute: null
+    expectedThemeAttribute: dark
     expectedAnimationName: tlp-glow
   - name: desktop dark theme with reduced motion
     viewport: desktop
     theme: dark
     motion: reduce
-    expectedThemeAttribute: null
+    expectedThemeAttribute: dark
     expectedAnimationName: none
   - name: desktop light theme with normal motion
     viewport: desktop
@@ -37,13 +37,13 @@ cases:
     viewport: mobile
     theme: dark
     motion: no-preference
-    expectedThemeAttribute: null
+    expectedThemeAttribute: dark
     expectedAnimationName: tlp-glow
   - name: mobile dark theme with reduced motion
     viewport: mobile
     theme: dark
     motion: reduce
-    expectedThemeAttribute: null
+    expectedThemeAttribute: dark
     expectedAnimationName: none
   - name: mobile light theme with normal motion
     viewport: mobile
