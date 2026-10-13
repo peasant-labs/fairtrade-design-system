@@ -36,11 +36,11 @@ decisions:
     id: 4
     disposition: DEMO
     binding:
-      codeReference: {file: src/index.css, contains: '.check-box:checked { background: var(--surface-2); border-color: var(--rule-strong); }'}
+      codeReference: {file: src/index.css, contains: '.check-box:checked { background: var(--amber-fill); border-color: var(--amber-fill); }'}
       pointerRemoved: '#136/4'
       lineRemoved: '- **#136/4, amber salience**: the transcript shows many amber fills above the fold.'
       restatingFilesAmended:
-        - {file: DESIGN.md, contains: 'checked inputs and active toggles use neutral surfaces and ink, not amber fills.'}
+        - {file: DESIGN.md, contains: 'checked inputs and selected interactive toggles use `--amber-fill` with `--amber-fill-ink`, with non-color state cues.'}
   - name: filter-density
     id: 5
     disposition: DEMO

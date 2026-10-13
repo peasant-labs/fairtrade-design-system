@@ -121,6 +121,7 @@ const PAIRS = [
   { fg: 'ink-4', bg: 'surface-2', kind: 'text', note: 'meta/counts/line-numbers (text-safe)' },
   // primary button label
   { fg: 'on-amber', bg: 'amber', kind: 'text', note: 'primary button label' },
+  { fg: 'on-amber', bg: 'amber-bright', kind: 'text', note: 'selected control hover label' },
   // selected/toggled control label + unread count on the golden amber fill (both themes)
   { fg: 'amber-fill-ink', bg: 'amber-fill', kind: 'text', note: 'toggle/selected chip + unread count label' },
   // diff body text: required because add/del tokens are used directly as readable diff rows.

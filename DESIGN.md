@@ -294,7 +294,7 @@ first, with the light value under a `-light` key where it differs.
   underline, the selected-row marker, links, keywords and the focus ring in the dark theme.
   `--amber-bright` is its hover state and `--amber-dim` its quiet edge (focused input border, the
   `>` of the active nav marker). `--amber-fill` with `--amber-fill-ink` remains available for
-  primary emphasis; checked inputs and active toggles use neutral surfaces and ink, not amber fills.
+  primary emphasis; checked inputs and selected interactive toggles use `--amber-fill` with `--amber-fill-ink`, with non-color state cues.
   The fill tokens are split from `--amber` so light-theme text can stay dark enough for AA. `--on-amber` is the
   ink on an amber primary button.
 
@@ -321,7 +321,7 @@ text, rail).
 
 ### Named Rules
 **The Scarce Amber Rule.** Amber marks at most one focal point per region: the primary
-action, the active marker, a link, the focus ring. Large fills stay low-chroma earth; amber is never small body
+action, the active marker, a link, the focus ring. Small interactive controls also use amber to mark their on/selected state, paired with a tick, thumb position or label. Large fills stay low-chroma earth; amber is never small body
 text on light and never a large saturated panel. Never combine color emphasis, bold and motion on one
 element.
 
