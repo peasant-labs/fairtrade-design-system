@@ -58,7 +58,7 @@ for (const row of spec.cases) for (const theme of spec.themes) {
       const stem = `${row.name.replaceAll(' ', '-')}-${theme}`
       await page.screenshot({ path: join(process.env.DEMO_TRUTH_CAPTURE_DIR, `${stem}.png`) })
       if (row.focus) {
-        const detail = page.locator(row.focus).first()
+        const detail = root.locator(row.focus).first()
         await detail.scrollIntoViewIfNeeded()
         await expect(detail).toBeInViewport()
         await page.screenshot({ path: join(process.env.DEMO_TRUTH_CAPTURE_DIR, `${stem}-detail.png`) })

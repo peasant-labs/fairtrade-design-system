@@ -13,6 +13,7 @@ cases:
     root: .iu-page
     text: [automatic publishing is controlled by the folder rules below., except acme/worker]
     absent: [it never publishes on its own.]
+    focus: '.srow:has-text("except acme/worker")'
   - name: project analytics
     query: app=graph&section=analytics
     width: 1440
@@ -45,6 +46,7 @@ cases:
     root: .iu-page
     text: [github]
     marks: ['.srow-label [data-brand="github"]']
+    focus: '.srow:has([data-brand="github"])'
   - name: published pull request digest
     query: app=commons&commons=pull-request
     width: 1440
