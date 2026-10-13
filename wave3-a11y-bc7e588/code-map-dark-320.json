@@ -1,0 +1,228 @@
+{
+  "surface": "code map",
+  "width": 320,
+  "theme": "dark",
+  "url": "http://localhost:5294/?fb=off&app=graph&section=map&theme=dark#inuse",
+  "head": "bc7e588fb2d8d900564a0222a045663cf45cf0e4",
+  "provenance": [
+    {
+      "asset": "/assets/index-BAM01EhN.js",
+      "sha256": "d93e7c065b1122cb2a1438f0c9af8325342d2f3744a2d3778fa85539d21c47e0"
+    },
+    {
+      "asset": "/assets/index-AF2BH4Re.css",
+      "sha256": "87ff578e6f3c1317a299955a20c3327980a968ef43d5312be689d4c7a96664a1"
+    }
+  ],
+  "insightReadings": [
+    {
+      "name": "insight title body size and panel reflow",
+      "selector": ".tlp-insight-title",
+      "fontPx": 16,
+      "tokenPx": 16,
+      "lineHeight": 24,
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "panel": {
+        "left": 52,
+        "right": 268,
+        "top": 122547.296875,
+        "bottom": 123113.296875,
+        "width": 216,
+        "height": 566
+      },
+      "item": {
+        "left": 64,
+        "right": 256,
+        "top": 122576.296875,
+        "bottom": 122822.296875,
+        "width": 192,
+        "height": 246
+      },
+      "panelClientWidth": 216,
+      "panelScrollWidth": 216,
+      "panelClientHeight": 566,
+      "panelScrollHeight": 566,
+      "textRects": [
+        {
+          "left": 73,
+          "right": 208.734375,
+          "top": 122603.296875,
+          "bottom": 122623.296875
+        },
+        {
+          "left": 73,
+          "right": 221.328125,
+          "top": 122627.296875,
+          "bottom": 122647.296875
+        },
+        {
+          "left": 73,
+          "right": 210.25,
+          "top": 122651.296875,
+          "bottom": 122671.296875
+        }
+      ]
+    },
+    {
+      "name": "insight title body size and panel reflow",
+      "selector": ".tlp-insight-title",
+      "fontPx": 16,
+      "tokenPx": 16,
+      "lineHeight": 24,
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "panel": {
+        "left": 52,
+        "right": 268,
+        "top": 122547.296875,
+        "bottom": 123113.296875,
+        "width": 216,
+        "height": 566
+      },
+      "item": {
+        "left": 64,
+        "right": 256,
+        "top": 122867.296875,
+        "bottom": 123113.296875,
+        "width": 192,
+        "height": 246
+      },
+      "panelClientWidth": 216,
+      "panelScrollWidth": 216,
+      "panelClientHeight": 566,
+      "panelScrollHeight": 566,
+      "textRects": [
+        {
+          "left": 73,
+          "right": 198.25,
+          "top": 122894.296875,
+          "bottom": 122914.296875
+        },
+        {
+          "left": 73,
+          "right": 245.734375,
+          "top": 122918.296875,
+          "bottom": 122938.296875
+        },
+        {
+          "left": 73,
+          "right": 123.890625,
+          "top": 122942.296875,
+          "bottom": 122962.296875
+        }
+      ]
+    },
+    {
+      "name": "insight summary body size and panel reflow",
+      "selector": ".tlp-insight-summary",
+      "fontPx": 16,
+      "tokenPx": 16,
+      "lineHeight": 24,
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "panel": {
+        "left": 52,
+        "right": 268,
+        "top": 122547.296875,
+        "bottom": 123113.296875,
+        "width": 216,
+        "height": 566
+      },
+      "item": {
+        "left": 64,
+        "right": 256,
+        "top": 122576.296875,
+        "bottom": 122822.296875,
+        "width": 192,
+        "height": 246
+      },
+      "panelClientWidth": 216,
+      "panelScrollWidth": 216,
+      "panelClientHeight": 566,
+      "panelScrollHeight": 566,
+      "textRects": [
+        {
+          "left": 73,
+          "right": 233.328125,
+          "top": 122683.296875,
+          "bottom": 122703.296875
+        },
+        {
+          "left": 73,
+          "right": 236.8125,
+          "top": 122707.296875,
+          "bottom": 122727.296875
+        },
+        {
+          "left": 73,
+          "right": 243.171875,
+          "top": 122731.296875,
+          "bottom": 122751.296875
+        }
+      ]
+    },
+    {
+      "name": "insight summary body size and panel reflow",
+      "selector": ".tlp-insight-summary",
+      "fontPx": 16,
+      "tokenPx": 16,
+      "lineHeight": 24,
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "panel": {
+        "left": 52,
+        "right": 268,
+        "top": 122547.296875,
+        "bottom": 123113.296875,
+        "width": 216,
+        "height": 566
+      },
+      "item": {
+        "left": 64,
+        "right": 256,
+        "top": 122867.296875,
+        "bottom": 123113.296875,
+        "width": 192,
+        "height": 246
+      },
+      "panelClientWidth": 216,
+      "panelScrollWidth": 216,
+      "panelClientHeight": 566,
+      "panelScrollHeight": 566,
+      "textRects": [
+        {
+          "left": 73,
+          "right": 225.6875,
+          "top": 122974.296875,
+          "bottom": 122994.296875
+        },
+        {
+          "left": 73,
+          "right": 214.765625,
+          "top": 122998.296875,
+          "bottom": 123018.296875
+        },
+        {
+          "left": 73,
+          "right": 208.203125,
+          "top": 123022.296875,
+          "bottom": 123042.296875
+        }
+      ]
+    }
+  ],
+  "baseline": [],
+  "scan": {
+    "tags": [
+      "wcag2a",
+      "wcag2aa"
+    ],
+    "violations": [],
+    "incomplete": [
+      "aria-prohibited-attr",
+      "aria-valid-attr-value"
+    ],
+    "passes": 21
+  }
+}

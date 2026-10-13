@@ -1,0 +1,179 @@
+{
+  "surface": "code map",
+  "width": 1440,
+  "theme": "dark",
+  "url": "http://localhost:5294/?fb=off&app=graph&section=map&theme=dark#inuse",
+  "head": "bc7e588fb2d8d900564a0222a045663cf45cf0e4",
+  "provenance": [
+    {
+      "asset": "/assets/index-BAM01EhN.js",
+      "sha256": "d93e7c065b1122cb2a1438f0c9af8325342d2f3744a2d3778fa85539d21c47e0"
+    },
+    {
+      "asset": "/assets/index-AF2BH4Re.css",
+      "sha256": "87ff578e6f3c1317a299955a20c3327980a968ef43d5312be689d4c7a96664a1"
+    }
+  ],
+  "insightReadings": [
+    {
+      "name": "insight title body size and panel reflow",
+      "selector": ".tlp-insight-title",
+      "fontPx": 16,
+      "tokenPx": 16,
+      "lineHeight": 24,
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "panel": {
+        "left": 96,
+        "right": 1344,
+        "top": 77633.1875,
+        "bottom": 77933.1875,
+        "width": 1248,
+        "height": 300
+      },
+      "item": {
+        "left": 128,
+        "right": 1312,
+        "top": 77662.1875,
+        "bottom": 77775.1875,
+        "width": 1184,
+        "height": 113
+      },
+      "panelClientWidth": 1248,
+      "panelScrollWidth": 1248,
+      "panelClientHeight": 300,
+      "panelScrollHeight": 300,
+      "textRects": [
+        {
+          "left": 153,
+          "right": 588.375,
+          "top": 77673.1875,
+          "bottom": 77693.1875
+        }
+      ]
+    },
+    {
+      "name": "insight title body size and panel reflow",
+      "selector": ".tlp-insight-title",
+      "fontPx": 16,
+      "tokenPx": 16,
+      "lineHeight": 24,
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "panel": {
+        "left": 96,
+        "right": 1344,
+        "top": 77633.1875,
+        "bottom": 77933.1875,
+        "width": 1248,
+        "height": 300
+      },
+      "item": {
+        "left": 128,
+        "right": 1312,
+        "top": 77820.1875,
+        "bottom": 77933.1875,
+        "width": 1184,
+        "height": 113
+      },
+      "panelClientWidth": 1248,
+      "panelScrollWidth": 1248,
+      "panelClientHeight": 300,
+      "panelScrollHeight": 300,
+      "textRects": [
+        {
+          "left": 153,
+          "right": 515.921875,
+          "top": 77831.1875,
+          "bottom": 77851.1875
+        }
+      ]
+    },
+    {
+      "name": "insight summary body size and panel reflow",
+      "selector": ".tlp-insight-summary",
+      "fontPx": 16,
+      "tokenPx": 16,
+      "lineHeight": 24,
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "panel": {
+        "left": 96,
+        "right": 1344,
+        "top": 77633.1875,
+        "bottom": 77933.1875,
+        "width": 1248,
+        "height": 300
+      },
+      "item": {
+        "left": 128,
+        "right": 1312,
+        "top": 77662.1875,
+        "bottom": 77775.1875,
+        "width": 1184,
+        "height": 113
+      },
+      "panelClientWidth": 1248,
+      "panelScrollWidth": 1248,
+      "panelClientHeight": 300,
+      "panelScrollHeight": 300,
+      "textRects": [
+        {
+          "left": 137,
+          "right": 645.375,
+          "top": 77705.1875,
+          "bottom": 77725.1875
+        }
+      ]
+    },
+    {
+      "name": "insight summary body size and panel reflow",
+      "selector": ".tlp-insight-summary",
+      "fontPx": 16,
+      "tokenPx": 16,
+      "lineHeight": 24,
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "panel": {
+        "left": 96,
+        "right": 1344,
+        "top": 77633.1875,
+        "bottom": 77933.1875,
+        "width": 1248,
+        "height": 300
+      },
+      "item": {
+        "left": 128,
+        "right": 1312,
+        "top": 77820.1875,
+        "bottom": 77933.1875,
+        "width": 1184,
+        "height": 113
+      },
+      "panelClientWidth": 1248,
+      "panelScrollWidth": 1248,
+      "panelClientHeight": 300,
+      "panelScrollHeight": 300,
+      "textRects": [
+        {
+          "left": 137,
+          "right": 573.6875,
+          "top": 77863.1875,
+          "bottom": 77883.1875
+        }
+      ]
+    }
+  ],
+  "baseline": [],
+  "scan": {
+    "tags": [
+      "wcag2a",
+      "wcag2aa"
+    ],
+    "violations": [],
+    "incomplete": [
+      "aria-valid-attr-value"
+    ],
+    "passes": 21
+  }
+}

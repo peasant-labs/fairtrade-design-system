@@ -1,0 +1,32 @@
+{
+  "surface": "transcript",
+  "width": 320,
+  "theme": "light",
+  "url": "http://localhost:5294/?fb=off&app=transcript&theme=light#inuse",
+  "head": "bc7e588fb2d8d900564a0222a045663cf45cf0e4",
+  "provenance": [
+    {
+      "asset": "/assets/index-BAM01EhN.js",
+      "sha256": "d93e7c065b1122cb2a1438f0c9af8325342d2f3744a2d3778fa85539d21c47e0"
+    },
+    {
+      "asset": "/assets/index-AF2BH4Re.css",
+      "sha256": "87ff578e6f3c1317a299955a20c3327980a968ef43d5312be689d4c7a96664a1"
+    }
+  ],
+  "insightReadings": [],
+  "baseline": [],
+  "scan": {
+    "tags": [
+      "wcag2a",
+      "wcag2aa"
+    ],
+    "violations": [],
+    "incomplete": [
+      "aria-valid-attr-value",
+      "color-contrast",
+      "duplicate-id-aria"
+    ],
+    "passes": 22
+  }
+}

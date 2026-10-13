@@ -1,0 +1,6047 @@
+{
+  "candidate": {
+    "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+    "tree": "08d0c54357447c232d206c0e81224d9d28f52476",
+    "root": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-design-system-116--wave3",
+    "port": 5311
+  },
+  "base": {
+    "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+    "root": "/tmp/opencode/w3-base",
+    "port": 5312
+  },
+  "assets": [
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "port": 5311,
+      "path": "/assets/index-BggrwM9v.js",
+      "url": "http://localhost:5311/assets/index-BggrwM9v.js",
+      "sha256": "4e38dbde73cdc6d69f95077a3825ad490d2aca034db768c84a25c78324f36d4b",
+      "servedEqualsDist": true
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "port": 5311,
+      "path": "/assets/index-DQcMloqA.css",
+      "url": "http://localhost:5311/assets/index-DQcMloqA.css",
+      "sha256": "4c4e53dab52b256913e50ccb01d522b141aec18a2d83d4e5248ec5812fd19e63",
+      "servedEqualsDist": true
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "port": 5312,
+      "path": "/assets/index-BAM01EhN.js",
+      "url": "http://localhost:5312/assets/index-BAM01EhN.js",
+      "sha256": "d93e7c065b1122cb2a1438f0c9af8325342d2f3744a2d3778fa85539d21c47e0",
+      "servedEqualsDist": true
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "port": 5312,
+      "path": "/assets/index-AF2BH4Re.css",
+      "url": "http://localhost:5312/assets/index-AF2BH4Re.css",
+      "sha256": "87ff578e6f3c1317a299955a20c3327980a968ef43d5312be689d4c7a96664a1",
+      "servedEqualsDist": true
+    }
+  ],
+  "observations": [
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 240,
+      "trackWidth": 240,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 75,
+        "y": 449.359375,
+        "width": 240,
+        "height": 6
+      },
+      "track": {
+        "x": 74,
+        "y": 448.359375,
+        "width": 242,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12"
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 70,
+      "trackWidth": 70,
+      "scale": 0.62,
+      "drawnRatio": 0.6199999128069197,
+      "rect": {
+        "x": 196,
+        "y": 449.875,
+        "width": 43.399993896484375,
+        "height": 4
+      },
+      "track": {
+        "x": 195,
+        "y": 448.875,
+        "width": 72,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 196,
+          "y": 449.875,
+          "width": 43.399993896484375,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 481.46875,
+          "width": 12.600006103515625,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 513.0625,
+          "width": 7.6999969482421875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 544.65625,
+          "width": 4.1999969482421875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 576.25,
+          "width": 2.100006103515625,
+          "height": 4
+        }
+      ]
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "auto",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 41,
+        "y": 845.6875,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 240,
+      "trackWidth": 240,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 75,
+        "y": 449.359375,
+        "width": 240,
+        "height": 6
+      },
+      "track": {
+        "x": 74,
+        "y": 448.359375,
+        "width": 242,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12"
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 43,
+      "trackWidth": 70,
+      "scale": 1,
+      "drawnRatio": 0.6198660714285714,
+      "rect": {
+        "x": 196,
+        "y": 449.875,
+        "width": 43.390625,
+        "height": 4
+      },
+      "track": {
+        "x": 195,
+        "y": 448.875,
+        "width": 72,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 196,
+          "y": 449.875,
+          "width": 43.390625,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 481.46875,
+          "width": 12.59375,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 513.0625,
+          "width": 7.6875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 544.65625,
+          "width": 4.1875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 576.25,
+          "width": 2.09375,
+          "height": 4
+        }
+      ]
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "transform",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 41,
+        "y": 845.6875,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-governance",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 240,
+      "trackWidth": 240,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 75,
+        "y": 475.359375,
+        "width": 240,
+        "height": 6
+      },
+      "track": {
+        "x": 74,
+        "y": 474.359375,
+        "width": 242,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12"
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-mapviz",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 70,
+      "trackWidth": 70,
+      "scale": 0.62,
+      "drawnRatio": 0.6199999128069197,
+      "rect": {
+        "x": 196,
+        "y": 475.875,
+        "width": 43.399993896484375,
+        "height": 4
+      },
+      "track": {
+        "x": 195,
+        "y": 474.875,
+        "width": 72,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 196,
+          "y": 475.875,
+          "width": 43.399993896484375,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 507.46875,
+          "width": 12.600006103515625,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 539.0625,
+          "width": 7.6999969482421875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 570.65625,
+          "width": 4.1999969482421875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 602.25,
+          "width": 2.100006103515625,
+          "height": 4
+        }
+      ]
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "switch",
+      "willChange": "auto",
+      "property": "all",
+      "duration": "1e-05s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 41,
+        "y": 871.6875,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-governance",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 240,
+      "trackWidth": 240,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 75,
+        "y": 475.359375,
+        "width": 240,
+        "height": 6
+      },
+      "track": {
+        "x": 74,
+        "y": 474.359375,
+        "width": 242,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12"
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-mapviz",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 43,
+      "trackWidth": 70,
+      "scale": 1,
+      "drawnRatio": 0.6198660714285714,
+      "rect": {
+        "x": 196,
+        "y": 475.875,
+        "width": 43.390625,
+        "height": 4
+      },
+      "track": {
+        "x": 195,
+        "y": 474.875,
+        "width": 72,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 196,
+          "y": 475.875,
+          "width": 43.390625,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 507.46875,
+          "width": 12.59375,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 539.0625,
+          "width": 7.6875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 570.65625,
+          "width": 4.1875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 602.25,
+          "width": 2.09375,
+          "height": 4
+        }
+      ]
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "switch",
+      "willChange": "transform",
+      "property": "all",
+      "duration": "1e-05s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 41,
+        "y": 871.6875,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-governance",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 240,
+      "trackWidth": 240,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 75,
+        "y": 475.359375,
+        "width": 240,
+        "height": 6
+      },
+      "track": {
+        "x": 74,
+        "y": 474.359375,
+        "width": 242,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 72095,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-mapviz",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 70,
+      "trackWidth": 70,
+      "scale": 0.62,
+      "drawnRatio": 0.6199999128069197,
+      "rect": {
+        "x": 196,
+        "y": 475.875,
+        "width": 43.399993896484375,
+        "height": 4
+      },
+      "track": {
+        "x": 195,
+        "y": 474.875,
+        "width": 72,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 196,
+          "y": 475.875,
+          "width": 43.399993896484375,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 507.46875,
+          "width": 12.600006103515625,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 539.0625,
+          "width": 7.6999969482421875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 570.65625,
+          "width": 4.1999969482421875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 602.25,
+          "width": 2.100006103515625,
+          "height": 4
+        }
+      ],
+      "scrollTop": 77692,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "switch",
+      "willChange": "auto",
+      "property": "all",
+      "duration": "1e-05s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 41,
+        "y": 871.6875,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-governance",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 240,
+      "trackWidth": 240,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 75,
+        "y": 475.359375,
+        "width": 240,
+        "height": 6
+      },
+      "track": {
+        "x": 74,
+        "y": 474.359375,
+        "width": 242,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 72095,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-mapviz",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 43,
+      "trackWidth": 70,
+      "scale": 1,
+      "drawnRatio": 0.6198660714285714,
+      "rect": {
+        "x": 196,
+        "y": 475.875,
+        "width": 43.390625,
+        "height": 4
+      },
+      "track": {
+        "x": 195,
+        "y": 474.875,
+        "width": 72,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 196,
+          "y": 475.875,
+          "width": 43.390625,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 507.46875,
+          "width": 12.59375,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 539.0625,
+          "width": 7.6875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 570.65625,
+          "width": 4.1875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 602.25,
+          "width": 2.09375,
+          "height": 4
+        }
+      ],
+      "scrollTop": 77692,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "switch",
+      "willChange": "transform",
+      "property": "all",
+      "duration": "1e-05s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 41,
+        "y": 871.6875,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 826,
+      "trackWidth": 826,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 439,
+        "y": 449.21875,
+        "width": 826,
+        "height": 6
+      },
+      "track": {
+        "x": 438,
+        "y": 448.21875,
+        "width": 828,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 50389,
+      "clientHeight": 900,
+      "scrollHeight": 74607,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 688,
+      "trackWidth": 688,
+      "scale": 0.62,
+      "drawnRatio": 0.6199999964514444,
+      "rect": {
+        "x": 544,
+        "y": 449.671875,
+        "width": 426.55999755859375,
+        "height": 4
+      },
+      "track": {
+        "x": 543,
+        "y": 448.671875,
+        "width": 690,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 544,
+          "y": 449.671875,
+          "width": 426.55999755859375,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 481.265625,
+          "width": 123.84002685546875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 512.859375,
+          "width": 75.67999267578125,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 544.453125,
+          "width": 41.280029296875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 576.046875,
+          "width": 20.6400146484375,
+          "height": 4
+        }
+      ],
+      "scrollTop": 54400,
+      "clientHeight": 900,
+      "scrollHeight": 74607,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "auto",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 389,
+        "y": 665.609375,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 826,
+      "trackWidth": 826,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 439,
+        "y": 449.21875,
+        "width": 826,
+        "height": 6
+      },
+      "track": {
+        "x": 438,
+        "y": 448.21875,
+        "width": 828,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 50389,
+      "clientHeight": 900,
+      "scrollHeight": 74553,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 427,
+      "trackWidth": 688,
+      "scale": 1,
+      "drawnRatio": 0.6199809229651163,
+      "rect": {
+        "x": 544,
+        "y": 449.671875,
+        "width": 426.546875,
+        "height": 4
+      },
+      "track": {
+        "x": 543,
+        "y": 448.671875,
+        "width": 690,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 544,
+          "y": 449.671875,
+          "width": 426.546875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 481.265625,
+          "width": 123.828125,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 512.859375,
+          "width": 75.671875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 544.453125,
+          "width": 41.265625,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 576.046875,
+          "width": 20.625,
+          "height": 4
+        }
+      ],
+      "scrollTop": 54400,
+      "clientHeight": 900,
+      "scrollHeight": 74553,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "transform",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 389,
+        "y": 665.609375,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 826,
+      "trackWidth": 826,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 439,
+        "y": 449.21875,
+        "width": 826,
+        "height": 6
+      },
+      "track": {
+        "x": 438,
+        "y": 448.21875,
+        "width": 828,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 50389,
+      "clientHeight": 900,
+      "scrollHeight": 74607,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 688,
+      "trackWidth": 688,
+      "scale": 0.62,
+      "drawnRatio": 0.6199999964514444,
+      "rect": {
+        "x": 544,
+        "y": 449.671875,
+        "width": 426.55999755859375,
+        "height": 4
+      },
+      "track": {
+        "x": 543,
+        "y": 448.671875,
+        "width": 690,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 544,
+          "y": 449.671875,
+          "width": 426.55999755859375,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 481.265625,
+          "width": 123.84002685546875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 512.859375,
+          "width": 75.67999267578125,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 544.453125,
+          "width": 41.280029296875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 576.046875,
+          "width": 20.6400146484375,
+          "height": 4
+        }
+      ],
+      "scrollTop": 54400,
+      "clientHeight": 900,
+      "scrollHeight": 74607,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "auto",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 389,
+        "y": 665.609375,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 826,
+      "trackWidth": 826,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 439,
+        "y": 449.21875,
+        "width": 826,
+        "height": 6
+      },
+      "track": {
+        "x": 438,
+        "y": 448.21875,
+        "width": 828,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 50389,
+      "clientHeight": 900,
+      "scrollHeight": 74553,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 427,
+      "trackWidth": 688,
+      "scale": 1,
+      "drawnRatio": 0.6199809229651163,
+      "rect": {
+        "x": 544,
+        "y": 449.671875,
+        "width": 426.546875,
+        "height": 4
+      },
+      "track": {
+        "x": 543,
+        "y": 448.671875,
+        "width": 690,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 544,
+          "y": 449.671875,
+          "width": 426.546875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 481.265625,
+          "width": 123.828125,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 512.859375,
+          "width": 75.671875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 544.453125,
+          "width": 41.265625,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 576.046875,
+          "width": 20.625,
+          "height": 4
+        }
+      ],
+      "scrollTop": 54400,
+      "clientHeight": 900,
+      "scrollHeight": 74553,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "transform",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 389,
+        "y": 665.609375,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 826,
+      "trackWidth": 826,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 439,
+        "y": 449.21875,
+        "width": 826,
+        "height": 6
+      },
+      "track": {
+        "x": 438,
+        "y": 448.21875,
+        "width": 828,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 50389,
+      "clientHeight": 900,
+      "scrollHeight": 74607,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 688,
+      "trackWidth": 688,
+      "scale": 0.62,
+      "drawnRatio": 0.6199999964514444,
+      "rect": {
+        "x": 544,
+        "y": 449.671875,
+        "width": 426.55999755859375,
+        "height": 4
+      },
+      "track": {
+        "x": 543,
+        "y": 448.671875,
+        "width": 690,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 544,
+          "y": 449.671875,
+          "width": 426.55999755859375,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 481.265625,
+          "width": 123.84002685546875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 512.859375,
+          "width": 75.67999267578125,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 544.453125,
+          "width": 41.280029296875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 576.046875,
+          "width": 20.6400146484375,
+          "height": 4
+        }
+      ],
+      "scrollTop": 54400,
+      "clientHeight": 900,
+      "scrollHeight": 74607,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "auto",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 389,
+        "y": 665.609375,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 826,
+      "trackWidth": 826,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 439,
+        "y": 449.21875,
+        "width": 826,
+        "height": 6
+      },
+      "track": {
+        "x": 438,
+        "y": 448.21875,
+        "width": 828,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 50389,
+      "clientHeight": 900,
+      "scrollHeight": 74553,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 427,
+      "trackWidth": 688,
+      "scale": 1,
+      "drawnRatio": 0.6199809229651163,
+      "rect": {
+        "x": 544,
+        "y": 475.671875,
+        "width": 426.546875,
+        "height": 4
+      },
+      "track": {
+        "x": 543,
+        "y": 474.671875,
+        "width": 690,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 544,
+          "y": 475.671875,
+          "width": 426.546875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 507.265625,
+          "width": 123.828125,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 538.859375,
+          "width": 75.671875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 570.453125,
+          "width": 41.265625,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 602.046875,
+          "width": 20.625,
+          "height": 4
+        }
+      ],
+      "scrollTop": 54374,
+      "clientHeight": 900,
+      "scrollHeight": 74553,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "transform",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 389,
+        "y": 665.609375,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 240,
+      "trackWidth": 240,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 75,
+        "y": 449.359375,
+        "width": 240,
+        "height": 6
+      },
+      "track": {
+        "x": 74,
+        "y": 448.359375,
+        "width": 242,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 72121,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 70,
+      "trackWidth": 70,
+      "scale": 0.62,
+      "drawnRatio": 0.6199999128069197,
+      "rect": {
+        "x": 196,
+        "y": 449.875,
+        "width": 43.399993896484375,
+        "height": 4
+      },
+      "track": {
+        "x": 195,
+        "y": 448.875,
+        "width": 72,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 196,
+          "y": 449.875,
+          "width": 43.399993896484375,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 481.46875,
+          "width": 12.600006103515625,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 513.0625,
+          "width": 7.6999969482421875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 544.65625,
+          "width": 4.1999969482421875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 576.25,
+          "width": 2.100006103515625,
+          "height": 4
+        }
+      ],
+      "scrollTop": 77718,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "auto",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 41,
+        "y": 845.6875,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 240,
+      "trackWidth": 240,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 75,
+        "y": 449.359375,
+        "width": 240,
+        "height": 6
+      },
+      "track": {
+        "x": 74,
+        "y": 448.359375,
+        "width": 242,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 72121,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 43,
+      "trackWidth": 70,
+      "scale": 1,
+      "drawnRatio": 0.6198660714285714,
+      "rect": {
+        "x": 196,
+        "y": 449.875,
+        "width": 43.390625,
+        "height": 4
+      },
+      "track": {
+        "x": 195,
+        "y": 448.875,
+        "width": 72,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 196,
+          "y": 449.875,
+          "width": 43.390625,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 481.46875,
+          "width": 12.59375,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 513.0625,
+          "width": 7.6875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 544.65625,
+          "width": 4.1875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 576.25,
+          "width": 2.09375,
+          "height": 4
+        }
+      ],
+      "scrollTop": 77718,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "transform",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 41,
+        "y": 845.6875,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-governance",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 240,
+      "trackWidth": 240,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 75,
+        "y": 475.359375,
+        "width": 240,
+        "height": 6
+      },
+      "track": {
+        "x": 74,
+        "y": 474.359375,
+        "width": 242,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 72095,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-mapviz",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 70,
+      "trackWidth": 70,
+      "scale": 0.62,
+      "drawnRatio": 0.6199999128069197,
+      "rect": {
+        "x": 196,
+        "y": 475.875,
+        "width": 43.399993896484375,
+        "height": 4
+      },
+      "track": {
+        "x": 195,
+        "y": 474.875,
+        "width": 72,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 196,
+          "y": 475.875,
+          "width": 43.399993896484375,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 507.46875,
+          "width": 12.600006103515625,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 539.0625,
+          "width": 7.6999969482421875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 570.65625,
+          "width": 4.1999969482421875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 602.25,
+          "width": 2.100006103515625,
+          "height": 4
+        }
+      ],
+      "scrollTop": 77692,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "switch",
+      "willChange": "auto",
+      "property": "all",
+      "duration": "1e-05s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 41,
+        "y": 871.6875,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-governance",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 240,
+      "trackWidth": 240,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 75,
+        "y": 475.359375,
+        "width": 240,
+        "height": 6
+      },
+      "track": {
+        "x": 74,
+        "y": 474.359375,
+        "width": 242,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 72095,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-mapviz",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 43,
+      "trackWidth": 70,
+      "scale": 1,
+      "drawnRatio": 0.6198660714285714,
+      "rect": {
+        "x": 196,
+        "y": 475.875,
+        "width": 43.390625,
+        "height": 4
+      },
+      "track": {
+        "x": 195,
+        "y": 474.875,
+        "width": 72,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 196,
+          "y": 475.875,
+          "width": 43.390625,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 507.46875,
+          "width": 12.59375,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 539.0625,
+          "width": 7.6875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 570.65625,
+          "width": 4.1875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 602.25,
+          "width": 2.09375,
+          "height": 4
+        }
+      ],
+      "scrollTop": 77692,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "switch",
+      "willChange": "transform",
+      "property": "all",
+      "duration": "1e-05s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 41,
+        "y": 871.6875,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 826,
+      "trackWidth": 826,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 439,
+        "y": 449.21875,
+        "width": 826,
+        "height": 6
+      },
+      "track": {
+        "x": 438,
+        "y": 448.21875,
+        "width": 828,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 50389,
+      "clientHeight": 900,
+      "scrollHeight": 74607,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 688,
+      "trackWidth": 688,
+      "scale": 0.62,
+      "drawnRatio": 0.6199999964514444,
+      "rect": {
+        "x": 544,
+        "y": 449.671875,
+        "width": 426.55999755859375,
+        "height": 4
+      },
+      "track": {
+        "x": 543,
+        "y": 448.671875,
+        "width": 690,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 544,
+          "y": 449.671875,
+          "width": 426.55999755859375,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 481.265625,
+          "width": 123.84002685546875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 512.859375,
+          "width": 75.67999267578125,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 544.453125,
+          "width": 41.280029296875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 576.046875,
+          "width": 20.6400146484375,
+          "height": 4
+        }
+      ],
+      "scrollTop": 54400,
+      "clientHeight": 900,
+      "scrollHeight": 74607,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "auto",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 389,
+        "y": 665.609375,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 826,
+      "trackWidth": 826,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 439,
+        "y": 449.21875,
+        "width": 826,
+        "height": 6
+      },
+      "track": {
+        "x": 438,
+        "y": 448.21875,
+        "width": 828,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 50389,
+      "clientHeight": 900,
+      "scrollHeight": 74553,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 427,
+      "trackWidth": 688,
+      "scale": 1,
+      "drawnRatio": 0.6199809229651163,
+      "rect": {
+        "x": 544,
+        "y": 449.671875,
+        "width": 426.546875,
+        "height": 4
+      },
+      "track": {
+        "x": 543,
+        "y": 448.671875,
+        "width": 690,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 544,
+          "y": 449.671875,
+          "width": 426.546875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 481.265625,
+          "width": 123.828125,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 512.859375,
+          "width": 75.671875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 544.453125,
+          "width": 41.265625,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 576.046875,
+          "width": 20.625,
+          "height": 4
+        }
+      ],
+      "scrollTop": 54400,
+      "clientHeight": 900,
+      "scrollHeight": 74553,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "transform",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 389,
+        "y": 665.609375,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "reduce",
+      "surface": "ds-governance",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 826,
+      "trackWidth": 826,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 439,
+        "y": 475.21875,
+        "width": 826,
+        "height": 6
+      },
+      "track": {
+        "x": 438,
+        "y": 474.21875,
+        "width": 828,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 50363,
+      "clientHeight": 900,
+      "scrollHeight": 74607,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "reduce",
+      "surface": "ds-mapviz",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 688,
+      "trackWidth": 688,
+      "scale": 0.62,
+      "drawnRatio": 0.6199999964514444,
+      "rect": {
+        "x": 544,
+        "y": 475.671875,
+        "width": 426.55999755859375,
+        "height": 4
+      },
+      "track": {
+        "x": 543,
+        "y": 474.671875,
+        "width": 690,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 544,
+          "y": 475.671875,
+          "width": 426.55999755859375,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 507.265625,
+          "width": 123.84002685546875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 538.859375,
+          "width": 75.67999267578125,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 570.453125,
+          "width": 41.280029296875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 602.046875,
+          "width": 20.6400146484375,
+          "height": 4
+        }
+      ],
+      "scrollTop": 54374,
+      "clientHeight": 900,
+      "scrollHeight": 74607,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "reduce",
+      "surface": "switch",
+      "willChange": "auto",
+      "property": "all",
+      "duration": "1e-05s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 389,
+        "y": 691.609375,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "reduce",
+      "surface": "ds-governance",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 826,
+      "trackWidth": 826,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 439,
+        "y": 475.21875,
+        "width": 826,
+        "height": 6
+      },
+      "track": {
+        "x": 438,
+        "y": 474.21875,
+        "width": 828,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 50363,
+      "clientHeight": 900,
+      "scrollHeight": 74553,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "reduce",
+      "surface": "ds-mapviz",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 427,
+      "trackWidth": 688,
+      "scale": 1,
+      "drawnRatio": 0.6199809229651163,
+      "rect": {
+        "x": 544,
+        "y": 475.671875,
+        "width": 426.546875,
+        "height": 4
+      },
+      "track": {
+        "x": 543,
+        "y": 474.671875,
+        "width": 690,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 544,
+          "y": 475.671875,
+          "width": 426.546875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 507.265625,
+          "width": 123.828125,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 538.859375,
+          "width": 75.671875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 570.453125,
+          "width": 41.265625,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 602.046875,
+          "width": 20.625,
+          "height": 4
+        }
+      ],
+      "scrollTop": 54374,
+      "clientHeight": 900,
+      "scrollHeight": 74553,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark#ds-governance",
+      "theme": "dark",
+      "width": 1440,
+      "motion": "reduce",
+      "surface": "switch",
+      "willChange": "transform",
+      "property": "all",
+      "duration": "1e-05s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 389,
+        "y": 691.609375,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 240,
+      "trackWidth": 240,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 75,
+        "y": 449.359375,
+        "width": 240,
+        "height": 6
+      },
+      "track": {
+        "x": 74,
+        "y": 448.359375,
+        "width": 242,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 72121,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 70,
+      "trackWidth": 70,
+      "scale": 0.62,
+      "drawnRatio": 0.6199999128069197,
+      "rect": {
+        "x": 196,
+        "y": 449.875,
+        "width": 43.399993896484375,
+        "height": 4
+      },
+      "track": {
+        "x": 195,
+        "y": 448.875,
+        "width": 72,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 196,
+          "y": 449.875,
+          "width": 43.399993896484375,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 481.46875,
+          "width": 12.600006103515625,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 513.0625,
+          "width": 7.6999969482421875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 544.65625,
+          "width": 4.1999969482421875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 576.25,
+          "width": 2.100006103515625,
+          "height": 4
+        }
+      ],
+      "scrollTop": 77718,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "auto",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 41,
+        "y": 845.6875,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 240,
+      "trackWidth": 240,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 75,
+        "y": 449.359375,
+        "width": 240,
+        "height": 6
+      },
+      "track": {
+        "x": 74,
+        "y": 448.359375,
+        "width": 242,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 72121,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 43,
+      "trackWidth": 70,
+      "scale": 1,
+      "drawnRatio": 0.6198660714285714,
+      "rect": {
+        "x": 196,
+        "y": 449.875,
+        "width": 43.390625,
+        "height": 4
+      },
+      "track": {
+        "x": 195,
+        "y": 448.875,
+        "width": 72,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 196,
+          "y": 449.875,
+          "width": 43.390625,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 481.46875,
+          "width": 12.59375,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 513.0625,
+          "width": 7.6875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 544.65625,
+          "width": 4.1875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 576.25,
+          "width": 2.09375,
+          "height": 4
+        }
+      ],
+      "scrollTop": 77718,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 390,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "transform",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 41,
+        "y": 845.6875,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-governance",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 240,
+      "trackWidth": 240,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 75,
+        "y": 475.359375,
+        "width": 240,
+        "height": 6
+      },
+      "track": {
+        "x": 74,
+        "y": 474.359375,
+        "width": 242,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 72095,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-mapviz",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 70,
+      "trackWidth": 70,
+      "scale": 0.62,
+      "drawnRatio": 0.6199999128069197,
+      "rect": {
+        "x": 196,
+        "y": 475.875,
+        "width": 43.399993896484375,
+        "height": 4
+      },
+      "track": {
+        "x": 195,
+        "y": 474.875,
+        "width": 72,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 196,
+          "y": 475.875,
+          "width": 43.399993896484375,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 507.46875,
+          "width": 12.600006103515625,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 539.0625,
+          "width": 7.6999969482421875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 570.65625,
+          "width": 4.1999969482421875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 602.25,
+          "width": 2.100006103515625,
+          "height": 4
+        }
+      ],
+      "scrollTop": 77692,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "switch",
+      "willChange": "auto",
+      "property": "all",
+      "duration": "1e-05s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 41,
+        "y": 871.6875,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-governance",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 240,
+      "trackWidth": 240,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 75,
+        "y": 475.359375,
+        "width": 240,
+        "height": 6
+      },
+      "track": {
+        "x": 74,
+        "y": 474.359375,
+        "width": 242,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 72095,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "ds-mapviz",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 43,
+      "trackWidth": 70,
+      "scale": 1,
+      "drawnRatio": 0.6198660714285714,
+      "rect": {
+        "x": 196,
+        "y": 475.875,
+        "width": 43.390625,
+        "height": 4
+      },
+      "track": {
+        "x": 195,
+        "y": 474.875,
+        "width": 72,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 196,
+          "y": 475.875,
+          "width": 43.390625,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 507.46875,
+          "width": 12.59375,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 539.0625,
+          "width": 7.6875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 570.65625,
+          "width": 4.1875,
+          "height": 4
+        },
+        {
+          "x": 196,
+          "y": 602.25,
+          "width": 2.09375,
+          "height": 4
+        }
+      ],
+      "scrollTop": 77692,
+      "clientHeight": 900,
+      "scrollHeight": 105599,
+      "devicePixelRatio": 1,
+      "innerWidth": 390,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 390,
+      "motion": "reduce",
+      "surface": "switch",
+      "willChange": "transform",
+      "property": "all",
+      "duration": "1e-05s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 41,
+        "y": 871.6875,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 826,
+      "trackWidth": 826,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 439,
+        "y": 449.21875,
+        "width": 826,
+        "height": 6
+      },
+      "track": {
+        "x": 438,
+        "y": 448.21875,
+        "width": 828,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 50389,
+      "clientHeight": 900,
+      "scrollHeight": 74607,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "transform",
+      "duration": "0.2s",
+      "layoutWidth": 688,
+      "trackWidth": 688,
+      "scale": 0.62,
+      "drawnRatio": 0.6199999964514444,
+      "rect": {
+        "x": 544,
+        "y": 449.671875,
+        "width": 426.55999755859375,
+        "height": 4
+      },
+      "track": {
+        "x": 543,
+        "y": 448.671875,
+        "width": 690,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 544,
+          "y": 449.671875,
+          "width": 426.55999755859375,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 481.265625,
+          "width": 123.84002685546875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 512.859375,
+          "width": 75.67999267578125,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 544.453125,
+          "width": 41.280029296875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 576.046875,
+          "width": 20.6400146484375,
+          "height": 4
+        }
+      ],
+      "scrollTop": 54400,
+      "clientHeight": 900,
+      "scrollHeight": 74607,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "auto",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 389,
+        "y": 665.609375,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-governance",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 826,
+      "trackWidth": 826,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 439,
+        "y": 449.21875,
+        "width": 826,
+        "height": 6
+      },
+      "track": {
+        "x": 438,
+        "y": 448.21875,
+        "width": 828,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 50389,
+      "clientHeight": 900,
+      "scrollHeight": 74553,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "ds-mapviz",
+      "property": "width",
+      "duration": "0.2s",
+      "layoutWidth": 427,
+      "trackWidth": 688,
+      "scale": 1,
+      "drawnRatio": 0.6199809229651163,
+      "rect": {
+        "x": 544,
+        "y": 449.671875,
+        "width": 426.546875,
+        "height": 4
+      },
+      "track": {
+        "x": 543,
+        "y": 448.671875,
+        "width": 690,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 544,
+          "y": 449.671875,
+          "width": 426.546875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 481.265625,
+          "width": 123.828125,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 512.859375,
+          "width": 75.671875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 544.453125,
+          "width": 41.265625,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 576.046875,
+          "width": 20.625,
+          "height": 4
+        }
+      ],
+      "scrollTop": 54400,
+      "clientHeight": 900,
+      "scrollHeight": 74553,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 1440,
+      "motion": "no-preference",
+      "surface": "switch",
+      "willChange": "transform",
+      "property": "transform, background",
+      "duration": "0.16s, 0.16s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 389,
+        "y": 665.609375,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 1440,
+      "motion": "reduce",
+      "surface": "ds-governance",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 826,
+      "trackWidth": 826,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 439,
+        "y": 475.21875,
+        "width": 826,
+        "height": 6
+      },
+      "track": {
+        "x": 438,
+        "y": 474.21875,
+        "width": 828,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 50363,
+      "clientHeight": 900,
+      "scrollHeight": 74607,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 1440,
+      "motion": "reduce",
+      "surface": "ds-mapviz",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 688,
+      "trackWidth": 688,
+      "scale": 0.62,
+      "drawnRatio": 0.6199999964514444,
+      "rect": {
+        "x": 544,
+        "y": 475.671875,
+        "width": 426.55999755859375,
+        "height": 4
+      },
+      "track": {
+        "x": 543,
+        "y": 474.671875,
+        "width": 690,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 544,
+          "y": 475.671875,
+          "width": 426.55999755859375,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 507.265625,
+          "width": 123.84002685546875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 538.859375,
+          "width": 75.67999267578125,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 570.453125,
+          "width": 41.280029296875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 602.046875,
+          "width": 20.6400146484375,
+          "height": 4
+        }
+      ],
+      "scrollTop": 54374,
+      "clientHeight": 900,
+      "scrollHeight": 74607,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 1440,
+      "motion": "reduce",
+      "surface": "switch",
+      "willChange": "auto",
+      "property": "all",
+      "duration": "1e-05s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 389,
+        "y": 691.609375,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 1440,
+      "motion": "reduce",
+      "surface": "ds-governance",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 826,
+      "trackWidth": 826,
+      "scale": 1,
+      "drawnRatio": 1,
+      "rect": {
+        "x": 439,
+        "y": 475.21875,
+        "width": 826,
+        "height": 6
+      },
+      "track": {
+        "x": 438,
+        "y": 474.21875,
+        "width": 828,
+        "height": 8
+      },
+      "aria": {
+        "role": "progressbar",
+        "now": "12",
+        "min": "0",
+        "max": "12"
+      },
+      "text": "scanned12 / 12",
+      "scrollTop": 50363,
+      "clientHeight": 900,
+      "scrollHeight": 74553,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 1440,
+      "motion": "reduce",
+      "surface": "ds-mapviz",
+      "property": "all",
+      "duration": "1e-05s",
+      "layoutWidth": 427,
+      "trackWidth": 688,
+      "scale": 1,
+      "drawnRatio": 0.6199809229651163,
+      "rect": {
+        "x": 544,
+        "y": 475.671875,
+        "width": 426.546875,
+        "height": 4
+      },
+      "track": {
+        "x": 543,
+        "y": 474.671875,
+        "width": 690,
+        "height": 6
+      },
+      "aria": null,
+      "text": "claude-code62%",
+      "fills": [
+        {
+          "x": 544,
+          "y": 475.671875,
+          "width": 426.546875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 507.265625,
+          "width": 123.828125,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 538.859375,
+          "width": 75.671875,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 570.453125,
+          "width": 41.265625,
+          "height": 4
+        },
+        {
+          "x": 544,
+          "y": 602.046875,
+          "width": 20.625,
+          "height": 4
+        }
+      ],
+      "scrollTop": 54374,
+      "clientHeight": 900,
+      "scrollHeight": 74553,
+      "devicePixelRatio": 1,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "fractionalScrollTop": false
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=light#ds-governance",
+      "theme": "light",
+      "width": 1440,
+      "motion": "reduce",
+      "surface": "switch",
+      "willChange": "transform",
+      "property": "all",
+      "duration": "1e-05s",
+      "checked": "true",
+      "role": "switch",
+      "rect": {
+        "x": 389,
+        "y": 691.609375,
+        "width": 52,
+        "height": 28
+      }
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=dark&app=transcript#inuse",
+      "theme": "dark",
+      "width": 390,
+      "surface": "transcript-scroll",
+      "geometry": [
+        {
+          "class": "txn-app txn-app-condensed",
+          "text": null,
+          "display": "flex",
+          "x": 16,
+          "y": 57.40625,
+          "width": 358,
+          "height": 843,
+          "scroll": 0
+        },
+        {
+          "class": "tabs txn-tabs",
+          "text": "highlights 5full trace 9diffs 1files 7annotations 3",
+          "display": "flex",
+          "x": 16,
+          "y": 184.40625,
+          "width": 258.5625,
+          "height": 37,
+          "scroll": 0
+        },
+        {
+          "class": "txn-sticky",
+          "text": null,
+          "display": "flex",
+          "x": 16,
+          "y": 222.40625,
+          "width": 358,
+          "height": 40,
+          "scroll": 0
+        },
+        {
+          "class": "txn-sticky-model mono",
+          "text": "anthropic/claude-fable-5",
+          "display": "none",
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "scroll": 0
+        },
+        {
+          "class": "txn-stream",
+          "text": null,
+          "display": "block",
+          "x": 16,
+          "y": 309.40625,
+          "width": 358,
+          "height": 512.40625,
+          "scroll": 195
+        }
+      ]
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=dark&app=transcript#inuse",
+      "theme": "dark",
+      "width": 390,
+      "surface": "transcript-scroll",
+      "geometry": [
+        {
+          "class": "txn-app txn-app-condensed",
+          "text": null,
+          "display": "flex",
+          "x": 16,
+          "y": 57.40625,
+          "width": 358,
+          "height": 843,
+          "scroll": 0
+        },
+        {
+          "class": "tabs txn-tabs",
+          "text": "highlights 5full trace 9diffs 1files 7annotations 3",
+          "display": "flex",
+          "x": 16,
+          "y": 184.40625,
+          "width": 258.5625,
+          "height": 37,
+          "scroll": 0
+        },
+        {
+          "class": "txn-sticky",
+          "text": null,
+          "display": "flex",
+          "x": 16,
+          "y": 222.40625,
+          "width": 358,
+          "height": 40,
+          "scroll": 0
+        },
+        {
+          "class": "txn-sticky-model mono",
+          "text": "anthropic/claude-fable-5",
+          "display": "none",
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "scroll": 0
+        },
+        {
+          "class": "txn-stream",
+          "text": null,
+          "display": "block",
+          "x": 16,
+          "y": 309.40625,
+          "width": 358,
+          "height": 512.40625,
+          "scroll": 195
+        }
+      ]
+    },
+    {
+      "head": "fed1e6f4f5a54844ce0b6e103461c9db23064f77",
+      "url": "http://localhost:5311/?fb=off&theme=light&app=transcript#inuse",
+      "theme": "light",
+      "width": 390,
+      "surface": "transcript-scroll",
+      "geometry": [
+        {
+          "class": "txn-app txn-app-condensed",
+          "text": null,
+          "display": "flex",
+          "x": 16,
+          "y": 57.40625,
+          "width": 358,
+          "height": 843,
+          "scroll": 0
+        },
+        {
+          "class": "tabs txn-tabs",
+          "text": "highlights 5full trace 9diffs 1files 7annotations 3",
+          "display": "flex",
+          "x": 16,
+          "y": 184.40625,
+          "width": 258.5625,
+          "height": 37,
+          "scroll": 0
+        },
+        {
+          "class": "txn-sticky",
+          "text": null,
+          "display": "flex",
+          "x": 16,
+          "y": 222.40625,
+          "width": 358,
+          "height": 40,
+          "scroll": 0
+        },
+        {
+          "class": "txn-sticky-model mono",
+          "text": "anthropic/claude-fable-5",
+          "display": "none",
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "scroll": 0
+        },
+        {
+          "class": "txn-stream",
+          "text": null,
+          "display": "block",
+          "x": 16,
+          "y": 309.40625,
+          "width": 358,
+          "height": 512.40625,
+          "scroll": 195
+        }
+      ]
+    },
+    {
+      "head": "ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+      "url": "http://localhost:5312/?fb=off&theme=light&app=transcript#inuse",
+      "theme": "light",
+      "width": 390,
+      "surface": "transcript-scroll",
+      "geometry": [
+        {
+          "class": "txn-app txn-app-condensed",
+          "text": null,
+          "display": "flex",
+          "x": 16,
+          "y": 57.40625,
+          "width": 358,
+          "height": 843,
+          "scroll": 0
+        },
+        {
+          "class": "tabs txn-tabs",
+          "text": "highlights 5full trace 9diffs 1files 7annotations 3",
+          "display": "flex",
+          "x": 16,
+          "y": 184.40625,
+          "width": 258.5625,
+          "height": 37,
+          "scroll": 0
+        },
+        {
+          "class": "txn-sticky",
+          "text": null,
+          "display": "flex",
+          "x": 16,
+          "y": 222.40625,
+          "width": 358,
+          "height": 40,
+          "scroll": 0
+        },
+        {
+          "class": "txn-sticky-model mono",
+          "text": "anthropic/claude-fable-5",
+          "display": "none",
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "scroll": 0
+        },
+        {
+          "class": "txn-stream",
+          "text": null,
+          "display": "block",
+          "x": 16,
+          "y": 309.40625,
+          "width": 358,
+          "height": 512.40625,
+          "scroll": 195
+        }
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "detail": "dark 390 no-preference surface 0",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-390-dark-no-preference-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-390-dark-no-preference-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 390 no-preference surface 1",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-390-dark-no-preference-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-390-dark-no-preference-freeze.png",
+      "geometrySame": false,
+      "maxMetricDeltaPx": 0.0124969482421875,
+      "edgePixelsOnly": true,
+      "subpixelNote": true,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 16,
+        "minY": 450,
+        "maxY": 548
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 390 no-preference surface 2",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-390-dark-no-preference-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-390-dark-no-preference-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 390 reduce surface 0",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-390-dark-reduce-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-390-dark-reduce-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 390 reduce surface 1",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-390-dark-reduce-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-390-dark-reduce-freeze.png",
+      "geometrySame": false,
+      "maxMetricDeltaPx": 0.0124969482421875,
+      "edgePixelsOnly": true,
+      "subpixelNote": true,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 16,
+        "minY": 476,
+        "maxY": 574
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 390 reduce surface 2",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-390-dark-reduce-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-390-dark-reduce-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 1440 no-preference surface 0",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-1440-dark-no-preference-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-1440-dark-no-preference-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 1440 no-preference surface 1",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-1440-dark-no-preference-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-1440-dark-no-preference-freeze.png",
+      "geometrySame": false,
+      "maxMetricDeltaPx": 0.0150146484375,
+      "edgePixelsOnly": true,
+      "subpixelNote": true,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 20,
+        "minY": 450,
+        "maxY": 579
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 1440 no-preference surface 2",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-1440-dark-no-preference-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-1440-dark-no-preference-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 1440 reduce surface 0",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-1440-dark-reduce-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-1440-dark-reduce-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 1440 reduce surface 1",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-1440-dark-reduce-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-1440-dark-reduce-freeze.png",
+      "geometrySame": false,
+      "maxMetricDeltaPx": 0.0150146484375,
+      "edgePixelsOnly": true,
+      "subpixelNote": true,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 20,
+        "minY": 476,
+        "maxY": 605
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 1440 reduce surface 2",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-1440-dark-reduce-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-1440-dark-reduce-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "light 390 no-preference surface 0",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-390-light-no-preference-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-390-light-no-preference-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "light 390 no-preference surface 1",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-390-light-no-preference-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-390-light-no-preference-freeze.png",
+      "geometrySame": false,
+      "maxMetricDeltaPx": 0.0124969482421875,
+      "edgePixelsOnly": true,
+      "subpixelNote": true,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 16,
+        "minY": 450,
+        "maxY": 548
+      },
+      "accepted": true
+    },
+    {
+      "detail": "light 390 no-preference surface 2",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-390-light-no-preference-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-390-light-no-preference-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "light 390 reduce surface 0",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-390-light-reduce-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-390-light-reduce-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "light 390 reduce surface 1",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-390-light-reduce-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-390-light-reduce-freeze.png",
+      "geometrySame": false,
+      "maxMetricDeltaPx": 0.0124969482421875,
+      "edgePixelsOnly": true,
+      "subpixelNote": true,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 16,
+        "minY": 476,
+        "maxY": 574
+      },
+      "accepted": true
+    },
+    {
+      "detail": "light 390 reduce surface 2",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-390-light-reduce-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-390-light-reduce-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "light 1440 no-preference surface 0",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-1440-light-no-preference-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-1440-light-no-preference-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "light 1440 no-preference surface 1",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-1440-light-no-preference-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-1440-light-no-preference-freeze.png",
+      "geometrySame": false,
+      "maxMetricDeltaPx": 0.0150146484375,
+      "edgePixelsOnly": true,
+      "subpixelNote": true,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 20,
+        "minY": 450,
+        "maxY": 579
+      },
+      "accepted": true
+    },
+    {
+      "detail": "light 1440 no-preference surface 2",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-1440-light-no-preference-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-1440-light-no-preference-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "light 1440 reduce surface 0",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-1440-light-reduce-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-1440-light-reduce-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "light 1440 reduce surface 1",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-1440-light-reduce-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-1440-light-reduce-freeze.png",
+      "geometrySame": false,
+      "maxMetricDeltaPx": 0.0150146484375,
+      "edgePixelsOnly": true,
+      "subpixelNote": true,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 20,
+        "minY": 476,
+        "maxY": 605
+      },
+      "accepted": true
+    },
+    {
+      "detail": "light 1440 reduce surface 2",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-1440-light-reduce-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-1440-light-reduce-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "transcript scroll 390 dark",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-transcript-scroll-390-dark-no-preference-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-transcript-scroll-390-dark-no-preference-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "transcript scroll 390 light",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-transcript-scroll-390-light-no-preference-freeze.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-transcript-scroll-390-light-no-preference-freeze.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    }
+  ],
+  "commands": [
+    "pnpm install --frozen-lockfile",
+    "pnpm build",
+    "git worktree add --detach /tmp/opencode/w3-base ec4a7ee572b3911a4e2b82e4216368ab88b84af9",
+    "ln -s /home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-design-system-116--wave3/node_modules /tmp/opencode/w3-base/node_modules",
+    "pnpm_config_verify_deps_before_run=false pnpm build",
+    "pnpm exec vite preview --port 5311 --strictPort",
+    "pnpm_config_verify_deps_before_run=false pnpm exec vite preview --port 5312 --strictPort",
+    "node /tmp/opencode/wave3-fed1e6f/capture.mjs",
+    "resume: pnpm build",
+    "resume: pnpm_config_verify_deps_before_run=false pnpm --dir /tmp/opencode/w3-base build",
+    "pnpm build > build-freeze.log",
+    "pnpm_config_verify_deps_before_run=false pnpm --dir /tmp/opencode/w3-base build > base-build-freeze.log",
+    "TRANSCRIPT_ONLY=1 node /tmp/opencode/wave3-fed1e6f/capture.mjs > transcript-freeze-r2.log",
+    "git worktree remove /tmp/opencode/w3-base"
+  ],
+  "kind": "validation/evidence only; not formal review",
+  "springMarker": "served CSS cubic-bezier(.16,1,.3,1); old spring overshoot absent",
+  "formalReview": "Independent one full three-lens round returned0/0/0 and is closed; this is UAT evidence only, nothing published",
+  "guard": "only provider fill-edge pixel differences and width deltas<.02px allowed; all other geometry/text/data identical",
+  "events": [
+    {
+      "detail": "dark390reduce redaction earlier82pixel transient",
+      "record": "provenance-resumed-stop.json",
+      "control": "diagnostic.json",
+      "firstPixels": 82,
+      "controlPixels": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cause": "unproven"
+    },
+    {
+      "detail": "dark 390 reduce surface 1",
+      "firstPixels": 199,
+      "secondPixels": 16,
+      "firstAccepted": false,
+      "result": "transient non-fill pixels199 did not reproduce; retry16pixels entirely within approved provider fill edges"
+    },
+    {
+      "detail": "dark 1440 no-preference surface 1",
+      "firstPixels": 20,
+      "secondPixels": 20,
+      "firstAccepted": true,
+      "result": "documented subpixel fill-edge note reproduced"
+    },
+    {
+      "detail": "dark1440 default switch non-fill difference reproduced",
+      "firstPixels": 104,
+      "retryPixels": 112,
+      "result": "STOP; pixels confined to adjacent busy saving spinner x612\u2013625/y870\u2013883, not the interacted switch; dynamic animation comparison inconclusive, not proven switch regression"
+    }
+  ],
+  "priorPairs": [
+    {
+      "detail": "dark 390 no-preference surface 0",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-390-dark-no-preference.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-390-dark-no-preference.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      }
+    },
+    {
+      "detail": "dark 390 no-preference surface 1",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-390-dark-no-preference.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-390-dark-no-preference.png",
+      "geometrySame": false,
+      "maxMetricDeltaPx": 0.0124969482421875,
+      "edgePixelsOnly": true,
+      "subpixelNote": true,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 16,
+        "minY": 450,
+        "maxY": 548
+      }
+    },
+    {
+      "detail": "dark 390 no-preference surface 2",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-390-dark-no-preference.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-390-dark-no-preference.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      }
+    },
+    {
+      "detail": "dark 390 reduce surface 1",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-390-dark-reduce.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-390-dark-reduce.png",
+      "geometrySame": false,
+      "maxMetricDeltaPx": 0.0124969482421875,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 199,
+        "minY": 28,
+        "maxY": 815
+      },
+      "accepted": false
+    },
+    {
+      "detail": "dark 390 reduce surface 1 retry",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-390-dark-reduce-retry.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-390-dark-reduce-retry.png",
+      "geometrySame": false,
+      "maxMetricDeltaPx": 0.0124969482421875,
+      "edgePixelsOnly": true,
+      "subpixelNote": true,
+      "pixels": {
+        "dim": false,
+        "total": 351000,
+        "diff": 16,
+        "minY": 476,
+        "maxY": 574
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 390 reduce surface 0",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-390-dark-reduce-run1.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-390-dark-reduce-run1.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "pixels": {
+        "diff": 0
+      },
+      "accepted": true,
+      "source": "diagnostic.json"
+    },
+    {
+      "detail": "dark 390 reduce surface 2",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-390-dark-reduce-control.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-390-dark-reduce-control.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "pixels": {
+        "diff": 0
+      },
+      "accepted": true,
+      "source": "diagnostic.json"
+    },
+    {
+      "detail": "dark 1440 no-preference surface 0",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-1440-dark-no-preference.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-1440-dark-no-preference.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 0,
+        "minY": 0,
+        "maxY": -1
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 1440 no-preference surface 1",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-1440-dark-no-preference.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-1440-dark-no-preference.png",
+      "geometrySame": false,
+      "maxMetricDeltaPx": 0.0150146484375,
+      "edgePixelsOnly": true,
+      "subpixelNote": true,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 20,
+        "minY": 450,
+        "maxY": 579
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 1440 no-preference surface 1 retry",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-1440-dark-no-preference-retry1.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-1440-dark-no-preference-retry1.png",
+      "geometrySame": false,
+      "maxMetricDeltaPx": 0.0150146484375,
+      "edgePixelsOnly": true,
+      "subpixelNote": true,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 20,
+        "minY": 450,
+        "maxY": 579
+      },
+      "accepted": true
+    },
+    {
+      "detail": "dark 1440 no-preference surface 2",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-1440-dark-no-preference.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-1440-dark-no-preference.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 104,
+        "minY": 870,
+        "maxY": 883
+      },
+      "accepted": false,
+      "pixelRange": {
+        "minX": 612,
+        "maxX": 625,
+        "minY": 870,
+        "maxY": 883
+      }
+    },
+    {
+      "detail": "dark 1440 no-preference surface 2 retry",
+      "candidate": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-1440-dark-no-preference-retry2.png",
+      "base": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-1440-dark-no-preference-retry2.png",
+      "geometrySame": true,
+      "maxMetricDeltaPx": 0,
+      "edgePixelsOnly": false,
+      "subpixelNote": false,
+      "pixels": {
+        "dim": false,
+        "total": 1296000,
+        "diff": 112,
+        "minY": 870,
+        "maxY": 883
+      },
+      "accepted": false,
+      "pixelRange": {
+        "minX": 612,
+        "maxX": 625,
+        "minY": 870,
+        "maxY": 883
+      }
+    }
+  ],
+  "freezeTechnique": "document.getAnimations().forEach(a => { a.pause(); a.currentTime = 0 })",
+  "freezeObservations": [
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-390-dark-no-preference-freeze.png",
+      "count": 8,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-390-dark-no-preference-freeze.png",
+      "count": 8,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-390-dark-no-preference-freeze.png",
+      "count": 8,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-390-dark-no-preference-freeze.png",
+      "count": 8,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-390-dark-no-preference-freeze.png",
+      "count": 8,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-390-dark-no-preference-freeze.png",
+      "count": 8,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-390-dark-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-390-dark-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-390-dark-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-390-dark-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-390-dark-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-390-dark-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-1440-dark-no-preference-freeze.png",
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "railMark",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-1440-dark-no-preference-freeze.png",
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "railMark",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-1440-dark-no-preference-freeze.png",
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "railMark",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-1440-dark-no-preference-freeze.png",
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "railMark",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-1440-dark-no-preference-freeze.png",
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "railMark",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-1440-dark-no-preference-freeze.png",
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "railMark",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-1440-dark-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-1440-dark-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-1440-dark-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-1440-dark-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-1440-dark-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-1440-dark-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-390-light-no-preference-freeze.png",
+      "count": 8,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-390-light-no-preference-freeze.png",
+      "count": 8,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-390-light-no-preference-freeze.png",
+      "count": 8,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-390-light-no-preference-freeze.png",
+      "count": 8,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-390-light-no-preference-freeze.png",
+      "count": 8,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-390-light-no-preference-freeze.png",
+      "count": 8,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-390-light-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-390-light-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-390-light-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-390-light-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-390-light-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-390-light-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-1440-light-no-preference-freeze.png",
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "railMark",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-1440-light-no-preference-freeze.png",
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "railMark",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-1440-light-no-preference-freeze.png",
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "railMark",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-1440-light-no-preference-freeze.png",
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "railMark",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-1440-light-no-preference-freeze.png",
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "railMark",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-1440-light-no-preference-freeze.png",
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "railMark",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-governance-1440-light-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-ds-mapviz-1440-light-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-switch-1440-light-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-governance-1440-light-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-ds-mapviz-1440-light-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-switch-1440-light-reduce-freeze.png",
+      "count": 0,
+      "running": 0,
+      "animations": []
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-transcript-scroll-390-dark-no-preference-freeze.png",
+      "preserveFinite": true,
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 940.0000000000001
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 1100
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 160
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "txn-slidedown",
+          "playState": "paused",
+          "currentTime": 160
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-transcript-scroll-390-dark-no-preference-freeze.png",
+      "preserveFinite": true,
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 940.0000000000001
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 1100
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 160
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "txn-slidedown",
+          "playState": "paused",
+          "currentTime": 160
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/wave3-fed1e6f-transcript-scroll-390-light-no-preference-freeze.png",
+      "preserveFinite": true,
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 940.0000000000001
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 1100
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 160
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "txn-slidedown",
+          "playState": "paused",
+          "currentTime": 160
+        }
+      ]
+    },
+    {
+      "file": "/tmp/opencode/wave3-fed1e6f/base-ec4a7ee-transcript-scroll-390-light-no-preference-freeze.png",
+      "preserveFinite": true,
+      "count": 9,
+      "running": 0,
+      "animations": [
+        {
+          "name": "heroResolve",
+          "playState": "paused",
+          "currentTime": 940.0000000000001
+        },
+        {
+          "name": "philReveal",
+          "playState": "paused",
+          "currentTime": 1100
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "tabIn",
+          "playState": "paused",
+          "currentTime": 160
+        },
+        {
+          "name": "busy-spin",
+          "playState": "paused",
+          "currentTime": 0
+        },
+        {
+          "name": "txn-slidedown",
+          "playState": "paused",
+          "currentTime": 160
+        }
+      ]
+    }
+  ],
+  "spinnerRules": {
+    "5311": {
+      "switchBusy": [
+        ".sw-busy-spin{transform-origin:50%;animation:.9s linear infinite busy-spin}"
+      ],
+      "keyframes": [
+        "@keyframes busy-spin{to{transform:rotate(360deg)}}"
+      ]
+    },
+    "5312": {
+      "switchBusy": [
+        ".sw-busy-spin{transform-origin:50%;animation:.9s linear infinite busy-spin}"
+      ],
+      "keyframes": [
+        "@keyframes busy-spin{to{transform:rotate(360deg)}}"
+      ]
+    }
+  },
+  "result": "PASS: static parity retained with documented provider subpixel fill-edge rasterization only, below .02px; default/reduced motion checks and transcript spot-check pass",
+  "cleanup": {
+    "previewsStopped": [
+      5311,
+      5312
+    ],
+    "baseWorktreeRemoved": true,
+    "candidateStatus": "clean",
+    "repoChanges": false
+  },
+  "scope": "Complete24motion pairs +2transcript pairs. UATvalidation evidence only; independent formal review already0/0/0 and closed; nothing published.",
+  "transcriptFreezeTechnique": "Pause every animation; infinite animations currentTime=0; finite entrance animations currentTime=effect.getComputedTiming().endTime, symmetrically. Verify running count0.",
+  "transcriptModelNote": "At390 sticky model DOM is mounted with correct anthropic/claude-fable-5, but preexisting phone CSS display:none in BOTH builds. Visible sticky scrubber/header and tabs exactgeometry; no layout shift. No visible-model claim.",
+  "observationScriptCorrections": [
+    "Initial120px selected model-less user turn; replaced with existing assistant turn1 reading-line scroll.",
+    "Initialvisible-model assumption corrected to attached model + visible stickybar/tabs: bothbase andcandidate intentionally hide mobile model label.",
+    "Finite transcript entrance animations settled at end before symmetric pause to avoid shifting finished stickybar/tab entrance back to hidden start."
+  ],
+  "visualInspection": "All48motionPNGstogether in four uncropped inspection contact sheets, plusbothcandidate transcriptPNGs individually. Exactpixel0 base transcript parity. No styling/spacing regression observed."
+}
