@@ -326,7 +326,7 @@ export default function TranscriptViewer({
 
   const scrollFrameRef = useRef(null)
   useEffect(() => () => {
-    if (scrollFrameRef.current != null) cancelAnimationFrame(scrollFrameRef.current)
+    if (scrollFrameRef.current != null && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(scrollFrameRef.current)
     scrollFrameRef.current = null
   }, [session?.id, tab, viewMode, visibleTurns])
 
