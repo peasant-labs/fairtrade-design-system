@@ -362,7 +362,7 @@ function SplitChain({ items, itemHref, author, selected, onSelect }) {
   }, [index])
 
   if (entries.length === 0) {
-    return <p className="pd-split-empty">no sessions in this digest yet.</p>
+    return <p className="pd-split-empty">no transcripts in this digest yet.</p>
   }
 
   const onListKey = (event) => {
@@ -374,7 +374,7 @@ function SplitChain({ items, itemHref, author, selected, onSelect }) {
   }
 
   const entry = entries[index]
-  const label = entry.session ? entry.session.text : 'before the first session'
+  const label = entry.session ? entry.session.text : 'before the first transcript'
   const sessionHref = entry.session ? itemHref?.(entry.session) : undefined
   const groups = groupChainItems(entry.items)
   const shownPrompts = entry.items.filter((item) => item.kind === 'prompt').length
@@ -385,14 +385,14 @@ function SplitChain({ items, itemHref, author, selected, onSelect }) {
     <div className="pd-split">
       <div className="pd-split-side">
         <p className="pd-split-hint" id={hintId}>
-          <span className="tnum">{entries.length}</span> {entries.length === 1 ? 'session' : 'sessions'}
+          <span className="tnum">{entries.length}</span> {entries.length === 1 ? 'transcript' : 'transcripts'}
           {entries.length > 1 && <>, <kbd className="kbd-key">j</kbd> and <kbd className="kbd-key">k</kbd> move</>}
         </p>
         <ul
           ref={listRef}
           className="pd-split-list"
           role="listbox"
-          aria-label="sessions"
+          aria-label="transcripts"
           aria-describedby={hintId}
           aria-activedescendant={optionId(index)}
           tabIndex={0}
@@ -411,7 +411,7 @@ function SplitChain({ items, itemHref, author, selected, onSelect }) {
                 onClick={() => selectRef.current(i)}
               >
                 <ChevronRight className="pd-split-mark" aria-hidden="true" />
-                <span className="pd-split-option-label">{option.session ? option.session.text : 'before the first session'}</span>
+                <span className="pd-split-option-label">{option.session ? option.session.text : 'before the first transcript'}</span>
                 <span className="pd-split-option-count">
                   <span className="tnum">{count}</span> {count === 1 ? 'prompt' : 'prompts'}
                 </span>
@@ -428,11 +428,11 @@ function SplitChain({ items, itemHref, author, selected, onSelect }) {
         </header>
         {collapsed && (
           <p className="pd-split-collapsed">
-            <span className="tnum">{entryPromptCount(entry)}</span> {entryPromptCount(entry) === 1 ? 'prompt' : 'prompts'} in this session, not listed in this digest.
+            <span className="tnum">{entryPromptCount(entry)}</span> {entryPromptCount(entry) === 1 ? 'prompt' : 'prompts'} in this transcript, not listed in this digest.
             {sessionHref ? ' open the transcript to read them.' : ''}
           </p>
         )}
-        {!collapsed && groups.length === 0 && <p className="pd-split-collapsed">no prompts in this session.</p>}
+        {!collapsed && groups.length === 0 && <p className="pd-split-collapsed">no prompts in this transcript.</p>}
         {/* whatever the entry carries still renders, a collapsed session's commit anchors included */}
         {groups.length > 0 && (
           <ul className="pd-chain">
@@ -489,7 +489,7 @@ export default function PromptDigest({ digest, itemHref, author, layout = 'stack
       <header className="pd-head">
         <dl className="pd-counts">
           <div className="pd-count">
-            <dt className="pd-label">sessions</dt>
+            <dt className="pd-label">transcripts</dt>
             <dd className="pd-value tnum">{header.sessionCount}</dd>
           </div>
           <div className="pd-count">
@@ -511,7 +511,7 @@ export default function PromptDigest({ digest, itemHref, author, layout = 'stack
           </div>
         </dl>
         <a className="link pd-village" href={header.villageUrl}>
-          view on village
+          open pull request digest
         </a>
       </header>
 

@@ -553,7 +553,7 @@ export const Split = {
   args: { ...splitMeta, digest: PR_DIGEST },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const list = canvas.getByRole('listbox', { name: 'sessions' })
+    const list = canvas.getByRole('listbox', { name: 'transcripts' })
     const options = within(list).getAllByRole('option')
     await expect(options).toHaveLength(2)
     await expect(options[0]).toHaveAttribute('aria-selected', 'true')
@@ -562,7 +562,7 @@ export const Split = {
     await userEvent.keyboard('j')
     await waitFor(() => expect(options[1]).toHaveAttribute('aria-selected', 'true'))
     await expect(canvas.getByRole('heading', { name: 'Guard empty turns in the digest' })).toBeVisible()
-    await expect(canvas.getByText(/in this session, not listed in this digest/)).toBeVisible()
+    await expect(canvas.getByText(/in this transcript, not listed in this digest/)).toBeVisible()
     // stops at the last entry
     await userEvent.keyboard('j')
     await expect(options[1]).toHaveAttribute('aria-selected', 'true')
@@ -589,7 +589,7 @@ export const SplitBeforeFirstBoundary = {
     const canvas = within(canvasElement)
     const options = within(canvas.getByRole('listbox')).getAllByRole('option')
     await expect(options).toHaveLength(3)
-    await expect(options[0]).toHaveTextContent('before the first session')
+    await expect(options[0]).toHaveTextContent('before the first transcript')
     await expect(canvas.getByText('Recorded before the first boundary.')).toBeVisible()
   },
 }

@@ -13,6 +13,7 @@ import {
   SignInProviders,
   StatsStrip,
   TranscriptViewer,
+  BrandMark,
 } from '../../ui'
 import {
   COLLECTIVE,
@@ -55,7 +56,7 @@ export function SignInPage({ onSignIn }) {
     <div className="iu-page cmg-signin">
       <div className="cmg-signin-card">
         <p className="cmg-signin-brand mono">village</p>
-        <h2 className="iu-page-title">the agent sessions behind your team&apos;s pull requests</h2>
+        <h2 className="iu-page-title">the transcripts behind your team&apos;s pull requests</h2>
         <p className="iu-page-sub">peasant records your AI coding sessions on your machine. village keeps the ones you publish, shared with your collectives, and links them to pull requests.</p>
         <SignInProviders onSignIn={onSignIn} />
         <ul className="cmg-signin-notes">
@@ -98,7 +99,7 @@ export function VillageHome({ onNavigate }) {
     <div className="iu-page">
       <header className="iu-page-head">
         <h2 className="iu-page-title">your transcripts</h2>
-        <p className="iu-page-sub">sessions you published from peasant. only the collectives you picked can read each one.</p>
+        <p className="iu-page-sub">transcripts you published from peasant. only the collectives you picked can read each one.</p>
       </header>
       <StatsStrip items={HOME_STATS} label="your transcripts in numbers" />
       <div className="cmg-home">
@@ -218,7 +219,7 @@ export function AccountSettingsView({ actions = {} } = {}) {
         </SettingGroup>
         <SettingGroup label="connections" defaultOpen count={2} noun={['connection', 'connections']}>
           <div className="srow">
-            <span className="srow-text-col"><span className="srow-label">github · {VIEWER.login}</span><span className="srow-help">you sign in to village with this account.</span></span>
+            <span className="srow-text-col"><span className="srow-label"><BrandMark name="github" /> github · {VIEWER.login}</span><span className="srow-help">you sign in to village with this account.</span></span>
             <button type="button" className="btn btn-secondary btn-sm">sign out</button>
           </div>
           <div className="srow">

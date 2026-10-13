@@ -44,7 +44,8 @@ import {
   Layers,
   Upload,
 } from 'lucide-react'
-import { StatGrid, DangerZone, ConfirmInline, ApprovalBar } from '../../ui'
+import { StatGrid, DangerZone, ConfirmInline, ApprovalBar, BrandMark } from '../../ui'
+import { formatCount, formatDate } from '../../ui/format.js'
 
 /* =====================================================================
    CommonsExplore — the COMMONS browse/discovery half of Village.
@@ -83,13 +84,9 @@ const PROVIDER_COLOR = {
   codex: 'g-codex',
 }
 
-const fmtTokens = (n) => n.toLocaleString('en-US')
+const fmtTokens = formatCount
 const fmtDur = (m) => (m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m}min`)
-const fmtDate = (iso) => {
-  const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  const d = new Date(iso + 'T00:00:00')
-  return `${M[d.getMonth()]} ${d.getDate()}`
-}
+const fmtDate = formatDate
 const initials = (name) =>
   name
     .split(/[\s-]+/)
@@ -1706,7 +1703,7 @@ function DetailTurn({ turn, selected, openTools, toggleTool, registerRef, labels
             {head}
             {body}
           </div>
-          <div className="subtask-foot">returned to claude</div>
+          <div className="subtask-foot">returned to <BrandMark name="claude" /> claude</div>
         </div>
       </div>
     )

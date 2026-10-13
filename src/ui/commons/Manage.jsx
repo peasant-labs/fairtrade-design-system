@@ -64,7 +64,7 @@ function formatDate(iso) {
   if (!iso) return 'unknown'
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return 'unknown'
-  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date)
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(date).toLowerCase()
 }
 
 export function Manage({

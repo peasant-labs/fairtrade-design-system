@@ -158,7 +158,7 @@ export default function ProjectOverview({
           <div className="gan-kpis" role="list" aria-label="headline metrics">
             <StatTile
               icon={Activity}
-              label="sessions"
+              label="new sessions"
               value={formatNumber(data.totalSessions)}
               hint="recorded"
               detail={data.sessionsPerWeek.map(row => `${row.week}: ${formatNumber(row.count)} sessions`).join('\n') || 'no recorded weeks'}
@@ -172,28 +172,23 @@ export default function ProjectOverview({
             />
             <StatTile
               icon={TrendingUp}
-              label="returning rate"
+              label="contributors in multiple weeks"
               value={formatRate(data.returningContributorRate.rate)}
               hint={`${formatNumber(data.returningContributorRate.returning)} of ${formatNumber(data.returningContributorRate.total)}`}
               detail={`${formatNumber(data.returningContributorRate.returning)} returning contributors active in two or more weeks; ${formatNumber(data.returningContributorRate.total)} contributors with dated sessions.`}
             />
             <StatTile
               icon={GitCommitHorizontal}
-              label="session → commit"
+              label="sessions linked to commits"
               value={formatRate(data.sessionToCommitRate.rate)}
               hint={`${formatNumber(data.sessionToCommitRate.withCommit)} of ${formatNumber(data.sessionToCommitRate.total)}`}
               detail={`${formatNumber(data.sessionToCommitRate.withCommit)} sessions linked to a commit; ${formatNumber(data.sessionToCommitRate.total - data.sessionToCommitRate.withCommit)} without a linked commit.`}
             />
             <StatTile
               icon={CircleCheck}
-              label="longest streak"
-              detail={data.longestStreak.startWeek == null ? 'no recorded streak' : `${data.longestStreak.startWeek} to ${data.longestStreak.endWeek}`}
-              value={`${formatNumber(data.longestStreak.weeks)} wk`}
-              hint={
-                data.longestStreak.startWeek == null
-                  ? undefined
-                  : `from ${data.longestStreak.startWeek}`
-              }
+              label="weeks with sessions"
+              detail={data.sessionsPerWeek.filter(row => row.count > 0).map(row => row.week).join('\n') || 'no weeks with sessions'}
+              value={`${formatNumber(data.sessionsPerWeek.filter(row => row.count > 0).length)} wk`}
             />
             <StatTile
               icon={Hash}
@@ -264,7 +259,7 @@ export default function ProjectOverview({
             <ChartCard
               icon={UserPlus}
               title="new contributors per week"
-              subtitle="acquisition signal · first appearance"
+              subtitle="first recorded session · by contributor"
               aside={`${formatNumber(sumValues(weekPoints(data.newContributorVelocity, 'newContributors')))} new`}
             >
               <ChartBar

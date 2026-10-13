@@ -66,19 +66,19 @@ cases:
       - {label: Fix flaky ingest test, count: 1 prompt}
       - {label: Guard empty turns in the digest, count: 10 prompts}
     selected: 1
-    pane: {title: Guard empty turns in the digest, prompts: [], collapsed: 10 prompts in this session, link: open the transcript}
+    pane: {title: Guard empty turns in the digest, prompts: [], collapsed: 10 prompts in this transcript, link: open the transcript}
   - name: items before the first boundary
     chain: leading-items
     options:
-      - {label: before the first session, count: 1 prompt}
+      - {label: before the first transcript, count: 1 prompt}
       - {label: Fix flaky ingest test, count: 1 prompt}
     selected: 0
-    pane: {title: before the first session, prompts: [Recorded before any boundary]}
+    pane: {title: before the first transcript, prompts: [Recorded before any boundary]}
   - name: an empty chain
     chain: empty
     options: []
     selected: null
-    empty: no sessions in this digest yet.
+    empty: no transcripts in this digest yet.
   - name: a controlled selection
     chain: many-sessions
     props: {selected: 2}

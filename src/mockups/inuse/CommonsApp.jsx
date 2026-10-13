@@ -54,8 +54,7 @@ export default function CommonsApp({ theme }) {
     return VIEWS.has(initial) ? initial : 'home'
   })
   const transcriptVm = useMemo(() => {
-    const vm = demoTranscriptViewModel()
-    return { ...vm, session: { ...vm.session, title: 'Fix flaky ingest test' } }
+    return demoTranscriptViewModel()
   }, [])
   const onNavigate = (v) => setView(v)
   const back = BACK_TO[view]

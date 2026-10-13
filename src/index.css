@@ -1855,6 +1855,7 @@
   .iu-page-tip { margin: 0; font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-2); }
   .iu-page-tip code { font-size: var(--fs-sm); color: var(--ink-strong); }
   .iu-page-search { display: block; }
+  .iu-page-controls { display: contents; border: 0; margin: 0; padding: 0; min-width: 0; }
   .iu-page-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
   .iu-page-toolbar .is-field { margin: 0; }
   .iu-page-toolbar .bs-seg { max-width: 100%; overflow-x: auto; }
