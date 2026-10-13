@@ -562,7 +562,7 @@ export const Split = {
     await userEvent.keyboard('j')
     await waitFor(() => expect(options[1]).toHaveAttribute('aria-selected', 'true'))
     await expect(canvas.getByRole('heading', { name: 'Guard empty turns in the digest' })).toBeVisible()
-    await expect(canvas.getByText(/in this session, not listed in this digest/)).toBeVisible()
+    await expect(canvas.getByText(/in this transcript, not listed in this digest/)).toBeVisible()
     // stops at the last entry
     await userEvent.keyboard('j')
     await expect(options[1]).toHaveAttribute('aria-selected', 'true')

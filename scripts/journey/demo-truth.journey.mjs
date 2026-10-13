@@ -39,7 +39,6 @@ for (const row of spec.cases) for (const theme of spec.themes) {
     // Hash navigation can happen before React mounts the target. Explicitly move
     // the mounted demo into the viewport; visibility alone permits offscreen DOM.
     await page.locator('#inuse').evaluate(node => node.scrollIntoView({ block: 'start', behavior: 'instant' }))
-    if (row.focus) await page.locator(row.focus).first().scrollIntoViewIfNeeded()
     await expect(page.locator('.iu-bar')).toBeInViewport()
     await expect(root).toBeInViewport()
     const assets = await page.locator('link[rel="stylesheet"][href^="/assets/"], script[type="module"][src^="/assets/"]').evaluateAll(nodes => nodes.map(node => node.getAttribute('href') || node.getAttribute('src')))
@@ -58,6 +57,13 @@ for (const row of spec.cases) for (const theme of spec.themes) {
       mkdirSync(process.env.DEMO_TRUTH_CAPTURE_DIR, { recursive: true })
       const stem = `${row.name.replaceAll(' ', '-')}-${theme}`
       await page.screenshot({ path: join(process.env.DEMO_TRUTH_CAPTURE_DIR, `${stem}.png`) })
+      if (row.focus) {
+        const detail = page.locator(row.focus).first()
+        await detail.scrollIntoViewIfNeeded()
+        await expect(detail).toBeInViewport()
+        await page.screenshot({ path: join(process.env.DEMO_TRUTH_CAPTURE_DIR, `${stem}-detail.png`) })
+        evidence.detail = { selector: row.focus, text: await detail.innerText(), bounds: await detail.boundingBox(), scrollY: await page.evaluate(() => window.scrollY) }
+      }
       writeFileSync(join(process.env.DEMO_TRUTH_CAPTURE_DIR, `${stem}.json`), JSON.stringify(evidence, null, 2))
     }
   })
