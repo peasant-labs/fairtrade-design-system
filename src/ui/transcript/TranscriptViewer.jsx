@@ -12,6 +12,7 @@ import ProviderIcon from '../ProviderIcon.jsx'
 import { formatDuration } from '../StepsWaterfall.jsx'
 import { TOOL_GROUPS } from './view-model.js'
 import { categoryCounts, projectTurn } from './filters.js'
+import { turnAtReadingLine } from './scroll-position.js'
 import TurnCard from './TurnCard.jsx'
 import TranscriptContext from './TranscriptContext.jsx'
 import { UsageScopes } from './UsageDisclosure.jsx'
@@ -598,12 +599,9 @@ export default function TranscriptViewer({
     if (!sc) return
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     syncScrollChrome(sc)
-    let best = visibleTurns[0]?.index ?? 0
-    for (const t of visibleTurns) {
-      const el = turnRefs.current[t.index]
-      if (el && el.offsetTop - sc.scrollTop <= sc.clientHeight * 0.4) best = t.index
-    }
-    setActiveTurn(best)
+    setActiveTurn(turnAtReadingLine(visibleTurns,
+      index => turnRefs.current[index]?.offsetTop ?? Infinity,
+      sc.scrollTop + sc.clientHeight * 0.4))
   }
 
   function openFile(file) {

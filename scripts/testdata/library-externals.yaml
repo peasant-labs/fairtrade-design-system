@@ -1,0 +1,8 @@
+requiredNames:
+  - markdown renderer
+  - markdown line breaks
+  - markdown tables
+externals:
+  - {name: markdown renderer, package: react-markdown, mutation: renderer bundled again, dependencyMutation: renderer dependency missing}
+  - {name: markdown line breaks, package: remark-breaks, mutation: line breaks bundled again, dependencyMutation: line breaks dependency missing}
+  - {name: markdown tables, package: remark-gfm, mutation: tables bundled again, dependencyMutation: tables dependency missing}

@@ -161,7 +161,7 @@ export function ProviderBars({
               {d.label}
             </span>
             <span className="st-bar-track" aria-hidden="true">
-              <span className="st-bar-fill" style={{ width: `${fillW}%` }} />
+              <span className="st-bar-fill" style={{ transform: `scaleX(${fillW / 100})` }} />
             </span>
             <span className="st-bar-pct tnum">{pct}%</span>
           </div>

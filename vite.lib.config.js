@@ -1,26 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { globSync } from 'node:fs'
 import { LIB_EXTERNALS } from './scripts/lib-externals.mjs'
-
-/* react-markdown's character-reference helper publishes a browser-only DOM entry. Keep the
-   published library importable in SSR/package smokes by selecting its environment-neutral entry;
-   app and Storybook builds retain Vite's normal browser resolution. */
-const decodeNamedCharacterReference = globSync('node_modules/.pnpm/decode-named-character-reference@*/node_modules/decode-named-character-reference/index.js', { absolute: true })[0]
 
 export default defineConfig({
   publicDir: false,
-  plugins: [
-    react(),
-    {
-      name: 'fairtrade-node-safe-character-reference',
-      enforce: 'pre',
-      resolveId(source) {
-        if (source !== 'decode-named-character-reference') return null
-        return decodeNamedCharacterReference ?? null
-      },
-    },
-  ],
+  plugins: [react()],
   build: {
     outDir: 'dist/lib',
     emptyOutDir: true,
