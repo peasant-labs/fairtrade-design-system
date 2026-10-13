@@ -742,7 +742,6 @@
     width: var(--sw-thumb); height: var(--sw-thumb);
     background: var(--ink-3);
     transform: translateX(0);
-    will-change: transform;
   }
   @media (prefers-reduced-motion: no-preference) { .sw::before { transition: transform var(--dur-2) var(--ease-standard), background var(--dur-2) var(--ease-standard); } }
   .sw:hover { border-color: var(--amber-dim); }

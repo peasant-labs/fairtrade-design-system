@@ -23,8 +23,31 @@ import { findForeignNamespaces, GRAPH_NAMESPACES, COMMONS_NAMESPACES, ANALYTICS_
 import { lintCssText } from './css-token-lint.mjs'
 import { LIB_EXTERNALS } from './lib-externals.mjs'
 import { loadStrictYaml, assertExactNames } from './css-source.mjs'
+import { turnAtReadingLine } from '../src/ui/transcript/scroll-position.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+
+/** @type {{requiredNames: string[], cases: {name: string, count: number, stride: number, line: number, expected: number}[], mutations: {name: string, lineDelta: number, case: string}[], readMutation: {name: string, case: string, find: string, replace: string}}} */
+const scrollSpec = loadStrictYaml('scripts/testdata/transcript-scroll.yaml')
+assertExactNames(scrollSpec.cases.map(row => row.name), scrollSpec.requiredNames, 'transcript scroll')
+const checkScroll = (row, line = row.line, findTurn = turnAtReadingLine) => {
+  const turns = Array.from({length: row.count}, (_, i) => ({index: i * row.stride}))
+  let reads = 0
+  const active = findTurn(turns, index => { reads++; return index / row.stride * 100 }, line)
+  assert.equal(active, row.expected, `${row.name}: active turn`)
+  assert.ok(reads <= Math.ceil(Math.log2(row.count + 1)), `${row.name}: logarithmic offset reads`)
+}
+for (const row of scrollSpec.cases) checkScroll(row)
+for (const mutation of scrollSpec.mutations) {
+  const row = scrollSpec.cases.find(row => row.name === mutation.case)
+  assert.ok(row, `${mutation.name}: fixture case missing`)
+  assert.throws(() => checkScroll(row, row.line + mutation.lineDelta), /active turn/, mutation.name)
+}
+const linearRow = scrollSpec.cases.find(row => row.name === scrollSpec.readMutation.case)
+const scrollSource = readFileSync(join(ROOT, 'src/ui/transcript/scroll-position.js'), 'utf8')
+assert.equal(scrollSource.split(scrollSpec.readMutation.find).length - 1, 1, 'scroll mutation anchor')
+const linearMutant = await import(`data:text/javascript,${encodeURIComponent(scrollSource.replace(scrollSpec.readMutation.find, scrollSpec.readMutation.replace))}`)
+assert.throws(() => checkScroll(linearRow, linearRow.line, linearMutant.turnAtReadingLine), /logarithmic offset reads/, scrollSpec.readMutation.name)
 
 /** @type {{requiredNames: string[], externals: {name: string, package: string, mutation: string, dependencyMutation: string}[]}} */
 const externalSpec = loadStrictYaml('scripts/testdata/library-externals.yaml')

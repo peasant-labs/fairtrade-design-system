@@ -178,14 +178,16 @@
 
 .st-bar-fill {
   display: block;
+  width: 100%;
   height: 100%;
+  transform-origin: left;
   /* monochrome — a color-mix of ink-strong over the surface, NOT a hue. weight carries it. */
   background: color-mix(in oklab, var(--ink-strong) 64%, var(--surface));
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .st-bar-fill {
-    transition: width var(--dur-3, 200ms) var(--ease-out, ease);
+    transition: transform var(--dur-3) var(--ease-out);
   }
 }
 

@@ -98,3 +98,24 @@ fitMutations:
     icon: changes legend session star
     markerSizePx: 9
     expectedDiagnostic: changes legend session star overflows its marker
+
+# Mounted production component consumers. Default and reduce are measured separately;
+# only transform may transition, and the fill keeps its full layout width.
+motionRows:
+  - name: redaction scan progress
+    anchor: ds-governance
+    selector: '#ds-governance .rdx-scan-fill'
+    scale: 1
+    mutation: scan progress animates width again
+  - name: provider share progress
+    anchor: ds-mapviz
+    selector: '#ds-mapviz .st-bar-fill'
+    scale: 0.62
+    mutation: provider share animates width again
+motionModes:
+  - {name: default motion, value: no-preference}
+  - {name: reduced motion, value: reduce}
+motionWidths: [390, 1440]
+switchProbe:
+  selector: '#states .sw:not([disabled])'
+  mutation: switch permanently promotes its thumb

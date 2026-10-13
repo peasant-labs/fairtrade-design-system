@@ -12,6 +12,7 @@ import ProviderIcon from '../ProviderIcon.jsx'
 import { formatDuration } from '../StepsWaterfall.jsx'
 import { TOOL_GROUPS } from './view-model.js'
 import { categoryCounts, projectTurn } from './filters.js'
+import { turnAtReadingLine } from './scroll-position.js'
 import TurnCard from './TurnCard.jsx'
 import TranscriptContext from './TranscriptContext.jsx'
 import { UsageScopes } from './UsageDisclosure.jsx'
@@ -323,6 +324,12 @@ export default function TranscriptViewer({
     return turns.map((t) => projectTurn(t, filters, ctx)).filter((t) => t != null)
   }, [turns, filters, commits, vm])
 
+  const scrollFrameRef = useRef(null)
+  useEffect(() => () => {
+    if (scrollFrameRef.current != null) cancelAnimationFrame(scrollFrameRef.current)
+    scrollFrameRef.current = null
+  }, [session?.id, tab, viewMode, visibleTurns])
+
   const readTraceReadingSnapshot = useCallback(() => {
     const sc = scrollRef.current
     if (!sc) return null
@@ -597,13 +604,17 @@ export default function TranscriptViewer({
     const sc = scrollRef.current
     if (!sc) return
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
-    syncScrollChrome(sc)
-    let best = visibleTurns[0]?.index ?? 0
-    for (const t of visibleTurns) {
-      const el = turnRefs.current[t.index]
-      if (el && el.offsetTop - sc.scrollTop <= sc.clientHeight * 0.4) best = t.index
+    if (scrollFrameRef.current != null) return
+    const updateScroll = () => {
+      scrollFrameRef.current = null
+      if (scrollRef.current !== sc) return
+      syncScrollChrome(sc)
+      setActiveTurn(turnAtReadingLine(visibleTurns,
+        index => turnRefs.current[index]?.offsetTop ?? Infinity,
+        sc.scrollTop + sc.clientHeight * 0.4))
     }
-    setActiveTurn(best)
+    if (typeof requestAnimationFrame === 'function') scrollFrameRef.current = requestAnimationFrame(updateScroll)
+    else updateScroll()
   }
 
   function openFile(file) {

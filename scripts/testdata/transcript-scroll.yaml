@@ -1,0 +1,21 @@
+requiredNames:
+  - before first turn
+  - exact turn boundary
+  - between turns
+  - after final turn
+  - empty trace
+  - long filtered trace
+cases:
+  - {name: before first turn, count: 8, stride: 3, line: -1, expected: 0}
+  - {name: exact turn boundary, count: 8, stride: 3, line: 400, expected: 12}
+  - {name: between turns, count: 8, stride: 3, line: 450, expected: 12}
+  - {name: after final turn, count: 8, stride: 3, line: 1000, expected: 21}
+  - {name: empty trace, count: 0, stride: 1, line: 0, expected: 0}
+  - {name: long filtered trace, count: 4096, stride: 3, line: 301050, expected: 9030}
+mutations:
+  - {name: reading line shifted past the next turn, lineDelta: 100, case: between turns}
+readMutation:
+  name: linear scan visits every turn
+  case: long filtered trace
+  find: 'let low = 0'
+  replace: 'turns.forEach(turn => topOf(turn.index)); let low = 0'
