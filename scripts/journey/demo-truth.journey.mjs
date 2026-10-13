@@ -36,7 +36,12 @@ for (const row of spec.cases) for (const theme of spec.themes) {
       await expect(action.locator('..')).toHaveAttribute('open', '')
     }
     await page.evaluate(() => document.fonts.ready)
+    // Hash navigation can happen before React mounts the target. Explicitly move
+    // the mounted demo into the viewport; visibility alone permits offscreen DOM.
+    await page.locator('#inuse').evaluate(node => node.scrollIntoView({ block: 'start', behavior: 'instant' }))
     if (row.focus) await page.locator(row.focus).first().scrollIntoViewIfNeeded()
+    await expect(page.locator('.iu-bar')).toBeInViewport()
+    await expect(root).toBeInViewport()
     const assets = await page.locator('link[rel="stylesheet"][href^="/assets/"], script[type="module"][src^="/assets/"]').evaluateAll(nodes => nodes.map(node => node.getAttribute('href') || node.getAttribute('src')))
     expect(assets.length).toBeGreaterThan(0)
     const provenance = []
@@ -46,7 +51,8 @@ for (const row of spec.cases) for (const theme of spec.themes) {
       if (asset.endsWith('.js')) expect(bytes.toString()).toContain('last loaded')
       provenance.push({ asset, sha256: createHash('sha256').update(bytes).digest('hex') })
     }
-    const evidence = { surface: row.name, width: row.width, theme, url: page.url(), head: process.env.CAPTURE_HEAD, provenance }
+    const observations = { root: row.root, text: await root.innerText(), bounds: await root.boundingBox(), shellBounds: await page.locator('.iu-bar').boundingBox(), scrollY: await page.evaluate(() => window.scrollY) }
+    const evidence = { surface: row.name, width: row.width, theme, url: page.url(), head: process.env.CAPTURE_HEAD, harnessHead: process.env.CAPTURE_HARNESS_HEAD, observations, provenance }
     await info.attach('demo-truth-provenance', { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' })
     if (process.env.DEMO_TRUTH_CAPTURE_DIR) {
       mkdirSync(process.env.DEMO_TRUTH_CAPTURE_DIR, { recursive: true })
