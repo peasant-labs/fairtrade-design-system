@@ -95,7 +95,7 @@ export const Nodes = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     // selection rides aria-pressed (border + marker are the visible, non-colour cues).
-    const sel = canvas.getByRole('button', { name: /ingest\/stream\.go .* selected/ })
+    const sel = canvas.getByRole('button', { name: 'ingest/stream.go, coverage 3 of 4, 420 loc, selected' })
     await expect(sel).toHaveAttribute('aria-pressed', 'true')
     // violation count surfaces in the accessible name, not colour alone.
     await expect(
