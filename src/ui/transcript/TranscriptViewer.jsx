@@ -324,12 +324,6 @@ export default function TranscriptViewer({
     return turns.map((t) => projectTurn(t, filters, ctx)).filter((t) => t != null)
   }, [turns, filters, commits, vm])
 
-  const scrollFrameRef = useRef(null)
-  useEffect(() => () => {
-    if (scrollFrameRef.current != null && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(scrollFrameRef.current)
-    scrollFrameRef.current = null
-  }, [session?.id, tab, viewMode, visibleTurns])
-
   const readTraceReadingSnapshot = useCallback(() => {
     const sc = scrollRef.current
     if (!sc) return null
@@ -604,17 +598,10 @@ export default function TranscriptViewer({
     const sc = scrollRef.current
     if (!sc) return
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
-    if (scrollFrameRef.current != null) return
-    const updateScroll = () => {
-      scrollFrameRef.current = null
-      if (scrollRef.current !== sc) return
-      syncScrollChrome(sc)
-      setActiveTurn(turnAtReadingLine(visibleTurns,
-        index => turnRefs.current[index]?.offsetTop ?? Infinity,
-        sc.scrollTop + sc.clientHeight * 0.4))
-    }
-    if (typeof requestAnimationFrame === 'function') scrollFrameRef.current = requestAnimationFrame(updateScroll)
-    else updateScroll()
+    syncScrollChrome(sc)
+    setActiveTurn(turnAtReadingLine(visibleTurns,
+      index => turnRefs.current[index]?.offsetTop ?? Infinity,
+      sc.scrollTop + sc.clientHeight * 0.4))
   }
 
   function openFile(file) {
