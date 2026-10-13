@@ -19,10 +19,16 @@ for (const row of spec.cases) for (const theme of spec.themes) {
     await expect(root).toBeVisible()
     for (const text of row.text) await expect(root).toContainText(text)
     for (const text of row.absent ?? []) await expect(root).not.toContainText(text)
+    const marks = []
     for (const selector of row.marks ?? []) {
-      const mark = page.locator(selector)
+      const mark = root.locator(selector)
+      await expect(mark).toHaveCount(1)
       await expect(mark).toBeVisible()
       await expect(mark.locator('path')).toHaveAttribute('d', /.+/)
+      const order = await mark.evaluate(node => ({ brand: node.dataset.brand, nextText: node.nextSibling?.nodeType === Node.TEXT_NODE ? node.nextSibling.textContent.trimStart() : null, decorative: node.getAttribute('aria-hidden') }))
+      expect(order.nextText, `${row.name}: ${selector} must immediately precede its provider name`).toMatch(new RegExp(`^${order.brand}\\b`))
+      expect(order.decorative).toBe('true')
+      marks.push({ selector, count: await mark.count(), ...order })
     }
     if (row.disabled) {
       const controls = page.locator(row.disabled)
@@ -50,7 +56,7 @@ for (const row of spec.cases) for (const theme of spec.themes) {
       if (asset.endsWith('.js')) expect(bytes.toString()).toContain('last loaded')
       provenance.push({ asset, sha256: createHash('sha256').update(bytes).digest('hex') })
     }
-    const observations = { root: row.root, text: await root.innerText(), bounds: await root.boundingBox(), shellBounds: await page.locator('.iu-bar').boundingBox(), scrollY: await page.evaluate(() => window.scrollY) }
+    const observations = { root: row.root, text: await root.innerText(), marks, bounds: await root.boundingBox(), shellBounds: await page.locator('.iu-bar').boundingBox(), scrollY: await page.evaluate(() => window.scrollY) }
     const evidence = { surface: row.name, width: row.width, theme, url: page.url(), head: process.env.CAPTURE_HEAD, harnessHead: process.env.CAPTURE_HARNESS_HEAD, observations, provenance }
     await info.attach('demo-truth-provenance', { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' })
     if (process.env.DEMO_TRUTH_CAPTURE_DIR) {
