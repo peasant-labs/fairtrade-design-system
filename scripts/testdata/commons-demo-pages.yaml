@@ -22,7 +22,7 @@ pages:
   - name: sign-in
     view: signin
     providers: [github]
-    text: [the agent sessions behind your team's pull requests, your handle is your GitHub login]
+    text: [the transcripts behind your team's pull requests, your handle is your GitHub login]
     absentButtons: [more sign-in providers]
   - name: collectives
     view: collectives
@@ -51,7 +51,7 @@ pages:
     buttons: [sign out, sign out everywhere, delete account]
   - name: transcript page
     view: transcript-detail
-    text: [Fix flaky ingest test, village.peasantlabs.org/transcripts/3f9c0a17, pull requests, show all 5]
+    text: [Port the transcript canvas into the shared package, village.peasantlabs.org/transcripts/3f9c0a17, pull requests, show all 5]
     buttons: [copy link, more]
     absentButtons: [share, chat with trace]
   - name: pull request prompts

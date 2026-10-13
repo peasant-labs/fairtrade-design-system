@@ -36,6 +36,7 @@ for (const row of spec.cases) for (const theme of spec.themes) {
       await expect(action.locator('..')).toHaveAttribute('open', '')
     }
     await page.evaluate(() => document.fonts.ready)
+    if (row.focus) await page.locator(row.focus).first().scrollIntoViewIfNeeded()
     const assets = await page.locator('link[rel="stylesheet"][href^="/assets/"], script[type="module"][src^="/assets/"]').evaluateAll(nodes => nodes.map(node => node.getAttribute('href') || node.getAttribute('src')))
     expect(assets.length).toBeGreaterThan(0)
     const provenance = []

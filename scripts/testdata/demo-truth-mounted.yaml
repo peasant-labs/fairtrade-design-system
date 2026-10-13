@@ -57,3 +57,17 @@ cases:
     root: .pub-bar
     text: [published]
     absent: [not published]
+  - name: returned provider
+    query: app=commons&commons=explore-transcript
+    width: 1440
+    root: .cex-detail
+    text: [returned to claude, 412.3k tokens]
+    marks: ['.subtask-foot [data-brand="claude"]']
+    focus: .subtask-foot
+  - name: village calendar dates
+    query: app=commons&commons=explore
+    width: 1440
+    root: .cex-root
+    text: ['jun 14, 2026']
+    absent: ['Jun 14']
+    tabular: .cex-date
