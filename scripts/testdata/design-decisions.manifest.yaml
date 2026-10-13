@@ -1,0 +1,31 @@
+requiredNames:
+  - middot-separators
+  - active-markers
+  - type-floor
+  - amber-salience
+  - filter-density
+  - proportional-prose
+  - static-motion
+  - primary-targets
+  - modal-focus
+  - overlay-shadows
+  - prose-measure
+  - heading-hierarchy
+  - font-loading
+  - lowercase-chrome
+  - stripe-widths
+  - opaque-chrome
+  - guarded-transitions
+  - paragraph-spacing
+  - wrapping-leading
+  - content-truncation
+  - role-accents
+  - navigation-glyphs
+  - chrome-links
+  - icon-sizes
+  - focus-ring
+  - responsive-queries
+  - progressive-disclosure
+  - accent-glow
+requiredMutations: [planted-middot, unresolved-decision, missing-code, retained-pointer]
+requiredCases: [clean-separators, bound-decision, no-original-conflict-line]
