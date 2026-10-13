@@ -44,6 +44,8 @@ cases:
     sources: *boundSources
 mutations:
   - {name: planted-middot, case: clean-separators, file: src/ui/example.jsx, append: ' · ', error: 'middot forbidden'}
+  - {name: encoded-middot, case: clean-separators, file: src/ui/example.jsx, append: '<span>&middot;</span>', error: 'middot forbidden'}
+  - {name: escaped-middot, case: clean-separators, file: src/ui/example.jsx, append: '"\u00b7"', error: 'middot forbidden'}
   - {name: unresolved-decision, case: bound-decision, clearBinding: true, error: 'unresolved decision'}
   - {name: missing-code, case: bound-decision, file: src/ui/example.jsx, replace: '', error: 'code reference missing'}
   - {name: retained-pointer, case: bound-decision, file: llm/NEUROINCLUSIVE.md, append: '(#136/1)', error: 'resolved pointer retained'}

@@ -72,8 +72,8 @@ const viewModel = {
   ],
   highlights: [
     { id: 'h1', kind: 'request', turn: 0, title: 'initial request', sub: 'Port the transcript canvas…', time: '8m ago' },
-    { id: 'h3', kind: 'error', turn: 2, title: 'pnpm -r typecheck failed', sub: '1 failed · exit 2', err: true },
-    { id: 'h4', kind: 'checkpoint', turn: 3, title: '9f3c1ad', sub: 'feat(canvas): port TurnRow', stat: '+312 −24 · 7 files' },
+    { id: 'h3', kind: 'error', turn: 2, title: 'pnpm -r typecheck failed', sub: '1 failed, exit 2', err: true },
+    { id: 'h4', kind: 'checkpoint', turn: 3, title: '9f3c1ad', sub: 'feat(canvas): port TurnRow', stat: '+312 −24, 7 files' },
   ],
   filterIndex: { toolGroupCounts: { edits: 1, bash: 1, read: 1, search: 0, fetch: 0, tasks: 0, other: 0 }, annotationsByTurn: { 2: [{ id: 'a1', kind: 'error', turn: 2, label: 'typecheck failed' }] }, tags: ['errors'], tagCounts: { errors: 1 }, totalTurns: 5 },
   analytics: {
@@ -84,13 +84,13 @@ const viewModel = {
     ],
     scorecardBands: [
       { id: 'token', label: 'token efficiency', band: 'watch', value: '8% retry tokens', detail: '1,300 tokens spent on the retry after typecheck' },
-      { id: 'prompt', label: 'prompt quality', band: 'ok', value: 'spec 72/100', detail: 'has examples · no explicit constraints' },
+      { id: 'prompt', label: 'prompt quality', band: 'ok', value: 'spec 72/100', detail: 'has examples, no explicit constraints' },
       { id: 'loop', label: 'loop efficiency', band: 'good', value: '1 max error streak', detail: 'recovered in 1 turn' },
     ],
     patternAnnotations: [
-      { id: 'a1', kind: 'error', turn: 2, label: 'pnpm -r typecheck · exit 2', preview: "src/lib/tasks.ts(48,9): error TS2532" },
+      { id: 'a1', kind: 'error', turn: 2, label: 'pnpm -r typecheck, exit 2', preview: "src/lib/tasks.ts(48,9): error TS2532" },
       { id: 'a2', kind: 'revert', turn: 3, label: 'tasks.ts edited after a failed run', preview: 'strict-mode index guard added' },
-      { id: 'a3', kind: 'subagent', turn: 4, label: 'docs-writer · depth 1', preview: 'Task spawned a nested subagent' },
+      { id: 'a3', kind: 'subagent', turn: 4, label: 'docs-writer, depth 1', preview: 'Task spawned a nested subagent' },
     ],
   },
 }
@@ -186,7 +186,7 @@ export const GraphSlot = {
     viewMode: 'graph',
     graphSlot: ({ activeTurn }) => (
       <div style={{ padding: 'var(--sp-6)', textAlign: 'center', color: 'var(--ink-3)' }}>
-        consumer graph engine · active turn {activeTurn}
+        consumer graph engine, active turn {activeTurn}
       </div>
     ),
   },

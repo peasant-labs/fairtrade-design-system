@@ -1719,11 +1719,11 @@ function cssId(id) {
 function nodeAriaLabel(node, state = {}) {
   const { selected, expanded, violations = 0 } = state
   const cov = clampCoverage(node.coverage)
-  let label = `${leaf(node.label || node.id)}: ${node.kind} · coverage ${cov} of 4`
-  if (node.loc) label += ` · ${node.loc} loc`
-  if (violations > 0) label += ` · ${violations} violation${violations === 1 ? '' : 's'}`
-  if (selected) label += ' · selected'
-  if (expanded) label += ' · expanded'
+  let label = `${leaf(node.label || node.id)}: ${node.kind}, coverage ${cov} of 4`
+  if (node.loc) label += `, ${node.loc} loc`
+  if (violations > 0) label += `, ${violations} violation${violations === 1 ? '' : 's'}`
+  if (selected) label += ', selected'
+  if (expanded) label += ', expanded'
   return label
 }
 
@@ -1812,8 +1812,8 @@ function Node({
 
       <span className="mc-node-meta mono tnum">
         {node.kind === 'folder' && expandable ? (expanded ? 'open' : 'folder') : 'file'}
-        {node.loc ? ` · ${node.loc} loc` : ''}
-        {` · cov ${cov}/4`}
+        {node.loc ? `, ${node.loc} loc` : ''}
+        {`, cov ${cov}/4`}
       </span>
     </button>
   )

@@ -21,7 +21,7 @@ const items = [
     role: 'user',
     label: '1',
     time: '8m ago',
-    longTime: 'jun 17, 2026 · 09:12',
+    longTime: 'jun 17, 2026, 09:12',
     tokens: { in: 280, out: 0 },
     body: 'Port the transcript canvas into the shared package. Start by reading the existing renderer before extracting it.',
   },
@@ -31,7 +31,7 @@ const items = [
     role: 'assistant',
     label: '1a',
     time: '8m ago',
-    longTime: 'jun 17, 2026 · 09:12',
+    longTime: 'jun 17, 2026, 09:12',
     tokens: { in: 1840, out: 920 },
     thinking: {
       words: 84,
@@ -57,7 +57,7 @@ const items = [
     kind: 'phase',
     phaseLabel: 'debugging',
     icon: AlertTriangle,
-    range: 'turns 2–3 · 1 error',
+    range: 'turns 2–3, 1 error',
   },
   {
     id: 'a2',
@@ -65,7 +65,7 @@ const items = [
     role: 'assistant',
     label: '2a',
     time: '6m ago',
-    longTime: 'jun 17, 2026 · 09:16',
+    longTime: 'jun 17, 2026, 09:16',
     error: true,
     tokens: { in: 2600, out: 1320 },
     body: 'The index access is unguarded under strict mode. Adding a null-guard, then re-running the workspace typecheck.',
@@ -107,7 +107,7 @@ const items = [
     depth: 1,
     subagent: 'docs-writer',
     time: '3m ago',
-    longTime: 'jun 17, 2026 · 09:18',
+    longTime: 'jun 17, 2026, 09:18',
     tokens: { in: 1700, out: 1140 },
     body: 'Spawned a subagent to document the props/callback/capability contract for the extracted package.',
     tools: [
@@ -115,7 +115,7 @@ const items = [
         id: 't3a',
         kind: 'task',
         name: 'Task',
-        preview: 'docs-writer · document the props/callback contract',
+        preview: 'docs-writer, document the props/callback contract',
         agent: 'docs-writer',
         status: 'completed',
         task: 'Document the props/callback/capability contract',
@@ -202,14 +202,14 @@ export const ToolRenderers = {
         body: 'one turn exercising every built-in tool renderer plus the reused diff.',
         tools: [
           { id: 'x-read', kind: 'read', name: 'Read', preview: 'src/lib/tasks.ts', path: 'src/lib/tasks.ts', lines: '1–20', excerpt: 'export const x = 1\nexport const y = 2' },
-          { id: 'x-grep', kind: 'grep', name: 'Grep', preview: 'rendererFor · src · 4 matches', pattern: 'rendererFor', scope: 'src', glob: '*.ts', matches: 4, results: 'src/canvas/rendererFor.ts:12 export function rendererFor(kind)' },
+          { id: 'x-grep', kind: 'grep', name: 'Grep', preview: 'rendererFor, src, 4 matches', pattern: 'rendererFor', scope: 'src', glob: '*.ts', matches: 4, results: 'src/canvas/rendererFor.ts:12 export function rendererFor(kind)' },
           { id: 'x-edit', kind: 'edit', name: 'Edit', preview: 'src/lib/tasks.ts', path: 'src/lib/tasks.ts', adds: 2, dels: 1, hunk: [
             { sign: 'ctx', a: '1', b: '1', t: 'const a = 1' },
             { sign: 'del', a: '2', b: '', t: 'const b = 2' },
             { sign: 'add', a: '', b: '2', t: 'const b = 3' },
           ] },
           { id: 'x-bash', kind: 'bash', name: 'Bash', preview: 'pnpm test', command: 'pnpm test', stdout: '1 failing\nexit 1', duration: '2.3s', exit: 1 },
-          { id: 'x-task', kind: 'task', name: 'Task', preview: 'docs-writer · write the contract', agent: 'docs-writer', status: 'completed', task: 'write the contract', owner: 'main', promptBody: 'document the props.', result: 'done. 78 lines.' },
+          { id: 'x-task', kind: 'task', name: 'Task', preview: 'docs-writer, write the contract', agent: 'docs-writer', status: 'completed', task: 'write the contract', owner: 'main', promptBody: 'document the props.', result: 'done. 78 lines.' },
           { id: 'x-fetch', kind: 'webfetch', name: 'WebFetch', preview: 'docs.peasant.dev/api', url: 'https://docs.peasant.dev/api', prompt: 'extract the auth flow', result: 'auth uses a bearer token in the Authorization header.' },
           { id: 'x-other', kind: 'mcp', name: 'mcp__server__call', preview: 'mcp__server__call', args: { a: 1, b: 'two' }, result: 'ok' },
         ],
@@ -232,7 +232,7 @@ export const CustomRenderTool = {
   args: {
     renderTool: (tool) => (
       <div className="tl-tool-body">
-        <span className="mono">custom · {tool.kind} · {tool.preview}</span>
+        <span className="mono">custom, {tool.kind}, {tool.preview}</span>
       </div>
     ),
   },

@@ -70,10 +70,10 @@ export default function Changes({
     <div className="gmp-root gmp-changes-root">
       <div className="gmp-changes-head">
         <div>
-          {projectLabel && <span className="label">lines of work · {projectLabel}</span>}
+          {projectLabel && <span className="label">lines of work, {projectLabel}</span>}
           <div className="gmp-changes-sub mono">
-            {defaultBranch ? `default branch ${defaultBranch} · ` : ''}
-            {openCount} open · {mergedCount} merged
+            {defaultBranch ? `default branch ${defaultBranch}, ` : ''}
+            {openCount} open, {mergedCount} merged
           </div>
         </div>
         <button
@@ -180,7 +180,7 @@ export default function Changes({
                     } else onSelectChange?.(change)
                   }}
                 >
-                  <GitMerge size={14} aria-hidden="true" /> reverted · {r.branch} · then undone · {r.when}
+                  <GitMerge size={14} aria-hidden="true" /> reverted, {r.branch}, then undone, {r.when}
                 </button>
               ))}
             </div>
@@ -198,7 +198,7 @@ export default function Changes({
           <span className="gmp-legend-item">
             <span className="cg-dot cg-dot-hollow" style={{ width: 9, height: 9 }} aria-hidden="true" /> no session captured
           </span>
-          <span className="gmp-legend-item gmp-legend-dim">a star marks a recorded session · select a commit to open it</span>
+          <span className="gmp-legend-item gmp-legend-dim">a star marks a recorded session, select a commit to open it</span>
         </div>
       </div>
     </div>

@@ -216,7 +216,7 @@ export default function ChangeDetail({
         <div className="gmp-signals">
           {payload.frictions.map((f, i) => (
             <span key={i} className="gmp-signal">
-              <RotateCw size={14} aria-hidden="true" /> {f.label} · <span className="mono">{f.file}</span> <b className="tnum">{f.count}×</b> across {f.sessions} conversations
+              <RotateCw size={14} aria-hidden="true" /> {f.label}, <span className="mono">{f.file}</span> <b className="tnum">{f.count}×</b> across {f.sessions} conversations
             </span>
           ))}
           {payload.violations.length > 0 && (
@@ -250,7 +250,7 @@ export default function ChangeDetail({
 
       {/* files changed with lazy per-file diffs */}
       <div className="gmp-detail-sec">
-        <div className="sb-head gmp-detail-sechead">files changed · click a path to open its diff</div>
+        <div className="sb-head gmp-detail-sechead">files changed, click a path to open its diff</div>
         <div className="gmp-files">
           {payload.files.map((f) => (
             <div key={f.path} ref={(el) => { fileRefs.current[f.path] = el }}>

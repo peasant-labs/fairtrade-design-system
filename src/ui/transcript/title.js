@@ -70,7 +70,7 @@ export function projectLabel(project) {
  * Compose the session detail h1.
  *
  *   • {project}: {Summary}   — project + meaningful prompt
- *   • {project} · {shortId}  — project, no usable prompt
+ *   • {project}, {shortId}  — project, no usable prompt
  *   • {shortId} — {Summary}  — no project, but a prompt
  *   • Session {shortId}      — nothing useful at all
  *
@@ -91,7 +91,7 @@ export function composeSessionTitle(args) {
 
   let title
   if (proj && summary) title = `${proj}: ${summary}`
-  else if (proj) title = `${proj} · ${shortId}`
+  else if (proj) title = `${proj}, ${shortId}`
   else if (summary) title = `${shortId} — ${summary}`
   else title = `Session ${shortId}`
 

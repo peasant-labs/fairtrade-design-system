@@ -21,4 +21,4 @@ for (const mutation of guards.mutations) {
   }, new RegExp(mutation.error), mutation.name)
   console.log(`PASS ${mutation.name}`)
 }
-console.log(`PASS decision register contract (${register.decisions.filter(row => row.binding === null).length} bindings pending; no completion claimed)`)
+console.log(`PASS decision register contract (${register.decisions.filter(row => row.binding === null).length} bindings pending; real-source audit required separately)`)

@@ -66,10 +66,10 @@ const fmtTokens = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') 
  * @property {string} preview       one-line summary shown while collapsed
  * @property {string} [duration]    e.g. '4.1s' (tabular)
  * @property {number} [exit]        bash exit code; !== 0 surfaces an error pill + tints the dot
- *   kind-specific payload: read{path,lines,excerpt} · grep{pattern,scope,glob,matches,results}
- *   · edit{path,adds,dels,hunk[]} · bash{command,description,stdout,exit,duration}
- *   · webfetch{url,prompt,result} · task{agent,status,task,owner,promptBody,result}
- *   · default{args,result}
+ *   kind-specific payload: read{path,lines,excerpt}, grep{pattern,scope,glob,matches,results}
+ *   edit{path,adds,dels,hunk[]}, bash{command,description,stdout,exit,duration}
+ *   webfetch{url,prompt,result}, task{agent,status,task,owner,promptBody,result}
+ *   default{args,result}
  */
 
 /**
@@ -92,7 +92,7 @@ const fmtTokens = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') 
  *
  * @property {string} [phaseLabel]   (kind: phase) e.g. 'debugging'
  * @property {React.ComponentType<any>} [icon]  lucide phase icon
- * @property {string} [range]        'turns 3–4 · 1 error'
+ * @property {string} [range]        'turns 3–4, 1 error'
  *
  * @property {string} [hash]         (kind: checkpoint) commit hash
  * @property {string} [msg]          commit message

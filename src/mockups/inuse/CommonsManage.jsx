@@ -154,7 +154,7 @@ export function PublishView() {
                 <div className="cmg-step-main">
                   <div className="cmg-step-title">push transcripts</div>
                   <p className="cmg-step-desc">auto-redaction runs before upload. add --dry-run to preview, or --visibility public to override.</p>
-                  <CommandBlock cmd="peasant village push" note="--dry-run preview · --visibility public override" />
+                  <CommandBlock cmd="peasant village push" note="--dry-run preview, --visibility public override" />
                 </div>
               </div>
             </div>
@@ -366,11 +366,11 @@ export function CollectivesView({ data = {}, actions = {} } = {}) {
                   <span className="cmg-col-foot mono">
                     <span className="cmg-col-role">{c.role}</span>
                     {c.since ? <>
-                      <span className="cmg-dot" aria-hidden="true">·</span>
+                      <span className="cmg-dot" aria-hidden="true">,</span>
                       <span>{c.since}</span>
                     </> : null}
-                    {c.members != null ? <><span className="cmg-dot" aria-hidden="true">·</span><span className="tnum">{c.members} members</span></> : null}
-                    {c.transcripts != null ? <><span className="cmg-dot" aria-hidden="true">·</span><span className="tnum">{c.transcripts} transcripts</span></> : null}
+                    {c.members != null ? <><span className="cmg-dot" aria-hidden="true">,</span><span className="tnum">{c.members} members</span></> : null}
+                    {c.transcripts != null ? <><span className="cmg-dot" aria-hidden="true">,</span><span className="tnum">{c.transcripts} transcripts</span></> : null}
                   </span>
                 </span>
                 <ChevronRight size={16} aria-hidden="true" className="cmg-col-chev" />
@@ -1035,7 +1035,7 @@ export function ContributeView() {
         <div className="cmg-contribute-foot">
           <span className="cmg-sel-count mono">
             <span className="tnum">{selected.size}</span> selected
-            {privateCount > 0 ? <span className="cmg-sel-warn"> · <span className="tnum">{privateCount}</span> private</span> : null}
+            {privateCount > 0 ? <span className="cmg-sel-warn">, <span className="tnum">{privateCount}</span> private</span> : null}
           </span>
           <button type="button" className="btn btn-sm btn-primary" disabled={selected.size === 0} onClick={() => setConfirming(true)}>
             <Upload size={14} aria-hidden="true" /> contribute {selected.size} transcript{selected.size === 1 ? '' : 's'}

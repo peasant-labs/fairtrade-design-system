@@ -192,8 +192,8 @@ composeSessionTitleCases:
     id: abcdef1234
     project: /repo/phaze
     promptContent: null
-    expectedTitle: 'phaze · abcdef12'
-    expectedTooltip: 'phaze · abcdef12'
+    expectedTitle: 'phaze, abcdef12'
+    expectedTooltip: 'phaze, abcdef12'
   - name: a prompt with no project uses the short-id emdash form
     id: abcdef1234
     project: null

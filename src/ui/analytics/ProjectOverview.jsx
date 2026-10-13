@@ -224,8 +224,8 @@ export default function ProjectOverview({
               title="weekly active contributors"
               subtitle={
                 effectiveWeeklyView === 'new'
-                  ? `new contributors per week · ${formatNumber(sumValues(weekPoints(data.newContributorVelocity, 'newContributors')))} new`
-                  : `distinct contributors active each week · ${formatNumber(sumValues(weekPoints(data.weeklyActiveContributors, 'contributors')))} active`
+                  ? `new contributors per week, ${formatNumber(sumValues(weekPoints(data.newContributorVelocity, 'newContributors')))} new`
+                  : `distinct contributors active each week, ${formatNumber(sumValues(weekPoints(data.weeklyActiveContributors, 'contributors')))} active`
               }
               aside={
                 <WeeklyMetricToggle
@@ -259,7 +259,7 @@ export default function ProjectOverview({
             <ChartCard
               icon={UserPlus}
               title="new contributors per week"
-              subtitle="first recorded session · by contributor"
+              subtitle="first recorded session, by contributor"
               aside={`${formatNumber(sumValues(weekPoints(data.newContributorVelocity, 'newContributors')))} new`}
             >
               <ChartBar
@@ -301,7 +301,7 @@ export default function ProjectOverview({
           ) : null}
 
           {show.sessionStats ? (
-            <ChartCard icon={Activity} title="typical vs. tail" subtitle="median · p90" aside="per session">
+            <ChartCard icon={Activity} title="typical vs. tail" subtitle="median, p90" aside="per session">
               <TypicalStats data={data.sessionStats} />
             </ChartCard>
           ) : null}
@@ -311,7 +311,7 @@ export default function ProjectOverview({
           <ChartCard
             icon={Users}
             title="contributors"
-            subtitle="rolled up · sorted by session volume"
+            subtitle="rolled up, sorted by session volume"
             aside={`${formatNumber(data.perContributorBreakdown.length)} people`}
             className="gan-tablecard"
           >
@@ -533,7 +533,7 @@ function OutcomeDonut({ data }) {
 
 function TypicalStats({ data }) {
   // Numeric pairs render with MATCHED precision (identical-precision rule:
-  // "8.0 · 19.2", never "8 · 19.2"); token pairs also share one unit.
+  // "8.0, 19.2", never "8, 19.2"); token pairs also share one unit.
   const [tokensMedian, tokensP90] = formatTokenPair(data.totalTokens.median, data.totalTokens.p90)
   const [turnsMedian, turnsP90] = formatNumberPair(data.turnCount.median, data.turnCount.p90)
   const [toolsMedian, toolsP90] = formatNumberPair(data.toolCallCount.median, data.toolCallCount.p90)
@@ -557,7 +557,7 @@ function StatRow({ label, median, p90 }) {
       <span className="gan-typlab">{label}</span>
       <span className="gan-typvals">
         <span className="gan-typmed tnum">{median}</span>
-        <span className="gan-typsep" aria-hidden="true">·</span>
+        <span className="gan-typsep" aria-hidden="true">,</span>
         <span className="gan-typp90 tnum">{p90}</span>
       </span>
     </div>
@@ -569,7 +569,7 @@ function overviewSubtitle(sessions, data) {
     projectHint(sessions, data.totalProjects),
     `${formatNumber(data.totalContributors)} ${plural(data.totalContributors, 'contributor', 'contributors')}`,
     `${formatNumber(data.totalSessions)} ${plural(data.totalSessions, 'session', 'sessions')} across ${formatNumber(data.sessionsPerWeek.length)} ${plural(data.sessionsPerWeek.length, 'week', 'weeks')}`,
-  ].join(' · ')
+  ].join(', ')
 }
 
 function projectHint(sessions, totalProjects) {

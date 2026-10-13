@@ -193,7 +193,7 @@
   margin-bottom: var(--sp-2);
 }
 
-/* category · confidence badge — square, hairline, mono, tabular confidence. */
+/* category/confidence badge — square, hairline, mono, tabular confidence. */
 .dv-badge {
   display: inline-flex;
   align-items: center;

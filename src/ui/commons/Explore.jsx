@@ -260,7 +260,7 @@ function CollectiveCard({ collective, href, onOpen }) {
       </div>
       {collective.description && <p className="cex-desc">{collective.description}</p>}
       <div className="cex-cfoot mono tnum">
-        {collective.memberCount} members · {collective.transcriptCount} transcripts
+        {collective.memberCount} members, {collective.transcriptCount} transcripts
       </div>
     </>
   )
@@ -457,7 +457,7 @@ export default function Explore({
               <VisibilityEye visibility={selectedTranscript.visibility} />
             </div>
             <p className="cex-vdesc">
-              {selectedTranscript.projectName || 'shared transcript'} · {selectedTranscript.owner.displayName || selectedTranscript.owner.githubUsername}
+              {selectedTranscript.projectName || 'shared transcript'}, {selectedTranscript.owner.displayName || selectedTranscript.owner.githubUsername}
             </p>
             <div className="cex-vmeta win-meta">
               <span className="metaitem">

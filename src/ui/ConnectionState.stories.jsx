@@ -61,7 +61,7 @@ export const Pills = {
     expect(canvas.getByText('disconnected')).toBeInTheDocument()
 
     // the local-first note leads the live pill.
-    expect(canvas.getByText('on this computer · no internet')).toBeInTheDocument()
+    expect(canvas.getByText('on this computer, no internet')).toBeInTheDocument()
   },
 }
 

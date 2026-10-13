@@ -98,9 +98,9 @@ export function TimeStrip({
 
   // the slider's value domain is the bucket index (an integer step the AT can
   // announce), exposed as aria-valuenow / min / max. the readout text gives the
-  // human-legible "label · value" so the position never depends on colour.
+  // human-legible "label, value" so the position never depends on colour.
   const readout = current
-    ? `${current.label} · ${Number(current.value) || 0} ${
+    ? `${current.label}, ${Number(current.value) || 0} ${
         (Number(current.value) || 0) === 1 ? 'session' : 'sessions'
       }`
     : 'no activity'
@@ -275,7 +275,7 @@ export function TimeStrip({
       {/* baseline + the accessible, always-visible readout. */}
       <div className="ts2-foot">
         <span className="ts2-foot__total" aria-hidden="true">
-          {total} {total === 1 ? 'session' : 'sessions'} · {count} {count === 1 ? 'bucket' : 'buckets'}
+          {total} {total === 1 ? 'session' : 'sessions'}, {count} {count === 1 ? 'bucket' : 'buckets'}
         </span>
         <output id={readoutId} className="ts2-foot__readout">
           {readout}

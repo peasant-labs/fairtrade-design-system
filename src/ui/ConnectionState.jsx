@@ -20,7 +20,7 @@ import './ConnectionState.css'
                                       word. status is never color-only — the word and the icon both
                                       carry it (no status dot — a color-only dot would break that
                                       rule). copy stays plain and local
-                                      ("on this computer · no internet").
+                                      ("on this computer, no internet").
 
      <DataState ...>                  the discriminator. losing the connection is NOT the same as
                                       having no data: it renders a skeleton while loading, a calm
@@ -44,7 +44,7 @@ const STATUS = {
     tone: 'live',
     icon: HardDrive,
     word: 'live',
-    note: 'on this computer · no internet',
+    note: 'on this computer, no internet',
   },
   connecting: {
     tone: 'connecting',
@@ -115,14 +115,14 @@ function CommandChip({ command }) {
 
 /**
  * ConnectionPill — the small, glanceable connection indicator. a square hairline pill carrying an
- * icon and the word; the note ("on this computer · no internet") sits beside it as quiet mono
+ * icon and the word; the note ("on this computer, no internet") sits beside it as quiet mono
  * chrome. the state never rides on color alone: the icon and the word both encode it (no status
  * dot — a color-only dot would break that rule), and the whole pill is announced via role=status.
  * the per-tone icon color is a tint on top, only where color is welcome.
  *
  * @param {object} props
  * @param {'live'|'connecting'|'disconnected'} [props.status='live'] - the connection state.
- * @param {boolean} [props.showNote=true] - render the trailing "on this computer · no internet"
+ * @param {boolean} [props.showNote=true] - render the trailing "on this computer, no internet"
  *        style note. set false for the tightest, word-only pill.
  * @param {string} [props.className]
  */

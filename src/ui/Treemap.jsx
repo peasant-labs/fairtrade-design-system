@@ -246,7 +246,7 @@ export default function Treemap({
             className={'tm-tile' + (inkFlipped ? ' tm-tile--ink-flip' : '')}
             data-level={level}
             aria-label={`${d.label}: ${value} ${unit}`}
-            title={`${d.label} · ${value} ${unit}`}
+            title={`${d.label}, ${value} ${unit}`}
             onClick={() => onSelect?.(t.id, d)}
             style={{
               left: `${(t.x / LAYOUT_W) * 100}%`,
@@ -262,7 +262,7 @@ export default function Treemap({
       {/* a one-line legend keeps the encoding self-describing: area = size, the
           ramp swatch = the second metric. text-only, so it never relies on hue. */}
       <span className="tm-meta tnum" aria-hidden="true">
-        {data.length} tiles · {total} total
+        {data.length} tiles, {total} total
       </span>
     </div>
   )

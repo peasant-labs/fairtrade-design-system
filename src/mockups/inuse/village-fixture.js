@@ -47,7 +47,7 @@ export const COLLECTIVE = Object.freeze({
   ],
   org: { login: 'acme', linked: 2, total: 14 },
   transcriptCount: 248,
-  memberBreakdown: '1 owner · 7 members · 4 contributors',
+  memberBreakdown: '1 owner, 7 members, 4 contributors',
   transcripts: [
     { id: '3f9c0a17', title: 'Fix flaky ingest test', harness: 'claude-code', turns: 37, author: '@alice-dev', pullRequests: ['#42', '#45', '#51', '#60'], repo: 'acme/ingest-api', when: '12m ago' },
     { id: 'c41a9f20', title: 'Guard empty turns in the digest', harness: 'claude-code', turns: 22, author: '@alice-dev', pullRequests: ['#42'], repo: 'acme/ingest-api', when: '2h ago' },

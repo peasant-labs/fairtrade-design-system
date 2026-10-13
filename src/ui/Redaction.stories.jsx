@@ -99,7 +99,7 @@ export const Default = {
     const standard = canvas.getByRole('button', { name: /standard/i })
     expect(standard).toHaveAttribute('aria-pressed', 'true')
 
-    // each match shows its category · confidence badge.
+    // each match shows its category/confidence badge.
     expect(canvas.getAllByText('CREDENTIAL')).toHaveLength(2)
     expect(canvas.getByText('0.98')).toBeInTheDocument()
     expect(canvas.getByText('PII')).toBeInTheDocument()
@@ -240,7 +240,7 @@ export const NarrowReview = {
   parameters: {
     viewport: {
       defaultViewport: 'review320',
-      options: { review320: { name: 'review · 320', styles: { width: '320px', height: '780px' } } },
+      options: { review320: { name: 'review, 320', styles: { width: '320px', height: '780px' } } },
     },
   },
   args: {

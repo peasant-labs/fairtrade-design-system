@@ -133,7 +133,7 @@ export const HeatmapRow = {
             textTransform: 'lowercase',
           }}
         >
-          commits / day · store/
+          commits / day, store/
         </span>
         <Heatmap
           values={SESSIONS}
@@ -151,7 +151,7 @@ export const HeatmapRow = {
             textTransform: 'lowercase',
           }}
         >
-          pre-baked levels · api/handlers.go
+          pre-baked levels, api/handlers.go
         </span>
         <Heatmap levels={[0, 1, 2, 3, 4, 4, 3, 2, 1, 0]} ariaLabel="coverage trend" />
       </div>

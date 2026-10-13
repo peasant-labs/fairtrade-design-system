@@ -185,6 +185,17 @@ components:
     backgroundColor: '{colors.surface}'
     rounded: '{rounded.none}'
     width: '420px'
+  publish-primary:
+    rounded: '{rounded.none}'
+    height: '36px'
+    touchMinHeight: '44px'
+    typography: '{typography.label-strong}'
+  overlay:
+    shadow: 'var(--glow), 0 24px 60px -20px rgba(0,0,0,.6)'
+  focus-ring:
+    width: '3px'
+    offset: '2px'
+    insetOffset: 'calc(-1 * var(--focus-ring-width))'
 ---
 
 # Design System: fairtrade
@@ -205,7 +216,7 @@ components:
 > - **`PRODUCT.md`** holds who the system serves.
 > - **The in-use demo** (`#inuse`, fairtrade.peasantlabs.org) is the fidelity oracle. When the demo
 >   and this file disagree, match the demo. Record the conflict as a numbered item on the open
->   ratification issue (today #136, so pointers read `(#136/N)`), add one line under "Known
+>   ratification issue, add one line under "Known
 >   conflicts with the demo", and put the pointer right after the conflicting clause in every
 >   sentence that states it (see Status). A ratified change resolves it.
 > - **Status.** A pointer, `(#<issue>/N)`, marks the clause it follows. The conflict covers what
@@ -246,16 +257,19 @@ Seven principles, in priority order:
    on scroll. Reaching a tool never requires hunting.
 4. **Everything is aligned, and left-aligned.** One vertical axis; labels, values and content share
    a left edge; everything sits on the 4/8 grid.
-5. **Glanceable.** Providers, tools, states and nav lead with a real vector icon (#136/22).
+5. **Glanceable.** Providers lead with real brand marks; tools and states use functional icons.
+   Navigation is text-first: section links, tabs and breadcrumbs need no decorative glyph.
 6. **Readable first.** Calm contrast, comfortable leading, nothing readable below 16px. Monospace is
    reserved for code and chrome.
 7. **Maximize usability.** Usability beats flourish at every fork: comfortable targets, obvious
    states, minimal motion, WCAG AA in both themes.
 
 **The Static-First Rule.** Motion is off by default (`--motion-base`). Short transitions
-(`--dur-1` to `--dur-3`) belong inside `@media (prefers-reduced-motion: no-preference)` (#136/17),
+(`--dur-1` to `--dur-3`) belong inside `@media (prefers-reduced-motion: no-preference)`,
 and the reduce block zeroes every animation and transition globally, so nothing moves under
-reduce. Nothing loops, pulses, blinks, auto-plays or auto-scrolls the reading view (#136/7);
+reduce. Skeletons and live dots stay static; nothing pulses, blinks, auto-plays or auto-scrolls
+the reading view. The one looping exception is the named `busy-spin` animation, only while
+work is in progress and only under `prefers-reduced-motion: no-preference`;
 nothing flashes more than three times a second; a live table settles at most one
 change a second; the live indicator is a static filled dot. The one long entrance (`--dur-entrance`) belongs to the
 presentation site's hero, never to a product surface.
@@ -279,16 +293,17 @@ first, with the light value under a `-light` key where it differs.
 - **Amber** (`--amber`): the single accent. Primary actions, the active nav marker, the active tab
   underline, the selected-row marker, links, keywords and the focus ring in the dark theme.
   `--amber-bright` is its hover state and `--amber-dim` its quiet edge (focused input border, the
-  `>` of the active nav marker). `--amber-fill` with `--amber-fill-ink` is the golden fill behind
-  near-black ink on selected, pressed and toggled controls; it is split from `--amber` so the light
-  theme can keep amber text dark enough for AA while toggles still read golden. `--on-amber` is the
+  `>` of the active nav marker). `--amber-fill` with `--amber-fill-ink` remains available for
+  primary emphasis; checked inputs and active toggles use neutral surfaces and ink, not amber fills.
+  The fill tokens are split from `--amber` so light-theme text can stay dark enough for AA. `--on-amber` is the
   ink on an amber primary button.
 
 ### Secondary
 - **Teal** (`--teal`): the user role and informational accents (the user turn rail and label).
 - **Olive** (`--olive`): success and additions; the live dot.
 - **Clay** (`--clay`): danger and deletions; the danger button text.
-- **Mauve** (`--mauve`): system and sub-agent turns (#136/21).
+- **Mauve** (`--mauve`): sub-agent turns. System turns use neutral `--ink-3`.
+  Assistant turns take their provider's accent; user turns stay teal.
 
 These four are the tile and chart accents (`--chart-1` to `--chart-4`). The semantic aliases map
 onto them: `--success` (olive), `--warning` (amber), `--danger` (clay), each with a `-fg` ink for a
@@ -305,7 +320,7 @@ text, rail).
   border.
 
 ### Named Rules
-**The Scarce Amber Rule.** Amber marks at most one focal point per region (#136/4): the primary
+**The Scarce Amber Rule.** Amber marks at most one focal point per region: the primary
 action, the active marker, a link, the focus ring. Large fills stay low-chroma earth; amber is never small body
 text on light and never a large saturated panel. Never combine color emphasis, bold and motion on one
 element.
@@ -339,7 +354,8 @@ fixed-width cut carries the terminal identity in chrome, headings and code; the 
 carries everything a person reads at length.
 
 Both faces load from Google Fonts with a `<link>` in the document head (with `preconnect`), never a
-remote `@import` in CSS (#136/13). Weights: proportional 400 and 700 with italics; mono 400, 500, 600, 700
+remote `@import` in app CSS. The exported `fonts.css` is deprecated for apps and retained only
+for non-app compatibility; apps must use the head links. Weights: proportional 400 and 700 with italics; mono 400, 500, 600, 700
 and italic 400.
 
 ### Hierarchy
@@ -347,16 +363,18 @@ and italic 400.
 - **Headline** (700, `--fs-xl`, `--lh-tight`): page titles.
 - **Title** (700, `--fs-lg`, `--lh-tight`): section and card titles. Headings are at least 20%
   larger than body text, with at least 2em above them and more space above than below
-  (#136/18), and a hairline under section headers. Tight leading is for single-line headings; any
-  text that wraps gets at least 1.4 (#136/19).
+  and a hairline under section headers. Compact toolbar labels are not headings and are demoted
+  to non-heading elements. Tight leading is for single-line headings; any
+  text that wraps gets at least 1.4.
 - **Body** (400, `--fs-body`, `--lh-body`, `--tracking-prose` and `--word-spacing-prose`): prose,
-  descriptions and transcript speech. Paragraphs are separated by at least one line-height (#136/18). The measure is `--measure-prose`,
+  descriptions and transcript speech. Paragraphs are separated by at least one line-height. The measure is `--measure-prose`,
   and transcript reading panes use `--measure-read`: about 45 to 66 characters a line, never beyond
-  about 80 (#136/11). Text is left-aligned in a single column and never justified.
+  about 80. The tokens are probe-verified in the body face with prose tracking and word spacing;
+  their nominal `ch` values are not character-count guarantees. Text is left-aligned in a single column and never justified.
 - **Label** (400 to 600, `--fs-label`, mono, letter-spacing 0): chrome. Nav, buttons, chips, tabs,
-  table headers, metadata (#136/3).
+  table headers, metadata labels.
 - **Code** (400, `--fs-body`, mono, `--lh-mono`, letter-spacing 0): code, logs, IDs and tool output
-  (#136/3), each in its own horizontal scroller, never capped by the prose measure.
+  each in its own horizontal scroller, never capped by the prose measure.
 
 The presentation site also uses a locked three-tier heading ladder (`--fs-group`, `--fs-section`,
 `--fs-sub`) that does not drift down the page.
@@ -373,16 +391,16 @@ regions. Map focus and folder changes share one status region; settings views ca
 
 ### Named Rules
 **The 16px Floor Rule.** Nothing a person reads drops below 16px (`--fs-min`): table cells, code,
-log lines, tooltips and metadata included (#136/3). Chrome labels are mono 14 (`--fs-label`,
-#136/3). #130 inventories the sizes below the floor. Gain density
+log lines, tooltips and data values included. Chrome labels are mono 14 (`--fs-label`).
+`--fs-micro` is retired; no smaller-type exception exists. Gain density
 through row height and padding, never smaller glyphs.
 
 **The Mono Is Chrome Rule.** Mono is for code, IDs, timecodes, tabular data and chrome. Paragraphs
-and transcript speech are never set in mono (#136/6). Prose gets tracking, word spacing, 1.5 leading and a
+and transcript speech are never set in mono. Prose gets tracking, word spacing, 1.5 leading and a
 capped measure; mono gets letter-spacing 0 so columns stay aligned.
 
 **The Lowercase Chrome Rule.** UI chrome is all lowercase (nav, labels, buttons, headings, tabs,
-table headers) (#136/14). User content is never lowercased: names, transcript text, collective names, code,
+table headers). User content is never lowercased: names, transcript text, collective names, code,
 hashes and data values keep their case. Multi-line literal copy (error bodies, help, tooltips) may
 use sentence case so sentences stay parseable. Never `text-transform: uppercase` on multi-word text.
 
@@ -392,8 +410,8 @@ DataTable columns can align on the decimal separator without changing the values
 
 **The Bold, Not Italic Rule.** Emphasis is weight: `em` and `i` render at 600, upright. Underline is
 reserved for links. In prose, links carry a dotted underline (solid on hover and focus) so they
-never rely on color alone; chrome links stay clean (#136/23). Bold earns a faint amber glow in the dark theme
-only, on single accent words, never on multi-line text (#136/28).
+never rely on color alone; chrome links stay clean. A faint amber text glow belongs only to
+single accent words explicitly marked `.hl` in the dark theme, never to generic bold spans or multi-line text.
 
 ## Layout
 
@@ -405,7 +423,7 @@ Row heights come in three density tokens (`--row-h-compact`, `--row-h-standard`,
 
 Breakpoints are one scale (`--bp-sm`, `--bp-md`, `--bp-lg`, `--bp-xl`): phone below 480, large phone
 480 to 767, tablet 768 to 1023, laptop 1024 to 1439, desktop from 1440. Desktop is the canonical
-layout and narrower widths adapt down with `max-width` queries (#136/26). Mobile complements desktop: it stays
+layout and narrower widths adapt down with `max-width` queries. Mobile complements desktop: it stays
 overflow-free, legible and tappable from 320px up (WCAG 1.4.10 reflow at 400% zoom), and the desktop
 layout is never compromised to serve it. Each table and code block gets its own `overflow-x: auto`.
 
@@ -420,17 +438,20 @@ rest go under an overflow menu. Table rows default to one kebab, not a row of bu
 stable breadcrumb, a sticky context header naming the current transcript or dataset, a definite
 active nav state, position indicators in long flows ("turn 312 of 1,840"), and anchor-linkable rows.
 
-**The Progressive Disclosure Rule.** Lead with a summary and defer detail: collapsed turns and tool
-calls, headline metrics with drill-down (#136/27). Calm by default; the user opts into density
-(#136/5).
+**The Progressive Disclosure Rule.** Transcript turns start expanded and remain collapsible;
+tool details start collapsed. Headline metrics expose drill-down details. The transcript's
+tool-type filter subgroup starts collapsed and persists the user's disclosure choice.
+Calm by default; the user opts into density.
 
 **The Target Rule.** Every interactive box is at least 24 by 24 (`--target-min`); dense controls
-may instead meet the WCAG 2.5.8 spacing exception. Primary actions aim for 44
-(`--target-comfortable`, #136/8). The glyph stays at icon size; the box is what grows.
+may instead meet the WCAG 2.5.8 spacing exception. Primary publish actions use 36px on desktop
+(`--control-h`) and 44px for coarse pointers (`--target-comfortable`); the header publish action
+also uses the desktop control height, never the 28px small-control height. The glyph stays at icon size; the box is what grows.
 
 **The Text Spacing Rule.** A user stylesheet with WCAG 1.4.12 spacing (line-height 1.5, paragraph
 spacing 2x, letter 0.12em, word 0.16em) clips nothing: no fixed px heights on text containers, and
-no `overflow: hidden` or truncation of transcript lines (#136/20).
+message content never truncates. Primary labels and titles wrap; paths and prompt previews
+may ellipsize only with their complete text available through a title or detail view.
 
 **The Help In Place Rule.** Help at the point of use (column headers, metrics, jargon) opens on
 hover and on keyboard focus (`Tooltip`, `Term`), and `Term` also opens on tap.
@@ -445,20 +466,20 @@ Flat by default. Depth comes from tonal layering (canvas, then surface, then `--
 `--surface-elev`) and from hairline and functional borders (`--bd`, `--bd-strong`), not from
 shadows. Every region with running text or data sits on one flat fill: no gradients, patterns,
 scanlines or textures behind reading content. Overlays, sticky headers and command palettes use
-opaque surfaces (#136/16).
+opaque surfaces.
 
 ### Shadow Vocabulary
-- **Amber glow** (`--glow`, `--glow-soft`): a faint text glow on accent words (`.hl`) and on bold
-  text in transcript bodies (#136/28), and a faint halo on floating panels and the selected graph node. Dark
+- **Amber glow** (`--glow`, `--glow-soft`): a faint text glow only on accent words (`.hl`),
+  and a faint halo on floating panels and the selected graph node. Dark
   theme only: the light theme sets both to `none`.
 - **Overlay lift**: in the dark theme, dialogs, floating menus and popovers separate from the page
-  with the glow plus one soft drop shadow (#136/10).
-- **Selection inset**: an inset 2 to 3px amber bar (#136/15; `box-shadow: inset 2px 0 0 var(--amber)`)
+  with the one `--overlay-shadow` token; the light theme sets it to `none`.
+- **Selection inset**: an inset `--stroke-emphasis` (2px) amber bar
   marks the active turn, outline item or palette row without shifting layout.
 
 ### Named Rules
-**The Opaque Chrome Rule.** No glass or blur in the base UI (#136/16). Any `backdrop-filter` sits behind
-`prefers-reduced-transparency: no-preference` with an opaque fallback (#136/16). Under
+**The Opaque Chrome Rule.** No glass or blur in the base UI. Any `backdrop-filter` sits behind
+`prefers-reduced-transparency: no-preference` with an opaque fallback. Under
 `prefers-reduced-transparency: reduce`, nothing blurs and the sticky chrome is opaque.
 
 **The Texture Stays Out Rule.** ASCII texture lives on non-text chrome and display surfaces only
@@ -471,7 +492,9 @@ Square and editorial. Radius is 0 on every box: cards, controls, chips, tags, in
 menus, tooltips, graph nodes. The only curves are true circles whose shape is the meaning: status
 dots, radio marks and busy spinners. Borders are 1px (`--stroke-hairline`); 2px
 (`--stroke-emphasis`) is reserved for active and selected emphasis such as the tab underline and
-role rails (#136/15). The focus ring is a 3px outline offset 2px (#136/25).
+role rails. The focus ring uses `--focus-ring-width` (3px) and `--focus-ring-offset` (2px).
+The one inset variant uses `--focus-ring-offset-inset` (-3px), only where an outside ring
+would be clipped or collide with a neighbour; it keeps the same width and color.
 
 ## Components
 
@@ -515,8 +538,9 @@ render the same system.
 
 ### Navigation
 - **Top nav:** fixed and sticky with the brand stalk, mono 14 lowercase links in `--ink-3`, the
-  active link in amber led by the one permitted `>` marker (#136/2, in `--amber-dim`), a search affordance
-  (cmd-k), the storybook link and the theme toggle.
+  active link in amber led by the one permitted `>` marker (in `--amber-dim`), a search affordance
+  (cmd-k), the storybook link and the theme toggle. Selection toggles use a selected state and
+  `aria-pressed`, never a decorative `>` prefix.
 - **Tabs:** mono lowercase, `--ink-3` at rest, the active tab in `--ink` with a 2px amber underline;
   counts are tabular in `--ink-4`.
 - **Trails:** breadcrumb, step indicator, tabs and pagination; orientation lives here.
@@ -532,8 +556,8 @@ render the same system.
 The reading view both apps embed (`TranscriptViewer`, fed only by `adaptTranscript`). A header whose
 title and meta chips leave once the trace scrolls while its breadcrumb and actions row stays pinned,
 with the tab strip, the condensed scrubber header (provider, model, position) and the turns bar.
-Role-accented turns, each led by an icon: user in teal, assistant in amber, sub-agents in mauve
-(#136/21). Collapsible tool-call rows with tool icons, thinking blocks, unified diffs (rail, gutter,
+Role-accented turns, each led by an icon: user in teal, assistant in its provider's accent,
+sub-agents in mauve, system in `--ink-3`. Collapsible tool-call rows with tool icons, thinking blocks, unified diffs (rail, gutter,
 sign) and code blocks. Syntax highlighting renders structured output only
 (`codeToHast` or `codeToTokens` through React); raw highlighter HTML is never injected. Token
 evidence is disclosed by owner and scope. Recorded costs stay strings, labeled as harness estimates,
@@ -547,7 +571,8 @@ activity time strip.
 
 ### Dialogs and overlays
 A scrim over a bordered `--surface` card with header, body and footer; the primary action sits
-bottom-right. Only explicit destructive confirmations may trap focus (#136/9); routine messages go
+bottom-right. User-opened modals, including publish, trap focus under the APG dialog pattern
+and restore focus to the opener on close. Routine messages go
 to one polite live region, never a focus-stealing toast. Destructive actions confirm or undo.
 
 ### Forms and empty states
@@ -595,8 +620,8 @@ The data families are the data table, pagination, accordion, timeline, toast and
 
 ### Icons and brand marks
 - **Functional icons** are Lucide only (`lucide-react`), one stroke family at `--ic-sm`, `--ic-md`
-  or `--ic-lg` (#136/24). Tools, states, roles, breadcrumbs, controls and nav all lead with a real glyph
-  (#136/22).
+  or `--ic-lg`. Tools, states and roles use functional icons; navigation is text-first.
+  Company/provider identities, including the `github` account row, always lead with a real brand mark.
 - **Brand marks:** when the UI names a company or provider, it leads with that provider's real mark
   (`<BrandMark name="claude" />`; aliases resolve anthropic to claude, google to gemini, codex to
   openai), never a generic stand-in. Marks are single-color via `currentColor`, sized off the icon
@@ -621,12 +646,12 @@ vector chrome and ASCII never mix on one element.
 - **Do** reference a token for every color and size (`var(--amber)`, `var(--sp-4)`); tokens live
   in `src/index.css` and ship as `@peasant-labs/fairtrade/tokens.css`.
 - **Do** keep both themes at WCAG AA and re-theme only by swapping tokens on `[data-theme]`.
-- **Do** keep reading text at 16px or more and chrome at mono 14 (#136/3).
-- **Do** write chrome in lowercase (#136/14) and keep user content in its own case.
+- **Do** keep reading text at 16px or more and chrome at mono 14.
+- **Do** write chrome in lowercase and keep user content in its own case.
 - **Do** use tabular numbers on every count, duration and numeric column.
 - **Do** lead every provider name with its `<BrandMark>`.
-- **Do** keep 1.5 prose leading, 24px targets, the global `:focus-visible` ring (3px, offset 2px,
-  #136/25) and a reduced-motion path for anything that moves.
+- **Do** keep 1.5 prose leading, 24px targets, the standard or sanctioned inset `:focus-visible`
+  ring and a reduced-motion path for anything that moves.
 - **Do** land a new visual pattern here, in the demo first, before a consuming app uses it.
 - **Do** keep chrome copy plain, literal and short, with verb and object on buttons
   ("export transcript", not "ok"); errors say what happened and what to do.
@@ -635,62 +660,24 @@ vector chrome and ASCII never mix on one element.
 - **Don't** hardcode a hex or px value outside the token blocks.
 - **Don't** round a box corner.
 - **Don't** use amber for large fills, small body text on light, chart gridlines or more than one
-  focal point per region (#136/4).
+  focal point per region.
 - **Don't** carry meaning by color alone.
 - **Don't** set `outline: none` without a stronger replacement, justify text, loop an animation
-  (#136/7) or add motion outside `prefers-reduced-motion: no-preference` (#136/17).
+  other than the named busy-spinner exception, or add motion outside `prefers-reduced-motion: no-preference`.
 - **Don't** put glass, blur, gradients or texture behind reading content.
-- **Don't** set prose or transcript speech in mono (#136/6), or italicize for emphasis.
-- **Don't** load fonts with a remote `@import`; use the `<link>` form (#136/13).
+- **Don't** set prose or transcript speech in mono, or italicize for emphasis.
+- **Don't** load app fonts with a remote `@import`; use the `<link>` form.
 - **Don't** inject highlighter HTML; use structured Shiki output rendered through React.
-- **Don't** use em dashes, middot separators (#136/1) or buzzwords (delve, leverage, robust,
+- **Don't** use em dashes, middot separators or buzzwords (delve, leverage, robust,
   seamless, crucial, elevate, foster, tapestry, landscape, journey, ultimately), or "not X, but Y"
   constructions.
 - **Don't** decorate chrome as a fake terminal: no `//` comment markers, no `>` prompt prefixes on
-  titles, labels or bullets (the active nav marker is the one `>`, #136/2), no eyebrow or kicker labels above
+  titles, labels or bullets (the active nav marker is the one `>`), no eyebrow or kicker labels above
   a heading, no decorative captions under imagery. A section is a title and at most one subtitle.
   Bullets use a plain `-` or a small box marker in `--ink-4` or `--ink-5`. Form-field labels, control
   sub-labels and section titles are functional, not eyebrows.
 
 ### Known conflicts with the demo
-Each line is a place where the in-use demo and this record disagree, labelled with its item on
-#136, which tracks the decisions (#130 tracks the type sizes). Until an item is ratified, consumers
-match the demo; the Status note above sets the scope. The pointer sits right after the conflicting
-clause, in every sentence that states it. The PR
-that resolves an item, whichever way it goes, deletes its line here and every pointer to it (find
-them with `grep -nw`), and amends every file that restates the rule. Demo and library fixes filed as
-their own issues are tracked there, not here.
-
-- **#136/1, middots**: the demo uses middot separators in meta rows.
-- **#136/2, `>` markers**: the analytics toggles and the site rail use a `>` other than the active nav marker.
-- **#136/3, type size**: `--fs-micro` and literal sizes below 14px sit under the 16px floor and mono-14 chrome.
-- **#136/4, amber salience**: the transcript shows many amber fills above the fold.
-- **#136/5, density**: the transcript filter rail opens dense by default.
-- **#136/6, prose in mono**: some village notes set sentences in mono.
-- **#136/7, looping motion**: a shimmer skeleton, a pulse and busy spinners loop while shown.
-- **#136/8, primary targets**: primary actions use `--control-h`, not `--target-comfortable`.
-- **#136/9, focus trap**: the publish popup, a modal the user opened, traps focus.
-- **#136/10, overlay shadows**: the drop shadow is a literal value and is absent in the light theme.
-- **#136/11, prose measure**: `--measure-prose` holds more characters than the rule intends.
-- **#136/13, font loading**: the exported `fonts.css` uses a remote `@import`.
-- **#136/14, uppercase**: one uppercase danger word.
-- **#136/15, stripe widths**: some rails are wider than `--stroke-emphasis`.
-- **#136/16, blur by default**: the nav, the transcript's sticky header and phase bars, and the
-  scrims blur unless reduced transparency is set.
-- **#136/17, transitions outside the motion query**: some older rules declare transitions outside
-  `prefers-reduced-motion: no-preference`.
-- **#136/18, paragraph and heading spacing**: transcript markdown and the in-use headings sit closer
-  than the rule.
-- **#136/19, leading on wrapping headings**: headings keep `--lh-tight` when they wrap.
-- **#136/20, truncation**: the transcript clips its title, prompt previews and tool paths.
-- **#136/21, role accents**: the assistant takes its provider's accent, and system turns render in
-  `--ink-3`.
-- **#136/22, glyphs on navigation**: the section nav, tabs, breadcrumbs and top-nav links are text only.
-- **#136/23, link underlines in chrome**: breadcrumb links and home session titles carry the dotted
-  underline.
-- **#136/24, icon sizes**: badges, chips, legends and gutters render Lucide icons at 9 to 13px.
-- **#136/25, focus ring offset**: segmented and tight controls draw the ring inset or at 1px.
-- **#136/26, query direction**: four rules adapt with `min-width` queries.
-- **#136/27, progressive disclosure**: turns never collapse, the demo opens some tool calls on load,
-  and the analytics tiles have no drill-down.
-- **#136/28, glow scope**: every bold span in a transcript body glows, including multi-word ones.
+None currently registered. Resolved decisions and their source/record evidence are checked by
+`pnpm audit:design-decisions`. A future conflict must be recorded and ratified before changing
+the binding rule; do not silently promote a demo defect into policy.

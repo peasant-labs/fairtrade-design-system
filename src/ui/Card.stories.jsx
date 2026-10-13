@@ -26,8 +26,8 @@ const Thumb = ({ label = 'claude-code' }) => (
     }}
   >
     {`░▒▓█ ${label} █▓▒░
-▓▒░·   transcript   ·░▒▓
-░·  ▟▙ ▟▙ ▟▙ ▟▙ ▟▙  ·░`}
+▓▒░    transcript    ░▒▓
+░   ▟▙ ▟▙ ▟▙ ▟▙ ▟▙   ░`}
   </pre>
 )
 

@@ -231,7 +231,7 @@ try {
       assert.equal(anchorCount(), fixture.expectedAnchorCounts.expanded, 'expanded anchors are the mounted checkboxes')
       for (const row of memberRows) {
         assert.ok(row.querySelector('.helper-thread-facts'), 'open member states its facts line')
-        assert.ok(row.querySelector('.helper-thread-sep'), 'facts are middot separated')
+        assert.equal(row.querySelector('.helper-thread-sep')?.textContent, ',', 'facts are comma separated')
         assert.equal(row.querySelector('.helper-thread-marker'), null, 'no inset marker on a member row')
         assert.equal(row.closest('li.helper-tree-row') !== null, true, 'each member is one tree row')
         assert.ok(row.textContent.includes(`status for ${row.dataset.threadId}`), 'route data retained')

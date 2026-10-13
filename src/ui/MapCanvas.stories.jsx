@@ -10,7 +10,7 @@ import { frame } from './story-frame.jsx'
    the theme toolbar flips data-theme. four orthogonal channels: WIDTH ∝ loc, the
    monochrome FILL ∝ coverage 0..4, the ICON for folder/file, and amber selection +
    marker / clay violation badge — so nothing reads on colour alone. Default's play()
-   asserts a node is a real button with its "<leaf> — <kind> · coverage N of 4" label,
+   asserts a node is a real button with its "<leaf> — <kind>, coverage N of 4" label,
    that clicking selects it, and that arrow keys then move the roving focus. */
 
 export default {
@@ -105,7 +105,7 @@ export const Default = {
     // at folders grain the files render; the biggest-loc file is a real button whose
     // accessible name carries identity + kind + coverage (never colour-only).
     const stream = await canvas.findByRole('button', {
-      name: /stream\.go: file · coverage 3 of 4/i,
+      name: /stream\.go: file, coverage 3 of 4/i,
     })
     await expect(stream).toBeInTheDocument()
 

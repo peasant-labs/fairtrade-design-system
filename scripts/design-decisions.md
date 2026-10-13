@@ -3,20 +3,21 @@
 `pnpm test:design-decisions` validates the named register contract and runs the
 fixture mutations against the same assertions used by the audit.
 `pnpm audit:design-decisions` reads every file recursively under `src/ui` and
-`src/mockups`, including stories and documentation, and refuses any literal U+00B7.
+`src/mockups`, including stories and documentation, and refuses literal U+00B7,
+HTML entities and escaped Unicode forms that emit the same separator.
 The allowed set is empty. It also requires every decision binding to be resolved.
 
-The audit is intentionally **not in a shared build or CI chain yet**. Existing
-source still contains middots, and the record still contains unresolved pointers.
-The final source sweep, after surface edits freeze, must remove those separators,
-complete the bindings, run the audit green, and then enable it in the shared gates.
-The contract tests passing alone do not mean reconciliation is complete.
+Both commands run in the library build's shared test gate. The source sweep and
+record reconciliation have landed; all bindings describe existing implementation.
+The contract tests passing alone do not mean reconciliation is complete: the
+real-source audit must also pass.
 
 ## Register binding
 
 `scripts/testdata/design-decisions.yaml` records approved dispositions, not done
 states. `binding: null` means reconciliation has not been verified, even if the
-implementation already exists. No row currently claims completion.
+implementation already exists. Resolved bindings identify source excerpts and
+record amendments, not release or merge approval.
 
 For each verified resolution replace null with:
 
@@ -55,12 +56,13 @@ absence. This does not waive code, amendment or pointer-remnant checks.
 - **Concurrency:** reads only; run against a frozen tree for final proof so another
   writer cannot change source during the scan.
 - **CI parity:** both commands run from a clean checkout with the pinned Node/pnpm
-  toolchain and installed yaml dependency; the audit is not currently required CI.
+  toolchain and installed yaml dependency; both commands are required by `build:lib` in CI.
 - **Evidence:** assertions name unresolved decisions or offending file/line locations.
   This is source-policy evidence, not screenshots or rendered interaction proof.
 - **Mutation:** `planted-middot` adds a literal separator and must fail with
   `middot forbidden`; record mutations refuse a null binding, missing code excerpt
-  and a retained pointer in a noncanonical restating file.
+  and a retained pointer in a noncanonical restating file. Encoded and escaped
+  separator mutations protect against hiding a rendered middot from the scan.
 - **Exit condition:** retain this direct fixture/source layer, with no promotion to
   a browser harness; simplify if an existing source lint covers the same full trees
   and the register's evidence/remnant checks.

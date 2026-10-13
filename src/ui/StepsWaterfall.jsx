@@ -103,7 +103,7 @@ export default function StepsWaterfall({
       <div className="swf-head">
         <span className="swf-head-meta">
           <span className="swf-head-total tnum">{formatDuration(total)}</span>
-          <span className="swf-head-sep" aria-hidden="true">·</span>
+          <span className="swf-head-sep" aria-hidden="true">,</span>
           <span className="swf-head-count tnum">
             {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
           </span>
