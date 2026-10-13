@@ -37,7 +37,7 @@ function initial() {
   const bar = params.get('bar')
   return {
     popup: PUBLISH_DIALOG_STATES.includes(popup) ? popup : null,
-    bar: PUBLISH_STATES.includes(bar) ? bar : 'not-published',
+    bar: popup === 'done' || popup === 'waits-approval' ? 'published' : popup === 'publishing' ? 'publishing' : PUBLISH_STATES.includes(bar) ? bar : 'not-published',
   }
 }
 

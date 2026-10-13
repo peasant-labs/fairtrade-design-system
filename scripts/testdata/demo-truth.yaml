@@ -1,0 +1,97 @@
+cases:
+  - name: published copies are transcripts
+    module: /src/mockups/inuse/CommonsPullRequest.jsx
+    component: PullRequestView
+    probes:
+      - {selector: '.pd-label', text: transcripts, absent: sessions}
+      - {selector: '.pd-split-list', count: 1}
+      - {selector: '.pd-split-hint', text: transcripts, absent: sessions}
+      - {selector: '.pd-village', text: open pull request digest, absent: view on village}
+  - name: analytics uses session vocabulary
+    module: /src/mockups/inuse/GraphAnalytics.jsx
+    component: AnalyticsView
+    probes:
+      - {selector: '.gan-root', text: sessions linked to commits, absent: acquisition signal}
+      - {selector: '.gan-root', text: new sessions, absent: returning rate}
+      - {selector: '.gan-root', text: weeks with sessions, absent: longest streak}
+      - {selector: '.gan-foot', count: 0}
+  - name: transcript counts use lowercase k
+    module: /src/mockups/inuse/TranscriptApp.jsx
+    component: default
+    probes:
+      - {selector: '.txn-app', text: 18.4k tokens}
+  - name: village counts use lowercase k
+    module: /src/mockups/inuse/CommonsExplore.jsx
+    component: TranscriptDetailView
+    probes:
+      - {selector: '.cex-detail', text: 412.3k tokens, absent: 412.3K}
+  - name: dates use lowercase month and year
+    module: /src/ui/commons/Explore.jsx
+    component: default
+    probes:
+      - {selector: '.cex-root', text: 'jun 14, 2026', absent: 'Jun 14'}
+  - name: one overflow session is singular
+    module: /src/ui/graph/SessionOverflowDisclosure.jsx
+    component: default
+    props:
+      commitHash: aabbcc
+      expanded: false
+      overflow: [{sessionId: demo-session, title: Recorded session}]
+    probes:
+      - {selector: '.tlp-overflow-toggle', text: '+1 more session', absent: '+1 more sessions'}
+  - name: returning provider has its mark
+    module: /src/mockups/inuse/CommonsExplore.jsx
+    component: TranscriptDetailView
+    probes:
+      - {selector: '.subtask-foot', text: returned to claude}
+      - {selector: '.subtask-foot .brand', count: 1}
+  - name: github account has its mark
+    module: /src/mockups/inuse/CommonsPages.jsx
+    component: AccountSettingsView
+    probes:
+      - {selector: '.srow-label .brand', count: 1}
+  - name: offline home is stale and inert
+    module: /src/mockups/inuse/GraphApp.jsx
+    component: default
+    query: '?section=home&local=offline'
+    probes:
+      - {selector: '.iu-page', text: last loaded 14:32:05}
+      - {selector: '.iu-page input, .iu-page select, .iu-page button', disabled: true}
+      - {selector: '.tbl-wrap', count: 1}
+  - name: settings describes enabled and blocked rules
+    module: /src/mockups/inuse/LocalHome.jsx
+    component: SettingsView
+    probes:
+      - {selector: '.iu-page', absent: it never publishes on its own.}
+      - {selector: '.iu-page', text: except acme/worker}
+      - {selector: '.iu-page', text: automatic publishing is controlled by the folder rules below.}
+  - name: transcript turn totals and phases agree
+    module: /src/mockups/inuse/TranscriptApp.jsx
+    component: default
+    probes:
+      - {selector: '.txn-app', text: 9 turns, absent: 8 turns}
+      - {selector: '.rng', text: turns 1–3, absent: turns 0–2}
+  - name: changes legend is literal
+    module: /src/mockups/inuse/GraphMap.jsx
+    component: ChangesView
+    probes:
+      - {selector: '.gmp-changes-legend', text: a star marks a recorded session, absent: flies a sparkle}
+      - {selector: '.gmp-changes-legend .cg-dot-filled .cg-spark', count: 1}
+  - name: local transcript replaces archived app name
+    module: /src/mockups/inuse/InUseShell.jsx
+    component: default
+    probes:
+      - {selector: 'div', absent: transcript-browser}
+      - {selector: 'div', text: peasant transcript}
+  - name: village title follows transcript fixture
+    module: /src/mockups/inuse/CommonsApp.jsx
+    component: default
+    query: '?commons=transcript-detail'
+    probes:
+      - {selector: '.txn-app', text: Port the transcript canvas into the shared package, absent: Fix flaky ingest test}
+  - name: direct publish success also sets published bar
+    module: /src/mockups/inuse/TranscriptApp.jsx
+    component: default
+    query: '?publish=done'
+    probes:
+      - {selector: '.pub-bar', text: published, absent: not published}

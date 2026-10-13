@@ -30,7 +30,7 @@ const HARNESS = 'claude-code'
 const ROOT_MODEL = 'anthropic/claude-fable-5'
 const CHANGED_MODEL = 'anthropic/claude-opus-4-8'
 
-/* ---- the recorded session, baked in (sess_demo_0001 / transcript-browser) ---- */
+/* ---- the recorded session, baked in (sess_demo_0001 / fairtrade) ---- */
 const TURNS = [
   {
     id: 0,
@@ -547,9 +547,9 @@ function buildWire() {
     totalTokens: 18400,
     tokensIn: 12200,
     tokensOut: 6200,
-    turnCount: 8,
+    turnCount: TURNS.length,
     toolCallCount: 5,
-    project: 'transcript-browser',
+    project: 'fairtrade-design-system',
     model: ROOT_MODEL,
     outcome: 'resolved',
     turns: TURNS.map(turnToWire),

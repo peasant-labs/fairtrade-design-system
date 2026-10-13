@@ -29,7 +29,6 @@ export function AnalyticsView({ theme }) {
       title="project overview"
       subtitle="peasant-labs/peasant · 3 contributors · 8 sessions across 3 weeks"
       contributorLimit={10}
-      footnote="every tile and every chart paints from design tokens, so the whole dashboard re-themes light/dark live. hover any bar, slice, point or area to read its value."
     />
   )
 }
