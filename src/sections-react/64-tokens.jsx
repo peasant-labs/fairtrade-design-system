@@ -120,7 +120,7 @@ export function TokensSection() {
               <tr><td className="dt-name">--motion-base</td><td className="dt-val tnum" style={{ width: '1%', whiteSpace: 'nowrap' }}>0ms <CopyBtn token="--motion-base" style={{ marginLeft: 'var(--sp-2)' }} /></td><td className="dt-role">static-first default</td></tr>
               <tr><td className="dt-name">--dur-1 / --dur-2 / --dur-3</td><td className="dt-val tnum" style={{ width: '1%', whiteSpace: 'nowrap' }}>120 / 160 / 200ms <CopyBtn token="--dur-2" style={{ marginLeft: 'var(--sp-2)' }} /></td><td className="dt-role">interaction transitions (no-preference only)</td></tr>
               <tr><td className="dt-name">--dur-entrance</td><td className="dt-val tnum" style={{ width: '1%', whiteSpace: 'nowrap' }}>900ms <CopyBtn token="--dur-entrance" style={{ marginLeft: 'var(--sp-2)' }} /></td><td className="dt-role">one-time hero + reveal; off under reduced-motion</td></tr>
-              <tr><td className="dt-name">--ease-out / --ease-spring</td><td className="dt-val" style={{ width: '1%', whiteSpace: 'nowrap' }}>cubic-bezier <CopyBtn token="--ease-out" style={{ marginLeft: 'var(--sp-2)' }} /></td><td className="dt-role">entrance easing curves</td></tr>
+              <tr><td className="dt-name">--ease-out / --ease-spring</td><td className="dt-val" style={{ width: '1%', whiteSpace: 'nowrap' }}>cubic-bezier(.16, 1, .3, 1) <CopyBtn token="--ease-out" style={{ marginLeft: 'var(--sp-2)' }} /></td><td className="dt-role">entrance easing without overshoot</td></tr>
             </tbody>
           </table>
         </div>

@@ -119,7 +119,7 @@
   --z-sticky: 30; --z-nav: 40; --z-dropdown: 50; --z-dialog: 60; --z-toast: 70; --z-tooltip: 80;
   /* motion: interaction durations stay <=200ms; entrance is a one-time exception (see motion section) */
   --dur-1: 120ms; --dur-2: 160ms; --dur-3: 200ms; --dur-entrance: 900ms;
-  --ease-standard: cubic-bezier(.2, 0, 0, 1); --ease-out: cubic-bezier(.16, 1, .3, 1); --ease-spring: cubic-bezier(.2, .82, .2, 1.12);
+  --ease-standard: cubic-bezier(.2, 0, 0, 1); --ease-out: cubic-bezier(.16, 1, .3, 1); --ease-spring: cubic-bezier(.16, 1, .3, 1);
 }
 [data-theme="light"] {
   --canvas: #fbfaf7; --surface: #fdfcfa; --surface-2: #f4f2ec; --surface-hover: #edeae2; --surface-elev: #efece4;

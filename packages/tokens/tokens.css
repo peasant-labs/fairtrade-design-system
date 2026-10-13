@@ -137,7 +137,7 @@
   --dur-entrance: 900ms;
   --ease-standard: cubic-bezier(.2, 0, 0, 1);
   --ease-out: cubic-bezier(.16, 1, .3, 1);
-  --ease-spring: cubic-bezier(.2, .82, .2, 1.12);
+  --ease-spring: cubic-bezier(.16, 1, .3, 1);
 }
 [data-theme="light"] {
   --canvas: #fbfaf7;
