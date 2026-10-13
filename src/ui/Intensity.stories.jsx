@@ -99,7 +99,7 @@ export const Nodes = {
     await expect(sel).toHaveAttribute('aria-pressed', 'true')
     // violation count surfaces in the accessible name, not colour alone.
     await expect(
-      canvas.getByRole('button', { name: /auth\/middleware\.go .* 2 violations/ }),
+      canvas.getByRole('button', { name: 'auth/middleware.go, coverage 1 of 4, 240 loc, 2 violations' }),
     ).toBeInTheDocument()
   },
 }
