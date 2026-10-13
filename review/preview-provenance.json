@@ -1,0 +1,70 @@
+{
+  "repository": "peasant-labs/fairtrade-design-system",
+  "branch": "fairtrade-release--disclosure-action-hint",
+  "head": "188898d8ac16f154adabf4589c7b7cd6746617d3",
+  "reviewedSource": "df89ed0d10cb61a09fc0958c3df40a0befdc2114",
+  "evidenceScope": "Mounted built Storybook component library preview only; not Peasant production, full-shell or SxS proof.",
+  "captureCommand": "CHROME_PATH=<system Chrome> pnpm exec node scripts/sbshot.mjs both <output> sessiongroupdisclosure",
+  "source": {
+    "src/ui/SessionGroupDisclosure.jsx": "30eded9d4d89b3417a8cd12a3e15f290753121dbe9ff1f2dc91856907287e4ef",
+    "src/ui/SessionGroupDisclosure.stories.jsx": "319ba07f45b4c13c266b9eb4dbe1c8e26daa45827cb30cf698d8b5a53f2db982",
+    "scripts/journey/session-group-disclosure.journey.mjs": "380e93e0b7f99239b1234b68e2c9d1dde2780797150f70433ad208144ab28de2",
+    "scripts/testdata/session-group-disclosure.yaml": "2424b417fcc2ee2aed2ee4f1b4a193f95447d9f00ca35c89c98ea1688e3abca3",
+    "public/components.json": "a68c387b062d7de15c6429add9ed5c0f780ae6359c7f327f8a5118be46b32885"
+  },
+  "assets": {
+    "storybook-static/assets/SessionGroupDisclosure-BMhGlGZO.js": "cf094c7dbe0b952bc2c1106c87fe4fa4ee270dfae22f9918e7893911df2013a1",
+    "storybook-static/assets/SessionGroupDisclosure.stories-lJ_YIEKw.js": "e519c226393f07e620410dd2ca1853b958874f34c0aa71a4ab2bccfc76fa1690"
+  },
+  "images": [
+    {
+      "file": "dark/components-sessiongroupdisclosure--expands-and-collapses.png",
+      "sha256": "8a2dadf4d11edc43557d306062989333cd73681bf7d7f7bd5cbba38b469031b5",
+      "theme": "dark",
+      "url": "http://localhost:6018/iframe.html?id=components-sessiongroupdisclosure--expands-and-collapses&viewMode=story&globals=theme:dark&args="
+    },
+    {
+      "file": "dark/components-sessiongroupdisclosure--indented.png",
+      "sha256": "c06fb00194bab61bc4c69977c87d0eea36789d40db29664a4ca115173861146e",
+      "theme": "dark",
+      "url": "http://localhost:6018/iframe.html?id=components-sessiongroupdisclosure--indented&viewMode=story&globals=theme:dark&args="
+    },
+    {
+      "file": "dark/components-sessiongroupdisclosure--playground.png",
+      "sha256": "b3db659240d8ab5aa8e6a601176aabc3c0bae5b7a146b872c4d3b8039d77b01e",
+      "theme": "dark",
+      "url": "http://localhost:6018/iframe.html?id=components-sessiongroupdisclosure--playground&viewMode=story&globals=theme:dark&args="
+    },
+    {
+      "file": "dark/components-sessiongroupdisclosure--without-action-hint.png",
+      "sha256": "48dc731e01483c6b350ded6f41a4fcdb207d86720295653e13d46a0c52162d8d",
+      "theme": "dark",
+      "url": "http://localhost:6018/iframe.html?id=components-sessiongroupdisclosure--without-action-hint&viewMode=story&globals=theme:dark&args="
+    },
+    {
+      "file": "light/components-sessiongroupdisclosure--expands-and-collapses.png",
+      "sha256": "e5e391f39222c1fcbe2a131563b1071be4170d065505f29537666ae3b52978d5",
+      "theme": "light",
+      "url": "http://localhost:6018/iframe.html?id=components-sessiongroupdisclosure--expands-and-collapses&viewMode=story&globals=theme:light&args="
+    },
+    {
+      "file": "light/components-sessiongroupdisclosure--indented.png",
+      "sha256": "97d749542f68a18aff41f823c587c51fe01e08abe49548ffe20ea516868d5e71",
+      "theme": "light",
+      "url": "http://localhost:6018/iframe.html?id=components-sessiongroupdisclosure--indented&viewMode=story&globals=theme:light&args="
+    },
+    {
+      "file": "light/components-sessiongroupdisclosure--playground.png",
+      "sha256": "35f85c0ae6a3e97649db6b419973df458045a8a4853ecffb27a6c0d49c46be81",
+      "theme": "light",
+      "url": "http://localhost:6018/iframe.html?id=components-sessiongroupdisclosure--playground&viewMode=story&globals=theme:light&args="
+    },
+    {
+      "file": "light/components-sessiongroupdisclosure--without-action-hint.png",
+      "sha256": "f9f255fab5ccc54c6819b7bdfaf5fc5d30908c4f88eb35546b5cdde5647eec18",
+      "theme": "light",
+      "url": "http://localhost:6018/iframe.html?id=components-sessiongroupdisclosure--without-action-hint&viewMode=story&globals=theme:light&args="
+    }
+  ],
+  "inspected": true
+}
