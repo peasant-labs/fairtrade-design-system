@@ -1,0 +1,31 @@
+# Approved dispositions are not completion claims. Bindings require existing code,
+# removed record lines/pointers, and verified restating-file amendments.
+decisions:
+  - {name: middot-separators, id: 1, disposition: DEMO, binding: null}
+  - {name: active-markers, id: 2, disposition: DEMO, binding: null}
+  - {name: type-floor, id: 3, disposition: DEMO, binding: null}
+  - {name: amber-salience, id: 4, disposition: DEMO, binding: null}
+  - {name: filter-density, id: 5, disposition: DEMO, binding: null}
+  - {name: proportional-prose, id: 6, disposition: DEMO, binding: null}
+  - {name: static-motion, id: 7, disposition: SPLIT, binding: null}
+  - {name: primary-targets, id: 8, disposition: RECORD, binding: null}
+  - {name: modal-focus, id: 9, disposition: RECORD, binding: null}
+  - {name: overlay-shadows, id: 10, disposition: SPLIT, binding: null}
+  - {name: prose-measure, id: 11, disposition: DEMO, binding: null}
+  - {name: heading-hierarchy, id: 12, disposition: DEMO, binding: null}
+  - {name: font-loading, id: 13, disposition: SPLIT, binding: null}
+  - {name: lowercase-chrome, id: 14, disposition: DEMO, binding: null}
+  - {name: stripe-widths, id: 15, disposition: DEMO, binding: null}
+  - {name: opaque-chrome, id: 16, disposition: DEMO, binding: null}
+  - {name: guarded-transitions, id: 17, disposition: DEMO, binding: null}
+  - {name: paragraph-spacing, id: 18, disposition: DEMO, binding: null}
+  - {name: wrapping-leading, id: 19, disposition: DEMO, binding: null}
+  - {name: content-truncation, id: 20, disposition: RECORD, binding: null}
+  - {name: role-accents, id: 21, disposition: RECORD, binding: null}
+  - {name: navigation-glyphs, id: 22, disposition: SPLIT, binding: null}
+  - {name: chrome-links, id: 23, disposition: DEMO, binding: null}
+  - {name: icon-sizes, id: 24, disposition: DEMO, binding: null}
+  - {name: focus-ring, id: 25, disposition: SPLIT, binding: null}
+  - {name: responsive-queries, id: 26, disposition: DEMO, binding: null}
+  - {name: progressive-disclosure, id: 27, disposition: SPLIT, binding: null}
+  - {name: accent-glow, id: 28, disposition: DEMO, binding: null}

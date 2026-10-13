@@ -76,6 +76,8 @@
     "test:release-notes:mutations": "node scripts/release-notes.mutations.mjs",
     "prebuild:lib": "pnpm test:release-guard",
     "test:datatable": "node scripts/datatable-host-boundary.test.mjs && node scripts/datatable.render.test.mjs",
+    "test:design-decisions": "node scripts/design-decisions.test.mjs",
+    "audit:design-decisions": "node scripts/design-decisions.mjs",
     "gen:check": "node scripts/gen-llm-artifacts.mjs && git diff --exit-code public/tokens.json public/components.json packages/tokens/tokens.css packages/tokens/tokens.json packages/tokens/base.css packages/tokens/fonts.css DESIGN.md",
     "build:app": "node scripts/gen-llm-artifacts.mjs && node scripts/contrast.mjs && vite build",
     "test:contract": "tsc -p tsconfig.contract.json",
