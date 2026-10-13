@@ -8,6 +8,10 @@ rows:
   - { id: d, title: Archive D, amount: '7' }
   - { id: e, title: Other E, amount: '€9,00' }
 cases:
+  - name: disabled controls retain the named scroll region
+    props: { disabled: true, selectable: true, defaultSearch: Ledger, defaultColumnFilters: [{ id: title, value: Ledger }] }
+    expectedTitles: [Ledger A, Ledger B]
+    expectedCount: showing 2 of 2
   - name: uncontrolled search filters rows
     props: { defaultSearch: Ledger }
     expectedTitles: [Ledger A, Ledger B]

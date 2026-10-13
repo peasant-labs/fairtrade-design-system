@@ -25,6 +25,16 @@ await withMountedSource(async ({ load, mount, React }) => {
         if (row.props.defaultSelectedKeys) assert.equal(container.querySelectorAll('.is-selected').length, row.props.defaultSelectedKeys.length)
       }
       assert.deepEqual(titles(), row.expectedTitles, row.name)
+      if (row.props.disabled) {
+        const scroll = container.querySelector('.tbl-scroll')
+        assert.equal(scroll.tabIndex, 0, `${row.name}: keyboard scroll target`)
+        assert.equal(scroll.getAttribute('role'), 'region', `${row.name}: named region`)
+        assert.ok(scroll.getAttribute('aria-label'), `${row.name}: accessible name`)
+        assert.equal(scroll.closest('fieldset[disabled]'), null, `${row.name}: no disabled ancestor`)
+        for (const control of container.querySelectorAll('input, button')) {
+          assert.equal(control.disabled, true, `${row.name}: table actions stay disabled`)
+        }
+      }
       console.log(`passes: ${row.name}`)
     } finally { await mounted.unmount() }
   }
