@@ -110,11 +110,11 @@
   .gan-foot { font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink-3); line-height: var(--lh-body); max-width: var(--measure-prose); border-left: var(--stroke-emphasis) solid var(--rule-strong); padding-left: var(--sp-3); }
 
   /* ---- responsive: stack the grid + donut, scroll the table at narrow widths ---- */
-  @media (max-width: 920px) {
+  @media (width < 1024px) {
     .gan-kpis { grid-template-columns: repeat(3, 1fr); }
     .gan-grid { grid-template-columns: 1fr; }
   }
-  @media (max-width: 560px) {
+  @media (width < 768px) {
     .gan-card-head { flex-wrap: wrap; }
     .gan-kpis { grid-template-columns: repeat(2, 1fr); }
     .gan-donut { grid-template-columns: 1fr; justify-items: center; }
@@ -138,12 +138,12 @@
    `.cmg-page section` and the demo stage with `.iu section`. This guard is
    UNLAYERED because unlayered declarations beat every layer regardless of
    declaration order — it cannot lose to either bundle ordering. Re-assert
-   the card box the bare rule overrode, including the ≤560px compact variant
+   the card box the bare rule overrode, including the (width < 768px) compact variant
    (the layered mobile rule would otherwise lose to this unlayered
    re-assert). */
 .gan-root section { max-width: none; margin: 0; padding: 0; }
 .gan-root .gan-card,
 .gan-root .gan-tablecard { padding: var(--sp-3) var(--sp-4) var(--sp-4); }
-@media (max-width: 560px) {
+@media (width < 768px) {
   .gan-root .gan-tablecard { padding: var(--sp-2) var(--sp-3) var(--sp-3); }
 }

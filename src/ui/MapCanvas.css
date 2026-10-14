@@ -44,7 +44,7 @@
   border-bottom: var(--bd);
   background: var(--surface-2);
 }
-@media (max-width: 720px) {
+@media (width < 768px) {
   .mc-toolbar { flex-wrap: wrap; height: auto; min-height: var(--control-h); padding-block: var(--sp-2); }
   .mc .mc-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; height: auto; }
   .mc .mc-seg-btn { min-width: 0; min-height: var(--control-h); height: auto; flex-wrap: wrap; padding: var(--sp-1) var(--sp-2); overflow-wrap: anywhere; }

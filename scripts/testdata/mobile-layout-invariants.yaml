@@ -30,7 +30,7 @@ invariants:
   - id: txn-title-wraps-on-mobile
     file: src/index.css
     description: >-
-      The primary session title keeps its reading size and wraps below 720px.
+      The primary session title keeps its reading size and wraps below the md breakpoint (width < 768px).
       Taller headers are preferable to hiding the user's content.
     mustContainAll:
       - ".txn-title {"
@@ -39,7 +39,7 @@ invariants:
   - id: txn-meta-scrolls-on-mobile
     file: src/index.css
     description: >-
-      Metadata stays in a single horizontal scroll row below 720px, without shrinking text.
+      Metadata stays in a single horizontal scroll row below the md breakpoint (width < 768px), without shrinking text.
     mustContainAll:
       - ".txn-meta {"
       - ".txn-meta {\n    flex-wrap: nowrap;\n    white-space: nowrap;\n    overflow-x: auto;"
@@ -51,7 +51,7 @@ invariants:
       - 'tabIndex={0} role="region" aria-label="session metadata"'
   - id: txn-tabs-scroll-on-mobile
     file: src/index.css
-    description: Session tabs remain a single sideways-scrollable row below 720px.
+    description: Session tabs remain a single sideways-scrollable row below the md breakpoint (width < 768px).
     mustContainAll:
       - ".txn-tabs { gap: var(--sp-4); flex-wrap: nowrap; overflow-x: auto; }"
   - id: txn-tabs-keyboard-navigation
@@ -62,7 +62,7 @@ invariants:
       - 'role="tablist" aria-label="session views" onKeyDown={onTabKey}'
   - id: txn-trace-head-compact-on-mobile
     file: src/index.css
-    description: the "N turns / list·graph toggle" bar gets reduced padding below 720px, matching .txn-header's own mobile treatment.
+    description: the "N turns / list·graph toggle" bar gets reduced padding below the md breakpoint (width < 768px), matching .txn-header's own mobile treatment.
     mustContainAll:
       - ".txn-trace-head { padding: var(--sp-2) var(--sp-3); }"
   - id: dialog-wide-sheet-on-mobile
@@ -71,9 +71,9 @@ invariants:
       below the md breakpoint the wide dialog (the publish popup) is a
       full-width sheet: its overlay drops the side padding and the panel
       takes width 100% with no side borders, so the panel is never wider
-      than the viewport. The anchor ties the rule to the 767px media query.
+      than the viewport. The anchor ties the rule to the width < 768px media query.
     mustContainAll:
-      - "@media (max-width: 767px) {\n    .dlg-overlay:has(> .dialog-wide) { padding: 0;"
+      - "@media (width < 768px) {\n    .dlg-overlay:has(> .dialog-wide) { padding: 0;"
       - ".dlg-overlay > .dialog.dialog-wide { width: 100%;"
       - "border-left: 0; border-right: 0;"
   - id: dialog-close-button-keeps-its-square

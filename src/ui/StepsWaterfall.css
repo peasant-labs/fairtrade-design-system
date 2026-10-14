@@ -227,7 +227,7 @@
   box-shadow: inset 0 0 0 1px var(--rule);
 }
 
-@media (max-width: 480px) {
+@media (width < 480px) {
   /* desktop-first: the bar is the first thing to fold away on a narrow rail (the duration value
      beside it still carries the fact). */
   .swf-bar {

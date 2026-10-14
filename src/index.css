@@ -60,8 +60,9 @@
   --control-h: 36px; --control-h-sm: 28px; --nav-h: 56px;
   --maxw: 1040px; --gutter: var(--sp-6);
   /* breakpoint scale (desktop-first reference; @media can't consume var(), so these document the
-     one canonical scale that the max-width queries below target): xs <480, sm 480-767, md 768-1023,
-     lg 1024-1439, xl >=1440. exported to public/tokens.json so agents + consumers share one scale. */
+     one canonical scale that the single-sided width queries below target): phone <480,
+     large phone 480-767, tablet 768-1023, laptop 1024-1439, desktop >=1440. exported to
+     public/tokens.json so agents + consumers share one scale. */
   --bp-sm: 480px; --bp-md: 768px; --bp-lg: 1024px; --bp-xl: 1440px;
   --dialog-w: 420px; --dialog-w-wide: 720px;
   --fs-label: 14px; --fs-sm: 14px; --fs-body: 16px; --fs-md: 18px; --fs-lg: 22px; --fs-xl: 28px; --fs-hero: 40px; --fs-display: 52px;
@@ -589,15 +590,15 @@
 }
 
 /* ---- responsive: collapse the rail, single column ---- */
-/* the full "storybook" label only fits beside the section links + search + the live status from ~1160px
-   up; below that, collapse storybook to an icon-only square (the aria-label keeps its name). 1200 gives a
-   margin so the full label never crowds the live status in the 1100-1160 band. */
+/* the full "storybook" label only fits beside the section links + search + the live status once the
+   viewport reaches the desktop band (1440px and up); below that, collapse storybook to an icon-only
+   square (the aria-label keeps its name). */
 
 /* mobile horizontal padding: the 32px desktop gutter eats too much of a phone's width, so the page
    gutter steps down on small screens (desktop-first; this only narrows, never widens). every surface
    that pads off --gutter (sections, bands, groups, nav, docs) tightens together. */
-@media (max-width: 640px) { :root { --gutter: var(--sp-4); } }
-@media (max-width: 380px) { :root { --gutter: var(--sp-3); } }
+@media (width < 768px) { :root { --gutter: var(--sp-4); } }
+@media (width < 480px) { :root { --gutter: var(--sp-3); } }
 
 /* ======================================================================
    tier-2 components: states + overlays + chip depth (added 2026-06-16).
@@ -1064,7 +1065,7 @@
   /* the wide size carries a two-part task (a review plus a choice); below md it becomes a full-width
      sheet from the bottom edge, with no horizontal scroll. */
   .dlg-overlay > .dialog.dialog-wide { width: min(var(--dialog-w-wide), 100%); }
-  @media (max-width: 767px) {
+  @media (width < 768px) {
     .dlg-overlay:has(> .dialog-wide) { padding: 0; align-items: flex-end; }
     .dlg-overlay > .dialog.dialog-wide { width: 100%; max-height: calc(100dvh - var(--sp-6)); border-left: 0; border-right: 0; border-bottom: 0; }
   }
@@ -1165,11 +1166,11 @@
 
 /* narrow-viewport guards: keep dense controls from forcing horizontal page scroll.
    the content column shrinks (min-width:0) and wide demo controls scroll within themselves. */
-@media (max-width: 620px) {
+@media (width < 768px) {
   .bs-seg, .bs-group, .steps, .pager, .cp-keys { max-width: 100%; overflow-x: auto; }
 }
 
-@media (max-width: 620px) {
+@media (width < 768px) {
   /* footer: let the right cluster wrap instead of forcing max-content width */
   .foot-in { flex-wrap: wrap; height: auto; padding-top: var(--sp-3); padding-bottom: var(--sp-3); gap: var(--sp-2) var(--sp-3); }
   .foot-in .right { margin-left: 0; }
@@ -1318,7 +1319,7 @@
   @media (prefers-reduced-motion: reduce) {
     .pgn-btn { transition: none; }
   }
-  @media (max-width: 880px) {
+  @media (width < 1024px) {
     .pgn-edge > span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     .pgn-edge { padding: 0; width: var(--control-h-sm); }
   }
@@ -1443,7 +1444,7 @@
   @keyframes tsx-in  { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @keyframes tsx-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(4px); } }
 
-  @media (max-width: 480px) {
+  @media (width < 480px) {
     .tsx-host:not(.tsx-host--inline) { left: var(--sp-4); right: var(--sp-4); width: auto; }
     .tsx-bottom-center:not(.tsx-host--inline), .tsx-top-center:not(.tsx-host--inline) { transform: none; }
   }
@@ -1661,7 +1662,7 @@
   .dr-cal { display: flex; flex-direction: column; min-width: 0; }
   .dr-body { display: flex; flex-direction: column; min-width: 0; }
   .dr-grids { display: flex; gap: var(--sp-5); padding: var(--sp-4); }
-  @media (max-width: 560px) { .dr-grids { gap: 0; } .dr-grids .dr-month + .dr-month { display: none; } }
+  @media (width < 768px) { .dr-grids { gap: 0; } .dr-grids .dr-month + .dr-month { display: none; } }
 
   /* per-month header: prev/next chevrons flank a month-year caption. */
   .dr-month { display: flex; flex-direction: column; gap: var(--sp-2); }
@@ -1873,15 +1874,15 @@
   .iu-state-text { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); white-space: nowrap; }
 
   /* ---- tablet: keep the app labels, but drop the expand label + tighten the banner so it fits ---- */
-  @media (max-width: 900px) {
+  @media (width < 1024px) {
     .iu-bar { gap: var(--sp-3); padding: 0 var(--sp-4); }
   }
   /* Compact tiles retain their names for assistive technology. */
-  @media (max-width: 720px) {
+  @media (width < 768px) {
     .iu-bar { gap: var(--sp-2); padding: var(--sp-1) var(--sp-4); flex: none; }
     .iu-opt-label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
   }
-  @media (max-width: 480px) {
+  @media (width < 480px) {
     .iu-bar-brand span { display: none; }
   }
 }
@@ -2482,9 +2483,9 @@
   .txn-light .txn-ol-task.txn-ol-active { background: color-mix(in srgb, var(--amber) 16%, var(--surface)); }
 }
 
-/* ---- responsive: below 1080 the transcript goes full width and the side panels drop (matches the
-   viewer, where the outline/filters rails only appear on wide viewports) ---- */
-@media (max-width: 1080px) {
+/* ---- responsive: below the tablet band the transcript goes full width and the side panels drop
+   (matches the viewer, where the outline/filters rails only appear on wide viewports) ---- */
+@media (width < 1024px) {
   /* single column regardless of collapse state; the rails + their collapsed strips both drop here. */
   .txn-body-grid,
   .txn-body-grid[data-left-rail="closed"],
@@ -2493,7 +2494,7 @@
   .txn-rail-left, .txn-rail-right, .txn-rail-strip { display: none; }
   .txn-center { border-right: 0; }
 }
-@media (max-width: 860px) {
+@media (width < 1024px) {
   /* stacked: drop the shared row grid (there's only one column to align) so each
      card flows independently instead of collapsing into the same subgrid rows. */
   .txn-sc-grid { grid-template-columns: 1fr; grid-template-rows: none; }
@@ -2501,7 +2502,7 @@
   .txn-sc-headline, .txn-sc-flags, .txn-sc-delta { align-self: auto; }
   .txn-sc-card:last-child { border-bottom: 0; }
 }
-@media (max-width: 720px) {
+@media (width < 768px) {
   .txn-header { padding: var(--sp-3); }
   .txn-header-top { flex-wrap: wrap; }
   .txn-crumb { flex-basis: 100%; overflow: visible; overflow-wrap: anywhere; }
@@ -2558,14 +2559,14 @@
 }
 /* Keep consent prose distinct from the checkbox row without changing sheet insets. */
 .pub-dialog .pub-auto { gap: var(--sp-2); }
-@media (max-width: 720px) {
+@media (width < 768px) {
   .mc .mc-toolbar { flex-wrap: nowrap; height: var(--control-h); padding-block: 0; }
   .mc .mc-toolbar .mc-seg { display: flex; flex: 1; min-width: 0; width: auto; height: var(--control-h-sm); overflow-x: auto; }
   .mc .mc-toolbar .mc-seg-btn { flex: none; min-height: var(--target-min); height: 100%; flex-wrap: nowrap; padding: 0 var(--sp-3); white-space: nowrap; overflow-wrap: normal; }
   .mc .mc-toolbar .mc-search { flex: none; width: calc(var(--sp-8) * 2); }
 }
 /* ---- phone: wrap checkpoint text to keep it readable within the stage ---- */
-@media (max-width: 480px) {
+@media (width < 480px) {
   .txn-checkpoint .mkc { max-width: 100%; min-width: 0; }
   .txn-cp-msg { white-space: normal; overflow-wrap: anywhere; text-transform: none; }
   .txn-cp-stat { flex-basis: 100%; }
@@ -2618,12 +2619,12 @@
      matching-collectives strip aligns with the transcript results below it in the same column. */
   .cex-coll-results { display: flex; flex-direction: column; gap: var(--sp-3); padding-inline: 0; padding-bottom: var(--sp-4); border-bottom: var(--bd); }
   .cex-coll-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
-  @media (max-width: 719px) { .cex-coll-grid { grid-template-columns: 1fr; } }
+  @media (width < 768px) { .cex-coll-grid { grid-template-columns: 1fr; } }
   .cex-nomatch-inline { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-3); }
 
   /* ---- transcript cards (grid) ---- */
   .cex-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); align-items: start; }
-  @media (max-width: 759px) { .cex-grid { grid-template-columns: 1fr; } }
+  @media (width < 768px) { .cex-grid { grid-template-columns: 1fr; } }
   .cex-tcard { cursor: pointer; text-align: left; align-items: stretch; }
   .cex-model { gap: var(--sp-2); min-width: 0; }
   .cex-model b { font-weight: 700; }
@@ -2660,7 +2661,7 @@
   .cex-trow-title { flex: 1; min-width: 0; color: var(--ink); font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); overflow-wrap: anywhere; }
   .cex-trow-stats { display: inline-flex; align-items: center; gap: var(--sp-3); flex: none; }
   .cex-trow-date { color: var(--ink-4); font-size: var(--fs-label); flex: none; }
-  @media (max-width: 720px) { .cex-trow-stats, .cex-trow-date { display: none; } .cex-trow-model { width: auto; } }
+  @media (width < 768px) { .cex-trow-stats, .cex-trow-date { display: none; } .cex-trow-model { width: auto; } }
 
   /* ---- collective card ---- */
   .cex-ccard { cursor: pointer; text-align: left; gap: var(--sp-2); align-items: stretch; }
@@ -2696,10 +2697,10 @@
 
   /* body: stream + right rail */
   .cex-viewer-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 15rem); align-items: stretch; min-height: 0; }
-  @media (max-width: 880px) { .cex-viewer-body { grid-template-columns: 1fr; } }
+  @media (width < 1024px) { .cex-viewer-body { grid-template-columns: 1fr; } }
   .cex-stream { position: relative; overflow: auto; max-height: 30rem; min-width: 0; border-right: var(--bd); }
   .cex-stream:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
-  @media (max-width: 880px) { .cex-stream { border-right: 0; border-bottom: var(--bd); } }
+  @media (width < 1024px) { .cex-stream { border-right: 0; border-bottom: var(--bd); } }
   .cex-microphase { color: var(--ink-4); font-size: var(--fs-label); border: var(--bd); padding: 0 var(--sp-2); margin-left: var(--sp-2); }
 
   .cex-turn-wrap { scroll-margin-top: var(--sp-3); }
@@ -2783,7 +2784,7 @@
   .cex-disc-note b { color: var(--ink-2); font-weight: 600; font-style: normal; }
 
   /* kpi tiles */
-  @media (max-width: 560px) { .cex-kpis { grid-template-columns: 1fr; } }
+  @media (width < 768px) { .cex-kpis { grid-template-columns: 1fr; } }
 
   /* sections. NB: `.cex-psec` is a real <section>, so the global `section { padding: 0 var(--gutter) }`
      applied a 32px side inset that `.iu section` does NOT reset (it only neutralises max-width + margin).
@@ -2851,12 +2852,12 @@
   .cex-profile .rr-danger .rr-danger-head { padding-inline: var(--sp-4) !important; }
   .cex-profile .rr-danger .rr-danger-body { padding-inline: var(--sp-4) !important; }
 
-  @media (max-width: 720px) {
+  @media (width < 768px) {
     .cex-explore-body { grid-template-columns: 1fr; row-gap: var(--sp-4); }
     .cex-rail { position: static; }
   }
   /* ---- phone: prevent card overflow and tighten padding ---- */
-  @media (max-width: 480px) {
+  @media (width < 480px) {
     .iu-view { padding: var(--sp-3); }
     .iu-page { padding: var(--sp-3) 0 var(--sp-6); gap: var(--sp-4); }
     .iu-page-summary { padding: var(--sp-3); }
@@ -3096,8 +3097,8 @@
   .cmg-confirm-title { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: var(--fs-sm); color: var(--ink); }
   .cmg-confirm-more { padding: var(--sp-2) var(--sp-3); font-size: var(--fs-label); color: var(--ink-4); }
 
-  /* ---- narrow-width guards (<=720px): stack everything, no page overflow ---- */
-  @media (max-width: 720px) {
+  /* ---- narrow-width guards (width < 768px): stack everything, no page overflow ---- */
+  @media (width < 768px) {
     .cmg-page, .cmg-detail { padding: var(--sp-4); }
     .cmg-form-grid { grid-template-columns: 1fr; }
     .cmg-grid { grid-template-columns: 1fr; }
@@ -3107,7 +3108,7 @@
     .cmg-pub-row { grid-template-columns: auto minmax(0, 1fr) auto auto; }
     .cmg-pub-meta:nth-of-type(3) { display: none; }
   }
-  @media (max-width: 480px) {
+  @media (width < 480px) {
     .cmg-tiles { grid-template-columns: 1fr; }
     .cmg-tx-row { grid-template-columns: auto auto minmax(0, 1fr) auto; }
     .cmg-tx-row > .btn-icon { display: none; }
@@ -3415,10 +3416,10 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .cmg-pr-list { display: flex; flex-direction: column; gap: var(--sp-1); margin: 0; padding: 0; list-style: none; }
   .cmg-pr-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-1) var(--sp-3); }
 
-  @media (max-width: 1023px) {
+  @media (width < 1024px) {
     .cmg-home { grid-template-columns: minmax(0, 1fr); }
   }
-  @media (max-width: 767px) {
+  @media (width < 768px) {
     .cmg-policies { grid-template-columns: minmax(0, 1fr); }
     .cmg-signin-card { padding: var(--sp-4); }
   }

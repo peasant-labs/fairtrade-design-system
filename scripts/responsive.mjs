@@ -1,12 +1,13 @@
 /* responsive QA capture: viewport screenshots of the key surfaces at each breakpoint width, in a
    theme, for desktop-first responsive review. usage: node scripts/responsive.mjs <theme> [w1 w2 ...]
-   widths default to the token scale floors (xs/sm/md/lg/xl). anchors: top, color, data-table, inuse. */
+   widths default to a small-phone capture plus the documented --bp-* band floors (phone 480,
+   tablet 768, laptop 1024). anchors: top, color, data-table, inuse. */
 import puppeteer from 'puppeteer-core'
 import { mkdirSync } from 'node:fs'
 const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const theme = process.argv[2] || 'dark'
 const widths = (process.argv.slice(3).map(Number).filter(Boolean))
-const WIDTHS = widths.length ? widths : [360, 768, 1024]
+const WIDTHS = widths.length ? widths : [360, 480, 768, 1024]
 const ANCHORS = ['top', 'color', 'data-table', 'inuse']
 const out = `shots/resp-${theme}`
 mkdirSync(out, { recursive: true })

@@ -205,7 +205,7 @@
   .gmp-navigator-empty { margin: 0; padding: var(--sp-4); color: var(--ink-4); font-size: var(--fs-sm); line-height: var(--lh-body); }
   .gmp-navigator-missing { margin: 0; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); color: var(--clay); font-size: var(--fs-sm); }
   .gmp-navigator-missing button { border: 0; background: transparent; color: var(--ink); text-decoration: underline; cursor: pointer; }
-  @media (max-width: 720px) {
+  @media (width < 768px) {
     .gmp-navigator-head { flex-direction: column; }
     .gmp-navigator-search { width: 100%; }
     .gmp-navigator-body { grid-template-columns: 1fr; }
@@ -228,7 +228,7 @@
   .gmp-presentation-switch button[aria-pressed='true'] { box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber-dim); background: var(--surface-elev); color: var(--ink-strong); }
   .gmp-presentation-switch button:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
   /* phone: drop the spacer so the search wraps below the toolbar buttons instead of overflowing */
-  @media (max-width: 600px) { .gmp-toolbar-spacer { display: none; } }
+  @media (width < 768px) { .gmp-toolbar-spacer { display: none; } }
 
   /* ── selection rail (the in-use code-map demo composes these around the kit RailShell) ── */
   .gmp-rail-inner { border: 0; }
@@ -333,7 +333,7 @@
   .gmp-session-destination-summary > div:nth-child(odd) { border-right: var(--bd); }
   .gmp-session-destination-summary dt { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-4); }
   .gmp-session-destination-summary dd { margin: 0; min-width: 0; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-2); }
-  @media (max-width: 600px) {
+  @media (width < 768px) {
     .gmp-session-destination-summary { grid-template-columns: minmax(0, 1fr); }
     .gmp-session-destination-summary > div { border-right: 0; }
     .gmp-session-destination-summary > div:nth-last-child(-n + 2) { border-bottom: var(--bd); }
@@ -435,10 +435,10 @@
   .gmp-changes-legend .cg-spark { position: static !important; transform: none !important; }
 
   /* below the wide layout there isn't room for floating merged chips — drop them into flow. */
-  @media (max-width: 1460px) {
+  @media (width < 1440px) {
     .gmp-merged-chip { position: static !important; margin-top: var(--sp-2); }
   }
-  @media (max-width: 600px) {
+  @media (width < 768px) {
     .gmp-changes-body { padding: var(--sp-3); overflow: hidden; }
     .gmp-merged-chip { position: static !important; margin-top: var(--sp-2); }
   }

@@ -237,7 +237,7 @@
   align-items: center;
   gap: var(--sp-2);
 }
-@media (max-width: 560px) {
+@media (width < 768px) {
   .cg-row { flex-wrap: wrap; gap: var(--sp-2); }
   .cg-msg { flex-basis: 100%; }
   .cg-meta { flex-wrap: wrap; min-width: 0; max-width: 100%; }
