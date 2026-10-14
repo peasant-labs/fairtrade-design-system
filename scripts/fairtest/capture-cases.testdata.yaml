@@ -4,10 +4,10 @@
 # selector that clips the full-region shot, the probes and keyboard focus
 # representatives it captures, and the shared host kind its row declares.
 #
-# The selector strings and the case set mirror the surfaces the amber
-# restoration was captured against by hand, so the harness and the reviewed
-# evidence describe the same targets. The required surface inventory lives in
-# the sibling .manifest.yaml.
+# The selector strings and the case set mirror the surfaces captured by hand
+# for the pre-change baseline build, so the harness and the reviewed evidence
+# describe the same targets. The required surface inventory lives in the
+# sibling .manifest.yaml.
 states:
   - before
   - after

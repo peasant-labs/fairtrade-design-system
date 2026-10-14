@@ -1,10 +1,13 @@
 # Required-name inventory and executable mutations for capture-sheet.yaml.
-expectedCaseCount: 4
+expectedCaseCount: 7
 requiredCaseNames:
   - default column order interleaves before beside after
   - cells resolve to shot unshootable and missing
   - html escaping keeps markup inert
   - a shot cell without an image fails closed
+  - manifest mismatches fail with actionable diagnostics
+  - a duplicate record scope fails
+  - a record target no planned row covers fails
 expectedMutationCount: 7
 requiredMutationNames:
   - removing the escaping case breaks the required inventory

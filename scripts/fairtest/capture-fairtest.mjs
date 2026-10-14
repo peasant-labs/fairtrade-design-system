@@ -7,18 +7,20 @@
 // width x theme against each, composes the interleaved before-beside-after
 // contact sheets from the certified records, builds one single-capture evidence
 // run per state, verifies both runs against the app-owned capture policy, and
-// writes the reports. It exits non-zero unless both verdicts pass.
+// writes the reports plus a run-level inventory. It exits non-zero unless both
+// verdicts pass and the output tree holds exactly the files the run declared.
 //
 // Every capture root, row key, artifact class, sheet, and report is derived from
-// the browser-free child model, so the shape written here matches the shape the
-// neutral verifier reads.
+// the browser-free child model and the app-owned path helpers, so the shape
+// written here matches the shape the neutral verifier reads.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { dirname, join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { capturePolicyInput } from './capture-policy.mjs'
-import { captureState, gitInfo, serveDist } from './capture-driver.mjs'
+import { captureRowArtifact } from './capture-paths.mjs'
+import { captureState, resolveBuildInfo, serveDist } from './capture-driver.mjs'
 import { renderSheets } from './capture-sheets.mjs'
 
 const capture = await importFairtestSource('src/capture/index.mjs')
@@ -28,10 +30,10 @@ const verify = await importFairtestSource('src/evidence/verify.mjs')
 
 const USAGE = [
   'usage: node scripts/fairtest/capture-fairtest.mjs',
-  '  --before-dir <dist> [--before-label <commit>]',
-  '  --after-dir  <dist> [--after-label  <commit>]',
+  '  --before-dir <dist> [--before-label <lowercase-hex-commit>]',
+  '  --after-dir  <dist> [--after-label  <lowercase-hex-commit>]',
   '  --out <capture-root>',
-  '  [--cases <capture-cases.yaml>] [--cases-manifest <manifest.yaml>] [--run-prefix <slug>]',
+  '  [--cases <capture-cases.testdata.yaml>] [--run-prefix <slug>]',
 ].join('\n')
 
 /**
@@ -66,31 +68,33 @@ function writeJson(path, value) {
 }
 
 /**
- * Resolve the build label for one state: the explicit label when given, else the
- * worktree head the served tree was built from.
- * @param {string} state state id
- * @param {string} dir served built tree
- * @param {string | undefined} explicit explicit label
- * @returns {string}
+ * Every file under a directory, as sorted capture-root-relative posix paths.
+ * @param {string} root directory to walk
+ * @returns {string[]}
  */
-function resolveLabel(state, dir, explicit) {
-  if (explicit !== undefined) return explicit
-  try {
-    return gitInfo(dir).head
-  } catch (error) {
-    throw new Error(
-      `capture: cannot read the worktree head for the ${state} tree ${JSON.stringify(dir)} at path --${state}-label; ` +
-      `${error instanceof Error ? error.message : String(error)}; ` +
-      `repair: pass --${state}-label <commit> for a served tree outside a git worktree.`,
-    )
+function listFiles(root) {
+  /** @type {string[]} */
+  const found = []
+  /** @param {string} directory @returns {void} */
+  const walk = (directory) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const absolute = join(directory, entry.name)
+      if (entry.isDirectory()) walk(absolute)
+      else found.push(relative(root, absolute).split(sep).join('/'))
+    }
   }
+  walk(root)
+  return found.sort()
 }
 
 const options = parseArgs(process.argv.slice(2))
 const outRoot = options.out
 if (!outRoot) throw new Error(`capture: missing output root at path --out; repair: pass --out <capture-root>. ${USAGE}`)
 const casesPath = options.cases ?? fileURLToPath(new URL('capture-cases.testdata.yaml', import.meta.url))
-const manifestPath = options['cases-manifest'] ?? casesPath.replace(/\.yaml$/, '.manifest.yaml')
+if (!casesPath.endsWith('.yaml')) {
+  throw new Error(`capture: unsupported case-document path ${JSON.stringify(casesPath)} for field "cases" at path --cases; repair: pass a .yaml case document so its sibling .manifest.yaml can be resolved.`)
+}
+const manifestPath = casesPath.replace(/\.yaml$/, '.manifest.yaml')
 const runPrefix = options['run-prefix'] ?? 'capture'
 
 /** @type {Record<string, string | undefined>} */
@@ -121,8 +125,6 @@ const browser = await chromium.launch({ headless: true })
 
 /** @type {import('./capture-driver.mjs').CaptureRecordLike[]} */
 const records = []
-/** @type {string[]} */
-const files = []
 /** @type {Record<string, string>} */
 const verdicts = {}
 /** @type {Record<string, string>} */
@@ -131,18 +133,17 @@ const failureCodes = {}
 try {
   for (const state of states) {
     const dir = /** @type {string} */ (dirs[state])
-    const label = resolveLabel(state, dir, labels[state])
+    const buildInfo = resolveBuildInfo(state, dir, labels[state])
     const server = await serveDist(dir)
     /** @type {{ build: import('./capture-driver.mjs').CaptureBuildLike, records: import('./capture-driver.mjs').CaptureRecordLike[], files: string[] }} */
     let captured
     try {
-      captured = await captureState({ state, origin: server.origin, distRoot: dir, label, cases, outRoot, browser })
+      captured = await captureState({ state, origin: server.origin, distRoot: dir, head: buildInfo.head, dirty: buildInfo.dirty, cases, outRoot, browser })
     } finally {
       await server.close()
     }
     writeJson(join(outRoot, 'build', `${state}.json`), captured.build)
     for (const record of captured.records) records.push(record)
-    for (const file of captured.files) files.push(file)
 
     const nowMs = Date.now()
     const runId = `${runPrefix}-${state}`
@@ -150,23 +151,26 @@ try {
     const artifacts = {}
     for (const record of captured.records) {
       const key = capture.captureRowKey(record.surface, record.width, record.theme)
+      const provenancePath = captureRowArtifact(outRoot, state, key, 'provenance.json')
+      const provenance = JSON.parse(readFileSync(provenancePath, 'utf8'))
+      capture.assertServedMatchesDist(provenance, `${state}/${key}`)
       artifacts[key] = {
-        'capture.json': readFileSync(join(outRoot, 'rows', state, key, 'capture.json'), 'utf8'),
-        'surface.png': readFileSync(join(outRoot, 'rows', state, key, 'surface.png')),
-        'provenance.json': readFileSync(join(outRoot, 'rows', state, key, 'provenance.json'), 'utf8'),
+        'capture.json': readFileSync(captureRowArtifact(outRoot, state, key, 'capture.json'), 'utf8'),
+        'surface.png': readFileSync(captureRowArtifact(outRoot, state, key, 'surface.png')),
+        'provenance.json': readFileSync(provenancePath, 'utf8'),
       }
     }
     const run = capture.buildCaptureRun({
       identity: identity.createIdentity({ kind: 'capture-run', id: runId, createdAtMs: nowMs }),
       state,
-      root: label,
+      root: buildInfo.head,
       themeSource: 'rendered theme attribute',
       records: captured.records,
       artifacts,
       shotFiles: captured.files,
       observedAtMs: nowMs,
     })
-    const policy = capturePolicyInput({ runId, cases, state, root: label })
+    const policy = capturePolicyInput({ runId, cases, state, root: buildInfo.head })
     const report = verify.verifyEvidenceRun(run, policy, { nowMs })
     writeJson(join(outRoot, 'evidence', `${state}.json`), report)
     verdicts[state] = report.verdict
@@ -175,7 +179,7 @@ try {
   }
 
   const plan = capture.planSheets({ cases, records })
-  const sheetEntries = await renderSheets({ plan, captureRoot: outRoot, outRoot })
+  const sheetEntries = await renderSheets({ plan, root: outRoot })
   const sheetManifest = capture.validateSheetManifest({
     version: 1,
     order: capture.DEFAULT_SHEET_ORDER,
@@ -185,8 +189,43 @@ try {
   capture.assertSheetManifestMatchesPlan(plan, sheetManifest, 'sheets/manifest.json')
   writeJson(join(outRoot, 'sheets', 'manifest.json'), sheetManifest)
 
+  /** @type {Set<string>} */
+  const declared = new Set(['inventory.json', 'sheets/manifest.json'])
+  for (const state of states) {
+    declared.add(`build/${state}.json`)
+    declared.add(`evidence/${state}.json`)
+  }
+  for (const record of records) {
+    const key = capture.captureRowKey(record.surface, record.width, record.theme)
+    for (const name of ['capture.json', 'surface.png', 'provenance.json']) declared.add(`rows/${record.state}/${key}/${name}`)
+    for (const target of record.targets) if (target.shot !== null) declared.add(target.shot.file)
+  }
+  for (const sheet of sheetEntries) declared.add(sheet.file)
+
   const unshootable = records.reduce((total, record) => total + record.targets.filter((target) => target.unshootable !== null).length, 0)
   const shots = records.reduce((total, record) => total + record.targets.filter((target) => target.shot !== null).length, 0)
+  writeJson(join(outRoot, 'inventory.json'), {
+    version: 1,
+    runPrefix,
+    states,
+    rows: records.length,
+    shots,
+    unshootable,
+    sheets: sheetEntries.length,
+    files: [...declared].filter((file) => file !== 'inventory.json').sort(),
+  })
+
+  const observed = listFiles(outRoot)
+  const missing = [...declared].filter((file) => !observed.includes(file)).sort()
+  const stray = observed.filter((file) => !declared.has(file)).sort()
+  if (missing.length > 0 || stray.length > 0) {
+    throw new Error(
+      `capture: output tree holds files the run did not declare for field "files" at path inventory.json; ` +
+      `missing ${JSON.stringify(missing)} stray ${JSON.stringify(stray)}; ` +
+      'repair: re-run into an empty capture root so a previous cycle cannot silently cohabit with this one.',
+    )
+  }
+
   const elapsedSeconds = Math.round((Date.now() - startedAtMs) / 100) / 10
   const summary = {
     rows: records.length,

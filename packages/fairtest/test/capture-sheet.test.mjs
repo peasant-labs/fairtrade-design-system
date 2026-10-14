@@ -10,12 +10,13 @@ import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import { assertExactFields, checkRequiredNames, loadSingleDocument } from '../src/core/index.mjs'
 import { artifactDigest } from '../src/evidence/index.mjs'
-import { DEFAULT_SHEET_ORDER, planSheets, renderSheetDocument, validateSheetManifest } from '../src/capture/index.mjs'
+import { DEFAULT_SHEET_ORDER, assertSheetManifestMatchesPlan, planSheets, renderSheetDocument, validateSheetManifest } from '../src/capture/index.mjs'
 
 const TESTDATA = new URL('../testdata/', import.meta.url)
 const CORPUS = 'capture-sheet.yaml'
 const MANIFEST = 'capture-sheet.manifest.yaml'
-const CHECKS = ['order', 'cells', 'escaping', 'render']
+const CHECKS = ['order', 'cells', 'escaping', 'render', 'manifest', 'plan']
+const PLAN_MUTATIONS = ['duplicate-record', 'uncovered-target']
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
 
 /** @param {string} relative @returns {string} */
@@ -70,8 +71,13 @@ function validateFamilyShape(corpus, label) {
         ? ['name', 'check', 'expectedCells']
         : entry.check === 'escaping'
           ? ['name', 'check', 'reason', 'expectedFragments', 'mustNotContain']
-          : ['name', 'check', 'expectedDiagnostic']
+          : entry.check === 'plan'
+            ? ['name', 'check', 'mutation', 'expectedDiagnostic']
+            : ['name', 'check', 'expectedDiagnostic']
     assertExactFields(entry, fields, label, `cases[${index}]`)
+    if (entry.check === 'plan' && !PLAN_MUTATIONS.includes(/** @type {string} */ (entry.mutation))) {
+      throw new Error(`${label}: case "${entry.name}" names an unknown plan mutation ${JSON.stringify(entry.mutation)} for field "mutation" at path cases[${index}].mutation; repair: use one of ${PLAN_MUTATIONS.join(', ')} for "mutation".`)
+    }
   }
 }
 
@@ -154,6 +160,7 @@ function toRecord(matrix, spec, reasonOverride = null) {
     kind: surfaceKind(matrix, surface),
     width,
     theme,
+    observedTheme: theme,
     observedAtMs: 1000,
     servedAssets: [{ asset: '/assets/index-a.js', sha256: artifactDigest('/assets/index-a.js') }],
     targets,
@@ -274,6 +281,31 @@ describe('capture sheet fixture', () => {
     }
   })
 
+  it('fails closed on a duplicate record scope and an uncovered record target', () => {
+    const matrix = /** @type {Record<string, unknown>} */ (corpus.matrix)
+    const baseRecords = /** @type {Record<string, unknown>[]} */ (corpus.records).map((spec) => toRecord(matrix, spec))
+    for (const entry of /** @type {Record<string, unknown>[]} */ (corpus.cases)) {
+      if (entry.check !== 'plan') continue
+      let message = null
+      try {
+        const records = structuredClone(baseRecords)
+        if (entry.mutation === 'duplicate-record') {
+          records.push(structuredClone(baseRecords[0]))
+        } else {
+          const targets = /** @type {Record<string, unknown>[]} */ (records[0].targets)
+          targets.push({ target: 'rogue', kind: 'probe', selector: '.rogue', read: null, contrast: null, shot: { file: 'shots/rogue.png', sha256: artifactDigest('rogue') }, unshootable: null })
+        }
+        planSheets({ cases: matrix, records })
+      } catch (error) {
+        message = error instanceof Error ? error.message : String(error)
+      }
+      assert.ok(message, `${String(entry.name)}: a bad record set passed the plan instead of failing`)
+      for (const fragment of /** @type {string[]} */ (entry.expectedDiagnostic)) {
+        assert.ok(message.includes(fragment), `${String(entry.name)}: diagnostic is missing ${JSON.stringify(fragment)}; got ${message}`)
+      }
+    }
+  })
+
   it('fails every named corpus mutation for its intended field', () => {
     const cases = /** @type {Record<string, unknown>[]} */ (corpus.cases)
     for (const mutation of /** @type {Record<string, unknown>[]} */ (manifest.mutations)) {
@@ -299,8 +331,10 @@ describe('capture sheet fixture', () => {
 })
 
 describe('capture sheet manifest', () => {
+  const corpus = readFamily(CORPUS)
+
   it('validates a manifest that names both run ids and every sheet digest', () => {
-    const { plan } = buildPlan(readFamily(CORPUS))
+    const { plan } = buildPlan(corpus)
     const manifest = validateSheetManifest({
       version: 1,
       order: DEFAULT_SHEET_ORDER,
@@ -309,10 +343,46 @@ describe('capture sheet manifest', () => {
     }, 'manifest')
     assert.equal(manifest.sheets.length, 1, 'the manifest must name the composed sheet')
     assert.deepEqual(Object.keys(plan.sheets[0]), ['id', 'surface', 'file', 'rows'], 'a planned sheet must carry exactly id, surface, file, and rows')
-    assert.throws(
-      () => validateSheetManifest({ version: 1, order: DEFAULT_SHEET_ORDER, runIds: [{ state: 'before', runId: 'capture-before' }], sheets: [{ id: 'sheet-alpha', surface: 'alpha', file: 'sheets/sheet-alpha.png', sha256: 'NOT-HEX' }] }, 'manifest'),
-      /NOT-HEX[\s\S]*at path[\s\S]*repair:/,
-      'a malformed sheet digest must fail',
+    assertSheetManifestMatchesPlan(plan, manifest, 'manifest')
+  })
+
+  it('fails manifest mismatches with actionable diagnostics', () => {
+    const manifestCase = /** @type {Record<string, unknown>[]} */ (corpus.cases).find((entry) => entry.check === 'manifest')
+    assert.ok(manifestCase, 'the manifest case must exist')
+    const fragments = /** @type {Record<string, string[]>} */ (manifestCase.expectedDiagnostic)
+    const { plan } = buildPlan(corpus)
+    const good = {
+      version: 1,
+      order: DEFAULT_SHEET_ORDER,
+      runIds: [{ state: 'before', runId: 'capture-before' }, { state: 'after', runId: 'capture-after' }],
+      sheets: plan.sheets.map((sheet) => ({ id: sheet.id, surface: sheet.surface, file: sheet.file, sha256: artifactDigest(sheet.file) })),
+    }
+    assertSheetManifestMatchesPlan(plan, good, 'manifest')
+    /** @param {() => unknown} run @param {string[]} expected @param {string} name */
+    const expectFailure = (run, expected, name) => {
+      let message = null
+      try {
+        run()
+      } catch (error) {
+        message = error instanceof Error ? error.message : String(error)
+      }
+      assert.ok(message, `${name}: mismatched manifest passed instead of failing`)
+      for (const fragment of expected) assert.ok(message.includes(fragment), `${name}: diagnostic is missing ${JSON.stringify(fragment)}; got ${message}`)
+    }
+    expectFailure(
+      () => assertSheetManifestMatchesPlan(plan, { ...good, sheets: [{ id: 'sheet-other', surface: 'other', file: 'sheets/sheet-other.png', sha256: artifactDigest('other') }] }, 'manifest'),
+      fragments.inventory,
+      'inventory',
+    )
+    expectFailure(
+      () => assertSheetManifestMatchesPlan(plan, { ...good, runIds: [{ state: 'after', runId: 'capture-after' }, { state: 'before', runId: 'capture-before' }] }, 'manifest'),
+      fragments.stateOrder,
+      'state-order',
+    )
+    expectFailure(
+      () => assertSheetManifestMatchesPlan(plan, { ...good, order: 'state-theme-width' }, 'manifest'),
+      fragments.order,
+      'order',
     )
   })
 })

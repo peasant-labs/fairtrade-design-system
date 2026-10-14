@@ -118,7 +118,7 @@ export function buildCaptureRun(input) {
     const rowIdentity = createIdentity({ kind: entry.kind, id: key, createdAtMs: observedAtMs })
     const themeObservation = validateThemeObservation({
       expected: entry.theme,
-      observed: entry.theme,
+      observed: entry.observedTheme,
       source: themeSource,
       observedAtMs,
     }, `captureRun.rows.${key}`)

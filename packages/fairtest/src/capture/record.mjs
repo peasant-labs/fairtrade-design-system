@@ -17,17 +17,10 @@
 import { assertExactFields, assertIntegerInRange, assertNonEmptyString, freezeRecord, isPlainRecord } from '../core/values.mjs'
 import { THEME_NAMES, assertHostKind } from '../host-contract/kinds.mjs'
 import { artifactDigest, assertArtifactDigest } from '../evidence/digest.mjs'
+import { CAPTURE_MAX_MILLISECONDS, CAPTURE_MAX_WIDTH, CAPTURE_TARGET_KINDS, assertCaptureName } from './values.mjs'
 import { captureRowKey } from './cases.mjs'
 
-const NAME_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/
-const MAX_SAFE = 9007199254740991
-
-/**
- * Closed target-kind vocabulary: a probe read, its hover treatment, a keyboard
- * focus representative, and the full region shot.
- * @type {readonly string[]}
- */
-export const CAPTURE_TARGET_KINDS = freezeRecord(['probe', 'hover', 'focus', 'surface'])
+export { CAPTURE_TARGET_KINDS }
 
 /**
  * @typedef {object} CaptureShotRef
@@ -57,7 +50,8 @@ export const CAPTURE_TARGET_KINDS = freezeRecord(['probe', 'hover', 'focus', 'su
  * @property {string} surface surface id
  * @property {string} kind shared host kind
  * @property {number} width viewport width
- * @property {string} theme theme name
+ * @property {string} theme theme name the row was asked to render
+ * @property {string} observedTheme theme name the host rendered, read back from the page
  * @property {number} observedAtMs observation time in whole milliseconds
  * @property {{ asset: string, sha256: string }[]} servedAssets served asset digests
  * @property {CaptureTarget[]} targets captured targets
@@ -179,22 +173,19 @@ export function classifyCaptureTarget(value, label = 'target') {
  * @returns {CaptureRecord}
  */
 export function validateCaptureRecord(value, label) {
-  assertExactFields(value, ['state', 'surface', 'kind', 'width', 'theme', 'observedAtMs', 'servedAssets', 'targets'], label, 'capture')
+  assertExactFields(value, ['state', 'surface', 'kind', 'width', 'theme', 'observedTheme', 'observedAtMs', 'servedAssets', 'targets'], label, 'capture')
   const record = /** @type {Record<string, unknown>} */ (value)
-  assertNonEmptyString(record.state, 'state', 'capture.state')
-  if (!NAME_PATTERN.test(/** @type {string} */ (record.state))) {
-    throw new Error(`invalid value ${JSON.stringify(record.state)} for field "state" at path capture.state; repair: use a lowercase state id up to 64 characters for "state".`)
-  }
-  assertNonEmptyString(record.surface, 'surface', 'capture.surface')
-  if (!NAME_PATTERN.test(/** @type {string} */ (record.surface))) {
-    throw new Error(`invalid value ${JSON.stringify(record.surface)} for field "surface" at path capture.surface; repair: use a lowercase surface id up to 64 characters for "surface".`)
-  }
+  assertCaptureName(record.state, 'state', 'capture.state')
+  assertCaptureName(record.surface, 'surface', 'capture.surface')
   assertHostKind(record.kind, 'capture.kind')
-  assertIntegerInRange(record.width, 'width', 'capture.width', { min: 1, max: MAX_SAFE })
+  assertIntegerInRange(record.width, 'width', 'capture.width', { min: 1, max: CAPTURE_MAX_WIDTH })
   if (!/** @type {readonly string[]} */ (THEME_NAMES).includes(/** @type {string} */ (record.theme))) {
     throw new Error(`invalid value ${JSON.stringify(record.theme)} for field "theme" at path capture.theme; repair: use one of ${THEME_NAMES.join(', ')} for "theme".`)
   }
-  assertIntegerInRange(record.observedAtMs, 'observedAtMs', 'capture.observedAtMs', { min: 0, max: MAX_SAFE })
+  if (!/** @type {readonly string[]} */ (THEME_NAMES).includes(/** @type {string} */ (record.observedTheme))) {
+    throw new Error(`invalid value ${JSON.stringify(record.observedTheme)} for field "observedTheme" at path capture.observedTheme; repair: record the rendered theme read back from the page as one of ${THEME_NAMES.join(', ')} for "observedTheme".`)
+  }
+  assertIntegerInRange(record.observedAtMs, 'observedAtMs', 'capture.observedAtMs', { min: 0, max: CAPTURE_MAX_MILLISECONDS })
   if (!Array.isArray(record.servedAssets) || record.servedAssets.length === 0) {
     throw new Error(`${label}: expected a non-empty served asset list at path capture.servedAssets; repair: record at least one served asset digest.`)
   }
@@ -217,6 +208,7 @@ export function validateCaptureRecord(value, label) {
     kind: record.kind,
     width: record.width,
     theme: /** @type {string} */ (record.theme),
+    observedTheme: /** @type {string} */ (record.observedTheme),
     observedAtMs: record.observedAtMs,
     servedAssets,
     targets,

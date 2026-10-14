@@ -11,6 +11,7 @@ import { describe, it } from 'node:test'
 import { assertExactFields, checkRequiredNames, loadSingleDocument } from '../src/core/index.mjs'
 import { artifactDigest, verifyEvidenceRun } from '../src/evidence/index.mjs'
 import {
+  assertCaptureShotsDigest,
   buildCaptureRun,
   captureRecordDigest,
   classifyCaptureTarget,
@@ -33,7 +34,7 @@ const TESTDATA = new URL('../testdata/', import.meta.url)
 const CORPUS = 'capture-rows.yaml'
 const MANIFEST = 'capture-rows.manifest.yaml'
 const CHECKS = ['verify', 'fixture']
-const MUTATIONS = ['none', 'drop-artifact', 'tamper-digest', 'drop-proof', 'cross-root', 'shot-without-file', 'silent-miss']
+const MUTATIONS = ['none', 'drop-artifact', 'tamper-digest', 'drop-proof', 'cross-root', 'theme-mismatch', 'shot-without-file', 'silent-miss', 'both-shot-and-reason', 'shot-digest-mismatch']
 const MUTATION_KINDS = new Set(['delete-record', 'duplicate-name', 'rename-field', 'delete-field', 'unknown-field', 'bad-value', 'trailing-document'])
 
 /** @param {string} relative @returns {string} */
@@ -183,6 +184,7 @@ function buildScenario(corpus) {
       kind: String(row.kind),
       width: Number(row.width),
       theme: String(row.theme),
+      observedTheme: String(row.observedTheme ?? row.theme),
       observedAtMs,
       servedAssets: [{ asset: String(row.asset), sha256: artifactDigest(String(row.asset)) }],
       targets,
@@ -228,6 +230,9 @@ function mutateRun(run, mutation) {
     rows[0].proof = null
   } else if (mutation === 'cross-root') {
     /** @type {EvidenceProvenance} */ (rows[0].provenance).root = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+  } else if (mutation === 'theme-mismatch') {
+    const observation = /** @type {{ expected: string, observed: string }} */ (rows[0].themeObservation)
+    observation.observed = observation.observed === 'dark' ? 'light' : 'dark'
   }
   return run
 }
@@ -274,6 +279,13 @@ describe('capture rows fixture', () => {
         const record = structuredClone(scenario.records[0])
         if (entry.mutation === 'shot-without-file') {
           reconcileCaptureRecord(record, ['other.png'], 'fixture')
+        } else if (entry.mutation === 'both-shot-and-reason') {
+          record.targets[0].unshootable = { reason: 'redundant reason beside a shot' }
+          createCaptureRecord(record)
+        } else if (entry.mutation === 'shot-digest-mismatch') {
+          const shot = record.targets[0].shot
+          assert.ok(shot, 'the first target must carry a shot for this case')
+          assertCaptureShotsDigest(record, { [shot.file]: 'DIFFERENT-BYTES' }, 'fixture')
         } else {
           record.targets[0].shot = null
           record.targets[0].unshootable = null
@@ -297,7 +309,23 @@ describe('capture rows fixture', () => {
     assert.equal(unshootable.shootable, false, 'an unshootable target must classify unshootable')
     if (!unshootable.shootable) assert.match(unshootable.reason, /no element matched/, 'the unshootable classification must carry the explicit reason')
     const record = scenario.records[0]
-    assert.equal(captureRecordDigest(record), captureRecordDigest(record), 'the canonical record digest must be stable')
+    const permuted = /** @type {import('../src/capture/record.mjs').CaptureRecord} */ ({
+      targets: record.targets,
+      servedAssets: record.servedAssets,
+      observedAtMs: record.observedAtMs,
+      observedTheme: record.observedTheme,
+      theme: record.theme,
+      width: record.width,
+      kind: record.kind,
+      surface: record.surface,
+      state: record.state,
+    })
+    assert.equal(captureRecordDigest(permuted), captureRecordDigest(record), 'the canonical record digest must be stable under a key permutation')
+    assert.notEqual(
+      captureRecordDigest({ ...record, targets: record.targets.map((target, index) => (index === 0 ? { ...target, target: `${target.target}-other` } : target)) }),
+      captureRecordDigest(record),
+      'a changed target name must change the canonical record digest',
+    )
   })
 
   it('fails every named corpus mutation for its intended field', () => {

@@ -1,0 +1,42 @@
+# Served-build record cases used by the capture-build contract test. Synthetic
+# caller-owned data: one built tree with two assets and the served comparison
+# that matches it. Each case either validates the served-build record shape or
+# asserts the served-versus-dist proof fails closed. The required case
+# inventory lives in the sibling manifest.
+expectedCaseCount: 5
+build:
+  state: before
+  root: /workspace/built-tree
+  head: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  dirty: false
+  assets:
+    - {asset: /assets/index-a.js, sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+    - {asset: /assets/index-a.css, sha256: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb}
+  served:
+    - {asset: /assets/index-a.js, sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, servedEqualsDist: true}
+    - {asset: /assets/index-a.css, sha256: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, servedEqualsDist: true}
+cases:
+  - name: a matching served build proves the served bytes
+    check: matches
+    mutation: none
+    expectValid: true
+  - name: a dropped served reference fails and names the asset
+    check: matches
+    mutation: drop-served
+    expectValid: false
+    expectedErrorContains: ["served asset set differs", "/assets/index-a.css", "at path", "repair:"]
+  - name: a served byte mismatch fails
+    check: matches
+    mutation: served-false
+    expectValid: false
+    expectedErrorContains: ["served bytes differ", "at path", "repair:"]
+  - name: a duplicate asset reference fails
+    check: valid
+    mutation: duplicate-asset
+    expectValid: false
+    expectedErrorContains: ["duplicate asset", "at path", "repair:"]
+  - name: a non-hex head fails
+    check: valid
+    mutation: non-hex-head
+    expectValid: false
+    expectedErrorContains: ['field "head"', "at path", "repair:"]

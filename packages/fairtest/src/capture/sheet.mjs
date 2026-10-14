@@ -16,7 +16,7 @@
 
 import { assertExactFields, assertIntegerInRange, assertNonEmptyString, freezeRecord, isPlainRecord } from '../core/values.mjs'
 import { assertArtifactDigest } from '../evidence/digest.mjs'
-import { validateCaptureCases } from './cases.mjs'
+import { captureSurfaceTargets, validateCaptureCases } from './cases.mjs'
 import { validateCaptureRecord } from './record.mjs'
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/
@@ -164,19 +164,32 @@ export function planSheets(input) {
 
   const byScope = new Map()
   for (const entry of records) {
-    byScope.set(`${entry.state}|${entry.surface}|${entry.width}|${entry.theme}`, entry)
+    const scopeKey = `${entry.state}|${entry.surface}|${entry.width}|${entry.theme}`
+    if (byScope.has(scopeKey)) {
+      throw new Error(
+        `plan: duplicate capture record for ${JSON.stringify(scopeKey)} at path plan.records; ` +
+        'repair: keep exactly one record per state, surface, width, and theme.',
+      )
+    }
+    byScope.set(scopeKey, entry)
   }
 
   /** @type {Sheet[]} */
   const sheets = []
   for (const surface of cases.surfaces) {
-    /** @type {{ name: string, kind: string }[]} */
-    const targets = []
-    for (const probe of surface.probes) targets.push({ name: probe.name, kind: 'probe' })
-    for (const probe of surface.probes) if (probe.hover) targets.push({ name: probe.name, kind: 'hover' })
-    for (const focus of surface.focus) targets.push({ name: focus.name, kind: 'focus' })
-    targets.push({ name: 'surface', kind: 'surface' })
-
+    const targets = captureSurfaceTargets(surface)
+    const planned = new Set(targets.map((target) => `${target.kind}:${target.name}`))
+    for (const record of records) {
+      if (record.surface !== surface.id) continue
+      for (const target of record.targets) {
+        if (!planned.has(`${target.kind}:${target.target}`)) {
+          throw new Error(
+            `plan: record target ${JSON.stringify(target.target)} of kind ${JSON.stringify(target.kind)} on surface ${JSON.stringify(surface.id)} at path plan.records; ` +
+            'repair: capture only the surface targets the case document declares, or declare the target in the case document.',
+          )
+        }
+      }
+    }
     /** @type {SheetRow[]} */
     const rows = []
     for (const target of targets) {
@@ -223,15 +236,29 @@ export function renderSheetDocument(plan, sheetId, images, title = 'capture cont
   if (!isPlainRecord(validated) || !Array.isArray(validated.sheets) || !Array.isArray(validated.columns)) {
     throw new Error('sheet: invalid plan at path sheet.plan; repair: render a plan produced by planSheets.')
   }
+  for (const [index, column] of validated.columns.entries()) {
+    if (!isPlainRecord(column) || typeof column.label !== 'string') {
+      throw new Error(`sheet: invalid column ${index} at path sheet.columns[${index}]; repair: render a plan produced by planSheets.`)
+    }
+  }
   const sheet = validated.sheets.find((entry) => entry.id === sheetId)
   if (!sheet) {
     throw new Error(`sheet: unknown sheet ${JSON.stringify(sheetId)} at path sheet.id; repair: render one of ${validated.sheets.map((entry) => entry.id).join(', ')}.`)
+  }
+  if (!Array.isArray(sheet.rows)) {
+    throw new Error(`sheet: invalid row list at path sheet.sheets.${JSON.stringify(sheetId)}.rows; repair: render a plan produced by planSheets.`)
   }
   if (!isPlainRecord(images)) {
     throw new Error('sheet: invalid image map at path sheet.images; repair: provide shot bytes keyed by shot file.')
   }
   const header = `<tr><th></th>${validated.columns.map((column) => `<th style="font:11px sans-serif;border-left:2px solid #666">${escapeSheetText(column.label)}</th>`).join('')}</tr>`
-  const rows = sheet.rows.map((row) => {
+  const rows = sheet.rows.map((row, rowIndex) => {
+    if (!isPlainRecord(row) || !Array.isArray(row.cells)) {
+      throw new Error(`sheet: invalid row ${rowIndex} at path sheet.sheets.${JSON.stringify(sheetId)}.rows[${rowIndex}].cells; repair: render a plan produced by planSheets.`)
+    }
+    if (row.cells.length !== validated.columns.length) {
+      throw new Error(`sheet: row ${rowIndex} carries ${row.cells.length} cells but the plan declares ${validated.columns.length} columns at path sheet.sheets.${JSON.stringify(sheetId)}.rows[${rowIndex}].cells; repair: plan one cell per column.`)
+    }
     const label = `<td style="font:12px monospace;white-space:nowrap">${escapeSheetText(row.label)}<br>${escapeSheetText(row.kind)}</td>`
     const cells = row.cells.map((cell) => {
       if (cell.status === 'shot') {
@@ -242,10 +269,11 @@ export function renderSheetDocument(plan, sheetId, images, title = 'capture cont
             'repair: supply the shot bytes for every shot cell before rendering the sheet.',
           )
         }
-        return `<td style="border:1px solid #999"><img src="${escapeSheetText(image)}" style="max-width:170px;max-height:90px;display:block"></td>`
+        const sizing = cell.kind === 'surface' ? 'max-width:340px;max-height:220px' : 'max-width:170px;max-height:90px'
+        return `<td style="border:1px solid #999"><img src="${escapeSheetText(image)}" style="${sizing};display:block"></td>`
       }
       if (cell.status === 'unshootable') {
-        return `<td style="border:1px solid #888;background:#e8e8e8;font:9px sans-serif;color:#444;max-width:170px">unshootable — ${escapeSheetText(cell.reason)}</td>`
+        return `<td style="border:1px solid #888;background:#e8e8e8;font:9px sans-serif;color:#444;max-width:170px">unshootable: ${escapeSheetText(cell.reason)}</td>`
       }
       return `<td style="border:1px solid #f00;font:10px sans-serif">missing (${escapeSheetText(cell.kind)} reference with no record)</td>`
     }).join('')

@@ -10,10 +10,42 @@
 
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
+import { captureRelativePath } from './capture-paths.mjs'
 
 const captureSheet = await importFairtestSource('src/capture/sheet.mjs')
+
+/**
+ * @typedef {object} CaptureSheetCellLike
+ * @property {string} status cell status
+ * @property {string | null} file shot file, or null
+ * @property {string} kind target kind
+ */
+
+/**
+ * @typedef {object} CaptureSheetRowLike
+ * @property {CaptureSheetCellLike[]} cells one cell per column
+ */
+
+/**
+ * @typedef {object} CaptureSheetLike
+ * @property {string} id sheet id
+ * @property {string} surface surface id
+ * @property {string} file sheet png path
+ * @property {CaptureSheetRowLike[]} rows sheet rows
+ */
+
+/**
+ * @typedef {object} CaptureSheetPlanLike
+ * @property {CaptureSheetLike[]} sheets planned sheets
+ */
+
+/**
+ * @typedef {object} RenderSheetsOptions
+ * @property {CaptureSheetPlanLike} plan sheet plan from the child
+ * @property {string} root capture root the shot references resolve under and the sheets are written to
+ */
 
 /**
  * SHA-256 hex digest of bytes.
@@ -26,10 +58,10 @@ function sha256(data) {
 
 /**
  * Render every planned sheet and return the manifest entries.
- * @param {{ plan: { sheets: { id: string, surface: string, file: string, rows: { cells: { status: string, file: string | null, kind: string }[] }[] }[] }, captureRoot: string, outRoot: string }} options render options
+ * @param {RenderSheetsOptions} options render options
  * @returns {Promise<{ id: string, surface: string, file: string, sha256: string }[]>}
  */
-export async function renderSheets({ plan, captureRoot, outRoot }) {
+export async function renderSheets({ plan, root }) {
   const { chromium } = await import('@playwright/test')
   const browser = await chromium.launch({ headless: true })
   /** @type {{ id: string, surface: string, file: string, sha256: string }[]} */
@@ -45,18 +77,18 @@ export async function renderSheets({ plan, captureRoot, outRoot }) {
           if (file === null) {
             throw new Error(`capture sheets: shot cell in ${JSON.stringify(sheet.id)} carries no file at path sheet.rows; repair: re-capture the row so every shot cell names its file.`)
           }
-          const absolute = join(captureRoot, ...file.split('/'))
+          const absolute = captureRelativePath(root, file, 'sheetCell.file')
           if (!existsSync(absolute)) {
             throw new Error(
-              `capture sheets: shot ${JSON.stringify(file)} is missing at path ${absolute}; ` +
+              `capture sheets: shot ${JSON.stringify(file)} is missing for field "file" at path ${absolute}; ` +
               'repair: render the sheets from a completed capture root so every shot cell resolves to a file.',
             )
           }
           images[file] = `data:image/png;base64,${readFileSync(absolute).toString('base64')}`
         }
       }
-      const html = captureSheet.renderSheetDocument(plan, sheet.id, images, `${sheet.surface} — each before paired beside its after`)
-      const absolute = join(outRoot, ...sheet.file.split('/'))
+      const html = captureSheet.renderSheetDocument(plan, sheet.id, images, `${sheet.surface}: each before paired beside its after`)
+      const absolute = captureRelativePath(root, sheet.file, 'sheetFile')
       mkdirSync(dirname(absolute), { recursive: true })
       const page = await browser.newPage({ viewport: { width: 2200, height: 400 } })
       try {

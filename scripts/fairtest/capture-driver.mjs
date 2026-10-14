@@ -11,9 +11,11 @@
 //
 // The tree is served from an in-process loopback static server with explicit
 // MIME types and no directory listing, and the served bytes are proven equal to
-// the built tree before any record is written. The model validation, the row
-// serialization, and the served-versus-dist comparison live in the browser-free
-// child; this module owns the page driving and the file I/O.
+// the built tree with the shared served-digest proof before any record is
+// written. The model validation, the row serialization, the reconciliation
+// invariants, and the served-versus-dist comparison live in the browser-free
+// child and the shared artifact contract; this module owns the page driving and
+// the file I/O.
 
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -21,21 +23,20 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
+import { assertServedDigestsMatchRunRoot } from './fairtest-artifacts.mjs'
+import { captureRelativePath, captureRowArtifact } from './capture-paths.mjs'
 
 const captureCases = await importFairtestSource('src/capture/cases.mjs')
 const captureRecord = await importFairtestSource('src/capture/record.mjs')
 const captureBuild = await importFairtestSource('src/capture/build.mjs')
+const hostKinds = await importFairtestSource('src/host-contract/kinds.mjs')
 
 /**
- * @typedef {object} CaptureSurfaceLike
- * @property {string} id
+ * @typedef {object} CaptureTargetPlan
+ * @property {string} name
  * @property {string} kind
- * @property {string} path
- * @property {string} query
- * @property {string} hash
- * @property {string} root
- * @property {{ name: string, selector: string, hover?: boolean, stateLabel?: boolean }[]} probes
- * @property {{ name: string, selector: string }[]} focus
+ * @property {string} selector
+ * @property {boolean} [stateLabel]
  */
 
 /**
@@ -43,7 +44,17 @@ const captureBuild = await importFairtestSource('src/capture/build.mjs')
  * @property {string[]} states
  * @property {number[]} widths
  * @property {string[]} themes
- * @property {CaptureSurfaceLike[]} surfaces
+ * @property {Record<string, unknown>[]} surfaces
+ */
+
+/**
+ * @typedef {object} CaptureBuildLike
+ * @property {string} state
+ * @property {string} root
+ * @property {string} head
+ * @property {boolean} dirty
+ * @property {{ asset: string, sha256: string }[]} assets
+ * @property {{ asset: string, sha256: string, servedEqualsDist: boolean }[]} served
  */
 
 /**
@@ -64,19 +75,10 @@ const captureBuild = await importFairtestSource('src/capture/build.mjs')
  * @property {string} kind
  * @property {number} width
  * @property {string} theme
+ * @property {string} observedTheme
  * @property {number} observedAtMs
  * @property {{ asset: string, sha256: string }[]} servedAssets
  * @property {CaptureTargetLike[]} targets
- */
-
-/**
- * @typedef {object} CaptureBuildLike
- * @property {string} state
- * @property {string} root
- * @property {string} head
- * @property {boolean} dirty
- * @property {{ asset: string, sha256: string }[]} assets
- * @property {{ asset: string, sha256: string, servedEqualsDist: boolean }[]} served
  */
 
 /**
@@ -84,7 +86,8 @@ const captureBuild = await importFairtestSource('src/capture/build.mjs')
  * @property {string} state state id
  * @property {string} origin loopback origin of the served tree
  * @property {string} distRoot built tree root
- * @property {string} label worktree head or explicit build label
+ * @property {string} head worktree head or explicit build label
+ * @property {boolean} dirty whether the served worktree was dirty
  * @property {CaptureCasesLike} cases validated capture-case document
  * @property {string} outRoot capture root
  * @property {import('@playwright/test').Browser} browser launched browser
@@ -174,13 +177,15 @@ export function readDistAssets(distRoot) {
   const refs = [...index.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((match) => match[1])
   return refs.map((ref) => ({
     asset: ref,
-    sha256: sha256(readFileSync(join(distRoot, ...ref.split('/').filter((segment) => segment.length > 0)))),
+    sha256: sha256(readFileSync(captureRelativePath(distRoot, ref.replace(/^\//, ''), 'distAsset'))),
   }))
 }
 
 /**
  * Prove the served origin is the exact built tree: every asset reference the
- * served index names is fetched and compared byte for byte with the tree.
+ * served index names is fetched, hashed, and compared against the tree with the
+ * shared served-digest proof, so a served origin that is not this build fails
+ * closed instead of certifying someone else's bytes.
  * @param {string} origin loopback origin
  * @param {string} distRoot built tree root
  * @returns {Promise<{ asset: string, sha256: string, servedEqualsDist: boolean }[]>}
@@ -188,13 +193,14 @@ export function readDistAssets(distRoot) {
 export async function servedMatchesDist(origin, distRoot) {
   const html = await (await fetch(`${origin}/`)).text()
   const refs = [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((match) => match[1])
-  const served = []
+  /** @type {Record<string, string>} */
+  const assetDigests = {}
   for (const ref of refs) {
     const bytes = Buffer.from(await (await fetch(origin + ref)).arrayBuffer())
-    const onDisk = readFileSync(join(distRoot, ...ref.split('/').filter((segment) => segment.length > 0)))
-    served.push({ asset: ref, sha256: sha256(bytes), servedEqualsDist: bytes.equals(onDisk) })
+    assetDigests[ref] = sha256(bytes)
   }
-  return served
+  assertServedDigestsMatchRunRoot({ assetDigests, distRoot, label: 'capture driver', against: 'capture-dist' })
+  return refs.map((ref) => ({ asset: ref, sha256: assetDigests[ref], servedEqualsDist: true }))
 }
 
 /**
@@ -207,6 +213,29 @@ export function gitInfo(distRoot) {
   const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: worktree, encoding: 'utf8' }).trim()
   const dirty = execFileSync('git', ['status', '--porcelain'], { cwd: worktree, encoding: 'utf8' }).trim().length > 0
   return { head, dirty }
+}
+
+/**
+ * Resolve the build identity a state records: the explicit label when one is
+ * supplied, else the worktree head. The dirty read is optional, so a served
+ * tree outside a git worktree still resolves when its label is given.
+ * @param {string} state state id
+ * @param {string} distRoot built tree root
+ * @param {string | undefined} explicit explicit build label
+ * @returns {{ head: string, dirty: boolean }}
+ */
+export function resolveBuildInfo(state, distRoot, explicit) {
+  try {
+    const info = gitInfo(distRoot)
+    return { head: explicit ?? info.head, dirty: info.dirty }
+  } catch (error) {
+    if (explicit !== undefined) return { head: explicit, dirty: false }
+    throw new Error(
+      `capture driver: cannot read the worktree head for the ${state} tree for field "head" at path build.head; ` +
+      `${error instanceof Error ? error.message : String(error)}; ` +
+      `repair: pass --${state}-label <lowercase-hex-commit> for a served tree outside a git worktree.`,
+    )
+  }
 }
 
 /**
@@ -357,11 +386,19 @@ function readHoverTargetInPage(selector) {
 }
 
 /**
+ * @typedef {object} PointerVerdict
+ * @property {boolean} pointerParked whether the pointer ended outside the target and its group
+ * @property {number[]} parkPoint the park point the verdict was taken at
+ * @property {boolean} hoveredAtShot whether the target was still hovered at the last park point
+ */
+
+/**
  * Park the pointer outside the target and outside its control group, then
- * verify the target is not hovered.
+ * verify the target is not hovered. Reports the verdict honestly: when no
+ * candidate park point leaves the target unhovered, `pointerParked` is false.
  * @param {import('@playwright/test').Page} page live page
  * @param {string} selector target selector
- * @returns {Promise<{ pointerParked: boolean, parkPoint: number[], hoveredAtShot: boolean }>}
+ * @returns {Promise<PointerVerdict>}
  */
 async function ensureNotHovered(page, selector) {
   const { candidates } = await page.evaluate(({ target, groupSelector }) => {
@@ -404,7 +441,7 @@ async function ensureNotHovered(page, selector) {
     if (!hovered) return { pointerParked: true, parkPoint: point, hoveredAtShot: false }
   }
   const last = candidates[candidates.length - 1] ?? [0, 0]
-  return { pointerParked: true, parkPoint: last, hoveredAtShot: hovered }
+  return { pointerParked: hovered === false, parkPoint: last, hoveredAtShot: hovered }
 }
 
 /**
@@ -549,15 +586,26 @@ function invisibleReason(read, selector) {
 }
 
 /**
+ * The explicit reason a target could not be shot because the pointer could not
+ * be proven off it and its control group.
+ * @param {string} selector target selector
+ * @param {PointerVerdict} verdict pointer verdict
+ * @returns {string}
+ */
+function unhoveredReason(selector, verdict) {
+  return `pointer could not be parked off ${selector} and its control group before the shot (hoveredAtShot=${verdict.hoveredAtShot}); not shot, because a hovered target is not the resting state`
+}
+
+/**
  * Compose the page URL for one surface and theme.
  * @param {string} origin loopback origin
- * @param {CaptureSurfaceLike} surface capture surface
+ * @param {Record<string, unknown>} surface capture surface
  * @param {string} theme theme name
  * @returns {string}
  */
 function pageUrl(origin, surface, theme) {
-  const query = [BASE_QUERY, surface.query, `theme=${theme}`].filter((entry) => typeof entry === 'string' && entry.length > 0).join('&')
-  return `${origin}${surface.path}?${query}${surface.hash}`
+  const query = [BASE_QUERY, String(surface.query ?? ''), `theme=${theme}`].filter((entry) => entry.length > 0).join('&')
+  return `${origin}${String(surface.path)}?${query}${String(surface.hash ?? '')}`
 }
 
 /**
@@ -567,8 +615,153 @@ function pageUrl(origin, surface, theme) {
  * @returns {{ file: string, sha256: string }}
  */
 function shotRef(outRoot, relative) {
-  const bytes = readFileSync(join(outRoot, ...relative.split('/')))
+  const bytes = readFileSync(captureRelativePath(outRoot, relative, 'captureShot.file'))
   return { file: relative, sha256: sha256(bytes) }
+}
+
+/**
+ * @typedef {object} RowContext
+ * @property {import('@playwright/test').Page} page
+ * @property {string} outRoot
+ * @property {string} state
+ * @property {string} surfaceId
+ * @property {number} width
+ * @property {string} theme
+ * @property {string[]} files
+ */
+
+/**
+ * Capture one probe target: re-park the pointer, read computed style, and write
+ * the element shot. A target whose pointer cannot be proven off it is recorded
+ * unshootable rather than shot in a hovered state.
+ * @param {RowContext} context row context
+ * @param {CaptureTargetPlan} plan target plan
+ * @returns {Promise<CaptureTargetLike>}
+ */
+async function captureProbe(context, plan) {
+  const { page, outRoot, state, surfaceId, width, theme } = context
+  await page.locator(plan.selector).first().scrollIntoViewIfNeeded({ timeout: 1500 }).catch(() => {})
+  await pauseAnimations(page)
+  await page.waitForTimeout(60)
+  const parked = await ensureNotHovered(page, plan.selector)
+  const observed = await page.evaluate(readTargetInPage, { selector: plan.selector, wantStateLabel: Boolean(plan.stateLabel) })
+  const read = observed === null ? null : /** @type {Record<string, unknown>} */ ({ ...observed, pointerParked: parked.pointerParked, hoveredAtShot: parked.hoveredAtShot, parkPoint: parked.parkPoint })
+  const contrast = read
+    ? { text: contrastRatio(String(read.color), String(read.effBg)), beforeVsEffBg: contrastRatio(String(read.beforeBg), String(read.effBg)) }
+    : null
+  const shotRel = `shots/${state}/${surfaceId}-${width}-${theme}-${plan.name}.png`
+  let shot = null
+  let unshootable = null
+  const rect = /** @type {{ w: number, h: number } | null} */ (read ? read.rect : null)
+  if (!parked.pointerParked) {
+    unshootable = { reason: unhoveredReason(plan.selector, parked) }
+  } else if (read && read.visible === true && rect && rect.w > 0 && rect.h > 0) {
+    const written = await writeShot(page.locator(plan.selector).first(), captureRelativePath(outRoot, shotRel, 'captureShot.file'))
+    if (written) {
+      shot = shotRef(outRoot, shotRel)
+      context.files.push(shotRel)
+    } else {
+      unshootable = { reason: `screenshot attempt failed for ${plan.selector}` }
+    }
+  } else {
+    unshootable = { reason: invisibleReason(read, plan.selector) }
+  }
+  return { target: plan.name, kind: 'probe', selector: plan.selector, read, contrast, shot, unshootable }
+}
+
+/**
+ * Capture one hover target: hover deliberately, read the hover treatment, and
+ * write the hover shot. A target that is not hovered at shot time is recorded
+ * unshootable rather than shot as if it were.
+ * @param {RowContext} context row context
+ * @param {CaptureTargetPlan} plan target plan
+ * @returns {Promise<CaptureTargetLike>}
+ */
+async function captureHover(context, plan) {
+  const { page, outRoot, state, surfaceId, width, theme } = context
+  const target = page.locator(plan.selector).first()
+  await target.hover().catch(() => {})
+  await page.waitForTimeout(80)
+  const hoveredNow = await page.evaluate((selector) => {
+    const element = document.querySelector(selector)
+    return element ? element.matches(':hover') : false
+  }, plan.selector)
+  const observed = await page.evaluate(readHoverTargetInPage, plan.selector)
+  const read = observed === null ? null : /** @type {Record<string, unknown>} */ ({ ...observed, pointerHoveredExpected: true, hoveredAtShot: hoveredNow })
+  const hoverRel = `shots/${state}/${surfaceId}-${width}-${theme}-${plan.name}-hover.png`
+  let shot = null
+  let unshootable = null
+  if (!hoveredNow) {
+    unshootable = { reason: `target was not hovered at shot time for ${plan.selector}; the deliberate hover did not land` }
+  } else {
+    const written = await writeShot(target, captureRelativePath(outRoot, hoverRel, 'captureShot.file'))
+    if (written) {
+      shot = shotRef(outRoot, hoverRel)
+      context.files.push(hoverRel)
+    } else {
+      unshootable = { reason: `hover screenshot attempt failed for ${plan.selector}` }
+    }
+  }
+  await ensureNotHovered(page, plan.selector)
+  return {
+    target: plan.name,
+    kind: 'hover',
+    selector: plan.selector,
+    read,
+    contrast: read ? { text: contrastRatio(String(read.color), String(read.effBg)) } : null,
+    shot,
+    unshootable,
+  }
+}
+
+/**
+ * Capture one keyboard focus representative: reach a genuine focus ring and
+ * write a padded shot. A target that cannot show a real ring is recorded
+ * unshootable, never script-faked.
+ * @param {RowContext} context row context
+ * @param {CaptureTargetPlan} plan target plan
+ * @returns {Promise<CaptureTargetLike>}
+ */
+async function captureFocus(context, plan) {
+  const { page, outRoot, state, surfaceId, width, theme } = context
+  await page.locator(plan.selector).first().scrollIntoViewIfNeeded({ timeout: 1500 }).catch(() => {})
+  await pauseAnimations(page)
+  const observed = await page.evaluate(readTargetInPage, { selector: plan.selector, wantStateLabel: false })
+  const rect = /** @type {{ w: number, h: number } | null} */ (observed ? observed.rect : null)
+  const focusRel = `shots/${state}/${surfaceId}-${width}-${theme}-${plan.name}.png`
+  let read = observed === null ? null : /** @type {Record<string, unknown>} */ ({ ...observed })
+  let shot = null
+  let unshootable = null
+  if (!observed || observed.visible !== true || !rect || rect.w === 0 || rect.h === 0) {
+    unshootable = { reason: `focus representative not painted at this width: ${invisibleReason(observed, plan.selector)}` }
+    return { target: plan.name, kind: 'focus', selector: plan.selector, read, contrast: null, shot, unshootable }
+  }
+  const keyboard = await keyboardFocus(page, plan.selector)
+  const parked = await ensureNotHovered(page, plan.selector)
+  const info = await checkFocus(page, plan.selector)
+  read = /** @type {Record<string, unknown>} */ ({
+    ...observed,
+    focusMethod: keyboard.method,
+    activeElementIsTarget: info.activeElementIsTarget,
+    matchesFocusVisible: info.matchesFocusVisible,
+    activeElement: info.activeElement,
+    pointerParked: parked.pointerParked,
+    hoveredAtShot: parked.hoveredAtShot,
+  })
+  if (info.activeElementIsTarget && info.matchesFocusVisible) {
+    const written = await writePaddedShot(page, page.locator(plan.selector).first(), captureRelativePath(outRoot, focusRel, 'captureShot.file'))
+    if (written) {
+      shot = shotRef(outRoot, focusRel)
+      context.files.push(focusRel)
+    } else {
+      unshootable = { reason: 'focus screenshot attempt failed after the element was confirmed focus-visible' }
+    }
+  } else {
+    unshootable = {
+      reason: `genuine keyboard focus ring could not be achieved (method ${keyboard.method}; activeElementIsTarget=${info.activeElementIsTarget}; matchesFocusVisible=${info.matchesFocusVisible}); not script-faked`,
+    }
+  }
+  return { target: plan.name, kind: 'focus', selector: plan.selector, read, contrast: null, shot, unshootable }
 }
 
 /**
@@ -576,157 +769,96 @@ function shotRef(outRoot, relative) {
  * @param {CaptureStateOptions} options capture options
  * @returns {Promise<{ build: CaptureBuildLike, records: CaptureRecordLike[], files: string[] }>}
  */
-export async function captureState({ state, origin, distRoot, label, cases, outRoot, browser }) {
+export async function captureState({ state, origin, distRoot, head, dirty, cases, outRoot, browser }) {
   const assets = readDistAssets(distRoot)
   const served = await servedMatchesDist(origin, distRoot)
-  const build = captureBuild.assertServedMatchesDist({ state, root: resolve(distRoot), head: label, dirty: gitInfo(distRoot).dirty, assets, served })
+  const build = captureBuild.assertServedMatchesDist({ state, root: resolve(distRoot), head, dirty, assets, served })
 
   /** @type {CaptureRecordLike[]} */
   const records = []
   /** @type {string[]} */
   const files = []
   for (const surface of cases.surfaces) {
+    const surfaceId = String(surface.id)
     for (const width of cases.widths) {
       for (const theme of cases.themes) {
-        const key = captureCases.captureRowKey(surface.id, width, theme)
-        const url = pageUrl(origin, surface, theme)
+        const key = captureCases.captureRowKey(surfaceId, width, theme)
         const page = await browser.newPage({ viewport: { width, height: 1100 }, reducedMotion: 'reduce' })
         try {
           page.setDefaultTimeout(9000)
           page.setDefaultNavigationTimeout(25000)
-          await page.goto(url, { waitUntil: 'domcontentloaded' })
+          await page.goto(pageUrl(origin, surface, theme), { waitUntil: 'domcontentloaded' })
           await page.evaluate(() => document.fonts.ready)
           await page.waitForTimeout(500)
-          const root = page.locator(surface.root).first()
+          const root = page.locator(String(surface.root)).first()
           await root.waitFor({ state: 'visible' })
           await root.evaluate((/** @type {Element} */ node) => node.scrollIntoView({ block: 'start', behavior: 'instant' }))
           await pauseAnimations(page)
           const observedTheme = await page.locator('html').getAttribute('data-theme')
-          if (observedTheme !== theme) throw new Error(`theme mismatch ${observedTheme} != ${theme} for ${url}`)
+          if (!/** @type {readonly string[]} */ (hostKinds.THEME_NAMES).includes(/** @type {string} */ (observedTheme))) {
+            throw new Error(
+              `capture driver: the page rendered no declared theme for field "observedTheme" at path capture.observedTheme; ` +
+              `observed ${JSON.stringify(observedTheme)}; ` +
+              `repair: serve a page whose root declares one of ${hostKinds.THEME_NAMES.join(', ')}.`,
+            )
+          }
+          if (observedTheme !== theme) {
+            throw new Error(
+              `capture driver: the page did not render the requested theme for field "observedTheme" at path capture.observedTheme; ` +
+              `expected ${JSON.stringify(theme)} observed ${JSON.stringify(observedTheme)}; ` +
+              'repair: serve a page that honors the requested theme, or capture the theme the page renders.',
+            )
+          }
 
           const surfaceRel = `rows/${state}/${key}/surface.png`
-          const surfacePath = join(outRoot, ...surfaceRel.split('/'))
+          const surfacePath = captureRowArtifact(outRoot, state, key, 'surface.png')
           mkdirSync(dirname(surfacePath), { recursive: true })
           try {
             await root.screenshot({ path: surfacePath, timeout: 8000 })
           } catch {
             await page.screenshot({ path: surfacePath }).catch(() => {})
           }
-          if (!existsSync(surfacePath)) throw new Error(`full-region shot did not write a file for ${key}`)
+          if (!existsSync(surfacePath)) {
+            throw new Error(
+              `capture driver: full-region shot did not write a file for field "surface.png" at path ${surfaceRel}; ` +
+              'repair: shoot the region with the plain viewport fallback so every row carries its surface artifact.',
+            )
+          }
           files.push(surfaceRel)
 
+          /** @type {RowContext} */
+          const context = { page, outRoot, state, surfaceId, width, theme, files }
           /** @type {CaptureTargetLike[]} */
           const targets = []
-          for (const probe of surface.probes) {
-            await page.locator(probe.selector).first().scrollIntoViewIfNeeded({ timeout: 1500 }).catch(() => {})
-            await pauseAnimations(page)
-            await page.waitForTimeout(60)
-            await ensureNotHovered(page, probe.selector)
-            const read = await page.evaluate(readTargetInPage, { selector: probe.selector, wantStateLabel: Boolean(probe.stateLabel) })
-            const contrast = read
-              ? { text: contrastRatio(String(read.color), String(read.effBg)), beforeVsEffBg: contrastRatio(String(read.beforeBg), String(read.effBg)) }
-              : null
-            const shotRel = `shots/${state}/${surface.id}-${width}-${theme}-${probe.name}.png`
-            let shot = null
-            let unshootable = null
-            const rect = /** @type {{ w: number, h: number } | null} */ (read ? read.rect : null)
-            if (read && read.visible === true && rect && rect.w > 0 && rect.h > 0) {
-              const written = await writeShot(page.locator(probe.selector).first(), join(outRoot, ...shotRel.split('/')))
-              if (written) {
-                shot = shotRef(outRoot, shotRel)
-                files.push(shotRel)
-              } else {
-                unshootable = { reason: `screenshot attempt failed for ${probe.selector}` }
-              }
-            } else {
-              unshootable = { reason: invisibleReason(read, probe.selector) }
-            }
-            targets.push({ target: probe.name, kind: 'probe', selector: probe.selector, read, contrast, shot, unshootable })
-
-            if (probe.hover) {
-              const target = page.locator(probe.selector).first()
-              await target.hover().catch(() => {})
-              await page.waitForTimeout(80)
-              const hoverRead = await page.evaluate(readHoverTargetInPage, probe.selector)
-              const hoverRel = `shots/${state}/${surface.id}-${width}-${theme}-${probe.name}-hover.png`
-              let hoverShot = null
-              let hoverUnshootable = null
-              const written = await writeShot(target, join(outRoot, ...hoverRel.split('/')))
-              if (written) {
-                hoverShot = shotRef(outRoot, hoverRel)
-                files.push(hoverRel)
-              } else {
-                hoverUnshootable = { reason: `hover screenshot attempt failed for ${probe.selector}` }
-              }
-              targets.push({
-                target: probe.name,
-                kind: 'hover',
-                selector: probe.selector,
-                read: hoverRead,
-                contrast: hoverRead ? { text: contrastRatio(String(hoverRead.color), String(hoverRead.effBg)) } : null,
-                shot: hoverShot,
-                unshootable: hoverUnshootable,
-              })
-              await ensureNotHovered(page, probe.selector)
-            }
+          for (const plan of captureCases.captureSurfaceTargets(surface)) {
+            if (plan.kind === 'probe') targets.push(await captureProbe(context, plan))
+            else if (plan.kind === 'hover') targets.push(await captureHover(context, plan))
+            else if (plan.kind === 'focus') targets.push(await captureFocus(context, plan))
+            else targets.push({ target: plan.name, kind: 'surface', selector: plan.selector, read: null, contrast: null, shot: shotRef(outRoot, surfaceRel), unshootable: null })
           }
 
-          for (const focus of surface.focus) {
-            await page.locator(focus.selector).first().scrollIntoViewIfNeeded({ timeout: 1500 }).catch(() => {})
-            await pauseAnimations(page)
-            const read = await page.evaluate(readTargetInPage, { selector: focus.selector, wantStateLabel: false })
-            const rect = /** @type {{ w: number, h: number } | null} */ (read ? read.rect : null)
-            const focusRel = `shots/${state}/${surface.id}-${width}-${theme}-${focus.name}.png`
-            if (!read || read.visible !== true || !rect || rect.w === 0 || rect.h === 0) {
-              targets.push({
-                target: focus.name,
-                kind: 'focus',
-                selector: focus.selector,
-                read,
-                contrast: null,
-                shot: null,
-                unshootable: { reason: `focus representative not painted at this width: ${invisibleReason(read, focus.selector)}` },
-              })
-              continue
-            }
-            const keyboard = await keyboardFocus(page, focus.selector)
-            await ensureNotHovered(page, focus.selector)
-            const info = await checkFocus(page, focus.selector)
-            const focusRead = { ...read, focusMethod: keyboard.method, activeElementIsTarget: info.activeElementIsTarget, matchesFocusVisible: info.matchesFocusVisible, activeElement: info.activeElement }
-            let shot = null
-            let unshootable = null
-            if (info.activeElementIsTarget && info.matchesFocusVisible) {
-              const written = await writePaddedShot(page, page.locator(focus.selector).first(), join(outRoot, ...focusRel.split('/')))
-              if (written) {
-                shot = shotRef(outRoot, focusRel)
-                files.push(focusRel)
-              } else {
-                unshootable = { reason: 'focus screenshot attempt failed after the element was confirmed focus-visible' }
-              }
-            } else {
-              unshootable = {
-                reason: `genuine keyboard focus ring could not be achieved (method ${keyboard.method}; activeElementIsTarget=${info.activeElementIsTarget}; matchesFocusVisible=${info.matchesFocusVisible}); not script-faked`,
-              }
-            }
-            targets.push({ target: focus.name, kind: 'focus', selector: focus.selector, read: focusRead, contrast: null, shot, unshootable })
-          }
-
-          targets.push({ target: 'surface', kind: 'surface', selector: surface.root, read: null, contrast: null, shot: shotRef(outRoot, surfaceRel), unshootable: null })
-
+          /** @type {string[]} */
+          const rowFiles = [surfaceRel]
+          for (const target of targets) if (target.shot !== null) rowFiles.push(target.shot.file)
           const record = captureRecord.createCaptureRecord({
             state,
-            surface: surface.id,
-            kind: surface.kind,
+            surface: surfaceId,
+            kind: String(surface.kind),
             width,
             theme,
+            observedTheme,
             observedAtMs: Date.now(),
             servedAssets: assets,
             targets,
           })
-          captureRecord.reconcileCaptureRecord(record, files, `${state}/${key}`)
+          captureRecord.reconcileCaptureRecord(record, rowFiles, `${state}/${key}`)
+          /** @type {Record<string, Uint8Array>} */
+          const bytesByFile = {}
+          for (const relative of rowFiles) bytesByFile[relative] = readFileSync(captureRelativePath(outRoot, relative, 'captureShot.file'))
+          captureRecord.assertCaptureShotsDigest(record, bytesByFile, `${state}/${key}`)
           records.push(record)
-          writeFileSync(join(outRoot, 'rows', state, key, 'capture.json'), captureRecord.serializeCaptureRecord(record))
-          writeFileSync(join(outRoot, 'rows', state, key, 'provenance.json'), `${JSON.stringify(build, null, 2)}\n`)
+          writeFileSync(captureRowArtifact(outRoot, state, key, 'capture.json'), captureRecord.serializeCaptureRecord(record))
+          writeFileSync(captureRowArtifact(outRoot, state, key, 'provenance.json'), `${JSON.stringify(build, null, 2)}\n`)
         } finally {
           await page.close()
         }

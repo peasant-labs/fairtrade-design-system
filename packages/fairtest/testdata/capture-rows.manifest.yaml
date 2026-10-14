@@ -1,5 +1,5 @@
 # Required-name inventory and executable mutations for capture-rows.yaml.
-expectedCaseCount: 7
+expectedCaseCount: 10
 requiredCaseNames:
   - certified capture run verifies
   - dropped artifact fails
@@ -8,6 +8,9 @@ requiredCaseNames:
   - cross-root provenance fails
   - shot reference without a file fails
   - target with neither shot nor reason fails
+  - target with both a shot and a reason fails
+  - a shot whose bytes differ from its digest fails
+  - a restated theme observation fails
 expectedMutationCount: 7
 requiredMutationNames:
   - removing the cross-root case breaks the required inventory

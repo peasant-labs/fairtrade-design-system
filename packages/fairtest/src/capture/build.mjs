@@ -15,8 +15,8 @@
 
 import { assertExactFields, assertNonEmptyString, freezeRecord } from '../core/values.mjs'
 import { assertArtifactDigest } from '../evidence/digest.mjs'
+import { assertCaptureName } from './values.mjs'
 
-const NAME_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/
 const HEAD_PATTERN = /^[0-9a-f]{7,64}$/
 
 /**
@@ -121,14 +121,11 @@ function validateServed(value, label) {
 export function validateServedBuild(value, label) {
   assertExactFields(value, ['state', 'root', 'head', 'dirty', 'assets', 'served'], label, 'build')
   const record = /** @type {Record<string, unknown>} */ (value)
-  assertNonEmptyString(record.state, 'state', 'build.state')
-  if (!NAME_PATTERN.test(/** @type {string} */ (record.state))) {
-    throw new Error(`${label}: invalid value ${JSON.stringify(record.state)} for field "state" at path build.state; repair: use a lowercase state id up to 64 characters for "state".`)
-  }
+  assertCaptureName(record.state, 'state', 'build.state')
   assertNonEmptyString(record.root, 'root', 'build.root')
   assertNonEmptyString(record.head, 'head', 'build.head')
   if (!HEAD_PATTERN.test(/** @type {string} */ (record.head))) {
-    throw new Error(`${label}: invalid value ${JSON.stringify(record.head)} for field "head" at path build.head; repair: use a lowercase hex worktree head, or pass an explicit build label.`)
+    throw new Error(`${label}: invalid value ${JSON.stringify(record.head)} for field "head" at path build.head; repair: use a lowercase hex worktree head, or pass the same lowercase hex value as the explicit build label.`)
   }
   if (typeof record.dirty !== 'boolean') {
     throw new Error(`${label}: invalid value ${JSON.stringify(record.dirty)} for field "dirty" at path build.dirty; repair: record whether the worktree was dirty as a boolean.`)

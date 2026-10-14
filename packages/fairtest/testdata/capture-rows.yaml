@@ -2,7 +2,7 @@
 # Synthetic caller-owned data: one certified state, two rows, three targets.
 # Each case either verifies the built evidence run or asserts a producer
 # invariant failure. The required case inventory lives in the sibling manifest.
-expectedCaseCount: 7
+expectedCaseCount: 10
 run:
   state: before
   runId: capture-before
@@ -60,3 +60,16 @@ cases:
     check: fixture
     mutation: silent-miss
     expectedDiagnostic: ["neither a shot nor", "at path", "repair:"]
+  - name: target with both a shot and a reason fails
+    check: fixture
+    mutation: both-shot-and-reason
+    expectedDiagnostic: ["both a shot and an unshootable reason", "at path", "repair:"]
+  - name: a shot whose bytes differ from its digest fails
+    check: fixture
+    mutation: shot-digest-mismatch
+    expectedDiagnostic: ["shot digest mismatch", "at path", "repair:"]
+  - name: a restated theme observation fails
+    check: verify
+    mutation: theme-mismatch
+    expectVerdict: fail
+    expectedFailureCodes: [theme-mismatch]

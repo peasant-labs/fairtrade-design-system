@@ -2,7 +2,7 @@
 # Synthetic caller-owned data: one surface, one probe, one focus
 # representative, and two certified records that cover one width and theme.
 # The required case inventory lives in the sibling manifest.
-expectedCaseCount: 4
+expectedCaseCount: 7
 matrix:
   states: [before, after]
   widths: [320, 1440]
@@ -54,3 +54,17 @@ cases:
   - name: a shot cell without an image fails closed
     check: render
     expectedDiagnostic: ["no image for shot", "at path", "repair:"]
+  - name: manifest mismatches fail with actionable diagnostics
+    check: manifest
+    expectedDiagnostic:
+      inventory: ["sheet inventory mismatch", "at path", "repair:"]
+      stateOrder: ["state inventory mismatch", "at path", "repair:"]
+      order: ['field "order"', "at path", "repair:"]
+  - name: a duplicate record scope fails
+    check: plan
+    mutation: duplicate-record
+    expectedDiagnostic: ["duplicate capture record", "at path", "repair:"]
+  - name: a record target no planned row covers fails
+    check: plan
+    mutation: uncovered-target
+    expectedDiagnostic: ["record target", "at path", "repair:"]

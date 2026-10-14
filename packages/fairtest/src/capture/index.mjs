@@ -13,11 +13,13 @@ export {
   CAPTURE_PROBE_OPTION_FIELDS,
   captureRowKey,
   captureRowTargets,
+  captureSurfaceTargets,
   loadCaptureCases,
   validateCaptureCases,
+  validateCaptureSurface,
 } from './cases.mjs'
+export { CAPTURE_NAME_PATTERN, CAPTURE_MAX_WIDTH, CAPTURE_TARGET_KINDS, assertCaptureName } from './values.mjs'
 export {
-  CAPTURE_TARGET_KINDS,
   assertCaptureShotsDigest,
   captureRecordDigest,
   captureRecordKey,

@@ -14,7 +14,7 @@
   "scripts": {
     "test:adapter": "node --test test/host-contract.test.mjs",
     "test:bridge-contract": "node --test test/bridge-contract.test.mjs",
-    "test:capture": "node --test test/capture-cases.test.mjs test/capture-rows.test.mjs test/capture-sheet.test.mjs",
+    "test:capture": "node --test test/capture-cases.test.mjs test/capture-rows.test.mjs test/capture-sheet.test.mjs test/capture-build.test.mjs",
     "test:core": "node --test test/core.test.mjs test/isolation.test.mjs",
     "test:evidence": "node --test test/evidence.test.mjs test/evidence-mutations.mjs"
   }

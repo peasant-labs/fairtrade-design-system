@@ -14,9 +14,7 @@
 import { assertExactFields, assertIntegerInRange, assertNonEmptyString, freezeRecord, isPlainRecord } from '../core/values.mjs'
 import { loadSingleDocument } from '../core/fixtures.mjs'
 import { THEME_NAMES, assertHostKind } from '../host-contract/kinds.mjs'
-
-const NAME_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/
-const MAX_WIDTH = 100000
+import { CAPTURE_MAX_WIDTH, assertCaptureName } from './values.mjs'
 
 /**
  * Optional probe flags a capture case may declare beside its name and
@@ -71,23 +69,6 @@ export const CAPTURE_PROBE_OPTION_FIELDS = freezeRecord(['hover', 'stateLabel'])
  */
 
 /**
- * Assert a caller-owned name matches the shared lowercase name pattern.
- * @param {unknown} value
- * @param {string} field field name used in diagnostics
- * @param {string} where value path used in diagnostics
- * @returns {asserts value is string}
- */
-function assertName(value, field, where) {
-  assertNonEmptyString(value, field, where)
-  if (!NAME_PATTERN.test(value)) {
-    throw new Error(
-      `invalid value ${JSON.stringify(value)} for field "${field}" at path ${where}; ` +
-      `repair: use a lowercase name up to 64 characters for "${field}".`,
-    )
-  }
-}
-
-/**
  * Validate the ordered state list.
  * @param {unknown} value
  * @param {string} label owning document used in diagnostics
@@ -102,7 +83,7 @@ function validateStates(value, label) {
   const states = []
   for (const [index, entry] of value.entries()) {
     const where = `cases.states[${index}]`
-    assertName(entry, 'states', where)
+    assertCaptureName(entry, 'states', where)
     if (seen.has(entry)) {
       throw new Error(`${label}: duplicate state ${JSON.stringify(entry)} at path ${where}; repair: list every state id once in cases.states.`)
     }
@@ -127,7 +108,7 @@ function validateWidths(value, label) {
   const widths = []
   for (const [index, entry] of value.entries()) {
     const where = `cases.widths[${index}]`
-    assertIntegerInRange(entry, 'widths', where, { min: 1, max: MAX_WIDTH })
+    assertIntegerInRange(entry, 'widths', where, { min: 1, max: CAPTURE_MAX_WIDTH })
     if (seen.has(entry)) {
       throw new Error(`${label}: duplicate width ${JSON.stringify(entry)} at path ${where}; repair: list every width once in cases.widths.`)
     }
@@ -182,7 +163,7 @@ function validateProbe(value, label, where) {
   }
   assertExactFields(value, fields, label, where)
   const record = /** @type {Record<string, unknown>} */ (value)
-  assertName(record.name, 'probes[].name', `${where}.name`)
+  assertCaptureName(record.name, 'probes[].name', `${where}.name`)
   assertNonEmptyString(record.selector, 'selector', `${where}.selector`)
   for (const option of CAPTURE_PROBE_OPTION_FIELDS) {
     if (option in record && typeof record[option] !== 'boolean') {
@@ -205,7 +186,7 @@ function validateProbe(value, label, where) {
 function validateFocus(value, label, where) {
   assertExactFields(value, ['name', 'selector'], label, where)
   const record = /** @type {Record<string, unknown>} */ (value)
-  assertName(record.name, 'focus[].name', `${where}.name`)
+  assertCaptureName(record.name, 'focus[].name', `${where}.name`)
   assertNonEmptyString(record.selector, 'selector', `${where}.selector`)
   return /** @type {CaptureFocus} */ (freezeRecord(record))
 }
@@ -244,10 +225,10 @@ function assertNameList(value, field, label, where, allowEmpty) {
  * @param {string} where value path used in diagnostics
  * @returns {CaptureSurface}
  */
-function validateSurface(value, label, where) {
+function validateCaptureSurfaceValue(value, label, where) {
   assertExactFields(value, ['id', 'kind', 'path', 'query', 'hash', 'root', 'probes', 'focus'], label, where)
   const record = /** @type {Record<string, unknown>} */ (value)
-  assertName(record.id, 'surfaces[].id', `${where}.id`)
+  assertCaptureName(record.id, 'surfaces[].id', `${where}.id`)
   assertHostKind(record.kind, `${where}.kind`)
   assertNonEmptyString(record.path, 'path', `${where}.path`)
   if (!/** @type {string} */ (record.path).startsWith('/')) {
@@ -286,6 +267,19 @@ function validateSurface(value, label, where) {
 }
 
 /**
+ * Validate an unknown value as one capture surface and return a frozen copy.
+ * Exported so the driver and the sheet planner validate a surface the same way
+ * the case document does.
+ * @param {unknown} value
+ * @param {string} label owning document used in diagnostics
+ * @param {string} [path] value path used in diagnostics
+ * @returns {CaptureSurface}
+ */
+export function validateCaptureSurface(value, label, path = 'captureSurface') {
+  return validateCaptureSurfaceValue(value, label, path)
+}
+
+/**
  * Validate the ordered surface list.
  * @param {unknown} value
  * @param {string} label owning document used in diagnostics
@@ -305,7 +299,7 @@ function validateSurfaces(value, label) {
       throw new Error(`${label}: duplicate surface ${JSON.stringify(id)} at path ${where}.id; repair: give every surface a unique id.`)
     }
     seen.add(id)
-    surfaces.push(validateSurface(entry, label, where))
+    surfaces.push(validateCaptureSurfaceValue(entry, label, where))
   }
   return surfaces
 }
@@ -338,6 +332,35 @@ export function loadCaptureCases(source, label) {
 }
 
 /**
+ * @typedef {object} CaptureTargetPlan
+ * @property {string} name target name
+ * @property {string} kind one of the closed target kinds
+ * @property {string} selector selector the target reads
+ * @property {boolean} stateLabel whether a probe also reads the adjacent state-label color
+ */
+
+/**
+ * Expand one capture surface into its ordered target plans: every probe, then
+ * the hover treatment of the probes that declare one, then every keyboard focus
+ * representative, then the full region shot. The driver captures these plans
+ * and the sheet planner rows them, so the two can never disagree about what a
+ * surface captures.
+ * @param {unknown} surface capture surface
+ * @param {string} [label] owning document used in diagnostics
+ * @returns {CaptureTargetPlan[]}
+ */
+export function captureSurfaceTargets(surface, label = 'captureSurface') {
+  const validated = validateCaptureSurface(surface, label)
+  /** @type {CaptureTargetPlan[]} */
+  const targets = []
+  for (const probe of validated.probes) targets.push(freezeRecord({ name: probe.name, kind: 'probe', selector: probe.selector, stateLabel: probe.stateLabel === true }))
+  for (const probe of validated.probes) if (probe.hover) targets.push(freezeRecord({ name: probe.name, kind: 'hover', selector: probe.selector, stateLabel: false }))
+  for (const focus of validated.focus) targets.push(freezeRecord({ name: focus.name, kind: 'focus', selector: focus.selector, stateLabel: false }))
+  targets.push(freezeRecord({ name: 'surface', kind: 'surface', selector: validated.root, stateLabel: false }))
+  return freezeRecord(targets)
+}
+
+/**
  * Build the caller-owned row key for one surface, width, and theme.
  * @param {string} surface surface id
  * @param {number} width viewport width
@@ -346,7 +369,7 @@ export function loadCaptureCases(source, label) {
  */
 export function captureRowKey(surface, width, theme) {
   assertNonEmptyString(surface, 'surface', 'rowKey.surface')
-  assertIntegerInRange(width, 'width', 'rowKey.width', { min: 1, max: MAX_WIDTH })
+  assertIntegerInRange(width, 'width', 'rowKey.width', { min: 1, max: CAPTURE_MAX_WIDTH })
   if (!/** @type {readonly string[]} */ (THEME_NAMES).includes(theme)) {
     throw new Error(`invalid value ${JSON.stringify(theme)} for field "theme" at path rowKey.theme; repair: use one of ${THEME_NAMES.join(', ')} for "theme".`)
   }
