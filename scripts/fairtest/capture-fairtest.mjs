@@ -100,7 +100,7 @@ const labels = { before: options['before-label'], after: options['after-label'] 
 
 const cases = capture.loadCaptureCases(readFileSync(casesPath, 'utf8'), casesPath)
 const manifest = fixtures.loadSingleDocument(readFileSync(manifestPath, 'utf8'), manifestPath)
-fixtures.assertExactFields(manifest, ['expectedSurfaceCount', 'requiredSurfaceNames'], manifestPath, 'manifest')
+fixtures.checkKeys(manifest, ['expectedSurfaceCount', 'requiredSurfaceNames'], 'manifest', manifestPath)
 if (manifest.expectedSurfaceCount !== manifest.requiredSurfaceNames.length) {
   throw new Error(`capture: manifest surface count must equal its required-name inventory at path ${manifestPath}.expectedSurfaceCount; repair: align expectedSurfaceCount with requiredSurfaceNames.`)
 }
