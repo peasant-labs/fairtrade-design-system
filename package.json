@@ -203,6 +203,7 @@
     "test:fairtest:mounted": "node scripts/fairtest/run-mounted.mjs",
     "test:fairtest:product-contract": "node scripts/fairtest/run-product-contract.mjs",
     "test:fairtest:compat": "node scripts/fairtest-surface-manifest.mjs",
+    "test:fairtest:capture": "node scripts/fairtest/capture-fairtest.mjs",
     "test:fairtest:verify": "node scripts/fairtest/verify-fairtest.mjs"
   },
   "dependencies": {

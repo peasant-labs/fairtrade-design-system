@@ -1,0 +1,14 @@
+# Required-name inventory for capture-cases.testdata.yaml. The capture CLI
+# refuses a case document that is missing a required surface or that declares a
+# surface not registered here, so a surface cannot be silently dropped from the
+# shared capture set.
+expectedSurfaceCount: 8
+requiredSurfaceNames:
+  - controls-checkbox
+  - states-toggle
+  - badges-chip
+  - inuse-apptab
+  - inuse-seg
+  - inuse-analytics
+  - inuse-transcript
+  - inuse-settings-switch
