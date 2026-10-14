@@ -51,9 +51,9 @@ These tokens live in `src/index.css` and reach every consuming app through the p
 
 ---
 
-## 1. typography & text
+In sections 1 to 7 each line names the `DESIGN.md` rule it explains; the rule itself is worded once, there.
 
-Each line names the `DESIGN.md` rule it explains; the rule itself is worded once, there.
+## 1. typography & text
 
 - **The 16px Floor Rule** - dyslexic readers have a "critical font size" below which reading rate collapses, and dense UIs habitually shrink to 11-13px; gain density through row height, never a smaller glyph. *(Rello & Baeza-Yates 2017; BDA 2023)*
 - **The Mono Is Chrome Rule** - monospace slows natural-language reading, so prose keeps tracking, word spacing, 1.5 leading and a capped measure while mono keeps `letter-spacing:0` for its columns. *(Braille Institute; BDA 2023)*
