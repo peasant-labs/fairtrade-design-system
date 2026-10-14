@@ -31,6 +31,11 @@ const MORE_ITEMS = [
   { label: 'copy link', icon: LinkIcon },
 ]
 
+/* In update mode the access list names collectives that already read the transcript, so the
+   picker's "suggested" reason no longer describes why they are on the row. The row states the
+   name and the member count; the picker below keeps its own, still true, suggestion notes. */
+const withoutSuggestionNote = ({ note, ...item }) => item
+
 function initial() {
   const params = new URLSearchParams(window.location.search)
   const popup = params.get('publish')
@@ -71,6 +76,7 @@ export function usePublishFlow() {
   }
   const readers = access.filter((item) => item.pending !== 'removal' && item.pending !== 'approval').map((item) => item.name)
   const pending = access.filter((item) => item.pending === 'approval').map((item) => item.name)
+  const readerRows = published ? access.map(withoutSuggestionNote) : access
   const suggestions = [...SUGGESTED, ...OTHERS]
     .filter((item) => !access.some((entry) => entry.id === item.id))
     .filter((item) => !query.trim() || item.name.toLowerCase().includes(query.trim().toLowerCase()))
@@ -95,7 +101,7 @@ export function usePublishFlow() {
       scan={SCAN}
       onRescan={scan}
       changes={{ summary: '6 new turns since you published, 1 new match, redacted' }}
-      access={access}
+      access={readerRows}
       onRemove={(id) => setAccess((items) => (published
         ? items.map((item) => (item.id === id ? { ...item, pending: 'removal' } : item))
         : items.filter((item) => item.id !== id)))}
