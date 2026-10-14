@@ -15,7 +15,7 @@
 
 ## design reference
 - [DESIGN.md](DESIGN.md): the one design record - a generated frontmatter (its opening note says what is generated and what is authored), philosophy, colors, typography, layout, shapes, components, voice and anti-slop rules.
-- [llm/NEUROINCLUSIVE.md](llm/NEUROINCLUSIVE.md): the research sources and review checklist behind the neuroinclusive rules in DESIGN.md (the why, with the WCAG / COGA sources).
+- [llm/NEUROINCLUSIVE.md](llm/NEUROINCLUSIVE.md): the research behind each neuroinclusive rule in DESIGN.md, one line per rule naming the rule (the why, with the WCAG / COGA sources), plus the review checklist.
 - [PRODUCT.md](PRODUCT.md): who the design system serves, what it owns, and its constraints.
 
 ## using it

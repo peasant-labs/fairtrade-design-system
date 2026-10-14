@@ -1,0 +1,48 @@
+# Required-NAME manifest for port-record.yaml: deletion protection for the source record (a source
+# cannot be dropped) plus the mutations the check must kill.
+requiredSourceNames:
+  - heading-case
+  - breadcrumb-router
+  - section-band
+requiredMutationNames:
+  - a recorded source is dropped
+  - an unrecorded source appears
+  - a source PR number is missing
+  - a source head SHA is unknown
+  - a destination section is missing
+  - a destination section is not in the record
+  - a source hunk is dropped
+  - a port duty is dropped
+  - a hunk this delivery ports is missing from the record
+  - a hunk a later pull request owns is already in the record
+mutations:
+  - name: a recorded source is dropped
+    names: [heading-case, breadcrumb-router]
+    error: 'names differ from the required-name manifest'
+  - name: an unrecorded source appears
+    names: [heading-case, breadcrumb-router, section-band, an-unrecorded-source]
+    error: 'names differ from the required-name manifest'
+  - name: a source PR number is missing
+    row: {name: heading-case, pr: null, headSha: 9e88fd53ca48888e7a918a01140676c285d6d8d4, file: llm/DESIGN.md, destinationSection: '## Typography', destination: DESIGN.md, portedBy: later-pr, added: 'a hunk this pull request does not carry.'}
+    error: 'source PR number'
+  - name: a source head SHA is unknown
+    row: {name: heading-case, pr: 102, headSha: unknown, file: llm/DESIGN.md, destinationSection: '## Typography', destination: DESIGN.md, portedBy: later-pr, added: 'a hunk this pull request does not carry.'}
+    error: 'source head SHA'
+  - name: a destination section is missing
+    row: {name: heading-case, pr: 102, headSha: 9e88fd53ca48888e7a918a01140676c285d6d8d4, file: llm/DESIGN.md, destinationSection: '', destination: DESIGN.md, portedBy: later-pr, added: 'a hunk this pull request does not carry.'}
+    error: 'destination section missing'
+  - name: a destination section is not in the record
+    row: {name: heading-case, pr: 102, headSha: 9e88fd53ca48888e7a918a01140676c285d6d8d4, file: llm/DESIGN.md, destinationSection: '## A section the record does not have', destination: DESIGN.md, portedBy: later-pr, added: 'a hunk this pull request does not carry.'}
+    error: 'destination section is not a heading'
+  - name: a source hunk is dropped
+    row: {name: heading-case, pr: 102, headSha: 9e88fd53ca48888e7a918a01140676c285d6d8d4, file: llm/DESIGN.md, destinationSection: '## Typography', destination: DESIGN.md, portedBy: later-pr, added: ''}
+    error: 'source hunk missing'
+  - name: a port duty is dropped
+    row: {name: heading-case, pr: 102, headSha: 9e88fd53ca48888e7a918a01140676c285d6d8d4, file: llm/DESIGN.md, destinationSection: '## Typography', destination: DESIGN.md, portedBy: unassigned, added: 'a hunk this pull request does not carry.'}
+    error: 'port duty'
+  - name: a hunk this delivery ports is missing from the record
+    row: {name: heading-case, pr: 102, headSha: 9e88fd53ca48888e7a918a01140676c285d6d8d4, file: llm/DESIGN.md, destinationSection: '## Typography', destination: DESIGN.md, portedBy: ours, added: 'a hunk this delivery claims to port but does not record.'}
+    error: 'DESIGN.md does not contain'
+  - name: a hunk a later pull request owns is already in the record
+    row: {name: heading-case, pr: 102, headSha: 9e88fd53ca48888e7a918a01140676c285d6d8d4, file: llm/DESIGN.md, destinationSection: '## Typography', destination: DESIGN.md, portedBy: later-pr, added: '- **The Text Spacing Rule.** A user stylesheet with WCAG 1.4.12 spacing (line-height 1.5, paragraph spacing 2x, letter 0.12em, word 0.16em) clips nothing'}
+    error: 'DESIGN.md already carries'

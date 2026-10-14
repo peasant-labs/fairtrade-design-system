@@ -32,7 +32,7 @@ for visual changes, inspect the affected stories in both themes and use the repo
 
 ## design rules
 
-keep changes aligned with `AGENTS.md` and `DESIGN.md` (the design record; `llm/NEUROINCLUSIVE.md` carries the research behind its neuroinclusive rules). in brief:
+keep changes aligned with `AGENTS.md` and `DESIGN.md` (the design record; `llm/NEUROINCLUSIVE.md` carries the research behind each neuroinclusive rule, one line per rule). in brief:
 
 - use tokens only, never hardcoded hex or px values; keep radius at 0 and amber scarce
 - support dark and light themes, both at WCAG AA contrast
