@@ -1,0 +1,277 @@
+pixel comparison 2026-10-14T08:40:59.953Z
+method: Playwright chromium canvas decode of the recorded PNGs (same method as the repo scripts/png-diff.mjs); 16 = AA-channel tolerance.
+pairs 264
+
+[on] pairs=114 compared=110 unshootable=4 missingFile=0 dimMismatch=0
+  identical=0 differing=110 differingPixelsTotal=170940 aboveToleranceTotal=169416 maxChannelDelta=217 maxChannelDeltaOff=217 computedReadChanged=114
+  identicalInnerExcl1pxFrame=0 differingInnerExcl1pxFrame=110 maxChannelDeltaOffInnerExcl1pxFrame=217
+
+[off] pairs=54 compared=54 unshootable=0 missingFile=0 dimMismatch=0
+  identical=50 differing=4 differingPixelsTotal=80 aboveToleranceTotal=75 maxChannelDelta=210 maxChannelDeltaOff=210 computedReadChanged=12
+  identicalInnerExcl1pxFrame=52 differingInnerExcl1pxFrame=2 maxChannelDeltaOffInnerExcl1pxFrame=24
+
+[other] pairs=12 compared=8 unshootable=4 missingFile=0 dimMismatch=0
+  identical=6 differing=2 differingPixelsTotal=178 aboveToleranceTotal=140 maxChannelDelta=72 maxChannelDeltaOff=72 computedReadChanged=6
+  identicalInnerExcl1pxFrame=6 differingInnerExcl1pxFrame=2 maxChannelDeltaOffInnerExcl1pxFrame=72
+
+[selected-hover] pairs=36 compared=36 unshootable=0 missingFile=0 dimMismatch=0
+  identical=0 differing=36 differingPixelsTotal=115404 aboveToleranceTotal=115216 maxChannelDelta=217 maxChannelDeltaOff=217 computedReadChanged=30
+  identicalInnerExcl1pxFrame=0 differingInnerExcl1pxFrame=36 maxChannelDeltaOffInnerExcl1pxFrame=217
+
+[focus] pairs=48 compared=44 unshootable=4 missingFile=0 dimMismatch=0
+  identical=0 differing=44 differingPixelsTotal=105590 aboveToleranceTotal=105413 maxChannelDelta=217 maxChannelDeltaOff=217 computedReadChanged=48
+  identicalInnerExcl1pxFrame=0 differingInnerExcl1pxFrame=44 maxChannelDeltaOffInnerExcl1pxFrame=217
+
+--- off/unselected pairs (claim-bearing) ---
+badges-chip|chip-toggle-off|1440|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+badges-chip|chip-toggle-off|1440|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+badges-chip|chip-toggle-off|320|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+badges-chip|chip-toggle-off|320|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+badges-chip|chip-toggle-off|390|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+badges-chip|chip-toggle-off|390|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+controls-checkbox|checkbox-unchecked|1440|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[afterBorderColor]
+controls-checkbox|checkbox-unchecked|1440|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[afterBorderColor]
+controls-checkbox|checkbox-unchecked|320|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[afterBorderColor]
+controls-checkbox|checkbox-unchecked|320|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[afterBorderColor]
+controls-checkbox|checkbox-unchecked|390|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[afterBorderColor]
+controls-checkbox|checkbox-unchecked|390|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[afterBorderColor]
+inuse-analytics|gan-seg-off|1440|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-analytics|gan-seg-off|1440|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-analytics|gan-seg-off|320|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-analytics|gan-seg-off|320|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-analytics|gan-seg-off|390|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-analytics|gan-seg-off|390|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-apptab|apptab-off|1440|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-apptab|apptab-off|1440|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-apptab|apptab-off|320|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-apptab|apptab-off|320|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-apptab|apptab-off|390|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-apptab|apptab-off|390|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-transcript|cbx-unchecked|1440|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[afterBorderColor]
+inuse-transcript|cbx-unchecked|1440|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[afterBorderColor]
+inuse-transcript|cbx-unchecked|320|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[afterBorderColor]
+inuse-transcript|cbx-unchecked|320|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[afterBorderColor]
+inuse-transcript|cbx-unchecked|390|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[afterBorderColor]
+inuse-transcript|cbx-unchecked|390|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[afterBorderColor]
+inuse-transcript|sw-off|1440|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-transcript|sw-off|1440|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-transcript|sw-off|320|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-transcript|sw-off|320|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-transcript|sw-off|390|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+inuse-transcript|sw-off|390|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+states-toggle|bs-seg-off|1440|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+states-toggle|bs-seg-off|1440|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+states-toggle|bs-seg-off|320|dark: status=compared identical=false diffPx=4 above16=3 maxDelta=24 innerDiffPx=4 innerMaxDelta=24 first=(1,16) last=(1,22) readChanged=[]
+states-toggle|bs-seg-off|320|light: status=compared identical=false diffPx=4 above16=0 maxDelta=2 innerDiffPx=4 innerMaxDelta=2 first=(1,16) last=(1,22) readChanged=[]
+states-toggle|bs-seg-off|390|dark: status=compared identical=false diffPx=36 above16=36 maxDelta=183 innerDiffPx=0 innerMaxDelta=0 first=(0,1) last=(0,36) readChanged=[]
+states-toggle|bs-seg-off|390|light: status=compared identical=false diffPx=36 above16=36 maxDelta=210 innerDiffPx=0 innerMaxDelta=0 first=(0,1) last=(0,36) readChanged=[]
+states-toggle|bs-toggle-off|1440|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+states-toggle|bs-toggle-off|1440|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+states-toggle|bs-toggle-off|320|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+states-toggle|bs-toggle-off|320|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+states-toggle|bs-toggle-off|390|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+states-toggle|bs-toggle-off|390|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+states-toggle|sw-disabled-off|1440|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+states-toggle|sw-disabled-off|1440|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+states-toggle|sw-disabled-off|320|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+states-toggle|sw-disabled-off|320|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+states-toggle|sw-disabled-off|390|dark: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+states-toggle|sw-disabled-off|390|light: status=compared identical=true diffPx=0 above16=0 maxDelta=0 innerDiffPx=0 innerMaxDelta=0 readChanged=[]
+
+--- differing pairs in every class ---
+focus	badges-chip|chip-toggle-focus|1440|dark|focus	diffPx=3360	above16=3360	maxDelta=216
+focus	badges-chip|chip-toggle-focus|1440|light|focus	diffPx=3360	above16=3360	maxDelta=210
+focus	badges-chip|chip-toggle-focus|320|dark|focus	diffPx=3360	above16=3360	maxDelta=216
+focus	badges-chip|chip-toggle-focus|320|light|focus	diffPx=3360	above16=3360	maxDelta=210
+focus	badges-chip|chip-toggle-focus|390|dark|focus	diffPx=3360	above16=3360	maxDelta=216
+focus	badges-chip|chip-toggle-focus|390|light|focus	diffPx=3360	above16=3360	maxDelta=210
+on	badges-chip|chip-toggle-on|1440|dark	diffPx=3360	above16=3360	maxDelta=216
+selected-hover	badges-chip|chip-toggle-on|1440|dark|hover	diffPx=3360	above16=3360	maxDelta=216
+on	badges-chip|chip-toggle-on|1440|light	diffPx=3360	above16=3360	maxDelta=210
+selected-hover	badges-chip|chip-toggle-on|1440|light|hover	diffPx=3360	above16=3360	maxDelta=217
+on	badges-chip|chip-toggle-on|320|dark	diffPx=3360	above16=3360	maxDelta=216
+selected-hover	badges-chip|chip-toggle-on|320|dark|hover	diffPx=3360	above16=3360	maxDelta=216
+on	badges-chip|chip-toggle-on|320|light	diffPx=3360	above16=3360	maxDelta=210
+selected-hover	badges-chip|chip-toggle-on|320|light|hover	diffPx=3360	above16=3360	maxDelta=217
+on	badges-chip|chip-toggle-on|390|dark	diffPx=3360	above16=3360	maxDelta=216
+selected-hover	badges-chip|chip-toggle-on|390|dark|hover	diffPx=3360	above16=3360	maxDelta=216
+on	badges-chip|chip-toggle-on|390|light	diffPx=3360	above16=3360	maxDelta=210
+selected-hover	badges-chip|chip-toggle-on|390|light|hover	diffPx=3360	above16=3360	maxDelta=217
+on	controls-checkbox|checkbox-checked|1440|dark	diffPx=324	above16=324	maxDelta=216
+on	controls-checkbox|checkbox-checked|1440|light	diffPx=324	above16=324	maxDelta=210
+on	controls-checkbox|checkbox-checked|320|dark	diffPx=324	above16=324	maxDelta=217
+on	controls-checkbox|checkbox-checked|320|light	diffPx=324	above16=324	maxDelta=210
+on	controls-checkbox|checkbox-checked|390|dark	diffPx=324	above16=324	maxDelta=217
+on	controls-checkbox|checkbox-checked|390|light	diffPx=324	above16=324	maxDelta=210
+focus	controls-checkbox|checkbox-focus|1440|dark|focus	diffPx=324	above16=324	maxDelta=216
+focus	controls-checkbox|checkbox-focus|1440|light|focus	diffPx=324	above16=324	maxDelta=210
+focus	controls-checkbox|checkbox-focus|320|dark|focus	diffPx=324	above16=324	maxDelta=217
+focus	controls-checkbox|checkbox-focus|320|light|focus	diffPx=324	above16=324	maxDelta=210
+focus	controls-checkbox|checkbox-focus|390|dark|focus	diffPx=324	above16=324	maxDelta=217
+focus	controls-checkbox|checkbox-focus|390|light|focus	diffPx=324	above16=324	maxDelta=210
+on	controls-checkbox|checkbox-tick|1440|dark	diffPx=324	above16=324	maxDelta=216
+on	controls-checkbox|checkbox-tick|1440|light	diffPx=324	above16=324	maxDelta=210
+on	controls-checkbox|checkbox-tick|320|dark	diffPx=324	above16=324	maxDelta=217
+on	controls-checkbox|checkbox-tick|320|light	diffPx=324	above16=324	maxDelta=210
+on	controls-checkbox|checkbox-tick|390|dark	diffPx=324	above16=324	maxDelta=217
+on	controls-checkbox|checkbox-tick|390|light	diffPx=324	above16=324	maxDelta=210
+focus	inuse-analytics|gan-seg-focus|1440|dark|focus	diffPx=2296	above16=2296	maxDelta=216
+focus	inuse-analytics|gan-seg-focus|1440|light|focus	diffPx=2296	above16=2296	maxDelta=210
+focus	inuse-analytics|gan-seg-focus|320|dark|focus	diffPx=2378	above16=2378	maxDelta=216
+focus	inuse-analytics|gan-seg-focus|320|light|focus	diffPx=2378	above16=2378	maxDelta=210
+focus	inuse-analytics|gan-seg-focus|390|dark|focus	diffPx=2378	above16=2378	maxDelta=216
+focus	inuse-analytics|gan-seg-focus|390|light|focus	diffPx=2378	above16=2378	maxDelta=210
+on	inuse-analytics|gan-seg-on|1440|dark	diffPx=2268	above16=2268	maxDelta=216
+selected-hover	inuse-analytics|gan-seg-on|1440|dark|hover	diffPx=2268	above16=2268	maxDelta=216
+on	inuse-analytics|gan-seg-on|1440|light	diffPx=2268	above16=2268	maxDelta=210
+selected-hover	inuse-analytics|gan-seg-on|1440|light|hover	diffPx=2268	above16=2268	maxDelta=210
+on	inuse-analytics|gan-seg-on|320|dark	diffPx=2268	above16=2268	maxDelta=216
+selected-hover	inuse-analytics|gan-seg-on|320|dark|hover	diffPx=2268	above16=2268	maxDelta=216
+on	inuse-analytics|gan-seg-on|320|light	diffPx=2268	above16=2268	maxDelta=214
+selected-hover	inuse-analytics|gan-seg-on|320|light|hover	diffPx=2268	above16=2268	maxDelta=214
+on	inuse-analytics|gan-seg-on|390|dark	diffPx=2268	above16=2268	maxDelta=216
+selected-hover	inuse-analytics|gan-seg-on|390|dark|hover	diffPx=2268	above16=2268	maxDelta=216
+on	inuse-analytics|gan-seg-on|390|light	diffPx=2268	above16=2268	maxDelta=210
+selected-hover	inuse-analytics|gan-seg-on|390|light|hover	diffPx=2268	above16=2268	maxDelta=210
+focus	inuse-apptab|apptab-focus|1440|dark|focus	diffPx=513	above16=493	maxDelta=127
+focus	inuse-apptab|apptab-focus|1440|light|focus	diffPx=513	above16=479	maxDelta=99
+focus	inuse-apptab|apptab-focus|320|dark|focus	diffPx=371	above16=351	maxDelta=127
+focus	inuse-apptab|apptab-focus|320|light|focus	diffPx=371	above16=337	maxDelta=99
+focus	inuse-apptab|apptab-focus|390|dark|focus	diffPx=371	above16=351	maxDelta=127
+focus	inuse-apptab|apptab-focus|390|light|focus	diffPx=371	above16=337	maxDelta=99
+on	inuse-apptab|apptab-on-bar|1440|dark	diffPx=513	above16=493	maxDelta=127
+on	inuse-apptab|apptab-on-bar|1440|light	diffPx=513	above16=479	maxDelta=99
+on	inuse-apptab|apptab-on-bar|320|dark	diffPx=371	above16=351	maxDelta=127
+on	inuse-apptab|apptab-on-bar|320|light	diffPx=371	above16=337	maxDelta=99
+on	inuse-apptab|apptab-on-bar|390|dark	diffPx=371	above16=351	maxDelta=127
+on	inuse-apptab|apptab-on-bar|390|light	diffPx=371	above16=337	maxDelta=99
+on	inuse-apptab|apptab-on-ico|1440|dark	diffPx=100	above16=89	maxDelta=127
+on	inuse-apptab|apptab-on-ico|1440|light	diffPx=100	above16=82	maxDelta=99
+on	inuse-apptab|apptab-on-ico|320|dark	diffPx=100	above16=89	maxDelta=127
+on	inuse-apptab|apptab-on-ico|320|light	diffPx=100	above16=82	maxDelta=99
+on	inuse-apptab|apptab-on-ico|390|dark	diffPx=100	above16=89	maxDelta=127
+on	inuse-apptab|apptab-on-ico|390|light	diffPx=100	above16=82	maxDelta=99
+on	inuse-apptab|apptab-on-key|1440|dark	diffPx=133	above16=124	maxDelta=121
+on	inuse-apptab|apptab-on-key|1440|light	diffPx=133	above16=117	maxDelta=94
+on	inuse-apptab|apptab-on-key|320|dark	diffPx=133	above16=124	maxDelta=121
+on	inuse-apptab|apptab-on-key|320|light	diffPx=133	above16=117	maxDelta=94
+on	inuse-apptab|apptab-on-key|390|dark	diffPx=133	above16=124	maxDelta=121
+on	inuse-apptab|apptab-on-key|390|light	diffPx=133	above16=117	maxDelta=94
+on	inuse-apptab|apptab-on|1440|dark	diffPx=513	above16=493	maxDelta=127
+selected-hover	inuse-apptab|apptab-on|1440|dark|hover	diffPx=513	above16=493	maxDelta=127
+on	inuse-apptab|apptab-on|1440|light	diffPx=513	above16=479	maxDelta=99
+selected-hover	inuse-apptab|apptab-on|1440|light|hover	diffPx=513	above16=479	maxDelta=99
+on	inuse-apptab|apptab-on|320|dark	diffPx=371	above16=351	maxDelta=127
+selected-hover	inuse-apptab|apptab-on|320|dark|hover	diffPx=371	above16=351	maxDelta=127
+on	inuse-apptab|apptab-on|320|light	diffPx=371	above16=337	maxDelta=99
+selected-hover	inuse-apptab|apptab-on|320|light|hover	diffPx=371	above16=337	maxDelta=99
+on	inuse-apptab|apptab-on|390|dark	diffPx=371	above16=351	maxDelta=127
+selected-hover	inuse-apptab|apptab-on|390|dark|hover	diffPx=371	above16=351	maxDelta=127
+on	inuse-apptab|apptab-on|390|light	diffPx=371	above16=337	maxDelta=99
+selected-hover	inuse-apptab|apptab-on|390|light|hover	diffPx=371	above16=337	maxDelta=99
+on	inuse-seg|inuse-seg-on|1440|dark	diffPx=3600	above16=3600	maxDelta=216
+selected-hover	inuse-seg|inuse-seg-on|1440|dark|hover	diffPx=3600	above16=3600	maxDelta=216
+on	inuse-seg|inuse-seg-on|1440|light	diffPx=3600	above16=3600	maxDelta=210
+selected-hover	inuse-seg|inuse-seg-on|1440|light|hover	diffPx=3600	above16=3600	maxDelta=217
+on	inuse-seg|inuse-seg-on|320|dark	diffPx=2554	above16=2549	maxDelta=216
+selected-hover	inuse-seg|inuse-seg-on|320|dark|hover	diffPx=2554	above16=2549	maxDelta=216
+on	inuse-seg|inuse-seg-on|320|light	diffPx=2554	above16=2545	maxDelta=210
+selected-hover	inuse-seg|inuse-seg-on|320|light|hover	diffPx=2557	above16=2549	maxDelta=217
+on	inuse-seg|inuse-seg-on|390|dark	diffPx=3204	above16=3204	maxDelta=216
+selected-hover	inuse-seg|inuse-seg-on|390|dark|hover	diffPx=3204	above16=3204	maxDelta=216
+on	inuse-seg|inuse-seg-on|390|light	diffPx=3204	above16=3204	maxDelta=210
+selected-hover	inuse-seg|inuse-seg-on|390|light|hover	diffPx=3204	above16=3204	maxDelta=217
+on	inuse-settings-switch|sw-on-thumb|1440|dark	diffPx=1456	above16=1456	maxDelta=216
+on	inuse-settings-switch|sw-on-thumb|1440|light	diffPx=1456	above16=1456	maxDelta=210
+on	inuse-settings-switch|sw-on-thumb|320|dark	diffPx=1456	above16=1456	maxDelta=216
+on	inuse-settings-switch|sw-on-thumb|320|light	diffPx=1456	above16=1456	maxDelta=210
+on	inuse-settings-switch|sw-on-thumb|390|dark	diffPx=1456	above16=1456	maxDelta=216
+on	inuse-settings-switch|sw-on-thumb|390|light	diffPx=1456	above16=1456	maxDelta=210
+on	inuse-settings-switch|sw-on|1440|dark	diffPx=1456	above16=1456	maxDelta=216
+on	inuse-settings-switch|sw-on|1440|light	diffPx=1456	above16=1456	maxDelta=210
+on	inuse-settings-switch|sw-on|320|dark	diffPx=1456	above16=1456	maxDelta=216
+on	inuse-settings-switch|sw-on|320|light	diffPx=1456	above16=1456	maxDelta=210
+on	inuse-settings-switch|sw-on|390|dark	diffPx=1456	above16=1456	maxDelta=216
+on	inuse-settings-switch|sw-on|390|light	diffPx=1456	above16=1456	maxDelta=210
+on	inuse-transcript|cbx-checked|1440|dark	diffPx=324	above16=324	maxDelta=216
+on	inuse-transcript|cbx-checked|1440|light	diffPx=324	above16=324	maxDelta=210
+on	inuse-transcript|cbx-checked|320|dark	diffPx=324	above16=324	maxDelta=217
+on	inuse-transcript|cbx-checked|320|light	diffPx=324	above16=324	maxDelta=210
+on	inuse-transcript|cbx-checked|390|dark	diffPx=324	above16=324	maxDelta=217
+on	inuse-transcript|cbx-checked|390|light	diffPx=324	above16=324	maxDelta=210
+on	inuse-transcript|cbx-tick|1440|dark	diffPx=324	above16=324	maxDelta=216
+on	inuse-transcript|cbx-tick|1440|light	diffPx=324	above16=324	maxDelta=210
+on	inuse-transcript|cbx-tick|320|dark	diffPx=324	above16=324	maxDelta=217
+on	inuse-transcript|cbx-tick|320|light	diffPx=324	above16=324	maxDelta=210
+on	inuse-transcript|cbx-tick|390|dark	diffPx=324	above16=324	maxDelta=217
+on	inuse-transcript|cbx-tick|390|light	diffPx=324	above16=324	maxDelta=210
+on	inuse-transcript|sw-on-thumb|1440|dark	diffPx=1456	above16=1456	maxDelta=216
+on	inuse-transcript|sw-on-thumb|1440|light	diffPx=1456	above16=1456	maxDelta=210
+on	inuse-transcript|sw-on-thumb|320|dark	diffPx=1456	above16=1456	maxDelta=216
+on	inuse-transcript|sw-on-thumb|320|light	diffPx=1456	above16=1456	maxDelta=210
+on	inuse-transcript|sw-on-thumb|390|dark	diffPx=1456	above16=1456	maxDelta=216
+on	inuse-transcript|sw-on-thumb|390|light	diffPx=1456	above16=1456	maxDelta=210
+on	inuse-transcript|sw-on|1440|dark	diffPx=1456	above16=1456	maxDelta=216
+on	inuse-transcript|sw-on|1440|light	diffPx=1456	above16=1456	maxDelta=210
+on	inuse-transcript|sw-on|320|dark	diffPx=1456	above16=1456	maxDelta=216
+on	inuse-transcript|sw-on|320|light	diffPx=1456	above16=1456	maxDelta=210
+on	inuse-transcript|sw-on|390|dark	diffPx=1456	above16=1456	maxDelta=216
+on	inuse-transcript|sw-on|390|light	diffPx=1456	above16=1456	maxDelta=210
+focus	inuse-transcript|txn-viewsw-focus|1440|dark|focus	diffPx=960	above16=960	maxDelta=216
+focus	inuse-transcript|txn-viewsw-focus|1440|light|focus	diffPx=960	above16=960	maxDelta=210
+on	inuse-transcript|txn-viewsw-on-state|1440|dark	diffPx=89	above16=70	maxDelta=72
+on	inuse-transcript|txn-viewsw-on-state|1440|light	diffPx=89	above16=70	maxDelta=64
+other	inuse-transcript|txn-viewsw-state|1440|dark	diffPx=89	above16=70	maxDelta=72
+other	inuse-transcript|txn-viewsw-state|1440|light	diffPx=89	above16=70	maxDelta=64
+focus	states-toggle|bs-seg-focus|1440|dark|focus	diffPx=2820	above16=2820	maxDelta=216
+focus	states-toggle|bs-seg-focus|1440|light|focus	diffPx=2820	above16=2820	maxDelta=210
+focus	states-toggle|bs-seg-focus|320|dark|focus	diffPx=1954	above16=1949	maxDelta=216
+focus	states-toggle|bs-seg-focus|320|light|focus	diffPx=1954	above16=1944	maxDelta=210
+focus	states-toggle|bs-seg-focus|390|dark|focus	diffPx=2490	above16=2490	maxDelta=216
+focus	states-toggle|bs-seg-focus|390|light|focus	diffPx=2490	above16=2490	maxDelta=210
+off	states-toggle|bs-seg-off|320|dark	diffPx=4	above16=3	maxDelta=24
+off	states-toggle|bs-seg-off|320|light	diffPx=4	above16=0	maxDelta=2
+off	states-toggle|bs-seg-off|390|dark	diffPx=36	above16=36	maxDelta=183
+off	states-toggle|bs-seg-off|390|light	diffPx=36	above16=36	maxDelta=210
+on	states-toggle|bs-seg-on|1440|dark	diffPx=3600	above16=3600	maxDelta=216
+selected-hover	states-toggle|bs-seg-on|1440|dark|hover	diffPx=3600	above16=3600	maxDelta=216
+on	states-toggle|bs-seg-on|1440|light	diffPx=3600	above16=3600	maxDelta=210
+selected-hover	states-toggle|bs-seg-on|1440|light|hover	diffPx=3600	above16=3600	maxDelta=217
+on	states-toggle|bs-seg-on|320|dark	diffPx=2554	above16=2549	maxDelta=216
+selected-hover	states-toggle|bs-seg-on|320|dark|hover	diffPx=2554	above16=2549	maxDelta=216
+on	states-toggle|bs-seg-on|320|light	diffPx=2554	above16=2545	maxDelta=210
+selected-hover	states-toggle|bs-seg-on|320|light|hover	diffPx=2557	above16=2549	maxDelta=217
+on	states-toggle|bs-seg-on|390|dark	diffPx=3204	above16=3204	maxDelta=216
+selected-hover	states-toggle|bs-seg-on|390|dark|hover	diffPx=3204	above16=3204	maxDelta=216
+on	states-toggle|bs-seg-on|390|light	diffPx=3204	above16=3204	maxDelta=210
+selected-hover	states-toggle|bs-seg-on|390|light|hover	diffPx=3204	above16=3204	maxDelta=217
+focus	states-toggle|bs-toggle-focus|1440|dark|focus	diffPx=6948	above16=6948	maxDelta=216
+focus	states-toggle|bs-toggle-focus|1440|light|focus	diffPx=6948	above16=6948	maxDelta=210
+focus	states-toggle|bs-toggle-focus|320|dark|focus	diffPx=6948	above16=6948	maxDelta=216
+focus	states-toggle|bs-toggle-focus|320|light|focus	diffPx=6948	above16=6948	maxDelta=210
+focus	states-toggle|bs-toggle-focus|390|dark|focus	diffPx=6948	above16=6948	maxDelta=216
+focus	states-toggle|bs-toggle-focus|390|light|focus	diffPx=6948	above16=6948	maxDelta=210
+on	states-toggle|bs-toggle-on|1440|dark	diffPx=6948	above16=6948	maxDelta=216
+selected-hover	states-toggle|bs-toggle-on|1440|dark|hover	diffPx=6948	above16=6948	maxDelta=216
+on	states-toggle|bs-toggle-on|1440|light	diffPx=6948	above16=6948	maxDelta=210
+selected-hover	states-toggle|bs-toggle-on|1440|light|hover	diffPx=6948	above16=6948	maxDelta=217
+on	states-toggle|bs-toggle-on|320|dark	diffPx=6948	above16=6948	maxDelta=216
+selected-hover	states-toggle|bs-toggle-on|320|dark|hover	diffPx=6948	above16=6948	maxDelta=216
+on	states-toggle|bs-toggle-on|320|light	diffPx=6948	above16=6948	maxDelta=210
+selected-hover	states-toggle|bs-toggle-on|320|light|hover	diffPx=6948	above16=6948	maxDelta=217
+on	states-toggle|bs-toggle-on|390|dark	diffPx=6948	above16=6948	maxDelta=216
+selected-hover	states-toggle|bs-toggle-on|390|dark|hover	diffPx=6948	above16=6948	maxDelta=216
+on	states-toggle|bs-toggle-on|390|light	diffPx=6948	above16=6948	maxDelta=210
+selected-hover	states-toggle|bs-toggle-on|390|light|hover	diffPx=6948	above16=6948	maxDelta=217
+on	states-toggle|sw-disabled-on|1440|dark	diffPx=1456	above16=1456	maxDelta=109
+on	states-toggle|sw-disabled-on|1440|light	diffPx=1456	above16=1132	maxDelta=105
+on	states-toggle|sw-disabled-on|320|dark	diffPx=1456	above16=1456	maxDelta=109
+on	states-toggle|sw-disabled-on|320|light	diffPx=1456	above16=1132	maxDelta=105
+on	states-toggle|sw-disabled-on|390|dark	diffPx=1456	above16=1456	maxDelta=109
+on	states-toggle|sw-disabled-on|390|light	diffPx=1456	above16=1132	maxDelta=105
+focus	states-toggle|sw-focus|1440|dark|focus	diffPx=1456	above16=1456	maxDelta=216
+focus	states-toggle|sw-focus|1440|light|focus	diffPx=1456	above16=1456	maxDelta=210
+focus	states-toggle|sw-focus|320|dark|focus	diffPx=1456	above16=1456	maxDelta=216
+focus	states-toggle|sw-focus|320|light|focus	diffPx=1456	above16=1456	maxDelta=210
+focus	states-toggle|sw-focus|390|dark|focus	diffPx=1456	above16=1456	maxDelta=216
+focus	states-toggle|sw-focus|390|light|focus	diffPx=1456	above16=1456	maxDelta=210

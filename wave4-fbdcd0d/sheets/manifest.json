@@ -1,0 +1,120 @@
+[
+  {
+    "surface": "controls-checkbox",
+    "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets/sheet-controls-checkbox.png",
+    "probes": [
+      "checkbox-checked",
+      "checkbox-tick",
+      "checkbox-unchecked"
+    ]
+  },
+  {
+    "surface": "states-toggle",
+    "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets/sheet-states-toggle.png",
+    "probes": [
+      "bs-toggle-on",
+      "bs-toggle-off",
+      "bs-seg-on",
+      "bs-seg-off",
+      "sw-disabled-off",
+      "sw-disabled-on"
+    ]
+  },
+  {
+    "surface": "badges-chip",
+    "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets/sheet-badges-chip.png",
+    "probes": [
+      "chip-toggle-on",
+      "chip-toggle-off"
+    ]
+  },
+  {
+    "surface": "inuse-apptab",
+    "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets/sheet-inuse-apptab.png",
+    "probes": [
+      "apptab-on",
+      "apptab-on-bar",
+      "apptab-on-ico",
+      "apptab-on-key",
+      "apptab-off"
+    ]
+  },
+  {
+    "surface": "inuse-seg",
+    "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets/sheet-inuse-seg.png",
+    "probes": [
+      "inuse-seg-on"
+    ]
+  },
+  {
+    "surface": "inuse-analytics",
+    "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets/sheet-inuse-analytics.png",
+    "probes": [
+      "gan-seg-on",
+      "gan-seg-off"
+    ]
+  },
+  {
+    "surface": "inuse-transcript",
+    "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets/sheet-inuse-transcript.png",
+    "probes": [
+      "cbx-checked",
+      "cbx-tick",
+      "cbx-unchecked",
+      "sw-on",
+      "sw-on-thumb",
+      "sw-off",
+      "txn-viewsw-state",
+      "txn-viewsw-on-state"
+    ]
+  },
+  {
+    "surface": "inuse-settings-switch",
+    "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets/sheet-inuse-settings-switch.png",
+    "probes": [
+      "sw-on",
+      "sw-on-thumb",
+      "sw-state"
+    ]
+  },
+  {
+    "surface": "hover",
+    "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets/sheet-hover.png",
+    "probes": [
+      "bs-toggle-on",
+      "bs-seg-on",
+      "chip-toggle-on",
+      "apptab-on",
+      "inuse-seg-on",
+      "gan-seg-on"
+    ]
+  },
+  {
+    "surface": "focus",
+    "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets/sheet-focus.png",
+    "probes": [
+      "checkbox-focus",
+      "sw-focus",
+      "bs-toggle-focus",
+      "bs-seg-focus",
+      "chip-toggle-focus",
+      "apptab-focus",
+      "gan-seg-focus",
+      "txn-viewsw-focus"
+    ]
+  },
+  {
+    "surface": "full-surfaces",
+    "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets/sheet-full-surfaces.png",
+    "probes": [
+      "controls-checkbox",
+      "states-toggle",
+      "badges-chip",
+      "inuse-apptab",
+      "inuse-seg",
+      "inuse-analytics",
+      "inuse-transcript",
+      "inuse-settings-switch"
+    ]
+  }
+]

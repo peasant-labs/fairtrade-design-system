@@ -1,0 +1,1338 @@
+{
+  "purpose": "Local mounted UAT evidence only; no review verdict or publication",
+  "generatedAt": "2026-10-14T00:27:36.275Z",
+  "proofs": [
+    {
+      "state": "before",
+      "width": 320,
+      "theme": "dark",
+      "url": "http://127.0.0.1:5382/?fb=off&app=graph&section=home&local=offline&theme=dark#inuse",
+      "observedTheme": "dark",
+      "region": {
+        "role": "region",
+        "tabIndex": 0,
+        "ariaLabel": "sessions on this computer",
+        "overflowY": "auto",
+        "scrollable": true,
+        "scrollHeight": 1232,
+        "clientHeight": 384,
+        "ancestorDisabledFieldset": "session table",
+        "rect": {
+          "x": 24,
+          "y": 1165,
+          "w": 272,
+          "h": 384
+        }
+      },
+      "disabledControls": {
+        "inputs": [
+          "search session titles",
+          "search",
+          "filter session",
+          "filter project, branch",
+          "filter turns",
+          "filter duration",
+          "filter when",
+          "filter publish state"
+        ],
+        "buttons": [
+          "all 1,284",
+          "not published 1,246",
+          "published 38",
+          "auto 12",
+          "previous page",
+          "next page",
+          "load more"
+        ],
+        "selects": [
+          "project"
+        ],
+        "total": 16
+      },
+      "reachedRegionAt": 9,
+      "focusReachedRegion": true,
+      "tabStops": [
+        {
+          "tag": "button",
+          "cls": "iu-opt iu-opt-on",
+          "label": "peasant3",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item active",
+          "label": "home",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item",
+          "label": "settings",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "cx-copy",
+          "label": "copy command to clipboard",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm cx-offline-retry",
+          "label": "trying againtry again",
+          "matchesRegion": false
+        },
+        {
+          "tag": "svg",
+          "cls": "",
+          "label": "",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "bs-seg",
+          "label": "publish state",
+          "matchesRegion": false
+        },
+        {
+          "tag": "summary",
+          "cls": "",
+          "label": "column filters",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "tbl-scroll",
+          "label": "sessions on this computer",
+          "matchesRegion": true
+        }
+      ],
+      "arrowScroll": {
+        "scrollTopBefore": 0,
+        "scrollTopAfter": 408,
+        "moved": true
+      },
+      "shot": "/tmp/opencode/amber-restore-fbdcd0d/offline-keyboard/before-offline-320-dark.png"
+    },
+    {
+      "state": "before",
+      "width": 320,
+      "theme": "light",
+      "url": "http://127.0.0.1:5382/?fb=off&app=graph&section=home&local=offline&theme=light#inuse",
+      "observedTheme": "light",
+      "region": {
+        "role": "region",
+        "tabIndex": 0,
+        "ariaLabel": "sessions on this computer",
+        "overflowY": "auto",
+        "scrollable": true,
+        "scrollHeight": 1232,
+        "clientHeight": 384,
+        "ancestorDisabledFieldset": "session table",
+        "rect": {
+          "x": 24,
+          "y": 1165,
+          "w": 272,
+          "h": 384
+        }
+      },
+      "disabledControls": {
+        "inputs": [
+          "search session titles",
+          "search",
+          "filter session",
+          "filter project, branch",
+          "filter turns",
+          "filter duration",
+          "filter when",
+          "filter publish state"
+        ],
+        "buttons": [
+          "all 1,284",
+          "not published 1,246",
+          "published 38",
+          "auto 12",
+          "previous page",
+          "next page",
+          "load more"
+        ],
+        "selects": [
+          "project"
+        ],
+        "total": 16
+      },
+      "reachedRegionAt": 9,
+      "focusReachedRegion": true,
+      "tabStops": [
+        {
+          "tag": "button",
+          "cls": "iu-opt iu-opt-on",
+          "label": "peasant3",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item active",
+          "label": "home",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item",
+          "label": "settings",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "cx-copy",
+          "label": "copy command to clipboard",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm cx-offline-retry",
+          "label": "trying againtry again",
+          "matchesRegion": false
+        },
+        {
+          "tag": "svg",
+          "cls": "",
+          "label": "",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "bs-seg",
+          "label": "publish state",
+          "matchesRegion": false
+        },
+        {
+          "tag": "summary",
+          "cls": "",
+          "label": "column filters",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "tbl-scroll",
+          "label": "sessions on this computer",
+          "matchesRegion": true
+        }
+      ],
+      "arrowScroll": {
+        "scrollTopBefore": 0,
+        "scrollTopAfter": 409,
+        "moved": true
+      },
+      "shot": "/tmp/opencode/amber-restore-fbdcd0d/offline-keyboard/before-offline-320-light.png"
+    },
+    {
+      "state": "before",
+      "width": 390,
+      "theme": "dark",
+      "url": "http://127.0.0.1:5382/?fb=off&app=graph&section=home&local=offline&theme=dark#inuse",
+      "observedTheme": "dark",
+      "region": {
+        "role": "region",
+        "tabIndex": 0,
+        "ariaLabel": "sessions on this computer",
+        "overflowY": "auto",
+        "scrollable": true,
+        "scrollHeight": 1232,
+        "clientHeight": 384,
+        "ancestorDisabledFieldset": "session table",
+        "rect": {
+          "x": 28,
+          "y": 1090,
+          "w": 334,
+          "h": 384
+        }
+      },
+      "disabledControls": {
+        "inputs": [
+          "search session titles",
+          "search",
+          "filter session",
+          "filter project, branch",
+          "filter turns",
+          "filter duration",
+          "filter when",
+          "filter publish state"
+        ],
+        "buttons": [
+          "all 1,284",
+          "not published 1,246",
+          "published 38",
+          "auto 12",
+          "previous page",
+          "next page",
+          "load more"
+        ],
+        "selects": [
+          "project"
+        ],
+        "total": 16
+      },
+      "reachedRegionAt": 9,
+      "focusReachedRegion": true,
+      "tabStops": [
+        {
+          "tag": "button",
+          "cls": "iu-opt iu-opt-on",
+          "label": "peasant3",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item active",
+          "label": "home",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item",
+          "label": "settings",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "cx-copy",
+          "label": "copy command to clipboard",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm cx-offline-retry",
+          "label": "trying againtry again",
+          "matchesRegion": false
+        },
+        {
+          "tag": "svg",
+          "cls": "",
+          "label": "",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "bs-seg",
+          "label": "publish state",
+          "matchesRegion": false
+        },
+        {
+          "tag": "summary",
+          "cls": "",
+          "label": "column filters",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "tbl-scroll",
+          "label": "sessions on this computer",
+          "matchesRegion": true
+        }
+      ],
+      "arrowScroll": {
+        "scrollTopBefore": 0,
+        "scrollTopAfter": 422,
+        "moved": true
+      },
+      "shot": "/tmp/opencode/amber-restore-fbdcd0d/offline-keyboard/before-offline-390-dark.png"
+    },
+    {
+      "state": "before",
+      "width": 390,
+      "theme": "light",
+      "url": "http://127.0.0.1:5382/?fb=off&app=graph&section=home&local=offline&theme=light#inuse",
+      "observedTheme": "light",
+      "region": {
+        "role": "region",
+        "tabIndex": 0,
+        "ariaLabel": "sessions on this computer",
+        "overflowY": "auto",
+        "scrollable": true,
+        "scrollHeight": 1232,
+        "clientHeight": 384,
+        "ancestorDisabledFieldset": "session table",
+        "rect": {
+          "x": 28,
+          "y": 1090,
+          "w": 334,
+          "h": 384
+        }
+      },
+      "disabledControls": {
+        "inputs": [
+          "search session titles",
+          "search",
+          "filter session",
+          "filter project, branch",
+          "filter turns",
+          "filter duration",
+          "filter when",
+          "filter publish state"
+        ],
+        "buttons": [
+          "all 1,284",
+          "not published 1,246",
+          "published 38",
+          "auto 12",
+          "previous page",
+          "next page",
+          "load more"
+        ],
+        "selects": [
+          "project"
+        ],
+        "total": 16
+      },
+      "reachedRegionAt": 9,
+      "focusReachedRegion": true,
+      "tabStops": [
+        {
+          "tag": "button",
+          "cls": "iu-opt iu-opt-on",
+          "label": "peasant3",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item active",
+          "label": "home",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item",
+          "label": "settings",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "cx-copy",
+          "label": "copy command to clipboard",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm cx-offline-retry",
+          "label": "trying againtry again",
+          "matchesRegion": false
+        },
+        {
+          "tag": "svg",
+          "cls": "",
+          "label": "",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "bs-seg",
+          "label": "publish state",
+          "matchesRegion": false
+        },
+        {
+          "tag": "summary",
+          "cls": "",
+          "label": "column filters",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "tbl-scroll",
+          "label": "sessions on this computer",
+          "matchesRegion": true
+        }
+      ],
+      "arrowScroll": {
+        "scrollTopBefore": 0,
+        "scrollTopAfter": 410,
+        "moved": true
+      },
+      "shot": "/tmp/opencode/amber-restore-fbdcd0d/offline-keyboard/before-offline-390-light.png"
+    },
+    {
+      "state": "before",
+      "width": 1440,
+      "theme": "dark",
+      "url": "http://127.0.0.1:5382/?fb=off&app=graph&section=home&local=offline&theme=dark#inuse",
+      "observedTheme": "dark",
+      "region": {
+        "role": "region",
+        "tabIndex": 0,
+        "ariaLabel": "sessions on this computer",
+        "overflowY": "auto",
+        "scrollable": true,
+        "scrollHeight": 504,
+        "clientHeight": 384,
+        "ancestorDisabledFieldset": "session table",
+        "rect": {
+          "x": 144,
+          "y": 807,
+          "w": 1152,
+          "h": 384
+        }
+      },
+      "disabledControls": {
+        "inputs": [
+          "search session titles",
+          "search",
+          "filter session",
+          "filter project, branch",
+          "filter turns",
+          "filter duration",
+          "filter when",
+          "filter publish state"
+        ],
+        "buttons": [
+          "all 1,284",
+          "not published 1,246",
+          "published 38",
+          "auto 12",
+          "previous page",
+          "next page",
+          "load more"
+        ],
+        "selects": [
+          "project"
+        ],
+        "total": 16
+      },
+      "reachedRegionAt": 8,
+      "focusReachedRegion": true,
+      "tabStops": [
+        {
+          "tag": "button",
+          "cls": "iu-opt iu-opt-on",
+          "label": "peasant3",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item active",
+          "label": "home",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item",
+          "label": "settings",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "cx-copy",
+          "label": "copy command to clipboard",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm cx-offline-retry",
+          "label": "trying againtry again",
+          "matchesRegion": false
+        },
+        {
+          "tag": "svg",
+          "cls": "",
+          "label": "",
+          "matchesRegion": false
+        },
+        {
+          "tag": "summary",
+          "cls": "",
+          "label": "column filters",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "tbl-scroll",
+          "label": "sessions on this computer",
+          "matchesRegion": true
+        }
+      ],
+      "arrowScroll": {
+        "scrollTopBefore": 0,
+        "scrollTopAfter": 105,
+        "moved": true
+      },
+      "shot": "/tmp/opencode/amber-restore-fbdcd0d/offline-keyboard/before-offline-1440-dark.png"
+    },
+    {
+      "state": "before",
+      "width": 1440,
+      "theme": "light",
+      "url": "http://127.0.0.1:5382/?fb=off&app=graph&section=home&local=offline&theme=light#inuse",
+      "observedTheme": "light",
+      "region": {
+        "role": "region",
+        "tabIndex": 0,
+        "ariaLabel": "sessions on this computer",
+        "overflowY": "auto",
+        "scrollable": true,
+        "scrollHeight": 504,
+        "clientHeight": 384,
+        "ancestorDisabledFieldset": "session table",
+        "rect": {
+          "x": 144,
+          "y": 807,
+          "w": 1152,
+          "h": 384
+        }
+      },
+      "disabledControls": {
+        "inputs": [
+          "search session titles",
+          "search",
+          "filter session",
+          "filter project, branch",
+          "filter turns",
+          "filter duration",
+          "filter when",
+          "filter publish state"
+        ],
+        "buttons": [
+          "all 1,284",
+          "not published 1,246",
+          "published 38",
+          "auto 12",
+          "previous page",
+          "next page",
+          "load more"
+        ],
+        "selects": [
+          "project"
+        ],
+        "total": 16
+      },
+      "reachedRegionAt": 8,
+      "focusReachedRegion": true,
+      "tabStops": [
+        {
+          "tag": "button",
+          "cls": "iu-opt iu-opt-on",
+          "label": "peasant3",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item active",
+          "label": "home",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item",
+          "label": "settings",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "cx-copy",
+          "label": "copy command to clipboard",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm cx-offline-retry",
+          "label": "trying againtry again",
+          "matchesRegion": false
+        },
+        {
+          "tag": "svg",
+          "cls": "",
+          "label": "",
+          "matchesRegion": false
+        },
+        {
+          "tag": "summary",
+          "cls": "",
+          "label": "column filters",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "tbl-scroll",
+          "label": "sessions on this computer",
+          "matchesRegion": true
+        }
+      ],
+      "arrowScroll": {
+        "scrollTopBefore": 0,
+        "scrollTopAfter": 104,
+        "moved": true
+      },
+      "shot": "/tmp/opencode/amber-restore-fbdcd0d/offline-keyboard/before-offline-1440-light.png"
+    },
+    {
+      "state": "after",
+      "width": 320,
+      "theme": "dark",
+      "url": "http://127.0.0.1:5381/?fb=off&app=graph&section=home&local=offline&theme=dark#inuse",
+      "observedTheme": "dark",
+      "region": {
+        "role": "region",
+        "tabIndex": 0,
+        "ariaLabel": "sessions on this computer",
+        "overflowY": "auto",
+        "scrollable": true,
+        "scrollHeight": 1232,
+        "clientHeight": 384,
+        "ancestorDisabledFieldset": null,
+        "rect": {
+          "x": 24,
+          "y": 1165,
+          "w": 272,
+          "h": 384
+        }
+      },
+      "disabledControls": {
+        "inputs": [
+          "search session titles",
+          "search",
+          "filter session",
+          "filter project, branch",
+          "filter turns",
+          "filter duration",
+          "filter when",
+          "filter publish state"
+        ],
+        "buttons": [
+          "all 1,284",
+          "not published 1,246",
+          "published 38",
+          "auto 12",
+          "previous page",
+          "next page",
+          "load more"
+        ],
+        "selects": [
+          "project"
+        ],
+        "total": 16
+      },
+      "reachedRegionAt": 9,
+      "focusReachedRegion": true,
+      "tabStops": [
+        {
+          "tag": "button",
+          "cls": "iu-opt iu-opt-on",
+          "label": "peasant3",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item active",
+          "label": "home",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item",
+          "label": "settings",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "cx-copy",
+          "label": "copy command to clipboard",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm cx-offline-retry",
+          "label": "trying againtry again",
+          "matchesRegion": false
+        },
+        {
+          "tag": "svg",
+          "cls": "",
+          "label": "",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "bs-seg",
+          "label": "publish state",
+          "matchesRegion": false
+        },
+        {
+          "tag": "summary",
+          "cls": "",
+          "label": "column filters",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "tbl-scroll",
+          "label": "sessions on this computer",
+          "matchesRegion": true
+        }
+      ],
+      "arrowScroll": {
+        "scrollTopBefore": 0,
+        "scrollTopAfter": 383,
+        "moved": true
+      },
+      "shot": "/tmp/opencode/amber-restore-fbdcd0d/offline-keyboard/after-offline-320-dark.png"
+    },
+    {
+      "state": "after",
+      "width": 320,
+      "theme": "light",
+      "url": "http://127.0.0.1:5381/?fb=off&app=graph&section=home&local=offline&theme=light#inuse",
+      "observedTheme": "light",
+      "region": {
+        "role": "region",
+        "tabIndex": 0,
+        "ariaLabel": "sessions on this computer",
+        "overflowY": "auto",
+        "scrollable": true,
+        "scrollHeight": 1232,
+        "clientHeight": 384,
+        "ancestorDisabledFieldset": null,
+        "rect": {
+          "x": 24,
+          "y": 1165,
+          "w": 272,
+          "h": 384
+        }
+      },
+      "disabledControls": {
+        "inputs": [
+          "search session titles",
+          "search",
+          "filter session",
+          "filter project, branch",
+          "filter turns",
+          "filter duration",
+          "filter when",
+          "filter publish state"
+        ],
+        "buttons": [
+          "all 1,284",
+          "not published 1,246",
+          "published 38",
+          "auto 12",
+          "previous page",
+          "next page",
+          "load more"
+        ],
+        "selects": [
+          "project"
+        ],
+        "total": 16
+      },
+      "reachedRegionAt": 9,
+      "focusReachedRegion": true,
+      "tabStops": [
+        {
+          "tag": "button",
+          "cls": "iu-opt iu-opt-on",
+          "label": "peasant3",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item active",
+          "label": "home",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item",
+          "label": "settings",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "cx-copy",
+          "label": "copy command to clipboard",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm cx-offline-retry",
+          "label": "trying againtry again",
+          "matchesRegion": false
+        },
+        {
+          "tag": "svg",
+          "cls": "",
+          "label": "",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "bs-seg",
+          "label": "publish state",
+          "matchesRegion": false
+        },
+        {
+          "tag": "summary",
+          "cls": "",
+          "label": "column filters",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "tbl-scroll",
+          "label": "sessions on this computer",
+          "matchesRegion": true
+        }
+      ],
+      "arrowScroll": {
+        "scrollTopBefore": 0,
+        "scrollTopAfter": 381,
+        "moved": true
+      },
+      "shot": "/tmp/opencode/amber-restore-fbdcd0d/offline-keyboard/after-offline-320-light.png"
+    },
+    {
+      "state": "after",
+      "width": 390,
+      "theme": "dark",
+      "url": "http://127.0.0.1:5381/?fb=off&app=graph&section=home&local=offline&theme=dark#inuse",
+      "observedTheme": "dark",
+      "region": {
+        "role": "region",
+        "tabIndex": 0,
+        "ariaLabel": "sessions on this computer",
+        "overflowY": "auto",
+        "scrollable": true,
+        "scrollHeight": 1232,
+        "clientHeight": 384,
+        "ancestorDisabledFieldset": null,
+        "rect": {
+          "x": 28,
+          "y": 1090,
+          "w": 334,
+          "h": 384
+        }
+      },
+      "disabledControls": {
+        "inputs": [
+          "search session titles",
+          "search",
+          "filter session",
+          "filter project, branch",
+          "filter turns",
+          "filter duration",
+          "filter when",
+          "filter publish state"
+        ],
+        "buttons": [
+          "all 1,284",
+          "not published 1,246",
+          "published 38",
+          "auto 12",
+          "previous page",
+          "next page",
+          "load more"
+        ],
+        "selects": [
+          "project"
+        ],
+        "total": 16
+      },
+      "reachedRegionAt": 9,
+      "focusReachedRegion": true,
+      "tabStops": [
+        {
+          "tag": "button",
+          "cls": "iu-opt iu-opt-on",
+          "label": "peasant3",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item active",
+          "label": "home",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item",
+          "label": "settings",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "cx-copy",
+          "label": "copy command to clipboard",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm cx-offline-retry",
+          "label": "trying againtry again",
+          "matchesRegion": false
+        },
+        {
+          "tag": "svg",
+          "cls": "",
+          "label": "",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "bs-seg",
+          "label": "publish state",
+          "matchesRegion": false
+        },
+        {
+          "tag": "summary",
+          "cls": "",
+          "label": "column filters",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "tbl-scroll",
+          "label": "sessions on this computer",
+          "matchesRegion": true
+        }
+      ],
+      "arrowScroll": {
+        "scrollTopBefore": 0,
+        "scrollTopAfter": 424,
+        "moved": true
+      },
+      "shot": "/tmp/opencode/amber-restore-fbdcd0d/offline-keyboard/after-offline-390-dark.png"
+    },
+    {
+      "state": "after",
+      "width": 390,
+      "theme": "light",
+      "url": "http://127.0.0.1:5381/?fb=off&app=graph&section=home&local=offline&theme=light#inuse",
+      "observedTheme": "light",
+      "region": {
+        "role": "region",
+        "tabIndex": 0,
+        "ariaLabel": "sessions on this computer",
+        "overflowY": "auto",
+        "scrollable": true,
+        "scrollHeight": 1232,
+        "clientHeight": 384,
+        "ancestorDisabledFieldset": null,
+        "rect": {
+          "x": 28,
+          "y": 1090,
+          "w": 334,
+          "h": 384
+        }
+      },
+      "disabledControls": {
+        "inputs": [
+          "search session titles",
+          "search",
+          "filter session",
+          "filter project, branch",
+          "filter turns",
+          "filter duration",
+          "filter when",
+          "filter publish state"
+        ],
+        "buttons": [
+          "all 1,284",
+          "not published 1,246",
+          "published 38",
+          "auto 12",
+          "previous page",
+          "next page",
+          "load more"
+        ],
+        "selects": [
+          "project"
+        ],
+        "total": 16
+      },
+      "reachedRegionAt": 9,
+      "focusReachedRegion": true,
+      "tabStops": [
+        {
+          "tag": "button",
+          "cls": "iu-opt iu-opt-on",
+          "label": "peasant3",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item active",
+          "label": "home",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item",
+          "label": "settings",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "cx-copy",
+          "label": "copy command to clipboard",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm cx-offline-retry",
+          "label": "trying againtry again",
+          "matchesRegion": false
+        },
+        {
+          "tag": "svg",
+          "cls": "",
+          "label": "",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "bs-seg",
+          "label": "publish state",
+          "matchesRegion": false
+        },
+        {
+          "tag": "summary",
+          "cls": "",
+          "label": "column filters",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "tbl-scroll",
+          "label": "sessions on this computer",
+          "matchesRegion": true
+        }
+      ],
+      "arrowScroll": {
+        "scrollTopBefore": 0,
+        "scrollTopAfter": 377,
+        "moved": true
+      },
+      "shot": "/tmp/opencode/amber-restore-fbdcd0d/offline-keyboard/after-offline-390-light.png"
+    },
+    {
+      "state": "after",
+      "width": 1440,
+      "theme": "dark",
+      "url": "http://127.0.0.1:5381/?fb=off&app=graph&section=home&local=offline&theme=dark#inuse",
+      "observedTheme": "dark",
+      "region": {
+        "role": "region",
+        "tabIndex": 0,
+        "ariaLabel": "sessions on this computer",
+        "overflowY": "auto",
+        "scrollable": true,
+        "scrollHeight": 504,
+        "clientHeight": 384,
+        "ancestorDisabledFieldset": null,
+        "rect": {
+          "x": 144,
+          "y": 807,
+          "w": 1152,
+          "h": 384
+        }
+      },
+      "disabledControls": {
+        "inputs": [
+          "search session titles",
+          "search",
+          "filter session",
+          "filter project, branch",
+          "filter turns",
+          "filter duration",
+          "filter when",
+          "filter publish state"
+        ],
+        "buttons": [
+          "all 1,284",
+          "not published 1,246",
+          "published 38",
+          "auto 12",
+          "previous page",
+          "next page",
+          "load more"
+        ],
+        "selects": [
+          "project"
+        ],
+        "total": 16
+      },
+      "reachedRegionAt": 8,
+      "focusReachedRegion": true,
+      "tabStops": [
+        {
+          "tag": "button",
+          "cls": "iu-opt iu-opt-on",
+          "label": "peasant3",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item active",
+          "label": "home",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item",
+          "label": "settings",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "cx-copy",
+          "label": "copy command to clipboard",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm cx-offline-retry",
+          "label": "trying againtry again",
+          "matchesRegion": false
+        },
+        {
+          "tag": "svg",
+          "cls": "",
+          "label": "",
+          "matchesRegion": false
+        },
+        {
+          "tag": "summary",
+          "cls": "",
+          "label": "column filters",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "tbl-scroll",
+          "label": "sessions on this computer",
+          "matchesRegion": true
+        }
+      ],
+      "arrowScroll": {
+        "scrollTopBefore": 0,
+        "scrollTopAfter": 111,
+        "moved": true
+      },
+      "shot": "/tmp/opencode/amber-restore-fbdcd0d/offline-keyboard/after-offline-1440-dark.png"
+    },
+    {
+      "state": "after",
+      "width": 1440,
+      "theme": "light",
+      "url": "http://127.0.0.1:5381/?fb=off&app=graph&section=home&local=offline&theme=light#inuse",
+      "observedTheme": "light",
+      "region": {
+        "role": "region",
+        "tabIndex": 0,
+        "ariaLabel": "sessions on this computer",
+        "overflowY": "auto",
+        "scrollable": true,
+        "scrollHeight": 504,
+        "clientHeight": 384,
+        "ancestorDisabledFieldset": null,
+        "rect": {
+          "x": 144,
+          "y": 807,
+          "w": 1152,
+          "h": 384
+        }
+      },
+      "disabledControls": {
+        "inputs": [
+          "search session titles",
+          "search",
+          "filter session",
+          "filter project, branch",
+          "filter turns",
+          "filter duration",
+          "filter when",
+          "filter publish state"
+        ],
+        "buttons": [
+          "all 1,284",
+          "not published 1,246",
+          "published 38",
+          "auto 12",
+          "previous page",
+          "next page",
+          "load more"
+        ],
+        "selects": [
+          "project"
+        ],
+        "total": 16
+      },
+      "reachedRegionAt": 8,
+      "focusReachedRegion": true,
+      "tabStops": [
+        {
+          "tag": "button",
+          "cls": "iu-opt iu-opt-on",
+          "label": "peasant3",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item active",
+          "label": "home",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "iu-subnav-item",
+          "label": "settings",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "cx-copy",
+          "label": "copy command to clipboard",
+          "matchesRegion": false
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm cx-offline-retry",
+          "label": "trying againtry again",
+          "matchesRegion": false
+        },
+        {
+          "tag": "svg",
+          "cls": "",
+          "label": "",
+          "matchesRegion": false
+        },
+        {
+          "tag": "summary",
+          "cls": "",
+          "label": "column filters",
+          "matchesRegion": false
+        },
+        {
+          "tag": "div",
+          "cls": "tbl-scroll",
+          "label": "sessions on this computer",
+          "matchesRegion": true
+        }
+      ],
+      "arrowScroll": {
+        "scrollTopBefore": 0,
+        "scrollTopAfter": 98,
+        "moved": true
+      },
+      "shot": "/tmp/opencode/amber-restore-fbdcd0d/offline-keyboard/after-offline-1440-light.png"
+    }
+  ],
+  "builds": {
+    "before": {
+      "origin": "http://127.0.0.1:5382",
+      "dir": "/tmp/opencode/amber-before-a718f76",
+      "head": "a718f764532dcd0e67cccb99723c61d0dc7d6943"
+    },
+    "after": {
+      "origin": "http://127.0.0.1:5381",
+      "dir": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-design-system-116--fix--amber-selected",
+      "head": "fbdcd0d30f5595b752eaa3e7d8c1fa11a15f6dd7"
+    }
+  }
+}

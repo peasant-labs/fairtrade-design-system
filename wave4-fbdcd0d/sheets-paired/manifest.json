@@ -1,0 +1,132 @@
+{
+  "order": "before,after per width+theme",
+  "source": "captures/probe-report.json",
+  "sheets": [
+    {
+      "surface": "controls-checkbox",
+      "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets-paired/sheet-controls-checkbox.png",
+      "probes": [
+        "checkbox-checked",
+        "checkbox-tick",
+        "checkbox-unchecked"
+      ],
+      "order": "before,after per width+theme"
+    },
+    {
+      "surface": "states-toggle",
+      "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets-paired/sheet-states-toggle.png",
+      "probes": [
+        "bs-toggle-on",
+        "bs-toggle-off",
+        "bs-seg-on",
+        "bs-seg-off",
+        "sw-disabled-off",
+        "sw-disabled-on"
+      ],
+      "order": "before,after per width+theme"
+    },
+    {
+      "surface": "badges-chip",
+      "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets-paired/sheet-badges-chip.png",
+      "probes": [
+        "chip-toggle-on",
+        "chip-toggle-off"
+      ],
+      "order": "before,after per width+theme"
+    },
+    {
+      "surface": "inuse-apptab",
+      "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets-paired/sheet-inuse-apptab.png",
+      "probes": [
+        "apptab-on",
+        "apptab-on-bar",
+        "apptab-on-ico",
+        "apptab-on-key",
+        "apptab-off"
+      ],
+      "order": "before,after per width+theme"
+    },
+    {
+      "surface": "inuse-seg",
+      "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets-paired/sheet-inuse-seg.png",
+      "probes": [
+        "inuse-seg-on"
+      ],
+      "order": "before,after per width+theme"
+    },
+    {
+      "surface": "inuse-analytics",
+      "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets-paired/sheet-inuse-analytics.png",
+      "probes": [
+        "gan-seg-on",
+        "gan-seg-off"
+      ],
+      "order": "before,after per width+theme"
+    },
+    {
+      "surface": "inuse-transcript",
+      "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets-paired/sheet-inuse-transcript.png",
+      "probes": [
+        "cbx-checked",
+        "cbx-tick",
+        "cbx-unchecked",
+        "sw-on",
+        "sw-on-thumb",
+        "sw-off",
+        "txn-viewsw-state",
+        "txn-viewsw-on-state"
+      ],
+      "order": "before,after per width+theme"
+    },
+    {
+      "surface": "inuse-settings-switch",
+      "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets-paired/sheet-inuse-settings-switch.png",
+      "probes": [
+        "sw-on",
+        "sw-on-thumb",
+        "sw-state"
+      ],
+      "order": "before,after per width+theme"
+    },
+    {
+      "surface": "hover",
+      "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets-paired/sheet-hover.png",
+      "probes": [
+        "bs-toggle-on",
+        "bs-seg-on",
+        "chip-toggle-on",
+        "apptab-on",
+        "inuse-seg-on",
+        "gan-seg-on"
+      ]
+    },
+    {
+      "surface": "focus",
+      "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets-paired/sheet-focus.png",
+      "probes": [
+        "checkbox-focus",
+        "sw-focus",
+        "bs-toggle-focus",
+        "bs-seg-focus",
+        "chip-toggle-focus",
+        "apptab-focus",
+        "gan-seg-focus",
+        "txn-viewsw-focus"
+      ]
+    },
+    {
+      "surface": "full-surfaces",
+      "file": "/tmp/opencode/amber-restore-fbdcd0d/sheets-paired/sheet-full-surfaces.png",
+      "probes": [
+        "controls-checkbox",
+        "states-toggle",
+        "badges-chip",
+        "inuse-apptab",
+        "inuse-seg",
+        "inuse-analytics",
+        "inuse-transcript",
+        "inuse-settings-switch"
+      ]
+    }
+  ]
+}

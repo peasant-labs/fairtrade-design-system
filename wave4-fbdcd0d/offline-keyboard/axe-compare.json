@@ -1,0 +1,2660 @@
+{
+  "tags": [
+    "wcag2a",
+    "wcag2aa"
+  ],
+  "results": [
+    {
+      "state": "before",
+      "width": 320,
+      "theme": "dark",
+      "url": "http://127.0.0.1:5382/?fb=off&app=graph&section=home&local=offline&theme=dark#inuse",
+      "pageWideSerious": [
+        {
+          "id": "aria-required-children",
+          "impact": "critical",
+          "nodes": [
+            [
+              "#cp-list-2"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m0\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              ".dv-matches"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".mc-search-input"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".rdx-row-muted.rdx-row-add.rdx-row > .rdx-code"
+            ],
+            [
+              "button[aria-label=\"store/sqlite.go: 210 lines\"] > .tm-tile-label.mono"
+            ],
+            [
+              ".tm-tile[data-level=\"2\"][type=\"button\"]:nth-child(7) > .tm-tile-label.mono"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(4) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(5) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(6) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(5) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(6) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ]
+          ]
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".input-ico.field:nth-child(2) > .input[value=\"desert-archivists\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-name\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-err-slug\"]"
+            ],
+            [
+              "input[readonly=\"\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-disabled\"]"
+            ],
+            [
+              ".field:nth-child(1) > .input[value=\"desert-archivists\"]"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "nodes": [
+            [
+              "a[href=\"\"]"
+            ]
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "#typography > .dtable-wrap"
+            ],
+            [
+              "#motion > .dtable-wrap"
+            ],
+            [
+              "#controls > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              ".dtable-wrap:nth-child(20)"
+            ],
+            [
+              "#badges > .dtable-wrap"
+            ],
+            [
+              "#overlays > .dtable-wrap:nth-child(6)"
+            ],
+            [
+              ".dtable-wrap:nth-child(10)"
+            ],
+            [
+              ".specimen:nth-child(13) > .specimen-body > .cp-demo > .cp-panel[aria-modal=\"true\"][aria-label=\"command palette\"] > .cp-foot > .cp-keys"
+            ],
+            [
+              ".specimen:nth-child(14) > .specimen-body > .cp-demo > .cp-panel[aria-modal=\"true\"][aria-label=\"command palette\"] > .cp-foot > .cp-keys"
+            ],
+            [
+              "#overlays > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              ".dtable-wrap:nth-child(19)"
+            ],
+            [
+              "#data-table > .dtable-wrap"
+            ],
+            [
+              "#toast > .dtable-wrap"
+            ],
+            [
+              "#date-range > .dtable-wrap"
+            ],
+            [
+              "#ds-governance > .specimen:nth-child(5) > .specimen-body > div:nth-child(2)"
+            ],
+            [
+              "#ds-mapviz > .specimen:nth-child(13) > .specimen-body"
+            ],
+            [
+              ".trx-pre"
+            ],
+            [
+              ".cli-step:nth-child(1) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(2) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(3) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(4) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".specimen-body > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              "#a11y > .dtable-wrap"
+            ],
+            [
+              "div[aria-label=\"publish state\"]"
+            ],
+            [
+              "div[aria-label=\"sessions on this computer\"]"
+            ]
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".is-field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".field:nth-child(2) > .select-wrap > .select"
+            ]
+          ]
+        }
+      ],
+      "pageWideAll": [
+        "aria-required-children",
+        "aria-valid-attr-value",
+        "color-contrast",
+        "label",
+        "link-name",
+        "scrollable-region-focusable",
+        "select-name"
+      ],
+      "scopedSerious": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "div[aria-label=\"publish state\"]"
+            ],
+            [
+              "div[aria-label=\"sessions on this computer\"]"
+            ]
+          ]
+        }
+      ],
+      "scopedAll": [
+        "scrollable-region-focusable"
+      ],
+      "passes": 39
+    },
+    {
+      "state": "before",
+      "width": 320,
+      "theme": "light",
+      "url": "http://127.0.0.1:5382/?fb=off&app=graph&section=home&local=offline&theme=light#inuse",
+      "pageWideSerious": [
+        {
+          "id": "aria-required-children",
+          "impact": "critical",
+          "nodes": [
+            [
+              "#cp-list-2"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m0\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              ".dv-matches"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".mc-search-input"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".av-more"
+            ],
+            [
+              ".tag-on"
+            ],
+            [
+              ".rdx-row-muted.rdx-row-add.rdx-row > .rdx-code"
+            ],
+            [
+              "#_r_p_-node-ingest_stream_go > .mc-node-meta.mono.tnum"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(4) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(5) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(6) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(5) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(6) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ]
+          ]
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".input-ico.field:nth-child(2) > .input[value=\"desert-archivists\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-name\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-err-slug\"]"
+            ],
+            [
+              "input[readonly=\"\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-disabled\"]"
+            ],
+            [
+              ".field:nth-child(1) > .input[value=\"desert-archivists\"]"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "nodes": [
+            [
+              "a[href=\"\"]"
+            ]
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "#typography > .dtable-wrap"
+            ],
+            [
+              "#motion > .dtable-wrap"
+            ],
+            [
+              "#controls > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              ".dtable-wrap:nth-child(20)"
+            ],
+            [
+              "#badges > .dtable-wrap"
+            ],
+            [
+              "#overlays > .dtable-wrap:nth-child(6)"
+            ],
+            [
+              ".dtable-wrap:nth-child(10)"
+            ],
+            [
+              ".specimen:nth-child(13) > .specimen-body > .cp-demo > .cp-panel[aria-modal=\"true\"][aria-label=\"command palette\"] > .cp-foot > .cp-keys"
+            ],
+            [
+              ".specimen:nth-child(14) > .specimen-body > .cp-demo > .cp-panel[aria-modal=\"true\"][aria-label=\"command palette\"] > .cp-foot > .cp-keys"
+            ],
+            [
+              "#overlays > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              ".dtable-wrap:nth-child(19)"
+            ],
+            [
+              "#data-table > .dtable-wrap"
+            ],
+            [
+              "#toast > .dtable-wrap"
+            ],
+            [
+              "#date-range > .dtable-wrap"
+            ],
+            [
+              "#ds-governance > .specimen:nth-child(5) > .specimen-body > div:nth-child(2)"
+            ],
+            [
+              "#ds-mapviz > .specimen:nth-child(13) > .specimen-body"
+            ],
+            [
+              ".trx-pre"
+            ],
+            [
+              ".cli-step:nth-child(1) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(2) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(3) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(4) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".specimen-body > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              "#a11y > .dtable-wrap"
+            ],
+            [
+              "div[aria-label=\"publish state\"]"
+            ],
+            [
+              "div[aria-label=\"sessions on this computer\"]"
+            ]
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".is-field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".field:nth-child(2) > .select-wrap > .select"
+            ]
+          ]
+        }
+      ],
+      "pageWideAll": [
+        "aria-required-children",
+        "aria-valid-attr-value",
+        "color-contrast",
+        "label",
+        "link-name",
+        "scrollable-region-focusable",
+        "select-name"
+      ],
+      "scopedSerious": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "div[aria-label=\"publish state\"]"
+            ],
+            [
+              "div[aria-label=\"sessions on this computer\"]"
+            ]
+          ]
+        }
+      ],
+      "scopedAll": [
+        "scrollable-region-focusable"
+      ],
+      "passes": 39
+    },
+    {
+      "state": "before",
+      "width": 390,
+      "theme": "dark",
+      "url": "http://127.0.0.1:5382/?fb=off&app=graph&section=home&local=offline&theme=dark#inuse",
+      "pageWideSerious": [
+        {
+          "id": "aria-required-children",
+          "impact": "critical",
+          "nodes": [
+            [
+              "#cp-list-2"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m0\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              ".dv-matches"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".mc-search-input"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".rdx-row-muted.rdx-row-add.rdx-row > .rdx-code"
+            ],
+            [
+              "button[aria-label=\"store/sqlite.go: 210 lines\"] > .tm-tile-label.mono"
+            ],
+            [
+              ".tm-tile[data-level=\"2\"][type=\"button\"]:nth-child(7) > .tm-tile-label.mono"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(4) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(5) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(6) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(5) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(6) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ]
+          ]
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".input-ico.field:nth-child(2) > .input[value=\"desert-archivists\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-name\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-err-slug\"]"
+            ],
+            [
+              "input[readonly=\"\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-disabled\"]"
+            ],
+            [
+              ".field:nth-child(1) > .input[value=\"desert-archivists\"]"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "nodes": [
+            [
+              "a[href=\"\"]"
+            ]
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "#typography > .dtable-wrap"
+            ],
+            [
+              "#motion > .dtable-wrap"
+            ],
+            [
+              "#controls > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              ".dtable-wrap:nth-child(20)"
+            ],
+            [
+              "#badges > .dtable-wrap"
+            ],
+            [
+              ".dtable-wrap:nth-child(10)"
+            ],
+            [
+              ".specimen:nth-child(13) > .specimen-body > .cp-demo > .cp-panel[aria-modal=\"true\"][aria-label=\"command palette\"] > .cp-foot > .cp-keys"
+            ],
+            [
+              "#overlays > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              "#data-table > .dtable-wrap"
+            ],
+            [
+              "#toast > .dtable-wrap"
+            ],
+            [
+              "#date-range > .dtable-wrap"
+            ],
+            [
+              "#ds-mapviz > .specimen:nth-child(13) > .specimen-body"
+            ],
+            [
+              ".trx-pre"
+            ],
+            [
+              ".cli-step:nth-child(1) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(4) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              "#a11y > .dtable-wrap"
+            ],
+            [
+              "div[aria-label=\"publish state\"]"
+            ],
+            [
+              "div[aria-label=\"sessions on this computer\"]"
+            ]
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".is-field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".field:nth-child(2) > .select-wrap > .select"
+            ]
+          ]
+        }
+      ],
+      "pageWideAll": [
+        "aria-required-children",
+        "aria-valid-attr-value",
+        "color-contrast",
+        "label",
+        "link-name",
+        "scrollable-region-focusable",
+        "select-name"
+      ],
+      "scopedSerious": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "div[aria-label=\"publish state\"]"
+            ],
+            [
+              "div[aria-label=\"sessions on this computer\"]"
+            ]
+          ]
+        }
+      ],
+      "scopedAll": [
+        "scrollable-region-focusable"
+      ],
+      "passes": 39
+    },
+    {
+      "state": "before",
+      "width": 390,
+      "theme": "light",
+      "url": "http://127.0.0.1:5382/?fb=off&app=graph&section=home&local=offline&theme=light#inuse",
+      "pageWideSerious": [
+        {
+          "id": "aria-required-children",
+          "impact": "critical",
+          "nodes": [
+            [
+              "#cp-list-2"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m0\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              ".dv-matches"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".mc-search-input"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".av-more"
+            ],
+            [
+              ".tag-on"
+            ],
+            [
+              ".rdx-row-muted.rdx-row-add.rdx-row > .rdx-code"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(4) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(5) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(6) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(5) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(6) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ]
+          ]
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".input-ico.field:nth-child(2) > .input[value=\"desert-archivists\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-name\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-err-slug\"]"
+            ],
+            [
+              "input[readonly=\"\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-disabled\"]"
+            ],
+            [
+              ".field:nth-child(1) > .input[value=\"desert-archivists\"]"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "nodes": [
+            [
+              "a[href=\"\"]"
+            ]
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "#typography > .dtable-wrap"
+            ],
+            [
+              "#motion > .dtable-wrap"
+            ],
+            [
+              "#controls > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              ".dtable-wrap:nth-child(20)"
+            ],
+            [
+              "#badges > .dtable-wrap"
+            ],
+            [
+              ".dtable-wrap:nth-child(10)"
+            ],
+            [
+              ".specimen:nth-child(13) > .specimen-body > .cp-demo > .cp-panel[aria-modal=\"true\"][aria-label=\"command palette\"] > .cp-foot > .cp-keys"
+            ],
+            [
+              "#overlays > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              "#data-table > .dtable-wrap"
+            ],
+            [
+              "#toast > .dtable-wrap"
+            ],
+            [
+              "#date-range > .dtable-wrap"
+            ],
+            [
+              "#ds-mapviz > .specimen:nth-child(13) > .specimen-body"
+            ],
+            [
+              ".trx-pre"
+            ],
+            [
+              ".cli-step:nth-child(1) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(4) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              "#a11y > .dtable-wrap"
+            ],
+            [
+              "div[aria-label=\"publish state\"]"
+            ],
+            [
+              "div[aria-label=\"sessions on this computer\"]"
+            ]
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".is-field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".field:nth-child(2) > .select-wrap > .select"
+            ]
+          ]
+        }
+      ],
+      "pageWideAll": [
+        "aria-required-children",
+        "aria-valid-attr-value",
+        "color-contrast",
+        "label",
+        "link-name",
+        "scrollable-region-focusable",
+        "select-name"
+      ],
+      "scopedSerious": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "div[aria-label=\"publish state\"]"
+            ],
+            [
+              "div[aria-label=\"sessions on this computer\"]"
+            ]
+          ]
+        }
+      ],
+      "scopedAll": [
+        "scrollable-region-focusable"
+      ],
+      "passes": 39
+    },
+    {
+      "state": "before",
+      "width": 1440,
+      "theme": "dark",
+      "url": "http://127.0.0.1:5382/?fb=off&app=graph&section=home&local=offline&theme=dark#inuse",
+      "pageWideSerious": [
+        {
+          "id": "aria-required-children",
+          "impact": "critical",
+          "nodes": [
+            [
+              "#cp-list-2"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m0\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m1\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              ".dv-matches"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".mc-search-input"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".rdx-row-muted.rdx-row-add.rdx-row > .rdx-code"
+            ],
+            [
+              "button[aria-label=\"store/sqlite.go: 210 lines\"] > .tm-tile-label.mono"
+            ],
+            [
+              ".tm-tile[data-level=\"2\"][type=\"button\"]:nth-child(7) > .tm-tile-label.mono"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(4) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(5) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(6) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(5) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(6) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ]
+          ]
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".input-ico.field:nth-child(2) > .input[value=\"desert-archivists\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-name\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-err-slug\"]"
+            ],
+            [
+              "input[readonly=\"\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-disabled\"]"
+            ],
+            [
+              ".field:nth-child(1) > .input[value=\"desert-archivists\"]"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "nodes": [
+            [
+              "a[href=\"\"]"
+            ]
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "#toast > .dtable-wrap"
+            ],
+            [
+              "div[aria-label=\"sessions on this computer\"]"
+            ]
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".is-field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".field:nth-child(2) > .select-wrap > .select"
+            ]
+          ]
+        }
+      ],
+      "pageWideAll": [
+        "aria-required-children",
+        "aria-valid-attr-value",
+        "color-contrast",
+        "label",
+        "link-name",
+        "scrollable-region-focusable",
+        "select-name"
+      ],
+      "scopedSerious": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "div[aria-label=\"sessions on this computer\"]"
+            ]
+          ]
+        }
+      ],
+      "scopedAll": [
+        "scrollable-region-focusable"
+      ],
+      "passes": 39
+    },
+    {
+      "state": "before",
+      "width": 1440,
+      "theme": "light",
+      "url": "http://127.0.0.1:5382/?fb=off&app=graph&section=home&local=offline&theme=light#inuse",
+      "pageWideSerious": [
+        {
+          "id": "aria-required-children",
+          "impact": "critical",
+          "nodes": [
+            [
+              "#cp-list-2"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m0\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m1\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              ".dv-matches"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".mc-search-input"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".av-more"
+            ],
+            [
+              ".tag-on"
+            ],
+            [
+              ".rdx-row-muted.rdx-row-add.rdx-row > .rdx-code"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(4) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(5) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(6) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(5) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(6) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ]
+          ]
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".input-ico.field:nth-child(2) > .input[value=\"desert-archivists\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-name\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-err-slug\"]"
+            ],
+            [
+              "input[readonly=\"\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-disabled\"]"
+            ],
+            [
+              ".field:nth-child(1) > .input[value=\"desert-archivists\"]"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "nodes": [
+            [
+              "a[href=\"\"]"
+            ]
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "#toast > .dtable-wrap"
+            ],
+            [
+              "div[aria-label=\"sessions on this computer\"]"
+            ]
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".is-field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".field:nth-child(2) > .select-wrap > .select"
+            ]
+          ]
+        }
+      ],
+      "pageWideAll": [
+        "aria-required-children",
+        "aria-valid-attr-value",
+        "color-contrast",
+        "label",
+        "link-name",
+        "scrollable-region-focusable",
+        "select-name"
+      ],
+      "scopedSerious": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "div[aria-label=\"sessions on this computer\"]"
+            ]
+          ]
+        }
+      ],
+      "scopedAll": [
+        "scrollable-region-focusable"
+      ],
+      "passes": 39
+    },
+    {
+      "state": "after",
+      "width": 320,
+      "theme": "dark",
+      "url": "http://127.0.0.1:5381/?fb=off&app=graph&section=home&local=offline&theme=dark#inuse",
+      "pageWideSerious": [
+        {
+          "id": "aria-required-children",
+          "impact": "critical",
+          "nodes": [
+            [
+              "#cp-list-2"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m0\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              ".dv-matches"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".mc-search-input"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".rdx-row-muted.rdx-row-add.rdx-row > .rdx-code"
+            ],
+            [
+              "button[aria-label=\"store/sqlite.go: 210 lines\"] > .tm-tile-label.mono"
+            ],
+            [
+              ".tm-tile[data-level=\"2\"][type=\"button\"]:nth-child(7) > .tm-tile-label.mono"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(4) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(5) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(6) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(5) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(6) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ]
+          ]
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".input-ico.field:nth-child(2) > .input[value=\"desert-archivists\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-name\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-err-slug\"]"
+            ],
+            [
+              "input[readonly=\"\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-disabled\"]"
+            ],
+            [
+              ".field:nth-child(1) > .input[value=\"desert-archivists\"]"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "nodes": [
+            [
+              "a[href=\"\"]"
+            ]
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "#typography > .dtable-wrap"
+            ],
+            [
+              "#motion > .dtable-wrap"
+            ],
+            [
+              "#controls > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              ".dtable-wrap:nth-child(20)"
+            ],
+            [
+              "#badges > .dtable-wrap"
+            ],
+            [
+              "#overlays > .dtable-wrap:nth-child(6)"
+            ],
+            [
+              ".dtable-wrap:nth-child(10)"
+            ],
+            [
+              ".specimen:nth-child(13) > .specimen-body > .cp-demo > .cp-panel[aria-modal=\"true\"][aria-label=\"command palette\"] > .cp-foot > .cp-keys"
+            ],
+            [
+              ".specimen:nth-child(14) > .specimen-body > .cp-demo > .cp-panel[aria-modal=\"true\"][aria-label=\"command palette\"] > .cp-foot > .cp-keys"
+            ],
+            [
+              "#overlays > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              ".dtable-wrap:nth-child(19)"
+            ],
+            [
+              "#data-table > .dtable-wrap"
+            ],
+            [
+              "#toast > .dtable-wrap"
+            ],
+            [
+              "#date-range > .dtable-wrap"
+            ],
+            [
+              "#ds-governance > .specimen:nth-child(5) > .specimen-body > div:nth-child(2)"
+            ],
+            [
+              "#ds-mapviz > .specimen:nth-child(13) > .specimen-body"
+            ],
+            [
+              ".trx-pre"
+            ],
+            [
+              ".cli-step:nth-child(1) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(2) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(3) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(4) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".specimen-body > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              "#a11y > .dtable-wrap"
+            ],
+            [
+              "div[aria-label=\"publish state\"]"
+            ]
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".is-field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".field:nth-child(2) > .select-wrap > .select"
+            ]
+          ]
+        }
+      ],
+      "pageWideAll": [
+        "aria-required-children",
+        "aria-valid-attr-value",
+        "color-contrast",
+        "label",
+        "link-name",
+        "scrollable-region-focusable",
+        "select-name"
+      ],
+      "scopedSerious": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "div[aria-label=\"publish state\"]"
+            ]
+          ]
+        }
+      ],
+      "scopedAll": [
+        "scrollable-region-focusable"
+      ],
+      "passes": 39
+    },
+    {
+      "state": "after",
+      "width": 320,
+      "theme": "light",
+      "url": "http://127.0.0.1:5381/?fb=off&app=graph&section=home&local=offline&theme=light#inuse",
+      "pageWideSerious": [
+        {
+          "id": "aria-required-children",
+          "impact": "critical",
+          "nodes": [
+            [
+              "#cp-list-2"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m0\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              ".dv-matches"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".mc-search-input"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".av-more"
+            ],
+            [
+              ".tag-on"
+            ],
+            [
+              ".rdx-row-muted.rdx-row-add.rdx-row > .rdx-code"
+            ],
+            [
+              "#_r_p_-node-ingest_stream_go > .mc-node-meta.mono.tnum"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(4) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(5) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(6) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(5) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(6) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ]
+          ]
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".input-ico.field:nth-child(2) > .input[value=\"desert-archivists\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-name\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-err-slug\"]"
+            ],
+            [
+              "input[readonly=\"\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-disabled\"]"
+            ],
+            [
+              ".field:nth-child(1) > .input[value=\"desert-archivists\"]"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "nodes": [
+            [
+              "a[href=\"\"]"
+            ]
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "#typography > .dtable-wrap"
+            ],
+            [
+              "#motion > .dtable-wrap"
+            ],
+            [
+              "#controls > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              ".dtable-wrap:nth-child(20)"
+            ],
+            [
+              "#badges > .dtable-wrap"
+            ],
+            [
+              "#overlays > .dtable-wrap:nth-child(6)"
+            ],
+            [
+              ".dtable-wrap:nth-child(10)"
+            ],
+            [
+              ".specimen:nth-child(13) > .specimen-body > .cp-demo > .cp-panel[aria-modal=\"true\"][aria-label=\"command palette\"] > .cp-foot > .cp-keys"
+            ],
+            [
+              ".specimen:nth-child(14) > .specimen-body > .cp-demo > .cp-panel[aria-modal=\"true\"][aria-label=\"command palette\"] > .cp-foot > .cp-keys"
+            ],
+            [
+              "#overlays > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              ".dtable-wrap:nth-child(19)"
+            ],
+            [
+              "#data-table > .dtable-wrap"
+            ],
+            [
+              "#toast > .dtable-wrap"
+            ],
+            [
+              "#date-range > .dtable-wrap"
+            ],
+            [
+              "#ds-governance > .specimen:nth-child(5) > .specimen-body > div:nth-child(2)"
+            ],
+            [
+              "#ds-mapviz > .specimen:nth-child(13) > .specimen-body"
+            ],
+            [
+              ".trx-pre"
+            ],
+            [
+              ".cli-step:nth-child(1) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(2) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(3) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(4) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".specimen-body > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              "#a11y > .dtable-wrap"
+            ],
+            [
+              "div[aria-label=\"publish state\"]"
+            ]
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".is-field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".field:nth-child(2) > .select-wrap > .select"
+            ]
+          ]
+        }
+      ],
+      "pageWideAll": [
+        "aria-required-children",
+        "aria-valid-attr-value",
+        "color-contrast",
+        "label",
+        "link-name",
+        "scrollable-region-focusable",
+        "select-name"
+      ],
+      "scopedSerious": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "div[aria-label=\"publish state\"]"
+            ]
+          ]
+        }
+      ],
+      "scopedAll": [
+        "scrollable-region-focusable"
+      ],
+      "passes": 39
+    },
+    {
+      "state": "after",
+      "width": 390,
+      "theme": "dark",
+      "url": "http://127.0.0.1:5381/?fb=off&app=graph&section=home&local=offline&theme=dark#inuse",
+      "pageWideSerious": [
+        {
+          "id": "aria-required-children",
+          "impact": "critical",
+          "nodes": [
+            [
+              "#cp-list-2"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m0\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              ".dv-matches"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".mc-search-input"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".rdx-row-muted.rdx-row-add.rdx-row > .rdx-code"
+            ],
+            [
+              "button[aria-label=\"store/sqlite.go: 210 lines\"] > .tm-tile-label.mono"
+            ],
+            [
+              ".tm-tile[data-level=\"2\"][type=\"button\"]:nth-child(7) > .tm-tile-label.mono"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(4) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(5) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(6) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(5) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(6) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ]
+          ]
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".input-ico.field:nth-child(2) > .input[value=\"desert-archivists\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-name\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-err-slug\"]"
+            ],
+            [
+              "input[readonly=\"\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-disabled\"]"
+            ],
+            [
+              ".field:nth-child(1) > .input[value=\"desert-archivists\"]"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "nodes": [
+            [
+              "a[href=\"\"]"
+            ]
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "#typography > .dtable-wrap"
+            ],
+            [
+              "#motion > .dtable-wrap"
+            ],
+            [
+              "#controls > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              ".dtable-wrap:nth-child(20)"
+            ],
+            [
+              "#badges > .dtable-wrap"
+            ],
+            [
+              ".dtable-wrap:nth-child(10)"
+            ],
+            [
+              ".specimen:nth-child(13) > .specimen-body > .cp-demo > .cp-panel[aria-modal=\"true\"][aria-label=\"command palette\"] > .cp-foot > .cp-keys"
+            ],
+            [
+              "#overlays > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              "#data-table > .dtable-wrap"
+            ],
+            [
+              "#toast > .dtable-wrap"
+            ],
+            [
+              "#date-range > .dtable-wrap"
+            ],
+            [
+              "#ds-mapviz > .specimen:nth-child(13) > .specimen-body"
+            ],
+            [
+              ".trx-pre"
+            ],
+            [
+              ".cli-step:nth-child(1) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(4) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              "#a11y > .dtable-wrap"
+            ],
+            [
+              "div[aria-label=\"publish state\"]"
+            ]
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".is-field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".field:nth-child(2) > .select-wrap > .select"
+            ]
+          ]
+        }
+      ],
+      "pageWideAll": [
+        "aria-required-children",
+        "aria-valid-attr-value",
+        "color-contrast",
+        "label",
+        "link-name",
+        "scrollable-region-focusable",
+        "select-name"
+      ],
+      "scopedSerious": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "div[aria-label=\"publish state\"]"
+            ]
+          ]
+        }
+      ],
+      "scopedAll": [
+        "scrollable-region-focusable"
+      ],
+      "passes": 39
+    },
+    {
+      "state": "after",
+      "width": 390,
+      "theme": "light",
+      "url": "http://127.0.0.1:5381/?fb=off&app=graph&section=home&local=offline&theme=light#inuse",
+      "pageWideSerious": [
+        {
+          "id": "aria-required-children",
+          "impact": "critical",
+          "nodes": [
+            [
+              "#cp-list-2"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m0\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              ".dv-matches"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".mc-search-input"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".av-more"
+            ],
+            [
+              ".tag-on"
+            ],
+            [
+              ".rdx-row-muted.rdx-row-add.rdx-row > .rdx-code"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(4) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(5) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(6) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(5) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(6) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ]
+          ]
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".input-ico.field:nth-child(2) > .input[value=\"desert-archivists\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-name\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-err-slug\"]"
+            ],
+            [
+              "input[readonly=\"\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-disabled\"]"
+            ],
+            [
+              ".field:nth-child(1) > .input[value=\"desert-archivists\"]"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "nodes": [
+            [
+              "a[href=\"\"]"
+            ]
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "#typography > .dtable-wrap"
+            ],
+            [
+              "#motion > .dtable-wrap"
+            ],
+            [
+              "#controls > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(11)"
+            ],
+            [
+              "#states > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              ".dtable-wrap:nth-child(20)"
+            ],
+            [
+              "#badges > .dtable-wrap"
+            ],
+            [
+              ".dtable-wrap:nth-child(10)"
+            ],
+            [
+              ".specimen:nth-child(13) > .specimen-body > .cp-demo > .cp-panel[aria-modal=\"true\"][aria-label=\"command palette\"] > .cp-foot > .cp-keys"
+            ],
+            [
+              "#overlays > .dtable-wrap:nth-child(15)"
+            ],
+            [
+              "#data-table > .dtable-wrap"
+            ],
+            [
+              "#toast > .dtable-wrap"
+            ],
+            [
+              "#date-range > .dtable-wrap"
+            ],
+            [
+              "#ds-mapviz > .specimen:nth-child(13) > .specimen-body"
+            ],
+            [
+              ".trx-pre"
+            ],
+            [
+              ".cli-step:nth-child(1) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              ".cli-step:nth-child(4) > .cli-step-main > .cli-cmd > .cli-cmd-line"
+            ],
+            [
+              "#a11y > .dtable-wrap"
+            ],
+            [
+              "div[aria-label=\"publish state\"]"
+            ]
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".is-field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".field:nth-child(2) > .select-wrap > .select"
+            ]
+          ]
+        }
+      ],
+      "pageWideAll": [
+        "aria-required-children",
+        "aria-valid-attr-value",
+        "color-contrast",
+        "label",
+        "link-name",
+        "scrollable-region-focusable",
+        "select-name"
+      ],
+      "scopedSerious": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "div[aria-label=\"publish state\"]"
+            ]
+          ]
+        }
+      ],
+      "scopedAll": [
+        "scrollable-region-focusable"
+      ],
+      "passes": 39
+    },
+    {
+      "state": "after",
+      "width": 1440,
+      "theme": "dark",
+      "url": "http://127.0.0.1:5381/?fb=off&app=graph&section=home&local=offline&theme=dark#inuse",
+      "pageWideSerious": [
+        {
+          "id": "aria-required-children",
+          "impact": "critical",
+          "nodes": [
+            [
+              "#cp-list-2"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m0\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m1\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              ".dv-matches"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".mc-search-input"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".rdx-row-muted.rdx-row-add.rdx-row > .rdx-code"
+            ],
+            [
+              "button[aria-label=\"store/sqlite.go: 210 lines\"] > .tm-tile-label.mono"
+            ],
+            [
+              ".tm-tile[data-level=\"2\"][type=\"button\"]:nth-child(7) > .tm-tile-label.mono"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(4) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(5) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(6) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(5) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(6) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ]
+          ]
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".input-ico.field:nth-child(2) > .input[value=\"desert-archivists\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-name\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-err-slug\"]"
+            ],
+            [
+              "input[readonly=\"\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-disabled\"]"
+            ],
+            [
+              ".field:nth-child(1) > .input[value=\"desert-archivists\"]"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "nodes": [
+            [
+              "a[href=\"\"]"
+            ]
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "#toast > .dtable-wrap"
+            ]
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".is-field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".field:nth-child(2) > .select-wrap > .select"
+            ]
+          ]
+        }
+      ],
+      "pageWideAll": [
+        "aria-required-children",
+        "aria-valid-attr-value",
+        "color-contrast",
+        "label",
+        "link-name",
+        "scrollable-region-focusable",
+        "select-name"
+      ],
+      "scopedSerious": [],
+      "scopedAll": [],
+      "passes": 39
+    },
+    {
+      "state": "after",
+      "width": 1440,
+      "theme": "light",
+      "url": "http://127.0.0.1:5381/?fb=off&app=graph&section=home&local=offline&theme=light#inuse",
+      "pageWideSerious": [
+        {
+          "id": "aria-required-children",
+          "impact": "critical",
+          "nodes": [
+            [
+              "#cp-list-2"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m0\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              "div[aria-labelledby=\"dr-m1\"] > .dr-wdrow[role=\"row\"]"
+            ],
+            [
+              ".dv-matches"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".mc-search-input"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".av-more"
+            ],
+            [
+              ".tag-on"
+            ],
+            [
+              ".rdx-row-muted.rdx-row-add.rdx-row > .rdx-code"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(4) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(5) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-add.dv-line[role=\"row\"]:nth-child(6) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(1) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(5) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-del.dv-line[role=\"row\"]:nth-child(6) > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(7) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-hunk:nth-child(2) > .dv-hunk-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"]:nth-child(8) > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(1) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(2) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-del.dv-line[role=\"row\"] > .dv-num-old.dv-num[role=\"cell\"]"
+            ],
+            [
+              ".dv-match:nth-child(3) > .dv-match-pair[role=\"rowgroup\"] > .dv-add.dv-line[role=\"row\"] > .dv-num-new.dv-num[role=\"cell\"]"
+            ]
+          ]
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".input-ico.field:nth-child(2) > .input[value=\"desert-archivists\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-name\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-err-slug\"]"
+            ],
+            [
+              "input[readonly=\"\"]"
+            ],
+            [
+              "input[aria-describedby=\"is-hint-disabled\"]"
+            ],
+            [
+              ".field:nth-child(1) > .input[value=\"desert-archivists\"]"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "nodes": [
+            [
+              "a[href=\"\"]"
+            ]
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": [
+            [
+              "#toast > .dtable-wrap"
+            ]
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": [
+            [
+              ".field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".is-field:nth-child(3) > .select-wrap > .select"
+            ],
+            [
+              ".field:nth-child(2) > .select-wrap > .select"
+            ]
+          ]
+        }
+      ],
+      "pageWideAll": [
+        "aria-required-children",
+        "aria-valid-attr-value",
+        "color-contrast",
+        "label",
+        "link-name",
+        "scrollable-region-focusable",
+        "select-name"
+      ],
+      "scopedSerious": [],
+      "scopedAll": [],
+      "passes": 39
+    }
+  ]
+}
