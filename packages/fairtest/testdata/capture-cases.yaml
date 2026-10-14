@@ -1,0 +1,39 @@
+# Capture-case document used by the capture-case contract test. Synthetic
+# caller-owned data: two surfaces, two widths, two themes, two states. The
+# required surface inventory lives in capture-cases.manifest.yaml.
+states:
+  - before
+  - after
+widths:
+  - 320
+  - 1440
+themes:
+  - dark
+  - light
+surfaces:
+  - id: alpha-controls
+    kind: component
+    path: /
+    query: ""
+    hash: "#alpha"
+    root: "#alpha"
+    probes:
+      - name: alpha-on
+        selector: ".alpha-on"
+        hover: true
+      - name: alpha-off
+        selector: ".alpha-off"
+    focus:
+      - name: alpha-focus
+        selector: ".alpha-on"
+  - id: beta-seg
+    kind: component
+    path: /
+    query: "app=beta"
+    hash: "#beta"
+    root: "#beta"
+    probes:
+      - name: beta-seg-on
+        selector: ".beta-seg-on"
+        stateLabel: true
+    focus: []

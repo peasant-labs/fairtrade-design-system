@@ -1,0 +1,52 @@
+# Required-name inventory and executable mutations for capture-sheet.yaml.
+expectedCaseCount: 4
+requiredCaseNames:
+  - default column order interleaves before beside after
+  - cells resolve to shot unshootable and missing
+  - html escaping keeps markup inert
+  - a shot cell without an image fails closed
+expectedMutationCount: 7
+requiredMutationNames:
+  - removing the escaping case breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the check discriminator breaks the case shape
+  - deleting the expected keys breaks the case shape
+  - adding an unknown case field breaks exact membership
+  - inventing a check kind breaks the closed vocabulary
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing the escaping case breaks the required inventory
+    kind: delete-record
+    target: html escaping keeps markup inert
+    expectedField: html escaping keeps markup inert
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: default column order interleaves before beside after
+    expectedField: default column order interleaves before beside after
+  - name: renaming the check discriminator breaks the case shape
+    kind: rename-field
+    target: cells resolve to shot unshootable and missing
+    field: check
+    newField: kind
+    expectedField: check
+  - name: deleting the expected keys breaks the case shape
+    kind: delete-field
+    target: default column order interleaves before beside after
+    field: expectedKeys
+    expectedField: expectedKeys
+  - name: adding an unknown case field breaks exact membership
+    kind: unknown-field
+    target: html escaping keeps markup inert
+    field: width
+    value: 320
+    expectedField: width
+  - name: inventing a check kind breaks the closed vocabulary
+    kind: bad-value
+    target: a shot cell without an image fails closed
+    field: check
+    value: invented-check
+    expectedField: check
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document

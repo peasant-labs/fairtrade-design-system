@@ -1,0 +1,56 @@
+# Capture-sheet composition cases used by the capture-sheet contract test.
+# Synthetic caller-owned data: one surface, one probe, one focus
+# representative, and two certified records that cover one width and theme.
+# The required case inventory lives in the sibling manifest.
+expectedCaseCount: 4
+matrix:
+  states: [before, after]
+  widths: [320, 1440]
+  themes: [dark, light]
+  surfaces:
+    - id: alpha
+      kind: component
+      path: /
+      query: ""
+      hash: "#alpha"
+      root: "#alpha"
+      probes:
+        - {name: alpha-on, selector: ".alpha-on"}
+      focus:
+        - {name: alpha-focus, selector: ".alpha-on"}
+records:
+  - state: before
+    surface: alpha
+    width: 320
+    theme: dark
+    targets:
+      - {name: alpha-on, kind: probe, shot: true}
+      - {name: surface, kind: surface, shot: true}
+  - state: after
+    surface: alpha
+    width: 320
+    theme: dark
+    targets:
+      - {name: alpha-on, kind: probe, shot: false, unshootable: "not painted at capture time"}
+      - {name: surface, kind: surface, shot: true}
+cases:
+  - name: default column order interleaves before beside after
+    check: order
+    expectedKeys: ["320-dark-before", "320-dark-after", "320-light-before", "320-light-after", "1440-dark-before", "1440-dark-after", "1440-light-before", "1440-light-after"]
+    expectedLabels: ["320 dark / before", "320 dark / after", "320 light / before", "320 light / after", "1440 dark / before", "1440 dark / after", "1440 light / before", "1440 light / after"]
+  - name: cells resolve to shot unshootable and missing
+    check: cells
+    expectedCells:
+      - {row: alpha-on, kind: probe, column: "320-dark-before", status: shot}
+      - {row: alpha-on, kind: probe, column: "320-dark-after", status: unshootable, reason: "not painted at capture time"}
+      - {row: alpha-on, kind: probe, column: "320-light-before", status: missing}
+      - {row: alpha-focus, kind: focus, column: "320-dark-before", status: missing}
+      - {row: surface, kind: surface, column: "320-dark-before", status: shot}
+  - name: html escaping keeps markup inert
+    check: escaping
+    reason: '<img src="x" onerror=alert(1)>'
+    expectedFragments: ["&lt;img", "&gt;", "&quot;"]
+    mustNotContain: ['<img src="x"']
+  - name: a shot cell without an image fails closed
+    check: render
+    expectedDiagnostic: ["no image for shot", "at path", "repair:"]

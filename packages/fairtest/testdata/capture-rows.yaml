@@ -1,0 +1,62 @@
+# Capture-row observation cases used by the capture-row contract test.
+# Synthetic caller-owned data: one certified state, two rows, three targets.
+# Each case either verifies the built evidence run or asserts a producer
+# invariant failure. The required case inventory lives in the sibling manifest.
+expectedCaseCount: 7
+run:
+  state: before
+  runId: capture-before
+  root: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  themeSource: rendered theme attribute
+  observedAtMs: 1000
+  nowMs: 2000
+rows:
+  - surface: alpha-controls
+    kind: component
+    width: 320
+    theme: dark
+    asset: /assets/index-a.js
+    targets:
+      - {name: alpha-on, kind: probe, selector: ".alpha-on", shot: true}
+      - {name: surface, kind: surface, selector: "#alpha", shot: true}
+  - surface: beta-seg
+    kind: component
+    width: 320
+    theme: dark
+    asset: /assets/index-a.js
+    targets:
+      - {name: beta-seg-on, kind: probe, selector: ".beta-seg-on", shot: false, unshootable: "no element matched selector .beta-seg-on"}
+cases:
+  - name: certified capture run verifies
+    check: verify
+    mutation: none
+    expectVerdict: pass
+    expectedFailureCodes: []
+  - name: dropped artifact fails
+    check: verify
+    mutation: drop-artifact
+    expectVerdict: fail
+    expectedFailureCodes: [missing-artifact]
+  - name: tampered artifact digest fails
+    check: verify
+    mutation: tamper-digest
+    expectVerdict: fail
+    expectedFailureCodes: [digest-mismatch]
+  - name: missing proof fails
+    check: verify
+    mutation: drop-proof
+    expectVerdict: fail
+    expectedFailureCodes: [unproven]
+  - name: cross-root provenance fails
+    check: verify
+    mutation: cross-root
+    expectVerdict: fail
+    expectedFailureCodes: [cross-root]
+  - name: shot reference without a file fails
+    check: fixture
+    mutation: shot-without-file
+    expectedDiagnostic: ["has no file", "at path", "repair:"]
+  - name: target with neither shot nor reason fails
+    check: fixture
+    mutation: silent-miss
+    expectedDiagnostic: ["neither a shot nor", "at path", "repair:"]

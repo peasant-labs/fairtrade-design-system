@@ -1,0 +1,51 @@
+# Required-name inventory and executable mutations for capture-cases.yaml. The
+# "cases" of this family are the surfaces of the capture-case document.
+expectedCaseCount: 2
+requiredCaseNames:
+  - alpha-controls
+  - beta-seg
+expectedMutationCount: 7
+requiredMutationNames:
+  - removing the beta-seg surface breaks the required inventory
+  - duplicating a surface id breaks uniqueness
+  - renaming the probe list breaks the surface shape
+  - deleting the region root breaks the surface shape
+  - adding an unknown surface field breaks exact membership
+  - inventing a host kind breaks the closed vocabulary
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing the beta-seg surface breaks the required inventory
+    kind: delete-record
+    target: beta-seg
+    expectedField: beta-seg
+  - name: duplicating a surface id breaks uniqueness
+    kind: duplicate-name
+    target: beta-seg
+    expectedField: beta-seg
+  - name: renaming the probe list breaks the surface shape
+    kind: rename-field
+    target: alpha-controls
+    field: probes
+    newField: probe
+    expectedField: probes
+  - name: deleting the region root breaks the surface shape
+    kind: delete-field
+    target: alpha-controls
+    field: root
+    expectedField: root
+  - name: adding an unknown surface field breaks exact membership
+    kind: unknown-field
+    target: beta-seg
+    field: theme
+    value: light
+    expectedField: theme
+  - name: inventing a host kind breaks the closed vocabulary
+    kind: bad-value
+    target: beta-seg
+    field: kind
+    value: widget
+    expectedField: kind
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document
