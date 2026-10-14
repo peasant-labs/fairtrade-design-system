@@ -377,6 +377,6 @@
 @media (prefers-reduced-motion: no-preference) {
   .cx-offline-spin { animation: busy-spin 1.1s linear infinite; }
 }
-@media (max-width: 480px) {
+@media (width < 480px) {
   .cx-offline { padding: var(--sp-3) var(--sp-4); }
 }

@@ -22,17 +22,17 @@ responsive:
     file: src/index.css
     selector: .cex-coll-grid
     desktop: 'grid-template-columns: 1fr 1fr'
-    query: '@media (max-width: 719px)'
+    query: '@media (width < 768px)'
     narrow: 'grid-template-columns: 1fr'
   - name: transcript grid
     file: src/index.css
     selector: .cex-grid
     desktop: 'grid-template-columns: 1fr 1fr'
-    query: '@media (max-width: 759px)'
+    query: '@media (width < 768px)'
     narrow: 'grid-template-columns: 1fr'
 publishContract:
-  # Default desktop split, with stacked columns only below the old 480px boundary.
-  query: '@media (max-width: 479px)'
+  # Default desktop split, with stacked columns only below the phone boundary.
+  query: '@media (width < 480px)'
   desktopSplit: 'grid-template-columns: 1fr 1fr'
   narrowSplit: 'grid-template-columns: 1fr'
   desktopDivider: 'border-left: var(--bd)'

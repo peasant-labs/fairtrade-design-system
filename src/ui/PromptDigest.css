@@ -588,6 +588,6 @@ a.pd-row-link:focus-visible {
   color: var(--ink-2);
 }
 
-@media (max-width: 767px) {
+@media (width < 768px) {
   .pd-split { grid-template-columns: minmax(0, 1fr); }
 }

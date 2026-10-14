@@ -1,0 +1,41 @@
+# Data for the breakpoint-scale guard (scripts/breakpoint-scale.mjs). Required names live in
+# breakpoints.manifest.yaml; scripts/breakpoint-scale.test.mjs runs the cases and the mutation.
+#
+# `exceptions` lists the viewport @media conditions that deliberately stay off the documented
+# --bp-* scale (480 / 768 / 1024 / 1440). The guard fails on ANY length in a viewport @media
+# condition that is neither a scale px value nor one of these entries, so an off-scale query is
+# either fixed or recorded here with its reason. The list only shrinks: an entry whose condition
+# stops raising a violation fails the guard until it is deleted. Keep it empty when the whole
+# stylesheet tree sits on the scale.
+exceptions: []
+
+# Preludes fed through lintViewportQuery (the same code the build runs). `expect` lists the
+# check ids the prelude must raise, in order; [] means it is on the scale and canonical.
+cases:
+  - name: the phone boundary
+    media: '@media (width < 480px)'
+    expect: []
+  - name: a two-band condition
+    media: '@media (480px <= width < 768px)'
+    expect: []
+  - name: a non-viewport media feature
+    media: '@media (prefers-reduced-motion: no-preference)'
+    expect: []
+  - name: an off-scale width
+    media: '@media (width < 720px)'
+    expect: [off-scale]
+  - name: a boundary-minus-one width
+    media: '@media (width < 767px)'
+    expect: [boundary-minus-one]
+  - name: the retired descriptor form
+    media: '@media (max-width: 768px)'
+    expect: [descriptor-form]
+  - name: an inclusive upper bound
+    media: '@media (width <= 1024px)'
+    expect: [inclusive-bound]
+  - name: a rem-based width
+    media: '@media (width < 48rem)'
+    expect: [non-scale-unit]
+  - name: a height condition
+    media: '@media (max-height: 600px)'
+    expect: [descriptor-form, off-scale]

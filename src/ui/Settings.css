@@ -111,7 +111,7 @@
   color: var(--ink-2);
 }
 
-@media (max-width: 767px) {
+@media (width < 768px) {
   .srow { padding: var(--sp-3); }
   .srow-control { flex-wrap: wrap; flex-basis: 100%; max-width: 100%; }
   .srow-text { max-width: 100%; }

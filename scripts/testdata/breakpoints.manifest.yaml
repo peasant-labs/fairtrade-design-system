@@ -1,0 +1,28 @@
+# Required-NAME manifest for breakpoints.yaml: deletion protection for the declared off-scale
+# viewport exceptions, the case names, and the named mutation scripts/breakpoint-scale.test.mjs
+# plants in the REAL bytes of a source sheet. The mutation must make the guard fail, and the
+# failure must contain expectedDiagnostic. An exception added without its name here fails the
+# guard as an unexpected name.
+
+# Empty: every viewport @media query under src/ currently sits on the --bp-* scale.
+requiredExceptionNames: []
+
+requiredCaseNames:
+  - the phone boundary
+  - a two-band condition
+  - a non-viewport media feature
+  - an off-scale width
+  - a boundary-minus-one width
+  - the retired descriptor form
+  - an inclusive upper bound
+  - a rem-based width
+  - a height condition
+
+requiredMutationNames:
+  - an off-scale viewport query returns
+
+mutations:
+  - name: an off-scale viewport query returns
+    target: src/ui/Settings.css
+    append: "\n@media (max-width: 719px) { .srow { padding: var(--sp-2); } }\n"
+    expectedDiagnostic: '[off-scale] `@media (max-width: 719px)`: 719px is not on the --bp-* scale'

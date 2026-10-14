@@ -264,7 +264,7 @@ decisions:
     id: 26
     disposition: DEMO
     binding:
-      codeReference: {file: src/index.css, contains: '@media (max-width: 719px) { .cex-coll-grid { grid-template-columns: 1fr; } }'}
+      codeReference: {file: src/index.css, contains: '@media (width < 768px) { .cex-coll-grid { grid-template-columns: 1fr; } }'}
       pointerRemoved: '#136/26'
       lineRemoved: '- **#136/26, query direction**: four rules adapt with `min-width` queries.'
       restatingFilesAmended:
