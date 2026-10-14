@@ -55,16 +55,16 @@ In sections 1 to 7 each line names the `DESIGN.md` rule it explains; the rule it
 
 ## 1. typography & text
 
-- **The 16px Floor Rule** - dyslexic readers have a "critical font size" below which reading rate collapses, and dense UIs habitually shrink to 11-13px; gain density through row height, never a smaller glyph. *(Rello & Baeza-Yates 2017; BDA 2023)*
-- **The Mono Is Chrome Rule** - monospace slows natural-language reading, so prose keeps tracking, word spacing, 1.5 leading and a capped measure while mono keeps `letter-spacing:0` for its columns. *(Braille Institute; BDA 2023)*
-- **The Bold, Not Italic Rule** - slant and underline disrupt word shape, and all-caps removes the cues dyslexic readers scan by; emphasis is upright weight. *(BDA 2023)*
-- **prose measure** (`Typography`) - over-long lines fail the return sweep and land on the wrong next line, which hits dyslexic and ADHD readers hardest; tables, code and logs are never capped. *(BDA 2023; Schneps et al. PMC3734020)*
+- **The 16px Floor Rule** - dyslexic readers have a "critical font size" below which reading rate collapses, while dense UIs habitually shrink to 11-13px. *(Rello & Baeza-Yates 2017; BDA 2023)*
+- **The Mono Is Chrome Rule** - monospace slows natural-language reading, which is why prose and transcript speech keep the proportional face. *(Braille Institute; BDA 2023)*
+- **The Bold, Not Italic Rule** - slant and underline disrupt word shape, and all-caps removes the cues dyslexic readers scan by. *(BDA 2023)*
+- **prose measure** (`Typography`) - over-long lines fail the return sweep and land on the wrong next line, which hits dyslexic and ADHD readers hardest. *(BDA 2023; Schneps et al. PMC3734020)*
 - **single column, never justified** (`Typography`) - justification opens rivers and uneven gaps that break tracking; a ragged right edge is predictable to return to. *(BDA 2023; COGA)*
-- **paragraph and heading spacing** (`Typography`, `Layout`) - whitespace chunks dense text into navigable units: paragraph spacing at least one line-height, at least 2em above a heading, headings at least 20% larger than body. *(BDA 2023; WCAG 1.4.12)*
+- **paragraph and heading spacing** (`Typography`, `Layout`) - whitespace chunks dense text into navigable units, so paragraphs, headings and body keep one size and space relationship. *(BDA 2023; WCAG 1.4.12)*
 
 ## 2. layout & whitespace
 
-- **reflow** (`Layout`) - usable at 320px / 400% zoom with no page-level horizontal scroll; each table and code block scrolls inside its own container. *(WCAG 1.4.10)*
+- **reflow** (`Layout`) - a page has to stay usable at 320px and 400% zoom, with no page-level horizontal scroll. *(WCAG 1.4.10)*
 - **The Opaque Chrome Rule** - transparency and blur behind text lose legibility and add visual stress; overlays, sticky headers and palettes stay opaque, and `prefers-reduced-transparency` is honoured. (`prefers-contrast` is research guidance, not implemented.) *(MDN; COGA)*
 - **The Texture Stays Out Rule** - repeating high-contrast patterns make words appear to move; texture and ASCII imagery stay on non-text chrome and display surfaces, and every region with running text or data is one flat fill. *(BDA 2023; pattern-glare PMC4621622)*
 
@@ -72,7 +72,7 @@ In sections 1 to 7 each line names the `DESIGN.md` rule it explains; the rule it
 
 - **The Warm Paper Rule** - `#fff` dazzles and a `#000`-on-`#fff` edge triggers pattern glare, while pure white on black halates for about one in three adults with astigmatism; never "fix" either to pure black or white. *(BDA 2023; Rello & Bigham ASSETS 2017; NN/g Dark Mode; COGA)*
 - **The Text-Safe Ink Rule** - thin mono glyphs anti-alias darker, so captions and labels were landing near the AA floor and read weak beside the light theme; text clears 4.5:1 and primary body aims for 7:1. *(WCAG 1.4.3 / 1.4.6)*
-- **The Functional Border Rule** - in a dense table the structure is the information; every control border, focus ring, meaningful icon, toggle and chart series clears 3:1, while dividers between same-tone surfaces stay deliberately subtle. *(WCAG 1.4.11)*
+- **The Functional Border Rule** - in a dense table the structure is the information, so a control's boundary and the markers that carry its state have to be perceivable. *(WCAG 1.4.11)*
 - **The Never Color Alone Rule** - meaning has to survive every colour vision; each status, diff, log level, role and required field pairs colour with an icon, a label or a shape. *(WCAG 1.4.1; COGA)*
 - **The Scarce Amber Rule** - saturated amber is a loud, cheap register; it marks at most one focal point per region and large fills stay low-chroma earth. *(GOV.UK; APCA)*
 
@@ -83,34 +83,34 @@ In sections 1 to 7 each line names the `DESIGN.md` rule it explains; the rule it
 
 ## 5. cognitive load & orientation
 
-- **The Five Actions Rule** - one primary action and at most five first-class actions per view keep a dense view manageable. *(COGA Manageable Quantity)*
+- **The Five Actions Rule** - a dense view stays manageable when one action is primary and the rest wait behind an overflow. *(COGA Manageable Quantity)*
 - **The Progressive Disclosure Rule** - calm by default, density on request: expanded but collapsible transcript turns, initially collapsed tool details, essential columns + column-picker, headline metrics with drill-down. The tool-type filter subgroup starts collapsed and persists its disclosure choice. *(NN/g; COGA Objective 8)*
 - **no interruptions during focused work** (`Dialogs and overlays`) - surprise modals and focus-stealing toasts break concentration; user-opened modals, including publish, trap focus and restore it to their opener on close, and routine messages go to one polite live region. *(COGA Limit Interruptions; WAI-ARIA APG Dialog Modal Pattern)*
-- **The Orientation Rule** - a person should never have to work out where they are: a stable breadcrumb, a sticky context header, a definite active nav state, position indicators in long flows and anchor-linkable rows. *(COGA; NN/g)*
-- **The Same Place Rule** - rigid layout consistency: the same controls in the same place on every view, identical actions carry identical labels and icons, and nothing reflows, reorders or auto-submits without an explicit action. *(WCAG 3.2.6/3.2.1/3.2.2; GOV.UK)*
-- **plain, literal language** (`Do's and Don'ts`) - no idioms or metaphors, short sentences, verb and object on every button ("export transcript", not "ok"); short labels stay lowercase while multi-line literal copy may use sentence case. *(GOV.UK; COGA)*
+- **The Orientation Rule** - a person should never have to work out where they are, so orientation is kept rather than reconstructed. *(COGA; NN/g)*
+- **The Same Place Rule** - relearning where a control moved costs attention, so identical actions keep identical labels and icons. *(WCAG 3.2.6/3.2.1/3.2.2; GOV.UK)*
+- **plain, literal language** (`Do's and Don'ts`) - an idiom or a metaphor costs a reader who is already working hard, so sentences stay short and a button carries a verb and its object. *(GOV.UK; COGA)*
 - **The Help In Place Rule** - the explanation belongs at the point of use, and reaches hover, keyboard focus and tap alike. *(COGA Provide help and support)*
 - **salience is a scarce budget** (`Colors`) - at most one focal point per region, never colour emphasis plus bold plus motion on one element, and one focus ring. *(GOV.UK; COGA)*
 - **support task resumption** (research guidance) - never re-ask information already given; keep work and offer to continue where the person left off. *(WCAG 3.3.7; COGA)*
 
 ## 6. data & tables
 
-- **The Tabular Numbers Rule** - digits in a proportional face have varying widths, so counts, durations and numeric columns use tabular lining figures and align to a common edge. *(A List Apart; NN/g)*
-- **decimal alignment** (`Data tables and charts`) - mixed-precision numbers are compared at the decimal separator, with a right-aligned tabular fallback where the renderer or the locale forbids it. *(A List Apart)*
+- **The Tabular Numbers Rule** - digits in a proportional face have varying widths, which breaks column scanning. *(A List Apart; NN/g)*
+- **decimal alignment** (`Data tables and charts`) - a reader compares mixed-precision numbers at the decimal separator, so a column that cannot align there falls back to right-aligned tabular figures. *(A List Apart)*
 - **hairline rows and full-row hover** (`Data tables and charts`) - heavy gridlines and default zebra add noise; reserve zebra for more than five columns or fifteen rows, and pair a selection tint with a non-color marker (`--stroke-emphasis`, 2px, or bold first cell) that stays separable from hover. *(NN/g; A List Apart; WCAG 1.4.11)*
-- **sticky header and frozen first column** (`Data tables and charts`) - the frozen first column is a human-readable label, never an opaque id, and lowercase headers are compensated with weight and a rule under them. *(NN/g; Adrian Roselli)*
-- **row density** (`Data tables and charts`) - about 40px rows by default with persistent compact and comfortable densities, and in-row controls keep their hit boxes even when the glyph is smaller. *(BDA 2023; MUI X; WCAG 2.5.8)*
-- **maximize data-ink** (`Data tables and charts`) - no 3D, gradients, drop shadows, textures or full cell grids; group with whitespace and alignment, prefer horizontal rules, and keep gridlines muted and never amber. *(NN/g; A List Apart; Wilke)*
-- **search, filter and sort are defaults** (`Data tables and charts`) - recognition over recall: an always-visible search, discoverable column filters with a filters-active indicator, an explicit sort arrow and removable chips, in state the host can map to URL parameters. *(NN/g; Learning Loop)*
-- **chunk long content** (`Data tables and charts`) - long content is chunked into labelled, individually navigable segments with descriptive headings and a jump-to, and a persistent count reports what is shown. *(COGA; BDA 2023)*
+- **sticky header and frozen first column** (`Data tables and charts`) - a long table loses its reader when the header and the identifying column leave the screen. *(NN/g; Adrian Roselli)*
+- **row density** (`Data tables and charts`) - density is the reader's choice, so row height moves while type size and hit boxes do not. *(BDA 2023; MUI X; WCAG 2.5.8)*
+- **maximize data-ink** (`Data tables and charts`) - ornament competes with the data, so grouping comes from whitespace and alignment and gridlines stay muted. *(NN/g; A List Apart; Wilke)*
+- **search, filter and sort are defaults** (`Data tables and charts`) - recognition over recall: a data view keeps search, filters and sort in view instead of asking the reader to remember them. *(NN/g; Learning Loop)*
+- **chunk long content** (`Data tables and charts`) - long content stays navigable when it is chunked into labelled segments with descriptive headings and a jump-to. *(COGA; BDA 2023)*
 
 ## 7. technical / WCAG baseline
 
 - **focus indicator** (`Shapes`) - a keyboard user has to see where they are; the ring clears 3:1 against its component and its background, and nothing removes it without a stronger replacement. *(WCAG 2.4.13)*
 - **focus never hidden by sticky chrome** (`Layout`) - `scroll-padding-top` (and, with a player bar, `scroll-padding-bottom`) keeps tabbed-into-view and anchored content clear of the sticky nav. *(WCAG 2.4.11/2.4.12)*
-- **The Target Rule** - dense controls meet the WCAG 2.5.8 spacing exception where they cannot reach 24px, and the glyph stays at icon size while the box is what grows. *(WCAG 2.5.8/2.5.5; BDA 2023)*
-- **The Text Spacing Rule** - A WCAG 1.4.12 user stylesheet must clip nothing: no fixed px heights on text containers and no truncation of message content. Primary titles and labels wrap; paths and prompt previews may ellipsize with full text available through a title or detail view. *(WCAG 1.4.12)*
-- **reversible by default** (`Dialogs and overlays`) - undo or confirm for delete, edit and bulk actions; preserve in-progress work on navigation; errors stay specific, persistent and field-adjacent rather than a transient toast. *(COGA Objective 4; WCAG 3.3.1/3.3.3)*
+- **The Target Rule** - a control a finger or a pointer has to hit keeps its box large even when its glyph is small. *(WCAG 2.5.8/2.5.5; BDA 2023)*
+- **The Text Spacing Rule** - a WCAG 1.4.12 user stylesheet must clip nothing: no fixed px heights on text containers and no truncation of message content. Primary titles and labels wrap; paths and prompt previews may ellipsize with full text available through a title or detail view. *(WCAG 1.4.12)*
+- **reversible by default** (`Dialogs and overlays`) - a mistake has to be recoverable, and an error has to stay where the person is looking. *(COGA Objective 4; WCAG 3.3.1/3.3.3)*
 - **role accents and brand marks** (`Colors`, `Components`) - provider accents belong to assistant turns, teal to users, mauve to sub-agents and neutral `--ink-3` to system turns; navigation remains text-first, while named providers and companies, including github, lead with real brand marks. *(NN/g; COGA; DESIGN.md Components)*
 - **APCA is aspirational, not implemented** - the shipping gate (`scripts/contrast.mjs`) measures pure WCAG 2.x ratios in both themes and does not compute APCA Lc; WCAG 2.x is known to overstate contrast near black, so an APCA backstop is a future aim and no APCA coverage may be claimed. *(APCA; Myndex)*
 
