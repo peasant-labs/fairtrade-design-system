@@ -1,0 +1,41 @@
+# The prose hunk each of the three open pull requests (#102 heading case, #103 breadcrumb links,
+# #104 section containers) carries into DESIGN.md. This delivery lands first, so each of those pull
+# requests ports its own hunk when it lands; what our side keeps is the record below, holding the
+# hunk exactly as that pull request writes it at its head SHA.
+#
+# `added` is the complete source line at `headSha` (for a rewritten line, the new line), copied
+# verbatim. The check compares it with normalized identity: whitespace collapsed and the leading
+# `- **label**` marker and its emphasis ignored, so DESIGN.md hard-wrapping is tolerated while a
+# hunk cannot silently weaken and no hand-written phrase stands in for the source.
+#
+# portedBy: ours     - this delivery ports the hunk into DESIGN.md, and the check requires it there.
+# portedBy: later-pr - the source pull request owns the port; the check requires DESIGN.md not to
+#                      carry it yet, so unshipped behavior is never recorded ahead of its code.
+sources:
+  - name: heading-case
+    destinationSection: "## Typography"
+    pr: 102
+    headSha: 9e88fd53ca48888e7a918a01140676c285d6d8d4
+    file: llm/DESIGN.md
+    destination: DESIGN.md
+    portedBy: later-pr
+    added: |
+      - **case:** unannotated `h1`, `h2`, and `h3` headings preserve their source case so user names, titles, project values, and other data remain legible. Intentional chrome headings opt in with `data-chrome-heading` (or the equivalent element-scoped selector) and render lowercase; never lowercase user content.
+  - name: breadcrumb-router
+    destinationSection: "### Navigation"
+    pr: 103
+    headSha: 9c50172849cc1106c4532d9d69dfc0414b1f4aeb
+    file: llm/DESIGN.md
+    destination: DESIGN.md
+    portedBy: later-pr
+    added: |
+      - **trails** (`44-trails.jsx`) breadcrumb, step indicator (wizard), tabs (active underline + count), pagination. *Orientation lives here.* Breadcrumb link items use the caller's `LinkComponent`, which defaults to a native anchor and receives `href`, `className="link"`, and children. The final item remains a non-link current span with `aria-current="page"`, even when a final `href` is supplied. Item labels preserve user capitalization by default; only items explicitly marked `chrome: true` are lowercased. Breadcrumb links do not add a visited-state contract.
+  - name: section-band
+    destinationSection: "## Layout"
+    pr: 104
+    headSha: f32f14153b6b8dfe9913d2988d5177481f386d23
+    file: llm/DESIGN.md
+    destination: DESIGN.md
+    portedBy: later-pr
+    added: |
+      - **section containers:** a bare `section` is unconstrained. `section.band` is the explicit canonical content container: the base layer supplies its 1040px maximum and centering, while the existing `.band` component rule owns its padding and border. Host-specific guards may deliberately exempt semantic containers; do not depend on a semantic-element side effect.
