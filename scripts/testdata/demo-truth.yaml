@@ -101,3 +101,20 @@ cases:
     query: '?publish=done'
     probes:
       - {selector: '.pub-bar', text: published, absent: not published}
+  # Update mode names collectives that already read the transcript, so the picker's reason does not
+  # belong on those rows; the picker's own, still unadded suggestions keep theirs.
+  - name: update mode keeps no suggestion note on a collective that already reads
+    module: /src/mockups/inuse/TranscriptApp.jsx
+    component: default
+    query: '?publish=ready&bar=published'
+    probes:
+      - {selector: '.pub-access-row', text: Acme Platform}
+      - {selector: '.pub-access-row', absent: suggested}
+      - {selector: '.pub-picker-row', text: 'curated, waits for the owner’s approval'}
+  - name: first publish keeps the picker suggestion note on a reader row
+    module: /src/mockups/inuse/TranscriptApp.jsx
+    component: default
+    query: '?publish=ready'
+    probes:
+      - {selector: '.pub-access-row', text: 'suggested, repo acme/ingest-api is linked'}
+      - {selector: '.pub-picker-row', text: 'curated, waits for the owner’s approval'}
