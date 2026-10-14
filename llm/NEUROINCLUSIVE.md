@@ -4,16 +4,17 @@
 > - The binding rules live in [`../DESIGN.md`](../DESIGN.md), the one design record.
 > - Token values live in `src/index.css`. The token values in `DESIGN.md`'s frontmatter and in
 >   `public/tokens.json` are generated from it.
-> - This file keeps three things: the research behind the rules, how the rules were reconciled
->   with the locked identity, and the review checklist.
+> - This file keeps three things: the research behind each rule, one line per rule naming the
+>   `DESIGN.md` rule it explains; how the rules were reconciled with the locked identity; and the
+>   review checklist.
 > - The values in its tables explain the rules. They are not a second source of truth.
-> - If this file and `DESIGN.md` disagree, `DESIGN.md` wins. The disagreement is a bug: fix both
->   files in the same commit.
+> - A rule has one wording, in `DESIGN.md`. If this file and `DESIGN.md` disagree, `DESIGN.md` wins.
+>   The disagreement is a bug: fix both files in the same commit.
 
 This is not an "accessibility settings" page. It records the research behind fairtrade's
 neuroinclusive defaults. `DESIGN.md` sets each rule's status: binding, or a known conflict with the
-demo, as its Status note says. This file sets no status. A bullet here that `DESIGN.md`
-does not state is research guidance that the library does not ship yet, and where a bullet says
+demo, as its Status note says. This file sets no status. A line here that `DESIGN.md`
+does not state is research guidance that the library does not ship yet, and where a line says
 more than `DESIGN.md`, the extra is guidance too. The defaults exist because the product is a
 **data-heavy** application (long transcripts, tables, code, dashboards) and our users include people
 who are dyslexic, have ADHD, or are autistic. Designing for them by default makes the product
@@ -48,190 +49,70 @@ These tokens live in `src/index.css` and reach every consuming app through the p
 | `--row-h-compact/standard/comfortable` | **32 / 40 / 48px** | standard 40px default, persistent density toggle |
 | `--motion-base` | **0ms default**, 120 to 200ms (`--dur-1` to `--dur-3`) only under `prefers-reduced-motion:no-preference` | static-first |
 
-Hard floors (checked in review, not by a lint): no text `<16px` in reading contexts; no `text-align:justify`; no
-`outline:none` without a stronger replacement; no infinite animation except the named busy-spinner while work is in progress and motion is allowed; no color-only meaning.
-
 ---
 
 ## 1. typography & text
 
-- **16px floor, 18px ideal.** Dyslexic readers have a "critical font size" below which reading
-  rate collapses; the benefit threshold is ~18px and dense UIs habitually shrink to 11–13px. Body
-  reading text never goes below 16px - including table cells, code, log lines, tooltips, metadata.
-  Gain density through row height/padding, not smaller glyphs. *(Rello & Baeza-Yates 2017; BDA 2023)*
-- **Line-height 1.5 for prose, ≥1.4 for any multi-line text.** Tight leading (≤1.25) is reserved
-  for single-line, width-capped display headings only - never reuse it on wrapping body copy.
-  *(BDA 2023; WCAG 1.4.12)*
-- **+0.03em tracking and 0.16em word-spacing on proportional prose only.** Extra tracking reduces
-  letter "crowding" (Rello: +7–14% faster reading). **Monospace gets `letter-spacing:0`** - added
-  tracking breaks the tabular grid. Keep word-space ≥3.5× letter-space. *(BDA 2023; WCAG 1.4.12)*
-- **Cap prose measure at ~80 actual characters** (45–66 for transcript reading panes),
-  probe-verified with prose tracking and word spacing; the tokens are 58ch / 48ch.
-  Over-long lines cause return-sweep failures (landing on the wrong next line) that hit
-  dyslexic/ADHD readers hardest. **Do not cap tables/code/logs** - full width or horizontal scroll
-  in their own container. *(BDA 2023; Schneps et al. PMC3734020)*
-- **Left-align everything; never justify; single column.** Justification creates rivers and uneven
-  gaps that disrupt tracking; ragged-right gives a predictable left edge to return to. Right-aligned
-  numeric columns are fine (scanning, not justification). *(BDA 2023; COGA)*
-- **Bold for emphasis, never italics or underline.** Render `<em>/<i>` as `font-weight:600`, not
-  slanted. Underline is reserved for genuine links. Never ALL-CAPS / `text-transform:uppercase` on
-  multi-word strings (removes the word-shape cues dyslexic readers use). Lowercasing must **never**
-  touch code identifiers, hashes, or verbatim data values. *(BDA 2023)*
-- **Prose in the proportional face; Mono only for code/IDs/timecodes/tabular data/chrome.**
-  Monospace slows natural-language reading; never typeset paragraphs or transcript speech in mono.
-  This is exactly the locked split - formalized as a hard mapping. *(Braille Institute; A List Apart)*
+Each line names the `DESIGN.md` rule it explains; the rule itself is worded once, there.
+
+- **The 16px Floor Rule** - dyslexic readers have a "critical font size" below which reading rate collapses, and dense UIs habitually shrink to 11-13px; gain density through row height, never a smaller glyph. *(Rello & Baeza-Yates 2017; BDA 2023)*
+- **The Mono Is Chrome Rule** - monospace slows natural-language reading, so prose keeps tracking, word spacing, 1.5 leading and a capped measure while mono keeps `letter-spacing:0` for its columns. *(Braille Institute; BDA 2023)*
+- **The Bold, Not Italic Rule** - slant and underline disrupt word shape, and all-caps removes the cues dyslexic readers scan by; emphasis is upright weight. *(BDA 2023)*
+- **prose measure** (`Typography`) - over-long lines fail the return sweep and land on the wrong next line, which hits dyslexic and ADHD readers hardest; tables, code and logs are never capped. *(BDA 2023; Schneps et al. PMC3734020)*
+- **single column, never justified** (`Typography`) - justification opens rivers and uneven gaps that break tracking; a ragged right edge is predictable to return to. *(BDA 2023; COGA)*
+- **paragraph and heading spacing** (`Typography`, `Layout`) - whitespace chunks dense text into navigable units: paragraph spacing at least one line-height, at least 2em above a heading, headings at least 20% larger than body. *(BDA 2023; WCAG 1.4.12)*
 
 ## 2. layout & whitespace
 
-- **Generous structural spacing.** Paragraph spacing ≥1× line-height (margin, not indent), ≥2em
-  above headings, headings ≥20% larger than body, clear size/weight hierarchy. Whitespace chunks
-  dense text into navigable units. *(BDA 2023; WCAG 1.4.12)*
-- **One flat background colour behind any text.** No gradients, patterns, watermarks, CRT/scanline
-  textures, or busy striping behind reading or data content - repeating high-contrast patterns
-  induce visual stress ("words appear to move"). The cp437 / Caves-of-Qud texture lives on
-  **non-text chrome only** (borders, headers, empty states, hero art, thumbnails). *(BDA 2023; pattern-glare PMC4621622)*
-- **Reflow (WCAG 1.4.10):** usable at 320px / 400% zoom with no page-level horizontal scroll. Each
-  table/code block gets its own `overflow-x:auto`; prose wraps at the measure. *(WCAG 1.4.10)*
-- **Honor `prefers-reduced-transparency`** (and, not implemented yet, `prefers-contrast`). No glass/blur in the base UI;
-  overlays, sticky headers and command palettes use opaque surfaces; gate `backdrop-blur` behind
-  `prefers-reduced-transparency:no-preference` with an opaque fallback. *(MDN; COGA)*
+- **reflow** (`Layout`) - usable at 320px / 400% zoom with no page-level horizontal scroll; each table and code block scrolls inside its own container. *(WCAG 1.4.10)*
+- **The Opaque Chrome Rule** - transparency and blur behind text lose legibility and add visual stress; overlays, sticky headers and palettes stay opaque, and `prefers-reduced-transparency` is honoured. (`prefers-contrast` is research guidance, not implemented.) *(MDN; COGA)*
+- **The Texture Stays Out Rule** - repeating high-contrast patterns make words appear to move; texture and ASCII imagery stay on non-text chrome and display surfaces, and every region with running text or data is one flat fill. *(BDA 2023; pattern-glare PMC4621622)*
 
 ## 3. colour & contrast
 
-- **Light theme: warm paper, not pure white.** `#fff` dazzles and the `#000`-on-`#fff` edge triggers
-  pattern glare/migraine; warm off-white reads faster. Default `--canvas`/`--surface` to a faint
-  warm paper (`#fbfaf7`/`#fdfcfa`); body ink stays the locked off-black `#27241f`. *(BDA 2023; Rello & Bigham ASSETS 2017)*
-- **Dark theme: off-white on near-black, never `#fff` on `#000`.** Pure white on black causes
-  halation (haloing) for ~1-in-3 adults with astigmatism. Body uses `--ink #e9e5db` (16:1);
-  `--ink-strong #f8f5ed` (18.5:1) only for short emphasis; the amber text-shadow glow should never
-  touch multi-line text. Only single accent words marked `.hl` receive text glow, not generic bold. (The off-white on near-black is satisfied - do not "fix" it to
-  pure black/white.) *(NN/g Dark Mode; COGA)*
-- **Contrast floor 4.5:1, target 7:1 (AAA) for primary body.** Tune earthy hues by lightness; the
-  muted `--ink-3` (≈6.5:1 dark `#9a9488` / 7:1 light) is for **secondary** text only, never primary
-  body. (Raised from ≈5:1 dark on 2026-06-16: thin mono glyphs anti-alias darker, so the rendered
-  contrast of captions/labels was landing near the AA floor and read weak versus the light theme.)
-  Validate every text-on-surface pair in CI. *(WCAG 1.4.3 / 1.4.6)*
-- **Non-text contrast ≥3:1 (WCAG 1.4.11) on every functional border, input outline, focus
-  ring, meaningful icon, toggle, chart series.** In dense tables the structure *is* the information.
-  **Done for control borders and the focus ring (verified by the contrast gate, `scripts/contrast.mjs`,
-  run in CI via `pnpm build`); icons, toggles and chart series are checked in review:**
-  functional control/input borders use `--rule-strong`, raised to clear 3:1 against every surface in
-  both themes (dark `#6f6a5f` ~3.2 to 3.8:1, light `#8b836d` ~3.1 to 3.4:1), kept 1px thin. Structural
-  hairline dividers (`--rule`) are deliberately sub-3:1 (~1.6 to 1.8:1): under 1.4.11 they are
-  decorative separators between same-tone surfaces, not borders that identify a component or its state
-  (owner decision 2026-06-16). The gate fails on control borders and the focus ring, and only reports
-  the toggle fill, the `--amber-dim` focus tint and the dividers. *(WCAG 1.4.11)*
-- **Never color alone (WCAG 1.4.1).** Every status/diff/log-level/required-field carries a redundant
-  icon + label + shape. Negative numbers get a leading minus/parentheses. Pairs perfectly with the
-  locked "real icons, not glyph-dots" rule. *(WCAG 1.4.1; COGA)*
-- **Saturated amber is a scarce accent.** Large fills stay low-chroma/mid-luminance earthy; reserve
-  amber for small accents, focus, links, keywords, and large/bold text - never small body text on
-  light, never big saturated panels. This *tightens* the locked palette intent. *(GOV.UK; APCA)*
+- **The Warm Paper Rule** - `#fff` dazzles and a `#000`-on-`#fff` edge triggers pattern glare, while pure white on black halates for about one in three adults with astigmatism; never "fix" either to pure black or white. *(BDA 2023; Rello & Bigham ASSETS 2017; NN/g Dark Mode; COGA)*
+- **The Text-Safe Ink Rule** - thin mono glyphs anti-alias darker, so captions and labels were landing near the AA floor and read weak beside the light theme; text clears 4.5:1 and primary body aims for 7:1. *(WCAG 1.4.3 / 1.4.6)*
+- **The Functional Border Rule** - in a dense table the structure is the information; every control border, focus ring, meaningful icon, toggle and chart series clears 3:1, while dividers between same-tone surfaces stay deliberately subtle. *(WCAG 1.4.11)*
+- **The Never Color Alone Rule** - meaning has to survive every colour vision; each status, diff, log level, role and required field pairs colour with an icon, a label or a shape. *(WCAG 1.4.1; COGA)*
+- **The Scarce Amber Rule** - saturated amber is a loud, cheap register; it marks at most one focal point per region and large fills stay low-chroma earth. *(GOV.UK; APCA)*
 
 ## 4. motion & sensory
 
-- **Reduced-motion is the base state.** Author static-first, then add motion only inside
-  `@media (prefers-reduced-motion:no-preference)`. Under "reduce", kill non-essential
-  transitions/animations; cap any remainder at ~200ms. No parallax, carousels, marquees, looping
-  shimmer. **Defect fixed:** the reduce block is now a global wildcard (`*, *::before, *::after`) that
-  zeroes every `animation-duration`/`transition-duration` (and caps iteration count) plus resets
-  `scroll-behavior` to auto - it no longer covers only `scroll-behavior` or only the `.btn`/`.input`/`.nav`
-  rules, so nothing motion-bearing slips through. *(W3C C39; WCAG 2.3.3)*
-- **No autoplay/loop/blink by default.** Nothing flashes >3×/sec (WCAG 2.3.1); the recording/live
-  indicator is a **static** filled dot, not a pulse; live tables coalesce repaints to ≤1 change/sec
-  as a brief non-looping settle; never auto-scroll the viewport while reading. Skeletons stay static.
-  The single `busy-spin` exception is shown only during work, only with motion allowed;
-  under reduced motion it remains a static ring or glyph. *(WCAG 2.2.2 / 2.3.1; COGA)*
+- **The Static-First Rule** - motion off by default, added only inside `@media (prefers-reduced-motion: no-preference)`, with the reduce block zeroing every animation and transition globally. *(W3C C39; WCAG 2.3.3)*
+- **no autoplay, loop or blink** (`Overview`) - nothing flashes more than three times a second, skeletons stay static, the live indicator is a static filled dot, a live table settles at most once a second and the view never auto-scrolls while reading; the named busy-spinner is the one looping exception, and under reduced motion it remains a static ring or glyph. *(WCAG 2.2.2 / 2.3.1; COGA)*
 
 ## 5. cognitive load & orientation
 
-- **One primary action and ≤5 first-class actions per view.** One primary CTA, ≤5 first-class secondary actions, the rest under
-  a `…` overflow. Table rows default to a single kebab, not inline button rows. *(COGA Manageable Quantity)*
-- **Progressive disclosure by default.** Lead with a summary, defer detail to expand-on-demand:
-  expanded but collapsible transcript turns, initially collapsed tool details, essential columns +
-  column-picker, headline metrics with drill-down. The tool-type filter subgroup starts collapsed
-  and persists its disclosure choice. Calm by default; the user opts *into* density. *(NN/g; COGA Obj. 8)*
-- **No interruptions during focused work.** No surprise modals, no focus-stealing toasts, no
-  animating badges. Routine messages go to one fixed `aria-live="polite"` region. Only explicit
-  user-opened modals, including publish, trap focus and restore it to their opener on close
-  under the APG dialog pattern. *(COGA Limit Interruptions; WAI-ARIA APG Dialog Modal Pattern)*
-- **Persistent orientation everywhere** ("where am I / what is this / how did I get here"): stable
-  breadcrumb, sticky context header naming the current dataset/transcript, definite active nav-state,
-  position indicators in long flows ("turn 312 of 1,840"), anchor-linkable rows (`#turn-312`). The
-  locked sticky headers + amber active-nav already do this - extend the pattern. *(COGA; NN/g)*
-- **Support task resumption.** Continuous auto-save; never re-ask info already given (WCAG 3.3.7); on
-  return, "continue where you left off" + done/remaining + "jump to next unreviewed". *(WCAG 3.3.7; COGA)*
-- **Rigid layout consistency (WCAG 3.2.6).** Same controls in the same place on every view; identical
-  actions use byte-identical labels/icons; nothing reflows/reorders/auto-submits without explicit
-  action (3.2.1/3.2.2). One AppShell, one action registry. Reinforces "standardize to tokens". *(WCAG 3.2.6/3.2.1/3.2.2; GOV.UK)*
-- **Literal plain language.** No idioms/metaphors/cute errors; short sentences + bullets;
-  descriptive verb+object button labels ("export transcript", not "ok"); errors state what happened +
-  what to do. Short UI labels stay lowercase per the lock; multi-line literal copy (error bodies,
-  help, tooltips) may be sentence-case so sentences stay parseable. *(GOV.UK; COGA)*
-- **Inline contextual help** at the point of use (column headers, metrics, jargon), triggerable by
-  hover **and** keyboard **and** tap; "what to expect" before multi-step tasks; a consistently
-  located help launcher. *(COGA Provide help and support)*
-- **Salience is a scarce budget.** Amber/strong-contrast for at most one focal point per region;
-  never combine color-emphasis + bold + motion on one element; one clear focus ring, not competing
-  highlights. A formalization of the locked "amber scarce, earthy supporting" intent. *(GOV.UK; COGA)*
+- **The Five Actions Rule** - one primary action and at most five first-class actions per view keep a dense view manageable. *(COGA Manageable Quantity)*
+- **The Progressive Disclosure Rule** - calm by default, density on request: expanded but collapsible transcript turns, initially collapsed tool details, essential columns + column-picker, headline metrics with drill-down. The tool-type filter subgroup starts collapsed and persists its disclosure choice. *(NN/g; COGA Objective 8)*
+- **no interruptions during focused work** (`Dialogs and overlays`) - surprise modals and focus-stealing toasts break concentration; user-opened modals, including publish, trap focus and restore it to their opener on close, and routine messages go to one polite live region. *(COGA Limit Interruptions; WAI-ARIA APG Dialog Modal Pattern)*
+- **The Orientation Rule** - a person should never have to work out where they are: a stable breadcrumb, a sticky context header, a definite active nav state, position indicators in long flows and anchor-linkable rows. *(COGA; NN/g)*
+- **The Same Place Rule** - rigid layout consistency: the same controls in the same place on every view, identical actions carry identical labels and icons, and nothing reflows, reorders or auto-submits without an explicit action. *(WCAG 3.2.6/3.2.1/3.2.2; GOV.UK)*
+- **plain, literal language** (`Do's and Don'ts`) - no idioms or metaphors, short sentences, verb and object on every button ("export transcript", not "ok"); short labels stay lowercase while multi-line literal copy may use sentence case. *(GOV.UK; COGA)*
+- **The Help In Place Rule** - the explanation belongs at the point of use, and reaches hover, keyboard focus and tap alike. *(COGA Provide help and support)*
+- **salience is a scarce budget** (`Colors`) - at most one focal point per region, never colour emphasis plus bold plus motion on one element, and one focus ring. *(GOV.UK; COGA)*
+- **support task resumption** (research guidance) - never re-ask information already given; keep work and offer to continue where the person left off. *(WCAG 3.3.7; COGA)*
 
 ## 6. data & tables
 
-- **Right-align numeric columns; tabular lining figures by default** (`font-variant-numeric:
-  lining-nums tabular-nums` on tables/code/metrics; extend the existing `.tnum`); identical decimal
-  precision per column; match each header's alignment to its column. *(A List Apart; NN/g)*
-- **Align mixed-precision numbers on the decimal** (`text-align:"." center` where supported, with a
-  right + `tnum` + fixed-precision fallback). *(A List Apart)*
-- **Hairline rows + full-row hover, not heavy gridlines or default zebra.** Reserve ultra-low-contrast
-  zebra for >5 columns or >15 rows. Selection = distinct higher-alpha amber tint **plus** a non-color
-  marker (`--stroke-emphasis`, 2px, or bold first cell), separable from hover. The selection marker
-  (not the hairline row rule) is the affordance that must clear 3:1; row dividers stay subtle.
-  *(NN/g; A List Apart; WCAG 1.4.11)*
-- **Freeze the header row** (and the first identifier column on horizontal scroll) with
-  `position:sticky`; the frozen first column is a human-readable label, never an opaque ID; order
-  columns by importance. Compensate for lowercase headers with weight 600 + a rule under the header.
-  *(NN/g; Adrian Roselli)*
-- **Standard ~40px rows by default** (≈12px vertical padding), with persistent compact (32px) /
-  comfortable (48px) density; in-row controls get ≥24px (≥44px touch) hit boxes even when the glyph
-  is 14–16px. *(BDA 2023; MUI X; WCAG 2.5.8)*
-- **Maximize data-ink.** No 3D, gradients, drop shadows (beyond one functional sticky-edge), textures,
-  ornamental borders, or full cell grids in data. Group with whitespace, alignment, light hairlines;
-  prefer horizontal rules over vertical; **direct-label charts** instead of hue-only legends; mute
-  gridlines (low-alpha earthy, never amber - amber competes with data). *(NN/g; A List Apart; Wilke)*
-- **Search/filter/sort are first-class persistent defaults** on every data view (recognition over
-  recall): always-visible search with autosuggest, discoverable column filters with a "filters
-  active" indicator, explicit current-sort arrow, removable filter chips; persist state in URL params.
-  *(NN/g; Learning Loop)*
-- **Chunk long content** into short, labelled, individually navigable segments with descriptive
-  headings + a jump-to/ToC; very long tables paginate or windowed-virtualize with a persistent
-  "showing X of N"; each segment gets a stable URL fragment. *(COGA; BDA 2023)*
+- **The Tabular Numbers Rule** - digits in a proportional face have varying widths, so counts, durations and numeric columns use tabular lining figures and align to a common edge. *(A List Apart; NN/g)*
+- **decimal alignment** (`Data tables and charts`) - mixed-precision numbers are compared at the decimal separator, with a right-aligned tabular fallback where the renderer or the locale forbids it. *(A List Apart)*
+- **hairline rows and full-row hover** (`Data tables and charts`) - heavy gridlines and default zebra add noise; reserve zebra for more than five columns or fifteen rows, and pair a selection tint with a non-color marker (`--stroke-emphasis`, 2px, or bold first cell) that stays separable from hover. *(NN/g; A List Apart; WCAG 1.4.11)*
+- **sticky header and frozen first column** (`Data tables and charts`) - the frozen first column is a human-readable label, never an opaque id, and lowercase headers are compensated with weight and a rule under them. *(NN/g; Adrian Roselli)*
+- **row density** (`Data tables and charts`) - about 40px rows by default with persistent compact and comfortable densities, and in-row controls keep their hit boxes even when the glyph is smaller. *(BDA 2023; MUI X; WCAG 2.5.8)*
+- **maximize data-ink** (`Data tables and charts`) - no 3D, gradients, drop shadows, textures or full cell grids; group with whitespace and alignment, prefer horizontal rules, and keep gridlines muted and never amber. *(NN/g; A List Apart; Wilke)*
+- **search, filter and sort are defaults** (`Data tables and charts`) - recognition over recall: an always-visible search, discoverable column filters with a filters-active indicator, an explicit sort arrow and removable chips, in state the host can map to URL parameters. *(NN/g; Learning Loop)*
+- **chunk long content** (`Data tables and charts`) - long content is chunked into labelled, individually navigable segments with descriptive headings and a jump-to, and a persistent count reports what is shown. *(COGA; BDA 2023)*
 
 ## 7. technical / WCAG baseline
 
-- **Global focus indicator** (WCAG 2.4.13): `:focus-visible{outline:3px solid var(--focus-ring);
-  outline-offset:2px}`, or the one -3px inset variant where an outside ring clips or collides;
-  the ring clears ≥3:1 against both component and background; never bare
-  `outline:none`. **Defect fixed:** there was no global `:focus-visible` - only a color-only input
-  border. *(WCAG 2.4.13)*
-- **Focus never hidden by sticky chrome** (WCAG 2.4.11): `scroll-padding-top:var(--nav-h)` (+
-  `scroll-padding-bottom` for a player bar) so tab-into-view never tucks focus under the nav. *(WCAG 2.4.11/2.4.12)*
-- **Hit targets ≥24×24px** (WCAG 2.5.8), primary publish actions 36px desktop / 44px coarse-pointer touch; dense controls satisfy the 24px-spacing
-  exception. The glyph stays at `--ic-sm`/`--ic-md`; the *box* is ≥24px. *(WCAG 2.5.8/2.5.5)*
-- **Reversible by default** (COGA Obj. 4): undo/confirm for delete/edit/bulk; preserve in-progress
-  work on navigation; specific, persistent, field-adjacent plain-language error guidance (not a
-  transient toast). *(COGA; WCAG 3.3.1/3.3.3)*
-- **Author the WCAG 1.4.12 text-spacing metrics as comfortable defaults** and stay resilient: no fixed
-  px heights on text containers, no truncation of message content, so a user
-  stylesheet (line-height 1.5 / paragraph 2× / letter 0.12em / word 0.16em) cannot clip content. *(WCAG 1.4.12)*
-  Primary titles and labels wrap; paths and prompt previews may ellipsize with full text available
-  through a title or detail view. Provider accents belong to assistant turns, teal to users,
-  mauve to sub-agents and neutral `--ink-3` to system turns; navigation remains text-first,
-  while named providers and companies, including github, lead with real brand marks.
-- **APCA is aspirational, not implemented.** The shipping gate (`scripts/contrast.mjs`) measures pure
-  WCAG 2.x ratios in both themes; it does **not** compute APCA Lc. WCAG 2.x is known to overstate
-  contrast near black, so the long-term aim is to add an APCA backstop (target Lc 90 fluent body / 75
-  floor / 60 secondary / 45 large / 15 non-text) alongside WCAG 2.2 AA - but that work is not done.
-  Until then, do not claim APCA coverage. *(APCA; Myndex)*
+- **focus indicator** (`Shapes`) - a keyboard user has to see where they are; the ring clears 3:1 against its component and its background, and nothing removes it without a stronger replacement. *(WCAG 2.4.13)*
+- **focus never hidden by sticky chrome** (`Layout`) - `scroll-padding-top` (and, with a player bar, `scroll-padding-bottom`) keeps tabbed-into-view and anchored content clear of the sticky nav. *(WCAG 2.4.11/2.4.12)*
+- **The Target Rule** - dense controls meet the WCAG 2.5.8 spacing exception where they cannot reach 24px, and the glyph stays at icon size while the box is what grows. *(WCAG 2.5.8/2.5.5; BDA 2023)*
+- **The Text Spacing Rule** - A WCAG 1.4.12 user stylesheet must clip nothing: no fixed px heights on text containers and no truncation of message content. Primary titles and labels wrap; paths and prompt previews may ellipsize with full text available through a title or detail view. *(WCAG 1.4.12)*
+- **reversible by default** (`Dialogs and overlays`) - undo or confirm for delete, edit and bulk actions; preserve in-progress work on navigation; errors stay specific, persistent and field-adjacent rather than a transient toast. *(COGA Objective 4; WCAG 3.3.1/3.3.3)*
+- **role accents and brand marks** (`Colors`, `Components`) - provider accents belong to assistant turns, teal to users, mauve to sub-agents and neutral `--ink-3` to system turns; navigation remains text-first, while named providers and companies, including github, lead with real brand marks. *(NN/g; COGA; DESIGN.md Components)*
+- **APCA is aspirational, not implemented** - the shipping gate (`scripts/contrast.mjs`) measures pure WCAG 2.x ratios in both themes and does not compute APCA Lc; WCAG 2.x is known to overstate contrast near black, so an APCA backstop is a future aim and no APCA coverage may be claimed. *(APCA; Myndex)*
 
 ---
 
