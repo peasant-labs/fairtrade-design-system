@@ -2,7 +2,7 @@
 # refuses a case document that is missing a required surface or that declares a
 # surface not registered here, so a surface cannot be silently dropped from the
 # shared capture set.
-expectedSurfaceCount: 8
+expectedSurfaceCount: 11
 requiredSurfaceNames:
   - controls-checkbox
   - states-toggle
@@ -12,3 +12,6 @@ requiredSurfaceNames:
   - inuse-analytics
   - inuse-transcript
   - inuse-settings-switch
+  - publish-update
+  - publish-ready
+  - inuse-home
