@@ -52,17 +52,17 @@ fail-closed inventory walk ran in a clean root: `bands/` and `fix-320/` were sta
 run and restored afterwards, the same convention the accepted run used when it added the annex.
 
 Independent re-verification (separate script, `/tmp/opencode/verify-evidence.mjs`, not the
-producer's own check; report `/tmp/opencode/verify-main-final.json`): **PASS, 0 failures** —
+producer's own check; report `/tmp/opencode/verify-main-merged.json`): **PASS, 0 failures** —
 per-target exactly one of shot/reason (0 fabricated, 0 missing, 0 both); 720/720 shot files present
 with matching sha256; 24/24 unshootable carry a non-empty reason; `served==dist` true for every
 asset of both builds; sheet manifest `order` = `width-theme-state` with run ids
-`fix-ddd7a60-before` / `fix-ddd7a60-after`; all 11 sheet digests match their PNGs; 1,000 files
+`fix-ddd7a60-before` / `fix-ddd7a60-after`; all 11 sheet digests match their PNGs; 1,001 files
 observed, 0 stray, 0 missing. That check reads the run's own declared artifacts (the same bytes,
 copied to a clean root) because the canonical root now also holds the `bands/` annex, the `fix-320/`
-pair and this document: run against the canonical root the same script reports exactly one failure
-and it is that file-set check (`stray 1027`, `missing 0`, everything else green,
-`/tmp/opencode/verify-main-canonical.json`) — the annex and the fix pair are separate self-contained
-roots and are re-verified on their own in §6 and §7.
+pair, this document and `BINDING.md`: run against the canonical root the same script reports exactly
+one failure and it is that file-set check (`stray 1037`, `missing 0`, everything else green,
+`/tmp/opencode/verify-main-canonical-merged.json`) — the annex and the fix pair are separate
+self-contained roots and are re-verified on their own in §6 and §7.
 
 ## 2. What the fix commits changed on this head (no-visible-change proofs)
 
