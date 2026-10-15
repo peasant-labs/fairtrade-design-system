@@ -33,7 +33,9 @@ const MORE_ITEMS = [
 
 /* In update mode the access list names collectives that already read the transcript, so the
    picker's "suggested" reason no longer describes why they are on the row. The row states the
-   name and the member count; the picker below keeps its own, still true, suggestion notes. */
+   name and the member count; the picker below keeps its own, still true, suggestion notes.
+   A collective added while this update is open is the exception: nothing has read it yet, so the
+   row keeps the reason it was picked for. */
 const withoutSuggestionNote = ({ note, ...item }) => item
 
 function initial() {
@@ -76,7 +78,7 @@ export function usePublishFlow() {
   }
   const readers = access.filter((item) => item.pending !== 'removal' && item.pending !== 'approval').map((item) => item.name)
   const pending = access.filter((item) => item.pending === 'approval').map((item) => item.name)
-  const readerRows = published ? access.map(withoutSuggestionNote) : access
+  const readerRows = published ? access.map((item) => (item.pending === 'adding' || item.pending === 'approval') ? item : withoutSuggestionNote(item)) : access
   const suggestions = [...SUGGESTED, ...OTHERS]
     .filter((item) => !access.some((entry) => entry.id === item.id))
     .filter((item) => !query.trim() || item.name.toLowerCase().includes(query.trim().toLowerCase()))
