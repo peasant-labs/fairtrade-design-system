@@ -1318,7 +1318,16 @@
   }
   @media (width < 1024px) {
     .pgn-edge > span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-    .pgn-edge { padding: 0; width: var(--control-h-sm); }
+    /* the hidden label above is positioned absolutely, so the control it lives in must BE a
+       positioning context. with no positioned ancestor the 1px box is laid out against the initial
+       containing block and escapes the site root's overflow-x: clip (a clip only reaches
+       descendants whose containing block chain passes through it), so its static position -
+       centred in a square control that sits past the right edge of a 320px phone - widened the
+       document to 324px. the scroll-reveal transform is the only ancestor that ever contained it,
+       and it is absent under prefers-reduced-motion: reduce and resolves to none as soon as the
+       section reveals, so the page side-scrolled at 320px in both motion settings. the control's
+       own box, size and colours are unchanged. */
+    .pgn-edge { padding: 0; width: var(--control-h-sm); position: relative; }
   }
 
   /* ---- accordion ---- */

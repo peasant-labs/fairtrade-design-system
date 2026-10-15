@@ -27,6 +27,20 @@ invariants:
     mustContainAll:
       - ".cg-older {"
       - "width: 100%;"
+  - id: pgn-edge-contains-its-hidden-label
+    file: src/index.css
+    description: >-
+      The narrow numbered-pagination edge control hides its lowercase label with the standard clip
+      pattern, which positions the span absolutely. The control is declared a positioning context in
+      the same media block, so the 1px box is laid out inside the control instead of against the
+      initial containing block: an absolutely positioned box whose containing block sits outside the
+      site root's overflow-x: clip is not clipped by it, and the label's static position (centred in
+      a square control past the right edge of a 320px phone) widened the document to 324px whenever
+      no ancestor transform was there to contain it - under prefers-reduced-motion: reduce, and under
+      normal motion too once the section's scroll-reveal transform resolved to none.
+    mustContainAll:
+      - ".pgn-edge {"
+      - "position: relative;"
   - id: txn-title-wraps-on-mobile
     file: src/index.css
     description: >-

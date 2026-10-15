@@ -1,6 +1,7 @@
 requiredNames:
   - cg-row-fills-container
   - cg-older-fills-container
+  - pgn-edge-contains-its-hidden-label
   - txn-title-wraps-on-mobile
   - txn-meta-scrolls-on-mobile
   - txn-meta-keyboard-scroll-region
