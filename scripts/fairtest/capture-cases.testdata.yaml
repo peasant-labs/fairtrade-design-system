@@ -9,7 +9,11 @@
 # the same targets. The publish popup, the home table and the transcript search
 # strip are captured so the mobile gutters, the consent column, the table count
 # and the non-overlapping search remain observable on the consolidated build.
-# The required surface inventory lives in the sibling .manifest.yaml.
+# The in-use home table's probes are scoped under its region root (.iu-page):
+# the docs page mounts its own demo table with the same classes, and an unscoped
+# .tbl-footer/.tbl-tools matched the demo table instead, so the table-count and
+# table-tools probes read the wrong table. The required surface inventory lives
+# in the sibling .manifest.yaml.
 states:
   - before
   - after
@@ -201,9 +205,9 @@ surfaces:
     root: ".iu-page"
     probes:
       - name: tbl-count
-        selector: ".tbl-footer [role=\"status\"]"
+        selector: ".iu-page .tbl-footer [role=\"status\"]"
       - name: tbl-search
-        selector: ".tbl-tools"
+        selector: ".iu-page .tbl-tools"
       - name: iu-search
         selector: ".iu-page-search"
     focus: []
