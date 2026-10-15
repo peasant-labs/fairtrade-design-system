@@ -1,0 +1,210 @@
+{
+  "state": "after",
+  "surface": "commons-home",
+  "kind": "component",
+  "width": 740,
+  "theme": "light",
+  "observedTheme": "light",
+  "observedAtMs": 1792031159098,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-ywkUu4lV.js",
+      "sha256": "c03328f6ee5c892aca1afd9144b97347b553701fbdd768717a4d1552ef433549"
+    },
+    {
+      "asset": "/assets/index-3_aa8TVZ.css",
+      "sha256": "a5cd9cb1f1d324cfff805b21766800515e64e9f01bd51b9beb3d8c3964487894"
+    }
+  ],
+  "targets": [
+    {
+      "target": "iu-subnav",
+      "kind": "probe",
+      "selector": ".iu-subnav",
+      "read": {
+        "tag": "nav",
+        "text": "village sections",
+        "bg": "rgb(253, 252, 250)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(39, 36, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 16,
+          "y": 57,
+          "w": 708,
+          "h": 48
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.08,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": {
+        "file": "shots/after/commons-home-740-light-iu-subnav.png",
+        "sha256": "3486f8ec63f9fe3b891ba40c3ba8a5efc29ea46cbd4850ec216e1f2485ae6f58"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "cmg-home-main",
+      "kind": "probe",
+      "selector": ".cmg-home-main",
+      "read": {
+        "tag": "div",
+        "text": "search your transcriptsallAcme PlatformAcme CompanyML Reading Groupsearch rowsco",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(39, 36, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 48,
+          "y": 182,
+          "w": 644,
+          "h": 693
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.08,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": {
+        "file": "shots/after/commons-home-740-light-cmg-home-main.png",
+        "sha256": "8ebdeb7ffc48c8f4bc7507cdf252fc6c46e8a5d3dbc7499db6fbc07009304228"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "cmg-rail",
+      "kind": "probe",
+      "selector": ".cmg-rail",
+      "read": {
+        "tag": "aside",
+        "text": "your collectives",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(39, 36, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": false,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 48,
+          "y": 620,
+          "w": 644,
+          "h": 480
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.08,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": {
+        "file": "shots/after/commons-home-740-light-cmg-rail.png",
+        "sha256": "e98ee30ee924efb5af8d57621a81c81003af136530c17c98fe35f3178b9ca5d4"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": ".iu-page",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/after/commons-home--740--light/surface.png",
+        "sha256": "7b965f8af896b81d935f43682a90072a1433ae89ff2104eaf912d80ce3b03fc1"
+      },
+      "unshootable": null
+    }
+  ]
+}

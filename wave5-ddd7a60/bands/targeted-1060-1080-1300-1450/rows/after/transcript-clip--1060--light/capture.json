@@ -1,0 +1,272 @@
+{
+  "state": "after",
+  "surface": "transcript-clip",
+  "kind": "component",
+  "width": 1060,
+  "theme": "light",
+  "observedTheme": "light",
+  "observedAtMs": 1792030740491,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-ywkUu4lV.js",
+      "sha256": "c03328f6ee5c892aca1afd9144b97347b553701fbdd768717a4d1552ef433549"
+    },
+    {
+      "asset": "/assets/index-3_aa8TVZ.css",
+      "sha256": "a5cd9cb1f1d324cfff805b21766800515e64e9f01bd51b9beb3d8c3964487894"
+    }
+  ],
+  "targets": [
+    {
+      "target": "txn-body-grid",
+      "kind": "probe",
+      "selector": ".txn-body-grid",
+      "read": {
+        "tag": "div",
+        "text": "user turns8m,2 taskscollapse all#1Port the transcript canvas into the shared pac",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(39, 36, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "0px",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "grid",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 32,
+          "y": 284,
+          "w": 996,
+          "h": 768
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.08,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": {
+        "file": "shots/after/transcript-clip-1060-light-txn-body-grid.png",
+        "sha256": "93a5336c809687f9076da384f3a8e2b3cc6812102933f396852903b9bb1d4804"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "txn-rail-right",
+      "kind": "probe",
+      "selector": ".txn-rail-right",
+      "read": {
+        "tag": "aside",
+        "text": "filters",
+        "bg": "rgb(253, 252, 250)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(39, 36, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "0px",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "none",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": false,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.08,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": null,
+      "unshootable": {
+        "reason": "not painted at capture time (rect 0x0; own display none; own opacity 1); no ancestor with computed display none"
+      }
+    },
+    {
+      "target": "txn-viewsw-state",
+      "kind": "probe",
+      "selector": ".txn-viewsw-state",
+      "read": {
+        "tag": "span",
+        "text": "on",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(138, 95, 31)",
+        "borderColor": "rgb(138, 95, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "600",
+        "outlineColor": "rgb(138, 95, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "0px",
+        "fontSize": "14px",
+        "disabled": null,
+        "display": "block",
+        "hiddenAncestor": {
+          "tag": "aside",
+          "classes": "txn-rail txn-rail-right",
+          "selector": "aside.txn-rail.txn-rail-right",
+          "display": "none"
+        },
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(138, 95, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": false,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 5.48,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": null,
+      "unshootable": {
+        "reason": "not painted at capture time (rect 0x0; own display block; own opacity 1); nearest ancestor whose computed display is none: aside.txn-rail.txn-rail-right (display none)"
+      }
+    },
+    {
+      "target": "txn-tabbar",
+      "kind": "probe",
+      "selector": ".txn-tabbar",
+      "read": {
+        "tag": "div",
+        "text": "highlights 5full trace 9diffs 1files 7annotations 3search this transcript ⌘F",
+        "bg": "rgb(253, 252, 250)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(39, 36, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 32,
+          "y": 238,
+          "w": 996,
+          "h": 46
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.08,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": {
+        "file": "shots/after/transcript-clip-1060-light-txn-tabbar.png",
+        "sha256": "dd98acbc3835dde36f2b256c134efb0a61006ce0c15a676acb258f9d4ee408ae"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": "#inuse",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/after/transcript-clip--1060--light/surface.png",
+        "sha256": "5f1641de7d97944106db36886c538d56a0a88d12ce05be79584f21668b49fdef"
+      },
+      "unshootable": null
+    }
+  ]
+}

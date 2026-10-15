@@ -1,0 +1,29 @@
+# Transient case document (this run only; never committed). It carries the
+# single 320px surface this fix touches: the numbered-pagination specimen whose
+# visually hidden edge label escaped the site root's overflow clip. The
+# committed case document keeps the standing 320/390/1440 surface set.
+states:
+  - before
+  - after
+widths:
+  - 320
+themes:
+  - dark
+  - light
+surfaces:
+  - id: site-pagination
+    kind: component
+    path: /
+    query: ""
+    hash: "#pagination"
+    root: "#pagination"
+    probes:
+      - name: pgn-wide
+        selector: "#pagination .bs-cell:nth-child(2) .pgn"
+      - name: pgn-wide-prev
+        selector: "#pagination .bs-cell:nth-child(2) .pgn-edge:first-child"
+      - name: pgn-wide-next
+        selector: "#pagination .bs-cell:nth-child(2) .pgn-edge:last-child"
+      - name: pgn-current
+        selector: "#pagination .bs-cell:nth-child(2) .pgn-num[aria-current=\"page\"]"
+    focus: []

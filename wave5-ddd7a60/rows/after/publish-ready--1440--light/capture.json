@@ -1,0 +1,210 @@
+{
+  "state": "after",
+  "surface": "publish-ready",
+  "kind": "component",
+  "width": 1440,
+  "theme": "light",
+  "observedTheme": "light",
+  "observedAtMs": 1792059797931,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-bvmS1ugF.js",
+      "sha256": "c03328f6ee5c892aca1afd9144b97347b553701fbdd768717a4d1552ef433549"
+    },
+    {
+      "asset": "/assets/index-Dr3SWh4l.css",
+      "sha256": "6d7ab0316ac40f44b8e98d8893327c779cdb921b2ef90d88712108d24d557154"
+    }
+  ],
+  "targets": [
+    {
+      "target": "pub-body",
+      "kind": "probe",
+      "selector": ".pub-dialog .dlg-body",
+      "read": {
+        "tag": "div",
+        "text": "what leaves your machine re-scan9 matches, all redactedshow 3 exampleswho can re",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(39, 36, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "0px",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 361,
+          "y": 302,
+          "w": 718,
+          "h": 500
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.08,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": {
+        "file": "shots/after/publish-ready-1440-light-pub-body.png",
+        "sha256": "4eaeebda26d1f3dcb3a8160b1d82b5d64e242ed9210ea6db3dbec4b419c0ca42"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "pub-consent-column",
+      "kind": "probe",
+      "selector": ".pub-dialog .pub-auto",
+      "read": {
+        "tag": "div",
+        "text": "publish this repo automatically on git pushoff, change it in settings",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(39, 36, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 377,
+          "y": 730,
+          "w": 686,
+          "h": 56
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.08,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": {
+        "file": "shots/after/publish-ready-1440-light-pub-consent-column.png",
+        "sha256": "1022836137a7abef6982d4b299239eebcc971206cd82aee76cc887eabefe7840"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "pub-access-row",
+      "kind": "probe",
+      "selector": ".pub-access-row",
+      "read": {
+        "tag": "li",
+        "text": "Acme Platformsuggested, repo acme/ingest-api is linked12 members",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(39, 36, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "44px",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "grid",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 378,
+          "y": 444,
+          "w": 684,
+          "h": 62
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.08,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": {
+        "file": "shots/after/publish-ready-1440-light-pub-access-row.png",
+        "sha256": "f007b7435e6581db3a443b9747f9a29fbd5bf1a8284804f81593205fa2f05579"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": ".pub-dialog",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/after/publish-ready--1440--light/surface.png",
+        "sha256": "783872664e0949e5c415bce7df70a75a4b9bb06dfc9caa2ea8b622833a749940"
+      },
+      "unshootable": null
+    }
+  ]
+}

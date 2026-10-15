@@ -1,0 +1,567 @@
+{
+  "state": "after",
+  "surface": "inuse-transcript",
+  "kind": "component",
+  "width": 940,
+  "theme": "light",
+  "observedTheme": "light",
+  "observedAtMs": 1792031116396,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-ywkUu4lV.js",
+      "sha256": "c03328f6ee5c892aca1afd9144b97347b553701fbdd768717a4d1552ef433549"
+    },
+    {
+      "asset": "/assets/index-3_aa8TVZ.css",
+      "sha256": "a5cd9cb1f1d324cfff805b21766800515e64e9f01bd51b9beb3d8c3964487894"
+    }
+  ],
+  "targets": [
+    {
+      "target": "cbx-checked",
+      "kind": "probe",
+      "selector": ".check-box:checked",
+      "read": {
+        "tag": "input",
+        "text": "",
+        "bg": "rgb(184, 132, 26)",
+        "effBg": "rgb(184, 132, 26)",
+        "color": "rgb(74, 70, 62)",
+        "borderColor": "rgb(184, 132, 26)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(74, 70, 62)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "\"\"",
+        "afterBorderColor": "rgb(26, 18, 6)",
+        "afterBorderWidth": "2px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 57,
+          "y": 569,
+          "w": 18,
+          "h": 18
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 2.84,
+        "beforeVsEffBg": 6.35
+      },
+      "shot": {
+        "file": "shots/after/inuse-transcript-940-light-cbx-checked.png",
+        "sha256": "0246e2afc4d7a4718a2610e3ba4526598de2776307dd4ad686fb07ac757f6145"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "cbx-unchecked",
+      "kind": "probe",
+      "selector": ".check-box:not(:checked)",
+      "read": {
+        "tag": "input",
+        "text": "",
+        "bg": "rgb(251, 250, 247)",
+        "effBg": "rgb(251, 250, 247)",
+        "color": "rgb(74, 70, 62)",
+        "borderColor": "rgb(139, 131, 109)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(74, 70, 62)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "\"\"",
+        "afterBorderColor": "rgb(26, 18, 6)",
+        "afterBorderWidth": "2px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 277,
+          "y": 569,
+          "w": 18,
+          "h": 18
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 8.99,
+        "beforeVsEffBg": 20.12
+      },
+      "shot": {
+        "file": "shots/after/inuse-transcript-940-light-cbx-unchecked.png",
+        "sha256": "827eecf14e5d6cd788b3cbd97626eb28d17e55c4d9c6162a9d572b2457c1b1cd"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "sw-on",
+      "kind": "probe",
+      "selector": ".sw[aria-checked=\"true\"]",
+      "read": {
+        "tag": "button",
+        "text": "",
+        "bg": "rgb(184, 132, 26)",
+        "effBg": "rgb(184, 132, 26)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(184, 132, 26)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgb(26, 18, 6)",
+        "beforeContent": "\"\"",
+        "beforeTransform": "matrix(1, 0, 0, 1, 24, 0)",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 57,
+          "y": 564,
+          "w": 52,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 4.68,
+        "beforeVsEffBg": 5.61
+      },
+      "shot": {
+        "file": "shots/after/inuse-transcript-940-light-sw-on.png",
+        "sha256": "a244444de4ce6842db8299ef8a5d18be7bbec3a76e399e031b4b1765f35220cd"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "sw-off",
+      "kind": "probe",
+      "selector": ".sw[aria-checked=\"false\"]",
+      "read": {
+        "tag": "button",
+        "text": "",
+        "bg": "rgb(244, 242, 236)",
+        "effBg": "rgb(244, 242, 236)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(139, 131, 109)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgb(92, 87, 77)",
+        "beforeContent": "\"\"",
+        "beforeTransform": "matrix(1, 0, 0, 1, 0, 0)",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 57,
+          "y": 506,
+          "w": 52,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 13.81,
+        "beforeVsEffBg": 6.41
+      },
+      "shot": {
+        "file": "shots/after/inuse-transcript-940-light-sw-off.png",
+        "sha256": "bd0c7e8bcb1f6bd929ff14110d6868ffe2dcfea50825e2a4c4f90e319ffacb24"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "txn-viewsw-state",
+      "kind": "probe",
+      "selector": ".txn-viewsw-state",
+      "read": {
+        "tag": "span",
+        "text": "on",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(138, 95, 31)",
+        "borderColor": "rgb(138, 95, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "600",
+        "outlineColor": "rgb(138, 95, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "0px",
+        "fontSize": "14px",
+        "disabled": null,
+        "display": "block",
+        "hiddenAncestor": {
+          "tag": "aside",
+          "classes": "txn-rail txn-rail-right",
+          "selector": "aside.txn-rail.txn-rail-right",
+          "display": "none"
+        },
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(138, 95, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": false,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 5.48,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": null,
+      "unshootable": {
+        "reason": "not painted at capture time (rect 0x0; own display block; own opacity 1); nearest ancestor whose computed display is none: aside.txn-rail.txn-rail-right (display none)"
+      }
+    },
+    {
+      "target": "txn-viewsw-on-state",
+      "kind": "probe",
+      "selector": ".txn-viewsw:has(.sw[aria-checked=\"true\"]) .txn-viewsw-state",
+      "read": {
+        "tag": "span",
+        "text": "on",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(138, 95, 31)",
+        "borderColor": "rgb(138, 95, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "600",
+        "outlineColor": "rgb(138, 95, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "0px",
+        "fontSize": "14px",
+        "disabled": null,
+        "display": "block",
+        "hiddenAncestor": {
+          "tag": "aside",
+          "classes": "txn-rail txn-rail-right",
+          "selector": "aside.txn-rail.txn-rail-right",
+          "display": "none"
+        },
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(138, 95, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": false,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 5.48,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": null,
+      "unshootable": {
+        "reason": "not painted at capture time (rect 0x0; own display block; own opacity 1); nearest ancestor whose computed display is none: aside.txn-rail.txn-rail-right (display none)"
+      }
+    },
+    {
+      "target": "txn-search-trigger",
+      "kind": "probe",
+      "selector": ".txn-search-trigger",
+      "read": {
+        "tag": "button",
+        "text": "search this transcript ⌘F",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(139, 131, 109)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 611,
+          "y": 286,
+          "w": 281,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.08,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": {
+        "file": "shots/after/inuse-transcript-940-light-txn-search-trigger.png",
+        "sha256": "9aeaaa9ba0a188c04b144b31edc26236aba9039264744b214c0cc04518f4d3dd"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "txn-tabbar",
+      "kind": "probe",
+      "selector": ".txn-tabbar",
+      "read": {
+        "tag": "div",
+        "text": "highlights 5full trace 9diffs 1files 7annotations 3search this transcript ⌘F",
+        "bg": "rgb(253, 252, 250)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(39, 36, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 32,
+          "y": 243,
+          "w": 876,
+          "h": 115
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.08,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": {
+        "file": "shots/after/inuse-transcript-940-light-txn-tabbar.png",
+        "sha256": "faa81587619cfc67286b259be426779fc7ef76ce7cba16c4503b5a3cafdf41d1"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "txn-viewsw-focus",
+      "kind": "focus",
+      "selector": ".txn-viewsw .sw",
+      "read": {
+        "tag": "button",
+        "text": "show hidden indicators",
+        "bg": "rgb(184, 132, 26)",
+        "effBg": "rgb(184, 132, 26)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(184, 132, 26)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "0px",
+        "fontSize": "16px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": {
+          "tag": "aside",
+          "classes": "txn-rail txn-rail-right",
+          "selector": "aside.txn-rail.txn-rail-right",
+          "display": "none"
+        },
+        "stateLabelColor": null,
+        "beforeBg": "rgb(26, 18, 6)",
+        "beforeContent": "\"\"",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": false,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        }
+      },
+      "contrast": null,
+      "shot": null,
+      "unshootable": {
+        "reason": "focus representative not painted at this width: not painted at capture time (rect 0x0; own display flex; own opacity 1); nearest ancestor whose computed display is none: aside.txn-rail.txn-rail-right (display none)"
+      }
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": "#inuse",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/after/inuse-transcript--940--light/surface.png",
+        "sha256": "f4943ed3f0715cfedb89a0efcc36a46cfb6dcf0db45c7b85d62b5ab858692e09"
+      },
+      "unshootable": null
+    }
+  ]
+}

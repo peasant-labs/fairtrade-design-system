@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "order": "width-theme-state",
+  "runIds": [
+    {
+      "state": "before",
+      "runId": "annex-bands-full-before"
+    },
+    {
+      "state": "after",
+      "runId": "annex-bands-full-after"
+    }
+  ],
+  "sheets": [
+    {
+      "id": "sheet-controls-checkbox",
+      "surface": "controls-checkbox",
+      "file": "sheets/sheet-controls-checkbox.png",
+      "sha256": "36515b0df707bb73872c5dc3a01cce8aefd8db6aa315aabf7483a9317d2f6159"
+    },
+    {
+      "id": "sheet-states-toggle",
+      "surface": "states-toggle",
+      "file": "sheets/sheet-states-toggle.png",
+      "sha256": "a8e662cc372ae99c9c8579a5329e78405c16b94995db2ee488d4131b9e34eef0"
+    },
+    {
+      "id": "sheet-badges-chip",
+      "surface": "badges-chip",
+      "file": "sheets/sheet-badges-chip.png",
+      "sha256": "575cde762cd1d1b7b7ca5c22b219620aac75de5177f73f1d3b24042400658159"
+    },
+    {
+      "id": "sheet-inuse-apptab",
+      "surface": "inuse-apptab",
+      "file": "sheets/sheet-inuse-apptab.png",
+      "sha256": "62ec62812faf61189420c1f44a69b32c334c5f1227dac6fcf51626079b9140d9"
+    },
+    {
+      "id": "sheet-inuse-seg",
+      "surface": "inuse-seg",
+      "file": "sheets/sheet-inuse-seg.png",
+      "sha256": "da98498fd1c5ccc5a6f02cd6f2e81d8d562e65b7f84fee4ae82b8e915f4faebe"
+    },
+    {
+      "id": "sheet-inuse-analytics",
+      "surface": "inuse-analytics",
+      "file": "sheets/sheet-inuse-analytics.png",
+      "sha256": "07a0284cc2a8137808354a5cf85401b4c800b48724b9e39dfe33fa411af9b580"
+    },
+    {
+      "id": "sheet-inuse-transcript",
+      "surface": "inuse-transcript",
+      "file": "sheets/sheet-inuse-transcript.png",
+      "sha256": "7248af1d2c968ed347e2897b7eceeb2e0cf06e359449c8300b4d0be7261344f8"
+    },
+    {
+      "id": "sheet-inuse-settings-switch",
+      "surface": "inuse-settings-switch",
+      "file": "sheets/sheet-inuse-settings-switch.png",
+      "sha256": "2f10cbf37978f9ff56d6b2fd0b7f80495c3f91790f2828cee32a295048b8b9c5"
+    },
+    {
+      "id": "sheet-publish-update",
+      "surface": "publish-update",
+      "file": "sheets/sheet-publish-update.png",
+      "sha256": "247bc7d2d91f8c5a077622a1f5d1b2b6fe80932551737e5466e51def186b3f91"
+    },
+    {
+      "id": "sheet-publish-ready",
+      "surface": "publish-ready",
+      "file": "sheets/sheet-publish-ready.png",
+      "sha256": "5bf8801e0f1875158ac8ffcad5eaab01c12741b239d1c4bce96cdb69bfed975a"
+    },
+    {
+      "id": "sheet-inuse-home",
+      "surface": "inuse-home",
+      "file": "sheets/sheet-inuse-home.png",
+      "sha256": "55f9687c592f13eff8a122536bd6f4b481589378d48e9e5744311727ef88606b"
+    },
+    {
+      "id": "sheet-commons-home",
+      "surface": "commons-home",
+      "file": "sheets/sheet-commons-home.png",
+      "sha256": "c36e3259713618a9205d54ffc523c6e235a466c9a4f3906ef5f0f0fc6e7a28a5"
+    },
+    {
+      "id": "sheet-site-chrome",
+      "surface": "site-chrome",
+      "file": "sheets/sheet-site-chrome.png",
+      "sha256": "23c95ebaf72bed9d6cc6d2f12ff800452d523dcd6454f8cc80f8e77c11aca2aa"
+    }
+  ]
+}

@@ -1,0 +1,269 @@
+{
+  "state": "after",
+  "surface": "site-pagination",
+  "kind": "component",
+  "width": 320,
+  "theme": "light",
+  "observedTheme": "light",
+  "observedAtMs": 1792059192053,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-bvmS1ugF.js",
+      "sha256": "c03328f6ee5c892aca1afd9144b97347b553701fbdd768717a4d1552ef433549"
+    },
+    {
+      "asset": "/assets/index-Dr3SWh4l.css",
+      "sha256": "6d7ab0316ac40f44b8e98d8893327c779cdb921b2ef90d88712108d24d557154"
+    }
+  ],
+  "targets": [
+    {
+      "target": "pgn-wide",
+      "kind": "probe",
+      "selector": "#pagination .bs-cell:nth-child(2) .pgn",
+      "read": {
+        "tag": "nav",
+        "text": "pagination",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(39, 36, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 13,
+          "y": 675,
+          "w": 300,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.08,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": {
+        "file": "shots/after/site-pagination-320-light-pgn-wide.png",
+        "sha256": "b3dbfb16b21fc941d6144a78f25d4625e884f52179877ad7ae0397f3acdc4081"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "pgn-wide-prev",
+      "kind": "probe",
+      "selector": "#pagination .bs-cell:nth-child(2) .pgn-edge:first-child",
+      "read": {
+        "tag": "button",
+        "text": "previous page",
+        "bg": "rgb(251, 250, 247)",
+        "effBg": "rgb(251, 250, 247)",
+        "color": "rgb(74, 70, 62)",
+        "borderColor": "rgb(139, 131, 109)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(74, 70, 62)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(74, 70, 62)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 13,
+          "y": 675,
+          "w": 28,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 8.99,
+        "beforeVsEffBg": 20.12
+      },
+      "shot": {
+        "file": "shots/after/site-pagination-320-light-pgn-wide-prev.png",
+        "sha256": "2afbd0a91d4883aaab9d2486b5ca9a9496467f88738beacb29817f1d16f593ec"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "pgn-wide-next",
+      "kind": "probe",
+      "selector": "#pagination .bs-cell:nth-child(2) .pgn-edge:last-child",
+      "read": {
+        "tag": "button",
+        "text": "next page",
+        "bg": "rgb(251, 250, 247)",
+        "effBg": "rgb(251, 250, 247)",
+        "color": "rgb(74, 70, 62)",
+        "borderColor": "rgb(139, 131, 109)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(74, 70, 62)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(74, 70, 62)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 279,
+          "y": 675,
+          "w": 28,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 8.99,
+        "beforeVsEffBg": 20.12
+      },
+      "shot": {
+        "file": "shots/after/site-pagination-320-light-pgn-wide-next.png",
+        "sha256": "d54160d0a0e95d881c2d61d6517442bdf3115733c092ad8fc30753dd67982033"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "pgn-current",
+      "kind": "probe",
+      "selector": "#pagination .bs-cell:nth-child(2) .pgn-num[aria-current=\"page\"]",
+      "read": {
+        "tag": "button",
+        "text": "page 7",
+        "bg": "rgb(138, 95, 31)",
+        "effBg": "rgb(138, 95, 31)",
+        "color": "rgb(255, 253, 248)",
+        "borderColor": "rgb(138, 95, 31)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "600",
+        "outlineColor": "rgb(255, 253, 248)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "0px",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "inline-flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(255, 253, 248)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 139,
+          "y": 675,
+          "w": 28,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 5.53,
+        "beforeVsEffBg": 3.74
+      },
+      "shot": {
+        "file": "shots/after/site-pagination-320-light-pgn-current.png",
+        "sha256": "97c00a6312021f8d6d537db93773a1a46b16212f1d2468db5dc077a4677e3062"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": "#pagination",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/after/site-pagination--320--light/surface.png",
+        "sha256": "1b4d8027a271fbb499cdce9a133deb8ea8aea915e085bd0e599dc72e43a35f72"
+      },
+      "unshootable": null
+    }
+  ]
+}

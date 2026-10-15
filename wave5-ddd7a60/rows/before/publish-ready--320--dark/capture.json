@@ -1,0 +1,210 @@
+{
+  "state": "before",
+  "surface": "publish-ready",
+  "kind": "component",
+  "width": 320,
+  "theme": "dark",
+  "observedTheme": "dark",
+  "observedAtMs": 1792059582922,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-C7TroAbe.js",
+      "sha256": "70535b8d3563f7656d98ce56ff5e0a0fc96010e03a8f7c27dd4e7f87c2bc0296"
+    },
+    {
+      "asset": "/assets/index-CMB0VUbW.css",
+      "sha256": "f84e24b849499e7f8694c816afabb29d702801462d47aedba8b85ec3937a06ae"
+    }
+  ],
+  "targets": [
+    {
+      "target": "pub-body",
+      "kind": "probe",
+      "selector": ".pub-dialog .dlg-body",
+      "read": {
+        "tag": "div",
+        "text": "what leaves your machine re-scan9 matches, all redactedshow 3 exampleswho can re",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(14, 14, 12)",
+        "color": "rgb(233, 229, 219)",
+        "borderColor": "rgb(233, 229, 219)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(233, 229, 219)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "0px",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(233, 229, 219)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 0,
+          "y": 214,
+          "w": 320,
+          "h": 733
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.36,
+        "beforeVsEffBg": 1.09
+      },
+      "shot": {
+        "file": "shots/before/publish-ready-320-dark-pub-body.png",
+        "sha256": "932b715c72ea40f8005ff55368290bdf858d9f2dd7bb22cb0c062657a65fb94d"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "pub-consent-column",
+      "kind": "probe",
+      "selector": ".pub-dialog .pub-auto",
+      "read": {
+        "tag": "div",
+        "text": "publish this repo automatically on git pushoff, change it in settings",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(14, 14, 12)",
+        "color": "rgb(233, 229, 219)",
+        "borderColor": "rgb(233, 229, 219)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(233, 229, 219)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(233, 229, 219)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 16,
+          "y": 857,
+          "w": 288,
+          "h": 74
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.36,
+        "beforeVsEffBg": 1.09
+      },
+      "shot": {
+        "file": "shots/before/publish-ready-320-dark-pub-consent-column.png",
+        "sha256": "f26d90fb5791583e6b7788e0e1b7b1ac1ad7ff067f3f7a7a48aa1937d40d0da0"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "pub-access-row",
+      "kind": "probe",
+      "selector": ".pub-access-row",
+      "read": {
+        "tag": "li",
+        "text": "Acme Platformsuggested, repo acme/ingest-api is linked12 members",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(14, 14, 12)",
+        "color": "rgb(233, 229, 219)",
+        "borderColor": "rgb(233, 229, 219)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(233, 229, 219)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "44px",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "grid",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(233, 229, 219)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 17,
+          "y": 402,
+          "w": 286,
+          "h": 124
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.36,
+        "beforeVsEffBg": 1.09
+      },
+      "shot": {
+        "file": "shots/before/publish-ready-320-dark-pub-access-row.png",
+        "sha256": "7a8ddcaffe464e8d861fbcc5573ff9a9389b5054b2fe7f7c7466dedcfdfb23ff"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": ".pub-dialog",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/before/publish-ready--320--dark/surface.png",
+        "sha256": "32e67bb9508ff3639c16dde9608c4d2e5c1f4bcdbbec3a50942c0adde1523964"
+      },
+      "unshootable": null
+    }
+  ]
+}

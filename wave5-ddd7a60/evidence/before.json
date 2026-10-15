@@ -1,0 +1,808 @@
+{
+  "policyVersion": 1,
+  "runId": "fix-ddd7a60-before",
+  "mode": "single-capture",
+  "complete": true,
+  "verdict": "pass",
+  "failureCodes": [],
+  "failures": [],
+  "rows": [
+    {
+      "key": "controls-checkbox--320--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 157214,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "controls-checkbox--320--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 157317,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "controls-checkbox--390--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 168150,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "controls-checkbox--390--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 169888,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "controls-checkbox--1440--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 180258,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "controls-checkbox--1440--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 181118,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "states-toggle--320--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 319509,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "states-toggle--320--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 317971,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "states-toggle--390--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 343362,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "states-toggle--390--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 342584,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "states-toggle--1440--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 386186,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "states-toggle--1440--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 387731,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "badges-chip--320--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 102601,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "badges-chip--320--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 102491,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "badges-chip--390--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 100922,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "badges-chip--390--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 101484,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "badges-chip--1440--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 113397,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "badges-chip--1440--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 113988,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-apptab--320--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 62887,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-apptab--320--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 62789,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-apptab--390--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 69348,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-apptab--390--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 69131,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-apptab--1440--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 128075,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-apptab--1440--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 127934,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-seg--320--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 56172,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-seg--320--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 56099,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-seg--390--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 62632,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-seg--390--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 62440,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-seg--1440--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 121353,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-seg--1440--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 121237,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-analytics--320--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 54772,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-analytics--320--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 55055,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-analytics--390--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 56943,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-analytics--390--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 57410,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-analytics--1440--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 90330,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-analytics--1440--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 91209,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-transcript--320--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 67659,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-transcript--320--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 69014,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-transcript--390--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 85269,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-transcript--390--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 86557,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-transcript--1440--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 162653,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-transcript--1440--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 163699,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-settings-switch--320--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 54011,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-settings-switch--320--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 53793,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-settings-switch--390--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 59204,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-settings-switch--390--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 58827,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-settings-switch--1440--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 91553,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-settings-switch--1440--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 92036,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "publish-update--320--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 63690,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "publish-update--320--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 64009,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "publish-update--390--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 66786,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "publish-update--390--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 67086,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "publish-update--1440--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 67988,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "publish-update--1440--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 68619,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "publish-ready--320--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 57008,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "publish-ready--320--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 56905,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "publish-ready--390--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 54506,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "publish-ready--390--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 54537,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "publish-ready--1440--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 55838,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "publish-ready--1440--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 56423,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-home--320--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 58471,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-home--320--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 58519,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-home--390--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 62157,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-home--390--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 61939,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-home--1440--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 113410,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "inuse-home--1440--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 113355,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    }
+  ],
+  "artifactClasses": [
+    "capture.json",
+    "surface.png",
+    "provenance.json"
+  ]
+}

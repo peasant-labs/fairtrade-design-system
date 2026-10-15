@@ -1,0 +1,229 @@
+{
+  "state": "before",
+  "surface": "inuse-analytics",
+  "kind": "component",
+  "width": 390,
+  "theme": "dark",
+  "observedTheme": "dark",
+  "observedAtMs": 1792059505407,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-C7TroAbe.js",
+      "sha256": "70535b8d3563f7656d98ce56ff5e0a0fc96010e03a8f7c27dd4e7f87c2bc0296"
+    },
+    {
+      "asset": "/assets/index-CMB0VUbW.css",
+      "sha256": "f84e24b849499e7f8694c816afabb29d702801462d47aedba8b85ec3937a06ae"
+    }
+  ],
+  "targets": [
+    {
+      "target": "gan-seg-on",
+      "kind": "probe",
+      "selector": ".gan-seg.is-on",
+      "read": {
+        "tag": "button",
+        "text": "summary section",
+        "bg": "rgb(203, 163, 92)",
+        "effBg": "rgb(203, 163, 92)",
+        "color": "rgb(20, 16, 3)",
+        "borderColor": "rgb(203, 163, 92)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "700",
+        "outlineColor": "rgb(20, 16, 3)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "block",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(20, 16, 3)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 40,
+          "y": 274,
+          "w": 81,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 8.08,
+        "beforeVsEffBg": 8.93
+      },
+      "shot": {
+        "file": "shots/before/inuse-analytics-390-dark-gan-seg-on.png",
+        "sha256": "79ee8843db974434cc1f841602d06ca6d5a08497571f041dcafaa20856acc4aa"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "gan-seg-off",
+      "kind": "probe",
+      "selector": ".gan-seg:not(.is-on)",
+      "read": {
+        "tag": "button",
+        "text": "new",
+        "bg": "rgb(7, 7, 6)",
+        "effBg": "rgb(7, 7, 6)",
+        "color": "rgb(138, 132, 120)",
+        "borderColor": "rgb(111, 106, 95)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(138, 132, 120)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "block",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(138, 132, 120)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 133,
+          "y": 564,
+          "w": 45,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 5.42,
+        "beforeVsEffBg": 1.04
+      },
+      "shot": {
+        "file": "shots/before/inuse-analytics-390-dark-gan-seg-off.png",
+        "sha256": "638f6bb6a9e61a528050d5caa1c50d415601419a474a59944042bcb222863e1a"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "gan-seg-on",
+      "kind": "hover",
+      "selector": ".gan-seg.is-on",
+      "read": {
+        "bg": "rgb(203, 163, 92)",
+        "effBg": "rgb(203, 163, 92)",
+        "color": "rgb(20, 16, 3)",
+        "borderColor": "rgb(203, 163, 92)",
+        "text": "summary",
+        "pointerHoveredExpected": true,
+        "hoveredAtShot": true
+      },
+      "contrast": {
+        "text": 8.08
+      },
+      "shot": {
+        "file": "shots/before/inuse-analytics-390-dark-gan-seg-on-hover.png",
+        "sha256": "79ee8843db974434cc1f841602d06ca6d5a08497571f041dcafaa20856acc4aa"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "gan-seg-focus",
+      "kind": "focus",
+      "selector": ".gan-seg.is-on",
+      "read": {
+        "tag": "button",
+        "text": "summary section",
+        "bg": "rgb(203, 163, 92)",
+        "effBg": "rgb(203, 163, 92)",
+        "color": "rgb(20, 16, 3)",
+        "borderColor": "rgb(203, 163, 92)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "700",
+        "outlineColor": "rgb(20, 16, 3)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "block",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(20, 16, 3)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 40,
+          "y": 274,
+          "w": 81,
+          "h": 28
+        },
+        "focusMethod": "script-focus + Shift+Tab + Tab",
+        "activeElementIsTarget": true,
+        "matchesFocusVisible": true,
+        "activeElement": "button.gan-seg",
+        "pointerParked": true,
+        "hoveredAtShot": false
+      },
+      "contrast": null,
+      "shot": {
+        "file": "shots/before/inuse-analytics-390-dark-gan-seg-focus.png",
+        "sha256": "79482de03ece3a6d8e9ad4be98a53f10edfa466e4965e31d16e0b3613ce47364"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": "#inuse",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/before/inuse-analytics--390--dark/surface.png",
+        "sha256": "27b31eb53e2347b74c3b6a52f030da6c066c7d3ef6517d278ff5e6817af0d81d"
+      },
+      "unshootable": null
+    }
+  ]
+}

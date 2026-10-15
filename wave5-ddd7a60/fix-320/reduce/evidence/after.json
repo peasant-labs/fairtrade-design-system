@@ -1,0 +1,40 @@
+{
+  "policyVersion": 1,
+  "runId": "fix320-reduce-after",
+  "mode": "single-capture",
+  "complete": true,
+  "verdict": "pass",
+  "failureCodes": [],
+  "failures": [],
+  "rows": [
+    {
+      "key": "site-pagination--320--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 67459,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "site-pagination--320--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 67997,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    }
+  ],
+  "artifactClasses": [
+    "capture.json",
+    "surface.png",
+    "provenance.json"
+  ]
+}

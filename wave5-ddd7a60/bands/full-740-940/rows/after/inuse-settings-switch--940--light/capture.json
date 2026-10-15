@@ -1,0 +1,151 @@
+{
+  "state": "after",
+  "surface": "inuse-settings-switch",
+  "kind": "component",
+  "width": 940,
+  "theme": "light",
+  "observedTheme": "light",
+  "observedAtMs": 1792031123658,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-ywkUu4lV.js",
+      "sha256": "c03328f6ee5c892aca1afd9144b97347b553701fbdd768717a4d1552ef433549"
+    },
+    {
+      "asset": "/assets/index-3_aa8TVZ.css",
+      "sha256": "a5cd9cb1f1d324cfff805b21766800515e64e9f01bd51b9beb3d8c3964487894"
+    }
+  ],
+  "targets": [
+    {
+      "target": "sw-on",
+      "kind": "probe",
+      "selector": ".sw[aria-checked=\"true\"]",
+      "read": {
+        "tag": "button",
+        "text": "",
+        "bg": "rgb(184, 132, 26)",
+        "effBg": "rgb(184, 132, 26)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(184, 132, 26)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgb(26, 18, 6)",
+        "beforeContent": "\"\"",
+        "beforeTransform": "matrix(1, 0, 0, 1, 24, 0)",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 57,
+          "y": 564,
+          "w": 52,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 4.68,
+        "beforeVsEffBg": 5.61
+      },
+      "shot": {
+        "file": "shots/after/inuse-settings-switch-940-light-sw-on.png",
+        "sha256": "a244444de4ce6842db8299ef8a5d18be7bbec3a76e399e031b4b1765f35220cd"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "sw-state",
+      "kind": "probe",
+      "selector": ".sw-state",
+      "read": {
+        "tag": "span",
+        "text": "off",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(74, 70, 62)",
+        "borderColor": "rgb(74, 70, 62)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(74, 70, 62)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(74, 70, 62)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 268,
+          "y": 510,
+          "w": 129,
+          "h": 21
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 9.16,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": {
+        "file": "shots/after/inuse-settings-switch-940-light-sw-state.png",
+        "sha256": "36db9ab363767646be6282b8a15f561a8a32d656cb03b4ad94cec48d8ee80872"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": "#inuse",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/after/inuse-settings-switch--940--light/surface.png",
+        "sha256": "ad0a9a5987f411f1a42f17bf0929d3444d5d87ac194108c06d43ad5ea1afa3da"
+      },
+      "unshootable": null
+    }
+  ]
+}

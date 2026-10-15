@@ -1,0 +1,208 @@
+{
+  "policyVersion": 1,
+  "runId": "annex-bands-targeted-after",
+  "mode": "single-capture",
+  "complete": true,
+  "verdict": "pass",
+  "failureCodes": [],
+  "failures": [],
+  "rows": [
+    {
+      "key": "transcript-clip--1060--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 112607,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "transcript-clip--1060--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 113364,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "transcript-clip--1080--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 145302,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "transcript-clip--1080--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 146388,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "transcript-clip--1300--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 151032,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "transcript-clip--1300--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 152031,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "transcript-clip--1450--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 154186,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "transcript-clip--1450--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 155224,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "site-chrome--1060--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 8740,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "site-chrome--1060--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 8720,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "site-chrome--1080--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 8747,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "site-chrome--1080--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 8726,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "site-chrome--1300--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 8770,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "site-chrome--1300--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 8751,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "site-chrome--1450--dark",
+      "kind": "component",
+      "theme": "dark",
+      "artifactCount": 3,
+      "bytes": 8841,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    },
+    {
+      "key": "site-chrome--1450--light",
+      "kind": "component",
+      "theme": "light",
+      "artifactCount": 3,
+      "bytes": 8822,
+      "duplicate": {
+        "sameKey": false,
+        "crossRow": false,
+        "crossTheme": false
+      }
+    }
+  ],
+  "artifactClasses": [
+    "capture.json",
+    "surface.png",
+    "provenance.json"
+  ]
+}

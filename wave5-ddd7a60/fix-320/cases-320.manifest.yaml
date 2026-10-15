@@ -1,0 +1,4 @@
+# Required-name inventory for the transient 320px pagination case document.
+expectedSurfaceCount: 1
+requiredSurfaceNames:
+  - site-pagination

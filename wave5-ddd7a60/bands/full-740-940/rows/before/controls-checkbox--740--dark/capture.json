@@ -1,0 +1,207 @@
+{
+  "state": "before",
+  "surface": "controls-checkbox",
+  "kind": "component",
+  "width": 740,
+  "theme": "dark",
+  "observedTheme": "dark",
+  "observedAtMs": 1792030817571,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-C7TroAbe.js",
+      "sha256": "70535b8d3563f7656d98ce56ff5e0a0fc96010e03a8f7c27dd4e7f87c2bc0296"
+    },
+    {
+      "asset": "/assets/index-CMB0VUbW.css",
+      "sha256": "f84e24b849499e7f8694c816afabb29d702801462d47aedba8b85ec3937a06ae"
+    }
+  ],
+  "targets": [
+    {
+      "target": "checkbox-checked",
+      "kind": "probe",
+      "selector": ".check-box:checked",
+      "read": {
+        "tag": "input",
+        "text": "",
+        "bg": "rgb(203, 163, 92)",
+        "effBg": "rgb(203, 163, 92)",
+        "color": "rgb(184, 179, 164)",
+        "borderColor": "rgb(203, 163, 92)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(184, 179, 164)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "\"\"",
+        "afterBorderColor": "rgb(20, 16, 3)",
+        "afterBorderWidth": "2px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 57,
+          "y": 731,
+          "w": 18,
+          "h": 18
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 1.12,
+        "beforeVsEffBg": 8.93
+      },
+      "shot": {
+        "file": "shots/before/controls-checkbox-740-dark-checkbox-checked.png",
+        "sha256": "ce5e8b89de4c15583f3bd89188d6675847566a756d508d5e2aed626ac523df2a"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "checkbox-unchecked",
+      "kind": "probe",
+      "selector": ".check-box:not(:checked)",
+      "read": {
+        "tag": "input",
+        "text": "",
+        "bg": "rgb(7, 7, 6)",
+        "effBg": "rgb(7, 7, 6)",
+        "color": "rgb(184, 179, 164)",
+        "borderColor": "rgb(111, 106, 95)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(184, 179, 164)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "\"\"",
+        "afterBorderColor": "rgb(20, 16, 3)",
+        "afterBorderWidth": "2px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 177,
+          "y": 569,
+          "w": 18,
+          "h": 18
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 9.62,
+        "beforeVsEffBg": 1.04
+      },
+      "shot": {
+        "file": "shots/before/controls-checkbox-740-dark-checkbox-unchecked.png",
+        "sha256": "2ae563b906a239b39b3c3203d60980be88e7a4262a6e66e98c77022da0936363"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "checkbox-focus",
+      "kind": "focus",
+      "selector": ".check-box:checked",
+      "read": {
+        "tag": "input",
+        "text": "",
+        "bg": "rgb(203, 163, 92)",
+        "effBg": "rgb(203, 163, 92)",
+        "color": "rgb(184, 179, 164)",
+        "borderColor": "rgb(203, 163, 92)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(184, 179, 164)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "\"\"",
+        "afterBorderColor": "rgb(20, 16, 3)",
+        "afterBorderWidth": "2px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 57,
+          "y": 569,
+          "w": 18,
+          "h": 18
+        },
+        "focusMethod": "script-focus + Shift+Tab + Tab",
+        "activeElementIsTarget": true,
+        "matchesFocusVisible": true,
+        "activeElement": "input.check-box",
+        "pointerParked": true,
+        "hoveredAtShot": false
+      },
+      "contrast": null,
+      "shot": {
+        "file": "shots/before/controls-checkbox-740-dark-checkbox-focus.png",
+        "sha256": "20e96a6924c774c9bf15d40c65e2a7104e73eab236df9b270058c44ee9bb0396"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": "#controls",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/before/controls-checkbox--740--dark/surface.png",
+        "sha256": "f9ca0197131319c1e35a5b94495fcca9adb01f585e618ebd0419def434352f94"
+      },
+      "unshootable": null
+    }
+  ]
+}

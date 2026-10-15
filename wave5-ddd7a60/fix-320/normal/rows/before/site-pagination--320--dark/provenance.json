@@ -1,0 +1,28 @@
+{
+  "state": "before",
+  "root": "/tmp/opencode/fix320-before-dist",
+  "head": "b75b79dc95122da8d0d04e31d7cea8c3dddb3e5f",
+  "dirty": false,
+  "assets": [
+    {
+      "asset": "/assets/index-ywkUu4lV.js",
+      "sha256": "c03328f6ee5c892aca1afd9144b97347b553701fbdd768717a4d1552ef433549"
+    },
+    {
+      "asset": "/assets/index-3_aa8TVZ.css",
+      "sha256": "a5cd9cb1f1d324cfff805b21766800515e64e9f01bd51b9beb3d8c3964487894"
+    }
+  ],
+  "served": [
+    {
+      "asset": "/assets/index-ywkUu4lV.js",
+      "sha256": "c03328f6ee5c892aca1afd9144b97347b553701fbdd768717a4d1552ef433549",
+      "servedEqualsDist": true
+    },
+    {
+      "asset": "/assets/index-3_aa8TVZ.css",
+      "sha256": "a5cd9cb1f1d324cfff805b21766800515e64e9f01bd51b9beb3d8c3964487894",
+      "servedEqualsDist": true
+    }
+  ]
+}

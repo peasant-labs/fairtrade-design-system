@@ -1,0 +1,151 @@
+{
+  "state": "before",
+  "surface": "inuse-settings-switch",
+  "kind": "component",
+  "width": 390,
+  "theme": "dark",
+  "observedTheme": "dark",
+  "observedAtMs": 1792059559688,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-C7TroAbe.js",
+      "sha256": "70535b8d3563f7656d98ce56ff5e0a0fc96010e03a8f7c27dd4e7f87c2bc0296"
+    },
+    {
+      "asset": "/assets/index-CMB0VUbW.css",
+      "sha256": "f84e24b849499e7f8694c816afabb29d702801462d47aedba8b85ec3937a06ae"
+    }
+  ],
+  "targets": [
+    {
+      "target": "sw-on",
+      "kind": "probe",
+      "selector": ".sw[aria-checked=\"true\"]",
+      "read": {
+        "tag": "button",
+        "text": "",
+        "bg": "rgb(203, 163, 92)",
+        "effBg": "rgb(203, 163, 92)",
+        "color": "rgb(233, 229, 219)",
+        "borderColor": "rgb(203, 163, 92)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(233, 229, 219)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgb(20, 16, 3)",
+        "beforeContent": "\"\"",
+        "beforeTransform": "matrix(1, 0, 0, 1, 24, 0)",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(233, 229, 219)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 41,
+          "y": 564,
+          "w": 52,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 1.87,
+        "beforeVsEffBg": 8.08
+      },
+      "shot": {
+        "file": "shots/before/inuse-settings-switch-390-dark-sw-on.png",
+        "sha256": "7d4e81103aa98bf75ec9db2fba73b6825b81e04f36a66308bec4dd553e06b32e"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "sw-state",
+      "kind": "probe",
+      "selector": ".sw-state",
+      "read": {
+        "tag": "span",
+        "text": "off",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(14, 14, 12)",
+        "color": "rgb(184, 179, 164)",
+        "borderColor": "rgb(184, 179, 164)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(184, 179, 164)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(184, 179, 164)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 220,
+          "y": 509,
+          "w": 129,
+          "h": 21
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 9.22,
+        "beforeVsEffBg": 1.09
+      },
+      "shot": {
+        "file": "shots/before/inuse-settings-switch-390-dark-sw-state.png",
+        "sha256": "b90da97face983bfbad31623025c7e328372f95cd28baaadb21423eefeb94a81"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": "#inuse",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/before/inuse-settings-switch--390--dark/surface.png",
+        "sha256": "45cc50235d9c5183cc0cc8ea1a55379f0453b10e5b90b91ff2234062feda2907"
+      },
+      "unshootable": null
+    }
+  ]
+}

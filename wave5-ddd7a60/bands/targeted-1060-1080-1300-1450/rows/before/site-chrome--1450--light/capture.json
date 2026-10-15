@@ -1,0 +1,269 @@
+{
+  "state": "before",
+  "surface": "site-chrome",
+  "kind": "component",
+  "width": 1450,
+  "theme": "light",
+  "observedTheme": "light",
+  "observedAtMs": 1792030728716,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-C7TroAbe.js",
+      "sha256": "70535b8d3563f7656d98ce56ff5e0a0fc96010e03a8f7c27dd4e7f87c2bc0296"
+    },
+    {
+      "asset": "/assets/index-CMB0VUbW.css",
+      "sha256": "f84e24b849499e7f8694c816afabb29d702801462d47aedba8b85ec3937a06ae"
+    }
+  ],
+  "targets": [
+    {
+      "target": "nav-links",
+      "kind": "probe",
+      "selector": ".nav-links",
+      "read": {
+        "tag": "div",
+        "text": "foundationscomponentsusing the systemin use",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgba(255, 255, 255, 0.9)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(39, 36, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": false,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 272,
+          "y": -47,
+          "w": 459,
+          "h": 36
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.46,
+        "beforeVsEffBg": 21
+      },
+      "shot": {
+        "file": "shots/before/site-chrome-1450-light-nav-links.png",
+        "sha256": "b2210c8afc51f8b94cf52a429459ba9ba3cd9adff1c687b8609b1c52c5429b1b"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "sb-link",
+      "kind": "probe",
+      "selector": ".sb-link",
+      "read": {
+        "tag": "a",
+        "text": "storybook",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgba(255, 255, 255, 0.9)",
+        "color": "rgb(92, 87, 77)",
+        "borderColor": "rgb(139, 131, 109)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(92, 87, 77)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(92, 87, 77)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": false,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 1178,
+          "y": -43,
+          "w": 131,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 7.18,
+        "beforeVsEffBg": 21
+      },
+      "shot": {
+        "file": "shots/before/site-chrome-1450-light-sb-link.png",
+        "sha256": "8848068af374fa6705d8088ce07e0c1b1f06638d2a7df37ff9fa7a993b9af77c"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "sb-label",
+      "kind": "probe",
+      "selector": ".sb-label",
+      "read": {
+        "tag": "span",
+        "text": "storybook",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgba(255, 255, 255, 0.9)",
+        "color": "rgb(92, 87, 77)",
+        "borderColor": "rgb(92, 87, 77)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(92, 87, 77)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": null,
+        "display": "block",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(92, 87, 77)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": false,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 1215,
+          "y": -39,
+          "w": 81,
+          "h": 21
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 7.18,
+        "beforeVsEffBg": 21
+      },
+      "shot": {
+        "file": "shots/before/site-chrome-1450-light-sb-label.png",
+        "sha256": "46d06f1d01a2bd9248d6d3262fa51f3e147d7dc5e423458f80890f96276c0940"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "page-rail",
+      "kind": "probe",
+      "selector": ".page-rail",
+      "read": {
+        "tag": "nav",
+        "text": "on this page",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(251, 250, 247)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(39, 36, 31)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "block",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 105,
+          "y": 88,
+          "w": 224,
+          "h": 1004
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 14.81,
+        "beforeVsEffBg": 20.12
+      },
+      "shot": {
+        "file": "shots/before/site-chrome-1450-light-page-rail.png",
+        "sha256": "51854e1c212f5110772ed641282a57370fc182e01ac41d69d39e87d884469b7d"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": ".nav",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/before/site-chrome--1450--light/surface.png",
+        "sha256": "705b9327d95a33e1e80aced8793175a2492f420d95d73f04877f3c7a7bf817fd"
+      },
+      "unshootable": null
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "order": "width-theme-state",
+  "runIds": [
+    {
+      "state": "before",
+      "runId": "annex-bands-targeted-before"
+    },
+    {
+      "state": "after",
+      "runId": "annex-bands-targeted-after"
+    }
+  ],
+  "sheets": [
+    {
+      "id": "sheet-transcript-clip",
+      "surface": "transcript-clip",
+      "file": "sheets/sheet-transcript-clip.png",
+      "sha256": "ef13403e0de8504a3c30f12206d772db14e0ccb5cb49913f088a9046e3197ce7"
+    },
+    {
+      "id": "sheet-site-chrome",
+      "surface": "site-chrome",
+      "file": "sheets/sheet-site-chrome.png",
+      "sha256": "b7f3f9bf468c645edcd51d3196c141bad0a6cc4127a9256ad188127e54d4d8b3"
+    }
+  ]
+}

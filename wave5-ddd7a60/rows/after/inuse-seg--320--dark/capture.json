@@ -1,0 +1,114 @@
+{
+  "state": "after",
+  "surface": "inuse-seg",
+  "kind": "component",
+  "width": 320,
+  "theme": "dark",
+  "observedTheme": "dark",
+  "observedAtMs": 1792059693435,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-bvmS1ugF.js",
+      "sha256": "c03328f6ee5c892aca1afd9144b97347b553701fbdd768717a4d1552ef433549"
+    },
+    {
+      "asset": "/assets/index-Dr3SWh4l.css",
+      "sha256": "6d7ab0316ac40f44b8e98d8893327c779cdb921b2ef90d88712108d24d557154"
+    }
+  ],
+  "targets": [
+    {
+      "target": "inuse-seg-on",
+      "kind": "probe",
+      "selector": ".bs-seg-opt[aria-pressed=\"true\"]",
+      "read": {
+        "tag": "button",
+        "text": "public",
+        "bg": "rgb(203, 163, 92)",
+        "effBg": "rgb(203, 163, 92)",
+        "color": "rgb(20, 16, 3)",
+        "borderColor": "rgb(20, 16, 3)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "600",
+        "outlineColor": "rgb(20, 16, 3)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(20, 16, 3)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 38,
+          "y": 560,
+          "w": 71,
+          "h": 36
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 8.08,
+        "beforeVsEffBg": 8.93
+      },
+      "shot": {
+        "file": "shots/after/inuse-seg-320-dark-inuse-seg-on.png",
+        "sha256": "63a9a7401ca42e08d6af50cc882d9a45f45a01f6571db0fc38854123be27122d"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "inuse-seg-on",
+      "kind": "hover",
+      "selector": ".bs-seg-opt[aria-pressed=\"true\"]",
+      "read": {
+        "bg": "rgb(230, 196, 131)",
+        "effBg": "rgb(230, 196, 131)",
+        "color": "rgb(20, 16, 3)",
+        "borderColor": "rgb(20, 16, 3)",
+        "text": "public",
+        "pointerHoveredExpected": true,
+        "hoveredAtShot": true
+      },
+      "contrast": {
+        "text": 11.39
+      },
+      "shot": {
+        "file": "shots/after/inuse-seg-320-dark-inuse-seg-on-hover.png",
+        "sha256": "e9f6d9b11dd17057c888149460949fd9bf4794fc801d590c7f20f59d3bd2dbb7"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": "#inuse",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/after/inuse-seg--320--dark/surface.png",
+        "sha256": "0081557ce6d57971482199fa77165cda515ac25297258a0ed97ae37ab9274901"
+      },
+      "unshootable": null
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+ "dist": "…/dist",
+ "width": 320,
+ "rows": [
+  {
+   "surface": "controls-checkbox",
+   "rootSelector": "#controls",
+   "rootFound": true,
+   "pgnOrEdgeInsideRoot": 0,
+   "documentPgnEdges": 6,
+   "documentPgn": 3,
+   "containers": [
+    "section#pagination.band"
+   ]
+  },
+  {
+   "surface": "states-toggle",
+   "rootSelector": "#states",
+   "rootFound": true,
+   "pgnOrEdgeInsideRoot": 0,
+   "documentPgnEdges": 6,
+   "documentPgn": 3,
+   "containers": [
+    "section#pagination.band"
+   ]
+  },
+  {
+   "surface": "badges-chip",
+   "rootSelector": "#badges",
+   "rootFound": true,
+   "pgnOrEdgeInsideRoot": 0,
+   "documentPgnEdges": 6,
+   "documentPgn": 3,
+   "containers": [
+    "section#pagination.band"
+   ]
+  },
+  {
+   "surface": "inuse-apptab",
+   "rootSelector": "#inuse",
+   "rootFound": true,
+   "pgnOrEdgeInsideRoot": 0,
+   "documentPgnEdges": 6,
+   "documentPgn": 3,
+   "containers": [
+    "section#pagination.band"
+   ]
+  },
+  {
+   "surface": "inuse-seg",
+   "rootSelector": "#inuse",
+   "rootFound": true,
+   "pgnOrEdgeInsideRoot": 0,
+   "documentPgnEdges": 6,
+   "documentPgn": 3,
+   "containers": [
+    "section#pagination.band"
+   ]
+  },
+  {
+   "surface": "inuse-analytics",
+   "rootSelector": "#inuse",
+   "rootFound": true,
+   "pgnOrEdgeInsideRoot": 0,
+   "documentPgnEdges": 6,
+   "documentPgn": 3,
+   "containers": [
+    "section#pagination.band"
+   ]
+  },
+  {
+   "surface": "inuse-transcript",
+   "rootSelector": "#inuse",
+   "rootFound": true,
+   "pgnOrEdgeInsideRoot": 0,
+   "documentPgnEdges": 6,
+   "documentPgn": 3,
+   "containers": [
+    "section#pagination.band"
+   ]
+  },
+  {
+   "surface": "inuse-settings-switch",
+   "rootSelector": "#inuse",
+   "rootFound": true,
+   "pgnOrEdgeInsideRoot": 0,
+   "documentPgnEdges": 6,
+   "documentPgn": 3,
+   "containers": [
+    "section#pagination.band"
+   ]
+  },
+  {
+   "surface": "publish-update",
+   "rootSelector": ".pub-dialog",
+   "rootFound": false,
+   "pgnOrEdgeInsideRoot": null,
+   "documentPgnEdges": 6,
+   "documentPgn": 3,
+   "containers": [
+    "section#pagination.band"
+   ]
+  },
+  {
+   "surface": "publish-ready",
+   "rootSelector": ".pub-dialog",
+   "rootFound": true,
+   "pgnOrEdgeInsideRoot": 0,
+   "documentPgnEdges": 6,
+   "documentPgn": 3,
+   "containers": [
+    "section#pagination.band"
+   ]
+  },
+  {
+   "surface": "inuse-home",
+   "rootSelector": ".iu-page",
+   "rootFound": true,
+   "pgnOrEdgeInsideRoot": 0,
+   "documentPgnEdges": 6,
+   "documentPgn": 3,
+   "containers": [
+    "section#pagination.band"
+   ]
+  },
+  {
+   "surface": "commons-home (annex)",
+   "rootSelector": ".iu-page",
+   "rootFound": true,
+   "pgnOrEdgeInsideRoot": 0,
+   "documentPgnEdges": 6,
+   "documentPgn": 3,
+   "containers": [
+    "section#pagination.band"
+   ]
+  },
+  {
+   "surface": "site-chrome (annex)",
+   "rootSelector": ".nav",
+   "rootFound": true,
+   "pgnOrEdgeInsideRoot": 0,
+   "documentPgnEdges": 6,
+   "documentPgn": 3,
+   "containers": [
+    "section#pagination.band"
+   ]
+  }
+ ]
+}

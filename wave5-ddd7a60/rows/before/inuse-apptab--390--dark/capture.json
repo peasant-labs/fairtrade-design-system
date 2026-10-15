@@ -1,0 +1,347 @@
+{
+  "state": "before",
+  "surface": "inuse-apptab",
+  "kind": "component",
+  "width": 390,
+  "theme": "dark",
+  "observedTheme": "dark",
+  "observedAtMs": 1792059476608,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-C7TroAbe.js",
+      "sha256": "70535b8d3563f7656d98ce56ff5e0a0fc96010e03a8f7c27dd4e7f87c2bc0296"
+    },
+    {
+      "asset": "/assets/index-CMB0VUbW.css",
+      "sha256": "f84e24b849499e7f8694c816afabb29d702801462d47aedba8b85ec3937a06ae"
+    }
+  ],
+  "targets": [
+    {
+      "target": "apptab-on",
+      "kind": "probe",
+      "selector": ".iu-opt-on",
+      "read": {
+        "tag": "button",
+        "text": "peasant3",
+        "bg": "rgb(27, 26, 23)",
+        "effBg": "rgb(27, 26, 23)",
+        "color": "rgb(248, 245, 237)",
+        "borderColor": "rgb(248, 245, 237)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(248, 245, 237)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "24px",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgb(203, 163, 92)",
+        "beforeContent": "\"\"",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(248, 245, 237)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 243,
+          "y": 11,
+          "w": 69,
+          "h": 34
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.97,
+        "beforeVsEffBg": 7.4
+      },
+      "shot": {
+        "file": "shots/before/inuse-apptab-390-dark-apptab-on.png",
+        "sha256": "b79cd23a48be62bbd4ec22fb49bcfd7c6408bebff66246acaaa6f08862309591"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "apptab-on-ico",
+      "kind": "probe",
+      "selector": ".iu-opt-on .iu-opt-ico",
+      "read": {
+        "tag": "span",
+        "text": "",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(27, 26, 23)",
+        "color": "rgb(203, 163, 92)",
+        "borderColor": "rgb(203, 163, 92)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(203, 163, 92)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(203, 163, 92)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 255,
+          "y": 20,
+          "w": 16,
+          "h": 16
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 7.4,
+        "beforeVsEffBg": 1.21
+      },
+      "shot": {
+        "file": "shots/before/inuse-apptab-390-dark-apptab-on-ico.png",
+        "sha256": "b74d678c759a47a9f5ebd4b6977d9ce4b37092a18f70d8d047aa976f8e703ce0"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "apptab-on-key",
+      "kind": "probe",
+      "selector": ".iu-opt-on .iu-opt-key",
+      "read": {
+        "tag": "span",
+        "text": "3",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(27, 26, 23)",
+        "color": "rgb(203, 163, 92)",
+        "borderColor": "rgb(147, 122, 69)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(203, 163, 92)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": null,
+        "display": "block",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(203, 163, 92)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 279,
+          "y": 17,
+          "w": 21,
+          "h": 22
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 7.4,
+        "beforeVsEffBg": 1.21
+      },
+      "shot": {
+        "file": "shots/before/inuse-apptab-390-dark-apptab-on-key.png",
+        "sha256": "f4265393880bb11f9fecf8d5b72cb56ff302413c53d0b99d47cc786b208cc356"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "apptab-off",
+      "kind": "probe",
+      "selector": ".iu-opt:not(.iu-opt-on)",
+      "read": {
+        "tag": "button",
+        "text": "peasant transcript1",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(14, 14, 12)",
+        "color": "rgb(184, 179, 164)",
+        "borderColor": "rgb(184, 179, 164)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(184, 179, 164)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "24px",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(184, 179, 164)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 103,
+          "y": 11,
+          "w": 70,
+          "h": 34
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 9.22,
+        "beforeVsEffBg": 1.09
+      },
+      "shot": {
+        "file": "shots/before/inuse-apptab-390-dark-apptab-off.png",
+        "sha256": "a1f95a67fb67f58c1de838bdabd0c5106bac348dee3d34bd41993815b0c28c64"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "apptab-on",
+      "kind": "hover",
+      "selector": ".iu-opt-on",
+      "read": {
+        "bg": "rgb(27, 26, 23)",
+        "effBg": "rgb(27, 26, 23)",
+        "color": "rgb(233, 229, 219)",
+        "borderColor": "rgb(233, 229, 219)",
+        "text": "peasant3",
+        "pointerHoveredExpected": true,
+        "hoveredAtShot": true
+      },
+      "contrast": {
+        "text": 13.84
+      },
+      "shot": {
+        "file": "shots/before/inuse-apptab-390-dark-apptab-on-hover.png",
+        "sha256": "b79cd23a48be62bbd4ec22fb49bcfd7c6408bebff66246acaaa6f08862309591"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "apptab-focus",
+      "kind": "focus",
+      "selector": ".iu-opt-on",
+      "read": {
+        "tag": "button",
+        "text": "peasant3",
+        "bg": "rgb(27, 26, 23)",
+        "effBg": "rgb(27, 26, 23)",
+        "color": "rgb(248, 245, 237)",
+        "borderColor": "rgb(248, 245, 237)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(248, 245, 237)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "24px",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgb(203, 163, 92)",
+        "beforeContent": "\"\"",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(248, 245, 237)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 243,
+          "y": 11,
+          "w": 69,
+          "h": 34
+        },
+        "focusMethod": "script-focus + Shift+Tab + Tab",
+        "activeElementIsTarget": true,
+        "matchesFocusVisible": true,
+        "activeElement": "button.iu-opt",
+        "pointerParked": true,
+        "hoveredAtShot": false
+      },
+      "contrast": null,
+      "shot": {
+        "file": "shots/before/inuse-apptab-390-dark-apptab-focus.png",
+        "sha256": "300e3b0b412429e71b0141ea5fd008b632e9eff74e0c2937b250927d5078d440"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": "#inuse",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/before/inuse-apptab--390--dark/surface.png",
+        "sha256": "c626364c0e375170a0675432430152dd28b9bf3eb5caabaef9a21a9d21fad2ee"
+      },
+      "unshootable": null
+    }
+  ]
+}

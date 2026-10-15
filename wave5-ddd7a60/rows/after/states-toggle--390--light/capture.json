@@ -1,0 +1,599 @@
+{
+  "state": "after",
+  "surface": "states-toggle",
+  "kind": "component",
+  "width": 390,
+  "theme": "light",
+  "observedTheme": "light",
+  "observedAtMs": 1792059644235,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-bvmS1ugF.js",
+      "sha256": "c03328f6ee5c892aca1afd9144b97347b553701fbdd768717a4d1552ef433549"
+    },
+    {
+      "asset": "/assets/index-Dr3SWh4l.css",
+      "sha256": "6d7ab0316ac40f44b8e98d8893327c779cdb921b2ef90d88712108d24d557154"
+    }
+  ],
+  "targets": [
+    {
+      "target": "bs-toggle-on",
+      "kind": "probe",
+      "selector": ".bs-toggle[aria-pressed=\"true\"]",
+      "read": {
+        "tag": "button",
+        "text": "notify on reply",
+        "bg": "rgb(184, 132, 26)",
+        "effBg": "rgb(184, 132, 26)",
+        "color": "rgb(26, 18, 6)",
+        "borderColor": "rgb(184, 132, 26)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "600",
+        "outlineColor": "rgb(26, 18, 6)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(26, 18, 6)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 37,
+          "y": 831,
+          "w": 193,
+          "h": 36
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 5.61,
+        "beforeVsEffBg": 6.35
+      },
+      "shot": {
+        "file": "shots/after/states-toggle-390-light-bs-toggle-on.png",
+        "sha256": "7996fddbc751fbf54cb31b3390fa17439ade3c4fe3dd4850fd99ccebe3bfe99b"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "bs-toggle-off",
+      "kind": "probe",
+      "selector": ".bs-toggle[aria-pressed=\"false\"]",
+      "read": {
+        "tag": "button",
+        "text": "notify on reply",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(253, 252, 250)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(139, 131, 109)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 37,
+          "y": 919,
+          "w": 193,
+          "h": 36
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 15.08,
+        "beforeVsEffBg": 20.48
+      },
+      "shot": {
+        "file": "shots/after/states-toggle-390-light-bs-toggle-off.png",
+        "sha256": "b8e44c2e54dbce149364ac06801b1eaf4fd47637e4e4a14c22811c69cd81fedb"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "bs-seg-on",
+      "kind": "probe",
+      "selector": ".bs-seg-opt[aria-pressed=\"true\"]",
+      "read": {
+        "tag": "button",
+        "text": "public",
+        "bg": "rgb(184, 132, 26)",
+        "effBg": "rgb(184, 132, 26)",
+        "color": "rgb(26, 18, 6)",
+        "borderColor": "rgb(26, 18, 6)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "600",
+        "outlineColor": "rgb(26, 18, 6)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(26, 18, 6)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 38,
+          "y": 560,
+          "w": 91,
+          "h": 36
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 5.61,
+        "beforeVsEffBg": 6.35
+      },
+      "shot": {
+        "file": "shots/after/states-toggle-390-light-bs-seg-on.png",
+        "sha256": "0d463dfe4e31b0a5e4e85f385f87b235800f81f8d37a62002552333b3d32b212"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "bs-seg-off",
+      "kind": "probe",
+      "selector": ".bs-seg-opt[aria-pressed=\"false\"]",
+      "read": {
+        "tag": "button",
+        "text": "collective",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(251, 250, 247)",
+        "color": "rgb(74, 70, 62)",
+        "borderColor": "rgb(74, 70, 62)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(74, 70, 62)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(74, 70, 62)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 129,
+          "y": 560,
+          "w": 123,
+          "h": 36
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 8.99,
+        "beforeVsEffBg": 20.12
+      },
+      "shot": {
+        "file": "shots/after/states-toggle-390-light-bs-seg-off.png",
+        "sha256": "c41659398bcfd81db34575c3e71e4f454a8620e8d769acf6d4ede8a522585d2f"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "sw-disabled-off",
+      "kind": "probe",
+      "selector": ".sw[aria-checked=\"false\"][disabled]",
+      "read": {
+        "tag": "button",
+        "text": "",
+        "bg": "rgb(244, 242, 236)",
+        "effBg": "rgb(244, 242, 236)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(139, 131, 109)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "0.5",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": true,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": "rgb(92, 87, 77)",
+        "beforeBg": "rgb(92, 87, 77)",
+        "beforeContent": "\"\"",
+        "beforeTransform": "matrix(1, 0, 0, 1, 0, 0)",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 37,
+          "y": 564,
+          "w": 52,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 13.81,
+        "beforeVsEffBg": 6.41
+      },
+      "shot": {
+        "file": "shots/after/states-toggle-390-light-sw-disabled-off.png",
+        "sha256": "feebf6cdda7c5ba6a12487bfafd9a8bbdca93f2448e15f8d15a9dd5a812206a5"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "sw-disabled-on",
+      "kind": "probe",
+      "selector": ".sw[aria-checked=\"true\"][disabled]",
+      "read": {
+        "tag": "button",
+        "text": "",
+        "bg": "rgb(184, 132, 26)",
+        "effBg": "rgb(184, 132, 26)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(184, 132, 26)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "0.5",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": true,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": "rgb(92, 87, 77)",
+        "beforeBg": "rgb(26, 18, 6)",
+        "beforeContent": "\"\"",
+        "beforeTransform": "matrix(1, 0, 0, 1, 24, 0)",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 37,
+          "y": 622,
+          "w": 52,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 4.68,
+        "beforeVsEffBg": 5.61
+      },
+      "shot": {
+        "file": "shots/after/states-toggle-390-light-sw-disabled-on.png",
+        "sha256": "8249106bb40b9132f51ed46cadb57fe630e27bd0cc4c9a94d2975906b1cc89e2"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "bs-toggle-on",
+      "kind": "hover",
+      "selector": ".bs-toggle[aria-pressed=\"true\"]",
+      "read": {
+        "bg": "rgb(110, 76, 22)",
+        "effBg": "rgb(110, 76, 22)",
+        "color": "rgb(255, 253, 248)",
+        "borderColor": "rgb(110, 76, 22)",
+        "text": "notify on reply",
+        "pointerHoveredExpected": true,
+        "hoveredAtShot": true
+      },
+      "contrast": {
+        "text": 7.63
+      },
+      "shot": {
+        "file": "shots/after/states-toggle-390-light-bs-toggle-on-hover.png",
+        "sha256": "a3362b2290d51cfb01d361bb49242bf10a76f5da31488ef732049248d7e8b04f"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "bs-seg-on",
+      "kind": "hover",
+      "selector": ".bs-seg-opt[aria-pressed=\"true\"]",
+      "read": {
+        "bg": "rgb(110, 76, 22)",
+        "effBg": "rgb(110, 76, 22)",
+        "color": "rgb(255, 253, 248)",
+        "borderColor": "rgb(255, 253, 248)",
+        "text": "public",
+        "pointerHoveredExpected": true,
+        "hoveredAtShot": true
+      },
+      "contrast": {
+        "text": 7.63
+      },
+      "shot": {
+        "file": "shots/after/states-toggle-390-light-bs-seg-on-hover.png",
+        "sha256": "bc9593a36edc78085d22c02331b518df97dfb6655f53b20f50d7dadc6c8563f4"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "sw-focus",
+      "kind": "focus",
+      "selector": ".sw[aria-checked=\"true\"]:not([disabled])",
+      "read": {
+        "tag": "button",
+        "text": "",
+        "bg": "rgb(184, 132, 26)",
+        "effBg": "rgb(184, 132, 26)",
+        "color": "rgb(39, 36, 31)",
+        "borderColor": "rgb(184, 132, 26)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(39, 36, 31)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgb(26, 18, 6)",
+        "beforeContent": "\"\"",
+        "beforeTransform": "matrix(1, 0, 0, 1, 24, 0)",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(39, 36, 31)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 37,
+          "y": 564,
+          "w": 52,
+          "h": 28
+        },
+        "focusMethod": "script-focus + Shift+Tab + Tab",
+        "activeElementIsTarget": true,
+        "matchesFocusVisible": true,
+        "activeElement": "button.sw",
+        "pointerParked": true,
+        "hoveredAtShot": false
+      },
+      "contrast": null,
+      "shot": {
+        "file": "shots/after/states-toggle-390-light-sw-focus.png",
+        "sha256": "435c1ced7a55ab7ae7a85c21322f59343ff337511686018d2817236ad3abcd76"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "bs-toggle-focus",
+      "kind": "focus",
+      "selector": ".bs-toggle[aria-pressed=\"true\"]",
+      "read": {
+        "tag": "button",
+        "text": "notify on reply",
+        "bg": "rgb(184, 132, 26)",
+        "effBg": "rgb(184, 132, 26)",
+        "color": "rgb(26, 18, 6)",
+        "borderColor": "rgb(184, 132, 26)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "600",
+        "outlineColor": "rgb(26, 18, 6)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(26, 18, 6)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 37,
+          "y": 560,
+          "w": 193,
+          "h": 36
+        },
+        "focusMethod": "script-focus + Shift+Tab + Tab",
+        "activeElementIsTarget": true,
+        "matchesFocusVisible": true,
+        "activeElement": "button.btn",
+        "pointerParked": true,
+        "hoveredAtShot": false
+      },
+      "contrast": null,
+      "shot": {
+        "file": "shots/after/states-toggle-390-light-bs-toggle-focus.png",
+        "sha256": "8d200cd6c1217338371a6c97f4d68c12ed815cd66c6663de52345160e6035cb6"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "bs-seg-focus",
+      "kind": "focus",
+      "selector": ".bs-seg-opt[aria-pressed=\"true\"]",
+      "read": {
+        "tag": "button",
+        "text": "public",
+        "bg": "rgb(184, 132, 26)",
+        "effBg": "rgb(184, 132, 26)",
+        "color": "rgb(26, 18, 6)",
+        "borderColor": "rgb(26, 18, 6)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "600",
+        "outlineColor": "rgb(26, 18, 6)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": false,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(26, 18, 6)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 38,
+          "y": 560,
+          "w": 91,
+          "h": 36
+        },
+        "focusMethod": "script-focus + Shift+Tab + Tab",
+        "activeElementIsTarget": true,
+        "matchesFocusVisible": true,
+        "activeElement": "button.bs-seg-opt",
+        "pointerParked": true,
+        "hoveredAtShot": false
+      },
+      "contrast": null,
+      "shot": {
+        "file": "shots/after/states-toggle-390-light-bs-seg-focus.png",
+        "sha256": "81a139bbdae0b001cbc063bb6001b1831c590bf3a89bcdb046ed99f1367987c7"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": "#states",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/after/states-toggle--390--light/surface.png",
+        "sha256": "b8261746e7c85d24aa78344012c60d553270b2794d8078122e9598f6d7e51013"
+      },
+      "unshootable": null
+    }
+  ]
+}

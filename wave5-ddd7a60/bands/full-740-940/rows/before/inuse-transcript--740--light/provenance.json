@@ -1,0 +1,28 @@
+{
+  "state": "before",
+  "root": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-design-system-116--fix--amber-selected/dist",
+  "head": "fbdcd0d30f5595b752eaa3e7d8c1fa11a15f6dd7",
+  "dirty": false,
+  "assets": [
+    {
+      "asset": "/assets/index-C7TroAbe.js",
+      "sha256": "70535b8d3563f7656d98ce56ff5e0a0fc96010e03a8f7c27dd4e7f87c2bc0296"
+    },
+    {
+      "asset": "/assets/index-CMB0VUbW.css",
+      "sha256": "f84e24b849499e7f8694c816afabb29d702801462d47aedba8b85ec3937a06ae"
+    }
+  ],
+  "served": [
+    {
+      "asset": "/assets/index-C7TroAbe.js",
+      "sha256": "70535b8d3563f7656d98ce56ff5e0a0fc96010e03a8f7c27dd4e7f87c2bc0296",
+      "servedEqualsDist": true
+    },
+    {
+      "asset": "/assets/index-CMB0VUbW.css",
+      "sha256": "f84e24b849499e7f8694c816afabb29d702801462d47aedba8b85ec3937a06ae",
+      "servedEqualsDist": true
+    }
+  ]
+}

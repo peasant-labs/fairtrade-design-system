@@ -1,0 +1,267 @@
+{
+  "state": "before",
+  "surface": "site-chrome",
+  "kind": "component",
+  "width": 1060,
+  "theme": "dark",
+  "observedTheme": "dark",
+  "observedAtMs": 1792030702126,
+  "servedAssets": [
+    {
+      "asset": "/assets/index-C7TroAbe.js",
+      "sha256": "70535b8d3563f7656d98ce56ff5e0a0fc96010e03a8f7c27dd4e7f87c2bc0296"
+    },
+    {
+      "asset": "/assets/index-CMB0VUbW.css",
+      "sha256": "f84e24b849499e7f8694c816afabb29d702801462d47aedba8b85ec3937a06ae"
+    }
+  ],
+  "targets": [
+    {
+      "target": "nav-links",
+      "kind": "probe",
+      "selector": ".nav-links",
+      "read": {
+        "tag": "div",
+        "text": "foundationscomponentsusing the systemin use",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgba(7, 7, 6, 0.92)",
+        "color": "rgb(233, 229, 219)",
+        "borderColor": "rgb(233, 229, 219)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(233, 229, 219)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(233, 229, 219)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": false,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 209,
+          "y": -47,
+          "w": 459,
+          "h": 36
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 16.02,
+        "beforeVsEffBg": 1.04
+      },
+      "shot": {
+        "file": "shots/before/site-chrome-1060-dark-nav-links.png",
+        "sha256": "b5151e390c5edd0db38668ac77a06b31dc9bc70dfcb20d8ce996c56b5075a25c"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "sb-link",
+      "kind": "probe",
+      "selector": ".sb-link",
+      "read": {
+        "tag": "a",
+        "text": "storybook",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgba(7, 7, 6, 0.92)",
+        "color": "rgb(154, 148, 136)",
+        "borderColor": "rgb(111, 106, 95)",
+        "borderTopWidth": "1px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(154, 148, 136)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "auto",
+        "fontSize": "14px",
+        "disabled": null,
+        "display": "flex",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(154, 148, 136)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": true,
+        "inViewport": false,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 954,
+          "y": -43,
+          "w": 28,
+          "h": 28
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 6.68,
+        "beforeVsEffBg": 1.04
+      },
+      "shot": {
+        "file": "shots/before/site-chrome-1060-dark-sb-link.png",
+        "sha256": "781d57539384a6c3b97226b9722d0da8ffc08f767c6186bc70fa0e50accfb87e"
+      },
+      "unshootable": null
+    },
+    {
+      "target": "sb-label",
+      "kind": "probe",
+      "selector": ".sb-label",
+      "read": {
+        "tag": "span",
+        "text": "storybook",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgba(7, 7, 6, 0.92)",
+        "color": "rgb(154, 148, 136)",
+        "borderColor": "rgb(154, 148, 136)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(154, 148, 136)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "0px",
+        "fontSize": "14px",
+        "disabled": null,
+        "display": "none",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(154, 148, 136)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": false,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 6.68,
+        "beforeVsEffBg": 1.04
+      },
+      "shot": null,
+      "unshootable": {
+        "reason": "not painted at capture time (rect 0x0; own display none; own opacity 1); no ancestor with computed display none"
+      }
+    },
+    {
+      "target": "page-rail",
+      "kind": "probe",
+      "selector": ".page-rail",
+      "read": {
+        "tag": "nav",
+        "text": "on this page",
+        "bg": "rgba(0, 0, 0, 0)",
+        "effBg": "rgb(7, 7, 6)",
+        "color": "rgb(233, 229, 219)",
+        "borderColor": "rgb(233, 229, 219)",
+        "borderTopWidth": "0px",
+        "borderRadius": "0px",
+        "opacity": "1",
+        "fontWeight": "400",
+        "outlineColor": "rgb(233, 229, 219)",
+        "outlineStyle": "none",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "boxShadow": "none",
+        "minHeight": "0px",
+        "fontSize": "16px",
+        "disabled": null,
+        "display": "none",
+        "hiddenAncestor": null,
+        "stateLabelColor": null,
+        "beforeBg": "rgba(0, 0, 0, 0)",
+        "beforeContent": "none",
+        "beforeTransform": "none",
+        "afterContent": "none",
+        "afterBorderColor": "rgb(233, 229, 219)",
+        "afterBorderWidth": "0px",
+        "afterBg": "rgba(0, 0, 0, 0)",
+        "visible": false,
+        "inViewport": true,
+        "parentDisabledFieldset": false,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "pointerParked": true,
+        "hoveredAtShot": false,
+        "parkPoint": [
+          6,
+          6
+        ]
+      },
+      "contrast": {
+        "text": 16.02,
+        "beforeVsEffBg": 1.04
+      },
+      "shot": null,
+      "unshootable": {
+        "reason": "not painted at capture time (rect 0x0; own display none; own opacity 1); no ancestor with computed display none"
+      }
+    },
+    {
+      "target": "surface",
+      "kind": "surface",
+      "selector": ".nav",
+      "read": null,
+      "contrast": null,
+      "shot": {
+        "file": "rows/before/site-chrome--1060--dark/surface.png",
+        "sha256": "dfb08bfd4f539b9d433a282ab4b2e4b9061ee01ca653c1d48b1f9508ab592697"
+      },
+      "unshootable": null
+    }
+  ]
+}
