@@ -1,16 +1,19 @@
 # Data for the breakpoint-scale guard (scripts/breakpoint-scale.mjs). Required names live in
-# breakpoints.manifest.yaml; scripts/breakpoint-scale.test.mjs runs the cases and the mutation.
+# breakpoints.manifest.yaml; scripts/breakpoint-scale.test.mjs runs the cases and the mutations.
 #
 # `exceptions` lists the viewport @media conditions that deliberately stay off the documented
 # --bp-* scale (480 / 768 / 1024 / 1440). The guard fails on ANY length in a viewport @media
-# condition that is neither a scale px value nor one of these entries, so an off-scale query is
-# either fixed or recorded here with its reason. The list only shrinks: an entry whose condition
-# stops raising a violation fails the guard until it is deleted. Keep it empty when the whole
-# stylesheet tree sits on the scale.
+# condition, or in the media condition of an @import statement, that is neither a scale px value
+# nor one of these entries, so an off-scale query is either fixed or recorded here with its reason.
+# The list only shrinks: an entry whose condition stops raising a violation fails the guard until
+# it is deleted. Keep it empty when the whole stylesheet tree sits on the scale.
 exceptions: []
 
-# Preludes fed through lintViewportQuery (the same code the build runs). `expect` lists the
-# check ids the prelude must raise, in order; [] means it is on the scale and canonical.
+# Preludes fed through lintViewportQuery (the same code the build runs), or the @import media
+# condition when `statement` is present (the extracted condition must equal `media`). `expect` lists
+# the check ids the prelude must raise, in order; [] means it is on the scale and canonical.
+# `expectViewport` asserts the walker-side prelude test (case-insensitive @media); `messageIncludes`
+# asserts the repair text of at least one raised violation.
 cases:
   - name: the phone boundary
     media: '@media (width < 480px)'
@@ -33,9 +36,30 @@ cases:
   - name: an inclusive upper bound
     media: '@media (width <= 1024px)'
     expect: [inclusive-bound]
+    messageIncludes: '(width < 1024px)'
   - name: a rem-based width
     media: '@media (width < 48rem)'
     expect: [non-scale-unit]
   - name: a height condition
     media: '@media (max-height: 600px)'
+    expect: [descriptor-form, off-scale]
+  - name: an upper-case px unit
+    media: '@media (width < 719PX)'
+    expect: [off-scale]
+  - name: a ch viewport unit
+    media: '@media (width < 90ch)'
+    expect: [non-scale-unit]
+  - name: a pt viewport unit
+    media: '@media (16pt <= width < 768px)'
+    expect: [non-scale-unit]
+  - name: a vw viewport unit
+    media: '@media (width < 5vw)'
+    expect: [non-scale-unit]
+  - name: an upper-case media keyword
+    media: '@MEDIA (width < 719px)'
+    expect: [off-scale]
+    expectViewport: true
+  - name: an off-scale import condition
+    media: 'screen and (max-width: 719px)'
+    statement: '@import url("settings.css") screen and (max-width: 719px)'
     expect: [descriptor-form, off-scale]

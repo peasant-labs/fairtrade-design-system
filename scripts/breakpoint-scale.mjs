@@ -8,9 +8,12 @@
    and fails on any length in a viewport `@media` condition that is neither a
    scale px value nor a declared exception.
 
-   Subject: `@media` conditions only. A container query (`@container (width <
-   30rem)`) measures its own container, not the viewport, so its numbers follow
-   the component's geometry and are out of scope here.
+   Subject: viewport `@media` conditions and the media condition of an `@import`
+   statement. A container query (`@container (width < 30rem)`) measures its own
+   container, not the viewport, so its numbers follow the component's geometry and
+   are out of scope here. The prelude test is case-insensitive, and a condition
+   measured in any unit other than a lower-case `px` is reported rather than passed
+   over: the tokens are px numbers, so the guard cannot check `90ch`, `16pt` or `5vw`.
 
    Checks (each violation names its check id):
      off-scale          a px width that is not one of the four scale values.
@@ -22,13 +25,16 @@
                         single-sided comparison form.
      inclusive-bound    an upper bound written `width <= Npx`, which includes N
                         and so behaves like the retired `max-width` form.
-     non-scale-unit     a viewport condition measured in rem or em, which the
-                        px scale cannot check.
+     non-scale-unit     a viewport condition measured in a unit other than px
+                        (`rem`/`em`/`ch`/`pt`/`vw`, any case), which the px scale
+                        cannot check.
 
    Declared exceptions live in scripts/testdata/breakpoints.yaml with their
    required names in breakpoints.manifest.yaml. The list only shrinks: an entry
    whose condition no longer raises a violation fails the guard, so a fixed
-   query must leave the list. One fixture entry per (file, condition).
+   query must leave the list. One fixture entry per (file, condition); the key is
+   the file and the condition text, so an `@import` entry names the media condition
+   after the imported url (`screen and (max-width: 719px)`), not the whole statement.
 
    Wired into `build:lib`; runnable standalone via `node scripts/breakpoint-scale.mjs`. */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
@@ -63,15 +69,42 @@ export function loadScale(css = readFileSync(join(ROOT, TOKEN_SHEET), 'utf8')) {
   return { byName, values: [...values].sort((a, b) => a - b) }
 }
 
-const LENGTH = /(\d+(?:\.\d+)?)(px|rem|em)\b/g
-const DESCRIPTOR = /\b(min-width|max-width|min-height|max-height)\s*:\s*(\d+(?:\.\d+)?)(px|rem|em)\b/g
-const INCLUSIVE_UPPER = /\bwidth\s*<=\s*(\d+(?:\.\d+)?)(px|rem|em)\b/g
+/* The unit group matches ANY alpha token, case-insensitively, so an upper-case `719PX` is read as a
+   px length (and then checked against the scale) and `90ch` / `16pt` / `5vw` are read as units the
+   guard cannot check, instead of escaping the scan entirely. */
+const LENGTH = /(\d+(?:\.\d+)?)([a-z]+)\b/gi
+const DESCRIPTOR = /\b(min-width|max-width|min-height|max-height)\s*:\s*(\d+(?:\.\d+)?)([a-z]+)\b/gi
+const INCLUSIVE_UPPER = /\bwidth\s*<=\s*(\d+(?:\.\d+)?)([a-z]+)\b/gi
+
+/** True for a prelude the guard lints as a viewport media query (case-insensitive: `@MEDIA` too). */
+export const isViewportMedia = (prelude) => /^@media\b/i.test(prelude)
 
 /**
- * Every violation in one viewport media prelude. Exported so the case fixtures and
+ * The media condition an `@import` statement carries (the query list after the imported url), or
+ * '' when the statement has none. A `layer()`/`supports()` clause, if present, stays in the returned
+ * text: the guard only reads lengths from it, and the reported condition stays the bytes as written.
+ *
+ * @param {string} statement  one statement from walkCss (`@import …`, no trailing semicolon)
+ * @returns {string}
+ */
+export function importCondition(statement) {
+  const m = statement.match(/^@import\b([\s\S]*)$/i)
+  if (!m) return ''
+  let rest = m[1].trim()
+  const url = rest.match(/^url\(\s*(?:["'][^"']*["']|[^)"']*)\s*\)\s*/i)
+  const str = rest.match(/^["'][^"']*["']\s*/)
+  if (url) rest = rest.slice(url[0].length)
+  else if (str) rest = rest.slice(str[0].length)
+  else return ''
+  return rest.trim()
+}
+
+/**
+ * Every violation in one viewport media condition. Exported so the case fixtures and
  * the mutation test feed synthetic preludes through the same code the build runs.
  *
- * @param {string} prelude  the `@media …` prelude as walkCss reports it
+ * @param {string} prelude  the `@media …` prelude as walkCss reports it, or the media condition of
+ *                          an `@import` statement as importCondition returns it
  * @param {{values: number[], byName: Record<string, number>}} scale
  * @returns {Array<{check: string, message: string}>}
  */
@@ -89,12 +122,12 @@ export function lintViewportQuery(prelude, scale) {
   for (const m of prelude.matchAll(INCLUSIVE_UPPER)) {
     out.push({
       check: 'inclusive-bound',
-      message: `\`width <= ${m[2]}${m[3]}\` includes that width itself; the canonical upper bound is exclusive, so write \`(width < ${m[2]}${m[3]})\``,
+      message: `\`width <= ${m[1]}${m[2]}\` includes that width itself; the canonical upper bound is exclusive, so write \`(width < ${m[1]}${m[2]})\``,
     })
   }
 
   for (const m of prelude.matchAll(LENGTH)) {
-    if (m[2] !== 'px') {
+    if (m[2].toLowerCase() !== 'px') {
       out.push({
         check: 'non-scale-unit',
         message: `\`${m[0]}\` measures a viewport condition in ${m[2]}; every condition names one of the four --bp-* px values (${scale.values.join(' / ')}), so write the px value, or declare the exception in ${FIXTURE} with its reason`,
@@ -150,10 +183,10 @@ export function loadExceptions() {
 }
 
 /**
- * The whole guard: lint every viewport media query under src/ against the scale,
- * split into fresh violations and exceptions that no longer apply. The build runs
- * it with no arguments; the mutation test passes planted texts through the same
- * code path.
+ * The whole guard: lint every viewport media query under src/ (both `@media` blocks and the media
+ * condition of an `@import` statement) against the scale, split into fresh violations and exceptions
+ * that no longer apply. The build runs it with no arguments; the mutation test passes planted texts
+ * through the same code path.
  */
 export function checkBreakpoints(overrides = {}) {
   const scale = loadScale()
@@ -161,20 +194,32 @@ export function checkBreakpoints(overrides = {}) {
   const exempt = new Set(exceptions.map((e) => `${e.file}\u0000${e.condition}`))
   const used = new Set()
   const fresh = []
+  const report = (violations, file, line, condition) => {
+    const key = `${file}\u0000${condition}`
+    if (exempt.has(key)) {
+      used.add(key)
+      return
+    }
+    for (const v of violations) {
+      fresh.push({ ...v, file, line, prelude: condition, message: `${file}:${line}  [${v.check}] \`${condition}\`: ${v.message}` })
+    }
+  }
   for (const file of sourceSheets()) {
     const text = overrides[file] ?? readFileSync(join(ROOT, file), 'utf8')
-    for (const block of walkCss(text).blocks) {
-      if (!block.prelude.startsWith('@media')) continue
+    const { blocks, statements } = walkCss(text)
+    for (const block of blocks) {
+      if (!isViewportMedia(block.prelude)) continue
       const violations = lintViewportQuery(block.prelude, scale)
       if (!violations.length) continue
-      const key = `${file}\u0000${block.prelude}`
-      if (exempt.has(key)) {
-        used.add(key)
-        continue
-      }
-      for (const v of violations) {
-        fresh.push({ ...v, file, line: block.line, prelude: block.prelude, message: `${file}:${block.line}  [${v.check}] \`${block.prelude}\`: ${v.message}` })
-      }
+      report(violations, file, block.line, block.prelude)
+    }
+    for (const statement of statements) {
+      if (!/^@import\b/i.test(statement.text)) continue
+      const condition = importCondition(statement.text)
+      if (!condition) continue
+      const violations = lintViewportQuery(condition, scale)
+      if (!violations.length) continue
+      report(violations, file, statement.line, condition)
     }
   }
   const stale = exceptions.filter((e) => !used.has(`${e.file}\u0000${e.condition}`))

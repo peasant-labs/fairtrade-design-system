@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /* Cases and mutation for the breakpoint-scale guard. Data: scripts/testdata/breakpoints.yaml
    (+ .manifest.yaml).
-     - cases feed synthetic @media preludes through lintViewportQuery, the same code the build runs;
+     - cases feed synthetic @media preludes (and, with `statement`, an @import statement whose media
+       condition is extracted) through lintViewportQuery, the same code the build runs; a case may
+       also assert the walker-side prelude test (`expectViewport`) and the repair text
+       (`messageIncludes`);
      - the mutation plants a named break in the REAL bytes of a source sheet and runs the guard the
        build runs: the guard must fail and its report must contain the mutation's expectedDiagnostic,
        so it failed for the intended reason. The unmutated sheets must pass first.
@@ -10,7 +13,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT, loadStrictYaml, assertExactNames } from './css-source.mjs'
-import { lintViewportQuery, loadScale, runBreakpointGuard, sourceSheets } from './breakpoint-scale.mjs'
+import { importCondition, isViewportMedia, lintViewportQuery, loadScale, runBreakpointGuard, sourceSheets } from './breakpoint-scale.mjs'
 
 const spec = loadStrictYaml('scripts/testdata/breakpoints.yaml')
 const manifest = loadStrictYaml('scripts/testdata/breakpoints.manifest.yaml')
@@ -31,9 +34,24 @@ assertExactNames(manifest.mutations.map((m) => m.name), manifest.requiredMutatio
 const scale = loadScale()
 for (const c of spec.cases) {
   check(`case: ${c.name}`, () => {
-    const actual = lintViewportQuery(c.media, scale).map((v) => v.check)
+    // A case with `statement` exercises the @import path: the media condition is extracted from the
+    // statement the walker yields, and must be the condition the case also names in `media`.
+    let condition = c.media
+    if (c.statement !== undefined) {
+      condition = importCondition(c.statement)
+      if (condition !== c.media) throw new Error(`${c.name}: the @import statement yields ${JSON.stringify(condition)}, not ${JSON.stringify(c.media)}`)
+    }
+    if (c.expectViewport !== undefined) {
+      const viewport = isViewportMedia(condition)
+      if (viewport !== c.expectViewport) throw new Error(`${c.name}: expected isViewportMedia(${JSON.stringify(condition)}) to be ${c.expectViewport}, got ${viewport}`)
+    }
+    const violations = lintViewportQuery(condition, scale)
+    const actual = violations.map((v) => v.check)
     if (JSON.stringify(actual) !== JSON.stringify(c.expect)) {
       throw new Error(`${c.name}: expected the checks ${JSON.stringify(c.expect)}, got ${JSON.stringify(actual)}`)
+    }
+    if (c.messageIncludes !== undefined && !violations.some((v) => v.message.includes(c.messageIncludes))) {
+      throw new Error(`${c.name}: no repair message includes ${JSON.stringify(c.messageIncludes)}; got ${JSON.stringify(violations.map((v) => v.message))}`)
     }
   })
 }

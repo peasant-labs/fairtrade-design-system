@@ -44,7 +44,7 @@ for (const row of spec.source) {
 for (const row of spec.responsive) {
   const blocks = walkCss(files.get(row.file)).blocks.filter(block => block.prelude === row.selector)
   assert.ok(blocks.some(block => !block.context.some(c => c.startsWith('@media')) && block.decls.some(d => `${d.prop}: ${d.value}` === row.desktop)), `${row.name}: restore desktop columns`)
-  assert.ok(blocks.some(block => block.context.includes(row.query) && block.decls.some(d => `${d.prop}: ${d.value}` === row.narrow)), `${row.name}: restore the max-width override`)
-  assert.ok(!blocks.some(block => block.context.some(c => /min-width/.test(c))), `${row.name}: use the canonical max-width form`)
+  assert.ok(blocks.some(block => block.context.includes(row.query) && block.decls.some(d => `${d.prop}: ${d.value}` === row.narrow)), `${row.name}: restore the narrow-width band override`)
+  assert.ok(!blocks.some(block => block.context.some(c => /min-width/.test(c))), `${row.name}: use the single-sided band form`)
 }
 console.log(`Dense type inventory: ${microRefs(files).length} deferred consumers; retirement will require zero.`)
