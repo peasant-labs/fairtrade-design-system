@@ -435,6 +435,7 @@
   .gmp-changes-legend .cg-spark { position: static !important; transform: none !important; }
 
   /* below the wide layout there isn't room for floating merged chips — drop them into flow. */
+  /* decision: the desktop band is the boundary for floating merged chips; the retired 1460 was not a scale value */
   @media (width < 1440px) {
     .gmp-merged-chip { position: static !important; margin-top: var(--sp-2); }
   }

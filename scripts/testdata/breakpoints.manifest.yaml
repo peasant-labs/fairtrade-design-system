@@ -4,7 +4,8 @@
 # failure must contain expectedDiagnostic. An exception added without its name here fails the
 # guard as an unexpected name.
 
-requiredExceptionNames: []
+requiredExceptionNames:
+  - the transcript rails need more than the tablet token
 
 requiredCaseNames:
   - the phone boundary

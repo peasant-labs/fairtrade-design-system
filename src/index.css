@@ -590,9 +590,6 @@
 }
 
 /* ---- responsive: collapse the rail, single column ---- */
-/* the full "storybook" label only fits beside the section links + search + the live status once the
-   viewport reaches the desktop band (1440px and up); below that, collapse storybook to an icon-only
-   square (the aria-label keeps its name). */
 
 /* mobile horizontal padding: the 32px desktop gutter eats too much of a phone's width, so the page
    gutter steps down on small screens (desktop-first; this only narrows, never widens). every surface
@@ -2483,9 +2480,12 @@
   .txn-light .txn-ol-task.txn-ol-active { background: color-mix(in srgb, var(--amber) 16%, var(--surface)); }
 }
 
-/* ---- responsive: below the tablet band the transcript goes full width and the side panels drop
-   (matches the viewer, where the outline/filters rails only appear on wide viewports) ---- */
-@media (width < 1024px) {
+/* ---- responsive: below the transcript's two-rail width the transcript goes full width and the side
+   panels drop (matches the viewer, where the outline/filters rails only appear on wide viewports).
+   declared exception to the --bp-* scale: the two rails (240px + 272px) leave a ~448px reading
+   column at the tablet token widths (1024-1079), so the rails are dropped below 1080px rather than
+   at the 1024px token. scripts/testdata/breakpoints.yaml records the exception and its reason. ---- */
+@media (width < 1080px) {
   /* single column regardless of collapse state; the rails + their collapsed strips both drop here. */
   .txn-body-grid,
   .txn-body-grid[data-left-rail="closed"],

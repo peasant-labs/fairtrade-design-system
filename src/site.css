@@ -398,6 +398,7 @@
   .navctl:not(.bx):not(.sq):not(.sb-link) { display: none; }
 }
 
+/* decision: the storybook label is icon-only below the desktop band so the nav never crowds the section links, search and the live status; the full label returns at 1440 */
 @media (width < 1440px) {
   .sb-link .sb-label { display: none; }
   .sb-link { width: var(--control-h-sm); padding: 0; justify-content: center; gap: 0; }

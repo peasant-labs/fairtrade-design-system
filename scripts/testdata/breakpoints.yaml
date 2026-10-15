@@ -7,7 +7,14 @@
 # nor one of these entries, so an off-scale query is either fixed or recorded here with its reason.
 # The list only shrinks: an entry whose condition stops raising a violation fails the guard until
 # it is deleted. Keep it empty when the whole stylesheet tree sits on the scale.
-exceptions: []
+exceptions:
+  - name: the transcript rails need more than the tablet token
+    file: src/index.css
+    condition: '@media (width < 1080px)'
+    reason: >-
+      the two rails (240px + 272px) leave a ~448px reading column across the tablet token widths
+      (1024-1079), so the transcript drops its rails below 1080px rather than at the 1024px token;
+      the accepted build suppressed them below 1080 as well, so this restores that behaviour.
 
 # Preludes fed through lintViewportQuery (the same code the build runs), or the @import media
 # condition when `statement` is present (the extracted condition must equal `media`). `expect` lists
