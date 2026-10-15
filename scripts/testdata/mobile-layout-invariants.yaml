@@ -37,10 +37,10 @@ invariants:
       site root's overflow-x: clip is not clipped by it, and the label's static position (centred in
       a square control past the right edge of a 320px phone) widened the document to 324px whenever
       no ancestor transform was there to contain it - under prefers-reduced-motion: reduce, and under
-      normal motion too once the section's scroll-reveal transform resolved to none.
+      normal motion too once the section's scroll-reveal transform resolved to none. One literal covers
+      the whole rule, so no declaration in it can be dropped while the row still passes.
     mustContainAll:
-      - ".pgn-edge {"
-      - "position: relative;"
+      - ".pgn-edge { padding: 0; width: var(--control-h-sm); position: relative; }"
   - id: txn-title-wraps-on-mobile
     file: src/index.css
     description: >-
