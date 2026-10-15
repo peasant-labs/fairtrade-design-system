@@ -1,0 +1,28 @@
+{
+  "state": "after",
+  "root": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-design-system-116--wave5/dist",
+  "head": "6471209b423c50ca8d6e900dc3ecfe9c5e074053",
+  "dirty": false,
+  "assets": [
+    {
+      "asset": "/assets/index-bvmS1ugF.js",
+      "sha256": "c03328f6ee5c892aca1afd9144b97347b553701fbdd768717a4d1552ef433549"
+    },
+    {
+      "asset": "/assets/index-Dr3SWh4l.css",
+      "sha256": "6d7ab0316ac40f44b8e98d8893327c779cdb921b2ef90d88712108d24d557154"
+    }
+  ],
+  "served": [
+    {
+      "asset": "/assets/index-bvmS1ugF.js",
+      "sha256": "c03328f6ee5c892aca1afd9144b97347b553701fbdd768717a4d1552ef433549",
+      "servedEqualsDist": true
+    },
+    {
+      "asset": "/assets/index-Dr3SWh4l.css",
+      "sha256": "6d7ab0316ac40f44b8e98d8893327c779cdb921b2ef90d88712108d24d557154",
+      "servedEqualsDist": true
+    }
+  ]
+}

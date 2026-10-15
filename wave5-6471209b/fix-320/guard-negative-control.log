@@ -1,0 +1,47 @@
+
+Running 2 tests using 1 worker
+
+  ✘  1 [dark] › scripts/journey/app-validate.journey.mjs:26:3 › built app › passes the twenty interaction checks (39.6s)
+reduced transparency [dark]: {"matches":true,"theme":"dark","surface":"rgb(14, 14, 12)","navBg":"rgb(14, 14, 12)","probeBlur":"none","stickyBg":"rgb(14, 14, 12)","phaseBars":3,"contextBars":1,"bars":[{"cls":"nav nav--hidden","bg":"rgb(14, 14, 12)"},{"cls":"tm2-contextbar","bg":"rgb(14, 14, 12)"},{"cls":"tm2-phase","bg":"rgb(14, 14, 12)"},{"cls":"tm2-phase","bg":"rgb(14, 14, 12)"},{"cls":"tm2-phase","bg":"rgb(14, 14, 12)"}],"blurred":[]}
+  ✓  2 [dark] › scripts/journey/app-validate.journey.mjs:219:3 › built app › honors reduced transparency (871ms)
+
+
+  1) [dark] › scripts/journey/app-validate.journey.mjs:26:3 › built app › passes the twenty interaction checks 
+
+    Error: {"no-preference/320":{"top":0,"revealed":4},"no-preference/360":{"top":0,"revealed":0},"no-preference/390":{"top":0,"revealed":0},"no-preference/768":{"top":0,"revealed":0},"no-preference/1024":{"top":0,"revealed":0},"no-preference/1440":{"top":0,"revealed":0},"reduce/320":{"top":4,"revealed":4},"reduce/360":{"top":0,"revealed":0},"reduce/390":{"top":0,"revealed":0},"reduce/768":{"top":0,"revealed":0},"reduce/1024":{"top":0,"revealed":0},"reduce/1440":{"top":0,"revealed":0}}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      194 |       Object.values(over).every((v) => v.top <= 1 && v.revealed <= 1),
+      195 |       JSON.stringify(over),
+    > 196 |     ).toBe(true)
+          |       ^
+      197 |
+      198 |     // Reduced motion shortens transitions (the run itself is under reduce).
+      199 |     await page.setViewportSize({ width: 1280, height: 720 })
+        at /home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-design-system-116--wave5/scripts/journey/app-validate.journey.mjs:196:7
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    scripts/journey/.artifacts/results/app-validate.journey.mjs-b-72d67-e-twenty-interaction-checks-dark/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    scripts/journey/.artifacts/results/app-validate.journey.mjs-b-72d67-e-twenty-interaction-checks-dark/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: scripts/journey/.artifacts/results/app-validate.journey.mjs-b-72d67-e-twenty-interaction-checks-dark/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    scripts/journey/.artifacts/results/app-validate.journey.mjs-b-72d67-e-twenty-interaction-checks-dark/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace scripts/journey/.artifacts/results/app-validate.journey.mjs-b-72d67-e-twenty-interaction-checks-dark/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [dark] › scripts/journey/app-validate.journey.mjs:26:3 › built app › passes the twenty interaction checks 
+  1 passed (42.2s)
