@@ -1472,6 +1472,9 @@
         "indent": {
           "control": "boolean"
         },
+        "showActionHint": {
+          "control": "boolean"
+        },
         "label": {
           "control": "text"
         },
@@ -1491,7 +1494,8 @@
       "stories": [
         "Playground",
         "ExpandsAndCollapses",
-        "Indented"
+        "Indented",
+        "WithoutActionHint"
       ]
     },
     {

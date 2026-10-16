@@ -4,6 +4,14 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.25 - 2026-10-13
+
+### Added
+
+- `SessionGroupDisclosure` accepts `showActionHint={false}` to omit the visible
+  show/hide hint while retaining its chevron, count and accessible disclosure
+  control. The option defaults to `true`, preserving existing consumers.
+
 ## 0.0.24 - 2026-10-01
 
 - Distinguish full redaction occurrence counts from representative examples in the publish dialog.
