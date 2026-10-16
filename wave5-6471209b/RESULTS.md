@@ -471,7 +471,7 @@ every motion and scroll state. This:
 - is guarded by the built-app journey itself: the overflow sweep in
   `scripts/journey/app-validate.journey.mjs` now measures **every** swept width (320, 360, 390, 768,
   1024, 1440) at page top **and** with the `#pagination` band revealed, under **both** motion settings
-  (16 measurements, up from 6), and asserts `scrollWidth <= clientWidth + 1` on every one of them.
+  (24 measurements, up from 6), and asserts `scrollWidth <= clientWidth + 1` on every one of them.
   **Negative control**: a copy of the built dist with `position: relative` deleted from that one rule
   and nothing else (`/tmp/opencode/neg-dist`, served on its own port) makes the extended guard
   **fail, exit 1**, reporting
@@ -569,6 +569,15 @@ is false of the defect (§7.2).
   were not part of this run's gate battery; the previous record ran them with `CHROME_PATH` set to
   the Playwright chromium (exit 0, environmental first attempt 1).
 
+- **Eight capture probes still resolve to docs specimens instead of the in-use mounts (pre-existing).**
+  The capture driver resolves each probe with a page-wide first match, so `controls-checkbox`
+  `.check-box:not(:checked)`, `inuse-seg` `.bs-seg-opt[aria-pressed="true"]`, `inuse-transcript`
+  cbx-checked/cbx-unchecked/sw-on/sw-off and `inuse-settings-switch` sw-on/sw-state read the earlier
+  `#controls`/`#states` specimens under an in-use surface name, and `sheets/sheet-inuse-seg.png` and
+  the affected in-use reads show those specimens. Same class this revision fixed for the in-use home
+  surface (`98fc6df`); byte-identical in the accepted `wave5-ddd7a60` prefix; recorded as a
+  follow-up below. The amber checklist claims stay supported by the legitimately named specimen
+  surfaces and the app-tab/settings sheets.
 ### Follow-ups recorded (not fixed here)
 
 Each of these was surfaced by this revision's work and is deliberately left alone: none is a
@@ -597,6 +606,13 @@ approved applied set.
    cosmetic, not changed here.
 6. **Raw NUL byte in `src/ui/DataTable.jsx`.** The selection-key separator is a literal `\0` byte at
    line 358 (`selectedKey` joins the sorted keys with it); pre-existing, and out of this task's scope.
+
+7. **Eight capture probes resolve to docs specimens (pre-existing).** The driver's page-wide first
+   match reads `#controls`/`#states` specimens for `controls-checkbox` `.check-box:not(:checked)`,
+   `inuse-seg` `.bs-seg-opt[aria-pressed="true"]`, `inuse-transcript` cbx-checked/cbx-unchecked/sw-on/sw-off
+   and `inuse-settings-switch` sw-on/sw-state; fix direction: in-page root scoping (the class this
+   revision already fixed for the in-use home probes). Tracked as a follow-up task on the fairtest
+   capture surface.
 
 ## 9. Gate battery exit codes (one run, head `6471209b`, clean worktree)
 
@@ -628,7 +644,7 @@ and negative-controlled, and the bundle verifier).
 The dist hashes and the fix marker were re-checked after these rebuilds
 (`dist/assets/index-Dr3SWh4l.css` `6d7ab031…`, `dist/assets/index-bvmS1ugF.js` `c03328f6…`,
 `pgn-edge{width:var(--control-h-sm);padding:0;position:relative}` present exactly once, zero times in
-the pre-fix build), and the worktree is clean at `ddd7a60` with no untracked files.
+the pre-fix build), and the worktree is clean at `6471209b` with no untracked files.
 
 ### 9b. The extended guard (head `6471209b`)
 
@@ -645,6 +661,17 @@ Added wall time per project run: **+17.9 s** (22.8 s -> 40.7 s), i.e. about +36 
 two projects, for 18 extra measurements and the bounded wait that lets each section's reveal
 transform resolve (15 s cap; immediate under reduce, ~900 ms otherwise). Full-suite timing on this
 head is in §9's `pnpm journey:ci` row.
+
+### 9c. CI on this head: one runner-side flake, re-run green
+
+The first `ci` run on this head (`38825993003`, attempt 1) was red in `gates` only: the storybook
+static server on `:6017` died mid-run, so every story-URL test failed `ERR_CONNECTION_REFUSED`
+(12 tests, first at 00:03:29) while the app server stayed up; this revision's extended overflow
+guard **passed in that same attempt**. The parent head `ddd7a60` is green on a byte-identical tree,
+and the failed job's single diagnostic re-run (attempt 2) is **green** (`determine-runner`, `lib`,
+`gates` all pass). Classified a runner-side flake - an unsupervised fixed-port server with no
+liveness assertion between tests and Playwright retries that cannot recover it - and tracked as a
+separate follow-up task on the journey/CI harness surface.
 
 ## 10. Binding to this revision's head (`6471209b`)
 
@@ -669,7 +696,7 @@ negative control. The probes' numbers are unchanged; the negative control fails 
 
 The durable mirror is the new prefix `wave5-6471209b` on the screenshots branch, carrying only the
 corrected/recaptured pieces plus this document and `BINDING.md`; the accepted prefix `wave5-ddd7a60`
-is untouched. `BINDING.md` enumerates the delta (1 added file, 49 changed files, 0 removed) and
+is untouched. `BINDING.md` enumerates the delta (2 added files, 50 changed files, 0 removed) and
 records the merged bundle's own verifier result.
 
 

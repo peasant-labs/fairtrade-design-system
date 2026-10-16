@@ -70,9 +70,9 @@ Everything else: the other ten surfaces' rows and shots in both states, `build/{
 `evidence/{before,after}.json`, the other ten sheets, the `bands/` annex and the `fix-320/{reduce,normal}`
 focused runs. A full tree comparison of this bundle against the accepted prefix found exactly:
 
-- **1 file present only in this bundle**: `fix-320/guard-negative-control.log`.
+- **2 files present only in this bundle**: `fix-320/guard-negative-control.log` and this note (`BINDING.md` itself).
 - **0 files present only in the accepted prefix**.
-- **49 files differing**, all of them this revision's corrections: 5 under `fix-320/`
+- **50 files differing**, all of them this revision's corrections (the 49 artifacts listed below plus this revision's `RESULTS.md`): 5 under `fix-320/`
   (`pair-probe.mjs`, `pair-probe.json`, `diagnosis-probe.mjs`, and the two diagnosis payloads), 12
   `rows/{before,after}/inuse-home--*/capture.json`, 6 `rows/after/inuse-home--*/provenance.json`
   (the `before` provenance is unchanged), 24 `inuse-home` element shots, `sheets/sheet-inuse-home.png`
