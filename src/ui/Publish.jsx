@@ -277,9 +277,17 @@ function joinNames(names) {
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
 }
 
+// Missing review data permits prerequisite reads, never an actual publication retry.
+function reviewRefused(scan) {
+  return scan !== undefined && (
+    scan === null || typeof scan !== 'object' || Array.isArray(scan) ||
+    scan.failure !== undefined || !hasKnownRedactionCategories(scan.matches)
+  )
+}
+
 function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
   const titleId = useId()
-  const matches = scan?.matches ?? []
+  const matches = Array.isArray(scan?.matches) ? scan.matches : []
   const matchCount = scan?.matchCount ?? matches.length
   const sampled = matchCount > matches.length
   const kept = matches.filter((match) => match?.kept).length
@@ -287,9 +295,9 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
   const [openChoice, setOpen] = useState(null)
   const open = openChoice ?? kept > 0
   const checking = state === 'checking'
-  const failed = state === 'scan-failed'
+  const failed = state === 'scan-failed' || scan?.failure !== undefined
   const unscanned = !Array.isArray(scan?.matches) && !checking && !failed
-  const unsupported = Array.isArray(scan?.matches) && !hasKnownRedactionCategories(scan.matches)
+  const unsupported = reviewRefused(scan)
   return (
     <section className="pub-section" aria-labelledby={titleId}>
       <div className="pub-section-head">
@@ -304,7 +312,7 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
         <p className="pub-line" role="status"><Loader className="pub-spin" aria-hidden="true" /> checking for sensitive content</p>
       ) : failed ? (
         <p className="pub-line pub-line-alert" role="alert">
-          <AlertTriangle aria-hidden="true" /> {scan?.failure ?? 'the scan failed, so publish is off. re-scan to try again.'}
+          <AlertTriangle aria-hidden="true" /> {typeof scan?.failure === 'string' && scan.failure ? scan.failure : 'the scan failed, so publish is off. re-scan to try again.'}
         </p>
       ) : unsupported ? (
         <p className="pub-line pub-line-alert" role="alert"><AlertTriangle aria-hidden="true" />the scan contains an unsupported redaction category, so publish is off. update the scanner and re-scan.</p>
@@ -369,7 +377,8 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
  * @param {() => void} [props.onConnect] - `continue with github`.
  * @param {string} [props.joinHref] - `create or join one on village`.
  * @param {string} [props.stoppedAt] - the step that failed, in words ("setting who can read it").
- * @param {() => void} [props.onRetry]
+ * @param {() => void} [props.onRecover] - stopped-state prerequisite read/sign-in recovery only; may run before a scan or audience exists, but never with an explicitly refused review. Mutually exclusive with onRetry. Must not publish.
+ * @param {() => void} [props.onRetry] - stopped-state actual publication retry; requires a valid review and audience. Mutually exclusive with onRecover.
  * @param {{ url: string, collectives: string[], pending?: string[], pullRequest?: { number: number, branch: string, href?: string } }} [props.done]
  */
 export function PublishDialog({
@@ -392,6 +401,7 @@ export function PublishDialog({
   onConnect,
   joinHref,
   stoppedAt,
+  onRecover,
   onRetry,
   done,
 }) {
@@ -410,7 +420,27 @@ export function PublishDialog({
   const derived = mode === 'update'
     ? ['update', adds ? `add ${plural(adds, 'collective', 'collectives')}` : null, removes ? `remove ${plural(removes, 'collective', 'collectives')}` : null].filter(Boolean).join(' and ')
     : readers.length ? `publish to ${plural(readers.length, 'collective', 'collectives')}` : 'publish'
-  const blocked = state === 'checking' || state === 'scan-failed' || state === 'no-collective' || state === 'publishing' || (readers.length === 0 && !(mode === 'update' && removes > 0)) || !hasKnownRedactionCategories(scan?.matches)
+  const ambiguousRetry = !!onRecover && !!onRetry
+  const blocked = state === 'checking' || state === 'scan-failed' || state === 'no-collective' || state === 'publishing' || (readers.length === 0 && !(mode === 'update' && removes > 0)) || scan === undefined || reviewRefused(scan) || ambiguousRetry
+  const recoveryBlocked = reviewRefused(scan) || ambiguousRetry
+  const latestActions = useRef(null)
+  useLayoutEffect(() => {
+    latestActions.current = { open, state, blocked, recoveryBlocked, onRecover, onRetry, onPublish }
+    return () => { latestActions.current = null }
+  })
+  // Read the latest committed state even if a host retained an older button callback.
+  const runRecover = () => {
+    const latest = latestActions.current
+    if (latest?.open && latest.state === 'stopped' && !latest.recoveryBlocked) latest.onRecover?.()
+  }
+  const runRetry = () => {
+    const latest = latestActions.current
+    if (latest?.open && latest.state === 'stopped' && !latest.onRecover && !latest.blocked) latest.onRetry?.()
+  }
+  const runPublish = () => {
+    const latest = latestActions.current
+    if (latest?.open && latest.state === 'ready' && !latest.blocked) latest.onPublish?.()
+  }
   // while publishing, cancel, the close button, Escape and the scrim all wait for the result
   const dismissible = state !== 'publishing'
 
@@ -457,8 +487,8 @@ export function PublishDialog({
       <>
         <span className="pub-foot-note">{state === 'publishing' ? 'sending your redacted transcript to village.' : state === 'stopped' ? 'review who can read it.' : `nothing leaves your machine until you ${verb}.`}</span>
         <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={state === 'publishing'}>cancel</button>
-        {state === 'stopped' ? onRetry && (
-          <button type="button" className="btn btn-primary btn-sm" disabled={blocked} onClick={() => { if (!blocked) onRetry() }}><RotateCw aria-hidden="true" /> retry</button>
+        {state === 'stopped' ? (onRecover || onRetry) && (
+          <button type="button" className="btn btn-primary btn-sm" disabled={onRecover ? recoveryBlocked : blocked} onClick={onRecover ? runRecover : runRetry}><RotateCw aria-hidden="true" /> retry</button>
         ) : (
           <button
             type="button"
@@ -466,7 +496,7 @@ export function PublishDialog({
             disabled={blocked && state !== 'publishing'}
             aria-disabled={blocked ? 'true' : undefined}
             aria-busy={state === 'publishing' ? 'true' : undefined}
-            onClick={() => { if (!blocked) onPublish?.() }}
+            onClick={runPublish}
           >
             {state === 'publishing' ? <Loader className="pub-spin" aria-hidden="true" /> : null}
             {primaryLabel ?? derived}

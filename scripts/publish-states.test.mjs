@@ -171,3 +171,4 @@ await withMountedSource(async ({ load, mount, window, React }) => {
 })
 
 report.finish(`${fixture.labels.length} label values, ${fixture.popup.length} popup states and ${fixture.update.length} update cases.`)
+await import('./publish-recovery.test.mjs')

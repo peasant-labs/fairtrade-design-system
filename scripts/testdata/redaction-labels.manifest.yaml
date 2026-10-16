@@ -44,7 +44,7 @@ requiredMutationNames:
 mutations:
   - name: retry bypasses the unknown scan gate
     file: src/ui/Publish.jsx
-    find: "disabled={blocked} onClick={() => { if (!blocked) onRetry() }}"
+    find: "disabled={onRecover ? recoveryBlocked : blocked} onClick={onRecover ? runRecover : runRetry}"
     replace: "onClick={onRetry}"
     expectedDiagnostic: "unknown category blocks retry: unknown scan must block publishing"
   - name: credential label renders the raw id
@@ -59,7 +59,7 @@ mutations:
     expectedDiagnostic: "@peasant-labs/schema redactionCategoryLabel during conversion"
   - name: unknown matches leave publishing enabled
     file: src/ui/Publish.jsx
-    find: "|| !hasKnownRedactionCategories(scan?.matches)"
+    find: "|| scan === undefined || reviewRefused(scan)"
     replace: ""
     expectedDiagnostic: "unknown category: unknown scan must block publishing"
   - name: confidence loses its visible label
