@@ -1,0 +1,11 @@
+cases:
+  - name: omitted-default
+    story: components-sessiongroupdisclosure--playground
+    hint: true
+  - name: explicit-true
+    story: components-sessiongroupdisclosure--playground
+    args: showActionHint:true
+    hint: true
+  - name: explicit-false
+    story: components-sessiongroupdisclosure--without-action-hint
+    hint: false
