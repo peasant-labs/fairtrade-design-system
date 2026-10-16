@@ -14,6 +14,7 @@
  */
 import { writeFileSync } from 'node:fs'
 import { test, expect, storyUrl } from './lib/fixtures.mjs'
+import { assertWebServerServing } from './server-liveness.mjs'
 import {
   scanAxe,
   seriousViolations,
@@ -27,6 +28,16 @@ import {
 } from '../fairtest/fairtrade-component-target.mjs'
 
 test.describe('session group disclosure', () => {
+  // This suite drives the served Storybook, which starts once for the run and
+  // is never restarted. A failed beforeAll stops the rest of the file instead
+  // of letting every row fail on a dead port, and the beforeEach keeps a retry
+  // or a later row reporting the missing server rather than a connection error.
+  test.beforeAll(async () => {
+    await assertWebServerServing()
+  })
+  test.beforeEach(async () => {
+    await assertWebServerServing()
+  })
   test('expands, states its count, and passes axe', async ({ page, theme }, testInfo) => {
     await page.goto(storyUrl(COMPONENT_STORY_ID, theme))
 
