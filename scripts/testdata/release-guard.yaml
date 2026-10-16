@@ -109,6 +109,7 @@ github:
       approved: true
       expected_paths: ["/pulls/16/reviews?per_page=100", "/pulls/16/reviews?per_page=100&page=2", "/collaborators/alice/permission"]
 workflow:
+  ci_pr_types: [opened, synchronize, reopened, edited]
   prepack_if: "github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'release(')"
   build_if: "!(github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'release('))"
   ci_selection:
