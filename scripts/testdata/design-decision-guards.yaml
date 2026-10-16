@@ -1,0 +1,51 @@
+sourceRoots: [src/ui, src/mockups]
+allowedMiddots: []
+restatingFiles:
+  - DESIGN.md
+  - llm/NEUROINCLUSIVE.md
+  - AGENTS.md
+  - CONTRIBUTING.md
+  - llms.txt
+  - scripts/gen-llm-artifacts.mjs
+cases:
+  - name: clean-separators
+    sources: {src/ui/example.jsx: 'const text = "one, two"'}
+  - name: bound-decision
+    row:
+      name: middot-separators
+      id: 1
+      disposition: DEMO
+      binding:
+        codeReference: {file: src/ui/example.jsx, contains: 'const text = "one, two"'}
+        pointerRemoved: '#136/1'
+        lineRemoved: '- **#136/1, middots**: old conflict.'
+        restatingFilesAmended:
+          - {file: DESIGN.md, contains: 'No middot separators.'}
+    sources: &boundSources
+      src/ui/example.jsx: 'const text = "one, two"'
+      DESIGN.md: 'No middot separators.'
+      llm/NEUROINCLUSIVE.md: ''
+      AGENTS.md: ''
+      CONTRIBUTING.md: ''
+      llms.txt: ''
+      scripts/gen-llm-artifacts.mjs: ''
+  - name: no-original-conflict-line
+    row:
+      name: heading-hierarchy
+      id: 12
+      disposition: DEMO
+      binding:
+        codeReference: {file: src/ui/example.jsx, contains: 'const text = "one, two"'}
+        pointerRemoved: '#136/12'
+        lineRemoved: null
+        lineRemovalNote: 'The original known-conflicts list had no heading-hierarchy entry.'
+        restatingFilesAmended:
+          - {file: DESIGN.md, contains: 'No middot separators.'}
+    sources: *boundSources
+mutations:
+  - {name: planted-middot, case: clean-separators, file: src/ui/example.jsx, append: ' · ', error: 'middot forbidden'}
+  - {name: encoded-middot, case: clean-separators, file: src/ui/example.jsx, append: '<span>&middot;</span>', error: 'middot forbidden'}
+  - {name: escaped-middot, case: clean-separators, file: src/ui/example.jsx, append: '"\u00b7"', error: 'middot forbidden'}
+  - {name: unresolved-decision, case: bound-decision, clearBinding: true, error: 'unresolved decision'}
+  - {name: missing-code, case: bound-decision, file: src/ui/example.jsx, replace: '', error: 'code reference missing'}
+  - {name: retained-pointer, case: bound-decision, file: llm/NEUROINCLUSIVE.md, append: '(#136/1)', error: 'resolved pointer retained'}

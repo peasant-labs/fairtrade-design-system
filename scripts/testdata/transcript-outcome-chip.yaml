@@ -8,37 +8,37 @@ cases:
   - name: a canonical resolved outcome renders the ok tone
     outcome: resolved
     expectedClass: chip chip-ok
-    expectedTitle: outcome · resolved
+    expectedTitle: outcome, resolved
     expectedLabel: resolved
     expectedIconClass: lucide-shield-check
   - name: the legacy positive label normalizes to the same ok tone
     outcome: positive
     expectedClass: chip chip-ok
-    expectedTitle: outcome · resolved
+    expectedTitle: outcome, resolved
     expectedLabel: resolved
     expectedIconClass: lucide-shield-check
   - name: a canonical partial outcome renders the warn tone
     outcome: partial
     expectedClass: chip chip-warn
-    expectedTitle: outcome · partial
+    expectedTitle: outcome, partial
     expectedLabel: partial
     expectedIconClass: lucide-circle-dot
   - name: a canonical failed outcome renders the err tone
     outcome: failed
     expectedClass: chip chip-err
-    expectedTitle: outcome · not resolved
+    expectedTitle: outcome, not resolved
     expectedLabel: not resolved
     expectedIconClass: lucide-triangle-alert
   - name: the annotation not_resolved value normalizes to the same err tone
     outcome: not_resolved
     expectedClass: chip chip-err
-    expectedTitle: outcome · not resolved
+    expectedTitle: outcome, not resolved
     expectedLabel: not resolved
     expectedIconClass: lucide-triangle-alert
   - name: the legacy negative label normalizes to the same err tone
     outcome: negative
     expectedClass: chip chip-err
-    expectedTitle: outcome · not resolved
+    expectedTitle: outcome, not resolved
     expectedLabel: not resolved
     expectedIconClass: lucide-triangle-alert
 

@@ -324,12 +324,12 @@
      so focus / disabled / :checked are native; the tick is a css mark (no icon dependency) */
   .check { @apply inline-flex items-center gap-2 font-mono text-label lowercase text-ink-2 cursor-pointer; min-height: var(--target-min); }
   .check-box { @apply inline-flex items-center justify-center; box-sizing: border-box; appearance: none; -webkit-appearance: none; width: var(--ic-lg); height: var(--ic-lg); flex: none; margin: 0; padding: 0; border: 1px solid var(--rule-strong); background: var(--canvas); cursor: pointer; }
-  .check-box::after { content: ""; width: 5px; height: 9px; border: solid var(--ink); border-width: 0 2px 2px 0; transform: rotate(45deg) translateY(-1px); opacity: 0; }
-  .check-box:checked { background: var(--surface-2); border-color: var(--rule-strong); }
+  .check-box::after { content: ""; width: 5px; height: 9px; border: solid var(--amber-fill-ink); border-width: 0 2px 2px 0; transform: rotate(45deg) translateY(-1px); opacity: 0; }
+  .check-box:checked { background: var(--amber-fill); border-color: var(--amber-fill); }
   .check-box:checked::after { opacity: 1; }
   /* mixed: the same filled box with a dash instead of a tick. the state is also exposed to assistive
      technology (aria-checked="mixed"), so it is never carried by this mark alone. */
-  .check-box:indeterminate { background: var(--surface-2); border-color: var(--rule-strong); }
+  .check-box:indeterminate { background: var(--amber-fill); border-color: var(--amber-fill); }
   .check-box:indeterminate::after { width: 9px; height: 0; border-width: 0 0 2px 0; transform: none; opacity: 1; }
   .check-box:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
   .check-box:disabled { opacity: .5; cursor: not-allowed; }
@@ -632,8 +632,8 @@
   .btn[aria-busy="true"] { cursor: progress; }
 
   /* toggle: aria-pressed=true gets the filled, "on" treatment; off stays secondary */
-  .bs-toggle[aria-pressed="true"] { background: var(--surface-2); color: var(--ink); border-color: var(--rule-strong); font-weight: 600; }
-  .bs-toggle[aria-pressed="true"]:hover { background: var(--surface-hover); border-color: var(--rule-strong); }
+  .bs-toggle[aria-pressed="true"] { background: var(--amber-fill); color: var(--amber-fill-ink); border-color: var(--amber-fill); font-weight: 600; }
+  .bs-toggle[aria-pressed="true"]:hover { background: var(--amber-bright); color: var(--on-amber); border-color: var(--amber-bright); }
 
   /* button-group: one shared height, hairline seams, no double borders */
   .bs-group { display: inline-flex; }
@@ -641,7 +641,7 @@
   .bs-group .btn + .btn { border-left: 0; }
   .bs-group .btn:focus-visible { position: relative; z-index: 1; }
 
-  /* segmented control: a single track of options; the selected one is neutral.
+  /* segmented control: a single track of options; the selected one is amber.
      each option is a real button carrying aria-pressed so it never relies on color */
   .bs-seg { display: inline-flex; border: var(--bd-strong); background: var(--canvas); }
   .bs-seg-opt {
@@ -655,8 +655,8 @@
   .bs-seg-opt + .bs-seg-opt { border-left: var(--bd-strong); }
   .bs-seg-opt .lucide { width: var(--ic-sm); height: var(--ic-sm); }
   .bs-seg-opt:hover { background: var(--surface-hover); color: var(--ink); }
-  .bs-seg-opt[aria-pressed="true"] { background: var(--surface-2); color: var(--ink); font-weight: 600; }
-  .bs-seg-opt[aria-pressed="true"]:hover { background: var(--surface-hover); }
+  .bs-seg-opt[aria-pressed="true"] { background: var(--amber-fill); color: var(--amber-fill-ink); font-weight: 600; }
+  .bs-seg-opt[aria-pressed="true"]:hover { background: var(--amber-bright); color: var(--on-amber); }
   .bs-seg-opt:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
 
   /* ---- input-states ---- */
@@ -747,9 +747,9 @@
   .sw:hover { border-color: var(--amber-dim); }
   .sw:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 
-  /* The checked thumb slides right; colour remains neutral. */
-  .sw[aria-checked="true"] { background: var(--surface-2); border-color: var(--rule-strong); }
-  .sw[aria-checked="true"]::before { background: var(--ink); transform: translateX(var(--sw-travel)); }
+  /* The checked thumb slides right; amber also marks the on state. */
+  .sw[aria-checked="true"] { background: var(--amber-fill); border-color: var(--amber-fill); }
+  .sw[aria-checked="true"]::before { background: var(--amber-fill-ink); transform: translateX(var(--sw-travel)); }
 
   /* disabled: the real `disabled` attribute, dimmed + not-allowed */
   .sw:disabled { opacity: .5; cursor: not-allowed; }
@@ -770,7 +770,7 @@
     color: var(--ink-2);
   }
   .sw-state svg, .sw-state .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
-  .sw-field:has(.sw[aria-checked="true"]:not(:disabled)) .sw-state { color: var(--ink); font-weight: 600; }
+  .sw-field:has(.sw[aria-checked="true"]:not(:disabled)) .sw-state { color: var(--amber); font-weight: 600; }
   .sw-field:has(.sw:disabled) .sw-label,
   .sw-field:has(.sw:disabled) .sw-state { color: var(--ink-3); }
 
@@ -873,11 +873,11 @@
   button.chip-toggle:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
   button.chip-toggle .chipx-tick { display: none; }
   button.chip-toggle[aria-pressed="true"] {
-    color: var(--ink); background: var(--surface-2); border-color: var(--rule-strong);
+    color: var(--amber-fill-ink); background: var(--amber-fill); border-color: var(--amber-fill);
     font-weight: 600;
   }
   button.chip-toggle[aria-pressed="true"] .chipx-tick { display: inline-flex; }
-  button.chip-toggle[aria-pressed="true"]:hover { background: var(--surface-hover); border-color: var(--rule-strong); }
+  button.chip-toggle[aria-pressed="true"]:hover { background: var(--amber-bright); color: var(--on-amber); border-color: var(--amber-bright); }
 
   /* status dot: a small filled square (radius 0) ALWAYS paired with a label, so
      status never rides on color alone. role tints come from existing tokens. */
@@ -1808,10 +1808,10 @@
   .iu-opt-on { background: var(--surface-hover); color: var(--ink-strong); }
   .iu-opt-on::before {
     content: ""; position: absolute; inset: 0 0 auto 0; height: 2px;
-    background: var(--rule-strong);
+    background: var(--amber);
   }
-  .iu-opt-on .iu-opt-ico { color: var(--ink); }
-  .iu-opt-on .iu-opt-key { color: var(--ink); border-color: var(--rule-strong); }
+  .iu-opt-on .iu-opt-ico { color: var(--amber); }
+  .iu-opt-on .iu-opt-key { color: var(--amber); border-color: var(--amber-dim); }
 
   /* ---- the stage: fills the rest of the viewport, renders the active app full-bleed ---- */
   .iu-stage {
@@ -1855,6 +1855,7 @@
   .iu-page-tip { margin: 0; font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-2); }
   .iu-page-tip code { font-size: var(--fs-sm); color: var(--ink-strong); }
   .iu-page-search { display: block; }
+  .iu-page-controls { display: contents; border: 0; margin: 0; padding: 0; min-width: 0; }
   .iu-page-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
   .iu-page-toolbar .is-field { margin: 0; }
   .iu-page-toolbar .bs-seg { max-width: 100%; overflow-x: auto; }
@@ -2350,7 +2351,7 @@
   .txn-viewsw .sw[aria-checked="true"]::before { transform: translateX(18px); }
   .txn-viewsw-label { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); min-width: 0; }
   .txn-viewsw-state { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-4); }
-  .txn-viewsw:has(.sw[aria-checked="true"]) .txn-viewsw-state { color: var(--ink-2); font-weight: 600; }
+  .txn-viewsw:has(.sw[aria-checked="true"]) .txn-viewsw-state { color: var(--amber); font-weight: 600; }
 
   .txn-jumprow { display: flex; gap: var(--sp-2); }
   .txn-jumprow .btn { flex: 1; }
@@ -2600,7 +2601,8 @@
   .cex-topic { gap: var(--sp-1); max-width: 100%; min-width: 0; }
   .cex-topic-label { min-width: 0; overflow-wrap: anywhere; }
   .cex-topic-n { flex: none; color: var(--ink-4); font-size: var(--fs-label); }
-  button.chip-toggle[aria-pressed="true"] .cex-topic-n { color: var(--ink-3); }
+  button.chip-toggle[aria-pressed="true"] .cex-topic-n { color: var(--amber-fill-ink); }
+  button.chip-toggle[aria-pressed="true"]:hover .cex-topic-n { color: var(--on-amber); }
   .cex-opt { min-height: var(--target-min); }
   .cex-opt > span { display: inline-flex; align-items: center; gap: var(--sp-2); }
   .cex-fcount { color: var(--ink-4); font-size: var(--fs-label); }
@@ -3012,8 +3014,8 @@
   .cmg-roleseg { display: inline-flex; align-items: center; box-sizing: border-box; height: var(--control-h-sm); padding: 0 var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-3); background: transparent; border: 0; cursor: pointer; }
   .cmg-roleseg + .cmg-roleseg { border-left: var(--bd); }
   .cmg-roleseg:hover { color: var(--ink); background: var(--surface-hover); }
-  .cmg-roleseg[aria-pressed="true"] { background: var(--surface-2); color: var(--ink); font-weight: 600; }
-  .cmg-roleseg[aria-pressed="true"]:hover { background: var(--surface-hover); }
+  .cmg-roleseg[aria-pressed="true"] { background: var(--amber-fill); color: var(--amber-fill-ink); font-weight: 600; }
+  .cmg-roleseg[aria-pressed="true"]:hover { background: var(--amber-bright); color: var(--on-amber); }
   .cmg-roleseg:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); position: relative; z-index: 1; }
   /* read-only production role indicator (a <span>, not a <button> -- see Manage.jsx): same amber
      "current" treatment as the demo's interactive aria-pressed segment, keyed off data-active

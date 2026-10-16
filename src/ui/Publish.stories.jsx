@@ -23,8 +23,8 @@ const SCAN = {
   ],
 }
 const ACCESS = [
-  { id: 'platform', name: 'Acme Platform', members: 12, note: 'suggested · repo acme/ingest-api is linked' },
-  { id: 'company', name: 'Acme Company', members: 87, note: 'suggested · github org acme' },
+  { id: 'platform', name: 'Acme Platform', members: 12, note: 'suggested, repo acme/ingest-api is linked' },
+  { id: 'company', name: 'Acme Company', members: 87, note: 'suggested, github org acme' },
 ]
 const DONE = { url: 'https://village.peasantlabs.org/transcripts/3f9c0a17', collectives: ['Acme Platform', 'Acme Company'], pullRequest: { number: 42, branch: 'fix/flaky-ingest' } }
 
@@ -42,7 +42,7 @@ function Popup({ state, mode = 'publish', access = ACCESS, done = DONE, ...rest 
       onRescan={fn()}
       access={items}
       onRemove={(id) => setItems((list) => list.filter((item) => item.id !== id))}
-      picker={{ suggestions: [{ id: 'ml', name: 'ML Reading Group', members: 21, note: 'curated · waits for the owner’s approval' }], onAdd: fn() }}
+      picker={{ suggestions: [{ id: 'ml', name: 'ML Reading Group', members: 21, note: 'curated, waits for the owner’s approval' }], onAdd: fn() }}
       autoPublish={{ checked: auto, onChange: setAuto }}
       onPublish={fn()}
       onConnect={fn()}
@@ -69,7 +69,7 @@ export const BarStates = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('published · 2 collectives · 6 new turns')).toBeVisible()
+    await expect(canvas.getByText('published, 2 collectives, 6 new turns')).toBeVisible()
     await expect(canvas.getAllByRole('button', { name: 'update' })).toHaveLength(3)
     await expect(canvas.queryByRole('button', { name: 'manage' })).toBeNull()
   },
@@ -143,9 +143,9 @@ export const PopupUpdate = {
       state="ready"
       mode="update"
       onRestore={fn()}
-      changes={{ summary: '6 new turns since you published · 1 new match, redacted' }}
+      changes={{ summary: '6 new turns since you published, 1 new match, redacted' }}
       access={[{ id: 'platform', name: 'Acme Platform', members: 12 }, { id: 'company', name: 'Acme Company', members: 87 }, { id: 'ml', name: 'ML Reading Group', members: 21, pending: 'approval' }]}
-      accessSummary="adds ML Reading Group · removes nothing"
+      accessSummary="adds ML Reading Group, removes nothing"
     />
   ),
 }
@@ -165,7 +165,7 @@ export const Access = {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'remove Acme Platform' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'keep ML Reading Group' })).toBeVisible()
-    await expect(canvas.getByText(/removing · loses access when you update/)).toBeVisible()
+    await expect(canvas.getByText(/removing, loses access when you update/)).toBeVisible()
   },
 }
 
@@ -175,8 +175,8 @@ export const Picker = {
   parameters: { layout: 'padded' },
   render: function PickerStory() {
     const all = [
-      { id: 'platform', name: 'Acme Platform', members: 12, note: 'suggested · repo acme/ingest-api is linked' },
-      { id: 'ml', name: 'ML Reading Group', members: 21, note: 'curated · waits for the owner’s approval' },
+      { id: 'platform', name: 'Acme Platform', members: 12, note: 'suggested, repo acme/ingest-api is linked' },
+      { id: 'ml', name: 'ML Reading Group', members: 21, note: 'curated, waits for the owner’s approval' },
     ]
     const [query, setQuery] = useState('')
     const [added, setAdded] = useState([])
@@ -207,7 +207,7 @@ export const KeyboardWalk = {
         <PublishDialog
           open={open} onClose={() => setOpen(false)} title="Fix flaky ingest test" state={state}
           scan={SCAN} access={ACCESS} done={DONE} onRescan={() => setState('checking')}
-          autoPublish={{ checked: auto, onChange: setAuto, hint: 'selected collectives · overlapping rules still apply · change them in settings' }}
+          autoPublish={{ checked: auto, onChange: setAuto, hint: 'selected collectives, overlapping rules still apply, change them in settings' }}
           onPublish={() => {
             setState('publishing')
             setBar('publishing')

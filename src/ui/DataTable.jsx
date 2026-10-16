@@ -34,6 +34,7 @@ import { useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel,
  * @param {DataTableColumn[]} props.columns                column definitions.
  * @param {Object[]} props.rows                            row objects.
  * @param {boolean} [props.selectable=false]              render the selection column.
+ * @param {boolean} [props.disabled=false]                disable table controls while retaining keyboard scrolling.
  * @param {(row: Object, index: number) => (string|number)} [props.rowKey] stable key per row; defaults to row.id ?? index.
  * @param {DataTableSort} [props.defaultSort=null]        initial sort (uncontrolled).
  * @param {DataTableSort} [props.sort]                    controlled sort.
@@ -58,6 +59,7 @@ export default function DataTable({
   columns,
   rows,
   selectable = false,
+  disabled = false,
   rowKey,
   defaultSort = null,
   sort: sortProp,
@@ -220,13 +222,13 @@ export default function DataTable({
     <div className={`tbl-wrap${selectable ? ' tbl-has-selection' : ''}${className ? ' ' + className : ''}`}>
       <div className="tbl-tools">
         <label htmlFor={`${baseId}-search`}>search rows</label>
-        <input id={`${baseId}-search`} className="input" type="search" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input id={`${baseId}-search`} className="input" type="search" disabled={disabled} value={search} onChange={(e) => setSearch(e.target.value)} />
         <details className="tbl-filters">
           <summary>column filters</summary>
           <div className="tbl-filter-fields">
             {columns.map((col) => <label key={col.key}>
               <span>{col.label}</span>
-              <input className="input" aria-label={`filter ${typeof col.label === 'string' ? col.label : col.key}`} value={columnFilters.find((f) => f.id === col.key)?.value ?? ''} onChange={(e) => setFilters([
+              <input className="input" disabled={disabled} aria-label={`filter ${typeof col.label === 'string' ? col.label : col.key}`} value={columnFilters.find((f) => f.id === col.key)?.value ?? ''} onChange={(e) => setFilters([
                 ...columnFilters.filter((f) => f.id !== col.key),
                 ...(e.target.value ? [{ id: col.key, value: e.target.value }] : []),
               ])} />
@@ -236,8 +238,8 @@ export default function DataTable({
         {(search || columnFilters.length > 0) && <span className="tbl-filter-active">filters active</span>}
       </div>
       <div className="tbl-chips">
-        {search && <button type="button" className="tbl-chip" aria-label="remove search filter" onClick={() => setSearch('')}>search: {search}<X aria-hidden="true" /></button>}
-        {columnFilters.map((filter) => <button key={filter.id} type="button" className="tbl-chip" aria-label={`remove ${filter.id} filter`} onClick={() => setFilters(columnFilters.filter((f) => f.id !== filter.id))}>
+        {search && <button type="button" disabled={disabled} className="tbl-chip" aria-label="remove search filter" onClick={() => setSearch('')}>search: {search}<X aria-hidden="true" /></button>}
+        {columnFilters.map((filter) => <button key={filter.id} type="button" disabled={disabled} className="tbl-chip" aria-label={`remove ${filter.id} filter`} onClick={() => setFilters(columnFilters.filter((f) => f.id !== filter.id))}>
           {columns.find((c) => c.key === filter.id)?.label ?? filter.id}: {String(filter.value)}<X aria-hidden="true" />
         </button>)}
       </div>
@@ -260,6 +262,7 @@ export default function DataTable({
                   <input
                     type="checkbox"
                     className="check-box"
+                    disabled={disabled}
                     checked={table.getIsAllRowsSelected()}
                     ref={(el) => el && (el.indeterminate = table.getIsSomeRowsSelected())}
                     onChange={table.getToggleAllRowsSelectedHandler()}
@@ -282,6 +285,7 @@ export default function DataTable({
                   {col.sortable ? (
                     <button
                       type="button"
+                      disabled={disabled}
                       className={`tbl-sort${isSorted ? ' is-sorted' : ''}`}
                       onClick={table.getColumn(col.key)?.getToggleSortingHandler()}
                     >
@@ -314,6 +318,7 @@ export default function DataTable({
                           id={`${baseId}-row-${r.id}`}
                           type="checkbox"
                           className="check-box"
+                          disabled={disabled}
                           checked={isSel}
                           onChange={r.getToggleSelectedHandler()}
                           aria-label={`select row ${i + 1}`}
@@ -338,9 +343,9 @@ export default function DataTable({
       </div>
       <div className="tbl-footer">
         <span className="tnum" role="status">{countLabel}</span>
-        <button className="btn" type="button" disabled={!table.getCanPreviousPage()} onClick={() => table.previousPage()}>previous page</button>
+        <button className="btn" type="button" disabled={disabled || !table.getCanPreviousPage()} onClick={() => table.previousPage()}>previous page</button>
         <span className="tnum">page {pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}</span>
-        <button className="btn" type="button" disabled={!table.getCanNextPage()} onClick={() => table.nextPage()}>next page</button>
+        <button className="btn" type="button" disabled={disabled || !table.getCanNextPage()} onClick={() => table.nextPage()}>next page</button>
       </div>
     </div>
   )

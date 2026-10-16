@@ -22,7 +22,7 @@ pages:
   - name: sign-in
     view: signin
     providers: [github]
-    text: [the agent sessions behind your team's pull requests, your handle is your GitHub login]
+    text: [the transcripts behind your team's pull requests, your handle is your GitHub login]
     absentButtons: [more sign-in providers]
   - name: collectives
     view: collectives
@@ -33,7 +33,7 @@ pages:
   - name: a collective
     view: collective-detail
     nav: [home, collectives]
-    text: [Acme Platform, who can read, who can publish, your role, '248 transcripts', '12 members', github orgs, a collective links one github org today., '1 owner · 7 members · 4 contributors', transcripts 248, showing 5 of 248]
+    text: [Acme Platform, who can read, who can publish, your role, '248 transcripts', '12 members', github orgs, a collective links one github org today., '1 owner, 7 members, 4 contributors', transcripts 248, showing 5 of 248]
     absentText: [public, showing 5 of 5]
     tableCounts: [showing 5 of 248]
     buttons: [settings, more, manage]
@@ -51,7 +51,7 @@ pages:
     buttons: [sign out, sign out everywhere, delete account]
   - name: transcript page
     view: transcript-detail
-    text: [Fix flaky ingest test, village.peasantlabs.org/transcripts/3f9c0a17, pull requests, show all 5]
+    text: [Port the transcript canvas into the shared package, village.peasantlabs.org/transcripts/3f9c0a17, pull requests, show all 5]
     buttons: [copy link, more]
     absentButtons: [share, chat with trace]
   - name: pull request prompts

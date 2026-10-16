@@ -321,7 +321,7 @@ const DISCLOSURE_STORY = Object.freeze({
 const TRANSCRIPT_SEARCH_TRIGGER = Object.freeze({ name: 'search-trigger', role: Object.freeze({ role: 'button', name: 'search this transcript ⌘F' }), matches: '.txn-search-trigger', count: 1 })
 const TRANSCRIPT_SEARCH_FOCUSED = Object.freeze({ name: 'search-input-focused', selector: '.txn-search-input', focused: true })
 const OFFLINE_RETRY_BUSY = Object.freeze({ name: 'retry-busy', selector: '.cx-offline-retry', attribute: 'aria-busy', value: 'true' })
-const DIGEST_LIST = 'ul[role="listbox"][aria-label="sessions"]'
+const DIGEST_LIST = 'ul[role="listbox"][aria-label="transcripts"]'
 const DIGEST_SECOND_SELECTED = Object.freeze({ name: 'second-option-selected', selector: `${DIGEST_LIST} > li[role="option"]:nth-of-type(2)`, attribute: 'aria-selected', value: 'true' })
 const STATS_PAIRS = Object.freeze({ name: 'pairs', selector: 'ul.sst[aria-label="your sessions in numbers"] > li.sst-pair', count: 6 })
 const PUBLISH_BAR_ACTIONS = Object.freeze({ name: 'bar-actions', selector: '.pub-bar .pub-bar-action', count: 6 })

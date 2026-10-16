@@ -19,6 +19,8 @@ run the checks that cover your change before opening a pull request:
 pnpm gen:check
 pnpm build
 pnpm build:lib
+pnpm test:design-decisions
+pnpm audit:design-decisions
 pnpm pack:check
 pnpm build-storybook
 node scripts/sbsmoke.mjs
@@ -39,7 +41,11 @@ keep changes aligned with `AGENTS.md` and `DESIGN.md` (the design record; `llm/N
 - use tabular numbers for counts and durations
 - lead provider names with `<BrandMark>`
 - preserve 1.5 line-height, at least 24px hit targets, a visible focus ring, and reduced-motion behavior
-- keep copy plain, without em dashes or AI-slop
+- primary publish actions are 36px desktop and 44px on coarse-pointer touch; the standard ring has one inset variant
+- keep skeletons and live dots static; only the named busy-spinner loops during work with motion allowed
+- keep turns expanded but collapsible, tool details and the tool-type filter subgroup initially collapsed
+- user-opened modals trap focus and restore it to their opener; routine status messages do not interrupt
+- keep copy plain, without em dashes, middot separators or AI-slop; navigation is text-first, named providers and companies lead with brand marks
 
 do not hand-edit `public/tokens.json`, `public/components.json`, the frontmatter of `DESIGN.md`, or files under `packages/tokens/`. they are produced by `node scripts/gen-llm-artifacts.mjs`; use `pnpm gen:check` to confirm they are fresh.
 

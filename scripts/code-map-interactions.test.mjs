@@ -371,10 +371,10 @@ function deriveAnnouncement(payload, testCase, semantic, phase) {
   if (!node) throw new Error(`announcement target ${focusedId} is absent from payload`)
   const kind = node.kind === 'file' ? 'file' : 'folder'
   const coverage = Math.round(4 * node.recordedFiles / node.totalFiles)
-  let text = `${node.name || node.id}: ${kind} · coverage ${coverage} of 4`
-  if (node.loc) text += ` · ${node.loc} loc`
-  if (semantic.selectedId === focusedId) text += ' · selected'
-  if (semantic.expandedIds.includes(focusedId)) text += ' · expanded'
+  let text = `${node.name || node.id}: ${kind}, coverage ${coverage} of 4`
+  if (node.loc) text += `, ${node.loc} loc`
+  if (semantic.selectedId === focusedId) text += ', selected'
+  if (semantic.expandedIds.includes(focusedId)) text += ', expanded'
   return text
 }
 

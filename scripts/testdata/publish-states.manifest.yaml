@@ -58,8 +58,8 @@ requiredMutationNames:
 mutations:
   - name: published action reverts to manage
     file: src/ui/Publish.jsx
-    find: "'up to date'].filter(Boolean).join(' · '), action: 'update'"
-    replace: "'up to date'].filter(Boolean).join(' · '), action: 'manage'"
+    find: "'up to date'].filter(Boolean).join(', '), action: 'update'"
+    replace: "'up to date'].filter(Boolean).join(', '), action: 'manage'"
     expectedDiagnostic: "published and up to date: the bar's action must be"
   - name: a failed scan leaves publish on
     file: src/ui/Publish.jsx
@@ -78,8 +78,8 @@ mutations:
     expectedDiagnostic: "every access row's remove button is named remove <collective>"
   - name: auto-publish claims how it was published
     file: src/ui/Publish.jsx
-    find: "`auto-publish on · ${collective}`"
-    replace: "`auto-published on git push · ${collective}`"
+    find: "`auto-publish on, ${collective}`"
+    replace: "`auto-published on git push, ${collective}`"
     expectedDiagnostic: "auto-publish on: the label must read"
   - name: a kept match reads as all redacted
     file: src/ui/Publish.jsx

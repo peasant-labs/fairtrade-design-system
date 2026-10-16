@@ -26,27 +26,27 @@ const GROUPS = [
     id: 'ingest-pipeline',
     label: 'ingest-pipeline',
     items: [
-      { id: 'ip-1', label: 'Parse raw event stream into typed records', meta: '42 turns · jun 3', tokens: 2040 },
-      { id: 'ip-2', label: 'Backfill historical partitions from S3', meta: '18 turns · jun 5', tokens: 1180 },
-      { id: 'ip-3', label: 'Dedupe on idempotency key before write', meta: '27 turns · jun 9', tokens: 1620 },
-      { id: 'ip-4', label: 'Add dead-letter queue for poison messages', meta: '31 turns · jun 12', tokens: 3290 },
+      { id: 'ip-1', label: 'Parse raw event stream into typed records', meta: '42 turns, jun 3', tokens: 2040 },
+      { id: 'ip-2', label: 'Backfill historical partitions from S3', meta: '18 turns, jun 5', tokens: 1180 },
+      { id: 'ip-3', label: 'Dedupe on idempotency key before write', meta: '27 turns, jun 9', tokens: 1620 },
+      { id: 'ip-4', label: 'Add dead-letter queue for poison messages', meta: '31 turns, jun 12', tokens: 3290 },
     ],
   },
   {
     id: 'auth-service',
     label: 'auth-service',
     items: [
-      { id: 'as-1', label: 'Rotate signing keys without downtime', meta: '22 turns · jun 4', tokens: 1530 },
-      { id: 'as-2', label: 'Rate-limit the token endpoint per client', meta: '15 turns · jun 8', tokens: 980 },
-      { id: 'as-3', label: 'Migrate sessions to httpOnly cookies', meta: '38 turns · jun 14', tokens: 2710 },
+      { id: 'as-1', label: 'Rotate signing keys without downtime', meta: '22 turns, jun 4', tokens: 1530 },
+      { id: 'as-2', label: 'Rate-limit the token endpoint per client', meta: '15 turns, jun 8', tokens: 980 },
+      { id: 'as-3', label: 'Migrate sessions to httpOnly cookies', meta: '38 turns, jun 14', tokens: 2710 },
     ],
   },
   {
     id: 'docs-site',
     label: 'docs-site',
     items: [
-      { id: 'ds-1', label: 'Rewrite the quickstart for the new CLI', meta: '12 turns · jun 6', tokens: 760 },
-      { id: 'ds-2', label: 'Add dark-mode tokens to the theme', meta: '9 turns · jun 11', tokens: 540 },
+      { id: 'ds-1', label: 'Rewrite the quickstart for the new CLI', meta: '12 turns, jun 6', tokens: 760 },
+      { id: 'ds-2', label: 'Add dark-mode tokens to the theme', meta: '9 turns, jun 11', tokens: 540 },
     ],
   },
 ]

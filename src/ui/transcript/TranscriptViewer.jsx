@@ -124,7 +124,7 @@ function PhaseDivider({ phase }) {
   return (
     <div className="phase txn-phase">
       <h3 className="lbl"><Icon size={14} aria-hidden="true" /> {phase.label}</h3>
-      <span className="rng tnum">turns {phase.from}–{phase.to}{phase.errors ? ` · ${phase.errors} error` : ''}</span>
+      <span className="rng tnum">turns {phase.from + 1}–{phase.to + 1}{phase.errors ? `, ${phase.errors} error` : ''}</span>
     </div>
   )
 }
@@ -136,7 +136,7 @@ function TaskBoundary({ task }) {
     task.stat || null,
   ]
     .filter(Boolean)
-    .join(' · ')
+    .join(', ')
   return (
     <div className="txn-taskboundary">
       <span className="txn-tb-chip">user turn {task.index}</span>
@@ -146,10 +146,10 @@ function TaskBoundary({ task }) {
 }
 
 function CheckpointMarker({ commit }) {
-  // render the +adds −dels · N files stat when the cooked commit carries churn (render-when-present:
+  // render the +adds −dels, N files stat when the cooked commit carries churn (render-when-present:
   // the adapter populates it from the input commit's churn when available, else hash + message only).
   const stat = commit.adds != null || commit.dels != null || commit.files != null
-    ? `+${commit.adds ?? 0} −${commit.dels ?? 0}${commit.files != null ? ` · ${commit.files} files` : ''}`
+    ? `+${commit.adds ?? 0} −${commit.dels ?? 0}${commit.files != null ? `, ${commit.files} files` : ''}`
     : null
   return (
     <div className="marker txn-checkpoint">
@@ -760,7 +760,7 @@ export default function TranscriptViewer({
         <div className="txn-header-top">
           {/* Host-routable trail: pass `breadcrumb` (+ a router LinkComponent) to
               replace the demo's static sessions/{project}/{id} crumb — hosts have
-              real routes and origin-aware trails (map · node > project > id). */}
+              real routes and origin-aware trails (map, node > project > id). */}
           <nav className="crumb txn-crumb" aria-label="breadcrumb">
             {(breadcrumb ?? [
               { label: 'sessions', href: '#' },
@@ -1151,7 +1151,7 @@ export default function TranscriptViewer({
                 const annoRole = turns.find((t) => t.index === a.turn)?.role
                 return (
                   <Tooltip key={a.id} content={meta.tip}><button type="button" className="txn-anno-row" onClick={() => jumpTo(a.turn)}>
-                    <span className="txn-anno-turn tnum">turn {a.turn}{annoRole ? ' · ' + annoRole : ''}</span>
+                    <span className="txn-anno-turn tnum">turn {a.turn}{annoRole ? ', ' + annoRole : ''}</span>
                     <span className={'chip txn-pill ' + meta.chip}><Icon size={14} aria-hidden="true" /> {meta.label}</span>
                     <span className="txn-anno-label">{a.label}</span>
                     {a.preview && <span className="txn-anno-preview mono">{a.preview}</span>}
@@ -1205,7 +1205,7 @@ export default function TranscriptViewer({
 
       <footer className="txn-footer">
         <div className="txn-hint">
-          <kbd className="kbd-key">⌘</kbd><kbd className="kbd-key">f</kbd> search · <kbd className="kbd-key">j</kbd>/<kbd className="kbd-key">k</kbd> step turns
+          <kbd className="kbd-key">⌘</kbd><kbd className="kbd-key">f</kbd> search, <kbd className="kbd-key">j</kbd>/<kbd className="kbd-key">k</kbd> step turns
         </div>
         {tab === 'trace' && viewMode === 'list' && visibleTurns.length > 0 && (
           <div className="txn-progress tnum" aria-hidden="true">{progress.cur} of {progress.total}</div>

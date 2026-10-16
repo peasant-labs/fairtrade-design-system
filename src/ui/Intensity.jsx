@@ -175,7 +175,7 @@ export function MapNode({
     selected ? 'selected' : null,
   ]
     .filter(Boolean)
-    .join(' · ')
+    .join(', ')
 
   const Tag = as
   const interactive = Tag === 'button'
@@ -202,7 +202,7 @@ export function MapNode({
       </span>
       <span className="ir-node__count">
         {total != null ? `${recorded ?? 0}/${total}` : `cov ${cov}/4`}
-        {loc != null ? ` · ${loc} loc` : ''}
+        {loc != null ? `, ${loc} loc` : ''}
       </span>
       {selected && (
         <span className="ir-node__mark" aria-hidden="true">

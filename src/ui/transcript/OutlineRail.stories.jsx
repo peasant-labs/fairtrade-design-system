@@ -23,7 +23,7 @@ const viewModel = {
   analytics: {
     patternAnnotations: [
       { id: 'a1', kind: 'error', turn: 1, label: 'typecheck failed', preview: 'TS2532' },
-      { id: 'a3', kind: 'subagent', turn: 1, label: 'docs-writer · depth 1' },
+      { id: 'a3', kind: 'subagent', turn: 1, label: 'docs-writer, depth 1' },
     ],
   },
 }

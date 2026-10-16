@@ -140,11 +140,11 @@ flips fixture → wire).
 | `commit.adds` / `dels` / `files` (per-commit churn) | `gitops.DiffStats` per commit — not yet joined to session commits | `BACKEND_SMALL_EXT` + `RENDER_WHEN_PRESENT` | IMPLEMENTED (fixture / legacy shape); SURFACE = ingest ext + columns + migration |
 | `commit.turn` (anchor) | — (`commitTime` → nearest turn at/before it) | `ADAPTER_DERIVED` | IMPLEMENTED (`anchorCommitsToTurns`) |
 | `session.git.{filesChanged,insertions,deletions}` (aggregate) | sum of per-commit churn | `ADAPTER_DERIVED` | IMPLEMENTED (`cookGit`) |
-| `task.stat` / `highlight.stat` (string, e.g. `"+312 −24 · 7 files"`) | cooked from churn at the render edge | `ADAPTER_DERIVED` | IMPLEMENTED |
+| `task.stat` / `highlight.stat` (string, e.g. `"+312 −24, 7 files"`) | cooked from churn at the render edge | `ADAPTER_DERIVED` | IMPLEMENTED |
 
 The same pattern generalises to every cooked field: a component reads `TranscriptViewModel`, never the
 wire; anything optional is **render-when-present** (absent ⇒ the chip / region degrades, never an empty
-`+0 −0 · 0 files`).
+`+0 −0, 0 files`).
 
 ## parse enforcement — why "no wire parse in components" holds
 

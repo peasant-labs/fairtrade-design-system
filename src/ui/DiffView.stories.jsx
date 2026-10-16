@@ -6,7 +6,7 @@ import { frame } from './story-frame.jsx'
    - Default: a realistic 2-hunk Go diff (add a null-guard in a handler, convert a buffered
      loader to a streaming read) with context lines around each change.
    - Redaction: 3 matches (api key, email, bearer token) each redacted to a placeholder,
-     each carrying a category·confidence badge + a keep/revert button.
+     each carrying a category/confidence badge + a keep/revert button.
 
    the theme toolbar flips data-theme; the LightTheme story pins light. classes + diff
    tokens come from src/index.css; the dv-* rules come from DiffView.css. */
@@ -124,7 +124,7 @@ export const Redaction = {
     // the header tallies the redacted count.
     expect(canvas.getByText('redacted')).toBeInTheDocument()
 
-    // each match shows its category · confidence badge.
+    // each match shows its category/confidence badge.
     expect(canvas.getByText('api-key')).toBeInTheDocument()
     expect(canvas.getByText('0.98')).toBeInTheDocument()
     expect(canvas.getByText('bearer-token')).toBeInTheDocument()

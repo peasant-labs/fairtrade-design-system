@@ -111,7 +111,7 @@ export function GraphTurnNode({
   const flag = hasError ? 'error' : hasRetry ? 'retry' : hasRevert ? 're-edit' : null
   const tokenTitle =
     tokensIn != null || tokensOut != null
-      ? `${tokensIn ?? 0} in · ${tokensOut ?? 0} out`
+      ? `${tokensIn ?? 0} in, ${tokensOut ?? 0} out`
       : undefined
 
   const cls = [
@@ -133,7 +133,7 @@ export function GraphTurnNode({
     <div className={cls} style={style} data-role={label} data-turn={turnNumber}>
       <header className="ft-gnode-head">
         <span className="ft-gnode-role">{label}</span>
-        {agentName && <span className="ft-gnode-agent">· {agentName}</span>}
+        {agentName && <span className="ft-gnode-agent">, {agentName}</span>}
         <span className="ft-gnode-num">#{turnNumber}</span>
         {flag && (
           <span className={`ft-gnode-flag ft-gnode-flag-${hasError ? 'err' : 'warn'}`}>{flag}</span>

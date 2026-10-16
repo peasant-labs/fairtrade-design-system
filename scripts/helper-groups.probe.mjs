@@ -196,7 +196,7 @@ try {
       assert.equal(await page.$$eval('.helper-thread-marker', (els) => els.length), 0, 'revealed rows carry no inset marker')
       assert.equal(await page.$$eval('.helper-group-members [data-thread-id]', (rows) => rows.every((el) =>
         el.querySelector('.helper-thread-facts') && el.querySelector('.helper-thread-sep') && el.querySelector('.helper-thread-open'))), true,
-        'every member row reads as title + middot facts + authorized link')
+        'every member row reads as title + comma-separated facts + authorized link')
       // The connector geometry is measured, not authored: its first point sits
       // RAIL_CAP above the first mounted checkbox centre, its last the same
       // below the last, every x is an anchor column, and one horizontal step

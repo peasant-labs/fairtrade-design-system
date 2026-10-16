@@ -22,4 +22,9 @@
 - Import components from the `src/ui` barrel; they emit token-styled classes from `src/index.css`.
 - Never hardcode a colour or size - reference a token. Keep both themes and WCAG AA contrast.
 - Name a company with its real logo via `<BrandMark name="claude|gemini|openai|cursor|opencode" />`.
+- Navigation is text-first; the github account row still leads with its real brand mark.
+- Chrome is mono 14; reading content is at least 16px. Never use middot separators.
+- Turns start expanded but collapsible; tool details and the persisted tool-type filter subgroup start collapsed.
+- User-opened modals trap and restore focus. Primary publish actions are 36px desktop / 44px coarse-pointer touch.
+- Motion is static-first, with only the named busy-spinner exception during work when motion is allowed; the standard ring has one inset variant.
 - `public/tokens.json`, `public/components.json` and the frontmatter of `DESIGN.md` are generated; run `node scripts/gen-llm-artifacts.mjs` (never hand-edit).

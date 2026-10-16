@@ -767,7 +767,7 @@ function makeBand(id, label, value, band, flags) {
   const out = { id, label, band, value, icon: id }
   if (flags.length) {
     out.flags = flags
-    out.detail = flags.join(' · ')
+    out.detail = flags.join(', ')
   }
   return out
 }
@@ -807,13 +807,13 @@ function taskToVM(tg, i, turns) {
   const vm = { id: `task-${i + 1}`, index: i + 1, prompt: tg.prompt, turnIndices, outcome: tg.hasErrors ? 'error' : 'ok' }
   if (tg.durationMs) vm.durationMs = tg.durationMs
   if (tg.toolCallCount) vm.tools = tg.toolCallCount
-  // cooked churn/files summary for the task boundary chip, e.g. "2 files · +316 −25"
+  // cooked churn/files summary for the task boundary chip, e.g. "2 files, +316 −25"
   // (render-when-present: omitted for a read-only task with no files touched).
   const fileCount = tg.filesTouched.length
   const stat = []
   if (fileCount > 0) stat.push(`${fileCount} ${fileCount === 1 ? 'file' : 'files'}`)
   if (tg.insertions > 0 || tg.deletions > 0) stat.push(`+${tg.insertions} −${tg.deletions}`)
-  if (stat.length) vm.stat = stat.join(' · ')
+  if (stat.length) vm.stat = stat.join(', ')
   return vm
 }
 

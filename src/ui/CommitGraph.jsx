@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Star, GitMerge, ChevronDown } from 'lucide-react'
 import { ProviderName } from './ProviderIcon.jsx'
+import { formatDate } from './format.js'
 import SessionLane from './graph/SessionLane.jsx'
 import GhostGroup from './graph/GhostGroup.jsx'
 import SessionOverflowDisclosure from './graph/SessionOverflowDisclosure.jsx'
@@ -470,7 +471,7 @@ function CommitRow({ row, width, selected, onNavigate, onSelect, onOpenSession, 
                 <span className="cg-session-title">{session.title || session.sessionId}</span>
                 {session.startMs != null && (
                   <time className="cg-session-time tnum" dateTime={new Date(session.startMs).toISOString()}>
-                    {new Date(session.startMs).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toLowerCase()}
+                    {formatDate(session.startMs)}
                   </time>
                 )}
               </button>

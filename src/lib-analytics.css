@@ -45,7 +45,7 @@
   @media (prefers-reduced-motion: no-preference) { .gan-seg { transition: color var(--dur-1), border-color var(--dur-1), background var(--dur-1); } }
   .gan-seg:hover { color: var(--ink); border-color: var(--amber-dim); }
   .gan-seg:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-  .gan-seg.is-on { color: var(--ink); border-color: var(--rule-strong); background: var(--surface-2); }
+  .gan-seg.is-on { color: var(--amber-fill-ink); border-color: var(--amber-fill); background: var(--amber-fill); }
   .gan-seg.is-on { font-weight: 700; border-bottom-width: var(--stroke-emphasis); }
 
   /* ---- KPI stat tiles ---- */

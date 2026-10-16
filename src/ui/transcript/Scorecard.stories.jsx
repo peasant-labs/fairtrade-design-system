@@ -7,7 +7,7 @@ import { frame } from '../story-frame.jsx'
 
 const bands = [
   { id: 'token', label: 'token efficiency', band: 'watch', value: '8% retry tokens', detail: '1,300 tokens spent on the retry after typecheck' },
-  { id: 'prompt', label: 'prompt quality', band: 'ok', value: 'spec 72/100', detail: 'has examples · no explicit constraints' },
+  { id: 'prompt', label: 'prompt quality', band: 'ok', value: 'spec 72/100', detail: 'has examples, no explicit constraints' },
   { id: 'loop', label: 'loop efficiency', band: 'good', value: '1 max error streak', detail: 'recovered in 1 turn' },
 ]
 

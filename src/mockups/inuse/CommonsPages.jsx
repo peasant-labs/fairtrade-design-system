@@ -13,6 +13,7 @@ import {
   SignInProviders,
   StatsStrip,
   TranscriptViewer,
+  BrandMark,
 } from '../../ui'
 import {
   COLLECTIVE,
@@ -55,7 +56,7 @@ export function SignInPage({ onSignIn }) {
     <div className="iu-page cmg-signin">
       <div className="cmg-signin-card">
         <p className="cmg-signin-brand mono">village</p>
-        <h2 className="iu-page-title">the agent sessions behind your team&apos;s pull requests</h2>
+        <h2 className="iu-page-title">the transcripts behind your team&apos;s pull requests</h2>
         <p className="iu-page-sub">peasant records your AI coding sessions on your machine. village keeps the ones you publish, shared with your collectives, and links them to pull requests.</p>
         <SignInProviders onSignIn={onSignIn} />
         <ul className="cmg-signin-notes">
@@ -85,12 +86,12 @@ export function VillageHome({ onNavigate }) {
           <ProviderIcon harness={row.harness} accent />
           <span className="iu-session-text">
             <a className="iu-session-title" href={demoHref('transcript-detail')} onClick={(event) => { event.preventDefault(); onNavigate?.('transcript-detail') }}>{row.title}</a>
-            <span className="iu-session-sub">{harnessName(row.harness)} · {row.project} · {row.branch}</span>
+            <span className="iu-session-sub">{harnessName(row.harness)}, {row.project}, {row.branch}</span>
           </span>
         </span>
       ),
     },
-    { key: 'sharedWith', label: 'shared with', render: (_, row) => <span className="cmg-shared">{row.sharedWith.map((name) => <span key={name}>{name}{row.waiting ? ' · waiting' : ''}</span>)}</span> },
+    { key: 'sharedWith', label: 'shared with', render: (_, row) => <span className="cmg-shared">{row.sharedWith.map((name) => <span key={name}>{name}{row.waiting ? ', waiting' : ''}</span>)}</span> },
     { key: 'pullRequests', label: 'pull requests', render: (_, row) => <OverflowList items={prLinks(row.pullRequests, () => onNavigate?.('pull-request'))} label="pull requests" noun={['pull request', 'pull requests']} empty={<span className="cmg-none">none</span>} /> },
     { key: 'when', label: 'when' },
   ]
@@ -98,7 +99,7 @@ export function VillageHome({ onNavigate }) {
     <div className="iu-page">
       <header className="iu-page-head">
         <h2 className="iu-page-title">your transcripts</h2>
-        <p className="iu-page-sub">sessions you published from peasant. only the collectives you picked can read each one.</p>
+        <p className="iu-page-sub">transcripts you published from peasant. only the collectives you picked can read each one.</p>
       </header>
       <StatsStrip items={HOME_STATS} label="your transcripts in numbers" />
       <div className="cmg-home">
@@ -125,7 +126,7 @@ export function VillageHome({ onNavigate }) {
               {MY_COLLECTIVES.map((collective) => (
                 <li key={collective.id}>
                   <button type="button" className="cmg-rail-link" onClick={() => onNavigate?.('collective-detail')}>{collective.name}</button>
-                  <span className="cmg-rail-meta">{collective.role} · <span className="tnum">{collective.members}</span> members</span>
+                  <span className="cmg-rail-meta">{collective.role}, <span className="tnum">{collective.members}</span> members</span>
                 </li>
               ))}
             </ul>
@@ -218,7 +219,7 @@ export function AccountSettingsView({ actions = {} } = {}) {
         </SettingGroup>
         <SettingGroup label="connections" defaultOpen count={2} noun={['connection', 'connections']}>
           <div className="srow">
-            <span className="srow-text-col"><span className="srow-label">github · {VIEWER.login}</span><span className="srow-help">you sign in to village with this account.</span></span>
+            <span className="srow-text-col"><span className="srow-label"><BrandMark name="github" /> github, {VIEWER.login}</span><span className="srow-help">you sign in to village with this account.</span></span>
             <button type="button" className="btn btn-secondary btn-sm">sign out</button>
           </div>
           <div className="srow">
@@ -252,7 +253,7 @@ function PullRequestList({ onOpen }) {
         {shown.map((pr) => (
           <li key={pr.id}>
             <a className="cmg-pr-link mono" href={demoHref('pull-request')} onClick={(event) => { event.preventDefault(); onOpen?.() }}>{pr.repo} <span className="tnum">#{pr.number}</span></a>
-            <span className="cmg-none">{pr.state}{pr.traced ? ` · ${pr.traced}` : ''}</span>
+            <span className="cmg-none">{pr.state}{pr.traced ? `, ${pr.traced}` : ''}</span>
           </li>
         ))}
       </ul>

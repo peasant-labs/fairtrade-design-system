@@ -1,4 +1,5 @@
 requiredCaseNames:
+  - disabled controls retain the named scroll region
   - uncontrolled search filters rows
   - uncontrolled column filter seeds a removable chip
   - uncontrolled pagination slices local data

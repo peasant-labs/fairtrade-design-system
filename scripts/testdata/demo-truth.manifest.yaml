@@ -1,0 +1,114 @@
+requiredCaseNames:
+  - published copies are transcripts
+  - analytics uses session vocabulary
+  - transcript counts use lowercase k
+  - village counts use lowercase k
+  - dates use lowercase month and year
+  - one overflow session is singular
+  - returning provider has its mark
+  - github account has its mark
+  - offline home is stale and inert
+  - settings describes enabled and blocked rules
+  - transcript turn totals and phases agree
+  - changes legend is literal
+  - local transcript replaces archived app name
+  - village title follows transcript fixture
+  - direct publish success also sets published bar
+requiredMutationNames:
+  - stale published vocabulary
+  - stale analytics vocabulary
+  - uppercase count suffix
+  - wrong transcript token magnitude
+  - uppercase calendar month
+  - plural single overflow
+  - missing returning provider mark
+  - missing canonical returning provider mark
+  - missing github mark
+  - offline controls stay enabled
+  - contradictory settings copy
+  - wrong turn total
+  - metaphorical changes legend
+  - archived app title
+  - false village title
+  - success leaves unpublished bar
+mutations:
+  - name: stale published vocabulary
+    file: src/ui/PromptDigest.jsx
+    find: '<dt className="pd-label">transcripts</dt>'
+    replace: '<dt className="pd-label">sessions</dt>'
+    expectedDiagnostic: published copies are transcripts
+  - name: stale analytics vocabulary
+    file: src/ui/analytics/ProjectOverview.jsx
+    find: 'label="sessions linked to commits"'
+    replace: 'label="session → commit"'
+    expectedDiagnostic: analytics uses session vocabulary
+  - name: uppercase count suffix
+    file: src/ui/format.js
+    find: '.format(value).toLowerCase()'
+    replace: '.format(value)'
+    expectedDiagnostic: village counts use lowercase k
+  - name: wrong transcript token magnitude
+    file: src/mockups/inuse/TranscriptApp.jsx
+    find: 'totalTokens: 18400'
+    replace: 'totalTokens: 184000'
+    expectedDiagnostic: transcript counts use lowercase k
+  - name: uppercase calendar month
+    file: src/ui/format.js
+    find: "timeZone: 'UTC' }).toLowerCase()"
+    replace: "timeZone: 'UTC' })"
+    expectedDiagnostic: dates use lowercase month and year
+  - name: plural single overflow
+    file: src/ui/graph/SessionOverflowDisclosure.jsx
+    find: "sessions: 'session'"
+    replace: "sessions: 'sessions'"
+    expectedDiagnostic: one overflow session is singular
+  - name: missing returning provider mark
+    file: src/mockups/inuse/CommonsExplore.jsx
+    find: 'returned to <BrandMark name="claude" /> claude'
+    replace: 'returned to claude'
+    expectedDiagnostic: returning provider has its mark
+  - name: missing canonical returning provider mark
+    file: src/ui/transcript/TurnCard.jsx
+    find: 'returned to <BrandMark name="claude" /> claude'
+    replace: 'returned to claude'
+    expectedDiagnostic: transcript turn totals and phases agree
+  - name: missing github mark
+    file: src/mockups/inuse/CommonsPages.jsx
+    find: '<BrandMark name="github" /> github'
+    replace: 'github'
+    expectedDiagnostic: github account has its mark
+  - name: offline controls stay enabled
+    file: src/mockups/inuse/GraphApp.jsx
+    find: '<HomeView offline={offline} />'
+    replace: '<HomeView />'
+    expectedDiagnostic: offline home is stale and inert
+  - name: contradictory settings copy
+    file: src/mockups/inuse/local-fixture.js
+    find: 'picked at setup. automatic publishing is controlled by the folder rules below.'
+    replace: 'picked at setup. it never publishes on its own.'
+    expectedDiagnostic: settings describes enabled and blocked rules
+  - name: wrong turn total
+    file: src/mockups/inuse/TranscriptApp.jsx
+    find: 'turnCount: TURNS.length'
+    replace: 'turnCount: 8'
+    expectedDiagnostic: transcript turn totals and phases agree
+  - name: metaphorical changes legend
+    file: src/ui/graph/Changes.jsx
+    find: 'a star marks a recorded session'
+    replace: 'a filled dot also flies a sparkle'
+    expectedDiagnostic: changes legend is literal
+  - name: archived app title
+    file: src/mockups/inuse/InUseShell.jsx
+    find: "mark: 'peasant transcript'"
+    replace: "mark: 'transcript-browser'"
+    expectedDiagnostic: local transcript replaces archived app name
+  - name: false village title
+    file: src/mockups/inuse/CommonsApp.jsx
+    find: 'return demoTranscriptViewModel()'
+    replace: "const vm = demoTranscriptViewModel(); return { ...vm, session: { ...vm.session, title: 'Fix flaky ingest test' } }"
+    expectedDiagnostic: village title follows transcript fixture
+  - name: success leaves unpublished bar
+    file: src/mockups/inuse/PublishFlowDemo.jsx
+    find: "popup === 'done' || popup === 'waits-approval' ? 'published'"
+    replace: "popup === 'done' || popup === 'waits-approval' ? 'not-published'"
+    expectedDiagnostic: direct publish success also sets published bar

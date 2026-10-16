@@ -1,0 +1,79 @@
+themes: [dark, light]
+cases:
+  - name: offline home
+    query: app=graph&section=home&local=offline
+    width: 390
+    root: .iu-page
+    text: [last loaded 14:32:05, weeks with sessions]
+    disabled: '.iu-page input, .iu-page select, .iu-page button'
+    tabular: '.iu-page time.tnum'
+  - name: folder settings
+    query: app=graph&section=settings
+    width: 390
+    root: .iu-page
+    text: [automatic publishing is controlled by the folder rules below., except acme/worker]
+    absent: [it never publishes on its own.]
+    focus: '.srow:has-text("except acme/worker")'
+  - name: project analytics
+    query: app=graph&section=analytics
+    width: 1440
+    root: .gan-root
+    text: [new sessions, sessions linked to commits, weeks with sessions]
+    absent: [acquisition signal, paints from design tokens]
+    action: '.gan-tile summary'
+  - name: changes legend
+    query: app=graph&section=changes
+    width: 1440
+    root: .gmp-changes-root
+    text: [a star marks a recorded session, +1 more session]
+    absent: [flies a sparkle, +1 more sessions]
+  - name: local transcript
+    query: app=transcript
+    width: 390
+    root: .txn-app
+    text: [9 turns, 18.4k tokens, turns 1–3, fairtrade-design-system, returned to claude]
+    absent: [8 turns, turns 0–2, transcript-browser]
+    tabular: .txn-app .rng
+    marks: ['.subtask-foot [data-brand="claude"]']
+    focus: .subtask-foot
+  - name: village transcript
+    query: app=commons&commons=transcript-detail
+    width: 1440
+    root: .txn-app
+    text: [Port the transcript canvas into the shared package, 9 turns, returned to claude]
+    absent: [Fix flaky ingest test]
+    marks: ['.subtask-foot [data-brand="claude"]']
+    focus: .subtask-foot
+  - name: village account
+    query: app=commons&commons=account
+    width: 390
+    root: .iu-page
+    text: [github]
+    marks: ['.srow-label [data-brand="github"]']
+    focus: '.srow:has([data-brand="github"])'
+  - name: published pull request digest
+    query: app=commons&commons=pull-request
+    width: 1440
+    root: .pd
+    text: [transcripts, open pull request digest]
+    absent: [view on village]
+  - name: published completion
+    query: app=transcript&publish=done
+    width: 390
+    root: .pub-bar
+    text: [published]
+    absent: [not published]
+  - name: returned provider
+    query: app=commons&commons=explore-transcript
+    width: 1440
+    root: .cex-detail
+    text: [returned to claude, 412.3k tokens]
+    marks: ['.subtask-foot [data-brand="claude"]']
+    focus: .subtask-foot
+  - name: village calendar dates
+    query: app=commons&commons=explore
+    width: 1440
+    root: .cex-root
+    text: ['jun 14, 2026']
+    absent: ['Jun 14']
+    tabular: .cex-date

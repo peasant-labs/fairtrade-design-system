@@ -15,7 +15,7 @@ fetching, routing, authorization, eligibility, and explicit selection callbacks.
   ordinary child exits stay intact. Keep distinct unresolved containers keyed by
   their distinct backend group IDs.
 - The owner row anchors the tree: its checkbox, its verbatim title, and its mono
-  facts line with middot separators. Ticking the owner is the tree's default
+  facts line with comma separators. Ticking the owner is the tree's default
   auto-select: it selects the owner and every helper member disclosed under it;
   unticking the owner clears the owner and those members.
 - Each `HelperGroup` steps ONE indent (`--sp-7`) inside the tree, and its count
@@ -25,7 +25,7 @@ fetching, routing, authorization, eligibility, and explicit selection callbacks.
   chevron, the count in tabular mono, `, N selected` when members are selected,
   and `show`/`hide` on the trailing edge.
 - Member rows render only while a chip is open, separated from it by a top rule.
-  Each is a row like the owner's: title, middot facts, an individual checkbox, and
+  Each is a row like the owner's: title, comma-separated facts, an individual checkbox, and
   host-authorized navigation. There is no left vertical rule and no corner glyph.
 - ONE continuous connector (`.helper-tree-rail`) traces the centre of every
   MOUNTED row checkbox, so a row the host never mounted is never traced. It is

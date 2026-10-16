@@ -138,7 +138,7 @@ export const Combined = {
               color: 'var(--ink-3)',
             }}
           >
-            signed in with: {provider ?? '—'} · claimed: {handle ? `@${handle}` : '—'}
+            signed in with: {provider ?? '—'}, claimed: {handle ? `@${handle}` : '—'}
           </p>
         </div>
       )

@@ -288,7 +288,7 @@ cases:
         disclosures: [{id: internal, expanded: false}, {id: solo, expanded: false}]
         disclosureExpandedIds: []
         transform: 'translate(10px, 20px) scale(1)'
-        status: {role: status, ariaLive: polite, text: 'internal: folder · coverage 3 of 4 · 820 loc'}
+        status: {role: status, ariaLive: polite, text: 'internal: folder, coverage 3 of 4, 820 loc'}
         structure: *canvas_structure
     expectedTransformRelation: same
 
@@ -377,7 +377,7 @@ cases:
         disclosures: [{id: internal, expanded: false}, {id: solo, expanded: false}]
         disclosureExpandedIds: []
         transform: 'translate(10px, 20px) scale(1)'
-        status: {role: status, ariaLive: polite, text: 'internal: folder · coverage 3 of 4 · 820 loc · selected'}
+        status: {role: status, ariaLive: polite, text: 'internal: folder, coverage 3 of 4, 820 loc, selected'}
         structure: *canvas_structure
     expectedTransformRelation: same
 
@@ -410,7 +410,7 @@ cases:
         disclosures: [{id: internal, expanded: false}, {id: solo, expanded: false}]
         disclosureExpandedIds: []
         transform: *legacy_collapsed_transform
-        status: {role: status, ariaLive: polite, text: 'internal: folder · coverage 3 of 4 · 820 loc'}
+        status: {role: status, ariaLive: polite, text: 'internal: folder, coverage 3 of 4, 820 loc'}
         structure: *canvas_structure
     expectedTransformRelation: same
 
@@ -449,6 +449,6 @@ cases:
         # single revealed `internal/ingest` clamps to the max zoom (scale 2.4);
         # still a `change` from the pre-double-click framing below.
         transform: 'translate(-153.4px, -331.2px) scale(2.4)'
-        status: {role: status, ariaLive: polite, text: 'internal: folder · coverage 3 of 4 · 820 loc · selected · expanded'}
+        status: {role: status, ariaLive: polite, text: 'internal: folder, coverage 3 of 4, 820 loc, selected, expanded'}
         structure: *canvas_structure
     expectedTransformRelation: change

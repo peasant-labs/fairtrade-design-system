@@ -62,7 +62,7 @@ expectedSessionId: sess-doi
 expectedAnimationIterationCount: '1'
 changesOverflow:
   commitHash: c1d4a3
-  toggleLabel: 1 more sessions
+  toggleLabel: 1 more session
   thirdSessionTitle: Verify map session links
   sessionId: session-map-links
   sourceText: commit c1d4a3

@@ -240,7 +240,7 @@
   min-width: 0;
 }
 
-/* category · confidence badge — square, hairline, mono, tabular confidence. */
+/* category/confidence badge — square, hairline, mono, tabular confidence. */
 .rdx-badge {
   position: relative;
   display: inline-flex;

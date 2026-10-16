@@ -1,7 +1,7 @@
 cases:
   - {name: navigator disclosure is redundant to the tree item, component: navigator, selector: .gmp-navigator-disclosure, attribute: aria-hidden, expected: 'true'}
   - {name: session spine is a list item, component: commits, selector: .cg-session-spine, attribute: role, expected: listitem}
-  - {name: ranked intensity has bounded precision, component: ranked, selector: .tlp-ranked-doi, attribute: aria-label, expected: 'api · 0.74 of 1 recorded · 200 loc'}
+  - {name: ranked intensity has bounded precision, component: ranked, selector: .tlp-ranked-doi, attribute: aria-label, expected: 'api, 0.74 of 1 recorded, 200 loc'}
   - {name: session selection does not duplicate pressed state, component: session, selector: '[aria-live], [role="status"]', absent: true}
   - {name: ghost disclosure does not duplicate expanded state, component: ghosts, selector: '[aria-live], [role="status"]', absent: true}
   - {name: scent filter does not duplicate pressed state, component: scent, selector: '[aria-live], [role="status"]', absent: true}

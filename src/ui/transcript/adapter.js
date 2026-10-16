@@ -289,7 +289,7 @@ function makePreview(call) {
   if (filePath) return filePath
   if (!a) return preview(call.arguments, 80)
   if (typeof a.command === 'string') return preview(a.command, 100)
-  // search / grep → "pattern · scope · N matches": scope is in the wire args, the count comes off the
+  // search / grep → "pattern, scope, N matches": scope is in the wire args, the count comes off the
   // wire result. All three are real wire signals a consumer wants surfaced (not just the bare pattern).
   if (typeof a.pattern === 'string') {
     const scope = typeof a.path === 'string' ? a.path : typeof a.glob === 'string' ? a.glob : undefined
@@ -301,16 +301,16 @@ function makePreview(call) {
         : undefined
     return [a.pattern, scope, n != null ? `${n} ${n === 1 ? 'match' : 'matches'}` : undefined]
       .filter(Boolean)
-      .join(' · ')
+      .join(', ')
   }
   if (typeof a.url === 'string') return a.url
   if (typeof a.query === 'string') return preview(a.query, 100)
-  // task / subagent → "agent · description" (both are wire args)
+  // task / subagent → "agent, description" (both are wire args)
   const agent =
     typeof a.subagent_type === 'string' ? a.subagent_type
       : typeof a.subagent === 'string' ? a.subagent
         : typeof a.agent === 'string' ? a.agent : undefined
-  if (agent && typeof a.description === 'string') return `${agent} · ${a.description}`
+  if (agent && typeof a.description === 'string') return `${agent}, ${a.description}`
   if (typeof a.description === 'string') return preview(a.description, 100)
   if (typeof a.subject === 'string') return preview(a.subject, 100)
   if (typeof a.prompt === 'string') return preview(a.prompt, 100)

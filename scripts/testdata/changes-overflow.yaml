@@ -50,7 +50,7 @@ cases:
           hasCommitBinding: true
     expect:
       commitHash: commit-overflow
-      toggleLabel: 1 more sessions
+      toggleLabel: 1 more session
       inlineTitles: [First linked session, Second linked session]
       thirdSessionTitle: Third linked session
       expectedNavigation:

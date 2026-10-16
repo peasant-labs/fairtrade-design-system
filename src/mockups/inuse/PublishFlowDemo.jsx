@@ -19,11 +19,11 @@ const SCAN = {
   ],
 }
 const SUGGESTED = [
-  { id: 'platform', name: 'Acme Platform', members: 12, note: 'suggested · repo acme/ingest-api is linked' },
-  { id: 'company', name: 'Acme Company', members: 87, note: 'suggested · github org acme' },
+  { id: 'platform', name: 'Acme Platform', members: 12, note: 'suggested, repo acme/ingest-api is linked' },
+  { id: 'company', name: 'Acme Company', members: 87, note: 'suggested, github org acme' },
 ]
 const OTHERS = [
-  { id: 'ml', name: 'ML Reading Group', members: 21, note: 'curated · waits for the owner’s approval', curated: true },
+  { id: 'ml', name: 'ML Reading Group', members: 21, note: 'curated, waits for the owner’s approval', curated: true },
 ]
 const DONE = { url: 'https://village.peasantlabs.org/transcripts/3f9c0a17', pullRequest: { number: 42, branch: 'fix/flaky-ingest', href: '?app=commons&commons=pull-request#inuse' } }
 const MORE_ITEMS = [
@@ -37,7 +37,7 @@ function initial() {
   const bar = params.get('bar')
   return {
     popup: PUBLISH_DIALOG_STATES.includes(popup) ? popup : null,
-    bar: PUBLISH_STATES.includes(bar) ? bar : 'not-published',
+    bar: popup === 'done' || popup === 'waits-approval' ? 'published' : popup === 'publishing' ? 'publishing' : PUBLISH_STATES.includes(bar) ? bar : 'not-published',
   }
 }
 
@@ -94,7 +94,7 @@ export function usePublishFlow() {
       state={popup ?? 'ready'}
       scan={SCAN}
       onRescan={scan}
-      changes={{ summary: '6 new turns since you published · 1 new match, redacted' }}
+      changes={{ summary: '6 new turns since you published, 1 new match, redacted' }}
       access={access}
       onRemove={(id) => setAccess((items) => (published
         ? items.map((item) => (item.id === id ? { ...item, pending: 'removal' } : item))
@@ -127,5 +127,5 @@ function summarizeChange(access) {
   const adds = access.filter((item) => item.pending === 'adding' || item.pending === 'approval').map((item) => item.name)
   const removes = access.filter((item) => item.pending === 'removal').map((item) => item.name)
   if (!adds.length && !removes.length) return 'leave access as it is and update just sends the new turns.'
-  return `${adds.length ? `adds ${adds.join(', ')}` : 'adds nothing'} · ${removes.length ? `removes ${removes.join(', ')}` : 'removes nothing'}`
+  return `${adds.length ? `adds ${adds.join(', ')}` : 'adds nothing'}, ${removes.length ? `removes ${removes.join(', ')}` : 'removes nothing'}`
 }

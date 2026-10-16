@@ -684,7 +684,7 @@ function ProjectRail({ tasks, total, showAll, onShowAll, filter, onFilter }) {
   return (
     <div className="sidebar gmp-rail-inner">
       <div className="sb-sec">
-        <div className="sb-head">project · peasant-labs/peasant</div>
+        <div className="sb-head">project, peasant-labs/peasant</div>
         <div className="gmp-rail-pad">
           <div className="gmp-coverage">
             <div className="gmp-coverage-top">
@@ -802,7 +802,7 @@ function NodeRail({ node, detail, onSelectNode }) {
               <span style={{ width: Math.round(cov * 100) + '%' }} />
             </div>
             <div className="gmp-coverage-sub mono">
-              {detail.sessions} conversations · {detail.convos.filter((c) => c.kind === 'task').reduce((s, c) => s + c.requests, 0)} requests · last touch 5h ago
+              {detail.sessions} conversations, {detail.convos.filter((c) => c.kind === 'task').reduce((s, c) => s + c.requests, 0)} requests, last touch 5h ago
             </div>
           </div>
         </div>
@@ -831,7 +831,7 @@ function NodeRail({ node, detail, onSelectNode }) {
                     )}
                   </span>
                   <span className="gmp-convo-task-sub mono">
-                    {c.mods.join(', ')} · {c.requests} requests
+                    {c.mods.join(', ')}, {c.requests} requests
                   </span>
                   {c.labels.length > 0 && (
                     <span className="gmp-label-chips">

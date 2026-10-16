@@ -283,7 +283,7 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {number} [tools]               tool-call count in the task
  * @property {'ok' | 'error'} [outcome]
  * @property {string} [error]               short error label when outcome === 'error'
- * @property {string} [stat]                cooked churn/files summary, e.g. "2 files · +316 −25" (render-when-present)
+ * @property {string} [stat]                cooked churn/files summary, e.g. "2 files, +316 −25" (render-when-present)
  */
 
 /* ── Highlights (the HIGHLIGHTS tab) ─────────────────────────────────────────── */
@@ -298,7 +298,7 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {string} title
  * @property {string} [sub]
  * @property {string} [icon]                semantic icon key (consumer maps to a glyph)
- * @property {string} [stat]                e.g. "+312 −24 · 7 files"
+ * @property {string} [stat]                e.g. "+312 −24, 7 files"
  * @property {string} [time]
  * @property {string} [tokens]
  * @property {boolean} [err]                error styling

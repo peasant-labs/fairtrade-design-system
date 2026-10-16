@@ -65,14 +65,14 @@ export const WeeklyMetricToggleSwapsSeries = {
     // Starts on the active-contributor series; the subtitle carries the
     // current series' total.
     await expect(toggle.getByRole('button', { name: 'active' })).toHaveAttribute('aria-pressed', 'true')
-    await expect(canvas.getByText('distinct contributors active each week · 7 active')).toBeInTheDocument()
+    await expect(canvas.getByText('distinct contributors active each week, 7 active')).toBeInTheDocument()
 
     // Switching to "new" swaps the card's subtitle/series without touching
     // its title or the standalone new-contributors card (whose aside stays
     // the only exact "3 new" text — the subtitle's is merged).
     await userEvent.click(toggle.getByRole('button', { name: 'new' }))
     await waitFor(() =>
-      expect(canvas.getByText('new contributors per week · 3 new')).toBeInTheDocument(),
+      expect(canvas.getByText('new contributors per week, 3 new')).toBeInTheDocument(),
     )
     await expect(canvas.getByText('3 new')).toBeInTheDocument()
     await expect(canvas.getByText('weekly active contributors')).toBeInTheDocument()

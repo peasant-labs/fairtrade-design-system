@@ -42,7 +42,7 @@ export default function TranscriptOutcomeChip({ outcome, className = '' }) {
   const Icon = visual.icon
   const cls = ['chip', `chip-${visual.chipTone}`, className].filter(Boolean).join(' ')
   return (
-    <span className={cls} title={`outcome · ${visual.label}`}>
+    <span className={cls} title={`outcome, ${visual.label}`}>
       <Icon size={14} aria-hidden="true" /> {visual.label}
     </span>
   )

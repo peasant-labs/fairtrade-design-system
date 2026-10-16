@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { formatCount as compactCount } from '../format.js'
 import { ChevronRight, FileCode, Folder, Map as MapIcon, Search } from 'lucide-react'
 import { createCodeMapState, deriveCodeMapView } from './codeMapState.js'
 
@@ -263,7 +264,7 @@ function expandedIdsKey(ids) {
 }
 
 function formatCount(value) {
-  return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value) || 0)
+  return compactCount(Number(value) || 0)
 }
 
 function formatCoverage(recorded, total) {
