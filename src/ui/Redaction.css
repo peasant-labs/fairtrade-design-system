@@ -495,7 +495,7 @@
   align-items: flex-start;
   gap: var(--sp-2);
   padding-left: var(--sp-3);
-  border-left: 3px solid var(--rule);
+  border-left: var(--stroke-emphasis) solid var(--rule);
 }
 .rdx-trow-sent { border-left-color: var(--add-rail); }
 .rdx-trow-private { border-left-color: var(--ink-4); }
@@ -510,8 +510,8 @@
 
 /* ── focus ─────────────────────────────────────────────────────────────────── */
 .rdx :focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* ── motion: only when the user has not asked to reduce it ─────────────────── */

@@ -21,16 +21,16 @@ export function GraphControls({ className = '' }) {
   return (
     <div className={cls}>
       <ControlButton label="zoom in" onClick={() => rf.zoomIn({ duration: 150 })}>
-        <Plus size={12} strokeWidth={2} />
+        <Plus size={14} strokeWidth={2} />
       </ControlButton>
       <ControlButton label="zoom out" onClick={() => rf.zoomOut({ duration: 150 })}>
-        <Minus size={12} strokeWidth={2} />
+        <Minus size={14} strokeWidth={2} />
       </ControlButton>
       <ControlButton label="fit view" onClick={() => rf.fitView({ padding: 0.1, duration: 250 })}>
-        <Maximize2 size={11} strokeWidth={1.75} />
+        <Maximize2 size={14} strokeWidth={1.75} />
       </ControlButton>
       <ControlButton label="reset" onClick={() => rf.setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 200 })}>
-        <RotateCcw size={11} strokeWidth={1.75} />
+        <RotateCcw size={14} strokeWidth={1.75} />
       </ControlButton>
     </div>
   )

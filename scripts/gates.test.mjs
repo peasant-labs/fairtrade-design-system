@@ -143,7 +143,7 @@ check('css-lint: tokens + hairline + theme-safe keywords PASS clean', () => {
 
 check('css-lint: a one-off dimension (width/min-width/box-shadow) is NOT spacing-linted', () => {
   // width/min-width/box-shadow legitimately carry raw lengths (matching the DS convention).
-  assert.deepEqual(lintCssText('.gmp-x{min-width:180px;width:240px;box-shadow:inset 2px 0 0 var(--amber)}', 't.css'), [])
+  assert.deepEqual(lintCssText('.gmp-x{min-width:180px;width:240px;box-shadow:inset var(--stroke-emphasis) 0 0 var(--amber)}', 't.css'), [])
 })
 
 /* ── vendored png-diff.mjs logic sync (no drift across the 3 copies) ──────────── */

@@ -23,10 +23,15 @@ import './CommitGraph.css'
 
 // --- Lane geometry (px; kept here, not in CSS, because the SVG needs the raw numbers) -------
 
-const LANE_W = 14 // horizontal pitch between lanes
-const GUTTER_PAD = 9 // left inset of lane 0
-const GUTTER_TAIL = 7 // breathing room after the last lane before the content column
-const DOT = 9 // commit dot side
+// A session commit's marker is SESSION_DOT wide: the --ic-sm (14px) star plus a 2px margin on
+// each side (CommitGraph.css sizes .cg-dot-filled with the same tokens). The pitch, inset and
+// tail keep 4px clear between markers on adjacent lanes and between a marker and either gutter
+// edge; a neighbouring lane line is then 13px from the marker's edge.
+const SESSION_DOT = 18 // filled commit marker side (matches .cg-dot-filled in CommitGraph.css)
+const LANE_W = SESSION_DOT + 4 // pitch: 4px clear between markers on adjacent lanes
+const GUTTER_PAD = SESSION_DOT / 2 + 4 // lane 0 inset: 4px clear to the gutter's left edge
+const GUTTER_TAIL = SESSION_DOT / 2 + 4 // after the last lane: 4px clear before the content column
+const DOT = 9 // plain (hollow) commit dot side
 const DASH = '3 3'
 
 const laneX = (lane) => GUTTER_PAD + lane * LANE_W
@@ -400,11 +405,11 @@ function CommitRow({ row, width, selected, onNavigate, onSelect, onOpenSession, 
         {/* The square commit dot. Filled (a session is behind it) vs hollow (plain commit). */}
         <span
           className={dotCls}
-          style={{ left: laneX(lane), width: DOT, height: DOT }}
+          style={{ left: laneX(lane), ...(hasSession ? null : { width: DOT, height: DOT }) }}
           data-has-session={hasSession || undefined}
         />
-        {/* Redundant, non-colour session signal: a tiny 5-point star pinned to the dot
-            (a 4-point sparkle read as a plus at this size). */}
+        {/* Redundant, non-colour session signal: a 5-point star at the --ic-sm icon size, centred
+            inside the larger filled session marker (a 4-point sparkle read as a plus). */}
         {hasSession && (
           <Star className="cg-spark" style={{ left: laneX(lane) }} aria-hidden="true" />
         )}

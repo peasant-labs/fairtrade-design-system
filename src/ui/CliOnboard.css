@@ -72,8 +72,8 @@
 }
 
 .cli-copy:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Copied: olive ink/icon PAIRED with the "copied" word + check — never colour alone. */
@@ -240,8 +240,8 @@
 }
 
 .cli-card-close:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .cli-card-close-ic {

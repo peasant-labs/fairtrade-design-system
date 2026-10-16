@@ -311,7 +311,7 @@ export function MapView({ theme }) {
         onClick={() => setConn(nextConn)}
         title={`simulate connection: ${nextConn}`}
       >
-        <RotateCw size={13} aria-hidden="true" /> simulate {nextConn}
+        <RotateCw size={14} aria-hidden="true" /> simulate {nextConn}
       </button>
     </>
   )
@@ -739,7 +739,7 @@ function ProjectRail({ tasks, total, showAll, onShowAll, filter, onFilter }) {
         </div>
         {!showAll && (
           <button type="button" className="gmp-showall" onClick={onShowAll}>
-            show all {total} conversations <ArrowRight size={13} aria-hidden="true" />
+            show all {total} conversations <ArrowRight size={14} aria-hidden="true" />
           </button>
         )}
       </div>
@@ -778,7 +778,7 @@ function NodeRail({ node, detail, onSelectNode }) {
             <div className="chips gmp-connect-chips">
               {detail.depends.map((d) => (
                 <button key={d} type="button" className="chip gmp-connect-chip" onClick={() => onSelectNode(d)}>
-                  <ArrowRight size={12} aria-hidden="true" /> <span className="mono">{d}</span>
+                  <ArrowRight size={14} aria-hidden="true" /> <span className="mono">{d}</span>
                 </button>
               ))}
             </div>
@@ -788,7 +788,7 @@ function NodeRail({ node, detail, onSelectNode }) {
             <div className="chips gmp-connect-chips">
               {detail.used.map((u) => (
                 <button key={u} type="button" className="chip gmp-connect-chip" onClick={() => onSelectNode(u)}>
-                  <Link2 size={12} aria-hidden="true" /> <span className="mono">{u}</span>
+                  <Link2 size={14} aria-hidden="true" /> <span className="mono">{u}</span>
                 </button>
               ))}
             </div>
@@ -834,7 +834,7 @@ function NodeRail({ node, detail, onSelectNode }) {
                     <span className="gmp-convo-task-title">{c.title}</span>
                     {c.retries && (
                       <span className="gmp-retry" title="took several attempts">
-                        <RotateCw size={12} aria-hidden="true" />
+                        <RotateCw size={14} aria-hidden="true" />
                       </span>
                     )}
                   </span>
@@ -845,7 +845,7 @@ function NodeRail({ node, detail, onSelectNode }) {
                     <span className="gmp-label-chips">
                       {c.labels.map((l) => (
                         <span key={l} className="gmp-label-chip">
-                          <Tag size={11} aria-hidden="true" /> {l}
+                          <Tag size={14} aria-hidden="true" /> {l}
                         </span>
                       ))}
                     </span>
@@ -863,7 +863,7 @@ function NodeRail({ node, detail, onSelectNode }) {
           {detail.coupling.map((c) => (
             <li key={c.id}>
               <button type="button" className="gmp-coupling-row" onClick={() => onSelectNode(c.id)}>
-                <CornerDownRight size={13} aria-hidden="true" />
+                <CornerDownRight size={14} aria-hidden="true" />
                 <span className="mono gmp-coupling-id">{c.id}</span>
                 <span className="tnum gmp-coupling-shared">{c.shared} shared tasks</span>
               </button>
@@ -902,7 +902,7 @@ function NodeRail({ node, detail, onSelectNode }) {
         </div>
         <button type="button" className="gmp-contribute">
           <Share2 size={14} aria-hidden="true" /> contribute these {detail.sessions} sessions
-          <ArrowRight size={13} aria-hidden="true" />
+          <ArrowRight size={14} aria-hidden="true" />
         </button>
       </div>
     </div>

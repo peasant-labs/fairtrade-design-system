@@ -3,7 +3,8 @@
 # container instead of shrinking to it, and (2) the mounted transcript's
 # non-scrolling chrome (title/meta chips/turns-toolbar) consuming almost the
 # entire mobile viewport before any transcript content is visible; plus
-# (3) the wide dialog's full-width sheet below the md breakpoint.
+# (3) the wide dialog's full-width sheet below the md breakpoint, and (4) the
+# dialog head keeping its close button square and its title wrapping at 390px.
 # Each row names the SOURCE file the fix lives in (never the built dist,
 # which may minify/reorder declarations) and a literal substring that must be
 # present — a future edit that reverts the fix (e.g. drops width:100% from a
@@ -61,3 +62,41 @@ invariants:
       - "@media (max-width: 767px) {\n    .dlg-overlay:has(> .dialog-wide) { padding: 0;"
       - ".dlg-overlay > .dialog.dialog-wide { width: 100%;"
       - "border-left: 0; border-right: 0;"
+  - id: dialog-close-button-keeps-its-square
+    file: src/index.css
+    description: >-
+      the dialog head's close button does not flex-shrink. Without flex none, the
+      publish dialog's long title squeezed it to 19px wide at 390px, below the
+      24px target. One literal, so deleting the declaration fails the row.
+    mustContainAll:
+      - ".dlg-head > .btn-icon { flex: none; }"
+  - id: dialog-title-wraps-long-words
+    file: src/index.css
+    description: >-
+      the dialog title can hold user content (a session title), so a long
+      unbroken word wraps instead of pushing the close button out of the
+      dialog at 390px.
+    mustContainAll:
+      - ".dlg-head h3 { @apply text-md; min-width: 0; overflow-wrap: anywhere; }"
+  - id: dialog-head-markup-is-pinned
+    file: src/ui/Dialog.jsx
+    description: >-
+      the two dialog-head rows target .dlg-head h3 and .dlg-head > .btn-icon, so
+      the library dialog's markup strings are pinned too: the head div, and after
+      it in the same component the h3 title and the btn-icon class. The row checks
+      that these strings exist, not that the h3 and the button stay direct
+      children of the head. An edit that keeps both selectors matching but
+      rewrites these strings fails this row too; update the row.
+    mustContainAll:
+      - "<div className=\"dlg-head\">"
+      - "<h3 id={labelId}>"
+      - "btn-icon\""
+  - id: site-dialog-head-markup-is-pinned
+    file: src/Dialog.jsx
+    description: >-
+      the presentation site's own dialog uses the same head markup and the same
+      two rules, so it is pinned the same way.
+    mustContainAll:
+      - "<div className=\"dlg-head\">"
+      - "<h3 id={labelId}>"
+      - "btn-icon\""

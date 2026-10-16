@@ -72,11 +72,8 @@
    in flight. off by default. */
 @media (prefers-reduced-motion: no-preference) {
   .cx-pill-connecting .cx-pill-icon {
-    animation: cx-spin 1.1s linear infinite;
+    animation: busy-spin 1.1s linear infinite;
   }
-}
-@keyframes cx-spin {
-  to { transform: rotate(360deg); }
 }
 
 /* ── state discriminator wrapper ────────────────────────────────────────────
@@ -156,8 +153,8 @@
 }
 
 /* ── loading skeleton ───────────────────────────────────────────────────────
-   a few quiet bars. neutral surface, no shimmer by default — work completing,
-   not a signal. a gentle pulse is added only where motion is welcome. */
+   a few quiet bars. neutral surface, static: no shimmer and no pulse (nothing
+   loops but a busy spinner). */
 .cx-skeleton {
   display: flex;
   flex-direction: column;
@@ -174,17 +171,6 @@
 .cx-skel-bar:nth-child(3) { width: 86%; }
 .cx-skel-bar:nth-child(4) { width: 64%; }
 
-@media (prefers-reduced-motion: no-preference) {
-  .cx-skel-bar {
-    animation: cx-pulse 1.4s ease-in-out infinite;
-  }
-  .cx-skel-bar:nth-child(3) { animation-delay: 0.12s; }
-  .cx-skel-bar:nth-child(4) { animation-delay: 0.24s; }
-}
-@keyframes cx-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.55; }
-}
 
 /* ── teaching empty state ───────────────────────────────────────────────────
    left-aligned, like the system's other empty states: a leading icon, a title,
@@ -384,7 +370,7 @@
 .cx-offline-retry[aria-busy="true"] { cursor: progress; }
 .cx-offline-retry .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
 @media (prefers-reduced-motion: no-preference) {
-  .cx-offline-spin { animation: cx-spin 1.1s linear infinite; }
+  .cx-offline-spin { animation: busy-spin 1.1s linear infinite; }
 }
 @media (max-width: 480px) {
   .cx-offline { padding: var(--sp-3) var(--sp-4); }

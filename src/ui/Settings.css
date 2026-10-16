@@ -63,9 +63,8 @@
 .srow-status-failed { color: var(--ink); }
 .srow-status-failed .srow-status-icon { color: var(--clay); }
 @media (prefers-reduced-motion: no-preference) {
-  .srow-spin { animation: srow-spin 1.1s linear infinite; }
+  .srow-spin { animation: busy-spin 1.1s linear infinite; }
 }
-@keyframes srow-spin { to { transform: rotate(360deg); } }
 
 .srow-text { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); min-width: 0; }
 /* a text value is recorded content: body face, its own case */

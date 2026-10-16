@@ -1,0 +1,19 @@
+# Known exceptions to scripts/css-token-lint.mjs, one per (file, selector, prop, value, check).
+# The list only shrinks: when a literal is fixed the lint fails until its entry is deleted.
+# Each value here has no exact token (tokenising it changes the rendering), so it waits for
+# a reviewed change to its component rather than a silent restyle.
+entries:
+  - {file: "src/index.css", selector: ".kbd", prop: "padding", value: "0 5px", check: spacing}
+  - {file: "src/index.css", selector: ".marker .mkc", prop: "padding", value: "3px var(--sp-3)", check: spacing}
+  - {file: "src/index.css", selector: ".axes li .lucide", prop: "margin-top", value: "3px", check: spacing}
+  - {file: "src/index.css", selector: ".av-group .avatar", prop: "margin-left", value: "-6px", check: spacing}
+  - {file: "src/index.css", selector: ".kbd-key", prop: "padding", value: "2px 6px", check: spacing}
+  - {file: "src/index.css", selector: ".card-img:hover", prop: "box-shadow", value: "0 10px 28px -14px rgba(0,0,0,.55)", check: colour}
+  - {file: "src/index.css", selector: ".iu-opt-key", prop: "padding", value: "0 5px", check: spacing}
+  - {file: "src/index.css", selector: ".txn-durbadge", prop: "gap", value: "3px", check: spacing}
+  - {file: "src/index.css", selector: ".txn-exitbadge", prop: "padding", value: "0 5px", check: spacing}
+  - {file: "src/index.css", selector: ".txn-toolgroups", prop: "margin-left", value: "22px", check: spacing}
+  - {file: "src/index.css", selector: ".txn-progress", prop: "padding", value: "3px var(--sp-3)", check: spacing}
+  - {file: "src/lib-graph.css", selector: ".gmp-convo-task-btn", prop: "gap", value: "3px", check: spacing}
+  - {file: "src/lib-graph.css", selector: ".gmp-merged-chip", prop: "padding", value: "3px var(--sp-3)", check: spacing}
+  - {file: "src/ui/Intensity.css", selector: ".ir-node__badge", prop: "padding", value: "0 3px", check: spacing}

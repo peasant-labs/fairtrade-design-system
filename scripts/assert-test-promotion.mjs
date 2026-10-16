@@ -105,9 +105,9 @@ function applyMutation(records, mutation) {
 /** @param {PromotionManifest} value */
 function validateManifest(value) {
   checkKeys(value, ['expectedRecordCount', 'requiredRecordNames', 'expectedMutationCount', 'requiredMutationNames', 'mutations'], 'manifest', MANIFEST_REL)
-  assert.equal(value.expectedRecordCount, 7, 'manifest: expectedRecordCount guard')
+  assert.equal(value.expectedRecordCount, 8, 'manifest: expectedRecordCount guard')
   assert.equal(value.expectedMutationCount, 13, 'manifest: expectedMutationCount guard')
-  assert.deepEqual([...value.requiredRecordNames].sort(), ['example-browser-free-boundary', 'example-mounted-component-proof', 'example-mounted-product-proof', 'fairtest-path-resolution-guard', 'fairtest-raw-path-literal-guard', 'fairtest-target-dispatch-guard', 'fairtest-type-program-coverage-guard'], 'manifest: required record inventory')
+  assert.deepEqual([...value.requiredRecordNames].sort(), ['app-reduced-transparency-computed-check', 'example-browser-free-boundary', 'example-mounted-component-proof', 'example-mounted-product-proof', 'fairtest-path-resolution-guard', 'fairtest-raw-path-literal-guard', 'fairtest-target-dispatch-guard', 'fairtest-type-program-coverage-guard'], 'manifest: required record inventory')
   assert.equal(value.mutations.length, value.expectedMutationCount, 'manifest: mutation inventory count')
   checkRequiredNames(value.mutations.map((item) => item.name), value.requiredMutationNames, MANIFEST_REL)
   for (const [index, mutation] of value.mutations.entries()) {

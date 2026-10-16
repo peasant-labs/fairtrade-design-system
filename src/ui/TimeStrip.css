@@ -87,8 +87,8 @@
   touch-action: none;                 /* let pointer drags scrub, not scroll */
 }
 .ts2-track:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* ── covered region ────────────────────────────────────────────────────────

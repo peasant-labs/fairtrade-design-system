@@ -38,11 +38,10 @@ p, .turn .body, .empty p, .prose {
   word-spacing: normal;
 }
 em, i { font-style: normal; font-weight: 600; }
-:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 a { color: var(--amber); text-decoration: none; }
 a.link, .prose a { text-decoration: underline dotted; text-underline-offset: 3px; }
 a.link:hover, a.link:focus-visible, .prose a:hover { text-decoration-style: solid; }
-section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {
@@ -50,5 +49,8 @@ section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
   }
+}
+@media (prefers-reduced-transparency: reduce) {
+  *, *::before, *::after { backdrop-filter: none !important; }
 }
 }

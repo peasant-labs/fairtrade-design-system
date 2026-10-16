@@ -141,7 +141,7 @@ function Sessions({ openId, setOpenId, cursor, setCursor }) {
                 <span className="tui-turn-text">{t.text}</span>
               </div>
               {t.tools && t.tools.map((tc) => (
-                <div className="tui-turn-tool" key={tc}><CornerDownRight size={12} aria-hidden="true" /> {tc}</div>
+                <div className="tui-turn-tool" key={tc}><CornerDownRight size={14} aria-hidden="true" /> {tc}</div>
               ))}
             </div>
           ))}

@@ -82,8 +82,8 @@
 /* the standard neuroinclusive focus ring — must clear the overflow:hidden of the
    tile, so it sits above siblings while focused. */
 .tm-tile:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: -1px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-inset);
   z-index: 2;
   position: absolute;
 }

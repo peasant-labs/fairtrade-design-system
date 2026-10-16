@@ -459,23 +459,23 @@ function TranscriptCard({ t, onOpen }) {
       </div>
       {t.collectives.length > 0 && (
         <div className="cex-coll-line">
-          <Layers size={13} aria-hidden="true" /> {t.collectives.slice(0, 3).join(' · ')}
+          <Layers size={14} aria-hidden="true" /> {t.collectives.slice(0, 3).join(' · ')}
         </div>
       )}
       <div className="card-foot cex-foot">
         <Author author={author} />
         <span className="metaitem">
-          <Clock size={13} aria-hidden="true" /> <b className="tnum">{fmtDur(t.durMin)}</b>
+          <Clock size={14} aria-hidden="true" /> <b className="tnum">{fmtDur(t.durMin)}</b>
         </span>
         <span className="metaitem">
-          <ListTree size={13} aria-hidden="true" /> <b className="tnum">{t.tools}</b> tools
+          <ListTree size={14} aria-hidden="true" /> <b className="tnum">{t.tools}</b> tools
         </span>
         <span className="metaitem">
-          <GitBranch size={13} aria-hidden="true" /> <b className="tnum">{t.turns}</b> turns
+          <GitBranch size={14} aria-hidden="true" /> <b className="tnum">{t.turns}</b> turns
         </span>
         {t.attest > 0 && (
           <span className="metaitem cex-attest">
-            <ShieldCheck size={13} aria-hidden="true" /> <b className="tnum">{t.attest}</b>
+            <ShieldCheck size={14} aria-hidden="true" /> <b className="tnum">{t.attest}</b>
           </span>
         )}
         <span className="metaitem cex-date">{fmtDate(t.date)}</span>
@@ -496,13 +496,13 @@ function TranscriptRow({ t, onOpen }) {
       <span className="cex-trow-title">{t.title || 'Untitled transcript'}</span>
       <span className="cex-trow-stats">
         <span className="metaitem">
-          <Clock size={13} aria-hidden="true" /> <b className="tnum">{fmtDur(t.durMin)}</b>
+          <Clock size={14} aria-hidden="true" /> <b className="tnum">{fmtDur(t.durMin)}</b>
         </span>
         <span className="metaitem">
-          <GitBranch size={13} aria-hidden="true" /> <b className="tnum">{t.turns}</b>
+          <GitBranch size={14} aria-hidden="true" /> <b className="tnum">{t.turns}</b>
         </span>
         <span className="metaitem">
-          <ListTree size={13} aria-hidden="true" /> <b className="tnum">{t.tools}</b>
+          <ListTree size={14} aria-hidden="true" /> <b className="tnum">{t.tools}</b>
         </span>
       </span>
       <span className="cex-trow-date mono tnum">{fmtDate(t.date)}</span>
@@ -682,7 +682,7 @@ export function ExploreView({ theme } = {}) {
                     aria-pressed={on}
                     onClick={() => toggleTopic(tp.id)}
                   >
-                    <Check size={13} aria-hidden="true" className="chipx-tick" />
+                    <Check size={14} aria-hidden="true" className="chipx-tick" />
                     <span className="cex-topic-label" title={`#${tp.id}`}>#{tp.id}</span>
                     <span className="cex-topic-n tnum">{tp.count}</span>
                   </button>
@@ -1077,7 +1077,7 @@ function SavedLabel({ label }) {
   const cls = label.tone === 'ok' ? 'chip-ok' : label.tone === 'err' ? 'chip-err' : label.tone === 'warn' ? 'chip-warn' : ''
   return (
     <span className={'chip chip-sm ' + cls}>
-      <Icon size={13} aria-hidden="true" /> {label.valueLabel}
+      <Icon size={14} aria-hidden="true" /> {label.valueLabel}
     </span>
   )
 }
@@ -1244,8 +1244,8 @@ export function TranscriptDetailView({ theme, seedId = 'd41a8e', embedded = fals
         <div className="win-head cex-viewer-head">
           <div className="cex-head-top">
             <div className="crumb">
-              dashboard <ChevronRight size={13} aria-hidden="true" /> projects <ChevronRight size={13} aria-hidden="true" /> {meta.project}{' '}
-              <ChevronRight size={13} aria-hidden="true" /> <span className="cur mono">{seedId}</span>
+              dashboard <ChevronRight size={14} aria-hidden="true" /> projects <ChevronRight size={14} aria-hidden="true" /> {meta.project}{' '}
+              <ChevronRight size={14} aria-hidden="true" /> <span className="cur mono">{seedId}</span>
             </div>
             {/* ACTION MENU */}
             <div className="menu-anchor cex-actions" ref={menuRef}>
@@ -1257,7 +1257,7 @@ export function TranscriptDetailView({ theme, seedId = 'd41a8e', embedded = fals
                 onClick={() => setMenuOpen((o) => !o)}
               >
                 <MoreHorizontal size={14} aria-hidden="true" /> actions
-                <ChevronDown size={13} aria-hidden="true" className="menu-caret" />
+                <ChevronDown size={14} aria-hidden="true" className="menu-caret" />
               </button>
               {menuOpen && (
                 <div className="menu-pop menu-float" role="menu" aria-label="transcript actions">
@@ -1550,7 +1550,7 @@ export function TranscriptDetailView({ theme, seedId = 'd41a8e', embedded = fals
                       onClick={() => { setTab('list'); setTimeout(() => selectTurn(o.n), 0) }}
                     >
                       <span className={'cex-outline-role cex-role-' + o.role}>
-                        {o.role === 'user' ? <User size={12} aria-hidden="true" /> : <ClaudeMark />}
+                        {o.role === 'user' ? <User size={14} aria-hidden="true" /> : <ClaudeMark />}
                       </span>
                       <span className="cex-outline-label">{o.label}</span>
                       <span className="cex-outline-n tnum">{o.n}</span>
@@ -1628,7 +1628,7 @@ function RailFilters() {
             onClick={() => toggle(r.id)}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(r.id) } }}
           >
-            <span><r.Icon size={13} aria-hidden="true" /> {r.label}</span>
+            <span><r.Icon size={14} aria-hidden="true" /> {r.label}</span>
             <span className="cex-fcount tnum">{r.count}</span>
           </div>
         ))}
@@ -1667,7 +1667,7 @@ function DetailTurn({ turn, selected, openTools, toggleTool, registerRef, labels
       <span className="cex-turn-tools">
         <span className="tip-anchor cex-label-anchor">
           <button type="button" className="cex-label-btn" aria-label="add a label to this turn" aria-expanded={labelOpen} onClick={onLabelToggle}>
-            <Tag size={13} aria-hidden="true" />
+            <Tag size={14} aria-hidden="true" />
           </button>
           {labelOpen && <TurnLabelPopover onSave={onLabelSave} onClose={onLabelClose} />}
         </span>
@@ -1891,7 +1891,7 @@ export function ProfileView({ theme }) {
   return (
     <div className="cex-root cex-profile">
       <div className="crumb cex-profile-crumb">
-        commons <ChevronRight size={13} aria-hidden="true" /> <span className="cur mono">@{PROFILE.handle}</span>
+        commons <ChevronRight size={14} aria-hidden="true" /> <span className="cur mono">@{PROFILE.handle}</span>
       </div>
 
       {/* HERO */}
@@ -1904,7 +1904,7 @@ export function ProfileView({ theme }) {
           <span className="cex-phandle mono">@{PROFILE.handle}</span>
           {!discoverable && (
             <span className="cex-disc-note mono">
-              <EyeOff size={13} aria-hidden="true" /> not discoverable: you appear as <b>anon</b> to others
+              <EyeOff size={14} aria-hidden="true" /> not discoverable: you appear as <b>anon</b> to others
             </span>
           )}
         </div>
@@ -1968,7 +1968,7 @@ export function ProfileView({ theme }) {
                   </span>
                   {PROFILE.isOwner && renaming !== p.id && (
                     <button type="button" className="cex-icon-btn" aria-label={`rename project ${p.name}`} onClick={() => startRename(p)}>
-                      <Pencil size={13} aria-hidden="true" />
+                      <Pencil size={14} aria-hidden="true" />
                     </button>
                   )}
                 </div>
@@ -1997,10 +1997,10 @@ export function ProfileView({ theme }) {
                           ) : (
                             <>
                               <button type="button" className="cex-icon-btn" aria-label={`edit ${t.title}`}>
-                                <Pencil size={13} aria-hidden="true" />
+                                <Pencil size={14} aria-hidden="true" />
                               </button>
                               <button type="button" className="cex-icon-btn cex-danger" aria-label={`delete ${t.title}`} onClick={() => setConfirmDelete(t.id)}>
-                                <Trash2 size={13} aria-hidden="true" />
+                                <Trash2 size={14} aria-hidden="true" />
                               </button>
                             </>
                           )}

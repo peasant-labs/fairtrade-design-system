@@ -4,7 +4,7 @@
    @peasant-labs/fairtrade/analytics) over a deterministic demo fixture — so
    this demo and the consuming apps exercise byte-identical composition +
    metric code, not two parallel implementations. Styling comes from the
-   .gan-* rules in src/index.css (shipped to consumers as analytics.css). */
+   .gan-* rules in src/lib-analytics.css (shipped to consumers as analytics.css). */
 
 import { ProjectOverview } from '../../ui/analytics/index.js'
 import { SAMPLE_SESSIONS } from '../../ui/analytics/fixtures.js'

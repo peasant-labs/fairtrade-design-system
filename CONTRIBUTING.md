@@ -30,7 +30,7 @@ for visual changes, inspect the affected stories in both themes and use the repo
 
 ## design rules
 
-keep changes aligned with `AGENTS.md`, `llm/DESIGN.md`, and `llm/NEUROINCLUSIVE.md`. in brief:
+keep changes aligned with `AGENTS.md` and `DESIGN.md` (the design record; `llm/NEUROINCLUSIVE.md` carries the research behind its neuroinclusive rules). in brief:
 
 - use tokens only, never hardcoded hex or px values; keep radius at 0 and amber scarce
 - support dark and light themes, both at WCAG AA contrast
@@ -41,7 +41,7 @@ keep changes aligned with `AGENTS.md`, `llm/DESIGN.md`, and `llm/NEUROINCLUSIVE.
 - preserve 1.5 line-height, at least 24px hit targets, a visible focus ring, and reduced-motion behavior
 - keep copy plain, without em dashes or AI-slop
 
-do not hand-edit `public/tokens.json`, `public/components.json`, or files under `packages/tokens/`. they are produced by `node scripts/gen-llm-artifacts.mjs`; use `pnpm gen:check` to confirm they are fresh.
+do not hand-edit `public/tokens.json`, `public/components.json`, the frontmatter of `DESIGN.md`, or files under `packages/tokens/`. they are produced by `node scripts/gen-llm-artifacts.mjs`; use `pnpm gen:check` to confirm they are fresh.
 
 ## changes
 

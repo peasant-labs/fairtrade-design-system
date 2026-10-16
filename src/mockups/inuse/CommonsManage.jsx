@@ -120,7 +120,7 @@ export function PublishView() {
     <div className="cmg-root">
       <div className="cmg-page">
         <div className="crumb cmg-crumb">
-          village <ChevronRight size={13} aria-hidden="true" /> <span className="cur">publish</span>
+          village <ChevronRight size={14} aria-hidden="true" /> <span className="cur">publish</span>
         </div>
         <header className="cmg-head">
           <div>
@@ -177,7 +177,7 @@ export function PublishView() {
                   <span className="cmg-pub-prov"><ProviderMark id={p.provider} /></span>
                   <span className="cmg-pub-title">{p.title}</span>
                   <span className="cmg-pub-meta mono">{p.project}</span>
-                  <span className="cmg-pub-meta mono tnum"><Hash size={13} aria-hidden="true" /> {p.turns}</span>
+                  <span className="cmg-pub-meta mono tnum"><Hash size={14} aria-hidden="true" /> {p.turns}</span>
                   <VisibilityEye v={p.visibility} />
                   <span className="cmg-pub-date mono tnum">{p.date}</span>
                 </li>
@@ -280,7 +280,7 @@ export function CollectivesView({ data = {}, actions = {} } = {}) {
     <div className="cmg-root">
       <div className="cmg-page">
         <div className="crumb cmg-crumb">
-          village <ChevronRight size={13} aria-hidden="true" /> <span className="cur">{crumb}</span>
+          village <ChevronRight size={14} aria-hidden="true" /> <span className="cur">{crumb}</span>
         </div>
         <header className="cmg-head">
           <div>
@@ -461,7 +461,7 @@ function RedactionItem({ item }) {
         <span className="cmg-redact-badges">
           <span className={'chip ' + item.catTone} title={item.tip}>{item.catLabel.toLowerCase()}</span>
           <span className={'chip ' + (low ? 'chip-warn' : '')}>
-            {low ? <AlertTriangle size={13} aria-hidden="true" /> : null}
+            {low ? <AlertTriangle size={14} aria-hidden="true" /> : null}
             <span className="tnum">{item.confidence}%</span> confidence
           </span>
           {exposed ? <span className="chip chip-err">un-redacted</span> : null}
@@ -497,9 +497,9 @@ function RedactionItem({ item }) {
       </div>
       <div className="cmg-redact-foot">
         {exposed ? (
-          <span className="cmg-redact-warn mono"><AlertTriangle size={13} aria-hidden="true" /> this content will be exposed</span>
+          <span className="cmg-redact-warn mono"><AlertTriangle size={14} aria-hidden="true" /> this content will be exposed</span>
         ) : (
-          <span className="cmg-redact-safe mono"><ShieldCheck size={13} aria-hidden="true" /> redacted (safe default)</span>
+          <span className="cmg-redact-safe mono"><ShieldCheck size={14} aria-hidden="true" /> redacted (safe default)</span>
         )}
         {exposed ? (
           <button type="button" className="btn btn-sm btn-secondary" onClick={() => setExposed(false)}>
@@ -551,13 +551,13 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
         {/* hero + action cluster */}
         <header className="cmg-d-hero">
           <div className="crumb cmg-crumb">
-            village <ChevronRight size={13} aria-hidden="true" /> collectives <ChevronRight size={13} aria-hidden="true" /> <span className="cur">{collective.name}</span>
+            village <ChevronRight size={14} aria-hidden="true" /> collectives <ChevronRight size={14} aria-hidden="true" /> <span className="cur">{collective.name}</span>
           </div>
           <div className="cmg-d-hero-row">
             <div>
               <h2 className="cmg-title">{collective.name}</h2>
               <p className="cmg-deck">{collective.description}</p>
-              <span className="cmg-orgpill mono"><FolderGit2 size={13} aria-hidden="true" /> {collective.linkedGithubOrg || 'not linked'}</span>
+              <span className="cmg-orgpill mono"><FolderGit2 size={14} aria-hidden="true" /> {collective.linkedGithubOrg || 'not linked'}</span>
             </div>
             <div className="cmg-d-actions btn-row">
               {/* role switcher: demo the capability-gated action cluster */}
@@ -765,7 +765,7 @@ export function CollectiveSettingsView() {
     <div className="cmg-root cmg-settings">
       <div className="cmg-detail">
         <div className="crumb cmg-crumb">
-          village <ChevronRight size={13} aria-hidden="true" /> collectives <ChevronRight size={13} aria-hidden="true" />
+          village <ChevronRight size={14} aria-hidden="true" /> collectives <ChevronRight size={14} aria-hidden="true" />
           <span className="cur">settings</span>
         </div>
 
@@ -972,7 +972,7 @@ export function ContributeView() {
     <div className="cmg-root">
       <div className="cmg-page">
         <div className="crumb cmg-crumb">
-          village <ChevronRight size={13} aria-hidden="true" /> AI Research Team <ChevronRight size={13} aria-hidden="true" /> <span className="cur">contribute</span>
+          village <ChevronRight size={14} aria-hidden="true" /> AI Research Team <ChevronRight size={14} aria-hidden="true" /> <span className="cur">contribute</span>
         </div>
         <header className="cmg-head">
           <div>
@@ -1001,7 +1001,7 @@ export function ContributeView() {
                   <button type="button" className="cmg-proj-toggle" aria-expanded={isOpen} onClick={() => toggleOpen(p.id)}>
                     {isOpen ? <ChevronDown size={15} aria-hidden="true" /> : <ChevronRight size={15} aria-hidden="true" />}
                     <span className="cmg-proj-name mono">{p.name}</span>
-                    <span className="cmg-proj-branch mono"><GitBranch size={12} aria-hidden="true" /> {p.branch}</span>
+                    <span className="cmg-proj-branch mono"><GitBranch size={14} aria-hidden="true" /> {p.branch}</span>
                     <span className="cmg-proj-cnt mono tnum">{p.transcripts.length}</span>
                   </button>
                 </div>

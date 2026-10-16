@@ -117,7 +117,7 @@ export default function TurnCard({
         title="copy link to this turn"
         onClick={() => onCopyAnchor(turn.index)}
       >
-        {copied ? <Check size={13} aria-hidden="true" /> : <LinkIcon size={13} aria-hidden="true" />}
+        {copied ? <Check size={14} aria-hidden="true" /> : <LinkIcon size={14} aria-hidden="true" />}
       </button>}
       {renderActions ? (
         renderActions(turn)
@@ -128,7 +128,7 @@ export default function TurnCard({
       )}
       {turn.isError && (
         <span className="chip chip-err txn-pill">
-          <AlertTriangle size={12} aria-hidden="true" /> error
+          <AlertTriangle size={14} aria-hidden="true" /> error
         </span>
       )}
       {turn.tokens && (
@@ -136,7 +136,7 @@ export default function TurnCard({
           className="txn-tokbadge tnum"
           title={fmtTokens(turn.tokens.in) + ' in · ' + fmtTokens(turn.tokens.out) + ' out'}
         >
-          <Coins size={12} aria-hidden="true" /> {fmtTokens(turn.tokens.in + turn.tokens.out)}
+          <Coins size={14} aria-hidden="true" /> {fmtTokens(turn.tokens.in + turn.tokens.out)}
         </span>
       )}
     </div>
@@ -196,7 +196,7 @@ export default function TurnCard({
       {isSub ? (
         <div className="subtask txn-subtask">
           <div className="subtask-head">
-            <CornerDownRight size={13} aria-hidden="true" /> <span className="who">{turn.agentName}</span> subagent
+            <CornerDownRight size={14} aria-hidden="true" /> <span className="who">{turn.agentName}</span> subagent
           </div>
           <div className={cardClass}>
             {head}
@@ -204,7 +204,7 @@ export default function TurnCard({
           </div>
           <div className="subtask-foot">
             <span className="elbow">
-              <CornerDownRight size={13} aria-hidden="true" /> returned to claude
+              <CornerDownRight size={14} aria-hidden="true" /> returned to claude
             </span>
           </div>
         </div>

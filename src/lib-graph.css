@@ -105,7 +105,7 @@
     border: var(--bd-strong);
     background: var(--surface);
   }
-  .gmp-navigator-search:focus-within { border-color: var(--amber-dim); box-shadow: inset 0 0 0 var(--sp-1) var(--focus-ring); }
+  .gmp-navigator-search:focus-within { border-color: var(--amber-dim); box-shadow: inset 0 0 0 var(--focus-ring-width) var(--focus-ring); }
   .gmp-navigator-search > .lucide { width: var(--ic-sm); height: var(--ic-sm); margin-inline: var(--sp-2); color: var(--ink-3); }
   .gmp-navigator-search input {
     flex: 1;
@@ -129,10 +129,10 @@
     gap: var(--sp-2);
     min-height: var(--control-h);
     padding: var(--sp-2) var(--sp-4) var(--sp-2) calc(var(--sp-4) + var(--gmp-tree-depth) * var(--sp-5));
-    border-left: var(--sp-1) solid transparent;
+    border-left: var(--stroke-emphasis) solid transparent;
   }
   .gmp-navigator-row-wrap:hover { background: var(--surface-hover); }
-  .gmp-navigator-row-wrap:has(.gmp-navigator-row:focus-visible) { box-shadow: inset 0 0 0 var(--sp-1) var(--focus-ring); }
+  .gmp-navigator-row-wrap:has(.gmp-navigator-row:focus-visible) { box-shadow: inset 0 0 0 var(--focus-ring-width) var(--focus-ring); }
   .gmp-navigator-row-wrap[data-selected='true'] { border-left-color: var(--amber); background: var(--surface-elev); }
   .gmp-navigator-row {
     display: grid;
@@ -157,9 +157,10 @@
     cursor: pointer;
   }
   .gmp-navigator-disclosure:hover { background: var(--surface-hover); color: var(--ink); }
-  .gmp-navigator-disclosure:focus-visible { outline: var(--sp-1) solid var(--focus-ring); outline-offset: var(--sp-1); }
+  .gmp-navigator-disclosure:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
   .gmp-navigator-disclosure[aria-disabled='true'] { cursor: default; opacity: 0.6; }
-  .gmp-navigator-chevron { visibility: hidden; transition: transform var(--dur-1) var(--ease-standard); }
+  .gmp-navigator-chevron { visibility: hidden; }
+  @media (prefers-reduced-motion: no-preference) { .gmp-navigator-chevron { transition: transform var(--dur-1) var(--ease-standard); } }
   .gmp-navigator-disclosure[aria-expanded] .gmp-navigator-chevron { visibility: visible; }
   .gmp-navigator-disclosure[aria-expanded='true'] .gmp-navigator-chevron { transform: rotate(90deg); }
   .gmp-navigator-path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); color: var(--ink); }
@@ -197,7 +198,7 @@
   }
   .gmp-navigator-action + .gmp-navigator-action { margin-top: var(--sp-2); }
   .gmp-navigator-action:hover { background: var(--surface-hover); color: var(--ink); }
-  .gmp-navigator-action:focus-visible { outline: var(--sp-1) solid var(--focus-ring); outline-offset: var(--sp-1); }
+  .gmp-navigator-action:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
   .gmp-navigator-action > .lucide { width: var(--ic-sm); height: var(--ic-sm); }
   .gmp-navigator-action--primary { border-color: var(--amber-dim); color: var(--amber); }
   .gmp-navigator-empty { margin: 0; padding: var(--sp-4); color: var(--ink-4); font-size: var(--fs-sm); line-height: var(--lh-body); }
@@ -211,6 +212,131 @@
     .gmp-navigator-meta { flex-direction: column; gap: 0; align-items: flex-end; }
   }
   @media (prefers-reduced-motion: reduce) { .gmp-navigator-chevron { transition: none; } }
+
+  /* ── ranked-list toolbar + presentation switch (CodeMap composition) ── */
+  .gmp-toolbar-spacer { flex: 1; }
+  .gmp-rank-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); padding: var(--sp-3); border-bottom: var(--bd); }
+  .gmp-scent-filter { display: inline-flex; flex-wrap: wrap; gap: var(--sp-1); }
+  .gmp-rank-overflow { min-height: var(--target-min); margin: 0; padding: var(--sp-2) var(--sp-3); border: 0; border-top: var(--bd); background: var(--surface); color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); text-align: left; cursor: pointer; }
+  .gmp-rank-overflow:hover { background: var(--surface-hover); color: var(--ink-2); }
+  .gmp-presentation-switch { display: inline-flex; min-height: var(--control-h-sm); border: var(--bd-strong); }
+  .gmp-presentation-switch button { min-height: var(--target-min); padding: 0 var(--sp-3); border: 0; border-left: var(--bd); background: transparent; color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; cursor: pointer; }
+  .gmp-presentation-switch button:first-child { border-left: 0; }
+  .gmp-presentation-switch button:hover { background: var(--surface-hover); color: var(--ink); }
+  .gmp-presentation-switch button[aria-pressed='true'] { box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber-dim); background: var(--surface-elev); color: var(--ink-strong); }
+  .gmp-presentation-switch button:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+  /* phone: drop the spacer so the search wraps below the toolbar buttons instead of overflowing */
+  @media (max-width: 600px) { .gmp-toolbar-spacer { display: none; } }
+
+  /* ── selection rail (the in-use code-map demo composes these around the kit RailShell) ── */
+  .gmp-rail-inner { border: 0; }
+  .gmp-rail-pad { padding: var(--sp-3) var(--sp-4); }
+  /* the rail content (.gmp-rail-inner) sits inside the kit RailSection body (.rs-sec-body), which pads
+     0 --sp-4 --sp-4. the inner sidebar's own .sb-head / .gmp-rail-pad ALSO pad --sp-4, so the content was
+     inset twice — its left edge fell 32px from the card while the section header sat at 16px, reading as
+     lopsided padding. zero the body padding here (gmp-scoped, NOT in RailShell.css) so the inner sidebar's
+     single even inset governs and every block lines up with the section head. NB: the .rs-sec / .rs-sec-body
+     base lives in RailShell.css (JS-imported, UNLAYERED) which outranks this @layer rule regardless of
+     specificity, so !important is required; zero the section pad too so the rail isn't triple-inset. */
+  .gmp-root .rs-sec:has(.gmp-rail-inner) { padding: 0 !important; }
+  .gmp-root .rs-sec-body:has(> .gmp-rail-inner) { padding: 0 !important; }
+  /* with the body flush, let the inner section dividers + headers span the full card width edge-to-edge. */
+  .gmp-root .rs-sec-body > .gmp-rail-inner > .sb-sec:last-child { border-bottom: 0; }
+
+  /* coverage line + micro-bar */
+  .gmp-coverage { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .gmp-coverage-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); }
+  /* the "files built with ai" label takes the remaining width (and ellipsises if pinched); the percentage
+     never shrinks or breaks, so "35%" stays on one line instead of dropping the "%" below "35". */
+  .gmp-coverage-top > .label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gmp-coverage-pct { flex: none; white-space: nowrap; color: var(--ink-strong); font-weight: 600; }
+  .gmp-coverage-bar { height: 6px; background: var(--surface-2); border: 1px solid var(--rule); }
+  .gmp-coverage-bar > span { display: block; height: 100%; background: var(--amber-dim); }
+  .gmp-coverage-sub { font-size: 11px; color: var(--ink-4); }
+
+  /* task / conversation rows */
+  /* the .gmp-tasklist section has no .gmp-rail-pad wrapper (the rows are full-width hover targets), so add
+     the same --sp-3-equivalent breathing room above/below the rows that the .gmp-rail-pad sections (coverage,
+     filter) carry below their head — otherwise the recent-conversations rows sit tighter to the head than the
+     sibling sections, reading as uneven vertical rhythm down the rail. (--sp-1 + the row's own --sp-2 = --sp-3.) */
+  .gmp-tasklist, .gmp-convos, .gmp-coupling { list-style: none; margin: 0; padding: var(--sp-1) 0; }
+  .gmp-task-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-2) var(--sp-4); background: transparent; border: 0; border-left: var(--stroke-emphasis) solid transparent; text-align: left; cursor: pointer; min-height: var(--target-min); }
+  .gmp-task-row:hover, .gmp-task-row:focus-visible { background: var(--surface-hover); border-left-color: var(--amber); outline: none; }
+  .gmp-task-row:focus-visible { box-shadow: inset 0 0 0 var(--focus-ring-width) var(--focus-ring); }
+  .gmp-task-title { font-size: var(--fs-sm); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gmp-task-when { font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); white-space: nowrap; }
+  .gmp-odot { display: inline-block; width: 8px; height: 8px; flex: none; }
+
+  .gmp-rail-filter { margin: 0; }
+  .gmp-rail-filter .input { height: var(--control-h-sm); }
+  .gmp-showall { display: flex; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-2) var(--sp-4); background: transparent; border: 0; border-top: var(--bd); color: var(--amber); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; text-align: left; cursor: pointer; }
+  .gmp-showall:hover { background: var(--surface-hover); color: var(--amber-bright); }
+
+  /* node-rail header */
+  .gmp-rail-node-head { padding: var(--sp-3) var(--sp-4); }
+  .gmp-rail-close { display: inline-flex; align-items: center; justify-content: center; width: var(--control-h-sm); height: var(--control-h-sm); background: transparent; border: var(--bd-strong); color: var(--ink-3); cursor: pointer; }
+  .gmp-rail-close:hover { color: var(--ink); border-color: var(--amber-dim); }
+  .gmp-rail-name { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--ink-strong); word-break: break-all; }
+  .gmp-rail-meta { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-2); }
+
+  /* depends / used chips */
+  .gmp-connects { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .gmp-connect-grp { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .gmp-connect-chips { gap: var(--sp-2); }
+  .gmp-connect-chip { cursor: pointer; max-width: 100%; }
+  .gmp-connect-chip:hover { border-color: var(--amber-dim); color: var(--ink); }
+  .gmp-connect-chip .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+  /* conversations interleaved with commits */
+  .gmp-convo-task { border-bottom: var(--bd); }
+  .gmp-convo-task:last-child { border-bottom: 0; }
+  .gmp-convo-task-btn { display: flex; flex-direction: column; gap: 3px; width: 100%; padding: var(--sp-3) var(--sp-4); background: transparent; border: 0; text-align: left; cursor: pointer; }
+  .gmp-convo-task-btn:hover { background: var(--surface-hover); }
+  .gmp-convo-task-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+  .gmp-convo-task-top { display: flex; align-items: center; gap: var(--sp-2); }
+  .gmp-convo-task-title { font-size: var(--fs-sm); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gmp-retry { display: inline-flex; align-items: center; color: var(--amber); flex: none; margin-left: auto; }
+  .gmp-retry .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+  .gmp-convo-task-sub { font-size: 11px; color: var(--ink-4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gmp-convo-commit { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4); background: var(--surface-2); border-bottom: var(--bd); font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+  .gmp-convo-commit .lucide { color: var(--ink-4); width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+  .gmp-commit-hash { color: var(--ink-2); flex: none; }
+  .gmp-commit-msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .gmp-label-chips { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+
+  /* coupling rows */
+  .gmp-coupling-row { display: flex; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-2) var(--sp-4); background: transparent; border: 0; text-align: left; cursor: pointer; }
+  .gmp-coupling-row:hover { background: var(--surface-hover); }
+  .gmp-coupling-row:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+  .gmp-coupling-row .lucide { color: var(--ink-5); flex: none; }
+  .gmp-coupling-id { font-size: 11px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gmp-coupling-shared { font-size: 11px; color: var(--ink-4); white-space: nowrap; margin-left: auto; flex: none; }
+
+  /* effort totals */
+  .gmp-effort { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .gmp-effort-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+  .gmp-effort-row b { color: var(--ink); font-weight: 600; }
+  .gmp-effort-spend b { color: var(--amber); }
+  .gmp-contribute { display: flex; align-items: center; gap: var(--sp-2); width: 100%; margin-top: var(--sp-3); padding: var(--sp-3) var(--sp-4); background: transparent; border: 0; border-top: var(--bd); color: var(--amber); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; text-align: left; cursor: pointer; }
+  .gmp-contribute:hover { background: var(--surface-hover); color: var(--amber-bright); }
+  .gmp-contribute .lucide:last-child { margin-left: auto; }
+
+  /* ── session destination summary (the in-use changes demo) ── */
+  .gmp-session-destination-title { margin: 0; font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 700; line-height: 1.2; color: var(--ink-strong); }
+  .gmp-session-destination-context { margin: var(--sp-2) 0 var(--sp-4); color: var(--ink-3); font-size: var(--fs-sm); }
+  .gmp-session-destination-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border: var(--bd); background: var(--surface-2); }
+  .gmp-session-destination-summary > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--sp-3); align-items: baseline; min-height: var(--control-h); padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); }
+  .gmp-session-destination-summary > div:nth-last-child(-n + 2) { border-bottom: 0; }
+  .gmp-session-destination-summary > div:nth-child(odd) { border-right: var(--bd); }
+  .gmp-session-destination-summary dt { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-4); }
+  .gmp-session-destination-summary dd { margin: 0; min-width: 0; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-2); }
+  @media (max-width: 600px) {
+    .gmp-session-destination-summary { grid-template-columns: minmax(0, 1fr); }
+    .gmp-session-destination-summary > div { border-right: 0; }
+    .gmp-session-destination-summary > div:nth-last-child(-n + 2) { border-bottom: var(--bd); }
+    .gmp-session-destination-summary > div:last-child { border-bottom: 0; }
+  }
 
   /* ── Changes view (lane-based git graph over the kit CommitGraph) ─────────── */
   .gmp-changes-root {
@@ -251,7 +377,7 @@
     cursor: pointer;
   }
   .gmp-unlinked-session:hover { background: var(--surface-hover); }
-  .gmp-unlinked-session:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+  .gmp-unlinked-session:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 
   /* merged / reverted chips listed under the graph */
   .gmp-merged-chip {
@@ -270,8 +396,8 @@
     z-index: 3;
   }
   .gmp-merged-chip:hover { color: var(--ink-2); border-color: var(--rule-strong); }
-  .gmp-merged-chip:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
-  .gmp-merged-chip .lucide { width: 13px; height: 13px; flex: none; }
+  .gmp-merged-chip:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  .gmp-merged-chip .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
   .gmp-merged-sec { margin-top: var(--sp-5); border-top: var(--bd); padding-top: var(--sp-4); }
   .gmp-merged-head { border: 0; padding: 0 0 var(--sp-2); }
   .gmp-merged-list { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
@@ -297,9 +423,14 @@
     padding-top: var(--sp-4);
     border-top: var(--bd);
   }
-  /* the kit .cg-dot base (CommitGraph.css, unlayered) floats the square via absolute
-     placement; neutralise it here so the legend marker sits in flow next to its label. */
+  /* the kit .cg-dot and .cg-spark bases (CommitGraph.css, unlayered) float the square and its
+     star via absolute placement; neutralise them here so the legend marker sits in flow next to
+     its label. Both resets carry !important because an unlayered rule outranks any rule in this
+     layer. */
   .gmp-changes-legend .cg-dot { position: static !important; transform: none !important; flex: none; }
+  /* the filled legend marker holds its star in flow, centred, exactly as the graph draws it */
+  .gmp-changes-legend .cg-dot-filled { display: inline-grid; place-items: center; }
+  .gmp-changes-legend .cg-spark { position: static !important; transform: none !important; }
 
   /* below the wide layout there isn't room for floating merged chips — drop them into flow. */
   @media (max-width: 1460px) {
@@ -323,7 +454,7 @@
   /* signals band */
   .gmp-signals { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-bottom: var(--sp-4); }
   .gmp-signal { display: inline-flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); background: var(--surface); border: var(--bd); font-family: var(--font-mono); font-size: 11px; text-transform: lowercase; color: var(--ink-3); }
-  .gmp-signal .lucide { color: var(--ink-4); width: 14px; height: 14px; }
+  .gmp-signal .lucide { color: var(--ink-4); width: var(--ic-sm); height: var(--ic-sm); }
   .gmp-signal b { color: var(--ink); font-weight: 600; }
   .gmp-signal .mono { text-transform: none; color: var(--ink-2); }
   .gmp-signal-warn { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--rule)); }
@@ -340,7 +471,7 @@
 
   /* the shared mono label chip (the annotation chip extends it) */
   .gmp-label-chip { display: inline-flex; align-items: center; gap: var(--sp-1); padding: 1px var(--sp-2); border: 1px solid var(--rule-strong); font-family: var(--font-mono); font-size: 10px; text-transform: lowercase; color: var(--ink-2); }
-  .gmp-label-chip .lucide { color: var(--amber); width: 11px; height: 11px; }
+  .gmp-label-chip .lucide { color: var(--amber); width: var(--ic-sm); height: var(--ic-sm); }
 
   /* files-changed list + lazy diff */
   .gmp-files { display: flex; flex-direction: column; }
@@ -348,7 +479,7 @@
   .gmp-file + .gmp-file { border-top: 0; }
   .gmp-file-head { display: flex; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-2) var(--sp-3); background: var(--surface); border: 0; text-align: left; cursor: pointer; }
   .gmp-file-head:hover { background: var(--surface-hover); }
-  .gmp-file-head:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
+  .gmp-file-head:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
   .gmp-file-head .lucide:first-child { color: var(--ink-4); flex: none; }
   .gmp-file-path { font-size: var(--fs-sm); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
   .gmp-file-status { height: 22px; padding: 0 var(--sp-2); flex: none; }
@@ -362,7 +493,8 @@
   .gmp-hunk-attrib { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); background: var(--surface-2); font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
   .gmp-hunk-attrib .lucide { color: var(--ink-5); flex: none; }
   .gmp-hunk-from { color: var(--ink-4); text-transform: lowercase; flex: none; }
-  .gmp-hunk-link { color: var(--amber); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .gmp-hunk-link { background: transparent; border: 0; padding: 0; color: var(--amber); font: inherit; cursor: pointer; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .gmp-hunk-link:hover { color: var(--amber-bright); text-decoration: underline dotted; text-underline-offset: 2px; }
   .gmp-hunk-hash { color: var(--ink-4); margin-left: auto; flex: none; }
   .gmp-hunk-diff { border: 0; }
 
@@ -373,15 +505,15 @@
   .gmp-annot-x:hover { color: var(--ink); }
   .gmp-annot-add { display: inline-flex; align-items: center; gap: var(--sp-2); height: var(--control-h-sm); padding: 0 var(--sp-3); background: transparent; border: var(--bd-strong); color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; cursor: pointer; }
   .gmp-annot-add:hover { color: var(--ink); border-color: var(--amber-dim); }
-  .gmp-annot-add .lucide { color: var(--amber); width: 13px; height: 13px; }
-  .gmp-annot-pop { position: absolute; z-index: var(--z-dropdown); top: calc(100% + 4px); left: 0; display: flex; flex-direction: column; gap: var(--sp-2); width: min(280px, 90vw); padding: var(--sp-3); background: var(--surface-elev); border: var(--bd-strong); box-shadow: var(--glow-soft); }
+  .gmp-annot-add .lucide { color: var(--amber); width: var(--ic-sm); height: var(--ic-sm); }
+  .gmp-annot-pop { position: absolute; z-index: var(--z-dropdown); top: calc(100% + 4px); left: 0; display: flex; flex-direction: column; gap: var(--sp-2); width: min(280px, 90vw); padding: var(--sp-3); background: var(--surface-elev); border: var(--bd-strong); box-shadow: var(--overlay-shadow); }
   .gmp-annot-pop .input { height: var(--control-h-sm); }
   .gmp-annot-pop-foot { display: flex; justify-content: flex-end; gap: var(--sp-2); }
 
   /* exits */
   .gmp-exits { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); padding-top: var(--sp-4); border-top: var(--bd); }
   .gmp-gitdiff { padding: 0 var(--sp-3); height: var(--control-h); display: inline-flex; align-items: center; background: var(--canvas); border: var(--bd); font-size: 12px; color: var(--ink-2); }
-  .gmp-boundary { margin-top: var(--sp-4); font-size: 11px; text-transform: lowercase; color: var(--ink-4); border-left: 2px solid var(--rule-strong); padding-left: var(--sp-3); line-height: 1.5; }
+  .gmp-boundary { margin-top: var(--sp-4); font-size: 11px; text-transform: lowercase; color: var(--ink-4); border-left: var(--stroke-emphasis) solid var(--rule-strong); padding-left: var(--sp-3); line-height: 1.5; }
 }
 
 /* The trajectory graph: the @xyflow engine surface exported from `./graph`.
@@ -442,7 +574,7 @@
   }
   .tb-graph-controls-btn:last-child { border-bottom: 0; }
   .tb-graph-controls-btn:hover { background: var(--surface-hover); color: var(--ink); }
-  .tb-graph-controls-btn:focus-visible { outline: var(--sp-1) solid var(--focus-ring); outline-offset: calc(var(--sp-1) * -1); }
+  .tb-graph-controls-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
 
   /* Overlay POSITIONING only — the legend's swatch layout and typography come
      from the .ft-graph-legend visual this class is passed through to. */

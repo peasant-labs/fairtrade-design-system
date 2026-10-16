@@ -2,7 +2,7 @@
 
 > One design system for peasant and village (the transcript viewer and trajectory graph ship from
 > this package too): square, token-driven, two
-> themes (deep dark + truly-white light), neuroinclusive by default, calm desaturated earthy
+> themes (deep dark + warm paper light), neuroinclusive by default, calm desaturated earthy
 > palette with amber as a scarce accent. Built with React 19 + Tailwind v4; documented in a
 > single-page site and a Storybook component library. Paths below are repo-relative; read
 > AGENTS.md first for the hard invariants.
@@ -14,11 +14,12 @@
 - [public/components.json](public/components.json): the component manifest (name, category, props, controls, stories); generated.
 
 ## design reference
-- [llm/DESIGN.md](llm/DESIGN.md): the system - philosophy, tokens, typography, iconography, voice, component families.
-- [llm/NEUROINCLUSIVE.md](llm/NEUROINCLUSIVE.md): the neuroinclusive defaults baked into the tokens (the why, with the WCAG / COGA sources).
+- [DESIGN.md](DESIGN.md): the one design record - a generated frontmatter (its opening note says what is generated and what is authored), philosophy, colors, typography, layout, shapes, components, voice and anti-slop rules.
+- [llm/NEUROINCLUSIVE.md](llm/NEUROINCLUSIVE.md): the research sources and review checklist behind the neuroinclusive rules in DESIGN.md (the why, with the WCAG / COGA sources).
+- [PRODUCT.md](PRODUCT.md): who the design system serves, what it owns, and its constraints.
 
 ## using it
 - Import components from the `src/ui` barrel; they emit token-styled classes from `src/index.css`.
 - Never hardcode a colour or size - reference a token. Keep both themes and WCAG AA contrast.
 - Name a company with its real logo via `<BrandMark name="claude|gemini|openai|cursor|opencode" />`.
-- `public/tokens.json` + `public/components.json` are generated; run `node scripts/gen-llm-artifacts.mjs` (never hand-edit).
+- `public/tokens.json`, `public/components.json` and the frontmatter of `DESIGN.md` are generated; run `node scripts/gen-llm-artifacts.mjs` (never hand-edit).

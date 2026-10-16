@@ -47,24 +47,19 @@
   /* top is set inline (defaults to var(--nav-h)) so hosts can clear their nav. */
   z-index: var(--z-sticky);
   display: flex;
-  /* a hairline-bounded bar with a translucent, blurred backdrop so turns scroll
-     UNDER it legibly. solid fallback first for prefers-reduced-transparency. */
+  /* a hairline-bounded bar. opaque by default; the translucent, blurred backdrop
+     (turns scroll UNDER it legibly) is an opt-in where transparency is welcome. */
   background: var(--surface);
   border-top: var(--bd);
   border-bottom: var(--bd-strong);
 }
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .tm2-phase {
-    background: var(--glass-solid);
-    -webkit-backdrop-filter: blur(8px) saturate(1.4);
-    backdrop-filter: blur(8px) saturate(1.4);
-  }
-}
-@media (prefers-reduced-transparency: reduce) {
-  .tm2-phase {
-    background: var(--surface);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
+  @media (prefers-reduced-transparency: no-preference) {
+    .tm2-phase {
+      background: var(--glass-solid);
+      -webkit-backdrop-filter: blur(8px) saturate(1.4);
+      backdrop-filter: blur(8px) saturate(1.4);
+    }
   }
 }
 
@@ -83,11 +78,11 @@
   cursor: pointer;
   /* a left accent rail carries the active state without relying on colour alone:
      idle = the structural rule, active = amber + heavier weight + aria-current. */
-  border-left: 2px solid var(--rule);
+  border-left: var(--stroke-emphasis) solid var(--rule);
 }
 .tm2-phase-btn:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 .tm2-phase-btn[data-active='true'] {
   border-left-color: var(--amber);
@@ -218,17 +213,12 @@
   border-bottom: var(--bd-strong);
 }
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .tm2-contextbar {
-    background: var(--glass-solid);
-    -webkit-backdrop-filter: blur(8px) saturate(1.4);
-    backdrop-filter: blur(8px) saturate(1.4);
-  }
-}
-@media (prefers-reduced-transparency: reduce) {
-  .tm2-contextbar {
-    background: var(--surface);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
+  @media (prefers-reduced-transparency: no-preference) {
+    .tm2-contextbar {
+      background: var(--glass-solid);
+      -webkit-backdrop-filter: blur(8px) saturate(1.4);
+      backdrop-filter: blur(8px) saturate(1.4);
+    }
   }
 }
 .tm2-contextbar-inner {
@@ -256,8 +246,8 @@
   cursor: default;
 }
 .tm2-contextbar-main:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 .tm2-contextbar-eyebrow {
   flex: none;
@@ -296,8 +286,8 @@
   cursor: pointer;
 }
 .tm2-contextbar-next:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 .tm2-contextbar-next-icon {
   color: var(--amber);

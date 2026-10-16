@@ -65,7 +65,7 @@ export default function DiffEntryCard({ entry, byTurn = false, onJump }) {
           <span className="txn-churn-add">+{entry.adds}</span> <span className="txn-churn-del">−{entry.dels}</span>
         </span>
         <button type="button" className="txn-jump" onClick={onJump}>
-          jump to turn <ArrowRight size={13} aria-hidden="true" />
+          jump to turn <ArrowRight size={14} aria-hidden="true" />
         </button>
       </div>
       <DiffHunks hunks={entry.hunks} />

@@ -181,7 +181,7 @@
 /* a kept (un-redacted) match is flagged: the original will leave as-is, so it picks up the
    del rail as a left marker + a faint del wash to keep the warning honest without color-only. */
 .dv-match-kept {
-  border-left: 3px solid var(--del-rail);
+  border-left: var(--stroke-emphasis) solid var(--del-rail);
   background: var(--del-bg);
 }
 
@@ -268,13 +268,13 @@
 
 /* ── focus ───────────────────────────────────────────────────────────────── */
 .dv-keep:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 /* focusable rows: code lines are reachable for keyboard inspection. */
 .dv :focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: -2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-inset);
 }
 
 /* ── motion: only when the user has not asked to reduce it ─────────────────── */

@@ -1,0 +1,25 @@
+# Required-NAME manifest for token-measure.yaml: deletion protection.
+requiredMeasureNames:
+  - prose measure
+  - reading measure
+requiredLengthNames:
+  - emphasis stroke
+  - hairline stroke
+  - small icon
+  - medium icon
+  - large icon
+  - minimum target
+  - control height
+  - comfortable target
+  - focus ring width
+  - focus ring offset
+  - inset focus ring offset
+requiredFittedIconNames:
+  - commit session star
+  - changes legend session star
+requiredFitMutationNames:
+  - the session marker shrinks back to the 9px dot
+  - the legend session marker shrinks back to the 9px dot
+requiredMutationNames:
+  - the reading measure widens past 66 characters
+  - the prose measure widens past 80 characters

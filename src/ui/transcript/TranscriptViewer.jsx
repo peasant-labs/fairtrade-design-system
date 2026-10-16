@@ -747,7 +747,7 @@ export default function TranscriptViewer({
               const last = i === items.length - 1
               return (
                 <Fragment key={`${item.label}-${i}`}>
-                  {i > 0 && <ChevronRight size={13} aria-hidden="true" />}
+                  {i > 0 && <ChevronRight size={14} aria-hidden="true" />}
                   {!last && item.href != null
                     ? <CrumbLink className="link" href={item.href}>{item.label}</CrumbLink>
                     : <span className={last ? 'cur' : 'link'}>{item.label}</span>}
@@ -770,7 +770,7 @@ export default function TranscriptViewer({
                 onClick={() => { setShareOpen((o) => !o); setMoreOpen(false) }}
               >
                 <Share2 size={14} aria-hidden="true" /> share
-                <ChevronDown size={13} aria-hidden="true" className="menu-caret" />
+                <ChevronDown size={14} aria-hidden="true" className="menu-caret" />
               </button>
               {shareOpen && (
                 <div className="menu-pop menu-float" data-align="end" role="menu" aria-label="share">
@@ -877,7 +877,7 @@ export default function TranscriptViewer({
         {leftRailOpen ? (
           <aside className="txn-rail txn-rail-left" aria-label="user turns outline">
             <div className="txn-rail-head">
-              <LayoutList size={13} aria-hidden="true" /> user turns
+              <LayoutList size={14} aria-hidden="true" /> user turns
               <button type="button" className="txn-rail-collapse" aria-label="collapse user turns outline" title="collapse" onClick={() => setLeftRailOpen(false)}>
                 <PanelLeftClose size={14} aria-hidden="true" />
               </button>
@@ -1003,8 +1003,8 @@ export default function TranscriptViewer({
                         {h.stat && <span className="txn-hl-stat tnum">{h.stat}</span>}
                       </span>
                       <span className="txn-hl-side">
-                        {h.err && <span className="chip chip-err txn-pill"><AlertTriangle size={12} aria-hidden="true" /> failed</span>}
-                        {h.tokens && <span className="txn-tokbadge tnum"><Coins size={12} aria-hidden="true" /> {h.tokens}</span>}
+                        {h.err && <span className="chip chip-err txn-pill"><AlertTriangle size={14} aria-hidden="true" /> failed</span>}
+                        {h.tokens && <span className="txn-tokbadge tnum"><Coins size={14} aria-hidden="true" /> {h.tokens}</span>}
                         {h.time && <span className="txn-hl-time">{h.time}</span>}
                         {!isStatic && <ChevronRight size={14} aria-hidden="true" />}
                       </span>
@@ -1060,8 +1060,8 @@ export default function TranscriptViewer({
               <table className="dtable txn-filetable">
                 <thead>
                   <tr>
-                    <th><button type="button" className="txn-sort" onClick={() => setFileSort((s) => ({ key: 'path', dir: s.key === 'path' && s.dir === 'asc' ? 'desc' : 'asc' }))}>file {fileSort.key === 'path' ? (fileSort.dir === 'asc' ? <ChevronUp size={12} aria-hidden="true" /> : <ChevronDown size={12} aria-hidden="true" />) : null}</button></th>
-                    <th className="txn-files-churn-col"><button type="button" className="txn-sort" onClick={() => setFileSort((s) => ({ key: 'churn', dir: s.key === 'churn' && s.dir === 'asc' ? 'desc' : 'asc' }))}>lines +/− {fileSort.key === 'churn' ? (fileSort.dir === 'asc' ? <ChevronUp size={12} aria-hidden="true" /> : <ChevronDown size={12} aria-hidden="true" />) : null}</button></th>
+                    <th><button type="button" className="txn-sort" onClick={() => setFileSort((s) => ({ key: 'path', dir: s.key === 'path' && s.dir === 'asc' ? 'desc' : 'asc' }))}>file {fileSort.key === 'path' ? (fileSort.dir === 'asc' ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />) : null}</button></th>
+                    <th className="txn-files-churn-col"><button type="button" className="txn-sort" onClick={() => setFileSort((s) => ({ key: 'churn', dir: s.key === 'churn' && s.dir === 'asc' ? 'desc' : 'asc' }))}>lines +/− {fileSort.key === 'churn' ? (fileSort.dir === 'asc' ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />) : null}</button></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1075,7 +1075,7 @@ export default function TranscriptViewer({
                           aria-label={f.edited ? `${f.path}, jump to diffs` : `${f.path}, jump to last read`}
                           title={f.edited ? 'jump to diffs' : 'jump to last read'}
                         >
-                          {f.edited ? <Pencil size={13} aria-hidden="true" /> : <FileText size={13} aria-hidden="true" />}
+                          {f.edited ? <Pencil size={14} aria-hidden="true" /> : <FileText size={14} aria-hidden="true" />}
                           <span className="mono txn-file-path">…/{f.leaf}</span>
                           <span className="txn-file-counts tnum">{f.reads ? `${f.reads}r ` : ''}{f.edits ? `${f.edits}e ` : ''}{f.writes ? `${f.writes}w` : ''}</span>
                         </button>
@@ -1103,7 +1103,7 @@ export default function TranscriptViewer({
                 return (
                   <button key={a.id} type="button" className="txn-anno-row" onClick={() => jumpTo(a.turn)}>
                     <span className="txn-anno-turn tnum">turn {a.turn}{annoRole ? ' · ' + annoRole : ''}</span>
-                    <span className={'chip txn-pill ' + meta.chip} title={meta.tip}><Icon size={12} aria-hidden="true" /> {meta.label}</span>
+                    <span className={'chip txn-pill ' + meta.chip} title={meta.tip}><Icon size={14} aria-hidden="true" /> {meta.label}</span>
                     <span className="txn-anno-label">{a.label}</span>
                     {a.preview && <span className="txn-anno-preview mono">{a.preview}</span>}
                     <ChevronRight size={14} aria-hidden="true" />
@@ -1118,7 +1118,7 @@ export default function TranscriptViewer({
         {rightRailOpen ? (
           <aside className="txn-rail txn-rail-right" aria-label="filters">
             <div className="txn-rail-head">
-              <SlidersHorizontal size={13} aria-hidden="true" /> filters
+              <SlidersHorizontal size={14} aria-hidden="true" /> filters
               {filtersActive > 0 && <span className="chipx-count unread tnum">{filtersActive}</span>}
               <button type="button" className="txn-rail-collapse" aria-label="collapse filters" title="collapse" onClick={() => setRightRailOpen(false)}>
                 <PanelRightClose size={14} aria-hidden="true" />

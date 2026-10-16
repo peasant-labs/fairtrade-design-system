@@ -1,11 +1,23 @@
 # neuroinclusive by default
 
-This is not an "accessibility settings" page. These are the **default** rules of the fairtrade
-design system, because the product is a **data-heavy** application (long transcripts, tables,
-code, dashboards) and our users include people who are dyslexic, have ADHD, or are autistic.
-Designing for them by default makes the product calmer, faster to scan, and less fatiguing for
-**everyone**. Every rule below is a default behaviour of the base components and tokens - not an
-opt-in toggle.
+> **Authority.**
+> - The binding rules live in [`../DESIGN.md`](../DESIGN.md), the one design record.
+> - Token values live in `src/index.css`. The token values in `DESIGN.md`'s frontmatter and in
+>   `public/tokens.json` are generated from it.
+> - This file keeps three things: the research behind the rules, how the rules were reconciled
+>   with the locked identity, and the review checklist.
+> - The values in its tables explain the rules. They are not a second source of truth.
+> - If this file and `DESIGN.md` disagree, `DESIGN.md` wins. The disagreement is a bug: fix both
+>   files in the same commit.
+
+This is not an "accessibility settings" page. It records the research behind fairtrade's
+neuroinclusive defaults. `DESIGN.md` sets each rule's status: binding, or a known conflict with the
+demo (`#136/N`), as its Status note says. This file sets no status. A bullet here that `DESIGN.md`
+does not state is research guidance that the library does not ship yet, and where a bullet says
+more than `DESIGN.md`, the extra is guidance too. The defaults exist because the product is a
+**data-heavy** application (long transcripts, tables, code, dashboards) and our users include people
+who are dyslexic, have ADHD, or are autistic. Designing for them by default makes the product
+calmer, faster to scan, and less fatiguing for **everyone**, and none of it is an opt-in toggle.
 
 Sourced from a deep review of primary research: W3C **WCAG 2.2** + the **COGA** (Cognitive &
 Learning Disabilities) task force "Making Content Usable", the **British Dyslexia Association**
@@ -18,9 +30,11 @@ is stated.
 
 ---
 
-## the defaults that ship in the tokens
+## the tokens behind the defaults
 
-These are baked into `src/index.css` (and are intended to flow to every app once the multi-app rollout lands - that shared `@peasant-labs/theme` package does not exist in this repo yet):
+These tokens live in `src/index.css` and reach every consuming app through the package's
+`@peasant-labs/fairtrade/tokens.css` and `base.css` exports. The rule column is research;
+`DESIGN.md` sets each rule's status:
 
 | token | value | rule |
 |---|---|---|
@@ -31,10 +45,10 @@ These are baked into `src/index.css` (and are intended to flow to every app once
 | `--measure-prose` / `--measure-read` / `--measure-code` | **66ch / 60ch / 80ch** | cap running-prose line length; never cap tables/code (give each its own `overflow-x:auto`) |
 | `--focus-ring` | amber (dark) / near-black (light) | global `:focus-visible{outline:3px solid;outline-offset:2px}`; never bare `outline:none` |
 | `--target-min` / `--target-comfortable` | **24px / 44px** | every interactive box ≥24px (WCAG 2.5.8), primary ≥44px |
-| `--row-h-compact/standard/comfortable` | **32 / 40 / 48px** | comfortable 40px default, persistent density toggle |
-| `--motion-base` | **0ms default**, 150–200ms only under `prefers-reduced-motion:no-preference` | static-first |
+| `--row-h-compact/standard/comfortable` | **32 / 40 / 48px** | standard 40px default, persistent density toggle |
+| `--motion-base` | **0ms default**, 120 to 200ms (`--dur-1` to `--dur-3`) only under `prefers-reduced-motion:no-preference` | static-first |
 
-Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:justify`; no
+Hard floors (checked in review, not by a lint): no text `<16px` in reading contexts; no `text-align:justify`; no
 `outline:none` without a stronger replacement; no infinite animation; no color-only meaning.
 
 ---
@@ -77,7 +91,7 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
   **non-text chrome only** (borders, headers, empty states, hero art, thumbnails). *(BDA 2023; pattern-glare PMC4621622)*
 - **Reflow (WCAG 1.4.10):** usable at 320px / 400% zoom with no page-level horizontal scroll. Each
   table/code block gets its own `overflow-x:auto`; prose wraps at the measure. *(WCAG 1.4.10)*
-- **Honor `prefers-reduced-transparency` / `prefers-contrast`.** No glass/blur in the base UI;
+- **Honor `prefers-reduced-transparency`** (and, not implemented yet, `prefers-contrast`). No glass/blur in the base UI;
   overlays, sticky headers and command palettes use opaque surfaces; gate `backdrop-blur` behind
   `prefers-reduced-transparency:no-preference` with an opaque fallback. *(MDN; COGA)*
 
@@ -88,8 +102,9 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
   warm paper (`#fbfaf7`/`#fdfcfa`); body ink stays the locked off-black `#27241f`. *(BDA 2023; Rello & Bigham ASSETS 2017)*
 - **Dark theme: off-white on near-black, never `#fff` on `#000`.** Pure white on black causes
   halation (haloing) for ~1-in-3 adults with astigmatism. Body uses `--ink #e9e5db` (16:1);
-  `--ink-strong #f8f5ed` (18.5:1) only for short emphasis; the amber text-shadow glow never touches
-  multi-line text. (Already satisfied - do not "fix" to pure black/white.) *(NN/g Dark Mode; COGA)*
+  `--ink-strong #f8f5ed` (18.5:1) only for short emphasis; the amber text-shadow glow should never
+  touch multi-line text (`#136/28`). (The off-white on near-black is satisfied - do not "fix" it to
+  pure black/white.) *(NN/g Dark Mode; COGA)*
 - **Contrast floor 4.5:1, target 7:1 (AAA) for primary body.** Tune earthy hues by lightness; the
   muted `--ink-3` (≈6.5:1 dark `#9a9488` / 7:1 light) is for **secondary** text only, never primary
   body. (Raised from ≈5:1 dark on 2026-06-16: thin mono glyphs anti-alias darker, so the rendered
@@ -97,12 +112,14 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
   Validate every text-on-surface pair in CI. *(WCAG 1.4.3 / 1.4.6)*
 - **Non-text contrast ≥3:1 (WCAG 1.4.11) on every functional border, input outline, focus
   ring, meaningful icon, toggle, chart series.** In dense tables the structure *is* the information.
-  **Done (verified by the contrast gate, `scripts/contrast.mjs`, run in CI via `pnpm build`):**
+  **Done for control borders and the focus ring (verified by the contrast gate, `scripts/contrast.mjs`,
+  run in CI via `pnpm build`); icons, toggles and chart series are checked in review:**
   functional control/input borders use `--rule-strong`, raised to clear 3:1 against every surface in
   both themes (dark `#6f6a5f` ~3.2 to 3.8:1, light `#8b836d` ~3.1 to 3.4:1), kept 1px thin. Structural
   hairline dividers (`--rule`) are deliberately sub-3:1 (~1.6 to 1.8:1): under 1.4.11 they are
   decorative separators between same-tone surfaces, not borders that identify a component or its state
-  (owner decision 2026-06-16). The gate enforces 3:1 on the functional set and reports the dividers. *(WCAG 1.4.11)*
+  (owner decision 2026-06-16). The gate fails on control borders and the focus ring, and only reports
+  the toggle fill, the `--amber-dim` focus tint and the dividers. *(WCAG 1.4.11)*
 - **Never color alone (WCAG 1.4.1).** Every status/diff/log-level/required-field carries a redundant
   icon + label + shape. Negative numbers get a leading minus/parentheses. Pairs perfectly with the
   locked "real icons, not glyph-dots" rule. *(WCAG 1.4.1; COGA)*
@@ -125,7 +142,7 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
 
 ## 5. cognitive load & orientation
 
-- **≤5 primary actions per view.** One primary CTA, ≤5 first-class secondary actions, the rest under
+- **One primary action and ≤5 first-class actions per view.** One primary CTA, ≤5 first-class secondary actions, the rest under
   a `…` overflow. Table rows default to a single kebab, not inline button rows. *(COGA Manageable Quantity)*
 - **Progressive disclosure by default.** Lead with a summary, defer detail to expand-on-demand:
   collapsed transcript turns (speaker + first line), essential columns + column-picker, headline
@@ -169,7 +186,7 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
   `position:sticky`; the frozen first column is a human-readable label, never an opaque ID; order
   columns by importance. Compensate for lowercase headers with weight 600 + a rule under the header.
   *(NN/g; Adrian Roselli)*
-- **Comfortable ~40px rows by default** (≈12px vertical padding), with persistent compact (32px) /
+- **Standard ~40px rows by default** (≈12px vertical padding), with persistent compact (32px) /
   comfortable (48px) density; in-row controls get ≥24px (≥44px touch) hit boxes even when the glyph
   is 14–16px. *(BDA 2023; MUI X; WCAG 2.5.8)*
 - **Maximize data-ink.** No 3D, gradients, drop shadows (beyond one functional sticky-edge), textures,
@@ -198,7 +215,7 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
   work on navigation; specific, persistent, field-adjacent plain-language error guidance (not a
   transient toast). *(COGA; WCAG 3.3.1/3.3.3)*
 - **Author the WCAG 1.4.12 text-spacing metrics as comfortable defaults** and stay resilient: no fixed
-  px heights on text containers, no `overflow:hidden`/truncation of transcript lines, so a user
+  px heights on text containers, no `overflow:hidden`/truncation of transcript lines (`#136/20`), so a user
   stylesheet (line-height 1.5 / paragraph 2× / letter 0.12em / word 0.16em) cannot clip content. *(WCAG 1.4.12)*
 - **APCA is aspirational, not implemented.** The shipping gate (`scripts/contrast.mjs`) measures pure
   WCAG 2.x ratios in both themes; it does **not** compute APCA Lc. WCAG 2.x is known to overstate
@@ -213,7 +230,8 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
 1. **Pure-white light theme vs glare.** → Shift the light *reading* canvas a few percent warm to
    paper-white (`#fbfaf7`/`#fdfcfa`); it still reads as a crisp white theme and carries a faint amber
    kinship, while removing the documented `#000`-on-`#fff` glare. If literal `#fff` is required, scope
-   it to thin chrome and make large reading surfaces the paper. *(decision pending the owner - see below)*
+   it to thin chrome and make large reading surfaces the paper. *(shipped: the light canvas and surface
+   are the warm paper values, recorded in `DESIGN.md` as the warm paper rule)*
 2. **Amber/earthy palette vs functional contrast.** → Amber = accent/link/keyword/focus/large-bold,
    never small body text on light. **Raise the rule/border tokens to clear 3:1** (thin preserved).
    Tune muted tokens by lightness to clear ≥4.5:1.
@@ -224,31 +242,39 @@ Hard floors / lint rules: no text `<16px` in reading contexts; no `text-align:ju
    (600–700), amber accent, whitespace, and a hairline under section headers. Allow sentence-case for
    multi-line literal copy; keep short labels lowercase.
 5. **Underline-free amber links vs "links must look different".** → In-prose links get a secondary
-   non-color cue (dotted underline on hover/focus + the existing `> ` marker vocabulary) without
+   non-color cue (a dotted underline at rest, solid on hover and focus; no `>` marker) without
    undoing the global underline-free aesthetic.
-6. **cp437/Qud texture & glow vs flat-background/halation rules.** → Confine texture/glow to non-text
-   chrome; every region with running text or data stays a flat single fill; the `.hl` glow is single
-   accent words only.
+6. **cp437/Qud texture & glow vs flat-background/halation rules.** → Confine texture to non-text
+   chrome; every region with running text or data stays a flat single fill; glow is for single
+   accent words only (`#136/28`: the demo also glows multi-word bold in transcript bodies).
 
 ---
 
 ## what to verify in CI / review
 
-The four gates that actually run (CI mirrors these in `.github/workflows/ci.yml`):
+The automated gates that cover these rules (CI runs them in `.github/workflows/ci.yml`):
 
 - **contrast gate** (`scripts/contrast.mjs`, run via `pnpm build` before `vite build`): pure-JS WCAG
-  2.x ratios in both themes - every text/surface pair ≥4.5:1 (reports <7:1 primary); every functional
-  border/icon/focus ring ≥3:1; structural hairline dividers are reported, not failed. No APCA today.
-- **validator** (`node scripts/validate.mjs`): the 20-check interactive puppeteer gate (icons painted,
-  one h1, heading outline, copy-token labels, decorative icons aria-hidden, scroll-spy, ZONE header
-  gating, cmd-k palette, dialog focus-trap, theme toggle, 0 overflow at 360/390/768/1024/1440,
-  reduced-motion, no console errors).
+  2.x ratios in both themes - every required text/surface pair ≥4.5:1; control borders and the focus
+  ring ≥3:1; the toggle fill, the `--amber-dim` focus tint and the structural dividers are reported,
+  not failed. It has no icon or chart-series pairs. No APCA today.
+- **built-app validation** (`scripts/journey/app-validate.journey.mjs`, run by `pnpm journey:ci`): the
+  twenty interaction checks, ported from the older `scripts/validate.mjs` onto Playwright (icons
+  painted, one h1, heading outline, copy-token labels, decorative icons aria-hidden, scroll-spy, ZONE
+  header gating, cmd-k palette, dialog focus-trap, theme toggle, 0 overflow at 360/390/768/1024/1440,
+  reduced-motion, no console errors), plus a separate check that under `prefers-reduced-transparency:
+  reduce` no mounted element and no fresh unclassed div computes a backdrop blur, and the nav, the
+  mounted transcript glass bars and a `.txn-sticky` bar compute the opaque `--surface`, in each theme.
 - **storybook build** (`pnpm build-storybook`): the type/parse gate for `src/ui/*`.
-- **storybook smoke** (`node scripts/sbsmoke.mjs`): loads every story incl. `play()`, expects 0 real errors.
+- **storybook smoke** (`scripts/journey/storybook-smoke.journey.mjs`, run by `pnpm journey:ci`): loads
+  every story incl. `play()`, expects 0 real errors. `node scripts/sbsmoke.mjs` is the local equivalent.
 
-Manual / review checks beyond the automated gates:
+Manual / review checks beyond the automated gates. A consumer surface that matches the demo is not
+a finding (see `DESIGN.md` Status). On a listed known conflict the decision is open; anywhere else
+the demo has a defect to file in fairtrade. New fairtrade work is held to the record.
 
 - text-spacing resilience: apply the 1.4.12 user stylesheet; nothing clips.
 - no text token <16px in reading contexts; no `text-align:justify`; no `outline:none` without replacement; no infinite animation; no color-only status.
-- reflow at 320px / 400% zoom; reduced-motion and reduced-transparency honoured.
+- reflow at 320px / 400% zoom; reduced-motion honoured (reduced transparency is automated, above).
 - every interactive box ≥24px (or 24px-spacing exception); focus visible on every control including dense table cells.
+- meaningful icons, toggle boundaries and chart series clear 3:1 against their surfaces (the gate does not check them).

@@ -17,7 +17,7 @@ export default function FilterSection({ title, children, defaultOpen = true }) {
   return (
     <div className="txn-fsec">
       <button type="button" className="txn-fsec-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        {open ? <ChevronDown size={13} aria-hidden="true" /> : <ChevronRight size={13} aria-hidden="true" />} {title}
+        {open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />} {title}
       </button>
       {open && <div className="txn-fsec-body">{children}</div>}
     </div>

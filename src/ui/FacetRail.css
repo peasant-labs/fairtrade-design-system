@@ -139,8 +139,8 @@
 /* the visually-hidden input still owns focus; mirror the global ring onto the
    visible dot so keyboard users see where they are. */
 .fr-order-input:focus-visible + .fr-order-dot {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* ── provider checklist ───────────────────────────────────────────────────────
@@ -202,8 +202,8 @@
   color: var(--ink-2);
 }
 .fr-provider:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* ── topics tag cloud ─────────────────────────────────────────────────────────
@@ -257,8 +257,8 @@
   color: var(--amber-fill-ink);
 }
 .fr-topic:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* ── sticky footer ────────────────────────────────────────────────────────────
@@ -310,8 +310,8 @@
   color: var(--clay);
 }
 .fr-clear:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* ── motion (gated) ───────────────────────────────────────────────────────────
