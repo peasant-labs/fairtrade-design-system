@@ -4,6 +4,32 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.26 - 2026-10-15
+
+The in-use demo's quality remediation in one release: the five merged layers of fairtrade#116 (typography and phone layout, publish consent, accessibility and performance, demo truth and the decision register, and the final wave).
+
+### Added
+
+- The single design record (`DESIGN.md` with a generated frontmatter) and the product record (`PRODUCT.md`), with all 28 recorded demo/record conflicts decided and resolved.
+- `DataTable` host totals and local filtering: a persistent `showing X of N` (and `showing X of Y loaded` on a partial window, never an invented global total), local search and column filters with removable chips, a sticky header and a frozen identifier column.
+- Accessibility semantics for the graph and transcript composites: valid tree/list structure, heading navigation for turns and phases, keyboard-reachable horizontal scrollers, labeled token badges, outcome chips that pair icon with word, and target sizes on the 24px floor.
+- The publish dialog's complete state truth: engine-rendered redaction labels (`CREDENTIAL`, `PII`, `PATH`, `INTERNAL`), the auto-publish consent naming its consequence, and an update mode that no longer labels existing readers as suggestions.
+- Provider marks leading provider names in the canonical transcript footers on both routes.
+
+### Changed
+
+- Reading text sits on the 16px floor and chrome on mono 14 throughout the transcript, analytics, changes and code map; the 11px `--fs-micro` token is retired.
+- Phone layout: 320/390 wrap-not-clamp with overflow probes, a compact app switcher, restored gutters, and a search that never overlaps.
+- Every viewport media query now uses the documented breakpoint scale (480/768/1024/1440), with one declared exception (the transcript rails below 1080) and a build gate that enforces the rule.
+- Bounded transcript scroll reads (a logarithmic active-turn lookup), transform-based progress fills, and a non-overshooting `--ease-spring`; markdown rendering is externalized and an unused dependency is gone (library JS about 25.8% smaller).
+- `llm/NEUROINCLUSIVE.md` is cut to one line per rule so it cannot drift from `DESIGN.md`; the #102/#103/#104 prose port is recorded with content identity.
+
+### Fixed
+
+- The pre-existing 320px reduced-motion side-scroll in the pagination specimen; the overflow sweep is clean (456/456) across widths, themes and motions.
+- Reduced transparency now gates every glass surface with an opaque fallback; the dialog close button keeps its square and long titles wrap instead of pushing it out.
+- Commit messages keep their case in the transcript checkpoint marker; the offline home marks its data stale with search and filters disabled while the table scroll region stays keyboard reachable.
+
 ## 0.0.25 - 2026-10-13
 
 ### Added
