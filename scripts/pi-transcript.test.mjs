@@ -90,7 +90,7 @@ for (const c of cases) {
     assert.ok(!html.includes('MetadataOnlyNeedle'))
     const { JSDOM } = await import('jsdom')
     const document = new JSDOM(html).window.document
-    assert.deepEqual([...document.querySelectorAll('.txn-usage-scopes h3')].map(node => node.textContent), probe.ownerHeadings)
+    assert.deepEqual([...document.querySelectorAll('.txn-usage-scopes .txn-usage-scope-label')].map(node => node.textContent), probe.ownerHeadings)
   }
   console.log(`PASS ${c.name}`)
 }

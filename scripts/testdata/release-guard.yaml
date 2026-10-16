@@ -109,6 +109,16 @@ github:
       approved: true
       expected_paths: ["/pulls/16/reviews?per_page=100", "/pulls/16/reviews?per_page=100&page=2", "/collaborators/alice/permission"]
 workflow:
+  prepack_if: "github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'release(')"
+  build_if: "!(github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'release('))"
+  ci_selection:
+    - {name: final release PR, event_name: pull_request, title: "release(v1.2.3): final release", command: pnpm prepack}
+    - {name: candidate release PR, event_name: pull_request, title: "release(v1.2.3-rc4): candidate", command: pnpm prepack}
+    - {name: release prefix still requires exact release guard, event_name: pull_request, title: "release(invalid): invalid version", command: pnpm prepack}
+    - {name: ordinary PR, event_name: pull_request, title: "fix: render usage labels", command: "pnpm build:lib"}
+    - {name: embedded release title, event_name: pull_request, title: "fix: release(v1.2.3): embedded", command: "pnpm build:lib"}
+    - {name: push without PR metadata, event_name: push, title: null, command: "pnpm build:lib"}
+    - {name: manual run without PR metadata, event_name: workflow_dispatch, title: null, command: "pnpm build:lib"}
   validate_if: "github.event_name == 'pull_request' && github.event.action != 'closed' && startsWith(github.event.pull_request.title, 'release(')"
   tag_if: "github.event_name == 'workflow_dispatch' || (github.event.action == 'closed' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.title, 'release('))"
   release_needles:
