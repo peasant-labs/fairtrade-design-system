@@ -1,0 +1,27 @@
+widths: [320, 390, 1440]
+themes: [dark, light]
+baseline: []
+insightReadings:
+  - {name: insight title body size and panel reflow, surface: code map, selector: .tlp-insight-title, panel: .tlp-insight-panel, item: .tlp-insight-item, fontToken: --fs-body, expectedPx: 16, minimumLeading: 1.4, tolerancePx: 1}
+  - {name: insight summary body size and panel reflow, surface: code map, selector: .tlp-insight-summary, panel: .tlp-insight-panel, item: .tlp-insight-item, fontToken: --fs-body, expectedPx: 16, minimumLeading: 1.4, tolerancePx: 1}
+surfaces:
+  - {name: code map, query: 'app=graph&section=map', mounted: .gmp-navigator-tree, root: .iu-view, keyboard: tree, prose: [.tlp-insight-title, .tlp-insight-summary], outcomeSelector: .gmp-outcome}
+  - {name: analytics, query: 'app=graph&section=analytics', mounted: .gan-tile, root: .iu-view, keyboard: drilldown}
+  - {name: transcript, query: app=transcript, mounted: article.txn-turnwrap, root: .txn-app, keyboard: turn, passiveStickySelector: .txn-phase}
+  - {name: settings, query: 'app=graph&section=settings', mounted: .srow, root: .iu-view, keyboard: settings, prose: [.srow-help]}
+mutations:
+  - {name: unpinned theme is refused, kind: theme-pin}
+  - {name: wrong rendered theme is refused, kind: rendered-theme}
+  - {name: visible tree disclosure fails zero baseline, kind: tree-children, violation: aria-required-children}
+  - {name: unnamed button fails zero baseline, kind: button-name, violation: button-name}
+  - {name: outcome word cannot shrink and split, kind: outcome-wrap}
+  - {name: informational sticky phase cannot intercept turn controls, kind: sticky-pointer}
+  - {name: undersized turn anchor fails minimum target, kind: minimum-target}
+targets:
+  - {name: turn anchor, query: app=transcript, selector: .txn-anchor}
+  - {name: turn label, query: app=transcript, selector: .txn-labelbtn}
+  - {name: thinking disclosure, query: app=transcript, selector: .txn-thinking-toggle}
+  - {name: tool subgroup, query: app=transcript, selector: .txn-toolcat-toggle, desktopOnly: true}
+  - {name: trace view switch, query: app=transcript, selector: '.txn-viewsw .sw', desktopOnly: true}
+  - {name: collective annotation, query: 'app=commons&commons=explore-transcript', selector: .cex-label-btn}
+  - {name: pull request link, query: 'app=commons&commons=transcript-detail', selector: .cmg-pr-link}

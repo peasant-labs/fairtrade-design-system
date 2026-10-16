@@ -71,7 +71,7 @@ export default function TaskBody({ tool }) {
       >
         {open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />} result
       </button>
-      {open && <pre className="txn-code">{result}</pre>}
+      {open && <pre className="txn-code" tabIndex={0} aria-label="task result">{result}</pre>}
     </div>
   )
 }

@@ -271,7 +271,7 @@ function mutateErrorDisplayRoot() {
  * @returns {object} the boundary return value; the mutation must throw at the owning boundary
  */
 function mutateWrongTheme() {
-  return observeProductTheme({ expected: 'dark', renderedAttribute: 'dark', source: 'component-mutations:wrong-theme', observedAtMs: 1000 })
+  return observeProductTheme({ expected: 'dark', renderedAttribute: 'sepia', source: 'component-mutations:wrong-theme', observedAtMs: 1000 })
 }
 
 /**

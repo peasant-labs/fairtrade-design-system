@@ -17,5 +17,8 @@ export const LIB_EXTERNALS = Object.freeze([
   'react',
   'react-dom',
   'react/jsx-runtime',
+  'react-markdown',
+  'remark-breaks',
+  'remark-gfm',
   'recharts',
 ])

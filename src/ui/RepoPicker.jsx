@@ -106,13 +106,13 @@ export default function RepoPicker({ open, onClose, owners, initialSelected = []
         <div className="rpk-owners">
           {visibleOwners.map((owner) => (
             <section key={owner.id} className="rpk-owner" aria-labelledby={`${baseId}-${owner.id}`}>
-              <h4 className="rpk-owner-head" id={`${baseId}-${owner.id}`}>
+              <p className="rpk-owner-head" id={`${baseId}-${owner.id}`}>
                 {owner.kind === 'org'
                   ? <Building2 className="rpk-owner-icon" aria-hidden="true" />
                   : <Avatar name={owner.login} src={owner.avatarUrl} className="rpk-owner-avatar" aria-hidden="true" />}
                 <span className="rpk-owner-login">{owner.login}</span>{' '}
                 <span className="rpk-owner-kind">{owner.kind === 'org' ? 'organisation' : 'personal'}</span>
-              </h4>
+              </p>
               <ul className="rpk-repos">
                 {owner.repos.map((repo) => {
                   const note = status(repo.id)

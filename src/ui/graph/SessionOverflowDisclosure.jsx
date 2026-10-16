@@ -29,7 +29,6 @@ export default function SessionOverflowDisclosure({ commitHash, overflow, expand
       >
         <span className="tnum">+{overflow.length}</span> more {itemLabel}
       </button>
-      <span className="tlp-sr" role="status" aria-live="polite">{expanded ? `${overflow.length} more ${itemLabel} expanded` : ''}</span>
       {expanded && (
         <span className="tlp-overflow-list" role="group" aria-label={`all ${itemLabel}`}>
           {overflow.map((item) => (

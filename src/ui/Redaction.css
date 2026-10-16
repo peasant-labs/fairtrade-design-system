@@ -133,7 +133,9 @@
   overflow: hidden;
 }
 .rdx-scan-fill {
+  width: 100%;
   height: 100%;
+  transform-origin: left;
   background: var(--rule-strong);
 }
 
@@ -523,7 +525,7 @@
 /* ── motion: only when the user has not asked to reduce it ─────────────────── */
 @media (prefers-reduced-motion: no-preference) {
   .rdx-seg-opt { transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
-  .rdx-scan-fill { transition: width var(--dur-3) var(--ease-out); }
+  .rdx-scan-fill { transition: transform var(--dur-3) var(--ease-out); }
   .rdx-toggle { transition: border-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
   .rdx-card { transition: background var(--dur-2) var(--ease-out); }
   .rdx-row-add.rdx-row-muted { transition: opacity var(--dur-2) var(--ease-out); }

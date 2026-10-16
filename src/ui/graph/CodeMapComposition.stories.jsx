@@ -506,14 +506,9 @@ function canvasDomSnapshot(canvasElement) {
     .sort((left, right) => left.id.localeCompare(right.id))
   const grainByLabel = { overview: 'project', folders: 'package', files: 'file' }
   const checkedGrain = canvas.getByRole('radio', { checked: true })
-  // MapCanvas renders TWO aria-live status regions (see MapCanvas.jsx): the
-  // roving-focus announce (id `${baseId}-live`, whose text names the focused
-  // node's coverage/violations) and a SEPARATE folder-descent announce added for
-  // the canvas breadcrumb feature (deliberately distinct so a discrete "what
-  // changed" event never gets lost inside the ambient "what's focused" state).
-  // Snapshot the FOCUS announce specifically — selecting it by its id suffix so
-  // the second region cannot make getByRole('status') throw on "multiple
-  // elements"; the second region is counted in `structure.statusCount` below.
+  // The single live region carries separate focus and folder-change spans.
+  // This receipt records the focused node's speech; the descent regression
+  // gate verifies the event span inside the same live region.
   const status = application.querySelector('[role="status"][id$="-live"]')
   if (!status) throw new Error('focus-announce live region (role="status", id ending "-live") not found')
   const transform = application.querySelector('.mc-stage')?.style.transform ?? ''
@@ -527,7 +522,7 @@ function canvasDomSnapshot(canvasElement) {
     status: {
       role: status.getAttribute('role'),
       ariaLive: status.getAttribute('aria-live'),
-      text: status.textContent,
+      text: status.querySelector('[data-focus-announcement]').textContent,
     },
     structure: {
       applicationRole: application.getAttribute('role'),

@@ -346,7 +346,7 @@ and italic 400.
 - **Display** (700, `--fs-display`, `--lh-tight`): the presentation site's brand moments only.
 - **Headline** (700, `--fs-xl`, `--lh-tight`): page titles.
 - **Title** (700, `--fs-lg`, `--lh-tight`): section and card titles. Headings are at least 20%
-  larger than body text (#136/12), with at least 2em above them and more space above than below
+  larger than body text, with at least 2em above them and more space above than below
   (#136/18), and a hairline under section headers. Tight leading is for single-line headings; any
   text that wraps gets at least 1.4 (#136/19).
 - **Body** (400, `--fs-body`, `--lh-body`, `--tracking-prose` and `--word-spacing-prose`): prose,
@@ -360,6 +360,16 @@ and italic 400.
 
 The presentation site also uses a locked three-tier heading ladder (`--fs-group`, `--fs-section`,
 `--fs-sub`) that does not drift down the page.
+
+Small filter captions, repository-owner labels, usage-scope labels and publish-section labels
+are paragraphs, not headings. Transcript phases are level-three headings; each turn is a named
+article with a level-four heading, preserving its compact visible role label. Code, tables,
+metadata and the trace stream are keyboard-focusable scrollers. Technical help uses focus/tap
+triggers rather than hover-only titles. Tabs name and control their mounted panel. Graph tree
+items own selection/disclosure semantics; redundant pointer affordances stay out of the
+accessibility tree. Native pressed/expanded/checked state is not echoed by per-control live
+regions. Map focus and folder changes share one status region; settings views can use
+`SettingStatus` to share save announcements while standalone `SettingRow` retains its own.
 
 ### Named Rules
 **The 16px Floor Rule.** Nothing a person reads drops below 16px (`--fs-min`): table cells, code,
@@ -662,7 +672,6 @@ their own issues are tracked there, not here.
 - **#136/9, focus trap**: the publish popup, a modal the user opened, traps focus.
 - **#136/10, overlay shadows**: the drop shadow is a literal value and is absent in the light theme.
 - **#136/11, prose measure**: `--measure-prose` holds more characters than the rule intends.
-- **#136/12, heading step**: several titles and headings sit under the 20% step.
 - **#136/13, font loading**: the exported `fonts.css` uses a remote `@import`.
 - **#136/14, uppercase**: one uppercase danger word.
 - **#136/15, stripe widths**: some rails are wider than `--stroke-emphasis`.

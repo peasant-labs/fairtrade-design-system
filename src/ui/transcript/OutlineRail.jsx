@@ -3,6 +3,7 @@ import {
   RefreshCw, RotateCcw, CornerDownRight, ChevronRight,
 } from 'lucide-react'
 import StepsWaterfall from '../StepsWaterfall.jsx'
+import { Term } from '../Explainer.jsx'
 
 /* OutlineRail — the left rail's per-tab outline, lifted verbatim from the canonical mockup
    (src/mockups/inuse/TranscriptApp.jsx:1691). DUMB: it reads the cooked slices off the
@@ -105,7 +106,7 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {} }) {
           const Icon = meta.icon
           return (
             <div key={kind} className="txn-ol-group">
-              <div className="txn-ol-grouphead" title={meta.tip}><Icon size={14} aria-hidden="true" /> {meta.label} <span className="chipx-count">{items.length}</span></div>
+              <div className="txn-ol-grouphead"><Term def={meta.tip}><Icon size={14} aria-hidden="true" /> {meta.label} <span className="chipx-count">{items.length}</span></Term></div>
               <ul className="txn-outline">
                 {items.map((a) => (
                   <li key={a.id}>

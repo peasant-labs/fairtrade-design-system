@@ -13,6 +13,7 @@ import {
   PublishStateLabel,
   SettingGroup,
   SettingRow,
+  SettingStatus,
 } from '../../ui'
 import {
   HOME_SUMMARY,
@@ -169,7 +170,7 @@ function DemoSettingRow({ row }) {
 /** The settings section: every setting grouped, the summary line on top, and the files it saves to. */
 export function SettingsView() {
   return (
-    <div className="iu-page">
+    <SettingStatus><div className="iu-page">
       <header className="iu-page-head">
         <h2 className="iu-page-title">settings</h2>
         <p className="iu-page-sub">changes save right away. anything tagged not in peasant config can only be changed on this page.</p>
@@ -193,6 +194,6 @@ export function SettingsView() {
           </div>
         ))}
       </SettingGroup>
-    </div>
+    </div></SettingStatus>
   )
 }

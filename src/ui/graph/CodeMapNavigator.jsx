@@ -145,7 +145,7 @@ export default function CodeMapNavigator({
 
       <div className="gmp-navigator-body">
         <div
-          role="tree"
+          role={visible.length ? 'tree' : undefined}
           aria-label="code areas"
           className="gmp-navigator-tree"
           data-grain={grain}
@@ -219,6 +219,7 @@ function NavigatorRow({ row, hasChildren, isExpanded, selected, tabbable, setRef
           type="button"
           className="gmp-navigator-disclosure"
           tabIndex={-1}
+          aria-hidden="true"
           aria-label={`${isExpanded ? 'hide' : 'show'} children for ${row.node.name || row.node.id}`}
           aria-expanded={isExpanded}
           aria-disabled={row.forcedOpen ? 'true' : undefined}

@@ -23,3 +23,13 @@ requiredFitMutationNames:
 requiredMutationNames:
   - the reading measure widens past 66 characters
   - the prose measure widens past 80 characters
+requiredMotionNames:
+  - redaction scan progress
+  - provider share progress
+requiredMotionModeNames:
+  - default motion
+  - reduced motion
+requiredMotionMutationNames:
+  - scan progress animates width again
+  - provider share animates width again
+  - switch permanently promotes its thumb

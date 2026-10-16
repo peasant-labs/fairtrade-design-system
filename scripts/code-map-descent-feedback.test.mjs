@@ -8,9 +8,8 @@
 //     top level;
 //   - clicking a crumb collapses back to exactly that level (removes every
 //     id nested past it from expandedIds);
-//   - a dedicated aria-live region announces each open/close, distinct
-//     from the roving-focus live region (so a discrete "what changed"
-//     event is never swallowed by ambient "what's focused" updates);
+//   - one aria-live region retains both open/close feedback and roving-focus
+//     feedback in separate spans;
 //   - opening a folder re-frames the viewport to that folder's OWN
 //     subtree bounding box, not a whole-graph fit (proven by checking the
 //     scale/pan differ from what a whole-graph fit would have produced).
@@ -102,11 +101,9 @@ function crumbs(container) {
   return [...container.querySelectorAll('.mc-breadcrumb-crumb')]
 }
 function descentAnnounceText(container) {
-  // The SECOND .mc-sr region is the descent live region (the first is the
-  // pre-existing roving-focus announcement) -- assert on ordinal position,
-  // not a class-only guess, so a future reorder cannot silently break this.
-  const regions = [...container.querySelectorAll('.mc-sr')]
-  return regions[1]?.textContent ?? ''
+  const regions = container.querySelectorAll('[role="status"][aria-live="polite"]')
+  if (regions.length !== 1) throw new Error('folder feedback must share the one map live region')
+  return regions[0].querySelector('[data-descent-announcement]')?.textContent ?? ''
 }
 
 async function runBreadcrumbGrowsAndShrinksScenario(MapCanvas) {

@@ -1,4 +1,4 @@
-import { Children, useEffect, useId, useRef, useState } from 'react'
+import { Children, createContext, useContext, useEffect, useId, useRef, useState } from 'react'
 import { ChevronRight, CircleCheck, CircleX, Loader, Pencil } from 'lucide-react'
 import Switch from './Switch.jsx'
 import Chip from './Chip.jsx'
@@ -21,6 +21,18 @@ import './Settings.css'
    its rows. The `tag` prop puts the host's note ("not in peasant config") on the existing Chip. */
 
 export const SETTING_ROW_STATES = Object.freeze(['idle', 'pending', 'settled', 'failed'])
+const SettingAnnouncements = createContext(/** @type {((message:string)=>void)|null} */ (null))
+
+/** Share one polite save-status region across a settings view. Standalone rows keep their own.
+ * @param {{children: import('react').ReactNode}} props
+ */
+export function SettingStatus({ children }) {
+  const [message, announce] = useState('')
+  return <SettingAnnouncements.Provider value={announce}>
+    {children}
+    <span className="srow-announcement" role="status" aria-live="polite">{message}</span>
+  </SettingAnnouncements.Provider>
+}
 
 const STATUS = {
   pending: { icon: Loader, word: 'saving' },
@@ -74,9 +86,10 @@ function useCommit(value, onCommit) {
 
 /* a switch already swaps its own marker to a spinner while busy, so its pending mark is the word. */
 function StatusMark({ status, wordOnly = false }) {
+  const announce = useContext(SettingAnnouncements)
   const meta = STATUS[status]
   return (
-    <span className={`srow-status srow-status-${status}`} aria-live="polite">
+    <span className={`srow-status srow-status-${status}`} aria-live={announce ? undefined : 'polite'}>
       {meta && (
         <>
           {!wordOnly && <meta.icon className={status === 'pending' ? 'srow-status-icon srow-spin' : 'srow-status-icon'} aria-hidden="true" />}
@@ -151,6 +164,12 @@ function TextControl({ id, label, shown, status, commit, disabled }) {
 export function SettingRow({ label, help, control, value, options = [], onCommit, tag, disabled = false, className = '', ...rest }) {
   const id = useId()
   const { shown, status, error, commit } = useCommit(value, onCommit)
+  const announce = useContext(SettingAnnouncements)
+  useEffect(() => {
+    if (announce && (status === 'pending' || status === 'settled')) {
+      announce(`${typeof label === 'string' ? label : 'setting'}: ${STATUS[status].word}`)
+    }
+  }, [announce, label, status])
   const busy = status === 'pending'
   const labelId = `${id}-label`
   const helpId = help ? `${id}-help` : undefined

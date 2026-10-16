@@ -514,13 +514,13 @@ export function getProductAction(name) {
 
 /**
  * Normalize a rendered data-theme attribute value to a theme name. An absent
- * or empty value is the dark surface; the light surface carries the light
- * value. Anything else fails with an actionable diagnostic.
+ * or empty value remains a legacy dark surface; current app builds carry an
+ * explicit dark or light value. Anything else fails with an actionable diagnostic.
  * @param {unknown} rawAttributeValue raw attribute value, absent as nullish
  * @returns {string} dark or light
  */
 export function normalizeRenderedTheme(rawAttributeValue) {
-  if (rawAttributeValue === undefined || rawAttributeValue === null || rawAttributeValue === '') {
+  if (rawAttributeValue === undefined || rawAttributeValue === null || rawAttributeValue === '' || rawAttributeValue === 'dark') {
     return 'dark'
   }
   if (rawAttributeValue === 'light') {
@@ -528,7 +528,7 @@ export function normalizeRenderedTheme(rawAttributeValue) {
   }
   throw new Error(
     `fairtrade targets: unexpected rendered theme ${JSON.stringify(rawAttributeValue)} for field "renderedAttribute" at path theme.renderedAttribute; ` +
-    `repair: render dark as an absent or empty data-theme value and light as data-theme="light".`,
+    `repair: render data-theme="dark" or data-theme="light"; only absent/empty legacy dark values are also supported.`,
   )
 }
 

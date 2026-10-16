@@ -145,7 +145,7 @@ function ScanProgress({ scanned, total }) {
         aria-valuemax={safeTotal}
         aria-label={`scanned ${safeScanned} of ${safeTotal}`}
       >
-        <div className="rdx-scan-fill" style={{ width: `${pct}%` }} />
+        <div className="rdx-scan-fill" style={{ transform: `scaleX(${pct / 100})` }} />
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   ChevronRight, ChevronDown, ChevronUp, Clock, Coins, ShieldCheck, FileText,
   Search, Pencil, ListTree, LayoutList, SlidersHorizontal, Share2, Users, User, Wrench,
@@ -12,6 +12,7 @@ import ProviderIcon from '../ProviderIcon.jsx'
 import { formatDuration } from '../StepsWaterfall.jsx'
 import { TOOL_GROUPS } from './view-model.js'
 import { categoryCounts, projectTurn } from './filters.js'
+import { turnAtReadingLine } from './scroll-position.js'
 import TurnCard from './TurnCard.jsx'
 import TranscriptContext from './TranscriptContext.jsx'
 import { UsageScopes } from './UsageDisclosure.jsx'
@@ -24,6 +25,8 @@ import LabelPopover from './LabelPopover.jsx'
 import TranscriptOutcomeChip from './OutcomeChip.jsx'
 import useTranscriptInitialPosition from './useTranscriptInitialPosition.jsx'
 import { transcriptInitialPositionReadiness } from './initial-position.js'
+import { Term } from '../Explainer.jsx'
+import Tooltip from '../Tooltip.jsx'
 
 /* ───────────────────────────────────────────────────────────────────────────
    TranscriptViewer — the composite single-transcript surface (the headline)
@@ -110,11 +113,17 @@ const DEFAULT_FILTERS = Object.freeze({
 /* ── between-turn markers (lifted from the mockup's inline trace markup so the .txn-* CSS matches
    exactly; the composite draws them, not the per-turn TurnCard) ─────────────────────────────── */
 
+// Native focus and explicit turn navigation reserve the same sticky-heading space.
+function turnScrollTop(scroller, turn) {
+  const padding = Number.parseFloat(getComputedStyle(scroller).scrollPaddingTop)
+  return turn.offsetTop - (Number.isFinite(padding) ? padding : 12)
+}
+
 function PhaseDivider({ phase }) {
   const Icon = PHASE_ICON[phase.icon] ?? PHASE_ICON[phase.id] ?? Flag
   return (
     <div className="phase txn-phase">
-      <span className="lbl"><Icon size={14} aria-hidden="true" /> {phase.label}</span>
+      <h3 className="lbl"><Icon size={14} aria-hidden="true" /> {phase.label}</h3>
       <span className="rng tnum">turns {phase.from}–{phase.to}{phase.errors ? ` · ${phase.errors} error` : ''}</span>
     </div>
   )
@@ -204,6 +213,7 @@ export default function TranscriptViewer({
   pullRequests,
 }) {
   const vm = viewModel
+  const tabsId = useId()
   const caps = capabilities ?? {}
 
   /* ── controllable view state (each works unmanaged via its default) ─────────── */
@@ -527,7 +537,7 @@ export default function TranscriptViewer({
         const sc = scrollRef.current
         if (el && sc) {
           const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-          sc.scrollTo({ top: el.offsetTop - 12, behavior: reduce ? 'auto' : 'smooth' })
+          sc.scrollTo({ top: turnScrollTop(sc, el), behavior: reduce ? 'auto' : 'smooth' })
         }
       })
     }
@@ -589,12 +599,9 @@ export default function TranscriptViewer({
     if (!sc) return
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     syncScrollChrome(sc)
-    let best = visibleTurns[0]?.index ?? 0
-    for (const t of visibleTurns) {
-      const el = turnRefs.current[t.index]
-      if (el && el.offsetTop - sc.scrollTop <= sc.clientHeight * 0.4) best = t.index
-    }
-    setActiveTurn(best)
+    setActiveTurn(turnAtReadingLine(visibleTurns,
+      index => turnRefs.current[index]?.offsetTop ?? Infinity,
+      sc.scrollTop + sc.clientHeight * 0.4))
   }
 
   function openFile(file) {
@@ -611,7 +618,7 @@ export default function TranscriptViewer({
     if (!t) return
     const el = turnRefs.current[t.index]
     const sc = scrollRef.current
-    if (el && sc) { sc.scrollTo({ top: el.offsetTop - 12, behavior: 'auto' }); setActiveTurn(t.index) }
+    if (el && sc) { sc.scrollTo({ top: turnScrollTop(sc, el), behavior: 'auto' }); setActiveTurn(t.index) }
   }
   const onTabKey = (e) => {
     const i = TAB_ORDER.indexOf(tab)
@@ -676,7 +683,7 @@ export default function TranscriptViewer({
     const sc = scrollRef.current
     if (el && sc) {
       const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      sc.scrollTo({ top: el.offsetTop - 12, behavior: reduce ? 'auto' : 'smooth' })
+      sc.scrollTo({ top: turnScrollTop(sc, el), behavior: reduce ? 'auto' : 'smooth' })
       setActiveTurn(searchReveal.turn)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -726,6 +733,8 @@ export default function TranscriptViewer({
             ref={(el) => (tabRefs.current[id] = el)}
             type="button"
             role="tab"
+            id={`${tabsId}-${id}`}
+            aria-controls={`${tabsId}-panel`}
             aria-selected={on}
             tabIndex={on ? 0 : -1}
             className={'tab txn-tab' + (on ? ' active' : '')}
@@ -849,12 +858,12 @@ export default function TranscriptViewer({
           {showOutcome && session.outcome && <TranscriptOutcomeChip outcome={session.outcome} />}
           {session.harness && <span className="chip"><ProviderIcon harness={session.harness} accent /> {String(session.harness).replace(/-/g, ' ')}</span>}
           {session.model && <span className="chip mono">{session.model}</span>}
-          {session.git?.author && <span className="metaitem" title="author"><User size={14} aria-hidden="true" /> {session.git.author}</span>}
-          {session.durationMins != null && <span className="metaitem" title="session duration"><Clock size={14} aria-hidden="true" /> <b className="tnum">{session.durationMins}m</b></span>}
+          {session.git?.author && <Term className="metaitem" def="git author"><User size={14} aria-hidden="true" /> {session.git.author}</Term>}
+          {session.durationMins != null && <Term className="metaitem" def="session duration in minutes"><Clock size={14} aria-hidden="true" /> <b className="tnum">{session.durationMins}m</b></Term>}
           {session.turnCount != null && <span className="metaitem"><ListTree size={14} aria-hidden="true" /> <b className="tnum">{session.turnCount}</b> turns</span>}
           <span className="metaitem"><MessageSquareText size={14} aria-hidden="true" /> <b className="tnum">{session.inputSubmissionCount ?? 'unknown'}</b> {session.inputSubmissionCount === 1 ? 'prompt' : 'prompts'}</span>
           {session.toolCallCount != null && <span className="metaitem"><Wrench size={14} aria-hidden="true" /> <b className="tnum">{session.toolCallCount}</b> tools</span>}
-          {!vm.usageScopes?.length && session.totalTokens != null && <span className="metaitem" title={fmtTokens(session.tokensIn ?? 0) + ' in · ' + fmtTokens(session.tokensOut ?? 0) + ' out'}><Coins size={14} aria-hidden="true" /> <b className="tnum">{fmtTokens(session.totalTokens)}</b> tokens</span>}
+          {!vm.usageScopes?.length && session.totalTokens != null && <Term className="metaitem" def={fmtTokens(session.tokensIn ?? 0) + ' input tokens, ' + fmtTokens(session.tokensOut ?? 0) + ' output tokens'}><Coins size={14} aria-hidden="true" /> <b className="tnum">{fmtTokens(session.totalTokens)}</b> tokens</Term>}
           {commits.length > 0 && <span className="metaitem"><GitCommitHorizontal size={14} aria-hidden="true" /> <b className="tnum">{commits.length}</b> {commits.length === 1 ? 'commit' : 'commits'}</span>}
           {session.git?.filesChanged != null && <span className="metaitem"><FileText size={14} aria-hidden="true" /> <b className="tnum">{session.git.filesChanged}</b> {session.git.filesChanged === 1 ? 'file' : 'files'}</span>}
           {session.git && (session.git.insertions != null || session.git.deletions != null) && (
@@ -935,7 +944,7 @@ export default function TranscriptViewer({
         )}
 
         {/* CENTER */}
-        <section className="txn-center" role="tabpanel" aria-label={tab}>
+        <section className="txn-center" role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${tab}`}>
           {tab === 'trace' && (
             <div className={'txn-trace' + (sticky && viewMode === 'list' ? ' txn-trace-pinned' : '')}>
               {sticky && viewMode === 'list' && (
@@ -968,7 +977,7 @@ export default function TranscriptViewer({
                   <div className="txn-stream" ref={scrollRef} role="region" aria-label="full trace turns" onFocusCapture={() => {
                     const snapshot = readTraceReadingSnapshot()
                     if (snapshot) latestTraceReadingSnapshotRef.current = snapshot
-                  }} onScroll={onScroll} tabIndex={-1}>
+                  }} onScroll={onScroll} tabIndex={0}>
                     {streamPrelude != null && (
                       <div className="txn-stream-prelude">{streamPrelude}</div>
                     )}
@@ -1141,13 +1150,13 @@ export default function TranscriptViewer({
                 // the annotated turn's role is derived from the VM (not carried on the annotation).
                 const annoRole = turns.find((t) => t.index === a.turn)?.role
                 return (
-                  <button key={a.id} type="button" className="txn-anno-row" onClick={() => jumpTo(a.turn)}>
+                  <Tooltip key={a.id} content={meta.tip}><button type="button" className="txn-anno-row" onClick={() => jumpTo(a.turn)}>
                     <span className="txn-anno-turn tnum">turn {a.turn}{annoRole ? ' · ' + annoRole : ''}</span>
-                    <span className={'chip txn-pill ' + meta.chip} title={meta.tip}><Icon size={14} aria-hidden="true" /> {meta.label}</span>
+                    <span className={'chip txn-pill ' + meta.chip}><Icon size={14} aria-hidden="true" /> {meta.label}</span>
                     <span className="txn-anno-label">{a.label}</span>
                     {a.preview && <span className="txn-anno-preview mono">{a.preview}</span>}
                     <ChevronRight size={14} aria-hidden="true" />
-                  </button>
+                  </button></Tooltip>
                 )
               })}
             </div>

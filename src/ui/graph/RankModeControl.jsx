@@ -68,7 +68,6 @@ export default function RankModeControl({ rankMode, onChange, className = '', ..
           {mode}
         </button>
       ))}
-      <span className="tlp-sr" role="status" aria-live="polite">{`rank mode: ${rankMode}`}</span>
     </span>
   )
 }

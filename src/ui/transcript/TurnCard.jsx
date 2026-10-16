@@ -6,6 +6,7 @@ import Markdown from './Markdown.jsx'
 import Thinking from './Thinking.jsx'
 import ToolCall from './ToolCall.jsx'
 import UsageDisclosure from './UsageDisclosure.jsx'
+import { Term } from '../Explainer.jsx'
 
 /* TurnCard — one transcript turn, lifted verbatim from the canonical mockup
    (src/mockups/inuse/TranscriptApp.jsx:541). DUMB: it renders a cooked `TurnVM`
@@ -72,6 +73,7 @@ export default function TurnCard({
 }) {
   const [expanded, setExpanded] = useState(true)
   const bodyId = useId()
+  const headingId = useId()
   useLayoutEffect(() => {
     if (revealRequest) setExpanded(true)
   }, [revealRequest])
@@ -90,8 +92,8 @@ export default function TurnCard({
 
   const head = (
     <div className="txn-turnhead">
-      <span
-        className="txn-rolelabel"
+      <h4 id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</h4>
+      <span className="txn-rolelabel"
         style={turn.role === 'assistant' && !isSub ? { color: asstAccent } : undefined}
       >
         {turn.role === 'assistant' && !isSub && provider !== undefined ? (
@@ -116,9 +118,9 @@ export default function TurnCard({
         {expanded ? 'collapse' : 'expand'} turn {turn.label}
       </button>
       {(turn.time || turn.timestamp) && (
-        <span className="txn-turntime" title={turn.timeTitle ?? turn.timestamp}>
+        <Term className="txn-turntime" def={turn.timeTitle ?? turn.timestamp ?? turn.time}>
           {turn.time ?? formatRelative(turn.timestamp)}
-        </span>
+        </Term>
       )}
       {!isEarlier && <button
         type="button"
@@ -143,12 +145,9 @@ export default function TurnCard({
         </span>
       )}
       {turn.tokens && (
-        <span
-          className="txn-tokbadge tnum"
-          title={fmtTokens(turn.tokens.in) + ' in · ' + fmtTokens(turn.tokens.out) + ' out'}
-        >
-          <Coins size={14} aria-hidden="true" /> {fmtTokens(turn.tokens.in + turn.tokens.out)}
-        </span>
+        <Term className="txn-tokbadge tnum" def={fmtTokens(turn.tokens.in) + ' input tokens, ' + fmtTokens(turn.tokens.out) + ' output tokens'}>
+          <Coins size={14} aria-hidden="true" /> {fmtTokens(turn.tokens.in + turn.tokens.out)} tokens
+        </Term>
       )}
     </div>
   )
@@ -191,8 +190,9 @@ export default function TurnCard({
     (compact ? ' txn-compact' : '')
 
   return (
-    <div
+    <article
       className="txn-turnwrap"
+      aria-labelledby={headingId}
       ref={(el) => registerRef(turn.index, el)}
       data-turn={isEarlier ? undefined : turn.index}
       data-source-entry-ref={turn.sourceEntryRef}
@@ -200,7 +200,7 @@ export default function TurnCard({
       id={isEarlier ? `${turn.partition}-turn-${turn.index}` : 'turn-' + turn.index}
     >
       {turn.modelChangedFrom && turn.effectiveModel && (
-        <div className="txn-modelchange mono" role="status">
+        <div className="txn-modelchange mono">
           model changed: {turn.modelChangedFrom} -&gt; {turn.effectiveModel}
         </div>
       )}
@@ -225,6 +225,6 @@ export default function TurnCard({
           <div id={bodyId} hidden={!expanded}>{body}</div>
         </div>
       )}
-    </div>
+    </article>
   )
 }

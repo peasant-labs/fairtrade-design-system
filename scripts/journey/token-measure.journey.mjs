@@ -13,6 +13,8 @@
  */
 import { test as base, expect } from '@playwright/test'
 import { loadStrictYaml, assertExactNames } from '../css-source.mjs'
+import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 
 const FIXTURE = 'scripts/testdata/token-measure.yaml'
 const MANIFEST = 'scripts/testdata/token-measure.manifest.yaml'
@@ -23,6 +25,11 @@ assertExactNames(spec.lengths.map((l) => l.name), manifest.requiredLengthNames, 
 assertExactNames(spec.mutations.map((m) => m.name), manifest.requiredMutationNames, `${FIXTURE} mutations`)
 assertExactNames(spec.fittedIcons.map((e) => e.name), manifest.requiredFittedIconNames, `${FIXTURE} fittedIcons`)
 assertExactNames(spec.fitMutations.map((m) => m.name), manifest.requiredFitMutationNames, `${FIXTURE} fitMutations`)
+/** @type {{name: string, anchor: string, selector: string, scale: number, mutation: string}[]} */
+const motionRows = spec.motionRows
+assertExactNames(motionRows.map(row => row.name), manifest.requiredMotionNames, `${FIXTURE} motion rows`)
+assertExactNames(spec.motionModes.map(row => row.name), manifest.requiredMotionModeNames, `${FIXTURE} motion modes`)
+assertExactNames([...motionRows.map(row => row.mutation), spec.switchProbe.mutation], manifest.requiredMotionMutationNames, `${FIXTURE} motion mutations`)
 // every fit mutation must target a fitted-icon row; otherwise the per-page loop below would skip it
 for (const m of spec.fitMutations) {
   if (!spec.fittedIcons.some((r) => r.name === m.icon)) {
@@ -101,6 +108,69 @@ const measureBreaches = (results) =>
   })
 
 test.describe('global tokens', () => {
+  for (const mode of spec.motionModes) for (const width of spec.motionWidths) {
+    test(`layout-free motion ${mode.name} ${width}`, async ({ page, theme }, testInfo) => {
+      await page.setViewportSize({ width, height: 900 })
+      await page.emulateMedia({ reducedMotion: mode.value })
+      await page.goto(`${URL}&theme=${theme}#ds-governance`, { waitUntil: 'networkidle' })
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+      // Bind proof to this checkout's actual served bytes, never a stale preview.
+      const assets = await page.locator('script[src], link[rel="stylesheet"]').evaluateAll(elements =>
+        elements.map(el => el.getAttribute('src') || el.getAttribute('href')).filter(path => path?.startsWith('/assets/')))
+      expect(assets.length).toBeGreaterThan(0)
+      const provenance = []
+      const appOrigin = `http://localhost:${process.env.JOURNEY_APP_PORT || '5180'}`
+      for (const path of assets) {
+        const expected = readFileSync(`dist${path}`)
+        const response = await page.request.get(`${appOrigin}${path}`)
+        expect(await response.body(), `served ${path}`).toEqual(expected)
+        provenance.push({ path, sha256: createHash('sha256').update(expected).digest('hex') })
+      }
+      const observations = []
+      for (const row of motionRows) {
+        await page.locator(`#${row.anchor}`).scrollIntoViewIfNeeded()
+        const fill = page.locator(row.selector).first()
+        await fill.scrollIntoViewIfNeeded()
+        await expect(fill).toBeVisible()
+        await expect(page.locator(`#${row.anchor}`)).toHaveCSS('opacity', '1')
+        const read = () => fill.evaluate(el => {
+          const cs = getComputedStyle(el)
+          return { property: cs.transitionProperty, durations: cs.transitionDuration.split(',').map(value => parseFloat(value) * (value.trim().endsWith('ms') ? 1 : 1000)), layoutWidth: el.clientWidth, trackWidth: el.parentElement.clientWidth, scale: new DOMMatrixReadOnly(cs.transform).a }
+        })
+        const observed = await read()
+        expect(observed.layoutWidth).toBe(observed.trackWidth)
+        expect(observed.scale).toBeCloseTo(row.scale, 2)
+        const hasLayoutMotion = value => value.durations.some(duration => duration > 1) && value.property.split(',').some(property => property.trim() !== 'transform')
+        expect(hasLayoutMotion(observed), row.name).toBe(false)
+        if (mode.value === 'reduce') expect(Math.max(...observed.durations)).toBeLessThanOrEqual(1)
+        else expect(observed.property).toBe('transform')
+        // A planted width transition must fail the same computed-property check.
+        await fill.evaluate(el => { el.style.transition = 'width 200ms linear'; el.style.setProperty('transition-duration', '200ms', 'important') })
+        expect(hasLayoutMotion(await read()), row.mutation).toBe(true)
+        await fill.evaluate(el => { el.style.removeProperty('transition'); el.style.removeProperty('transition-duration') })
+        observations.push({ name: row.name, ...observed })
+        await page.screenshot({ path: testInfo.outputPath(`${row.anchor}-${theme}-${mode.value}-${width}.png`) })
+      }
+      await page.locator('#states').scrollIntoViewIfNeeded()
+      const toggle = page.locator(spec.switchProbe.selector).first()
+      await toggle.scrollIntoViewIfNeeded()
+      await expect(toggle).toBeVisible()
+      await expect(page.locator('#states')).toHaveCSS('opacity', '1')
+      const thumb = () => toggle.evaluate(el => ({ willChange: getComputedStyle(el, '::before').willChange, duration: getComputedStyle(el, '::before').transitionDuration }))
+      expect((await thumb()).willChange).toBe('auto')
+      // Scoped mutation of the actual mounted pseudo-element, removed before capture.
+      const mutationStyle = await page.addStyleTag({ content: `${spec.switchProbe.selector}::before { will-change: transform !important }` })
+      expect((await thumb()).willChange, spec.switchProbe.mutation).toBe('transform')
+      await mutationStyle.evaluate(el => el.remove())
+      const before = await toggle.getAttribute('aria-checked')
+      await toggle.click()
+      await expect(toggle).toHaveAttribute('aria-checked', before === 'true' ? 'false' : 'true')
+      if (mode.value === 'reduce') expect(parseFloat((await thumb()).duration)).toBeLessThanOrEqual(0.001)
+      await page.screenshot({ path: testInfo.outputPath(`switch-${theme}-${mode.value}-${width}.png`) })
+      await testInfo.attach('motion-provenance.json', { body: JSON.stringify({ theme, width, motion: mode.value, provenance, observations }), contentType: 'application/json' })
+    })
+  }
+
   test('measure what the tokens render', async ({ page, theme }) => {
     test.setTimeout(60_000)
     await page.goto(URL + (theme === 'light' ? '&theme=light' : ''), { waitUntil: 'networkidle' })

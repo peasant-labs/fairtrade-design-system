@@ -5,7 +5,7 @@ requiredCaseNames:
   - component-row-dark-absent-theme-passes
   - component-row-dark-empty-theme-passes
   - component-row-light-attribute-passes
-  - component-row-literal-dark-value-fails
+  - component-row-unknown-value-fails
   - component-row-unknown-theme-fails
   - component-url-dark-passes
   - component-url-light-passes

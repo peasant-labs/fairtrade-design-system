@@ -53,3 +53,24 @@ Run it browser-free with no service:
 ```text
 node scripts/assert-test-promotion.mjs
 ```
+
+## Graph and transcript accessibility journeys
+
+1. Subject: invalid tree/list children, unreachable scrollers, unnamed controls, wrong theme,
+   undersized targets and lost keyboard behavior on the mounted product.
+2. Necessity: direct semantic fixtures cover DOM contracts; axe, computed dimensions and real
+   keyboard input must observe the browser layout that caused these defects.
+3. Production path: built `dist/` graph map, analytics, transcript, settings and publish dialog.
+4. Cost: existing Playwright host, four surfaces at three widths in two themes, six target rows,
+   two mutation rows; publish scans extend the existing walk rather than duplicate it. Each test
+   retains the existing 60-second timeout; no second runner or copied production code.
+5. Lifetime: existing ignored journey artifacts; optional captures go to an explicit directory.
+   Playwright owns browser/service teardown; interrupted capture sets are incomplete evidence.
+6. Concurrency: one worker; isolated checkout and explicit app/Storybook ports for local runs.
+7. CI parity: `pnpm build`, `pnpm build-storybook`, then `pnpm journey:ci` on the pinned runner.
+8. Evidence: scoped axe JSON, observed URL/root theme, served-asset byte equality/digests,
+   actual keyboard actions and mounted full-shell screenshots in both themes.
+9. Mutation: unpinned/wrong themes, exposed tree disclosure, unnamed button and a 22px turn
+   anchor fail their owning assertions. Source mutations separately protect semantic fixes.
+10. Exit condition: collapse rows when an existing product journey proves these exact risks;
+    do not replace mounted geometry or axe with a source-shape check.

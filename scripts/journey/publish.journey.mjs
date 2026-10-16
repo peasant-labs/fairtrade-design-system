@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 import { loadStrictYaml, assertExactNames } from '../css-source.mjs'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { scanAxe, seriousViolations } from './lib/assertions.mjs'
 
 const spec = loadStrictYaml('scripts/testdata/publish-mounted.yaml')
 const manifest = loadStrictYaml('scripts/testdata/publish-mounted.manifest.yaml')
@@ -19,8 +20,8 @@ for (const row of spec.cases) {
     const response = await page.request.get(`${appURL}/assets/${asset}`)
     expect(await response.text()).toBe(readFileSync(join('dist/assets', asset), 'utf8'))
     await page.goto(`${appURL}/?fb=off&theme=${row.theme}#inuse`)
-    // The app's dark theme is the root default; light is an explicit override.
-    await expect.poll(() => page.locator('html').evaluate((el) => el.dataset.theme || 'dark')).toBe(row.theme)
+    expect(new URL(page.url()).searchParams.get('theme')).toBe(row.theme)
+    await expect(page.locator('html')).toHaveAttribute('data-theme', row.theme)
     const split = page.locator(spec.mobile.splitSelector)
     await expect(split).toBeVisible()
     const columns = await split.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length)
@@ -76,6 +77,10 @@ for (const row of spec.cases) {
     const ring = await primary.evaluate((el) => getComputedStyle(el).outlineStyle)
     expect(ring).not.toBe('none')
     await page.screenshot({ path: testInfo.outputPath(`publish-${row.theme}-${row.width}.png`), fullPage: false })
+    const scan = await scanAxe(page, { root: '.pub-dialog' })
+    expect(scan.passes).toBeGreaterThan(0)
+    expect(seriousViolations(scan), 'publish has no critical or serious accessibility exceptions').toEqual([])
+    await testInfo.attach('publish-accessibility.json', { body: JSON.stringify({ width: row.width, theme: row.theme, scan }), contentType: 'application/json' })
     await primary.press('Enter')
     await expect(primary).toHaveAttribute('aria-busy', 'true')
     await expect(primary).toBeFocused()

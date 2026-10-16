@@ -40,10 +40,6 @@ export default function SessionLane({
     .filter(Boolean)
     .join(' ')
   const label = title || sessionId
-  // Selection is the state that lingers, so it is the state worth announcing;
-  // hover is transient and firing an announcement on every pointer pass would
-  // be noise, not signal, for a screen-reader user.
-  const announcement = selected ? `${label} selected` : ''
   return (
     <span className="tlp-session-lane-group">
       <button
@@ -59,7 +55,6 @@ export default function SessionLane({
       >
         {harness && <ProviderIcon harness={harness} label />}
         <span className="tlp-session-lane-title">{label}</span>
-        <span className="tlp-sr" role="status" aria-live="polite">{announcement}</span>
       </button>
       {unresolvedGhosts.length > 0 && (
         <span className="tlp-session-lane-ghosts" role="group" aria-label={`session-era commits with no recorded mapping`}>
