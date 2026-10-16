@@ -4,6 +4,7 @@ on:
   push:
     branches: [main, 'tier-**']
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
 # read-only: this workflow validates the gates, it never deploys or writes Pages
@@ -79,7 +80,14 @@ jobs:
       # tsc declarations, smoke-lib (render + types-emit assertion), contrast on
       # the shipped dist/lib/tokens.css, and the pack-content assertion.
       - name: Build library (publishable artifact)
+        if: "!(github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'release('))"
         run: pnpm build:lib
+
+      # Release PRs must pass the same prepack chain as npm publication. It
+      # includes build:lib, so do not run the library build a second time.
+      - name: Validate release package (canonical prepack)
+        if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'release(')
+        run: pnpm prepack
 
       # Belt-and-suspenders: assert the npm tarball file set matches exports[].
       - name: Assert pack contents (exports <-> tarball)
