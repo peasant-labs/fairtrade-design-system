@@ -1,6 +1,8 @@
 import { loadFixturePair, withMountedSource, createReport, click, assertExactNames } from './mounted-parts.mjs'
 
-const { fixture } = loadFixturePair('scripts/testdata/redaction-labels.yaml', 'scripts/testdata/redaction-labels.manifest.yaml', { categories: 'requiredCategoryNames', unknown: 'requiredUnknownNames' })
+const { fixture, manifest } = loadFixturePair('scripts/testdata/redaction-labels.yaml', 'scripts/testdata/redaction-labels.manifest.yaml', { categories: 'requiredCategoryNames', unknown: 'requiredUnknownNames', invalidLabels: 'requiredInvalidLabelNames' })
+assertExactNames(fixture.exports, manifest.requiredExportNames, 'public category exports')
+assertExactNames(fixture.frozen, manifest.requiredFrozenNames, 'frozen category exports')
 const report = createReport('redaction labels')
 const match = (category) => ({ id: String(category), category, confidence: fixture.confidence, before: 'SensitiveOriginal', after: '<REDACTED>' })
 await withMountedSource(async ({ load, mount, React, window }) => {
@@ -13,9 +15,13 @@ await withMountedSource(async ({ load, mount, React, window }) => {
     report.check(mounted.container.querySelector('.rdx-badge-conf [role="tooltip"]')?.textContent === fixture.confidenceHelp, `${row.name}: confidence help must define the score`)
     await mounted.unmount()
   }
-  const { REDACTION_CATEGORY_LABELS } = await load('/src/ui/redaction-categories.js')
-  assertExactNames(Object.keys(REDACTION_CATEGORY_LABELS), fixture.categories.map((row) => row.category), 'canonical category ids')
-  assertExactNames(Object.values(REDACTION_CATEGORY_LABELS), fixture.categories.map((row) => row.label), 'canonical category labels')
+  const api = await load('/src/ui/index.js')
+  assertExactNames(api.AllRedactionCategories, fixture.categories.map((row) => row.category), 'canonical category ids')
+  assertExactNames(api.AllRedactionCategoryLabels, fixture.categories.map((row) => row.label), 'canonical category labels')
+  for (const row of fixture.categories) {
+    report.check(api.RedactionCategory[row.member] === row.category && api.RedactionCategoryLabel[row.labelMember] === row.label, `${row.name}: named bindings`)
+    report.check(api.redactionCategoryLabel(api.RedactionCategory[row.member]) === row.label && api.redactionCategoryFromLabel(api.RedactionCategoryLabel[row.labelMember]) === row.category, `${row.name}: public conversion roundtrip`)
+  }
   for (const row of fixture.unknown) {
     const matches = [match('secrets'), match(row.category)]
     const review = await mount(React.createElement(RedactionReview, { matches, availableLevels: ['standard'] }))

@@ -161,6 +161,9 @@ try {
   rmSync(tmp, { recursive: true, force: true })
 }
 
+// The export-map smoke also checks packed category runtime bindings and declarations.
+execFileSync('node', [join(ROOT, 'scripts/smoke-tarball.mjs')], { cwd: ROOT, stdio: 'inherit' })
+
 /* ── fixture loader ──────────────────────────────────────────────────────── */
 
 function loadStrictYaml(relativePath) {

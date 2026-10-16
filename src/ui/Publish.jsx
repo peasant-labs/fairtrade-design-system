@@ -353,7 +353,7 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
  * @param {string} props.title - the session title, kept in its case.
  * @param {'publish'|'update'} [props.mode='publish']
  * @param {PublishDialogState} props.state - one of PUBLISH_DIALOG_STATES.
- * @param {{ matches?: object[], matchCount?: number, total?: number, failure?: string }} [props.scan] - the host's scan result. `matchCount` is the full occurrence count when `matches` contains only examples. Until it carries a
+ * @param {{ matches?: import('./Redaction.jsx').RedactionMatch[], matchCount?: number, total?: number, failure?: string }} [props.scan] - the host's scan result. `matchCount` is the full occurrence count when `matches` contains only examples. Until it carries a
  *        `matches` list, the popup says the transcript is not scanned and keeps publish off. A match with `kept: true` leaves un-redacted, and the
  *        popup says so and opens the matches.
  * @param {() => void} [props.onRescan]

@@ -9,6 +9,31 @@ requiredUnknownNames:
   - prototype property is not a category
   - display label is not a wire category
   - unknown category blocks retry
+  - wrong case category
+  - empty category
+  - object category
+requiredInvalidLabelNames:
+  - semantic key is not a label
+  - wrong case label
+  - padded label
+  - prototype label
+  - missing label
+  - object label
+requiredExportNames:
+  - RedactionCategory
+  - RedactionCategoryLabel
+  - AllRedactionCategories
+  - AllRedactionCategoryLabels
+  - isRedactionCategory
+  - parseRedactionCategory
+  - parseRedactionCategoryLabel
+  - redactionCategoryFromLabel
+  - redactionCategoryLabel
+requiredFrozenNames:
+  - RedactionCategory
+  - RedactionCategoryLabel
+  - AllRedactionCategories
+  - AllRedactionCategoryLabels
 requiredMutationNames:
   - credential label renders the raw id
   - unknown matches are treated as trusted
@@ -23,15 +48,15 @@ mutations:
     replace: "onClick={onRetry}"
     expectedDiagnostic: "unknown category blocks retry: unknown scan must block publishing"
   - name: credential label renders the raw id
-    file: src/ui/redaction-categories.js
-    find: "secrets: 'CREDENTIAL'"
-    replace: "secrets: 'secrets'"
-    expectedDiagnostic: "canonical category labels: case names differ"
+    file: src/ui/Redaction.jsx
+    find: "{redactionCategoryLabel(category)}"
+    replace: "{category}"
+    expectedDiagnostic: "credential category: canonical label"
   - name: unknown matches are treated as trusted
     file: src/ui/Redaction.jsx
     find: "if (!hasKnownRedactionCategories(matches))"
     replace: "if (false)"
-    expectedDiagnostic: "unknown category: unknown review must fail closed"
+    expectedDiagnostic: "@peasant-labs/schema redactionCategoryLabel during conversion"
   - name: unknown matches leave publishing enabled
     file: src/ui/Publish.jsx
     find: "|| !hasKnownRedactionCategories(scan?.matches)"
