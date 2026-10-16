@@ -10,7 +10,8 @@
 // required-CI workflow, and the declared subset of the `scripts/testdata`
 // corpora and required-name manifests it resolves (boundary, ts-program,
 // surface-consumers, runner-inventory, process-cases, promotion, paths,
-// dispatch). Both this list and FAIRTEST_PATH_ROOTS are the claim for the
+// dispatch, component-story-inventory, publish-keyboard). Both this list and
+// FAIRTEST_PATH_ROOTS are the claim for the
 // locations named here: the raw-literal path guard
 // (scripts/fairtest/assert-fairtest-paths.mjs) refuses a bare literal equal to,
 // or under, any declared root in every scanned module except the fixture
@@ -21,7 +22,6 @@
 // The declared set is not exhaustive of every location an in-scope guard
 // reads. The root package.json read by the root boundary guard
 // (scripts/assert-fairtest-boundary.mjs) and the in-tree testdata reads in
-// scripts/fairtest/component-adapter.test.mjs and
 // scripts/fairtest/local-bridge.test.mjs are not among the declared locations.
 //
 // Plain data plus pure functions only: a frozen record of named repo-relative
@@ -61,6 +61,10 @@ export const FAIRTEST_PATHS = Object.freeze({
   pathsManifest: 'scripts/testdata/fairtest-paths.manifest.yaml',
   dispatchCorpus: 'scripts/testdata/fairtest-dispatch.yaml',
   dispatchManifest: 'scripts/testdata/fairtest-dispatch.manifest.yaml',
+  storyInventoryCorpus: 'scripts/testdata/component-story-inventory.yaml',
+  storyInventoryManifest: 'scripts/testdata/component-story-inventory.manifest.yaml',
+  publishKeyboardCorpus: 'scripts/testdata/publish-keyboard.yaml',
+  publishKeyboardManifest: 'scripts/testdata/publish-keyboard.manifest.yaml',
 })
 
 /**

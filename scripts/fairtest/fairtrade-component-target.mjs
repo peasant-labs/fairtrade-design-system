@@ -9,7 +9,7 @@
 // floors), the real mount signals a mounted story must show, the component
 // selector bundle, the named component actions, the normalized theme rows, and
 // the served-build provenance source contract. Nothing here starts a service, reads host state, or touches
-// host globals, so every export stays inspectable without a run.
+// host globals. The keyboard fixture is read at import, without a browser or service.
 //
 // The component proof record is the shared component branch of the host
 // resolution union: kind, identity, a mounted root, the normalized theme
@@ -22,6 +22,12 @@
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { assertProductThemeObservation } from './fairtrade-targets.mjs'
 import { fairtestRelative } from './fairtest-paths.mjs'
+import { loadStrictYaml, assertExactNames } from '../css-source.mjs'
+
+/** @type {{ cases: Array<ComponentAction & { after?: readonly ComponentExpectation[] }> }} */
+const publishKeyboard = loadStrictYaml(fairtestRelative('publishKeyboardCorpus'))
+const publishKeyboardManifest = loadStrictYaml(fairtestRelative('publishKeyboardManifest'))
+assertExactNames(publishKeyboard.cases.map((row) => row.name), publishKeyboardManifest.requiredCaseNames, 'publish keyboard sequence')
 
 const kindsContract = await importFairtestSource('src/host-contract/kinds.mjs')
 const targetsContract = await importFairtestSource('src/host-contract/targets.mjs')
@@ -261,11 +267,15 @@ export const COMPONENT_RENDER_PHASES = Object.freeze({
  * @property {string} storyId built Storybook story id
  * @property {string} layout Storybook layout, a COMPONENT_LAYOUT_BODY_CLASSES key
  * @property {readonly ComponentExpectation[]} before facts that hold before the action
- * @property {{ name: string, kind: 'click', target: ComponentExpectation } | { name: string, kind: 'key', target: ComponentExpectation, key: string } | null} action the named action, or null
+ * @property {ComponentAction | null} action the named action, or null
  * @property {readonly ComponentExpectation[]} after facts that hold after the action, in order
  * @property {{ field: string, expectation: ComponentExpectation }} gateTie the receipt field and the fact it reads at scan time
  * @property {readonly ComponentStyleProbe[]} computed computed-style evidence
  * @property {{ descendants: number, textLength: number, ariaChars: number, screenshotBytes: number }} floors measured non-blank floors after the action
+ */
+
+/**
+ * @typedef {{ name: string, kind: 'click', target: ComponentExpectation } | { name: string, kind: 'key', target: ComponentExpectation, key: string } | { name: string, kind: 'observe' } | { name: string, kind: 'sequence', steps: readonly (ComponentAction & { after?: readonly ComponentExpectation[] })[] }} ComponentAction
  */
 
 /**
@@ -315,7 +325,7 @@ const DIGEST_LIST = 'ul[role="listbox"][aria-label="sessions"]'
 const DIGEST_SECOND_SELECTED = Object.freeze({ name: 'second-option-selected', selector: `${DIGEST_LIST} > li[role="option"]:nth-of-type(2)`, attribute: 'aria-selected', value: 'true' })
 const STATS_PAIRS = Object.freeze({ name: 'pairs', selector: 'ul.sst[aria-label="your sessions in numbers"] > li.sst-pair', count: 6 })
 const PUBLISH_BAR_ACTIONS = Object.freeze({ name: 'bar-actions', selector: '.pub-bar .pub-bar-action', count: 6 })
-const PUBLISH_BAR_UPDATE = Object.freeze({ name: 'update-action', role: Object.freeze({ role: 'button', name: 'update' }), matches: '.pub-bar-action', count: 1 })
+const PUBLISH_BAR_UPDATE = Object.freeze({ name: 'update-action', role: Object.freeze({ role: 'button', name: 'update' }), matches: '.pub-bar-action', count: 3 })
 const ACCESS_NAMED_REMOVE = Object.freeze({ name: 'named-remove', role: Object.freeze({ role: 'button', name: 'remove Acme Platform' }), matches: '.pub-access-remove', count: 1 })
 const ACCESS_KEEP = Object.freeze({ name: 'keep-pending-removal', role: Object.freeze({ role: 'button', name: 'keep ML Reading Group' }), matches: '.pub-access-keep', count: 1 })
 const SETTING_GROUPS_ONE_OPEN = Object.freeze({ name: 'one-open-group', selector: 'details.srow-group[open]', count: 1 })
@@ -335,6 +345,19 @@ const PUBLISH_DIALOG_RESCAN_ON = Object.freeze({ name: 'rescan-on', role: Object
  */
 export const COMPONENT_STORIES = Object.freeze([
   DISCLOSURE_STORY,
+  Object.freeze({
+    key: 'publish-keyboard',
+    rowPrefix: 'component-publish-keyboard',
+    targetId: 'fairtrade-publish-keyboard-story',
+    storyId: 'in-use-publish--keyboard-walk',
+    layout: 'fullscreen',
+    before: Object.freeze([{ name: 'publish opener', selector: '.pub-bar-action', text: 'publish', count: 1 }]),
+    action: Object.freeze({ name: 'publish-popup-keyboard-walk', kind: 'sequence', steps: publishKeyboard.cases }),
+    after: Object.freeze([{ name: 'returned opener', selector: '.pub-bar-action', text: 'update', focused: true }]),
+    gateTie: Object.freeze({ field: 'returnedFocus', expectation: Object.freeze({ name: 'returned opener', selector: '.pub-bar-action', focused: true }) }),
+    computed: Object.freeze([{ name: 'publishTargetHeight', selector: '.pub-bar-action', property: 'minHeight', token: '--control-h' }]),
+    floors: Object.freeze({ descendants: 10, textLength: 80, ariaChars: 100, screenshotBytes: 1500 }),
+  }),
   Object.freeze({
     key: 'transcript-header',
     rowPrefix: 'component-transcript-header',

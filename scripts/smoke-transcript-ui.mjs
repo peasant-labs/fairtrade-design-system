@@ -246,8 +246,8 @@ const streamPreludeFixture = YAML.parse(
   assert('CAP-label-off', 'canLabel:false removes the label affordance, so onLabel can never fire', !noLabel.includes('txn-labelbtn'))
 
   // render the relevant action menu OPEN, with the cap on vs off, and check the gated menu item.
-  const share = (cap) => composite({ viewModel: vm, capabilities: { ...allCaps, ...cap }, shareOpen: true })
-  const more = (cap) => composite({ viewModel: vm, capabilities: { ...allCaps, ...cap }, moreOpen: true })
+  const share = (cap) => composite({ viewModel: vm, showTail: true, capabilities: { ...allCaps, ...cap }, shareOpen: true })
+  const more = (cap) => composite({ viewModel: vm, showTail: true, capabilities: { ...allCaps, ...cap }, moreOpen: true })
 
   assert('CAP-contribute-on', 'canContribute:true shows the contribute action in the open share menu', share({ canContribute: true }).includes('menu-text">contribute<'))
   assert('CAP-contribute-off', 'canContribute:false removes the contribute action, so onContribute can never fire', !share({ canContribute: false }).includes('menu-text">contribute<'))
@@ -267,7 +267,7 @@ const streamPreludeFixture = YAML.parse(
   const ol = html(ui.TranscriptOutlineRail, { viewModel: vm, tab: 'highlights' })
   assert('RAIL-outline-hl', 'OutlineRail highlights tab lists vm.highlights', ol.includes('initial request'))
   const fr = html(ui.TranscriptFiltersRail, { tab: 'trace', counts: { categories: { prompts: 1, responses: 1, thinking: 1, toolcalls: 1 }, toolGroups: vm.filterIndex.toolGroupCounts } })
-  assert('RAIL-filters-groups', 'FiltersRail renders the cooked tool-call group rows', fr.includes('file edits') && fr.includes('bash'))
+  assert('RAIL-filters-groups', 'FiltersRail initially collapses secondary tool-call groups behind a disclosure', fr.includes('txn-toolcat-toggle') && fr.includes('aria-expanded="false"') && !fr.includes('txn-toolgroups'))
   const scrub = html(ui.TranscriptScrubber, { turns: vm.turns, active: 0 })
   const ticks = (scrub.match(/txn-scrub-tick/g) || []).length
   assert('RAIL-scrubber-ticks', 'Scrubber renders one tick per turn in turn-index space', ticks === vm.turns.length)

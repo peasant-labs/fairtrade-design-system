@@ -1,0 +1,7 @@
+requiredCaseNames:
+  - desktop dark
+  - desktop light
+  - phone dark
+  - phone light
+  - narrow dark
+  - narrow light

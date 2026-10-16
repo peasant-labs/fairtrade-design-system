@@ -101,7 +101,7 @@
 .tour-eyebrow {
   margin: 0;
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
   text-transform: lowercase;

@@ -13,6 +13,8 @@ import {
   Send,
 } from 'lucide-react'
 import './Redaction.css'
+import { Term } from './Explainer.jsx'
+import { hasKnownRedactionCategories, redactionCategoryLabel } from './redaction-categories.js'
 
 /* Redaction: the "in use" safe-by-default review surface, modeled on peasant's
    RedactionStep / RedactionDiffView + the PushStep transparency panel. two composites,
@@ -180,9 +182,9 @@ function MatchCard({ match, onToggle, readOnly = false }) {
       <div className="rdx-card-head">
         <span className={`rdx-badge${low ? ' rdx-badge-low' : ''}`}>
           {low && <AlertTriangle className="rdx-badge-warn" aria-hidden="true" />}
-          <span className="rdx-badge-cat">{category}</span>
+          <span className="rdx-badge-cat">{redactionCategoryLabel(category)}</span>
           <span className="rdx-badge-dot" aria-hidden="true">·</span>
-          <span className="rdx-badge-conf tnum">{conf}</span>
+          <span className="rdx-badge-conf tnum"><Term def="how sure the scanner is that this is a real match">confidence</Term> <span className="rdx-confidence-value">{conf}</span></span>
           {low && <span className="rdx-sr"> (low confidence)</span>}
         </span>
 
@@ -256,7 +258,7 @@ function MatchCard({ match, onToggle, readOnly = false }) {
  *          empty input throws an actionable TypeError before the review renders.
  * @param {(level: 'minimal'|'standard'|'maximum') => void} [props.onLevel]
  *        - called only with an available level on select
- * @param {Array<{id, category, confidence:number, before?:string, secret?:string, after:string, kept?:boolean}>} [props.matches]
+ * @param {Array<{id, category: import('./redaction-categories.js').RedactionCategory, confidence:number, before?:string, secret?:string, after:string, kept?:boolean}>} [props.matches]
  *        - the flagged matches. `before`/`secret` is the original (one or the other), `after` the
  *          redacted form. `kept` (controlled mode) = the user opted OUT, secret leaves as-is.
  * @param {(id: string, kept: boolean) => void} [props.onToggle] - called when a match is toggled;
@@ -288,8 +290,19 @@ export function RedactionReview({
     )
   }
   const scannedN = scanned ?? total
-  const keptCount = matches.filter((m) => m.kept).length
   const cls = ['rdx', 'rdx-review', className].filter(Boolean).join(' ')
+
+  if (!hasKnownRedactionCategories(matches)) {
+    return (
+      <section className={cls} aria-label="redaction review" {...rest}>
+        <div className="rdx-banner" role="alert">
+          <AlertTriangle className="rdx-banner-icon" aria-hidden="true" />
+          <p className="rdx-banner-text">the scan contains an unsupported redaction category. review is blocked. update the scanner and re-scan before publishing.</p>
+        </div>
+      </section>
+    )
+  }
+  const keptCount = matches.filter((m) => m.kept).length
 
   return (
     <section className={cls} aria-label="redaction review" {...rest}>

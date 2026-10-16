@@ -760,8 +760,8 @@ export function demoTranscriptViewModel() {
 function DefaultTranscriptApp({ theme }) {
   const vm = useMemo(() => new URLSearchParams(window.location.search).get('transcript') === 'pi'
     ? adaptTranscript(piPayload) : buildMockupVM(), [])
-  // seed the same three tool calls expanded as the canonical demo (the rest default closed).
-  const [openTools, setOpenTools] = useState({ t1a: true, t4a: true, t5a: true })
+  // Tool details start collapsed; the reader opens them on demand.
+  const [openTools, setOpenTools] = useState({})
   // the local app owns the header row: the publish bar (status, one action, more) and its popup.
   const publish = usePublishFlow()
   return (

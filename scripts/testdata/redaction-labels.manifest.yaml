@@ -1,0 +1,49 @@
+requiredCategoryNames:
+  - credential category
+  - personal information category
+  - path category
+  - project category
+requiredUnknownNames:
+  - unknown category
+  - missing category
+  - prototype property is not a category
+  - display label is not a wire category
+  - unknown category blocks retry
+requiredMutationNames:
+  - credential label renders the raw id
+  - unknown matches are treated as trusted
+  - unknown matches leave publishing enabled
+  - confidence loses its visible label
+  - confidence help loses its definition
+  - retry bypasses the unknown scan gate
+mutations:
+  - name: retry bypasses the unknown scan gate
+    file: src/ui/Publish.jsx
+    find: "disabled={blocked} onClick={() => { if (!blocked) onRetry() }}"
+    replace: "onClick={onRetry}"
+    expectedDiagnostic: "unknown category blocks retry: unknown scan must block publishing"
+  - name: credential label renders the raw id
+    file: src/ui/redaction-categories.js
+    find: "secrets: 'CREDENTIAL'"
+    replace: "secrets: 'secrets'"
+    expectedDiagnostic: "canonical category labels: case names differ"
+  - name: unknown matches are treated as trusted
+    file: src/ui/Redaction.jsx
+    find: "if (!hasKnownRedactionCategories(matches))"
+    replace: "if (false)"
+    expectedDiagnostic: "unknown category: unknown review must fail closed"
+  - name: unknown matches leave publishing enabled
+    file: src/ui/Publish.jsx
+    find: "|| !hasKnownRedactionCategories(scan?.matches)"
+    replace: ""
+    expectedDiagnostic: "unknown category: unknown scan must block publishing"
+  - name: confidence loses its visible label
+    file: src/ui/Redaction.jsx
+    find: "<span className=\"rdx-confidence-value\">{conf}</span>"
+    replace: "<span className=\"rdx-confidence-value\" />"
+    expectedDiagnostic: "confidence must be labeled"
+  - name: confidence help loses its definition
+    file: src/ui/Redaction.jsx
+    find: "how sure the scanner is that this is a real match"
+    replace: "scanner score"
+    expectedDiagnostic: "confidence help must define the score"

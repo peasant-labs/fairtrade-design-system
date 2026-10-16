@@ -1,0 +1,9 @@
+cases:
+  - {name: publishing preserves focused primary, focus: .pub-primary}
+  - {name: publishing repairs disabled close focus, focus: '.dlg-head button'}
+  - {name: publishing repairs disabled checkbox focus, focus: 'input[type="checkbox"]'}
+  - {name: publishing repairs removed audience focus, focus: .pub-access-remove}
+menu:
+  - {name: Escape during first-item focus handoff, key: ArrowDown}
+  - {name: Escape during last-item focus handoff, key: ArrowUp}
+  - {name: Escape during click focus handoff, key: null}

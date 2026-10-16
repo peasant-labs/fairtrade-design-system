@@ -6,7 +6,7 @@ import { frame } from './story-frame.jsx'
 /* Redaction story. CSF3, title 'in use/Redaction'. the safe-by-default review surface +
    the transparency panel, modeled on peasant's RedactionStep + PushStep:
 
-   - Default: RedactionReview with three matches (api-key 0.98, email 0.91, bearer-token 0.87),
+   - Default: RedactionReview with two CREDENTIAL matches (0.98, 0.87) and one PII match (0.91),
      one toggled "kept" (un-redacted → flagged), level=standard, scan 12/12. controlled toggles
      so the kept state is owned by the story.
    - Transparency: the WhereDoesThisGo panel — destination + a "what gets sent / what stays
@@ -16,12 +16,12 @@ import { frame } from './story-frame.jsx'
    code (mono, never lowercased); chrome is lowercased. rdx-* rules + tokens live in
    Redaction.css (imported by the component). */
 
-// three flagged matches → placeholders. an api key + an email are high-confidence; the bearer
-// token sits a touch lower. the email is pre-toggled "kept" so the warning treatment is visible.
+// two CREDENTIAL matches (0.98, 0.87) and one PII match (0.91) use secrets/pii wire categories.
+// the PII match is pre-toggled "kept" so the warning treatment is visible.
 const MATCHES = [
   {
     id: 'r1',
-    category: 'api-key',
+    category: 'secrets',
     confidence: 0.98,
     before: 'const STRIPE_KEY = "sk_live_4eC39HqLyjWDarjtT1zdp7dc"',
     after: 'const STRIPE_KEY = "sk_live_••••••••••••••••••••dc"',
@@ -29,7 +29,7 @@ const MATCHES = [
   },
   {
     id: 'r2',
-    category: 'email',
+    category: 'pii',
     confidence: 0.91,
     before: '// reported by alex.rivera@example.com on the 0.4 rollout',
     after: '// reported by ‹redacted-email› on the 0.4 rollout',
@@ -37,7 +37,7 @@ const MATCHES = [
   },
   {
     id: 'r3',
-    category: 'bearer-token',
+    category: 'secrets',
     confidence: 0.87,
     before: 'Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.abc"',
     after: 'Authorization: "Bearer ‹redacted-token›"',
@@ -100,9 +100,9 @@ export const Default = {
     expect(standard).toHaveAttribute('aria-pressed', 'true')
 
     // each match shows its category · confidence badge.
-    expect(canvas.getByText('api-key')).toBeInTheDocument()
+    expect(canvas.getAllByText('CREDENTIAL')).toHaveLength(2)
     expect(canvas.getByText('0.98')).toBeInTheDocument()
-    expect(canvas.getByText('bearer-token')).toBeInTheDocument()
+    expect(canvas.getByText('PII')).toBeInTheDocument()
 
     // the email starts kept (un-redacted) → flagged "will be sent" + counted in the summary.
     expect(canvas.getAllByText(/will be sent/i).length).toBeGreaterThan(0)

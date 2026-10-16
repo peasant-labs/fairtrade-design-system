@@ -433,14 +433,13 @@
   flex: none;
   color: var(--clay);
 }
-/* the literal warning word — uppercased for emphasis, the one place chrome breaks lowercase, to
-   read as a klaxon rather than a label. */
+/* The warning word keeps lowercase chrome; weight, icon and colour carry emphasis. */
 .rr-danger-word {
   font-family: var(--font-mono);
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--clay);
 }
 .rr-danger-title {

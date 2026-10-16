@@ -30,6 +30,7 @@
    on top of the icon + word, never a color-only dot. */
 .cx-pill {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-2);
   min-height: var(--control-h-sm);
@@ -39,9 +40,12 @@
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: var(--fs-label);
-  line-height: 1;
+  line-height: var(--lh-mono);
   text-transform: lowercase;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .cx-pill-icon {
   width: var(--ic-sm);
@@ -54,6 +58,7 @@
   letter-spacing: 0;
 }
 .cx-pill-note {
+  min-width: 0;
   color: var(--ink-3);
   letter-spacing: 0;
 }

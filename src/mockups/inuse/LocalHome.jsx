@@ -124,10 +124,10 @@ export function HomeView({ renderState = renderPublishState }) {
         />
       </div>
 
-      <DataTable caption="sessions on this computer" columns={columns} rows={rows} rowKey={(row) => row.id} />
+      {/* Loading more extends the cumulative window, rather than navigating pages. */}
+      <DataTable caption="sessions on this computer" columns={columns} rows={rows} rowKey={(row) => row.id} rowCount={HOME_SUMMARY.total} pagination={{ pageIndex: 0, pageSize: HOME_SUMMARY.total }} />
 
       <div className="iu-page-foot">
-        <span className="iu-page-count">showing <span className="tnum">{rows.length}</span> of <span className="tnum">{HOME_SUMMARY.total.toLocaleString('en-US')}</span></span>
         <Button variant="secondary" size="sm">load more</Button>
       </div>
     </div>

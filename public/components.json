@@ -534,10 +534,37 @@
           "control": "false"
         },
         "onSortChange": {},
-        "onSelectionChange": {}
+        "onSelectionChange": {},
+        "search": {
+          "control": "text"
+        },
+        "defaultSearch": {
+          "control": "text"
+        },
+        "onSearchChange": {},
+        "columnFilters": {
+          "control": "false"
+        },
+        "defaultColumnFilters": {
+          "control": "false"
+        },
+        "onColumnFiltersChange": {},
+        "pagination": {
+          "control": "false"
+        },
+        "defaultPagination": {
+          "control": "false"
+        },
+        "onPaginationChange": {},
+        "rowCount": {
+          "control": "number"
+        }
       },
       "stories": [
         "Playground",
+        "ViewDefaults",
+        "HostSliced",
+        "UncontrolledView",
         "ReadOnly",
         "SortedAscending",
         "SomeSelected",
@@ -1317,7 +1344,8 @@
         "PopupWaitsApproval",
         "PopupUpdate",
         "Access",
-        "Picker"
+        "Picker",
+        "KeyboardWalk"
       ]
     },
     {

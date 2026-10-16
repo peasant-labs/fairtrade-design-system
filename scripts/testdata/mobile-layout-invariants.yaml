@@ -27,25 +27,39 @@ invariants:
     mustContainAll:
       - ".cg-older {"
       - "width: 100%;"
-  - id: txn-title-clamps-on-mobile
+  - id: txn-title-wraps-on-mobile
     file: src/index.css
     description: >-
-      the session title (often a full command/prompt line) must clamp to one
-      line with an ellipsis below 720px, not wrap to 2-3 lines and inflate
-      the persistent (non-scrolling) transcript header.
+      The primary session title keeps its reading size and wraps below 720px.
+      Taller headers are preferable to hiding the user's content.
     mustContainAll:
-      - "-webkit-line-clamp: 1;"
-  - id: txn-meta-scrolls-not-wraps-on-mobile
+      - ".txn-title {"
+      - "display: block;"
+      - "overflow-wrap: anywhere;"
+  - id: txn-meta-scrolls-on-mobile
     file: src/index.css
     description: >-
-      the meta chip row (outcome/harness/model/duration/turns/tools/tokens)
-      must become a horizontally-scrollable single row below 720px instead of
-      wrapping to 3+ rows — the single biggest contributor to the mobile
-      chrome crowding out the transcript stream.
+      Metadata stays in a single horizontal scroll row below 720px, without shrinking text.
     mustContainAll:
       - ".txn-meta {"
-      - "flex-wrap: nowrap;"
-      - "overflow-x: auto;"
+      - ".txn-meta {\n    flex-wrap: nowrap;\n    white-space: nowrap;\n    overflow-x: auto;"
+  - id: txn-meta-keyboard-scroll-region
+    file: src/ui/transcript/TranscriptViewer.jsx
+    description: The metadata scroller is focusable and named for keyboard and screen-reader users.
+    mustContainAll:
+      - '<div className="txn-meta chips"'
+      - 'tabIndex={0} role="region" aria-label="session metadata"'
+  - id: txn-tabs-scroll-on-mobile
+    file: src/index.css
+    description: Session tabs remain a single sideways-scrollable row below 720px.
+    mustContainAll:
+      - ".txn-tabs { gap: var(--sp-4); flex-wrap: nowrap; overflow-x: auto; }"
+  - id: txn-tabs-keyboard-navigation
+    file: src/ui/transcript/TranscriptViewer.jsx
+    description: Session views keep a named tablist and keyboard tab navigation.
+    mustContainAll:
+      - '<div className="tabs txn-tabs"'
+      - 'role="tablist" aria-label="session views" onKeyDown={onTabKey}'
   - id: txn-trace-head-compact-on-mobile
     file: src/index.css
     description: the "N turns / list·graph toggle" bar gets reduced padding below 720px, matching .txn-header's own mobile treatment.

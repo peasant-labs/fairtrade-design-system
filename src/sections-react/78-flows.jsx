@@ -122,7 +122,7 @@ function NodeRail() {
                   flex: 'none',
                   color: 'var(--ink-4)',
                   fontFamily: 'var(--font-mono)',
-                  fontSize: 'var(--fs-micro)',
+                  fontSize: 'var(--fs-label)',
                 }}
               >
                 {when}

@@ -116,14 +116,14 @@
 }
 .ir-legend__label {
   color: var(--ink-4);
-  font-size: var(--fs-micro, 11px);
+  font-size: var(--fs-label);
   text-align: center;
 }
 .ir-legend__ends {
   display: flex;
   justify-content: space-between;
   color: var(--ink-4);
-  font-size: var(--fs-micro, 11px);
+  font-size: var(--fs-label);
 }
 
 /* ── heatmap row ───────────────────────────────────────────────────────────
@@ -216,7 +216,7 @@
 }
 .ir-node__count {
   display: block;
-  font-size: var(--fs-micro, 11px);
+  font-size: var(--fs-label);
   line-height: 1.2;
   /* the cell's dim ink — still AA on every step (the old --ink-3 failed cov2+). */
   color: var(--node-fg-dim);
@@ -256,7 +256,7 @@
   color: var(--clay);
   border: 1px solid color-mix(in srgb, var(--clay) 55%, var(--rule));
   background: color-mix(in srgb, var(--clay) 12%, var(--surface));
-  font-size: var(--fs-micro, 11px);
+  font-size: var(--fs-label);
   line-height: 1.4;
   font-variant-numeric: tabular-nums;
 }

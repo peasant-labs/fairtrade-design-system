@@ -24,6 +24,11 @@ import { captureComponentRow, resolveComponentRunRoot } from './component-produc
 import * as targets from './fairtrade-component-target.mjs'
 import { COMPONENT_MUTATION_NAMES, runComponentMutation } from './component-mutations.mjs'
 import { PRODUCT_ONLY_FIELDS as PROOF_PRODUCT_ONLY_FIELDS } from './fairtest-artifacts.mjs'
+import { loadFixturePair } from '../mounted-parts.mjs'
+import { fairtestRelative } from './fairtest-paths.mjs'
+
+/** @type {{ fixture: { cases: Array<{name: string, rowPrefix: string, storyId: string, layout: string, action: string | null, tie: string}> } }} */
+const { fixture: storyInventory } = loadFixturePair(fairtestRelative('storyInventoryCorpus'), fairtestRelative('storyInventoryManifest'))
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
@@ -723,32 +728,22 @@ describe('component target registry and theme rows', () => {
       errorDisplay: '.sb-errordisplay',
       errorStack: '#error-stack',
     })
-    assert.deepEqual([...selected.actions], ['expand-disclosure', 'open-transcript-search', 'retry-local-connection', 'select-next-session', 'open-collapsed-group'])
+    assert.deepEqual([...selected.actions], storyInventory.cases.filter((row) => row.action).map((row) => row.action))
     assert.deepEqual([...targets.COMPONENT_MOUNT_BODY_CLASSES], ['sb-main-centered', 'sb-show-main'])
   })
 
   it('declares the component story registry with exact membership', () => {
     // A closed set: the component row keys the evidence policy requires are
     // derived from these entries, so membership is pinned exactly.
-    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => [story.key, story.rowPrefix, story.storyId, story.layout, story.action ? story.action.name : null]), [
-      ['session-group-disclosure', 'component', 'components-sessiongroupdisclosure--playground', 'centered', 'expand-disclosure'],
-      ['transcript-header', 'component-transcript-header', 'in-use-transcript-transcriptviewer--host-owned-header', 'fullscreen', 'open-transcript-search'],
-      ['offline-banner', 'component-offline-banner', 'in-use-connectionstate--offline-banner', 'fullscreen', 'retry-local-connection'],
-      ['digest-split', 'component-digest-split', 'components-promptdigest--split', 'centered', 'select-next-session'],
-      ['stats-strip', 'component-stats-strip', 'components-statsstrip--many-pairs', 'centered', null],
-      ['publish-bar', 'component-publish-bar', 'in-use-publish--bar-states', 'centered', null],
-      ['access-list', 'component-access-list', 'in-use-publish--access', 'centered', null],
-      ['setting-groups', 'component-setting-groups', 'in-use-settings--groups', 'centered', 'open-collapsed-group'],
-      ['publish-dialog', 'component-publish-dialog', 'in-use-publish--popup-scan-failed', 'fullscreen', null],
-    ])
+    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => [story.key, story.rowPrefix, story.storyId, story.layout, story.action ? story.action.name : null]), storyInventory.cases.map((row) => [row.name, row.rowPrefix, row.storyId, row.layout, row.action]))
     assert.equal(targets.COMPONENT_DEFAULT_STORY, targets.COMPONENT_STORIES[0], 'the disclosure story must stay the default entry')
     assert.equal(targets.COMPONENT_DEFAULT_STORY.targetId, targets.COMPONENT_TARGET_ID, 'the disclosure story keeps the component target identity')
     assert.deepEqual([...targets.COMPONENT_LAYOUT_BODY_CLASSES.fullscreen], ['sb-main-fullscreen', 'sb-show-main'])
     // The disclosure receipt keeps its declared shape; every other story names
     // its own tie field in the same place.
     assert.deepEqual([...targets.componentGateReceiptFields()], [...targets.COMPONENT_A11Y_GATE_RECEIPT_FIELDS])
-    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => story.gateTie.field), ['ariaExpanded', 'searchOpen', 'retryBusy', 'nextOptionSelected', 'pairsRendered', 'barActions', 'namedRemove', 'bothGroupsOpen', 'publishOff'])
-    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => targets.componentA11yPoint(story)), ['after-interaction', 'after-interaction', 'after-interaction', 'after-interaction', 'after-mount', 'after-mount', 'after-mount', 'after-interaction', 'after-mount'])
+    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => story.gateTie.field), storyInventory.cases.map((row) => row.tie))
+    assert.deepEqual(targets.COMPONENT_STORIES.map((story) => targets.componentA11yPoint(story)), storyInventory.cases.map((row) => row.action ? 'after-interaction' : 'after-mount'))
     for (const story of targets.COMPONENT_STORIES) {
       assert.ok(Object.isFrozen(story), `${story.key}: the story entry must be frozen`)
       assert.equal(targets.selectComponentStory(story.key), story, `${story.key}: the lookup must return the registry entry`)
@@ -795,7 +790,7 @@ describe('component target registry and theme rows', () => {
       assert.equal(contractTargets.requiresCapability(receipt.declaration, required), true)
     }
     assert.equal(receipt.declaration.kind, 'component')
-    assert.deepEqual([...receipt.declaration.actions], ['expand-disclosure', 'open-transcript-search', 'retry-local-connection', 'select-next-session', 'open-collapsed-group'])
+    assert.deepEqual([...receipt.declaration.actions], storyInventory.cases.filter((row) => row.action).map((row) => row.action))
   })
 })
 
@@ -906,7 +901,7 @@ describe('component target source boundary', () => {
     const specs = [...text.matchAll(/from\s*['"]([^'"]+)['"]/g)].map((match) => match[1])
     assert.ok(specs.length > 0, `${TARGET_MODULE}: holds no imports`)
     for (const spec of specs) {
-      const allowed = spec.startsWith('node:') || spec === '../fairtest-source.mjs' || spec === './fairtrade-targets.mjs' || spec === './fairtest-paths.mjs'
+      const allowed = spec.startsWith('node:') || spec === '../fairtest-source.mjs' || spec === './fairtrade-targets.mjs' || spec === './fairtest-paths.mjs' || spec === '../css-source.mjs'
       assert.ok(allowed, `${TARGET_MODULE}: import ${JSON.stringify(spec)} bypasses the sole source route at path import; repair: import child values through ../fairtest-source.mjs.`)
     }
     const dynamic = [...text.matchAll(/importFairtestSource\(\s*['"]([^'"]+)['"]\s*\)/g)].map((match) => match[1])

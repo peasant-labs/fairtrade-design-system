@@ -38,7 +38,10 @@ export default function Dialog({ open, onClose, title, labelId = 'dlg-title', ch
       }
       const a = items[0]
       const z = items[items.length - 1]
-      if (e.shiftKey && document.activeElement === a) {
+      if (!dlg.contains(document.activeElement)) {
+        e.preventDefault()
+        ;(e.shiftKey ? z : a).focus()
+      } else if (e.shiftKey && document.activeElement === a) {
         e.preventDefault()
         z.focus()
       } else if (!e.shiftKey && document.activeElement === z) {
@@ -46,12 +49,17 @@ export default function Dialog({ open, onClose, title, labelId = 'dlg-title', ch
         a.focus()
       }
     }
+    const onFocus = (e) => {
+      if (!dlg.contains(e.target)) (focusables()[0] || dlg).focus()
+    }
     document.addEventListener('keydown', onKey)
+    document.addEventListener('focusin', onFocus)
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
     return () => {
       document.removeEventListener('keydown', onKey)
+      document.removeEventListener('focusin', onFocus)
       document.body.style.overflow = prevOverflow
       const rf = rfRef.current
       const target = (rf && rf.current) || prevFocus

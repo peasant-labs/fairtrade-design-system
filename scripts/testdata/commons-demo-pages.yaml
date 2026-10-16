@@ -17,6 +17,8 @@ pages:
     account: '@alice-dev'
     text: [your transcripts, '38 transcripts', '3 collectives', '9 pull requests', your collectives, waiting for approval]
     buttons: [show 2 more pull requests, view all]
+    tableCounts: [showing 6 of 38]
+    absentText: [showing 6 of 6]
   - name: sign-in
     view: signin
     providers: [github]
@@ -32,7 +34,8 @@ pages:
     view: collective-detail
     nav: [home, collectives]
     text: [Acme Platform, who can read, who can publish, your role, '248 transcripts', '12 members', github orgs, a collective links one github org today., '1 owner · 7 members · 4 contributors', transcripts 248, showing 5 of 248]
-    absentText: [public]
+    absentText: [public, showing 5 of 5]
+    tableCounts: [showing 5 of 248]
     buttons: [settings, more, manage]
   - name: collective settings
     view: collective-settings

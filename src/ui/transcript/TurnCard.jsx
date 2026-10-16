@@ -1,4 +1,5 @@
 import { CornerDownRight, User, Wrench, Check, Link as LinkIcon, AlertTriangle, Coins } from 'lucide-react'
+import { useId, useLayoutEffect, useState } from 'react'
 import ProviderIcon from '../ProviderIcon.jsx'
 import { providerAccent, providerDisplayName } from '../provider-policy.js'
 import Markdown from './Markdown.jsx'
@@ -52,6 +53,7 @@ function formatRelative(ts) {
  * @param {{ outcome: string, flag?: string }} [props.savedLabel]
  * @param {boolean} [props.compact]
  * @param {boolean} [props.expandAll]
+ * @param {number} [props.revealRequest] explicit search navigation sequence
  */
 export default function TurnCard({
   turn,
@@ -66,7 +68,13 @@ export default function TurnCard({
   savedLabel,
   compact = false,
   expandAll = false,
+  revealRequest = 0,
 }) {
+  const [expanded, setExpanded] = useState(true)
+  const bodyId = useId()
+  useLayoutEffect(() => {
+    if (revealRequest) setExpanded(true)
+  }, [revealRequest])
   if (!turn) return null
   const isUser = turn.role === 'user'
   const isEarlier = !!turn.partition && turn.partition !== 'main'
@@ -104,6 +112,9 @@ export default function TurnCard({
       {turn.effectiveModel && <span className="txn-turnmodel mono">{turn.effectiveModel}</span>}
       {isSub && <span className="txn-depth tnum">depth {turn.depth}</span>}
       <span className="txn-turnnum tnum">#{turn.label}</span>
+      <button type="button" className="txn-turn-disclosure" aria-expanded={expanded} aria-controls={bodyId} onClick={() => setExpanded(value => !value)}>
+        {expanded ? 'collapse' : 'expand'} turn {turn.label}
+      </button>
       {(turn.time || turn.timestamp) && (
         <span className="txn-turntime" title={turn.timeTitle ?? turn.timestamp}>
           {turn.time ?? formatRelative(turn.timestamp)}
@@ -175,7 +186,7 @@ export default function TurnCard({
 
   const cardClass =
     'turn txn-turn ' +
-    (isUser ? 'user' : isSub ? 'sub' : 'asst') +
+    (isUser ? 'user' : isSub ? 'sub' : turn.role === 'system' ? 'system' : 'asst') +
     (active ? ' txn-active' : '') +
     (compact ? ' txn-compact' : '')
 
@@ -200,7 +211,7 @@ export default function TurnCard({
           </div>
           <div className={cardClass}>
             {head}
-            {body}
+            <div id={bodyId} hidden={!expanded}>{body}</div>
           </div>
           <div className="subtask-foot">
             <span className="elbow">
@@ -211,7 +222,7 @@ export default function TurnCard({
       ) : (
         <div className={cardClass}>
           {head}
-          {body}
+          <div id={bodyId} hidden={!expanded}>{body}</div>
         </div>
       )}
     </div>

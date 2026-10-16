@@ -181,13 +181,13 @@ function FocusedModeDemo() {
   return <FocusedModeToggle on={on} onToggle={setOn} />
 }
 
-/* the redaction matches, verbatim from Redaction's Default story: an api-key + email + bearer-token,
-   the email pre-toggled "kept" (un-redacted) so the loud warning treatment is visible. the secret +
-   redacted forms are code — mono, never lowercased. */
+/* verbatim from Redaction's Default story: two CREDENTIAL matches (0.98, 0.87) and one PII match (0.91).
+   the PII match is pre-toggled "kept" (un-redacted) so the warning treatment is visible.
+   the secret + redacted forms are code, mono, never lowercased. */
 const MATCHES = [
   {
     id: 'r1',
-    category: 'api-key',
+    category: 'secrets',
     confidence: 0.98,
     before: 'const STRIPE_KEY = "sk_live_4eC39HqLyjWDarjtT1zdp7dc"',
     after: 'const STRIPE_KEY = "sk_live_••••••••••••••••••••dc"',
@@ -195,7 +195,7 @@ const MATCHES = [
   },
   {
     id: 'r2',
-    category: 'email',
+    category: 'pii',
     confidence: 0.91,
     before: '// reported by alex.rivera@example.com on the 0.4 rollout',
     after: '// reported by ‹redacted-email› on the 0.4 rollout',
@@ -203,7 +203,7 @@ const MATCHES = [
   },
   {
     id: 'r3',
-    category: 'bearer-token',
+    category: 'secrets',
     confidence: 0.87,
     before: 'Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.abc"',
     after: 'Authorization: "Bearer ‹redacted-token›"',

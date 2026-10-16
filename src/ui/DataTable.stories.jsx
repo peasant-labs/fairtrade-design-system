@@ -4,6 +4,10 @@ import { expect, userEvent, within, waitFor } from 'storybook/test'
 import DataTable from './DataTable.jsx'
 import BrandMark from './BrandMark.jsx'
 import { frame } from './story-frame.jsx'
+import YAML from 'yaml'
+import viewFixture from '../../scripts/testdata/datatable.yaml?raw'
+
+const viewData = YAML.parse(viewFixture)
 
 /* lead a provider cell with the real brand mark (claude-code -> claude, gemini-cli -> gemini
    resolve inside BrandMark). the mark sits beside its visible id, so it is decorative. the
@@ -51,6 +55,16 @@ const meta = {
     defaultSelectedKeys: { control: false },
     onSortChange: { action: 'sort-change' },
     onSelectionChange: { action: 'selection-change' },
+    search: { control: 'text' },
+    defaultSearch: { control: 'text' },
+    onSearchChange: { action: 'search-change' },
+    columnFilters: { control: false },
+    defaultColumnFilters: { control: false },
+    onColumnFiltersChange: { action: 'column-filters-change' },
+    pagination: { control: false },
+    defaultPagination: { control: false },
+    onPaginationChange: { action: 'pagination-change' },
+    rowCount: { control: 'number' },
   },
   args: {
     columns: COLUMNS,
@@ -59,11 +73,41 @@ const meta = {
     caption: 'published transcripts, this commons',
     onSortChange: fn(),
     onSelectionChange: fn(),
+    onSearchChange: fn(),
+    onColumnFiltersChange: fn(),
+    onPaginationChange: fn(),
   },
+  parameters: { docs: { description: { component: `The host owns URL synchronization. Map search to q, columnFilters (TanStack id/value pairs) to repeated filter parameters, and pagination.pageIndex/pageSize to page/size. Parse and validate those parameters in the host, pass controlled values, then update the host route in onSearchChange/onColumnFiltersChange/onPaginationChange. Callbacks emit values, not TanStack updater functions. The table never accesses routing or storage. With rowCount the host supplies its total for the rows it gives: pagination stays manual (the page count comes from rowCount) and existing sorting stays local, while local search and column filters still apply to the given rows; when a filter is active on a partial window the count reports the loaded rows, never the host total. Without rowCount, filtering and pagination run locally. Search and column filters reset pageIndex to zero on user changes. Decimal alignment supports plain dot-separated numeric values and reserves the largest fractional width on the visible page; custom renderers, currency and locale-formatted strings fall back to right alignment with tabular figures. No values are rounded or rewritten.` } } },
 }
 export default meta
 
 export const Playground = {}
+
+function ViewExample({ hostSliced = false }) {
+  const [columnFilters, setFilters] = useState(hostSliced ? [] : [{ id: 'title', value: 'Ledger' }])
+  const [search, setSearch] = useState('')
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 2 })
+  const [lastFilters, setLastFilters] = useState(null)
+  const [lastSearch, setLastSearch] = useState(null)
+  const [lastPagination, setLastPagination] = useState(null)
+  const hostRows = viewData.rows.filter((row) => row.title.toLowerCase().includes(search.toLowerCase()) && columnFilters.every((filter) => String(row[filter.id] ?? '').toLowerCase().includes(String(filter.value).toLowerCase())))
+  const visibleRows = hostSliced ? hostRows.slice(pagination.pageIndex * pagination.pageSize, (pagination.pageIndex + 1) * pagination.pageSize) : viewData.rows
+  return <>
+    <DataTable columns={viewData.columns} rows={visibleRows} caption="ledger records" selectable
+      columnFilters={columnFilters}
+      onColumnFiltersChange={(next) => { setLastFilters(next); setFilters(next) }}
+      {...(hostSliced ? { rowCount: hostRows.length, search, onSearchChange: (next) => { setLastSearch(next); setSearch(next) }, pagination, onPaginationChange: (next) => { setLastPagination(next); setPagination(next) } } : {})} />
+    <div style={{ display: 'grid', gap: 'var(--sp-2)', marginTop: 'var(--sp-3)', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-label)', color: 'var(--ink-3)' }}>
+      <span>column filters: <output className="tbl-callback-filters">{lastFilters === null ? 'no change' : JSON.stringify(lastFilters)}</output></span>
+      <span>search: <output className="tbl-callback-search">{lastSearch === null ? 'no change' : JSON.stringify(lastSearch)}</output></span>
+      <span>pagination: <output className="tbl-callback-pagination">{lastPagination === null ? 'no change' : JSON.stringify(lastPagination)}</output></span>
+    </div>
+  </>
+}
+
+export const ViewDefaults = { render: () => <ViewExample /> }
+export const HostSliced = { render: () => <ViewExample hostSliced /> }
+export const UncontrolledView = { args: { columns: viewData.columns, rows: viewData.rows, defaultPagination: { pageIndex: 1, pageSize: 2 }, caption: 'local ledger records' } }
 
 export const ReadOnly = {
   name: 'read-only (no selection)',

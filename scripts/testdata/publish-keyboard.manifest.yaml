@@ -1,0 +1,12 @@
+requiredCaseNames:
+  - opener enters the ready dialog
+  - ready backward tab wraps to primary
+  - ready forward tab wraps to close
+  - checkbox shows component-owned checked consent
+  - primary enters publishing without losing focus
+  - repeated publish activation stays busy
+  - Escape cannot dismiss in-flight publishing
+  - publishing tabs wrap within enabled controls
+  - completion transfers focus to done
+  - done forward tab wraps to close
+  - closing restores the original opener

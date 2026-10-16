@@ -121,7 +121,7 @@ function TourScene() {
       </button>
 
       {outcome && (
-        <p style={{ marginTop: 'var(--sp-3)', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-micro)', color: 'var(--ink-3)' }}>
+        <p style={{ marginTop: 'var(--sp-3)', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-label)', color: 'var(--ink-3)' }}>
           {outcome}
         </p>
       )}

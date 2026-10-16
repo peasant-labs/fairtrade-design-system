@@ -1,0 +1,125 @@
+columns:
+  - { key: title, label: record, sortable: true }
+  - { key: amount, label: amount, sortable: true, align: decimal }
+rows:
+  - { id: a, title: Ledger A, amount: '1.2' }
+  - { id: b, title: Ledger B, amount: '123.456' }
+  - { id: c, title: Archive C, amount: '-12.34' }
+  - { id: d, title: Archive D, amount: '7' }
+  - { id: e, title: Other E, amount: '€9,00' }
+cases:
+  - name: uncontrolled search filters rows
+    props: { defaultSearch: Ledger }
+    expectedTitles: [Ledger A, Ledger B]
+    expectedCount: showing 2 of 2
+  - name: uncontrolled column filter seeds a removable chip
+    props: { defaultColumnFilters: [{ id: title, value: Ledger }] }
+    expectedTitles: [Ledger A, Ledger B]
+    expectedCount: showing 2 of 2
+  - name: uncontrolled pagination slices local data
+    props: { defaultPagination: { pageIndex: 1, pageSize: 2 } }
+    expectedTitles: [Archive C, Archive D]
+    expectedCount: showing 2 of 5
+  - name: host sliced window keeps the host total
+    props: { rowCount: 50 }
+    expectedTitles: [Ledger A, Ledger B, Archive C, Archive D, Other E]
+    expectedCount: showing 5 of 50
+  - name: host sliced window is not locally paginated
+    props: { rowCount: 50, pagination: { pageIndex: 3, pageSize: 5 } }
+    expectedTitles: [Ledger A, Ledger B, Archive C, Archive D, Other E]
+    expectedCount: showing 5 of 50
+  - name: host sliced window filters locally against the loaded rows
+    props: { rowCount: 50, defaultSearch: Ledger }
+    expectedTitles: [Ledger A, Ledger B]
+    expectedCount: showing 2 of 5 loaded
+  - name: host sliced window filters columns against the loaded rows
+    props: { rowCount: 50, defaultColumnFilters: [{ id: title, value: Archive }] }
+    expectedTitles: [Archive C, Archive D]
+    expectedCount: showing 2 of 5 loaded
+  - name: empty data keeps a count
+    rows: []
+    props: {}
+    expectedTitles: []
+    expectedCount: showing 0 of 0
+  - name: original sorting and numeric selection keys stay intact
+    props: { selectable: true, defaultSort: { key: title, dir: desc }, defaultSelectedKeys: [3] }
+    rows:
+      - { id: 3, title: Ledger A, amount: '1.2' }
+      - { id: 4, title: Ledger B, amount: '123.456' }
+    expectedTitles: [Ledger B, Ledger A]
+    expectedCount: showing 2 of 2
+mountedRows:
+  - { name: decimal separators share an x position, kind: decimal, story: view-defaults }
+  - { name: unsupported decimal values fall back to right tabular, kind: fallback, story: view-defaults }
+  - { name: removing the last chip calls the host and clears active state, kind: chips, story: view-defaults }
+  - { name: sticky header frozen identifier and standard rows are defaults, kind: defaults, story: view-defaults }
+  - { name: host pagination and search emit value callbacks, kind: host, story: host-sliced }
+  - { name: uncontrolled search and column inputs change the local view, kind: uncontrolled, story: uncontrolled-view }
+actions:
+  - name: uncontrolled chip removal changes the rendered rows
+    props: { defaultColumnFilters: [{ id: title, value: Ledger }] }
+    selector: '.tbl-chip'
+    callback: filters
+    expectedValue: []
+    expectedTitles: [Ledger A, Ledger B, Archive C, Archive D, Other E]
+  - name: controlled chip removal emits without changing host state
+    props: { columnFilters: [{ id: title, value: Ledger }] }
+    selector: '.tbl-chip'
+    callback: filters
+    expectedValue: []
+    expectedTitles: [Ledger A, Ledger B]
+  - name: uncontrolled next page changes the local slice
+    props: { defaultPagination: { pageIndex: 0, pageSize: 2 } }
+    selector: '.tbl-footer button:last-child'
+    callback: pagination
+    expectedValue: { pageIndex: 1, pageSize: 2 }
+    expectedTitles: [Archive C, Archive D]
+  - name: controlled next page emits without changing host state
+    props: { pagination: { pageIndex: 0, pageSize: 2 } }
+    selector: '.tbl-footer button:last-child'
+    callback: pagination
+    expectedValue: { pageIndex: 1, pageSize: 2 }
+    expectedTitles: [Ledger A, Ledger B]
+  - name: original sort callback keeps its public shape
+    props: {}
+    selector: '.tbl-sort'
+    callback: sort
+    expectedValue: { key: title, dir: asc }
+    expectedTitles: [Archive C, Archive D, Ledger A, Ledger B, Other E]
+  - name: original selection callback keeps numeric keys
+    props: { selectable: true }
+    rows:
+      - { id: 3, title: Ledger A, amount: '1.2' }
+      - { id: 4, title: Ledger B, amount: '123.456' }
+    selector: 'tbody input[type=checkbox]'
+    callback: selection
+    expectedValue: [3]
+    expectedTitles: [Ledger A, Ledger B]
+mutations:
+  - name: decimal separators disappear
+    kind: decimal
+    css: '.tbl-decimal-point { display: none !important; }'
+    diagnostic: decimal separators unpainted
+  - name: mixed precision loses decimal alignment
+    kind: decimal
+    css: '.tbl-decimal-fraction { width: auto !important; }'
+    diagnostic: decimal separators differ
+  - name: numeric cells lose tabular figures
+    kind: numeric
+    css: '.tbl-td .tnum { font-variant-numeric: normal !important; }'
+    diagnostic: tabular figures missing
+guardMutations:
+  - { name: planted location read, code: 'void window.location.href', diagnostic: location }
+  - { name: planted history write, code: 'window.history.pushState({}, "", "/")', diagnostic: history }
+  - { name: planted storage access, code: 'globalThis["localStorage"].getItem("table")', diagnostic: localStorage }
+  - { name: planted internal helper access, helper: true, code: 'const { history: route } = window; void route', diagnostic: history }
+consumerRows:
+  - { name: collective host total, query: 'app=commons&commons=collective-detail', count: showing 5 of 248, filter: { term: flaky, count: showing 1 of 5 loaded } }
+  - { name: local home host total, query: 'app=graph', count: showing 7 of 1284, filter: { term: flaky, count: showing 1 of 7 loaded } }
+  - { name: commons home host total, query: 'app=commons&commons=home', count: showing 6 of 38, filter: { term: flaky, count: showing 1 of 6 loaded } }
+consumerWidths: [320, 390, 1440]
+analyticsRows:
+  - { name: contributor phone, width: 320 }
+  - { name: contributor large phone, width: 390 }
+  - { name: contributor tablet, width: 768 }
+  - { name: contributor desktop, width: 1440 }

@@ -1,0 +1,27 @@
+requiredSourceNames:
+  - owned micro consumers are converted
+  - retirement never leaves a dangling consumer
+  - dense font literals meet the chrome floor
+requiredResponsiveNames: [collective grid, transcript grid]
+requiredMeasurementNames:
+  - transcript title
+  - transcript prose
+  - transcript toolbar
+  - filter rail
+  - commit subjects
+  - analytics toggles
+  - analytics headings
+  - transcript breadcrumbs
+  - transcript actions
+  - transcript footer
+  - analytics labels
+  - code map toolbar
+  - map navigation controls
+  - map navigation labels
+  - settings controls
+  - commons prose
+  - commons sections
+requiredCaseNames: [checkpoint message keeps case]
+requiredInteractionNames:
+  - expanded tool reading font floor
+  - search reveals only its matching collapsed turn

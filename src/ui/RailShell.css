@@ -83,6 +83,7 @@
   display: flex;
   align-items: center;
   gap: var(--sp-3);
+  flex-wrap: wrap;
   min-width: 0; /* let a long toolbar label (e.g. a file path) shrink instead of widening the column */
   min-height: var(--control-h);
   box-sizing: border-box;
@@ -94,12 +95,12 @@
   font-size: var(--fs-label);
   text-transform: lowercase;
 }
-/* truncate a long single-line toolbar label (a file path) rather than letting it force overflow. */
+/* Toolbar slots include controls and labels, not just paths. Keep them readable. */
 .rs-toolbar > * {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 /* the toolbar and the canvas share a left edge; collapse the doubled hairline. */
 .rs-toolbar + .rs-canvas {
@@ -213,7 +214,7 @@
 /* the right-aligned count/glyph stays quiet — dim mono, sits beside the chevron. */
 .rs-sec-meta {
   color: var(--ink-4);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-label);
 }
 .rs-sec-chevron {
   flex: none;
@@ -444,7 +445,7 @@
   }
   .rs-sheet-meta {
     color: var(--ink-4);
-    font-size: var(--fs-micro);
+    font-size: var(--fs-label);
   }
   .rs-sheet-chevron {
     flex: none;

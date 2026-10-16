@@ -82,7 +82,7 @@ the rest; each default keeps the long-standing header.
 
 | prop | default | effect |
 |---|---|---|
-| `showTail` | `true` | renders the composite's `share` menu and its `more actions` menu after `headerActions`. `false` removes both, so a host with its own publish and overflow controls owns the row. The `more actions` menu renders only when `canEdit` or `canExport` gives it an item. |
+| `showTail` | `false` | hosts explicitly opt in with `showTail={true}` to retain the legacy `share` (including capability-gated `contribute`) and `more actions` menus after `headerActions`. By default a host owns publish and overflow through `headerActions`. The opt-in `more actions` menu renders only when `canEdit` or `canExport` gives it an item. |
 | `showOutcome` | `true` | renders the outcome chip when `session.outcome` is present. `false` hides it without touching the cooked outcome. |
 | `showSearchTrigger` | `false` | renders a `search this transcript` button with its `⌘F` hint at the end of the tab strip. It opens the search bar exactly as the shortcut does, and it stays when `showTail` is `false`. |
 | `pullRequests` | omitted | a host node rendered under the meta row. The host owns the list, its data and any "show all" control; the composite renders nothing when it is omitted and hides it with the title while the header is condensed. |
