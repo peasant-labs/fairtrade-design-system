@@ -10,7 +10,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react'
  * SessionGroupDisclosure - the one collapsed count control for a session list.
  *
  * The label names the group's membership and its count ("orphan sessions 2"),
- * a chevron leads the control, and a trailing `show`/`hide` states what the
+ * a chevron leads the control, and by default trailing `show`/`hide` states what the
  * press will do. The control is a real `<button>` with `aria-expanded` and
  * `aria-controls`, so the row it reveals is named, not inferred.
  *
@@ -32,6 +32,8 @@ import { ChevronDown, ChevronRight } from 'lucide-react'
  *   inside an already-bordered panel
  * @param {boolean} [props.indent] - indent one step, so a group nested inside a
  *   list reads as belonging to it rather than as another list row
+ * @param {boolean} [props.showActionHint=true] - show the trailing show/hide
+ *   hint; false omits only the hint, keeping the labelled disclosure control
  * @param {string} [props.testID] - base for the wrapper and control test ids:
  *   `<base>`, `<base>-toggle`, and `<base>-label`
  * @param {import('react').ReactNode} [props.children] - revealed only while
@@ -45,6 +47,7 @@ export default function SessionGroupDisclosure({
   rowsID,
   bare = false,
   indent = false,
+  showActionHint = true,
   testID = 'session-group-disclosure',
   children,
 }) {
@@ -66,7 +69,7 @@ export default function SessionGroupDisclosure({
           {expanded ? label : collapsedLabel}
         </span>
         <span className="sgd-spacer" aria-hidden="true" />
-        <span className="sgd-show">{expanded ? 'hide' : 'show'}</span>
+        {showActionHint && <span className="sgd-show">{expanded ? 'hide' : 'show'}</span>}
       </button>
 
       {expanded && children}
