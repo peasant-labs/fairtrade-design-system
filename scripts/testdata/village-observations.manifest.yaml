@@ -1,0 +1,31 @@
+requiredCaseNames:
+  - catalog-complete-history-timeout
+  - never-fetched
+  - known-empty
+  - running
+  - cancelled
+  - village-unavailable
+  - invalid-credentials
+  - hidden-dated-evidence
+  - expired-observation
+  - long-content
+  - remote-attempt-history
+  - confirmed-receipt-not-approval
+  - diagnostic-not-contribution
+  - selected-page-conflict
+  - required-policy-refusal
+  - optional-metadata-warning
+requiredMutationNames:
+  - shared completion date hides retained history
+  - history pages lose category identity
+mutations:
+  - name: shared completion date hides retained history
+    file: src/ui/VillageObservations.jsx
+    find: 'value={domain.lastCompletedAt}'
+    replace: 'value={domains[0]?.lastCompletedAt}'
+    expectedDiagnostic: 'catalog-complete-history-timeout: visible 2026-10-15T09:00:00Z'
+  - name: history pages lose category identity
+    file: src/ui/VillageObservations.jsx
+    find: 'onPageChange?.(category.id, page)'
+    replace: 'onPageChange?.(categories[0].id, page)'
+    expectedDiagnostic: 'page callbacks carry independent category identity'

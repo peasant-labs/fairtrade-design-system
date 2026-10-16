@@ -23,6 +23,12 @@ export { default as CodeMapNavigator } from './CodeMapNavigator.jsx'
 export { CODE_MAP_STATE_VERSION, CODE_MAP_VIEWPORT_SCALE, isCodeMapViewportScale, codeMapStatesEqual, createCodeMapState, reduceCodeMapState, deriveCodeMapView, deriveTimelineHighlight, resolveEscapeAction } from './codeMapState.js'
 export { assertTimelineNavigationAction } from './timelineNavigation.js'
 export { GraphAppShell, GraphSectionNav, LOCAL_APP_SECTIONS, GRAPH_APP_SECTIONS } from '../inuse/InUseShell.jsx'
+export { default as VillageObservations } from '../VillageObservations.jsx'
+/** @typedef {import('../VillageObservations.jsx').VillageObservationsProps} VillageObservationsProps */
+/** @typedef {import('../VillageObservations.jsx').ObservationDomain} ObservationDomain */
+/** @typedef {import('../VillageObservations.jsx').ObservedCollective} ObservedCollective */
+/** @typedef {import('../VillageObservations.jsx').ContributionEvidenceCategory} ContributionEvidenceCategory */
+/** @typedef {import('../VillageObservations.jsx').ContributionEvidenceRow} ContributionEvidenceRow */
 
 /* ── derivation helper (runtime) — ChangesPayload → kit CommitGraph dataset ────── */
 export { buildChangesGraph, humanizeAge } from './changeGraph.js'

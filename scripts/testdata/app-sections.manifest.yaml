@@ -1,14 +1,26 @@
 # Required-NAME manifest for app-sections.yaml: deletion protection. The gate asserts the entry
 # and body names equal these lists exactly, as sets.
-requiredCaseNames: [home, settings, analytics, changes, code map]
-requiredBodyNames: [home body, settings body, analytics body, changes body, code map body]
+requiredCaseNames: [home, village, settings, analytics, changes, code map]
+requiredBodyNames: [home body, village body, settings body, analytics body, changes body, code map body]
 requiredAliasIds: [analytics, changes, map]
 
 requiredMutationNames:
+  - village leaves the nav
+  - village body is missing
   - the nav lists route-only sections
   - settings leaves the nav
   - the demo opens on the first route-only section
 mutations:
+  - name: village leaves the nav
+    file: src/ui/inuse/InUseShell.jsx
+    find: "Object.freeze({ id: 'village', label: 'village', inNav: true }),"
+    replace: "Object.freeze({ id: 'village', label: 'village', inNav: false }),"
+    expectedDiagnostic: "LOCAL_APP_SECTIONS entry village"
+  - name: village body is missing
+    file: src/mockups/inuse/GraphApp.jsx
+    find: "{view === 'village' && <LocalVillage />}"
+    replace: "{view === 'village' && null}"
+    expectedDiagnostic: "village body: selecting village must mount a body"
   - name: the nav lists route-only sections
     file: src/ui/inuse/InUseShell.jsx
     find: "return sections.filter((section) => section.inNav !== false)"
@@ -22,5 +34,5 @@ mutations:
   - name: the demo opens on the first route-only section
     file: src/mockups/inuse/GraphApp.jsx
     find: "return requested && SECTION_IDS.has(requested) ? requested : SECTIONS[0].id"
-    replace: "return requested && SECTION_IDS.has(requested) ? requested : SECTIONS[2].id"
+    replace: "return requested && SECTION_IDS.has(requested) ? requested : SECTIONS[3].id"
     expectedDiagnostic: "the demo must open on home"

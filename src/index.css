@@ -3433,3 +3433,31 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
     .cmg-signin-card { padding: var(--sp-4); }
   }
 }
+/* Local Village observations: presentation only, independent domain dates and evidence pages. */
+.iu-app-root:has(> .iu-view > .vobs) { height: auto; min-height: 100%; flex-shrink: 0; }
+.vobs { padding: var(--sp-5); color: var(--ink); font-family: var(--font-body); font-size: var(--fs-body); min-width: 0; overflow-wrap: anywhere; }
+.vobs .tabpanel { max-width: none; min-width: 0; font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); }
+.vobs p { line-height: var(--lh-body); max-width: var(--measure-prose); margin-block: var(--sp-5); }
+.vobs-header, .vobs-row-head { display: flex; align-items: start; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-4); }
+.vobs-header h2 { font-family: var(--font-mono); font-size: var(--fs-xl); margin: 0; }
+.vobs-header p { margin-block: var(--sp-3); }
+.vobs-status:empty { display: none; }
+.vobs-status, .vobs-issue { margin-block: var(--sp-4); }
+.vobs-issue { border: var(--bd-strong); padding: var(--sp-4); background: var(--surface); }
+.vobs-issue p { margin: 0; }
+.vobs-issue p + p { margin-top: var(--sp-5); }
+.vobs-domains { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); padding-block: var(--sp-4); border-block: var(--bd); }
+.vobs-domains dt, .vobs-facts dt { font: var(--fs-label)/var(--lh-body) var(--font-mono); color: var(--ink-3); }
+.vobs-domains dd, .vobs-facts dd { margin: 0; }
+.vobs-domains dd p { margin-block: var(--sp-2); }
+.vobs-list { padding: 0; margin-block: var(--sp-4); list-style: none; }
+.vobs-list > li { padding-block: var(--sp-5); border-bottom: var(--bd); }
+.vobs-list strong { font-size: var(--fs-body); }
+.vobs-facts { display: grid; gap: var(--sp-3); }
+.vobs-facts > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 3fr); gap: var(--sp-3); }
+.vobs-pager { overflow-x: auto; padding: var(--sp-1); }
+.vobs time, .vobs-summary { font-variant-numeric: tabular-nums; }
+@media (width < 768px) {
+  .vobs { padding: var(--sp-3); }
+  .vobs-domains, .vobs-facts > div { grid-template-columns: minmax(0, 1fr); }
+}

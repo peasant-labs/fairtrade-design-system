@@ -14,13 +14,14 @@ export const IN_USE_APPS = Object.freeze([
  */
 
 /* The local app's section registry, in canonical order. `inNav` says whether a section is
-   listed in the section navigation: home and settings are; analytics, changes and code map keep
+   listed in the section navigation: home, village and settings are; analytics, changes and code map keep
    their ids, labels and routes, and are reached by route only. A consumer derives its nav and
    routes from this list and fails loudly on an id it does not map. The declared type keeps the
-   components' `sections` prop open to any AppSection list, not only these five entries. */
+   components' `sections` prop open to any AppSection list. */
 /** @type {ReadonlyArray<Readonly<AppSection>>} */
 export const LOCAL_APP_SECTIONS = Object.freeze([
   Object.freeze({ id: 'home', label: 'home', inNav: true }),
+  Object.freeze({ id: 'village', label: 'village', inNav: true }),
   Object.freeze({ id: 'settings', label: 'settings', inNav: true }),
   Object.freeze({ id: 'analytics', label: 'analytics', inNav: false }),
   Object.freeze({ id: 'changes', label: 'changes', inNav: false }),

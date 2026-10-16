@@ -5,6 +5,7 @@
 requiredCaseNames:
   - native-text-thinking-pair
 requiredImportables:
+  - VillageObservations
   - adaptTranscript
   - prefilterTurns
   - TranscriptViewer

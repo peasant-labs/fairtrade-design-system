@@ -27,12 +27,14 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   report.check(registry.length === fixture.entries.length, `LOCAL_APP_SECTIONS must hold exactly ${fixture.entries.length} entries, found ${registry.length}`)
   fixture.entries.forEach((expected, index) => {
     const actual = registry[index] ?? {}
+    report.check(Object.isFrozen(actual), `LOCAL_APP_SECTIONS entry ${expected.name} must be frozen`)
     const same = actual.id === expected.id && actual.label === expected.label && actual.inNav === expected.inNav && Object.keys(actual).length === 3
     report.check(same, `LOCAL_APP_SECTIONS entry ${expected.name} at position ${index}: expected ${JSON.stringify({ id: expected.id, label: expected.label, inNav: expected.inNav })}, received ${JSON.stringify(actual)}`)
   })
   report.check(graphBarrel.LOCAL_APP_SECTIONS === registry && uiBarrel.LOCAL_APP_SECTIONS === registry, 'LOCAL_APP_SECTIONS must be exported from the ui and graph barrels')
   report.check(JSON.stringify(shell.GRAPH_APP_SECTIONS) === JSON.stringify(fixture.deprecatedAlias), `the deprecated GRAPH_APP_SECTIONS alias changed value: ${JSON.stringify(shell.GRAPH_APP_SECTIONS)}`)
   report.check(graphBarrel.GRAPH_APP_SECTIONS === shell.GRAPH_APP_SECTIONS, 'GRAPH_APP_SECTIONS must stay exported from the graph barrel')
+  report.check(uiBarrel.GRAPH_APP_SECTIONS === shell.GRAPH_APP_SECTIONS, 'GRAPH_APP_SECTIONS must stay exported from the ui barrel')
 
   const inNav = fixture.entries.filter((entry) => entry.inNav).map((entry) => entry.label)
   for (const [name, element] of [
