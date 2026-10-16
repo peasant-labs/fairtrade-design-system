@@ -4,6 +4,24 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.27 - 2026-10-16
+
+Replacement npm release for 0.0.26: its GitHub Release exists, but npm publication
+failed during the mounted Pi transcript check. This version includes all quality
+improvements documented under 0.0.26 below: typography and phone layout, publish
+consent and state truth, DataTable filtering and host totals, accessibility,
+performance, and the consolidated design record.
+
+### Fixed
+
+- Release pull requests now run the full canonical `pnpm prepack` chain in the
+  required library CI job, including the mounted Pi transcript check, instead of
+  only `build:lib`. Title edits re-run CI so changing a PR to a release title
+  selects the release checks; ordinary PR and push builds remain unchanged.
+- Mounted Pi usage-label assertions now select the existing production label
+  element and retain exact, nonempty owner-label checks. This repairs the stale
+  selectors that blocked 0.0.26 npm publication without changing the UI.
+
 ## 0.0.26 - 2026-10-15
 
 The in-use demo's quality remediation in one release: the five merged layers of fairtrade#116 (typography and phone layout, publish consent, accessibility and performance, demo truth and the decision register, and the final wave).
