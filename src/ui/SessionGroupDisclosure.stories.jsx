@@ -18,6 +18,7 @@ const meta = {
     expanded: { control: 'boolean' },
     bare: { control: 'boolean' },
     indent: { control: 'boolean' },
+    showActionHint: { control: 'boolean' },
     label: { control: 'text' },
     collapsedLabel: { control: 'text' },
     rowsID: { control: false },
@@ -82,4 +83,25 @@ export const ExpandsAndCollapses = {
 export const Indented = {
   render: Controlled,
   args: { indent: true },
+}
+
+// Hints remain visible by default; a nested group can opt out without changing
+// its count, chevron, accessible button, or caller-owned expansion state.
+export const WithoutActionHint = {
+  render: Controlled,
+  args: { showActionHint: false, bare: true, indent: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const toggle = canvas.getByTestId('session-group-disclosure-toggle')
+    await expect(toggle).toHaveAccessibleName('orphan sessions 2')
+    expect(canvasElement.querySelector('.sgd-show')).toBeNull()
+    expect(canvasElement.querySelector('#sgd-story-rows')).toBeNull()
+    await userEvent.click(toggle)
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(canvasElement.querySelector('.sgd-show')).toBeNull()
+    expect(canvasElement.querySelector('#sgd-story-rows')).not.toBeNull()
+    await userEvent.keyboard('{Enter}')
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(canvasElement.querySelector('#sgd-story-rows')).toBeNull()
+  },
 }
