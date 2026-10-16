@@ -26,6 +26,16 @@ const TRACE = process.env.JOURNEY_TRACE === '1' ? 'on' : 'retain-on-failure'
 const VIDEO = process.env.JOURNEY_VIDEO === '1' ? 'on' : 'retain-on-failure'
 const HTML = process.env.JOURNEY_HTML !== '0'
 
+/* Both servers run under scripts/journey/serve-supervised.mjs, which runs the
+ * command below unchanged and reports a mid-run death: Playwright waits for a
+ * webServer once and never watches it again, so a server that dies mid-run
+ * otherwise leaves only net::ERR_CONNECTION_REFUSED in the tests and no reason
+ * in the job log. The name is the prefix Playwright puts on the server's
+ * output, so a death is attributable to the storybook server or the app server.
+ */
+const supervised = (name, port, command) =>
+  `node scripts/journey/serve-supervised.mjs --name ${name} --port ${port} --command '${command}'`
+
 export default defineConfig({
   testDir: './scripts/journey',
   testMatch: '**/*.journey.mjs',
@@ -57,7 +67,12 @@ export default defineConfig({
     {
       // storybook-static is built by `pnpm build-storybook` before the run;
       // serve it on the same fixed port sbsmoke.mjs uses so story URLs never drift.
-      command: `pnpm exec http-server storybook-static -p ${SB_PORT} -a 127.0.0.1 --silent`,
+      name: 'storybook-static',
+      command: supervised(
+        'storybook-static',
+        SB_PORT,
+        `pnpm exec http-server storybook-static -p ${SB_PORT} -a 127.0.0.1 --silent`,
+      ),
       url: `${SB_URL}/index.json`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
@@ -67,7 +82,8 @@ export default defineConfig({
     {
       // dist/ is built by `pnpm build` before the run; the app-validate
       // journey drives it the way validate.mjs did (same port, same flags).
-      command: `pnpm exec vite preview --port ${APP_PORT} --strictPort`,
+      name: 'app-preview',
+      command: supervised('app-preview', APP_PORT, `pnpm exec vite preview --port ${APP_PORT} --strictPort`),
       url: `${APP_URL}/?fb=off`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,

@@ -46,6 +46,7 @@ cases:
 requiredChildScripts:
   - test:adapter
   - test:bridge-contract
+  - test:capture
   - test:core
   - test:evidence
 forbiddenPackFragments:

@@ -1,0 +1,54 @@
+# Required-NAME manifest for breakpoints.yaml: deletion protection for the declared off-scale
+# viewport exceptions, the case names, and the named mutation scripts/breakpoint-scale.test.mjs
+# plants in the REAL bytes of a source sheet. The mutation must make the guard fail, and the
+# failure must contain expectedDiagnostic. An exception added without its name here fails the
+# guard as an unexpected name.
+
+requiredExceptionNames:
+  - the transcript rails need more than the tablet token
+
+requiredCaseNames:
+  - the phone boundary
+  - a two-band condition
+  - a non-viewport media feature
+  - an off-scale width
+  - a boundary-minus-one width
+  - the retired descriptor form
+  - an inclusive upper bound
+  - a rem-based width
+  - a height condition
+  - an upper-case px unit
+  - a ch viewport unit
+  - a pt viewport unit
+  - a vw viewport unit
+  - an upper-case media keyword
+  - an off-scale import condition
+
+requiredMutationNames:
+  - an off-scale viewport query returns
+  - an upper-case px unit returns
+  - a non-px viewport unit returns
+  - an upper-case media keyword returns
+  - an import media condition returns
+
+mutations:
+  - name: an off-scale viewport query returns
+    target: src/ui/Settings.css
+    append: "\n@media (max-width: 719px) { .srow { padding: var(--sp-2); } }\n"
+    expectedDiagnostic: '[off-scale] `@media (max-width: 719px)`: 719px is not on the --bp-* scale'
+  - name: an upper-case px unit returns
+    target: src/ui/Settings.css
+    append: "\n@media (width < 719PX) { .srow { padding: var(--sp-2); } }\n"
+    expectedDiagnostic: '[off-scale] `@media (width < 719PX)`: 719px is not on the --bp-* scale'
+  - name: a non-px viewport unit returns
+    target: src/ui/Settings.css
+    append: "\n@media (width < 90ch) { .srow { padding: var(--sp-2); } }\n"
+    expectedDiagnostic: '[non-scale-unit] `@media (width < 90ch)`: `90ch` measures a viewport condition in ch;'
+  - name: an upper-case media keyword returns
+    target: src/ui/Settings.css
+    append: "\n@MEDIA (width < 719px) { .srow { padding: var(--sp-2); } }\n"
+    expectedDiagnostic: '[off-scale] `@MEDIA (width < 719px)`: 719px is not on the --bp-* scale'
+  - name: an import media condition returns
+    target: src/ui/Settings.css
+    append: "\n@import url(\"settings.css\") screen and (max-width: 719px);\n"
+    expectedDiagnostic: '[off-scale] `screen and (max-width: 719px)`: 719px is not on the --bp-* scale'

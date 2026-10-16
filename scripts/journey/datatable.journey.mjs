@@ -1,5 +1,6 @@
 import { test, expect, storyUrl } from './lib/fixtures.mjs'
 import { loadDataTableFixtures } from '../datatable-fixtures.mjs'
+import { assertWebServerServing } from './server-liveness.mjs'
 
 const spec = loadDataTableFixtures()
 const productUrl = (query, theme) => `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}/?fb=off&${query}&theme=${theme}#inuse`
@@ -102,6 +103,11 @@ const decimalProblems = () => {
 
 for (const row of spec.mountedRows) {
   test(row.name, async ({ page, theme }) => {
+    // This file mixes app-preview and Storybook rows, so the liveness check
+    // stays per row: an app-server death must not stop a Storybook row, and a
+    // Storybook death must report the missing server instead of a connection
+    // error against the story id.
+    await assertWebServerServing()
     await page.goto(storyUrl(`components-datatable--${row.story}`, theme))
     await expect(page.locator('.tbl')).toBeVisible()
     await expect.poll(() => page.locator('.tbl').evaluate((el) => el.closest('[data-theme]')?.getAttribute('data-theme') || 'dark')).toBe(theme)

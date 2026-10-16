@@ -139,30 +139,61 @@ test.describe('built app', () => {
     expect(themed).toBe('light')
     expect(t2, `${t1}->${t2}`).toBeGreaterThanOrEqual(t1 - 2)
 
-    // No horizontal overflow from 320px up. A fresh page per width, like the
-    // script: reused scroll state from the interaction checks above would
-    // otherwise pollute the measurement. The sweep runs at full motion like
-    // the script — the run's global reduce emulation freezes the philosophy
-    // marquee mid-cycle and reads 4px at 320px (pre-existing, filed
-    // separately); motion behavior itself is covered by the dedicated check
-    // below.
-    const motionCtx = await browser.newContext({ reducedMotion: 'no-preference' })
+    // No horizontal overflow from 320px up, at page top and with the pagination
+    // band revealed, under both motion settings. A fresh page per measurement,
+    // like the script: reused scroll state from the interaction checks above
+    // would otherwise pollute the measurement. The band-revealed pass is the one
+    // that catches the numbered pagination's edge control: its lowercase label
+    // is absolutely positioned behind the standard clip pattern, so it stays
+    // inside the site root's overflow-x: clip only while an ancestor transform
+    // contains it - a transform that is absent under reduced motion (the reveal
+    // effect returns early there, so the section never gets .reveal) and that
+    // resolves to none when the section reveals under normal motion. Before the
+    // .pgn-edge fix the escaped 1px box left the 320px document 4px wide, which
+    // this sweep now catches on the revealed pass under both motions and at page
+    // top under reduce.
     const over = {}
-    try {
-      for (const w of [320, 360, 390, 768, 1024, 1440]) {
-        const wp = await motionCtx.newPage()
-        await wp.setViewportSize({ width: w, height: 800 })
-        await wp.goto(URL, { waitUntil: 'networkidle' })
-        await wp.waitForTimeout(600)
-        over[w] = await wp.evaluate(
-          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        )
-        await wp.close()
+    for (const motion of ['no-preference', 'reduce']) {
+      const motionCtx = await browser.newContext({ reducedMotion: motion })
+      try {
+        for (const w of [320, 360, 390, 768, 1024, 1440]) {
+          const wp = await motionCtx.newPage()
+          await wp.setViewportSize({ width: w, height: 800 })
+          await wp.goto(URL, { waitUntil: 'networkidle' })
+          await wp.waitForTimeout(600)
+          const read = () =>
+            wp.evaluate(
+              () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+            )
+          const top = await read()
+          await wp.evaluate(() =>
+            document
+              .querySelector('#pagination')
+              .scrollIntoView({ block: 'start', behavior: 'instant' }),
+          )
+          // the section's own transform is the only ancestor that ever contained
+          // the hidden label: wait until it has resolved to none (immediately
+          // under reduce, after the 900ms scroll-reveal transition otherwise)
+          await wp.waitForFunction(
+            () => {
+              const band = document.querySelector('#pagination')
+              return !!band && getComputedStyle(band).transform === 'none'
+            },
+            null,
+            { timeout: 15000 },
+          )
+          const revealed = await read()
+          over[`${motion}/${w}`] = { top, revealed }
+          await wp.close()
+        }
+      } finally {
+        await motionCtx.close()
       }
-    } finally {
-      await motionCtx.close()
     }
-    expect(Object.values(over).every((v) => v <= 1), JSON.stringify(over)).toBe(true)
+    expect(
+      Object.values(over).every((v) => v.top <= 1 && v.revealed <= 1),
+      JSON.stringify(over),
+    ).toBe(true)
 
     // Reduced motion shortens transitions (the run itself is under reduce).
     await page.setViewportSize({ width: 1280, height: 720 })

@@ -4,7 +4,7 @@
    ported from peasant's RailShell / RailSection / split-rail. the layout: a
    scrolling main canvas column (min-width:0) beside a 320px sticky hairline
    rail card. desktop-first — the rail is a real second column that STAYS in
-   view as the canvas scrolls; only below the two-column breakpoint (<=880px)
+   view as the canvas scrolls; only below the two-column breakpoint (width < 1024px)
    does it detach into a fixed bottom-sheet, so mobile complements without ever
    compromising the desktop two-column reading.
 

@@ -3774,6 +3774,11 @@ describe('fairtest host export ownership', async () => {
     'assert-fairtest-paths.mjs',
     'fairtest-paths.mjs',
     'fairtrade-targets.type-test.mjs',
+    'capture-driver.mjs',
+    'capture-fairtest.mjs',
+    'capture-paths.mjs',
+    'capture-policy.mjs',
+    'capture-sheets.mjs',
   ])
   const hostModules = /** @type {Record<string, Record<string, unknown>>} */ ({})
   for (const file of hostFiles) {

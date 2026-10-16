@@ -464,7 +464,7 @@
   grid-template-columns: 1fr 1fr;
   background: var(--surface);
 }
-@media (max-width: 479px) {
+@media (width < 480px) {
   .rdx-where-split { grid-template-columns: 1fr; }
 }
 
@@ -474,7 +474,7 @@
 }
 /* the divider — top border when stacked, left border when side-by-side. */
 .rdx-where-col + .rdx-where-col { border-top: 0; border-left: var(--bd); }
-@media (max-width: 479px) {
+@media (width < 480px) {
   .rdx-where-col + .rdx-where-col { border-top: var(--bd); border-left: 0; }
 }
 .rdx-where-col-head {

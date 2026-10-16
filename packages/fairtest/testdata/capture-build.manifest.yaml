@@ -1,0 +1,53 @@
+# Required-name inventory and executable mutations for capture-build.yaml.
+expectedCaseCount: 5
+requiredCaseNames:
+  - a matching served build proves the served bytes
+  - a dropped served reference fails and names the asset
+  - a served byte mismatch fails
+  - a duplicate asset reference fails
+  - a non-hex head fails
+expectedMutationCount: 7
+requiredMutationNames:
+  - removing the byte-mismatch case breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - renaming the check discriminator breaks the case shape
+  - deleting the mutation name breaks the case shape
+  - adding an unknown case field breaks exact membership
+  - inventing a check kind breaks the closed vocabulary
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing the byte-mismatch case breaks the required inventory
+    kind: delete-record
+    target: a served byte mismatch fails
+    expectedField: a served byte mismatch fails
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: a matching served build proves the served bytes
+    expectedField: a matching served build proves the served bytes
+  - name: renaming the check discriminator breaks the case shape
+    kind: rename-field
+    target: a duplicate asset reference fails
+    field: check
+    newField: kind
+    expectedField: check
+  - name: deleting the mutation name breaks the case shape
+    kind: delete-field
+    target: a non-hex head fails
+    field: mutation
+    expectedField: mutation
+  - name: adding an unknown case field breaks exact membership
+    kind: unknown-field
+    target: a served byte mismatch fails
+    field: widths
+    value: "320"
+    expectedField: widths
+  - name: inventing a check kind breaks the closed vocabulary
+    kind: bad-value
+    target: a matching served build proves the served bytes
+    field: check
+    value: invented-check
+    expectedField: check
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document

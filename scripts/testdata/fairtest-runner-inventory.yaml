@@ -68,6 +68,11 @@ commands:
     owner: fairtest-core
     stage: browser-free
     runner: child-contract
+  - name: test:capture
+    invocation: pnpm --filter @peasant-labs/fairtest test:capture
+    owner: fairtest-core
+    stage: browser-free
+    runner: child-contract
   - name: test:fairtest:init
     invocation: pnpm test:fairtest:init
     owner: evidence-ci

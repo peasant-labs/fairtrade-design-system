@@ -264,11 +264,11 @@ decisions:
     id: 26
     disposition: DEMO
     binding:
-      codeReference: {file: src/index.css, contains: '@media (max-width: 719px) { .cex-coll-grid { grid-template-columns: 1fr; } }'}
+      codeReference: {file: src/index.css, contains: '@media (width < 768px) { .cex-coll-grid { grid-template-columns: 1fr; } }'}
       pointerRemoved: '#136/26'
       lineRemoved: '- **#136/26, query direction**: four rules adapt with `min-width` queries.'
       restatingFilesAmended:
-        - {file: DESIGN.md, contains: 'layout and narrower widths adapt down with `max-width` queries.'}
+        - {file: DESIGN.md, contains: 'narrower widths adapt down with single-sided width conditions using the four scale values'}
   - name: progressive-disclosure
     id: 27
     disposition: SPLIT

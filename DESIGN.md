@@ -210,8 +210,9 @@ components:
 >     (`COMPONENTS`) and the description (in `buildDesignFrontmatter`). A restyle that changes which
 >     tokens a component uses must update them there.
 > - **Prose.** It is authored. Where the prose quotes a value, the token wins.
-> - **`llm/NEUROINCLUSIVE.md`** keeps the research sources and the review checklist behind the
->   neuroinclusive rules stated here. Where the two disagree, this file wins, and the disagreement is
+> - **`llm/NEUROINCLUSIVE.md`** keeps the research behind the neuroinclusive rules stated here, one
+>   line per rule naming the rule below, plus the reconciliation notes and the review checklist. A
+>   rule is worded once, here. Where the two disagree, this file wins, and the disagreement is
 >   a bug to fix in both files in one commit.
 > - **`PRODUCT.md`** holds who the system serves.
 > - **The in-use demo** (`#inuse`, fairtrade.peasantlabs.org) is the fidelity oracle. When the demo
@@ -423,7 +424,9 @@ Row heights come in three density tokens (`--row-h-compact`, `--row-h-standard`,
 
 Breakpoints are one scale (`--bp-sm`, `--bp-md`, `--bp-lg`, `--bp-xl`): phone below 480, large phone
 480 to 767, tablet 768 to 1023, laptop 1024 to 1439, desktop from 1440. Desktop is the canonical
-layout and narrower widths adapt down with `max-width` queries. Mobile complements desktop: it stays
+layout and narrower widths adapt down with single-sided width conditions using the four scale values
+(for example, `(width < 768px)` for large phone and below); any condition that cannot use a scale
+value is a recorded exception in the breakpoint fixture. Mobile complements desktop: it stays
 overflow-free, legible and tappable from 320px up (WCAG 1.4.10 reflow at 400% zoom), and the desktop
 layout is never compromised to serve it. Each table and code block gets its own `overflow-x: auto`.
 

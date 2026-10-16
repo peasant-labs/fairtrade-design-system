@@ -169,7 +169,7 @@ jobs:
 
       # The browser-free contracts run before any service starts: the type
       # program with its coverage, path, boundary, and dispatch guards, the
-      # promotion record, the four child contract commands, the runner
+      # promotion record, the five child contract commands, the runner
       # inventory, the run-envelope wiring guard (which pins the upload SHA and
       # always-run steps), and the SurfaceGate compatibility gate.
       - name: Fairtest browser-free contracts
@@ -184,6 +184,7 @@ jobs:
           pnpm --filter @peasant-labs/fairtest test:adapter
           pnpm --filter @peasant-labs/fairtest test:evidence
           pnpm --filter @peasant-labs/fairtest test:bridge-contract
+          pnpm --filter @peasant-labs/fairtest test:capture
           pnpm test:fairtest:inventory
           pnpm test:fairtest:envelope
           pnpm test:fairtest:compat

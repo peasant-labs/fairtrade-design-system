@@ -664,6 +664,7 @@ function inspectWorkflowOrder(text) {
     'pnpm test:fairtest:dispatch',
     'pnpm test:fairtest:envelope',
     'pnpm test:fairtest:compat',
+    'pnpm --filter @peasant-labs/fairtest test:capture',
   ]) {
     if (!browserFreeCommands.includes(command)) {
       workflowFail(command, `the browser-free contracts step must run ${command}, observed ${JSON.stringify(browserFree.run)}`)

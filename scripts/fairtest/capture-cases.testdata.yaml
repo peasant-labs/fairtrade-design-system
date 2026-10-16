@@ -1,0 +1,213 @@
+# Fairtrade capture cases. One case matrix the capture CLI runs against each
+# served built tree: the ordered states, the viewport widths, the themes, and
+# the surfaces. Each surface names its page path, query, and hash, the region
+# selector that clips the full-region shot, the probes and keyboard focus
+# representatives it captures, and the shared host kind its row declares.
+#
+# The control selector strings mirror the surfaces captured by hand for the
+# pre-change baseline build, so the harness and the reviewed evidence describe
+# the same targets. The publish popup, the home table and the transcript search
+# strip are captured so the mobile gutters, the consent column, the table count
+# and the non-overlapping search remain observable on the consolidated build.
+# The in-use home table's probes are scoped under its region root (.iu-page):
+# the docs page mounts its own demo table with the same classes, and an unscoped
+# .tbl-footer/.tbl-tools matched the demo table instead, so the table-count and
+# table-tools probes read the wrong table. The required surface inventory lives
+# in the sibling .manifest.yaml.
+states:
+  - before
+  - after
+widths:
+  - 320
+  - 390
+  - 1440
+themes:
+  - dark
+  - light
+surfaces:
+  - id: controls-checkbox
+    kind: component
+    path: /
+    query: ""
+    hash: "#controls"
+    root: "#controls"
+    probes:
+      - name: checkbox-checked
+        selector: ".check-box:checked"
+      - name: checkbox-unchecked
+        selector: ".check-box:not(:checked)"
+    focus:
+      - name: checkbox-focus
+        selector: ".check-box:checked"
+  - id: states-toggle
+    kind: component
+    path: /
+    query: ""
+    hash: "#states"
+    root: "#states"
+    probes:
+      - name: bs-toggle-on
+        selector: ".bs-toggle[aria-pressed=\"true\"]"
+        hover: true
+      - name: bs-toggle-off
+        selector: ".bs-toggle[aria-pressed=\"false\"]"
+      - name: bs-seg-on
+        selector: ".bs-seg-opt[aria-pressed=\"true\"]"
+        hover: true
+      - name: bs-seg-off
+        selector: ".bs-seg-opt[aria-pressed=\"false\"]"
+      - name: sw-disabled-off
+        selector: ".sw[aria-checked=\"false\"][disabled]"
+        stateLabel: true
+      - name: sw-disabled-on
+        selector: ".sw[aria-checked=\"true\"][disabled]"
+        stateLabel: true
+    focus:
+      - name: sw-focus
+        selector: ".sw[aria-checked=\"true\"]:not([disabled])"
+      - name: bs-toggle-focus
+        selector: ".bs-toggle[aria-pressed=\"true\"]"
+      - name: bs-seg-focus
+        selector: ".bs-seg-opt[aria-pressed=\"true\"]"
+  - id: badges-chip
+    kind: component
+    path: /
+    query: ""
+    hash: "#badges"
+    root: "#badges"
+    probes:
+      - name: chip-toggle-on
+        selector: "button.chip-toggle[aria-pressed=\"true\"]"
+        hover: true
+      - name: chip-toggle-off
+        selector: "button.chip-toggle[aria-pressed=\"false\"]"
+    focus:
+      - name: chip-toggle-focus
+        selector: "button.chip-toggle[aria-pressed=\"true\"]"
+  - id: inuse-apptab
+    kind: component
+    path: /
+    query: "app=graph&section=home"
+    hash: "#inuse"
+    root: "#inuse"
+    probes:
+      - name: apptab-on
+        selector: ".iu-opt-on"
+        hover: true
+      - name: apptab-on-ico
+        selector: ".iu-opt-on .iu-opt-ico"
+      - name: apptab-on-key
+        selector: ".iu-opt-on .iu-opt-key"
+      - name: apptab-off
+        selector: ".iu-opt:not(.iu-opt-on)"
+    focus:
+      - name: apptab-focus
+        selector: ".iu-opt-on"
+  - id: inuse-seg
+    kind: component
+    path: /
+    query: "app=graph&section=home"
+    hash: "#inuse"
+    root: "#inuse"
+    probes:
+      - name: inuse-seg-on
+        selector: ".bs-seg-opt[aria-pressed=\"true\"]"
+        hover: true
+    focus: []
+  - id: inuse-analytics
+    kind: component
+    path: /
+    query: "app=graph&section=analytics"
+    hash: "#inuse"
+    root: "#inuse"
+    probes:
+      - name: gan-seg-on
+        selector: ".gan-seg.is-on"
+        hover: true
+      - name: gan-seg-off
+        selector: ".gan-seg:not(.is-on)"
+    focus:
+      - name: gan-seg-focus
+        selector: ".gan-seg.is-on"
+  - id: inuse-transcript
+    kind: component
+    path: /
+    query: "app=transcript"
+    hash: "#inuse"
+    root: "#inuse"
+    probes:
+      - name: cbx-checked
+        selector: ".check-box:checked"
+      - name: cbx-unchecked
+        selector: ".check-box:not(:checked)"
+      - name: sw-on
+        selector: ".sw[aria-checked=\"true\"]"
+      - name: sw-off
+        selector: ".sw[aria-checked=\"false\"]"
+      - name: txn-viewsw-state
+        selector: ".txn-viewsw-state"
+      - name: txn-viewsw-on-state
+        selector: ".txn-viewsw:has(.sw[aria-checked=\"true\"]) .txn-viewsw-state"
+      - name: txn-search-trigger
+        selector: ".txn-search-trigger"
+      - name: txn-tabbar
+        selector: ".txn-tabbar"
+    focus:
+      - name: txn-viewsw-focus
+        selector: ".txn-viewsw .sw"
+  - id: inuse-settings-switch
+    kind: component
+    path: /
+    query: "app=commons&commons=collective-settings"
+    hash: "#inuse"
+    root: "#inuse"
+    probes:
+      - name: sw-on
+        selector: ".sw[aria-checked=\"true\"]"
+      - name: sw-state
+        selector: ".sw-state"
+    focus: []
+  - id: publish-update
+    kind: component
+    path: /
+    query: "app=transcript&publish=ready&bar=published"
+    hash: "#inuse"
+    root: ".pub-dialog"
+    probes:
+      - name: pub-body
+        selector: ".pub-dialog .dlg-body"
+      - name: pub-consent-column
+        selector: ".pub-dialog .pub-auto"
+      - name: pub-access-row
+        selector: ".pub-access-row"
+      - name: pub-picker-row
+        selector: ".pub-picker-row"
+    focus: []
+  - id: publish-ready
+    kind: component
+    path: /
+    query: "app=transcript&publish=ready"
+    hash: "#inuse"
+    root: ".pub-dialog"
+    probes:
+      - name: pub-body
+        selector: ".pub-dialog .dlg-body"
+      - name: pub-consent-column
+        selector: ".pub-dialog .pub-auto"
+      - name: pub-access-row
+        selector: ".pub-access-row"
+    focus: []
+  - id: inuse-home
+    kind: component
+    path: /
+    query: "app=graph&section=home"
+    hash: "#inuse"
+    root: ".iu-page"
+    probes:
+      - name: tbl-count
+        selector: ".iu-page .tbl-footer [role=\"status\"]"
+      - name: tbl-search
+        selector: ".iu-page .tbl-tools"
+      - name: iu-search
+        selector: ".iu-page-search"
+    focus: []

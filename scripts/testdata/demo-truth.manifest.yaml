@@ -14,6 +14,8 @@ requiredCaseNames:
   - local transcript replaces archived app name
   - village title follows transcript fixture
   - direct publish success also sets published bar
+  - update mode keeps no suggestion note on a collective that already reads
+  - first publish keeps the picker suggestion note on a reader row
 requiredMutationNames:
   - stale published vocabulary
   - stale analytics vocabulary
@@ -31,6 +33,8 @@ requiredMutationNames:
   - archived app title
   - false village title
   - success leaves unpublished bar
+  - update mode keeps the picker note on a reader row
+  - first publish loses the picker note on a reader row
 mutations:
   - name: stale published vocabulary
     file: src/ui/PromptDigest.jsx
@@ -112,3 +116,13 @@ mutations:
     find: "popup === 'done' || popup === 'waits-approval' ? 'published'"
     replace: "popup === 'done' || popup === 'waits-approval' ? 'not-published'"
     expectedDiagnostic: direct publish success also sets published bar
+  - name: update mode keeps the picker note on a reader row
+    file: src/mockups/inuse/PublishFlowDemo.jsx
+    find: "const readerRows = published ? access.map((item) => (item.pending === 'adding' || item.pending === 'approval') ? item : withoutSuggestionNote(item)) : access"
+    replace: 'const readerRows = access'
+    expectedDiagnostic: update mode keeps no suggestion note on a collective that already reads
+  - name: first publish loses the picker note on a reader row
+    file: src/mockups/inuse/PublishFlowDemo.jsx
+    find: "const readerRows = published ? access.map((item) => (item.pending === 'adding' || item.pending === 'approval') ? item : withoutSuggestionNote(item)) : access"
+    replace: 'const readerRows = access.map(withoutSuggestionNote)'
+    expectedDiagnostic: first publish keeps the picker suggestion note on a reader row

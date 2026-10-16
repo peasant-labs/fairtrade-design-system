@@ -281,7 +281,7 @@
   .thumb-ascii { font-size: 2.95px; line-height: 1; color: var(--ink-strong); }
 }
 
-@media (max-width: 880px) {
+@media (width < 1024px) {
   .cols-2, .grid-cards, .type-faces { grid-template-columns: 1fr; }
   .principles { grid-template-columns: 1fr; }
   .ts-row { grid-template-columns: 1fr; row-gap: var(--sp-2); }
@@ -369,7 +369,7 @@
 }
 
 @layer components {
-  @media (max-width: 640px) {
+  @media (width < 768px) {
     .res { grid-template-columns: auto 1fr; gap: var(--sp-2); }
   }
 }
@@ -388,7 +388,7 @@
 [data-cap] .hero-grow { height: 380px; }
 [data-cap] .philos { min-height: 440px; }
 
-@media (max-width: 1100px) {
+@media (width < 1024px) {
   .nav-in { max-width: var(--maxw); }
   .docs { grid-template-columns: 1fr; max-width: var(--maxw); }
   .page-rail { display: none; }
@@ -398,18 +398,19 @@
   .navctl:not(.bx):not(.sq):not(.sb-link) { display: none; }
 }
 
-@media (max-width: 1200px) {
+/* decision: the storybook label is icon-only below the desktop band so the nav never crowds the section links, search and the live status; the full label returns at 1440 */
+@media (width < 1440px) {
   .sb-link .sb-label { display: none; }
   .sb-link { width: var(--control-h-sm); padding: 0; justify-content: center; gap: 0; }
 }
 
-@media (max-width: 900px) {
+@media (width < 1024px) {
   /* with the icon-only storybook control still present, the section links need to go
-     one breakpoint sooner so the nav never overflows in the 800-900 band */
+     one breakpoint sooner so the nav never overflows in the 768-1023 band */
   .nav-links { display: none; }
 }
 
-@media (max-width: 480px) {
+@media (width < 480px) {
   /* on a phone the search palette covers navigation; drop the storybook control too */
   .sb-link { display: none; }
   /* collapse the search control to its icon so the nav fits down to a 320px phone (the aria-label
@@ -422,13 +423,13 @@
   .pds-root { overflow-x: clip; }
 }
 
-@media (max-width: 720px) {
+@media (width < 768px) {
   .cmp, .start-jump, .icongrid { grid-template-columns: 1fr; }
   .principles { grid-template-columns: 1fr; }
   .anatomy-legend { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 560px) {
+@media (width < 768px) {
   .swatches { grid-template-columns: 1fr; }
   .tip-demo { gap: var(--sp-5); }
 }
@@ -455,7 +456,7 @@
 }
 
 @layer components {
-  @media (max-width: 880px) {
+  @media (width < 1024px) {
     .fb-grid, .fb-panels { grid-template-columns: 1fr; }
   }
 }
@@ -501,7 +502,7 @@
   @keyframes railMark { from { opacity: 0; transform: translateX(-3px); } to { opacity: 1; transform: none; } }
 }
 
-@media (max-width: 620px) {
+@media (width < 768px) {
   .ts-sample { overflow-wrap: anywhere; min-width: 0; }
   .specimen-body { overflow-x: auto; }
   /* type-scale meta: drop the fixed grid use-column so the cluster wraps and the row fits */
@@ -592,7 +593,7 @@
 }
 
 @layer components {
-  @media (max-width: 560px) {
+  @media (width < 768px) {
     .tui-bar-row { grid-template-columns: 9ch 1fr; }
     .tui-bar-val { display: none; }
     .tui-status { display: none; }
