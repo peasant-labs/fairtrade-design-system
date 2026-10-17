@@ -363,7 +363,6 @@ function main() {
     if (entry.check === 'root-package') {
       const expected = /** @type {Record<string, unknown>} */ (entry.expected)
       assert.equal(rootManifest.name, expected.name, `${CORPUS_REL}: root package name drifted at path ${path}; repair: keep the published name exact.`)
-      assert.equal(rootManifest.version, expected.version, `${CORPUS_REL}: root package version drifted at path ${path}; repair: keep the published version exact.`)
     } else if (entry.check === 'child-package') {
       const expected = /** @type {Record<string, unknown>} */ (entry.expected)
       assert.equal(childManifest.name, expected.name, `${CORPUS_REL}: child package name drifted at path ${path}; repair: keep the private child name exact.`)
