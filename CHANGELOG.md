@@ -16,6 +16,8 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 
 ### Changed
 
+- Keep `prepack` focused on building and validating the package. Run library
+  behavior, mutation, and built-rendering tests separately in CI with `test:lib`.
 - Pin published Schema 0.29.1 and use its engine-derived category conversion
   instead of a private mapping, preserving exact labels and unsupported-category
   refusal in redaction review and publication.
