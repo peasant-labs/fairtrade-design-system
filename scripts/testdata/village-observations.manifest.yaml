@@ -16,12 +16,24 @@ requiredCaseNames:
   - required-policy-refusal
   - optional-metadata-warning
 requiredMutationNames:
+  - diagnostic total retains the earlier count
+  - diagnostic outcome is omitted
   - view callback is dropped
   - category callback is dropped
   - busy or absent-handler pager becomes active
   - shared completion date hides retained history
   - history pages lose category identity
 mutations:
+  - name: diagnostic total retains the earlier count
+    file: src/ui/VillageObservations.jsx
+    find: '{category.total}'
+    replace: "{category.id === 'operation-diagnostics' ? 3 : category.total}"
+    expectedDiagnostic: 'updated diagnostics: exact visible summary including total'
+  - name: diagnostic outcome is omitted
+    file: src/ui/VillageObservations.jsx
+    find: '<strong>{row.title}</strong><p>{row.outcome}</p>'
+    replace: "<strong>{row.title}</strong><p>{row.id === 'diagnostic-new' ? '' : row.outcome}</p>"
+    expectedDiagnostic: 'updated diagnostics: exact visible outcome'
   - name: view callback is dropped
     file: src/ui/VillageObservations.jsx
     find: 'onViewChange?.(next)'

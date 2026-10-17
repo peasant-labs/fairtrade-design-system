@@ -8,6 +8,25 @@ const { fixture } = loadFixturePair('scripts/testdata/village-observations.yaml'
 const origin = `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}`
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex')
 
+async function assertUpdatedDiagnostics(panel) {
+  const expected = fixture.update.expect
+  const row = panel.locator(`[data-evidence-id="${expected.diagnosticId}"]`)
+  await row.scrollIntoViewIfNeeded()
+  await expect(row.locator('p').first(), 'updated diagnostics: exact visible outcome').toHaveText(expected.outcome)
+  await expect(row.locator('p').first()).toBeVisible()
+  await expect(row.locator('time'), 'updated diagnostics: exact occurred timestamp').toHaveText(expected.occurredAt)
+  await expect(row.locator('time')).toHaveAttribute('datetime', expected.occurredAt)
+  await row.locator('time').scrollIntoViewIfNeeded()
+  await expect(row.locator('time')).toBeVisible()
+  await expect(panel.locator('.vobs-summary'), 'updated diagnostics: exact summary including total').toHaveText(expected.summary)
+  await panel.locator('.vobs-summary').scrollIntoViewIfNeeded()
+  await expect(panel.locator('.vobs-summary')).toBeVisible()
+  await expect(panel.locator('.pgn-num'), 'updated diagnostics: exact page count and labels').toHaveText(expected.pageLabels)
+  await panel.locator('.pgn').scrollIntoViewIfNeeded()
+  for(const button of await panel.locator('.pgn-num').all()) await expect(button).toBeInViewport({ratio:1})
+  return {outcome:await row.locator('p').first().textContent(), occurredAt:await row.locator('time').textContent(), summary:await panel.locator('.vobs-summary').textContent(), pageLabels:await panel.locator('.pgn-num').allTextContents()}
+}
+
 test('local village mounted catalog, history and independent pages', async ({ page, request }, info) => {
   const theme = info.project.name
   await page.setViewportSize({ width: 1280, height: 1100 })
@@ -170,5 +189,41 @@ test('native controlled host and unavailable action contracts',async({page},info
   await expect(page.locator('.vobs-history > .tabpanel:visible [data-evidence-id=attempt-1]')).toBeAttached()
   await expect(page.locator('.vobs-history > .tabpanel:visible').getByRole('button',{name:'page 2',exact:true})).toHaveAttribute('aria-current','page')
   await page.getByRole('tab',{name:'operation diagnostics'}).click();await page.getByRole('button',{name:'apply host selection'}).click()
-  await expect(page.locator('[data-evidence-id=diagnostic-new]:visible')).toBeAttached()
+  await assertUpdatedDiagnostics(page.locator('.vobs-history > .tabpanel:visible'))
+})
+
+test('production fetch renders exact changed diagnostic values',async({page,request},info)=>{
+  const theme=info.project.name
+  const html=await readFile('dist/index.html','utf8')
+  expect(await(await request.get(origin)).text()).toBe(html)
+  for(const asset of [...html.matchAll(/(?:src|href)="(\/assets\/[^" ]+\.(?:js|css))"/g)].map((match)=>match[1])) expect(digest(await(await request.get(origin+asset)).body())).toBe(digest(await readFile(`dist${asset}`)))
+  for(const viewport of [fixture.scroll.desktop,fixture.scroll.mobile]){
+    await page.setViewportSize(viewport)
+    // Each size starts with the initial saved projection, not the prior size's post-fetch UI.
+    await page.goto('about:blank')
+    await page.goto(`${origin}/?fb=off&app=graph&section=village&theme=${theme}#inuse`)
+    const body=page.locator('.vobs')
+    await expect(page.locator('html')).toHaveAttribute('data-theme',theme)
+    await body.getByRole('tab',{name:'history',exact:true}).click()
+    await body.getByRole('navigation',{name:'remote attempts pages'}).getByRole('button',{name:'next page'}).click()
+    await body.getByRole('tab',{name:'confirmed receipts'}).click()
+    await body.getByRole('navigation',{name:'confirmed receipts pages'}).getByRole('button',{name:'next page'}).click()
+    await body.getByRole('tab',{name:'operation diagnostics'}).click()
+    const panel=body.locator('.vobs-history > .tabpanel:visible')
+    const before=fixture.base.categories.find((category)=>category.id==='operation-diagnostics')
+    await expect(panel.locator('.vobs-summary')).toHaveText(`${before.total} saved items; coverage: ${before.coverage}`)
+    await expect(panel.locator(`[data-evidence-id="${before.rows[0].id}"] > p`).first()).toHaveText(before.rows[0].outcome)
+    await body.getByRole('button',{name:'fetch metadata'}).click()
+    await expect(body.getByRole('tab',{name:'operation diagnostics'})).toHaveAttribute('aria-selected','true')
+    const observed=await assertUpdatedDiagnostics(panel)
+    await expect(panel.locator('[data-domain=catalog]')).toContainText('2026-10-17T12:00:00Z')
+    await expect(panel.locator('[data-domain=history]')).toContainText('2026-10-15T09:00:00Z')
+    await info.attach(`production-fetch-diagnostic-values-${theme}-${viewport.width}`,{body:JSON.stringify({theme,viewport,before,expected:fixture.update.expect,observed}),contentType:'application/json'})
+    for(const category of [fixture.base.categories[0],fixture.base.categories[1]]){
+      await body.getByRole('tab',{name:category.label,exact:true}).click()
+      const retained=body.locator('.vobs-history > .tabpanel:visible')
+      await expect(retained.getByRole('button',{name:'page 2',exact:true})).toHaveAttribute('aria-current','page')
+      await expect(retained.locator(`[data-evidence-id="${category.id}-2"]`)).toBeAttached()
+    }
+  }
 })

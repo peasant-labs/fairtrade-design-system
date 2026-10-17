@@ -16,6 +16,12 @@ invalidCases:
   - {name: invalid-controlled-category, props: {categoryId: missing}, diagnostic: controlled categoryId is not present}
 update:
   name: changed-diagnostics-domain-dates-category-reorder
+  expect:
+    diagnosticId: diagnostic-new
+    outcome: failed; catalog updated but history retained
+    occurredAt: '2026-10-17T12:00:00Z'
+    summary: '4 saved items; coverage: saved local operations'
+    pageLabels: ['1', '2', '3', '4']
   beforePages: {remote-attempts: 2, receipts: 3, operation-diagnostics: 1}
   selected: receipts
   order: [operation-diagnostics, receipts, remote-attempts]

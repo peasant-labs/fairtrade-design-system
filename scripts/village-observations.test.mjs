@@ -101,6 +101,16 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     report.check(calls.length===0, `${fixture.update.name}: no unsolicited page, restart or category callbacks`)
     const attempts = mounted.container.querySelectorAll('.vobs-history > .tabpanel')[2]
     report.check(attempts.textContent.includes('Historical Collective') && attempts.querySelector('[aria-current=page]')?.textContent==='2', `${fixture.update.name}: unchanged attempts retain page and row`)
+    const diagnosticsTab = [...mounted.container.querySelectorAll('[aria-label="history categories"] button')].find((node)=>node.textContent==='operation diagnostics')
+    await mounted.act(()=>click(window,diagnosticsTab))
+    const diagnosticsPanel = [...mounted.container.querySelectorAll('.vobs-history > .tabpanel')].find((node)=>!node.hidden)
+    const expected = fixture.update.expect
+    const diagnostic = diagnosticsPanel.querySelector(`[data-evidence-id="${expected.diagnosticId}"]`)
+    report.check(diagnostic?.querySelector('p')?.textContent === expected.outcome, 'updated diagnostics: exact visible outcome')
+    report.check(diagnostic?.querySelector('time')?.textContent === expected.occurredAt && diagnostic?.querySelector('time')?.getAttribute('datetime') === expected.occurredAt, 'updated diagnostics: exact visible occurred timestamp')
+    report.check(diagnosticsPanel.querySelector('.vobs-summary')?.textContent === expected.summary, 'updated diagnostics: exact visible summary including total')
+    report.check(JSON.stringify([...diagnosticsPanel.querySelectorAll('.pgn-num')].map((node)=>node.textContent)) === JSON.stringify(expected.pageLabels), 'updated diagnostics: exact visible page count and labels')
+    report.check(JSON.stringify(calls) === JSON.stringify([['category','operation-diagnostics']]), 'updated diagnostics: only the explicit category selection emits a callback')
     await mounted.unmount()
   }
 })
