@@ -19,6 +19,7 @@ export { providerAccent, providerDisplayName } from './provider-policy.js'
 export { default as EmptyState } from './EmptyState.jsx'
 export { Skeleton, Progress, Spinner, Toast, FeedbackPanel } from './Feedback.jsx'
 export { default as DataTable } from './DataTable.jsx'
+export { DataTableToolbar, DataTablePaginationControls } from './DataTableControls.jsx'
 export { default as ChartBar } from './ChartBar.jsx'
 export { default as ChartLine } from './ChartLine.jsx'
 export { default as Sparkline } from './Sparkline.jsx'
@@ -83,3 +84,15 @@ export { default as VillageObservations } from './VillageObservations.jsx'
    hand-maintained barrel. */
 export * from './transcript/index.js'
 export * from './transcript/graph/index.js'
+// Canonical engine-derived category bindings and same-name types come from Schema.
+export {
+  RedactionCategory,
+  RedactionCategoryLabel,
+  AllRedactionCategories,
+  AllRedactionCategoryLabels,
+  isRedactionCategory,
+  parseRedactionCategory,
+  parseRedactionCategoryLabel,
+  redactionCategoryFromLabel,
+  redactionCategoryLabel,
+} from '@peasant-labs/schema'

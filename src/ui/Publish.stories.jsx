@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { RedactionCategory } from '@peasant-labs/schema'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { PublishStateLabel, PublishBar, AccessList, CollectivePicker, PublishDialog, PUBLISH_STATES } from './Publish.jsx'
 import { frame } from './story-frame.jsx'
@@ -17,9 +18,9 @@ export default meta
 const SCAN = {
   total: 37,
   matches: [
-    { id: 'm1', category: 'secrets', confidence: 0.99, before: 'AKIAIOSFODNN7EXAMPLE', after: '<AWS_ACCESS_KEY>' },
-    { id: 'm2', category: 'pii', confidence: 0.97, before: 'alice@acme.dev', after: '<EMAIL>' },
-    { id: 'm3', category: 'paths', confidence: 0.91, before: '/Users/alice/work/acme/ingest-api', after: '/Users/<USER>/work/acme/ingest-api' },
+    { id: 'm1', category: RedactionCategory.Secrets, confidence: 0.99, before: 'AKIAIOSFODNN7EXAMPLE', after: '<AWS_ACCESS_KEY>' },
+    { id: 'm2', category: RedactionCategory.PII, confidence: 0.97, before: 'alice@acme.dev', after: '<EMAIL>' },
+    { id: 'm3', category: RedactionCategory.Paths, confidence: 0.91, before: '/Users/alice/work/acme/ingest-api', after: '/Users/<USER>/work/acme/ingest-api' },
   ],
 }
 const ACCESS = [

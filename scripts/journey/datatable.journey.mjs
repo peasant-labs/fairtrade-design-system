@@ -12,57 +12,11 @@ for (const row of spec.consumerRows) {
       await page.goto(productUrl(row.query, theme), { waitUntil: 'networkidle' })
       expect(await page.locator('html').getAttribute('data-theme') || 'dark').toBe(theme)
       const view = page.locator('.iu-app-root')
-      const search = view.getByRole('searchbox', { name: 'search rows', exact: true })
-      const searchLabel = view.locator('.tbl-tools > label')
-      const assertSearchCue = async () => {
-        await expect(search).toHaveAccessibleName('search rows')
-        await expect(searchLabel).toHaveText('search rows')
-        await expect(searchLabel).toBeVisible()
-        const cue = await searchLabel.evaluate((el) => {
-          const css = getComputedStyle(el), bounds = el.getBoundingClientRect()
-          return { clip: css.clipPath, width: bounds.width, height: bounds.height,
-            font: parseFloat(css.fontSize), family: css.fontFamily }
-        })
-        expect(cue.clip).toBe('none')
-        expect(cue.width).toBeGreaterThan(1)
-        expect(cue.height).toBeGreaterThan(1)
-        expect(cue.font).toBeGreaterThanOrEqual(14)
-        expect(cue.family).toContain('Atkinson Hyperlegible Mono')
-        if (width <= 720) {
-          const labelBounds = await searchLabel.boundingBox()
-          const inputBounds = await search.boundingBox()
-          const filterBounds = await view.locator('.tbl-filters summary').boundingBox()
-          expect(labelBounds.y + labelBounds.height).toBeLessThanOrEqual(inputBounds.y)
-          expect(inputBounds.y).toBe(filterBounds.y)
-          expect(labelBounds.x).toBeGreaterThanOrEqual(0)
-          expect(labelBounds.x + labelBounds.width).toBeLessThanOrEqual(width)
-        }
-      }
-      await assertSearchCue()
-      await expect(view.locator('.tbl-footer [role=status]')).toHaveText(row.count)
-      await expect(view.locator('.iu-page-count')).toHaveCount(0)
-      await expect(view.getByRole('button', { name: 'next page', exact: true, includeHidden: true })).toBeDisabled()
-      await expect(view.getByRole('button', { name: 'previous page', exact: true, includeHidden: true })).toBeDisabled()
-      await expect(view.locator('.tbl-footer')).toContainText('page 1 of 1')
-      if (width <= 720) {
-        await expect(view.locator('.tbl-footer > :visible')).toHaveCount(1)
-        await expect(view.locator('.tbl-footer > :visible')).toHaveAttribute('role', 'status')
-        await expect(view.getByRole('button', { name: 'next page', exact: true })).toHaveCount(0)
-        await expect(view.getByRole('button', { name: 'previous page', exact: true })).toHaveCount(0)
-      } else {
-        await expect(view.getByRole('button', { name: 'next page', exact: true })).toBeVisible()
-        await expect(view.getByRole('button', { name: 'previous page', exact: true })).toBeVisible()
-      }
-      if (row.filter) {
-        await view.getByRole('searchbox', { name: 'search rows' }).fill(row.filter.term)
-        await expect(view.locator('.tbl-footer [role=status]')).toHaveText(row.filter.count)
-        await expect(view.locator('.tbl tbody .tbl-row')).toHaveCount(1)
-        await assertSearchCue()
-        await view.getByRole('button', { name: 'remove search filter' }).click()
-        await expect(view.locator('.tbl-footer [role=status]')).toHaveText(row.count)
-        await assertSearchCue()
-      }
-      await view.locator('.tbl-footer').scrollIntoViewIfNeeded()
+      await expect(view.locator('.iu-page-count')).toHaveText(row.count)
+      await expect(view.locator('.tbl tbody .tbl-row')).toHaveCount(row.expectedRows)
+      await expect(view.locator('.tbl-tools,.tbl-chips,.tbl-footer')).toHaveCount(0)
+      await expect(view.getByRole('searchbox', { name: 'search rows', exact: true })).toHaveCount(0)
+      await view.locator('.iu-page-count').scrollIntoViewIfNeeded()
     }
   })
 }
@@ -112,7 +66,61 @@ for (const row of spec.mountedRows) {
     await expect(page.locator('.tbl')).toBeVisible()
     await expect.poll(() => page.locator('.tbl').evaluate((el) => el.closest('[data-theme]')?.getAttribute('data-theme') || 'dark')).toBe(theme)
     await page.evaluate(() => document.fonts.ready)
-    if (row.kind === 'decimal') {
+    if (row.kind === 'toolbar') {
+      for (const width of spec.consumerWidths) {
+        await page.setViewportSize({ width, height: 900 })
+        const search = page.getByRole('searchbox', { name: 'search rows', exact: true })
+        const label = page.locator('.tbl-tools > label')
+        await expect(search).toHaveAccessibleName('search rows')
+        await expect(label).toBeVisible()
+        const cue = await label.evaluate((element) => {
+          const css = getComputedStyle(element), bounds = element.getBoundingClientRect()
+          return { clip: css.clipPath, width: bounds.width, height: bounds.height, font: parseFloat(css.fontSize), family: css.fontFamily }
+        })
+        expect(cue.clip).toBe('none')
+        expect(cue.width).toBeGreaterThan(1)
+        expect(cue.height).toBeGreaterThan(1)
+        expect(cue.font).toBeGreaterThanOrEqual(14)
+        expect(cue.family).toContain('Atkinson Hyperlegible Mono')
+        if (width <= 720) {
+          const labelBounds = await label.boundingBox()
+          const inputBounds = await search.boundingBox()
+          const filterBounds = await page.locator('.tbl-filters summary').boundingBox()
+          expect(labelBounds.y + labelBounds.height).toBeLessThanOrEqual(inputBounds.y)
+          expect(inputBounds.y).toBe(filterBounds.y)
+          expect(labelBounds.x).toBeGreaterThanOrEqual(0)
+          expect(labelBounds.x + labelBounds.width).toBeLessThanOrEqual(width)
+        }
+        await search.fill('Ledger')
+        await expect(page.locator('.tbl-footer [role=status]')).toHaveText('showing 2 of 2')
+        await page.getByRole('button', { name: 'remove search filter' }).click()
+        await expect(page.locator('.tbl-footer [role=status]')).toHaveText('showing 2 of 5')
+      }
+    } else if (row.kind === 'legacy' || row.kind === 'bounded') {
+      const legacy = spec.cases.find((entry) => entry.controls === false)
+      await expect(page.locator('tbody .tbl-row')).toHaveCount(legacy.rows.length)
+      await expect(page.locator('.tbl-tools,.tbl-chips,.tbl-footer')).toHaveCount(0)
+      await page.setViewportSize({ width: 390, height: 844 })
+      const scroll = page.locator('.tbl-scroll')
+      const bounds = await scroll.evaluate((element) => ({
+        height: element.clientHeight,
+        contentHeight: element.scrollHeight,
+        maxHeight: getComputedStyle(element).maxHeight,
+        lastRowBottom: element.querySelector('tbody tr:last-child').getBoundingClientRect().bottom,
+        viewportBottom: element.getBoundingClientRect().bottom,
+      }))
+      if (row.kind === 'legacy') {
+        expect(bounds.maxHeight).toBe('none')
+        expect(bounds.contentHeight).toBeLessThanOrEqual(bounds.height + 1)
+        expect(bounds.lastRowBottom).toBeLessThanOrEqual(bounds.viewportBottom + 1)
+      } else {
+        expect(bounds.contentHeight).toBeGreaterThan(bounds.height)
+        await scroll.focus()
+        await expect(scroll).toBeFocused()
+        await scroll.evaluate((element) => { element.scrollTop = element.scrollHeight })
+        await expect(scroll.locator('tbody tr:last-child')).toBeInViewport()
+      }
+    } else if (row.kind === 'decimal') {
       await page.getByRole('button', { name: 'remove title filter' }).click()
       expect(await page.evaluate(decimalProblems)).toEqual([])
       for (const mutation of spec.mutations) {

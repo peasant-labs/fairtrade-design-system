@@ -4,6 +4,45 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.29 - 2026-10-17
+
+### Fixed
+
+- Restore plain `DataTable` behavior: render all supplied rows without injecting
+  search, filters, pagination, or a vertical height cap. Existing importers retain
+  their own paging and session-family presentation without new props.
+- Pagination is enabled only by explicit `pagination` or `defaultPagination`
+  settings. `maxHeight` explicitly enables bounded vertical scrolling; wrapped
+  rows expand naturally otherwise.
+- Allow npm registry processing time before requiring the published provenance
+  result; an accepted upload is not treated as immediately registry-visible.
+- Restore shared feedback-overlay styles to the published component CSS; moving
+  presentation styles out must not leave consuming applications unstyled.
+
+### Added
+
+- Public `DataTableToolbar` and `DataTablePaginationControls` components, with
+  optional `toolbar` and `footer` render callbacks. Importers can opt into search
+  and column filters independently and add their own toolbar actions.
+
+## 0.0.28 - 2026-10-17
+
+### Added
+
+- Re-export Schema's canonical frozen redaction category and label bindings,
+  same-name types, inventories, parsers, guard, and typed conversions from `/ui`.
+- `PublishDialog` accepts `onRecover` for prerequisite reads and sign-in recovery,
+  separately from publication retry. Invalid reviews and ambiguous callbacks
+  remain blocked, including retained callbacks after state changes.
+
+### Changed
+
+- Keep `prepack` focused on building and validating the package. Run library
+  behavior, mutation, and built-rendering tests separately in CI with `test:lib`.
+- Pin published Schema 0.29.1 and use its engine-derived category conversion
+  instead of a private mapping, preserving exact labels and unsupported-category
+  refusal in redaction review and publication.
+
 ## 0.0.27 - 2026-10-16
 
 Replacement npm release for 0.0.26: its GitHub Release exists, but npm publication

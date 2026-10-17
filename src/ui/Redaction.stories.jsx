@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { RedactionCategory } from '@peasant-labs/schema'
 import { expect, fn, within, userEvent, waitFor } from 'storybook/test'
 import { RedactionReview, WhereDoesThisGo } from './Redaction.jsx'
 import { frame } from './story-frame.jsx'
@@ -16,12 +17,12 @@ import { frame } from './story-frame.jsx'
    code (mono, never lowercased); chrome is lowercased. rdx-* rules + tokens live in
    Redaction.css (imported by the component). */
 
-// two CREDENTIAL matches (0.98, 0.87) and one PII match (0.91) use secrets/pii wire categories.
+// two CREDENTIAL matches (0.98, 0.87) and one PII match (0.91) use semantic categories.
 // the PII match is pre-toggled "kept" so the warning treatment is visible.
 const MATCHES = [
   {
     id: 'r1',
-    category: 'secrets',
+    category: RedactionCategory.Secrets,
     confidence: 0.98,
     before: 'const STRIPE_KEY = "sk_live_4eC39HqLyjWDarjtT1zdp7dc"',
     after: 'const STRIPE_KEY = "sk_live_••••••••••••••••••••dc"',
@@ -29,7 +30,7 @@ const MATCHES = [
   },
   {
     id: 'r2',
-    category: 'pii',
+    category: RedactionCategory.PII,
     confidence: 0.91,
     before: '// reported by alex.rivera@example.com on the 0.4 rollout',
     after: '// reported by ‹redacted-email› on the 0.4 rollout',
@@ -37,7 +38,7 @@ const MATCHES = [
   },
   {
     id: 'r3',
-    category: 'secrets',
+    category: RedactionCategory.Secrets,
     confidence: 0.87,
     before: 'Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.abc"',
     after: 'Authorization: "Bearer ‹redacted-token›"',

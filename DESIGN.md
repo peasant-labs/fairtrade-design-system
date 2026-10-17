@@ -593,14 +593,18 @@ The data families are the data table, pagination, accordion, timeline, toast and
   and a selection that pairs an amber tint with a non-color marker. Zebra striping only past five
   columns or fifteen rows. Columns are ordered by importance, and each header matches its column's
   alignment (numeric alignment is in the tabular numbers rule).
-- **DataTable defaults:** the header is sticky in its bounded scroll region; the first identifier
-  column stays frozen on horizontal scroll (beside the selection column when present). Rows use
-  `--row-h-standard` (40px), expand for wrapping content and keep readable 16px data. Search and
-  column-filter controls are discoverable without props; active filters have a text indicator and
-  individually removable chips. A persistent count reports visible rows and the local filtered
-  total without `rowCount`, or the host total with `rowCount` and no active filter. With an active
-  filter on a partial host window it reports `showing X of Y loaded`, including zero results,
-  never a global match total. Local pagination starts at page 0 with 10 rows per page.
+- **DataTable defaults:** all supplied rows render without injected search, column filters,
+  pagination, or a vertical height cap. The first identifier column stays frozen on horizontal
+  scroll (beside the selection column when present). Rows use `--row-h-standard` (40px), expand
+  for wrapping content and keep readable 16px data. An explicit `maxHeight` creates a bounded
+  keyboard-scrollable region with a sticky header; natural height is the default.
+- **Optional table controls:** the `toolbar` render callback can compose `DataTableToolbar` with
+  its search binding, column-filter binding, or both, plus importer-owned actions. Active opted-in
+  filters have a text indicator and individually removable chips. Explicit `pagination` or
+  `defaultPagination` settings enable paging and its default footer. A `footer` render callback
+  can compose `DataTablePaginationControls` or host-owned content. Its count reports visible rows
+  and the filtered total, or the host total with `rowCount` and no active filter. With an active
+  filter on a partial host window it reports `showing X of Y loaded`, never a global match total.
 - **DataTable state:** sort and selection retain their existing controlled/uncontrolled props.
   Search, column filters and pagination each accept a controlled value, default seed and value
   callback. User search/filter changes reset the page to zero. With `rowCount`, pagination stays
@@ -611,10 +615,10 @@ The data families are the data table, pagination, accordion, timeline, toast and
   total in both states.
   The host alone maps state to URL parameters. DataTable never reads or writes routing or storage,
   fetches data, or requires a provider.
-  Hosts remove their duplicate count when adopting `rowCount`. A cumulative load-more window
-  can hold pagination at page 0 with pageSize equal to the host total (at least 1); its page
-  buttons stay disabled and the host's load-more action appends rows. Page-based hosts instead
-  provide `pagination` and `onPaginationChange` and supply the requested slice.
+  A cumulative load-more host can keep its existing controls and leave table pagination off;
+  supplied parent and child rows are not paginated again. Hosts remove their duplicate count
+  only when explicitly adopting the table footer. Page-based hosts provide `pagination` and
+  `onPaginationChange` and supply the requested slice.
 - **Decimal columns:** `align: 'decimal'` aligns decimal separators for plain dot-separated numeric
   values by reserving the visible column's largest fractional width, with tabular figures. Integers
   reserve an invisible separator; values keep their precision. Custom renderers, currency and

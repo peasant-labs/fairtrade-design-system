@@ -13,7 +13,7 @@ export function loadDataTableFixtures() {
     if (!row.props || !Array.isArray(row.expectedTitles) || typeof row.expectedCount !== 'string') throw new Error(`datatable.yaml: ${row.name} needs props, expectedTitles and expectedCount`)
   }
   for (const row of data.consumerRows) {
-    if (typeof row.query !== 'string' || typeof row.count !== 'string') throw new Error(`datatable.yaml: ${row.name} needs a product query and exact host count`)
+    if (typeof row.query !== 'string' || typeof row.count !== 'string' || !Number.isSafeInteger(row.expectedRows) || row.expectedRows < 0) throw new Error(`datatable.yaml: ${row.name} needs a product query, exact host count and non-negative expectedRows`)
     if (row.filter !== undefined && (!row.filter || typeof row.filter.term !== 'string' || !row.filter.term.trim() || typeof row.filter.count !== 'string' || !row.filter.count.trim())) throw new Error(`datatable.yaml: ${row.name} filter needs non-empty term and count strings; restore the loaded-window interaction before running the consumer checks`)
   }
   for (const row of data.analyticsRows) {

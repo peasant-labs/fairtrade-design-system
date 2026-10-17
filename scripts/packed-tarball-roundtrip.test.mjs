@@ -20,6 +20,7 @@ import { tmpdir } from 'node:os'
 import { dirname, isAbsolute, join, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
+import { assertPublishedPackagePreserved } from './published-package-preservation.mjs'
 
 /**
  * @typedef {object} RoundtripFixture
@@ -157,9 +158,16 @@ try {
   }
   process.stdout.write(`  ${stdout.trim()}\n`)
   console.log(`packed-tarball roundtrip: ${fixture.cases.length} case(s), ${fixture.importables.flatMap((group) => group.names).length} importables, ${fixture.refusals.length} refusals verified against the packed tarball.`)
+  if (process.env.FAIRTRADE_PUBLISHED_TARBALL) await assertPublishedPackagePreserved({
+    tarball:process.env.FAIRTRADE_PUBLISHED_TARBALL, integrity:process.env.FAIRTRADE_PUBLISHED_INTEGRITY,
+    candidateRoot:pkgDir, workRoot:tmp, externalsRoot:join(ROOT,'node_modules'),
+  })
 } finally {
   rmSync(tmp, { recursive: true, force: true })
 }
+
+// The export-map smoke also checks packed category runtime bindings and declarations.
+execFileSync('node', [join(ROOT, 'scripts/smoke-tarball.mjs')], { cwd: ROOT, stdio: 'inherit' })
 
 /* ── fixture loader ──────────────────────────────────────────────────────── */
 

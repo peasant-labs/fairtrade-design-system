@@ -1,0 +1,27 @@
+cases:
+  - {name: recover before scan and audience, callback: recover, allowed: true}
+  - {name: recover before scan with audience, callback: recover, audience: true, allowed: true}
+  - {name: recover before audience after scan, callback: recover, scan: {matches: []}, allowed: true}
+  - {name: recover explicit failure, callback: recover, scan: {failure: scan unavailable}, allowed: false, refused: true}
+  - {name: recover failure with valid matches, callback: recover, scan: {failure: scan unavailable, matches: []}, allowed: false, refused: true}
+  - {name: recover malformed scan, callback: recover, scan: {matches: broken}, allowed: false, refused: true}
+  - {name: recover missing matches, callback: recover, scan: {}, allowed: false, refused: true}
+  - {name: recover null scan, callback: recover, scan: null, allowed: false, refused: true}
+  - {name: recover unsupported category, callback: recover, scan: {matches: [{category: future}]}, allowed: false, refused: true}
+  - {name: retry needs scan and audience, callback: retry, allowed: false}
+  - {name: retry needs scan with audience, callback: retry, audience: true, allowed: false}
+  - {name: retry needs audience after scan, callback: retry, scan: {matches: []}, allowed: false}
+  - {name: retry valid publication, callback: retry, scan: {matches: []}, audience: true, allowed: true}
+  - {name: retry explicit failure with matches, callback: retry, scan: {failure: scan unavailable, matches: []}, audience: true, allowed: false, refused: true}
+  - {name: both callbacks before prerequisites, callback: both, allowed: false}
+  - {name: both callbacks after prerequisites, callback: both, scan: {matches: []}, audience: true, allowed: false}
+transitions:
+  - {name: stale recovery sees unsupported scan, initial: recover before scan and audience, next: recover unsupported category, expected: null}
+  - {name: stale retry sees absent audience, initial: retry valid publication, next: retry needs audience after scan, expected: null}
+  - {name: stale recovery sees ambiguity, initial: recover before scan and audience, next: both callbacks before prerequisites, expected: null}
+  - {name: stale recovery uses latest callback, initial: recover before scan and audience, next: recover before scan and audience, expected: recover}
+  - {name: stale retry uses latest callback, initial: retry valid publication, next: retry valid publication, expected: retry}
+  - {name: stale recovery cannot become publication retry, initial: recover before scan and audience, next: retry valid publication, expected: null}
+  - {name: stale publication retry cannot become recovery, initial: retry valid publication, next: recover before scan and audience, expected: null}
+  - {name: closed dialog refuses stale recovery, initial: recover before scan and audience, next: recover before scan and audience, open: false, expected: null}
+  - {name: ready dialog refuses stale retry, initial: retry valid publication, next: retry valid publication, state: ready, expected: null}

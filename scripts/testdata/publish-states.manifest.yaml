@@ -55,7 +55,25 @@ requiredMutationNames:
   - re-scan stays live while publishing
   - a stopped publish claims no village changes
   - finished focus falls outside the popup
+  - recovery ignores explicit review refusal
+  - ambiguous recovery remains enabled
+  - recovery retains an obsolete callback
 mutations:
+  - name: recovery ignores explicit review refusal
+    file: src/ui/Publish.jsx
+    find: "const recoveryBlocked = reviewRefused(scan) || ambiguousRetry"
+    replace: "const recoveryBlocked = ambiguousRetry"
+    expectedDiagnostic: "recover explicit failure: actual recovery/retry button readiness"
+  - name: ambiguous recovery remains enabled
+    file: src/ui/Publish.jsx
+    find: "const ambiguousRetry = !!onRecover && !!onRetry"
+    replace: "const ambiguousRetry = false"
+    expectedDiagnostic: "both callbacks before prerequisites: actual recovery/retry button readiness"
+  - name: recovery retains an obsolete callback
+    file: src/ui/Publish.jsx
+    find: "if (latest?.open && latest.state === 'stopped' && !latest.recoveryBlocked) latest.onRecover?.()"
+    replace: "if (latest?.open && latest.state === 'stopped' && !latest.recoveryBlocked) onRecover?.()"
+    expectedDiagnostic: "stale recovery uses latest callback: old callback is never invoked"
   - name: published action reverts to manage
     file: src/ui/Publish.jsx
     find: "'up to date'].filter(Boolean).join(', '), action: 'update'"
@@ -88,7 +106,7 @@ mutations:
     expectedDiagnostic: "ready with a match kept un-redacted: the popup must read"
   - name: a missing scan leaves publish on
     file: src/ui/Publish.jsx
-    find: "|| (readers.length === 0 && !(mode === 'update' && removes > 0)) || !hasKnownRedactionCategories(scan?.matches)"
+    find: "|| (readers.length === 0 && !(mode === 'update' && removes > 0)) || scan === undefined || reviewRefused(scan)"
     replace: "|| (readers.length === 0 && !(mode === 'update' && removes > 0))"
     expectedDiagnostic: "ready before any scan: the primary button must be disabled"
   - name: remove stays offered while publishing
@@ -133,8 +151,8 @@ mutations:
     expectedDiagnostic: "finishing keeps focus inside the popup"
   - name: final collective removal never invokes the update
     file: src/ui/Publish.jsx
-    find: "onClick={() => { if (!blocked) onPublish?.() }}"
-    replace: "onClick={() => { if (!blocked && (mode !== 'update' || readers.length > 0)) onPublish?.() }}"
+    find: "onClick={runPublish}"
+    replace: "onClick={() => { if (mode !== 'update' || readers.length > 0) runPublish() }}"
     expectedDiagnostic: "update revokes its final collective: update activation must call onPublish 1 times"
   - name: representative examples replace the full match count
     file: src/ui/Publish.jsx

@@ -36,10 +36,6 @@ isolation:
       class: specimen-cap
     - name: specimen frame
       classPrefix: specimen-
-    - name: feedback popup
-      class: fbk-pop
-    - name: feedback tool
-      classPrefix: fbk-
     - name: site nav
       class: nav
     - name: site nav links
@@ -71,6 +67,14 @@ ownership:
   # The rules that diverged while two copies existed. Each is declared once, outside media
   # queries, in its owner sheet, with the value the in-use demo rendered.
   singleSourcedRules:
+    # Feedback is shared with Peasant, not presentation-only. Require its public
+    # styles in the shared source instead of banning them from shipped CSS.
+    - name: feedback launcher
+      selector: .fbk-launch
+      sheet: src/index.css
+    - name: feedback popup
+      selector: .fbk-pop
+      sheet: src/index.css
     - name: legend item
       selector: .gmp-legend-item
       sheet: src/lib-graph.css

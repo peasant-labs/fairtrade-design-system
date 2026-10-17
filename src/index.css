@@ -1173,6 +1173,32 @@
   .foot-in .right { margin-left: 0; }
 }
 
+/* Feedback-tool chrome is consumed by both the demo and application overlays.
+   Keep it published even though the host owns the feedback transport. */
+@layer components {
+  .fbk-launch { @apply fixed inline-flex items-center gap-2 bg-surface text-ink-2 font-mono text-label lowercase cursor-pointer; z-index: var(--z-toast); left: var(--sp-5); bottom: var(--sp-5); height: var(--control-h); padding: 0 var(--sp-4); border: var(--bd-strong); box-shadow: var(--glow-soft); }
+  .fbk-launch:hover { @apply text-amber-bright; border-color: var(--amber-dim); }
+  .fbk-launch .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+  .fbk-launch .cnt { @apply inline-flex items-center justify-center text-ink-3; min-width: var(--target-min); height: var(--target-min); padding: 0 var(--sp-1); border: var(--bd); font-variant-numeric: tabular-nums; }
+  .fbk-launch.armed { @apply text-amber; border-color: var(--amber); }
+  .fbk-launch.armed .cnt { @apply text-amber; border-color: var(--amber-dim); }
+  /* Outline only: highlighting a large target must not paint an expensive glow. */
+  .fbk-target { outline: var(--stroke-emphasis) solid var(--amber) !important; outline-offset: calc(-1 * var(--stroke-emphasis)); }
+  .fbk-tag { @apply fixed hidden bg-amber text-on-amber font-mono text-label lowercase; z-index: var(--z-tooltip); pointer-events: none; padding: var(--sp-1) var(--sp-2); white-space: nowrap; }
+  body.fbk-arming, body.fbk-arming * { cursor: crosshair !important; }
+  .fbk-pop { @apply fixed flex flex-col bg-surface; z-index: var(--z-tooltip); right: var(--sp-5); width: calc(var(--sp-7) * 8); max-width: calc(100vw - var(--sp-5) * 2); border: var(--bd-strong); box-shadow: var(--glow); }
+  .fbk-pop-h { @apply flex items-center justify-between font-mono text-label lowercase text-amber; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); }
+  .fbk-pop-h > span { @apply inline-flex items-center gap-2; }
+  .fbk-pop-h .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+  .fbk-x { @apply inline-flex items-center justify-center bg-transparent text-ink-3 cursor-pointer; width: var(--target-min); height: var(--target-min); border: 0; padding: 0; }
+  .fbk-x:hover { @apply text-amber-bright; }
+  .fbk-x .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+  .fbk-pop-b { padding: var(--sp-3) var(--sp-4); }
+  .fbk-pop-tgt { @apply font-mono text-label text-ink-3; margin-bottom: var(--sp-2); word-break: break-all; line-height: var(--lh-body); }
+  .fbk-pop-f { @apply flex items-center justify-end gap-2; padding: 0 var(--sp-4) var(--sp-3); }
+  .fbk-pop-f .fbk-kbd { @apply font-mono text-label text-ink-3; }
+}
+
 /* ======================================================================
    tier-2.5 new components (added 2026-06-17): data table / numbered
    pagination / accordion. NEW namespaces (.tbl-* / .pgn-* / .acc-*) only;
@@ -1182,7 +1208,7 @@
 @layer components {
   /* horizontal scroll on narrow viewports without breaking the table grid */
   .tbl-wrap { --tbl-sel-w: calc(var(--control-h-sm) + 2 * var(--sp-3)); overflow-x: auto; margin-top: var(--sp-4); min-width: 0; }
-  .tbl-scroll { overflow: auto; isolation: isolate; max-height: calc(var(--row-h-comfortable) * 8); scroll-padding-block-start: var(--control-h); }
+  .tbl-scroll { overflow: auto; isolation: isolate; scroll-padding-block-start: var(--control-h); }
   .tbl-tools, .tbl-footer, .tbl-chips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); }
   .tbl-tools { margin-bottom: var(--sp-2); }
   .tbl-tools > .input { flex: 1 1 calc(var(--sp-8) * 3); min-width: min(100%, calc(var(--sp-8) * 2)); max-width: 100%; }

@@ -10,10 +10,12 @@
    the symlink realpath, so transitive deps resolve from the repo store) — no
    network install. Requires a prior `pnpm build:lib`. */
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import YAML from 'yaml'
+import { assertExactNames } from './css-source.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
@@ -98,6 +100,25 @@ try {
       ].join('\n'),
     )
   }
+  // Compile and execute through the packed /ui export, including same-name types.
+  // This catches declaration emit dropping the type side of a JS re-export.
+  const categoryFixture = YAML.parse(readFileSync(join(ROOT, 'scripts/testdata/redaction-labels.yaml'), 'utf8'))
+  const categoryManifest = YAML.parse(readFileSync(join(ROOT, 'scripts/testdata/redaction-labels.manifest.yaml'), 'utf8'))
+  assertExactNames(categoryFixture.categories.map(row => row.name), categoryManifest.requiredCategoryNames, 'packed category cases')
+  assertExactNames(categoryFixture.unknown.map(row => row.name), categoryManifest.requiredUnknownNames, 'packed invalid category cases')
+  assertExactNames(categoryFixture.invalidLabels.map(row => row.name), categoryManifest.requiredInvalidLabelNames, 'packed invalid label cases')
+  assertExactNames(categoryFixture.exports, categoryManifest.requiredExportNames, 'packed category exports')
+  assertExactNames(categoryFixture.frozen, categoryManifest.requiredFrozenNames, 'packed frozen exports')
+  writeFileSync(join(tmp, 'redaction-categories.json'), JSON.stringify(categoryFixture))
+  const recoveryFixture = YAML.parse(readFileSync(join(ROOT, 'scripts/testdata/publish-recovery.yaml'), 'utf8'))
+  const recoveryManifest = YAML.parse(readFileSync(join(ROOT, 'scripts/testdata/publish-recovery.manifest.yaml'), 'utf8'))
+  assertExactNames(recoveryFixture.cases.map(row => row.name), recoveryManifest.requiredCaseNames, 'packed recovery cases')
+  writeFileSync(join(tmp, 'publish-recovery.json'), JSON.stringify(recoveryFixture))
+  copyFileSync(join(ROOT, 'scripts/redaction-categories.consumer.mjs'), join(tmp, 'redaction-categories.mjs'))
+  copyFileSync(join(ROOT, 'scripts/testdata/redaction-categories.consumer.ts'), join(tmp, 'redaction-categories.ts'))
+  writeFileSync(join(tmp, 'package.json'), JSON.stringify({ type: 'module' }))
+  execFileSync('node', [join(tmp, 'redaction-categories.mjs')], { cwd: tmp, stdio: 'inherit', timeout: 60_000 })
+  execFileSync('node', [join(ROOT, 'node_modules/typescript/bin/tsc'), '--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'NodeNext', '--moduleResolution', 'NodeNext', join(tmp, 'redaction-categories.ts')], { cwd: tmp, stdio: 'inherit', timeout: 60_000 })
   console.log('fairtrade tarball smoke: ./ui + ./icons import and all CSS/JSON exports resolve from the packed tarball.')
 } finally {
   rmSync(tmp, { recursive: true, force: true })

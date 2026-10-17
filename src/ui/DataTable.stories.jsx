@@ -2,12 +2,16 @@ import { useState } from 'react'
 import { fn } from 'storybook/test'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import DataTable from './DataTable.jsx'
+import { DataTableToolbar, DataTablePaginationControls } from './DataTableControls.jsx'
 import BrandMark from './BrandMark.jsx'
 import { frame } from './story-frame.jsx'
 import YAML from 'yaml'
 import viewFixture from '../../scripts/testdata/datatable.yaml?raw'
 
 const viewData = YAML.parse(viewFixture)
+const toolbar = (controls) => <DataTableToolbar {...controls} />
+const footer = (controls) => <DataTablePaginationControls {...controls} />
+const legacyRows = viewData.cases.find((row) => row.controls === false).rows
 
 /* lead a provider cell with the real brand mark (claude-code -> claude, gemini-cli -> gemini
    resolve inside BrandMark). the mark sits beside its visible id, so it is decorative. the
@@ -76,12 +80,16 @@ const meta = {
     onSearchChange: fn(),
     onColumnFiltersChange: fn(),
     onPaginationChange: fn(),
+    toolbar,
+    footer,
   },
   parameters: { docs: { description: { component: `The host owns URL synchronization. Map search to q, columnFilters (TanStack id/value pairs) to repeated filter parameters, and pagination.pageIndex/pageSize to page/size. Parse and validate those parameters in the host, pass controlled values, then update the host route in onSearchChange/onColumnFiltersChange/onPaginationChange. Callbacks emit values, not TanStack updater functions. The table never accesses routing or storage. With rowCount the host supplies its total for the rows it gives: pagination stays manual (the page count comes from rowCount) and existing sorting stays local, while local search and column filters still apply to the given rows; when a filter is active on a partial window the count reports the loaded rows, never the host total. Without rowCount, filtering and pagination run locally. Search and column filters reset pageIndex to zero on user changes. Decimal alignment supports plain dot-separated numeric values and reserves the largest fractional width on the visible page; custom renderers, currency and locale-formatted strings fall back to right alignment with tabular figures. No values are rounded or rewritten.` } } },
 }
 export default meta
 
 export const Playground = {}
+export const LegacyDefaults = { args: { rows: legacyRows, selectable: false, toolbar: undefined, footer: undefined } }
+export const BoundedScrolling = { args: { ...LegacyDefaults.args, maxHeight: 'calc(var(--row-h-comfortable) * 8)' } }
 
 function ViewExample({ hostSliced = false }) {
   const [columnFilters, setFilters] = useState(hostSliced ? [] : [{ id: 'title', value: 'Ledger' }])
@@ -94,6 +102,7 @@ function ViewExample({ hostSliced = false }) {
   const visibleRows = hostSliced ? hostRows.slice(pagination.pageIndex * pagination.pageSize, (pagination.pageIndex + 1) * pagination.pageSize) : viewData.rows
   return <>
     <DataTable columns={viewData.columns} rows={visibleRows} caption="ledger records" selectable
+      toolbar={toolbar} footer={footer}
       columnFilters={columnFilters}
       onColumnFiltersChange={(next) => { setLastFilters(next); setFilters(next) }}
       {...(hostSliced ? { rowCount: hostRows.length, search, onSearchChange: (next) => { setLastSearch(next); setSearch(next) }, pagination, onPaginationChange: (next) => { setLastPagination(next); setPagination(next) } } : {})} />

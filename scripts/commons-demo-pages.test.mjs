@@ -47,10 +47,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     for (const line of page.text ?? []) report.check(body.includes(line), `${page.name}: the page must show ${JSON.stringify(line)}`)
     for (const line of page.absentText ?? []) report.check(!body.toLowerCase().includes(line.toLowerCase()), `${page.name}: the page must not show ${JSON.stringify(line)}`)
     if (page.tableCounts) {
-      const counts = [...root.querySelectorAll('.tbl-footer [role=status]')].map(text)
+      const counts = [...root.querySelectorAll('.iu-page-count')].map(text)
       report.check(JSON.stringify(counts) === JSON.stringify(page.tableCounts), `${page.name}: table counts must equal ${JSON.stringify(page.tableCounts)}, received ${JSON.stringify(counts)}`)
-      report.check(!root.querySelector('.iu-page-count'), `${page.name}: no duplicate host count may render`)
-      report.check([...root.querySelectorAll('.tbl-footer button')].every((button) => button.disabled), `${page.name}: cumulative host rows must not offer unbacked page navigation`)
+      report.check(!root.querySelector('.tbl-tools,.tbl-footer'), `${page.name}: host-owned search and load-more must not acquire table controls`)
     }
     for (const name of page.buttons ?? []) report.check(buttons().some((label) => label === name || label.startsWith(name)), `${page.name}: a button named ${JSON.stringify(name)} must exist`)
     for (const name of page.absentButtons ?? []) report.check(!buttons().some((label) => label.toLowerCase().startsWith(name)), `${page.name}: no button may be named ${JSON.stringify(name)}`)

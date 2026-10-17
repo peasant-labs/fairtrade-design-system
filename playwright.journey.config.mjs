@@ -39,8 +39,8 @@ const supervised = (name, port, command) =>
 export default defineConfig({
   testDir: './scripts/journey',
   testMatch: '**/*.journey.mjs',
-  fullyParallel: false,
-  workers: 1,
+  fullyParallel: true,
+  workers: '100%',
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   timeout: 60_000,
