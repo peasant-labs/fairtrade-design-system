@@ -4,6 +4,25 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.29 - 2026-10-17
+
+### Fixed
+
+- Restore plain `DataTable` behavior: render all supplied rows without injecting
+  search, filters, pagination, or a vertical height cap. Existing importers retain
+  their own paging and session-family presentation without new props.
+- Pagination is enabled only by explicit `pagination` or `defaultPagination`
+  settings. `maxHeight` explicitly enables bounded vertical scrolling; wrapped
+  rows expand naturally otherwise.
+- Allow npm registry processing time before requiring the published provenance
+  result; an accepted upload is not treated as immediately registry-visible.
+
+### Added
+
+- Public `DataTableToolbar` and `DataTablePaginationControls` components, with
+  optional `toolbar` and `footer` render callbacks. Importers can opt into search
+  and column filters independently and add their own toolbar actions.
+
 ## 0.0.28 - 2026-10-17
 
 ### Added

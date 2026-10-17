@@ -8,6 +8,62 @@ rows:
   - { id: d, title: Archive D, amount: '7' }
   - { id: e, title: Other E, amount: '€9,00' }
 cases:
+  - name: bare table preserves all supplied rows without controls or a height bound
+    controls: false
+    props: {}
+    rows: &legacyRows
+      - { id: a, title: parent session }
+      - { id: b, title: child session }
+      - { id: c, title: record three }
+      - { id: d, title: record four }
+      - { id: e, title: record five }
+      - { id: f, title: record six }
+      - { id: g, title: record seven }
+      - { id: h, title: record eight }
+      - { id: i, title: record nine }
+      - { id: j, title: record ten }
+      - { id: k, title: record eleven }
+      - { id: l, title: A final session with a long title that wraps across several lines and must remain fully readable without an automatically bounded inner scroll area. }
+    expectedTitles: &legacyTitles
+      - parent session
+      - child session
+      - record three
+      - record four
+      - record five
+      - record six
+      - record seven
+      - record eight
+      - record nine
+      - record ten
+      - record eleven
+      - A final session with a long title that wraps across several lines and must remain fully readable without an automatically bounded inner scroll area.
+    expectedCount: ''
+  - name: host totals alone do not enable pagination or controls
+    controls: false
+    props: { rowCount: 50 }
+    rows: *legacyRows
+    expectedTitles: *legacyTitles
+    expectedCount: ''
+  - name: pagination opt in does not enable search or filters
+    controls: false
+    props: { defaultPagination: { pageIndex: 0, pageSize: 2 } }
+    expectedTitles: [Ledger A, Ledger B]
+    expectedCount: showing 2 of 5
+  - name: search-only toolbar accepts importer actions without adding filters
+    searchOnly: true
+    customAction: export selected
+    props: { defaultSearch: Ledger }
+    expectedTitles: [Ledger A, Ledger B]
+    expectedCount: showing 2 of 2
+  - name: filter-only toolbar does not add search
+    filtersOnly: true
+    props: { defaultColumnFilters: [{ id: title, value: Archive }] }
+    expectedTitles: [Archive C, Archive D]
+    expectedCount: showing 2 of 2
+  - name: inner scrolling requires an explicit height bound
+    props: { maxHeight: 'calc(var(--row-h-comfortable) * 8)' }
+    expectedTitles: [Ledger A, Ledger B, Archive C, Archive D, Other E]
+    expectedCount: showing 5 of 5
   - name: disabled controls retain the named scroll region
     props: { disabled: true, selectable: true, defaultSearch: Ledger, defaultColumnFilters: [{ id: title, value: Ledger }] }
     expectedTitles: [Ledger A, Ledger B]
@@ -53,6 +109,9 @@ cases:
     expectedTitles: [Ledger B, Ledger A]
     expectedCount: showing 2 of 2
 mountedRows:
+  - { name: opted in toolbar keeps accessible responsive search and filter cues, kind: toolbar, story: uncontrolled-view }
+  - { name: bare table retains every wrapped row without injected controls, kind: legacy, story: legacy-defaults }
+  - { name: bounded table scrolling remains keyboard accessible by opt in, kind: bounded, story: bounded-scrolling }
   - { name: decimal separators share an x position, kind: decimal, story: view-defaults }
   - { name: unsupported decimal values fall back to right tabular, kind: fallback, story: view-defaults }
   - { name: removing the last chip calls the host and clears active state, kind: chips, story: view-defaults }
@@ -118,9 +177,9 @@ guardMutations:
   - { name: planted storage access, code: 'globalThis["localStorage"].getItem("table")', diagnostic: localStorage }
   - { name: planted internal helper access, helper: true, code: 'const { history: route } = window; void route', diagnostic: history }
 consumerRows:
-  - { name: collective host total, query: 'app=commons&commons=collective-detail', count: showing 5 of 248, filter: { term: flaky, count: showing 1 of 5 loaded } }
-  - { name: local home host total, query: 'app=graph', count: showing 7 of 1284, filter: { term: flaky, count: showing 1 of 7 loaded } }
-  - { name: commons home host total, query: 'app=commons&commons=home', count: showing 6 of 38, filter: { term: flaky, count: showing 1 of 6 loaded } }
+  - { name: collective host total, query: 'app=commons&commons=collective-detail', count: showing 5 of 248, expectedRows: 5 }
+  - { name: local home host total, query: 'app=graph', count: 'showing 7 of 1,284', expectedRows: 7 }
+  - { name: commons home host total, query: 'app=commons&commons=home', count: 6 of 38 transcripts, expectedRows: 6 }
 consumerWidths: [320, 390, 1440]
 analyticsRows:
   - { name: contributor phone, width: 320 }

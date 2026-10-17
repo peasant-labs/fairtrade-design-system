@@ -1,13 +1,14 @@
 import { useCallback, useId, useMemo, useState } from 'react'
-import { ChevronUp, ChevronDown, ChevronsUpDown, X } from 'lucide-react'
+import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 import { useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel, getPaginationRowModel } from '@tanstack/react-table'
+import { DataTablePaginationControls } from './DataTableControls.jsx'
 
 /**
  * a sortable + selectable data table. square, hairline, mono headers; both themes
  * via tokens. sort + selection state/logic are powered by TanStack Table
  * (@tanstack/react-table, headless) while this component still renders its own markup
- * + token classes. Search, column filters and pagination can each be host-controlled
- * or seeded by defaults. Sorting cycles none -> asc -> desc -> none on a
+ * + token classes. Search and filter controls are opt-in toolbar content. Pagination
+ * is enabled only by explicit pagination/defaultPagination props. Sorting cycles none -> asc -> desc -> none on a
  * sortable header (a real <button>, so it is keyboard-operable), exposes aria-sort on the
  * <th>, and shows a lucide chevron indicator. selection reuses the existing .check-box control:
  * a header checkbox selects/clears all (with an indeterminate middle state) and
@@ -51,9 +52,12 @@ import { useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel,
  * @param {DataTableColumnFilters} [props.defaultColumnFilters=[]] initial column filters.
  * @param {(next: DataTableColumnFilters) => void} [props.onColumnFiltersChange] next filters.
  * @param {DataTablePagination} [props.pagination] controlled pagination (zero-based pageIndex).
- * @param {DataTablePagination} [props.defaultPagination] defaults to pageIndex 0, pageSize 10.
+ * @param {DataTablePagination} [props.defaultPagination] enables local pagination with this initial state.
  * @param {(next: DataTablePagination) => void} [props.onPaginationChange] next pagination.
  * @param {number} [props.rowCount] host total for host-sliced data: pagination stays manual (the page count comes from rowCount) and sorting stays local, while search and column filters still apply to the rows given; with a partial window and an active filter the footer reports the loaded rows, never the host total.
+ * @param {(controls: Parameters<typeof import('./DataTableControls.jsx').DataTableToolbar>[0]) => React.ReactNode} [props.toolbar] optional controls; render DataTableToolbar or importer-owned content.
+ * @param {(controls: Parameters<typeof DataTablePaginationControls>[0]) => React.ReactNode} [props.footer] optional footer; replaces the default pager when pagination is enabled.
+ * @param {React.CSSProperties['maxHeight']} [props.maxHeight] explicit inner scroll bound; natural height when omitted.
  */
 export default function DataTable({
   columns,
@@ -76,16 +80,20 @@ export default function DataTable({
   defaultColumnFilters = [],
   onColumnFiltersChange,
   pagination: paginationProp,
-  defaultPagination = { pageIndex: 0, pageSize: 10 },
+  defaultPagination,
   onPaginationChange,
   rowCount,
+  toolbar,
+  footer,
+  maxHeight,
 }) {
   const baseId = useId()
   const [searchState, setSearchState] = useState(defaultSearch)
   const search = searchProp !== undefined ? searchProp : searchState
   const [filtersState, setFiltersState] = useState(defaultColumnFilters)
   const columnFilters = filtersProp !== undefined ? filtersProp : filtersState
-  const [paginationState, setPaginationState] = useState(defaultPagination)
+  const paginationEnabled = paginationProp !== undefined || defaultPagination !== undefined
+  const [paginationState, setPaginationState] = useState(defaultPagination ?? { pageIndex: 0, pageSize: 10 })
   const pagination = paginationProp !== undefined ? paginationProp : paginationState
   const setPagination = (next) => {
     if (paginationProp === undefined) setPaginationState(next)
@@ -200,7 +208,7 @@ export default function DataTable({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: paginationEnabled ? getPaginationRowModel() : undefined,
   })
 
   const sortedRows = table.getRowModel().rows
@@ -217,33 +225,21 @@ export default function DataTable({
     Math.max(0, ...sortedRows.map((r) => decimalParts(r.original[c.key])?.fraction.length ?? 0)),
   ]))
   const colCount = columns.length + (selectable ? 1 : 0)
+  const paginationControls = {
+    countLabel,
+    pageIndex: paginationEnabled ? pagination.pageIndex : 0,
+    pageCount: paginationEnabled ? table.getPageCount() : 1,
+    canPreviousPage: paginationEnabled && table.getCanPreviousPage(),
+    canNextPage: paginationEnabled && table.getCanNextPage(),
+    onPreviousPage: () => table.previousPage(),
+    onNextPage: () => table.nextPage(),
+    disabled,
+  }
 
   return (
     <div className={`tbl-wrap${selectable ? ' tbl-has-selection' : ''}${className ? ' ' + className : ''}`}>
-      <div className="tbl-tools">
-        <label htmlFor={`${baseId}-search`}>search rows</label>
-        <input id={`${baseId}-search`} className="input" type="search" disabled={disabled} value={search} onChange={(e) => setSearch(e.target.value)} />
-        <details className="tbl-filters">
-          <summary>column filters</summary>
-          <div className="tbl-filter-fields">
-            {columns.map((col) => <label key={col.key}>
-              <span>{col.label}</span>
-              <input className="input" disabled={disabled} aria-label={`filter ${typeof col.label === 'string' ? col.label : col.key}`} value={columnFilters.find((f) => f.id === col.key)?.value ?? ''} onChange={(e) => setFilters([
-                ...columnFilters.filter((f) => f.id !== col.key),
-                ...(e.target.value ? [{ id: col.key, value: e.target.value }] : []),
-              ])} />
-            </label>)}
-          </div>
-        </details>
-        {(search || columnFilters.length > 0) && <span className="tbl-filter-active">filters active</span>}
-      </div>
-      <div className="tbl-chips">
-        {search && <button type="button" disabled={disabled} className="tbl-chip" aria-label="remove search filter" onClick={() => setSearch('')}>search: {search}<X aria-hidden="true" /></button>}
-        {columnFilters.map((filter) => <button key={filter.id} type="button" disabled={disabled} className="tbl-chip" aria-label={`remove ${filter.id} filter`} onClick={() => setFilters(columnFilters.filter((f) => f.id !== filter.id))}>
-          {columns.find((c) => c.key === filter.id)?.label ?? filter.id}: {String(filter.value)}<X aria-hidden="true" />
-        </button>)}
-      </div>
-      <div className="tbl-scroll" tabIndex={0} role="region" aria-label={caption || 'data table'}>
+      {toolbar?.({ search: { value: search, onChange: setSearch }, columnFilters: { columns, value: columnFilters, onChange: setFilters }, disabled })}
+      <div className="tbl-scroll" style={maxHeight === undefined ? undefined : { maxHeight }} tabIndex={0} role="region" aria-label={caption || 'data table'}>
       <table className="tbl">
         {caption && <caption className="tbl-caption">{caption}</caption>}
         {(selectable || columns.some((c) => c.width)) && (
@@ -341,12 +337,7 @@ export default function DataTable({
         </tbody>
       </table>
       </div>
-      <div className="tbl-footer">
-        <span className="tnum" role="status">{countLabel}</span>
-        <button className="btn" type="button" disabled={disabled || !table.getCanPreviousPage()} onClick={() => table.previousPage()}>previous page</button>
-        <span className="tnum">page {pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}</span>
-        <button className="btn" type="button" disabled={disabled || !table.getCanNextPage()} onClick={() => table.nextPage()}>next page</button>
-      </div>
+      {footer ? footer(paginationControls) : paginationEnabled ? <DataTablePaginationControls {...paginationControls} /> : null}
     </div>
   )
 }
@@ -355,7 +346,7 @@ export default function DataTable({
    recomputes when the *contents* change, not when a controlled caller hands us a brand-new
    Set instance with the same keys. */
 function selectedKey(set) {
-  return [...set].map(String).sort().join(' ')
+  return [...set].map(String).sort().join('\0')
 }
 
 /* align -> alignment modifier class (right and decimal values also carry .tnum) */

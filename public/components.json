@@ -562,6 +562,8 @@
       },
       "stories": [
         "Playground",
+        "LegacyDefaults",
+        "BoundedScrolling",
         "ViewDefaults",
         "HostSliced",
         "UncontrolledView",
