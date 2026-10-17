@@ -47,8 +47,23 @@ export default function VillageObservations({
 }) {
   const [localView, setLocalView] = useState('catalog')
   const [localCategory, setLocalCategory] = useState(categories[0]?.id)
+  const selectedView = view ?? localView
   const selectedCategory = categoryId ?? (categories.some((category) => category.id === localCategory) ? localCategory : categories[0]?.id)
+  if (view !== undefined && view !== 'catalog' && view !== 'history') throw new Error('VillageObservations: controlled view must be catalog or history; supply a registered view or omit it for local selection.')
+  if (categoryId !== undefined && !categories.some((category) => category.id === categoryId)) throw new Error('VillageObservations: controlled categoryId is not present in categories; supply the selected category or clear the controlled selection when changing scope.')
+  const metadata = <>
+    <p>Observations do not grant current permission. Earlier details remain dated evidence.</p>
+    <div role="status" className="vobs-status">{status ?? (fetching ? 'fetching metadata' : '')}</div>
+    <Issue issue={issue} />
+    <dl className="vobs-domains">{domains.map((domain) => <div key={domain.id} data-domain={domain.id}>
+      <dt>{domain.label}</dt><dd><p>{domain.result}{domain.commit ? `; ${domain.commit}` : ''}</p>
+        <p>last completed: <ObservationDate value={domain.lastCompletedAt} /></p>
+        <p>last attempt: <ObservationDate value={domain.lastAttemptAt} /></p><Issue issue={domain.issue} /></dd>
+    </div>)}</dl>
+  </>
   const catalog = <div className="vobs-catalog">
+    <p>Read saved observations offline. Fetch checks metadata only, without downloading transcripts or publishing.</p>
+    {selectedView === 'catalog' && metadata}
     <p>Relevant collectives only. Tracking does not join a collective or grant access.</p>
     {collectives.length === 0 ? <p>No saved relevant collectives. Fetch metadata to check available sources.</p> :
       <ul className="vobs-list">{collectives.map((row) => <li key={row.id}>
@@ -64,14 +79,15 @@ export default function VillageObservations({
       </li>)}</ul>}
   </div>
   const history = <div className="vobs-history">
-    <p>Saved evidence is dated. A confirmed receipt does not mean collective approval. Unknown coverage is not an empty history.</p>
     {categories.length ? <Tabs aria-label="history categories" value={selectedCategory} onChange={(id) => { setLocalCategory(id); onCategoryChange?.(id) }} tabs={categories.map((category) => ({
       id: category.id, label: category.label,
       content: <div aria-busy={category.loading || undefined}>
+        {selectedView === 'history' && selectedCategory === category.id && metadata}
+        <p>Saved evidence is dated. A confirmed receipt does not mean collective approval. Unknown coverage is not an empty history.</p>
         <p className="vobs-summary"><span className="tnum">{category.total}</span> saved items; coverage: {category.coverage}</p>
         <Issue issue={category.issue} />
         {category.conflict ? <Button disabled={!onRestart} onClick={() => onRestart?.(category.id)}>restart this category</Button> : <>
-          {category.rows.length ? <ul className="vobs-list">{category.rows.map((row) => <li key={row.id}>
+          {category.rows.length ? <ul className="vobs-list">{category.rows.map((row) => <li key={row.id} data-evidence-id={row.id}>
             <strong>{row.title}</strong><p>{row.outcome}</p>{row.description && <p>{row.description}</p>}
             <dl className="vobs-facts"><div><dt>recorded at</dt><dd><ObservationDate value={row.occurredAt} /></dd></div>
               {row.details?.map((detail) => <div key={detail.label}><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}
@@ -85,18 +101,9 @@ export default function VillageObservations({
     }))} /> : <p>No saved contribution evidence. Fetch metadata to check available history.</p>}
   </div>
   return <section className="vobs" aria-label="village observations">
-    <header className="vobs-header"><div><h2>village</h2><p>{villageLabel}<br />{accountLabel}</p></div>
+    <header className="vobs-header"><div><h2>village</h2><p className="vobs-scope">{villageLabel}<br />{accountLabel}</p></div>
       <Button variant="primary" onClick={onFetch} disabled={fetchDisabled || fetching || !onFetch} loading={fetching}>fetch metadata</Button>
     </header>
-    <p>Read saved observations offline. Fetch checks metadata only, without downloading transcripts or publishing.</p>
-    <p>Observations do not grant current permission. Earlier details remain dated evidence.</p>
-    <div role="status" className="vobs-status">{status ?? (fetching ? 'fetching metadata' : '')}</div>
-    <Issue issue={issue} />
-    <dl className="vobs-domains">{domains.map((domain) => <div key={domain.id} data-domain={domain.id}>
-      <dt>{domain.label}</dt><dd><p>{domain.result}{domain.commit ? `; ${domain.commit}` : ''}</p>
-        <p>last completed: <ObservationDate value={domain.lastCompletedAt} /></p>
-        <p>last attempt: <ObservationDate value={domain.lastAttemptAt} /></p><Issue issue={domain.issue} /></dd>
-    </div>)}</dl>
     <Tabs aria-label="village views" value={view ?? localView} onChange={(id) => { const next = id === 'history' ? 'history' : 'catalog'; setLocalView(next); onViewChange?.(next) }} tabs={[
       { id: 'catalog', label: 'catalog', content: catalog },
       { id: 'history', label: 'history', content: history },

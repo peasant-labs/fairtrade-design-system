@@ -7,11 +7,13 @@ const fixture = YAML.parse(source, { merge: true })
 
 export default function LocalVillage() {
   const scenario = new URLSearchParams(window.location.search).get('observations')
-  const initial = fixture.cases.find((row) => row.name === scenario)?.props ?? fixture.base
+  const initial = scenario === fixture.scroll.name ? {...fixture.base, view:'history', categories:fixture.base.categories.map((category)=>({...category, rows:Array.from({length:fixture.scroll.rows}, (_,index)=>({...category.rows[0], id:`${category.id}-long-${index}`, title:`${category.label} retained evidence ${index + 1}`}))}))} : fixture.cases.find((row) => row.name === scenario)?.props ?? fixture.base
   const [data, setData] = useState(initial)
   const [status, setStatus] = useState(initial.status)
   const fetch = () => {
-    setData((previous) => ({ ...previous, domains: fixture.base.domains, collectives: previous.collectives.map((row) => row.id === 'platform' ? { ...row, name: 'Acme Platform Tools' } : row) }))
+    setData((previous) => ({ ...previous, domains: fixture.update.domains,
+      categories: fixture.update.order.map((id) => id === 'operation-diagnostics' ? fixture.update.diagnostic : previous.categories.find((category) => category.id === id)).filter(Boolean),
+      collectives: previous.collectives.map((row) => row.id === 'platform' ? { ...row, name: 'Acme Platform Tools' } : row) }))
     setStatus('partial fetch: catalog updated; history retained; some associations retained')
   }
   const page = (id, next) => setData((previous) => ({ ...previous, categories: previous.categories.map((category) => category.id === id ? {

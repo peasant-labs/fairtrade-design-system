@@ -51,10 +51,10 @@ test('local village mounted catalog, history and independent pages', async ({ pa
   expect(await body.locator('p').first().evaluate((node) => getComputedStyle(node).fontFamily)).toContain('Atkinson')
   const axe = await new AxeBuilder({ page }).include('#inuse').analyze()
   expect(axe.violations).toEqual([])
-  await shell.locator('.iu-stage').evaluate((node) => { node.scrollTop = 0 })
+  await body.locator('.tabpanel:visible').evaluate((node) => { node.scrollTop = 0 })
   await shell.screenshot({ path: info.outputPath(`village-${theme}-desktop.png`) })
   await page.setViewportSize({ width: 390, height: 844 })
-  await shell.locator('.iu-stage').evaluate((node) => { node.scrollTop = 0 })
+  await body.locator('.tabpanel:visible').evaluate((node) => { node.scrollTop = 0 })
   await shell.screenshot({ path: info.outputPath(`village-${theme}-mobile.png`) })
   expect(await body.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true)
 
@@ -78,4 +78,97 @@ test('local village mounted catalog, history and independent pages', async ({ pa
   await expect(shell.getByText('changes save right away', { exact: false })).toBeVisible()
   await shell.getByRole('button', { name: 'village', exact: true }).click()
   await expect(body).toBeVisible()
+})
+
+test('persistent tools and paragraph separation on long mounted evidence', async ({page}, info)=>{
+  const theme=info.project.name
+  for(const viewport of [fixture.scroll.desktop,fixture.scroll.mobile]){
+    await page.setViewportSize(viewport)
+    await page.goto(`${origin}/?fb=off&app=graph&section=village&observations=${fixture.scroll.name}&theme=${theme}#inuse`)
+    const body=page.locator('.vobs')
+    await body.waitFor()
+    await page.locator('#inuse').evaluate((node)=>node.scrollIntoView({block:'start',behavior:'instant'}))
+    await expect(page.locator('html')).toHaveAttribute('data-theme',theme)
+    const scroller=body.locator('.vobs-history > .tabpanel:visible')
+    const gap=await scroller.locator('[data-domain=history] .vobs-issue').evaluate((node)=>{
+      const [a,b]=node.querySelectorAll('p');return {gap:b.getBoundingClientRect().top-a.getBoundingClientRect().bottom,line:parseFloat(getComputedStyle(a).lineHeight)}
+    })
+    expect(gap.gap).toBeGreaterThanOrEqual(gap.line)
+    await scroller.locator('[data-domain=history] .vobs-issue').scrollIntoViewIfNeeded()
+    await page.locator('#inuse').screenshot({path:info.outputPath(`spacing-${theme}-${viewport.width}.png`)})
+    await scroller.evaluate((node)=>{node.scrollTop=node.scrollHeight})
+    const selectors=['nav[aria-label="peasant sections"]','.vobs-header','.vobs > .tabs','.vobs-history > .tabs']
+    const rectangles=[]
+    for(const selector of selectors){
+      const item=page.locator(selector);await expect(item).toBeInViewport({ratio:1});
+      rectangles.push(await item.evaluate((node)=>{const r=node.getBoundingClientRect();return {top:r.top,bottom:r.bottom}}))
+    }
+    for(let i=1;i<rectangles.length;i++) expect(rectangles[i].top).toBeGreaterThanOrEqual(rectangles[i-1].bottom)
+    for(const selector of ['.vobs-header button','.vobs > .tabs button','.vobs-history > .tabs button']){
+      const buttons=page.locator(selector)
+      for(const button of await buttons.all()) expect(await button.evaluate((node)=>{const r=node.getBoundingClientRect();return node.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))})).toBe(true)
+    }
+    expect((await scroller.boundingBox()).height).toBeGreaterThan(viewport.height*0.35)
+    await expect(body.locator('.vobs-scope')).toContainText(fixture.base.accountLabel)
+    const fetch=body.getByRole('button',{name:'fetch metadata'})
+    expect(await fetch.evaluate((node)=>{const r=node.getBoundingClientRect();return node.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))})).toBe(true)
+    await fetch.focus();await page.keyboard.press('Tab')
+    const focused=await page.evaluate(()=>{const node=document.activeElement;const r=node.getBoundingClientRect();return {visible:r.top>=0&&r.bottom<=innerHeight,hit:node.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)),outline:getComputedStyle(node).outlineStyle}})
+    expect(focused.visible&&focused.hit).toBe(true);expect(focused.outline).not.toBe('none')
+    await info.attach(`persistent-tools-${theme}-${viewport.width}`,{body:JSON.stringify({theme,viewport,gap,rectangles,focused}),contentType:'application/json'})
+    await page.locator('#inuse').screenshot({path:info.outputPath(`persistent-${theme}-${viewport.width}.png`)})
+  }
+})
+
+test('native controlled host and unavailable action contracts',async({page},info)=>{
+  test.setTimeout(180_000)
+  const theme=info.project.name
+  const story=async(name)=>{await page.goto(`/iframe.html?id=in-use-village-observations--host-contract&viewMode=story&globals=theme:${theme}&args=caseName:${name}`);await expect(page.locator('.vobs')).toBeVisible();await expect(page.getByLabel('host callbacks')).toHaveText('[]')}
+  for(const row of fixture.controlledCases){
+    await story(row.name)
+    const list=page.getByRole('tablist',{name:row.panel})
+    await list.getByRole('tab',{name:row.label,exact:true}).click()
+    await expect(page.getByLabel('host callbacks')).toHaveText(JSON.stringify([[row.callback,row.target]]))
+    await expect(list.getByRole('tab',{name:row.label,exact:true})).toHaveAttribute('aria-selected','false')
+    await page.getByRole('button',{name:'apply host selection'}).click()
+    await expect(list.getByRole('tab',{name:row.label,exact:true})).toHaveAttribute('aria-selected','true')
+    await expect(page.getByLabel('host callbacks')).toHaveText(JSON.stringify([[row.callback,row.target]]))
+  }
+  for(const row of fixture.activationCases){
+    await story(row.name)
+    const panel=page.locator('.vobs-history > .tabpanel:visible')
+    const next=panel.getByRole('button',{name:'next page',includeHidden:true})
+    await panel.evaluate((node)=>{node.scrollTop=node.scrollHeight})
+    const box=await next.boundingBox();await page.mouse.click(box.x+box.width/2,box.y+box.height/2)
+    await expect(page.getByLabel('host callbacks')).toHaveText(JSON.stringify(row.blocked?[]:[['page','remote-attempts',2]]))
+    await next.evaluate((node)=>node.focus())
+    expect(await next.evaluate((node)=>node===document.activeElement)).toBe(!row.blocked)
+    await panel.focus();await page.keyboard.press('Tab');await page.keyboard.press('Tab')
+    const inPager=await page.evaluate(()=>!!document.activeElement.closest('.vobs-pager'))
+    expect(inPager).toBe(!row.blocked)
+    if(!row.blocked){await next.focus();await page.keyboard.press('Enter');await expect(page.getByLabel('host callbacks')).toHaveText(JSON.stringify([['page','remote-attempts',2],['page','remote-attempts',2]]))}
+  }
+  for(const row of fixture.fetchCases){
+    await story(row.name)
+    const button=page.getByRole('button',{name:'fetch metadata'})
+    if(row.blocked) await expect(button).toBeDisabled()
+    else await expect(button).toBeEnabled()
+    const box=await button.boundingBox();await page.mouse.click(box.x+box.width/2,box.y+box.height/2)
+    await expect(page.getByLabel('host callbacks')).toHaveText(JSON.stringify(row.blocked?[]:[['fetch']]))
+    await button.evaluate((node)=>node.focus());expect(await button.evaluate((node)=>node===document.activeElement)).toBe(!row.blocked)
+  }
+  await story(fixture.update.name)
+  await page.getByRole('button',{name:'apply evidence update'}).click()
+  const panel=page.locator('.vobs-history > .tabpanel:visible')
+  await expect(page.getByRole('tab',{name:'confirmed receipts'})).toHaveAttribute('aria-selected','true')
+  await expect(panel.locator('[data-evidence-id=receipt-1]')).toBeAttached()
+  await expect(panel.getByRole('button',{name:'page 3',exact:true})).toHaveAttribute('aria-current','page')
+  await expect(panel.locator('[data-domain=catalog]')).toContainText('2026-10-17T12:00:00Z')
+  await expect(panel.locator('[data-domain=history]')).toContainText('2026-10-15T09:00:00Z')
+  await expect(page.getByLabel('host callbacks')).toHaveText('[]')
+  await page.getByRole('tab',{name:'remote attempts',exact:true}).click();await page.getByRole('button',{name:'apply host selection'}).click()
+  await expect(page.locator('.vobs-history > .tabpanel:visible [data-evidence-id=attempt-1]')).toBeAttached()
+  await expect(page.locator('.vobs-history > .tabpanel:visible').getByRole('button',{name:'page 2',exact:true})).toHaveAttribute('aria-current','page')
+  await page.getByRole('tab',{name:'operation diagnostics'}).click();await page.getByRole('button',{name:'apply host selection'}).click()
+  await expect(page.locator('[data-evidence-id=diagnostic-new]:visible')).toBeAttached()
 })

@@ -16,9 +16,27 @@ requiredCaseNames:
   - required-policy-refusal
   - optional-metadata-warning
 requiredMutationNames:
+  - view callback is dropped
+  - category callback is dropped
+  - busy or absent-handler pager becomes active
   - shared completion date hides retained history
   - history pages lose category identity
 mutations:
+  - name: view callback is dropped
+    file: src/ui/VillageObservations.jsx
+    find: 'onViewChange?.(next)'
+    replace: 'void next'
+    expectedDiagnostic: 'controlled-view-host-rerender: exact once selection identity'
+  - name: category callback is dropped
+    file: src/ui/VillageObservations.jsx
+    find: 'onCategoryChange?.(id)'
+    replace: 'void id'
+    expectedDiagnostic: 'controlled-category-host-rerender: exact once selection identity'
+  - name: busy or absent-handler pager becomes active
+    file: src/ui/VillageObservations.jsx
+    find: 'inert={category.loading || !onPageChange ? true : undefined}'
+    replace: 'inert={undefined}'
+    expectedDiagnostic: 'busy-evidence-pager: native inert state protects the page controls'
   - name: shared completion date hides retained history
     file: src/ui/VillageObservations.jsx
     find: 'value={domain.lastCompletedAt}'
@@ -29,3 +47,9 @@ mutations:
     find: 'onPageChange?.(category.id, page)'
     replace: 'onPageChange?.(categories[0].id, page)'
     expectedDiagnostic: 'page callbacks carry independent category identity'
+requiredControlledNames: [controlled-view-host-rerender, controlled-category-host-rerender]
+requiredActivationNames: [busy-evidence-pager, missing-page-handler, ready-evidence-pager]
+requiredFetchNames: [missing-fetch-handler, disabled-fetch, fetching-no-double-submit, ready-fetch]
+requiredInvalidNames: [invalid-controlled-view, invalid-controlled-category]
+requiredUpdateNames: [changed-diagnostics-domain-dates-category-reorder]
+requiredScrollNames: [persistent-scope-fetch-views-categories-long-evidence]

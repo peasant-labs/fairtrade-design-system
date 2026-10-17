@@ -35,6 +35,22 @@ The controlled `view` and `categoryId` props are optional. Without them only tab
 local state; pages and data are always host-owned. The component does not reset host pages when
 fetch results change. Additional host-owned filters may sit beside the composition.
 
+Controlled selection is request/host-commit: callbacks emit the requested identity once,
+but the selected panel changes only after the host supplies the next controlled prop. An
+unmapped controlled view/category throws an actionable error rather than displaying another
+category's data. When changing scope, clear obsolete controlled selections together with data.
+No callback or fetch fires merely because props mount, reorder or update.
+
+The composition is a bounded reading surface: scope, fetch and view/category controls stay
+outside its internally scrolling evidence panel, in ordinary DOM reading order. Its default
+height is the viewport minus the product header; the canonical GraphAppShell supplies its
+actual remaining height through `--vobs-height: 100%`. Other hosts can set `--vobs-height` to
+their available content height instead of duplicating sticky controls or shell offsets.
+The panel is keyboard focusable and uses native scrolling; busy or handlerless pagers are
+native inert subtrees. Metadata explanations scroll with the evidence, while the compact
+selected scope and tools remain available. Opaque token surfaces and normal flex layout avoid
+overlapping shell navigation or focused controls; no second scroll-dependent scope is inferred.
+
 ## canonical navigation and release boundary
 
 `LOCAL_APP_SECTIONS` now lists home, village, settings in navigation; analytics, changes and

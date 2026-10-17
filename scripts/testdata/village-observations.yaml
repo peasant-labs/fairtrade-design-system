@@ -1,4 +1,41 @@
 pagingCalls: [[remote-attempts, 2], [receipts, 2]]
+controlledCases:
+  - {name: controlled-view-host-rerender, control: view, initial: catalog, target: history, label: history, callback: view, panel: village views}
+  - {name: controlled-category-host-rerender, control: categoryId, initial: remote-attempts, target: receipts, label: confirmed receipts, callback: category, panel: history categories}
+activationCases:
+  - {name: busy-evidence-pager, loading: true, handler: true, blocked: true}
+  - {name: missing-page-handler, loading: false, handler: false, blocked: true}
+  - {name: ready-evidence-pager, loading: false, handler: true, blocked: false}
+fetchCases:
+  - {name: missing-fetch-handler, handler: false, disabled: false, fetching: false, blocked: true}
+  - {name: disabled-fetch, handler: true, disabled: true, fetching: false, blocked: true}
+  - {name: fetching-no-double-submit, handler: true, disabled: false, fetching: true, blocked: true}
+  - {name: ready-fetch, handler: true, disabled: false, fetching: false, blocked: false}
+invalidCases:
+  - {name: invalid-controlled-view, props: {view: missing}, diagnostic: controlled view must be catalog or history}
+  - {name: invalid-controlled-category, props: {categoryId: missing}, diagnostic: controlled categoryId is not present}
+update:
+  name: changed-diagnostics-domain-dates-category-reorder
+  beforePages: {remote-attempts: 2, receipts: 3, operation-diagnostics: 1}
+  selected: receipts
+  order: [operation-diagnostics, receipts, remote-attempts]
+  domains:
+    - {id: catalog, label: catalog, result: complete, commit: updated, lastCompletedAt: '2026-10-17T12:00:00Z'}
+    - {id: history, label: history, result: failed, commit: retained, lastCompletedAt: '2026-10-15T09:00:00Z'}
+    - {id: associations, label: associations, result: partial, commit: retained, lastCompletedAt: '2026-10-16T11:00:00Z'}
+  diagnostic:
+    id: operation-diagnostics
+    label: operation diagnostics
+    page: 1
+    pageCount: 4
+    total: 4
+    coverage: saved local operations
+    rows: [{id: diagnostic-new, title: new diagnostic, outcome: failed; catalog updated but history retained, occurredAt: '2026-10-17T12:00:00Z'}]
+scroll:
+  name: persistent-scope-fetch-views-categories-long-evidence
+  rows: 18
+  desktop: {width: 1280, height: 1100}
+  mobile: {width: 390, height: 844}
 base: &base
   accountLabel: Developer One
   villageLabel: https://village.example.org

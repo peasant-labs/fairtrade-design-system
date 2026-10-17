@@ -1933,7 +1933,8 @@
         "NeverFetched",
         "HiddenEvidence",
         "LongContent",
-        "PagingConflict"
+        "PagingConflict",
+        "HostContract"
       ]
     },
     {
