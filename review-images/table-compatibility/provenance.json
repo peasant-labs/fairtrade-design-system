@@ -1,0 +1,85 @@
+{
+  "head": "ef0d779b315bdb24c32977578b8319b017982fc3",
+  "records": [
+    {
+      "size": "desktop",
+      "theme": "dark",
+      "rows": 7,
+      "controls": 0,
+      "maxHeight": "none",
+      "font": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+      "count": "showing 7 of 1,284",
+      "assets": [
+        {
+          "path": "/assets/index-CYSSOPyo.css",
+          "sha256": "15d476131f5d6878f7c03590d5aa70565bcc7dfa0eccff7202dc4e8df978987e"
+        },
+        {
+          "path": "/assets/index-BtOKpXqB.js",
+          "sha256": "b6d5739e9c1ed0f191afc0b1e930a98366440841f90902b58ecbc1c615605a50"
+        }
+      ],
+      "hostSearchInteraction": "7 rows -> 1 -> 7"
+    },
+    {
+      "size": "mobile",
+      "theme": "dark",
+      "rows": 7,
+      "controls": 0,
+      "maxHeight": "none",
+      "font": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+      "count": "showing 7 of 1,284",
+      "assets": [
+        {
+          "path": "/assets/index-BtOKpXqB.js",
+          "sha256": "b6d5739e9c1ed0f191afc0b1e930a98366440841f90902b58ecbc1c615605a50"
+        },
+        {
+          "path": "/assets/index-CYSSOPyo.css",
+          "sha256": "15d476131f5d6878f7c03590d5aa70565bcc7dfa0eccff7202dc4e8df978987e"
+        }
+      ],
+      "hostSearchInteraction": "7 rows -> 1 -> 7"
+    },
+    {
+      "size": "desktop",
+      "theme": "light",
+      "rows": 7,
+      "controls": 0,
+      "maxHeight": "none",
+      "font": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+      "count": "showing 7 of 1,284",
+      "assets": [
+        {
+          "path": "/assets/index-BtOKpXqB.js",
+          "sha256": "b6d5739e9c1ed0f191afc0b1e930a98366440841f90902b58ecbc1c615605a50"
+        },
+        {
+          "path": "/assets/index-CYSSOPyo.css",
+          "sha256": "15d476131f5d6878f7c03590d5aa70565bcc7dfa0eccff7202dc4e8df978987e"
+        }
+      ],
+      "hostSearchInteraction": "7 rows -> 1 -> 7"
+    },
+    {
+      "size": "mobile",
+      "theme": "light",
+      "rows": 7,
+      "controls": 0,
+      "maxHeight": "none",
+      "font": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+      "count": "showing 7 of 1,284",
+      "assets": [
+        {
+          "path": "/assets/index-CYSSOPyo.css",
+          "sha256": "15d476131f5d6878f7c03590d5aa70565bcc7dfa0eccff7202dc4e8df978987e"
+        },
+        {
+          "path": "/assets/index-BtOKpXqB.js",
+          "sha256": "b6d5739e9c1ed0f191afc0b1e930a98366440841f90902b58ecbc1c615605a50"
+        }
+      ],
+      "hostSearchInteraction": "7 rows -> 1 -> 7"
+    }
+  ]
+}
