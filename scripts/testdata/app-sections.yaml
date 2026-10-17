@@ -25,7 +25,7 @@ demo:
   navLabels: [home, settings]
   # every entry mounts a non-empty body when selected by id (?section=<id> for route-only ones)
   bodies:
-    - {name: home body, section: home, text: your sessions, tableCounts: [showing 7 of 1284]}
+    - {name: home body, section: home, text: your sessions, tableCounts: ['showing 7 of 1,284']}
     - {name: settings body, section: settings, text: changes save right away}
     - {name: analytics body, section: analytics, text: project overview}
     - {name: changes body, section: changes, text: lines of work}
