@@ -16,6 +16,8 @@ package is pre-1.0, so minor/patch semantics are best-effort.
   rows expand naturally otherwise.
 - Allow npm registry processing time before requiring the published provenance
   result; an accepted upload is not treated as immediately registry-visible.
+- Restore shared feedback-overlay styles to the published component CSS; moving
+  presentation styles out must not leave consuming applications unstyled.
 
 ### Added
 

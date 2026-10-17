@@ -83,7 +83,7 @@ const cssChecks = [
   {
     file: 'components.css',
     minBytes: 100_000, // healthy build is ~337KB; a stub sheet would be a few KB
-    markers: ['@layer', 'cg-', 'dv-', 'rr-', 'ir-'], // @layer block + CommitGraph/DiffView/RoleRoster/Intensity colocated selectors
+    markers: ['@layer', 'cg-', 'dv-', 'rr-', 'ir-', '.fbk-launch', '.fbk-pop'], // shared component and feedback-overlay selectors
   },
   { file: 'base.css', minBytes: 200, markers: ['html', 'body'] },
 ]

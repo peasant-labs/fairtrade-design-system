@@ -167,37 +167,7 @@
   .node .nm .lucide { @apply text-ink-3; width: var(--ic-sm); height: var(--ic-sm); }
   .node .ct { @apply font-mono text-ink-3; font-size: 10.5px; margin-top: 2px; }
   .node .eff { @apply absolute left-0 right-0 bottom-0; height: 3px; background: var(--rule-strong); }
-  /* feedback tool (dev iteration aid; comments append to feedback.md through the vite
-     /feedback middleware, and feedback.md is gitignored; disable with ?fb=off). one flow:
-     the launch button (bottom-left, clear of the bottom-right toast corner) arms a dom
-     picker; a click opens the right-side note popup; the highlight + label track the hover. */
-  .fbk-launch { @apply fixed z-[60] inline-flex items-center gap-2 bg-surface text-ink-2 font-mono text-label lowercase cursor-pointer; left: var(--sp-5); bottom: var(--sp-5); height: var(--control-h); padding: 0 var(--sp-4); border: var(--bd-strong); box-shadow: var(--glow-soft); }
-  .fbk-launch:hover { @apply text-amber-bright; border-color: var(--amber-dim); }
-  .fbk-launch .lucide { width: var(--ic-sm); height: var(--ic-sm); }
-  .fbk-launch .cnt { @apply inline-flex items-center justify-center text-ink-3; min-width: 18px; height: 18px; padding: 0 5px; border: var(--bd); font-variant-numeric: tabular-nums; }
-  .fbk-launch.armed { @apply text-amber; border-color: var(--amber); }
-  .fbk-launch.armed .cnt { @apply text-amber; border-color: var(--amber-dim); }
-  /* the hover highlight is an OUTLINE on the hovered element itself (outline never triggers reflow, so
-     the picker needs no per-frame getBoundingClientRect - see FeedbackTool.jsx). its label is a small
-     fixed tag placed near the pointer. */
-  /* outline ONLY - no box-shadow. a blurred glow painted around an arbitrarily large hovered element
-     (a full-width bar, a whole section) is an expensive main-thread repaint every frame as the pointer
-     sweeps, which froze the heavier sections; an outline is just the perimeter and is cheap at any size. */
-  .fbk-target { outline: 2px solid var(--amber) !important; outline-offset: -2px; }
-  .fbk-tag { @apply fixed z-[61] hidden bg-amber text-on-amber font-mono lowercase; pointer-events: none; font-size: 11px; padding: 1px 6px; white-space: nowrap; }
-  body.fbk-arming, body.fbk-arming * { cursor: crosshair !important; }
-  /* the right-side note popup (top set inline, near the picked element) */
-  .fbk-pop { @apply fixed z-[64] flex flex-col bg-surface; right: var(--sp-5); width: 320px; max-width: calc(100vw - var(--sp-5) * 2); border: var(--bd-strong); box-shadow: var(--glow); }
-  .fbk-pop-h { @apply flex items-center justify-between font-mono text-label lowercase text-amber; padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); }
-  .fbk-pop-h > span { @apply inline-flex items-center gap-2; }
-  .fbk-pop-h .lucide { width: var(--ic-sm); height: var(--ic-sm); }
-  .fbk-x { @apply inline-flex items-center justify-center bg-transparent text-ink-3 cursor-pointer; width: var(--sp-5); height: var(--sp-5); border: 0; padding: 0; }
-  .fbk-x:hover { @apply text-amber-bright; }
-  .fbk-x .lucide { width: var(--ic-sm); height: var(--ic-sm); }
-  .fbk-pop-b { padding: var(--sp-3) var(--sp-4); }
-  .fbk-pop-tgt { @apply font-mono text-ink-3; font-size: 11px; margin-bottom: var(--sp-2); word-break: break-all; line-height: 1.4; }
-  .fbk-pop-f { @apply flex items-center justify-end gap-2; padding: 0 var(--sp-4) var(--sp-3); }
-  .fbk-pop-f .fbk-kbd { @apply font-mono text-ink-3; font-size: 11px; }
+  /* Feedback-tool chrome is shared with consuming apps in src/index.css. */
   /* image -> ascii / halftone filters + glyph texture (rendered by src/effects.jsx) */
   .ascii { margin: 0; font-family: var(--font-mono); font-size: 5px; line-height: 1; letter-spacing: 0; white-space: pre; color: var(--ink-strong); }
   .glyph-field { margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; white-space: pre; color: var(--ink-3); overflow: hidden; }
@@ -486,7 +456,7 @@
 @media (prefers-reduced-motion: no-preference) {
   /* the presentation surfaces share the library's quick hover transition */
   .start-card, .res, .icontile, .principle, .rail-link, .nav-links a, .copy-token,
-  .face, .type-faces .face, .swatch, .ruler-row, .fbk-launch, .navctl {
+  .face, .type-faces .face, .swatch, .ruler-row, .navctl {
     transition: background var(--dur-1) var(--ease-standard),
                 border-color var(--dur-1) var(--ease-standard),
                 color var(--dur-1) var(--ease-standard),
