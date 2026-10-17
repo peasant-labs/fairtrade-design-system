@@ -69,10 +69,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     report.check(visible.includes(body.text), `${body.name}: selecting ${body.section} must mount a body reading ${JSON.stringify(body.text)}`)
     if (body.tableCounts) {
       const root = mounted.container
-      const counts = [...root.querySelectorAll('.tbl-footer [role=status]')].map((node) => node.textContent.trim())
+      const counts = [...root.querySelectorAll('.iu-page-count')].map((node) => node.textContent.trim())
       report.check(JSON.stringify(counts) === JSON.stringify(body.tableCounts), `${body.name}: table counts must equal ${JSON.stringify(body.tableCounts)}, received ${JSON.stringify(counts)}`)
-      report.check(!root.querySelector('.iu-page-count'), `${body.name}: no duplicate host count may render`)
-      report.check([...root.querySelectorAll('.tbl-footer button')].every((button) => button.disabled), `${body.name}: cumulative host rows must not offer unbacked page navigation`)
+      report.check(!root.querySelector('.tbl-tools,.tbl-footer'), `${body.name}: host-owned search and load-more must not acquire table controls`)
     }
     const listed = fixture.entries.find((entry) => entry.id === body.section)?.inNav
     report.check(listed || !!mounted.container.querySelector('.iu-subnav-back'), `${body.name}: a route-only section must offer back`)

@@ -129,10 +129,11 @@ export function HomeView({ renderState = renderPublishState, offline = false }) 
       </fieldset>
 
       {/* Loading more extends the cumulative window, rather than navigating pages. */}
-      <DataTable caption="sessions on this computer" disabled={offline} columns={columns} rows={rows} rowKey={(row) => row.id} rowCount={HOME_SUMMARY.total} pagination={{ pageIndex: 0, pageSize: HOME_SUMMARY.total }} />
+      <DataTable caption="sessions on this computer" disabled={offline} columns={columns} rows={rows} rowKey={(row) => row.id} />
 
       <fieldset className="iu-page-controls" aria-label="session table" disabled={offline}>
       <div className="iu-page-foot">
+        <span className="iu-page-count">showing <span className="tnum">{rows.length}</span> of <span className="tnum">{HOME_SUMMARY.total.toLocaleString('en-US')}</span></span>
         <Button variant="secondary" size="sm">load more</Button>
       </div>
       </fieldset>

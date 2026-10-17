@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { BadgeCheck, Clock, Check, X, Info, Boxes, ShieldCheck, KeyRound, Workflow, AlertTriangle } from 'lucide-react'
 import DataTable from './ui/DataTable.jsx'
+import { DataTableToolbar, DataTablePaginationControls } from './ui/DataTableControls.jsx'
 import Pagination from './ui/Pagination.jsx'
 import Accordion from './ui/Accordion.jsx'
 import Timeline from './ui/Timeline.jsx'
@@ -84,6 +85,8 @@ export function DataTableSection() {
             defaultSort={{ key: 'date', dir: 'desc' }}
             selectedKeys={selected}
             onSelectionChange={setSelected}
+            toolbar={(controls) => <DataTableToolbar {...controls} />}
+            footer={(controls) => <DataTablePaginationControls {...controls} />}
           />
         </div>
       </div>
@@ -525,4 +528,3 @@ export function DateRangeSection() {
     </section>
   )
 }
-

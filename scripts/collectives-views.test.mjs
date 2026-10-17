@@ -70,9 +70,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     for (const line of expect.absentText ?? []) report.check(!body.toLowerCase().includes(line.toLowerCase()), `${row.name}: the view must not show ${JSON.stringify(line)}`)
     for (const selector of expect.absentSelectors ?? []) report.check(!root.querySelector(selector), `${row.name}: the view must not mount ${selector}`)
     if (expect.tableCounts) {
-      const counts = [...root.querySelectorAll('.tbl-footer [role=status]')].map(text)
+      const counts = [...root.querySelectorAll('.iu-page-count')].map(text)
       report.check(JSON.stringify(counts) === JSON.stringify(expect.tableCounts), `${row.name}: table counts must equal ${JSON.stringify(expect.tableCounts)}, received ${JSON.stringify(counts)}`)
-      report.check([...root.querySelectorAll('.tbl-footer button')].every((button) => button.disabled), `${row.name}: cumulative host rows must not offer unbacked page navigation`)
+      report.check(!root.querySelector('.tbl-tools,.tbl-footer'), `${row.name}: host-owned load-more must not acquire table controls`)
     }
     if (expect.columns) {
       const columns = [...root.querySelectorAll('table thead th')].map(text)

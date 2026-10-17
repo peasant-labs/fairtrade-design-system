@@ -77,6 +77,36 @@ pnpm build-storybook # compile every component + story
   `public/tokens.json` (w3c dtcg) + `public/components.json` + `packages/tokens/*` (kept fresh by
   `pnpm gen:check`).
 
+## data table compatibility
+
+`DataTable` renders all supplied rows by default, with sorting and selection but
+no injected search, filters, pager, or vertical height cap. Existing importers
+keep ownership of their search and pagination.
+
+Opt into pagination with `pagination` or `defaultPagination`; `rowCount` supports
+host-sliced rows. Search and filter state can be controlled without adding UI.
+Use the public toolbar to opt into either or both controls and add host actions:
+
+```jsx
+import { DataTable, DataTableToolbar } from '@peasant-labs/fairtrade/ui'
+
+<DataTable
+  columns={columns}
+  rows={rows}
+  defaultPagination={{ pageIndex: 0, pageSize: 25 }}
+  toolbar={({ search, disabled }) => (
+    <DataTableToolbar search={search} disabled={disabled}>
+      {extraActions}
+    </DataTableToolbar>
+  )}
+/>
+```
+
+Pass the toolbar's `columnFilters` binding to add column filters. A `footer`
+callback can compose `DataTablePaginationControls` or host-owned content instead
+of the standard opted-in pager. `maxHeight` explicitly enables bounded inner
+scrolling; omit it for naturally expanding, wrapped rows.
+
 ## gates / ci
 
 `pnpm build` regenerates the machine-readable artifacts then runs a pure-js wcag contrast gate (both

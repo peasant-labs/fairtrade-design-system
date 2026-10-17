@@ -15,8 +15,6 @@ requiredPresentationSelectorNames:
   - docs page
   - specimen caption
   - specimen frame
-  - feedback popup
-  - feedback tool
   - site nav
   - site nav links
   - site nav control
@@ -27,6 +25,8 @@ requiredOwnerNamespaces:
   - tb-
   - gan-
 requiredSingleSourcedRuleNames:
+  - feedback launcher
+  - feedback popup
   - legend item
   - merged chip
   - caption fragment

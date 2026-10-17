@@ -10,9 +10,9 @@
 # strip are captured so the mobile gutters, the consent column, the table count
 # and the non-overlapping search remain observable on the consolidated build.
 # The in-use home table's probes are scoped under its region root (.iu-page):
-# the docs page mounts its own demo table with the same classes, and an unscoped
-# .tbl-footer/.tbl-tools matched the demo table instead, so the table-count and
-# table-tools probes read the wrong table. The required surface inventory lives
+# the docs page mounts its own opted-in table controls. Home probes observe the
+# host-owned count and load-more footer, not the docs table's search or pager.
+# The required surface inventory lives
 # in the sibling .manifest.yaml.
 states:
   - before
@@ -204,10 +204,10 @@ surfaces:
     hash: "#inuse"
     root: ".iu-page"
     probes:
-      - name: tbl-count
-        selector: ".iu-page .tbl-footer [role=\"status\"]"
-      - name: tbl-search
-        selector: ".iu-page .tbl-tools"
+      - name: host-count
+        selector: ".iu-page .iu-page-count"
+      - name: host-paging
+        selector: ".iu-page .iu-page-foot"
       - name: iu-search
         selector: ".iu-page-search"
     focus: []

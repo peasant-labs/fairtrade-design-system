@@ -17,7 +17,7 @@ pages:
     account: '@alice-dev'
     text: [your transcripts, '38 transcripts', '3 collectives', '9 pull requests', your collectives, waiting for approval]
     buttons: [show 2 more pull requests, view all]
-    tableCounts: [showing 6 of 38]
+    tableCounts: [6 of 38 transcripts]
     absentText: [showing 6 of 6]
   - name: sign-in
     view: signin

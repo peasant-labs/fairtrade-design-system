@@ -1,4 +1,10 @@
 requiredCaseNames:
+  - bare table preserves all supplied rows without controls or a height bound
+  - host totals alone do not enable pagination or controls
+  - pagination opt in does not enable search or filters
+  - search-only toolbar accepts importer actions without adding filters
+  - filter-only toolbar does not add search
+  - inner scrolling requires an explicit height bound
   - disabled controls retain the named scroll region
   - uncontrolled search filters rows
   - uncontrolled column filter seeds a removable chip
@@ -10,6 +16,9 @@ requiredCaseNames:
   - empty data keeps a count
   - original sorting and numeric selection keys stay intact
 requiredMountedNames:
+  - opted in toolbar keeps accessible responsive search and filter cues
+  - bare table retains every wrapped row without injected controls
+  - bounded table scrolling remains keyboard accessible by opt in
   - decimal separators share an x position
   - unsupported decimal values fall back to right tabular
   - removing the last chip calls the host and clears active state

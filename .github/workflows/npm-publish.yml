@@ -108,7 +108,9 @@ jobs:
           set -euo pipefail
           package="@peasant-labs/fairtrade@${TAG#fairtrade-v}"
           case "${REPOSITORY_VISIBILITY}" in
-            public) attempts=12 ;;
+            # Accepted uploads can remain unavailable while npm processes them.
+            # Keep provenance required, allowing up to ten minutes within this job.
+            public) attempts=120 ;;
             private|internal) attempts=1 ;;
             *) echo "::error::cannot verify ${package} provenance because GitHub reported unknown repository visibility ${REPOSITORY_VISIBILITY}"; exit 1 ;;
           esac

@@ -111,8 +111,9 @@ export function VillageHome({ onNavigate }) {
             <Segmented label="shared with" className="cmg-scope" value={scope} onChange={setScope} options={[{ value: 'all', label: 'all' }, ...MY_COLLECTIVES.map((c) => ({ value: c.name, label: c.name }))]} />
           </div>
           {/* Loading more extends the cumulative window, rather than navigating pages. */}
-          <DataTable caption="transcripts you published" columns={columns} rows={rows} rowKey={(row) => row.id} rowCount={38} pagination={{ pageIndex: 0, pageSize: 38 }} />
+          <DataTable caption="transcripts you published" columns={columns} rows={rows} rowKey={(row) => row.id} />
           <div className="iu-page-foot">
+            <span className="iu-page-count"><span className="tnum">{rows.length}</span> of <span className="tnum">38</span> transcripts</span>
             <button type="button" className="btn btn-secondary btn-sm">show 20 more</button>
           </div>
         </div>
