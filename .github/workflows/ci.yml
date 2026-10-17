@@ -71,20 +71,17 @@ jobs:
       # Contract gate: checkJs + strict + noImplicitAny on the transcript wire
       # contract / TranscriptViewModel type-test. Runs first so a contract leak
       # fails early with a clear attribution (not buried in the Vite/tsc build).
-      # Also called as the first step of build:lib below; explicit here for CI
+      # Also covered by test:lib below; explicit here for CI
       # step attribution.
       - name: Contract type gate (wire contract + VM leak assertions)
         run: pnpm test:contract
 
-      # Full library build: vite lib + CSS, finalize (CSS content assertion),
-      # tsc declarations, smoke-lib (render + types-emit assertion), contrast on
-      # the shipped dist/lib/tokens.css, and the pack-content assertion.
+      # Build the library and declarations before testing the built artifact.
       - name: Build library (publishable artifact)
         if: "!(github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'release('))"
         run: pnpm build:lib
 
-      # Release PRs must pass the same prepack chain as npm publication. It
-      # includes build:lib, so do not run the library build a second time.
+      # Release PRs validate the same packaging path npm publication uses.
       - name: Validate release package (canonical prepack)
         if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'release(')
         run: pnpm prepack
@@ -92,6 +89,9 @@ jobs:
       # Belt-and-suspenders: assert the npm tarball file set matches exports[].
       - name: Assert pack contents (exports <-> tarball)
         run: pnpm pack:check
+
+      - name: Test library (behavior, mutations, and built rendering)
+        run: pnpm test:lib
 
   gates:
     needs: determine-runner

@@ -77,3 +77,15 @@ export { default as InUseShell, GraphAppShell, GraphSectionNav, IN_USE_APPS, LOC
    hand-maintained barrel. */
 export * from './transcript/index.js'
 export * from './transcript/graph/index.js'
+// Canonical engine-derived category bindings and same-name types come from Schema.
+export {
+  RedactionCategory,
+  RedactionCategoryLabel,
+  AllRedactionCategories,
+  AllRedactionCategoryLabels,
+  isRedactionCategory,
+  parseRedactionCategory,
+  parseRedactionCategoryLabel,
+  redactionCategoryFromLabel,
+  redactionCategoryLabel,
+} from '@peasant-labs/schema'

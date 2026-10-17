@@ -6,10 +6,10 @@
 # not trigger this workflow. Pushing the tag replaces the old interactive
 # `pnpm publish` + OTP step.
 #
-# Gates: `npm publish` runs this package's `prepack` = `pnpm build:lib`, the
-# full library gate chain (contract type-tests, code-map/timeline/transcript
-# behavior + mutation gates, css-token lint, contrast on the shipped dist,
-# smoke-lib/transcript/map/changes, pack-content assertion). A red gate means
+# Gates: `npm publish` runs this package's `prepack`: metadata validation,
+# library/declaration build, contrast, and pack-content assertion. Behavior,
+# mutation, and built-rendering tests run separately through `test:lib` in CI.
+# A packaging failure means
 # no publish. The version-consistency guard below additionally refuses a tag
 # whose version does not byte-match package.json's committed version.
 #
@@ -93,8 +93,7 @@ jobs:
           esac
 
       # npm (not pnpm) for the publish step only — see the header comment.
-      # prepack runs `pnpm build:lib`, so the full gate chain executes against
-      # the exact tarball being published.
+      # prepack builds and checks the package; CI owns the library test suite.
       - name: Publish @peasant-labs/fairtrade to npm (OIDC trusted publishing)
         run: |
           set -euo pipefail

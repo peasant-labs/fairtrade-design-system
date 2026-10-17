@@ -93,8 +93,9 @@ annotated tag
 never move or delete a release tag. A failed run can be retried with `workflow_dispatch`, whose
 only input is the number of an already-merged PR; it does not accept a SHA, version, or tag.
 Release PR CI runs canonical `pnpm prepack` in the required `lib` job instead of `build:lib`.
-**Pushing the App-authenticated tag publishes**: `.github/workflows/npm-publish.yml` re-runs the full gate chain (`prepack` =
-`build:lib` plus the mounted Pi transcript check) against the exact tarball and publishes `@peasant-labs/fairtrade` via **npm
+`pnpm test:lib` runs the library tests, mutations, and built Pi rendering check in CI after building the artifact.
+**Pushing the App-authenticated tag publishes**: `.github/workflows/npm-publish.yml` runs `prepack`
+(package metadata validation, `build:lib`, and tarball-content checks) and publishes `@peasant-labs/fairtrade` via **npm
 Trusted Publishing (OIDC)** - no `NPM_TOKEN` secret exists. `pnpm
 test:package-provenance` keeps the package's canonical repository metadata exact. npm
 generates provenance automatically only when this source repository is public; private

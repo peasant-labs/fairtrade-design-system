@@ -1,0 +1,27 @@
+requiredCaseNames:
+  - recover before scan and audience
+  - recover before scan with audience
+  - recover before audience after scan
+  - recover explicit failure
+  - recover failure with valid matches
+  - recover malformed scan
+  - recover missing matches
+  - recover null scan
+  - recover unsupported category
+  - retry needs scan and audience
+  - retry needs scan with audience
+  - retry needs audience after scan
+  - retry valid publication
+  - retry explicit failure with matches
+  - both callbacks before prerequisites
+  - both callbacks after prerequisites
+requiredTransitionNames:
+  - stale recovery sees unsupported scan
+  - stale retry sees absent audience
+  - stale recovery sees ambiguity
+  - stale recovery uses latest callback
+  - stale retry uses latest callback
+  - stale recovery cannot become publication retry
+  - stale publication retry cannot become recovery
+  - closed dialog refuses stale recovery
+  - ready dialog refuses stale retry

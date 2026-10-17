@@ -203,6 +203,15 @@ test('required library CI selects prepack only for release pull requests', () =>
   const pack = lib.steps.find(step => step.run === 'pnpm pack:check')
   assert.ok(pack); assert.equal(pack.if, undefined)
   assert.ok(lib.steps.indexOf(pack) > Math.max(...builds.map(step => lib.steps.indexOf(step))))
+  const tests = lib.steps.find(step => step.run === 'pnpm test:lib')
+  assert.ok(tests); assert.equal(tests.if, undefined)
+  assert.notEqual(tests['continue-on-error'], true)
+  assert.ok(lib.steps.indexOf(tests) > lib.steps.indexOf(pack))
+  const scripts = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).scripts
+  assert.ok(scripts['test:lib'].includes('pnpm test:pi-transcript:mounted'))
+  assert.doesNotMatch(scripts.prepack, /\btest:/)
+  assert.doesNotMatch(scripts['build:lib'], /\btest:|\.test\./)
+  assert.equal(scripts['prebuild:lib'], undefined)
   for (const row of fixtures.workflow.ci_selection) {
     const github = { event_name: row.event_name, event: row.title === null ? {} : { pull_request: { title: row.title } } }
     // These pinned conditions use the same boolean/string subset as JavaScript.

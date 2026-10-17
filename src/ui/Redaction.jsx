@@ -14,7 +14,8 @@ import {
 } from 'lucide-react'
 import './Redaction.css'
 import { Term } from './Explainer.jsx'
-import { hasKnownRedactionCategories, redactionCategoryLabel } from './redaction-categories.js'
+import { redactionCategoryLabel } from '@peasant-labs/schema'
+import { hasKnownRedactionCategories } from './redaction-categories.js'
 
 /* Redaction: the "in use" safe-by-default review surface, modeled on peasant's
    RedactionStep / RedactionDiffView + the PushStep transparency panel. two composites,
@@ -248,6 +249,8 @@ function MatchCard({ match, onToggle, readOnly = false }) {
   )
 }
 
+/** @typedef {{id:string, category: import('@peasant-labs/schema').RedactionCategory, confidence:number, before?:string, secret?:string, after:string, kept?:boolean}} RedactionMatch */
+
 /**
  * RedactionReview — the safe-by-default review surface.
  *
@@ -258,7 +261,7 @@ function MatchCard({ match, onToggle, readOnly = false }) {
  *          empty input throws an actionable TypeError before the review renders.
  * @param {(level: 'minimal'|'standard'|'maximum') => void} [props.onLevel]
  *        - called only with an available level on select
- * @param {Array<{id, category: import('./redaction-categories.js').RedactionCategory, confidence:number, before?:string, secret?:string, after:string, kept?:boolean}>} [props.matches]
+ * @param {RedactionMatch[]} [props.matches]
  *        - the flagged matches. `before`/`secret` is the original (one or the other), `after` the
  *          redacted form. `kept` (controlled mode) = the user opted OUT, secret leaves as-is.
  * @param {(id: string, kept: boolean) => void} [props.onToggle] - called when a match is toggled;

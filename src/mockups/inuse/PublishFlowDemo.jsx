@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Copy, Link as LinkIcon } from 'lucide-react'
-import { PublishBar, PublishDialog, PUBLISH_DIALOG_STATES, PUBLISH_STATES } from '../../ui'
+import { PublishBar, PublishDialog, PUBLISH_DIALOG_STATES, PUBLISH_STATES, RedactionCategory } from '../../ui'
 
 /* The host side of the publish flow for the in-use transcript demo. It stands in for peasant: it
    owns the state, fakes the sign-in, the scan and the publish with short timers, and hands the
@@ -13,9 +13,9 @@ const SCAN = {
   total: 37,
   matchCount: 9,
   matches: [
-    { id: 'm1', category: 'secrets', confidence: 0.99, before: 'AKIAIOSFODNN7EXAMPLE', after: '<AWS_ACCESS_KEY>' },
-    { id: 'm2', category: 'pii', confidence: 0.97, before: 'alice@acme.dev', after: '<EMAIL>' },
-    { id: 'm3', category: 'paths', confidence: 0.91, before: '/Users/alice/work/acme/ingest-api', after: '/Users/<USER>/work/acme/ingest-api' },
+    { id: 'm1', category: RedactionCategory.Secrets, confidence: 0.99, before: 'AKIAIOSFODNN7EXAMPLE', after: '<AWS_ACCESS_KEY>' },
+    { id: 'm2', category: RedactionCategory.PII, confidence: 0.97, before: 'alice@acme.dev', after: '<EMAIL>' },
+    { id: 'm3', category: RedactionCategory.Paths, confidence: 0.91, before: '/Users/alice/work/acme/ingest-api', after: '/Users/<USER>/work/acme/ingest-api' },
   ],
 }
 const SUGGESTED = [

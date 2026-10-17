@@ -14,6 +14,7 @@ import {
   ScopeChip,
   FocusedModeToggle,
   RedactionReview,
+  RedactionCategory,
   WhereDoesThisGo,
 } from '../ui'
 
@@ -187,7 +188,7 @@ function FocusedModeDemo() {
 const MATCHES = [
   {
     id: 'r1',
-    category: 'secrets',
+    category: RedactionCategory.Secrets,
     confidence: 0.98,
     before: 'const STRIPE_KEY = "sk_live_4eC39HqLyjWDarjtT1zdp7dc"',
     after: 'const STRIPE_KEY = "sk_live_••••••••••••••••••••dc"',
@@ -195,7 +196,7 @@ const MATCHES = [
   },
   {
     id: 'r2',
-    category: 'pii',
+    category: RedactionCategory.PII,
     confidence: 0.91,
     before: '// reported by alex.rivera@example.com on the 0.4 rollout',
     after: '// reported by ‹redacted-email› on the 0.4 rollout',
@@ -203,7 +204,7 @@ const MATCHES = [
   },
   {
     id: 'r3',
-    category: 'secrets',
+    category: RedactionCategory.Secrets,
     confidence: 0.87,
     before: 'Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.abc"',
     after: 'Authorization: "Bearer ‹redacted-token›"',
