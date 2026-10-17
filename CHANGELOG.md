@@ -4,6 +4,22 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.28 - 2026-10-17
+
+### Added
+
+- Re-export Schema's canonical frozen redaction category and label bindings,
+  same-name types, inventories, parsers, guard, and typed conversions from `/ui`.
+- `PublishDialog` accepts `onRecover` for prerequisite reads and sign-in recovery,
+  separately from publication retry. Invalid reviews and ambiguous callbacks
+  remain blocked, including retained callbacks after state changes.
+
+### Changed
+
+- Pin published Schema 0.29.1 and use its engine-derived category conversion
+  instead of a private mapping, preserving exact labels and unsupported-category
+  refusal in redaction review and publication.
+
 ## 0.0.27 - 2026-10-16
 
 Replacement npm release for 0.0.26: its GitHub Release exists, but npm publication

@@ -1,7 +1,7 @@
 {
   "name": "@peasant-labs/fairtrade",
   "private": false,
-  "version": "0.0.27",
+  "version": "0.0.28",
   "description": "Fairtrade design-system library: canonical tokens, base styles, component CSS, and React UI exports.",
   "type": "module",
   "license": "Apache-2.0",
@@ -208,7 +208,7 @@
     "test:fairtest:verify": "node scripts/fairtest/verify-fairtest.mjs"
   },
   "dependencies": {
-    "@peasant-labs/schema": "0.20.0",
+    "@peasant-labs/schema": "0.29.1",
     "@tanstack/react-table": "^8.21.3",
     "lucide-react": "^1.18.0",
     "react-markdown": "10.1.0",
