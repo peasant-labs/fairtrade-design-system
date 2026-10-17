@@ -40,7 +40,7 @@ export default defineConfig({
   testDir: './scripts/journey',
   testMatch: '**/*.journey.mjs',
   fullyParallel: false,
-  workers: 1,
+  workers: '100%',
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   timeout: 60_000,
