@@ -1,0 +1,104 @@
+{
+  "sourceCommit": "b627efc23abe4d19ed623b079234c41469ec9777",
+  "sourceTree": "9aa52671fea335d7b59d5d7a705dce6ab8a1a5f3",
+  "packageVersion": "0.0.31",
+  "canonicalBrowserResults": {
+    "startTime": "2026-10-18T05:16:02.217Z",
+    "duration": 153076.504,
+    "expected": 158,
+    "skipped": 56,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "limits": [
+    "Emulated Chromium viewport and motion preferences, not physical-device proof.",
+    "The official product demo proves mounted persistent shell and body; bounded Storybook images independently prove the focused containment regression.",
+    "Consumer pin, removed-workaround mounted checks, whole-consumer review and UAT remain separate."
+  ],
+  "screenshots": [
+    {
+      "file": "dark/bounded-static-reduce-desktop.png",
+      "sha256": "1193e8bd34824735ccdf4f25f9f7ce918834e494566890a2640a15e757487015",
+      "surface": "bounded component regression",
+      "inspection": "Individually inspected by the implementing owner; this exact subset also inspected by parent on 2026-10-18.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/bounded-static-reduce-desktop.png",
+      "sha256": "5fb674090ee4705de2238cfc7170b5c0e4eb45620f0eeeac303630e46316e7e0",
+      "surface": "bounded component regression",
+      "inspection": "Individually inspected by the implementing owner; this exact subset also inspected by parent on 2026-10-18.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/bounded-relative-reduce-mobile.png",
+      "sha256": "0c82279caaf938d2bf62fdf577024437a1a1b53b511665ef35499c8c8b7c61ad",
+      "surface": "bounded component regression",
+      "inspection": "Individually inspected by the implementing owner; this exact subset also inspected by parent on 2026-10-18.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/bounded-relative-reduce-mobile.png",
+      "sha256": "bec6f9f69587cb80e93adb9a2638f9cd1a9a1f7c6e68dcf2fde27f59d6df3f5e",
+      "surface": "bounded component regression",
+      "inspection": "Individually inspected by the implementing owner; this exact subset also inspected by parent on 2026-10-18.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/catalog-desktop.png",
+      "sha256": "2a8b88fa27058735ac7885ce6c70ca48f9c2f0dd65eafe72d8000c0f58320b8a",
+      "surface": "mounted official product demo",
+      "inspection": "Individually inspected by the implementing owner; this exact subset also inspected by parent on 2026-10-18.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/catalog-mobile.png",
+      "sha256": "347b5cf375a92b9ba412a5df2ad58f20c5525322395c175df517691bb9f661ea",
+      "surface": "mounted official product demo",
+      "inspection": "Individually inspected by the implementing owner; this exact subset also inspected by parent on 2026-10-18.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/history-desktop.png",
+      "sha256": "5496737453dc7f98e7a639cfacc5d404eecd09ce5a1598d1eda0151d45597d3c",
+      "surface": "mounted official product demo",
+      "inspection": "Individually inspected by the implementing owner; this exact subset also inspected by parent on 2026-10-18.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/history-mobile.png",
+      "sha256": "305e26bf5938494248c08ff40ceb88119ffb69899af009231ec725f191171ede",
+      "surface": "mounted official product demo",
+      "inspection": "Individually inspected by the implementing owner; this exact subset also inspected by parent on 2026-10-18.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/catalog-desktop.png",
+      "sha256": "1ff7cc525af05c76d1422799e25b8d2332d8269a5b0042ccdb33951bd96e3a01",
+      "surface": "mounted official product demo",
+      "inspection": "Individually inspected by the implementing owner; this exact subset also inspected by parent on 2026-10-18.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/catalog-mobile.png",
+      "sha256": "19393772b6d03e73cf6ab4cff991c4cf8a2d2b6d25b07755a23bcdec92564799",
+      "surface": "mounted official product demo",
+      "inspection": "Individually inspected by the implementing owner; this exact subset also inspected by parent on 2026-10-18.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/history-desktop.png",
+      "sha256": "ac5974c295ba1a6345a21a9cfd0daf327d17271423609848666eaa75d71c1c1a",
+      "surface": "mounted official product demo",
+      "inspection": "Individually inspected by the implementing owner; this exact subset also inspected by parent on 2026-10-18.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/history-mobile.png",
+      "sha256": "0e91fabd376087584f01aeaf26d765fbb97b640aabcafaa91ca30274a9dda053",
+      "surface": "mounted official product demo",
+      "inspection": "Individually inspected by the implementing owner; this exact subset also inspected by parent on 2026-10-18.",
+      "data": "synthetic demonstration data"
+    }
+  ]
+}
