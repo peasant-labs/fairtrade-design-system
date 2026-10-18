@@ -4,6 +4,28 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.30
+
+### Added
+
+- Export `VillageObservations` and its cooked presentation types from `/ui` and
+  `/graph`, with an interactive local Village demo.
+- Add `village` between `home` and `settings` in the canonical local navigation.
+  Existing route-only sections, settings flows, open section props and the
+  deprecated three-entry graph registry remain supported.
+- Keep scope, fetch and view/category controls available while evidence scrolls.
+  Show independently dated catalog, history and association results, retained
+  errors, and separately controlled contribution-evidence pages.
+- Support controlled selection callbacks, explicit category restart and native
+  unavailable-action states without implicit fetching or permission decisions.
+
+### Compatibility
+
+- Preserve the published opt-in table controls, natural-height table defaults,
+  typed redaction categories and publication recovery behavior.
+- Hosts upgrading the expanded local registry must map `village` to a mounted
+  body. Hosts retain networking, routing, account scope and authorization.
+
 ## 0.0.29 - 2026-10-17
 
 ### Fixed
