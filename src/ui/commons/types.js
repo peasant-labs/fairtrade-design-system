@@ -255,6 +255,14 @@ export const COLLECTIVE_ROLES = Object.freeze([
  */
 
 /**
+ * One corpus-wide harness option supplied by an Explore host.
+ *
+ * @typedef {object} ExploreHarnessFacetPayload
+ * @property {import('@peasant-labs/schema').Harness} harness
+ * @property {number} count
+ */
+
+/**
  * One collective result from a collective search (useSearchCollectives).
  * Cooked from CollectiveSearchResult (frontend/src/lib/types.ts).
  *
@@ -290,6 +298,7 @@ export const COLLECTIVE_ROLES = Object.freeze([
  * @property {ExploreTranscriptListPayload} transcripts  browsing results (page + facet filters applied)
  * @property {CollectiveResultPayload[]} collectives     collective search results (empty when no query)
  * @property {PopularTagPayload[]} popularTags           top tags for the facet rail (cap set by caller)
+ * @property {ExploreHarnessFacetPayload[]} [harnessFacets] corpus-wide harness options; when present, including [], authoritative over displayed rows
  */
 
 /* ── Manage surface sub-types ────────────────────────────────────────────────── */
