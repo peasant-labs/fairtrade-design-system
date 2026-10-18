@@ -3173,8 +3173,8 @@ describe('product target registry and theme rows', () => {
     // deliberate red that names the vocabulary.
     assert.deepEqual(
       [...selected.sections].sort(),
-      ['analytics', 'changes', 'home', 'map', 'settings'],
-      'the section vocabulary must stay exactly home, settings, analytics, changes, and map at path target.sections; repair: keep the section ids in PRODUCT_SECTIONS; their order is deliberately not pinned.',
+      ['analytics', 'changes', 'home', 'map', 'settings', 'village'],
+      'the section vocabulary must stay exactly home, village, settings, analytics, changes, and map at path target.sections; repair: keep the section ids in PRODUCT_SECTIONS; their order is deliberately not pinned.',
     )
   })
 

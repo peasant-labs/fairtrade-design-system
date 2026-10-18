@@ -39,7 +39,8 @@ for (const row of spec.cases) for (const theme of spec.themes) {
     if (row.action) {
       const action = page.locator(row.action).first()
       await action.click()
-      await expect(action.locator('..')).toHaveAttribute('open', '')
+      if (row.actionStatus) await expect(root.getByRole('status')).toContainText(row.actionStatus)
+      else await expect(action.locator('..')).toHaveAttribute('open', '')
     }
     await page.evaluate(() => document.fonts.ready)
     // Hash navigation can happen before React mounts the target. Explicitly move

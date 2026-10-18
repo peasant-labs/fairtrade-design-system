@@ -1,0 +1,7 @@
+# local village observations
+
+- **Job / mode:** signed-in developers Operate: inspect their relevant collective catalog, historical outcomes and observation dates offline. The primary action is metadata-only `fetch`.
+- **Authority / structure:** extend Fairtrade's incumbent square, token-styled local shell. Main navigation is home, village, settings; route-only sections and the commons shell remain unchanged. Catalog and history are separate tabs; three history categories retain independently controlled pages.
+- **Evidence:** each domain names its own result and last completed date. A newly committed catalog remains visible beside retained older history after a partial fetch. Unknown, expired, invalidated and dated evidence never imply current permission.
+- **Boundaries:** reusable data/callback presentation only; the host owns authentication, scope changes, wire validation, networking, retention and authorization. No join, publish, purge or new consent flow. Preserve settings exits.
+- **States / proof:** never fetched, empty, running, cancelled, partial, offline Village, local outage, credential refusal, hidden resources, long content and selected-page conflicts; persistent in-place messages, keyboard tabs, mobile reflow, both themes and full-shell mounted interaction. This brief records the already approved narrow surface, not broader product positioning.

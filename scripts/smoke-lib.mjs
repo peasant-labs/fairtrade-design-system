@@ -12,6 +12,8 @@ import * as analytics from '../dist/lib/analytics.js'
 import YAML from 'yaml'
 
 const helperFixtures = YAML.parse(readFileSync(new URL('./testdata/helper_group_listing.yaml', import.meta.url), 'utf8'))
+const observationFixtures = YAML.parse(readFileSync(new URL('./testdata/village-observations.yaml', import.meta.url), 'utf8'), { merge: true })
+const sectionFixtures = YAML.parse(readFileSync(new URL('./testdata/app-sections.yaml', import.meta.url), 'utf8'))
 
 // Types-emit assertion (runs after `tsc -p tsconfig.lib.json`). tsconfig.lib has
 // noEmitOnError:false, so a silent declaration-emit failure (bad include glob,
@@ -111,6 +113,7 @@ const promptDigest = {
 }
 
 const sampleProps = {
+  VillageObservations: observationFixtures.base,
   HelperGroup: { ...helperFixtures.smoke.group, getMemberKey: (id) => id,
     renderMember: (id) => React.createElement(ui.HelperThreadRow, helperFixtures.rows[id]),
     onRefreshList: () => {} },
@@ -230,9 +233,24 @@ const expectedExports = [
   'SettingRow',
   'SettingGroup',
   'RepoPicker',
+  'VillageObservations',
 ]
 
 const failures = []
+for (const [entry, mod] of Object.entries({ ui, graph })) {
+  try {
+    const expectedRegistry = sectionFixtures.entries.map(({ id, label, inNav }) => ({ id, label, inNav }))
+    if (JSON.stringify(mod.LOCAL_APP_SECTIONS) !== JSON.stringify(expectedRegistry)) failures.push(`${entry}: built local section registry differs from the canonical fixture`)
+    if (!Object.isFrozen(mod.LOCAL_APP_SECTIONS) || !mod.LOCAL_APP_SECTIONS.every(Object.isFrozen)) failures.push(`${entry}: built local section registry and entries must be frozen`)
+    if (JSON.stringify(mod.GRAPH_APP_SECTIONS) !== JSON.stringify(sectionFixtures.deprecatedAlias)) failures.push(`${entry}: built deprecated graph registry changed value`)
+    const markup = renderToStaticMarkup(React.createElement(mod.VillageObservations, observationFixtures.base))
+    if (!markup.includes(observationFixtures.base.collectives[0].name)) failures.push(`${entry}: VillageObservations did not render the cooked catalog`)
+    const declarations = readFileSync(join(TYPES, entry === 'ui' ? 'index.d.ts' : 'graph/index.d.ts'), 'utf8')
+    if (!declarations.includes('VillageObservationsProps')) failures.push(`${entry}: VillageObservationsProps is absent from emitted declarations`)
+  } catch (error) {
+    failures.push(`${entry}: VillageObservations package render/type check failed: ${error.message}`)
+  }
+}
 for (const name of expectedExports) {
   if (!(name in ui)) failures.push(`${name}: missing from dist/lib/ui.js`)
 }

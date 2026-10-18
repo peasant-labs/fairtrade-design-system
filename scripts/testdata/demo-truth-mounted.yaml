@@ -1,5 +1,13 @@
 themes: [dark, light]
 cases:
+  - name: local village observations
+    query: app=graph&section=village
+    width: 1440
+    root: .vobs
+    text: [Relevant collectives only., Acme Platform, '2026-10-15T09:00:00Z']
+    tabular: .vobs time.tnum
+    action: '.vobs button:has-text("fetch metadata")'
+    actionStatus: partial fetch
   - name: offline home
     query: app=graph&section=home&local=offline
     width: 390

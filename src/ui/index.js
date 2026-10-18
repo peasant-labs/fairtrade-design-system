@@ -72,6 +72,12 @@ export { SettingRow, SettingGroup, SettingStatus, SETTING_ROW_STATES } from './S
 export { default as RepoPicker } from './RepoPicker.jsx'
 export { default as VisibilitySegmented, VisibilityEye, ScopeChip, FocusedModeToggle } from './VisibilityControl.jsx'
 export { default as InUseShell, GraphAppShell, GraphSectionNav, IN_USE_APPS, LOCAL_APP_SECTIONS, GRAPH_APP_SECTIONS } from './inuse/InUseShell.jsx'
+export { default as VillageObservations } from './VillageObservations.jsx'
+/** @typedef {import('./VillageObservations.jsx').VillageObservationsProps} VillageObservationsProps */
+/** @typedef {import('./VillageObservations.jsx').ObservationDomain} ObservationDomain */
+/** @typedef {import('./VillageObservations.jsx').ObservedCollective} ObservedCollective */
+/** @typedef {import('./VillageObservations.jsx').ContributionEvidenceCategory} ContributionEvidenceCategory */
+/** @typedef {import('./VillageObservations.jsx').ContributionEvidenceRow} ContributionEvidenceRow */
 /* transcript family: the schema-backed wire contract + cooked TranscriptViewModel, plus the lifted
    single-transcript components (composite + primitives) and the graph node visuals. The two
    sub-barrels carry the actual surface, so additions land in those files rather than on this

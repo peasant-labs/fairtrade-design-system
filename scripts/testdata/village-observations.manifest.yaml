@@ -1,0 +1,67 @@
+requiredCaseNames:
+  - catalog-complete-history-timeout
+  - never-fetched
+  - known-empty
+  - running
+  - cancelled
+  - village-unavailable
+  - invalid-credentials
+  - hidden-dated-evidence
+  - expired-observation
+  - long-content
+  - remote-attempt-history
+  - confirmed-receipt-not-approval
+  - diagnostic-not-contribution
+  - selected-page-conflict
+  - required-policy-refusal
+  - optional-metadata-warning
+requiredMutationNames:
+  - diagnostic total retains the earlier count
+  - diagnostic outcome is omitted
+  - view callback is dropped
+  - category callback is dropped
+  - busy or absent-handler pager becomes active
+  - shared completion date hides retained history
+  - history pages lose category identity
+mutations:
+  - name: diagnostic total retains the earlier count
+    file: src/ui/VillageObservations.jsx
+    find: '{category.total}'
+    replace: "{category.id === 'operation-diagnostics' ? 3 : category.total}"
+    expectedDiagnostic: 'updated diagnostics: exact visible summary including total'
+  - name: diagnostic outcome is omitted
+    file: src/ui/VillageObservations.jsx
+    find: '<strong>{row.title}</strong><p>{row.outcome}</p>'
+    replace: "<strong>{row.title}</strong><p>{row.id === 'diagnostic-new' ? '' : row.outcome}</p>"
+    expectedDiagnostic: 'updated diagnostics: exact visible outcome'
+  - name: view callback is dropped
+    file: src/ui/VillageObservations.jsx
+    find: 'onViewChange?.(next)'
+    replace: 'void next'
+    expectedDiagnostic: 'controlled-view-host-rerender: exact once selection identity'
+  - name: category callback is dropped
+    file: src/ui/VillageObservations.jsx
+    find: 'onCategoryChange?.(id)'
+    replace: 'void id'
+    expectedDiagnostic: 'controlled-category-host-rerender: exact once selection identity'
+  - name: busy or absent-handler pager becomes active
+    file: src/ui/VillageObservations.jsx
+    find: 'inert={category.loading || !onPageChange ? true : undefined}'
+    replace: 'inert={undefined}'
+    expectedDiagnostic: 'busy-evidence-pager: native inert state protects the page controls'
+  - name: shared completion date hides retained history
+    file: src/ui/VillageObservations.jsx
+    find: 'value={domain.lastCompletedAt}'
+    replace: 'value={domains[0]?.lastCompletedAt}'
+    expectedDiagnostic: 'catalog-complete-history-timeout: visible 2026-10-15T09:00:00Z'
+  - name: history pages lose category identity
+    file: src/ui/VillageObservations.jsx
+    find: 'onPageChange?.(category.id, page)'
+    replace: 'onPageChange?.(categories[0].id, page)'
+    expectedDiagnostic: 'page callbacks carry independent category identity'
+requiredControlledNames: [controlled-view-host-rerender, controlled-category-host-rerender]
+requiredActivationNames: [busy-evidence-pager, missing-page-handler, ready-evidence-pager]
+requiredFetchNames: [missing-fetch-handler, disabled-fetch, fetching-no-double-submit, ready-fetch]
+requiredInvalidNames: [invalid-controlled-view, invalid-controlled-category]
+requiredUpdateNames: [changed-diagnostics-domain-dates-category-reorder]
+requiredScrollNames: [persistent-scope-fetch-views-categories-long-evidence]

@@ -1,0 +1,133 @@
+pagingCalls: [[remote-attempts, 2], [receipts, 2]]
+controlledCases:
+  - {name: controlled-view-host-rerender, control: view, initial: catalog, target: history, label: history, callback: view, panel: village views}
+  - {name: controlled-category-host-rerender, control: categoryId, initial: remote-attempts, target: receipts, label: confirmed receipts, callback: category, panel: history categories}
+activationCases:
+  - {name: busy-evidence-pager, loading: true, handler: true, blocked: true}
+  - {name: missing-page-handler, loading: false, handler: false, blocked: true}
+  - {name: ready-evidence-pager, loading: false, handler: true, blocked: false}
+fetchCases:
+  - {name: missing-fetch-handler, handler: false, disabled: false, fetching: false, blocked: true}
+  - {name: disabled-fetch, handler: true, disabled: true, fetching: false, blocked: true}
+  - {name: fetching-no-double-submit, handler: true, disabled: false, fetching: true, blocked: true}
+  - {name: ready-fetch, handler: true, disabled: false, fetching: false, blocked: false}
+invalidCases:
+  - {name: invalid-controlled-view, props: {view: missing}, diagnostic: controlled view must be catalog or history}
+  - {name: invalid-controlled-category, props: {categoryId: missing}, diagnostic: controlled categoryId is not present}
+update:
+  name: changed-diagnostics-domain-dates-category-reorder
+  expect:
+    diagnosticId: diagnostic-new
+    outcome: failed; catalog updated but history retained
+    occurredAt: '2026-10-17T12:00:00Z'
+    summary: '4 saved items; coverage: saved local operations'
+    pageLabels: ['1', '2', '3', '4']
+  beforePages: {remote-attempts: 2, receipts: 3, operation-diagnostics: 1}
+  selected: receipts
+  order: [operation-diagnostics, receipts, remote-attempts]
+  domains:
+    - {id: catalog, label: catalog, result: complete, commit: updated, lastCompletedAt: '2026-10-17T12:00:00Z'}
+    - {id: history, label: history, result: failed, commit: retained, lastCompletedAt: '2026-10-15T09:00:00Z'}
+    - {id: associations, label: associations, result: partial, commit: retained, lastCompletedAt: '2026-10-16T11:00:00Z'}
+  diagnostic:
+    id: operation-diagnostics
+    label: operation diagnostics
+    page: 1
+    pageCount: 4
+    total: 4
+    coverage: saved local operations
+    rows: [{id: diagnostic-new, title: new diagnostic, outcome: failed; catalog updated but history retained, occurredAt: '2026-10-17T12:00:00Z'}]
+scroll:
+  name: persistent-scope-fetch-views-categories-long-evidence
+  rows: 18
+  desktop: {width: 1280, height: 1100}
+  mobile: {width: 390, height: 844}
+base: &base
+  accountLabel: Developer One
+  villageLabel: https://village.example.org
+  status: saved observations; village has not been contacted
+  domains: &domains
+    - {id: catalog, label: catalog, result: complete, commit: updated, lastCompletedAt: '2026-10-16T10:00:00Z', lastAttemptAt: '2026-10-16T10:00:00Z'}
+    - {id: history, label: history, result: failed, commit: retained, lastCompletedAt: '2026-10-15T09:00:00Z', lastAttemptAt: '2026-10-16T10:00:00Z', issue: {message: Village history did not answer. Earlier history is retained., retry: Check the Village connection and fetch again.}}
+    - {id: associations, label: associations, result: partial, commit: updated and retained, lastCompletedAt: '2026-10-14T08:00:00Z', lastAttemptAt: '2026-10-16T10:00:00Z'}
+  collectives:
+    - {id: platform, name: Acme Platform, description: Shared tooling and infrastructure, reasons: [membership, explicit tracking], observedAt: '2026-10-16T10:00:00Z', state: observed, policy: curated submissions; observed policy is not permission, tracking: true}
+    - {id: research, name: Research Notes, reasons: [pending own contribution], observedAt: '2026-10-16T10:00:00Z', state: observed, tracking: false}
+  categories:
+    - id: remote-attempts
+      label: remote attempts
+      page: 1
+      pageCount: 3
+      total: 3
+      coverage: unknown historical ranges
+      rows:
+        - {id: attempt-1, title: Historical Collective, outcome: rejected, occurredAt: '2026-10-12T08:00:00Z', details: [{label: transcript, value: transcript-one}, {label: attempt, value: '1'}, {label: decided by, value: moderator}, {label: decision date, value: '2026-10-13T09:00:00Z'}]}
+    - id: receipts
+      label: confirmed receipts
+      page: 1
+      pageCount: 3
+      total: 3
+      coverage: saved local confirmations
+      rows:
+        - {id: receipt-1, title: transcript-one, outcome: submitted; approval not confirmed, occurredAt: '2026-10-12T08:00:00Z', details: [{label: operation, value: share}, {label: receipt, value: receipt-1}]}
+    - id: operation-diagnostics
+      label: operation diagnostics
+      page: 1
+      pageCount: 3
+      total: 3
+      coverage: saved local operations
+      rows:
+        - {id: diagnostic-1, title: metadata fetch, outcome: uncertain; not a successful contribution, occurredAt: '2026-10-16T10:00:00Z', description: History timed out. Check the Village connection and explicitly retry.}
+cases:
+  - name: catalog-complete-history-timeout
+    props: *base
+    text: [Acme Platform, retained, '2026-10-15T09:00:00Z', updated]
+  - name: never-fetched
+    props: {<<: *base, domains: [{id: catalog, label: catalog, result: never fetched}], collectives: [], categories: []}
+    text: [unknown, No saved relevant collectives]
+  - name: known-empty
+    props: {<<: *base, collectives: []}
+    text: [No saved relevant collectives]
+  - name: running
+    props: {<<: *base, fetching: true, status: fetching metadata}
+    text: [fetching metadata]
+  - name: cancelled
+    props: {<<: *base, status: fetch cancelled; committed catalog remains saved}
+    text: [fetch cancelled, Acme Platform]
+  - name: village-unavailable
+    props: {<<: *base, issue: {message: Village is unavailable; saved observations remain., retry: Check your network and fetch again.}}
+    text: [Village is unavailable, Check your network]
+  - name: invalid-credentials
+    props: {<<: *base, accountLabel: signed out, fetchDisabled: true, collectives: [], categories: [], domains: [], issue: {message: Sign in to select an account. Private observations are hidden., retry: Open account settings and sign in.}}
+    text: [Private observations are hidden, Open account settings]
+    absent: [Acme Platform, Historical Collective]
+  - name: hidden-dated-evidence
+    props: {<<: *base, collectives: [{id: former, name: Former Name, state: invalidated; dated evidence only, reasons: [explicit tracking], observedAt: '2026-10-01T08:00:00Z'}]}
+    text: [Former Name, dated evidence only, explicit tracking]
+  - name: expired-observation
+    props: {<<: *base, collectives: [{id: expired, name: Earlier Policy, state: expired; fetch before acting, reasons: [explicit tracking], observedAt: '2026-09-01T08:00:00Z'}]}
+    text: [expired; fetch before acting]
+  - name: long-content
+    props: {<<: *base, collectives: [{id: long, name: 'UserCasePreserved/VeryLongCollectiveNameWithoutSpacesThatMustWrapWithoutLosingAnyEvidenceOrControls', description: A retained description with enough detail to wrap over multiple lines without truncation or hidden disclosure., state: observed, reasons: [organization]}]}
+    text: [UserCasePreserved/VeryLongCollectiveNameWithoutSpacesThatMustWrapWithoutLosingAnyEvidenceOrControls]
+  - name: remote-attempt-history
+    props: {<<: *base, view: history, categoryId: remote-attempts}
+    text: [Historical Collective, rejected, moderator, unknown historical ranges]
+  - name: confirmed-receipt-not-approval
+    props: {<<: *base, view: history, categoryId: receipts}
+    text: [submitted; approval not confirmed, receipt-1]
+  - name: diagnostic-not-contribution
+    props: {<<: *base, view: history, categoryId: operation-diagnostics}
+    text: [uncertain; not a successful contribution, explicitly retry]
+  - name: selected-page-conflict
+    props:
+      <<: *base
+      view: history
+      categories: [{id: remote-attempts, label: remote attempts, rows: [], page: 2, pageCount: 3, total: 3, coverage: available, conflict: true, issue: {message: This category changed while paging., retry: Restart this category to read its current evidence.}}]
+    text: [This category changed, restart this category]
+  - name: required-policy-refusal
+    props: {<<: *base, issue: {message: Village refused the requested share under its current policy. No share was confirmed., retry: Check the target policy and retry explicitly without changing consent.}}
+    text: [No share was confirmed, retry explicitly]
+  - name: optional-metadata-warning
+    props: {<<: *base, status: content pull succeeded; association metadata remains stale, issue: {message: Optional association lookup timed out. Downloaded content is retained., retry: Fetch metadata when Village is available.}}
+    text: [content pull succeeded, Downloaded content is retained]
