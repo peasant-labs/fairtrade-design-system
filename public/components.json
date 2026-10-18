@@ -1347,7 +1347,8 @@
         "PopupUpdate",
         "Access",
         "Picker",
-        "KeyboardWalk"
+        "KeyboardWalk",
+        "HeldCompletion"
       ]
     },
     {
@@ -1936,7 +1937,8 @@
         "HiddenEvidence",
         "LongContent",
         "PagingConflict",
-        "HostContract"
+        "HostContract",
+        "BoundedFlexHost"
       ]
     },
     {

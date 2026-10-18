@@ -4,6 +4,23 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.31
+
+### Fixed
+
+- Keep absolute accessibility labels inside the Village evidence panel when
+  reduced motion disables animation transforms. Bounded hosts no longer gain
+  document overflow from offscreen catalog rows; all evidence stays reachable
+  through the existing native scroller.
+
+### Tests
+
+- Verify static and motion-allowed panel containment in both themes and viewport
+  sizes, including positioned hosts, complete row retention and keyboard focus.
+- Hold ordinary async publication completion during native dismissal and
+  duplicate-activation checks, retaining the production demo's full completion
+  flow without depending on its short pending-state timer.
+
 ## 0.0.30
 
 ### Added

@@ -1,4 +1,11 @@
 pagingCalls: [[remote-attempts, 2], [receipts, 2]]
+containmentCases:
+  - {name: bounded-flex-host-keeps-catalog-labels-in-panel, hostPosition: static}
+  - {name: positioned-flex-host-keeps-catalog-labels-in-panel, hostPosition: relative}
+containmentCollectiveIds: [atlas, birch, cedar, delta, elm, fir, grove, hazel, iris, juniper, kelp, larch]
+containmentMotions:
+  - {name: static-reduced-motion-host, value: reduce}
+  - {name: motion-allowed-host, value: no-preference}
 controlledCases:
   - {name: controlled-view-host-rerender, control: view, initial: catalog, target: history, label: history, callback: view, panel: village views}
   - {name: controlled-category-host-rerender, control: categoryId, initial: remote-attempts, target: receipts, label: confirmed receipts, callback: category, panel: history categories}

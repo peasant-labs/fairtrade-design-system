@@ -3,6 +3,10 @@ import { RedactionCategory } from '@peasant-labs/schema'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { PublishStateLabel, PublishBar, AccessList, CollectivePicker, PublishDialog, PUBLISH_STATES } from './Publish.jsx'
 import { frame } from './story-frame.jsx'
+import YAML from 'yaml'
+import mountedSource from '../../scripts/testdata/publish-mounted.yaml?raw'
+
+const mountedFixture = YAML.parse(mountedSource)
 
 /* in use/Publish: the parts of the one outward action. Every part is controlled; these stories
    hold the state a host would. One story per label value and per popup state the fixture names
@@ -217,5 +221,37 @@ export const KeyboardWalk = {
         />
       </div>
     )
+  },
+}
+
+/* An ordinary async host callback. The native journey controls its remote dependency, not
+   the dialog's implementation or state: pending lasts until the response actually arrives. */
+export const HeldCompletion = {
+  render: function HeldCompletionStory() {
+    const [open,setOpen]=useState(false)
+    const [state,setState]=useState('ready')
+    const [publishCalls,setPublishCalls]=useState(0)
+    const [closeCalls,setCloseCalls]=useState(0)
+    const requests=useRef(new Set())
+    useEffect(()=>()=>{for(const request of requests.current)request.abort()},[])
+    const publish=async()=>{
+      setPublishCalls(value=>value+1)
+      setState('publishing')
+      const request=new AbortController()
+      requests.current.add(request)
+      try {
+        const response=await fetch(mountedFixture.pending.endpoint,{method:mountedFixture.pending.method,signal:request.signal})
+        if(!response.ok)throw new Error('The fixture publication was refused.')
+        setState('done')
+      } catch(error) {if(!request.signal.aborted)setState('stopped')}
+      finally {requests.current.delete(request)}
+    }
+    return <div style={{padding:'var(--sp-5)'}}>
+      <output aria-label="host publish calls">{publishCalls}</output>
+      <output aria-label="host close calls">{closeCalls}</output>
+      <PublishBar state="not-published" onAction={()=>{setState('ready');setOpen(true)}} />
+      <PublishDialog open={open} state={state} title="Recorded session" scan={SCAN} access={ACCESS} done={DONE}
+        onRescan={()=>{}} onPublish={publish} onClose={()=>{setCloseCalls(value=>value+1);setOpen(false)}} />
+    </div>
   },
 }

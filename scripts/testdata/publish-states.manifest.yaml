@@ -38,6 +38,7 @@ requiredTransitionNames:
   - keyboard focus remains inside during publish and pending approval
 
 requiredMutationNames:
+  - publishing invokes the publication callback again
   - published action reverts to manage
   - representative examples replace the full match count
   - final collective removal never invokes the update
@@ -59,6 +60,11 @@ requiredMutationNames:
   - ambiguous recovery remains enabled
   - recovery retains an obsolete callback
 mutations:
+  - name: publishing invokes the publication callback again
+    file: src/ui/Publish.jsx
+    find: "if (latest?.open && latest.state === 'ready' && !latest.blocked) latest.onPublish?.()"
+    replace: 'if (latest?.open) latest.onPublish?.()'
+    expectedDiagnostic: 'publishing: publish to 2 collectives must call []'
   - name: recovery ignores explicit review refusal
     file: src/ui/Publish.jsx
     find: "const recoveryBlocked = reviewRefused(scan) || ambiguousRetry"

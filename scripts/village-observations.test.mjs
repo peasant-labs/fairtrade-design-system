@@ -1,9 +1,10 @@
 import { loadFixturePair, assertExactNames, withMountedSource, click, createReport } from './mounted-parts.mjs'
 import { renderToStaticMarkup } from 'react-dom/server'
 
-const { fixture, manifest } = loadFixturePair('scripts/testdata/village-observations.yaml', 'scripts/testdata/village-observations.manifest.yaml', {cases: 'requiredCaseNames', controlledCases:'requiredControlledNames', activationCases:'requiredActivationNames', fetchCases:'requiredFetchNames', invalidCases:'requiredInvalidNames'})
+const { fixture, manifest } = loadFixturePair('scripts/testdata/village-observations.yaml', 'scripts/testdata/village-observations.manifest.yaml', {cases: 'requiredCaseNames', controlledCases:'requiredControlledNames', activationCases:'requiredActivationNames', fetchCases:'requiredFetchNames', invalidCases:'requiredInvalidNames', containmentCases:'requiredContainmentNames', containmentMotions:'requiredContainmentMotionNames'})
 assertExactNames([fixture.update.name], manifest.requiredUpdateNames, 'evidence update fixture')
 assertExactNames([fixture.scroll.name], manifest.requiredScrollNames, 'persistent tools fixture')
+assertExactNames(fixture.containmentCollectiveIds, manifest.requiredContainmentCollectiveIds, 'bounded host collective inventory')
 const report = createReport('village observations')
 await withMountedSource(async ({ load, mount, window, React }) => {
   const { default: Component } = await load('/src/ui/VillageObservations.jsx')

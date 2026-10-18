@@ -2,11 +2,52 @@ import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { readFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
-import { loadFixturePair } from '../mounted-parts.mjs'
+import { loadFixturePair, assertExactNames } from '../mounted-parts.mjs'
 
-const { fixture } = loadFixturePair('scripts/testdata/village-observations.yaml', 'scripts/testdata/village-observations.manifest.yaml')
+const { fixture, manifest } = loadFixturePair('scripts/testdata/village-observations.yaml', 'scripts/testdata/village-observations.manifest.yaml', {cases:'requiredCaseNames',containmentCases:'requiredContainmentNames',containmentMotions:'requiredContainmentMotionNames'})
+assertExactNames(fixture.containmentCollectiveIds,manifest.requiredContainmentCollectiveIds,'bounded host collective inventory')
 const origin = `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}`
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex')
+
+for(const motion of fixture.containmentMotions)for(const row of fixture.containmentCases)for(const viewport of [fixture.scroll.desktop,fixture.scroll.mobile]){
+  test(`bounded public host ${row.name} ${motion.name} ${viewport.width}`,async({page},info)=>{
+    await page.emulateMedia({reducedMotion:motion.value})
+    await page.setViewportSize(viewport)
+    await page.goto(`/iframe.html?id=in-use-village-observations--bounded-flex-host&viewMode=story&globals=theme:${info.project.name}&args=hostPosition:${row.hostPosition}`)
+    const host=page.locator('.vobs-bounded-host')
+    const panel=host.locator('.vobs > .tabpanel:visible')
+    await expect(panel).toBeVisible()
+    await page.evaluate(()=>document.fonts.ready)
+    await panel.evaluate((node)=>Promise.allSettled(node.getAnimations().map(animation=>animation.finished)))
+    const geometry=()=>page.evaluate(()=>{
+      const host=document.querySelector('.vobs-bounded-host'),panel=host.querySelector('.vobs > .tabpanel:not([hidden])'),label=panel.querySelector('.sr-only')
+      const rect=panel.getBoundingClientRect()
+      return {viewportHeight:innerHeight,documentHeight:document.documentElement.scrollHeight,bodyHeight:document.body.scrollHeight,hostOverflow:getComputedStyle(host).overflowY,bodyOverflow:getComputedStyle(document.body).overflowY,panelOverflow:getComputedStyle(panel).overflowY,panelHeight:panel.clientHeight,panelScrollHeight:panel.scrollHeight,panelBottom:rect.bottom,labelParent:label?.offsetParent?.className,labelAnchoredToPanel:label?.offsetParent===panel,panelTransform:getComputedStyle(panel).transform,panelAnimation:getComputedStyle(panel).animationName,panelAnimationFill:getComputedStyle(panel).animationFillMode,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches}
+    })
+    const before=await geometry()
+    await info.attach(`${row.name}-${motion.name}-${info.project.name}-${viewport.width}-geometry`,{body:JSON.stringify(before),contentType:'application/json'})
+    expect(before.documentHeight,`${row.name}: document must stay within the bounded viewport`).toBeLessThanOrEqual(viewport.height+1)
+    expect(before.hostOverflow).not.toMatch(/hidden|clip/)
+    expect(before.bodyOverflow).not.toMatch(/hidden|clip/)
+    expect(before.panelOverflow).toBe('auto')
+    expect(before.labelAnchoredToPanel).toBe(true)
+    expect(before.panelBottom).toBeLessThanOrEqual(viewport.height+1)
+    expect(before.panelScrollHeight).toBeGreaterThan(before.panelHeight)
+    expect(before.panelHeight).toBeGreaterThan(viewport.height*0.35)
+    await expect(panel.locator('.vobs-row-head strong')).toHaveText(fixture.containmentCollectiveIds.map(id=>`Collective ${id}`))
+    expect(await panel.locator('.vobs-list > li').evaluateAll((rows)=>rows.every((node)=>node.getClientRects().length>0&&node.getBoundingClientRect().height>0))).toBe(true)
+    await panel.evaluate((node)=>{node.scrollTop=node.scrollHeight})
+    const last=fixture.containmentCollectiveIds.at(-1)
+    const action=panel.getByRole('button',{name:`untrack Collective ${last}`,exact:true})
+    await action.focus()
+    await expect(action).toBeFocused()
+    expect(await action.evaluate((node)=>{const r=node.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight&&node.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))})).toBe(true)
+    const after=await geometry()
+    expect(after.documentHeight,`${row.name}: focus and native scrolling must not grow the document`).toBeLessThanOrEqual(viewport.height+1)
+    await info.attach(`${row.name}-${motion.name}-${info.project.name}-${viewport.width}-scrolled-geometry`,{body:JSON.stringify(after),contentType:'application/json'})
+    await page.screenshot({path:info.outputPath(`bounded-${row.hostPosition}-${motion.value}-${info.project.name}-${viewport.width}.png`)})
+  })
+}
 
 async function assertUpdatedDiagnostics(panel) {
   const expected = fixture.update.expect

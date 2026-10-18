@@ -7,12 +7,58 @@ import { scanAxe, seriousViolations } from './lib/assertions.mjs'
 const spec = loadStrictYaml('scripts/testdata/publish-mounted.yaml')
 const manifest = loadStrictYaml('scripts/testdata/publish-mounted.manifest.yaml')
 assertExactNames(spec.cases.map((row) => row.name), manifest.requiredCaseNames, 'mounted publish rows')
+assertExactNames([spec.pending.name],manifest.requiredPendingNames,'host-held publication cases')
 const consent = loadStrictYaml('scripts/testdata/publish-consent.yaml')
 const appURL = `http://localhost:${process.env.JOURNEY_APP_PORT || '5180'}`
 // This marker is unique to the repaired production path, not a test-only DOM flag.
 const marker = "updates to already-published sessions, redacted, without review"
 const asset = readdirSync('dist/assets').find((file) => file.endsWith('.js') && readFileSync(join('dist/assets', file), 'utf8').includes(marker))
 if (!asset) throw new Error('publish journey: dist/assets lacks mandatory consent; rebuild this checkout before capturing the mounted path')
+
+async function heldPublication(page,row) {
+  const pending=spec.pending
+  let release
+  const completion=new Promise(resolve=>{release=resolve})
+  const requests=[]
+  await page.route(pending.endpoint,async(route)=>{
+    requests.push(route.request().method())
+    await completion
+    await route.fulfill({status:pending.response.status,body:pending.response.body,headers:{'access-control-allow-origin':'*'}})
+  })
+  try {
+    await page.goto(`/iframe.html?id=${pending.story}&viewMode=story&globals=theme:${row.theme}`)
+    const opener=page.locator('.pub-bar-action')
+    await opener.press('Enter')
+    const dialog=page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+    const request=page.waitForRequest(request=>request.url()===pending.endpoint&&request.method()===pending.method)
+    await dialog.getByRole('button',{name:pending.primaryLabel,exact:true}).press('Enter')
+    await request
+    const primary=dialog.locator('.pub-primary[aria-busy="true"]')
+    await expect(primary).toBeFocused()
+    await expect(dialog.locator('.pub-rescan')).toBeDisabled()
+    await primary.press('Escape')
+    expect(await page.getByLabel('host close calls').textContent(),'pending publication must ignore Escape').toBe(pending.expectedPendingCloseCalls)
+    await expect(dialog,'pending publication must ignore Escape').toBeVisible()
+    await expect(primary).toHaveAttribute('aria-busy','true')
+    await primary.press('Enter')
+    const bounds=await primary.boundingBox()
+    await page.mouse.click(bounds.x+bounds.width/2,bounds.y+bounds.height/2)
+    expect(await page.getByLabel('host publish calls').textContent(),'pending duplicate activation must not resubmit').toBe(pending.expectedPublishCalls)
+    expect(requests,'only the original publication request may start').toEqual(Array(pending.expectedRequests).fill(pending.method))
+    release()
+    const done=dialog.getByRole('button',{name:pending.doneLabel,exact:true})
+    await expect(done).toBeFocused()
+    await done.press('Escape')
+    await expect(dialog).toHaveCount(0)
+    await expect(opener).toBeFocused()
+    await expect(page.getByLabel('host publish calls')).toHaveText(pending.expectedPublishCalls)
+    await expect(page.getByLabel('host close calls')).toHaveText(pending.expectedCompletedCloseCalls)
+  } finally {
+    release()
+    await page.unrouteAll({behavior:'wait'})
+  }
+}
 
 for (const row of spec.cases) {
   test(`mounted publish ${row.name}`, async ({ page }, testInfo) => {
@@ -82,11 +128,9 @@ for (const row of spec.cases) {
     expect(seriousViolations(scan), 'publish has no critical or serious accessibility exceptions').toEqual([])
     await testInfo.attach('publish-accessibility.json', { body: JSON.stringify({ width: row.width, theme: row.theme, scan }), contentType: 'application/json' })
     await primary.press('Enter')
-    await expect(primary).toHaveAttribute('aria-busy', 'true')
-    await expect(primary).toBeFocused()
-    await expect(dialog.locator('.pub-rescan')).toBeDisabled()
-    await primary.press('Escape')
-    await expect(dialog).toBeVisible()
+    // This real product host completes on a short timer. Pending-only interaction invariants
+    // run below against the same public dialog with a held ordinary async host dependency.
+    // Here the observable contract is the completed production flow, not winning that timer.
     const done = dialog.locator('.dlg-foot .btn-primary')
     await expect(done).toHaveText('done')
     await expect(done).toBeFocused()
@@ -121,5 +165,6 @@ for (const row of spec.cases) {
       })
     }
     await expect(menu).toBeFocused()
+    await heldPublication(page,row)
   })
 }
