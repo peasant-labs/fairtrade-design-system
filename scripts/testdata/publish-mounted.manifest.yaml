@@ -5,3 +5,5 @@ requiredCaseNames:
   - phone light
   - narrow dark
   - narrow light
+requiredPendingNames:
+  - host-held-publication-keeps-dismissal-and-duplicates-blocked

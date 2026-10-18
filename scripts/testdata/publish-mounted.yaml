@@ -13,3 +13,15 @@ cases:
   - {name: phone light, theme: light, width: 390}
   - {name: narrow dark, theme: dark, width: 320}
   - {name: narrow light, theme: light, width: 320}
+pending:
+  name: host-held-publication-keeps-dismissal-and-duplicates-blocked
+  story: in-use-publish--held-completion
+  endpoint: https://village.example.org/api/v1/transcripts
+  method: POST
+  primaryLabel: publish to 2 collectives
+  doneLabel: done
+  expectedPublishCalls: '1'
+  expectedPendingCloseCalls: '0'
+  expectedCompletedCloseCalls: '1'
+  expectedRequests: 1
+  response: {status: 200, body: '{}'}

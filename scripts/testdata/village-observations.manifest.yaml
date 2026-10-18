@@ -65,3 +65,6 @@ requiredFetchNames: [missing-fetch-handler, disabled-fetch, fetching-no-double-s
 requiredInvalidNames: [invalid-controlled-view, invalid-controlled-category]
 requiredUpdateNames: [changed-diagnostics-domain-dates-category-reorder]
 requiredScrollNames: [persistent-scope-fetch-views-categories-long-evidence]
+requiredContainmentNames: [bounded-flex-host-keeps-catalog-labels-in-panel, positioned-flex-host-keeps-catalog-labels-in-panel]
+requiredContainmentCollectiveIds: [atlas, birch, cedar, delta, elm, fir, grove, hazel, iris, juniper, kelp, larch]
+requiredContainmentMotionNames: [static-reduced-motion-host, motion-allowed-host]

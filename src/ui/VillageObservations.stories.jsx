@@ -45,3 +45,12 @@ function ContractHost({ caseName }) {
   </>
 }
 export const HostContract = { args:{caseName:'controlled-view-host-rerender'}, render:(args)=><ContractHost key={args.caseName} {...args} /> }
+
+function BoundedHost({ hostPosition }) {
+  const data={...fixture.base,collectives:fixture.containmentCollectiveIds.map((id)=>({...fixture.base.collectives[0],id,name:`Collective ${id}`}))}
+  return <div className="vobs-bounded-host" style={{display:'flex',flexDirection:'column',height:'100dvh',minHeight:0,position:hostPosition,'--vobs-height':'100%'}}>
+    <p>saved collective evidence</p>
+    <VillageObservations {...data} onFetch={()=>{}} onTrack={()=>{}} onPageChange={()=>{}} />
+  </div>
+}
+export const BoundedFlexHost = {parameters:{layout:'fullscreen'},args:{hostPosition:'static'},render:(args)=><BoundedHost {...args} />}

@@ -3462,7 +3462,8 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 /* Local Village observations: presentation only, independent domain dates and evidence pages. */
 .iu-app-root:has(> .iu-view > .vobs) > .iu-view { min-height: 0; --vobs-height: 100%; }
 .vobs { padding: var(--sp-4); color: var(--ink); font-family: var(--font-body); font-size: var(--fs-body); min-width: 0; overflow-wrap: anywhere; display: flex; flex-direction: column; height: var(--vobs-height, calc(100dvh - var(--nav-h))); min-height: 0; }
-.vobs .tabpanel { max-width: none; min-width: 0; font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); flex: 1; min-height: 0; overflow: auto; scroll-padding-block: var(--sp-4); }
+/* Keep absolute accessibility labels inside their scroller without relying on motion transforms. */
+.vobs .tabpanel { position: relative; max-width: none; min-width: 0; font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); flex: 1; min-height: 0; overflow: auto; scroll-padding-block: var(--sp-4); }
 .vobs > .tabpanel:has(.vobs-history) { display: flex; flex-direction: column; overflow: hidden; }
 .vobs .tabpanel[hidden] { display: none; }
 .vobs-history { display: flex; flex-direction: column; min-height: 0; flex: 1; }
