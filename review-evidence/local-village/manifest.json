@@ -1,0 +1,116 @@
+{
+  "version": "0.0.30",
+  "sourceCommit": "2a002539ac3e266b02ae13bed0714a620c9fa870",
+  "sourceTree": "1c302279f256a0283c3dc32e1acd8e98f2e4e1f9",
+  "fixtureData": "synthetic demonstration data only",
+  "build": {
+    "htmlSha256": "9de7f96aaf8a9fa7d572131d79f506dfb9b7aa6d5c6247d7d07620751dfed9be",
+    "assets": {
+      "/assets/index-BJNEkQUi.js": "33f5b773500b0800700e361b69b3fe7f9ad3d1d12ae3d85e1ab2e42b576a82b8",
+      "/assets/index-Dv_K-_P3.css": "f72c7c83e68084884fb3c062c173722e5609f1d4011d8d6710fcb135f07fd050"
+    }
+  },
+  "screenshots": [
+    {
+      "file": "dark/catalog-desktop.png",
+      "theme": "dark",
+      "surface": "catalog",
+      "viewport": {
+        "width": 1280,
+        "height": 1100
+      },
+      "route": "/?fb=off&app=graph&section=village&theme=dark#inuse",
+      "sha256": "2a8b88fa27058735ac7885ce6c70ca48f9c2f0dd65eafe72d8000c0f58320b8a"
+    },
+    {
+      "file": "dark/catalog-mobile.png",
+      "theme": "dark",
+      "surface": "catalog",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "route": "/?fb=off&app=graph&section=village&theme=dark#inuse",
+      "sha256": "347b5cf375a92b9ba412a5df2ad58f20c5525322395c175df517691bb9f661ea"
+    },
+    {
+      "file": "dark/history-desktop.png",
+      "theme": "dark",
+      "surface": "history",
+      "viewport": {
+        "width": 1280,
+        "height": 1100
+      },
+      "route": "/?fb=off&app=graph&section=village&observations=persistent-scope-fetch-views-categories-long-evidence&theme=dark#inuse",
+      "sha256": "5496737453dc7f98e7a639cfacc5d404eecd09ce5a1598d1eda0151d45597d3c"
+    },
+    {
+      "file": "dark/history-mobile.png",
+      "theme": "dark",
+      "surface": "history",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "route": "/?fb=off&app=graph&section=village&observations=persistent-scope-fetch-views-categories-long-evidence&theme=dark#inuse",
+      "sha256": "305e26bf5938494248c08ff40ceb88119ffb69899af009231ec725f191171ede"
+    },
+    {
+      "file": "light/catalog-desktop.png",
+      "theme": "light",
+      "surface": "catalog",
+      "viewport": {
+        "width": 1280,
+        "height": 1100
+      },
+      "route": "/?fb=off&app=graph&section=village&theme=light#inuse",
+      "sha256": "1ff7cc525af05c76d1422799e25b8d2332d8269a5b0042ccdb33951bd96e3a01"
+    },
+    {
+      "file": "light/catalog-mobile.png",
+      "theme": "light",
+      "surface": "catalog",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "route": "/?fb=off&app=graph&section=village&theme=light#inuse",
+      "sha256": "19393772b6d03e73cf6ab4cff991c4cf8a2d2b6d25b07755a23bcdec92564799"
+    },
+    {
+      "file": "light/history-desktop.png",
+      "theme": "light",
+      "surface": "history",
+      "viewport": {
+        "width": 1280,
+        "height": 1100
+      },
+      "route": "/?fb=off&app=graph&section=village&observations=persistent-scope-fetch-views-categories-long-evidence&theme=light#inuse",
+      "sha256": "ac5974c295ba1a6345a21a9cfd0daf327d17271423609848666eaa75d71c1c1a"
+    },
+    {
+      "file": "light/history-mobile.png",
+      "theme": "light",
+      "surface": "history",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "route": "/?fb=off&app=graph&section=village&observations=persistent-scope-fetch-views-categories-long-evidence&theme=light#inuse",
+      "sha256": "0e91fabd376087584f01aeaf26d765fbb97b640aabcafaa91ca30274a9dda053"
+    }
+  ],
+  "inspected": true,
+  "validation": {
+    "canonical": {
+      "passed": 142,
+      "expectedOppositeThemeSkips": 56,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "currentLibraryTests": "passed",
+    "prepack": "passed",
+    "node": "v26.3.0",
+    "pnpm": "11.24.0"
+  }
+}
