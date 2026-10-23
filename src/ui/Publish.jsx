@@ -286,6 +286,17 @@ function reviewRefused(scan) {
   )
 }
 
+/* a host's actionable detail (what failed, why, where, the fix), one disclosure away in its box */
+function FailureDetail({ detail }) {
+  if (typeof detail !== 'string' || !detail) return null
+  return (
+    <details className="pub-failure-detail">
+      <summary>details</summary>
+      <pre>{detail}</pre>
+    </details>
+  )
+}
+
 function WhatLeaves({ state, scan, onRescan, checkingStage, readOnlyReview }) {
   const titleId = useId()
   const matches = Array.isArray(scan?.matches) ? scan.matches : []
@@ -331,25 +342,20 @@ function WhatLeaves({ state, scan, onRescan, checkingStage, readOnlyReview }) {
               {scan.failureAction.busy ? <Loader className="pub-spin" aria-hidden="true" /> : null}{scan.failureAction.label}
             </button>
           ) : null}
-          {/* the host's actionable detail (what failed, why, where, the fix) stays one step away */}
-          {typeof scan?.failureDetail === 'string' && scan.failureDetail ? (
-            <details className="pub-failure-detail">
-              <summary>details</summary>
-              <pre>{scan.failureDetail}</pre>
-            </details>
-          ) : null}
+          <FailureDetail detail={scan?.failureDetail} />
         </div>
       ) : unsupported ? (
-        <p className="pub-line pub-line-alert" role="alert"><AlertTriangle aria-hidden="true" />the scan contains an unsupported redaction category, so publish is off. update the scanner and re-scan.</p>
+        <p className="pub-line pub-line-alert" role="alert"><AlertTriangle aria-hidden="true" /><span className="pub-line-text">the scan contains an unsupported redaction category, so publish is off. update the scanner and re-scan.</span></p>
       ) : unscanned ? (
         <p className="pub-line pub-line-alert">
-          <AlertTriangle aria-hidden="true" /> not scanned yet, so publish is off.{onRescan ? ' re-scan to check it.' : ''}
+          <AlertTriangle aria-hidden="true" /><span className="pub-line-text">not scanned yet, so publish is off.{onRescan ? ' re-scan to check it.' : ''}</span>
         </p>
       ) : (
         <>
+          {/* the count wraps, and its toggle stays on the count's first line at every width */}
           <p className={kept ? 'pub-line pub-line-alert' : 'pub-line'}>
             {kept ? <AlertTriangle aria-hidden="true" /> : <ShieldCheck aria-hidden="true" />}
-            <span>
+            <span className="pub-line-text">
               <span className="tnum">{matchCount}</span> {matchCount === 1 ? 'match' : 'matches'}
               {kept ? <>, <span className="tnum">{kept}</span> kept un-redacted, will be sent</> : matchCount ? ', all redacted' : ', nothing to redact'}
             </span>
@@ -405,6 +411,11 @@ function WhatLeaves({ state, scan, onRescan, checkingStage, readOnlyReview }) {
  * @param {() => void} [props.onConnect] - `continue with github`.
  * @param {string} [props.joinHref] - `create or join one on village`.
  * @param {string} [props.stoppedAt] - the step that failed, in words ("setting who can read it").
+ * @param {string} [props.stoppedDetail] - stopped state: the host's actionable detail, pre-wrapped mono text behind a
+ *        "details" disclosure in the stopped box.
+ * @param {{ line: string, detail?: string, onRetry?: () => void, busy?: boolean }} [props.accessFailure] - the
+ *        collectives could not be read. "who can read it" shows the line, a retry for that read and the detail in
+ *        place of the access list and picker, and publishing stays off. The dialog's state stays the host's.
  * @param {() => void} [props.onRecover] - stopped-state prerequisite read/sign-in recovery only; may run before a scan or audience exists, but never with an explicitly refused review. Mutually exclusive with onRetry. Must not publish.
  * @param {() => void} [props.onRetry] - stopped-state actual publication retry; requires a valid review and audience. Mutually exclusive with onRecover.
  * @param {{ url: string, collectives: string[], pending?: string[], pullRequest?: { number: number, branch: string, href?: string } }} [props.done]
@@ -430,6 +441,8 @@ export function PublishDialog({
   onConnect,
   joinHref,
   stoppedAt,
+  stoppedDetail,
+  accessFailure,
   onRecover,
   onRetry,
   done,
@@ -450,7 +463,7 @@ export function PublishDialog({
     ? ['update', adds ? `add ${plural(adds, 'collective', 'collectives')}` : null, removes ? `remove ${plural(removes, 'collective', 'collectives')}` : null].filter(Boolean).join(' and ')
     : readers.length ? `publish to ${plural(readers.length, 'collective', 'collectives')}` : 'publish'
   const ambiguousRetry = !!onRecover && !!onRetry
-  const blocked = state === 'checking' || state === 'scan-failed' || state === 'no-collective' || state === 'publishing' || (readers.length === 0 && !(mode === 'update' && removes > 0)) || scan === undefined || reviewRefused(scan) || ambiguousRetry
+  const blocked = state === 'checking' || state === 'scan-failed' || state === 'no-collective' || state === 'publishing' || (readers.length === 0 && !(mode === 'update' && removes > 0)) || scan === undefined || reviewRefused(scan) || ambiguousRetry || !!accessFailure
   const recoveryBlocked = reviewRefused(scan) || ambiguousRetry
   const latestActions = useRef(null)
   useLayoutEffect(() => {
@@ -481,7 +494,7 @@ export function PublishDialog({
       : pendingReaders.length
         ? <>submitted to <span className="pub-title-content">{joinNames(pendingReaders)}</span></>
         : mode === 'update' ? 'updated, no collective can read it' : 'published privately'
-    : <>{verb} <span className="pub-title-content">“{title}”</span></>
+    : <>{verb} <span className="pub-title-content" title={title}>“{title}”</span></>
 
   // A state change may disable or remove the focused close, checkbox or audience control.
   // Repair that handoff before paint; an enabled primary survives the busy state.
@@ -514,7 +527,8 @@ export function PublishDialog({
   } else {
     footer = (
       <>
-        <span className="pub-foot-note">{state === 'publishing' ? 'sending your redacted transcript to peasant online.' : state === 'stopped' ? 'review who can read it.' : `nothing leaves your machine until you ${verb}.`}</span>
+        {/* stopped: the box says what happened, and some of it may have left already, so no note */}
+        {state === 'stopped' ? null : <span className="pub-foot-note">{state === 'publishing' ? 'sending your redacted transcript to peasant online.' : `nothing leaves your machine until you ${verb}.`}</span>}
         <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={state === 'publishing'}>cancel</button>
         {state === 'stopped' ? (onRecover || onRetry) && (
           <button type="button" className="btn btn-primary btn-sm" disabled={onRecover ? recoveryBlocked : blocked} onClick={onRecover ? runRecover : runRetry}><RotateCw aria-hidden="true" /> retry</button>
@@ -544,7 +558,7 @@ export function PublishDialog({
         </div>
       )}
       {state === 'waiting-github' && (
-        <p className="pub-line" role="status"><Loader className="pub-spin" aria-hidden="true" /> waiting for github in your browser</p>
+        <p className="pub-line" role="status"><Loader className="pub-spin" aria-hidden="true" /><span className="pub-line-text">waiting for github in your browser</span></p>
       )}
 
       {!gate && !finished && (
@@ -564,6 +578,17 @@ export function PublishDialog({
                 you are not in a collective yet.{' '}
                 {joinHref && <a className="link" href={joinHref}>create or join one on peasant online <ExternalLink aria-hidden="true" /></a>}
               </p>
+            ) : accessFailure ? (
+              <div className="pub-line pub-line-alert" role="alert">
+                <AlertTriangle aria-hidden="true" />
+                <span className="pub-line-text">{accessFailure.line || 'your collectives could not be read.'}</span>
+                {typeof accessFailure.onRetry === 'function' ? (
+                  <button type="button" className="btn btn-secondary btn-sm pub-failure-action" aria-label="retry loading your collectives" onClick={() => accessFailure.onRetry()} disabled={!!accessFailure.busy} aria-busy={accessFailure.busy ? 'true' : undefined}>
+                    {accessFailure.busy ? <Loader className="pub-spin" aria-hidden="true" /> : <RotateCw aria-hidden="true" />} retry
+                  </button>
+                ) : null}
+                <FailureDetail detail={accessFailure.detail} />
+              </div>
             ) : (
               <>
                 <AccessList items={access} onRemove={state === 'publishing' ? undefined : onRemove} onRestore={state === 'publishing' ? undefined : onRestore} />
@@ -584,12 +609,14 @@ export function PublishDialog({
           </section>
 
           {state === 'publishing' && (
-            <p className="pub-line" role="status"><Loader className="pub-spin" aria-hidden="true" /> {mode === 'update' ? 'updating' : `publishing to ${plural(readers.length, 'collective', 'collectives')}`}</p>
+            <p className="pub-line" role="status"><Loader className="pub-spin" aria-hidden="true" /><span className="pub-line-text">{mode === 'update' ? 'updating' : `publishing to ${plural(readers.length, 'collective', 'collectives')}`}</span></p>
           )}
           {state === 'stopped' && (
-            <p className="pub-line pub-line-alert" role="alert">
-              <AlertTriangle aria-hidden="true" /> stopped while {stoppedAt ?? 'publishing'}. review who can read it.
-            </p>
+            <div className="pub-line pub-line-alert" role="alert">
+              <AlertTriangle aria-hidden="true" />
+              <span className="pub-line-text">stopped while {stoppedAt ?? 'publishing'}.</span>
+              <FailureDetail detail={stoppedDetail} />
+            </div>
           )}
         </>
       )}

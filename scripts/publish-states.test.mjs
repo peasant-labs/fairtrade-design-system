@@ -16,7 +16,7 @@ const report = createReport('publish states')
 const text = (node) => node?.textContent.replace(/\s+/g, ' ').trim()
 const noop = () => {}
 const POPUP_FIELDS = ['name', 'state', 'heading', 'primary', 'rescan', 'lines', 'removeButtons', 'steps']
-const POPUP_OPTIONAL = ['access', 'pending', 'alert', 'absent', 'kept', 'unscanned', 'matchesOpen', 'mode', 'doneCollectives', 'noRetry', 'matchCount', 'failure']
+const POPUP_OPTIONAL = ['access', 'pending', 'alert', 'absent', 'kept', 'unscanned', 'matchesOpen', 'mode', 'doneCollectives', 'noRetry', 'matchCount', 'failure', 'stoppedDetail', 'accessFailure']
 for (const row of fixture.popup) assertFields(row, POPUP_FIELDS, `publish states popup row ${row.name}`, POPUP_OPTIONAL)
 
 await withMountedSource(async ({ load, mount, window, React }) => {
@@ -74,6 +74,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       onConnect: record('onConnect'),
       onRetry: row.noRetry ? undefined : record('onRetry'),
       ...(row.access ? { access: row.access } : {}),
+      ...(row.stoppedDetail ? { stoppedDetail: row.stoppedDetail } : {}),
+      ...(row.accessFailure ? { accessFailure: { ...row.accessFailure, onRetry: record('onAccessRetry') } } : {}),
       done: { ...fixture.done, ...(row.pending ? { pending: row.pending } : {}), ...(row.doneCollectives ? { collectives: row.doneCollectives } : {}) },
     })
     const mounted = await mount(React.createElement(ui.PublishDialog, props))
@@ -81,6 +83,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     report.check(!!dialog && dialog.classList.contains('dialog-wide'), `${row.name}: the popup is the wide dialog`)
     const heading = text(dialog?.querySelector('.dlg-head h3'))
     report.check(heading === row.heading, `${row.name}: heading expected ${JSON.stringify(row.heading)}, received ${JSON.stringify(heading)}`)
+    if (row.heading.includes(`“${fixture.session}”`)) {
+      const tip = dialog?.querySelector('.dlg-head .pub-title-content')?.getAttribute('title')
+      report.check(tip === fixture.session, `${row.name}: the full title is its tooltip, expected ${JSON.stringify(fixture.session)}, received ${JSON.stringify(tip)}`)
+    }
     const buttons = [...(dialog?.querySelectorAll('.dlg-foot button') ?? [])]
     const primary = buttons.find((button) => button.classList.contains('btn-primary'))
     if (row.primary === null) {

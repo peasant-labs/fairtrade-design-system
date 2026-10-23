@@ -26,6 +26,8 @@ requiredPopupNames:
   - update done without collective readers
   - done awaiting its only collective
   - first publish cannot remove its only collective
+  - stopped with a detail
+  - collectives cannot load
 requiredUpdateNames:
   - update adds one collective
   - update removes one collective
@@ -39,6 +41,11 @@ requiredTransitionNames:
   - keyboard focus remains inside during publish and pending approval
 
 requiredMutationNames:
+  - the stopped box repeats the review line
+  - a collectives failure leaves publishing on
+  - the stopped detail is dropped
+  - the collectives retry is dropped
+  - the title loses its tooltip
   - publishing invokes the publication callback again
   - published action reverts to manage
   - representative examples replace the full match count
@@ -148,8 +155,8 @@ mutations:
     expectedDiagnostic: "publishing: re-scan must be disabled"
   - name: a stopped publish claims no village changes
     file: src/ui/Publish.jsx
-    find: ". review who can read it."
-    replace: ". nothing changed on village."
+    find: "stopped while {stoppedAt ?? 'publishing'}."
+    replace: "stopped while {stoppedAt ?? 'publishing'}. nothing changed on village."
     expectedDiagnostic: "stopped at a named step: the popup must not read"
   - name: finished focus falls outside the popup
     file: src/ui/Publish.jsx
@@ -166,3 +173,28 @@ mutations:
     find: "const matchCount = scan?.matchCount ?? matches.length"
     replace: "const matchCount = matches.length"
     expectedDiagnostic: "full scan count with representative examples: the popup must read"
+  - name: the stopped box repeats the review line
+    file: src/ui/Publish.jsx
+    find: "stopped while {stoppedAt ?? 'publishing'}."
+    replace: "stopped while {stoppedAt ?? 'publishing'}. review who can read it."
+    expectedDiagnostic: 'stopped at a named step: the popup must not read "review who can read it."'
+  - name: a collectives failure leaves publishing on
+    file: src/ui/Publish.jsx
+    find: " || ambiguousRetry || !!accessFailure"
+    replace: " || ambiguousRetry"
+    expectedDiagnostic: "collectives cannot load: the primary button must be disabled"
+  - name: the stopped detail is dropped
+    file: src/ui/Publish.jsx
+    find: "<FailureDetail detail={stoppedDetail} />"
+    replace: ""
+    expectedDiagnostic: 'stopped with a detail: the popup must read "details"'
+  - name: the collectives retry is dropped
+    file: src/ui/Publish.jsx
+    find: "onClick={() => accessFailure.onRetry()}"
+    replace: ""
+    expectedDiagnostic: "collectives cannot load: retry loading your collectives must call"
+  - name: the title loses its tooltip
+    file: src/ui/Publish.jsx
+    find: "<span className=\"pub-title-content\" title={title}>"
+    replace: "<span className=\"pub-title-content\">"
+    expectedDiagnostic: "the full title is its tooltip"

@@ -34,7 +34,9 @@ labels:
 # publishing). kept: match ids the host marks kept (they leave un-redacted); unscanned: the host
 # gives no scan yet. matchesOpen: whether the matches review is open on mount.
 # steps: press a control by its accessible name or text (or a key), then the exact callbacks it
-# made, as [name, ...arguments].
+# made, as [name, ...arguments]. stoppedDetail and accessFailure pass those props (accessFailure's
+# retry records as onAccessRetry). Every heading that quotes the session carries it whole as its
+# tooltip.
 popup:
   - name: connect to village first
     state: connect
@@ -150,12 +152,41 @@ popup:
     heading: publish “Fix flaky ingest test”
     primary: {label: retry, enabled: true}
     rescan: {enabled: true}
-    alert: stopped while setting who can read it. review who can read it.
-    lines: [review who can read it.]
-    absent: [nothing leaves your machine until, nothing changed on village.]
+    alert: stopped while setting who can read it.
+    lines: [stopped while setting who can read it.]
+    absent: [review who can read it., nothing leaves your machine until, nothing changed on village.]
     removeButtons: [remove Acme Platform, remove Acme Company]
     steps:
       - {press: retry, calls: [[onRetry]]}
+  # The host's actionable detail sits one disclosure away in the stopped box; the footer's retry stays the
+  # one recovery action.
+  - name: stopped with a detail
+    state: stopped
+    stoppedDetail: 'list collectives: reach peasant online: connection refused'
+    heading: publish “Fix flaky ingest test”
+    primary: {label: retry, enabled: true}
+    rescan: {enabled: true}
+    alert: stopped while setting who can read it.
+    lines: [details, 'list collectives: reach peasant online: connection refused']
+    absent: [review who can read it.]
+    removeButtons: [remove Acme Platform, remove Acme Company]
+    steps:
+      - {press: retry, calls: [[onRetry]]}
+  # The collectives could not be read: "who can read it" says so in place of the list and the picker,
+  # with its own retry and the detail, and publishing stays off while the dialog stays ready.
+  - name: collectives cannot load
+    state: ready
+    accessFailure: {line: can't load your collectives right now, detail: 'list collectives: connection refused'}
+    heading: publish “Fix flaky ingest test”
+    primary: {label: publish to 2 collectives, enabled: false}
+    rescan: {enabled: true}
+    alert: can't load your collectives right now
+    lines: [who can read it, details, 'list collectives: connection refused', nothing leaves your machine until you publish.]
+    absent: [Acme Platform, add a collective]
+    removeButtons: []
+    steps:
+      - {press: retry loading your collectives, calls: [[onAccessRetry]]}
+      - {press: publish to 2 collectives, calls: []}
   - name: done
     state: done
     heading: published to Acme Platform and Acme Company
@@ -181,8 +212,8 @@ popup:
     heading: publish “Fix flaky ingest test”
     primary: null
     rescan: {enabled: true}
-    lines: [review who can read it.]
-    absent: [retry]
+    lines: [stopped while setting who can read it.]
+    absent: [retry, review who can read it.]
     removeButtons: [remove Acme Platform, remove Acme Company]
     steps: [{press: cancel, calls: [[onClose]]}]
   - name: update done without collective readers
