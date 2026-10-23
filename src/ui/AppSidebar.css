@@ -291,8 +291,8 @@ span.asb-item { cursor: default; }
 .asb-av {
   display: grid;
   place-items: center;
-  width: var(--control-h-sm);
-  height: var(--control-h-sm);
+  width: var(--chip-h);
+  height: var(--chip-h);
   flex: none;
   font-family: var(--font-mono);
   font-size: var(--fs-label);

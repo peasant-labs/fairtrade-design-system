@@ -79,8 +79,8 @@
   align-items: center;
   justify-content: center;
   flex: none;
-  width: var(--control-h-sm);
-  height: var(--control-h-sm);
+  width: var(--chip-h);
+  height: var(--chip-h);
   border: var(--bd-strong);
   background: var(--surface-2);
   color: var(--ink-3);
@@ -130,7 +130,7 @@
 .xpl--inline .xpl-body {
   /* align under the toggle's title: square mark + its gap. */
   padding: var(--sp-2) 0 0;
-  padding-inline-start: calc(var(--control-h-sm) + var(--sp-3));
+  padding-inline-start: calc(var(--chip-h) + var(--sp-3));
 }
 .xpl-body > * + * {
   margin-top: var(--sp-2);

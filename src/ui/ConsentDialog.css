@@ -177,7 +177,7 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: var(--control-h-sm) max-content 1fr;
+  grid-template-columns: var(--chip-h) max-content 1fr;
   /* the [chip | key | value] gutter. set on BOTH the grid and the subgrid row
      below because browsers disagree on whether a subgrid inherits the parent's
      column-gap — declaring it in both places makes the chip→key clearance the
@@ -206,8 +206,8 @@
   align-items: center;
   justify-content: center;
   flex: none;
-  width: var(--control-h-sm);
-  height: var(--control-h-sm);
+  width: var(--chip-h);
+  height: var(--chip-h);
   border: var(--bd-strong);
   background: var(--surface);
   color: var(--ink-3);

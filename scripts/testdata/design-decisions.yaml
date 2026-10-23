@@ -79,15 +79,15 @@ decisions:
     id: 8
     disposition: RECORD
     binding:
-      codeReference: {file: src/ui/Publish.css, contains: '.pub-foot .btn-primary { min-height: var(--target-comfortable); }'}
+      codeReference: {file: src/index.css, contains: '@media (pointer: coarse) { :root { --control-h: var(--target-comfortable); --control-h-sm: var(--target-comfortable); } }'}
       pointerRemoved: '#136/8'
       lineRemoved: '- **#136/8, primary targets**: primary actions use `--control-h`, not `--target-comfortable`.'
       restatingFilesAmended:
-        - {file: DESIGN.md, contains: 'Primary publish actions use 36px on desktop'}
-        - {file: llm/NEUROINCLUSIVE.md, contains: 'primary publish actions 36px desktop / 44px coarse-pointer touch'}
-        - {file: AGENTS.md, contains: 'are 36px desktop / 44px coarse-pointer touch.'}
-        - {file: CONTRIBUTING.md, contains: 'primary publish actions are 36px desktop and 44px on coarse-pointer touch'}
-        - {file: llms.txt, contains: 'Primary publish actions are 36px desktop / 44px coarse-pointer touch.'}
+        - {file: DESIGN.md, contains: 'On a coarse pointer every control reaches 44px: `--control-h` and `--control-h-sm` both rise to'}
+        - {file: llm/NEUROINCLUSIVE.md, contains: 'on a coarse pointer every control height rises to 44px and a small visual (`--chip-h`) takes a 44px hit box'}
+        - {file: AGENTS.md, contains: 'On a coarse pointer every control height rises to'}
+        - {file: CONTRIBUTING.md, contains: 'on a coarse pointer every control height rises to 44px; a small visual drawn at `--chip-h` takes a 44px hit box instead'}
+        - {file: llms.txt, contains: 'On a coarse pointer every control height rises to 44px; a small visual drawn at `--chip-h` takes a 44px hit box.'}
         - {file: scripts/gen-llm-artifacts.mjs, contains: "['publish-primary', { ...control, touchMinHeight: tok('target-comfortable')"}
   - name: modal-focus
     id: 9

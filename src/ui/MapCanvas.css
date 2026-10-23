@@ -334,8 +334,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--control-h-sm);
-  height: var(--control-h-sm);
+  width: var(--chip-h);
+  height: var(--chip-h);
   transform: translate(-100%, -100%);
   margin: 0;
   padding: 0;

@@ -59,7 +59,7 @@ function block(css, opener) {
 
 const TYPE_GROUP = [
   [/^bp-/, 'breakpoint', 'dimension'],
-  [/^sp-|^nav-h$|^control-h|^maxw$|^gutter$|^band-y$|^group-y$|^row-h-|^target-/, 'space', 'dimension'],
+  [/^sp-|^nav-h$|^control-h|^chip-h$|^maxw$|^gutter$|^band-y$|^group-y$|^row-h-|^target-/, 'space', 'dimension'],
   [/^fs-|^ic-|^lh-/, 'typography', 'dimension'],
   [/^dur-|^ease-|^motion-/, 'motion', 'duration'],
   [/^z-/, 'z-index', 'number'],
@@ -228,7 +228,7 @@ const COMPONENTS = [
   ['button-ghost-hover', { backgroundColor: '{colors.surface-hover}', textColor: '{colors.ink}' }],
   ['button-danger', { backgroundColor: 'transparent', textColor: '{colors.clay}', typography: '{typography.label}', ...control, padding: ['0', tok('sp-4')] }],
   ['input', { backgroundColor: '{colors.canvas}', textColor: '{colors.ink}', typography: '{typography.field}', ...control, padding: ['0', tok('sp-3')] }],
-  ['chip', { textColor: '{colors.ink-2}', typography: '{typography.label}', rounded: '{rounded.none}', height: tok('control-h-sm'), padding: ['0', tok('sp-3')] }],
+  ['chip', { textColor: '{colors.ink-2}', typography: '{typography.label}', rounded: '{rounded.none}', height: tok('chip-h'), padding: ['0', tok('sp-3')] }],
   ['card', { backgroundColor: '{colors.surface}', rounded: '{rounded.none}', padding: tok('sp-4') }],
   ['dialog', { backgroundColor: '{colors.surface}', rounded: '{rounded.none}', width: tok('dialog-w') }],
   ['publish-primary', { ...control, touchMinHeight: tok('target-comfortable'), typography: '{typography.label-strong}' }],
