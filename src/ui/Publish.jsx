@@ -125,7 +125,8 @@ export function PublishBar({ state, collectives, newTurns, collective, onAction,
           {label}
         </button>
       )}
-      {moreItems?.length ? <Menu icon={MoreHorizontal} ariaLabel="more" size="sm" align="end" items={moreItems} /> : null}
+      {/* the more trigger matches the action beside it: the control height, 44px for a finger */}
+      {moreItems?.length ? <Menu icon={MoreHorizontal} ariaLabel="more" align="end" items={moreItems} /> : null}
     </div>
   )
 }

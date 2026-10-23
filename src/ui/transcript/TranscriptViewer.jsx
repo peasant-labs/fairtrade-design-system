@@ -859,9 +859,10 @@ export default function TranscriptViewer({
           {session.harness && <span className="chip"><ProviderIcon harness={session.harness} accent /> {String(session.harness).replace(/-/g, ' ')}</span>}
           {session.model && <span className="chip mono">{session.model}</span>}
           {session.git?.author && <Term className="metaitem" def="git author"><User size={14} aria-hidden="true" /> {session.git.author}</Term>}
-          {session.durationMins != null && <Term className="metaitem" def="session duration in minutes"><Clock size={14} aria-hidden="true" /> <b className="tnum">{session.durationMins}m</b></Term>}
+          {session.durationMins != null && <span className="metaitem"><Clock size={14} aria-hidden="true" /> <b className="tnum">{session.durationMins}m</b></span>}
           {session.turnCount != null && <span className="metaitem"><ListTree size={14} aria-hidden="true" /> <b className="tnum">{session.turnCount}</b> turns</span>}
-          <span className="metaitem"><MessageSquareText size={14} aria-hidden="true" /> <b className="tnum">{session.inputSubmissionCount ?? 'unknown'}</b> {session.inputSubmissionCount === 1 ? 'prompt' : 'prompts'}</span>
+          {/* a figure that was not measured is left out, never shown as unknown or as zero */}
+          {session.inputSubmissionCount != null && <span className="metaitem"><MessageSquareText size={14} aria-hidden="true" /> <b className="tnum">{session.inputSubmissionCount}</b> {session.inputSubmissionCount === 1 ? 'prompt' : 'prompts'}</span>}
           {session.toolCallCount != null && <span className="metaitem"><Wrench size={14} aria-hidden="true" /> <b className="tnum">{session.toolCallCount}</b> tools</span>}
           {!vm.usageScopes?.length && session.totalTokens != null && <Term className="metaitem" def={fmtTokens(session.tokensIn ?? 0) + ' input tokens, ' + fmtTokens(session.tokensOut ?? 0) + ' output tokens'}><Coins size={14} aria-hidden="true" /> <b className="tnum">{fmtTokens(session.totalTokens)}</b> tokens</Term>}
           {commits.length > 0 && <span className="metaitem"><GitCommitHorizontal size={14} aria-hidden="true" /> <b className="tnum">{commits.length}</b> {commits.length === 1 ? 'commit' : 'commits'}</span>}
@@ -908,13 +909,13 @@ export default function TranscriptViewer({
           {tabStrip}
           <button
             type="button"
-            className="btn btn-secondary btn-sm txn-search-trigger"
+            className="btn btn-secondary txn-search-trigger"
             aria-keyshortcuts="Meta+F Control+F"
             onClick={openSearch}
           >
             <Search size={14} aria-hidden="true" />
             <span className="txn-search-trigger-text">search this transcript</span>{' '}
-            <kbd className="kbd-key">⌘F</kbd>
+            <kbd className="txn-search-key">⌘F</kbd>
           </button>
         </div>
       ) : tabStrip}
