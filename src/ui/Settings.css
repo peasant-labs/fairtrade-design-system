@@ -1,8 +1,8 @@
 /* Settings styles — namespaced srow-, tokens only, radius 0. Every row is one grid: the left
    column holds the label and at most one help line on one left edge, the right column holds the
    value or control, ending at the right padding. A long value (a description) stacks under its
-   label in the left column, at the same left edge, never in a column of its own. Below md the
-   control takes its own line and still ends at the right padding. Labels and states are mono
+   label in the left column, at the same left edge, never in a column of its own. On a phone the
+   row stays on one line where it fits; a select drops to its own line, at the right padding. Labels and states are mono
    chrome; help and errors are body prose at the 16px floor. The save status sits before the
    control, so "saving" and "saved" grow leftward and the control never moves; an idle status
    takes no room. Motion only under no-preference. */
@@ -129,9 +129,9 @@
 /* a status with something to say keeps a gap from the control; an idle one takes no room */
 .srow-status:not(:empty) { margin-inline-end: var(--sp-3); }
 @media (width < 768px) {
-  /* stacked, the control group takes its own line and still ends at the right padding */
-  .srow { grid-template-columns: minmax(0, 1fr); }
-  .srow > :not(:first-child) { grid-column: 1; }
+  /* a phone keeps the row on one line where it fits: the label on the left, the control at the
+     right padding. a select, which runs long, drops to its own line, still at the right padding */
+  .srow:has(.srow-select) > .srow-control { grid-column: 1 / -1; }
   .srow-control { flex-wrap: wrap; max-width: 100%; }
   .srow-text { max-width: 100%; }
   .srow-select { min-width: 0; max-width: 100%; }
