@@ -26,6 +26,9 @@
      instead of sprawling on a wide monitor. */
   .gan-root { display: flex; flex-direction: column; height: 100%; min-width: 0; min-height: 0; font-family: var(--font-mono); max-width: none; margin-inline: 0; --gan-pad-x: var(--sp-6); }
   @media (width < 768px) { .gan-root { --gan-pad-x: var(--sp-4); } }
+  /* the overview is a page frame: its sides are the app page inset (--gan-pad-x, 32px from a tablet
+     up, 16px below) at every width, so a view that holds it adds none */
+  .iu-view:has(> .gan-root) { padding: 0; }
   .gan-head { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-4) var(--gan-pad-x); border-bottom: var(--bd); }
   .gan-head-titles { min-width: 0; }
   .gan-h2 { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); color: var(--ink-strong); text-transform: lowercase; line-height: var(--lh-body); margin: 0; overflow-wrap: anywhere; }
@@ -123,8 +126,8 @@
     .gan-kpis { grid-template-columns: repeat(2, 1fr); }
     .gan-donut { grid-template-columns: 1fr; justify-items: center; }
     .gan-legend { width: 100%; }
-    .gan-head { padding: var(--sp-3); }
-    .gan-scroll { padding: var(--sp-3); }
+    .gan-head { padding: var(--sp-3) var(--gan-pad-x); }
+    .gan-scroll { padding: var(--sp-3) var(--gan-pad-x); }
     .gan-tablecard { padding: var(--sp-2) var(--sp-3) var(--sp-3); }
     .gan-tablecard .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   }

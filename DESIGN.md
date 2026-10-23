@@ -436,8 +436,9 @@ Desktop-first, left-aligned, on a 4/8 grid. The spacing scale is `--sp-1` to `--
 24, 32, 40, 56) and every padding, margin and gap uses it. The presentation site's content columns
 cap at `--maxw` with `--gutter` sides. An app page does not: `AppPage` (and the in-use demo's
 `.iu-page`) takes the full width of the column beside the sidebar with the same padding on the left
-and the right, so the gap beside the sidebar always equals the gap at the window's edge; prose keeps
-its own measure inside it. Buttons and inputs share one height (`--control-h`, `--control-h-sm` for small).
+and the right (32px from 768px up, 16px below), so the gap beside the sidebar always equals the gap
+at the window's edge; prose keeps its own measure inside it. Every page frame (the analytics
+overview included) carries that inset once, and the demo's view adds none around it. Buttons and inputs share one height (`--control-h`, `--control-h-sm` for small).
 Row heights come in three density tokens (`--row-h-compact`, `--row-h-standard`,
 `--row-h-comfortable`).
 
