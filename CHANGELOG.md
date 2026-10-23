@@ -33,7 +33,9 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 
 - `CommandBlock`'s command is set at the 16px code size. When it scrolls
   sideways, the scroll region is focusable (`tabindex="0"`, `role="region"`,
-  named "command: <label or command>") with the inset focus ring.
+  named "command: <label or command>") with the inset focus ring. The block can
+  shrink inside a grid or flex column, so a long command no longer pushes the
+  copy button out of view.
 - `Explore`'s search placeholder is "search transcripts", so it fits a phone;
   its accessible name still lists everything it searches.
 - `SettingRow` on a phone keeps the save status before the control, as on
