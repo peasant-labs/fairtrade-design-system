@@ -1,7 +1,8 @@
 # Wrapped CommandBlock line layout on the built Storybook, checked by
 # scripts/journey/command-block.journey.mjs in both themes. A long address breaks after its slashes,
 # so the word after it (a pipe and its command) ends the address's last line instead of starting a
-# line of its own; no run (a flag, a date, a piece of an address) ever breaks inside itself.
+# line of its own; no run (a flag, a date, a piece of an address) ever breaks inside itself, and no
+# drawn line of any wrapped command in the story ends on a hyphen.
 story: in-use-clionboard--wrapped-compact
 viewport: {width: 390, height: 900}
 cases:

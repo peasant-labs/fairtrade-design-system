@@ -21,11 +21,21 @@ for (const row of fixture.cases) {
       const line = parseFloat(getComputedStyle(code).lineHeight)
       const broken = runs.filter((run) => run.textContent.length < 24 && run.getBoundingClientRect().height >= line * 1.5).map((run) => run.textContent)
       const lines = new Set(runs.map((run) => Math.round(run.getBoundingClientRect().top))).size
-      return { lastRunTop: top(lastRun), followerTop: top(follower), broken, lines }
+      // the text each drawn line ends on, across every wrapped command in the story
+      const ends = []
+      for (const block of document.querySelectorAll('.cli-cmd-wrap code')) {
+        const byLine = new Map()
+        for (const run of block.querySelectorAll('.cli-run')) {
+          for (const rect of run.getClientRects()) byLine.set(Math.round(rect.top), run.textContent)
+        }
+        ends.push(...byLine.values())
+      }
+      return { lastRunTop: top(lastRun), followerTop: top(follower), broken, lines, hyphenEnds: ends.filter((text) => text.endsWith('-')) }
     }, row)
     expect(layout, `${context}: the command must render`).not.toBeNull()
     expect(layout.lines, `${context}: the command must wrap at this width`).toBeGreaterThan(1)
     expect(layout.followerTop, `${context}: ${JSON.stringify(row.follower)} must end the line ${JSON.stringify(row.lastRun)} ends on ${JSON.stringify(layout)}`).toBe(layout.lastRunTop)
     expect(layout.broken, `${context}: no short run may break inside itself`).toEqual([])
+    expect(layout.hyphenEnds, `${context}: no drawn line may end on a hyphen`).toEqual([])
   })
 }
