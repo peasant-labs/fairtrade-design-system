@@ -582,10 +582,13 @@ render the same system.
 - **App sidebar:** `AppSidebar` is the one sidebar for every app screen (online, local and docs),
   in one order that every app gets, so no app can drift: (1) the brand row, the mark with the
   collapse control; (2) the app's nav groups; (3) search, when the app has one (`search`: one item
-  with a quiet mono key hint); (4) the switcher to the other apps; (5) the footer, the theme toggle
-  (`theme` with `onThemeChange`: one item naming the theme it switches to, "switch to dark mode",
-  with that theme's icon) and then the account. The collapsed rail shows each of them as an icon
-  with a title, and the phone drawer keeps the same order. The parts:
+  with a quiet mono key hint); (4) the switcher to the other apps; (5) the footer, one compact row
+  pinned under the nav with a hairline above it: the account on the left (avatar or initial and
+  handle, or the host's signed-out slot) at the nav icons' inset, and on the right an icon-only
+  square theme toggle (`theme` with `onThemeChange`, named for the theme it switches to, "switch to
+  dark mode", with that theme's icon, its tip above it and never over the account). The collapsed
+  rail shows each of them as an icon with a title (the account on top of the theme toggle), and the
+  phone drawer keeps the same order. The parts:
   the wheat mark alone (its name is the accessible name and the tooltip; the full logo with the
   wordmark belongs to the landing page only), a collapse handle seated on the column's right edge
   level with the mark (a small square whose chevron turns to point the way the column will go)
@@ -649,8 +652,13 @@ to one polite live region, never a focus-stealing toast. Destructive actions con
 
 ### Forms and empty states
 The filter sidebar, form fields with functional labels, and the empty state: an icon ring, a
-title, a body and one action. A setting row keeps its save-status slot before its control, so the
-control ends on the row's padding and the row is as wide on the right as on the left.
+title, a body and one action. Every settings section is the same card (`SettingGroup`), and every
+setting row is one grid: the left column holds the label and at most one help line on one left edge;
+the right column holds the value or control, ending at the right padding. A long value (a
+description) stacks under its label at the same left edge, never in a column of its own, and a
+divider spans the card's inner width. No free sentence sits between rows: a note that matters
+becomes a row. The save status sits before the control and takes no room while idle, so "saving"
+and "saved" grow leftward and the control never moves. The card inset gate checks all of it.
 
 ### Data tables and charts
 The data families are the data table, pagination, accordion, timeline, toast and date range.

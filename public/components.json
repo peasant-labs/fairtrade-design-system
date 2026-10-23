@@ -1359,6 +1359,7 @@
         "PopupWaitingGithub",
         "PopupChecking",
         "PopupScanFailed",
+        "PopupScanFailedDetail",
         "PopupNoCollective",
         "PopupReady",
         "PopupKept",

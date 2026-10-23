@@ -19,15 +19,36 @@ package is pre-1.0, so minor/patch semantics are best-effort.
   demo's local, account and collective settings at 1440 and 390 in both
   themes. Every card row's content must start and end the same distance from
   its edges, at least the padding floor, with nothing crossing its content box.
-  Four named CSS mutations prove that it fails for the reason it names. On the
-  0.0.36 CSS it fails (16px and 12px insets).
+  The label, help and a stacked value share one left edge, and a divider spans
+  the card's inner width. Seven named CSS mutations prove that it fails for the
+  reason it names. On the 0.0.36 CSS it fails (16px and 12px insets).
 - `AppSidebar` switcher entries take `soon: true`: the entry shows as text,
   marked `aria-disabled`, with a quiet "soon" note in the trailing slot and no
   hover or press. Every switcher now ends with community as soon by itself; an
   app that passes its own `community` entry gets that entry instead.
-- `CommandBlock` takes `wrap` (break at spaces, and anywhere inside a long URL,
-  instead of scrolling) and `compact` (an icon-only copy button whose name stays
-  "copy <command>").
+- `CommandBlock` takes `wrap` (break only at spaces: each token stays whole, so a
+  flag or a date never splits after a hyphen; only a token wider than the line,
+  like a URL, breaks inside it) and `compact` (an icon-only copy button whose
+  name stays "copy <command>"). Copy always uses the raw command.
+
+- `AppSidebar`'s footer is one compact row pinned under the nav: the account on
+  the left (avatar and handle at the nav icons' inset, or the host's signed-out
+  slot) and an icon-only square theme toggle on the right. Its tip sits above it,
+  never over the account. In the collapsed rail the account sits on top of the
+  theme toggle; the phone drawer keeps the row. The footer is outside the nav's
+  scroller, so it stays put.
+- `SettingRow` is one grid: the label and its help line share the left column's
+  left edge, and the value or control ends at the right padding. A long text
+  value (over 40 characters, or `stack`) stacks under its label at the same left
+  edge. An idle save status takes no room, so the control sits at the right
+  padding and never moves when a status appears.
+- `PublishDialog`: the scan-failure box spans the section's full width with the
+  card padding, and an optional `scan.failureDetail` (the actionable detail)
+  shows behind a "details" disclosure in it. The unchecked auto-publish line
+  shows only the host's `hint`; with none, nothing ("off, change it in
+  settings" is gone). The checked consent sentence is unchanged.
+- `CollectiveSettingsView` drops the free sentence under the pull requests row
+  ("automatic linking is now a personal setting").
 
 ### Changed
 
@@ -43,7 +64,10 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 
 ### Compatibility
 
-- One new token and new props only; nothing removed. A consumer that passed
+- One new token and new props only; nothing removed. `.srow` is now a grid; a
+  host row built from `.srow` puts its first child on the left and the rest on
+  the right. A host theme button beside its account slot goes: the footer owns
+  the toggle. A consumer that passed
   `{ id: 'community', label: 'community', tag: 'soon' }` can drop it, since the
   component adds community itself.
 - Card-like boxes grow from 16px to 24px of padding on desktop.
