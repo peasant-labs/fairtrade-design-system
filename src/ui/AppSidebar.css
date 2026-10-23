@@ -5,15 +5,20 @@
    full-height column (resizable, collapsible to an icon rail); below 768px a
    top bar whose menu button opens the same nav as an opaque drawer. one flat
    ground: the column is the page surface told apart by a strong edge, never
-   by a darker grey. the current item gets surface-2, an inset amber bar and
-   an amber icon (never colour alone: aria-current carries the state).
-   tokens only, square corners, transitions only under reduced-motion
-   no-preference, hover only on a fine pointer. classes namespaced `asb-`.
+   by a darker grey. the current item sits on one sliding indicator (surface-2
+   and an inset amber bar) with an amber icon (never colour alone:
+   aria-current carries the state). tokens only, square corners, motion on
+   transform and opacity only and only under reduced-motion no-preference
+   (every transition interruptible), hover only on a fine pointer. classes
+   namespaced `asb-`.
    ─────────────────────────────────────────────────────────────────────────── */
 
 .asb {
   --asb-rail-w: calc(var(--sp-8) + var(--sp-2));
-  --asb-drawer-w: min(calc(100vw - var(--sp-8)), calc(var(--sp-8) * 6));
+  /* the drawer stops short of the menu button, which stays above the scrim as the close control */
+  --asb-drawer-w: min(calc(100vw - var(--target-comfortable) - var(--sp-6)), calc(var(--sp-8) * 6));
+  /* one drawer item's stagger step */
+  --asb-stagger: calc(var(--dur-1) / 4);
   box-sizing: border-box;
   color: var(--ink);
 }
@@ -25,6 +30,7 @@
 
 /* ── the column ───────────────────────────────────────────────────────── */
 .asb-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--sp-5);
@@ -77,7 +83,26 @@
   cursor: pointer;
 }
 .asb-icon-btn .lucide { width: var(--ic-lg); height: var(--ic-lg); }
-.asb-close { display: none; }
+
+/* the menu glyph: three strokes that turn into a cross while the drawer is open */
+.asb-glyph line { transform-box: fill-box; transform-origin: center; }
+.asb[data-drawer-open="true"] .asb-glyph-top { transform: translateY(6px) rotate(45deg); }
+.asb[data-drawer-open="true"] .asb-glyph-mid { transform: scaleX(0); }
+.asb[data-drawer-open="true"] .asb-glyph-bot { transform: translateY(-6px) rotate(-45deg); }
+
+/* the current-item indicator: one block that slides between current items. items sit above it;
+   until it is placed (a server render, before layout) the current item carries the same look. */
+.asb-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--surface-2);
+  box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber);
+  opacity: 0;
+}
+.asb-indicator[data-placed="true"] { opacity: 1; }
 
 /* ── groups and items ─────────────────────────────────────────────────── */
 .asb-group { display: grid; grid-template-columns: minmax(0, 1fr); }
@@ -113,11 +138,14 @@
   border: 0;
   border-radius: 0;
   cursor: pointer;
+  position: relative;
+  z-index: 1;
 }
 span.asb-item { cursor: default; }
 .asb-item-sub { padding-left: calc(var(--sp-3) + var(--sp-5)); }
-.asb-item[aria-current] {
-  color: var(--ink-strong);
+.asb-item[aria-current] { color: var(--ink-strong); }
+.asb:not([data-indicator="ready"]) .asb-item[aria-current="page"],
+.asb-apps .asb-item[aria-current] {
   background: var(--surface-2);
   box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber);
 }
@@ -185,10 +213,13 @@ span.asb-item { cursor: default; }
   bottom: 0;
   left: calc(50% - var(--stroke-emphasis) / 2);
   width: var(--stroke-emphasis);
-  background: transparent;
+  background: var(--amber);
+  opacity: 0;
 }
 .asb-resize:focus-visible { outline-offset: var(--focus-ring-offset-inset); }
-.asb-resize:focus-visible::after, .asb[data-resizing="true"] .asb-resize::after { background: var(--amber); }
+.asb-resize:focus-visible::after { opacity: 1; }
+/* pressed or dragging: the line firms up and doubles in weight */
+.asb-resize:active::after, .asb[data-resizing="true"] .asb-resize::after { opacity: 1; transform: scaleX(2); }
 .asb[data-resizing="true"] { cursor: col-resize; user-select: none; }
 
 /* ── top bar and drawer pieces (shown only below 768px) ───────────────── */
@@ -215,7 +246,7 @@ span.asb-item { cursor: default; }
   .asb[data-collapsed="true"] .asb-item,
   .asb[data-collapsed="true"] .asb-account { justify-content: center; padding: 0; }
   .asb[data-collapsed="true"] .asb-initial { display: inline-flex; }
-  .asb[data-collapsed="true"] .asb-label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .asb[data-collapsed="true"] .asb-label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; opacity: 0; transform: translateX(calc(-1 * var(--sp-1))); }
 }
 
 /* ── narrow: a top bar, and the same nav as an opaque drawer ──────────── */
@@ -233,24 +264,34 @@ span.asb-item { cursor: default; }
     background: var(--surface);
     border-bottom: var(--bd-strong);
   }
-  .asb-panel, .asb-toggle, .asb-resize { display: none; }
-  .asb-close { display: grid; }
-  .asb[data-drawer-open="true"] .asb-scrim {
+  .asb-toggle, .asb-resize { display: none; }
+  /* the menu button stays above the scrim and the drawer: it is the close control while open */
+  .asb-menu { position: relative; z-index: 3; }
+  /* the drawer and scrim stay laid out while closed (hidden and out of the focus order), so the
+     open and close can transition and the current-item indicator can be measured */
+  .asb-scrim {
     display: block;
     position: fixed;
     inset: 0;
+    z-index: 1;
     background: color-mix(in srgb, var(--canvas) 84%, transparent);
+    opacity: 0;
+    visibility: hidden;
   }
-  .asb[data-drawer-open="true"] .asb-panel {
-    display: flex;
+  .asb-panel {
     position: fixed;
     top: 0;
     bottom: 0;
     left: 0;
+    z-index: 2;
     width: var(--asb-drawer-w);
     height: auto;
     padding: var(--sp-4) var(--sp-3);
+    visibility: hidden;
+    transform: translateX(-100%);
   }
+  .asb[data-drawer-open="true"] .asb-scrim { opacity: 1; visibility: visible; }
+  .asb[data-drawer-open="true"] .asb-panel { visibility: visible; transform: none; }
 }
 
 /* ── touch: 44px targets ──────────────────────────────────────────────── */
@@ -264,13 +305,69 @@ span.asb-item { cursor: default; }
 @media (hover: hover) and (pointer: fine) {
   .asb-item:hover, a.asb-account:hover { background: var(--surface-hover); }
   span.asb-item:not([aria-current]):hover { background: none; }
-  .asb-item[aria-current]:hover { background: var(--surface-2); }
+  /* the current item keeps its look on hover: the indicator shows through, or its own fill */
+  .asb[data-indicator="ready"] .asb-item[aria-current="page"]:hover { background: none; }
+  .asb:not([data-indicator="ready"]) .asb-item[aria-current="page"]:hover,
+  .asb-apps .asb-item[aria-current]:hover { background: var(--surface-2); }
   .asb-icon-btn:hover { color: var(--ink); border-color: var(--rule-strong); }
-  .asb-resize:hover::after { background: var(--amber); }
+  /* the resize affordance: the edge line shows faintly under a hovering pointer */
+  .asb-resize:not(:active):not(:focus-visible):hover::after { opacity: .6; }
 }
 
-/* ── press feedback, only when motion is welcome ──────────────────────── */
+/* ── motion, only when it is welcome: transform and opacity, interruptible ── */
 @media (prefers-reduced-motion: no-preference) {
+  /* press feedback */
   .asb-icon-btn { transition: transform var(--dur-2) var(--ease-out); }
   .asb-icon-btn:active { transform: scale(0.97); }
+  a.asb-item, button.asb-item { transition: transform var(--dur-1) var(--ease-out); }
+  a.asb-item:active, button.asb-item:active { transform: scale(0.98); }
+
+  /* the indicator slides to a new current item; a re-measure (collapse, resize) snaps */
+  .asb-indicator { transition: opacity var(--dur-1) var(--ease-out); }
+  .asb-indicator[data-animate="true"] { transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-3) var(--ease-out); }
+
+  /* the menu glyph turns into a cross and back */
+  .asb-glyph line { transition: transform var(--dur-2) var(--ease-out); }
+
+  /* the resize line fades in on hover and firms up on press */
+  .asb-resize::after { transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+}
+
+/* expanding the rail: the width snaps, the labels fade in from a 4px offset */
+@media (width >= 768px) and (prefers-reduced-motion: no-preference) {
+  .asb-label { transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
+  .asb-glabel, .asb-top .asb-brand, .asb-ext { transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
+  /* the group labels, the wordmark and the outside marker return from display: none, so they
+     start from their hidden look; only after a user toggle, never on page load */
+  @starting-style {
+    .asb[data-toggled="true"][data-collapsed="false"] .asb-glabel,
+    .asb[data-toggled="true"][data-collapsed="false"] .asb-top .asb-brand,
+    .asb[data-toggled="true"][data-collapsed="false"] .asb-ext { opacity: 0; transform: translateX(calc(-1 * var(--sp-1))); }
+  }
+}
+
+/* the drawer: slides in from its edge over --dur-3, out faster over --dur-2; the scrim fades; the
+   items stagger in after it. visibility flips at the end of a close so the closed drawer leaves
+   the focus order only once it is out of view. */
+@media (width < 768px) and (prefers-reduced-motion: no-preference) {
+  .asb-panel { transition: transform var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
+  .asb-scrim { transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
+  .asb[data-drawer-open="true"] .asb-panel { transition: transform var(--dur-3) var(--ease-out), visibility 0s; }
+  .asb[data-drawer-open="true"] .asb-scrim { transition: opacity var(--dur-3) var(--ease-out), visibility 0s; }
+  .asb-panel .asb-list > li, .asb-panel .asb-me {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--sp-2)));
+    transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
+  }
+  .asb[data-drawer-open="true"] .asb-panel .asb-list > li,
+  .asb[data-drawer-open="true"] .asb-panel .asb-me {
+    opacity: 1;
+    transform: none;
+    transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
+    transition-delay: calc(min(var(--asb-i, 0), 10) * var(--asb-stagger));
+  }
+  .asb[data-drawer-open="true"] .asb-panel .asb-me { transition-delay: calc(10 * var(--asb-stagger)); }
+  /* the current-item block arrives with the first items rather than before them */
+  .asb:not([data-drawer-open="true"]) .asb-indicator { opacity: 0; }
+  .asb[data-drawer-open="true"] .asb-indicator { transition: opacity var(--dur-2) var(--ease-out) calc(2 * var(--asb-stagger)); }
 }

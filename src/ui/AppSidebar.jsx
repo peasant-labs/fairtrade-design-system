@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
-import { AppWindow, BookOpen, ExternalLink, Globe, Laptop, Menu, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react'
+import { AppWindow, BookOpen, ExternalLink, Globe, Laptop, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import './AppSidebar.css'
 
 /* the shared app sidebar every peasant app screen mounts: the hosted app (online), the local app
@@ -12,8 +12,15 @@ import './AppSidebar.css'
                                tooltip. a separator on the right edge resizes it by pointer or keys.
      narrow (width < 768px)    a top bar with the brand and a menu button. the menu opens the same
                                nav as an opaque drawer from the left (no glass, no blur), always
-                               expanded; Escape, the scrim, the close button or a nav link closes it
-                               and focus returns to the menu button.
+                               expanded; the menu button turns into its close control, and Escape,
+                               the scrim, the button or a nav link closes it, focus returning to
+                               the button.
+
+   motion lives in the css, behind prefers-reduced-motion: no-preference, on transform and opacity
+   only, and every transition is interruptible: the drawer slides from its edge and its items
+   stagger in, the menu glyph turns into a cross, expanded labels fade in from a 4px offset while
+   the rail width snaps, and one indicator slides between current items instead of jumping. the
+   indicator is placed from layout offsets, so a pressed (scaled) item never skews it.
 
    collapsed state and width persist in localStorage under `${storageKey}.collapsed` and
    `${storageKey}.width`. storage is read after mount (so a server render and the first client
@@ -121,6 +128,19 @@ function writeStored(key, value) {
 
 const clampWidth = (value, min, max) => Math.min(max, Math.max(min, value))
 
+/* an element's layout offset inside a positioned container, summed up the offsetParent chain: a
+   transformed ancestor (a drawer item mid-stagger) becomes an offsetParent of its own, and layout
+   offsets ignore transforms, so the sum is the resting position whatever is moving */
+function offsetWithin(el, container) {
+  let top = 0
+  let left = 0
+  for (let node = el; node && node !== container; node = node.offsetParent) {
+    top += node.offsetTop
+    left += node.offsetLeft
+  }
+  return { top, left }
+}
+
 function WheatMark() {
   return (
     <svg className="asb-mark" viewBox="0 0 18 22" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square">
@@ -151,6 +171,17 @@ function Leading({ icon: Icon, swatch, label }) {
   if (swatch) return <span className="asb-sw" aria-hidden="true" style={{ background: swatch }} />
   // with neither, the collapsed rail still needs something to show: the label's first letter
   return <span className="asb-ic asb-initial" aria-hidden="true">{label.charAt(0)}</span>
+}
+
+/* three strokes that turn into a cross while the drawer is open (css moves them, transform only) */
+function MenuGlyph() {
+  return (
+    <svg className="asb-glyph lucide" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line className="asb-glyph-top" x1="4" y1="6" x2="20" y2="6" />
+      <line className="asb-glyph-mid" x1="4" y1="12" x2="20" y2="12" />
+      <line className="asb-glyph-bot" x1="4" y1="18" x2="20" y2="18" />
+    </svg>
+  )
 }
 
 function ItemBody({ item, external }) {
@@ -198,18 +229,18 @@ function SidebarItem({ item, current, Link, onNavigate }) {
   return <span className={className} aria-current={ariaCurrent} title={title}>{body}</span>
 }
 
-function AppSwitcher({ app, apps, Link, onNavigate }) {
+function AppSwitcher({ app, apps, Link, onNavigate, firstIndex }) {
   const shown = apps.filter((entry) => entry.id === app || entry.href)
   if (shown.length === 0) return null
   return (
     <nav className="asb-group asb-apps" aria-label="apps">
       <ul className="asb-list">
-        {shown.map((entry) => {
+        {shown.map((entry, index) => {
           const current = entry.id === app
           const item = { id: entry.id, label: entry.label, icon: APP_ICONS[entry.id] ?? AppWindow }
           const body = <ItemBody item={item} external={!current} />
           return (
-            <li key={entry.id}>
+            <li key={entry.id} style={{ '--asb-i': firstIndex + index }}>
               {entry.href ? (
                 <Link
                   href={entry.href}
@@ -277,11 +308,16 @@ export default function AppSidebar({
   const [width, setWidth] = useState(() => clampWidth(defaultWidth, minWidth, maxWidth))
   const [resizing, setResizing] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  // set by the first user toggle, so expand-only entrance motion never plays on page load
+  const [toggled, setToggled] = useState(false)
+  // the one current-item indicator: placed from layout offsets, animated only when the current
+  // item changes (never on mount, collapse or resize, which would read as drift)
+  const [indicator, setIndicator] = useState(null)
+  const placedForRef = useRef(null)
   const reactId = useId()
   const panelId = `asb-panel-${reactId}`
   const panelRef = useRef(null)
   const menuRef = useRef(null)
-  const closeRef = useRef(null)
   const dragRef = useRef(null)
   const widthRef = useRef(width)
   widthRef.current = width
@@ -302,9 +338,35 @@ export default function AppSidebar({
   const toggleCollapsed = () => {
     const next = !collapsed
     setCollapsed(next)
+    setToggled(true)
     if (storageKey) writeStored(`${storageKey}.collapsed`, String(next))
     onCollapsedChange?.(next)
   }
+
+  useIsoLayoutEffect(() => {
+    const panel = panelRef.current
+    if (!panel) return undefined
+    const place = () => {
+      const current = panel.querySelector('nav:not(.asb-apps) .asb-item[aria-current="page"]')
+      if (!current) {
+        placedForRef.current = null
+        setIndicator((previous) => (previous === null ? previous : null))
+        return
+      }
+      // slide only when the current item itself changed; a re-measure for the same item snaps
+      const animate = placedForRef.current !== null && placedForRef.current !== currentId
+      placedForRef.current = currentId
+      // layout offsets relative to the positioned panel, unaffected by a press scale or a stagger
+      const { top, left } = offsetWithin(current, panel)
+      const next = { id: currentId, top, left, width: current.offsetWidth, height: current.offsetHeight, animate }
+      setIndicator((previous) => (previous && previous.id === next.id && previous.top === next.top && previous.left === next.left && previous.width === next.width && previous.height === next.height ? previous : next))
+    }
+    place()
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const observer = new ResizeObserver(place)
+    observer.observe(panel)
+    return () => observer.disconnect()
+  }, [currentId, collapsed, width, groups, drawerOpen])
 
   const closeDrawer = useCallback((returnFocus = true) => {
     setDrawerOpen(false)
@@ -316,14 +378,17 @@ export default function AppSidebar({
     if (drawerOpen) closeDrawer(false)
   }, [drawerOpen, closeDrawer])
 
-  // the open drawer holds focus: it starts on the close button, Tab wraps inside, Escape closes
+  // the open drawer holds focus: the menu button (now its close control) and the drawer form one
+  // Tab loop, and Escape closes
   useEffect(() => {
     if (!drawerOpen) return
     const panel = panelRef.current
-    closeRef.current?.focus()
+    const menu = menuRef.current
+    menu?.focus()
+    const inLoop = (el) => el === menu || panel.contains(el)
     const focusables = () =>
-      [...panel.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')]
-        .filter((el) => el.getClientRects().length > 0 || el === document.activeElement)
+      [menu, ...panel.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+        .filter((el) => el && (el.getClientRects().length > 0 || el === document.activeElement))
     const onKey = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault()
@@ -335,7 +400,7 @@ export default function AppSidebar({
       if (items.length === 0) return
       const first = items[0]
       const last = items[items.length - 1]
-      if (!panel.contains(document.activeElement)) {
+      if (!inLoop(document.activeElement)) {
         e.preventDefault()
         ;(e.shiftKey ? last : first).focus()
       } else if (e.shiftKey && document.activeElement === first) {
@@ -394,6 +459,8 @@ export default function AppSidebar({
   }
 
   const rootClass = ['asb', className].filter(Boolean).join(' ')
+  // a running index over every listed item, so the drawer can stagger them in order
+  let listIndex = 0
   const shownAccount = accountSlot ?? (account ? <AccountRow account={account} Link={Link} onNavigate={onNavigate} /> : null)
 
   return (
@@ -402,6 +469,8 @@ export default function AppSidebar({
       data-collapsed={collapsed ? 'true' : 'false'}
       data-drawer-open={drawerOpen ? 'true' : 'false'}
       data-resizing={resizing ? 'true' : undefined}
+      data-indicator={indicator ? 'ready' : undefined}
+      data-toggled={toggled ? 'true' : undefined}
       style={{ '--asb-w': `${width}px` }}
     >
       <div className="asb-bar">
@@ -410,18 +479,25 @@ export default function AppSidebar({
           ref={menuRef}
           type="button"
           className="asb-icon-btn asb-menu"
-          aria-label="open the menu"
+          aria-label={drawerOpen ? 'close the menu' : 'open the menu'}
           aria-expanded={drawerOpen ? 'true' : 'false'}
           aria-controls={panelId}
-          onClick={() => setDrawerOpen(true)}
+          onClick={() => (drawerOpen ? closeDrawer() : setDrawerOpen(true))}
         >
-          <Menu aria-hidden="true" />
+          <MenuGlyph />
         </button>
       </div>
 
       <div className="asb-scrim" aria-hidden="true" onClick={() => closeDrawer()} />
 
       <aside id={panelId} ref={panelRef} className="asb-panel" aria-label={label}>
+        <span
+          className="asb-indicator"
+          aria-hidden="true"
+          data-placed={indicator ? 'true' : 'false'}
+          data-animate={indicator?.animate ? 'true' : 'false'}
+          style={indicator ? { transform: `translateY(${indicator.top}px)`, left: `${indicator.left}px`, width: `${indicator.width}px`, height: `${indicator.height}px` } : undefined}
+        />
         <div className="asb-top">
           <Brand brand={brand} homeHref={homeHref} Link={Link} onNavigate={onNavigate} />
           <button
@@ -435,9 +511,6 @@ export default function AppSidebar({
           >
             {collapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
           </button>
-          <button ref={closeRef} type="button" className="asb-icon-btn asb-close" aria-label="close the menu" onClick={() => closeDrawer()}>
-            <X aria-hidden="true" />
-          </button>
         </div>
 
         {groups.map((group) => (
@@ -445,7 +518,7 @@ export default function AppSidebar({
             {group.label ? <span className="asb-glabel">{group.label}</span> : null}
             <ul className="asb-list">
               {group.items.map((item) => (
-                <li key={item.id}>
+                <li key={item.id} style={{ '--asb-i': listIndex++ }}>
                   <SidebarItem item={item} current={item.id === currentId} Link={Link} onNavigate={onNavigate} />
                 </li>
               ))}
@@ -453,7 +526,7 @@ export default function AppSidebar({
           </nav>
         ))}
 
-        <AppSwitcher app={app} apps={apps} Link={Link} onNavigate={onNavigate} />
+        <AppSwitcher app={app} apps={apps} Link={Link} onNavigate={onNavigate} firstIndex={listIndex} />
 
         {shownAccount ? <div className="asb-me">{shownAccount}</div> : null}
       </aside>

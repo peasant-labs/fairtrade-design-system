@@ -568,7 +568,13 @@ render the same system.
   with an icon or a colour swatch, the current item marked with `aria-current` and the amber inset
   bar, an outside-the-app marker, the app switcher (online, local, docs) and the account row.
   Collapse and width persist per browser. Below 768px it becomes a top bar whose menu opens the
-  same nav as an opaque drawer. `AppSidebarLayout` places it beside the page.
+  same nav as an opaque drawer; the menu button then becomes the drawer's one close control.
+  `AppSidebarLayout` places it beside the page. Its motion runs only under
+  `prefers-reduced-motion: no-preference`, on transform and opacity, and every transition can be
+  interrupted: the drawer slides in from its edge over `--dur-3` and out over `--dur-2` while the
+  scrim fades, its items stagger in a quarter of `--dur-1` apart, the menu glyph turns into a cross,
+  an expanded rail's labels fade in from a 4px offset while the width snaps, items press to 0.98,
+  and one indicator slides between current items instead of jumping.
 - **In-use shell:** the app switcher replaces the page header at the same height and carries a
   keyboard tablist for the three apps.
 - **Local app sections:** `LOCAL_APP_SECTIONS` in `src/ui/inuse/InUseShell.jsx` is the canonical

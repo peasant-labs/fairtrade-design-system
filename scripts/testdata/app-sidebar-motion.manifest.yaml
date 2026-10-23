@@ -1,0 +1,8 @@
+# Required-NAME manifest for app-sidebar-motion.yaml: deletion protection. The journey asserts the
+# case and motion names equal these lists exactly, as sets.
+requiredCaseNames:
+  - desktop indicator follows the current item
+  - phone drawer opens to the current item and closes
+requiredMotionNames:
+  - motion-allowed
+  - reduced

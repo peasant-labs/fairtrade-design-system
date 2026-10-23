@@ -120,11 +120,23 @@ cases:
     props: {app: online, account: {handle: mira}}
     slot: signed out
     expected: {text: signed out, handle: false}
-  # The narrow-viewport menu: the button opens the drawer, Escape closes it, a nav link closes it.
+  # The narrow-viewport menu: the button opens the drawer and then is its one close control; the
+  # listed items carry their stagger order; the button, Escape and a nav link each close it.
   - name: the menu opens and closes the drawer
     kind: drawer
     props: {app: online, currentId: home}
-    expected: {name: open the menu, closeName: close the menu}
+    expected: {name: open the menu, closeName: close the menu, listed: 7}
+  # One indicator marks the current item: placed without sliding at first, sliding to a new
+  # current item, hidden when no item is current.
+  - name: one indicator slides between current items
+    kind: indicator
+    props: {app: online, currentId: home}
+    next: discover
+    missing: nowhere
+    expected:
+      first: {count: 1, hidden: 'true', placed: 'true', slides: 'false', ready: ready}
+      moved: {count: 1, hidden: 'true', placed: 'true', slides: 'true', ready: ready}
+      none: {count: 1, hidden: 'true', placed: 'false', slides: 'false', ready: null}
   # A router link receives the same props an anchor would.
   - name: a link component receives the item props
     kind: link-component

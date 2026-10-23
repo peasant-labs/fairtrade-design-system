@@ -3,7 +3,9 @@
    icon or swatch, the external marker and its spoken suffix, the group landmarks and labels, the
    online / local / docs switcher, the collapse toggle, the remembered collapsed state and width
    (including a throwing store and a null key), the keyboard resize, the account row, the
-   narrow-viewport menu and a router link component.
+   narrow-viewport menu (its button doubling as the close control, the drawer items in stagger
+   order), the one sliding current-item indicator and a router link component. jsdom has no
+   layout, so the indicator is checked for placement and for when it may slide, not for pixels.
    Cases: scripts/testdata/app-sidebar.yaml (+ .manifest.yaml).
    Run: node scripts/app-sidebar.test.mjs; mutations: node scripts/parts-mutations.mjs
    scripts/app-sidebar.test.mjs scripts/testdata/app-sidebar.manifest.yaml. */
@@ -216,8 +218,14 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         report.check(menu?.getAttribute('aria-expanded') === 'false' && asb?.dataset.drawerOpen === 'false', `${name}: the drawer must start closed`)
         await mounted.act(() => click(window, menu))
         report.check(menu?.getAttribute('aria-expanded') === 'true' && asb?.dataset.drawerOpen === 'true', `${name}: the menu button must open the drawer`)
-        const close = root.querySelector('button.asb-close')
-        report.check(close?.getAttribute('aria-label') === row.expected.closeName && window.document.activeElement === close, `${name}: focus must move to the close button`)
+        report.check(menu?.getAttribute('aria-label') === row.expected.closeName && window.document.activeElement === menu, `${name}: the open menu button must become ${JSON.stringify(row.expected.closeName)} and hold focus`)
+        const closers = [...root.querySelectorAll('button')].filter((button) => button.getAttribute('aria-label') === row.expected.closeName)
+        report.check(closers.length === 1, `${name}: there must be one close control, received ${closers.length}`)
+        const order = [...root.querySelectorAll('.asb-panel .asb-list > li')].map((li) => li.style.getPropertyValue('--asb-i'))
+        report.check(order.length === row.expected.listed && same(order, order.map((_, index) => String(index))), `${name}: the ${row.expected.listed} listed items must carry their stagger order 0..${row.expected.listed - 1}, received ${JSON.stringify(order)}`)
+        await mounted.act(() => click(window, menu))
+        report.check(menu?.getAttribute('aria-expanded') === 'false' && asb?.dataset.drawerOpen === 'false', `${name}: pressing the open menu button must close the drawer`)
+        await mounted.act(() => click(window, menu))
         await mounted.act(() => keydown(window, window.document.body, 'Escape'))
         report.check(menu?.getAttribute('aria-expanded') === 'false' && asb?.dataset.drawerOpen === 'false', `${name}: Escape must close the drawer`)
         await mounted.settle(5)
@@ -227,6 +235,26 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         link?.addEventListener('click', (event) => event.preventDefault(), { once: true })
         await mounted.act(() => click(window, link))
         report.check(asb?.dataset.drawerOpen === 'false', `${name}: choosing a nav link must close the drawer`)
+        await mounted.unmount()
+      } else if (row.kind === 'indicator') {
+        const mounted = await mount(React.createElement(AppSidebar, propsFor(row)))
+        const root = mounted.container
+        const look = () => {
+          const bars = root.querySelectorAll('.asb-indicator')
+          return {
+            count: bars.length,
+            hidden: bars[0]?.getAttribute('aria-hidden'),
+            placed: bars[0]?.dataset.placed,
+            slides: bars[0]?.dataset.animate,
+            ready: root.querySelector('.asb')?.dataset.indicator ?? null,
+          }
+        }
+        report.check(same(look(), row.expected.first), `${name}: the first placement must be ${JSON.stringify(row.expected.first)}, received ${JSON.stringify(look())}`)
+        await mounted.rerender(React.createElement(AppSidebar, propsFor(row, { currentId: row.next })))
+        report.check(same(look(), row.expected.moved), `${name}: a new current item must be ${JSON.stringify(row.expected.moved)}, received ${JSON.stringify(look())}`)
+        report.check(itemFor(root, row.next)?.getAttribute('aria-current') === 'page', `${name}: the new current item must carry aria-current`)
+        await mounted.rerender(React.createElement(AppSidebar, propsFor(row, { currentId: row.missing })))
+        report.check(same(look(), row.expected.none), `${name}: with no current item the indicator must be ${JSON.stringify(row.expected.none)}, received ${JSON.stringify(look())}`)
         await mounted.unmount()
       } else if (row.kind === 'link-component') {
         const seen = []
@@ -249,4 +277,4 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   }
 })
 
-report.finish(`${fixture.cases.length} cases over items, groups, the switcher, collapse, persistence, resize, the account row, the drawer and router links.`)
+report.finish(`${fixture.cases.length} cases over items, groups, the switcher, collapse, persistence, resize, the account row, the drawer, the current-item indicator and router links.`)
