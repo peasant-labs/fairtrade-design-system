@@ -6,6 +6,7 @@ import {
   CircleFadingArrowUp,
   ExternalLink,
   GitPullRequest,
+  Info,
   ListX,
   Loader,
   MoreHorizontal,
@@ -365,6 +366,15 @@ function WhatLeaves({ state, scan, onRescan, checkingStage, readOnlyReview }) {
               </button>
             )}
           </p>
+          {/* the host's quiet note on the scanned copy (what it leaves out, and why): information,
+              never an alert, and it does not hold publishing back */}
+          {typeof scan?.note?.line === 'string' && scan.note.line ? (
+            <div className="pub-line pub-line-note">
+              <Info aria-hidden="true" />
+              <span className="pub-line-text">{scan.note.line}</span>
+              <FailureDetail detail={scan.note.detail} />
+            </div>
+          ) : null}
           {open && matches.length > 0 && (
             <RedactionReview readOnly={readOnlyReview} matches={matches} total={scan?.total ?? matches.length} availableLevels={['standard']} className="pub-review" />
           )}
@@ -392,7 +402,7 @@ function WhatLeaves({ state, scan, onRescan, checkingStage, readOnlyReview }) {
  * @param {string} props.title - the session title, kept in its case.
  * @param {'publish'|'update'} [props.mode='publish']
  * @param {PublishDialogState} props.state - one of PUBLISH_DIALOG_STATES.
- * @param {{ matches?: import('./Redaction.jsx').RedactionMatch[], matchCount?: number, total?: number, failure?: string, failureDetail?: string, failureAction?: { label: string, onSelect: () => void, busy?: boolean } }} [props.scan] - the host's scan result. `failure` is one plain line; `failureAction` is a button in the failure box (the one action that fixes it); `failureDetail`, the actionable detail (what, why, where, the fix), shows as pre-wrapped mono text behind a "details" disclosure in the failure box. `matchCount` is the full occurrence count when `matches` contains only examples. Until it carries a
+ * @param {{ matches?: import('./Redaction.jsx').RedactionMatch[], matchCount?: number, total?: number, failure?: string, failureDetail?: string, failureAction?: { label: string, onSelect: () => void, busy?: boolean }, note?: { line: string, detail?: string } }} [props.scan] - the host's scan result. `note` is a quiet line under a finished scan's count (what the scanned copy leaves out, and why), with its detail behind a "details" disclosure; it is information, not an alert, and publishing stays on. `failure` is one plain line; `failureAction` is a button in the failure box (the one action that fixes it); `failureDetail`, the actionable detail (what, why, where, the fix), shows as pre-wrapped mono text behind a "details" disclosure in the failure box. `matchCount` is the full occurrence count when `matches` contains only examples. Until it carries a
  *        `matches` list, the popup says the transcript is not scanned and keeps publish off. A match with `kept: true` leaves un-redacted, and the
  *        popup says so and opens the matches.
  * @param {() => void} [props.onRescan]

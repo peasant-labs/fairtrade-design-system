@@ -187,6 +187,18 @@ popup:
     steps:
       - {press: retry loading your collectives, calls: [[onAccessRetry]]}
       - {press: publish to 2 collectives, calls: []}
+  # The host's quiet note on the scanned copy (what it leaves out, and why): information under the
+  # count, with its detail one disclosure away, never an alert, and publishing stays on.
+  - name: a note on the scanned copy
+    state: ready
+    scanNote: {line: "1 line in this session couldn't be read, so the copy being published stops before it.", detail: 'line 50 of the recording: unexpected end of JSON input'}
+    heading: publish “Fix flaky ingest test”
+    primary: {label: publish to 2 collectives, enabled: true}
+    rescan: {enabled: true}
+    lines: ['3 matches, all redacted', "1 line in this session couldn't be read, so the copy being published stops before it.", details, 'line 50 of the recording: unexpected end of JSON input']
+    removeButtons: [remove Acme Platform, remove Acme Company]
+    steps:
+      - {press: publish to 2 collectives, calls: [[onPublish]]}
   - name: done
     state: done
     heading: published to Acme Platform and Acme Company

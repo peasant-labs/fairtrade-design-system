@@ -198,6 +198,20 @@ export const PopupCollectivesFailed = {
     await expect(canvas.getByRole('button', { name: 'publish' })).toBeDisabled()
   },
 }
+export const PopupScanNote = {
+  name: 'popup, a note on the scanned copy',
+  render: () => (
+    <Popup
+      state="ready"
+      scan={{ ...SCAN, note: { line: 'one line in this session couldn’t be read, so the copy being published stops before it.', detail: 'line 50 of the recording: unexpected end of JSON input' } }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement.ownerDocument.body)
+    await expect(canvas.getByText(/copy being published stops before it/)).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'publish to 2 collectives' })).toBeEnabled()
+  },
+}
 export const PopupLongTitle = {
   name: 'popup, a long session title',
   render: () => <Popup state="ready" title="step 0: benchmark the transfer handler and mail the numbers to <EMAIL>, then compare them with last week's run and write up where the time goes" />,

@@ -28,6 +28,7 @@ requiredPopupNames:
   - first publish cannot remove its only collective
   - stopped with a detail
   - collectives cannot load
+  - a note on the scanned copy
 requiredUpdateNames:
   - update adds one collective
   - update removes one collective
@@ -41,6 +42,9 @@ requiredTransitionNames:
   - keyboard focus remains inside during publish and pending approval
 
 requiredMutationNames:
+  - the scan note holds publishing back
+  - the scan note is dropped
+  - the scan note becomes an alert
   - the stopped box repeats the review line
   - a collectives failure leaves publishing on
   - the stopped detail is dropped
@@ -198,3 +202,18 @@ mutations:
     find: "<span className=\"pub-title-content\" title={title}>"
     replace: "<span className=\"pub-title-content\">"
     expectedDiagnostic: "the full title is its tooltip"
+  - name: the scan note holds publishing back
+    file: src/ui/Publish.jsx
+    find: " || ambiguousRetry || !!accessFailure"
+    replace: " || ambiguousRetry || !!accessFailure || !!scan?.note"
+    expectedDiagnostic: "a note on the scanned copy: the primary button must be enabled"
+  - name: the scan note is dropped
+    file: src/ui/Publish.jsx
+    find: "{typeof scan?.note?.line === 'string' && scan.note.line ? ("
+    replace: "{false ? ("
+    expectedDiagnostic: "a note on the scanned copy: the popup must read"
+  - name: the scan note becomes an alert
+    file: src/ui/Publish.jsx
+    find: "<div className=\"pub-line pub-line-note\">"
+    replace: "<div className=\"pub-line pub-line-note\" role=\"alert\">"
+    expectedDiagnostic: "a note on the scanned copy: the note is not an alert"
