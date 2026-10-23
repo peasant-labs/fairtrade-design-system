@@ -4,6 +4,56 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.36 - 2026-10-23
+
+### Added
+
+- `AppSidebar` keeps one order in every app: the brand row (the mark and the
+  collapse control), the app's nav groups, search, the switcher to the other
+  apps, then the footer with the theme toggle and the account. Two new parts
+  fill it:
+  - `search` (`{ onOpen, label?, shortcut?, keyShortcuts? }`): one item after
+    the nav groups with a quiet mono key hint (`aria-keyshortcuts` from
+    `keyShortcuts`). Choosing it closes the phone drawer and calls `onOpen`.
+  - `theme` with `onThemeChange`: the footer leads with one toggle that names
+    the theme it switches to ("switch to dark mode", label "dark mode", the moon
+    icon), then the account. Without `onThemeChange` there is no toggle.
+  The collapsed rail shows both as icons with titles; the phone drawer keeps the
+  order.
+- A switcher entry can carry a `tag`, a short note after its label. A tagged
+  entry with no `href` (`{ id: 'community', label: 'community', tag: 'soon' }`)
+  shows as text with its note instead of being left out, so a place that does
+  not exist yet can sit next to docs.
+
+### Changed
+
+- App heads lead with the title alone. Explainer sentences are gone from the
+  shipped views: the collective settings head ("changes save right away."), the
+  "find a collective" and github rail notes, the explore head, the collective
+  detail fallback deck, the code map navigator head (its kicker and note), the
+  analytics card subtitles that described the chart (unit and count subtitles
+  stay), and VillageObservations' offline note (its permission warnings stay).
+  `CollectivesView` no longer has a default `deck`; a host that passes one still
+  sees it. The in-use demo screens drop theirs. DESIGN.md records the rule.
+- `PublishBar`'s more trigger matches the action beside it: the control height,
+  44px on a coarse pointer.
+- The transcript header's search trigger takes the header control height, and
+  its shortcut is quiet mono text instead of a boxed key in a small button.
+- The transcript meta row uses one figure style (icon, tabular number in the
+  ink, word in ink-3). Duration is a plain figure, the author and token figures
+  keep their definitions without a dotted underline, and an unmeasured prompt
+  count is left out instead of reading "unknown prompts".
+
+### Compatibility
+
+- New `AppSidebar` props only (`search`, `theme`, `onThemeChange`); none
+  removed. A consumer that rendered search or a theme item in its own group
+  moves them into these props; one that rendered a theme button beside its
+  account slot drops it.
+- `.asb-me` no longer carries the footer's top rule and auto margin; the new
+  `.asb-foot` wraps the theme toggle and the account.
+- `.gmp-navigator-kicker` and `.gmp-navigator-note` are gone.
+
 ## 0.0.35 - 2026-10-23
 
 ### Added
