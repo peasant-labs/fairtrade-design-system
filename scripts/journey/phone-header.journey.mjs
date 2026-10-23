@@ -51,6 +51,26 @@ for (const row of fixture.cases) {
       expect(trail.middles.some((m) => m.cut && m.ellipsis === 'ellipsis'), `${context}: a middle crumb must shrink to an ellipsis ${JSON.stringify(trail)}`).toBe(true)
       expect(trail.first.cut || trail.last.cut, `${context}: the first and last crumbs read whole ${JSON.stringify(trail)}`).toBe(false)
     }
+    if (row.kind === 'chips') {
+      await expect(page.locator('#inuse .gan-section-chips')).toBeVisible()
+      const strip = await page.evaluate(() => {
+        const chips = document.querySelector('#inuse .gan-section-chips')
+        const view = chips.closest('.iu-view')
+        const all = [...chips.querySelectorAll('.gan-seg')]
+        const first = all[0].getBoundingClientRect()
+        const tops = new Set(all.map((chip) => Math.round(chip.getBoundingClientRect().top)))
+        const scrolls = chips.scrollWidth > chips.clientWidth
+        chips.scrollLeft = chips.scrollWidth
+        const last = all.at(-1).getBoundingClientRect()
+        const edge = chips.getBoundingClientRect()
+        return { rows: tops.size, scrolls, inset: Math.round(first.left - view.getBoundingClientRect().left), minHeight: Math.min(...all.map((chip) => chip.getBoundingClientRect().height)), lastInside: last.right <= edge.right + 1 }
+      })
+      expect(strip.rows, `${context}: the chips must be one row ${JSON.stringify(strip)}`).toBe(1)
+      expect(strip.scrolls, `${context}: the strip scrolls in its own row`).toBe(true)
+      expect(strip.inset, `${context}: the first chip starts on the page's left edge`).toBe(row.inset)
+      expect(strip.minHeight, `${context}: every chip keeps the 44px reach`).toBeGreaterThanOrEqual(44)
+      expect(strip.lastInside, `${context}: the strip scrolls to its last chip`).toBe(true)
+    }
     await phone.close()
   })
 }

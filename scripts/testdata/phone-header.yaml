@@ -4,7 +4,11 @@
 #            strip never runs under it, the trigger shows no ⌘F, and the strip scrolls to its last tab.
 #   crumb    the transcript trail is one line: every crumb and separator share one row, a middle
 #            crumb shrinks to an ellipsis, and the first and last crumbs read whole.
+#   chips    the analytics section chips are one row that scrolls in its own strip: every chip shares
+#            one top, keeps the 44px reach, the first starts on the page's left edge (`inset` from the
+#            demo's view) and the strip scrolls to its last chip.
 viewport: {width: 390, height: 844}
 cases:
   - {name: the search trigger keeps beside the tab strip, kind: tab-bar, query: 'app=transcript'}
   - {name: the transcript trail is one line, kind: crumb, query: 'app=transcript'}
+  - {name: the analytics sections are one strip, kind: chips, query: 'app=graph&section=analytics', inset: 16}

@@ -41,6 +41,22 @@
   .gan-toggle-lab .lucide { width: var(--ic-sm); height: var(--ic-sm); }
   .gan-toggle-lab b { color: var(--ink-2); font-weight: 600; font-variant-numeric: tabular-nums; }
   .gan-toggle-chips { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+  /* on a phone the section chips are one row that scrolls sideways in its own strip, fading at its
+     end like the transcript tabs, instead of wrapping into three rows. the strip spans the head and
+     starts on the page's left edge; its padding keeps a chip's focus ring inside the scroller. */
+  @media (width < 768px) {
+    .gan-head > .gan-toggle { align-self: stretch; }
+    .gan-section-chips {
+      flex: 1 1 100%;
+      flex-wrap: nowrap;
+      min-width: 0;
+      overflow-x: auto;
+      padding: var(--sp-1) var(--sp-6) var(--sp-1) var(--sp-1);
+      margin: calc(-1 * var(--sp-1));
+      mask-image: linear-gradient(to right, var(--ink) calc(100% - var(--sp-6)), transparent);
+    }
+    .gan-section-chips > .gan-seg { flex: none; }
+  }
   .gan-seg {
     box-sizing: border-box; height: var(--control-h-sm); padding: 0 var(--sp-2);
     font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; line-height: var(--lh-mono);

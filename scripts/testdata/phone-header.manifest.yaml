@@ -3,3 +3,4 @@
 requiredCaseNames:
   - the search trigger keeps beside the tab strip
   - the transcript trail is one line
+  - the analytics sections are one strip
