@@ -562,6 +562,13 @@ render the same system.
 - **Tabs:** mono lowercase, `--ink-3` at rest, the active tab in `--ink` with a 2px amber underline;
   counts are tabular in `--ink-4`.
 - **Trails:** breadcrumb, step indicator, tabs and pagination; orientation lives here.
+- **App sidebar:** `AppSidebar` is the one sidebar for every app screen (online, local and docs):
+  the wheat mark and wordmark, a collapse toggle down to an icon rail whose labels become titles, a
+  resizable width (pointer drag, or arrow keys, Home and End on the separator), groups of items
+  with an icon or a colour swatch, the current item marked with `aria-current` and the amber inset
+  bar, an outside-the-app marker, the app switcher (online, local, docs) and the account row.
+  Collapse and width persist per browser. Below 768px it becomes a top bar whose menu opens the
+  same nav as an opaque drawer. `AppSidebarLayout` places it beside the page.
 - **In-use shell:** the app switcher replaces the page header at the same height and carries a
   keyboard tablist for the three apps.
 - **Local app sections:** `LOCAL_APP_SECTIONS` in `src/ui/inuse/InUseShell.jsx` is the canonical

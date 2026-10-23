@@ -1,0 +1,132 @@
+# Cases for AppSidebar (src/ui/AppSidebar.jsx). scripts/app-sidebar.test.mjs mounts the REAL
+# component for each case and checks what a user reaches: links and buttons with aria-current on the
+# current item, an icon or a swatch, the external marker with its spoken suffix, the group labels,
+# the app switcher, the collapse toggle, the remembered state, the keyboard resize, the account row
+# and the narrow-viewport menu. Every case mounts `groups` below unless it says otherwise.
+#
+# `icon` names a lucide-react export; `onSelect: true` gives the item a recording handler.
+groups:
+  - id: main
+    ariaLabel: peasant sections
+    items:
+      - {id: home, label: home, href: /home, icon: House}
+      - {id: discover, label: discover, onSelect: true, icon: Compass}
+      - {id: eval-crowd, label: eval-crowd, href: /c/eval-crowd, swatch: 'var(--olive)', depth: 1}
+      - {id: collectives, label: collectives, href: 'https://online.invalid/collectives', icon: Users, external: true}
+  - id: help
+    label: help
+    items:
+      - {id: docs, label: docs, href: /docs, icon: BookOpen}
+apps:
+  - {id: online, label: online, href: 'https://online.invalid/'}
+  - {id: local, label: local, href: 'http://localhost:8686/'}
+  - {id: docs, label: docs}
+
+cases:
+  # Items: tag, aria-current, the leading glyph, the external marker and the accessible text
+  # (textContent without aria-hidden nodes: the label plus any spoken suffix).
+  - name: items render as links and buttons
+    kind: items
+    props: {app: online, currentId: home}
+    expected:
+      - {id: home, tag: A, current: page, leading: icon, external: false, text: home, depth: 0}
+      - {id: discover, tag: BUTTON, current: null, leading: icon, external: false, text: discover, depth: 0}
+      - {id: eval-crowd, tag: A, current: null, leading: swatch, external: false, text: eval-crowd, depth: 1}
+      - {id: collectives, tag: A, current: null, leading: icon, external: true, text: 'collectives, opens outside this app', depth: 0}
+      - {id: docs, tag: A, current: null, leading: icon, external: false, text: docs, depth: 0}
+  - name: a button item reports its id
+    kind: select
+    props: {app: online, currentId: home}
+    click: discover
+    expectedSelected: [discover]
+  # Groups: every nav landmark and its name, and which group labels show while expanded.
+  - name: group labels and landmarks
+    kind: groups
+    props: {app: online}
+    expected:
+      navNames: [peasant sections, help, apps]
+      visibleLabels: [help]
+      asideName: peasant
+  # The switcher: the current app is marked; others are links that leave the app; a non-current
+  # entry with no href is omitted.
+  - name: the switcher marks the current app
+    kind: switcher
+    props: {app: local}
+    expected:
+      - {label: online, tag: A, current: null, external: true}
+      - {label: local, tag: A, current: 'true', external: false}
+  - name: a current app with no href is marked text
+    kind: switcher
+    props: {app: docs}
+    expected:
+      - {label: online, tag: A, current: null, external: true}
+      - {label: local, tag: A, current: null, external: true}
+      - {label: docs, tag: SPAN, current: 'true', external: false}
+  # Collapse: the toggle flips aria-expanded and its name, the root is marked collapsed, the labels
+  # stay in the DOM as accessible names, items carry title tooltips, and the separator leaves.
+  - name: the toggle collapses to a rail
+    kind: collapse
+    props: {app: online, storageKey: null}
+    expected:
+      before: {expanded: 'true', name: collapse the sidebar, collapsed: 'false', separator: true}
+      after: {expanded: 'false', name: expand the sidebar, collapsed: 'true', separator: false}
+      titles: [home, discover, eval-crowd, collectives, docs]
+      callbacks: [true]
+  # Persistence: a toggle and a key resize write storage; a remount reads them back.
+  - name: collapsed state and width persist
+    kind: persist
+    props: {app: online, storageKey: test.sidebar}
+    keys: [ArrowRight]
+    expected:
+      storage: {test.sidebar.width: '264', test.sidebar.collapsed: 'true'}
+      remount: {collapsed: 'true', width: 264px}
+  - name: stored values are restored and clamped
+    kind: restore
+    props: {app: online, storageKey: test.sidebar}
+    storage: {test.sidebar.collapsed: 'true', test.sidebar.width: '999'}
+    expected: {collapsed: 'true', width: 360px}
+  - name: a throwing localStorage still renders
+    kind: throwing-storage
+    props: {app: online}
+    expected: {items: 5, collapsedAfterToggle: 'true'}
+  - name: a null storage key writes nothing
+    kind: no-storage
+    props: {app: online, storageKey: null}
+    keys: [ArrowRight]
+    expected: {writes: 0}
+  # Keyboard resize: each key's resulting aria-valuenow, clamped to min and max.
+  - name: keyboard resize clamps to the bounds
+    kind: resize
+    props: {app: online, storageKey: null, defaultWidth: 248, minWidth: 200, maxWidth: 360}
+    steps:
+      - {key: ArrowRight, value: 264}
+      - {key: ArrowLeft, value: 248}
+      - {key: End, value: 360}
+      - {key: ArrowRight, value: 360}
+      - {key: Home, value: 200}
+      - {key: ArrowLeft, value: 200}
+    expected: {min: '200', max: '360', width: 200px}
+  # Account row: the avatar initial, the @handle, and a link only when an href is given.
+  - name: the account row links to the account
+    kind: account
+    props: {app: online, account: {handle: mira, href: /settings/account}}
+    expected: {tag: A, initial: M, handle: '@mira', href: /settings/account}
+  - name: the account row without an href is text
+    kind: account
+    props: {app: online, account: {handle: Bo}}
+    expected: {tag: SPAN, initial: B, handle: '@Bo', href: null}
+  - name: an account slot replaces the row
+    kind: account-slot
+    props: {app: online, account: {handle: mira}}
+    slot: signed out
+    expected: {text: signed out, handle: false}
+  # The narrow-viewport menu: the button opens the drawer, Escape closes it, a nav link closes it.
+  - name: the menu opens and closes the drawer
+    kind: drawer
+    props: {app: online, currentId: home}
+    expected: {name: open the menu, closeName: close the menu}
+  # A router link receives the same props an anchor would.
+  - name: a link component receives the item props
+    kind: link-component
+    props: {app: online, currentId: home, homeHref: /}
+    expected: {hrefs: [/, /, /home, /c/eval-crowd, 'https://online.invalid/collectives', /docs, 'https://online.invalid/', 'http://localhost:8686/'], current: /home}
