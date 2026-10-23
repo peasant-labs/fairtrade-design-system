@@ -10,7 +10,8 @@ import './AppSidebar.css'
                                  2. the app's nav groups
                                  3. search, when the app has one (`search`)
                                  4. the switcher to the other apps
-                                 5. the footer: the theme toggle (`theme`), then the account
+                                 5. the footer, one row pinned to the column's foot: the account on
+                                    the left, an icon-only theme toggle (`theme`) on the right
                                the collapse control is a small handle seated on the column's
                                right edge, level with the brand. collapsed, it is an icon rail:
                                labels stay in the DOM as the accessible names (visually hidden) and
@@ -42,8 +43,10 @@ import './AppSidebar.css'
  * @property {string} id         'online' | 'local' | 'docs', or another app id (shown with a generic icon).
  * @property {string} label      the switcher label.
  * @property {string} [href]     where the app lives. An app without an href is omitted, unless it has a tag.
- * @property {string} [tag]      a short note after the label, e.g. 'soon'. With no href the entry is shown as
- *                               text (a place that does not exist yet), not a link.
+ * @property {string} [tag]      a short note after the label. With no href the entry is shown as text, not a link.
+ * @property {boolean} [soon]    a place that does not exist yet: shown as text, aria-disabled, with a 'soon' note
+ *                               and no hover or press. The switcher always ends with community as soon unless
+ *                               `apps` names a community entry of its own.
  * @property {string} [target]   default '_blank': another app opens in a new tab.
  * @property {string} [rel]      default 'noopener noreferrer' when the target is '_blank'.
  */
@@ -87,7 +90,7 @@ import './AppSidebar.css'
 
 /**
  * @typedef {Object} AppSidebarProps
- * @property {'online'|'local'|'docs'|string} app   which app renders the sidebar; its own switcher entry is left out.
+ * @property {'online'|'local'|'docs'|string} app   which app renders the sidebar; its own switcher entry is left out, and online and local never show.
  * @property {AppSidebarApp[]} [apps]               the app switcher entries (default APP_SIDEBAR_APPS, no hrefs).
  * @property {AppSidebarGroup[]} groups
  * @property {string} [currentId]                   the id of the current item (aria-current="page").
@@ -124,15 +127,20 @@ import './AppSidebar.css'
  * @property {string} [className]
  */
 
-/** The app switcher's default entries, in order. Consumers map their hrefs in.
+/** The app switcher's default entries, in order: the docs (community as soon follows by itself).
+ * Online and local are never in a switcher, in any app. Consumers map their hrefs in.
  * @type {ReadonlyArray<Readonly<AppSidebarApp>>} */
 export const APP_SIDEBAR_APPS = Object.freeze([
-  Object.freeze({ id: 'online', label: 'online' }),
-  Object.freeze({ id: 'local', label: 'local' }),
   Object.freeze({ id: 'docs', label: 'docs' }),
 ])
 
+/** The apps a switcher never lists: the hosted and the local app reach each other another way. */
+const NEVER_SWITCHED = new Set(['online', 'local'])
+
 const APP_ICONS = { online: Globe, local: Laptop, docs: BookOpen, community: MessagesSquare }
+
+/** The switcher's last entry in every app until a community space exists. */
+const COMMUNITY_SOON = Object.freeze({ id: 'community', label: 'community', soon: true })
 const RESIZE_STEP = 16
 const EXTERNAL_SUFFIX = ', opens outside this app'
 const NEW_TAB_SUFFIX = ', opens in a new tab'
@@ -260,10 +268,13 @@ function SidebarItem({ item, current, Link, onNavigate }) {
   return <span className={className} aria-current={ariaCurrent} title={title}>{body}</span>
 }
 
-/* the other apps: the one the reader is in is not a destination, so it is left out, and an app
-   with nowhere to go is left out too. each opens in a new tab unless its entry names a target. */
+/* the switcher: the docs and community. the app the reader is in is not a destination, so it is
+   left out; online and local are never listed, in any app; an entry with nowhere to go is left
+   out unless it is a place to come (soon). each opens in a new tab unless its entry names a target. */
 function AppSwitcher({ app, apps, Link, onNavigate, firstIndex }) {
-  const shown = apps.filter((entry) => entry.id !== app && (entry.href || entry.tag))
+  // every app ends its switcher with community; an app names its own entry once the place exists
+  const withCommunity = apps.some((entry) => entry.id === COMMUNITY_SOON.id) ? apps : [...apps, COMMUNITY_SOON]
+  const shown = withCommunity.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))
   if (shown.length === 0) return null
   return (
     <nav className="asb-group asb-apps" aria-label="apps">
@@ -272,17 +283,18 @@ function AppSwitcher({ app, apps, Link, onNavigate, firstIndex }) {
           const item = { id: entry.id, label: entry.label, icon: APP_ICONS[entry.id] ?? AppWindow }
           const target = entry.target ?? '_blank'
           const rel = entry.rel ?? (target === '_blank' ? 'noopener noreferrer' : undefined)
+          const note = entry.soon ? 'soon' : entry.tag
           // the space keeps the note a separate word in the text; flex layout ignores it
-          const tag = entry.tag ? <>{' '}<span className="asb-tag">{entry.tag}</span></> : null
+          const tag = note ? <>{' '}<span className="asb-tag">{note}</span></> : null
           return (
             <li key={entry.id} style={{ '--asb-i': firstIndex + index }}>
-              {entry.href ? (
-                <Link href={entry.href} className="asb-item" title={entry.tag ? `${entry.label}, ${entry.tag}` : entry.label} target={target} rel={rel} onClick={onNavigate}>
+              {entry.href && !entry.soon ? (
+                <Link href={entry.href} className="asb-item" title={note ? `${entry.label}, ${note}` : entry.label} target={target} rel={rel} onClick={onNavigate}>
                   <ItemBody item={item} external suffix={target === '_blank' ? NEW_TAB_SUFFIX : EXTERNAL_SUFFIX} />
                   {tag}
                 </Link>
               ) : (
-                <span className="asb-item asb-item-soon" title={`${entry.label}, ${entry.tag}`}>
+                <span className="asb-item asb-item-soon" aria-disabled="true" title={`${entry.label}, ${note}`}>
                   <ItemBody item={item} external={false} />
                   {tag}
                 </span>
@@ -319,14 +331,15 @@ function SearchItem({ search, onNavigate, index }) {
   )
 }
 
-/* the theme toggle: it names the theme it switches to, with that theme's icon */
+/* the theme toggle: a square icon button that names the theme it switches to, with that theme's
+   icon. its tip sits above it (beside it in the rail), never over the account. */
 function ThemeItem({ theme, onThemeChange }) {
   const next = theme === 'light' ? 'dark' : 'light'
   const name = `switch to ${next} mode`
   return (
-    <button type="button" className="asb-item asb-theme" aria-label={name} title={name} onClick={() => onThemeChange(next)}>
-      <span className="asb-ic" aria-hidden="true">{next === 'dark' ? <Moon /> : <Sun />}</span>
-      <span className="asb-label">{next} mode</span>
+    <button type="button" className="asb-icon-btn asb-theme" aria-label={name} onClick={() => onThemeChange(next)}>
+      {next === 'dark' ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}
+      <span className="asb-tip" aria-hidden="true">{name}</span>
     </button>
   )
 }
@@ -348,7 +361,7 @@ function AccountRow({ account, Link, onNavigate }) {
 /**
  * The shared app sidebar, in one order for every app: the brand mark with a collapse handle on the
  * column's edge, the caller's nav groups, search, the switcher to the other apps, then the footer
- * (the theme toggle, then the account). A sticky resizable column on desktop
+ * row (the account on the left, the theme toggle on the right). A sticky resizable column on desktop
  * that collapses to an icon rail; a top bar plus an opaque drawer below 768px.
  * @param {AppSidebarProps} props
  */
@@ -608,14 +621,16 @@ export default function AppSidebar({
 
           <AppSwitcher app={app} apps={apps} Link={Link} onNavigate={onNavigate} firstIndex={listIndex} />
 
-          {/* the footer: the theme toggle, then the account */}
-          {showTheme || shownAccount ? (
-            <div className="asb-foot">
-              {showTheme ? <ThemeItem theme={theme} onThemeChange={onThemeChange} /> : null}
-              {shownAccount ? <div className="asb-me">{shownAccount}</div> : null}
-            </div>
-          ) : null}
         </div>
+
+        {/* the footer: one row pinned under the nav, the account on the left (or the host's
+            signed-out slot) and the theme toggle on the right */}
+        {showTheme || shownAccount ? (
+          <div className="asb-foot">
+            {shownAccount ? <div className="asb-me">{shownAccount}</div> : null}
+            {showTheme ? <ThemeItem theme={theme} onThemeChange={onThemeChange} /> : null}
+          </div>
+        ) : null}
 
         {collapsed ? null : (
           <div

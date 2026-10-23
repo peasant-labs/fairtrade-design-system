@@ -13,7 +13,7 @@ await withMountedSource(async ({ load, mount, React, window }) => {
     }
     const mounted = await mount(React.createElement(PublishDialog, props))
     report.check(mounted.container.querySelector('.pub-auto .check')?.textContent.trim() === fixture.label, `${row.name}: exact checkbox label`)
-    report.check(mounted.container.querySelector('.pub-auto .pub-hint')?.textContent === row.expected, `${row.name}: exact consent must read ${JSON.stringify(row.expected)}`)
+    report.check((mounted.container.querySelector('.pub-auto .pub-hint')?.textContent ?? null) === row.expected, `${row.name}: exact consent must read ${JSON.stringify(row.expected)}`)
     const checkbox = mounted.container.querySelector('input[type="checkbox"]')
     await mounted.act(() => click(window, checkbox))
     report.check(changed === !row.checked, `${row.name}: checkbox calls the host with the next state`)

@@ -13,6 +13,7 @@ requiredPopupNames:
   - waiting for github
   - checking for sensitive content
   - the scan failed
+  - the scan failed with a detail
   - not in a collective yet
   - ready to publish
   - ready with a match kept un-redacted

@@ -553,7 +553,13 @@ render the same system.
 - **Shadow Strategy:** none at rest (see Elevation & Depth). Cards, the library `Card` included,
   lift 2px on hover, only under `prefers-reduced-motion: no-preference`.
 - **Border:** `--bd-strong`.
-- **Internal Padding:** `--sp-4`, with `--sp-3` gaps.
+- **Internal Padding:** `--card-pad` (24px, 16px below 768px), the same on all four sides of a card,
+  a dialog's parts, an empty state and the left and right of every setting row and group summary,
+  with `--sp-3` gaps. A row's label starts at the left padding and its control group ends at the
+  right padding; nothing touches a border. Setting rows keep a `--row-h-comfortable` minimum height
+  and centre their content; stacked on a phone, the control group takes its own line and still ends
+  at the right padding. `scripts/journey/card-insets.journey.mjs` measures it on the demo's settings
+  screens and fails on a breach.
 
 ### Inputs / Fields
 - **Style:** `--canvas` fill, `--rule-strong` border, the body face at 16px without prose tracking,
@@ -576,19 +582,23 @@ render the same system.
 - **App sidebar:** `AppSidebar` is the one sidebar for every app screen (online, local and docs),
   in one order that every app gets, so no app can drift: (1) the brand row, the mark with the
   collapse control; (2) the app's nav groups; (3) search, when the app has one (`search`: one item
-  with a quiet mono key hint); (4) the switcher to the other apps; (5) the footer, the theme toggle
-  (`theme` with `onThemeChange`: one item naming the theme it switches to, "switch to dark mode",
-  with that theme's icon) and then the account. The collapsed rail shows each of them as an icon
-  with a title, and the phone drawer keeps the same order. The parts:
+  with a quiet mono key hint); (4) the switcher (the docs and community); (5) the footer, one compact row
+  pinned under the nav with a hairline above it: the account on the left (avatar or initial and
+  handle, or the host's signed-out slot) at the nav icons' inset, and on the right an icon-only
+  square theme toggle (`theme` with `onThemeChange`, named for the theme it switches to, "switch to
+  dark mode", with that theme's icon, its tip above it and never over the account). The collapsed
+  rail shows each of them as an icon with a title (the account on top of the theme toggle), and the
+  phone drawer keeps the same order. The parts:
   the wheat mark alone (its name is the accessible name and the tooltip; the full logo with the
   wordmark belongs to the landing page only), a collapse handle seated on the column's right edge
   level with the mark (a small square whose chevron turns to point the way the column will go)
   down to an icon rail whose labels become titles, a resizable width (pointer drag, or arrow keys,
   Home and End on the separator), groups of items with an icon or a colour swatch, the current item
   marked with `aria-current` and the amber inset bar, an outside-the-app marker, the switcher to
-  the other apps (never the one the reader is in; each opens in a new tab unless its entry names a
-  target; a tagged entry with no address, such as community with "soon", shows as text with its
-  note) and the account row. Brand text is `peasant`, never `peasant labs`.
+  the docs (never the app the reader is in, and never online or local, in any app; each opens in a
+  new tab unless its entry names a target; the switcher always ends with community as a place that does not exist yet, text marked
+  `aria-disabled` with a quiet "soon" note in the trailing slot and no hover or press, until an app
+  names its own community entry) and the account row. Brand text is `peasant`, never `peasant labs`.
   Collapse and width persist per browser. Below 768px it becomes a top bar whose menu opens the
   same nav as an opaque drawer; the menu button then becomes the drawer's one close control.
   `AppSidebarLayout` places it beside the page. Its motion runs only under
@@ -642,8 +652,15 @@ to one polite live region, never a focus-stealing toast. Destructive actions con
 
 ### Forms and empty states
 The filter sidebar, form fields with functional labels, and the empty state: an icon ring, a
-title, a body and one action. A setting row keeps its save-status slot before its control, so the
-control ends on the row's padding and the row is as wide on the right as on the left.
+title, a body and one action. Every settings section is the same card (`SettingGroup`), and every
+setting row is one grid: the left column holds the label and at most one help line on one left edge;
+the right column holds the value or control, ending at the right padding. A long value (a
+description) stacks under its label at the same left edge, never in a column of its own, and a
+divider spans the card's inner width. No free sentence sits between rows: a note that matters
+becomes a row. The save status sits before the control and takes no room while idle, so "saving"
+and "saved" grow leftward and the control never moves. On a phone a row stays on one line where
+it fits; a select drops to its own line at the right padding. The card inset gate checks all of it.
+No provenance chip ("not in peasant config", "this computer only") sits on a setting.
 
 ### Data tables and charts
 The data families are the data table, pagination, accordion, timeline, toast and date range.

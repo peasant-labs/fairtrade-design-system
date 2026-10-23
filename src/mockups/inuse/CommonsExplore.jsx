@@ -627,7 +627,7 @@ export function ExploreView({ theme } = {}) {
             type="text"
             value={rawQuery}
             onChange={(e) => setRawQuery(e.target.value)}
-            placeholder="search transcripts, collectives, projects, models..."
+            placeholder="search transcripts"
             aria-label="search transcripts, collectives, projects, models"
           />
           {rawQuery && (

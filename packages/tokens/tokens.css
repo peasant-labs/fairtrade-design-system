@@ -63,6 +63,7 @@
   --row-h-compact: 32px;
   --row-h-standard: 40px;
   --row-h-comfortable: 48px;
+  --card-pad: var(--sp-5);
   --motion-base: 0ms;
   --canvas: #0b0b0a;
   --surface: #0b0b0a;

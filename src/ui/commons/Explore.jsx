@@ -610,7 +610,7 @@ export default function Explore({
             type="text"
             value={rawQuery}
             onChange={(event) => setRawQuery(event.target.value)}
-            placeholder="search transcripts, collectives, projects, models..."
+            placeholder="search transcripts"
             aria-label="search transcripts, collectives, projects, models"
           />
           {rawQuery && (

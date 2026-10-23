@@ -21,6 +21,8 @@ import './Settings.css'
    its rows. The `tag` prop puts the host's note ("not in peasant config") on the existing Chip. */
 
 export const SETTING_ROW_STATES = Object.freeze(['idle', 'pending', 'settled', 'failed'])
+/* a text value longer than this many characters stacks under its label */
+const STACK_AFTER = 40
 const SettingAnnouncements = createContext(/** @type {((message:string)=>void)|null} */ (null))
 
 /** Share one polite save-status region across a settings view. Standalone rows keep their own.
@@ -159,9 +161,11 @@ function TextControl({ id, label, shown, status, commit, disabled }) {
  * @param {(next: boolean|string) => Promise<void>|void} props.onCommit - the one write; reject to fail.
  * @param {string} [props.tag] - a note on the row, shown on a Chip ("not in peasant config").
  * @param {boolean} [props.disabled]
+ * @param {boolean} [props.stack] - put the value under the label (at its left edge) instead of beside
+ *        it. Defaults to on for a text value longer than one short line (a description).
  * @param {string} [props.className]
  */
-export function SettingRow({ label, help, control, value, options = [], onCommit, tag, disabled = false, className = '', ...rest }) {
+export function SettingRow({ label, help, control, value, options = [], onCommit, tag, disabled = false, stack, className = '', ...rest }) {
   const id = useId()
   const { shown, status, error, commit } = useCommit(value, onCommit)
   const announce = useContext(SettingAnnouncements)
@@ -197,7 +201,9 @@ export function SettingRow({ label, help, control, value, options = [], onCommit
     throw new TypeError(`SettingRow: unknown control ${JSON.stringify(control)}; use switch, select, checkbox or text.`)
   }
 
-  const cls = ['srow', `srow-${status}`, className].filter(Boolean).join(' ')
+  // a long text value reads under its label rather than squeezed into the right-hand column
+  const stacked = stack ?? (control === 'text' && String(shown ?? '').length > STACK_AFTER)
+  const cls = ['srow', `srow-${status}`, stacked ? 'srow-stacked' : '', className].filter(Boolean).join(' ')
   return (
     <div className={cls} data-status={status} {...rest}>
       <div className="srow-text-col">

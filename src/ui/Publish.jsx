@@ -286,7 +286,7 @@ function reviewRefused(scan) {
   )
 }
 
-function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
+function WhatLeaves({ state, scan, onRescan, checkingStage, readOnlyReview }) {
   const titleId = useId()
   const matches = Array.isArray(scan?.matches) ? scan.matches : []
   const matchCount = scan?.matchCount ?? matches.length
@@ -310,11 +310,35 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
         )}
       </div>
       {checking ? (
-        <p className="pub-line" role="status"><Loader className="pub-spin" aria-hidden="true" /> checking for sensitive content</p>
+        <div className="pub-checking" role="status">
+          <p className="pub-line">
+            <Loader className="pub-spin" aria-hidden="true" />
+            <span className="pub-line-text">{checkingStage?.stage || 'checking for sensitive content'}</span>
+            {checkingStage?.progress && Number.isFinite(checkingStage.progress.done) && Number.isFinite(checkingStage.progress.total) ? (
+              <span className="pub-progress"><span className="tnum">{checkingStage.progress.done}</span> of <span className="tnum">{checkingStage.progress.total}</span></span>
+            ) : null}
+          </p>
+          {/* why publish waits, when a step runs long: a quiet line, announced with the stage */}
+          {checkingStage?.note ? <p className="pub-hint">{checkingStage.note}</p> : null}
+        </div>
       ) : failed ? (
-        <p className="pub-line pub-line-alert" role="alert">
-          <AlertTriangle aria-hidden="true" /> {typeof scan?.failure === 'string' && scan.failure ? scan.failure : 'the scan failed, so publish is off. re-scan to try again.'}
-        </p>
+        <div className="pub-line pub-line-alert" role="alert">
+          <AlertTriangle aria-hidden="true" />
+          <span className="pub-line-text">{typeof scan?.failure === 'string' && scan.failure ? scan.failure : 'the scan failed, so publish is off. re-scan to try again.'}</span>
+          {/* the one action that fixes it, when the host has one (re-index and retry) */}
+          {scan?.failureAction?.label && typeof scan.failureAction.onSelect === 'function' ? (
+            <button type="button" className="btn btn-secondary btn-sm pub-failure-action" onClick={() => scan.failureAction.onSelect()} disabled={!!scan.failureAction.busy} aria-busy={scan.failureAction.busy ? 'true' : undefined}>
+              {scan.failureAction.busy ? <Loader className="pub-spin" aria-hidden="true" /> : null}{scan.failureAction.label}
+            </button>
+          ) : null}
+          {/* the host's actionable detail (what failed, why, where, the fix) stays one step away */}
+          {typeof scan?.failureDetail === 'string' && scan.failureDetail ? (
+            <details className="pub-failure-detail">
+              <summary>details</summary>
+              <pre>{scan.failureDetail}</pre>
+            </details>
+          ) : null}
+        </div>
       ) : unsupported ? (
         <p className="pub-line pub-line-alert" role="alert"><AlertTriangle aria-hidden="true" />the scan contains an unsupported redaction category, so publish is off. update the scanner and re-scan.</p>
       ) : unscanned ? (
@@ -362,16 +386,19 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
  * @param {string} props.title - the session title, kept in its case.
  * @param {'publish'|'update'} [props.mode='publish']
  * @param {PublishDialogState} props.state - one of PUBLISH_DIALOG_STATES.
- * @param {{ matches?: import('./Redaction.jsx').RedactionMatch[], matchCount?: number, total?: number, failure?: string }} [props.scan] - the host's scan result. `matchCount` is the full occurrence count when `matches` contains only examples. Until it carries a
+ * @param {{ matches?: import('./Redaction.jsx').RedactionMatch[], matchCount?: number, total?: number, failure?: string, failureDetail?: string, failureAction?: { label: string, onSelect: () => void, busy?: boolean } }} [props.scan] - the host's scan result. `failure` is one plain line; `failureAction` is a button in the failure box (the one action that fixes it); `failureDetail`, the actionable detail (what, why, where, the fix), shows as pre-wrapped mono text behind a "details" disclosure in the failure box. `matchCount` is the full occurrence count when `matches` contains only examples. Until it carries a
  *        `matches` list, the popup says the transcript is not scanned and keeps publish off. A match with `kept: true` leaves un-redacted, and the
  *        popup says so and opens the matches.
  * @param {() => void} [props.onRescan]
+ * @param {{ stage: string, note?: string, progress?: { done: number, total: number } }} [props.checking] - while state is
+ *        'checking': the step being done (replaces "checking for sensitive content"), a quiet note on why publish waits
+ *        when a step runs long, and a determinate count ("120 of 468"). All of it sits in the status region.
  * @param {{ summary: string }} [props.changes] - update mode: what changed since the last publish.
  * @param {AccessItem[]} [props.access] - who can read it after this publish.
  * @param {(id: string) => void} [props.onRemove]
  * @param {(id: string) => void} [props.onRestore]
  * @param {object} [props.picker] - CollectivePicker props (suggestions, onAdd, query, onQueryChange).
- * @param {{ checked: boolean, onChange: (checked: boolean) => void, hint?: string }} [props.autoPublish] - hint replaces only the unchecked line; checked consent is always component-owned.
+ * @param {{ checked: boolean, onChange: (checked: boolean) => void, hint?: string }} [props.autoPublish] - hint is the unchecked line, shown only when given; checked consent is always component-owned.
  * @param {string} [props.accessSummary] - update mode: the access change in words ("adds ML Reading Group, removes nothing").
  * @param {string} [props.primaryLabel] - replaces the derived primary label.
  * @param {() => void} [props.onPublish]
@@ -390,6 +417,7 @@ export function PublishDialog({
   state,
   scan,
   onRescan,
+  checking,
   changes,
   access = [],
   onRemove,
@@ -527,7 +555,7 @@ export function PublishDialog({
               <p className="pub-line">{changes.summary}</p>
             </section>
           )}
-          <WhatLeaves state={state} scan={scan} onRescan={onRescan} readOnlyReview />
+          <WhatLeaves state={state} scan={scan} onRescan={onRescan} checkingStage={checking} readOnlyReview />
 
           <section className="pub-section" aria-labelledby={`${sectionId}-readers`}>
             <p className="pub-section-title" id={`${sectionId}-readers`}>who can read it</p>
@@ -548,7 +576,8 @@ export function PublishDialog({
                 <Checkbox checked={autoPublish.checked} onChange={(checked) => autoPublish.onChange(checked)} disabled={state === 'publishing'}>
                   publish this repo automatically on git push
                 </Checkbox>
-                <span className="pub-hint">{autoPublish.checked ? "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives." : autoPublish.hint ?? 'off, change it in settings'}</span>
+                {/* checked, the consent sentence is the component's own; unchecked, only the host's hint, if any */}
+                {autoPublish.checked ? <span className="pub-hint">on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.</span> : autoPublish.hint ? <span className="pub-hint">{autoPublish.hint}</span> : null}
               </div>
             )}
             {mode === 'update' && accessSummary && <p className="pub-line pub-delta">{accessSummary}</p>}

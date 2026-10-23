@@ -36,9 +36,13 @@ async function copyToClipboard(text) {
  * @param {object} props
  * @param {string} props.command - the literal shell command (case preserved — never lowercased).
  * @param {string} [props.label] - an accessible name for the copy button; defaults to the command.
+ * @param {boolean} [props.wrap=false] - wrap a long command at spaces (and break a long URL anywhere)
+ *        instead of scrolling it sideways. Copying is unaffected: the command is copied whole.
+ * @param {boolean} [props.compact=false] - an icon-only copy button (its name stays "copy <command>"),
+ *        for a narrow column.
  * @param {string} [props.className] - extra classes appended to the root.
  */
-export function CommandBlock({ command, label, className = '', ...rest }) {
+export function CommandBlock({ command, label, wrap = false, compact = false, className = '', ...rest }) {
   const [copied, setCopied] = useState(false)
 
   // Reset the "copied" flag ~1.5s after a successful copy; the timer is cleared on unmount / re-copy.
@@ -53,17 +57,21 @@ export function CommandBlock({ command, label, className = '', ...rest }) {
     if (ok) setCopied(true)
   }, [command])
 
-  const cls = ['cli-cmd', className].filter(Boolean).join(' ')
+  const cls = ['cli-cmd', wrap ? 'cli-cmd-wrap' : '', compact ? 'cli-cmd-compact' : '', className].filter(Boolean).join(' ')
   const name = label || command
 
   return (
     <div className={cls} {...rest}>
-      <pre className="cli-cmd-line">
+      {/* a command that scrolls sideways is a scroll region a keyboard can reach and name */}
+      <pre className="cli-cmd-line" {...(wrap ? {} : { tabIndex: 0, role: 'region', 'aria-label': `command: ${name}` })}>
         <code>
           {/* the dim prompt sigil is chrome — not part of the command, and not selectable */}
           <span className="cli-cmd-sigil" aria-hidden="true">$ </span>
-          {/* COMMAND — literal, case preserved; never lowercase it */}
-          {command}
+          {/* COMMAND — literal, case preserved; never lowercase it. wrapped, each space-separated
+              token is kept whole, so a line breaks only at a space (never after a hyphen in a flag
+              or a date); only a token wider than the line breaks inside it. copy uses the raw
+              string either way. */}
+          {wrap ? command.split(/(\s+)/).map((part, index) => (/^\s*$/.test(part) ? part : <span key={index} className="cli-tok">{part}</span>)) : command}
         </code>
       </pre>
 
@@ -79,8 +87,9 @@ export function CommandBlock({ command, label, className = '', ...rest }) {
         ) : (
           <Copy className="cli-copy-ic" aria-hidden="true" />
         )}
-        {/* icon AND word — the copied state is never colour-only */}
-        <span className="cli-copy-word">{copied ? 'copied' : 'copy'}</span>
+        {/* icon AND word — the copied state is never colour-only; compact keeps the word for
+            assistive tech and in the button's name */}
+        <span className={compact ? 'cli-copy-word cli-sr' : 'cli-copy-word'}>{copied ? 'copied' : 'copy'}</span>
       </button>
     </div>
   )

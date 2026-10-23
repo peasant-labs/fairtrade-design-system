@@ -103,6 +103,34 @@ export const PopupScanFailed = {
     await expect(canvas.getByRole('alert')).toHaveTextContent('the scan failed, so publish is off.')
   },
 }
+
+/* while checking: the step being done, the count so far and, when a step runs long, why publish waits */
+export const PopupCheckingStage = {
+  name: 'popup, checking, with its stage',
+  decorators: [(Story) => <div style={{ minHeight: '100vh' }}><Story /></div>],
+  render: () => <Popup state="checking" checking={{ stage: 'scanning 468 turns…', progress: { done: 120, total: 468 }, note: 'taking longer than usual (12s): every turn is checked for secrets and personal details on this computer before anything is sent. publish waits for it.' }} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement.ownerDocument.body)
+    const status = canvas.getByRole('status')
+    await expect(status).toHaveTextContent('scanning 468 turns…')
+    await expect(status).toHaveTextContent('120 of 468')
+    await expect(status).toHaveTextContent('publish waits for it.')
+  },
+}
+
+/* the host's one plain line, its one fixing action and its actionable detail, all in the same box */
+export const PopupScanFailedDetail = {
+  name: 'popup, the scan failed, with a detail',
+  decorators: [(Story) => <div style={{ minHeight: '100vh' }}><Story /></div>],
+  render: () => <Popup state="scan-failed" scan={{ ...SCAN, failure: 'this session needs a quick re-index before it can be published', failureAction: { label: 're-index and retry', onSelect: fn() }, failureDetail: 'index out of date: 3 turns changed since the last index.\nre-index ran: no; another index update was running on this computer.\nfix: re-index this session, then scan again.' }} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement.ownerDocument.body)
+    await expect(canvas.getByRole('alert')).toHaveTextContent('this session needs a quick re-index')
+    await expect(canvas.getByRole('button', { name: 're-index and retry' })).toBeEnabled()
+    await userEvent.click(canvas.getByText('details'))
+    await expect(canvas.getByText(/index out of date: 3 turns changed/)).toBeVisible()
+  },
+}
 export const PopupNoCollective = { name: 'popup, not in a collective yet', render: () => <Popup state="no-collective" access={[]} /> }
 export const PopupReady = {
   name: 'popup, ready to publish',

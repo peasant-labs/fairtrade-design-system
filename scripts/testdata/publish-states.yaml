@@ -75,6 +75,18 @@ popup:
     steps:
       - {press: re-scan, calls: [[onRescan]]}
       - {press: publish to 2 collectives, calls: []}
+  # The host's one-line failure, with its actionable detail one disclosure away in the same box.
+  - name: the scan failed with a detail
+    state: scan-failed
+    heading: publish “Fix flaky ingest test”
+    primary: {label: publish to 2 collectives, enabled: false}
+    rescan: {enabled: true}
+    failure: {failure: the scan could not finish., failureDetail: 'the session index was out of date; peasant re-indexed it. run peasant index if this repeats.'}
+    alert: the scan could not finish.
+    lines: [the scan could not finish., details, 'the session index was out of date; peasant re-indexed it. run peasant index if this repeats.']
+    removeButtons: [remove Acme Platform, remove Acme Company]
+    steps:
+      - {press: publish to 2 collectives, calls: []}
   - name: not in a collective yet
     state: no-collective
     access: []
@@ -90,7 +102,7 @@ popup:
     heading: publish “Fix flaky ingest test”
     primary: {label: publish to 2 collectives, enabled: true}
     rescan: {enabled: true}
-    lines: ['3 matches, all redacted', Acme Platform, Acme Company, publish this repo automatically on git push, 'off, change it in settings']
+    lines: ['3 matches, all redacted', Acme Platform, Acme Company, publish this repo automatically on git push]
     absent: [kept un-redacted, not scanned yet]
     matchesOpen: false
     removeButtons: [remove Acme Platform, remove Acme Company]
