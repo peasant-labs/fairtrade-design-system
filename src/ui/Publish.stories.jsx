@@ -128,7 +128,7 @@ export const PopupScanFailedDetail = {
     await expect(canvas.getByRole('alert')).toHaveTextContent('this session needs a quick re-index')
     await expect(canvas.getByRole('button', { name: 're-index and retry' })).toBeEnabled()
     await userEvent.click(canvas.getByText('details'))
-    await expect(canvas.getByText(/the session index was out of date/)).toBeVisible()
+    await expect(canvas.getByText(/index out of date: 3 turns changed/)).toBeVisible()
   },
 }
 export const PopupNoCollective = { name: 'popup, not in a collective yet', render: () => <Popup state="no-collective" access={[]} /> }
