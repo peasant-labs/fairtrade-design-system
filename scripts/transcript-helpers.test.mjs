@@ -27,7 +27,7 @@ const titleModule = process.env.FAIRTRADE_TITLE_MODULE
   : new URL('../src/ui/transcript/title.js', import.meta.url).href
 
 const { nextNavTurn } = await import(`${turnNavModule}?helpers-contract=${Date.now()}`)
-const { formatRelative, formatDurationMins, formatDateLong } = await import(`${timeModule}?helpers-contract=${Date.now()}`)
+const { formatRelative, formatDurationMins, formatDurationMs, formatDateLong, isKnownTime } = await import(`${timeModule}?helpers-contract=${Date.now()}`)
 const { summarizePrompt, projectLabel, composeSessionTitle } = await import(`${titleModule}?helpers-contract=${Date.now()}`)
 
 const failures = []
@@ -59,6 +59,18 @@ for (const testCase of fixture.formatRelativeCases.cases) {
 for (const testCase of fixture.formatDurationMinsCases) {
   const actual = formatDurationMins(testCase.mins ?? undefined)
   check(actual === testCase.expected, `formatDurationMins — ${testCase.name}: expected ${JSON.stringify(testCase.expected)}, received ${JSON.stringify(actual)}`)
+}
+
+/* ── formatDurationMs ─────────────────────────────────────────────────────── */
+for (const testCase of fixture.formatDurationMsCases) {
+  const actual = formatDurationMs(testCase.ms ?? undefined)
+  check(actual === testCase.expected, `formatDurationMs — ${testCase.name}: expected ${JSON.stringify(testCase.expected)}, received ${JSON.stringify(actual)}`)
+}
+
+/* ── isKnownTime ──────────────────────────────────────────────────────────── */
+for (const testCase of fixture.knownTimeCases) {
+  const actual = isKnownTime(testCase.iso)
+  check(actual === testCase.expected, `isKnownTime — ${testCase.name}: expected ${JSON.stringify(testCase.expected)}, received ${JSON.stringify(actual)}`)
 }
 
 /* ── formatDateLong ───────────────────────────────────────────────────────── */
@@ -134,7 +146,7 @@ function assertNameSet(actualNames, requiredNames, label) {
 function validateManifest(value) {
   const fields = [
     'requiredTurnNavNames', 'requiredFormatRelativeNames', 'requiredFormatDurationMinsNames',
-    'requiredFormatDateLongNames', 'requiredSummarizePromptNames', 'requiredProjectLabelNames',
+    'requiredFormatDurationMsNames', 'requiredKnownTimeNames', 'requiredFormatDateLongNames', 'requiredSummarizePromptNames', 'requiredProjectLabelNames',
     'requiredComposeSessionTitleNames',
   ]
   for (const field of fields) {
@@ -148,6 +160,8 @@ function validateFixture(value, manifestValue) {
   assertNameSet(names(value.turnNavCases), manifestValue.requiredTurnNavNames, 'turnNavCases')
   assertNameSet(names(value.formatRelativeCases.cases), manifestValue.requiredFormatRelativeNames, 'formatRelativeCases')
   assertNameSet(names(value.formatDurationMinsCases), manifestValue.requiredFormatDurationMinsNames, 'formatDurationMinsCases')
+  assertNameSet(names(value.formatDurationMsCases), manifestValue.requiredFormatDurationMsNames, 'formatDurationMsCases')
+  assertNameSet(names(value.knownTimeCases), manifestValue.requiredKnownTimeNames, 'knownTimeCases')
   assertNameSet(names(value.formatDateLongCases), manifestValue.requiredFormatDateLongNames, 'formatDateLongCases')
   assertNameSet(names(value.summarizePromptCases), manifestValue.requiredSummarizePromptNames, 'summarizePromptCases')
   assertNameSet(names(value.projectLabelCases), manifestValue.requiredProjectLabelNames, 'projectLabelCases')

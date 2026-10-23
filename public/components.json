@@ -1649,7 +1649,7 @@
       "exports": [
         "StepsWaterfall"
       ],
-      "doc": "Human-readable ms duration: \"4.2s\", \"42s\", \"2m 14s\", \"1.5h\". Tabular-friendly, no leading zeros.",
+      "doc": "Human-readable ms duration in the one transcript format: \"820ms\", \"4.2s\", \"2m 14s\", \"1h 12m\"; zero or unknown reads as nothing.",
       "props": {},
       "stories": [
         "Default",

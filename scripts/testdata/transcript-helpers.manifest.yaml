@@ -24,23 +24,46 @@ requiredFormatRelativeNames:
   - 45 minutes rounds up to 1h ago
   - hours under 24 read as Nh ago
   - 35 hours still reads as 1d ago
-  - days under 14 read as Nd ago
-  - 20 days reads as 3w ago
-  - 100 days reads as 3mo ago
-  - 400 days reads as 1y ago
+  - days up to a week read as Nd ago
+  - exactly a week still reads as 7d ago
+  - past a week reads as the date
+  - 100 days back reads as the date
+  - another year reads as the date with its year
+  - a go zero time reads as nothing
+  - the unix epoch reads as nothing
 
 requiredFormatDurationMinsNames:
   - null minutes returns an empty string
   - a negative minute count returns an empty string
-  - exactly zero minutes reads as under 1 second
+  - zero minutes is unmeasured and reads as nothing
+  - a few seconds read as under 1 second
   - sub-minute durations read in seconds
-  - sub-hour durations round to whole minutes
+  - sub-hour durations read minutes and seconds
+  - a long fractional minute count reads minutes and seconds
+  - whole minutes drop the zero seconds
+  - hour-plus durations drop the seconds
   - hour-plus durations show hours and minutes
   - an exact multiple of an hour omits the minutes
+
+requiredFormatDurationMsNames:
+  - zero milliseconds is unmeasured and reads as nothing
+  - unknown milliseconds read as nothing
+  - under a second reads in milliseconds
+  - under ten seconds keeps one decimal
+  - a whole second drops the decimal
+  - a minute and more reads minutes and seconds
+
+requiredKnownTimeNames:
+  - a recorded time is known
+  - a go zero time is unknown
+  - the unix epoch is unknown
+  - an empty time is unknown
+  - an unparseable time is unknown
 
 requiredFormatDateLongNames:
   - empty iso returns an empty string
   - an unparseable iso returns the input unchanged
+  - a go zero time reads as nothing
   - a valid iso renders month, day, hour, and minute
 
 requiredSummarizePromptNames:
@@ -79,6 +102,9 @@ requiredComposeSessionTitleNames:
 requiredMutationNames:
   - 'turnNav: no-anchor direction always snaps to the first turn'
   - 'time: hour-plus minute remainder is miscalculated'
+  - 'time: an unknown time is formatted'
+  - 'time: an old time stays relative'
+  - 'time: a zero duration renders'
   - 'title: sentence capitalization is inverted'
 mutations:
   - name: 'turnNav: no-anchor direction always snaps to the first turn'
@@ -90,11 +116,32 @@ mutations:
     expectedDiagnostic: "no current anchor snaps to the last turn going up"
   - name: 'time: hour-plus minute remainder is miscalculated'
     file: src/ui/transcript/time.js
-    find: "const m = Math.round(mins - h * 60)"
-    replace: "const m = Math.round(mins - h * 61)"
+    find: "const remM = m % 60"
+    replace: "const remM = m % 61"
     envVar: FAIRTRADE_TIME_MODULE
     outFile: time.mutated.js
     expectedDiagnostic: "hour-plus durations show hours and minutes"
+  - name: 'time: an unknown time is formatted'
+    file: src/ui/transcript/time.js
+    find: "return Number.isFinite(t) && t > 0"
+    replace: "return Number.isFinite(t)"
+    envVar: FAIRTRADE_TIME_MODULE
+    outFile: time.mutated.js
+    expectedDiagnostic: "formatRelative — a go zero time reads as nothing"
+  - name: 'time: an old time stays relative'
+    file: src/ui/transcript/time.js
+    find: "if (d <= 7) return `${d}d ago`"
+    replace: "if (d <= 7000) return `${d}d ago`"
+    envVar: FAIRTRADE_TIME_MODULE
+    outFile: time.mutated.js
+    expectedDiagnostic: "past a week reads as the date"
+  - name: 'time: a zero duration renders'
+    file: src/ui/transcript/time.js
+    find: "if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) return ''"
+    replace: "if (seconds == null || !Number.isFinite(seconds) || seconds < 0) return ''"
+    envVar: FAIRTRADE_TIME_MODULE
+    outFile: time.mutated.js
+    expectedDiagnostic: "zero minutes is unmeasured and reads as nothing"
   - name: 'title: sentence capitalization is inverted'
     file: src/ui/transcript/title.js
     find: "if (first >= 'a' && first <= 'z') return first.toUpperCase() + s.slice(1)"

@@ -34,7 +34,7 @@ export { TOOL_GROUPS } from './view-model.js'
    legacy-git normalisation site — plus the single-session analytics util. The
    analytics helpers keep their canonical wire-shaped signatures so consumers
    import one stable contract. Pure-render derivations live in the adapter. ─────────── */
-export { adaptTranscript, prefilterTurns, diffLines } from './adapter.js'
+export { adaptTranscript, prefilterTurns, isSessionMetadataTurn, diffLines } from './adapter.js'
 export {
   computeTasks,
   computeTurnLabels,
@@ -53,7 +53,7 @@ export {
    math and the session-detail header's time + title formatters. Pure,
    framework-agnostic functions — no fairtrade equivalent existed. ──────────── */
 export { nextNavTurn } from './turnNav.js'
-export { formatRelative, formatDurationMins, formatDateLong } from './time.js'
+export { formatRelative, formatDurationMins, formatDurationMs, formatDurationSeconds, formatDateLong, isKnownTime } from './time.js'
 export { summarizePrompt, composeSessionTitle, projectLabel } from './title.js'
 
 /* ── lifted transcript rendering primitives + composite (runtime) ─────────────────

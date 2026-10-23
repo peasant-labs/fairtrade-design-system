@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import ToolBody from './ToolBody.jsx'
 import UsageDisclosure from './UsageDisclosure.jsx'
+import { formatDurationMs } from './time.js'
 
 /* ToolCall — the collapsible tool-call disclosure row, lifted verbatim from the canonical
    mockup (src/mockups/inuse/TranscriptApp.jsx:514). Controlled: `open` / `onToggle` are owned
@@ -33,11 +34,8 @@ const GROUP_ICON = {
   other: Wrench,
 }
 
-/** humanize a duration in ms → "820ms" / "1.4s". @param {number | undefined} ms @returns {string} */
-function fmtDuration(ms) {
-  if (ms == null) return ''
-  return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`
-}
+/** a tool's duration in the one transcript format ("820ms", "1.4s", "1m 15s"); zero reads as nothing */
+const fmtDuration = formatDurationMs
 
 /**
  * @param {object} props
