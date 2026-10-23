@@ -4,13 +4,16 @@
    a row does not shift when "saving" becomes "saved"; the slot sits before the control, so the
    control ends on the row's padding and the row is as wide on the right as on the left. Motion
    only under no-preference. */
+/* a row: the card padding on the left and the right (equal, so the label starts and the control
+   ends the same distance from the card's edges), a steady minimum height, centred content */
 .srow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-3) var(--sp-5);
-  padding: var(--sp-3) var(--sp-4);
+  min-height: var(--row-h-comfortable);
+  padding: var(--sp-3) var(--card-pad);
 }
 .srow + .srow { border-top: var(--bd); }
 .srow-text-col {
@@ -50,6 +53,9 @@
 }
 .srow-control { display: inline-flex; align-items: center; gap: var(--sp-3); flex: none; min-width: 0; }
 .srow-control .sw-field { margin: 0; }
+/* the switch's state word takes the width of the longer word, so "on" and "off" rows line their
+   tracks up */
+.srow-control .sw-state { min-width: calc(3ch + var(--ic-sm) + var(--sp-1)); }
 .srow-select .select { min-width: 12rem; }
 .srow-status {
   display: inline-flex;
@@ -88,7 +94,7 @@
   justify-content: space-between;
   gap: var(--sp-3);
   min-height: var(--target-comfortable);
-  padding: var(--sp-3) var(--sp-4);
+  padding: var(--sp-3) var(--card-pad);
   cursor: pointer;
   list-style: none;
 }
@@ -108,7 +114,7 @@
 .srow-summary-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
 .srow-group-description {
   margin: 0;
-  padding: var(--sp-3) var(--sp-4) 0;
+  padding: var(--sp-3) var(--card-pad) 0;
   font-family: var(--font-body);
   font-size: var(--fs-body);
   line-height: var(--lh-body);
@@ -116,18 +122,15 @@
 }
 
 @media (width < 768px) {
-  .srow { padding: var(--sp-3); }
-  .srow-control { flex-wrap: wrap; flex-basis: 100%; max-width: 100%; }
-  /* stacked, the control leads its line and the status follows it */
-  .srow-status { order: 0; justify-content: flex-start; }
+  /* stacked, the control group takes its own line and still ends at the right padding */
+  .srow-control { flex-wrap: wrap; flex-basis: 100%; max-width: 100%; justify-content: flex-end; }
   .srow-text { max-width: 100%; }
   .srow-select { min-width: 0; max-width: 100%; }
   .srow-select .select { min-width: 0; max-width: 100%; }
-  .srow-summary { padding: var(--sp-3); }
 }
 .srow-note {
   margin: 0;
-  padding: var(--sp-3) var(--sp-4);
+  padding: var(--sp-3) var(--card-pad);
   border-top: var(--bd);
   font-family: var(--font-body);
   font-size: var(--fs-body);

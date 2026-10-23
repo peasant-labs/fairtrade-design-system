@@ -47,7 +47,7 @@
         "AppPage",
         "APP_SIDEBAR_APPS"
       ],
-      "doc": "",
+      "doc": "@property {boolean} [soon] a place that does not exist yet: shown as text, aria-disabled, with a 'soon' note",
       "props": {},
       "stories": [
         "Online",
@@ -398,6 +398,7 @@
       "stories": [
         "Steps",
         "Command",
+        "WrappedCompact",
         "GettingStartedCard"
       ]
     },

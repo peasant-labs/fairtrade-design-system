@@ -1,0 +1,14 @@
+# Required-NAME manifest for card-insets.yaml: deletion protection for the screens and viewports
+# the card inset gate measures.
+requiredScreenNames:
+  - local settings
+  - account settings
+  - collective settings
+requiredViewportNames:
+  - desktop
+  - phone
+requiredMutationNames:
+  - the card padding shrinks
+  - a row loses its side padding
+  - the save status slot follows the control
+  - a control overflows its row

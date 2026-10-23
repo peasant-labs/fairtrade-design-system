@@ -1,0 +1,30 @@
+# Cases for the card inset gate (scripts/journey/card-insets.journey.mjs). Each screen is an in-use
+# demo page with settings cards; the journey opens it at each viewport in both themes and measures
+# every card row (a setting row, a group's summary): the content's left inset from the row's edge
+# must equal its right inset within a pixel, both must be at least the viewport's padding floor,
+# and no element inside the row may cross its content box. `path` is the demo query string.
+screens:
+  - {name: local settings, path: '?app=graph&section=settings'}
+  - {name: account settings, path: '?app=commons&commons=account'}
+  - {name: collective settings, path: '?app=commons&commons=collective-settings'}
+viewports:
+  - {name: desktop, width: 1440, height: 900, padFloor: 24}
+  - {name: phone, width: 390, height: 780, padFloor: 16}
+rows: '#inuse .srow, #inuse .srow-summary'
+# Mutations: each injects CSS into the measured page and must make the probe report the breach in
+# `expect`, proving the gate fails for the intended reason.
+mutationScreen: account settings
+mutationViewport: desktop
+mutations:
+  - name: the card padding shrinks
+    css: ':root { --card-pad: var(--sp-4) !important; }'
+    expect: is under the 24px floor
+  - name: a row loses its side padding
+    css: '.srow { padding-inline: 0 !important; }'
+    expect: left inset 0px is under the 24px floor
+  - name: the save status slot follows the control
+    css: '.srow-status { order: 0 !important; }'
+    expect: differs from right inset
+  - name: a control overflows its row
+    css: '.srow-control { transform: translateX(var(--card-pad)) !important; }'
+    expect: crosses the content box
