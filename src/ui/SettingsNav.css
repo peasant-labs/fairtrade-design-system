@@ -1,0 +1,90 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   settings section bar: one settings page's sections, inside the page body
+   ─────────────────────────────────────────────────────────────────────────
+   a container query on .snav-layout picks the shape from the width the page
+   body really has: at 44rem and up a sticky column beside the sections, below
+   it one row above them that scrolls sideways. the current section reads like
+   the app sidebar's current item one level down (surface-2 fill, amber inset
+   bar, amber icon) in the column, and like a tab (amber underline) in the row;
+   aria-current carries the state, never colour alone. tokens only, square
+   corners, motion on transform only and only under reduced-motion
+   no-preference, hover only on a fine pointer. classes namespaced `snav-`.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.snav-layout { container: snav / inline-size; min-width: 0; }
+.snav-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); align-items: start; }
+.snav-body { display: flex; flex-direction: column; gap: var(--sp-6); min-width: 0; }
+/* a <section> in the body is grouping, not the presentation site's capped, centred column */
+:where(.snav-body) section { max-width: none; margin-inline: 0; }
+
+.snav { min-width: 0; }
+.snav-list {
+  position: relative;
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  border-bottom: var(--bd);
+}
+.snav-list > li { flex: none; }
+
+.snav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: var(--control-h);
+  padding: 0 var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  color: var(--ink-2);
+  text-align: left;
+  text-decoration: none;
+  text-transform: lowercase;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+}
+/* the row and the column both sit flush in their box, so the ring goes inside */
+.snav-item:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+.snav-ic { display: inline-flex; flex: none; color: var(--ink-3); }
+.snav-ic .lucide, .snav-ic .brand { width: var(--ic-lg); height: var(--ic-lg); }
+.snav-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+.snav-item[aria-current] { color: var(--ink-strong); box-shadow: inset 0 calc(-1 * var(--stroke-emphasis)) 0 var(--amber); }
+.snav-item[aria-current] .snav-ic { color: var(--amber); }
+
+/* ── a wide body: a sticky column beside the sections ─────────────────── */
+@container snav (width >= 44rem) {
+  .snav-grid { grid-template-columns: minmax(10rem, 13rem) minmax(0, 1fr); gap: var(--sp-7); }
+  .snav { position: sticky; top: var(--snav-top, var(--sp-5)); }
+  .snav-list { flex-direction: column; overflow: visible; border-bottom: 0; }
+  /* in the column a long label wraps rather than hiding its end */
+  .snav-item { gap: var(--sp-3); padding-block: var(--sp-2); white-space: normal; }
+  .snav-label { overflow: visible; overflow-wrap: anywhere; }
+  .snav-item[aria-current] { background: var(--surface-2); box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber); }
+}
+
+/* ── touch: 44px targets ──────────────────────────────────────────────── */
+@media (pointer: coarse) {
+  .snav-item { min-height: var(--target-comfortable); }
+}
+
+/* ── hover, on a fine pointer only ────────────────────────────────────── */
+@media (hover: hover) and (pointer: fine) {
+  /* the current section keeps its own look */
+  .snav-item:not([aria-current]):hover { color: var(--ink); background: var(--surface-hover); }
+  .snav-item:not([aria-current]):hover .snav-ic { color: var(--ink-2); }
+}
+
+/* ── motion, only when it is welcome: a press, on transform ───────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .snav-item { transition: transform var(--dur-1) var(--ease-out); }
+  .snav-item:active { transform: scale(0.98); }
+}

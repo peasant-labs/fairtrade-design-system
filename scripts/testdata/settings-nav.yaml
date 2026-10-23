@@ -1,0 +1,67 @@
+# Cases for the settings section bar (src/ui/SettingsNav.jsx). scripts/settings-nav.test.mjs mounts
+# the REAL component for each case and checks what a reader reaches: one nav landmark named for the
+# sections, each section a link (a route or an in-page anchor) or a button, aria-current on the
+# current one ('page' for a route, 'location' for an anchor, 'true' for a button), the choice
+# reported to the host, the section in view marked while the reader scrolls (`spy`), the layout's
+# bar-beside-body structure and a router link component.
+#
+# `icon` names a lucide-react export. `href: route` gives a section `?section=<id>`, `href: anchor`
+# gives it `#settings-<id>`, and no href makes it a button.
+sections:
+  - {id: general, label: general, icon: SlidersHorizontal}
+  - {id: access, label: access, icon: KeyRound}
+  - {id: members, label: members, icon: Users}
+  - {id: danger, label: danger zone}
+
+cases:
+  - name: routes are links and the current one is the page
+    kind: items
+    href: route
+    props: {currentId: access}
+    expected:
+      landmark: settings sections
+      items:
+        - {id: general, tag: A, href: '?section=general', current: null, icon: true, text: general}
+        - {id: access, tag: A, href: '?section=access', current: page, icon: true, text: access}
+        - {id: members, tag: A, href: '?section=members', current: null, icon: true, text: members}
+        - {id: danger, tag: A, href: '?section=danger', current: null, icon: false, text: danger zone}
+  - name: anchors are links and the current one is the location
+    kind: items
+    href: anchor
+    props: {currentId: general, label: collective settings}
+    expected:
+      landmark: collective settings
+      items:
+        - {id: general, tag: A, href: '#settings-general', current: location, icon: true, text: general}
+        - {id: access, tag: A, href: '#settings-access', current: null, icon: true, text: access}
+        - {id: members, tag: A, href: '#settings-members', current: null, icon: true, text: members}
+        - {id: danger, tag: A, href: '#settings-danger', current: null, icon: false, text: danger zone}
+  - name: buttons report the chosen section
+    kind: select
+    href: none
+    props: {currentId: general}
+    click: members
+    expected: {selected: [members], tag: BUTTON, current: 'true'}
+  - name: the section in view is marked while reading
+    kind: spy
+    href: anchor
+    props: {currentId: general, spy: true}
+    inView: members
+    expected: {before: general, after: members}
+  - name: a chosen anchor is marked at once
+    kind: spy-click
+    href: anchor
+    props: {currentId: general, spy: true}
+    click: danger
+    expected: {after: danger, selected: [danger]}
+  - name: the layout puts the bar beside the body
+    kind: layout
+    href: route
+    props: {currentId: general, bodyClassName: host-body}
+    body: the general settings
+    expected: {grid: true, bar: settings sections, body: the general settings, bodyClass: true}
+  - name: a link component receives the section props
+    kind: link-component
+    href: route
+    props: {currentId: members}
+    expected: {hrefs: ['?section=general', '?section=access', '?section=members', '?section=danger'], current: '?section=members'}

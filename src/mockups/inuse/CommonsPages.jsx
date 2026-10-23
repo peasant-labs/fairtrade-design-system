@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { MoreHorizontal, Search, Download, Pencil, Eye } from 'lucide-react'
+import { MoreHorizontal, Search, Download, Pencil, Eye, GitPullRequest, Plug, TriangleAlert, UserRound } from 'lucide-react'
 import {
   CopyIconButton,
   DataTable,
@@ -10,6 +10,7 @@ import {
   Segmented,
   SettingGroup,
   SettingRow,
+  SettingsLayout,
   SignInProviders,
   StatsStrip,
   TranscriptViewer,
@@ -195,6 +196,14 @@ export function CollectiveSettingsView({ data = {}, actions = {} } = {}) {
 
 /* ── your settings ───────────────────────────────────────────────────────── */
 
+/* the settings section bar: one anchor per group on this page */
+const ACCOUNT_SECTIONS = [
+  { id: 'profile', label: 'profile', icon: UserRound },
+  { id: 'pull-requests', label: 'pull requests', icon: GitPullRequest },
+  { id: 'connections', label: 'connections', icon: Plug },
+  { id: 'danger-zone', label: 'danger zone', icon: TriangleAlert },
+].map((section) => ({ ...section, href: `#account-${section.id}` }))
+
 /** Your settings: profile, automatic pull request linking (off by default), connections. */
 export function AccountSettingsView({ actions = {} } = {}) {
   const write = (key) => (value) => (actions.onCommit ? actions.onCommit(key, value) : demoWrite())
@@ -205,35 +214,37 @@ export function AccountSettingsView({ actions = {} } = {}) {
           <h2 className="iu-page-title">your settings</h2>
           <p className="iu-page-sub">switches apply right away. text changes when you press edit.</p>
         </header>
-        <SettingGroup label="profile" defaultOpen>
-          <SettingRow label="handle" control="text" value={VIEWER.handle} onCommit={write('handle')} />
-          <SettingRow label="discoverable profile" help="on: your handle shows on your transcripts and in member lists. off: you show as anon." control="switch" value onCommit={write('discoverable')} />
-        </SettingGroup>
-        <SettingGroup label="pull requests" defaultOpen>
-          <SettingRow
-            label="link my transcripts to my pull requests automatically"
-            help="off: comment /peasant attach on a pull request. on: when you open a pull request in a repo that one of your collectives links, your transcripts that trace its commits are linked. who can read them does not change."
-            control="switch"
-            value={false}
-            onCommit={write('autoLink')}
-          />
-        </SettingGroup>
-        <SettingGroup label="connections" defaultOpen count={2} noun={['connection', 'connections']}>
-          <div className="srow">
-            <span className="srow-text-col"><span className="srow-label"><BrandMark name="github" /> github, {VIEWER.login}</span><span className="srow-help">you sign in to village with this account.</span></span>
-            <button type="button" className="btn btn-secondary btn-sm">sign out</button>
-          </div>
-          <div className="srow">
-            <span className="srow-text-col"><span className="srow-label">peasant on 1 computer</span><span className="srow-help">it can publish as you. last used 12m ago.</span></span>
-            <button type="button" className="btn btn-secondary btn-sm">sign out everywhere</button>
-          </div>
-        </SettingGroup>
-        <SettingGroup label="danger zone" defaultOpen count={null}>
-          <div className="srow">
-            <span className="srow-help">delete your village account. this cannot be undone.</span>
-            <button type="button" className="btn btn-danger btn-sm">delete account</button>
-          </div>
-        </SettingGroup>
+        <SettingsLayout sections={ACCOUNT_SECTIONS} currentId={ACCOUNT_SECTIONS[0].id} spy>
+          <SettingGroup id="account-profile" label="profile" defaultOpen>
+            <SettingRow label="handle" control="text" value={VIEWER.handle} onCommit={write('handle')} />
+            <SettingRow label="discoverable profile" help="on: your handle shows on your transcripts and in member lists. off: you show as anon." control="switch" value onCommit={write('discoverable')} />
+          </SettingGroup>
+          <SettingGroup id="account-pull-requests" label="pull requests" defaultOpen>
+            <SettingRow
+              label="link my transcripts to my pull requests automatically"
+              help="off: comment /peasant attach on a pull request. on: when you open a pull request in a repo that one of your collectives links, your transcripts that trace its commits are linked. who can read them does not change."
+              control="switch"
+              value={false}
+              onCommit={write('autoLink')}
+            />
+          </SettingGroup>
+          <SettingGroup id="account-connections" label="connections" defaultOpen count={2} noun={['connection', 'connections']}>
+            <div className="srow">
+              <span className="srow-text-col"><span className="srow-label"><BrandMark name="github" /> github, {VIEWER.login}</span><span className="srow-help">you sign in to village with this account.</span></span>
+              <button type="button" className="btn btn-secondary btn-sm">sign out</button>
+            </div>
+            <div className="srow">
+              <span className="srow-text-col"><span className="srow-label">peasant on 1 computer</span><span className="srow-help">it can publish as you. last used 12m ago.</span></span>
+              <button type="button" className="btn btn-secondary btn-sm">sign out everywhere</button>
+            </div>
+          </SettingGroup>
+          <SettingGroup id="account-danger-zone" label="danger zone" defaultOpen count={null}>
+            <div className="srow">
+              <span className="srow-help">delete your village account. this cannot be undone.</span>
+              <button type="button" className="btn btn-danger btn-sm">delete account</button>
+            </div>
+          </SettingGroup>
+        </SettingsLayout>
       </div>
     </>
   )
