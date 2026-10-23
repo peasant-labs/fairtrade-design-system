@@ -67,8 +67,11 @@ export function CommandBlock({ command, label, wrap = false, compact = false, cl
         <code>
           {/* the dim prompt sigil is chrome — not part of the command, and not selectable */}
           <span className="cli-cmd-sigil" aria-hidden="true">$ </span>
-          {/* COMMAND — literal, case preserved; never lowercase it */}
-          {command}
+          {/* COMMAND — literal, case preserved; never lowercase it. wrapped, each space-separated
+              token is kept whole, so a line breaks only at a space (never after a hyphen in a flag
+              or a date); only a token wider than the line breaks inside it. copy uses the raw
+              string either way. */}
+          {wrap ? command.split(/(\s+)/).map((part, index) => (/^\s*$/.test(part) ? part : <span key={index} className="cli-tok">{part}</span>)) : command}
         </code>
       </pre>
 

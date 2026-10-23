@@ -42,9 +42,11 @@
   white-space: pre;
 }
 
-/* wrap: break at spaces, and anywhere inside a long URL, instead of scrolling */
+/* wrap: break only at spaces. each token is one atomic box that moves to the next line whole;
+   a token wider than the line (a long URL) breaks anywhere inside it instead of overflowing */
 .cli-cmd-wrap .cli-cmd-line { overflow-x: visible; }
-.cli-cmd-wrap .cli-cmd-line code { white-space: pre-wrap; overflow-wrap: anywhere; }
+.cli-cmd-wrap .cli-cmd-line code { white-space: pre-wrap; }
+.cli-tok { display: inline-block; max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 /* compact: the copy button is the icon alone (the word stays for assistive tech) */
 .cli-cmd-compact .cli-copy { min-width: var(--control-h); padding: 0; }

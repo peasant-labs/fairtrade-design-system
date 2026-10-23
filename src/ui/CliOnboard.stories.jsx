@@ -83,6 +83,7 @@ export const WrappedCompact = {
   render: () => (
     <div style={{ display: 'grid', gap: 'var(--sp-4)', width: 'min(100%, 358px)' }}>
       <CommandBlock command={LONG} wrap compact label="the windows install command" />
+      <CommandBlock command="peasant village push --since 2026-01-01 --collective peasant-labs --event pull-request" wrap compact label="the push command" />
       <CommandBlock command={LONG} compact label="the windows install command" />
     </div>
   ),
@@ -98,6 +99,11 @@ export const WrappedCompact = {
     await expect(regions).toHaveLength(1)
     await expect(regions[0]).toHaveAttribute('tabindex', '0')
     await expect(canvas.getAllByRole('button', { name: 'copy the windows install command' })).toHaveLength(2)
+    // wrapped, a token is never split after a hyphen: each flag and date stays on one line
+    for (const token of canvasElement.querySelectorAll('.cli-tok')) {
+      const line = parseFloat(getComputedStyle(token).lineHeight)
+      if (token.textContent.length < 24) await expect(token.getBoundingClientRect().height).toBeLessThan(line * 1.5)
+    }
   },
 }
 
