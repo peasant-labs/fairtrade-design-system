@@ -140,3 +140,11 @@ invariants:
     mustContainAll:
       - ".srow-text-row > .srow-control { grid-column: 1 / -1; justify-self: start; justify-content: flex-start; }"
       - ".srow-text-row .srow-text { justify-content: flex-start; }"
+  - id: srow-action-drops-on-mobile
+    file: src/ui/Settings.css
+    description: >-
+      below the md breakpoint an action row (a host's own .srow of words and a button: sign out,
+      delete the account, manage on github) puts the action on its own line under the words, at the
+      right padding. Beside long words the button squeezed them, so hosts added rules of their own.
+    mustContainAll:
+      - ".srow:not(:has(> .srow-control)) > :not(:first-child) { grid-column: 1 / -1; }"

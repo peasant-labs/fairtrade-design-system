@@ -142,6 +142,9 @@
      the row's width instead of being squeezed beside a path */
   .srow-text-row > .srow-control { grid-column: 1 / -1; justify-self: start; justify-content: flex-start; }
   .srow-text-row .srow-text { justify-content: flex-start; }
+  /* an action row (a host's words and a button beside them: sign out, delete the account, manage on
+     github) gives its action a line of its own under the words, at the right padding, as a select */
+  .srow:not(:has(> .srow-control)) > :not(:first-child) { grid-column: 1 / -1; }
   .srow-control { flex-wrap: wrap; max-width: 100%; }
   .srow-text { max-width: 100%; }
   .srow-select { min-width: 0; max-width: 100%; }
