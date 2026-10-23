@@ -116,7 +116,7 @@ export function CollectivesView({ data = {}, actions = {} } = {}) {
     collectives = [],
     linkedOrgs = [],
     title = 'collectives',
-    deck = 'a collective is a group that can read the transcripts its members publish to it. link your repositories so pull requests find them.',
+    deck,
     crumb,
     caption = 'collectives',
     createLabel = 'new collective',
@@ -208,7 +208,6 @@ export function CollectivesView({ data = {}, actions = {} } = {}) {
       {onSearchCollectives && (
         <section className="cmg-section" aria-labelledby={`${hintId}-find`}>
           <h3 className="cmg-section-title" id={`${hintId}-find`}>find a collective</h3>
-          <p className="cmg-note">search by collective name or github org.</p>
           <form className="cmg-find" role="search" onSubmit={(event) => { event.preventDefault(); onSearchCollectives(query) }}>
             <Input label="collective or github org" type="search" iconLeft={Search} placeholder="collective name or github org" value={query} onChange={(event) => setQuery(event.target.value)} />
             <button type="submit" className="btn btn-secondary">search</button>
@@ -376,7 +375,6 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
                   {collective.role === 'owner' && onLinkRepos && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPicking(true)}>manage</button>}
                 </p>
               ) : collective.org === null ? <p className="cmg-rail-line cmg-none">nothing linked</p> : null}
-              <p className="cmg-note">a collective links one github org today.</p>
             </section>
             <section className="cmg-rail-box">
               <h3 className="cmg-rail-title">members{typeof collective.memberCount === 'number' ? <> <span className="tnum cmg-count">{collective.memberCount}</span></> : null}</h3>
@@ -467,7 +465,6 @@ export function CollectiveSettingsView({ data = {}, actions = {} } = {}) {
         <div className="cmg-crumb-content"><Breadcrumb items={[{ label: 'collectives', href: hrefFor?.('collectives') }, { label: collective.name, href: hrefFor?.('collective', collective.id) }, { label: 'settings' }]} /></div>
         <header className="iu-page-head">
           <h2 className="iu-page-title"><span className="iu-page-title-content">{collective.name}</span>, settings</h2>
-          <p className="iu-page-sub">changes save right away.</p>
         </header>
         <SettingsLayout
           sections={sections.map((name) => ({ id: anchor(name), label: name, href: `#${anchor(name)}`, icon: SETTINGS_SECTION_ICONS[name] }))}

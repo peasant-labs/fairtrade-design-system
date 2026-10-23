@@ -620,7 +620,6 @@ export function ExploreView({ theme } = {}) {
     <div className="cex-root">
       <header className="cex-explore-head">
         <h2 className="cex-h2">explore transcripts</h2>
-        <p className="cex-deck">search redacted ai agent transcripts shared by the community.</p>
         <div className="input-ico cex-searchbar">
           <Search size={16} aria-hidden="true" className="lucide" />
           <input

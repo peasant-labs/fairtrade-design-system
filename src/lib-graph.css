@@ -82,22 +82,6 @@
     border-bottom: var(--bd);
     background: var(--surface-2);
   }
-  .gmp-navigator-kicker {
-    margin: 0;
-    font-family: var(--font-mono);
-    font-size: var(--fs-label);
-    font-weight: 600;
-    text-transform: lowercase;
-    color: var(--ink-strong);
-  }
-  .gmp-navigator-note {
-    max-width: var(--measure-prose);
-    margin: var(--sp-1) 0 0;
-    font-family: var(--font-body);
-    font-size: var(--fs-body);
-    line-height: var(--lh-body);
-    color: var(--ink-3);
-  }
   .gmp-navigator-search {
     display: flex;
     align-items: center;

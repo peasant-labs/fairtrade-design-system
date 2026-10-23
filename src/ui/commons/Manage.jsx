@@ -136,9 +136,7 @@ export function Manage({
           <div className="cmg-d-hero-row">
             <div>
               <h2 className="cmg-title">{collective.name || 'collective'}</h2>
-              <p className="cmg-deck">
-                {collective.description || 'shared collective governance'}
-              </p>
+              {collective.description ? <p className="cmg-deck">{collective.description}</p> : null}
               <span className="cmg-orgpill mono">
                 <FolderGit2 size={14} aria-hidden="true" />{' '}
                 {collective.linkedGithubOrg || 'not linked'}

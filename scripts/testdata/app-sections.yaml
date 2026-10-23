@@ -28,7 +28,7 @@ demo:
   bodies:
     - {name: home body, section: home, text: your sessions, tableCounts: ['showing 7 of 1,284']}
     - {name: village body, section: village, text: Relevant collectives only.}
-    - {name: settings body, section: settings, text: changes save right away}
+    - {name: settings body, section: settings, text: publishing plan}
     - {name: analytics body, section: analytics, text: project overview}
     - {name: changes body, section: changes, text: lines of work}
     - {name: code map body, section: map, text: spatial map}

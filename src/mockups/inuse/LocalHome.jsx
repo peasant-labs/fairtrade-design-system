@@ -85,7 +85,6 @@ export function HomeView({ renderState = renderPublishState, offline = false }) 
     <div className="iu-page">
       <header className="iu-page-head">
         <h2 className="iu-page-title">your sessions</h2>
-        <p className="iu-page-sub"><span className="tnum">{HOME_SUMMARY.published}</span> of <span className="tnum">{HOME_SUMMARY.total.toLocaleString('en-US')}</span> published. the rest stay on this machine.</p>
       </header>
       {offline && <p className="iu-page-tip" role="status">stale data: last loaded <time className="tnum">14:32:05</time>. start peasant to search or filter.</p>}
 
@@ -186,18 +185,17 @@ export function SettingsView() {
     <SettingStatus><div className="iu-page">
       <header className="iu-page-head">
         <h2 className="iu-page-title">settings</h2>
-        <p className="iu-page-sub">changes save right away. anything tagged not in peasant config can only be changed on this page.</p>
       </header>
       <StatsStrip items={SETTINGS_SUMMARY} label="settings summary" />
 
       <SettingsLayout sections={SETTINGS_SECTIONS} currentId={SETTINGS_SECTIONS[0].id} spy>
         {SETTINGS_GROUPS.map((group) => (
-          <SettingGroup key={group.id} id={`local-settings-${group.id}`} label={group.label} defaultOpen={group.open} description={group.description}>
+          <SettingGroup key={group.id} id={`local-settings-${group.id}`} label={group.label} defaultOpen={group.open}>
             {group.rows.map((row) => <DemoSettingRow key={row.id} row={row} />)}
           </SettingGroup>
         ))}
 
-        <SettingGroup id="local-settings-files" label="files" defaultOpen count={SETTINGS_FILES.length} description="where settings are saved.">
+        <SettingGroup id="local-settings-files" label="files" defaultOpen count={SETTINGS_FILES.length}>
           {SETTINGS_FILES.map((file) => (
             <div key={file.path} className="srow">
               <span className="srow-text-col">

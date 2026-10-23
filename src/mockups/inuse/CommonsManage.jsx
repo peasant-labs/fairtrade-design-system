@@ -125,7 +125,6 @@ export function PublishView() {
         <header className="cmg-head">
           <div>
             <h2 className="cmg-title">publishing dashboard</h2>
-            <p className="cmg-deck">push transcripts from the peasant cli to the village.</p>
           </div>
         </header>
 
@@ -259,7 +258,7 @@ export function CollectivesView({ data = {}, actions = {} } = {}) {
     collectives = COLLECTIVES,
     linkedOrgs = LINKED_ORGS,
     title = 'collectives',
-    deck = 'groups that govern shared data together.',
+    deck,
     crumb = 'collectives',
     createLabel = 'new collective',
     createBusy = false,
@@ -285,7 +284,7 @@ export function CollectivesView({ data = {}, actions = {} } = {}) {
         <header className="cmg-head">
           <div>
             <h2 className="cmg-title">{title}</h2>
-            <p className="cmg-deck">{deck}</p>
+            {deck ? <p className="cmg-deck">{deck}</p> : null}
           </div>
           <button
             type="button"
@@ -773,7 +772,6 @@ export function CollectiveSettingsView() {
           <div className="cmg-d-hero-row">
             <div>
               <h2 className="cmg-title">collective settings</h2>
-              <p className="cmg-deck">edit how this collective accepts contributions and shares data.</p>
             </div>
             <Tag>settings</Tag>
           </div>
@@ -977,7 +975,6 @@ export function ContributeView() {
         <header className="cmg-head">
           <div>
             <h2 className="cmg-title">contribute to AI Research Team</h2>
-            <p className="cmg-deck">select your own transcripts to share with this collective.</p>
           </div>
         </header>
 

@@ -114,12 +114,6 @@ export default function CodeMapNavigator({
   return (
     <section className="gmp-navigator" aria-label={ariaLabel}>
       <header className="gmp-navigator-head">
-        <div>
-          <p className="gmp-navigator-kicker">browse the codebase</p>
-          <p className="gmp-navigator-note">
-            choose an area for its recorded work, then open the spatial map when relationships matter
-          </p>
-        </div>
         <label className="gmp-navigator-search">
           <Search aria-hidden="true" />
           <span className="mc-sr">filter code areas</span>

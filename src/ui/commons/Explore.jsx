@@ -604,7 +604,6 @@ export default function Explore({
     <div className={`cex-root ${className}`.trim()}>
       <header className="cex-explore-head">
         <h2 className="cex-h2">explore transcripts</h2>
-        <p className="cex-deck">search redacted ai agent transcripts shared by the community.</p>
         <div className="input-ico cex-searchbar">
           <input
             className="input"
