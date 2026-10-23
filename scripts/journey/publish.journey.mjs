@@ -90,6 +90,25 @@ for (const row of spec.cases) {
     await expect(dialog.locator('.pub-auto .pub-hint')).toHaveText(consent.checkedSentence)
     await dialog.locator('.pub-auto .pub-hint').scrollIntoViewIfNeeded()
     await page.screenshot({ path: testInfo.outputPath(`consent-${row.theme}-${row.width}.png`), fullPage: false })
+    // the match count's toggle keeps to the count's first line at every width, and the quiet row
+    // actions set their words on the section's right edge; a long title stops at two lines
+    const rows = await dialog.evaluate((el) => {
+      const words = (node) => { const range = document.createRange(); range.selectNodeContents(node); return range.getBoundingClientRect() }
+      const toggle = el.querySelector('.pub-toggle')
+      const count = toggle.closest('.pub-line').querySelector('.pub-line-text')
+      const edge = toggle.closest('.pub-section').getBoundingClientRect().right
+      const rescan = el.querySelector('.pub-rescan')
+      return {
+        toggleOnCountLine: toggle.getBoundingClientRect().top < count.getBoundingClientRect().top + parseFloat(getComputedStyle(count).lineHeight),
+        toggleEdge: Math.abs(words(toggle).right - edge),
+        rescanEdge: rescan ? Math.abs(words(rescan).right - edge) : 0,
+        titleClamp: getComputedStyle(el.querySelector('.dlg-head h3')).webkitLineClamp,
+      }
+    })
+    expect(rows.toggleOnCountLine, 'the examples toggle stays on the match count line').toBe(true)
+    expect(rows.toggleEdge, 'the examples toggle ends on the section edge').toBeLessThanOrEqual(1)
+    expect(rows.rescanEdge, 're-scan ends on the section edge').toBeLessThanOrEqual(1)
+    expect(rows.titleClamp).toBe('2')
     await dialog.locator('.pub-toggle').click()
     await expect(dialog.locator('.rdx-badge-cat').first()).toHaveText('CREDENTIAL')
     await expect(dialog.getByText('confidence', { exact: true }).first()).toBeVisible()
