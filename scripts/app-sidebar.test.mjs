@@ -136,6 +136,55 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         ]
         report.check(same(order, row.expected), `${name}: the sidebar order must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(order)}`)
         await mounted.unmount()
+      } else if (row.kind === 'soon') {
+        const mounted = await mount(React.createElement(AppSidebar, propsFor(row)))
+        const entries = [...mounted.container.querySelectorAll('nav[aria-label="apps"] .asb-item')]
+        const soon = entries.find((item) => item.querySelector('.asb-label')?.textContent === 'community')
+        const actual = soon && {
+          tag: soon.tagName,
+          disabled: soon.getAttribute('aria-disabled'),
+          href: soon.getAttribute('href'),
+          title: soon.getAttribute('title'),
+          text: spoken(soon),
+          last: entries.at(-1) === soon,
+        }
+        report.check(same(actual, row.expected), `${name}: the soon entry must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
+        await mounted.unmount()
+      } else if (row.kind === 'slot-order') {
+        const orders = []
+        for (const config of row.configs) {
+          const groups = [{ id: 'main', ariaLabel: `${config.app} sections`, items: config.groups.map((id) => ({ id, label: id, href: `/${id}` })) }]
+          const props = {
+            app: config.app,
+            apps: fixture.apps,
+            groups,
+            storageKey: null,
+            theme: 'light',
+            onThemeChange: () => {},
+            ...(config.search ? { search: { onOpen: () => {} } } : {}),
+            ...(config.account ? { account: { handle: config.account } } : {}),
+          }
+          const mounted = await mount(React.createElement(AppSidebar, props))
+          const aside = mounted.container.querySelector('aside')
+          const tokenOf = (node) => {
+            if (node.matches('nav.asb-apps')) return 'apps'
+            if (node.matches('nav.asb-group')) return 'groups'
+            if (node.matches('.asb-search')) return 'search'
+            if (node.matches('.asb-foot')) return `foot:${[...node.children].map((child) => (child.matches('.asb-theme') ? 'theme' : child.matches('.asb-me') ? 'account' : child.className)).join('+')}`
+            return node.className
+          }
+          const order = [
+            aside?.firstElementChild?.classList.contains('asb-top') ? 'top' : aside?.firstElementChild?.className,
+            ...[...(aside?.querySelector('.asb-scroll')?.children ?? [])].filter((node) => !node.matches('.asb-indicator')).map(tokenOf),
+          ]
+          orders.push(order)
+          const lastApp = [...mounted.container.querySelectorAll('nav[aria-label="apps"] .asb-label')].at(-1)?.textContent
+          report.check(lastApp === row.lastApp, `${name}: the last switcher entry in ${config.app} must be ${row.lastApp}, received ${lastApp}`)
+          await mounted.unmount()
+        }
+        for (const [index, order] of orders.entries()) {
+          report.check(same(order, row.expected), `${name}: ${row.configs[index].app} must have the slot order ${JSON.stringify(row.expected)}, received ${JSON.stringify(order)}`)
+        }
       } else if (row.kind === 'theme') {
         const calls = []
         const mounted = await mount(React.createElement(AppSidebar, propsFor(row, { onThemeChange: (next) => calls.push(next) })))

@@ -206,18 +206,18 @@ span.asb-item { cursor: default; }
 .asb-ext .lucide { width: var(--ic-sm); height: var(--ic-sm); }
 
 .asb-apps .asb-item { text-transform: lowercase; }
-/* a tagged place that does not exist yet ('soon'): text, not a link, with its note as a small chip */
+/* a place that does not exist yet ('soon'): text, not a link, no hover and no press, its note in the
+   trailing slot where an outside-the-app marker sits, in the same quiet ink */
 .asb-item-soon { color: var(--ink-3); }
 .asb-tag {
   flex: none;
   margin-left: auto;
-  padding: 0 var(--sp-1);
   font-family: var(--font-mono);
   font-size: var(--fs-label);
   line-height: var(--lh-mono);
   letter-spacing: 0;
-  color: var(--ink-3);
-  border: var(--bd);
+  text-transform: lowercase;
+  color: var(--ink-4);
 }
 .asb-ext + .asb-sr + .asb-tag { margin-left: var(--sp-2); }
 .asb-apps { padding-top: var(--sp-3); border-top: var(--bd); }

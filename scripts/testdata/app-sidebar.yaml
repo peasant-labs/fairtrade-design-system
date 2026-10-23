@@ -54,6 +54,16 @@ cases:
     props: {app: online, theme: light, account: {handle: mira}}
     search: {label: search, shortcut: '⌘K', keyShortcuts: Meta+K}
     expected: [top, 'nav:peasant sections', 'nav:help', search, apps, 'foot:theme+account']
+  # The same slots in the same order in every app, whatever the app passes: each config below is
+  # one app's data (its own groups, search, theme and account); the slot order must not differ.
+  - name: every app gets the same slot order
+    kind: slot-order
+    configs:
+      - {app: online, groups: [home, discover], search: true, account: mira}
+      - {app: local, groups: [sessions, settings], search: true, account: mira}
+      - {app: docs, groups: [overview, install, cli], search: true, account: mira}
+    expected: [top, groups, search, apps, 'foot:theme+account']
+    lastApp: community
   # The theme toggle names the theme it switches to, with that theme's icon, and reports it.
   - name: the theme toggle names the theme it switches to
     kind: theme
@@ -84,12 +94,14 @@ cases:
     props: {app: local}
     expected:
       - {label: online, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'online, opens in a new tab'}
+      - {label: community, tag: SPAN, current: null, target: null, rel: null, text: community soon}
   - name: every other app with an address is listed
     kind: switcher
     props: {app: docs}
     expected:
       - {label: online, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'online, opens in a new tab'}
       - {label: local, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'local, opens in a new tab'}
+      - {label: community, tag: SPAN, current: null, target: null, rel: null, text: community soon}
   - name: a tagged entry with no address is text
     kind: switcher
     props:
@@ -100,6 +112,20 @@ cases:
     expected:
       - {label: docs, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'docs, opens in a new tab'}
       - {label: community, tag: SPAN, current: null, target: null, rel: null, text: community soon}
+  # Community: every switcher ends with it as a place that does not exist yet, text with a 'soon'
+  # note, aria-disabled, not a link; an app that names its own community entry gets that instead.
+  - name: every switcher ends with community as soon
+    kind: soon
+    props: {app: online}
+    expected: {tag: SPAN, disabled: 'true', href: null, title: 'community, soon', text: community soon, last: true}
+  - name: a community entry of the app's own replaces the soon one
+    kind: switcher
+    props:
+      app: online
+      apps:
+        - {id: community, label: community, href: 'https://community.invalid/'}
+    expected:
+      - {label: community, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'community, opens in a new tab'}
   - name: an entry's own target is kept
     kind: switcher
     props:
@@ -108,6 +134,7 @@ cases:
         - {id: online, label: online, href: 'https://online.invalid/', target: _self}
     expected:
       - {label: online, tag: A, current: null, target: _self, rel: null, text: 'online, opens outside this app'}
+      - {label: community, tag: SPAN, current: null, target: null, rel: null, text: community soon}
   # Collapse: the toggle flips aria-expanded and its name, the root is marked collapsed, the labels
   # stay in the DOM as accessible names, items carry title tooltips, and the separator leaves.
   - name: the toggle collapses to a rail
@@ -171,7 +198,7 @@ cases:
   - name: the menu opens and closes the drawer
     kind: drawer
     props: {app: online, currentId: home}
-    expected: {name: open the menu, closeName: close the menu, listed: 6}
+    expected: {name: open the menu, closeName: close the menu, listed: 7}
   # One indicator marks the current item: placed without sliding at first, sliding to a new
   # current item, hidden when no item is current.
   - name: one indicator slides between current items

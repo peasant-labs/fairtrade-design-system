@@ -30,8 +30,8 @@ const meta = {
 export default meta
 
 const APP_HREFS = { online: '#online', local: '#local', docs: '#docs' }
-// the switcher: the other apps, then community, which does not exist yet: a tagged entry with no href
-const apps = [...APP_SIDEBAR_APPS.map((entry) => ({ ...entry, href: APP_HREFS[entry.id] })), { id: 'community', label: 'community', tag: 'soon' }]
+// the switcher: the other apps; the component ends it with community as soon by itself
+const apps = APP_SIDEBAR_APPS.map((entry) => ({ ...entry, href: APP_HREFS[entry.id] }))
 
 const ONLINE_GROUPS = [
   { id: 'main', ariaLabel: 'peasant sections', items: [
