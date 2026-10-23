@@ -4,6 +4,48 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.37 - 2026-10-23
+
+### Added
+
+- `--card-pad`, the one inner padding of card-like boxes: 24px, 16px below
+  768px. Setting rows and group summaries take it on the left and the right,
+  and cards, dialog parts and empty states take it all round. A row's label
+  starts at the left padding and its control group ends at the right padding;
+  setting rows keep a 48px minimum height. Stacked on a phone, the control
+  group takes its own line and ends at the right padding. A switch's on/off
+  word takes a fixed width, so tracks line up from row to row.
+- `scripts/journey/card-insets.journey.mjs`: a computed-geometry gate over the
+  demo's local, account and collective settings at 1440 and 390 in both
+  themes. Every card row's content must start and end the same distance from
+  its edges, at least the padding floor, with nothing crossing its content box.
+  Four named CSS mutations prove that it fails for the reason it names. On the
+  0.0.36 CSS it fails (16px and 12px insets).
+- `AppSidebar` switcher entries take `soon: true`: the entry shows as text,
+  marked `aria-disabled`, with a quiet "soon" note in the trailing slot and no
+  hover or press. Every switcher now ends with community as soon by itself; an
+  app that passes its own `community` entry gets that entry instead.
+- `CommandBlock` takes `wrap` (break at spaces, and anywhere inside a long URL,
+  instead of scrolling) and `compact` (an icon-only copy button whose name stays
+  "copy <command>").
+
+### Changed
+
+- `CommandBlock`'s command is set at the 16px code size. When it scrolls
+  sideways, the scroll region is focusable (`tabindex="0"`, `role="region"`,
+  named "command: <label or command>") with the inset focus ring.
+- `Explore`'s search placeholder is "search transcripts", so it fits a phone;
+  its accessible name still lists everything it searches.
+- `SettingRow` on a phone keeps the save status before the control, as on
+  desktop, so the control ends on the row's padding.
+
+### Compatibility
+
+- One new token and new props only; nothing removed. A consumer that passed
+  `{ id: 'community', label: 'community', tag: 'soon' }` can drop it, since the
+  component adds community itself.
+- Card-like boxes grow from 16px to 24px of padding on desktop.
+
 ## 0.0.36 - 2026-10-23
 
 ### Added

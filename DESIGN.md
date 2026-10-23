@@ -553,7 +553,13 @@ render the same system.
 - **Shadow Strategy:** none at rest (see Elevation & Depth). Cards, the library `Card` included,
   lift 2px on hover, only under `prefers-reduced-motion: no-preference`.
 - **Border:** `--bd-strong`.
-- **Internal Padding:** `--sp-4`, with `--sp-3` gaps.
+- **Internal Padding:** `--card-pad` (24px, 16px below 768px), the same on all four sides of a card,
+  a dialog's parts, an empty state and the left and right of every setting row and group summary,
+  with `--sp-3` gaps. A row's label starts at the left padding and its control group ends at the
+  right padding; nothing touches a border. Setting rows keep a `--row-h-comfortable` minimum height
+  and centre their content; stacked on a phone, the control group takes its own line and still ends
+  at the right padding. `scripts/journey/card-insets.journey.mjs` measures it on the demo's settings
+  screens and fails on a breach.
 
 ### Inputs / Fields
 - **Style:** `--canvas` fill, `--rule-strong` border, the body face at 16px without prose tracking,
@@ -587,8 +593,9 @@ render the same system.
   Home and End on the separator), groups of items with an icon or a colour swatch, the current item
   marked with `aria-current` and the amber inset bar, an outside-the-app marker, the switcher to
   the other apps (never the one the reader is in; each opens in a new tab unless its entry names a
-  target; a tagged entry with no address, such as community with "soon", shows as text with its
-  note) and the account row. Brand text is `peasant`, never `peasant labs`.
+  target; the switcher always ends with community as a place that does not exist yet, text marked
+  `aria-disabled` with a quiet "soon" note in the trailing slot and no hover or press, until an app
+  names its own community entry) and the account row. Brand text is `peasant`, never `peasant labs`.
   Collapse and width persist per browser. Below 768px it becomes a top bar whose menu opens the
   same nav as an opaque drawer; the menu button then becomes the drawer's one close control.
   `AppSidebarLayout` places it beside the page. Its motion runs only under
