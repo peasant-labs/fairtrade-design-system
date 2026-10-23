@@ -143,9 +143,9 @@ export function HomeView({ renderState = renderPublishState, offline = false }) 
 
 const demoWrite = () => new Promise((resolve) => setTimeout(resolve, 700))
 
-/* one demo row: an instant-apply control saved per field, or a value with its one action */
+/* one demo row: an instant-apply control saved per field, or a value with its one action. no
+   provenance chip: where a setting is stored is not the reader's concern on this page */
 function DemoSettingRow({ row }) {
-  const tag = row.notInConfig ? 'not in peasant config' : undefined
   if (row.kind === 'readonly') {
     return (
       <div className="srow">
@@ -166,7 +166,6 @@ function DemoSettingRow({ row }) {
       control={row.kind}
       value={row.value}
       options={row.options}
-      tag={tag}
       disabled={row.kind === 'select' && row.options?.length === 1}
       onCommit={demoWrite}
     />
