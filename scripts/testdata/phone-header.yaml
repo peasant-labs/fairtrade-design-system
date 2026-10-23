@@ -1,0 +1,7 @@
+# Phone headers on the built in-use demo, checked by scripts/journey/phone-header.journey.mjs in both
+# themes on a 390px touch screen (pointer: coarse).
+#   tab-bar  the transcript's search trigger is one square icon control beside the tab strip: the
+#            strip never runs under it, the trigger shows no ⌘F, and the strip scrolls to its last tab.
+viewport: {width: 390, height: 844}
+cases:
+  - {name: the search trigger keeps beside the tab strip, kind: tab-bar, query: 'app=transcript'}

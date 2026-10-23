@@ -2695,8 +2695,14 @@
   .txn-checkpoint .mkc { max-width: 100%; min-width: 0; }
   .txn-cp-msg { white-space: normal; overflow-wrap: anywhere; text-transform: none; }
   .txn-cp-stat { flex-basis: 100%; }
-  /* the trigger keeps its icon and shortcut; its words stay in the accessible name only. */
+  /* the trigger is its icon alone, one square control beside the tab strip, which keeps the rest of
+     the row; its words stay in the accessible name only. */
   .txn-search-trigger-text { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .txn-search-trigger { width: var(--control-h); padding: 0; }
+}
+/* a phone or a touch screen has no ⌘F to press: the trigger leaves its shortcut out */
+@media (width < 480px), (pointer: coarse) {
+  .txn-search-key { display: none; }
 }/* ======================================================================
    CommonsExplore (in-use mockup): browse/discovery + embedded viewer +
    profile. namespace .cex-* only; existing tokens only; square, hairline,

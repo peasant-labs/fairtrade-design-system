@@ -1,0 +1,4 @@
+# Required-NAME manifest for phone-header.yaml: deletion protection. The journey asserts the case
+# names equal this list exactly, as a set.
+requiredCaseNames:
+  - the search trigger keeps beside the tab strip
