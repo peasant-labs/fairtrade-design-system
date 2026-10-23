@@ -41,7 +41,7 @@ popup:
     heading: publish “Fix flaky ingest test”
     primary: null
     rescan: null
-    lines: [connect this computer to village once to publish., continue with GitHub]
+    lines: [connect this computer to peasant online once to publish., continue with GitHub]
     removeButtons: []
     steps:
       - {press: continue with GitHub, calls: [[onConnect]]}
@@ -81,7 +81,7 @@ popup:
     heading: publish “Fix flaky ingest test”
     primary: {label: publish, enabled: false}
     rescan: {enabled: true}
-    lines: [you are not in a collective yet., create or join one on village]
+    lines: [you are not in a collective yet., create or join one on peasant online]
     removeButtons: []
     steps:
       - {press: publish, calls: []}
@@ -125,7 +125,7 @@ popup:
     heading: publish “Fix flaky ingest test”
     primary: {label: publish to 2 collectives, enabled: false}
     rescan: {enabled: false}
-    lines: [publishing to 2 collectives, sending your redacted transcript to village.]
+    lines: [publishing to 2 collectives, sending your redacted transcript to peasant online.]
     absent: [nothing leaves your machine until]
     removeButtons: []
     steps:

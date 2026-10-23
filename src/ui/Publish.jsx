@@ -485,7 +485,7 @@ export function PublishDialog({
   } else {
     footer = (
       <>
-        <span className="pub-foot-note">{state === 'publishing' ? 'sending your redacted transcript to village.' : state === 'stopped' ? 'review who can read it.' : `nothing leaves your machine until you ${verb}.`}</span>
+        <span className="pub-foot-note">{state === 'publishing' ? 'sending your redacted transcript to peasant online.' : state === 'stopped' ? 'review who can read it.' : `nothing leaves your machine until you ${verb}.`}</span>
         <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={state === 'publishing'}>cancel</button>
         {state === 'stopped' ? (onRecover || onRetry) && (
           <button type="button" className="btn btn-primary btn-sm" disabled={onRecover ? recoveryBlocked : blocked} onClick={onRecover ? runRecover : runRetry}><RotateCw aria-hidden="true" /> retry</button>
@@ -510,7 +510,7 @@ export function PublishDialog({
     <Dialog open={open} onClose={onClose} dismissible={dismissible} title={heading} labelId={labelId} size="wide" className="pub-dialog" footer={<div className="pub-foot">{footer}</div>}>
       {state === 'connect' && (
         <div className="pub-gate">
-          <p className="pub-line">connect this computer to village once to publish.</p>
+          <p className="pub-line">connect this computer to peasant online once to publish.</p>
           <SignInProviders onSignIn={() => onConnect?.()} />
         </div>
       )}
@@ -533,7 +533,7 @@ export function PublishDialog({
             {state === 'no-collective' ? (
               <p className="pub-line">
                 you are not in a collective yet.{' '}
-                {joinHref && <a className="link" href={joinHref}>create or join one on village <ExternalLink aria-hidden="true" /></a>}
+                {joinHref && <a className="link" href={joinHref}>create or join one on peasant online <ExternalLink aria-hidden="true" /></a>}
               </p>
             ) : (
               <>

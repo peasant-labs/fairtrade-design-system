@@ -83,7 +83,7 @@ test('local village mounted catalog, history and independent pages', async ({ pa
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
   const shell = page.locator('#inuse')
   const body = shell.locator('.vobs')
-  await expect(shell.getByRole('button', { name: 'village', exact: true })).toHaveAttribute('aria-current', 'page')
+  await expect(shell.getByRole('button', { name: 'online', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(body.locator('strong').filter({ hasText: 'Acme Platform' })).toBeVisible()
   await body.getByRole('button', { name: 'fetch metadata' }).click()
   await expect(body.getByRole('status')).toContainText('partial fetch')
@@ -136,7 +136,7 @@ test('local village mounted catalog, history and independent pages', async ({ pa
   await expect(shell.getByText('on this computer', { exact: false }).first()).toBeVisible()
   await shell.getByRole('button', { name: 'settings', exact: true }).click()
   await expect(shell.getByText('changes save right away', { exact: false })).toBeVisible()
-  await shell.getByRole('button', { name: 'village', exact: true }).click()
+  await shell.getByRole('button', { name: 'online', exact: true }).click()
   await expect(body).toBeVisible()
 })
 

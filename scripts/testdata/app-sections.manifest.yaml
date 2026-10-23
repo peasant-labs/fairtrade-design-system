@@ -13,8 +13,8 @@ requiredMutationNames:
 mutations:
   - name: village leaves the nav
     file: src/ui/inuse/InUseShell.jsx
-    find: "Object.freeze({ id: 'village', label: 'village', inNav: true }),"
-    replace: "Object.freeze({ id: 'village', label: 'village', inNav: false }),"
+    find: "Object.freeze({ id: 'village', label: 'online', inNav: true }),"
+    replace: "Object.freeze({ id: 'village', label: 'online', inNav: false }),"
     expectedDiagnostic: "LOCAL_APP_SECTIONS entry village"
   - name: village body is missing
     file: src/mockups/inuse/GraphApp.jsx

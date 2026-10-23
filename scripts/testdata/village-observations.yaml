@@ -7,7 +7,7 @@ containmentMotions:
   - {name: static-reduced-motion-host, value: reduce}
   - {name: motion-allowed-host, value: no-preference}
 controlledCases:
-  - {name: controlled-view-host-rerender, control: view, initial: catalog, target: history, label: history, callback: view, panel: village views}
+  - {name: controlled-view-host-rerender, control: view, initial: catalog, target: history, label: history, callback: view, panel: online views}
   - {name: controlled-category-host-rerender, control: categoryId, initial: remote-attempts, target: receipts, label: confirmed receipts, callback: category, panel: history categories}
 activationCases:
   - {name: busy-evidence-pager, loading: true, handler: true, blocked: true}
