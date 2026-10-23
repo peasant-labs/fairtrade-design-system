@@ -1,0 +1,8 @@
+# Wrapped CommandBlock line layout on the built Storybook, checked by
+# scripts/journey/command-block.journey.mjs in both themes. A long address breaks after its slashes,
+# so the word after it (a pipe and its command) ends the address's last line instead of starting a
+# line of its own; no run (a flag, a date, a piece of an address) ever breaks inside itself.
+story: in-use-clionboard--wrapped-compact
+viewport: {width: 390, height: 900}
+cases:
+  - {name: a pipe ends the address's last line, command: curl -fsSL https://raw.githubusercontent.com/peasant-labs/peasant/develop/scripts/install.sh | bash, lastRun: install.sh, follower: '| bash'}

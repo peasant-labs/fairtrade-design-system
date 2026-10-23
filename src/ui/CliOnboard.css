@@ -42,11 +42,14 @@
   white-space: pre;
 }
 
-/* wrap: break only at spaces. each token is one atomic box that moves to the next line whole;
-   a token wider than the line (a long URL) breaks anywhere inside it instead of overflowing */
+/* wrap: a line breaks at a space or after an address's slashes (a <wbr> between runs). a word is
+   inline, so when a long address breaks over lines the next word follows it on its last line; each
+   run inside a word is one atomic box that moves to the next line whole (a flag or a date never
+   breaks after a hyphen), and only a run wider than the line breaks anywhere inside it */
 .cli-cmd-wrap .cli-cmd-line { overflow-x: visible; }
 .cli-cmd-wrap .cli-cmd-line code { white-space: pre-wrap; }
-.cli-tok { display: inline-block; max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cli-tok { display: inline; }
+.cli-run { display: inline-block; max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 /* compact: the copy button is the icon alone (the word stays for assistive tech) */
 .cli-cmd-compact .cli-copy { min-width: var(--control-h); padding: 0; }

@@ -75,14 +75,16 @@ export const Command = {
   },
 }
 
-/* A long command on a phone: `wrap` breaks at spaces and inside the URL instead of scrolling, and
-   `compact` draws the copy button as its icon alone. The default (no wrap) scrolls sideways in a
-   focusable, named region. */
+/* A long command on a phone: `wrap` breaks at spaces and after an address's slashes instead of
+   scrolling, a pipe stays with the command it feeds, and `compact` draws the copy button as its icon
+   alone. The default (no wrap) scrolls sideways in a focusable, named region. */
 const LONG = 'powershell -ExecutionPolicy Bypass -c "irm https://peasantlabs.org/install.ps1 | iex"'
+const CURL = 'curl -fsSL https://raw.githubusercontent.com/peasant-labs/peasant/develop/scripts/install.sh | bash'
 export const WrappedCompact = {
   render: () => (
     <div style={{ display: 'grid', gap: 'var(--sp-4)', width: 'min(100%, 358px)' }}>
       <CommandBlock command={LONG} wrap compact label="the windows install command" />
+      <CommandBlock command={CURL} wrap compact label="the install command" />
       <CommandBlock command="peasant village push --since 2026-01-01 --collective peasant-labs --event pull-request" wrap compact label="the push command" />
       <CommandBlock command={LONG} compact label="the windows install command" />
     </div>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
 import { Copy, Check, X } from 'lucide-react'
 import './CliOnboard.css'
 
@@ -17,6 +17,48 @@ import './CliOnboard.css'
    is gated behind prefers-reduced-motion: no-preference; focus uses focus-visible (3px ring). */
 
 /** Write `text` to the clipboard, resolving false (not throwing) when no clipboard is available. */
+/* where a wrapped command may break inside a word: after an address's "//" and after a path's single
+   slash (never between two slashes, never before a space) */
+const BREAK_AFTER = /(?<=\/\/)|(?<=[^/]\/)(?=[^/\s])/
+
+/**
+ * The words of a wrapped command and the spaces between them, as the line breaks them: a lone "|"
+ * keeps to the word after it, so a pipe never starts or ends a line on its own.
+ * @param {string} command
+ * @returns {Array<{ word: string } | { space: string }>}
+ */
+export function commandWords(command) {
+  const parts = command.split(/(\s+)/).filter((part) => part !== '')
+  /** @type {Array<{ word: string } | { space: string }>} */
+  const out = []
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i]
+    if (/^\s+$/.test(part)) out.push({ space: part })
+    else if (part === '|' && /^ +$/.test(parts[i + 1] ?? '') && parts[i + 2] !== undefined) {
+      out.push({ word: part + parts[i + 1] + parts[i + 2] })
+      i += 2
+    } else out.push({ word: part })
+  }
+  return out
+}
+
+/* one word of a wrapped command: inline, so a long address that breaks over lines lets the next
+   word follow it on its last line; its pieces between address slashes are atomic runs, so a flag
+   or a date never breaks after a hyphen, and only a run wider than the line breaks inside it */
+function CommandWord({ word }) {
+  const runs = word.split(BREAK_AFTER)
+  return (
+    <span className="cli-tok">
+      {runs.map((run, index) => (
+        <Fragment key={index}>
+          {index > 0 ? <wbr /> : null}
+          <span className="cli-run">{run}</span>
+        </Fragment>
+      ))}
+    </span>
+  )
+}
+
 async function copyToClipboard(text) {
   try {
     if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
@@ -67,11 +109,11 @@ export function CommandBlock({ command, label, wrap = false, compact = false, cl
         <code>
           {/* the dim prompt sigil is chrome — not part of the command, and not selectable */}
           <span className="cli-cmd-sigil" aria-hidden="true">$ </span>
-          {/* COMMAND — literal, case preserved; never lowercase it. wrapped, each space-separated
-              token is kept whole, so a line breaks only at a space (never after a hyphen in a flag
-              or a date); only a token wider than the line breaks inside it. copy uses the raw
-              string either way. */}
-          {wrap ? command.split(/(\s+)/).map((part, index) => (/^\s*$/.test(part) ? part : <span key={index} className="cli-tok">{part}</span>)) : command}
+          {/* COMMAND — literal, case preserved; never lowercase it. wrapped, a line breaks at a
+              space or after an address's slashes (never after a hyphen in a flag or a date), and a
+              lone "|" stays with the word it pipes into; only a piece wider than the line breaks
+              inside it. the spaces stay plain spaces, and copy uses the raw string either way. */}
+          {wrap ? commandWords(command).map((part, index) => ('space' in part ? part.space : <CommandWord key={index} word={part.word} />)) : command}
         </code>
       </pre>
 

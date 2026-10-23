@@ -1,0 +1,34 @@
+# Wrapped CommandBlock (src/ui/CliOnboard.jsx), checked by scripts/command-block.test.mjs on the
+# mounted component. A wrapped command is set as words: a line breaks at a space or after an
+# address's slashes, so each word lists its runs (the pieces between those break points); a lone
+# "|" keeps to the word after it; the spaces stay plain spaces and copy takes the exact command.
+#
+# The line layout itself (a pipe ending an address's last line instead of a line of its own) is a
+# browser check: scripts/journey/command-block.journey.mjs, cases in command-block-layout.yaml.
+cases:
+  - name: a pipe keeps to the word after it
+    command: curl -fsSL https://raw.githubusercontent.com/peasant-labs/peasant/develop/scripts/install.sh | bash
+    words:
+      - [curl]
+      - [-fsSL]
+      - ['https://', raw.githubusercontent.com/, peasant-labs/, peasant/, develop/, scripts/, install.sh]
+      - ['| bash']
+  - name: a quoted pipe keeps to its command
+    command: powershell -ExecutionPolicy Bypass -c "irm https://peasantlabs.org/install.ps1 | iex"
+    words:
+      - [powershell]
+      - [-ExecutionPolicy]
+      - [Bypass]
+      - [-c]
+      - ['"irm']
+      - ['https://', peasantlabs.org/, install.ps1]
+      - ['| iex"']
+  - name: a double pipe is a word of its own
+    command: make check || true
+    words: [[make], [check], ['||'], ['true']]
+  - name: a trailing pipe stays where it is
+    command: cat notes.txt |
+    words: [[cat], [notes.txt], ['|']]
+  - name: flags and dates are one run each
+    command: peasant village push --since 2026-01-01 --collective peasant-labs
+    words: [[peasant], [village], [push], [--since], [2026-01-01], [--collective], [peasant-labs]]
