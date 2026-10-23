@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import {
   BookOpen, Building2, Code, Compass, Download, EyeOff, FileText, FlaskConical, GitPullRequest, GraduationCap,
@@ -124,6 +124,13 @@ function SettingsPage() {
 function useStoryTheme() {
   const read = () => (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark')
   const [theme, setTheme] = useState(read)
+  // the toolbar sets data-theme after the first render; follow it
+  useEffect(() => {
+    const observer = new MutationObserver(() => setTheme(read()))
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    setTheme(read())
+    return () => observer.disconnect()
+  }, [])
   const change = (next) => {
     setTheme(next)
     document.documentElement.setAttribute('data-theme', next)

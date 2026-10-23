@@ -116,7 +116,7 @@ export default function CodeMapNavigator({
       <header className="gmp-navigator-head">
         <label className="gmp-navigator-search">
           <Search aria-hidden="true" />
-          <span className="mc-sr">filter code areas</span>
+          <span className="gmp-sr">filter code areas</span>
           <input
             value={filter}
             onChange={(event) => {

@@ -2608,7 +2608,6 @@
      with a definition (the author, the token split) opens it on focus or tap, without the dotted
      underline that made two of the figures read as links */
   .txn-meta .metaitem b { font-weight: 400; color: var(--ink); }
-  .txn-meta .term.metaitem { border-bottom: 0; }
   .txn-tabs { gap: var(--sp-4); flex-wrap: nowrap; overflow-x: auto; }
   .txn-tab { padding: var(--sp-2) 2px; }
   .txn-tabbar { padding-right: var(--sp-3); }
