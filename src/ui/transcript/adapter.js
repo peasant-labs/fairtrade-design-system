@@ -25,7 +25,7 @@
    live in analytics.js.
    ─────────────────────────────────────────────────────────────────────────── */
 
-import { parseArgs, parseResult, extractPath, editPairs, writeContent, countDiff } from './adapter.parse.js'
+import { parseArgs, parseResult, extractPath, editPairs, writeContent } from './adapter.parse.js'
 import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analytics.js'
 import { zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
 import { aggregateUsage } from './usage.js'
@@ -415,7 +415,18 @@ function buildDiffHunks(call) {
     const pairs = editPairs(call)
     if (pairs.length === 0) return undefined
     const hunks = pairs.map((p) => ({ lines: diffLines(p.old_string, p.new_string) }))
-    const { adds, dels } = countDiff(call)
+    // count the lines the diff adds and removes, not the net change in length: a rewrite of three
+    // lines is +3 −3, never +0 −0. each hunk's trailing empty line (the newline artifact) is not a
+    // line anyone wrote, so it is left out, as the renderer leaves it out
+    let adds = 0
+    let dels = 0
+    for (const hunk of hunks) {
+      const lines = hunk.lines.length > 0 && hunk.lines[hunk.lines.length - 1].text === '' ? hunk.lines.slice(0, -1) : hunk.lines
+      for (const line of lines) {
+        if (line.sign === 'add') adds += 1
+        else if (line.sign === 'del') dels += 1
+      }
+    }
     return { hunks, adds, dels }
   }
   return undefined

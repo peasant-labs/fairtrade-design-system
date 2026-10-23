@@ -35,6 +35,8 @@
 .txn-usage-scopes[open] { max-height: var(--measure-read); overflow: auto; }
 .txn-usage-scope-label { font-size: var(--fs-label); margin-block: var(--sp-3); }
 .txn-turn-heading { position: absolute; width: var(--stroke-hairline); height: var(--stroke-hairline); overflow: hidden; clip-path: inset(50%); margin: 0; font-size: var(--fs-lg); }
+/* words a screen reader says that the eye reads from a glyph (the "to" behind a drawn arrow) */
+.txn-sr { position: absolute; width: var(--stroke-hairline); height: var(--stroke-hairline); overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }
 .txn-generic .txn-code { font-size: var(--fs-body); }
 .txn-generic .txn-out-eyebrow { font-size: var(--fs-sm); }
 .txn-tc-head .kind, .txn-tc-head .path, .txn-title, .txn-crumb { text-transform: none; }
@@ -2063,8 +2065,10 @@
   /* the host's pull request list sits under the meta row and leaves with it on condense. */
   .txn-prs { margin-top: var(--sp-3); min-width: 0; }
   .txn-app-condensed > .txn-header .txn-prs { display: none; }
-  .txn-tab { padding: var(--sp-3) 2px; }
+  /* a tab, a segment and a turn chip keep their label on one line; a narrow strip scrolls instead */
+  .txn-tab { padding: var(--sp-3) 2px; white-space: nowrap; }
   .txn-tab .cnt { font-variant-numeric: tabular-nums; }
+  .txn-diffs .bs-seg-opt, .txn-viewtoggle .bs-seg-opt { flex: none; white-space: nowrap; }
 
   /* ---- body grid: center + right rail ---- */
   /* split layout: outline (user turns) | transcript | filters. each side rail collapses to a thin strip
@@ -2074,6 +2078,9 @@
   .txn-body-grid[data-left-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) 272px; }
   .txn-body-grid[data-right-rail="closed"] { grid-template-columns: 240px minmax(0, 1fr) var(--txn-rail-strip-w); }
   .txn-body-grid[data-left-rail="closed"][data-right-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) var(--txn-rail-strip-w); }
+  /* a tab without filters has no right rail at all, so the centre takes its room */
+  .txn-body-grid[data-right-rail="none"] { grid-template-columns: 240px minmax(0, 1fr); }
+  .txn-body-grid[data-left-rail="closed"][data-right-rail="none"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr); }
   /* .txn-center is a real <section>, so it inherits the presentation page's global
      `section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }` reset. As a
      grid item in .txn-body-grid's `minmax(0, 1fr)` centre track, an auto horizontal margin wins
@@ -2122,7 +2129,7 @@
 
   /* task boundary chip */
   .txn-taskboundary { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-4) 0 var(--sp-2); }
-  .txn-tb-chip { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); border: var(--bd-strong); padding: var(--sp-1) var(--sp-2); white-space: normal; }
+  .txn-tb-chip { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); border: var(--bd-strong); padding: var(--sp-1) var(--sp-2); white-space: nowrap; }
   .txn-tb-meta { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-4); }
   .txn-taskboundary::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
 
@@ -2239,7 +2246,9 @@
   /* edit diff (the ONLY red/green). dual gutters: 4px rail | a-gut | b-gut | sign | text */
   .txn-diff { border: var(--bd); }
   .txn-diff .dl { grid-template-columns: 8px 30px 30px 16px 1fr; }
-  .txn-diff .dl .t { font-size: var(--fs-body); }
+  /* a long line wraps inside its own column, under its first character, so the gutters and the
+     sign stay aligned; a line is never clipped */
+  .txn-diff .dl .t { font-size: var(--fs-body); min-width: 0; overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }
 
   /* bash terminal */
   .txn-term { display: flex; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-body); color: var(--ink); background: var(--canvas); border: var(--bd); padding: var(--sp-2) var(--sp-3); align-items: baseline; flex-wrap: wrap; }
@@ -2438,7 +2447,6 @@
 
   .txn-jumprow { display: flex; gap: var(--sp-2); }
   .txn-jumprow .btn { flex: 1; }
-  .txn-filter-ph { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); line-height: 1.5; padding: var(--sp-3) var(--sp-2); }
 
   /* ---- highlights ---- */
   .txn-highlights { overflow: auto; padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-4); min-height: 0; }
@@ -2541,6 +2549,10 @@
   .txn-footer { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4); border-top: var(--bd); background: var(--surface); }
   .txn-progress { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); background: var(--surface-elev); border: var(--bd-strong); padding: var(--sp-1) var(--sp-3); }
 
+  /* a finger has no keyboard to step with and the counter crowds the reading view: on a touch
+     screen the footer (the key hints, the position counter) is left out */
+  @media (pointer: coarse) { .txn-footer { display: none; } }
+
   /* ---- hint strip ---- */
   .txn-hint { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-4); }
   .txn-hint .kbd-key { font-size: var(--fs-label); padding: 0 var(--sp-1); min-width: var(--target-min); }
@@ -2575,7 +2587,9 @@
   .txn-body-grid,
   .txn-body-grid[data-left-rail="closed"],
   .txn-body-grid[data-right-rail="closed"],
-  .txn-body-grid[data-left-rail="closed"][data-right-rail="closed"] { grid-template-columns: 1fr; }
+  .txn-body-grid[data-left-rail="closed"][data-right-rail="closed"],
+  .txn-body-grid[data-right-rail="none"],
+  .txn-body-grid[data-left-rail="closed"][data-right-rail="none"] { grid-template-columns: 1fr; }
   .txn-rail-left, .txn-rail-right, .txn-rail-strip { display: none; }
   .txn-center { border-right: 0; }
 }
@@ -2622,7 +2636,10 @@
      with a definition (the author, the token split) opens it on focus or tap, without the dotted
      underline that made two of the figures read as links */
   .txn-meta .metaitem b { font-weight: 400; color: var(--ink); }
-  .txn-tabs { gap: var(--sp-4); flex-wrap: nowrap; overflow-x: auto; }
+  /* the strip scrolls sideways and fades at its end, so a cut tab reads as more to scroll to; the
+     fade lifts while a tab has focus, so it never dims a focus ring */
+  .txn-tabs { gap: var(--sp-4); flex-wrap: nowrap; overflow-x: auto; padding-right: var(--sp-6); mask-image: linear-gradient(to right, var(--ink) calc(100% - var(--sp-6)), transparent); }
+  .txn-tabs:focus-within { mask-image: none; }
   .txn-tab { padding: var(--sp-2) 2px; }
   .txn-tabbar { padding-right: var(--sp-3); }
   .txn-tabbar > .txn-tabs { flex-wrap: nowrap; }

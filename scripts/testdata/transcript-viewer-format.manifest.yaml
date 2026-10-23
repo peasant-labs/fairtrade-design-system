@@ -1,0 +1,56 @@
+# Required-NAME manifest for transcript-viewer-format.yaml: deletion protection. The gate asserts the
+# case names equal this list exactly, as a set, and parts-mutations.mjs proves each production
+# mutation below turns the gate red for the named reason.
+requiredCaseNames:
+  - a same-length rewrite counts its lines
+  - thinking counts words in words
+  - a model change names models and draws an arrow
+  - a last crumb with an href is a link
+  - a last crumb without an href is the current page
+  - a tab without filters has no filters rail
+  - the stylesheet keeps labels whole and lines unclipped
+
+requiredMutationNames:
+  - an edit counts its net change
+  - thinking abbreviates words
+  - a model change keeps the raw arrow
+  - the last crumb drops its href
+  - every tab keeps the filters rail
+  - a long diff line is clipped
+  - touch screens keep the key hints
+mutations:
+  - name: an edit counts its net change
+    file: src/ui/transcript/adapter.js
+    find: "return { hunks, adds, dels }"
+    replace: "return { hunks, adds: Math.max(0, adds - dels), dels: Math.max(0, dels - adds) }"
+    expectedDiagnostic: "a same-length rewrite counts its lines: counts"
+  - name: thinking abbreviates words
+    file: src/ui/transcript/Thinking.jsx
+    find: "{(block.words ?? 0) === 1 ? 'word' : 'words'}"
+    replace: "w"
+    expectedDiagnostic: "thinking counts words in words: the badge"
+  - name: a model change keeps the raw arrow
+    file: src/ui/transcript/TurnCard.jsx
+    find: 'model changed: {modelName(turn.modelChangedFrom)} <span aria-hidden="true">→</span><span className="txn-sr"> to</span> {modelName(turn.effectiveModel)}'
+    replace: 'model changed: {turn.modelChangedFrom} -&gt; {turn.effectiveModel}'
+    expectedDiagnostic: "a model change names models and draws an arrow: the marker"
+  - name: the last crumb drops its href
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "{item.href != null\n                    ? <CrumbLink"
+    replace: "{!last && item.href != null\n                    ? <CrumbLink"
+    expectedDiagnostic: "a last crumb with an href is a link: crumbs"
+  - name: every tab keeps the filters rail
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "  const tabHasFilters = tab === 'trace' || tab === 'highlights'"
+    replace: "  const tabHasFilters = true"
+    expectedDiagnostic: "a tab without filters has no filters rail: diffs"
+  - name: a long diff line is clipped
+    file: src/index.css
+    find: "min-width: 0; overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }"
+    replace: "min-width: 0; overflow: hidden; white-space: pre; }"
+    expectedDiagnostic: "the stylesheet keeps labels whole and lines unclipped: @layer components .txn-diff .dl .t must set white-space: pre-wrap"
+  - name: touch screens keep the key hints
+    file: src/index.css
+    find: "  @media (pointer: coarse) { .txn-footer { display: none; } }"
+    replace: ""
+    expectedDiagnostic: "the stylesheet keeps labels whole and lines unclipped: @layer components > @media (pointer: coarse) .txn-footer must set display: none"

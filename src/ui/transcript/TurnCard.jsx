@@ -26,6 +26,8 @@ import { formatRelative as formatRelativeTime, isKnownTime } from './time.js'
 
 /** compact token count, e.g. 1700 → "1.7k". @param {number} n @returns {string} */
 const fmtTokens = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n))
+/* a model id without its provider prefix: "anthropic/claude-fable-5" reads "claude-fable-5" */
+const modelName = (id) => String(id ?? '').split('/').pop()
 
 /** The turn's time label, the fallback when no curated `time` is supplied (a real app derives it
  *  from the wire timestamp; a static demo pins a stable `time`, since "ago" is non-deterministic).
@@ -199,7 +201,8 @@ export default function TurnCard({
     >
       {turn.modelChangedFrom && turn.effectiveModel && (
         <div className="txn-modelchange mono">
-          model changed: {turn.modelChangedFrom} -&gt; {turn.effectiveModel}
+          {/* the model names without their provider prefix; the arrow is drawn, the sentence reads "to" */}
+          model changed: {modelName(turn.modelChangedFrom)} <span aria-hidden="true">→</span><span className="txn-sr"> to</span> {modelName(turn.effectiveModel)}
         </div>
       )}
       {isSub ? (

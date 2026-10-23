@@ -718,6 +718,7 @@ export default function TranscriptViewer({
   const cut = (rawTitle.codePointAt(158) ?? 0) > 0xffff ? 158 : 159
   const title = rawTitle.length > 160 ? rawTitle.slice(0, cut).trimEnd() + '…' : rawTitle
 
+  const tabHasFilters = tab === 'trace' || tab === 'highlights'
   const tabStrip = (
     <div className="tabs txn-tabs" role="tablist" aria-label="session views" onKeyDown={onTabKey}>
       {TAB_ORDER.map((id) => {
@@ -772,9 +773,11 @@ export default function TranscriptViewer({
               return (
                 <Fragment key={`${item.label}-${i}`}>
                   {i > 0 && <ChevronRight size={14} aria-hidden="true" />}
-                  {!last && item.href != null
+                  {/* a crumb with somewhere to go is a link, the last one too; only a crumb
+                      without an href is the current place */}
+                  {item.href != null
                     ? <CrumbLink className="link" href={item.href}>{item.label}</CrumbLink>
-                    : <span className={last ? 'cur' : 'link'}>{item.label}</span>}
+                    : <span className={last ? 'cur' : 'link'} aria-current={last ? 'page' : undefined}>{item.label}</span>}
                 </Fragment>
               )
             })}
@@ -921,7 +924,8 @@ export default function TranscriptViewer({
       ) : tabStrip}
 
       {/* ===================== BODY ===================== */}
-      <div className="txn-body-grid" data-left-rail={leftRailOpen ? 'open' : 'closed'} data-right-rail={rightRailOpen ? 'open' : 'closed'}>
+      {/* only the trace and the highlights have filters; any other tab leaves the right rail out */}
+      <div className="txn-body-grid" data-left-rail={leftRailOpen ? 'open' : 'closed'} data-right-rail={!tabHasFilters ? 'none' : rightRailOpen ? 'open' : 'closed'}>
         {/* LEFT: outline */}
         {leftRailOpen ? (
           <aside className="txn-rail txn-rail-left" aria-label="user turns outline">
@@ -1165,7 +1169,7 @@ export default function TranscriptViewer({
         </section>
 
         {/* RIGHT: filters */}
-        {rightRailOpen ? (
+        {!tabHasFilters ? null : rightRailOpen ? (
           <aside className="txn-rail txn-rail-right" aria-label="filters">
             <div className="txn-rail-head">
               <SlidersHorizontal size={14} aria-hidden="true" /> filters
