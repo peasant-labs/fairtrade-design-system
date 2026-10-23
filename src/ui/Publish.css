@@ -148,7 +148,14 @@
 }
 .pub-line > .lucide { width: var(--ic-md); height: var(--ic-md); flex: none; color: var(--ink-3); }
 .pub-line code { font-size: var(--fs-sm); color: var(--ink-strong); }
-.pub-line-alert { padding: var(--sp-3); border: var(--bd-strong); background: var(--surface-2); }
+/* a notice box spans the section's full width (the base sheet caps a <p> at the prose measure), with
+   the card padding on both sides */
+.pub-line { max-inline-size: none; }
+.pub-line-alert { padding: var(--sp-3) var(--card-pad); border: var(--bd-strong); background: var(--surface-2); }
+.pub-line-text { flex: 1 1 auto; min-width: 0; }
+.pub-failure-detail { flex-basis: 100%; }
+.pub-failure-detail > summary { min-height: var(--target-min); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); cursor: pointer; }
+.pub-failure-detail > p { margin: var(--sp-2) 0 0; max-inline-size: var(--measure-prose); font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); overflow-wrap: anywhere; }
 .pub-line-alert > .lucide { color: var(--clay); }
 .pub-toggle { margin-inline-start: auto; }
 .pub-rescan .lucide { width: var(--ic-sm); height: var(--ic-sm); }

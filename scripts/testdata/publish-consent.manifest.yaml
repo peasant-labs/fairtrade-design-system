@@ -20,6 +20,6 @@ mutations:
     expectedDiagnostic: "checked canonical consent: exact consent"
   - name: unchecked default claims selected collectives
     file: src/ui/Publish.jsx
-    find: "'off, change it in settings'"
-    replace: "'same collectives · change it in settings'"
+    find: "autoPublish.hint ? <span className=\"pub-hint\">{autoPublish.hint}</span> : null"
+    replace: "<span className=\"pub-hint\">{autoPublish.hint ?? 'same collectives · change it in settings'}</span>"
     expectedDiagnostic: "unchecked default consent: exact consent"

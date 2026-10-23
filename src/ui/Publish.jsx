@@ -312,9 +312,17 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
       {checking ? (
         <p className="pub-line" role="status"><Loader className="pub-spin" aria-hidden="true" /> checking for sensitive content</p>
       ) : failed ? (
-        <p className="pub-line pub-line-alert" role="alert">
-          <AlertTriangle aria-hidden="true" /> {typeof scan?.failure === 'string' && scan.failure ? scan.failure : 'the scan failed, so publish is off. re-scan to try again.'}
-        </p>
+        <div className="pub-line pub-line-alert" role="alert">
+          <AlertTriangle aria-hidden="true" />
+          <span className="pub-line-text">{typeof scan?.failure === 'string' && scan.failure ? scan.failure : 'the scan failed, so publish is off. re-scan to try again.'}</span>
+          {/* the host's actionable detail (what failed, why, where, the fix) stays one step away */}
+          {typeof scan?.failureDetail === 'string' && scan.failureDetail ? (
+            <details className="pub-failure-detail">
+              <summary>details</summary>
+              <p>{scan.failureDetail}</p>
+            </details>
+          ) : null}
+        </div>
       ) : unsupported ? (
         <p className="pub-line pub-line-alert" role="alert"><AlertTriangle aria-hidden="true" />the scan contains an unsupported redaction category, so publish is off. update the scanner and re-scan.</p>
       ) : unscanned ? (
@@ -362,7 +370,7 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
  * @param {string} props.title - the session title, kept in its case.
  * @param {'publish'|'update'} [props.mode='publish']
  * @param {PublishDialogState} props.state - one of PUBLISH_DIALOG_STATES.
- * @param {{ matches?: import('./Redaction.jsx').RedactionMatch[], matchCount?: number, total?: number, failure?: string }} [props.scan] - the host's scan result. `matchCount` is the full occurrence count when `matches` contains only examples. Until it carries a
+ * @param {{ matches?: import('./Redaction.jsx').RedactionMatch[], matchCount?: number, total?: number, failure?: string, failureDetail?: string }} [props.scan] - the host's scan result. `failure` is one plain line; `failureDetail`, the actionable detail (what, why, where, the fix), shows behind a "details" disclosure in the failure box. `matchCount` is the full occurrence count when `matches` contains only examples. Until it carries a
  *        `matches` list, the popup says the transcript is not scanned and keeps publish off. A match with `kept: true` leaves un-redacted, and the
  *        popup says so and opens the matches.
  * @param {() => void} [props.onRescan]
@@ -371,7 +379,7 @@ function WhatLeaves({ state, scan, onRescan, readOnlyReview }) {
  * @param {(id: string) => void} [props.onRemove]
  * @param {(id: string) => void} [props.onRestore]
  * @param {object} [props.picker] - CollectivePicker props (suggestions, onAdd, query, onQueryChange).
- * @param {{ checked: boolean, onChange: (checked: boolean) => void, hint?: string }} [props.autoPublish] - hint replaces only the unchecked line; checked consent is always component-owned.
+ * @param {{ checked: boolean, onChange: (checked: boolean) => void, hint?: string }} [props.autoPublish] - hint is the unchecked line, shown only when given; checked consent is always component-owned.
  * @param {string} [props.accessSummary] - update mode: the access change in words ("adds ML Reading Group, removes nothing").
  * @param {string} [props.primaryLabel] - replaces the derived primary label.
  * @param {() => void} [props.onPublish]
@@ -548,7 +556,10 @@ export function PublishDialog({
                 <Checkbox checked={autoPublish.checked} onChange={(checked) => autoPublish.onChange(checked)} disabled={state === 'publishing'}>
                   publish this repo automatically on git push
                 </Checkbox>
-                <span className="pub-hint">{autoPublish.checked ? "on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives." : autoPublish.hint ?? 'off, change it in settings'}</span>
+                {/* checked, the consent sentence is the component's own; unchecked, only the host's hint, if any */}
+                {autoPublish.checked
+                  ? <span className="pub-hint">on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.</span>
+                  : autoPublish.hint ? <span className="pub-hint">{autoPublish.hint}</span> : null}
               </div>
             )}
             {mode === 'update' && accessSummary && <p className="pub-line pub-delta">{accessSummary}</p>}

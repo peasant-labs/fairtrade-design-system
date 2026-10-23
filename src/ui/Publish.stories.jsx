@@ -103,6 +103,19 @@ export const PopupScanFailed = {
     await expect(canvas.getByRole('alert')).toHaveTextContent('the scan failed, so publish is off.')
   },
 }
+
+/* the host's one plain line, with its actionable detail one disclosure away in the same box */
+export const PopupScanFailedDetail = {
+  name: 'popup, the scan failed, with a detail',
+  decorators: [(Story) => <div style={{ minHeight: '100vh' }}><Story /></div>],
+  render: () => <Popup state="scan-failed" scan={{ ...SCAN, failure: 'the scan could not finish.', failureDetail: 'the session index was out of date; peasant re-indexed it. run peasant index if this repeats.' }} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement.ownerDocument.body)
+    await expect(canvas.getByRole('alert')).toHaveTextContent('the scan could not finish.')
+    await userEvent.click(canvas.getByText('details'))
+    await expect(canvas.getByText(/the session index was out of date/)).toBeVisible()
+  },
+}
 export const PopupNoCollective = { name: 'popup, not in a collective yet', render: () => <Popup state="no-collective" access={[]} /> }
 export const PopupReady = {
   name: 'popup, ready to publish',
