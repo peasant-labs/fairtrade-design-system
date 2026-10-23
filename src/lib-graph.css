@@ -75,6 +75,9 @@
   }
   /* the navigator's own visually hidden label, so the graph sheet does not lean on another component's */
   .gmp-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  /* a head row's controls: the host's own (a docs link) beside the surface's own */
+  .gmp-head-actions { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--sp-2); }
+  .gmp-head-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2) var(--sp-3); }
   .gmp-navigator-head {
     display: flex;
     align-items: flex-start;

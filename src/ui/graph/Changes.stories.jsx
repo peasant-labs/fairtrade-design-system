@@ -53,6 +53,24 @@ export const SemanticNavigationActions = {
   },
 }
 
+/* the host's own control in the head row, beside "open the map": the local app's docs link */
+export const HeaderActions = {
+  render: () => (
+    <Changes
+      payload={fixture.payload}
+      projectLabel="peasant-labs/peasant"
+      nowMs={1770001000000}
+      headerActions={<a className="btn btn-ghost btn-sm" href="https://peasantlabs.org/docs#changes" target="_blank" rel="noopener noreferrer">how to read changes</a>}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const head = canvasElement.querySelector('.gmp-changes-head .gmp-head-actions')
+    await expect(head).not.toBeNull()
+    await expect(within(head).getByRole('link', { name: 'how to read changes' })).toHaveAttribute('href', 'https://peasantlabs.org/docs#changes')
+    await expect(within(head).getByRole('button', { name: 'open the map' })).toBeInTheDocument()
+  },
+}
+
 export const LinkedSessionOverflow = {
   args: { onNavigate: fn() },
   render: (args) => {
