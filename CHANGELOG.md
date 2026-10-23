@@ -4,6 +4,61 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.39 - 2026-10-23
+
+### Changed
+
+- On a coarse pointer every control reaches 44px. `--control-h` and
+  `--control-h-sm` rise to `--target-comfortable`, so tabs, segments, page
+  buttons, inputs and small buttons grow for a finger; a fine pointer keeps
+  36px and 28px. The new `--chip-h` keeps chips, tags, badges and the switch
+  track at their small size. A switch, a chip button, a crumb link and a table
+  sort header take an invisible 44px hit box instead.
+- `TranscriptViewer` on a phone:
+  - Tabs and segments stay on one line, and the tab strip fades at its end.
+  - Keyboard hints are hidden on a touch screen.
+  - The meta row wraps with each item whole, and "+11 −4" sits with the
+    files count.
+  - Diff lines wrap instead of being clipped.
+  - A closed definition bubble no longer widens a column sideways.
+- `TranscriptViewer` everywhere:
+  - Thinking reads "30 words".
+  - A model change reads "claude-fable-5 → claude-opus-4-8".
+  - Diff +/− counts come from the diff's own lines, so "+0 −0" no longer
+    shows on a real change.
+  - The filters rail is gone on tabs that have no filters.
+  - A Cursor prompt shows without its `<user_query>` wrapper or the context
+    tags before it. The wire keeps the text, and prose that only mentions the
+    tag is shown as written.
+- The last breadcrumb is a link when it has an `href`. One without an `href`
+  carries `aria-current="page"`.
+- `RedactionReview` and `DiffView` keep the badge comma against the category
+  label ("CREDENTIAL, confidence 0.98").
+- `VillageObservations` has no explainer sentences, and its empty states read
+  "no collectives saved yet", "nothing saved on this page" and "no
+  contribution history saved yet".
+- `ProjectOverview`'s typical vs. tail reads "2m, 5m", with the p90 in AA ink.
+- From 768px, `.iu-page` takes the `.asb-page` inset (32px top and sides, 48px
+  bottom) and `.iu-page-title` the hero size. A `.iu-view` that holds a page
+  adds no inset of its own.
+- `AppSidebar` never stays scrolled sideways, so a focus can no longer cut the
+  labels at the left edge.
+
+### Added
+
+- `cleanSessionTitle(text)` shows a stored session title as written: it drops
+  Cursor's `<user_query>` wrapper (and an unclosed one) and collapses
+  whitespace, and keeps every word, its case, its dots and a trailing "…".
+  `summarizePrompt` applies the same rule first. `unwrapUserQuery(text)` is
+  the rule on its own.
+
+### Compatibility
+
+- No props removed. A host that set its own 44px touch sizes, `.iu-page`
+  padding or a 40px page title can drop those overrides. A host test that read
+  the old explainer sentences or the "median / p90" separator needs the new
+  copy.
+
 ## 0.0.38 - 2026-10-23
 
 ### Changed
