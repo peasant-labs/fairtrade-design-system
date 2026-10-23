@@ -1,0 +1,16 @@
+# Required-NAME manifest for touch-targets.yaml: deletion protection for the targets and mutations
+# the touch target gate covers.
+requiredTargetNames:
+  - session tab
+  - crumb link
+  - page button
+  - section toggle
+  - sort header
+  - small button
+  - switch
+  - page button on a mouse
+requiredMutationNames:
+  - control heights stay small on touch
+  - the switch loses its reach
+  - the switch track grows
+  - the sort header stays small

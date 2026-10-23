@@ -322,14 +322,14 @@
   .btn-icon { width: var(--control-h); padding: 0; }
   .btn-sm.btn-icon { width: var(--control-h-sm); }
   /* a finger gets a 44px target. controls drawn at a control height grow with it (the tokens rise
-     under a coarse pointer); a switch, a chip button, a crumb link and a sort header keep their look
-     and take an invisible 44px reach around them. */
+     under a coarse pointer); a switch, a chip button and a crumb link keep their look and take an
+     invisible 44px reach around them (the table sort header's rule sits after its own base rule). a
+     reach is laid out inside the control's border, so it reaches past that hairline too. */
   @media (pointer: coarse) {
-    .sw::after { content: ""; position: absolute; inset: calc((var(--target-comfortable) - var(--chip-h)) / -2) calc(var(--sp-1) * -1); }
+    .sw::after { content: ""; position: absolute; inset: calc((var(--target-comfortable) - var(--chip-h)) / -2 - var(--stroke-hairline)) calc(var(--sp-1) * -1); }
     button.chip, a.chip { position: relative; }
-    button.chip::after, a.chip::after { content: ""; position: absolute; inset: calc((var(--target-comfortable) - var(--chip-h)) / -2) 0; }
+    button.chip::after, a.chip::after { content: ""; position: absolute; inset: calc((var(--target-comfortable) - var(--chip-h)) / -2 - var(--stroke-hairline)) 0; }
     .crumb a { display: inline-flex; align-items: center; min-height: var(--target-comfortable); }
-    .tbl-sort { min-height: var(--target-comfortable); }
   }
   .btn:disabled { opacity: .42; cursor: not-allowed; pointer-events: none; }
   /* the primary action is the golden amber fill with near-black ink in both themes */
@@ -1314,6 +1314,8 @@
   /* chevron sizing: the unsorted dual-chevron sits quiet until hovered/sorted */
   .tbl-sort-ic { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--ink-4); }
   .tbl-sort:hover .tbl-sort-ic { color: var(--ink-3); }
+  /* a finger gets the 44px target on the whole header */
+  @media (pointer: coarse) { .tbl-sort { min-height: var(--target-comfortable); } }
 
   /* body cells: hairline standard-height rows, middle-aligned, compact padding */
   .tbl-td { height: var(--row-h-standard); box-sizing: border-box; padding: var(--sp-1) var(--sp-3); border-bottom: var(--bd); color: var(--ink-2); vertical-align: middle; }

@@ -1,0 +1,36 @@
+# Cases for the touch target gate (scripts/journey/touch-targets.journey.mjs). On a coarse pointer
+# (a touch screen) every control reaches 44px: the control heights rise, and a control that keeps a
+# small look (a switch) takes an invisible 44px hit box. The journey opens each story at 390 with
+# touch, in both themes, and measures every visible match of `selector`: its hit box (the element's
+# box, or a positioned ::before / ::after reach around it, whichever is larger) must be at least
+# `minHeight` tall and `minWidth` wide, and its drawn box at most `maxVisual` tall, where set.
+# A `pointer: fine` row opens the story without touch and checks that the desktop size holds.
+viewport: {width: 390, height: 844}
+targets:
+  - {name: session tab, story: in-use-transcript-transcriptviewer--default, selector: '.txn-tab', minHeight: 44}
+  - {name: crumb link, story: in-use-transcript-transcriptviewer--default, selector: '.txn-crumb a', minHeight: 44}
+  - {name: page button, story: components-pagination--long-range, selector: '.pgn-btn', minHeight: 44, minWidth: 44}
+  - {name: section toggle, story: analytics-projectoverview--overview, selector: '.gan-seg', minHeight: 44}
+  - {name: sort header, story: components-datatable--playground, selector: '.tbl-sort', minHeight: 44}
+  - {name: small button, story: controls-button--small, selector: '.btn-sm', minHeight: 44}
+  - {name: switch, story: controls-switch--on, selector: '.sw', minHeight: 44, maxVisual: 28}
+  - {name: page button on a mouse, story: components-pagination--long-range, selector: '.pgn-btn', pointer: fine, maxVisual: 28}
+# Mutations: each injects CSS into the named story with touch on, and the gate must report the
+# target named in `expect`, proving it fails for the intended reason.
+mutations:
+  - name: control heights stay small on touch
+    story: components-pagination--long-range
+    css: ':root { --control-h: 36px !important; --control-h-sm: 28px !important; }'
+    expect: 'page button: hit box'
+  - name: the switch loses its reach
+    story: controls-switch--on
+    css: '.sw::after { content: none !important; }'
+    expect: 'switch: hit box'
+  - name: the switch track grows
+    story: controls-switch--on
+    css: ':root { --chip-h: 44px !important; }'
+    expect: 'switch: drawn'
+  - name: the sort header stays small
+    story: components-datatable--playground
+    css: '.tbl-sort { min-height: 0 !important; }'
+    expect: 'sort header: hit box'
