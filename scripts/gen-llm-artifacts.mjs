@@ -220,8 +220,8 @@ const TYPE_ROLES = [
 ]
 const control = { rounded: '{rounded.none}', height: tok('control-h') }
 const COMPONENTS = [
-  ['button-primary', { backgroundColor: '{colors.amber}', textColor: '{colors.on-amber}', typography: '{typography.label-strong}', ...control, padding: ['0', tok('sp-4')] }],
-  ['button-primary-hover', { backgroundColor: '{colors.amber-bright}' }],
+  ['button-primary', { backgroundColor: '{colors.amber-fill}', textColor: '{colors.amber-fill-ink}', typography: '{typography.label-strong}', ...control, padding: ['0', tok('sp-4')] }],
+  ['button-primary-hover', { backgroundColor: '{colors.amber-fill-hover}' }],
   ['button-secondary', { backgroundColor: 'transparent', textColor: '{colors.ink}', typography: '{typography.label}', ...control, padding: ['0', tok('sp-4')] }],
   ['button-secondary-hover', { textColor: '{colors.amber-bright}' }],
   ['button-ghost', { backgroundColor: 'transparent', textColor: '{colors.ink-3}', typography: '{typography.label}', ...control, padding: ['0', tok('sp-4')] }],

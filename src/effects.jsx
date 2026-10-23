@@ -202,7 +202,7 @@ export function AsciiImage({ src, cols = 120, aspect = 0.6, fit = false, gamma =
       const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ctx.clearRect(0, 0, W, H)
       const cw = W / cols, ch = H / rows
-      ctx.fillStyle = ink || (light ? '#0d0c09' : '#f8f5ed')
+      ctx.fillStyle = ink || (light ? '#0d0c09' : '#fbf8f1')
       ctx.textBaseline = 'middle'; ctx.textAlign = 'left'
       // size the font OFF THE ROW HEIGHT (not the column width). a glyph's ink only fills ~0.7 of its em, so
       // an em == cell-height left a ~0.3-cell blank strip between every row of ink; at this tiny font size
@@ -256,7 +256,7 @@ export function Halftone({ src, cols = 42, accent = true, gamma = 0.9, contrast 
       const light = theme === 'light' || document.documentElement.getAttribute('data-theme') === 'light'
       const lum = sampleImage(img, cols, rows, { gamma, contrast, light, invert, vignette, isolated, contain })
       ctx.clearRect(0, 0, W, H)
-      ctx.fillStyle = readVar(accent ? '--amber' : '--ink-strong', '#cba35c')
+      ctx.fillStyle = readVar(accent ? '--amber' : '--ink-strong', '#d6ae66')
       for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
         const r = lum[y * cols + x] * cell * 0.62
         if (r > 0.35) { ctx.beginPath(); ctx.arc((x + 0.5) * cell, (y + 0.5) * cell, r, 0, 7); ctx.fill() }

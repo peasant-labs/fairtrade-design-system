@@ -399,7 +399,7 @@
 
 /* ── the claim button ─────────────────────────────────────────────────────────
    the primary action, disabled until the handle is available. mirrors the
-   system's .btn-primary look (amber fill, on-amber ink). */
+   system's .btn-primary look (amber fill, amber-fill ink). */
 .si-claim-submit {
   display: inline-flex;
   align-items: center;
@@ -407,7 +407,7 @@
   box-sizing: border-box;
   height: var(--control-h);
   padding: 0 var(--sp-4);
-  border: 1px solid var(--amber);
+  border: 1px solid var(--amber-fill);
   background: var(--amber-fill);
   color: var(--amber-fill-ink);
   font-family: var(--font-mono);
@@ -417,9 +417,11 @@
   line-height: 1;
   cursor: pointer;
 }
-.si-claim-submit:hover:not(:disabled) {
-  background: var(--amber-bright);
-  border-color: var(--amber-bright);
+@media (hover: hover) and (pointer: fine) {
+  .si-claim-submit:hover:not(:disabled) {
+    background: var(--amber-fill-hover);
+    border-color: var(--amber-fill-hover);
+  }
 }
 .si-claim-submit:disabled {
   background: var(--surface-2);
@@ -429,8 +431,9 @@
 }
 @media (prefers-reduced-motion: no-preference) {
   .si-claim-submit {
-    transition: background var(--dur-1), border-color var(--dur-1), color var(--dur-1);
+    transition: background var(--dur-1), border-color var(--dur-1), color var(--dur-1), transform var(--dur-2) var(--ease-out);
   }
+  .si-claim-submit:active:not(:disabled) { transform: scale(0.97); }
 }
 
 /* ═══ 3. OnboardingCard — the two composed ═══════════════════════════════════ */

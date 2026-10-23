@@ -4,8 +4,8 @@
   "description": "an open-source design system for building agent products of every kind. react + tailwind, dark-first, square, neuroinclusive.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#070706",
-  "theme_color": "#070706",
+  "background_color": "#0b0b0a",
+  "theme_color": "#0b0b0a",
   "icons": [
     {
       "src": "/favicon.svg",

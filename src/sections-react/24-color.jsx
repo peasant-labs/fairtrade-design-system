@@ -13,18 +13,18 @@ export function ColorSection() {
       <p className="prose">a small palette built from a near-black canvas, a warm ink ramp, two border weights, and one scarce amber accent. teal, olive, clay and mauve are supporting tints for roles (user, add, del, system) and never stand in for an icon or a label. every token re-themes between dark and light; the table lists both the dark and light value of every token.</p>
 
       <div className="swatches">
-        <div className="swatch" style={{ '--c': '#070706' }}><div className="swc"></div><div className="nm">canvas</div></div>
-        <div className="swatch" style={{ '--c': '#0e0e0c' }}><div className="swc"></div><div className="nm">surface</div></div>
-        <div className="swatch" style={{ '--c': '#e9e5db' }}><div className="swc"></div><div className="nm">ink</div></div>
-        <div className="swatch" style={{ '--c': '#cba35c' }}><div className="swc"></div><div className="nm">amber</div></div>
-        <div className="swatch" style={{ '--c': '#7ea69d' }}><div className="swc"></div><div className="nm">teal</div></div>
-        <div className="swatch" style={{ '--c': '#9aa779' }}><div className="swc"></div><div className="nm">olive</div></div>
-        <div className="swatch" style={{ '--c': '#c07f64' }}><div className="swc"></div><div className="nm">clay</div></div>
-        <div className="swatch" style={{ '--c': '#9a8cae' }}><div className="swc"></div><div className="nm">mauve</div></div>
-        <div className="swatch" style={{ '--c': '#b8b3a4' }}><div className="swc"></div><div className="nm">ink-2</div></div>
-        <div className="swatch" style={{ '--c': '#9a9488' }}><div className="swc"></div><div className="nm">ink-3</div></div>
-        <div className="swatch" style={{ '--c': '#3c382f' }}><div className="swc"></div><div className="nm">rule</div></div>
-        <div className="swatch" style={{ '--c': '#e6c483' }}><div className="swc"></div><div className="nm">amber-bright</div></div>
+        <div className="swatch" style={{ '--c': '#0b0b0a' }}><div className="swc"></div><div className="nm">canvas</div></div>
+        <div className="swatch" style={{ '--c': '#0b0b0a' }}><div className="swc"></div><div className="nm">surface</div></div>
+        <div className="swatch" style={{ '--c': '#ece8df' }}><div className="swc"></div><div className="nm">ink</div></div>
+        <div className="swatch" style={{ '--c': '#d6ae66' }}><div className="swc"></div><div className="nm">amber</div></div>
+        <div className="swatch" style={{ '--c': '#8fb6ac' }}><div className="swc"></div><div className="nm">teal</div></div>
+        <div className="swatch" style={{ '--c': '#a9b688' }}><div className="swc"></div><div className="nm">olive</div></div>
+        <div className="swatch" style={{ '--c': '#d08f74' }}><div className="swc"></div><div className="nm">clay</div></div>
+        <div className="swatch" style={{ '--c': '#ab9ec0' }}><div className="swc"></div><div className="nm">mauve</div></div>
+        <div className="swatch" style={{ '--c': '#cdc8bb' }}><div className="swc"></div><div className="nm">ink-2</div></div>
+        <div className="swatch" style={{ '--c': '#b3ad9f' }}><div className="swc"></div><div className="nm">ink-3</div></div>
+        <div className="swatch" style={{ '--c': '#4f4a40' }}><div className="swc"></div><div className="nm">rule</div></div>
+        <div className="swatch" style={{ '--c': '#ebc98c' }}><div className="swc"></div><div className="nm">amber-bright</div></div>
       </div>
 
       <TokenTable
@@ -36,26 +36,26 @@ export function ColorSection() {
           { key: 'role', header: 'role', className: 'dt-role' },
         ]}
         rows={[
-          { name: '--canvas', c: '#070706', dark: '#070706', light: '#fbfaf7', role: 'page background', token: '--canvas' },
-          { name: '--surface', c: '#0e0e0c', dark: '#0e0e0c', light: '#fdfcfa', role: 'panels, cards, windows', token: '--surface' },
-          { name: '--surface-2', c: '#141413', dark: '#141413', light: '#f4f2ec', role: 'elevated bars, headers, swatch chips', token: '--surface-2' },
+          { name: '--canvas', c: '#0b0b0a', dark: '#0b0b0a', light: '#fbfaf7', role: 'page background', token: '--canvas' },
+          { name: '--surface', c: '#0b0b0a', dark: '#0b0b0a', light: '#fbfaf7', role: 'panels, cards, windows', token: '--surface' },
+          { name: '--surface-2', c: '#1c1b18', dark: '#1c1b18', light: '#f1eee6', role: 'selected rows, inset wells, swatch chips', token: '--surface-2' },
 
-          { name: '--ink-strong', c: '#f8f5ed', dark: '#f8f5ed', light: '#0d0c09', role: 'headings, short emphasis', token: '--ink-strong' },
-          { name: '--ink', c: '#e9e5db', dark: '#e9e5db', light: '#27241f', role: 'primary body text', token: '--ink' },
-          { name: '--ink-2', c: '#b8b3a4', dark: '#b8b3a4', light: '#4a463e', role: 'secondary text, metadata', token: '--ink-2' },
-          { name: '--ink-3', c: '#9a9488', dark: '#9a9488', light: '#5c574d', role: 'tertiary, labels, captions', token: '--ink-3' },
+          { name: '--ink-strong', c: '#fbf8f1', dark: '#fbf8f1', light: '#0d0c09', role: 'headings, short emphasis', token: '--ink-strong' },
+          { name: '--ink', c: '#ece8df', dark: '#ece8df', light: '#1f1c17', role: 'primary body text', token: '--ink' },
+          { name: '--ink-2', c: '#cdc8bb', dark: '#cdc8bb', light: '#3d3932', role: 'secondary text, metadata', token: '--ink-2' },
+          { name: '--ink-3', c: '#b3ad9f', dark: '#b3ad9f', light: '#4f4a41', role: 'tertiary, labels, captions', token: '--ink-3' },
 
-          { name: '--rule', c: '#3c382f', dark: '#3c382f', light: '#c4bca8', role: 'subtle structural divider', token: '--rule' },
-          { name: '--rule-strong', c: '#6f6a5f', dark: '#6f6a5f', light: '#8b836d', role: 'control / input border, clears 3:1', token: '--rule-strong' },
+          { name: '--rule', c: '#4f4a40', dark: '#4f4a40', light: '#b3ab96', role: 'structural divider, clears 2:1', token: '--rule' },
+          { name: '--rule-strong', c: '#857f72', dark: '#857f72', light: '#7f7762', role: 'panel edge, control and input border, clears 4:1', token: '--rule-strong' },
 
-          { name: '--amber', c: '#cba35c', dark: '#cba35c', light: '#8a5f1f', role: 'accent, focus, links, keywords', token: '--amber' },
-          { name: '--amber-bright', c: '#e6c483', dark: '#e6c483', light: '#6e4c16', role: 'hover, glow on bold', token: '--amber-bright' },
+          { name: '--amber', c: '#d6ae66', dark: '#d6ae66', light: '#8a5f1f', role: 'accent, focus, links, keywords', token: '--amber' },
+          { name: '--amber-bright', c: '#ebc98c', dark: '#ebc98c', light: '#6e4c16', role: 'hover, glow on bold', token: '--amber-bright' },
           { name: '--amber-dim', c: '#937a45', dark: '#937a45', light: '#b09a63', role: 'muted accent, the nav marker', token: '--amber-dim' },
 
-          { name: '--teal', c: '#7ea69d', dark: '#7ea69d', light: '#3a675e', role: 'user role, info', token: '--teal' },
-          { name: '--olive', c: '#9aa779', dark: '#9aa779', light: '#586a3c', role: 'success, diff add, the do tag', token: '--olive' },
-          { name: '--clay', c: '#c07f64', dark: '#c07f64', light: '#974b32', role: 'danger, diff del, the don\'t tag', token: '--clay' },
-          { name: '--mauve', c: '#9a8cae', dark: '#9a8cae', light: '#594e72', role: 'system, subagents', token: '--mauve' },
+          { name: '--teal', c: '#8fb6ac', dark: '#8fb6ac', light: '#3a675e', role: 'user role, info', token: '--teal' },
+          { name: '--olive', c: '#a9b688', dark: '#a9b688', light: '#586a3c', role: 'success, diff add, the do tag', token: '--olive' },
+          { name: '--clay', c: '#d08f74', dark: '#d08f74', light: '#974b32', role: 'danger, diff del, the don\'t tag', token: '--clay' },
+          { name: '--mauve', c: '#ab9ec0', dark: '#ab9ec0', light: '#594e72', role: 'system, subagents', token: '--mauve' },
         ]}
       />
 
