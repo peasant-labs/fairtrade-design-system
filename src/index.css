@@ -801,14 +801,15 @@
   .sw:hover { border-color: var(--amber-dim); }
   .sw:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 
-  /* The checked thumb slides right; amber also marks the on state. */
-  .sw[aria-checked="true"] { background: var(--amber-fill); border-color: var(--amber-fill); }
-  .sw[aria-checked="true"]::before { background: var(--amber-fill-ink); transform: translateX(var(--sw-travel)); }
+  /* The checked thumb slides right and the track inverts to the strongest ink: on is neutral, never
+     amber, because a settings page holds many switches and amber stays scarce. */
+  .sw[aria-checked="true"] { background: var(--ink-strong); border-color: var(--ink-strong); }
+  .sw[aria-checked="true"]::before { background: var(--canvas); transform: translateX(var(--sw-travel)); }
 
   /* disabled: the real `disabled` attribute, dimmed + not-allowed */
   .sw:disabled { opacity: .5; cursor: not-allowed; }
   .sw:disabled:hover { border-color: var(--rule-strong); }
-  .sw[aria-checked="true"]:disabled:hover { border-color: var(--amber-dim); }
+  .sw[aria-checked="true"]:disabled:hover { border-color: var(--ink-strong); }
 
   /* busy: a quiet ring + a spinning loader sits over the thumb under no-preference */
   .sw[aria-busy="true"] { cursor: progress; border-color: var(--amber-dim); }
@@ -824,7 +825,7 @@
     color: var(--ink-2);
   }
   .sw-state svg, .sw-state .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
-  .sw-field:has(.sw[aria-checked="true"]:not(:disabled)) .sw-state { color: var(--amber); font-weight: 600; }
+  .sw-field:has(.sw[aria-checked="true"]:not(:disabled)) .sw-state { color: var(--ink); font-weight: 600; }
   .sw-field:has(.sw:disabled) .sw-label,
   .sw-field:has(.sw:disabled) .sw-state { color: var(--ink-3); }
 

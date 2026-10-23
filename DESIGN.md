@@ -304,6 +304,9 @@ first, with the light value under a `-light` key where it differs.
   `>` of the active nav marker). The primary action is filled with the golden `--amber-fill` and
   labelled in near-black `--amber-fill-ink` in both themes; `--amber-fill-hover` is its hover fill.
   Likewise, checked inputs and selected interactive toggles use `--amber-fill` with `--amber-fill-ink`, with non-color state cues.
+  A switch is the exception: on is the inverted neutral (an `--ink-strong` track, a `--canvas`
+  thumb) and never amber, because a settings page holds many switches and amber stays scarce. The
+  track's fill and the thumb's side carry the state, so a settings row shows no on/off word beside it.
   The fill tokens are split from `--amber` so light-theme text can stay dark enough for AA. `--on-amber` is the
   ink on the remaining `--amber` fills (the current step, the current page number).
 

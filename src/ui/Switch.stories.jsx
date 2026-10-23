@@ -37,6 +37,20 @@ export const Playground = {}
 
 export const On = {
   args: { label: 'auto-publish to commons', defaultChecked: true },
+  play: async ({ canvasElement }) => {
+    // on is the inverted neutral: the track takes the strongest ink, never the amber fill
+    const track = canvasElement.querySelector('.sw')
+    const probe = (token) => {
+      const el = canvasElement.ownerDocument.createElement('span')
+      el.style.background = `var(${token})`
+      canvasElement.appendChild(el)
+      const color = getComputedStyle(el).backgroundColor
+      el.remove()
+      return color
+    }
+    expect(getComputedStyle(track).backgroundColor).toBe(probe('--ink-strong'))
+    expect(getComputedStyle(track).backgroundColor).not.toBe(probe('--amber-fill'))
+  },
 }
 
 export const Off = {

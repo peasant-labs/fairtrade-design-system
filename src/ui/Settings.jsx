@@ -180,7 +180,9 @@ export function SettingRow({ label, help, control, value, options = [], onCommit
 
   let controlNode
   if (control === 'switch') {
-    controlNode = <Switch id={id} checked={Boolean(shown)} busy={busy} disabled={disabled} onChange={(next) => commit(next)} />
+    // the row's own status mark says pending, saved or failed, and the track shows on or off, so the
+    // switch's on/off word would only repeat it
+    controlNode = <Switch id={id} checked={Boolean(shown)} busy={busy} disabled={disabled} stateMarker={false} onChange={(next) => commit(next)} />
   } else if (control === 'checkbox') {
     controlNode = (
       <label className="check srow-check">
