@@ -50,24 +50,27 @@ invariants:
       - ".txn-title {"
       - "display: block;"
       - "overflow-wrap: anywhere;"
-  - id: txn-meta-scrolls-on-mobile
+  - id: txn-meta-wraps-on-mobile
     file: src/index.css
     description: >-
-      Metadata stays in a single horizontal scroll row below the md breakpoint (width < 768px), without shrinking text.
+      Metadata wraps below the md breakpoint (width < 768px), each item whole on its line, without
+      shrinking text. A sideways scroller hid the last items with nothing on screen to say so.
     mustContainAll:
-      - ".txn-meta {"
-      - ".txn-meta {\n    flex-wrap: nowrap;\n    white-space: nowrap;\n    overflow-x: auto;"
+      - ".txn-meta {\n    flex-wrap: wrap;"
+      - ".txn-meta > * { white-space: nowrap; }"
   - id: txn-meta-keyboard-scroll-region
     file: src/ui/transcript/TranscriptViewer.jsx
-    description: The metadata scroller is focusable and named for keyboard and screen-reader users.
+    description: The metadata row is focusable and named for keyboard and screen-reader users.
     mustContainAll:
       - '<div className="txn-meta chips"'
       - 'tabIndex={0} role="region" aria-label="session metadata"'
   - id: txn-tabs-scroll-on-mobile
     file: src/index.css
-    description: Session tabs remain a single sideways-scrollable row below the md breakpoint (width < 768px).
+    description: >-
+      Session tabs remain a single sideways-scrollable row below the md breakpoint (width < 768px),
+      and the row fades at its end so a cut tab reads as more to scroll to.
     mustContainAll:
-      - ".txn-tabs { gap: var(--sp-4); flex-wrap: nowrap; overflow-x: auto; }"
+      - ".txn-tabs { gap: var(--sp-4); flex-wrap: nowrap; overflow-x: auto; padding-right: var(--sp-6); mask-image: linear-gradient(to right, var(--ink) calc(100% - var(--sp-6)), transparent); }"
   - id: txn-tabs-keyboard-navigation
     file: src/ui/transcript/TranscriptViewer.jsx
     description: Session views keep a named tablist and keyboard tab navigation.

@@ -3,7 +3,7 @@ requiredNames:
   - cg-older-fills-container
   - pgn-edge-contains-its-hidden-label
   - txn-title-wraps-on-mobile
-  - txn-meta-scrolls-on-mobile
+  - txn-meta-wraps-on-mobile
   - txn-meta-keyboard-scroll-region
   - txn-tabs-scroll-on-mobile
   - txn-tabs-keyboard-navigation
