@@ -2619,14 +2619,13 @@
     display: block;
     overflow-wrap: anywhere;
   }
-  /* Secondary metadata stays in one keyboard-scrollable row. */
+  /* the metadata wraps onto as many lines as it needs, so nothing runs off the edge unseen; each
+     figure stays whole on its line */
   .txn-meta {
-    flex-wrap: nowrap;
-    white-space: nowrap;
-    overflow-x: auto;
-    padding-bottom: var(--sp-1);
+    flex-wrap: wrap;
     margin-top: var(--sp-2);
   }
+  .txn-meta > * { white-space: nowrap; }
   /* The narrow title above re-declares display, so the
      condensed hide must restate itself inside this media block or the phone keeps the
      title while condensed. */

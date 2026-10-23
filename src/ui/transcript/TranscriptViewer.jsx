@@ -869,10 +869,17 @@ export default function TranscriptViewer({
           {session.toolCallCount != null && <span className="metaitem"><Wrench size={14} aria-hidden="true" /> <b className="tnum">{session.toolCallCount}</b> tools</span>}
           {!vm.usageScopes?.length && session.totalTokens != null && <Term className="metaitem" def={fmtTokens(session.tokensIn ?? 0) + ' input tokens, ' + fmtTokens(session.tokensOut ?? 0) + ' output tokens'}><Coins size={14} aria-hidden="true" /> <b className="tnum">{fmtTokens(session.totalTokens)}</b> tokens</Term>}
           {commits.length > 0 && <span className="metaitem"><GitCommitHorizontal size={14} aria-hidden="true" /> <b className="tnum">{commits.length}</b> {commits.length === 1 ? 'commit' : 'commits'}</span>}
-          {session.git?.filesChanged != null && <span className="metaitem"><FileText size={14} aria-hidden="true" /> <b className="tnum">{session.git.filesChanged}</b> {session.git.filesChanged === 1 ? 'file' : 'files'}</span>}
-          {session.git && (session.git.insertions != null || session.git.deletions != null) && (
-            <span className="metaitem txn-churn-meta tnum"><span className="txn-churn-add">+{session.git.insertions ?? 0}</span> <span className="txn-churn-del">−{session.git.deletions ?? 0}</span></span>
-          )}
+          {/* the line counts ride with the file count as one unit, so "+11 −4" never wraps onto a
+              line of its own */}
+          {(() => {
+            const churn = session.git && (session.git.insertions != null || session.git.deletions != null)
+              ? <span className="txn-churn-meta tnum"><span className="txn-churn-add">+{session.git.insertions ?? 0}</span> <span className="txn-churn-del">−{session.git.deletions ?? 0}</span></span>
+              : null
+            if (session.git?.filesChanged != null) {
+              return <span className="metaitem txn-files-meta"><FileText size={14} aria-hidden="true" /> <b className="tnum">{session.git.filesChanged}</b> {session.git.filesChanged === 1 ? 'file' : 'files'}{churn ? <> {churn}</> : null}</span>
+            }
+            return churn ? <span className="metaitem">{churn}</span> : null
+          })()}
         </div>
         {/* host-owned pull request list: the host supplies the rows and any "show all" control;
             the composite only gives it a place under the meta row. */}

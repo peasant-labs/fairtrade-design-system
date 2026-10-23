@@ -202,7 +202,10 @@
    a small square panel — mono, --surface-2, hairline — mirroring the canvas
    .tip-bubble. hidden until the trigger is hovered, focused, or tapped (pinned).
    the prose around it stays put: the bubble is absolutely positioned. */
+/* a closed bubble takes no layout, so it never widens the scroller it sits in; it shows on hover,
+   focus or a tap (its text stays the term's description either way) */
 .term-bubble {
+  display: none;
   position: absolute;
   bottom: calc(100% + var(--sp-2));
   left: 0;
@@ -224,6 +227,7 @@
 .term-anchor:hover .term-bubble,
 .term-anchor:focus-within .term-bubble,
 .term-anchor.is-pinned .term-bubble {
+  display: block;
   opacity: 1;
   pointer-events: auto;
 }

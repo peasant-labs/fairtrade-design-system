@@ -56,6 +56,7 @@ and no required workflow carries the dev command or its attach hint.
 | `storybook-smoke.journey.mjs` | `scripts/sbsmoke.mjs` | Every story renders, play() runs, no JS errors |
 | `app-validate.journey.mjs` | `scripts/validate.mjs` | The twenty built-app interaction checks, plus the reduced-transparency check |
 | `session-group-disclosure.journey.mjs` | — | The shared disclosure: expand, count, tokens, axe |
+| `transcript-columns.journey.mjs` | — | The transcript's scrolling columns (the trace stream, the filters rail) at 1440 and 390 in both themes: scrollWidth equals clientWidth, so a closed definition bubble never widens them; a named CSS mutation proves it fails for that reason |
 | `card-insets.journey.mjs` | — | Card insets on the demo's settings screens, desktop and phone: every setting row's and group summary's content starts and ends the same distance from its edges, at least the `--card-pad` floor, nothing crosses its content box, the label, help and a stacked value share one left edge, and dividers span the card; seven named CSS mutations prove it fails for the intended reason |
 | `app-sidebar.journey.mjs` | — | AppSidebar motion: the current-item indicator rests on the current item (desktop, phone drawer), the drawer opens and closes, reduced motion moves nothing, axe finds every part of it in a landmark |
 

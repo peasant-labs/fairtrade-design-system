@@ -1,0 +1,6 @@
+# Required-NAME manifest for transcript-columns.yaml: deletion protection for the screens, viewports,
+# columns and mutations the transcript column gate covers.
+requiredScreenNames: [transcript]
+requiredViewportNames: [desktop, phone]
+requiredColumnNames: [stream, filters]
+requiredMutationNames: [closed bubbles take layout again]
