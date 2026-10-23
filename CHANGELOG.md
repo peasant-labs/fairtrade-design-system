@@ -4,6 +4,55 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.38 - 2026-10-23
+
+### Changed
+
+- `AppSidebar` enforces one order in every app:
+  1. the brand row;
+  2. the shortcuts under it: search, the docs and community, then the app's
+     links that leave it;
+  3. the app's own pages;
+  4. the footer row: the account on the left, then a settings gear and the
+     theme toggle on the right.
+
+  The component moves a host's items into place itself. An `external` item in
+  `groups` (or one passed in the new `elsewhere` prop) moves up to the
+  shortcuts. A `settings` item in `groups` (or the new `settingsHref`) becomes
+  the footer gear, current on the settings page; settings is never a page. A
+  visible label carries no tooltip (a host `title` is ignored). Tooltips belong
+  to the collapsed rail, which shows each label, and to icon-only buttons.
+- `TranscriptViewer`:
+  - Durations read short ("4m 30s", "1h 12m", "12s") from one formatter.
+  - A missing, zero, epoch or Go zero-time timestamp shows nothing; the
+    adapter fails closed on it, so "739912d ago" cannot appear.
+  - A zero or unknown per-turn duration is hidden, so no "0s" shows.
+  - Claude Code's session records ("custom-title", "agent name", "session
+    title") are not listed or counted as turns.
+  - A relative time becomes a date after seven days.
+  - `isSessionMetadataTurn` is exported.
+- `ProjectOverview`:
+  - The last x-axis tick is no longer clipped.
+  - KPI labels hold two lines, so every value sits at one height.
+  - Typical vs. tail reads "median / p90" with an AA separator.
+  - A shown section chip is a neutral on-state, not amber.
+  - The contributors count says "1 person".
+  - The page takes the 32px app inset.
+- On a coarse pointer, small buttons are 44px tall, and switches and crumb links
+  take a 44px reach.
+
+### Added
+
+- `Changes` and `ChangeDetail` take `headerActions`, the host's own controls in
+  the head row (a docs link beside "open the map").
+
+### Compatibility
+
+- New props only (`elsewhere`, `settingsHref`, `headerActions`); nothing
+  removed. A host that listed settings or an outside link among its pages sees
+  them move on re-pin, with no change of its own. A host can drop its own
+  `title` descriptions.
+
 ## 0.0.37 - 2026-10-23
 
 ### Added

@@ -580,15 +580,19 @@ render the same system.
   counts are tabular in `--ink-4`.
 - **Trails:** breadcrumb, step indicator, tabs and pagination; orientation lives here.
 - **App sidebar:** `AppSidebar` is the one sidebar for every app screen (online, local and docs),
-  in one order that every app gets, so no app can drift: (1) the brand row, the mark with the
-  collapse control; (2) the app's nav groups; (3) search, when the app has one (`search`: one item
-  with a quiet mono key hint); (4) the switcher (the docs and community); (5) the footer, one compact row
+  in one order that every app gets, enforced by the component so no app can drift: (1) the brand
+  row, the mark with the collapse control; (2) the shortcuts, under a hairline from the pages:
+  search first (`search`, with a quiet mono key hint), the docs and community, then the app's links
+  that leave it (`elsewhere`, or any `external` item, which the component lifts out of the groups);
+  (3) the app's own pages (`groups`; settings is never one of them); (4) the footer, one compact row
   pinned under the nav with a hairline above it: the account on the left (avatar or initial and
-  handle, or the host's signed-out slot) at the nav icons' inset, and on the right an icon-only
-  square theme toggle (`theme` with `onThemeChange`, named for the theme it switches to, "switch to
-  dark mode", with that theme's icon, its tip above it and never over the account). The collapsed
-  rail shows each of them as an icon with a title (the account on top of the theme toggle), and the
-  phone drawer keeps the same order. The parts:
+  handle, or the host's signed-out slot) at the nav icons' inset, and on the right two square icon
+  buttons, the settings gear (`settingsHref`, or a `settings` item the component lifts out of the
+  groups; current on the settings page) and the theme toggle (`theme` with `onThemeChange`, named
+  for the theme it switches to, "switch to dark mode"), each with its tip above it and never over
+  the account. A visible label carries no tooltip: tooltips belong to the collapsed rail, where
+  each item shows its label, and to icon-only buttons. The phone drawer keeps the same order. The
+  parts:
   the wheat mark alone (its name is the accessible name and the tooltip; the full logo with the
   wordmark belongs to the landing page only), a collapse handle seated on the column's right edge
   level with the mark (a small square whose chevron turns to point the way the column will go)
