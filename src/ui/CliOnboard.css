@@ -9,6 +9,10 @@
 .cli-cmd {
   display: flex;
   align-items: stretch;
+  /* inside a grid or flex column the block may shrink below its command's length; the line then
+     scrolls (or wraps) instead of pushing the copy button out of view */
+  min-width: 0;
+  max-width: 100%;
   border: var(--bd);
   background: var(--surface-2);
   font-family: var(--font-mono);
