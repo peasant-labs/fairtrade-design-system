@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import {
   BookOpen, Code, Compass, Download, EyeOff, FileText, FlaskConical, GitPullRequest, GraduationCap,
@@ -9,9 +10,10 @@ import AppSidebar, { AppSidebarLayout, APP_SIDEBAR_APPS } from './AppSidebar.jsx
    .storybook/preview.jsx plus the component's own sheet; the theme toolbar flips data-theme. each
    story mounts the sidebar inside AppSidebarLayout beside a placeholder page, the way an app screen
    does. Online, Local and Docs show the three apps' navs; Collapsed starts as the icon rail; Mobile
-   runs at a phone viewport, where the sidebar is a top bar whose menu opens the drawer. every story
-   passes storageKey={null} so one story's collapse or resize never leaks into the next. the nav
-   data is example data. */
+   runs at a phone viewport, where the sidebar is a top bar whose menu opens the drawer. choosing an
+   in-app item makes it current, so the indicator can be seen sliding. every story passes
+   storageKey={null} so one story's collapse or resize never leaks into the next. the nav data is
+   example data. */
 
 const meta = {
   title: 'in use/AppSidebar',
@@ -88,9 +90,14 @@ function PlaceholderPage({ title }) {
   )
 }
 
-function Frame({ title, ...props }) {
+function Frame({ title, groups, currentId, ...props }) {
+  const [current, setCurrent] = useState(currentId)
+  const live = useMemo(() => groups.map((group) => ({
+    ...group,
+    items: group.items.map((item) => (item.external ? item : { ...item, onSelect: setCurrent })),
+  })), [groups])
   return (
-    <AppSidebarLayout sidebar={<AppSidebar apps={apps} storageKey={null} homeHref="#home" {...props} />}>
+    <AppSidebarLayout sidebar={<AppSidebar apps={apps} storageKey={null} homeHref="#home" groups={live} currentId={current} {...props} />}>
       <PlaceholderPage title={title} />
     </AppSidebarLayout>
   )
@@ -109,6 +116,11 @@ export const Online = {
     await expect(canvas.getByRole('link', { name: 'discover' })).toBeInTheDocument()
     await userEvent.click(canvas.getByRole('button', { name: 'expand the sidebar' }))
     await waitFor(() => expect(canvas.getByRole('button', { name: 'collapse the sidebar' })).toHaveAttribute('aria-expanded', 'true'))
+    // choosing another item moves the current marker there, then back
+    await userEvent.click(canvas.getByRole('link', { name: 'discover' }))
+    await waitFor(() => expect(canvas.getByRole('link', { name: 'discover' })).toHaveAttribute('aria-current', 'page'))
+    await userEvent.click(canvas.getByRole('link', { name: 'home' }))
+    await waitFor(() => expect(canvas.getByRole('link', { name: 'home' })).toHaveAttribute('aria-current', 'page'))
     // rest without a focused control so the documented state carries no focus ring
     canvasElement.ownerDocument.activeElement?.blur()
   },
@@ -148,8 +160,11 @@ export const Mobile = {
     await expect(menu).toHaveAttribute('aria-expanded', 'false')
     await userEvent.click(menu)
     await waitFor(() => expect(menu).toHaveAttribute('aria-expanded', 'true'))
+    // the same button is now the drawer's close control
+    await expect(menu).toHaveAttribute('aria-label', 'close the menu')
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(menu).toHaveAttribute('aria-expanded', 'false'))
+    await expect(menu).toHaveAttribute('aria-label', 'open the menu')
     canvasElement.ownerDocument.activeElement?.blur()
   },
 }

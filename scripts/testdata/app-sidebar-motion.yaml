@@ -1,0 +1,24 @@
+# Mounted motion cases for AppSidebar (src/ui/AppSidebar.jsx), run by
+# scripts/journey/app-sidebar.journey.mjs against the built Storybook in both themes and under
+# both motion preferences. jsdom has no layout, so these are the checks that the one sliding
+# current-item indicator rests exactly on the current item (on desktop after choosing another
+# item, and inside the phone drawer while its items stagger in), and that the drawer opens to the
+# left edge and closes out of view and out of the focus order. Under reduced motion nothing may
+# still be running a frame after the change. Each case also runs axe over the page, at rest and
+# with the drawer closed and open, and fails on any finding inside the sidebar (region included:
+# every part of the sidebar sits in a landmark).
+cases:
+  - name: desktop indicator follows the current item
+    kind: desktop
+    story: in-use-appsidebar--docs
+    viewport: {width: 1280, height: 800}
+    first: overview
+    choose: agent evals
+  - name: phone drawer opens to the current item and closes
+    kind: phone
+    story: in-use-appsidebar--local
+    viewport: {width: 390, height: 780}
+    first: sessions
+motions:
+  - {name: motion-allowed, value: no-preference}
+  - {name: reduced, value: reduce}

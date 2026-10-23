@@ -17,6 +17,7 @@ requiredCaseNames:
   - the account row without an href is text
   - an account slot replaces the row
   - the menu opens and closes the drawer
+  - one indicator slides between current items
   - a link component receives the item props
 
 requiredMutationNames:
@@ -27,6 +28,9 @@ requiredMutationNames:
   - the switcher lists apps it cannot reach
   - escape does not close the drawer
   - a storage read can throw
+  - the indicator slides on its first placement
+  - the menu button never becomes the close control
+  - the drawer items lose their stagger order
 mutations:
   - name: the current item loses aria-current
     file: src/ui/AppSidebar.jsx
@@ -63,3 +67,18 @@ mutations:
     find: "return globalThis.localStorage?.getItem(key) ?? null\n  } catch {\n    return null\n  }"
     replace: "return globalThis.localStorage?.getItem(key) ?? null\n  } finally {\n    void 0\n  }"
     expectedDiagnostic: "a throwing localStorage still renders"
+  - name: the indicator slides on its first placement
+    file: src/ui/AppSidebar.jsx
+    find: "const animate = placedForRef.current !== null && placedForRef.current !== currentId"
+    replace: "const animate = true"
+    expectedDiagnostic: "one indicator slides between current items: the first placement"
+  - name: the menu button never becomes the close control
+    file: src/ui/AppSidebar.jsx
+    find: "aria-label={drawerOpen ? 'close the menu' : 'open the menu'}"
+    replace: "aria-label=\"open the menu\""
+    expectedDiagnostic: "the menu opens and closes the drawer: the open menu button"
+  - name: the drawer items lose their stagger order
+    file: src/ui/AppSidebar.jsx
+    find: "<li key={item.id} style={{ '--asb-i': listIndex++ }}>"
+    replace: "<li key={item.id} style={{ '--asb-i': 0 }}>"
+    expectedDiagnostic: "the menu opens and closes the drawer: the"
