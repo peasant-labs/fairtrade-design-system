@@ -21,16 +21,30 @@
   padding: var(--sp-2) var(--sp-3);
   overflow-x: auto;
   font-family: inherit;
-  font-size: var(--fs-sm);
-  line-height: 1.5;
+  /* the code role: mono at the 16px body floor */
+  font-size: var(--fs-body);
+  line-height: var(--lh-mono);
   color: var(--ink);
   /* COMMAND — literal content, case preserved; never lowercase it */
+}
+/* the scroll region takes the inset ring, so the box's own edge is not clipped */
+.cli-cmd-line:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-inset);
 }
 
 .cli-cmd-line code {
   font-family: inherit;
   white-space: pre;
 }
+
+/* wrap: break at spaces, and anywhere inside a long URL, instead of scrolling */
+.cli-cmd-wrap .cli-cmd-line { overflow-x: visible; }
+.cli-cmd-wrap .cli-cmd-line code { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* compact: the copy button is the icon alone (the word stays for assistive tech) */
+.cli-cmd-compact .cli-copy { min-width: var(--control-h); padding: 0; }
+.cli-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 
 /* the leading prompt sigil — chrome, dim, and not selectable so a copy of the line is just the cmd */
 .cli-cmd-sigil {
