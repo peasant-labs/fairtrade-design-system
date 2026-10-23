@@ -18,17 +18,27 @@ package is pre-1.0, so minor/patch semantics are best-effort.
   faint line under a hovering pointer and firms up when pressed.
 - Reduced motion makes every one of these changes instant.
 
+### Fixed
+
+- Every part of `AppSidebar` now sits inside a landmark, so axe's `region` rule
+  passes on a page that mounts it. The resize separator moves inside the aside,
+  whose content scrolls in an inner `.asb-scroll` column, and the narrow top bar
+  is a `nav` named after the sidebar's label (default "peasant menu").
+
 ### Compatibility
 
 - No API or prop change. The separate close button inside the drawer is gone;
   the menu button (named "close the menu" while the drawer is open) closes it.
+- The aside's content scrolls in `.asb-scroll`, and the aside itself no longer
+  scrolls or carries the padding.
 
 ### Tests
 
 - A Playwright journey checks, in both themes and both motion preferences,
   that the indicator rests on the current item on desktop and inside the phone
   drawer, that the drawer opens to the edge and closes out of view, and that
-  reduced motion moves nothing perceptibly.
+  reduced motion moves nothing perceptibly. It also runs axe over the page and
+  fails on any finding inside the sidebar.
 - The mounted sidebar gate covers the close control, the stagger order and when
   the indicator may slide, with three new production mutations.
 

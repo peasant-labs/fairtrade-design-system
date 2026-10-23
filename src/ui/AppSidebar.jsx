@@ -317,6 +317,7 @@ export default function AppSidebar({
   const reactId = useId()
   const panelId = `asb-panel-${reactId}`
   const panelRef = useRef(null)
+  const scrollRef = useRef(null)
   const menuRef = useRef(null)
   const dragRef = useRef(null)
   const widthRef = useRef(width)
@@ -344,7 +345,7 @@ export default function AppSidebar({
   }
 
   useIsoLayoutEffect(() => {
-    const panel = panelRef.current
+    const panel = scrollRef.current
     if (!panel) return undefined
     const place = () => {
       const current = panel.querySelector('nav:not(.asb-apps) .asb-item[aria-current="page"]')
@@ -356,7 +357,7 @@ export default function AppSidebar({
       // slide only when the current item itself changed; a re-measure for the same item snaps
       const animate = placedForRef.current !== null && placedForRef.current !== currentId
       placedForRef.current = currentId
-      // layout offsets relative to the positioned panel, unaffected by a press scale or a stagger
+      // layout offsets relative to the positioned scroller, unaffected by a press scale or a stagger
       const { top, left } = offsetWithin(current, panel)
       const next = { id: currentId, top, left, width: current.offsetWidth, height: current.offsetHeight, animate }
       setIndicator((previous) => (previous && previous.id === next.id && previous.top === next.top && previous.left === next.left && previous.width === next.width && previous.height === next.height ? previous : next))
@@ -473,7 +474,8 @@ export default function AppSidebar({
       data-toggled={toggled ? 'true' : undefined}
       style={{ '--asb-w': `${width}px` }}
     >
-      <div className="asb-bar">
+      {/* the narrow top bar is a landmark of its own, so nothing on the page sits outside one */}
+      <nav className="asb-bar" aria-label={`${label} menu`}>
         <Brand brand={brand} homeHref={homeHref} Link={Link} onNavigate={onNavigate} />
         <button
           ref={menuRef}
@@ -486,69 +488,73 @@ export default function AppSidebar({
         >
           <MenuGlyph />
         </button>
-      </div>
+      </nav>
 
       <div className="asb-scrim" aria-hidden="true" onClick={() => closeDrawer()} />
 
+      {/* the aside holds everything else, the resize separator included; its content scrolls in an
+          inner column so the separator on the edge is never clipped */}
       <aside id={panelId} ref={panelRef} className="asb-panel" aria-label={label}>
-        <span
-          className="asb-indicator"
-          aria-hidden="true"
-          data-placed={indicator ? 'true' : 'false'}
-          data-animate={indicator?.animate ? 'true' : 'false'}
-          style={indicator ? { transform: `translateY(${indicator.top}px)`, left: `${indicator.left}px`, width: `${indicator.width}px`, height: `${indicator.height}px` } : undefined}
-        />
-        <div className="asb-top">
-          <Brand brand={brand} homeHref={homeHref} Link={Link} onNavigate={onNavigate} />
-          <button
-            type="button"
-            className="asb-icon-btn asb-toggle"
-            aria-label={collapsed ? 'expand the sidebar' : 'collapse the sidebar'}
-            aria-expanded={collapsed ? 'false' : 'true'}
-            aria-controls={panelId}
-            title={collapsed ? 'expand the sidebar' : 'collapse the sidebar'}
-            onClick={toggleCollapsed}
-          >
-            {collapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
-          </button>
+        <div ref={scrollRef} className="asb-scroll">
+          <span
+            className="asb-indicator"
+            aria-hidden="true"
+            data-placed={indicator ? 'true' : 'false'}
+            data-animate={indicator?.animate ? 'true' : 'false'}
+            style={indicator ? { transform: `translateY(${indicator.top}px)`, left: `${indicator.left}px`, width: `${indicator.width}px`, height: `${indicator.height}px` } : undefined}
+          />
+          <div className="asb-top">
+            <Brand brand={brand} homeHref={homeHref} Link={Link} onNavigate={onNavigate} />
+            <button
+              type="button"
+              className="asb-icon-btn asb-toggle"
+              aria-label={collapsed ? 'expand the sidebar' : 'collapse the sidebar'}
+              aria-expanded={collapsed ? 'false' : 'true'}
+              aria-controls={panelId}
+              title={collapsed ? 'expand the sidebar' : 'collapse the sidebar'}
+              onClick={toggleCollapsed}
+            >
+              {collapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
+            </button>
+          </div>
+
+          {groups.map((group) => (
+            <nav key={group.id} className="asb-group" aria-label={group.ariaLabel ?? group.label ?? group.id}>
+              {group.label ? <span className="asb-glabel">{group.label}</span> : null}
+              <ul className="asb-list">
+                {group.items.map((item) => (
+                  <li key={item.id} style={{ '--asb-i': listIndex++ }}>
+                    <SidebarItem item={item} current={item.id === currentId} Link={Link} onNavigate={onNavigate} />
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))}
+
+          <AppSwitcher app={app} apps={apps} Link={Link} onNavigate={onNavigate} firstIndex={listIndex} />
+
+          {shownAccount ? <div className="asb-me">{shownAccount}</div> : null}
         </div>
 
-        {groups.map((group) => (
-          <nav key={group.id} className="asb-group" aria-label={group.ariaLabel ?? group.label ?? group.id}>
-            {group.label ? <span className="asb-glabel">{group.label}</span> : null}
-            <ul className="asb-list">
-              {group.items.map((item) => (
-                <li key={item.id} style={{ '--asb-i': listIndex++ }}>
-                  <SidebarItem item={item} current={item.id === currentId} Link={Link} onNavigate={onNavigate} />
-                </li>
-              ))}
-            </ul>
-          </nav>
-        ))}
-
-        <AppSwitcher app={app} apps={apps} Link={Link} onNavigate={onNavigate} firstIndex={listIndex} />
-
-        {shownAccount ? <div className="asb-me">{shownAccount}</div> : null}
+        {collapsed ? null : (
+          <div
+            role="separator"
+            tabIndex={0}
+            className="asb-resize"
+            aria-orientation="vertical"
+            aria-label="resize the sidebar"
+            aria-controls={panelId}
+            aria-valuenow={width}
+            aria-valuemin={minWidth}
+            aria-valuemax={maxWidth}
+            onKeyDown={onResizeKey}
+            onPointerDown={onResizeDown}
+            onPointerMove={onResizeMove}
+            onPointerUp={onResizeEnd}
+            onPointerCancel={onResizeEnd}
+          />
+        )}
       </aside>
-
-      {collapsed ? null : (
-        <div
-          role="separator"
-          tabIndex={0}
-          className="asb-resize"
-          aria-orientation="vertical"
-          aria-label="resize the sidebar"
-          aria-controls={panelId}
-          aria-valuenow={width}
-          aria-valuemin={minWidth}
-          aria-valuemax={maxWidth}
-          onKeyDown={onResizeKey}
-          onPointerDown={onResizeDown}
-          onPointerMove={onResizeMove}
-          onPointerUp={onResizeEnd}
-          onPointerCancel={onResizeEnd}
-        />
-      )}
     </div>
   )
 }
