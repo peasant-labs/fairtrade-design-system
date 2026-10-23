@@ -115,7 +115,8 @@
   color: var(--ink-strong);
   text-transform: lowercase;
 }
-.srow-summary-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
+/* the count keeps to one line at the summary's end; the group's name wraps instead */
+.srow-summary-count { flex: none; white-space: nowrap; font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
 .srow-group-description {
   margin: 0;
   padding: var(--sp-3) var(--card-pad) 0;

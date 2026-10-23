@@ -557,9 +557,7 @@ export function PublishDialog({
                   publish this repo automatically on git push
                 </Checkbox>
                 {/* checked, the consent sentence is the component's own; unchecked, only the host's hint, if any */}
-                {autoPublish.checked
-                  ? <span className="pub-hint">on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.</span>
-                  : autoPublish.hint ? <span className="pub-hint">{autoPublish.hint}</span> : null}
+                {autoPublish.checked ? <span className="pub-hint">on: later pushes publish this repo's new sessions and updates to already-published sessions, redacted, without review, to this rule's collectives.</span> : autoPublish.hint ? <span className="pub-hint">{autoPublish.hint}</span> : null}
               </div>
             )}
             {mode === 'update' && accessSummary && <p className="pub-line pub-delta">{accessSummary}</p>}
