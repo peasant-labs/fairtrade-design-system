@@ -1,0 +1,50 @@
+# Required-NAME manifest for transcript-session-records.yaml: deletion protection. The gate asserts
+# the case names equal this list exactly, as a set, and parts-mutations.mjs proves each production
+# mutation below turns the gate red for the named reason.
+requiredCaseNames:
+  - session metadata records are not turns
+  - the same text from another harness stays a turn
+  - an unknown turn time is dropped
+  - an unknown session time is empty
+  - the meta row reads a short duration
+  - a turn without a known time shows no time
+  - the steps list leaves out a zero duration
+
+requiredMutationNames:
+  - session metadata records stay turns
+  - every harness loses metadata-shaped turns
+  - an unknown turn time is kept
+  - an unknown session time is kept
+  - the meta row shows raw minutes
+  - a zero step duration is shown
+mutations:
+  - name: session metadata records stay turns
+    file: src/ui/transcript/adapter.js
+    find: "    .filter((turn) => !isSessionMetadataTurn(turn, payload.harness))\n"
+    replace: ""
+    expectedDiagnostic: "session metadata records are not turns: cooked turns"
+  - name: every harness loses metadata-shaped turns
+    file: src/ui/transcript/adapter.js
+    find: "if (harness !== 'claude-code' || turn.role !== 'system') return false"
+    replace: "if (turn.role !== 'system') return false"
+    expectedDiagnostic: "the same text from another harness stays a turn: cooked turns"
+  - name: an unknown turn time is kept
+    file: src/ui/transcript/adapter.js
+    find: "    .map(withKnownTime)"
+    replace: ""
+    expectedDiagnostic: "an unknown turn time is dropped: cooked times"
+  - name: an unknown session time is kept
+    file: src/ui/transcript/adapter.js
+    find: "startTime: isKnownTime(payload.startTime) ? payload.startTime : '',"
+    replace: "startTime: payload.startTime,"
+    expectedDiagnostic: "an unknown session time is empty: session times"
+  - name: the meta row shows raw minutes
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "<b className=\"tnum\">{formatDurationMins(session.durationMins)}</b>"
+    replace: "<b className=\"tnum\">{session.durationMins}m</b>"
+    expectedDiagnostic: "the meta row reads a short duration: meta duration"
+  - name: a zero step duration is shown
+    file: src/ui/StepsWaterfall.jsx
+    find: "{durationLabel ? <span className=\"swf-dur tnum\">{durationLabel}</span> : null}"
+    replace: "<span className=\"swf-dur tnum\">{durationLabel || '0s'}</span>"
+    expectedDiagnostic: "the steps list leaves out a zero duration: step durations"
