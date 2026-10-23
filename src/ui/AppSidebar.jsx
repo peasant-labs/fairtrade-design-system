@@ -10,7 +10,8 @@ import './AppSidebar.css'
                                  2. the app's nav groups
                                  3. search, when the app has one (`search`)
                                  4. the switcher to the other apps
-                                 5. the footer: the theme toggle (`theme`), then the account
+                                 5. the footer, one row pinned to the column's foot: the account on
+                                    the left, an icon-only theme toggle (`theme`) on the right
                                the collapse control is a small handle seated on the column's
                                right edge, level with the brand. collapsed, it is an icon rail:
                                labels stay in the DOM as the accessible names (visually hidden) and
@@ -327,14 +328,15 @@ function SearchItem({ search, onNavigate, index }) {
   )
 }
 
-/* the theme toggle: it names the theme it switches to, with that theme's icon */
+/* the theme toggle: a square icon button that names the theme it switches to, with that theme's
+   icon. its tip sits above it (beside it in the rail), never over the account. */
 function ThemeItem({ theme, onThemeChange }) {
   const next = theme === 'light' ? 'dark' : 'light'
   const name = `switch to ${next} mode`
   return (
-    <button type="button" className="asb-item asb-theme" aria-label={name} title={name} onClick={() => onThemeChange(next)}>
-      <span className="asb-ic" aria-hidden="true">{next === 'dark' ? <Moon /> : <Sun />}</span>
-      <span className="asb-label">{next} mode</span>
+    <button type="button" className="asb-icon-btn asb-theme" aria-label={name} onClick={() => onThemeChange(next)}>
+      {next === 'dark' ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}
+      <span className="asb-tip" aria-hidden="true">{name}</span>
     </button>
   )
 }
@@ -356,7 +358,7 @@ function AccountRow({ account, Link, onNavigate }) {
 /**
  * The shared app sidebar, in one order for every app: the brand mark with a collapse handle on the
  * column's edge, the caller's nav groups, search, the switcher to the other apps, then the footer
- * (the theme toggle, then the account). A sticky resizable column on desktop
+ * row (the account on the left, the theme toggle on the right). A sticky resizable column on desktop
  * that collapses to an icon rail; a top bar plus an opaque drawer below 768px.
  * @param {AppSidebarProps} props
  */
@@ -616,14 +618,16 @@ export default function AppSidebar({
 
           <AppSwitcher app={app} apps={apps} Link={Link} onNavigate={onNavigate} firstIndex={listIndex} />
 
-          {/* the footer: the theme toggle, then the account */}
-          {showTheme || shownAccount ? (
-            <div className="asb-foot">
-              {showTheme ? <ThemeItem theme={theme} onThemeChange={onThemeChange} /> : null}
-              {shownAccount ? <div className="asb-me">{shownAccount}</div> : null}
-            </div>
-          ) : null}
         </div>
+
+        {/* the footer: one row pinned under the nav, the account on the left (or the host's
+            signed-out slot) and the theme toggle on the right */}
+        {showTheme || shownAccount ? (
+          <div className="asb-foot">
+            {shownAccount ? <div className="asb-me">{shownAccount}</div> : null}
+            {showTheme ? <ThemeItem theme={theme} onThemeChange={onThemeChange} /> : null}
+          </div>
+        ) : null}
 
         {collapsed ? null : (
           <div

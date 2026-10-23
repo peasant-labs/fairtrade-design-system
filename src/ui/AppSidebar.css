@@ -224,7 +224,39 @@ span.asb-item { cursor: default; }
 
 /* ── account row ──────────────────────────────────────────────────────── */
 /* the footer: the theme toggle, then the account, pinned to the column's foot */
-.asb-foot { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-1); margin-top: auto; padding-top: var(--sp-3); border-top: var(--bd); }
+/* the footer: one row under the nav, outside its scroller so it stays put and its tip is never
+   clipped. a hairline above it, the account on the left at the nav icons' inset, the theme toggle
+   on the right, both one control high and centred */
+.asb-foot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 var(--sp-3);
+  padding: var(--sp-3) 0 var(--sp-5);
+  border-top: var(--bd);
+}
+.asb-me { flex: 1; min-width: 0; }
+.asb-theme { position: relative; margin-left: auto; }
+/* the theme toggle's tip: above it, right-aligned to it, so it never covers the account */
+.asb-tip {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + var(--sp-2));
+  z-index: var(--z-tooltip);
+  width: max-content;
+  padding: var(--sp-1) var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0;
+  white-space: nowrap;
+  color: var(--ink);
+  background: var(--surface-elev);
+  border: var(--bd-strong);
+  opacity: 0;
+  pointer-events: none;
+}
+.asb-theme:focus-visible .asb-tip { opacity: 1; }
 
 /* the search item's key hint: quiet mono text, not a boxed key */
 .asb-kbd {
@@ -243,7 +275,8 @@ span.asb-item { cursor: default; }
   align-items: center;
   gap: var(--sp-3);
   min-height: var(--control-h);
-  padding: 0 var(--sp-2);
+  /* the avatar starts at the nav icons' inset */
+  padding: 0 0 0 var(--sp-3);
   font-family: var(--font-mono);
   font-size: var(--fs-label);
   letter-spacing: 0;
@@ -322,6 +355,11 @@ span.asb-item { cursor: default; }
   .asb[data-collapsed="true"] .asb-tag { display: none; }
   .asb[data-collapsed="true"] .asb-item,
   .asb[data-collapsed="true"] .asb-account { justify-content: center; padding: 0; }
+  /* the rail: the account on top, the theme toggle under it, both centred; the tip beside it */
+  .asb[data-collapsed="true"] .asb-foot { flex-direction: column; margin-inline: var(--sp-2); }
+  .asb[data-collapsed="true"] .asb-me { flex: none; }
+  .asb[data-collapsed="true"] .asb-theme { margin-left: 0; }
+  .asb[data-collapsed="true"] .asb-tip { right: auto; bottom: auto; left: calc(100% + var(--sp-2)); top: 50%; transform: translateY(-50%); }
   .asb[data-collapsed="true"] .asb-initial { display: inline-flex; }
   .asb[data-collapsed="true"] .asb-label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; opacity: 0; transform: translateX(calc(-1 * var(--sp-1))); }
 }
@@ -390,6 +428,7 @@ span.asb-item { cursor: default; }
   .asb[data-indicator="ready"] .asb-item[aria-current="page"]:hover { background: none; }
   .asb:not([data-indicator="ready"]) .asb-item[aria-current="page"]:hover { background: var(--surface-2); }
   .asb-icon-btn:hover { color: var(--ink); border-color: var(--rule-strong); }
+  .asb-theme:hover .asb-tip { opacity: 1; }
   .asb-toggle:hover { color: var(--ink-strong); background: var(--surface-hover); }
   /* the resize affordance: the edge line shows faintly under a hovering pointer */
   .asb-resize:not(:active):not(:focus-visible):hover::after { opacity: .6; }

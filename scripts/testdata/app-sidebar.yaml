@@ -48,12 +48,13 @@ cases:
       visibleLabels: [help]
       asideName: peasant
   # One order for every app: the brand row (outside the scrolling nav), the app's nav groups,
-  # search, the switcher to the other apps, then the footer with the theme toggle and the account.
+  # search, the switcher to the other apps, then the footer row (outside the scrolling nav too):
+  # the account on the left, the icon-only theme toggle on the right.
   - name: the sidebar keeps one order
     kind: structure
     props: {app: online, theme: light, account: {handle: mira}}
     search: {label: search, shortcut: '⌘K', keyShortcuts: Meta+K}
-    expected: [top, 'nav:peasant sections', 'nav:help', search, apps, 'foot:theme+account']
+    expected: [top, 'nav:peasant sections', 'nav:help', search, apps, 'foot:account+theme']
   # The same slots in the same order in every app, whatever the app passes: each config below is
   # one app's data (its own groups, search, theme and account); the slot order must not differ.
   - name: every app gets the same slot order
@@ -62,16 +63,16 @@ cases:
       - {app: online, groups: [home, discover], search: true, account: mira}
       - {app: local, groups: [sessions, settings], search: true, account: mira}
       - {app: docs, groups: [overview, install, cli], search: true, account: mira}
-    expected: [top, groups, search, apps, 'foot:theme+account']
+    expected: [top, groups, search, apps, 'foot:account+theme']
     lastApp: community
   # The theme toggle names the theme it switches to, with that theme's icon, and reports it.
   - name: the theme toggle names the theme it switches to
     kind: theme
     props: {app: online, theme: light}
     expected:
-      first: {name: switch to dark mode, title: switch to dark mode, label: dark mode, icon: lucide-moon}
+      first: {name: switch to dark mode, tip: switch to dark mode, label: null, icon: lucide-moon}
       calls: [dark]
-      after: {name: switch to light mode, title: switch to light mode, label: light mode, icon: lucide-sun}
+      after: {name: switch to light mode, tip: switch to light mode, label: null, icon: lucide-sun}
   # Search: one item after the nav groups, its key hint beside the label, opening the app's search.
   - name: search opens the app's search
     kind: search

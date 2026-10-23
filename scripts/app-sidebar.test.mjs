@@ -130,9 +130,11 @@ await withMountedSource(async ({ load, mount, window, React }) => {
           if (node.matches('.asb-foot')) return `foot:${[...node.children].map((child) => (child.matches('.asb-theme') ? 'theme' : child.matches('.asb-me') ? 'account' : child.className)).join('+')}`
           return node.className
         }
+        const foot = aside?.querySelector(':scope > .asb-foot')
         const order = [
           aside?.firstElementChild?.classList.contains('asb-top') ? 'top' : aside?.firstElementChild?.className,
           ...[...(aside?.querySelector('.asb-scroll')?.children ?? [])].filter((node) => !node.matches('.asb-indicator')).map(tokenOf),
+          ...(foot ? [tokenOf(foot)] : []),
         ]
         report.check(same(order, row.expected), `${name}: the sidebar order must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(order)}`)
         await mounted.unmount()
@@ -173,9 +175,11 @@ await withMountedSource(async ({ load, mount, window, React }) => {
             if (node.matches('.asb-foot')) return `foot:${[...node.children].map((child) => (child.matches('.asb-theme') ? 'theme' : child.matches('.asb-me') ? 'account' : child.className)).join('+')}`
             return node.className
           }
+          const foot = aside?.querySelector(':scope > .asb-foot')
           const order = [
             aside?.firstElementChild?.classList.contains('asb-top') ? 'top' : aside?.firstElementChild?.className,
             ...[...(aside?.querySelector('.asb-scroll')?.children ?? [])].filter((node) => !node.matches('.asb-indicator')).map(tokenOf),
+            ...(foot ? [tokenOf(foot)] : []),
           ]
           orders.push(order)
           const lastApp = [...mounted.container.querySelectorAll('nav[aria-label="apps"] .asb-label')].at(-1)?.textContent
@@ -190,7 +194,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         const mounted = await mount(React.createElement(AppSidebar, propsFor(row, { onThemeChange: (next) => calls.push(next) })))
         const look = () => {
           const toggle = mounted.container.querySelector('.asb-foot button.asb-theme')
-          return toggle && { name: toggle.getAttribute('aria-label'), title: toggle.getAttribute('title'), label: toggle.querySelector('.asb-label')?.textContent, icon: [...toggle.querySelector('.asb-ic svg')?.classList ?? []].find((c) => c.startsWith('lucide-')) }
+          return toggle && { name: toggle.getAttribute('aria-label'), tip: toggle.querySelector('.asb-tip')?.textContent, label: toggle.querySelector('.asb-label')?.textContent ?? null, icon: [...toggle.querySelector('svg')?.classList ?? []].find((c) => c.startsWith('lucide-') && c !== 'lucide') }
         }
         report.check(same(look(), row.expected.first), `${name}: the toggle must read ${JSON.stringify(row.expected.first)}, received ${JSON.stringify(look())}`)
         const toggle = mounted.container.querySelector('button.asb-theme')
