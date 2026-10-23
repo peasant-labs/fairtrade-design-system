@@ -94,7 +94,7 @@
   .gan-legend-v { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; }
   .gan-legend-pct { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-4); font-variant-numeric: tabular-nums; text-align: right; min-width: var(--sp-6); }
 
-  /* ---- median.p90 typical-vs-tail grid ---- */
+  /* ---- typical-vs-tail grid: "2m, 5m", the median then the p90, the comma against the median ---- */
   .gan-typical { display: flex; flex-direction: column; }
   .gan-typrow { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) 0; border-bottom: var(--bd); }
   .gan-typrow:last-child { border-bottom: 0; }
@@ -102,7 +102,7 @@
   .gan-typvals { display: inline-flex; align-items: baseline; gap: var(--sp-2); }
   .gan-typmed { font-family: var(--font-mono); font-size: var(--fs-md); color: var(--ink-strong); font-variant-numeric: tabular-nums; }
   .gan-typsep { color: var(--ink-3); }
-  .gan-typp90 { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-4); font-variant-numeric: tabular-nums; }
+  .gan-typp90 { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
   /* ---- contributor table card (reuses .tbl-*) ---- */
   .gan-tablecard { display: flex; flex-direction: column; gap: var(--sp-2); background: var(--surface); border: var(--bd-strong); padding: var(--sp-3) var(--sp-4) var(--sp-4); min-width: 0; overflow: hidden; }
