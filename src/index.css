@@ -1935,6 +1935,14 @@
   .iu-page-sub.mono { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   /* a page whose title is recorded content (a pull request, a collective, a transcript) keeps its case */
   .iu-page-title-content { text-transform: none; }
+  /* from a tablet up the in-use page frame is the app page frame (.asb-page): one top, side and
+     bottom inset and one title size in every app. the page owns that inset, so a view that holds a
+     page adds none of its own. */
+  @media (width >= 768px) {
+    .iu-page { padding: var(--sp-6) var(--sp-6) var(--sp-7); }
+    .iu-page-title { font-size: var(--fs-hero); }
+    .iu-view:has(> .iu-page) { padding: 0; }
+  }
   .iu-page-titlerow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
   .iu-page-context { margin: 0; display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .iu-page-context .lucide { width: var(--ic-sm); height: var(--ic-sm); }
