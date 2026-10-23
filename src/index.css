@@ -2018,7 +2018,18 @@
   .txn-app-condensed > .txn-header .txn-crumb { flex-wrap: nowrap; overflow: hidden; white-space: nowrap; }
   .txn-app-condensed > .txn-header .txn-actions { flex-wrap: nowrap; }
   .txn-header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); }
-  .txn-crumb { flex-wrap: wrap; min-width: 0; }
+  /* the trail is one line at every width, so a "›" never ends a line: the middle crumbs shrink to an
+     ellipsis, the first and the last keep their width (a very long one ellipsizes at its cap), and
+     the separators never shrink. the padding keeps a crumb's focus ring inside the clipped row. */
+  .txn-crumb { flex-wrap: nowrap; white-space: nowrap; overflow: hidden; min-width: 0; padding: var(--sp-1); margin: calc(-1 * var(--sp-1)); }
+  .txn-crumb > svg { flex: none; }
+  .txn-crumb > :not(svg) { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: none; }
+  .txn-crumb > :first-child:not(svg) { max-width: 30%; }
+  .txn-crumb > :last-child:not(svg) { max-width: 50%; }
+  .txn-crumb > :not(svg):not(:first-child):not(:last-child) { flex: 0 1 auto; min-width: 3ch; }
+  /* a touch screen keeps the 44px reach on a crumb as a block, centred by its line, since an ellipsis
+     needs a block box (the shared crumb rule makes a link an inline flex box) */
+  @media (pointer: coarse) { .txn-crumb > a { display: block; line-height: var(--target-comfortable); } }
   .txn-crumb .cur { font-variant-numeric: tabular-nums; }
   .txn-actions { display: inline-flex; align-items: center; gap: var(--sp-2); flex: none; }
 
@@ -2624,10 +2635,9 @@
 @media (width < 768px) {
   .txn-header { padding: var(--sp-3); }
   .txn-header-top { flex-wrap: wrap; }
-  .txn-crumb { flex-basis: 100%; overflow: visible; overflow-wrap: anywhere; }
+  .txn-crumb { flex-basis: 100%; }
   .txn-actions { flex-wrap: wrap; min-width: 0; max-width: 100%; }
   .txn-app-condensed > .txn-header .txn-header-top { flex-wrap: wrap; }
-  .txn-app-condensed > .txn-header .txn-crumb { flex-wrap: wrap; overflow: visible; white-space: normal; }
   .txn-trace-head { flex-wrap: wrap; }
   .txn-header .chip:not(button):not(a) { min-height: 0; }
   .iu .btn:not(.btn-sm) { min-height: var(--control-h); height: auto; padding-block: var(--sp-2); line-height: var(--lh-mono); }

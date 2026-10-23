@@ -2,6 +2,9 @@
 # themes on a 390px touch screen (pointer: coarse).
 #   tab-bar  the transcript's search trigger is one square icon control beside the tab strip: the
 #            strip never runs under it, the trigger shows no ⌘F, and the strip scrolls to its last tab.
+#   crumb    the transcript trail is one line: every crumb and separator share one row, a middle
+#            crumb shrinks to an ellipsis, and the first and last crumbs read whole.
 viewport: {width: 390, height: 844}
 cases:
   - {name: the search trigger keeps beside the tab strip, kind: tab-bar, query: 'app=transcript'}
+  - {name: the transcript trail is one line, kind: crumb, query: 'app=transcript'}

@@ -2,3 +2,4 @@
 # names equal this list exactly, as a set.
 requiredCaseNames:
   - the search trigger keeps beside the tab strip
+  - the transcript trail is one line

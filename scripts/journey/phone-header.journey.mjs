@@ -33,6 +33,24 @@ for (const row of fixture.cases) {
       expect(bar.scrolls, `${context}: the tab strip scrolls in its own row`).toBe(true)
       expect(bar.last.right, `${context}: the strip scrolls to its last tab`).toBeLessThanOrEqual(bar.tabs.right + 1)
     }
+    if (row.kind === 'crumb') {
+      await expect(page.locator('#inuse .txn-crumb')).toBeVisible()
+      const trail = await page.evaluate(() => {
+        const nav = document.querySelector('#inuse .txn-crumb')
+        const parts = [...nav.children]
+        const crumbs = parts.filter((part) => part.tagName.toLowerCase() !== 'svg')
+        const middle = (el) => ({ cut: el.scrollWidth > el.clientWidth + 1, ellipsis: getComputedStyle(el).textOverflow })
+        return {
+          rows: new Set(parts.map((part) => Math.round(part.getBoundingClientRect().top + part.getBoundingClientRect().height / 2))).size,
+          first: middle(crumbs[0]), last: middle(crumbs.at(-1)), middles: crumbs.slice(1, -1).map(middle),
+          overflow: nav.scrollWidth > nav.clientWidth + 1,
+        }
+      })
+      expect(trail.rows, `${context}: every crumb and separator must share one row ${JSON.stringify(trail)}`).toBe(1)
+      expect(trail.overflow, `${context}: the trail must fit its row`).toBe(false)
+      expect(trail.middles.some((m) => m.cut && m.ellipsis === 'ellipsis'), `${context}: a middle crumb must shrink to an ellipsis ${JSON.stringify(trail)}`).toBe(true)
+      expect(trail.first.cut || trail.last.cut, `${context}: the first and last crumbs read whole ${JSON.stringify(trail)}`).toBe(false)
+    }
     await phone.close()
   })
 }
