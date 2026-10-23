@@ -144,7 +144,7 @@
   color: var(--ink-2);
 }
 /* a line: its icon, its words, and at most one action. the words wrap and the action keeps to the
-   first line, on the words' baseline; the icon centres on that first line. */
+   first line, on the words' baseline, and so does the icon. */
 .pub-line {
   display: flex;
   flex-wrap: wrap;
@@ -156,7 +156,9 @@
   line-height: var(--lh-body);
   color: var(--ink);
 }
-.pub-line > .lucide { width: var(--ic-md); height: var(--ic-md); flex: none; align-self: flex-start; margin-block-start: calc((1lh - var(--ic-md)) / 2); color: var(--ink-3); }
+/* the icon has no text baseline, so it sits on the words' baseline and drops by half its overhang
+   past the cap height: its middle meets the middle of the words' capitals on the first line */
+.pub-line > .lucide { width: var(--ic-md); height: var(--ic-md); flex: none; position: relative; inset-block-start: calc((var(--ic-md) - 1cap) / 2); color: var(--ink-3); }
 .pub-line code { font-size: var(--fs-sm); color: var(--ink-strong); }
 /* a notice box spans the section's full width (the base sheet caps a <p> at the prose measure), with
    the card padding on both sides */
