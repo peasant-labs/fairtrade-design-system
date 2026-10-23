@@ -6,7 +6,9 @@
  *     (its rightmost visible child to its right edge) within a pixel, so a control never floats
  *     short of the right edge while the text hugs the left one;
  *   - both insets are at least the viewport's padding floor, so nothing touches a border;
- *   - no visible element inside the row crosses the row's content box.
+ *   - no visible element inside the row crosses the row's content box;
+ *   - the label, its help line and a value stacked under it share one left edge;
+ *   - a divider between rows spans the card's inner width.
  * Content is what a reader sees: controls, icons and images, and every element with text of its
  * own; an empty reserved slot is not content. The equal-inset check holds where a control sits
  * beside its label (and on a group's summary); a stacked control (a phone row) and a lone help line
@@ -61,8 +63,20 @@ const measureRows = (selector) => {
     const rights = content.map((el) => extent(el).right)
     const control = row.querySelector('button, select, input, textarea, [role="switch"]')
     const first = content.find((el) => ownText(el))
-    // stacked, a control starts at the left padding; beside its label it is pushed to the right
-    const beside = !!control && !!first && control.getBoundingClientRect().left > first.getBoundingClientRect().left + 1
+    // a control beside its label is pushed to the right; a long value stacked under its label is not
+    const beside = !!control && !!first && !row.matches('.srow-stacked') && control.getBoundingClientRect().left > first.getBoundingClientRect().left + 1
+    // one left edge: the label line, the help line and an error in the text column, and a value
+    // stacked under the label, all start at the same x
+    const textCol = row.querySelector(':scope > .srow-text-col')
+    const edgeEls = textCol ? [...textCol.children].filter(visible) : []
+    if (row.matches('.srow-stacked')) edgeEls.push(...[...row.querySelectorAll(':scope > .srow-control > *')].filter(visible).slice(0, 1))
+    const edgeLefts = edgeEls.map((el) => el.getBoundingClientRect().left)
+    // the divider between rows spans the card's inner width
+    const parent = row.parentElement
+    const parentBox = parent.getBoundingClientRect()
+    const parentStyle = getComputedStyle(parent)
+    const parentInner = { left: parentBox.left + parseFloat(parentStyle.borderLeftWidth) + parseFloat(parentStyle.paddingLeft), right: parentBox.right - parseFloat(parentStyle.borderRightWidth) - parseFloat(parentStyle.paddingRight) }
+    const divided = parseFloat(style.borderTopWidth) > 0
     const label = (row.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 48)
     const crossing = [...row.querySelectorAll('*')].filter(visible).filter((el) => {
       const r = el.getBoundingClientRect()
@@ -77,6 +91,8 @@ const measureRows = (selector) => {
       // count; a summary without a count and a lone help line end where their text ends
       spans: (row.matches('summary, .srow-summary') && !!row.querySelector('.srow-summary-count')) || beside,
       crossing,
+      edgeSpread: edgeLefts.length > 1 ? Math.round((Math.max(...edgeLefts) - Math.min(...edgeLefts)) * 10) / 10 : 0,
+      dividerShort: divided ? Math.round(Math.max(Math.abs(box.left - parentInner.left), Math.abs(parentInner.right - box.right)) * 10) / 10 : 0,
     }
   })
 }
@@ -90,6 +106,8 @@ const failuresFor = (measured, screen, viewport) => {
     if (row.right < viewport.padFloor - 0.5) failures.push(`${where}: right inset ${row.right}px is under the ${viewport.padFloor}px floor`)
     if (row.spans && Math.abs(row.left - row.right) > 1) failures.push(`${where}: left inset ${row.left}px differs from right inset ${row.right}px`)
     if (row.crossing.length) failures.push(`${where}: crosses the content box: ${row.crossing.join(', ')}`)
+    if (row.edgeSpread > 1) failures.push(`${where}: label, help and value left edges differ by ${row.edgeSpread}px`)
+    if (row.dividerShort > 1) failures.push(`${where}: the divider stops ${row.dividerShort}px short of the card's inner width`)
   }
   return failures
 }

@@ -1,8 +1,9 @@
 # Cases for the card inset gate (scripts/journey/card-insets.journey.mjs). Each screen is an in-use
 # demo page with settings cards; the journey opens it at each viewport in both themes and measures
 # every card row (a setting row, a group's summary): the content's left inset from the row's edge
-# must equal its right inset within a pixel, both must be at least the viewport's padding floor,
-# and no element inside the row may cross its content box. `path` is the demo query string.
+# must equal its right inset within a pixel, both must be at least the viewport's padding floor, no
+# element inside the row may cross its content box, the label, help and a stacked value share one
+# left edge, and a divider spans the card's inner width. `path` is the demo query string.
 screens:
   - {name: local settings, path: '?app=graph&section=settings'}
   - {name: account settings, path: '?app=commons&commons=account'}
@@ -13,7 +14,7 @@ viewports:
 rows: '#inuse .srow, #inuse .srow-summary'
 # Mutations: each injects CSS into the measured page and must make the probe report the breach in
 # `expect`, proving the gate fails for the intended reason.
-mutationScreen: account settings
+mutationScreen: collective settings
 mutationViewport: desktop
 mutations:
   - name: the card padding shrinks
@@ -22,9 +23,18 @@ mutations:
   - name: a row loses its side padding
     css: '.srow { padding-inline: 0 !important; }'
     expect: left inset 0px is under the 24px floor
-  - name: the save status slot follows the control
-    css: '.srow-status { order: 0 !important; }'
+  - name: an idle status reserves room after the control
+    css: '.srow-status { min-width: 6rem !important; order: 0 !important; }'
     expect: differs from right inset
   - name: a control overflows its row
     css: '.srow-control { transform: translateX(var(--card-pad)) !important; }'
     expect: crosses the content box
+  - name: the help line is indented
+    css: '.srow-help { margin-left: var(--sp-2) !important; }'
+    expect: left edges differ
+  - name: a long value sits in a column of its own
+    css: '.srow-stacked > .srow-control { grid-column: 2 !important; justify-self: end !important; }'
+    expect: left edges differ
+  - name: a divider stops short of the card
+    css: '.srow + .srow { margin-inline: var(--sp-4) !important; }'
+    expect: the divider stops

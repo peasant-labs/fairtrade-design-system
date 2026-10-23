@@ -10,5 +10,8 @@ requiredViewportNames:
 requiredMutationNames:
   - the card padding shrinks
   - a row loses its side padding
-  - the save status slot follows the control
+  - an idle status reserves room after the control
   - a control overflows its row
+  - the help line is indented
+  - a long value sits in a column of its own
+  - a divider stops short of the card

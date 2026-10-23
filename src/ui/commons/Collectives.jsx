@@ -458,7 +458,6 @@ export function CollectiveSettingsView({ data = {}, actions = {} } = {}) {
   const sections = ['general', 'access', 'members', 'github orgs', 'pull requests', ...(danger ? ['danger zone'] : [])]
   const anchor = (name) => `cmg-settings-${name.replace(/ /g, '-')}`
   const helpOf = (choices) => choices.filter((choice) => choice.help).map((choice) => `${choice.label}: ${choice.help}`).join(' ')
-  const accountHref = hrefFor?.('account')
   return (
     <>
       <div className="iu-page cmg-settings">
@@ -531,7 +530,6 @@ export function CollectiveSettingsView({ data = {}, actions = {} } = {}) {
               value={showOnPullRequests}
               onCommit={write('showOnPullRequests')}
             />
-            <p className="srow-note">automatic linking is now a personal setting, in {accountHref ? <a className="link" href={accountHref}>your settings</a> : 'your settings'}.</p>
           </SettingGroup>
 
           {danger && (

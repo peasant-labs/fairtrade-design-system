@@ -1,24 +1,29 @@
-/* Settings styles — namespaced srow-, tokens only, radius 0. A row is the label column on the
-   shared left edge and the control on the right; below md they stack. Labels and states are mono
-   chrome; help and errors are body prose at the 16px floor. The status mark keeps a fixed slot so
-   a row does not shift when "saving" becomes "saved"; the slot sits before the control, so the
-   control ends on the row's padding and the row is as wide on the right as on the left. Motion
-   only under no-preference. */
+/* Settings styles — namespaced srow-, tokens only, radius 0. Every row is one grid: the left
+   column holds the label and at most one help line on one left edge, the right column holds the
+   value or control, ending at the right padding. A long value (a description) stacks under its
+   label in the left column, at the same left edge, never in a column of its own. Below md the
+   control takes its own line and still ends at the right padding. Labels and states are mono
+   chrome; help and errors are body prose at the 16px floor. The save status sits before the
+   control, so "saving" and "saved" grow leftward and the control never moves; an idle status
+   takes no room. Motion only under no-preference. */
 /* a row: the card padding on the left and the right (equal, so the label starts and the control
    ends the same distance from the card's edges), a steady minimum height, centred content */
 .srow {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: var(--sp-3) var(--sp-5);
   min-height: var(--row-h-comfortable);
   padding: var(--sp-3) var(--card-pad);
 }
+/* the divider spans the card's inner width, row to row */
 .srow + .srow { border-top: var(--bd); }
+.srow > :first-child { grid-column: 1; }
+.srow > :not(:first-child) { grid-column: 2; justify-self: end; }
+/* a long value: under the label, at the label's left edge */
+.srow-stacked > .srow-control { grid-column: 1; justify-self: start; justify-content: flex-start; }
 .srow-text-col {
   display: flex;
-  flex: 1 1 20rem;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--sp-1);
@@ -51,7 +56,7 @@
   padding-inline-start: var(--sp-2);
   border-left: var(--bd-strong);
 }
-.srow-control { display: inline-flex; align-items: center; gap: var(--sp-3); flex: none; min-width: 0; }
+.srow-control { display: inline-flex; align-items: center; justify-content: flex-end; flex: none; min-width: 0; }
 .srow-control .sw-field { margin: 0; }
 /* the switch's state word takes the width of the longer word, so "on" and "off" rows line their
    tracks up */
@@ -63,7 +68,6 @@
   justify-content: flex-end;
   order: -1;
   gap: var(--sp-1);
-  min-width: 6rem;
   font-family: var(--font-mono);
   font-size: var(--fs-label);
   line-height: 1;
@@ -121,9 +125,13 @@
   color: var(--ink-2);
 }
 
+/* a status with something to say keeps a gap from the control; an idle one takes no room */
+.srow-status:not(:empty) { margin-inline-end: var(--sp-3); }
 @media (width < 768px) {
   /* stacked, the control group takes its own line and still ends at the right padding */
-  .srow-control { flex-wrap: wrap; flex-basis: 100%; max-width: 100%; justify-content: flex-end; }
+  .srow { grid-template-columns: minmax(0, 1fr); }
+  .srow > :not(:first-child) { grid-column: 1; }
+  .srow-control { flex-wrap: wrap; max-width: 100%; }
   .srow-text { max-width: 100%; }
   .srow-select { min-width: 0; max-width: 100%; }
   .srow-select .select { min-width: 0; max-width: 100%; }
