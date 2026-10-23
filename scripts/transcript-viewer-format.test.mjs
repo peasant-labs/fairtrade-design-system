@@ -39,6 +39,8 @@ await withMountedSource(async ({ load, mount, React }) => {
     if (row.kind === 'diff-counts') {
       const counts = vm.diffs.map((entry) => ({ adds: entry.adds, dels: entry.dels }))
       report.check(same(counts, [{ adds: row.expected.adds, dels: row.expected.dels }]), `${name}: counts must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(counts)}`)
+      const taskStat = vm.tasks.find((task) => task.turnIndices?.includes(1))?.stat ?? null
+      report.check(taskStat === row.expected.taskStat, `${name}: the task's churn must be ${JSON.stringify(row.expected.taskStat)}, received ${JSON.stringify(taskStat)}`)
       const mounted = await mount(viewer({ activeTab: 'diffs' }))
       const churn = [...mounted.container.querySelectorAll('.txn-diffentry .txn-churn')].map(text)
       report.check(same(churn, [row.expected.churn]), `${name}: counts on the diffs tab must read ${JSON.stringify(row.expected.churn)}, received ${JSON.stringify(churn)}`)

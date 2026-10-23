@@ -35,7 +35,7 @@ payload:
 cases:
   - name: a same-length rewrite counts its lines
     kind: diff-counts
-    expected: {adds: 3, dels: 3, churn: '+3 −3'}
+    expected: {adds: 3, dels: 3, churn: '+3 −3', taskStat: '1 file, +3 −3'}
   - name: thinking counts words in words
     kind: thinking-words
     blocks:

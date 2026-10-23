@@ -12,6 +12,7 @@ requiredCaseNames:
 
 requiredMutationNames:
   - an edit counts its net change
+  - a task counts its net change
   - thinking abbreviates words
   - a model change keeps the raw arrow
   - the last crumb drops its href
@@ -20,10 +21,15 @@ requiredMutationNames:
   - touch screens keep the key hints
 mutations:
   - name: an edit counts its net change
-    file: src/ui/transcript/adapter.js
-    find: "return { hunks, adds, dels }"
-    replace: "return { hunks, adds: Math.max(0, adds - dels), dels: Math.max(0, dels - adds) }"
+    file: src/ui/transcript/adapter.parse.js
+    find: "result = { spans, adds, dels }"
+    replace: "result = { spans, adds: Math.max(0, adds - dels), dels: Math.max(0, dels - adds) }"
     expectedDiagnostic: "a same-length rewrite counts its lines: counts"
+  - name: a task counts its net change
+    file: src/ui/transcript/adapter.parse.js
+    find: "return diff ? { adds: diff.adds, dels: diff.dels } : { adds: 0, dels: 0 }"
+    replace: "return diff ? { adds: Math.max(0, diff.adds - diff.dels), dels: Math.max(0, diff.dels - diff.adds) } : { adds: 0, dels: 0 }"
+    expectedDiagnostic: "a same-length rewrite counts its lines: the task's churn"
   - name: thinking abbreviates words
     file: src/ui/transcript/Thinking.jsx
     find: "{(block.words ?? 0) === 1 ? 'word' : 'words'}"

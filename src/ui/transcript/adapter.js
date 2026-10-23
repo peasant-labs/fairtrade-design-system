@@ -25,7 +25,7 @@
    live in analytics.js.
    ─────────────────────────────────────────────────────────────────────────── */
 
-import { parseArgs, parseResult, extractPath, editPairs, writeContent } from './adapter.parse.js'
+import { parseArgs, parseResult, extractPath, callDiff, diffLines } from './adapter.parse.js'
 import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analytics.js'
 import { zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
 import { aggregateUsage } from './usage.js'
@@ -355,82 +355,19 @@ function makePreview(call) {
   return preview(call.arguments, 80)
 }
 
-/**
- * Dependency-free line diff (LCS) → cooked `DiffLineVM[]`. fairtrade ships no
- * `diff` package, so the adapter computes hunks itself. Line numbers are 1-based
- * within the supplied snippet (the wire carries the edit snippet, not the file
- * offset). Deterministic — no clock/randomness — so it is screenshot-stable.
- * @param {string} oldText
- * @param {string} newText
- * @returns {DiffLineVM[]}
- */
-export function diffLines(oldText, newText) {
-  const a = oldText === '' ? [] : oldText.split('\n')
-  const b = newText === '' ? [] : newText.split('\n')
-  const m = a.length
-  const n = b.length
-  /** @type {number[][]} */
-  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
-  for (let i = m - 1; i >= 0; i--) {
-    for (let j = n - 1; j >= 0; j--) {
-      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
-    }
-  }
-  /** @type {DiffLineVM[]} */
-  const out = []
-  let i = 0
-  let j = 0
-  let oldNo = 1
-  let newNo = 1
-  while (i < m && j < n) {
-    if (a[i] === b[j]) {
-      out.push({ sign: 'ctx', oldNo: String(oldNo++), newNo: String(newNo++), text: a[i] })
-      i++
-      j++
-    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
-      out.push({ sign: 'del', oldNo: String(oldNo++), text: a[i] })
-      i++
-    } else {
-      out.push({ sign: 'add', newNo: String(newNo++), text: b[j] })
-      j++
-    }
-  }
-  while (i < m) out.push({ sign: 'del', oldNo: String(oldNo++), text: a[i++] })
-  while (j < n) out.push({ sign: 'add', newNo: String(newNo++), text: b[j++] })
-  return out
-}
+export { diffLines }
 
 /**
  * Compute the cooked diff hunks + churn for an edit-family / write tool call, or
- * undefined for any other kind.
+ * undefined for any other kind. The churn is the hunks' own + and − lines (see `callDiff`), so the
+ * header always agrees with the diff it heads.
  * @param {ToolCallDetail} call
  * @returns {{ hunks: DiffHunkVM[], adds: number, dels: number } | undefined}
  */
 function buildDiffHunks(call) {
-  const n = call.name.toLowerCase()
-  if (n === 'write') {
-    const content = writeContent(call)
-    return { hunks: [{ lines: diffLines('', content) }], adds: content ? content.split('\n').length : 0, dels: 0 }
-  }
-  if (n === 'edit' || n === 'multiedit' || n === 'notebookedit') {
-    const pairs = editPairs(call)
-    if (pairs.length === 0) return undefined
-    const hunks = pairs.map((p) => ({ lines: diffLines(p.old_string, p.new_string) }))
-    // count the lines the diff adds and removes, not the net change in length: a rewrite of three
-    // lines is +3 −3, never +0 −0. each hunk's trailing empty line (the newline artifact) is not a
-    // line anyone wrote, so it is left out, as the renderer leaves it out
-    let adds = 0
-    let dels = 0
-    for (const hunk of hunks) {
-      const lines = hunk.lines.length > 0 && hunk.lines[hunk.lines.length - 1].text === '' ? hunk.lines.slice(0, -1) : hunk.lines
-      for (const line of lines) {
-        if (line.sign === 'add') adds += 1
-        else if (line.sign === 'del') dels += 1
-      }
-    }
-    return { hunks, adds, dels }
-  }
-  return undefined
+  const diff = callDiff(call)
+  if (!diff) return undefined
+  return { hunks: diff.spans.map((lines) => ({ lines })), adds: diff.adds, dels: diff.dels }
 }
 
 /**
