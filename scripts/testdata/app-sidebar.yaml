@@ -219,6 +219,13 @@ cases:
       first: {count: 1, hidden: 'true', placed: 'true', slides: 'false', ready: ready}
       moved: {count: 1, hidden: 'true', placed: 'true', slides: 'true', ready: ready}
       none: {count: 1, hidden: 'true', placed: 'false', slides: 'false', ready: null}
+  # The column scrolls up and down only: a sideways scroll (a focus or scrollIntoView on anything a
+  # few pixels too wide) goes straight back, so labels are never cut at the left edge.
+  - name: the column never stays scrolled sideways
+    kind: sideways
+    props: {app: docs, currentId: home}
+    shift: 11
+    expected: {scrollLeft: 0}
   # A router link receives the same props an anchor would.
   - name: a link component receives the item props
     kind: link-component

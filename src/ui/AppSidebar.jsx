@@ -485,6 +485,14 @@ export default function AppSidebar({
     return () => observer.disconnect()
   }, [currentId, collapsed, width, groups, drawerOpen])
 
+  // the column scrolls up and down only. overflow-x: hidden still lets a focus or a scrollIntoView
+  // slide it sideways when anything inside is a few pixels too wide for a moment (a host's own
+  // styles, the indicator before a new scrollbar re-measures it), which cuts every label at the left
+  // edge and stays that way. it goes straight back.
+  const keepColumnUpright = useCallback((event) => {
+    if (event.currentTarget.scrollLeft !== 0) event.currentTarget.scrollLeft = 0
+  }, [])
+
   const closeDrawer = useCallback((returnFocus = true) => {
     setDrawerOpen(false)
     if (returnFocus) requestAnimationFrame(() => menuRef.current?.focus())
@@ -643,7 +651,7 @@ export default function AppSidebar({
             <ChevronLeft aria-hidden="true" />
           </button>
         </div>
-        <div ref={scrollRef} className="asb-scroll">
+        <div ref={scrollRef} className="asb-scroll" onScroll={keepColumnUpright}>
           <span
             className="asb-indicator"
             aria-hidden="true"

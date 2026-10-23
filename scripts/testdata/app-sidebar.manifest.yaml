@@ -28,6 +28,7 @@ requiredCaseNames:
   - an account slot replaces the row
   - the menu opens and closes the drawer
   - one indicator slides between current items
+  - the column never stays scrolled sideways
   - a link component receives the item props
 
 requiredMutationNames:
@@ -54,6 +55,7 @@ requiredMutationNames:
   - the indicator slides on its first placement
   - the menu button never becomes the close control
   - the drawer items lose their stagger order
+  - the column stays scrolled sideways
 mutations:
   - name: the current item loses aria-current
     file: src/ui/AppSidebar.jsx
@@ -170,3 +172,8 @@ mutations:
     find: "const title = collapsed ? item.label : undefined"
     replace: "const title = item.label"
     expectedDiagnostic: "items render as links and buttons: home shows its label"
+  - name: the column stays scrolled sideways
+    file: src/ui/AppSidebar.jsx
+    find: "<div ref={scrollRef} className=\"asb-scroll\" onScroll={keepColumnUpright}>"
+    replace: "<div ref={scrollRef} className=\"asb-scroll\">"
+    expectedDiagnostic: "the column never stays scrolled sideways: a sideways scroll must go straight back"
