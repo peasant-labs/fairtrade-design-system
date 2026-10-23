@@ -12,6 +12,8 @@
 formatterCases:
   - {name: a cost with float noise reads at cents, fn: formatCost, input: '0.30000000000000004', expected: '$0.30'}
   - {name: a cost under a cent reads less than a cent, fn: formatCost, input: '1e-7', expected: '<$0.01'}
+  - {name: a cost in scientific notation reads less than a cent, fn: formatCost, input: '2e-8', expected: '<$0.01'}
+  - {name: a fraction of a cent always carries the dollar sign, fn: formatCost, input: '0.0019', expected: '<$0.01'}
   - {name: a zero cost reads zero dollars, fn: formatCost, input: 0, expected: '$0.00'}
   - {name: a large cost is grouped, fn: formatCost, input: '1234.5', expected: '$1,234.50'}
   - {name: a missing cost reads the placeholder, fn: formatCost, input: null, expected: '—'}
@@ -39,8 +41,8 @@ mountedCases:
       completeness: complete
       tokens: {input: 272000, output: 4210, totalTokens: 276210}
       cost: {source: recorded_harness_estimate, input: '1e-7', output: '0.30000000000000004', total: '0.4'}
-    shows: ['$0.30', '<$0.01', '$0.40', '272,000', '276,210']
-    hides: ['0.30000000000000004', '1e-7']
+    shows: ['$0.30', '<$0.01', '$0.40', '272,000', '276,210', 'cache read cost—']
+    hides: ['0.30000000000000004', '1e-7', 'unknown']
   - name: the session usage by scope shows sums at cents
     kind: scopes
     scopes:
@@ -48,8 +50,8 @@ mountedCases:
         ownerCount: 2
         tokens: [{label: total tokens, value: '276210', completeness: complete}]
         cost: [{label: output, value: '0.60000000000000008', completeness: partial}, {label: total, value: unknown, completeness: unknown}]
-    shows: ['276,210 (complete)', '$0.60 (partial)', 'unknown (unknown)']
-    hides: ['0.60000000000000008']
+    shows: ['276,210 (complete)', '$0.60 (partial)', 'total cost—']
+    hides: ['0.60000000000000008', 'unknown (unknown)', 'unknown']
   - name: a turn's token badge reads millions
     kind: turn-tokens
     tokens: {in: 1000000, out: 234567}

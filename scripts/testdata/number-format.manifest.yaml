@@ -4,6 +4,8 @@
 requiredFormatterNames:
   - a cost with float noise reads at cents
   - a cost under a cent reads less than a cent
+  - a cost in scientific notation reads less than a cent
+  - a fraction of a cent always carries the dollar sign
   - a zero cost reads zero dollars
   - a large cost is grouped
   - a missing cost reads the placeholder
@@ -37,6 +39,7 @@ requiredMutationNames:
   - a missing value reads NaN
   - the usage panel shows the raw cost
   - the turn badge divides by a thousand
+  - an unreported sum reads unknown twice
 mutations:
   - name: a cost shows its recorded digits
     file: src/ui/format.js
@@ -55,11 +58,16 @@ mutations:
     expectedDiagnostic: "a NaN count reads the placeholder"
   - name: the usage panel shows the raw cost
     file: src/ui/transcript/UsageDisclosure.jsx
-    find: "const shownCost = (value) => (value == null || value === 'unknown' ? 'unknown' : formatCost(value))"
-    replace: "const shownCost = (value) => (value == null ? 'unknown' : String(value))"
+    find: "const shownCost = (value) => (value == null || value === 'unknown' ? MISSING_NUMBER : formatCost(value))"
+    replace: "const shownCost = (value) => (value == null ? MISSING_NUMBER : String(value))"
     expectedDiagnostic: "a turn's usage panel shows costs at cents"
   - name: the turn badge divides by a thousand
     file: src/ui/transcript/TurnCard.jsx
     find: "{formatCount(turn.tokens.in + turn.tokens.out)} tokens"
     replace: "{(turn.tokens.in + turn.tokens.out) / 1000}k tokens"
     expectedDiagnostic: "a turn's token badge reads millions"
+  - name: an unreported sum reads unknown twice
+    file: src/ui/transcript/UsageDisclosure.jsx
+    find: "const shownSum = (field, show) => (field.value === 'unknown' ? MISSING_NUMBER : `${show(field.value)} (${field.completeness})`)"
+    replace: "const shownSum = (field) => `${field.value} (${field.completeness})`"
+    expectedDiagnostic: "the session usage by scope shows sums at cents"

@@ -142,7 +142,7 @@ try {
     const scopeSummary = await page.$('.txn-usage-scopes > summary')
     await scopeSummary.click()
     assert.deepEqual(await page.$$eval('.txn-usage-scopes .txn-usage-scope-label', nodes => nodes.map(node => node.textContent)), probe.ownerHeadings)
-    assert.ok(await page.$eval('.txn-usage-scopes', element => element.textContent.includes('0 (partial)') && element.textContent.includes('unknown (unknown)')))
+    assert.ok(await page.$eval('.txn-usage-scopes', element => element.textContent.includes('0 (partial)') && !element.textContent.includes('unknown (unknown)')))
     await shot('scopes')
     await scopeSummary.click()
     await page.keyboard.down('Control')
