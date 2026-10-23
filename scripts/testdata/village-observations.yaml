@@ -91,10 +91,10 @@ cases:
     text: [Acme Platform, retained, '2026-10-15T09:00:00Z', updated]
   - name: never-fetched
     props: {<<: *base, domains: [{id: catalog, label: catalog, result: never fetched}], collectives: [], categories: []}
-    text: [unknown, No saved relevant collectives]
+    text: [unknown, no collectives saved yet]
   - name: known-empty
     props: {<<: *base, collectives: []}
-    text: [No saved relevant collectives]
+    text: [no collectives saved yet]
   - name: running
     props: {<<: *base, fetching: true, status: fetching metadata}
     text: [fetching metadata]

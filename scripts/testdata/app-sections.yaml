@@ -27,7 +27,7 @@ demo:
   # every entry mounts a non-empty body when selected by id (?section=<id> for route-only ones)
   bodies:
     - {name: home body, section: home, text: your sessions, tableCounts: ['showing 7 of 1,284']}
-    - {name: village body, section: village, text: Relevant collectives only.}
+    - {name: village body, section: village, text: Acme Platform}
     - {name: settings body, section: settings, text: publishing plan}
     - {name: analytics body, section: analytics, text: project overview}
     - {name: changes body, section: changes, text: lines of work}

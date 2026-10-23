@@ -4,7 +4,7 @@ cases:
     component: default
     query: '?app=graph&section=village'
     probes:
-      - {selector: '.vobs', text: Relevant collectives only.}
+      - {selector: '.vobs', text: Acme Platform}
       - {selector: '.vobs [data-domain="catalog"]', text: updated}
       - {selector: '.vobs [data-domain="history"]', text: '2026-10-15T09:00:00Z'}
       - {selector: 'nav[aria-label="peasant sections"]', text: back, absent: online}

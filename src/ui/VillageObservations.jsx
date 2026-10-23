@@ -52,7 +52,6 @@ export default function VillageObservations({
   if (view !== undefined && view !== 'catalog' && view !== 'history') throw new Error('VillageObservations: controlled view must be catalog or history; supply a registered view or omit it for local selection.')
   if (categoryId !== undefined && !categories.some((category) => category.id === categoryId)) throw new Error('VillageObservations: controlled categoryId is not present in categories; supply the selected category or clear the controlled selection when changing scope.')
   const metadata = <>
-    <p>Observations do not grant current permission. Earlier details remain dated evidence.</p>
     <div role="status" className="vobs-status">{status ?? (fetching ? 'fetching metadata' : '')}</div>
     <Issue issue={issue} />
     <dl className="vobs-domains">{domains.map((domain) => <div key={domain.id} data-domain={domain.id}>
@@ -63,8 +62,7 @@ export default function VillageObservations({
   </>
   const catalog = <div className="vobs-catalog">
     {selectedView === 'catalog' && metadata}
-    <p>Relevant collectives only. Tracking does not join a collective or grant access.</p>
-    {collectives.length === 0 ? <p>No saved relevant collectives. Fetch metadata to check available sources.</p> :
+    {collectives.length === 0 ? <p>no collectives saved yet</p> :
       <ul className="vobs-list">{collectives.map((row) => <li key={row.id}>
         <div className="vobs-row-head"><strong>{row.name}</strong>{onTrack && typeof row.tracking === 'boolean' ?
           <Button onClick={() => onTrack(row.id, !row.tracking)}>{row.tracking ? 'untrack' : 'track'}<span className="sr-only"> {row.name}</span></Button> : null}</div>
@@ -82,7 +80,6 @@ export default function VillageObservations({
       id: category.id, label: category.label,
       content: <div aria-busy={category.loading || undefined}>
         {selectedView === 'history' && selectedCategory === category.id && metadata}
-        <p>Saved evidence is dated. A confirmed receipt does not mean collective approval. Unknown coverage is not an empty history.</p>
         <p className="vobs-summary"><span className="tnum">{category.total}</span> saved items; coverage: {category.coverage}</p>
         <Issue issue={category.issue} />
         {category.conflict ? <Button disabled={!onRestart} onClick={() => onRestart?.(category.id)}>restart this category</Button> : <>
@@ -91,13 +88,13 @@ export default function VillageObservations({
             <dl className="vobs-facts"><div><dt>recorded at</dt><dd><ObservationDate value={row.occurredAt} /></dd></div>
               {row.details?.map((detail) => <div key={detail.label}><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}
             </dl>
-          </li>)}</ul> : <p>No saved items on this page.</p>}
+          </li>)}</ul> : <p>nothing saved on this page</p>}
           <div className="vobs-pager" inert={category.loading || !onPageChange ? true : undefined}>
             <Pagination label={`${category.label} pages`} page={category.page} total={category.pageCount} onChange={(page) => onPageChange?.(category.id, page)} />
           </div>
         </>}
       </div>,
-    }))} /> : <p>No saved contribution evidence. Fetch metadata to check available history.</p>}
+    }))} /> : <p>no contribution history saved yet</p>}
   </div>
   return <section className="vobs" aria-label="online observations">
     <header className="vobs-header"><div><h2>online</h2><p className="vobs-scope">{villageLabel}<br />{accountLabel}</p></div>
