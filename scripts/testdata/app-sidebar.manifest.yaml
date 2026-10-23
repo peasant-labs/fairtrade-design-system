@@ -5,10 +5,14 @@ requiredCaseNames:
   - items render as links and buttons
   - a button item reports its id
   - group labels and landmarks
+  - the sidebar keeps one order
+  - the theme toggle names the theme it switches to
+  - search opens the app's search
   - the brand is the mark alone
   - the switcher leaves out the current app
   - every other app with an address is listed
   - an entry's own target is kept
+  - a tagged entry with no address is text
   - the toggle collapses to a rail
   - collapsed state and width persist
   - stored values are restored and clamped
@@ -32,6 +36,9 @@ requiredMutationNames:
   - another app opens in the same tab
   - the brand shows the wordmark
   - the collapse handle leaves the brand row
+  - the footer loses the theme toggle
+  - search leaves the sidebar
+  - the theme toggle names the current theme
   - escape does not close the drawer
   - a storage read can throw
   - the indicator slides on its first placement
@@ -60,13 +67,13 @@ mutations:
     expectedDiagnostic: "items render as links and buttons: collectives text"
   - name: the switcher lists apps it cannot reach
     file: src/ui/AppSidebar.jsx
-    find: "const shown = apps.filter((entry) => entry.id !== app && entry.href)"
+    find: "const shown = apps.filter((entry) => entry.id !== app && (entry.href || entry.tag))"
     replace: "const shown = apps.filter((entry) => entry.id !== app)"
     expectedDiagnostic: "the switcher leaves out the current app: switcher entries"
   - name: the switcher lists the current app
     file: src/ui/AppSidebar.jsx
-    find: "const shown = apps.filter((entry) => entry.id !== app && entry.href)"
-    replace: "const shown = apps.filter((entry) => entry.href)"
+    find: "const shown = apps.filter((entry) => entry.id !== app && (entry.href || entry.tag))"
+    replace: "const shown = apps.filter((entry) => entry.href || entry.tag)"
     expectedDiagnostic: "the switcher leaves out the current app: switcher entries"
   - name: another app opens in the same tab
     file: src/ui/AppSidebar.jsx
@@ -108,3 +115,18 @@ mutations:
     find: "<li key={item.id} style={{ '--asb-i': listIndex++ }}>"
     replace: "<li key={item.id} style={{ '--asb-i': 0 }}>"
     expectedDiagnostic: "the menu opens and closes the drawer: the"
+  - name: the footer loses the theme toggle
+    file: src/ui/AppSidebar.jsx
+    find: "{showTheme ? <ThemeItem theme={theme} onThemeChange={onThemeChange} /> : null}"
+    replace: "null"
+    expectedDiagnostic: "the sidebar keeps one order: the sidebar order"
+  - name: search leaves the sidebar
+    file: src/ui/AppSidebar.jsx
+    find: "{search ? <SearchItem search={search} onNavigate={onNavigate} index={listIndex++} /> : null}"
+    replace: "{null}"
+    expectedDiagnostic: "the sidebar keeps one order: the sidebar order"
+  - name: the theme toggle names the current theme
+    file: src/ui/AppSidebar.jsx
+    find: "const next = theme === 'light' ? 'dark' : 'light'"
+    replace: "const next = theme"
+    expectedDiagnostic: "the theme toggle names the theme it switches to: the toggle must read"

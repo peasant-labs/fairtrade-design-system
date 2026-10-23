@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /* Mounted-source gate for AppSidebar: links and buttons with aria-current on the current item, the
    icon or swatch, the external marker and its spoken suffix, the group landmarks and labels, the
-   brand as the mark alone, the switcher to the other apps (new tab by default), the collapse
-   handle in the brand row, the remembered collapsed state and width
+   brand as the mark alone, the one order every app gets (brand row, nav groups, search, switcher,
+   footer with the theme toggle then the account), the search item, the theme toggle, the switcher
+   to the other apps (new tab by default), the collapse handle in the brand row, the remembered collapsed state and width
    (including a throwing store and a null key), the keyboard resize, the account row, the
    narrow-viewport menu (its button doubling as the close control, the drawer items in stagger
    order), the one sliding current-item indicator and a router link component. jsdom has no
@@ -117,6 +118,48 @@ await withMountedSource(async ({ load, mount, window, React }) => {
           text: spoken(item),
         }))
         report.check(same(entries, row.expected), `${name}: switcher entries must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(entries)}`)
+        await mounted.unmount()
+      } else if (row.kind === 'structure') {
+        const extra = row.search ? { search: { ...row.search, onOpen: () => {} } } : {}
+        const mounted = await mount(React.createElement(AppSidebar, propsFor(row, { ...extra, onThemeChange: () => {} })))
+        const aside = mounted.container.querySelector('aside')
+        const tokenOf = (node) => {
+          if (node.matches('nav.asb-apps')) return 'apps'
+          if (node.matches('nav.asb-group')) return `nav:${node.getAttribute('aria-label')}`
+          if (node.matches('.asb-search')) return 'search'
+          if (node.matches('.asb-foot')) return `foot:${[...node.children].map((child) => (child.matches('.asb-theme') ? 'theme' : child.matches('.asb-me') ? 'account' : child.className)).join('+')}`
+          return node.className
+        }
+        const order = [
+          aside?.firstElementChild?.classList.contains('asb-top') ? 'top' : aside?.firstElementChild?.className,
+          ...[...(aside?.querySelector('.asb-scroll')?.children ?? [])].filter((node) => !node.matches('.asb-indicator')).map(tokenOf),
+        ]
+        report.check(same(order, row.expected), `${name}: the sidebar order must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(order)}`)
+        await mounted.unmount()
+      } else if (row.kind === 'theme') {
+        const calls = []
+        const mounted = await mount(React.createElement(AppSidebar, propsFor(row, { onThemeChange: (next) => calls.push(next) })))
+        const look = () => {
+          const toggle = mounted.container.querySelector('.asb-foot button.asb-theme')
+          return toggle && { name: toggle.getAttribute('aria-label'), title: toggle.getAttribute('title'), label: toggle.querySelector('.asb-label')?.textContent, icon: [...toggle.querySelector('.asb-ic svg')?.classList ?? []].find((c) => c.startsWith('lucide-')) }
+        }
+        report.check(same(look(), row.expected.first), `${name}: the toggle must read ${JSON.stringify(row.expected.first)}, received ${JSON.stringify(look())}`)
+        const toggle = mounted.container.querySelector('button.asb-theme')
+        if (toggle) await mounted.act(() => click(window, toggle))
+        report.check(same(calls, row.expected.calls), `${name}: onThemeChange must report ${JSON.stringify(row.expected.calls)}, received ${JSON.stringify(calls)}`)
+        await mounted.rerender(React.createElement(AppSidebar, propsFor(row, { theme: row.expected.calls[0], onThemeChange: (next) => calls.push(next) })))
+        report.check(same(look(), row.expected.after), `${name}: after the switch the toggle must read ${JSON.stringify(row.expected.after)}, received ${JSON.stringify(look())}`)
+        await mounted.rerender(React.createElement(AppSidebar, propsFor(row, { onThemeChange: undefined })))
+        report.check(!mounted.container.querySelector('.asb-theme'), `${name}: without onThemeChange there must be no theme toggle`)
+        await mounted.unmount()
+      } else if (row.kind === 'search') {
+        let opened = 0
+        const mounted = await mount(React.createElement(AppSidebar, propsFor(row, { search: { ...row.search, onOpen: () => { opened += 1 } } })))
+        const button = mounted.container.querySelector('.asb-search button.asb-item')
+        const actual = button && { name: spoken(button), title: button.getAttribute('title'), keys: button.getAttribute('aria-keyshortcuts'), hint: button.querySelector('.asb-kbd')?.textContent ?? null }
+        report.check(same(actual, row.expected.button), `${name}: the search item must be ${JSON.stringify(row.expected.button)}, received ${JSON.stringify(actual)}`)
+        if (button) await mounted.act(() => click(window, button))
+        report.check(opened === 1, `${name}: choosing search must call onOpen once, received ${opened}`)
         await mounted.unmount()
       } else if (row.kind === 'brand') {
         const mounted = await mount(React.createElement(AppSidebar, propsFor(row)))
