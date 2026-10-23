@@ -25,11 +25,13 @@ package is pre-1.0, so minor/patch semantics are best-effort.
   - Thinking reads "30 words".
   - A model change reads "claude-fable-5 → claude-opus-4-8".
   - Diff +/− counts come from the diff's own lines, so "+0 −0" no longer
-    shows on a real change.
+    shows on a real change. A task's churn in the trace outline ("1 file,
+    +A −D") counts from the same lines.
   - The filters rail is gone on tabs that have no filters.
   - A Cursor prompt shows without its `<user_query>` wrapper or the context
-    tags before it. The wire keeps the text, and prose that only mentions the
-    tag is shown as written.
+    tags before it. Display only: a Cursor user turn gets `displayContent` (and
+    its task `displayPrompt`), which the turn and the trace outline render;
+    `content` stays as recorded, and other harnesses are untouched.
 - The last breadcrumb is a link when it has an `href`. One without an `href`
   carries `aria-current="page"`.
 - `RedactionReview` and `DiffView` keep the badge comma against the category
@@ -38,9 +40,10 @@ package is pre-1.0, so minor/patch semantics are best-effort.
   "no collectives saved yet", "nothing saved on this page" and "no
   contribution history saved yet".
 - `ProjectOverview`'s typical vs. tail reads "2m, 5m", with the p90 in AA ink.
-- From 768px, `.iu-page` takes the `.asb-page` inset (32px top and sides, 48px
-  bottom) and `.iu-page-title` the hero size. A `.iu-view` that holds a page
-  adds no inset of its own.
+- `.iu-page` takes the `.asb-page` inset: 32px top and sides and 48px bottom
+  from 768px, 16px sides below, and `.iu-page-title` the hero size from 768px.
+  A `.iu-view` that holds a page, or the analytics overview, adds no inset of
+  its own, and the overview keeps its 16px sides on a phone.
 - `AppSidebar` never stays scrolled sideways, so a focus can no longer cut the
   labels at the left edge.
 
