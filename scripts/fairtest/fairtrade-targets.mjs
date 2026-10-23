@@ -157,8 +157,8 @@ const PRODUCT_HANDLES = Object.freeze({
 
 /**
  * Section ids the graph surface may report as active: the local app's section
- * registry, home, village and settings in the navigation, analytics, changes, and the
- * code map by route only.
+ * registry, home and settings in the navigation, village (online), analytics,
+ * changes, and the code map by route only.
  * @type {readonly string[]}
  */
 const PRODUCT_SECTIONS = Object.freeze(['home', 'village', 'settings', 'analytics', 'changes', 'map'])

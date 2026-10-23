@@ -83,7 +83,10 @@ test('local village mounted catalog, history and independent pages', async ({ pa
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
   const shell = page.locator('#inuse')
   const body = shell.locator('.vobs')
-  await expect(shell.getByRole('button', { name: 'online', exact: true })).toHaveAttribute('aria-current', 'page')
+  // online is reached by route only: the section nav offers back and does not list it
+  const sectionNav = shell.getByRole('navigation', { name: 'peasant sections' })
+  await expect(sectionNav.getByRole('button', { name: 'back', exact: true })).toBeVisible()
+  await expect(sectionNav.getByRole('button', { name: 'online', exact: true })).toHaveCount(0)
   await expect(body.locator('strong').filter({ hasText: 'Acme Platform' })).toBeVisible()
   await body.getByRole('button', { name: 'fetch metadata' }).click()
   await expect(body.getByRole('status')).toContainText('partial fetch')
@@ -136,8 +139,12 @@ test('local village mounted catalog, history and independent pages', async ({ pa
   await expect(shell.getByText('on this computer', { exact: false }).first()).toBeVisible()
   await shell.getByRole('button', { name: 'settings', exact: true }).click()
   await expect(shell.getByText('changes save right away', { exact: false })).toBeVisible()
-  await shell.getByRole('button', { name: 'online', exact: true }).click()
+  // the online page is reached by its route again, and back leaves it for home
+  await page.reload()
   await expect(body).toBeVisible()
+  await shell.getByRole('button', { name: 'back', exact: true }).click()
+  await expect(shell.getByText('your sessions', { exact: false }).first()).toBeVisible()
+  await expect(body).toHaveCount(0)
 })
 
 test('persistent tools and paragraph separation on long mounted evidence', async ({page}, info)=>{

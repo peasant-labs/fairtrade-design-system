@@ -4,6 +4,23 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.34 - 2026-10-23
+
+### Changed
+
+- `LOCAL_APP_SECTIONS`: the online entry (id `village`, label `online`) is now
+  `inNav: false`. The local app's section nav lists home and settings; the
+  online page keeps its id, label and route and is reached by route only, like
+  analytics, changes and code map. The local app linked to the hosted app twice
+  (this nav entry and its app switcher), so the duplicate leaves the nav.
+- The in-use demo derives this from the registry: its nav lists home and
+  settings, and `?section=village` opens the online page with a back to home.
+
+### Compatibility
+
+- No export, prop or token change. A consumer that derives its nav from the
+  registry drops the online entry on re-pin and keeps its `/village` route.
+
 ## 0.0.33 - 2026-10-23
 
 ### Changed
