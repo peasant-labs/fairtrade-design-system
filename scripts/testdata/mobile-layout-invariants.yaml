@@ -131,3 +131,12 @@ invariants:
       - "<div className=\"dlg-head\">"
       - "<h3 id={labelId}>"
       - "btn-icon\""
+  - id: srow-text-stacks-on-mobile
+    file: src/ui/Settings.css
+    description: >-
+      below the md breakpoint a SettingRow's text value (a value and its edit button, a folder
+      list) reads under its label at the label's left edge. Beside the label it took the auto
+      column and squeezed the label to about 80px at 390.
+    mustContainAll:
+      - ".srow-text-row > .srow-control { grid-column: 1 / -1; justify-self: start; justify-content: flex-start; }"
+      - ".srow-text-row .srow-text { justify-content: flex-start; }"

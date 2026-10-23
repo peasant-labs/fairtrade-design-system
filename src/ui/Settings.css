@@ -138,6 +138,10 @@
   /* a phone keeps the row on one line where it fits: the label on the left, the control at the
      right padding. a select, which runs long, drops to its own line, still at the right padding */
   .srow:has(.srow-select) > .srow-control { grid-column: 1 / -1; }
+  /* a text value and its edit button read under the label, at its left edge, so the label keeps
+     the row's width instead of being squeezed beside a path */
+  .srow-text-row > .srow-control { grid-column: 1 / -1; justify-self: start; justify-content: flex-start; }
+  .srow-text-row .srow-text { justify-content: flex-start; }
   .srow-control { flex-wrap: wrap; max-width: 100%; }
   .srow-text { max-width: 100%; }
   .srow-select { min-width: 0; max-width: 100%; }

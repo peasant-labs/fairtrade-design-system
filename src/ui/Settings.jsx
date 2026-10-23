@@ -203,7 +203,7 @@ export function SettingRow({ label, help, control, value, options = [], onCommit
 
   // a long text value reads under its label rather than squeezed into the right-hand column
   const stacked = stack ?? (control === 'text' && String(shown ?? '').length > STACK_AFTER)
-  const cls = ['srow', `srow-${status}`, stacked ? 'srow-stacked' : '', className].filter(Boolean).join(' ')
+  const cls = ['srow', `srow-${status}`, control === 'text' ? 'srow-text-row' : '', stacked ? 'srow-stacked' : '', className].filter(Boolean).join(' ')
   return (
     <div className={cls} data-status={status} {...rest}>
       <div className="srow-text-col">
