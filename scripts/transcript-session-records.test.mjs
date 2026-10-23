@@ -22,7 +22,11 @@ const text = (node) => (node?.textContent ?? '').replace(/\s+/g, ' ').trim()
 await withMountedSource(async ({ load, mount, React }) => {
   const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
-  const cook = (row) => adaptTranscript({ ...fixture.payload, ...(row.harness ? { harness: row.harness } : {}) })
+  const cook = (row) => adaptTranscript({
+    ...fixture.payload,
+    ...(row.harness ? { harness: row.harness } : {}),
+    ...(row.turns ? { turns: row.turns, turnCount: row.turns.length } : {}),
+  })
   const viewer = (vm) => React.createElement(TranscriptViewer, { viewModel: vm, capabilities: CAPABILITIES })
 
   for (const row of fixture.cases) {
@@ -59,10 +63,20 @@ await withMountedSource(async ({ load, mount, React }) => {
       report.check(mounted.container.querySelectorAll('.swf-item').length > 0, `${name}: the steps list must render its user turns`)
       report.check(zero === row.expected.zeroLabels, `${name}: step durations must leave out zero, received ${JSON.stringify(labels)}`)
       await mounted.unmount()
+    } else if (row.kind === 'user-content') {
+      const content = vm.turns.find((turn) => turn.index === row.turn)?.content ?? null
+      report.check(content === row.expected.content, `${name}: cooked content must be ${JSON.stringify(row.expected.content)}, received ${JSON.stringify(content)}`)
+      const mounted = await mount(viewer(vm))
+      const shown = text(mounted.container.querySelector(`article[data-turn="${row.turn}"]`))
+      report.check(shown.includes(row.expected.content), `${name}: the mounted turn must show ${JSON.stringify(row.expected.content)}, received ${JSON.stringify(shown)}`)
+      for (const hidden of row.expected.hidden) {
+        report.check(!shown.includes(hidden), `${name}: the mounted turn must not show ${JSON.stringify(hidden)}, received ${JSON.stringify(shown)}`)
+      }
+      await mounted.unmount()
     } else {
       throw new Error(`${FIXTURE}: unknown case kind ${row.kind}`)
     }
   }
 })
 
-report.finish(`${fixture.cases.length} cases over session metadata records, unknown times, the session duration and the steps list.`)
+report.finish(`${fixture.cases.length} cases over session metadata records, unknown times, the session duration, the steps list and the shown prompt.`)

@@ -221,6 +221,44 @@ summarizePromptCases:
   - name: a long input is truncated with an ellipsis at 80 characters
     raw: '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
     expected: '0123456789012345678901234567890123456789012345678901234567890123456789012345678…'
+  - name: a cursor wrapper after a timestamp keeps only the query
+    raw: "<timestamp>Mon 9:00</timestamp>\n<user_query>\ninspect the package. then report\n</user_query>"
+    expected: 'Inspect the package'
+
+# cleanSessionTitle shows a stored title as written: only the harness's <user_query> wrapper (and
+# the context tags before it) goes, and whitespace collapses. The first six cases are the local
+# app's own title fixture, so the two places that show a title agree.
+cleanSessionTitleCases:
+  - name: plain title stays as written
+    title: 'Fix the auth retry'
+    expected: 'Fix the auth retry'
+  - name: cursor wrapper is dropped
+    title: '<user_query>Inspect the fortuna package and summarize its files.</user_query>'
+    expected: 'Inspect the fortuna package and summarize its files.'
+  - name: cursor wrapper after a timestamp is dropped
+    title: '<timestamp>Mon 9:00</timestamp> <user_query> Inspect the package </user_query>'
+    expected: 'Inspect the package'
+  - name: unclosed cursor wrapper keeps the words after it
+    title: '<user_query>Rename the workspace slug helper and update its call…'
+    expected: 'Rename the workspace slug helper and update its call…'
+  - name: redaction markers stay as written
+    title: 'Fix /<PATH>/app/src/auth.go'
+    expected: 'Fix /<PATH>/app/src/auth.go'
+  - name: whitespace is collapsed
+    title: "  Profile   the\nforecast "
+    expected: 'Profile the forecast'
+  - name: prose that mentions the wrapper stays as written
+    title: 'Why does Cursor wrap prompts in <user_query> tags?'
+    expected: 'Why does Cursor wrap prompts in <user_query> tags?'
+  - name: a user_info prelude is dropped
+    title: "<user_info>OS: darwin</user_info>\n<user_query>\nwhy is the build red?\n</user_query>"
+    expected: 'why is the build red?'
+  - name: words after the closing tag are kept
+    title: '<user_query>Fix the retry</user_query> and the timeout'
+    expected: 'Fix the retry and the timeout'
+  - name: undefined returns an empty string
+    title: null
+    expected: ''
 
 projectLabelCases:
   - name: a posix path takes the last segment

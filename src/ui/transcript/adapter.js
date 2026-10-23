@@ -30,6 +30,7 @@ import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analyt
 import { zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
 import { aggregateUsage } from './usage.js'
 import { isKnownTime } from './time.js'
+import { unwrapUserQuery } from './title.js'
 
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
@@ -958,7 +959,8 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     }
     for (const tc of toolCalls) toolCallsById.set(tc.id, tc)
 
-    let content = t.content ?? ''
+    // a user prompt shows without a harness's <user_query> wrapper (display only; the wire keeps it)
+    let content = t.role === 'user' ? unwrapUserQuery(t.content ?? '') : (t.content ?? '')
     /** @type {import('./view-model.js').ThinkingVM | undefined} */
     let thinking
     if (t.entryType === 'thinking' && (protectedTurn(t) || content.trim() !== '')) {
