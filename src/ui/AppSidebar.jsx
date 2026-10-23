@@ -1,19 +1,23 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
-import { AppWindow, BookOpen, ChevronLeft, ExternalLink, Globe, Laptop } from 'lucide-react'
+import { AppWindow, BookOpen, ChevronLeft, ExternalLink, Globe, Laptop, MessagesSquare, Moon, Search, Sun } from 'lucide-react'
 import './AppSidebar.css'
 
 /* the shared app sidebar every peasant app screen mounts: the hosted app (online), the local app
    (local) and the docs. one nav DOM serves both layouts, and css picks which one shows:
 
-     desktop (width >= 768px)  a sticky full-height column. the brand mark sits on top, then the
-                               caller's groups, then the switcher to the other apps, then the account
-                               row. the collapse control is a small handle seated on the column's
+     desktop (width >= 768px)  a sticky full-height column in one fixed order that every app gets:
+                                 1. the brand mark, with the collapse control
+                                 2. the app's nav groups
+                                 3. search, when the app has one (`search`)
+                                 4. the switcher to the other apps
+                                 5. the footer: the theme toggle (`theme`), then the account
+                               the collapse control is a small handle seated on the column's
                                right edge, level with the brand. collapsed, it is an icon rail:
                                labels stay in the DOM as the accessible names (visually hidden) and
                                every item carries a title tooltip. a separator on the right edge
                                resizes it by pointer or keys.
      narrow (width < 768px)    a top bar with the brand mark and a menu button. the menu opens the same
-                               nav as an opaque drawer from the left (no glass, no blur), always
+                               nav, in the same order, as an opaque drawer from the left (no glass, no blur), always
                                expanded; the menu button turns into its close control, and Escape,
                                the scrim, the button or a nav link closes it, focus returning to
                                the button.
@@ -37,7 +41,9 @@ import './AppSidebar.css'
  * @typedef {Object} AppSidebarApp
  * @property {string} id         'online' | 'local' | 'docs', or another app id (shown with a generic icon).
  * @property {string} label      the switcher label.
- * @property {string} [href]     where the app lives. An app without an href is omitted.
+ * @property {string} [href]     where the app lives. An app without an href is omitted, unless it has a tag.
+ * @property {string} [tag]      a short note after the label, e.g. 'soon'. With no href the entry is shown as
+ *                               text (a place that does not exist yet), not a link.
  * @property {string} [target]   default '_blank': another app opens in a new tab.
  * @property {string} [rel]      default 'noopener noreferrer' when the target is '_blank'.
  */
@@ -66,6 +72,14 @@ import './AppSidebar.css'
  */
 
 /**
+ * @typedef {Object} AppSidebarSearch
+ * @property {() => void} onOpen     opens the app's search (a command palette, a search page).
+ * @property {string} [label]        default 'search'.
+ * @property {string} [shortcut]     the key hint shown beside the label, e.g. '⌘K'.
+ * @property {string} [keyShortcuts] the same keys for aria-keyshortcuts, e.g. 'Meta+K'.
+ */
+
+/**
  * @typedef {Object} AppSidebarAccount
  * @property {string} handle   shown as @handle; its first letter fills the square avatar.
  * @property {string} [href]   makes the account row a link.
@@ -79,6 +93,9 @@ import './AppSidebar.css'
  * @property {string} [currentId]                   the id of the current item (aria-current="page").
  * @property {string} [homeHref]                    the brand links here.
  * @property {string} [brand]                       the brand's accessible name and tooltip, default 'peasant'.
+ * @property {AppSidebarSearch} [search]           the app's search, placed after its nav groups.
+ * @property {'light'|'dark'} [theme]               the current theme; with onThemeChange, the footer leads with the theme toggle.
+ * @property {(next: 'light'|'dark') => void} [onThemeChange]  called with the theme to switch to.
  * @property {AppSidebarAccount} [account]
  * @property {import('react').ReactNode} [accountSlot]  replaces the default account row content.
  * @property {import('react').ComponentType<any>} [LinkComponent]  a router link; receives href, className,
@@ -115,7 +132,7 @@ export const APP_SIDEBAR_APPS = Object.freeze([
   Object.freeze({ id: 'docs', label: 'docs' }),
 ])
 
-const APP_ICONS = { online: Globe, local: Laptop, docs: BookOpen }
+const APP_ICONS = { online: Globe, local: Laptop, docs: BookOpen, community: MessagesSquare }
 const RESIZE_STEP = 16
 const EXTERNAL_SUFFIX = ', opens outside this app'
 const NEW_TAB_SUFFIX = ', opens in a new tab'
@@ -246,7 +263,7 @@ function SidebarItem({ item, current, Link, onNavigate }) {
 /* the other apps: the one the reader is in is not a destination, so it is left out, and an app
    with nowhere to go is left out too. each opens in a new tab unless its entry names a target. */
 function AppSwitcher({ app, apps, Link, onNavigate, firstIndex }) {
-  const shown = apps.filter((entry) => entry.id !== app && entry.href)
+  const shown = apps.filter((entry) => entry.id !== app && (entry.href || entry.tag))
   if (shown.length === 0) return null
   return (
     <nav className="asb-group asb-apps" aria-label="apps">
@@ -255,16 +272,62 @@ function AppSwitcher({ app, apps, Link, onNavigate, firstIndex }) {
           const item = { id: entry.id, label: entry.label, icon: APP_ICONS[entry.id] ?? AppWindow }
           const target = entry.target ?? '_blank'
           const rel = entry.rel ?? (target === '_blank' ? 'noopener noreferrer' : undefined)
+          // the space keeps the note a separate word in the text; flex layout ignores it
+          const tag = entry.tag ? <>{' '}<span className="asb-tag">{entry.tag}</span></> : null
           return (
             <li key={entry.id} style={{ '--asb-i': firstIndex + index }}>
-              <Link href={entry.href} className="asb-item" title={entry.label} target={target} rel={rel} onClick={onNavigate}>
-                <ItemBody item={item} external suffix={target === '_blank' ? NEW_TAB_SUFFIX : EXTERNAL_SUFFIX} />
-              </Link>
+              {entry.href ? (
+                <Link href={entry.href} className="asb-item" title={entry.tag ? `${entry.label}, ${entry.tag}` : entry.label} target={target} rel={rel} onClick={onNavigate}>
+                  <ItemBody item={item} external suffix={target === '_blank' ? NEW_TAB_SUFFIX : EXTERNAL_SUFFIX} />
+                  {tag}
+                </Link>
+              ) : (
+                <span className="asb-item asb-item-soon" title={`${entry.label}, ${entry.tag}`}>
+                  <ItemBody item={item} external={false} />
+                  {tag}
+                </span>
+              )}
             </li>
           )
         })}
       </ul>
     </nav>
+  )
+}
+
+/* the app's search: one item after the nav groups, its key hint beside the label */
+function SearchItem({ search, onNavigate, index }) {
+  const label = search.label ?? 'search'
+  return (
+    <div className="asb-group asb-search">
+      <ul className="asb-list">
+        <li style={{ '--asb-i': index }}>
+          <button
+            type="button"
+            className="asb-item"
+            title={search.shortcut ? `${label} (${search.shortcut})` : label}
+            aria-keyshortcuts={search.keyShortcuts}
+            onClick={() => { onNavigate(); search.onOpen?.() }}
+          >
+            <span className="asb-ic" aria-hidden="true"><Search /></span>
+            <span className="asb-label">{label}</span>
+            {search.shortcut ? <kbd className="asb-kbd" aria-hidden="true">{search.shortcut}</kbd> : null}
+          </button>
+        </li>
+      </ul>
+    </div>
+  )
+}
+
+/* the theme toggle: it names the theme it switches to, with that theme's icon */
+function ThemeItem({ theme, onThemeChange }) {
+  const next = theme === 'light' ? 'dark' : 'light'
+  const name = `switch to ${next} mode`
+  return (
+    <button type="button" className="asb-item asb-theme" aria-label={name} title={name} onClick={() => onThemeChange(next)}>
+      <span className="asb-ic" aria-hidden="true">{next === 'dark' ? <Moon /> : <Sun />}</span>
+      <span className="asb-label">{next} mode</span>
+    </button>
   )
 }
 
@@ -283,8 +346,9 @@ function AccountRow({ account, Link, onNavigate }) {
 }
 
 /**
- * The shared app sidebar: the brand mark, a collapse handle on the column's edge, the caller's nav
- * groups, the switcher to the other apps and an account row. A sticky resizable column on desktop
+ * The shared app sidebar, in one order for every app: the brand mark with a collapse handle on the
+ * column's edge, the caller's nav groups, search, the switcher to the other apps, then the footer
+ * (the theme toggle, then the account). A sticky resizable column on desktop
  * that collapses to an icon rail; a top bar plus an opaque drawer below 768px.
  * @param {AppSidebarProps} props
  */
@@ -295,6 +359,9 @@ export default function AppSidebar({
   currentId,
   homeHref,
   brand = 'peasant',
+  search,
+  theme,
+  onThemeChange,
   account,
   accountSlot,
   LinkComponent,
@@ -467,6 +534,7 @@ export default function AppSidebar({
   // a running index over every listed item, so the drawer can stagger them in order
   let listIndex = 0
   const shownAccount = accountSlot ?? (account ? <AccountRow account={account} Link={Link} onNavigate={onNavigate} /> : null)
+  const showTheme = (theme === 'light' || theme === 'dark') && typeof onThemeChange === 'function'
 
   return (
     <div
@@ -536,9 +604,17 @@ export default function AppSidebar({
             </nav>
           ))}
 
+          {search ? <SearchItem search={search} onNavigate={onNavigate} index={listIndex++} /> : null}
+
           <AppSwitcher app={app} apps={apps} Link={Link} onNavigate={onNavigate} firstIndex={listIndex} />
 
-          {shownAccount ? <div className="asb-me">{shownAccount}</div> : null}
+          {/* the footer: the theme toggle, then the account */}
+          {showTheme || shownAccount ? (
+            <div className="asb-foot">
+              {showTheme ? <ThemeItem theme={theme} onThemeChange={onThemeChange} /> : null}
+              {shownAccount ? <div className="asb-me">{shownAccount}</div> : null}
+            </div>
+          ) : null}
         </div>
 
         {collapsed ? null : (

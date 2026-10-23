@@ -47,6 +47,28 @@ cases:
       navNames: [peasant sections, help, apps]
       visibleLabels: [help]
       asideName: peasant
+  # One order for every app: the brand row (outside the scrolling nav), the app's nav groups,
+  # search, the switcher to the other apps, then the footer with the theme toggle and the account.
+  - name: the sidebar keeps one order
+    kind: structure
+    props: {app: online, theme: light, account: {handle: mira}}
+    search: {label: search, shortcut: '⌘K', keyShortcuts: Meta+K}
+    expected: [top, 'nav:peasant sections', 'nav:help', search, apps, 'foot:theme+account']
+  # The theme toggle names the theme it switches to, with that theme's icon, and reports it.
+  - name: the theme toggle names the theme it switches to
+    kind: theme
+    props: {app: online, theme: light}
+    expected:
+      first: {name: switch to dark mode, title: switch to dark mode, label: dark mode, icon: lucide-moon}
+      calls: [dark]
+      after: {name: switch to light mode, title: switch to light mode, label: light mode, icon: lucide-sun}
+  # Search: one item after the nav groups, its key hint beside the label, opening the app's search.
+  - name: search opens the app's search
+    kind: search
+    props: {app: online}
+    search: {label: search, shortcut: '⌘K', keyShortcuts: Meta+K}
+    expected:
+      button: {name: search, title: search (⌘K), keys: Meta+K, hint: ⌘K}
   # The brand: the wheat mark alone in the top bar and in the column, its name kept as the
   # accessible name and the tooltip. The full logo with the wordmark belongs to the landing page.
   - name: the brand is the mark alone
@@ -68,6 +90,16 @@ cases:
     expected:
       - {label: online, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'online, opens in a new tab'}
       - {label: local, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'local, opens in a new tab'}
+  - name: a tagged entry with no address is text
+    kind: switcher
+    props:
+      app: online
+      apps:
+        - {id: docs, label: docs, href: 'https://docs.invalid/'}
+        - {id: community, label: community, tag: soon}
+    expected:
+      - {label: docs, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'docs, opens in a new tab'}
+      - {label: community, tag: SPAN, current: null, target: null, rel: null, text: community soon}
   - name: an entry's own target is kept
     kind: switcher
     props:

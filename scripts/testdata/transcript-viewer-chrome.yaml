@@ -101,9 +101,9 @@ interactions:
     kind: more-menu-absent
     capabilities: {canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false}
 
-# The meta row names the count prompts. Absent reads unknown and a recorded zero reads 0.
+# The meta row names the count prompts. An unmeasured count is left out; a recorded zero reads 0.
 promptLabels:
-  - {name: an unmeasured count reads unknown prompts, absent: true, expected: unknown prompts}
+  - {name: an unmeasured count is left out, absent: true, expected: null}
   - {name: a recorded zero reads 0 prompts, value: 0, expected: 0 prompts}
   - {name: one prompt reads singular, value: 1, expected: 1 prompt}
   - {name: several prompts read plural, value: 4, expected: 4 prompts}

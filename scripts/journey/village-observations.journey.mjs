@@ -138,7 +138,7 @@ test('local village mounted catalog, history and independent pages', async ({ pa
   await expect(shell.locator('.vobs')).toBeVisible()
   await expect(shell.getByText('on this computer', { exact: false }).first()).toBeVisible()
   await shell.getByRole('button', { name: 'settings', exact: true }).click()
-  await expect(shell.getByText('changes save right away', { exact: false })).toBeVisible()
+  await expect(shell.getByText('publishing plan', { exact: false })).toBeVisible()
   // the online page is reached by its route again, and back leaves it for home
   await page.reload()
   await expect(body).toBeVisible()

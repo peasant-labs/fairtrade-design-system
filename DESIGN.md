@@ -573,7 +573,13 @@ render the same system.
 - **Tabs:** mono lowercase, `--ink-3` at rest, the active tab in `--ink` with a 2px amber underline;
   counts are tabular in `--ink-4`.
 - **Trails:** breadcrumb, step indicator, tabs and pagination; orientation lives here.
-- **App sidebar:** `AppSidebar` is the one sidebar for every app screen (online, local and docs):
+- **App sidebar:** `AppSidebar` is the one sidebar for every app screen (online, local and docs),
+  in one order that every app gets, so no app can drift: (1) the brand row, the mark with the
+  collapse control; (2) the app's nav groups; (3) search, when the app has one (`search`: one item
+  with a quiet mono key hint); (4) the switcher to the other apps; (5) the footer, the theme toggle
+  (`theme` with `onThemeChange`: one item naming the theme it switches to, "switch to dark mode",
+  with that theme's icon) and then the account. The collapsed rail shows each of them as an icon
+  with a title, and the phone drawer keeps the same order. The parts:
   the wheat mark alone (its name is the accessible name and the tooltip; the full logo with the
   wordmark belongs to the landing page only), a collapse handle seated on the column's right edge
   level with the mark (a small square whose chevron turns to point the way the column will go)
@@ -581,7 +587,8 @@ render the same system.
   Home and End on the separator), groups of items with an icon or a colour swatch, the current item
   marked with `aria-current` and the amber inset bar, an outside-the-app marker, the switcher to
   the other apps (never the one the reader is in; each opens in a new tab unless its entry names a
-  target) and the account row. Brand text is `peasant`, never `peasant labs`.
+  target; a tagged entry with no address, such as community with "soon", shows as text with its
+  note) and the account row. Brand text is `peasant`, never `peasant labs`.
   Collapse and width persist per browser. Below 768px it becomes a top bar whose menu opens the
   same nav as an opaque drawer; the menu button then becomes the drawer's one close control.
   `AppSidebarLayout` places it beside the page. Its motion runs only under
@@ -736,9 +743,17 @@ vector chrome and ASCII never mix on one element.
   constructions.
 - **Don't** decorate chrome as a fake terminal: no `//` comment markers, no `>` prompt prefixes on
   titles, labels or bullets (the active nav marker is the one `>`), no eyebrow or kicker labels above
-  a heading, no decorative captions under imagery. A section is a title and at most one subtitle.
+  a heading, no decorative captions under imagery. A presentation-site section is a title and at
+  most one subtitle; an app page or section is a title alone (see the next rule).
   Bullets use a plain `-` or a small box marker in `--ink-4` or `--ink-5`. Form-field labels, control
   sub-labels and section titles are functional, not eyebrows.
+
+- **Don't** put an explainer sentence beside or under a page or section heading in an app (online,
+  local, docs chrome). App pages lead with the title and the controls; the heads lay out cleanly
+  with the title alone. What may still sit under a heading is information, not a description of the
+  page: a figure or a count, user content (a collective's purpose), a row's own help, or a warning
+  that restates a server decision (that observations grant no permission). The in-use demo follows
+  the rule, so it never reintroduces an explainer.
 
 ### Known conflicts with the demo
 None currently registered. Resolved decisions and their source/record evidence are checked by

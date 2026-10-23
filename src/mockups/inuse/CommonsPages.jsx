@@ -100,7 +100,6 @@ export function VillageHome({ onNavigate }) {
     <div className="iu-page">
       <header className="iu-page-head">
         <h2 className="iu-page-title">your transcripts</h2>
-        <p className="iu-page-sub">transcripts you published from peasant. only the collectives you picked can read each one.</p>
       </header>
       <StatsStrip items={HOME_STATS} label="your transcripts in numbers" />
       <div className="cmg-home">
@@ -212,7 +211,6 @@ export function AccountSettingsView({ actions = {} } = {}) {
       <div className="iu-page cmg-settings">
         <header className="iu-page-head">
           <h2 className="iu-page-title">your settings</h2>
-          <p className="iu-page-sub">switches apply right away. text changes when you press edit.</p>
         </header>
         <SettingsLayout sections={ACCOUNT_SECTIONS} currentId={ACCOUNT_SECTIONS[0].id} spy>
           <SettingGroup id="account-profile" label="profile" defaultOpen>

@@ -36,6 +36,7 @@
 @media (pointer: coarse) {
   .pub-bar-action,
   .pub-foot .btn-primary { min-height: var(--target-comfortable); }
+  .pub-bar .menu-trigger.btn-icon { width: var(--target-comfortable); height: var(--target-comfortable); }
 }
 
 @media (prefers-reduced-motion: no-preference) {

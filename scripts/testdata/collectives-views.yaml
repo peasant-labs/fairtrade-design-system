@@ -134,7 +134,7 @@ cases:
         members: [{handle: '@alice-dev', name: Alice Developer, role: owner}, {handle: '@bob-ai', role: member}]
         memberCount: 2
     expect:
-      text: ['Curated Showcase, settings', changes save right away., no org linked, a collective links one github org today., your settings]
+      text: ['Curated Showcase, settings', no org linked, a collective links one github org today., your settings]
       absentText: [acme]
       selects:
         who can publish: {values: [open, verified_only, curated], selected: curated}

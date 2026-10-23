@@ -62,7 +62,6 @@ export default function VillageObservations({
     </div>)}</dl>
   </>
   const catalog = <div className="vobs-catalog">
-    <p>Read saved observations offline. Fetch checks metadata only, without downloading transcripts or publishing.</p>
     {selectedView === 'catalog' && metadata}
     <p>Relevant collectives only. Tracking does not join a collective or grant access.</p>
     {collectives.length === 0 ? <p>No saved relevant collectives. Fetch metadata to check available sources.</p> :

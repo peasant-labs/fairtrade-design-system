@@ -206,10 +206,38 @@ span.asb-item { cursor: default; }
 .asb-ext .lucide { width: var(--ic-sm); height: var(--ic-sm); }
 
 .asb-apps .asb-item { text-transform: lowercase; }
+/* a tagged place that does not exist yet ('soon'): text, not a link, with its note as a small chip */
+.asb-item-soon { color: var(--ink-3); }
+.asb-tag {
+  flex: none;
+  margin-left: auto;
+  padding: 0 var(--sp-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  letter-spacing: 0;
+  color: var(--ink-3);
+  border: var(--bd);
+}
+.asb-ext + .asb-sr + .asb-tag { margin-left: var(--sp-2); }
 .asb-apps { padding-top: var(--sp-3); border-top: var(--bd); }
 
 /* ── account row ──────────────────────────────────────────────────────── */
-.asb-me { margin-top: auto; padding-top: var(--sp-3); border-top: var(--bd); }
+/* the footer: the theme toggle, then the account, pinned to the column's foot */
+.asb-foot { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-1); margin-top: auto; padding-top: var(--sp-3); border-top: var(--bd); }
+
+/* the search item's key hint: quiet mono text, not a boxed key */
+.asb-kbd {
+  flex: none;
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0;
+  color: var(--ink-4);
+  background: none;
+  border: 0;
+  padding: 0;
+}
 .asb-account {
   display: flex;
   align-items: center;
@@ -289,7 +317,9 @@ span.asb-item { cursor: default; }
   .asb[data-collapsed="true"] .asb-top { padding-inline: var(--sp-2); }
   .asb[data-collapsed="true"] .asb-top { justify-content: center; }
   .asb[data-collapsed="true"] .asb-glabel,
-  .asb[data-collapsed="true"] .asb-ext { display: none; }
+  .asb[data-collapsed="true"] .asb-ext,
+  .asb[data-collapsed="true"] .asb-kbd,
+  .asb[data-collapsed="true"] .asb-tag { display: none; }
   .asb[data-collapsed="true"] .asb-item,
   .asb[data-collapsed="true"] .asb-account { justify-content: center; padding: 0; }
   .asb[data-collapsed="true"] .asb-initial { display: inline-flex; }
@@ -406,19 +436,19 @@ span.asb-item { cursor: default; }
   .asb-scrim { transition: opacity var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
   .asb[data-drawer-open="true"] .asb-panel { transition: transform var(--dur-3) var(--ease-out), visibility 0s; }
   .asb[data-drawer-open="true"] .asb-scrim { transition: opacity var(--dur-3) var(--ease-out), visibility 0s; }
-  .asb-panel .asb-list > li, .asb-panel .asb-me {
+  .asb-panel .asb-list > li, .asb-panel .asb-foot {
     opacity: 0;
     transform: translateX(calc(-1 * var(--sp-2)));
     transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
   }
   .asb[data-drawer-open="true"] .asb-panel .asb-list > li,
-  .asb[data-drawer-open="true"] .asb-panel .asb-me {
+  .asb[data-drawer-open="true"] .asb-panel .asb-foot {
     opacity: 1;
     transform: none;
     transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
     transition-delay: calc(min(var(--asb-i, 0), 10) * var(--asb-stagger));
   }
-  .asb[data-drawer-open="true"] .asb-panel .asb-me { transition-delay: calc(10 * var(--asb-stagger)); }
+  .asb[data-drawer-open="true"] .asb-panel .asb-foot { transition-delay: calc(10 * var(--asb-stagger)); }
   /* the current-item block arrives with the first items rather than before them */
   .asb:not([data-drawer-open="true"]) .asb-indicator { opacity: 0; }
   .asb[data-drawer-open="true"] .asb-indicator { transition: opacity var(--dur-2) var(--ease-out) calc(2 * var(--asb-stagger)); }

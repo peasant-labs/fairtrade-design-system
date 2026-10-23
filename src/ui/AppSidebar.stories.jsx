@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import {
   BookOpen, Building2, Code, Compass, Download, EyeOff, FileText, FlaskConical, GitPullRequest, GraduationCap,
@@ -12,7 +12,9 @@ import { SettingGroup, SettingRow } from './Settings.jsx'
    .storybook/preview.jsx plus the component's own sheet; the theme toolbar flips data-theme. each
    story mounts the sidebar inside AppSidebarLayout beside a placeholder page, the way an app screen
    does. Online, Local and Docs show the three apps' navs; Collapsed starts as the icon rail; Mobile
-   runs at a phone viewport, where the sidebar is a top bar whose menu opens the drawer; AccountSettings
+   runs at a phone viewport, where the sidebar is a top bar whose menu opens the drawer. every story
+   shows the one order the sidebar keeps in every app: the brand row, the app's groups, search (Local),
+   the switcher, then the footer with the theme toggle and the account. AccountSettings
    is an account settings page in the AppPage frame with the settings section bar in its body, the
    sidebar left as it is on every other page. choosing an
    in-app item makes it current, so the indicator can be seen sliding. every story passes
@@ -28,12 +30,8 @@ const meta = {
 export default meta
 
 const APP_HREFS = { online: '#online', local: '#local', docs: '#docs' }
-const apps = APP_SIDEBAR_APPS.map((entry) => ({ ...entry, href: APP_HREFS[entry.id] }))
-
-const help = { id: 'help', ariaLabel: 'help', items: [
-  { id: 'docs', label: 'docs', href: '#docs', icon: BookOpen },
-  { id: 'community', label: 'community', href: '#community', icon: MessagesSquare, external: true, title: 'community, opens outside peasant' },
-] }
+// the switcher: the other apps, then community, which does not exist yet: a tagged entry with no href
+const apps = [...APP_SIDEBAR_APPS.map((entry) => ({ ...entry, href: APP_HREFS[entry.id] })), { id: 'community', label: 'community', tag: 'soon' }]
 
 const ONLINE_GROUPS = [
   { id: 'main', ariaLabel: 'peasant sections', items: [
@@ -45,7 +43,6 @@ const ONLINE_GROUPS = [
     { id: 'peasant-dev', label: 'peasant-dev', href: '#peasant-dev', swatch: 'var(--clay)', depth: 1 },
     { id: 'reading-group', label: 'reading-group', href: '#reading-group', swatch: 'var(--teal)', depth: 1 },
   ] },
-  help,
 ]
 
 const LOCAL_GROUPS = [
@@ -54,7 +51,6 @@ const LOCAL_GROUPS = [
     { id: 'collectives', label: 'collectives', href: '#online-collectives', icon: Users, external: true, title: 'collectives, opens online' },
     { id: 'settings', label: 'settings', href: '#settings', icon: Settings },
   ] },
-  help,
 ]
 
 const DOCS_GROUPS = [
@@ -123,14 +119,34 @@ function SettingsPage() {
   )
 }
 
+/* the theme the story frame is drawn in: read from the toolbar's data-theme, flipped by the
+   sidebar's own toggle the way an app's theme hook would */
+function useStoryTheme() {
+  const read = () => (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark')
+  const [theme, setTheme] = useState(read)
+  // the toolbar sets data-theme after the first render; follow it
+  useEffect(() => {
+    const observer = new MutationObserver(() => setTheme(read()))
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    setTheme(read())
+    return () => observer.disconnect()
+  }, [])
+  const change = (next) => {
+    setTheme(next)
+    document.documentElement.setAttribute('data-theme', next)
+  }
+  return [theme, change]
+}
+
 function Frame({ title, groups, currentId, page, ...props }) {
   const [current, setCurrent] = useState(currentId)
+  const [theme, setTheme] = useStoryTheme()
   const live = useMemo(() => groups.map((group) => ({
     ...group,
     items: group.items.map((item) => (item.external ? item : { ...item, onSelect: setCurrent })),
   })), [groups])
   return (
-    <AppSidebarLayout sidebar={<AppSidebar apps={apps} storageKey={null} homeHref="#home" groups={live} currentId={current} {...props} />}>
+    <AppSidebarLayout sidebar={<AppSidebar apps={apps} storageKey={null} homeHref="#home" groups={live} currentId={current} theme={theme} onThemeChange={setTheme} {...props} />}>
       {page ?? <PlaceholderPage title={title} />}
     </AppSidebarLayout>
   )
@@ -175,7 +191,7 @@ export const AccountSettings = {
 }
 
 export const Local = {
-  render: () => <Frame title="sessions" app="local" groups={LOCAL_GROUPS} currentId="home" account={{ handle: 'mira' }} />,
+  render: () => <Frame title="sessions" app="local" groups={LOCAL_GROUPS} currentId="home" account={{ handle: 'mira' }} search={{ onOpen: () => {}, shortcut: '⌘K', keyShortcuts: 'Meta+K' }} />,
 }
 
 export const Docs = {

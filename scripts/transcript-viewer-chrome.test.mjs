@@ -142,7 +142,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const extra = row.absent ? { inputSubmissionCount: undefined } : { inputSubmissionCount: row.value }
     const mounted = await mount(viewer({}, extra))
     const items = [...mounted.container.querySelectorAll('.txn-meta .metaitem')].map((node) => node.textContent.replace(/\s+/g, ' ').trim())
-    report.check(items.includes(row.expected), `${row.name}: expected a meta item ${JSON.stringify(row.expected)}, received ${JSON.stringify(items)}`)
+    if (row.expected === null) report.check(!items.some((text) => /prompt/.test(text)), `${row.name}: no prompt figure may show, received ${JSON.stringify(items)}`)
+    else report.check(items.includes(row.expected), `${row.name}: expected a meta item ${JSON.stringify(row.expected)}, received ${JSON.stringify(items)}`)
     report.check(!items.some((text) => text.includes('input submission')), `${row.name}: the meta row must not say input submissions`)
     await mounted.unmount()
   }

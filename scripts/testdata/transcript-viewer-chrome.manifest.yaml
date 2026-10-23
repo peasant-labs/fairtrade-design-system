@@ -26,7 +26,7 @@ requiredInteractionNames:
   - the more menu no longer offers chat with trace
   - the more menu is absent when no capability gives it an item
 requiredPromptLabelNames:
-  - an unmeasured count reads unknown prompts
+  - an unmeasured count is left out
   - a recorded zero reads 0 prompts
   - one prompt reads singular
   - several prompts read plural

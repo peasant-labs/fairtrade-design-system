@@ -178,6 +178,16 @@
   .term { transition: border-color var(--dur-1) var(--ease-standard),
                       color var(--dur-1) var(--ease-standard); }
 }
+/* a metadata figure with a definition (the transcript meta row's author and tokens) reads like
+   every other figure in its row: the row's mono label face and ink, no dotted underline. it still
+   opens its definition on focus or tap. */
+.term.metaitem {
+  border-bottom: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  color: var(--ink-3);
+}
 .term:hover,
 .term-anchor.is-pinned .term {
   color: var(--ink);

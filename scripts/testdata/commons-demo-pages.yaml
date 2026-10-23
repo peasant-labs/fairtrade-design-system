@@ -33,20 +33,20 @@ pages:
   - name: a collective
     view: collective-detail
     nav: [home, collectives]
-    text: [Acme Platform, who can read, who can publish, your role, '248 transcripts', '12 members', github orgs, a collective links one github org today., '1 owner, 7 members, 4 contributors', transcripts 248, showing 5 of 248]
+    text: [Acme Platform, who can read, who can publish, your role, '248 transcripts', '12 members', github orgs, '1 owner, 7 members, 4 contributors', transcripts 248, showing 5 of 248]
     absentText: [public, showing 5 of 5]
     tableCounts: [showing 5 of 248]
     buttons: [settings, more, manage]
   - name: collective settings
     view: collective-settings
     nav: [home, collectives]
-    text: [changes save right away., github orgs, danger zone]
+    text: [github orgs, danger zone]
     switches: [show transcripts on pull requests]
     selectOptions: [public]
     absentText: [automatic linking when a pull request opens]
   - name: account settings
     view: account
-    text: [your settings, switches apply right away.]
+    text: [your settings, discoverable profile]
     switches: [discoverable profile, link my transcripts to my pull requests automatically]
     buttons: [sign out, sign out everywhere, delete account]
   - name: transcript page

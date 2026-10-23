@@ -205,7 +205,6 @@ export default function ProjectOverview({
             <ChartCard
               icon={BarChart3}
               title="sessions per week"
-              subtitle="agent sessions bucketed by iso week"
               aside={`${formatNumber(data.totalSessions)} total`}
             >
               <ChartBar
@@ -224,8 +223,8 @@ export default function ProjectOverview({
               title="weekly active contributors"
               subtitle={
                 effectiveWeeklyView === 'new'
-                  ? `new contributors per week, ${formatNumber(sumValues(weekPoints(data.newContributorVelocity, 'newContributors')))} new`
-                  : `distinct contributors active each week, ${formatNumber(sumValues(weekPoints(data.weeklyActiveContributors, 'contributors')))} active`
+                  ? `${formatNumber(sumValues(weekPoints(data.newContributorVelocity, 'newContributors')))} new`
+                  : `${formatNumber(sumValues(weekPoints(data.weeklyActiveContributors, 'contributors')))} active`
               }
               aside={
                 <WeeklyMetricToggle
@@ -259,7 +258,6 @@ export default function ProjectOverview({
             <ChartCard
               icon={UserPlus}
               title="new contributors per week"
-              subtitle="first recorded session, by contributor"
               aside={`${formatNumber(sumValues(weekPoints(data.newContributorVelocity, 'newContributors')))} new`}
             >
               <ChartBar
@@ -293,7 +291,6 @@ export default function ProjectOverview({
             <ChartCard
               icon={PieChart}
               title="outcome distribution"
-              subtitle="share of session outcomes"
               aside={`${formatNumber(outcomeTotal)} total`}
             >
               <OutcomeDonut data={data.outcomeDistribution} />
@@ -311,7 +308,6 @@ export default function ProjectOverview({
           <ChartCard
             icon={Users}
             title="contributors"
-            subtitle="rolled up, sorted by session volume"
             aside={`${formatNumber(data.perContributorBreakdown.length)} people`}
             className="gan-tablecard"
           >
