@@ -582,7 +582,7 @@ render the same system.
 - **App sidebar:** `AppSidebar` is the one sidebar for every app screen (online, local and docs),
   in one order that every app gets, so no app can drift: (1) the brand row, the mark with the
   collapse control; (2) the app's nav groups; (3) search, when the app has one (`search`: one item
-  with a quiet mono key hint); (4) the switcher to the other apps; (5) the footer, one compact row
+  with a quiet mono key hint); (4) the switcher (the docs and community); (5) the footer, one compact row
   pinned under the nav with a hairline above it: the account on the left (avatar or initial and
   handle, or the host's signed-out slot) at the nav icons' inset, and on the right an icon-only
   square theme toggle (`theme` with `onThemeChange`, named for the theme it switches to, "switch to
@@ -595,8 +595,8 @@ render the same system.
   down to an icon rail whose labels become titles, a resizable width (pointer drag, or arrow keys,
   Home and End on the separator), groups of items with an icon or a colour swatch, the current item
   marked with `aria-current` and the amber inset bar, an outside-the-app marker, the switcher to
-  the other apps (never the one the reader is in; each opens in a new tab unless its entry names a
-  target; the switcher always ends with community as a place that does not exist yet, text marked
+  the docs (never the app the reader is in, and never online or local, in any app; each opens in a
+  new tab unless its entry names a target; the switcher always ends with community as a place that does not exist yet, text marked
   `aria-disabled` with a quiet "soon" note in the trailing slot and no hover or press, until an app
   names its own community entry) and the account row. Brand text is `peasant`, never `peasant labs`.
   Collapse and width persist per browser. Below 768px it becomes a top bar whose menu opens the
@@ -658,7 +658,9 @@ the right column holds the value or control, ending at the right padding. A long
 description) stacks under its label at the same left edge, never in a column of its own, and a
 divider spans the card's inner width. No free sentence sits between rows: a note that matters
 becomes a row. The save status sits before the control and takes no room while idle, so "saving"
-and "saved" grow leftward and the control never moves. The card inset gate checks all of it.
+and "saved" grow leftward and the control never moves. On a phone a row stays on one line where
+it fits; a select drops to its own line at the right padding. The card inset gate checks all of it.
+No provenance chip ("not in peasant config", "this computer only") sits on a setting.
 
 ### Data tables and charts
 The data families are the data table, pagination, accordion, timeline, toast and date range.

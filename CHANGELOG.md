@@ -41,10 +41,21 @@ package is pre-1.0, so minor/patch semantics are best-effort.
   left edge, and the value or control ends at the right padding. A long text
   value (over 40 characters, or `stack`) stacks under its label at the same left
   edge. An idle save status takes no room, so the control sits at the right
-  padding and never moves when a status appears.
+  padding and never moves when a status appears. On a phone the row stays on one
+  line where it fits; a select drops to its own line at the right padding.
+- The in-use demo's local settings drop their "not in peasant config" chips.
+- `AppSidebar`'s switcher never lists online or local, in any app.
+  `APP_SIDEBAR_APPS` is now docs only; community as soon follows on its own,
+  and the app the reader is in is never listed.
+- `PublishDialog` takes `checking` (`{ stage, note?, progress? }`). While
+  checking, it shows the step being done in place of "checking for sensitive
+  content", a determinate count ("120 of 468") and a quiet note on why publish
+  waits, all inside the status region.
 - `PublishDialog`: the scan-failure box spans the section's full width with the
-  card padding, and an optional `scan.failureDetail` (the actionable detail)
-  shows behind a "details" disclosure in it. The unchecked auto-publish line
+  card padding. An optional `scan.failureAction` (`{ label, onSelect, busy? }`)
+  renders a button in the box, and an optional `scan.failureDetail` (the
+  actionable detail) shows as pre-wrapped mono text behind a "details"
+  disclosure. The unchecked auto-publish line
   shows only the host's `hint`; with none, nothing ("off, change it in
   settings" is gone). The checked consent sentence is unchanged.
 - `CollectiveSettingsView` drops the free sentence under the pull requests row
