@@ -29,9 +29,9 @@ export const seriesVar = (color) => SERIES_VAR[color] || 'var(--chart-1)'
    nav + ARIA, a neuroinclusive win), and static-first animation. */
 export const cartesianProps = () => ({
   accessibilityLayer: true,
-  // right margin clears the last x-tick label (line series sit point-to-edge); left is small
-  // because the YAxis carries its own width.
-  margin: { top: 8, right: 18, bottom: 4, left: 4 },
+  // right margin clears the whole last x-tick label ("10-19" centred on the plot's end; line
+  // series sit point-to-edge); left is small because the YAxis carries its own width.
+  margin: { top: 8, right: 28, bottom: 4, left: 4 },
 })
 export const noAnim = { isAnimationActive: false }
 
