@@ -4,6 +4,34 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.33 - 2026-10-23
+
+### Changed
+
+- `AppSidebar` moves, only when motion is allowed and only on transform and
+  opacity, and every transition can be interrupted. The phone drawer slides in
+  from its edge and out faster, the scrim fades, and the drawer's items stagger
+  in. The menu glyph turns into a cross and the menu button becomes the
+  drawer's one close control. One indicator slides between current items
+  instead of jumping. Expanding the rail fades its labels in from a 4px offset
+  while the width snaps. Nav items press to 0.98. The resize edge shows a
+  faint line under a hovering pointer and firms up when pressed.
+- Reduced motion makes every one of these changes instant.
+
+### Compatibility
+
+- No API or prop change. The separate close button inside the drawer is gone;
+  the menu button (named "close the menu" while the drawer is open) closes it.
+
+### Tests
+
+- A Playwright journey checks, in both themes and both motion preferences,
+  that the indicator rests on the current item on desktop and inside the phone
+  drawer, that the drawer opens to the edge and closes out of view, and that
+  reduced motion moves nothing perceptibly.
+- The mounted sidebar gate covers the close control, the stagger order and when
+  the indicator may slide, with three new production mutations.
+
 ## 0.0.32 - 2026-10-23
 
 ### Added
