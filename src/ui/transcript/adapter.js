@@ -29,6 +29,7 @@ import { parseArgs, parseResult, extractPath, editPairs, writeContent, countDiff
 import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analytics.js'
 import { zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
 import { aggregateUsage } from './usage.js'
+import { isKnownTime } from './time.js'
 
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
@@ -139,6 +140,42 @@ function validateTurnEvidence(turns) {
       throw Object.assign(new TypeError(`Fairtrade prefilterTurns refused turn at position ${position} during evidence validation: a source reference or provenance field is malformed. No turns were filtered. Correct the producer using the canonical schema and retry.`), { cause })
     }
   })
+}
+
+/* Claude Code writes session metadata as records of their own (a custom title, an agent name, an
+   ai title); peasant keeps each as a top-level system entry whose whole content is the record's
+   preview: "custom-title: <title>", "agent name: <name>", "session title: <title>", or the bare
+   "agent renamed" / "session title set" when the record carries no value. They describe the
+   session, not the conversation, so they are not turns. Matched only on that exact shape: a real
+   system turn (several lines, tool calls, another harness, a sub-agent) is never dropped. */
+const SESSION_METADATA_PREVIEW = /^(custom-title|agent name|session title): \S/
+const SESSION_METADATA_BARE = new Set(['agent renamed', 'session title set'])
+
+/**
+ * Is this wire turn one of Claude Code's session metadata records rather than conversation?
+ * @param {TurnDetail} turn
+ * @param {string | undefined} harness  the session's harness
+ * @returns {boolean}
+ */
+export function isSessionMetadataTurn(turn, harness) {
+  if (harness !== 'claude-code' || turn.role !== 'system') return false
+  if ((turn.depth ?? 0) !== 0 || (turn.toolCalls?.length ?? 0) > 0) return false
+  const content = (turn.content ?? '').trim()
+  if (content === '' || content.includes('\n')) return false
+  return SESSION_METADATA_PREVIEW.test(content) || SESSION_METADATA_BARE.has(content)
+}
+
+/**
+ * A turn whose timestamp is unknown (missing, zero, epoch or Go zero-time) carries none at all,
+ * so no relative time, date or duration is ever derived from it. Fails closed: the turn is kept,
+ * its time is dropped.
+ * @param {TurnDetail} turn
+ * @returns {TurnDetail}
+ */
+function withKnownTime(turn) {
+  if (turn.timestamp === undefined || turn.timestamp === null || isKnownTime(turn.timestamp)) return turn
+  const { timestamp: _unknown, ...rest } = turn
+  return /** @type {TurnDetail} */ (rest)
 }
 
 /**
@@ -519,8 +556,9 @@ function cookSession(payload, git) {
   const session = {
     id: payload.id,
     harness: payload.harness,
-    startTime: payload.startTime,
-    endTime: payload.endTime,
+    // an unknown session time (zero, epoch, Go zero-time) is empty, never a date
+    startTime: isKnownTime(payload.startTime) ? payload.startTime : '',
+    endTime: isKnownTime(payload.endTime) ? payload.endTime : '',
     durationMins: payload.durationMins,
     totalTokens: payload.totalTokens,
     tokensIn: payload.tokensIn,
@@ -872,7 +910,10 @@ function cookRelationships(relationships, navigation) {
  */
 function cookPartition(payload, completeTurns, nativeMetadata, partition, annotations, analytics, visibleIndices) {
   const stickyModels = resolveStickyModels(completeTurns, payload.model)
-  const filteredTurns = payload.harness === 'pi' ? completeTurns : prefilterTurns(completeTurns)
+  // session metadata records are not conversation, and an unknown time is no time at all
+  const filteredTurns = (payload.harness === 'pi' ? completeTurns : prefilterTurns(completeTurns))
+    .filter((turn) => !isSessionMetadataTurn(turn, payload.harness))
+    .map(withKnownTime)
   const visibleTurnIndices = visibleIndices === undefined ? null : new Set(visibleIndices)
   const turns = visibleTurnIndices === null ? filteredTurns : filteredTurns.filter((turn) => visibleTurnIndices.has(turn.index))
   const labels = computeTurnLabels(turns)

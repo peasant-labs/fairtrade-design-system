@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ListTree, ChevronDown, TriangleAlert } from 'lucide-react'
+import { formatDurationMs } from './transcript/time.js'
 import './StepsWaterfall.css'
 
 /* StepsWaterfall — a "what happened, in what order, how long" per-task timeline, ported in intent
@@ -14,18 +15,9 @@ import './StepsWaterfall.css'
    tasks carry a clay marker + the word "error" + an icon, so the failure never rides on colour
    alone (WCAG 1.4.1). tokens only, hairline, mono, calm, square (radius 0). */
 
-/** Human-readable ms duration: "4.2s", "42s", "2m 14s", "1.5h". Tabular-friendly, no leading zeros. */
+/** Human-readable ms duration in the one transcript format: "820ms", "4.2s", "2m 14s", "1h 12m"; zero or unknown reads as nothing. */
 export function formatDuration(ms) {
-  if (!Number.isFinite(ms) || ms <= 0) return '0s'
-  const s = Math.round(ms / 1000)
-  if (s < 10) return `${(ms / 1000).toFixed(1)}s`
-  if (s < 60) return `${s}s`
-  const m = Math.floor(s / 60)
-  const rem = s % 60
-  if (m < 60) return rem ? `${m}m ${rem}s` : `${m}m`
-  const h = Math.floor(m / 60)
-  const remM = m % 60
-  return remM ? `${h}h ${remM}m` : `${h}h`
+  return formatDurationMs(ms)
 }
 
 /** Collapse whitespace + truncate to n chars with an ellipsis. Pure display — value unchanged. */
@@ -102,8 +94,10 @@ export default function StepsWaterfall({
       {/* Header: total duration + task count + a collapse-all toggle. */}
       <div className="swf-head">
         <span className="swf-head-meta">
-          <span className="swf-head-total tnum">{formatDuration(total)}</span>
-          <span className="swf-head-sep" aria-hidden="true">,</span>
+          {formatDuration(total) ? <>
+            <span className="swf-head-total tnum">{formatDuration(total)}</span>
+            <span className="swf-head-sep" aria-hidden="true">,</span>
+          </> : null}
           <span className="swf-head-count tnum">
             {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
           </span>
@@ -169,7 +163,8 @@ function StepRow({ task, n, maxMs, longest, onJump }) {
     .join(' ')
 
   const errorLabel = task.error || 'error'
-  const ariaLabel = `step ${n}: ${shorten(task.prompt, 60)}, ${formatDuration(duration)}${
+  const durationLabel = formatDuration(duration)
+  const ariaLabel = `step ${n}: ${shorten(task.prompt, 60)}${durationLabel ? `, ${durationLabel}` : ''}${
     isError ? `, ${errorLabel}` : ''
   }`
 
@@ -204,7 +199,8 @@ function StepRow({ task, n, maxMs, longest, onJump }) {
           />
         </span>
 
-        <span className="swf-dur tnum">{formatDuration(duration)}</span>
+        {/* an unmeasured (zero) duration is left out, never shown as "0s" */}
+        {durationLabel ? <span className="swf-dur tnum">{durationLabel}</span> : null}
       </button>
     </li>
   )

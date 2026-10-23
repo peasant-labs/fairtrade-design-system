@@ -9,7 +9,7 @@ import {
   PanelRightClose, PanelRightOpen,
 } from 'lucide-react'
 import ProviderIcon from '../ProviderIcon.jsx'
-import { formatDuration } from '../StepsWaterfall.jsx'
+import { formatDurationMins, formatDurationMs } from './time.js'
 import { TOOL_GROUPS } from './view-model.js'
 import { categoryCounts, projectTurn } from './filters.js'
 import { turnAtReadingLine } from './scroll-position.js'
@@ -131,7 +131,7 @@ function PhaseDivider({ phase }) {
 
 function TaskBoundary({ task }) {
   const meta = [
-    task.durationMs ? formatDuration(task.durationMs) : null,
+    formatDurationMs(task.durationMs) || null,
     task.tools != null ? `${task.tools} tools` : null,
     task.stat || null,
   ]
@@ -859,7 +859,7 @@ export default function TranscriptViewer({
           {session.harness && <span className="chip"><ProviderIcon harness={session.harness} accent /> {String(session.harness).replace(/-/g, ' ')}</span>}
           {session.model && <span className="chip mono">{session.model}</span>}
           {session.git?.author && <Term className="metaitem" def="git author"><User size={14} aria-hidden="true" /> {session.git.author}</Term>}
-          {session.durationMins != null && <span className="metaitem"><Clock size={14} aria-hidden="true" /> <b className="tnum">{session.durationMins}m</b></span>}
+          {formatDurationMins(session.durationMins) && <span className="metaitem"><Clock size={14} aria-hidden="true" /> <b className="tnum">{formatDurationMins(session.durationMins)}</b></span>}
           {session.turnCount != null && <span className="metaitem"><ListTree size={14} aria-hidden="true" /> <b className="tnum">{session.turnCount}</b> turns</span>}
           {/* a figure that was not measured is left out, never shown as unknown or as zero */}
           {session.inputSubmissionCount != null && <span className="metaitem"><MessageSquareText size={14} aria-hidden="true" /> <b className="tnum">{session.inputSubmissionCount}</b> {session.inputSubmissionCount === 1 ? 'prompt' : 'prompts'}</span>}

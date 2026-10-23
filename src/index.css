@@ -312,6 +312,14 @@
   .btn-sm .lucide, .btn-sm .brand { width: var(--ic-sm); height: var(--ic-sm); }
   .btn-icon { width: var(--control-h); padding: 0; }
   .btn-sm.btn-icon { width: var(--control-h-sm); }
+  /* a finger gets a 44px target: a small button grows to it; a switch and a crumb link keep their
+     look and take an invisible reach around them */
+  @media (pointer: coarse) {
+    .btn-sm { height: auto; min-height: var(--target-comfortable); }
+    .btn-sm.btn-icon { width: var(--target-comfortable); }
+    .sw::after { content: ""; position: absolute; inset: calc((var(--target-comfortable) - var(--control-h-sm)) / -2) calc(var(--sp-1) * -1); }
+    .crumb a { display: inline-flex; align-items: center; min-height: var(--target-comfortable); }
+  }
   .btn:disabled { opacity: .42; cursor: not-allowed; pointer-events: none; }
   /* the primary action is the golden amber fill with near-black ink in both themes */
   .btn-primary { background: var(--amber-fill); color: var(--amber-fill-ink); font-weight: 600; border-color: var(--amber-fill); }

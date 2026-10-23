@@ -8,6 +8,7 @@ import Thinking from './Thinking.jsx'
 import ToolCall from './ToolCall.jsx'
 import UsageDisclosure from './UsageDisclosure.jsx'
 import { Term } from '../Explainer.jsx'
+import { formatRelative as formatRelativeTime, isKnownTime } from './time.js'
 
 /* TurnCard — one transcript turn, lifted verbatim from the canonical mockup
    (src/mockups/inuse/TranscriptApp.jsx:541). DUMB: it renders a cooked `TurnVM`
@@ -26,19 +27,14 @@ import { Term } from '../Explainer.jsx'
 /** compact token count, e.g. 1700 → "1.7k". @param {number} n @returns {string} */
 const fmtTokens = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n))
 
-/** Relative "Nm ago" from an RFC3339 timestamp — the fallback when no curated `time` is supplied
- *  (a real app derives the relative label from the wire timestamp; a static demo pins a stable
- *  `time` instead, since "ago" is non-deterministic). Returns the raw string if unparseable. */
-function formatRelative(ts) {
-  const t = ts ? Date.parse(ts) : NaN
-  if (!Number.isFinite(t)) return ts || ''
-  const s = Math.max(0, Math.round((Date.now() - t) / 1000))
-  if (s < 45) return 'just now'
-  const m = Math.round(s / 60)
-  if (m < 60) return `${m}m ago`
-  const h = Math.round(m / 60)
-  if (h < 24) return `${h}h ago`
-  return `${Math.round(h / 24)}d ago`
+/** The turn's time label, the fallback when no curated `time` is supplied (a real app derives it
+ *  from the wire timestamp; a static demo pins a stable `time`, since "ago" is non-deterministic).
+ *  A recorded time reads relative, then as a date past a week; an unknown one (zero, epoch, Go
+ *  zero-time) reads as nothing; an unparseable curated string passes through as written. */
+function turnTimeLabel(ts) {
+  if (!ts) return ''
+  if (!Number.isFinite(Date.parse(ts))) return ts
+  return isKnownTime(ts) ? formatRelativeTime(ts) : ''
 }
 
 /**
@@ -81,6 +77,7 @@ export default function TurnCard({
   if (!turn) return null
   const isUser = turn.role === 'user'
   const isEarlier = !!turn.partition && turn.partition !== 'main'
+  const timeLabel = turn.time || turnTimeLabel(turn.timestamp)
   const isSub = !!turn.depth && turn.depth > 0
   // The assistant is the agent, so a present canonical provider selects its
   // accent. Curated turns may omit provider and use the neutral assistant
@@ -118,9 +115,9 @@ export default function TurnCard({
       <button type="button" className="txn-turn-disclosure" aria-expanded={expanded} aria-controls={bodyId} onClick={() => setExpanded(value => !value)}>
         {expanded ? 'collapse' : 'expand'} turn {turn.label}
       </button>
-      {(turn.time || turn.timestamp) && (
+      {timeLabel && (
         <Term className="txn-turntime" def={turn.timeTitle ?? turn.timestamp ?? turn.time}>
-          {turn.time ?? formatRelative(turn.timestamp)}
+          {timeLabel}
         </Term>
       )}
       {!isEarlier && <button

@@ -26,6 +26,7 @@ import { buildChangesGraph } from './changeGraph.js'
  * @param {() => void} [props.onShowOlder]  deprecated legacy pagination callback; use onNavigate.
  * @param {(sessionId: string) => void} [props.onOpenSession] deprecated legacy session callback; use onNavigate.
  * @param {number} [props.nowMs]  pins relative-time humanisation (default Date.now()); the harness fixes it for byte-stable captures
+ * @param {import('react').ReactNode} [props.headerActions]  the host's own controls for the head row, beside "open the map" (a docs link, say)
  */
 export default function Changes({
   payload,
@@ -38,6 +39,7 @@ export default function Changes({
   onShowOlder,
   onOpenSession,
   nowMs,
+  headerActions,
 }) {
   const now = nowMs ?? Date.now()
   const graph = useMemo(() => buildChangesGraph(payload, { nowMs: now }), [payload, now])
@@ -76,16 +78,19 @@ export default function Changes({
             {openCount} open, {mergedCount} merged
           </div>
         </div>
-        <button
-          type="button"
-          className="btn btn-secondary btn-sm"
-          onClick={() => {
-            if (onNavigate) onNavigate({ type: 'open-map' })
-            else onOpenMap?.()
-          }}
-        >
-          <Box size={14} aria-hidden="true" /> open the map
-        </button>
+        <div className="gmp-head-actions">
+          {headerActions}
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => {
+              if (onNavigate) onNavigate({ type: 'open-map' })
+              else onOpenMap?.()
+            }}
+          >
+            <Box size={14} aria-hidden="true" /> open the map
+          </button>
+        </div>
       </div>
 
       <div className="gmp-changes-body">

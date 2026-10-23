@@ -308,7 +308,7 @@ export default function ProjectOverview({
           <ChartCard
             icon={Users}
             title="contributors"
-            aside={`${formatNumber(data.perContributorBreakdown.length)} people`}
+            aside={`${formatNumber(data.perContributorBreakdown.length)} ${plural(data.perContributorBreakdown.length, 'person', 'people')}`}
             className="gan-tablecard"
           >
             <ContributorTable
@@ -553,7 +553,7 @@ function StatRow({ label, median, p90 }) {
       <span className="gan-typlab">{label}</span>
       <span className="gan-typvals">
         <span className="gan-typmed tnum">{median}</span>
-        <span className="gan-typsep" aria-hidden="true">,</span>
+        <span className="gan-typsep" aria-hidden="true">/</span>
         <span className="gan-typp90 tnum">{p90}</span>
       </span>
     </div>

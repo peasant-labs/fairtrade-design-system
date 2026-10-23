@@ -6,6 +6,7 @@ requiredCaseNames:
   - a button item reports its id
   - group labels and landmarks
   - the sidebar keeps one order
+  - a settings page becomes the footer gear
   - the theme toggle names the theme it switches to
   - search opens the app's search
   - the brand is the mark alone
@@ -45,6 +46,9 @@ requiredMutationNames:
   - community is not marked disabled
   - the switcher drops community
   - the switcher lists online and local
+  - an outside link stays among the pages
+  - settings stays a page
+  - a visible label gets a tooltip
   - escape does not close the drawer
   - a storage read can throw
   - the indicator slides on its first placement
@@ -73,13 +77,13 @@ mutations:
     expectedDiagnostic: "items render as links and buttons: collectives text"
   - name: the switcher lists apps it cannot reach
     file: src/ui/AppSidebar.jsx
-    find: "const shown = withCommunity.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))"
-    replace: "const shown = withCommunity.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id))"
+    find: "return withCommunity.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))"
+    replace: "return withCommunity.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id))"
     expectedDiagnostic: "online and local never appear in a switcher: switcher entries"
   - name: the switcher lists the current app
     file: src/ui/AppSidebar.jsx
-    find: "const shown = withCommunity.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))"
-    replace: "const shown = withCommunity.filter((entry) => !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))"
+    find: "return withCommunity.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))"
+    replace: "return withCommunity.filter((entry) => !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))"
     expectedDiagnostic: "the switcher leaves out the current app: switcher entries"
   - name: another app opens in the same tab
     file: src/ui/AppSidebar.jsx
@@ -128,8 +132,8 @@ mutations:
     expectedDiagnostic: "the sidebar keeps one order: the sidebar order"
   - name: search leaves the sidebar
     file: src/ui/AppSidebar.jsx
-    find: "{search ? <SearchItem search={search} onNavigate={onNavigate} index={listIndex++} /> : null}"
-    replace: "{null}"
+    find: "{search ? <li style={{ '--asb-i': index++ }}><SearchItem"
+    replace: "{false ? <li style={{ '--asb-i': index++ }}><SearchItem"
     expectedDiagnostic: "the sidebar keeps one order: the sidebar order"
   - name: the theme toggle names the current theme
     file: src/ui/AppSidebar.jsx
@@ -138,8 +142,8 @@ mutations:
     expectedDiagnostic: "the theme toggle names the theme it switches to: the toggle must read"
   - name: community is not marked disabled
     file: src/ui/AppSidebar.jsx
-    find: 'className="asb-item asb-item-soon" aria-disabled="true"'
-    replace: 'className="asb-item asb-item-soon"'
+    find: 'className="asb-item asb-app asb-item-soon" aria-disabled="true"'
+    replace: 'className="asb-item asb-app asb-item-soon"'
     expectedDiagnostic: "every switcher ends with community as soon: the soon entry"
   - name: the switcher drops community
     file: src/ui/AppSidebar.jsx
@@ -151,3 +155,18 @@ mutations:
     find: "entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href"
     replace: "entry.id !== app && (entry.href"
     expectedDiagnostic: "online and local never appear in a switcher: switcher entries"
+  - name: an outside link stays among the pages
+    file: src/ui/AppSidebar.jsx
+    find: "if (item.external) { leaving.push(item); return false }"
+    replace: "void leaving"
+    expectedDiagnostic: "the sidebar keeps one order: the sidebar order"
+  - name: settings stays a page
+    file: src/ui/AppSidebar.jsx
+    find: "if (item.id === 'settings' && item.href) { settingsItem = settingsItem ?? item; return false }"
+    replace: "void settingsItem"
+    expectedDiagnostic: "a settings page becomes the footer gear: the gear"
+  - name: a visible label gets a tooltip
+    file: src/ui/AppSidebar.jsx
+    find: "const title = collapsed ? item.label : undefined"
+    replace: "const title = item.label"
+    expectedDiagnostic: "items render as links and buttons: home shows its label"

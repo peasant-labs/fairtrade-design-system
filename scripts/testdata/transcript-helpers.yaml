@@ -79,18 +79,27 @@ formatRelativeCases:
     - name: 35 hours still reads as 1d ago
       deltaSeconds: 126000
       expected: 1d ago
-    - name: days under 14 read as Nd ago
+    - name: days up to a week read as Nd ago
+      deltaSeconds: 518400
+      expected: 6d ago
+    - name: exactly a week still reads as 7d ago
+      deltaSeconds: 604800
+      expected: 7d ago
+    - name: past a week reads as the date
       deltaSeconds: 864000
-      expected: 10d ago
-    - name: 20 days reads as 3w ago
-      deltaSeconds: 1728000
-      expected: 3w ago
-    - name: 100 days reads as 3mo ago
+      expected: aug 17
+    - name: 100 days back reads as the date
       deltaSeconds: 8640000
-      expected: 3mo ago
-    - name: 400 days reads as 1y ago
+      expected: may 19
+    - name: another year reads as the date with its year
       deltaSeconds: 34560000
-      expected: 1y ago
+      expected: jul 23, 2025
+    - name: a go zero time reads as nothing
+      iso: '0001-01-01T00:00:00Z'
+      expected: ''
+    - name: the unix epoch reads as nothing
+      iso: '1970-01-01T00:00:00Z'
+      expected: ''
 
 formatDurationMinsCases:
   - name: null minutes returns an empty string
@@ -99,21 +108,70 @@ formatDurationMinsCases:
   - name: a negative minute count returns an empty string
     mins: -1
     expected: ''
-  - name: exactly zero minutes reads as under 1 second
+  - name: zero minutes is unmeasured and reads as nothing
     mins: 0
+    expected: ''
+  - name: a few seconds read as under 1 second
+    mins: 0.005
     expected: <1s
   - name: sub-minute durations read in seconds
     mins: 0.5
     expected: 30s
-  - name: sub-hour durations round to whole minutes
+  - name: sub-hour durations read minutes and seconds
     mins: 9.4
-    expected: 9m
+    expected: 9m 24s
+  - name: a long fractional minute count reads minutes and seconds
+    mins: 4.500883333333333
+    expected: 4m 30s
+  - name: whole minutes drop the zero seconds
+    mins: 4
+    expected: 4m
+  - name: hour-plus durations drop the seconds
+    mins: 72.5
+    expected: 1h 12m
   - name: hour-plus durations show hours and minutes
     mins: 76
     expected: 1h 16m
   - name: an exact multiple of an hour omits the minutes
     mins: 120
     expected: 2h
+
+formatDurationMsCases:
+  - name: zero milliseconds is unmeasured and reads as nothing
+    ms: 0
+    expected: ''
+  - name: unknown milliseconds read as nothing
+    ms: null
+    expected: ''
+  - name: under a second reads in milliseconds
+    ms: 820
+    expected: 820ms
+  - name: under ten seconds keeps one decimal
+    ms: 1400
+    expected: 1.4s
+  - name: a whole second drops the decimal
+    ms: 2000
+    expected: 2s
+  - name: a minute and more reads minutes and seconds
+    ms: 75000
+    expected: 1m 15s
+
+knownTimeCases:
+  - name: a recorded time is known
+    iso: '2026-08-27T12:00:00.000Z'
+    expected: true
+  - name: a go zero time is unknown
+    iso: '0001-01-01T00:00:00Z'
+    expected: false
+  - name: the unix epoch is unknown
+    iso: '1970-01-01T00:00:00Z'
+    expected: false
+  - name: an empty time is unknown
+    iso: ''
+    expected: false
+  - name: an unparseable time is unknown
+    iso: not-a-date
+    expected: false
 
 formatDateLongCases:
   - name: empty iso returns an empty string
@@ -122,6 +180,9 @@ formatDateLongCases:
   - name: an unparseable iso returns the input unchanged
     iso: not-a-date
     expected: not-a-date
+  - name: a go zero time reads as nothing
+    iso: '0001-01-01T00:00:00Z'
+    expected: ''
   - name: a valid iso renders month, day, hour, and minute
     iso: '2026-01-12T16:23:00.000Z'
     expectedPattern: '^[A-Za-z]{3}\.? \d{1,2}, \d{1,2}:\d{2}\s*[AaPp]\.?[Mm]\.?$'

@@ -66,7 +66,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   }))
   const propsFor = (row, extra = {}) => ({ groups, apps: fixture.apps, ...row.props, ...extra })
   const labelOf = (id) => fixture.groups.flatMap((group) => group.items).find((item) => item.id === id)?.label
-  const itemFor = (root, id) => [...root.querySelectorAll('aside nav:not([aria-label="apps"]) .asb-item')]
+  // a nav item (a page, or an app's link that leaves it), not a switcher entry or search
+  const NAV_ITEMS = 'aside nav .asb-item:not(.asb-app):not(.asb-search)'
+  const itemFor = (root, id) => [...root.querySelectorAll(NAV_ITEMS)]
     .find((item) => item.querySelector('.asb-label')?.textContent === labelOf(id))
 
   for (const row of fixture.cases) {
@@ -88,8 +90,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
           report.check(!!item.querySelector('.asb-ext .lucide') === expected.external, `${name}: ${expected.id} external marker must be ${expected.external ? 'present' : 'absent'}`)
           report.check(spoken(item) === expected.text, `${name}: ${expected.id} text must read ${JSON.stringify(expected.text)}, received ${JSON.stringify(spoken(item))}`)
           report.check(item.classList.contains('asb-item-sub') === (expected.depth === 1), `${name}: ${expected.id} depth must be ${expected.depth}`)
-          const label = labelOf(expected.id)
-          report.check(item.getAttribute('title') === label, `${name}: ${expected.id} must carry ${JSON.stringify(label)} as the title`)
+          report.check(item.getAttribute('title') === null, `${name}: ${expected.id} shows its label, so it must carry no tooltip`)
         }
         await mounted.unmount()
       } else if (row.kind === 'select') {
@@ -105,11 +106,11 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         const labels = [...root.querySelectorAll('.asb-glabel')].map((node) => node.textContent)
         report.check(same(labels, row.expected.visibleLabels), `${name}: group labels must be ${JSON.stringify(row.expected.visibleLabels)}, received ${JSON.stringify(labels)}`)
         report.check(root.querySelector('aside')?.getAttribute('aria-label') === row.expected.asideName, `${name}: the aside must be named ${row.expected.asideName}`)
-        report.check(root.querySelectorAll('aside').length === 1 && root.querySelectorAll('nav[aria-label="apps"]').length === 1, `${name}: there must be one nav DOM, not a desktop copy and a drawer copy`)
+        report.check(root.querySelectorAll('aside').length === 1 && root.querySelectorAll('nav[aria-label="shortcuts"]').length === 1, `${name}: there must be one nav DOM, not a desktop copy and a drawer copy`)
         await mounted.unmount()
       } else if (row.kind === 'switcher') {
         const mounted = await mount(React.createElement(AppSidebar, propsFor(row)))
-        const entries = [...mounted.container.querySelectorAll('nav[aria-label="apps"] .asb-item')].map((item) => ({
+        const entries = [...mounted.container.querySelectorAll('.asb-utils .asb-app')].map((item) => ({
           label: item.querySelector('.asb-label')?.textContent,
           tag: item.tagName,
           current: item.getAttribute('aria-current'),
@@ -124,10 +125,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         const mounted = await mount(React.createElement(AppSidebar, propsFor(row, { ...extra, onThemeChange: () => {} })))
         const aside = mounted.container.querySelector('aside')
         const tokenOf = (node) => {
-          if (node.matches('nav.asb-apps')) return 'apps'
+          if (node.matches('nav.asb-utils')) return `shortcuts:${[...node.querySelectorAll('.asb-list > li > *')].map((item) => (item.matches('.asb-search') ? 'search' : item.querySelector('.asb-label')?.textContent)).join('+')}`
           if (node.matches('nav.asb-group')) return `nav:${node.getAttribute('aria-label')}`
-          if (node.matches('.asb-search')) return 'search'
-          if (node.matches('.asb-foot')) return `foot:${[...node.children].map((child) => (child.matches('.asb-theme') ? 'theme' : child.matches('.asb-me') ? 'account' : child.className)).join('+')}`
+          if (node.matches('.asb-foot')) return `foot:${[...node.children].map((child) => (child.matches('.asb-theme') ? 'theme' : child.matches('.asb-settings') ? 'settings' : child.matches('.asb-me') ? 'account' : child.className)).join('+')}`
           return node.className
         }
         const foot = aside?.querySelector(':scope > .asb-foot')
@@ -140,7 +140,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         await mounted.unmount()
       } else if (row.kind === 'soon') {
         const mounted = await mount(React.createElement(AppSidebar, propsFor(row)))
-        const entries = [...mounted.container.querySelectorAll('nav[aria-label="apps"] .asb-item')]
+        const entries = [...mounted.container.querySelectorAll('.asb-utils .asb-app')]
         const soon = entries.find((item) => item.querySelector('.asb-label')?.textContent === 'community')
         const actual = soon && {
           tag: soon.tagName,
@@ -155,7 +155,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       } else if (row.kind === 'slot-order') {
         const orders = []
         for (const config of row.configs) {
-          const groups = [{ id: 'main', ariaLabel: `${config.app} sections`, items: config.groups.map((id) => ({ id, label: id, href: `/${id}` })) }]
+          const groups = [{ id: 'main', ariaLabel: `${config.app} sections`, items: config.groups.map((id) => ({ id, label: id, href: `/${id}`, ...(config.external?.includes(id) ? { external: true } : {}) })) }]
           const props = {
             app: config.app,
             apps: fixture.apps,
@@ -165,14 +165,14 @@ await withMountedSource(async ({ load, mount, window, React }) => {
             onThemeChange: () => {},
             ...(config.search ? { search: { onOpen: () => {} } } : {}),
             ...(config.account ? { account: { handle: config.account } } : {}),
+            ...(config.settingsHref ? { settingsHref: config.settingsHref } : {}),
           }
           const mounted = await mount(React.createElement(AppSidebar, props))
           const aside = mounted.container.querySelector('aside')
           const tokenOf = (node) => {
-            if (node.matches('nav.asb-apps')) return 'apps'
-            if (node.matches('nav.asb-group')) return 'groups'
-            if (node.matches('.asb-search')) return 'search'
-            if (node.matches('.asb-foot')) return `foot:${[...node.children].map((child) => (child.matches('.asb-theme') ? 'theme' : child.matches('.asb-me') ? 'account' : child.className)).join('+')}`
+            if (node.matches('nav.asb-utils')) return 'shortcuts'
+            if (node.matches('nav.asb-group')) return 'pages'
+            if (node.matches('.asb-foot')) return `foot:${[...node.children].map((child) => (child.matches('.asb-theme') ? 'theme' : child.matches('.asb-settings') ? 'settings' : child.matches('.asb-me') ? 'account' : child.className)).join('+')}`
             return node.className
           }
           const foot = aside?.querySelector(':scope > .asb-foot')
@@ -182,7 +182,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
             ...(foot ? [tokenOf(foot)] : []),
           ]
           orders.push(order)
-          const lastApp = [...mounted.container.querySelectorAll('nav[aria-label="apps"] .asb-label')].at(-1)?.textContent
+          const lastApp = [...mounted.container.querySelectorAll('.asb-utils .asb-app .asb-label')].at(-1)?.textContent
           report.check(lastApp === row.lastApp, `${name}: the last switcher entry in ${config.app} must be ${row.lastApp}, received ${lastApp}`)
           await mounted.unmount()
         }
@@ -208,11 +208,22 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       } else if (row.kind === 'search') {
         let opened = 0
         const mounted = await mount(React.createElement(AppSidebar, propsFor(row, { search: { ...row.search, onOpen: () => { opened += 1 } } })))
-        const button = mounted.container.querySelector('.asb-search button.asb-item')
+        const button = mounted.container.querySelector('.asb-utils button.asb-search')
         const actual = button && { name: spoken(button), title: button.getAttribute('title'), keys: button.getAttribute('aria-keyshortcuts'), hint: button.querySelector('.asb-kbd')?.textContent ?? null }
         report.check(same(actual, row.expected.button), `${name}: the search item must be ${JSON.stringify(row.expected.button)}, received ${JSON.stringify(actual)}`)
         if (button) await mounted.act(() => click(window, button))
         report.check(opened === 1, `${name}: choosing search must call onOpen once, received ${opened}`)
+        await mounted.unmount()
+      } else if (row.kind === 'gear') {
+        const mounted = await mount(React.createElement(AppSidebar, propsFor(row, { groups: [...groups.slice(0, 1), { id: 'more', ariaLabel: 'more', items: [{ id: 'settings', label: 'settings', href: row.settingsHref }] }] })))
+        const gear = mounted.container.querySelector('.asb-foot a.asb-settings')
+        const actual = {
+          inPages: [...mounted.container.querySelectorAll(NAV_ITEMS)].some((item) => item.querySelector('.asb-label')?.textContent === 'settings'),
+          href: gear?.getAttribute('href') ?? null,
+          name: gear?.getAttribute('aria-label') ?? null,
+          current: gear?.getAttribute('aria-current') ?? null,
+        }
+        report.check(same(actual, row.expected), `${name}: the gear must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
         await mounted.unmount()
       } else if (row.kind === 'brand') {
         const mounted = await mount(React.createElement(AppSidebar, propsFor(row)))
@@ -245,7 +256,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         report.check(same(state(), row.expected.after), `${name}: after the toggle expected ${JSON.stringify(row.expected.after)}, received ${JSON.stringify(state())}`)
         const labelsAfter = [...root.querySelectorAll('.asb-panel .asb-label')].map((node) => node.textContent)
         report.check(labelsAfter.length > 0 && same(labelsAfter, labelsBefore), `${name}: collapsed labels must stay in the DOM as accessible names`)
-        const titles = [...root.querySelectorAll('aside nav:not([aria-label="apps"]) .asb-item')].map((item) => item.getAttribute('title'))
+        const titles = [...root.querySelectorAll(NAV_ITEMS)].map((item) => item.getAttribute('title'))
         report.check(same(titles, row.expected.titles), `${name}: collapsed items must carry title tooltips ${JSON.stringify(row.expected.titles)}, received ${JSON.stringify(titles)}`)
         report.check(same(calls, row.expected.callbacks), `${name}: onCollapsedChange must report ${JSON.stringify(row.expected.callbacks)}, received ${JSON.stringify(calls)}`)
         await mounted.unmount()
@@ -275,7 +286,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
           report.check(false, `${name}: mounting threw ${error.message}`)
         }
         const root = mounted?.container
-        const items = root?.querySelectorAll('aside nav:not([aria-label="apps"]) .asb-item').length ?? 0
+        const items = root?.querySelectorAll(NAV_ITEMS).length ?? 0
         report.check(items === row.expected.items, `${name}: expected ${row.expected.items} items, received ${items}`)
         const toggle = root?.querySelector('button.asb-toggle')
         if (toggle) await mounted.act(() => click(window, toggle))

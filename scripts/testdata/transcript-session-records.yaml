@@ -1,0 +1,54 @@
+# Cases for how the transcript treats session records and times (adaptTranscript ->
+# TranscriptViewer). scripts/transcript-session-records.test.mjs cooks the payload below for each
+# case, then checks the cooked view model or the REAL mounted viewer:
+#   - Claude Code's session metadata records ("custom-title: ...", "agent name: ...") are not
+#     turns, while a real system turn and the same text from another harness stay turns;
+#   - a missing, zero, epoch or Go zero-time timestamp is no time: the cooked turn carries none
+#     and the mounted turn shows no "ago" label;
+#   - the session duration reads in the one short format, never as raw minutes;
+#   - the user-turn steps list leaves out a zero duration instead of showing "0s".
+# `harness` overrides the payload's harness for one case.
+payload:
+  id: session-records
+  harness: claude-code
+  startTime: '0001-01-01T00:00:00Z'
+  endTime: '2026-10-06T12:04:30Z'
+  durationMins: 4.500883333333333
+  totalTokens: 1200
+  tokensIn: 800
+  tokensOut: 400
+  turnCount: 6
+  toolCallCount: 0
+  turns:
+    - {index: 0, role: system, content: 'custom-title: EnCUCA · Contador', timestamp: '0001-01-01T00:00:00Z', depth: 0}
+    - {index: 1, role: system, content: 'agent name: EnCUCA · Contador', timestamp: '0001-01-01T00:00:00Z', depth: 0}
+    - {index: 2, role: user, content: 'Quero um app bem simples para mostrar numa apresentação', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+    - {index: 3, role: assistant, content: 'Vou criar o contador agora.', timestamp: '2026-10-06T12:04:30Z', depth: 0}
+    - {index: 4, role: system, content: "the conversation was compacted.\nsummary: the counter app was built.", timestamp: '2026-10-06T12:05:00Z', depth: 0}
+    - {index: 5, role: user, content: 'Agora adicione um botão zerar', timestamp: '1970-01-01T00:00:00Z', depth: 0}
+    - {index: 6, role: assistant, content: 'Pronto.', depth: 0}
+
+cases:
+  - name: session metadata records are not turns
+    kind: turns
+    expected: [2, 3, 4, 5, 6]
+  - name: the same text from another harness stays a turn
+    kind: turns
+    harness: codex
+    expected: [0, 1, 2, 3, 4, 5, 6]
+  - name: an unknown turn time is dropped
+    kind: times
+    expected: {'2': '2026-10-06T12:00:00Z', '3': '2026-10-06T12:04:30Z', '4': '2026-10-06T12:05:00Z', '5': null, '6': null}
+  - name: an unknown session time is empty
+    kind: session
+    expected: {startTime: '', endTime: '2026-10-06T12:04:30Z'}
+  - name: the meta row reads a short duration
+    kind: meta-duration
+    expected: 4m 30s
+  - name: a turn without a known time shows no time
+    kind: turn-time
+    turn: 5
+    expected: null
+  - name: the steps list leaves out a zero duration
+    kind: steps
+    expected: {zeroLabels: 0}

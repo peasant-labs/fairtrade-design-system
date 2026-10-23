@@ -131,6 +131,7 @@ function DiffFile({ file, diff, open, onToggle }) {
  * @param {() => void} [props.onShare]      the "share … conversations" exit (host owns share UX)
  * @param {() => void} [props.onCopyRecap]  the "copy recap" exit (host owns the clipboard recap)
  * @param {Record<string, boolean>} [props.initialOpenFiles]  files open on first render (path → open?)
+ * @param {import('react').ReactNode} [props.headerActions]  the host's own controls for the head row, at the crumb's end (a docs link, say)
  */
 export default function ChangeDetail({
   payload,
@@ -143,6 +144,7 @@ export default function ChangeDetail({
   onShare,
   onCopyRecap,
   initialOpenFiles = {},
+  headerActions,
 }) {
   assertChangeDetailPayloadEnums(payload)
   const [openFiles, setOpenFiles] = useState(initialOpenFiles)
@@ -185,9 +187,12 @@ export default function ChangeDetail({
   return (
     <div className="gmp-root gmp-detail-root" ref={scrollRef}>
       <div className="gmp-detail-head">
-        <div className="crumb">
-          review <ChevronRight size={14} aria-hidden="true" /> {payload.defaultBranch}{' '}
-          <ChevronRight size={14} aria-hidden="true" /> <span className="cur">{payload.branch}</span>
+        <div className="gmp-head-row">
+          <div className="crumb">
+            review <ChevronRight size={14} aria-hidden="true" /> {payload.defaultBranch}{' '}
+            <ChevronRight size={14} aria-hidden="true" /> <span className="cur">{payload.branch}</span>
+          </div>
+          {headerActions ? <div className="gmp-head-actions">{headerActions}</div> : null}
         </div>
         <div className="gmp-detail-title">{displayTitle}</div>
 

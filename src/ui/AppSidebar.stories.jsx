@@ -11,10 +11,12 @@ import { SettingGroup, SettingRow } from './Settings.jsx'
 /* CSF3 stories for the shared app sidebar. classes + tokens come from src/index.css via
    .storybook/preview.jsx plus the component's own sheet; the theme toolbar flips data-theme. each
    story mounts the sidebar inside AppSidebarLayout beside a placeholder page, the way an app screen
-   does. Online, Local and Docs show the three apps' navs; Collapsed starts as the icon rail; Mobile
+   does. Online, Local and Docs show the three apps' navs (Local's settings page becomes the footer's
+   gear and its collectives link moves up to the shortcuts on their own); Collapsed starts as the icon rail; Mobile
    runs at a phone viewport, where the sidebar is a top bar whose menu opens the drawer. every story
-   shows the one order the sidebar keeps in every app: the brand row, the app's groups, search (Local),
-   the switcher, then the footer with the theme toggle and the account. AccountSettings
+   shows the one order the sidebar keeps in every app: the brand row, the shortcuts (search, the docs,
+   community, the app's links that leave it), the app's pages, then the footer row (the account, the
+   settings gear and the theme toggle). AccountSettings
    is an account settings page in the AppPage frame with the settings section bar in its body, the
    sidebar left as it is on every other page. choosing an
    in-app item makes it current, so the indicator can be seen sliding. every story passes
@@ -152,14 +154,14 @@ function Frame({ title, groups, currentId, page, ...props }) {
 }
 
 export const Online = {
-  render: () => <Frame title="home" app="online" groups={ONLINE_GROUPS} currentId="home" account={{ handle: 'mira', href: '#account' }} />,
+  render: () => <Frame title="home" app="online" groups={ONLINE_GROUPS} currentId="home" account={{ handle: 'mira', href: '#account' }} settingsHref="#settings" search={{ onOpen: () => {}, shortcut: '⌘K', keyShortcuts: 'Meta+K' }} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const toggle = canvas.getByRole('button', { name: 'collapse the sidebar' })
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
     await expect(canvas.getByRole('link', { name: 'home' })).toHaveAttribute('aria-current', 'page')
-    // the switcher lists the other apps only, each opening in a new tab
-    const switcher = canvas.getByRole('navigation', { name: 'apps' })
+    // the shortcuts sit on top: search, the docs (a new tab) and community; never online or local
+    const switcher = canvas.getByRole('navigation', { name: 'shortcuts' })
     await expect(within(switcher).queryByText('online')).toBeNull()
     await expect(within(switcher).getByRole('link', { name: /^docs\s*, opens in a new tab$/ })).toHaveAttribute('target', '_blank')
     // collapse to the rail, check the labels survive as accessible names, then expand again

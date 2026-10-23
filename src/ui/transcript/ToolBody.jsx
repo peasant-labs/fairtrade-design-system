@@ -1,6 +1,7 @@
 import { Terminal, Clock, Globe } from 'lucide-react'
 import { DiffHunks } from './DiffEntryCard.jsx'
 import TaskBody from './TaskBody.jsx'
+import { formatDurationMs } from './time.js'
 
 /* ToolBody — the per-kind tool-call body, lifted verbatim from the canonical mockup
    (src/mockups/inuse/TranscriptApp.jsx:400). DUMB: it dispatches on the cooked
@@ -27,11 +28,8 @@ function str(v) {
 function num(v) {
   return typeof v === 'number' ? v : undefined
 }
-/** humanize a duration in ms → "820ms" / "1.4s". @param {number | undefined} ms @returns {string} */
-function fmtDuration(ms) {
-  if (ms == null) return ''
-  return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`
-}
+/** a tool's duration in the one transcript format ("820ms", "1.4s", "1m 15s"); zero reads as nothing */
+const fmtDuration = formatDurationMs
 
 /** read: file path + an optional line meta, then the excerpt. @param {{ tool: ToolCallVM }} props */
 function ReadBody({ tool }) {
