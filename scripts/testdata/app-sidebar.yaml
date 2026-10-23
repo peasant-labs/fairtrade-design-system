@@ -20,7 +20,8 @@ groups:
 apps:
   - {id: online, label: online, href: 'https://online.invalid/'}
   - {id: local, label: local, href: 'http://localhost:8686/'}
-  - {id: docs, label: docs}
+  - {id: docs, label: docs, href: 'https://docs.invalid/'}
+  - {id: blog, label: blog}
 
 cases:
   # Items: tag, aria-current, the leading glyph, the external marker and the accessible text
@@ -88,20 +89,19 @@ cases:
     expected:
       - {tag: A, name: peasant, title: peasant, mark: true, visibleText: ''}
       - {tag: A, name: peasant, title: peasant, mark: true, visibleText: ''}
-  # The switcher: the app the reader is in is left out (it is not a destination), so is an app with
-  # no href; every other app is a link that opens in a new tab unless its entry names a target.
+  # The switcher: the docs and community. The app the reader is in is left out (it is not a
+  # destination), online and local never appear in any app, and an entry with no href is left out;
+  # every listed app is a link that opens in a new tab unless its entry names a target.
   - name: the switcher leaves out the current app
-    kind: switcher
-    props: {app: local}
-    expected:
-      - {label: online, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'online, opens in a new tab'}
-      - {label: community, tag: SPAN, current: null, target: null, rel: null, text: community soon}
-  - name: every other app with an address is listed
     kind: switcher
     props: {app: docs}
     expected:
-      - {label: online, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'online, opens in a new tab'}
-      - {label: local, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'local, opens in a new tab'}
+      - {label: community, tag: SPAN, current: null, target: null, rel: null, text: community soon}
+  - name: online and local never appear in a switcher
+    kind: switcher
+    props: {app: online}
+    expected:
+      - {label: docs, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'docs, opens in a new tab'}
       - {label: community, tag: SPAN, current: null, target: null, rel: null, text: community soon}
   - name: a tagged entry with no address is text
     kind: switcher
@@ -130,11 +130,11 @@ cases:
   - name: an entry's own target is kept
     kind: switcher
     props:
-      app: docs
+      app: online
       apps:
-        - {id: online, label: online, href: 'https://online.invalid/', target: _self}
+        - {id: docs, label: docs, href: 'https://docs.invalid/', target: _self}
     expected:
-      - {label: online, tag: A, current: null, target: _self, rel: null, text: 'online, opens outside this app'}
+      - {label: docs, tag: A, current: null, target: _self, rel: null, text: 'docs, opens outside this app'}
       - {label: community, tag: SPAN, current: null, target: null, rel: null, text: community soon}
   # Collapse: the toggle flips aria-expanded and its name, the root is marked collapsed, the labels
   # stay in the DOM as accessible names, items carry title tooltips, and the separator leaves.
@@ -215,4 +215,4 @@ cases:
   - name: a link component receives the item props
     kind: link-component
     props: {app: online, currentId: home, homeHref: /}
-    expected: {hrefs: [/, /, /home, /c/eval-crowd, 'https://online.invalid/collectives', /docs, 'http://localhost:8686/'], current: /home}
+    expected: {hrefs: [/, /, /home, /c/eval-crowd, 'https://online.invalid/collectives', /docs, 'https://docs.invalid/'], current: /home}

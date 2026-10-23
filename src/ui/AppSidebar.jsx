@@ -90,7 +90,7 @@ import './AppSidebar.css'
 
 /**
  * @typedef {Object} AppSidebarProps
- * @property {'online'|'local'|'docs'|string} app   which app renders the sidebar; its own switcher entry is left out.
+ * @property {'online'|'local'|'docs'|string} app   which app renders the sidebar; its own switcher entry is left out, and online and local never show.
  * @property {AppSidebarApp[]} [apps]               the app switcher entries (default APP_SIDEBAR_APPS, no hrefs).
  * @property {AppSidebarGroup[]} groups
  * @property {string} [currentId]                   the id of the current item (aria-current="page").
@@ -127,13 +127,15 @@ import './AppSidebar.css'
  * @property {string} [className]
  */
 
-/** The app switcher's default entries, in order. Consumers map their hrefs in.
+/** The app switcher's default entries, in order: the docs (community as soon follows by itself).
+ * Online and local are never in a switcher, in any app. Consumers map their hrefs in.
  * @type {ReadonlyArray<Readonly<AppSidebarApp>>} */
 export const APP_SIDEBAR_APPS = Object.freeze([
-  Object.freeze({ id: 'online', label: 'online' }),
-  Object.freeze({ id: 'local', label: 'local' }),
   Object.freeze({ id: 'docs', label: 'docs' }),
 ])
+
+/** The apps a switcher never lists: the hosted and the local app reach each other another way. */
+const NEVER_SWITCHED = new Set(['online', 'local'])
 
 const APP_ICONS = { online: Globe, local: Laptop, docs: BookOpen, community: MessagesSquare }
 
@@ -266,12 +268,13 @@ function SidebarItem({ item, current, Link, onNavigate }) {
   return <span className={className} aria-current={ariaCurrent} title={title}>{body}</span>
 }
 
-/* the other apps: the one the reader is in is not a destination, so it is left out, and an app
-   with nowhere to go is left out too. each opens in a new tab unless its entry names a target. */
+/* the switcher: the docs and community. the app the reader is in is not a destination, so it is
+   left out; online and local are never listed, in any app; an entry with nowhere to go is left
+   out unless it is a place to come (soon). each opens in a new tab unless its entry names a target. */
 function AppSwitcher({ app, apps, Link, onNavigate, firstIndex }) {
   // every app ends its switcher with community; an app names its own entry once the place exists
   const withCommunity = apps.some((entry) => entry.id === COMMUNITY_SOON.id) ? apps : [...apps, COMMUNITY_SOON]
-  const shown = withCommunity.filter((entry) => entry.id !== app && (entry.href || entry.tag || entry.soon))
+  const shown = withCommunity.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))
   if (shown.length === 0) return null
   return (
     <nav className="asb-group asb-apps" aria-label="apps">

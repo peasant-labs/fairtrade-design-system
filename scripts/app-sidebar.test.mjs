@@ -53,7 +53,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const barrel = await load('/src/ui/index.js')
   const AppSidebar = sidebar.default
   report.check(barrel.AppSidebar === AppSidebar && barrel.AppSidebarLayout === sidebar.AppSidebarLayout && barrel.APP_SIDEBAR_APPS === sidebar.APP_SIDEBAR_APPS, 'AppSidebar, AppSidebarLayout and APP_SIDEBAR_APPS must be exported from the ui barrel')
-  report.check(Object.isFrozen(sidebar.APP_SIDEBAR_APPS) && same(sidebar.APP_SIDEBAR_APPS.map((a) => a.id), ['online', 'local', 'docs']), 'APP_SIDEBAR_APPS must be the frozen online, local, docs list')
+  report.check(Object.isFrozen(sidebar.APP_SIDEBAR_APPS) && same(sidebar.APP_SIDEBAR_APPS.map((a) => a.id), ['docs']), 'APP_SIDEBAR_APPS must be the frozen docs-only list')
 
   const selected = []
   const groups = fixture.groups.map((group) => ({
