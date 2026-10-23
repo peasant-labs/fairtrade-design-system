@@ -14,9 +14,10 @@ const settle = (page) => page.evaluate(async () => {
   await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))
   await Promise.allSettled(document.getAnimations().map((animation) => animation.finished))
 })
-// motion longer than a millisecond (the base layer's reduce rule clamps every transition to .01ms)
+// sidebar motion longer than a millisecond (the base layer's reduce rule clamps every transition
+// to .01ms); motion elsewhere on the page is not the sidebar's to assert
 const perceptible = (page) => page.evaluate(() => document.getAnimations()
-  .filter((animation) => animation.playState === 'running')
+  .filter((animation) => animation.playState === 'running' && animation.effect?.target?.closest?.('.asb'))
   .map((animation) => ({ timing: animation.effect.getTiming(), target: animation.effect.target?.className?.baseVal ?? animation.effect.target?.className, property: animation.transitionProperty }))
   .filter(({ timing }) => Number(timing.duration) + Number(timing.delay) > 1)
   .map(({ target, property, timing }) => `${target} ${property} ${timing.duration}ms+${timing.delay}ms`))
