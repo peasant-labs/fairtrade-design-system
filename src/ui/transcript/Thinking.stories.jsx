@@ -23,7 +23,7 @@ export const Default = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     // collapsed: the word-count badge shows, the body does not.
-    expect(canvas.getByText('24w')).toBeInTheDocument()
+    expect(canvasElement.querySelector('.txn-thinking-wc')).toHaveTextContent('24 words')
     // expanding reveals the cooked thinking text.
     await userEvent.click(canvas.getByRole('button', { name: /thinking/i }))
     expect(canvas.getByText(/run a typecheck across the workspace/)).toBeInTheDocument()

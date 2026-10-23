@@ -71,7 +71,7 @@ const trimHunks = [{ lines: [{ sign: 'add', newNo: '1', text: 'a' }, { sign: 'ad
 /* ── Thinking ────────────────────────────────────────────────────────────────── */
 {
   const out = html(ui.TranscriptThinking, { block: { text: 'reasoning', words: 7 } })
-  assert('TH-badge', 'Thinking renders the cooked word-count badge (7w)', out.includes('7w') && out.includes('txn-thinking'))
+  assert('TH-badge', 'Thinking renders the cooked word count (7 words)', out.replace(/<[^>]+>/g, '').includes('7 words') && out.includes('txn-thinking'))
 }
 
 /* ── ToolBody: the six renderers + catch-all (dispatch on cooked ToolCallVM.group) */
@@ -109,7 +109,7 @@ const trimHunks = [{ lines: [{ sign: 'add', newNo: '1', text: 'a' }, { sign: 'ad
   const out = html(ui.TranscriptTurnCard, { turn: assistantTurn, expandAll: true })
   assert('TURN-num', 'TurnCard renders the turn number', out.includes('#2'))
   assert('TURN-md', 'TurnCard renders the cooked content via Markdown', /<strong>renderer<\/strong>/.test(out))
-  assert('TURN-thinking', 'TurnCard renders thinking from the cooked turn', out.includes('txn-thinking') && out.includes('7w'))
+  assert('TURN-thinking', 'TurnCard renders thinking from the cooked turn', out.includes('txn-thinking') && out.replace(/<[^>]+>/g, '').includes('7 words'))
   assert('TURN-tool', 'TurnCard composes the tool call (open via expandAll)', out.includes('txn-toolcall') && out.includes('txn-tcbody'))
 }
 
