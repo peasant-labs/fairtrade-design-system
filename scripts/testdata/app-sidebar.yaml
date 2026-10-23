@@ -45,27 +45,35 @@ cases:
     kind: groups
     props: {app: online}
     expected:
-      navNames: [peasant sections, help, apps]
+      navNames: [shortcuts, peasant sections, help]
       visibleLabels: [help]
       asideName: peasant
-  # One order for every app: the brand row (outside the scrolling nav), the app's nav groups,
-  # search, the switcher to the other apps, then the footer row (outside the scrolling nav too):
-  # the account on the left, the icon-only theme toggle on the right.
+  # One order for every app: the brand row (outside the scrolling nav), the shortcuts (search, the
+  # docs and community, then the app's links that leave it, lifted out of its groups), the app's
+  # pages, then the footer row (outside the scrolling nav too): the account on the left, the icon
+  # buttons on the right.
   - name: the sidebar keeps one order
     kind: structure
     props: {app: online, theme: light, account: {handle: mira}}
     search: {label: search, shortcut: '⌘K', keyShortcuts: Meta+K}
-    expected: [top, 'nav:peasant sections', 'nav:help', search, apps, 'foot:account+theme']
+    expected: [top, 'shortcuts:search+docs+community+collectives', 'nav:peasant sections', 'nav:help', 'foot:account+theme']
   # The same slots in the same order in every app, whatever the app passes: each config below is
   # one app's data (its own groups, search, theme and account); the slot order must not differ.
   - name: every app gets the same slot order
     kind: slot-order
     configs:
-      - {app: online, groups: [home, discover], search: true, account: mira}
-      - {app: local, groups: [sessions, settings], search: true, account: mira}
-      - {app: docs, groups: [overview, install, cli], search: true, account: mira}
-    expected: [top, groups, search, apps, 'foot:account+theme']
+      - {app: online, groups: [home, discover], search: true, account: mira, settingsHref: /settings}
+      - {app: local, groups: [home, settings, collectives], external: [collectives], search: true, account: mira}
+      - {app: docs, groups: [overview, install, cli], search: true, account: mira, settingsHref: /settings}
+    expected: [top, shortcuts, pages, 'foot:account+settings+theme']
     lastApp: community
+  # Settings is never a page: a settings item in the groups becomes the footer's gear, current on
+  # the settings page.
+  - name: a settings page becomes the footer gear
+    kind: gear
+    props: {app: local, currentId: settings}
+    settingsHref: /settings
+    expected: {inPages: false, href: /settings, name: settings, current: page}
   # The theme toggle names the theme it switches to, with that theme's icon, and reports it.
   - name: the theme toggle names the theme it switches to
     kind: theme
@@ -80,7 +88,7 @@ cases:
     props: {app: online}
     search: {label: search, shortcut: '⌘K', keyShortcuts: Meta+K}
     expected:
-      button: {name: search, title: search (⌘K), keys: Meta+K, hint: ⌘K}
+      button: {name: search, title: null, keys: Meta+K, hint: ⌘K}
   # The brand: the wheat mark alone in the top bar and in the column, its name kept as the
   # accessible name and the tooltip. The full logo with the wordmark belongs to the landing page.
   - name: the brand is the mark alone
@@ -118,7 +126,7 @@ cases:
   - name: every switcher ends with community as soon
     kind: soon
     props: {app: online}
-    expected: {tag: SPAN, disabled: 'true', href: null, title: 'community, soon', text: community soon, last: true}
+    expected: {tag: SPAN, disabled: 'true', href: null, title: null, text: community soon, last: true}
   - name: a community entry of the app's own replaces the soon one
     kind: switcher
     props:
@@ -144,7 +152,7 @@ cases:
     expected:
       before: {expanded: 'true', name: collapse the sidebar, collapsed: 'false', separator: true, inBrandRow: true}
       after: {expanded: 'false', name: expand the sidebar, collapsed: 'true', separator: false, inBrandRow: true}
-      titles: [home, discover, eval-crowd, collectives, docs]
+      titles: [collectives, home, discover, eval-crowd, docs]
       callbacks: [true]
   # Persistence: a toggle and a key resize write storage; a remount reads them back.
   - name: collapsed state and width persist
@@ -215,4 +223,4 @@ cases:
   - name: a link component receives the item props
     kind: link-component
     props: {app: online, currentId: home, homeHref: /}
-    expected: {hrefs: [/, /, /home, /c/eval-crowd, 'https://online.invalid/collectives', /docs, 'https://docs.invalid/'], current: /home}
+    expected: {hrefs: [/, /, 'https://docs.invalid/', 'https://online.invalid/collectives', /home, /c/eval-crowd, /docs], current: /home}

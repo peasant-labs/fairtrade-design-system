@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
-import { AppWindow, BookOpen, ChevronLeft, ExternalLink, Globe, Laptop, MessagesSquare, Moon, Search, Sun } from 'lucide-react'
+import { AppWindow, BookOpen, ChevronLeft, ExternalLink, Globe, Laptop, MessagesSquare, Moon, Search, Settings, Sun } from 'lucide-react'
 import './AppSidebar.css'
 
 /* the shared app sidebar every peasant app screen mounts: the hosted app (online), the local app
@@ -7,11 +7,15 @@ import './AppSidebar.css'
 
      desktop (width >= 768px)  a sticky full-height column in one fixed order that every app gets:
                                  1. the brand mark, with the collapse control
-                                 2. the app's nav groups
-                                 3. search, when the app has one (`search`)
-                                 4. the switcher to the other apps
-                                 5. the footer, one row pinned to the column's foot: the account on
-                                    the left, an icon-only theme toggle (`theme`) on the right
+                                 2. the shortcuts: search (`search`), the docs and community (the
+                                    switcher), then the app's links that leave it (an `external`
+                                    item, or `elsewhere`)
+                                 3. the app's own pages (`groups`)
+                                 4. the footer, one row pinned to the column's foot: the account on
+                                    the left; a settings gear (`settingsHref`, or a `settings` item
+                                    lifted out of the groups) and the theme toggle on the right
+                               a visible label carries no tooltip; the rail and the icon-only
+                               buttons do
                                the collapse control is a small handle seated on the column's
                                right edge, level with the brand. collapsed, it is an icon rail:
                                labels stay in the DOM as the accessible names (visually hidden) and
@@ -59,8 +63,9 @@ import './AppSidebar.css'
  * @property {(id: string) => void} [onSelect]  with no href, renders a button that calls this.
  * @property {import('react').ComponentType<any>} [icon]  a lucide icon component.
  * @property {string} [swatch]             a CSS colour for a 12px square in place of an icon, e.g. 'var(--olive)'.
- * @property {boolean} [external]          the item leaves this app: a trailing marker and a spoken suffix.
- * @property {string} [title]              tooltip; defaults to the label.
+ * @property {boolean} [external]          the item leaves this app: a trailing marker and a spoken suffix. It is
+ *                                         listed with the shortcuts, never among the pages.
+ * @property {string} [title]              ignored: a visible label takes no tooltip, and the rail shows the label.
  * @property {0|1} [depth]                 1 indents the item under the one above it.
  * @property {string} [target]
  * @property {string} [rel]
@@ -96,7 +101,12 @@ import './AppSidebar.css'
  * @property {string} [currentId]                   the id of the current item (aria-current="page").
  * @property {string} [homeHref]                    the brand links here.
  * @property {string} [brand]                       the brand's accessible name and tooltip, default 'peasant'.
- * @property {AppSidebarSearch} [search]           the app's search, placed after its nav groups.
+ * @property {AppSidebarSearch} [search]           the app's search, the first shortcut under the brand.
+ * @property {AppSidebarItem[]} [elsewhere]         the app's links that leave it (collectives online, from the local app),
+ *                                                  listed in the shortcuts after the docs and community. An `external`
+ *                                                  item in `groups` moves there too.
+ * @property {string} [settingsHref]                the app's settings: a gear in the footer, current when currentId is
+ *                                                  'settings'. A `settings` item in `groups` becomes the gear instead.
  * @property {'light'|'dark'} [theme]               the current theme; with onThemeChange, the footer leads with the theme toggle.
  * @property {(next: 'light'|'dark') => void} [onThemeChange]  called with the theme to switch to.
  * @property {AppSidebarAccount} [account]
@@ -238,9 +248,10 @@ function ItemBody({ item, external, suffix = EXTERNAL_SUFFIX }) {
   )
 }
 
-function SidebarItem({ item, current, Link, onNavigate }) {
+function SidebarItem({ item, current, Link, onNavigate, collapsed }) {
   const className = 'asb-item' + (item.depth === 1 ? ' asb-item-sub' : '')
-  const title = item.title ?? item.label
+  // a visible label needs no tooltip; in the rail the label is the tooltip
+  const title = collapsed ? item.label : undefined
   const ariaCurrent = current ? 'page' : undefined
   const body = <ItemBody item={item} external={!!item.external} />
   if (item.href) {
@@ -268,66 +279,74 @@ function SidebarItem({ item, current, Link, onNavigate }) {
   return <span className={className} aria-current={ariaCurrent} title={title}>{body}</span>
 }
 
-/* the switcher: the docs and community. the app the reader is in is not a destination, so it is
-   left out; online and local are never listed, in any app; an entry with nowhere to go is left
+/* the switcher entries: the docs and community. the app the reader is in is not a destination, so
+   it is left out; online and local are never listed, in any app; an entry with nowhere to go is left
    out unless it is a place to come (soon). each opens in a new tab unless its entry names a target. */
-function AppSwitcher({ app, apps, Link, onNavigate, firstIndex }) {
+function switcherEntries(app, apps) {
   // every app ends its switcher with community; an app names its own entry once the place exists
   const withCommunity = apps.some((entry) => entry.id === COMMUNITY_SOON.id) ? apps : [...apps, COMMUNITY_SOON]
-  const shown = withCommunity.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))
-  if (shown.length === 0) return null
+  return withCommunity.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))
+}
+
+function SwitcherEntry({ entry, Link, onNavigate, collapsed }) {
+  const item = { id: entry.id, label: entry.label, icon: APP_ICONS[entry.id] ?? AppWindow }
+  const target = entry.target ?? '_blank'
+  const rel = entry.rel ?? (target === '_blank' ? 'noopener noreferrer' : undefined)
+  const note = entry.soon ? 'soon' : entry.tag
+  const title = collapsed ? (note ? `${entry.label}, ${note}` : entry.label) : undefined
+  // the space keeps the note a separate word in the text; flex layout ignores it
+  const tag = note ? <>{' '}<span className="asb-tag">{note}</span></> : null
+  if (entry.href && !entry.soon) {
+    return (
+      <Link href={entry.href} className="asb-item asb-app" title={title} target={target} rel={rel} onClick={onNavigate}>
+        <ItemBody item={item} external suffix={target === '_blank' ? NEW_TAB_SUFFIX : EXTERNAL_SUFFIX} />
+        {tag}
+      </Link>
+    )
+  }
   return (
-    <nav className="asb-group asb-apps" aria-label="apps">
-      <ul className="asb-list">
-        {shown.map((entry, index) => {
-          const item = { id: entry.id, label: entry.label, icon: APP_ICONS[entry.id] ?? AppWindow }
-          const target = entry.target ?? '_blank'
-          const rel = entry.rel ?? (target === '_blank' ? 'noopener noreferrer' : undefined)
-          const note = entry.soon ? 'soon' : entry.tag
-          // the space keeps the note a separate word in the text; flex layout ignores it
-          const tag = note ? <>{' '}<span className="asb-tag">{note}</span></> : null
-          return (
-            <li key={entry.id} style={{ '--asb-i': firstIndex + index }}>
-              {entry.href && !entry.soon ? (
-                <Link href={entry.href} className="asb-item" title={note ? `${entry.label}, ${note}` : entry.label} target={target} rel={rel} onClick={onNavigate}>
-                  <ItemBody item={item} external suffix={target === '_blank' ? NEW_TAB_SUFFIX : EXTERNAL_SUFFIX} />
-                  {tag}
-                </Link>
-              ) : (
-                <span className="asb-item asb-item-soon" aria-disabled="true" title={`${entry.label}, ${note}`}>
-                  <ItemBody item={item} external={false} />
-                  {tag}
-                </span>
-              )}
-            </li>
-          )
-        })}
-      </ul>
-    </nav>
+    <span className="asb-item asb-app asb-item-soon" aria-disabled="true" title={title}>
+      <ItemBody item={item} external={false} />
+      {tag}
+    </span>
   )
 }
 
-/* the app's search: one item after the nav groups, its key hint beside the label */
-function SearchItem({ search, onNavigate, index }) {
+/* the app's search: the first shortcut, its key hint beside the label */
+function SearchItem({ search, onNavigate, collapsed }) {
   const label = search.label ?? 'search'
   return (
-    <div className="asb-group asb-search">
+    <button
+      type="button"
+      className="asb-item asb-search"
+      title={collapsed ? label : undefined}
+      aria-keyshortcuts={search.keyShortcuts}
+      onClick={() => { onNavigate(); search.onOpen?.() }}
+    >
+      <span className="asb-ic" aria-hidden="true"><Search /></span>
+      <span className="asb-label">{label}</span>
+      {search.shortcut ? <kbd className="asb-kbd" aria-hidden="true">{search.shortcut}</kbd> : null}
+    </button>
+  )
+}
+
+/* the shortcuts on top, under the brand: search, then the docs and community, then the app's own
+   links that leave it (collectives online, from the local app) */
+function Shortcuts({ search, entries, elsewhere, Link, onNavigate, collapsed, currentId }) {
+  if (!search && entries.length === 0 && elsewhere.length === 0) return null
+  let index = 0
+  return (
+    <nav className="asb-group asb-utils" aria-label="shortcuts">
       <ul className="asb-list">
-        <li style={{ '--asb-i': index }}>
-          <button
-            type="button"
-            className="asb-item"
-            title={search.shortcut ? `${label} (${search.shortcut})` : label}
-            aria-keyshortcuts={search.keyShortcuts}
-            onClick={() => { onNavigate(); search.onOpen?.() }}
-          >
-            <span className="asb-ic" aria-hidden="true"><Search /></span>
-            <span className="asb-label">{label}</span>
-            {search.shortcut ? <kbd className="asb-kbd" aria-hidden="true">{search.shortcut}</kbd> : null}
-          </button>
-        </li>
+        {search ? <li style={{ '--asb-i': index++ }}><SearchItem search={search} onNavigate={onNavigate} collapsed={collapsed} /></li> : null}
+        {entries.map((entry) => <li key={`app-${entry.id}`} style={{ '--asb-i': index++ }}><SwitcherEntry entry={entry} Link={Link} onNavigate={onNavigate} collapsed={collapsed} /></li>)}
+        {elsewhere.map((item) => (
+          <li key={`link-${item.id}`} style={{ '--asb-i': index++ }}>
+            <SidebarItem item={{ ...item, external: true }} current={item.id === currentId} Link={Link} onNavigate={onNavigate} collapsed={collapsed} />
+          </li>
+        ))}
       </ul>
-    </div>
+    </nav>
   )
 }
 
@@ -344,7 +363,17 @@ function ThemeItem({ theme, onThemeChange }) {
   )
 }
 
-function AccountRow({ account, Link, onNavigate }) {
+/* the app's settings: a gear in the footer, never a page in the nav. it is current on a settings page */
+function SettingsItem({ href, current, Link, onNavigate }) {
+  return (
+    <Link href={href} className="asb-icon-btn asb-settings" aria-label="settings" aria-current={current ? 'page' : undefined} onClick={onNavigate}>
+      <Settings aria-hidden="true" />
+      <span className="asb-tip" aria-hidden="true">settings</span>
+    </Link>
+  )
+}
+
+function AccountRow({ account, Link, onNavigate, collapsed }) {
   const handle = account.handle ?? ''
   const body = (
     <>
@@ -353,15 +382,16 @@ function AccountRow({ account, Link, onNavigate }) {
     </>
   )
   if (account.href) {
-    return <Link href={account.href} className="asb-account" title={'@' + handle} onClick={onNavigate}>{body}</Link>
+    return <Link href={account.href} className="asb-account" title={collapsed ? '@' + handle : undefined} onClick={onNavigate}>{body}</Link>
   }
-  return <span className="asb-account" title={'@' + handle}>{body}</span>
+  return <span className="asb-account" title={collapsed ? '@' + handle : undefined}>{body}</span>
 }
 
 /**
  * The shared app sidebar, in one order for every app: the brand mark with a collapse handle on the
- * column's edge, the caller's nav groups, search, the switcher to the other apps, then the footer
- * row (the account on the left, the theme toggle on the right). A sticky resizable column on desktop
+ * column's edge, the shortcuts (search, the docs and community, the app's links that leave it), the
+ * app's own pages, then the footer row (the account on the left, the settings gear and the theme
+ * toggle on the right). A sticky resizable column on desktop
  * that collapses to an icon rail; a top bar plus an opaque drawer below 768px.
  * @param {AppSidebarProps} props
  */
@@ -373,6 +403,8 @@ export default function AppSidebar({
   homeHref,
   brand = 'peasant',
   search,
+  elsewhere = [],
+  settingsHref,
   theme,
   onThemeChange,
   account,
@@ -432,7 +464,7 @@ export default function AppSidebar({
     const panel = scrollRef.current
     if (!panel) return undefined
     const place = () => {
-      const current = panel.querySelector('nav:not(.asb-apps) .asb-item[aria-current="page"]')
+      const current = panel.querySelector('nav:not(.asb-utils) .asb-item[aria-current="page"]')
       if (!current) {
         placedForRef.current = null
         setIndicator((previous) => (previous === null ? previous : null))
@@ -544,9 +576,24 @@ export default function AppSidebar({
   }
 
   const rootClass = ['asb', className].filter(Boolean).join(' ')
+  // the component owns the order, whatever a host puts in its groups: a link that leaves the app
+  // moves up to the shortcuts, and settings moves down to the footer's gear
+  const leaving = []
+  let settingsItem = null
+  const pages = groups.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => {
+      if (item.id === 'settings' && item.href) { settingsItem = settingsItem ?? item; return false }
+      if (item.external) { leaving.push(item); return false }
+      return true
+    }),
+  })).filter((group) => group.items.length > 0)
+  const entries = switcherEntries(app, apps)
+  const links = [...leaving, ...elsewhere]
+  const gearHref = settingsHref ?? settingsItem?.href
   // a running index over every listed item, so the drawer can stagger them in order
-  let listIndex = 0
-  const shownAccount = accountSlot ?? (account ? <AccountRow account={account} Link={Link} onNavigate={onNavigate} /> : null)
+  let listIndex = (search ? 1 : 0) + entries.length + links.length
+  const shownAccount = accountSlot ?? (account ? <AccountRow account={account} Link={Link} onNavigate={onNavigate} collapsed={collapsed} /> : null)
   const showTheme = (theme === 'light' || theme === 'dark') && typeof onThemeChange === 'function'
 
   return (
@@ -604,30 +651,30 @@ export default function AppSidebar({
             data-animate={indicator?.animate ? 'true' : 'false'}
             style={indicator ? { transform: `translateY(${indicator.top}px)`, left: `${indicator.left}px`, width: `${indicator.width}px`, height: `${indicator.height}px` } : undefined}
           />
-          {groups.map((group) => (
+          {/* 2. the shortcuts: search, the docs and community, then the app's links that leave it */}
+          <Shortcuts search={search} entries={entries} elsewhere={links} Link={Link} onNavigate={onNavigate} collapsed={collapsed} currentId={currentId} />
+
+          {/* 3. the app's own pages */}
+          {pages.map((group) => (
             <nav key={group.id} className="asb-group" aria-label={group.ariaLabel ?? group.label ?? group.id}>
               {group.label ? <span className="asb-glabel">{group.label}</span> : null}
               <ul className="asb-list">
                 {group.items.map((item) => (
                   <li key={item.id} style={{ '--asb-i': listIndex++ }}>
-                    <SidebarItem item={item} current={item.id === currentId} Link={Link} onNavigate={onNavigate} />
+                    <SidebarItem item={item} current={item.id === currentId} Link={Link} onNavigate={onNavigate} collapsed={collapsed} />
                   </li>
                 ))}
               </ul>
             </nav>
           ))}
-
-          {search ? <SearchItem search={search} onNavigate={onNavigate} index={listIndex++} /> : null}
-
-          <AppSwitcher app={app} apps={apps} Link={Link} onNavigate={onNavigate} firstIndex={listIndex} />
-
         </div>
 
-        {/* the footer: one row pinned under the nav, the account on the left (or the host's
-            signed-out slot) and the theme toggle on the right */}
-        {showTheme || shownAccount ? (
+        {/* 4. the footer: one row pinned under the nav, the account on the left (or the host's
+            signed-out slot), the settings gear and the theme toggle on the right */}
+        {showTheme || shownAccount || gearHref ? (
           <div className="asb-foot">
             {shownAccount ? <div className="asb-me">{shownAccount}</div> : null}
+            {gearHref ? <SettingsItem href={gearHref} current={currentId === (settingsItem?.id ?? 'settings')} Link={Link} onNavigate={onNavigate} /> : null}
             {showTheme ? <ThemeItem theme={theme} onThemeChange={onThemeChange} /> : null}
           </div>
         ) : null}
