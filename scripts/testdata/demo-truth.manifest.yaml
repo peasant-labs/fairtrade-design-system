@@ -18,6 +18,7 @@ requiredCaseNames:
   - update mode keeps no suggestion note on a collective that already reads
   - first publish keeps the picker suggestion note on a reader row
 requiredMutationNames:
+  - the typical pair is slashed
   - stale published vocabulary
   - stale analytics vocabulary
   - uppercase count suffix
@@ -127,3 +128,8 @@ mutations:
     find: "const readerRows = published ? access.map((item) => (item.pending === 'adding' || item.pending === 'approval') ? item : withoutSuggestionNote(item)) : access"
     replace: 'const readerRows = access.map(withoutSuggestionNote)'
     expectedDiagnostic: first publish keeps the picker suggestion note on a reader row
+  - name: the typical pair is slashed
+    file: src/ui/analytics/ProjectOverview.jsx
+    find: '<span className="gan-typmed tnum">{median}<span className="gan-typsep">,</span></span>'
+    replace: '<span className="gan-typmed tnum">{median}</span><span className="gan-typsep">/</span>'
+    expectedDiagnostic: "analytics uses session vocabulary: .gan-typvals must"

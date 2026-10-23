@@ -436,8 +436,9 @@ Desktop-first, left-aligned, on a 4/8 grid. The spacing scale is `--sp-1` to `--
 24, 32, 40, 56) and every padding, margin and gap uses it. The presentation site's content columns
 cap at `--maxw` with `--gutter` sides. An app page does not: `AppPage` (and the in-use demo's
 `.iu-page`) takes the full width of the column beside the sidebar with the same padding on the left
-and the right, so the gap beside the sidebar always equals the gap at the window's edge; prose keeps
-its own measure inside it. Buttons and inputs share one height (`--control-h`, `--control-h-sm` for small).
+and the right (32px from 768px up, 16px below), so the gap beside the sidebar always equals the gap
+at the window's edge; prose keeps its own measure inside it. Every page frame (the analytics
+overview included) carries that inset once, and the demo's view adds none around it. Buttons and inputs share one height (`--control-h`, `--control-h-sm` for small).
 Row heights come in three density tokens (`--row-h-compact`, `--row-h-standard`,
 `--row-h-comfortable`).
 
@@ -469,6 +470,11 @@ Calm by default; the user opts into density.
 may instead meet the WCAG 2.5.8 spacing exception. Primary publish actions use 36px on desktop
 (`--control-h`) and 44px for coarse pointers (`--target-comfortable`); the header publish action
 also uses the desktop control height, never the 28px small-control height. The glyph stays at icon size; the box is what grows.
+On a coarse pointer every control reaches 44px: `--control-h` and `--control-h-sm` both rise to
+`--target-comfortable`, so a control drawn at either height grows with no rule of its own, and a
+fine pointer keeps 36px and 28px. A visual that must stay small (a switch track, a chip, a tag, a
+badge) is drawn at `--chip-h`, which holds; when it is a control (a switch, a chip button) it takes an
+invisible 44px hit box instead, as do crumb links and table sort headers.
 
 **The Text Spacing Rule.** A user stylesheet with WCAG 1.4.12 spacing (line-height 1.5, paragraph
 spacing 2x, letter 0.12em, word 0.16em) clips nothing: no fixed px heights on text containers, and

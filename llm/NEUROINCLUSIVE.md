@@ -45,7 +45,7 @@ These tokens live in `src/index.css` and reach every consuming app through the p
 | `--word-spacing-prose` | **0.16em** | word-space ≥ 3.5× letter-space so words don't fuse (prose only) |
 | `--measure-prose` / `--measure-read` / `--measure-code` | **58ch / 48ch / 80ch** | probe-verified prose <=80 actual characters and reading panes 45–66; never cap tables/code (give each its own `overflow-x:auto`) |
 | `--focus-ring` | amber (dark) / near-black (light) | global 3px ring offset 2px; one -3px inset variant where the outside ring would clip or collide; never bare `outline:none` |
-| `--target-min` / `--target-comfortable` | **24px / 44px** | every interactive box ≥24px or the WCAG spacing exception; primary publish actions 36px desktop / 44px coarse-pointer touch |
+| `--target-min` / `--target-comfortable` | **24px / 44px** | every interactive box ≥24px or the WCAG spacing exception; primary publish actions 36px desktop / 44px coarse-pointer touch; on a coarse pointer every control height rises to 44px and a small visual (`--chip-h`) takes a 44px hit box |
 | `--row-h-compact/standard/comfortable` | **32 / 40 / 48px** | standard 40px default, persistent density toggle |
 | `--motion-base` | **0ms default**, 120 to 200ms (`--dur-1` to `--dur-3`) only under `prefers-reduced-motion:no-preference` | static-first |
 

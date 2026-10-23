@@ -9,6 +9,10 @@ requiredCaseNames:
   - the meta row reads a short duration
   - a turn without a known time shows no time
   - the steps list leaves out a zero duration
+  - a cursor prompt shows without its wrapper
+  - an evidence-bearing cursor prompt shows without its wrapper
+  - another harness shows its prompt as written
+  - a prompt that mentions the tag stays as written
 
 requiredMutationNames:
   - session metadata records stay turns
@@ -17,6 +21,10 @@ requiredMutationNames:
   - an unknown session time is kept
   - the meta row shows raw minutes
   - a zero step duration is shown
+  - a user prompt keeps the cursor wrapper
+  - the recorded content is rewritten
+  - every harness is unwrapped
+  - the trace outline shows the recorded prompt
 mutations:
   - name: session metadata records stay turns
     file: src/ui/transcript/adapter.js
@@ -48,3 +56,23 @@ mutations:
     find: "{durationLabel ? <span className=\"swf-dur tnum\">{durationLabel}</span> : null}"
     replace: "<span className=\"swf-dur tnum\">{durationLabel || '0s'}</span>"
     expectedDiagnostic: "the steps list leaves out a zero duration: step durations"
+  - name: a user prompt keeps the cursor wrapper
+    file: src/ui/transcript/adapter.js
+    find: "    if (shown !== undefined) turnVM.displayContent = shown"
+    replace: "    void shown"
+    expectedDiagnostic: "a cursor prompt shows without its wrapper: the shown prompt"
+  - name: the recorded content is rewritten
+    file: src/ui/transcript/adapter.js
+    find: "    if (shown !== undefined) turnVM.displayContent = shown"
+    replace: "    if (shown !== undefined) { turnVM.displayContent = shown; turnVM.content = shown }"
+    expectedDiagnostic: "an evidence-bearing cursor prompt shows without its wrapper: the recorded content"
+  - name: every harness is unwrapped
+    file: src/ui/transcript/adapter.js
+    find: "  if (harness !== 'cursor' || role !== 'user') return undefined"
+    replace: "  if (role !== 'user') return undefined"
+    expectedDiagnostic: "another harness shows its prompt as written: the shown prompt"
+  - name: the trace outline shows the recorded prompt
+    file: src/ui/transcript/OutlineRail.jsx
+    find: "prompt: t.displayPrompt ?? t.prompt,"
+    replace: "prompt: t.prompt,"
+    expectedDiagnostic: "a cursor prompt shows without its wrapper: the trace outline must not show"

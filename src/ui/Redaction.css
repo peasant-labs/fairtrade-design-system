@@ -248,7 +248,7 @@
   align-items: center;
   gap: var(--sp-1);
   padding: 0 var(--sp-2);
-  min-height: var(--control-h-sm);
+  min-height: var(--chip-h);
   border: var(--bd);
   background: var(--surface-2);
   color: var(--ink-2);
@@ -256,6 +256,7 @@
   min-width: 0;
   max-width: 100%;
 }
+.rdx-badge-lead { white-space: nowrap; }
 .rdx-badge-cat { color: var(--ink-2); }
 .rdx-badge-dot { color: var(--ink-4); }
 .rdx-badge-conf { color: var(--ink-3); }

@@ -1,0 +1,11 @@
+# Required-NAME manifest for page-frame.yaml: deletion protection. The journey asserts the width and
+# page names equal these lists exactly, as sets.
+requiredWidthNames:
+  - desktop
+  - phone
+requiredPageNames:
+  - app page
+  - local home
+  - local settings
+  - analytics overview
+  - online transcripts

@@ -26,6 +26,9 @@
      instead of sprawling on a wide monitor. */
   .gan-root { display: flex; flex-direction: column; height: 100%; min-width: 0; min-height: 0; font-family: var(--font-mono); max-width: none; margin-inline: 0; --gan-pad-x: var(--sp-6); }
   @media (width < 768px) { .gan-root { --gan-pad-x: var(--sp-4); } }
+  /* the overview is a page frame: its sides are the app page inset (--gan-pad-x, 32px from a tablet
+     up, 16px below) at every width, so a view that holds it adds none */
+  .iu-view:has(> .gan-root) { padding: 0; }
   .gan-head { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-4) var(--gan-pad-x); border-bottom: var(--bd); }
   .gan-head-titles { min-width: 0; }
   .gan-h2 { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); color: var(--ink-strong); text-transform: lowercase; line-height: var(--lh-body); margin: 0; overflow-wrap: anywhere; }
@@ -94,7 +97,7 @@
   .gan-legend-v { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; }
   .gan-legend-pct { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-4); font-variant-numeric: tabular-nums; text-align: right; min-width: var(--sp-6); }
 
-  /* ---- median.p90 typical-vs-tail grid ---- */
+  /* ---- typical-vs-tail grid: "2m, 5m", the median then the p90, the comma against the median ---- */
   .gan-typical { display: flex; flex-direction: column; }
   .gan-typrow { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) 0; border-bottom: var(--bd); }
   .gan-typrow:last-child { border-bottom: 0; }
@@ -102,7 +105,7 @@
   .gan-typvals { display: inline-flex; align-items: baseline; gap: var(--sp-2); }
   .gan-typmed { font-family: var(--font-mono); font-size: var(--fs-md); color: var(--ink-strong); font-variant-numeric: tabular-nums; }
   .gan-typsep { color: var(--ink-3); }
-  .gan-typp90 { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-4); font-variant-numeric: tabular-nums; }
+  .gan-typp90 { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
   /* ---- contributor table card (reuses .tbl-*) ---- */
   .gan-tablecard { display: flex; flex-direction: column; gap: var(--sp-2); background: var(--surface); border: var(--bd-strong); padding: var(--sp-3) var(--sp-4) var(--sp-4); min-width: 0; overflow: hidden; }
@@ -123,8 +126,8 @@
     .gan-kpis { grid-template-columns: repeat(2, 1fr); }
     .gan-donut { grid-template-columns: 1fr; justify-items: center; }
     .gan-legend { width: 100%; }
-    .gan-head { padding: var(--sp-3); }
-    .gan-scroll { padding: var(--sp-3); }
+    .gan-head { padding: var(--sp-3) var(--gan-pad-x); }
+    .gan-scroll { padding: var(--sp-3) var(--gan-pad-x); }
     .gan-tablecard { padding: var(--sp-2) var(--sp-3) var(--sp-3); }
     .gan-tablecard .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   }

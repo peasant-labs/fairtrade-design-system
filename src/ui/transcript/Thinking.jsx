@@ -26,7 +26,7 @@ export default function Thinking({ block }) {
         {open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
         <Brain size={14} aria-hidden="true" />
         <i>thinking</i>
-        <span className="txn-thinking-wc tnum">{block.words ?? 0}w</span>
+        <span className="txn-thinking-wc"><span className="tnum">{block.words ?? 0}</span> {(block.words ?? 0) === 1 ? 'word' : 'words'}</span>
       </button>
       {open && (
         <div className="txn-thinking-body">

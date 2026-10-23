@@ -54,7 +54,7 @@ export {
    framework-agnostic functions — no fairtrade equivalent existed. ──────────── */
 export { nextNavTurn } from './turnNav.js'
 export { formatRelative, formatDurationMins, formatDurationMs, formatDurationSeconds, formatDateLong, isKnownTime } from './time.js'
-export { summarizePrompt, composeSessionTitle, projectLabel } from './title.js'
+export { summarizePrompt, composeSessionTitle, projectLabel, cleanSessionTitle, unwrapUserQuery } from './title.js'
 
 /* ── lifted transcript rendering primitives + composite (runtime) ─────────────────
    The dumb single-transcript components, lifted verbatim from the canonical mockup.

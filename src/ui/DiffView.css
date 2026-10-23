@@ -205,6 +205,7 @@
   color: var(--ink-2);
   font-size: var(--fs-label);
 }
+.dv-badge-lead { white-space: nowrap; }
 .dv-badge-cat { color: var(--ink-2); }
 .dv-badge-dot { color: var(--ink-4); }
 .dv-badge-conf { color: var(--ink-3); }

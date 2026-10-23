@@ -18,6 +18,7 @@
    ─────────────────────────────────────────────────────────────────────────── */
 
 /** @typedef {import('./wire-types.js').ToolCallDetail} ToolCallDetail */
+/** @typedef {import('./view-model.js').DiffLineVM} DiffLineVM */
 
 /**
  * The SOLE `JSON.parse` of a wire-encoded tool string in the lifted code. Every
@@ -136,28 +137,99 @@ export function writeContent(call) {
 }
 
 /**
- * Lines inserted / removed for an edit-family or write tool call. Consolidates
- * the THREE duplicate `countDiff` definitions. Pure: depends only on the parsed
- * arguments, never a clock or the file system.
+ * Dependency-free line diff (LCS) → cooked `DiffLineVM[]`. fairtrade ships no
+ * `diff` package, so the adapter computes hunks itself. Line numbers are 1-based
+ * within the supplied snippet (the wire carries the edit snippet, not the file
+ * offset). Deterministic — no clock/randomness — so it is screenshot-stable.
+ * @param {string} oldText
+ * @param {string} newText
+ * @returns {DiffLineVM[]}
+ */
+export function diffLines(oldText, newText) {
+  const a = oldText === '' ? [] : oldText.split('\n')
+  const b = newText === '' ? [] : newText.split('\n')
+  const m = a.length
+  const n = b.length
+  /** @type {number[][]} */
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
+  for (let i = m - 1; i >= 0; i--) {
+    for (let j = n - 1; j >= 0; j--) {
+      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
+    }
+  }
+  /** @type {DiffLineVM[]} */
+  const out = []
+  let i = 0
+  let j = 0
+  let oldNo = 1
+  let newNo = 1
+  while (i < m && j < n) {
+    if (a[i] === b[j]) {
+      out.push({ sign: 'ctx', oldNo: String(oldNo++), newNo: String(newNo++), text: a[i] })
+      i++
+      j++
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      out.push({ sign: 'del', oldNo: String(oldNo++), text: a[i] })
+      i++
+    } else {
+      out.push({ sign: 'add', newNo: String(newNo++), text: b[j] })
+      j++
+    }
+  }
+  while (i < m) out.push({ sign: 'del', oldNo: String(oldNo++), text: a[i++] })
+  while (j < n) out.push({ sign: 'add', newNo: String(newNo++), text: b[j++] })
+  return out
+}
+
+/** @type {WeakMap<ToolCallDetail, { spans: DiffLineVM[][], adds: number, dels: number } | undefined>} */
+const diffCache = new WeakMap()
+
+/**
+ * The cooked line diff of an edit-family or write tool call (one line list per replaced span) and
+ * its churn: the + and − lines of that same diff, so a rewrite of three lines counts +3 −3 and every
+ * count (the tool call, the diffs tab, a task's churn) agrees with the lines it heads. A span's
+ * trailing empty line is the newline artifact, not a line anyone wrote, so it is not counted, as the
+ * renderer does not show it. Undefined for any other kind, or an edit with no replacement. Memoised
+ * per call object, because the adapter and the analytics both ask and the line diff is quadratic in
+ * the span length.
+ * @param {ToolCallDetail} call
+ * @returns {{ spans: DiffLineVM[][], adds: number, dels: number } | undefined}
+ */
+export function callDiff(call) {
+  if (diffCache.has(call)) return diffCache.get(call)
+  const name = call.name.toLowerCase()
+  /** @type {DiffLineVM[][] | undefined} */
+  let spans
+  if (name === 'write') spans = [diffLines('', writeContent(call))]
+  else if (name === 'edit' || name === 'multiedit' || name === 'notebookedit') {
+    const pairs = editPairs(call)
+    if (pairs.length) spans = pairs.map((pair) => diffLines(pair.old_string, pair.new_string))
+  }
+  let result
+  if (spans) {
+    let adds = 0
+    let dels = 0
+    for (const span of spans) {
+      const written = span.length > 0 && span[span.length - 1].text === '' ? span.slice(0, -1) : span
+      for (const line of written) {
+        if (line.sign === 'add') adds++
+        else if (line.sign === 'del') dels++
+      }
+    }
+    result = { spans, adds, dels }
+  }
+  diffCache.set(call, result)
+  return result
+}
+
+/**
+ * Lines inserted / removed for an edit-family or write tool call: the churn of `callDiff`, zero
+ * for any other kind. Consolidates the THREE duplicate `countDiff` definitions. Pure: depends only
+ * on the parsed arguments, never a clock or the file system.
  * @param {ToolCallDetail} call
  * @returns {{ adds: number, dels: number }}
  */
 export function countDiff(call) {
-  const name = call.name.toLowerCase()
-  if (name === 'write') {
-    const content = writeContent(call)
-    return { adds: content ? content.split('\n').length : 0, dels: 0 }
-  }
-  if (name === 'edit' || name === 'multiedit' || name === 'notebookedit') {
-    let adds = 0
-    let dels = 0
-    for (const pair of editPairs(call)) {
-      const a = (pair.new_string || '').split('\n').length
-      const b = (pair.old_string || '').split('\n').length
-      if (a > b) adds += a - b
-      if (b > a) dels += b - a
-    }
-    return { adds, dels }
-  }
-  return { adds: 0, dels: 0 }
+  const diff = callDiff(call)
+  return diff ? { adds: diff.adds, dels: diff.dels } : { adds: 0, dels: 0 }
 }

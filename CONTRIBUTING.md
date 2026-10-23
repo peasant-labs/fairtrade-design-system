@@ -42,6 +42,7 @@ keep changes aligned with `AGENTS.md` and `DESIGN.md` (the design record; `llm/N
 - lead provider names with `<BrandMark>`
 - preserve 1.5 line-height, at least 24px hit targets, a visible focus ring, and reduced-motion behavior
 - primary publish actions are 36px desktop and 44px on coarse-pointer touch; the standard ring has one inset variant
+- on a coarse pointer every control height rises to 44px; a small visual drawn at `--chip-h` takes a 44px hit box instead
 - keep skeletons and live dots static; only the named busy-spinner loops during work with motion allowed
 - keep turns expanded but collapsible, tool details and the tool-type filter subgroup initially collapsed
 - user-opened modals trap focus and restore it to their opener; routine status messages do not interrupt

@@ -41,6 +41,7 @@ requiredMutationNames:
   - confidence loses its visible label
   - confidence help loses its definition
   - retry bypasses the unknown scan gate
+  - the comma floats a badge gap from the label
 mutations:
   - name: retry bypasses the unknown scan gate
     file: src/ui/Publish.jsx
@@ -72,3 +73,8 @@ mutations:
     find: "how sure the scanner is that this is a real match"
     replace: "scanner score"
     expectedDiagnostic: "confidence help must define the score"
+  - name: the comma floats a badge gap from the label
+    file: src/ui/Redaction.jsx
+    find: "<span className=\"rdx-badge-lead\"><span className=\"rdx-badge-cat\">{redactionCategoryLabel(category)}</span><span className=\"rdx-badge-dot\" aria-hidden=\"true\">,</span></span>"
+    replace: "<span className=\"rdx-badge-cat\">{redactionCategoryLabel(category)}</span><span className=\"rdx-badge-dot\" aria-hidden=\"true\">,</span>"
+    expectedDiagnostic: "credential category: the comma sits against the label"

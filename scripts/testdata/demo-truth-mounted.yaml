@@ -4,7 +4,7 @@ cases:
     query: app=graph&section=village
     width: 1440
     root: .vobs
-    text: [Relevant collectives only., Acme Platform, '2026-10-15T09:00:00Z']
+    text: [relevance, Acme Platform, '2026-10-15T09:00:00Z']
     tabular: .vobs time.tnum
     action: '.vobs button:has-text("fetch metadata")'
     actionStatus: partial fetch

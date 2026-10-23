@@ -552,8 +552,7 @@ function StatRow({ label, median, p90 }) {
     <div className="gan-typrow">
       <span className="gan-typlab">{label}</span>
       <span className="gan-typvals">
-        <span className="gan-typmed tnum">{median}</span>
-        <span className="gan-typsep" aria-hidden="true">/</span>
+        <span className="gan-typmed tnum">{median}<span className="gan-typsep">,</span></span>
         <span className="gan-typp90 tnum">{p90}</span>
       </span>
     </div>

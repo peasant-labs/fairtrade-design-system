@@ -1,0 +1,20 @@
+# Cases for the transcript column gate (scripts/journey/transcript-columns.journey.mjs). The journey
+# opens the built demo's transcript at each viewport in both themes and checks that every visible
+# scrolling column (the trace stream, the filters rail) is exactly as wide as its content box:
+# scrollWidth equals clientWidth, so nothing hidden (a closed definition bubble) widens it and a
+# sideways swipe never slides the conversation off its edge. `path` is the demo query string.
+screens:
+  - {name: transcript, path: '?app=transcript'}
+viewports:
+  - {name: desktop, width: 1440, height: 900}
+  - {name: phone, width: 390, height: 780}
+columns:
+  - {name: stream, selector: '#inuse .txn-stream'}
+  - {name: filters, selector: '#inuse .txn-rail-right .txn-rail-body'}
+# Mutations: each injects CSS into the measured page and must make the gate report the column in
+# `expect`, proving it fails for the intended reason.
+mutationViewport: phone
+mutations:
+  - name: closed bubbles take layout again
+    css: '.term-bubble { display: block !important; }'
+    expect: wider than its box

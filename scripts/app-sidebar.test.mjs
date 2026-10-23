@@ -378,6 +378,16 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         await mounted.rerender(React.createElement(AppSidebar, propsFor(row, { currentId: row.missing })))
         report.check(same(look(), row.expected.none), `${name}: with no current item the indicator must be ${JSON.stringify(row.expected.none)}, received ${JSON.stringify(look())}`)
         await mounted.unmount()
+      } else if (row.kind === 'sideways') {
+        const mounted = await mount(React.createElement(AppSidebar, propsFor(row)))
+        const column = mounted.container.querySelector('.asb-scroll')
+        // jsdom has no layout, so the column is given a scroll position the way a focus would leave it
+        let left = 0
+        Object.defineProperty(column, 'scrollLeft', { configurable: true, get: () => left, set: (value) => { left = value } })
+        left = row.shift
+        await mounted.act(() => column.dispatchEvent(new window.Event('scroll')))
+        report.check(left === row.expected.scrollLeft, `${name}: a sideways scroll must go straight back to ${row.expected.scrollLeft}, received ${left}`)
+        await mounted.unmount()
       } else if (row.kind === 'link-component') {
         const seen = []
         const Link = ({ href, children, ...rest }) => {

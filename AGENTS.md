@@ -47,7 +47,8 @@ side a consumer matches.
   never lowercase user content (names, code, data values). **Tabular numbers** on counts/durations.
 - **Neuroinclusive by default**: 1.5 line-height, >=24px hit targets, global focus ring,
   static-first motion (guard transitions with `prefers-reduced-motion`). Primary publish actions
-  are 36px desktop / 44px coarse-pointer touch. The standard focus ring has one inset variant.
+  are 36px desktop / 44px coarse-pointer touch. On a coarse pointer every control height rises to
+  44px; a small visual drawn at `--chip-h` takes a 44px hit box. The standard focus ring has one inset variant.
   Only the named busy-spinner may loop during work when motion is allowed. See `DESIGN.md`.
 - **Semantic meaning is never carried by colour alone** - always pair an icon or text label.
 - **Real brand logos**: when naming a company/provider (claude, gemini, openai, cursor, opencode, strike),

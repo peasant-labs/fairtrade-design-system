@@ -1,0 +1,78 @@
+# Cases for how the transcript viewer formats what it shows (adaptTranscript -> TranscriptViewer).
+# scripts/transcript-viewer-format.test.mjs cooks the payload below with the REAL adapter and mounts
+# the REAL viewer (or the part named), then checks what a reader sees:
+#   - an edit counts the lines it adds and removes from the diff itself, so a same-length rewrite
+#     reads +3 −3 (the count was the net change in length, +0 −0);
+#   - a thinking block says "30 words" and "1 word", never "30w";
+#   - a model change names the models without their provider prefix and draws an arrow, never "->";
+#   - a breadcrumb item with an href is a link even when it is last; one without is the current page;
+#   - a tab without filters (the diffs) has no filters rail and no "not available" line;
+#   - the stylesheet keeps tabs, segments and the turn chip on one line, fades the narrow tab strip,
+#     wraps a long diff line instead of clipping it, and leaves the key hints out on a touch screen.
+payload:
+  id: viewer-format
+  harness: claude-code
+  model: anthropic/claude-fable-5
+  turnCount: 4
+  turns:
+    - {index: 0, role: user, content: 'Rename the upload helpers.', timestamp: '2026-10-20T10:00:00Z', depth: 0}
+    - index: 1
+      role: assistant
+      content: 'Renaming them in place.'
+      timestamp: '2026-10-20T10:01:00Z'
+      depth: 0
+      observedModel: anthropic/claude-fable-5
+      toolCalls:
+        - id: rewrite
+          name: Edit
+          arguments: '{"file_path":"src/upload.ts","old_string":"const a = uploadBuild(file)\nconst b = uploadLogs(file)\nconst c = uploadMeta(file)\n","new_string":"const a = sendBuild(file)\nconst b = sendLogs(file)\nconst c = sendMeta(file)\n"}'
+          result: '"ok"'
+          toolKind: edit
+          filePath: src/upload.ts
+    - {index: 2, role: user, content: 'Now the region.', timestamp: '2026-10-20T10:02:00Z', depth: 0}
+    - {index: 3, role: assistant, content: 'Switching models for this one.', timestamp: '2026-10-20T10:03:00Z', depth: 0, observedModel: anthropic/claude-opus-4-8}
+
+cases:
+  - name: a same-length rewrite counts its lines
+    kind: diff-counts
+    expected: {adds: 3, dels: 3, churn: '+3 −3', taskStat: '1 file, +3 −3'}
+  - name: thinking counts words in words
+    kind: thinking-words
+    blocks:
+      - {text: a thinking block of thirty words, words: 30}
+      - {text: one, words: 1}
+    expected: [30 words, 1 word]
+  - name: a model change names models and draws an arrow
+    kind: model-marker
+    expected: {text: 'model changed: claude-fable-5 → to claude-opus-4-8', shown: 'model changed: claude-fable-5 → claude-opus-4-8'}
+  - name: a last crumb with an href is a link
+    kind: crumb
+    breadcrumb:
+      - {label: collectives, href: /collectives}
+      - {label: EnCUCA, href: /collectives/encuca}
+    expected: [{tag: A, href: /collectives, current: null}, {tag: A, href: /collectives/encuca, current: null}]
+  - name: a last crumb without an href is the current page
+    kind: crumb
+    breadcrumb:
+      - {label: home, href: /}
+      - {label: viewer-format}
+    expected: [{tag: A, href: /, current: null}, {tag: SPAN, href: null, current: page}]
+  - name: a tab without filters has no filters rail
+    kind: filters-rail
+    tabs:
+      diffs: {rail: false, grid: none}
+      trace: {rail: true, grid: open}
+  - name: the stylesheet keeps labels whole and lines unclipped
+    kind: stylesheet
+    # context is the at-rule chain around the rule, outermost first, joined with " > "
+    rules:
+      - {selector: .txn-tab, context: '@layer components', prop: white-space, value: nowrap}
+      - {selector: '.txn-diffs .bs-seg-opt, .txn-viewtoggle .bs-seg-opt', context: '@layer components', prop: white-space, value: nowrap}
+      - {selector: .txn-tb-chip, context: '@layer components', prop: white-space, value: nowrap}
+      - {selector: .txn-diff .dl .t, context: '@layer components', prop: white-space, value: pre-wrap}
+      - {selector: .txn-diff .dl .t, context: '@layer components', prop: overflow-wrap, value: anywhere}
+      - {selector: .txn-diff .dl .t, context: '@layer components', prop: overflow, value: visible}
+      - {selector: .txn-tabs, context: '@media (width < 768px)', prop: overflow-x, value: auto}
+      - {selector: .txn-tabs, context: '@media (width < 768px)', prop: mask-image, value: 'linear-gradient(to right, var(--ink) calc(100% - var(--sp-6)), transparent)'}
+      - {selector: '.txn-tabs:focus-within', context: '@media (width < 768px)', prop: mask-image, value: none}
+      - {selector: .txn-footer, context: '@layer components > @media (pointer: coarse)', prop: display, value: none}

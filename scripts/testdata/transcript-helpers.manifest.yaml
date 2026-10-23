@@ -78,6 +78,7 @@ requiredSummarizePromptNames:
   - a slash command with a message uses the message
   - a slash command with args and a message prefers the message
   - a long input is truncated with an ellipsis at 80 characters
+  - a cursor wrapper after a timestamp keeps only the query
 
 requiredProjectLabelNames:
   - a posix path takes the last segment
@@ -86,6 +87,18 @@ requiredProjectLabelNames:
   - undefined returns an empty string
   - a string with no separators returns the whole string
   - a trailing slash is ignored
+
+requiredCleanSessionTitleNames:
+  - plain title stays as written
+  - cursor wrapper is dropped
+  - cursor wrapper after a timestamp is dropped
+  - unclosed cursor wrapper keeps the words after it
+  - redaction markers stay as written
+  - whitespace is collapsed
+  - prose that mentions the wrapper stays as written
+  - a user_info prelude is dropped
+  - words after the closing tag are kept
+  - undefined returns an empty string
 
 requiredComposeSessionTitleNames:
   - project and summary compose the project colon summary form
@@ -106,6 +119,9 @@ requiredMutationNames:
   - 'time: an old time stays relative'
   - 'time: a zero duration renders'
   - 'title: sentence capitalization is inverted'
+  - 'title: the cursor wrapper tag is kept'
+  - 'title: a wrapper mentioned in prose is unwrapped'
+  - 'title: a title keeps its runs of whitespace'
 mutations:
   - name: 'turnNav: no-anchor direction always snaps to the first turn'
     file: src/ui/transcript/turnNav.js
@@ -149,3 +165,24 @@ mutations:
     envVar: FAIRTRADE_TITLE_MODULE
     outFile: title.mutated.js
     expectedDiagnostic: "a plain sentence drops the trailing period"
+  - name: 'title: the cursor wrapper tag is kept'
+    file: src/ui/transcript/title.js
+    find: "const start = lead[0].length"
+    replace: "const start = lead[0].length - USER_QUERY_OPEN.length"
+    envVar: FAIRTRADE_TITLE_MODULE
+    outFile: title.mutated.js
+    expectedDiagnostic: "cleanSessionTitle — cursor wrapper is dropped"
+  - name: 'title: a wrapper mentioned in prose is unwrapped'
+    file: src/ui/transcript/title.js
+    find: "const lead = USER_QUERY_LEAD.exec(text)"
+    replace: 'const lead = /^[\s\S]*?<user_query>/.exec(text)'
+    envVar: FAIRTRADE_TITLE_MODULE
+    outFile: title.mutated.js
+    expectedDiagnostic: "cleanSessionTitle — prose that mentions the wrapper stays as written"
+  - name: 'title: a title keeps its runs of whitespace'
+    file: src/ui/transcript/title.js
+    find: "return unwrapUserQuery(text).replace(/\\s+/g, ' ').trim()"
+    replace: "return unwrapUserQuery(text).trim()"
+    envVar: FAIRTRADE_TITLE_MODULE
+    outFile: title.mutated.js
+    expectedDiagnostic: "cleanSessionTitle — whitespace is collapsed"

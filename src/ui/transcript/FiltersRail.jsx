@@ -95,9 +95,8 @@ export default function FiltersRail({
   const umbrella = toolGroupsState(toolGroups, counts.toolGroups)
   const setCheckpoint = (cp) => onFiltersChange({ ...filters, checkpoint: cp })
 
-  if (tab !== 'trace' && tab !== 'highlights') {
-    return <div className="txn-filter-ph">filters are not available for this view yet.</div>
-  }
+  // only the trace and the highlights have filters; the viewer leaves this rail out elsewhere
+  if (tab !== 'trace' && tab !== 'highlights') return null
 
   if (tab === 'highlights') {
     return (

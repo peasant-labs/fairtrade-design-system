@@ -35,6 +35,8 @@
 .txn-usage-scopes[open] { max-height: var(--measure-read); overflow: auto; }
 .txn-usage-scope-label { font-size: var(--fs-label); margin-block: var(--sp-3); }
 .txn-turn-heading { position: absolute; width: var(--stroke-hairline); height: var(--stroke-hairline); overflow: hidden; clip-path: inset(50%); margin: 0; font-size: var(--fs-lg); }
+/* words a screen reader says that the eye reads from a glyph (the "to" behind a drawn arrow) */
+.txn-sr { position: absolute; width: var(--stroke-hairline); height: var(--stroke-hairline); overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }
 .txn-generic .txn-code { font-size: var(--fs-body); }
 .txn-generic .txn-out-eyebrow { font-size: var(--fs-sm); }
 .txn-tc-head .kind, .txn-tc-head .path, .txn-title, .txn-crumb { text-transform: none; }
@@ -57,7 +59,10 @@
      edge-to-edge control whose outside ring would be clipped or collide with a neighbour. */
   --focus-ring-width: 3px; --focus-ring-offset: 2px; --focus-ring-offset-inset: calc(-1 * var(--focus-ring-width));
   --ghost-node-size: 9px;
-  --control-h: 36px; --control-h-sm: 28px; --nav-h: 56px;
+  /* control heights rise to --target-comfortable on a coarse pointer (set after the token blocks);
+     --chip-h is a visual size (chip, tag, badge, switch track) that holds, so a dense control
+     drawn at it takes a hit box instead of growing. */
+  --control-h: 36px; --control-h-sm: 28px; --chip-h: 28px; --nav-h: 56px;
   --maxw: 1040px; --gutter: var(--sp-6);
   /* breakpoint scale (desktop-first reference; @media can't consume var(), so these document the
      one canonical scale that the single-sided width queries below target): phone <480,
@@ -155,6 +160,10 @@
 
 /* a phone gets the smaller card padding */
 @media (width < 768px) { :root { --card-pad: var(--sp-4); } }
+
+/* a finger gets a 44px target: every control height rises to the comfortable target. desktop and
+   any fine pointer keep 36px and 28px. */
+@media (pointer: coarse) { :root { --control-h: var(--target-comfortable); --control-h-sm: var(--target-comfortable); } }
 
 /* the browser's own parts follow the theme: a native select's option list, scrollbars and form
    pickers are drawn dark on the dark ground and light on paper. */
@@ -312,12 +321,14 @@
   .btn-sm .lucide, .btn-sm .brand { width: var(--ic-sm); height: var(--ic-sm); }
   .btn-icon { width: var(--control-h); padding: 0; }
   .btn-sm.btn-icon { width: var(--control-h-sm); }
-  /* a finger gets a 44px target: a small button grows to it; a switch and a crumb link keep their
-     look and take an invisible reach around them */
+  /* a finger gets a 44px target. controls drawn at a control height grow with it (the tokens rise
+     under a coarse pointer); a switch, a chip button and a crumb link keep their look and take an
+     invisible 44px reach around them (the table sort header's rule sits after its own base rule). a
+     reach is laid out inside the control's border, so it reaches past that hairline too. */
   @media (pointer: coarse) {
-    .btn-sm { height: auto; min-height: var(--target-comfortable); }
-    .btn-sm.btn-icon { width: var(--target-comfortable); }
-    .sw::after { content: ""; position: absolute; inset: calc((var(--target-comfortable) - var(--control-h-sm)) / -2) calc(var(--sp-1) * -1); }
+    .sw::after { content: ""; position: absolute; inset: calc((var(--target-comfortable) - var(--chip-h)) / -2 - var(--stroke-hairline)) calc(var(--sp-1) * -1); }
+    button.chip, a.chip { position: relative; }
+    button.chip::after, a.chip::after { content: ""; position: absolute; inset: calc((var(--target-comfortable) - var(--chip-h)) / -2 - var(--stroke-hairline)) 0; }
     .crumb a { display: inline-flex; align-items: center; min-height: var(--target-comfortable); }
   }
   .btn:disabled { opacity: .42; cursor: not-allowed; pointer-events: none; }
@@ -384,7 +395,7 @@
 
   /* chips */
   .chips { @apply flex flex-wrap items-center gap-3; }
-  .chip { @apply inline-flex items-center gap-2 font-mono text-label text-ink-2; box-sizing: border-box; padding: 0 var(--sp-3); height: var(--control-h-sm); border: var(--bd-strong); }
+  .chip { @apply inline-flex items-center gap-2 font-mono text-label text-ink-2; box-sizing: border-box; padding: 0 var(--sp-3); height: var(--chip-h); border: var(--bd-strong); }
   .chip .lucide, .chip .brand { width: var(--ic-sm); height: var(--ic-sm); }
   .chip-chrome { text-transform: lowercase; }
   .chipx-dot-inline { display: inline-flex; align-items: center; gap: var(--sp-2); }
@@ -766,13 +777,13 @@
   /* the control: a 48x28 track, hairline border, square corners */
   .sw {
     --sw-pad: var(--sp-1);
-    --sw-thumb: calc(var(--control-h-sm) - 2 * var(--sw-pad) - 2px);
-    --sw-travel: calc(var(--control-h-sm) * 2 - var(--sp-1) - 2px - 2 * var(--sw-pad) - var(--sw-thumb));
+    --sw-thumb: calc(var(--chip-h) - 2 * var(--sw-pad) - 2px);
+    --sw-travel: calc(var(--chip-h) * 2 - var(--sp-1) - 2px - 2 * var(--sw-pad) - var(--sw-thumb));
     appearance: none; -webkit-appearance: none;
     box-sizing: border-box;
     display: inline-flex; align-items: center;
     position: relative; flex: none;
-    width: calc(var(--control-h-sm) * 2 - var(--sp-1)); height: var(--control-h-sm);
+    width: calc(var(--chip-h) * 2 - var(--sp-1)); height: var(--chip-h);
     margin: 0; padding: var(--sw-pad);
     background: var(--surface-2);
     border: 1px solid var(--rule-strong);
@@ -884,7 +895,7 @@
      a count badge, and a small size. token-driven, square, both themes free. */
 
   /* size variants (default chip is 26px; .chip-sm is the dense row) */
-  .chip-sm { height: var(--control-h-sm); padding: 0 var(--sp-2); font-size: var(--fs-label); }
+  .chip-sm { height: var(--chip-h); padding: 0 var(--sp-2); font-size: var(--fs-label); }
   .chip-sm .lucide, .chip-sm .brand { width: var(--ic-sm); height: var(--ic-sm); }
 
   /* removable chip: the x is a REAL button with its own >=24px hit box, sitting
@@ -1155,7 +1166,7 @@
   .kbd-chord .kbd-plus { color: var(--ink-4); font-family: var(--font-mono); font-size: var(--fs-label); }
 
   /* ---- tag / label token ---- */
-  .tag { display: inline-flex; align-items: center; gap: var(--sp-1); box-sizing: border-box; min-height: var(--control-h-sm); padding: 0 var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); background: var(--surface-2); border: var(--bd-strong); white-space: normal; overflow-wrap: anywhere; }
+  .tag { display: inline-flex; align-items: center; gap: var(--sp-1); box-sizing: border-box; min-height: var(--chip-h); padding: 0 var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); background: var(--surface-2); border: var(--bd-strong); white-space: normal; overflow-wrap: anywhere; }
   .tag .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
   .tag .brand { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
   /* a leading swatch dot pairs an accent with the label so meaning never rides on
@@ -1303,6 +1314,8 @@
   /* chevron sizing: the unsorted dual-chevron sits quiet until hovered/sorted */
   .tbl-sort-ic { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--ink-4); }
   .tbl-sort:hover .tbl-sort-ic { color: var(--ink-3); }
+  /* a finger gets the 44px target on the whole header */
+  @media (pointer: coarse) { .tbl-sort { min-height: var(--target-comfortable); } }
 
   /* body cells: hairline standard-height rows, middle-aligned, compact padding */
   .tbl-td { height: var(--row-h-standard); box-sizing: border-box; padding: var(--sp-1) var(--sp-3); border-bottom: var(--bd); color: var(--ink-2); vertical-align: middle; }
@@ -1924,6 +1937,14 @@
   .iu-page-sub.mono { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   /* a page whose title is recorded content (a pull request, a collective, a transcript) keeps its case */
   .iu-page-title-content { text-transform: none; }
+  /* the in-use page frame is the app page frame (.asb-page): one top, side and bottom inset (32px
+     sides from a tablet up, 16px below) and, from a tablet up, one title size in every app. the page
+     owns that inset at every width, so a view that holds a page adds none of its own. */
+  .iu-view:has(> .iu-page) { padding: 0; }
+  @media (width >= 768px) {
+    .iu-page { padding: var(--sp-6) var(--sp-6) var(--sp-7); }
+    .iu-page-title { font-size: var(--fs-hero); }
+  }
   .iu-page-titlerow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
   .iu-page-context { margin: 0; display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .iu-page-context .lucide { width: var(--ic-sm); height: var(--ic-sm); }
@@ -2063,8 +2084,10 @@
   /* the host's pull request list sits under the meta row and leaves with it on condense. */
   .txn-prs { margin-top: var(--sp-3); min-width: 0; }
   .txn-app-condensed > .txn-header .txn-prs { display: none; }
-  .txn-tab { padding: var(--sp-3) 2px; }
+  /* a tab, a segment and a turn chip keep their label on one line; a narrow strip scrolls instead */
+  .txn-tab { padding: var(--sp-3) 2px; white-space: nowrap; }
   .txn-tab .cnt { font-variant-numeric: tabular-nums; }
+  .txn-diffs .bs-seg-opt, .txn-viewtoggle .bs-seg-opt { flex: none; white-space: nowrap; }
 
   /* ---- body grid: center + right rail ---- */
   /* split layout: outline (user turns) | transcript | filters. each side rail collapses to a thin strip
@@ -2074,6 +2097,9 @@
   .txn-body-grid[data-left-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) 272px; }
   .txn-body-grid[data-right-rail="closed"] { grid-template-columns: 240px minmax(0, 1fr) var(--txn-rail-strip-w); }
   .txn-body-grid[data-left-rail="closed"][data-right-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) var(--txn-rail-strip-w); }
+  /* a tab without filters has no right rail at all, so the centre takes its room */
+  .txn-body-grid[data-right-rail="none"] { grid-template-columns: 240px minmax(0, 1fr); }
+  .txn-body-grid[data-left-rail="closed"][data-right-rail="none"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr); }
   /* .txn-center is a real <section>, so it inherits the presentation page's global
      `section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }` reset. As a
      grid item in .txn-body-grid's `minmax(0, 1fr)` centre track, an auto horizontal margin wins
@@ -2122,7 +2148,7 @@
 
   /* task boundary chip */
   .txn-taskboundary { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-4) 0 var(--sp-2); }
-  .txn-tb-chip { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); border: var(--bd-strong); padding: var(--sp-1) var(--sp-2); white-space: normal; }
+  .txn-tb-chip { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); border: var(--bd-strong); padding: var(--sp-1) var(--sp-2); white-space: nowrap; }
   .txn-tb-meta { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-4); }
   .txn-taskboundary::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
 
@@ -2239,7 +2265,9 @@
   /* edit diff (the ONLY red/green). dual gutters: 4px rail | a-gut | b-gut | sign | text */
   .txn-diff { border: var(--bd); }
   .txn-diff .dl { grid-template-columns: 8px 30px 30px 16px 1fr; }
-  .txn-diff .dl .t { font-size: var(--fs-body); }
+  /* a long line wraps inside its own column, under its first character, so the gutters and the
+     sign stay aligned; a line is never clipped */
+  .txn-diff .dl .t { font-size: var(--fs-body); min-width: 0; overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }
 
   /* bash terminal */
   .txn-term { display: flex; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-body); color: var(--ink); background: var(--canvas); border: var(--bd); padding: var(--sp-2) var(--sp-3); align-items: baseline; flex-wrap: wrap; }
@@ -2438,7 +2466,6 @@
 
   .txn-jumprow { display: flex; gap: var(--sp-2); }
   .txn-jumprow .btn { flex: 1; }
-  .txn-filter-ph { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); line-height: 1.5; padding: var(--sp-3) var(--sp-2); }
 
   /* ---- highlights ---- */
   .txn-highlights { overflow: auto; padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-4); min-height: 0; }
@@ -2541,6 +2568,10 @@
   .txn-footer { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4); border-top: var(--bd); background: var(--surface); }
   .txn-progress { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); background: var(--surface-elev); border: var(--bd-strong); padding: var(--sp-1) var(--sp-3); }
 
+  /* a finger has no keyboard to step with and the counter crowds the reading view: on a touch
+     screen the footer (the key hints, the position counter) is left out */
+  @media (pointer: coarse) { .txn-footer { display: none; } }
+
   /* ---- hint strip ---- */
   .txn-hint { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-4); }
   .txn-hint .kbd-key { font-size: var(--fs-label); padding: 0 var(--sp-1); min-width: var(--target-min); }
@@ -2575,7 +2606,9 @@
   .txn-body-grid,
   .txn-body-grid[data-left-rail="closed"],
   .txn-body-grid[data-right-rail="closed"],
-  .txn-body-grid[data-left-rail="closed"][data-right-rail="closed"] { grid-template-columns: 1fr; }
+  .txn-body-grid[data-left-rail="closed"][data-right-rail="closed"],
+  .txn-body-grid[data-right-rail="none"],
+  .txn-body-grid[data-left-rail="closed"][data-right-rail="none"] { grid-template-columns: 1fr; }
   .txn-rail-left, .txn-rail-right, .txn-rail-strip { display: none; }
   .txn-center { border-right: 0; }
 }
@@ -2605,14 +2638,13 @@
     display: block;
     overflow-wrap: anywhere;
   }
-  /* Secondary metadata stays in one keyboard-scrollable row. */
+  /* the metadata wraps onto as many lines as it needs, so nothing runs off the edge unseen; each
+     figure stays whole on its line */
   .txn-meta {
-    flex-wrap: nowrap;
-    white-space: nowrap;
-    overflow-x: auto;
-    padding-bottom: var(--sp-1);
+    flex-wrap: wrap;
     margin-top: var(--sp-2);
   }
+  .txn-meta > * { white-space: nowrap; }
   /* The narrow title above re-declares display, so the
      condensed hide must restate itself inside this media block or the phone keeps the
      title while condensed. */
@@ -2622,7 +2654,10 @@
      with a definition (the author, the token split) opens it on focus or tap, without the dotted
      underline that made two of the figures read as links */
   .txn-meta .metaitem b { font-weight: 400; color: var(--ink); }
-  .txn-tabs { gap: var(--sp-4); flex-wrap: nowrap; overflow-x: auto; }
+  /* the strip scrolls sideways and fades at its end, so a cut tab reads as more to scroll to; the
+     fade lifts while a tab has focus, so it never dims a focus ring */
+  .txn-tabs { gap: var(--sp-4); flex-wrap: nowrap; overflow-x: auto; padding-right: var(--sp-6); mask-image: linear-gradient(to right, var(--ink) calc(100% - var(--sp-6)), transparent); }
+  .txn-tabs:focus-within { mask-image: none; }
   .txn-tab { padding: var(--sp-2) 2px; }
   .txn-tabbar { padding-right: var(--sp-3); }
   .txn-tabbar > .txn-tabs { flex-wrap: nowrap; }
@@ -2948,7 +2983,7 @@
   /* ---- phone: prevent card overflow and tighten padding ---- */
   @media (width < 480px) {
     .iu-view { padding: var(--sp-3); }
-    .iu-page { padding: var(--sp-3) 0 var(--sp-6); gap: var(--sp-4); }
+    .iu-page { padding: var(--sp-5) var(--sp-4) var(--sp-6); gap: var(--sp-4); }
     .iu-page-summary { padding: var(--sp-3); }
     .cex-results, .cex-grid { min-width: 0; }
     .cex-tcard { min-width: 0; width: 100%; }

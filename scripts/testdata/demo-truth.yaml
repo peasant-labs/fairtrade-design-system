@@ -4,7 +4,7 @@ cases:
     component: default
     query: '?app=graph&section=village'
     probes:
-      - {selector: '.vobs', text: Relevant collectives only.}
+      - {selector: '.vobs', text: Acme Platform}
       - {selector: '.vobs [data-domain="catalog"]', text: updated}
       - {selector: '.vobs [data-domain="history"]', text: '2026-10-15T09:00:00Z'}
       - {selector: 'nav[aria-label="peasant sections"]', text: back, absent: online}
@@ -23,6 +23,8 @@ cases:
       - {selector: '.gan-root', text: sessions linked to commits, absent: acquisition signal}
       - {selector: '.gan-root', text: new sessions, absent: returning rate}
       - {selector: '.gan-root', text: weeks with sessions, absent: longest streak}
+      # typical then tail, the comma on the typical value: "30m, 53m" (the row's gap is the space)
+      - {selector: '.gan-typvals', text: '30m,53m', absent: /}
       - {selector: '.gan-foot', count: 0}
   - name: transcript counts use lowercase k
     module: /src/mockups/inuse/TranscriptApp.jsx

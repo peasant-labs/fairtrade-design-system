@@ -1,0 +1,16 @@
+# One page frame for every app page, checked by scripts/journey/page-frame.journey.mjs in both
+# themes: AppPage (.asb-page) in Storybook, and the in-use demo's page frames (.iu-page and the
+# analytics overview) on the built app. A page's title sits at the frame's inset from the column
+# beside the sidebar: 32px from 768px up, 16px below. The demo's view adds nothing around a frame,
+# so the demo (the fidelity oracle) shows the same inset an app does.
+#
+# where: app is the built in-use demo (query is the demo's address); where: storybook is a story id.
+widths:
+  - {name: desktop, width: 1440, height: 900, inset: 32}
+  - {name: phone, width: 390, height: 900, inset: 16}
+pages:
+  - {name: app page, where: storybook, story: in-use-appsidebar--local, host: .asb-main, title: .asb-page h1}
+  - {name: local home, where: app, query: 'app=graph&section=home', host: '#inuse .iu-view', title: '#inuse .iu-page-title'}
+  - {name: local settings, where: app, query: 'app=graph&section=settings', host: '#inuse .iu-view', title: '#inuse .iu-page-title'}
+  - {name: analytics overview, where: app, query: 'app=graph&section=analytics', host: '#inuse .iu-view', title: '#inuse .gan-h2'}
+  - {name: online transcripts, where: app, query: 'app=commons', host: '#inuse .iu-view', title: '#inuse .iu-page-title'}

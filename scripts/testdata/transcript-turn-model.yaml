@@ -246,6 +246,6 @@ cases:
         modelNodes: [anthropic/claude-fable-5, anthropic/claude-fable-5, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8, anthropic/claude-opus-4-8]
         unattributedRole: user
         markerCount: 1
-        markerText: 'model changed: anthropic/claude-fable-5 -> anthropic/claude-opus-4-8'
+        markerText: 'model changed: claude-fable-5 → to claude-opus-4-8'
         harnessText: claude code
         forbiddenModelSentinels: [Session/Default, Turn/Explicit]

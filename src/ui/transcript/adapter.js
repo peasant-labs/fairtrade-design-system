@@ -25,11 +25,12 @@
    live in analytics.js.
    ─────────────────────────────────────────────────────────────────────────── */
 
-import { parseArgs, parseResult, extractPath, editPairs, writeContent, countDiff } from './adapter.parse.js'
+import { parseArgs, parseResult, extractPath, callDiff, diffLines } from './adapter.parse.js'
 import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analytics.js'
 import { zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
 import { aggregateUsage } from './usage.js'
 import { isKnownTime } from './time.js'
+import { unwrapUserQuery } from './title.js'
 
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
@@ -45,6 +46,7 @@ import { isKnownTime } from './time.js'
 /** @typedef {import('./view-model.js').SessionGitVM} SessionGitVM */
 /** @typedef {import('./view-model.js').CommitVM} CommitVM */
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
+/** @typedef {import('./view-model.js').TaskGroupVM} TaskGroupVM */
 /** @typedef {import('./view-model.js').ToolCallVM} ToolCallVM */
 /** @typedef {import('./view-model.js').ToolGroup} ToolGroup */
 /** @typedef {import('./view-model.js').DiffLineVM} DiffLineVM */
@@ -102,6 +104,40 @@ function protectedTurn(turn) {
   return !!turn.sourceEntryRef || present(turn, 'provenance') || !!turn.usage ||
     !!turn.toolCalls?.some(tool => tool.callEntryRef || tool.resultEntryRef || tool.usage ||
       present(tool, 'callProvenance') || present(tool, 'resultProvenance'))
+}
+
+/**
+ * The text a user turn shows in place of its recorded content, or undefined when it shows the
+ * content itself. Cursor sends every prompt as <user_query>…</user_query>, sometimes after its own
+ * context tags; that wrapper is the harness's transport, not the developer's words, so a cursor user
+ * turn SHOWS what the wrapper holds (`unwrapUserQuery`). This is display only: the turn's `content`
+ * stays exactly as recorded, so evidence, search, copy and export keep the recorded text. Other
+ * harnesses and other roles show their content unchanged.
+ * @param {import('./wire-types.js').Role} role
+ * @param {string} content
+ * @param {string | undefined} harness
+ * @returns {string | undefined}
+ */
+function displayedPrompt(role, content, harness) {
+  if (harness !== 'cursor' || role !== 'user') return undefined
+  const shown = unwrapUserQuery(content)
+  return shown === content ? undefined : shown
+}
+
+/**
+ * Task groups carrying the shown prompt of the turn that opens each one, where it differs from the
+ * recorded prompt (the trace outline lists it).
+ * @param {TaskGroupVM[]} tasks
+ * @param {TurnVM[]} turnVMs
+ * @returns {TaskGroupVM[]}
+ */
+function withDisplayedPrompts(tasks, turnVMs) {
+  const shownByIndex = new Map(turnVMs.filter((t) => t.displayContent !== undefined).map((t) => [t.index, t.displayContent]))
+  if (shownByIndex.size === 0) return tasks
+  return tasks.map((task) => {
+    const shown = shownByIndex.get(task.turnIndices?.[0])
+    return shown === undefined ? task : { ...task, displayPrompt: shown }
+  })
 }
 
 /** Detect malformed PRESENT evidence too, before any destructive legacy filtering. @param {TurnDetail} turn */
@@ -354,71 +390,19 @@ function makePreview(call) {
   return preview(call.arguments, 80)
 }
 
-/**
- * Dependency-free line diff (LCS) → cooked `DiffLineVM[]`. fairtrade ships no
- * `diff` package, so the adapter computes hunks itself. Line numbers are 1-based
- * within the supplied snippet (the wire carries the edit snippet, not the file
- * offset). Deterministic — no clock/randomness — so it is screenshot-stable.
- * @param {string} oldText
- * @param {string} newText
- * @returns {DiffLineVM[]}
- */
-export function diffLines(oldText, newText) {
-  const a = oldText === '' ? [] : oldText.split('\n')
-  const b = newText === '' ? [] : newText.split('\n')
-  const m = a.length
-  const n = b.length
-  /** @type {number[][]} */
-  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
-  for (let i = m - 1; i >= 0; i--) {
-    for (let j = n - 1; j >= 0; j--) {
-      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
-    }
-  }
-  /** @type {DiffLineVM[]} */
-  const out = []
-  let i = 0
-  let j = 0
-  let oldNo = 1
-  let newNo = 1
-  while (i < m && j < n) {
-    if (a[i] === b[j]) {
-      out.push({ sign: 'ctx', oldNo: String(oldNo++), newNo: String(newNo++), text: a[i] })
-      i++
-      j++
-    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
-      out.push({ sign: 'del', oldNo: String(oldNo++), text: a[i] })
-      i++
-    } else {
-      out.push({ sign: 'add', newNo: String(newNo++), text: b[j] })
-      j++
-    }
-  }
-  while (i < m) out.push({ sign: 'del', oldNo: String(oldNo++), text: a[i++] })
-  while (j < n) out.push({ sign: 'add', newNo: String(newNo++), text: b[j++] })
-  return out
-}
+export { diffLines }
 
 /**
  * Compute the cooked diff hunks + churn for an edit-family / write tool call, or
- * undefined for any other kind.
+ * undefined for any other kind. The churn is the hunks' own + and − lines (see `callDiff`), so the
+ * header always agrees with the diff it heads.
  * @param {ToolCallDetail} call
  * @returns {{ hunks: DiffHunkVM[], adds: number, dels: number } | undefined}
  */
 function buildDiffHunks(call) {
-  const n = call.name.toLowerCase()
-  if (n === 'write') {
-    const content = writeContent(call)
-    return { hunks: [{ lines: diffLines('', content) }], adds: content ? content.split('\n').length : 0, dels: 0 }
-  }
-  if (n === 'edit' || n === 'multiedit' || n === 'notebookedit') {
-    const pairs = editPairs(call)
-    if (pairs.length === 0) return undefined
-    const hunks = pairs.map((p) => ({ lines: diffLines(p.old_string, p.new_string) }))
-    const { adds, dels } = countDiff(call)
-    return { hunks, adds, dels }
-  }
-  return undefined
+  const diff = callDiff(call)
+  if (!diff) return undefined
+  return { hunks: diff.spans.map((lines) => ({ lines })), adds: diff.adds, dels: diff.dels }
 }
 
 /**
@@ -687,14 +671,14 @@ function buildHighlights(turnVMs, phases, git) {
 
   const firstUser = turnVMs.find((t) => t.role === 'user' && t.content.trim() !== '')
   if (firstUser) {
-    out.push({ id: 'hl-request', kind: 'request', turn: firstUser.index, icon: 'request', title: 'initial request', sub: preview(firstUser.content, 160) })
+    out.push({ id: 'hl-request', kind: 'request', turn: firstUser.index, icon: 'request', title: 'initial request', sub: preview(firstUser.displayContent ?? firstUser.content, 160) })
   }
 
   phases.slice(1).forEach((p, i) => {
     const t = turnVMs.find((x) => x.index === p.from)
     /** @type {HighlightVM} */
     const h = { id: `hl-phase-${i}`, kind: 'phase', turn: p.from, icon: 'phase', title: `${p.label} begins`, tag: p.label }
-    const sub = preview(t ? t.content : '', 200)
+    const sub = preview(t ? (t.displayContent ?? t.content) : '', 200)
     if (sub) h.sub = sub
     out.push(h)
   })
@@ -807,7 +791,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     toolCallsById,
     diffs: buildDiffs(turnVMs),
     files: buildFiles(turnVMs),
-    tasks: an.taskGroups ?? computeTaskGroups(turns),
+    tasks: withDisplayedPrompts(an.taskGroups ?? computeTaskGroups(turns), turnVMs),
     highlights: buildHighlights(turnVMs, phases, git),
     filterIndex: buildFilterIndex(turnVMs, annotationsByTurn),
     analytics: an,
@@ -947,6 +931,7 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     }
     for (const tc of toolCalls) toolCallsById.set(tc.id, tc)
 
+    // a user prompt shows without a harness's <user_query> wrapper (display only; the wire keeps it)
     let content = t.content ?? ''
     /** @type {import('./view-model.js').ThinkingVM | undefined} */
     let thinking
@@ -991,6 +976,8 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     if (depth === 0 && t.role === 'assistant') turnVM.provider = provider
     if (t.agentName) turnVM.agentName = t.agentName
     if (thinking) turnVM.thinking = thinking
+    const shown = displayedPrompt(t.role, content, provider)
+    if (shown !== undefined) turnVM.displayContent = shown
     if (t.usage) turnVM.usage = t.usage
     if (t.sourceEntryRef) turnVM.sourceEntryRef = t.sourceEntryRef
     if (t.provenance) turnVM.provenance = t.provenance

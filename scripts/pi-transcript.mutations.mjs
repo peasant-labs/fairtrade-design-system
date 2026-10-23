@@ -18,6 +18,7 @@ try {
     .replaceAll("from './analytics.js'", `from '${new URL('../src/ui/transcript/analytics.js', import.meta.url).href}'`)
     .replaceAll("from './usage.js'", `from '${new URL('../src/ui/transcript/usage.js', import.meta.url).href}'`)
     .replaceAll("from './time.js'", `from '${new URL('../src/ui/transcript/time.js', import.meta.url).href}'`)
+    .replaceAll("from './title.js'", `from '${new URL('../src/ui/transcript/title.js', import.meta.url).href}'`)
     .replace("from '@peasant-labs/schema'", `from '${pathToFileURL(resolve('node_modules/@peasant-labs/schema/dist/index.js')).href}'`)
     .replace(find, '')
   writeFileSync(artifact, rewritten)

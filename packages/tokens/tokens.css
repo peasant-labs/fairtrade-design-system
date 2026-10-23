@@ -28,6 +28,7 @@
   --ghost-node-size: 9px;
   --control-h: 36px;
   --control-h-sm: 28px;
+  --chip-h: 28px;
   --nav-h: 56px;
   --maxw: 1040px;
   --gutter: var(--sp-6);

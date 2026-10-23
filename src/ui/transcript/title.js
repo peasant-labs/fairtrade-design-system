@@ -16,8 +16,47 @@
 
 const PROMPT_SUMMARY_LIMIT = 80
 
+/* Cursor wraps the user's prompt in <user_query>…</user_query>, sometimes after its own context
+   tags (<timestamp>…</timestamp>, <user_info>…</user_info>). The wrapper and that prelude are the
+   harness's, not the user's words, so every place that shows a prompt or a title keeps only what
+   the wrapper holds; the stored content is never changed. The wrapper counts only where it opens
+   the text (after nothing but such tag blocks), so prose that merely mentions <user_query> stays
+   as written. An unclosed wrapper (a prompt cut before its close) keeps everything after it. */
+const USER_QUERY_OPEN = '<user_query>'
+const USER_QUERY_CLOSE = '</user_query>'
+const USER_QUERY_LEAD = /^\s*(?:<([a-z][a-z0-9_-]*)>[\s\S]*?<\/\1>\s*)*<user_query>/
+
+/**
+ * The prompt without a harness's <user_query> wrapper: the user's own text, untouched otherwise.
+ * @param {string | undefined} text
+ * @returns {string}
+ */
+export function unwrapUserQuery(text) {
+  if (!text) return ''
+  const lead = USER_QUERY_LEAD.exec(text)
+  if (!lead) return text
+  const start = lead[0].length
+  const end = text.indexOf(USER_QUERY_CLOSE, start)
+  if (end === -1) return text.slice(start).trim()
+  const query = text.slice(start, end).trim()
+  const rest = text.slice(end + USER_QUERY_CLOSE.length).trim()
+  return rest && !rest.startsWith(USER_QUERY_OPEN) ? `${query}\n\n${rest}` : query
+}
+
+/**
+ * A stored session title, shown as written: the harness's <user_query> wrapper dropped and the
+ * whitespace collapsed, but every word, its case, its dots and an existing trailing "…" kept. For a
+ * title, never `summarizePrompt`, which cuts at the first sentence and recases.
+ * @param {string | undefined} text
+ * @returns {string}
+ */
+export function cleanSessionTitle(text) {
+  return unwrapUserQuery(text).replace(/\s+/g, ' ').trim()
+}
+
 /**
  * Produce a short, human-readable summary of a raw prompt. Heuristic, in order:
+ *   0. Drop a harness's <user_query> wrapper (cleanSessionTitle's rule).
  *   1. Strip leading <system-reminder> blocks and leading fenced code blocks.
  *   2. Pull out a <command-name> (e.g. `/mcp`) if present, keep following prose.
  *   3. Strip remaining XML-ish tags, collapse whitespace, take the first sentence.
@@ -30,7 +69,7 @@ const PROMPT_SUMMARY_LIMIT = 80
 export function summarizePrompt(raw, limit = PROMPT_SUMMARY_LIMIT) {
   if (!raw) return ''
 
-  let working = stripLeadingNoise(raw)
+  let working = stripLeadingNoise(unwrapUserQuery(raw))
 
   const { slashCommand, rest } = splitCommandWrapper(working)
   working = rest

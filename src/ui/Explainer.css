@@ -79,8 +79,8 @@
   align-items: center;
   justify-content: center;
   flex: none;
-  width: var(--control-h-sm);
-  height: var(--control-h-sm);
+  width: var(--chip-h);
+  height: var(--chip-h);
   border: var(--bd-strong);
   background: var(--surface-2);
   color: var(--ink-3);
@@ -130,7 +130,7 @@
 .xpl--inline .xpl-body {
   /* align under the toggle's title: square mark + its gap. */
   padding: var(--sp-2) 0 0;
-  padding-inline-start: calc(var(--control-h-sm) + var(--sp-3));
+  padding-inline-start: calc(var(--chip-h) + var(--sp-3));
 }
 .xpl-body > * + * {
   margin-top: var(--sp-2);
@@ -202,7 +202,10 @@
    a small square panel — mono, --surface-2, hairline — mirroring the canvas
    .tip-bubble. hidden until the trigger is hovered, focused, or tapped (pinned).
    the prose around it stays put: the bubble is absolutely positioned. */
+/* a closed bubble takes no layout, so it never widens the scroller it sits in; it shows on hover,
+   focus or a tap (its text stays the term's description either way) */
 .term-bubble {
+  display: none;
   position: absolute;
   bottom: calc(100% + var(--sp-2));
   left: 0;
@@ -224,6 +227,7 @@
 .term-anchor:hover .term-bubble,
 .term-anchor:focus-within .term-bubble,
 .term-anchor.is-pinned .term-bubble {
+  display: block;
   opacity: 1;
   pointer-events: auto;
 }
