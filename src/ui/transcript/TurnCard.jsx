@@ -168,7 +168,7 @@ export default function TurnCard({
           </span>
         </div>
       )}
-      <Markdown text={turn.content} />
+      <Markdown text={turn.displayContent ?? turn.content} />
       {turn.thinking && <Thinking block={turn.thinking} />}
       <UsageDisclosure usage={turn.usage} />
       {turn.toolCalls &&

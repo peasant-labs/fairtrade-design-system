@@ -188,7 +188,10 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {import('@peasant-labs/schema').ContentProvenance} [provenance]
  * @property {import('./wire-types.js').Role} role
  * @property {string} label                 display label, e.g. "1a" / "2"
- * @property {string} content               markdown body (thinking already extracted)
+ * @property {string} content               markdown body (thinking already extracted), as recorded
+ * @property {string} [displayContent]      the text the turn shows instead of `content`, present only
+ *                                          when they differ (a cursor prompt's `<user_query>` wrapper
+ *                                          removed); views render `displayContent ?? content`
  * @property {number} depth                 subagent nesting depth (0 = top level)
  * @property {string} [effectiveModel]       sticky model effective for this assistant turn; resolved over the complete ordered wire before projection
  * @property {string} [modelChangedFrom]     prior root model when this turn carries the observation that changed it
@@ -278,6 +281,7 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {string} id
  * @property {number} index                 1-based task number
  * @property {string} prompt                user content for the task (case preserved)
+ * @property {string} [displayPrompt]       the prompt as its turn shows it, present only when it differs
  * @property {number[]} turnIndices         turns belonging to this task
  * @property {number} [durationMs]
  * @property {number} [tools]               tool-call count in the task

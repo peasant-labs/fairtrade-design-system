@@ -8,7 +8,9 @@
 #   - the session duration reads in the one short format, never as raw minutes;
 #   - the user-turn steps list leaves out a zero duration instead of showing "0s";
 #   - a Cursor prompt shows without its <user_query> wrapper and the context tags before it, while
-#     prose that only mentions the tag stays as written (display only: the wire keeps the text).
+#     prose that only mentions the tag stays as written, and another harness's prompt shows as
+#     written. Display only: every turn's cooked content stays exactly as recorded (evidence-bearing
+#     turns included); the shown text is `displayContent ?? content`.
 # `harness` overrides the payload's harness for one case, and `turns` its turns.
 payload:
   id: session-records
@@ -61,11 +63,26 @@ cases:
       - {index: 0, role: user, content: "<timestamp>Mon 9:00</timestamp>\n<user_query>\nInspect the fortuna package.\n</user_query>", timestamp: '2026-10-06T12:00:00Z', depth: 0}
       - {index: 1, role: assistant, content: 'Done.', timestamp: '2026-10-06T12:01:00Z', depth: 0}
     turn: 0
-    expected: {content: 'Inspect the fortuna package.', hidden: ['user_query', 'Mon 9:00']}
+    expected: {shown: 'Inspect the fortuna package.', hidden: ['user_query', 'Mon 9:00']}
+  - name: an evidence-bearing cursor prompt shows without its wrapper
+    kind: user-content
+    harness: cursor
+    turns:
+      - {index: 0, role: user, sourceEntryRef: entry-prompt, content: "<user_query>Summarize the fortuna files.</user_query>", timestamp: '2026-10-06T12:00:00Z', depth: 0}
+      - {index: 1, role: assistant, content: 'Done.', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+    turn: 0
+    expected: {shown: 'Summarize the fortuna files.', hidden: ['user_query']}
+  - name: another harness shows its prompt as written
+    kind: user-content
+    turns:
+      - {index: 0, role: user, content: "<user_query>Typed by hand.</user_query>", timestamp: '2026-10-06T12:00:00Z', depth: 0}
+      - {index: 1, role: assistant, content: 'Done.', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+    turn: 0
+    expected: {shown: '<user_query>Typed by hand.</user_query>', hidden: []}
   - name: a prompt that mentions the tag stays as written
     kind: user-content
     turns:
       - {index: 0, role: user, content: 'why does cursor send <user_query> tags?', timestamp: '2026-10-06T12:00:00Z', depth: 0}
       - {index: 1, role: assistant, content: 'It wraps the prompt.', timestamp: '2026-10-06T12:01:00Z', depth: 0}
     turn: 0
-    expected: {content: 'why does cursor send <user_query> tags?', hidden: []}
+    expected: {shown: 'why does cursor send <user_query> tags?', hidden: []}

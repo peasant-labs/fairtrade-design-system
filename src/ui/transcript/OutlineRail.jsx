@@ -128,7 +128,7 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {} }) {
   const waterfallTasks = (viewModel?.tasks ?? []).map((t) => ({
     id: String(t.turnIndices?.[0] ?? t.index),
     index: t.index,
-    prompt: t.prompt,
+    prompt: t.displayPrompt ?? t.prompt,
     durationMs: t.durationMs ?? 0,
     tools: t.tools,
     outcome: t.outcome,

@@ -46,6 +46,7 @@ import { unwrapUserQuery } from './title.js'
 /** @typedef {import('./view-model.js').SessionGitVM} SessionGitVM */
 /** @typedef {import('./view-model.js').CommitVM} CommitVM */
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
+/** @typedef {import('./view-model.js').TaskGroupVM} TaskGroupVM */
 /** @typedef {import('./view-model.js').ToolCallVM} ToolCallVM */
 /** @typedef {import('./view-model.js').ToolGroup} ToolGroup */
 /** @typedef {import('./view-model.js').DiffLineVM} DiffLineVM */
@@ -103,6 +104,40 @@ function protectedTurn(turn) {
   return !!turn.sourceEntryRef || present(turn, 'provenance') || !!turn.usage ||
     !!turn.toolCalls?.some(tool => tool.callEntryRef || tool.resultEntryRef || tool.usage ||
       present(tool, 'callProvenance') || present(tool, 'resultProvenance'))
+}
+
+/**
+ * The text a user turn shows in place of its recorded content, or undefined when it shows the
+ * content itself. Cursor sends every prompt as <user_query>…</user_query>, sometimes after its own
+ * context tags; that wrapper is the harness's transport, not the developer's words, so a cursor user
+ * turn SHOWS what the wrapper holds (`unwrapUserQuery`). This is display only: the turn's `content`
+ * stays exactly as recorded, so evidence, search, copy and export keep the recorded text. Other
+ * harnesses and other roles show their content unchanged.
+ * @param {import('./wire-types.js').Role} role
+ * @param {string} content
+ * @param {string | undefined} harness
+ * @returns {string | undefined}
+ */
+function displayedPrompt(role, content, harness) {
+  if (harness !== 'cursor' || role !== 'user') return undefined
+  const shown = unwrapUserQuery(content)
+  return shown === content ? undefined : shown
+}
+
+/**
+ * Task groups carrying the shown prompt of the turn that opens each one, where it differs from the
+ * recorded prompt (the trace outline lists it).
+ * @param {TaskGroupVM[]} tasks
+ * @param {TurnVM[]} turnVMs
+ * @returns {TaskGroupVM[]}
+ */
+function withDisplayedPrompts(tasks, turnVMs) {
+  const shownByIndex = new Map(turnVMs.filter((t) => t.displayContent !== undefined).map((t) => [t.index, t.displayContent]))
+  if (shownByIndex.size === 0) return tasks
+  return tasks.map((task) => {
+    const shown = shownByIndex.get(task.turnIndices?.[0])
+    return shown === undefined ? task : { ...task, displayPrompt: shown }
+  })
 }
 
 /** Detect malformed PRESENT evidence too, before any destructive legacy filtering. @param {TurnDetail} turn */
@@ -636,14 +671,14 @@ function buildHighlights(turnVMs, phases, git) {
 
   const firstUser = turnVMs.find((t) => t.role === 'user' && t.content.trim() !== '')
   if (firstUser) {
-    out.push({ id: 'hl-request', kind: 'request', turn: firstUser.index, icon: 'request', title: 'initial request', sub: preview(firstUser.content, 160) })
+    out.push({ id: 'hl-request', kind: 'request', turn: firstUser.index, icon: 'request', title: 'initial request', sub: preview(firstUser.displayContent ?? firstUser.content, 160) })
   }
 
   phases.slice(1).forEach((p, i) => {
     const t = turnVMs.find((x) => x.index === p.from)
     /** @type {HighlightVM} */
     const h = { id: `hl-phase-${i}`, kind: 'phase', turn: p.from, icon: 'phase', title: `${p.label} begins`, tag: p.label }
-    const sub = preview(t ? t.content : '', 200)
+    const sub = preview(t ? (t.displayContent ?? t.content) : '', 200)
     if (sub) h.sub = sub
     out.push(h)
   })
@@ -756,7 +791,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     toolCallsById,
     diffs: buildDiffs(turnVMs),
     files: buildFiles(turnVMs),
-    tasks: an.taskGroups ?? computeTaskGroups(turns),
+    tasks: withDisplayedPrompts(an.taskGroups ?? computeTaskGroups(turns), turnVMs),
     highlights: buildHighlights(turnVMs, phases, git),
     filterIndex: buildFilterIndex(turnVMs, annotationsByTurn),
     analytics: an,
@@ -897,7 +932,7 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     for (const tc of toolCalls) toolCallsById.set(tc.id, tc)
 
     // a user prompt shows without a harness's <user_query> wrapper (display only; the wire keeps it)
-    let content = t.role === 'user' ? unwrapUserQuery(t.content ?? '') : (t.content ?? '')
+    let content = t.content ?? ''
     /** @type {import('./view-model.js').ThinkingVM | undefined} */
     let thinking
     if (t.entryType === 'thinking' && (protectedTurn(t) || content.trim() !== '')) {
@@ -941,6 +976,8 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     if (depth === 0 && t.role === 'assistant') turnVM.provider = provider
     if (t.agentName) turnVM.agentName = t.agentName
     if (thinking) turnVM.thinking = thinking
+    const shown = displayedPrompt(t.role, content, provider)
+    if (shown !== undefined) turnVM.displayContent = shown
     if (t.usage) turnVM.usage = t.usage
     if (t.sourceEntryRef) turnVM.sourceEntryRef = t.sourceEntryRef
     if (t.provenance) turnVM.provenance = t.provenance
