@@ -51,6 +51,13 @@ export { default as ModerationQueue, ApprovalBar } from './ModerationQueue.jsx'
 export { default as RoleRoster, ConfirmInline, DangerZone } from './RoleRoster.jsx'
 export { default as MapCanvas } from './MapCanvas.jsx'
 export { default as RailShell, RailSection, SplitRail } from './RailShell.jsx'
+export { default as AppSidebar, AppSidebarLayout, APP_SIDEBAR_APPS } from './AppSidebar.jsx'
+/** @typedef {import('./AppSidebar.jsx').AppSidebarProps} AppSidebarProps */
+/** @typedef {import('./AppSidebar.jsx').AppSidebarLayoutProps} AppSidebarLayoutProps */
+/** @typedef {import('./AppSidebar.jsx').AppSidebarGroup} AppSidebarGroup */
+/** @typedef {import('./AppSidebar.jsx').AppSidebarItem} AppSidebarItem */
+/** @typedef {import('./AppSidebar.jsx').AppSidebarApp} AppSidebarApp */
+/** @typedef {import('./AppSidebar.jsx').AppSidebarAccount} AppSidebarAccount */
 export { default as ProviderIcon, ProviderTag, ProviderName, AccentLegend, PROVIDER_ACCENT } from './ProviderIcon.jsx'
 export { default as StepsWaterfall } from './StepsWaterfall.jsx'
 export { default as GroupedMultiSelect } from './GroupedMultiSelect.jsx'

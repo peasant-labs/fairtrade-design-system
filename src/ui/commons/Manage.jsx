@@ -129,7 +129,7 @@ export function Manage({
       <div className="cmg-detail">
         <header className="cmg-d-hero">
           <div className="crumb cmg-crumb">
-            village <ChevronRight size={14} aria-hidden="true" /> collectives{' '}
+            online <ChevronRight size={14} aria-hidden="true" /> collectives{' '}
             <ChevronRight size={14} aria-hidden="true" />
             <span className="cur">{collective.name || 'collective'}</span>
           </div>

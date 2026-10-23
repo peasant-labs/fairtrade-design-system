@@ -7,73 +7,75 @@
 name: fairtrade
 description: 'One square, token-driven design system for reading AI coding transcripts: two WCAG AA themes, neuroinclusive by default, amber as a scarce accent.'
 colors:
-  canvas: '#070706'
+  canvas: '#0b0b0a'
   canvas-light: '#fbfaf7'
-  surface: '#0e0e0c'
-  surface-light: '#fdfcfa'
-  surface-2: '#141413'
-  surface-2-light: '#f4f2ec'
-  surface-hover: '#1b1a17'
-  surface-hover-light: '#edeae2'
+  surface: '#0b0b0a'
+  surface-light: '#fbfaf7'
+  surface-2: '#1c1b18'
+  surface-2-light: '#f1eee6'
+  surface-hover: '#24231f'
+  surface-hover-light: '#ebe7dd'
   surface-elev: '#1c1b18'
   surface-elev-light: '#efece4'
-  ink-strong: '#f8f5ed'
+  ink-strong: '#fbf8f1'
   ink-strong-light: '#0d0c09'
-  ink: '#e9e5db'
-  ink-light: '#27241f'
-  ink-2: '#b8b3a4'
-  ink-2-light: '#4a463e'
-  ink-3: '#9a9488'
-  ink-3-light: '#5c574d'
-  ink-4: '#8a8478'
-  ink-4-light: '#6f695e'
-  ink-5: '#534e45'
+  ink: '#ece8df'
+  ink-light: '#1f1c17'
+  ink-2: '#cdc8bb'
+  ink-2-light: '#3d3932'
+  ink-3: '#b3ad9f'
+  ink-3-light: '#4f4a41'
+  ink-4: '#a19b8e'
+  ink-4-light: '#625c51'
+  ink-5: '#615b50'
   ink-5-light: '#837d72'
-  rule: '#3c382f'
-  rule-light: '#c4bca8'
-  rule-strong: '#6f6a5f'
-  rule-strong-light: '#8b836d'
-  focus-ring: '#cba35c'
+  rule: '#4f4a40'
+  rule-light: '#b3ab96'
+  rule-strong: '#857f72'
+  rule-strong-light: '#7f7762'
+  focus-ring: '#d6ae66'
   focus-ring-light: '#0d0c09'
-  amber: '#cba35c'
+  amber: '#d6ae66'
   amber-light: '#8a5f1f'
-  amber-bright: '#e6c483'
+  amber-bright: '#ebc98c'
   amber-bright-light: '#6e4c16'
   amber-dim: '#937a45'
   amber-dim-light: '#b09a63'
-  amber-fill: '#cba35c'
-  amber-fill-light: '#b8841a'
+  amber-fill: '#e6b450'
+  amber-fill-light: '#b88014'
+  amber-fill-hover: '#f0c266'
+  amber-fill-hover-light: '#c48a14'
   amber-fill-ink: '#141003'
-  amber-fill-ink-light: '#1a1206'
-  teal: '#7ea69d'
+  amber-fill-ink-light: '#160f03'
+  teal: '#8fb6ac'
   teal-light: '#3a675e'
-  olive: '#9aa779'
+  olive: '#a9b688'
   olive-light: '#586a3c'
-  clay: '#c07f64'
+  clay: '#d08f74'
   clay-light: '#974b32'
-  mauve: '#9a8cae'
+  mauve: '#ab9ec0'
   mauve-light: '#594e72'
   on-amber: '#141003'
   on-amber-light: '#fffdf8'
-  success: '#9aa779'
+  success: '#a9b688'
   success-light: '#586a3c'
   success-fg: '#141003'
   success-fg-light: '#fffdf8'
-  warning: '#cba35c'
+  warning: '#d6ae66'
   warning-light: '#8a5f1f'
   warning-fg: '#141003'
   warning-fg-light: '#fffdf8'
-  danger: '#c07f64'
+  danger: '#d08f74'
   danger-light: '#974b32'
   danger-fg: '#141003'
   danger-fg-light: '#fffdf8'
-  add-text: '#bccb96'
+  add-text: '#c4d2a0'
   add-text-light: '#465528'
-  add-rail: '#9aa779'
+  add-rail: '#a9b688'
   add-rail-light: '#586a3c'
-  del-text: '#daa791'
+  del-text: '#e2b09b'
   del-text-light: '#82402a'
-  del-rail: '#c07f64'
+  del-rail: '#d08f74'
   del-rail-light: '#974b32'
 typography:
   display:
@@ -130,14 +132,14 @@ spacing:
   sp-8: '56px'
 components:
   button-primary:
-    backgroundColor: '{colors.amber}'
-    textColor: '{colors.on-amber}'
+    backgroundColor: '{colors.amber-fill}'
+    textColor: '{colors.amber-fill-ink}'
     typography: '{typography.label-strong}'
     rounded: '{rounded.none}'
     height: '36px'
     padding: '0 16px'
   button-primary-hover:
-    backgroundColor: '{colors.amber-bright}'
+    backgroundColor: '{colors.amber-fill-hover}'
   button-secondary:
     backgroundColor: 'transparent'
     textColor: '{colors.ink}'
@@ -273,7 +275,11 @@ the reading view. The one looping exception is the named `busy-spin` animation, 
 work is in progress and only under `prefers-reduced-motion: no-preference`;
 nothing flashes more than three times a second; a live table settles at most one
 change a second; the live indicator is a static filled dot. The one long entrance (`--dur-entrance`) belongs to the
-presentation site's hero, never to a product surface.
+presentation site's hero, never to a product surface. Press feedback is the one movement a control
+makes: a button scales to 0.97 on `:active` (a chip or joined segment to 0.98), easing on
+`transform` alone with `--ease-out`; `--ease-in-out` is for moving something already on screen.
+Hover styles apply only under `@media (hover: hover) and (pointer: fine)`, so a tap never leaves a
+control stuck in its hover state.
 
 **Key Characteristics:**
 - Two themes only, dark by default, both WCAG AA, re-themed purely by swapping tokens on `[data-theme]`.
@@ -291,13 +297,14 @@ vivid reads as cheap. Every value is a token in `src/index.css`; the frontmatter
 first, with the light value under a `-light` key where it differs.
 
 ### Primary
-- **Amber** (`--amber`): the single accent. Primary actions, the active nav marker, the active tab
-  underline, the selected-row marker, links, keywords and the focus ring in the dark theme.
+- **Amber** (`--amber`): the single accent. The active nav marker, the active tab underline, the
+  selected-row marker, links, keywords and the focus ring in the dark theme.
   `--amber-bright` is its hover state and `--amber-dim` its quiet edge (focused input border, the
-  `>` of the active nav marker). `--amber-fill` with `--amber-fill-ink` remains available for
-  primary emphasis; checked inputs and selected interactive toggles use `--amber-fill` with `--amber-fill-ink`, with non-color state cues.
+  `>` of the active nav marker). The primary action is filled with the golden `--amber-fill` and
+  labelled in near-black `--amber-fill-ink` in both themes; `--amber-fill-hover` is its hover fill.
+  Likewise, checked inputs and selected interactive toggles use `--amber-fill` with `--amber-fill-ink`, with non-color state cues.
   The fill tokens are split from `--amber` so light-theme text can stay dark enough for AA. `--on-amber` is the
-  ink on an amber primary button.
+  ink on the remaining `--amber` fills (the current step, the current page number).
 
 ### Secondary
 - **Teal** (`--teal`): the user role and informational accents (the user turn rail and label).
@@ -313,8 +320,10 @@ text, rail).
 
 ### Neutral
 - **Canvas** (`--canvas`): the page ground. Deep neutral-warm near-black in dark; warm paper in light.
-- **Surfaces** (`--surface`, `--surface-2`, `--surface-elev`, `--surface-hover`): panels, raised
-  panels, overlays and hover, stepping up in tone rather than casting shadows.
+- **Surfaces** (`--surface`, `--surface-2`, `--surface-elev`, `--surface-hover`): panels, selected
+  rows and inset wells, overlays and hover. `--surface` equals `--canvas` in both themes: one flat
+  ground, so a panel is told apart by its `--rule-strong` edge, never by a near-black grey on black.
+  `--surface-2` is kept for selected rows and inset wells.
 - **Inks** (`--ink-strong`, `--ink`, `--ink-2`, `--ink-3`, `--ink-4`, `--ink-5`): short emphasis,
   primary text, secondary, tertiary, the faintest text-safe ink, and decoration only.
 - **Rules** (`--rule`, `--rule-strong`): the structural hairline divider and the functional control
@@ -326,16 +335,19 @@ action, the active marker, a link, the focus ring. Small interactive controls al
 text on light and never a large saturated panel. Never combine color emphasis, bold and motion on one
 element.
 
-**The Text-Safe Ink Rule.** Text clears 4.5:1, and primary body text aims for 7:1. `--ink-4` is the
+**The Text-Safe Ink Rule.** Text clears 4.5:1, and primary body text aims for 7:1. Every text ink,
+`--ink-3` and `--ink-4` included, holds 6.3:1 on the ground, so muted text never reads faint. `--ink-4` is the
 faintest ink that may carry text. `--ink-5` and `--rule` are decoration and structure only. `--ink-3`
 is for secondary text, never primary body.
 
 **The Functional Border Rule.** Anything that identifies a control or its state (input outlines,
 button borders, toggles, focus rings, meaningful icons, chart series) clears 3:1 against every
-surface in both themes: use `--rule-strong` or stronger. Hairline dividers between same-tone
-surfaces (`--rule`) stay deliberately subtle. `scripts/contrast.mjs`, run by `pnpm build`, fails
-on control borders and the focus ring, and only reports the toggle fill, the `--amber-dim` focus
-tint and the dividers; icons and chart series are checked in review.
+surface in both themes: use `--rule-strong` or stronger. On the ground, `--rule-strong` holds 4:1,
+so panel edges, inputs and buttons read clearly. Hairline dividers between same-tone
+surfaces (`--rule`) stay deliberately subtle but hold 2:1 on the ground, so a line is never
+invisible. `scripts/contrast.mjs`, run by `pnpm build`, fails on control borders, the focus ring,
+these two floors and the 6.3:1 muted-ink floor, and only reports the toggle fill, the `--amber-dim`
+focus tint and the dividers on raised surfaces; icons and chart series are checked in review.
 
 **The Never Color Alone Rule.** Status, diff, log level, role and required fields always pair color
 with an icon, a text label or a shape. Negative numbers carry a leading minus.
@@ -465,8 +477,9 @@ action.
 
 ## Elevation & Depth
 
-Flat by default. Depth comes from tonal layering (canvas, then surface, then `--surface-2` and
-`--surface-elev`) and from hairline and functional borders (`--bd`, `--bd-strong`), not from
+Flat by default. The page and its panels share one ground (`--surface` equals `--canvas`); depth
+comes from edges first (hairline and functional borders, `--bd` and `--bd-strong`), then from
+`--surface-2` for selected rows and inset wells and `--surface-elev` for overlays, not from
 shadows. Every region with running text or data sits on one flat fill: no gradients, patterns,
 scanlines or textures behind reading content. Overlays, sticky headers and command palettes use
 opaque surfaces.
@@ -510,8 +523,10 @@ render the same system.
 ### Buttons
 - **Shape:** square (radius 0), one height per size (`--control-h`, or `--control-h-sm` for small),
   mono label chrome, lowercase.
-- **Primary:** amber fill with `--on-amber` ink at weight 600; hover moves to `--amber-bright`. One
-  per view.
+- **Primary:** `--amber-fill` with `--amber-fill-ink` at weight 600; hover moves to
+  `--amber-fill-hover`. One per view.
+- **Press and hover:** every button scales to 0.97 on press under
+  `prefers-reduced-motion: no-preference`; hover styles apply only to a fine hovering pointer.
 - **Secondary:** transparent with a `--rule-strong` border and `--ink` text; hover tints the text
   `--amber-bright` and the border `--amber-dim`.
 - **Ghost:** transparent `--ink-3` text; hover raises to `--ink` on `--surface-hover`.
@@ -547,6 +562,13 @@ render the same system.
 - **Tabs:** mono lowercase, `--ink-3` at rest, the active tab in `--ink` with a 2px amber underline;
   counts are tabular in `--ink-4`.
 - **Trails:** breadcrumb, step indicator, tabs and pagination; orientation lives here.
+- **App sidebar:** `AppSidebar` is the one sidebar for every app screen (online, local and docs):
+  the wheat mark and wordmark, a collapse toggle down to an icon rail whose labels become titles, a
+  resizable width (pointer drag, or arrow keys, Home and End on the separator), groups of items
+  with an icon or a colour swatch, the current item marked with `aria-current` and the amber inset
+  bar, an outside-the-app marker, the app switcher (online, local, docs) and the account row.
+  Collapse and width persist per browser. Below 768px it becomes a top bar whose menu opens the
+  same nav as an opaque drawer. `AppSidebarLayout` places it beside the page.
 - **In-use shell:** the app switcher replaces the page header at the same height and carries a
   keyboard tablist for the three apps.
 - **Local app sections:** `LOCAL_APP_SECTIONS` in `src/ui/inuse/InUseShell.jsx` is the canonical
@@ -554,7 +576,8 @@ render the same system.
   is reached by route only; every other entry sits in the section nav. A consumer derives its nav and
   routes from the registry and fails loudly on an id it does not map. `GRAPH_APP_SECTIONS` is a
   deprecated alias kept for consumers on the older three-section shape.
-  Main navigation is home, village, settings. Village presents saved relevant collective
+  Main navigation is home, online, settings; the hosted app's entry is labelled `online` and keeps
+  the id and route `village`. Online presents saved relevant collective
   observations and separately pageable contribution evidence, with independently dated fetch
   results. Hosts own network operations and authorization; observations never grant permission.
 

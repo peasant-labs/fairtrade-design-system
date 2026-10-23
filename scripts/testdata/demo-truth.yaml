@@ -7,7 +7,7 @@ cases:
       - {selector: '.vobs', text: Relevant collectives only.}
       - {selector: '.vobs [data-domain="catalog"]', text: updated}
       - {selector: '.vobs [data-domain="history"]', text: '2026-10-15T09:00:00Z'}
-      - {selector: 'nav .iu-subnav-item[aria-current="page"]', text: village}
+      - {selector: 'nav .iu-subnav-item[aria-current="page"]', text: online}
   - name: published copies are transcripts
     module: /src/mockups/inuse/CommonsPullRequest.jsx
     component: PullRequestView

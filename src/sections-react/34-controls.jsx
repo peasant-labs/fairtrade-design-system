@@ -148,9 +148,11 @@ export function ControlsSection() {
           <tbody>
             <tr><td className="dt-name">--control-h</td><td className="dt-val tnum">36px</td><td className="dt-role">button and input height</td><td><CopyBtn token="--control-h" /></td></tr>
             <tr><td className="dt-name">--control-h-sm</td><td className="dt-val tnum">28px</td><td className="dt-role">small variant height</td><td><CopyBtn token="--control-h-sm" /></td></tr>
-            <tr><td><Swatch c="#cba35c" /><span className="dt-name">--amber</span></td><td className="dt-val tnum">#cba35c</td><td className="dt-role">primary fill, focus ring</td><td><CopyBtn token="--amber" /></td></tr>
-            <tr><td><Swatch c="#141003" /><span className="dt-name">--on-amber</span></td><td className="dt-val tnum">#141003</td><td className="dt-role">label on primary fill</td><td><CopyBtn token="--on-amber" /></td></tr>
-            <tr><td><Swatch c="#6f6a5f" /><span className="dt-name">--rule-strong</span></td><td className="dt-val">var(--bd-strong)</td><td className="dt-role">control border, clears 3:1</td><td><CopyBtn token="--rule-strong" /></td></tr>
+            <tr><td><Swatch c="#e6b450" /><span className="dt-name">--amber-fill</span></td><td className="dt-val tnum">#e6b450</td><td className="dt-role">primary fill</td><td><CopyBtn token="--amber-fill" /></td></tr>
+            <tr><td><Swatch c="#f0c266" /><span className="dt-name">--amber-fill-hover</span></td><td className="dt-val tnum">#f0c266</td><td className="dt-role">primary fill on hover</td><td><CopyBtn token="--amber-fill-hover" /></td></tr>
+            <tr><td><Swatch c="#141003" /><span className="dt-name">--amber-fill-ink</span></td><td className="dt-val tnum">#141003</td><td className="dt-role">label on primary fill</td><td><CopyBtn token="--amber-fill-ink" /></td></tr>
+            <tr><td><Swatch c="#d6ae66" /><span className="dt-name">--amber</span></td><td className="dt-val tnum">#d6ae66</td><td className="dt-role">focus ring</td><td><CopyBtn token="--amber" /></td></tr>
+            <tr><td><Swatch c="#857f72" /><span className="dt-name">--rule-strong</span></td><td className="dt-val">var(--bd-strong)</td><td className="dt-role">control border, clears 4:1</td><td><CopyBtn token="--rule-strong" /></td></tr>
           </tbody>
         </table>
       </div>

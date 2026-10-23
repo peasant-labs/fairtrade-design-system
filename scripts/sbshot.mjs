@@ -40,7 +40,7 @@ const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new'
 for (const theme of themes) {
   const dir = join(outdir, theme)
   mkdirSync(dir, { recursive: true })
-  const bg = theme === 'light' ? '#fbfaf7' : '#070706'
+  const bg = theme === 'light' ? '#fbfaf7' : '#0b0b0a'
   for (const id of ids) {
     const page = await browser.newPage()
     await page.setViewport({ width: 1000, height: 760, deviceScaleFactor: 2 })

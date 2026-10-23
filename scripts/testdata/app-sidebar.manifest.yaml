@@ -1,0 +1,65 @@
+# Required-NAME manifest for app-sidebar.yaml: deletion protection. The gate asserts the case names
+# equal this list exactly, as a set, and parts-mutations.mjs proves each production mutation below
+# turns the gate red for the named reason.
+requiredCaseNames:
+  - items render as links and buttons
+  - a button item reports its id
+  - group labels and landmarks
+  - the switcher marks the current app
+  - a current app with no href is marked text
+  - the toggle collapses to a rail
+  - collapsed state and width persist
+  - stored values are restored and clamped
+  - a throwing localStorage still renders
+  - a null storage key writes nothing
+  - keyboard resize clamps to the bounds
+  - the account row links to the account
+  - the account row without an href is text
+  - an account slot replaces the row
+  - the menu opens and closes the drawer
+  - a link component receives the item props
+
+requiredMutationNames:
+  - the current item loses aria-current
+  - the width is not clamped
+  - the collapsed state is not written
+  - the external suffix is dropped
+  - the switcher lists apps it cannot reach
+  - escape does not close the drawer
+  - a storage read can throw
+mutations:
+  - name: the current item loses aria-current
+    file: src/ui/AppSidebar.jsx
+    find: "const ariaCurrent = current ? 'page' : undefined"
+    replace: "const ariaCurrent = undefined"
+    expectedDiagnostic: "items render as links and buttons: home aria-current"
+  - name: the width is not clamped
+    file: src/ui/AppSidebar.jsx
+    find: "const clampWidth = (value, min, max) => Math.min(max, Math.max(min, value))"
+    replace: "const clampWidth = (value) => value"
+    expectedDiagnostic: "keyboard resize clamps to the bounds: after End then ArrowRight"
+  - name: the collapsed state is not written
+    file: src/ui/AppSidebar.jsx
+    find: "if (storageKey) writeStored(`${storageKey}.collapsed`, String(next))"
+    replace: "void next"
+    expectedDiagnostic: "collapsed state and width persist: storage"
+  - name: the external suffix is dropped
+    file: src/ui/AppSidebar.jsx
+    find: '<span className="asb-sr">{EXTERNAL_SUFFIX}</span>'
+    replace: 'null'
+    expectedDiagnostic: "items render as links and buttons: collectives text"
+  - name: the switcher lists apps it cannot reach
+    file: src/ui/AppSidebar.jsx
+    find: "const shown = apps.filter((entry) => entry.id === app || entry.href)"
+    replace: "const shown = apps"
+    expectedDiagnostic: "the switcher marks the current app: switcher entries"
+  - name: escape does not close the drawer
+    file: src/ui/AppSidebar.jsx
+    find: "if (e.key === 'Escape') {"
+    replace: "if (e.key === 'Esc') {"
+    expectedDiagnostic: "the menu opens and closes the drawer: Escape"
+  - name: a storage read can throw
+    file: src/ui/AppSidebar.jsx
+    find: "return globalThis.localStorage?.getItem(key) ?? null\n  } catch {\n    return null\n  }"
+    replace: "return globalThis.localStorage?.getItem(key) ?? null\n  } finally {\n    void 0\n  }"
+    expectedDiagnostic: "a throwing localStorage still renders"

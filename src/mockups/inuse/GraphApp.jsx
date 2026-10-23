@@ -7,7 +7,7 @@ import { AnalyticsView } from './GraphAnalytics.jsx'
 import { HomeView, SettingsView } from './LocalHome.jsx'
 import LocalVillage from './LocalVillage.jsx'
 
-/* peasant (local app) demo parent. The section registry opens on home; home, village and settings are in
+/* peasant (local app) demo parent. The section registry opens on home; home, online (id village) and settings are in
    the nav, while analytics, changes and code map are reached by route only: `?section=<id>` opens
    one directly, and the changes timeline still links into the code map. change-detail opens from a
    commit click (onNavigate) with a back affordance. `?local=offline` shows the page-level notice

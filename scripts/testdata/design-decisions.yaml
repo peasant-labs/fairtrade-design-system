@@ -172,7 +172,7 @@ decisions:
     id: 17
     disposition: DEMO
     binding:
-      codeReference: {file: src/index.css, contains: '@media (prefers-reduced-motion: no-preference) { .btn { transition: background var(--dur-1), color var(--dur-1), border-color var(--dur-1); } }'}
+      codeReference: {file: src/index.css, contains: '@media (prefers-reduced-motion: no-preference) { .btn { transition: background var(--dur-1), color var(--dur-1), border-color var(--dur-1), transform var(--dur-2) var(--ease-out); } }'}
       pointerRemoved: '#136/17'
       lineRemoved: '- **#136/17, transitions outside the motion query**: some older rules declare transitions outside'
       restatingFilesAmended:

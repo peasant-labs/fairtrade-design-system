@@ -34,24 +34,24 @@ const typeRows = [
 ]
 
 const colorRows = [
-  { c: '#070706', name: '--canvas', dark: '#070706', light: '#fbfaf7', role: 'page background', token: '--canvas' },
-  { c: '#0e0e0c', name: '--surface', dark: '#0e0e0c', light: '#fdfcfa', role: 'panels and cards', token: '--surface' },
-  { c: '#141413', name: '--surface-2', dark: '#141413', light: '#f4f2ec', role: 'elevated, table head', token: '--surface-2' },
-  { c: '#f8f5ed', name: '--ink-strong', dark: '#f8f5ed', light: '#0d0c09', role: 'headings, short emphasis', token: '--ink-strong' },
-  { c: '#e9e5db', name: '--ink', dark: '#e9e5db', light: '#27241f', role: 'primary body text', token: '--ink' },
-  { c: '#b8b3a4', name: '--ink-2', dark: '#b8b3a4', light: '#4a463e', role: 'secondary text', token: '--ink-2' },
-  { c: '#9a9488', name: '--ink-3', dark: '#9a9488', light: '#5c574d', role: 'tertiary, labels', token: '--ink-3' },
-  { c: '#8a8478', name: '--ink-4', dark: '#8a8478', light: '#6f695e', role: 'faint text: meta, counts, line numbers (>=4.5:1)', token: '--ink-4' },
-  { c: '#534e45', name: '--ink-5', dark: '#534e45', light: '#837d72', role: 'decoration only: bullets, separators, faint glyphs', token: '--ink-5' },
-  { c: '#3c382f', name: '--rule', dark: '#3c382f', light: '#c4bca8', role: 'subtle structural divider', token: '--rule' },
-  { c: '#6f6a5f', name: '--rule-strong', dark: '#6f6a5f', light: '#8b836d', role: 'control / input border, clears 3:1', token: '--rule-strong' },
-  { c: '#cba35c', name: '--amber', dark: '#cba35c', light: '#8a5f1f', role: 'accent, focus, links, keywords', token: '--amber' },
-  { c: '#e6c483', name: '--amber-bright', dark: '#e6c483', light: '#6e4c16', role: 'hover, highlight', token: '--amber-bright' },
+  { c: '#0b0b0a', name: '--canvas', dark: '#0b0b0a', light: '#fbfaf7', role: 'page background', token: '--canvas' },
+  { c: '#0b0b0a', name: '--surface', dark: '#0b0b0a', light: '#fbfaf7', role: 'panels and cards', token: '--surface' },
+  { c: '#1c1b18', name: '--surface-2', dark: '#1c1b18', light: '#f1eee6', role: 'elevated, table head', token: '--surface-2' },
+  { c: '#fbf8f1', name: '--ink-strong', dark: '#fbf8f1', light: '#0d0c09', role: 'headings, short emphasis', token: '--ink-strong' },
+  { c: '#ece8df', name: '--ink', dark: '#ece8df', light: '#1f1c17', role: 'primary body text', token: '--ink' },
+  { c: '#cdc8bb', name: '--ink-2', dark: '#cdc8bb', light: '#3d3932', role: 'secondary text', token: '--ink-2' },
+  { c: '#b3ad9f', name: '--ink-3', dark: '#b3ad9f', light: '#4f4a41', role: 'tertiary, labels', token: '--ink-3' },
+  { c: '#a19b8e', name: '--ink-4', dark: '#a19b8e', light: '#625c51', role: 'faint text: meta, counts, line numbers (>=4.5:1)', token: '--ink-4' },
+  { c: '#615b50', name: '--ink-5', dark: '#615b50', light: '#837d72', role: 'decoration only: bullets, separators, faint glyphs', token: '--ink-5' },
+  { c: '#4f4a40', name: '--rule', dark: '#4f4a40', light: '#b3ab96', role: 'structural divider, clears 2:1', token: '--rule' },
+  { c: '#857f72', name: '--rule-strong', dark: '#857f72', light: '#7f7762', role: 'panel edge, control and input border, clears 4:1', token: '--rule-strong' },
+  { c: '#d6ae66', name: '--amber', dark: '#d6ae66', light: '#8a5f1f', role: 'accent, focus, links, keywords', token: '--amber' },
+  { c: '#ebc98c', name: '--amber-bright', dark: '#ebc98c', light: '#6e4c16', role: 'hover, highlight', token: '--amber-bright' },
   { c: '#937a45', name: '--amber-dim', dark: '#937a45', light: '#b09a63', role: 'focus border, marker', token: '--amber-dim' },
-  { c: '#7ea69d', name: '--teal', dark: '#7ea69d', light: '#3a675e', role: 'user role, info', token: '--teal' },
-  { c: '#9aa779', name: '--olive', dark: '#9aa779', light: '#586a3c', role: 'success, diff add', token: '--olive' },
-  { c: '#c07f64', name: '--clay', dark: '#c07f64', light: '#974b32', role: 'danger, diff del', token: '--clay' },
-  { c: '#9a8cae', name: '--mauve', dark: '#9a8cae', light: '#594e72', role: 'system, subagent', token: '--mauve' },
+  { c: '#8fb6ac', name: '--teal', dark: '#8fb6ac', light: '#3a675e', role: 'user role, info', token: '--teal' },
+  { c: '#a9b688', name: '--olive', dark: '#a9b688', light: '#586a3c', role: 'success, diff add', token: '--olive' },
+  { c: '#d08f74', name: '--clay', dark: '#d08f74', light: '#974b32', role: 'danger, diff del', token: '--clay' },
+  { c: '#ab9ec0', name: '--mauve', dark: '#ab9ec0', light: '#594e72', role: 'system, subagent', token: '--mauve' },
 ]
 
 const controlRows = [
@@ -120,7 +120,9 @@ export function TokensSection() {
               <tr><td className="dt-name">--motion-base</td><td className="dt-val tnum" style={{ width: '1%', whiteSpace: 'nowrap' }}>0ms <CopyBtn token="--motion-base" style={{ marginLeft: 'var(--sp-2)' }} /></td><td className="dt-role">static-first default</td></tr>
               <tr><td className="dt-name">--dur-1 / --dur-2 / --dur-3</td><td className="dt-val tnum" style={{ width: '1%', whiteSpace: 'nowrap' }}>120 / 160 / 200ms <CopyBtn token="--dur-2" style={{ marginLeft: 'var(--sp-2)' }} /></td><td className="dt-role">interaction transitions (no-preference only)</td></tr>
               <tr><td className="dt-name">--dur-entrance</td><td className="dt-val tnum" style={{ width: '1%', whiteSpace: 'nowrap' }}>900ms <CopyBtn token="--dur-entrance" style={{ marginLeft: 'var(--sp-2)' }} /></td><td className="dt-role">one-time hero + reveal; off under reduced-motion</td></tr>
-              <tr><td className="dt-name">--ease-out / --ease-spring</td><td className="dt-val" style={{ width: '1%', whiteSpace: 'nowrap' }}>cubic-bezier(.16, 1, .3, 1) <CopyBtn token="--ease-out" style={{ marginLeft: 'var(--sp-2)' }} /></td><td className="dt-role">entrance easing without overshoot</td></tr>
+              <tr><td className="dt-name">--ease-out</td><td className="dt-val" style={{ width: '1%', whiteSpace: 'nowrap' }}>cubic-bezier(.23, 1, .32, 1) <CopyBtn token="--ease-out" style={{ marginLeft: 'var(--sp-2)' }} /></td><td className="dt-role">press and enter feedback, no overshoot</td></tr>
+              <tr><td className="dt-name">--ease-in-out</td><td className="dt-val" style={{ width: '1%', whiteSpace: 'nowrap' }}>cubic-bezier(.77, 0, .175, 1) <CopyBtn token="--ease-in-out" style={{ marginLeft: 'var(--sp-2)' }} /></td><td className="dt-role">moving something already on screen</td></tr>
+              <tr><td className="dt-name">--ease-spring</td><td className="dt-val" style={{ width: '1%', whiteSpace: 'nowrap' }}>cubic-bezier(.16, 1, .3, 1) <CopyBtn token="--ease-spring" style={{ marginLeft: 'var(--sp-2)' }} /></td><td className="dt-role">entrance easing without overshoot</td></tr>
             </tbody>
           </table>
         </div>

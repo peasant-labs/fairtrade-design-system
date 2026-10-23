@@ -83,24 +83,28 @@
   --row-h-compact: 32px; --row-h-standard: 40px; --row-h-comfortable: 48px;
   --motion-base: 0ms;
 
-  /* dark (default) - sharp, deep */
-  --canvas: #070706; --surface: #0e0e0c; --surface-2: #141413; --surface-hover: #1b1a17; --surface-elev: #1c1b18;
-  /* ink-4 is text-safe (>=4.5:1); ink-5 is decoration-only (dividers, faint glyphs) */
-  --ink-strong: #f8f5ed; --ink: #e9e5db; --ink-2: #b8b3a4; --ink-3: #9a9488; --ink-4: #8a8478; --ink-5: #534e45;
-  /* rule-strong is a functional control/input border (>=3:1); rule is a subtle structural divider */
-  --rule: #3c382f; --rule-strong: #6f6a5f; --focus-ring: #cba35c;
-  --amber: #cba35c; --amber-bright: #e6c483; --amber-dim: #937a45;
+  /* dark (default): one flat ground. surface equals canvas so panels never read as grey on black;
+     they are told apart by an edge. surface-2 is for selected rows and inset wells only. */
+  --canvas: #0b0b0a; --surface: #0b0b0a; --surface-2: #1c1b18; --surface-hover: #24231f; --surface-elev: #1c1b18;
+  /* every text ink clears 6.3:1 on the ground (muted, never faint); ink-5 is decoration-only
+     (dividers, faint glyphs, disabled glyphs) */
+  --ink-strong: #fbf8f1; --ink: #ece8df; --ink-2: #cdc8bb; --ink-3: #b3ad9f; --ink-4: #a19b8e; --ink-5: #615b50;
+  /* rule-strong is the panel edge and the control/input border (>=4:1 on the ground); rule is the
+     structural divider (>=2:1 on the ground, so a line is always visible) */
+  --rule: #4f4a40; --rule-strong: #857f72; --focus-ring: #d6ae66;
+  --amber: #d6ae66; --amber-bright: #ebc98c; --amber-dim: #937a45;
   /* amber-fill is the golden amber used as a FILL behind near-black ink on selected/pressed/toggled
      controls; split from --amber (which doubles as accent TEXT) so the light theme can keep amber-text
-     dark for WCAG while still rendering toggles as a genuine golden amber, not amber-dark. */
-  --amber-fill: #cba35c; --amber-fill-ink: #141003;
-  --teal: #7ea69d; --olive: #9aa779; --clay: #c07f64; --mauve: #9a8cae; --on-amber: #141003;
+     dark for WCAG while still rendering toggles as a genuine golden amber, not amber-dark. the
+     primary action is filled with it too; amber-fill-hover is its hover fill. */
+  --amber-fill: #e6b450; --amber-fill-hover: #f0c266; --amber-fill-ink: #141003;
+  --teal: #8fb6ac; --olive: #a9b688; --clay: #d08f74; --mauve: #ab9ec0; --on-amber: #141003;
   /* semantic status, mapped onto the earth palette (soft = tinted background, fg = label on a filled chip) */
-  --success: #9aa779; --success-fg: #141003; --success-soft: rgba(154,167,121,.14);
-  --warning: #cba35c; --warning-fg: #141003; --warning-soft: rgba(203,163,92,.14);
-  --danger: #c07f64; --danger-fg: #141003; --danger-soft: rgba(192,127,100,.14);
-  --add-bg: rgba(154,167,121,.13); --add-text: #bccb96; --add-rail: #9aa779;
-  --del-bg: rgba(192,127,100,.14); --del-text: #daa791; --del-rail: #c07f64;
+  --success: #a9b688; --success-fg: #141003; --success-soft: rgba(169,182,136,.14);
+  --warning: #d6ae66; --warning-fg: #141003; --warning-soft: rgba(214,174,102,.14);
+  --danger: #d08f74; --danger-fg: #141003; --danger-soft: rgba(208,143,116,.14);
+  --add-bg: rgba(169,182,136,.13); --add-text: #c4d2a0; --add-rail: #a9b688;
+  --del-bg: rgba(208,143,116,.14); --del-text: #e2b09b; --del-rail: #d08f74;
   /* charts: categorical series map to the earth accents (already >=4.5:1 on --surface, both
      themes) so chart colour re-themes for free; amber stays the scarce emphasis series. grid is
      the hairline rule, axis lines + tick labels read at --ink-3. (used by the .recharts-* +
@@ -110,8 +114,8 @@
   --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, Menlo, Consolas, monospace;
   --chart-1: var(--teal); --chart-2: var(--olive); --chart-3: var(--clay); --chart-4: var(--mauve); --chart-amber: var(--amber);
   --chart-grid: var(--rule-strong); --chart-axis: var(--ink-3); --chart-surface: var(--surface); --chart-point-stroke: var(--surface);
-  --nav-bg: rgba(7,7,6,.92); --grid: rgba(203,163,92,.12); --hero-tex: .16;
-  --glow: 0 0 6px rgba(203,163,92,.22); --glow-soft: 0 0 4px rgba(203,163,92,.13);
+  --nav-bg: rgba(11,11,10,.92); --grid: rgba(214,174,102,.12); --hero-tex: .16;
+  --glow: 0 0 6px rgba(214,174,102,.22); --glow-soft: 0 0 4px rgba(214,174,102,.13);
   /* the one drop shadow for floating overlays (menus, popovers, dialogs, panels). dark lifts the
      overlay off the near-black canvas; light stays flat (hairline border only). */
   --overlay-shadow: var(--glow), 0 24px 60px -20px rgba(0,0,0,.6);
@@ -120,16 +124,18 @@
   --z-sticky: 30; --z-nav: 40; --z-dropdown: 50; --z-dialog: 60; --z-toast: 70; --z-tooltip: 80;
   /* motion: interaction durations stay <=200ms; entrance is a one-time exception (see motion section) */
   --dur-1: 120ms; --dur-2: 160ms; --dur-3: 200ms; --dur-entrance: 900ms;
-  --ease-standard: cubic-bezier(.2, 0, 0, 1); --ease-out: cubic-bezier(.16, 1, .3, 1); --ease-spring: cubic-bezier(.16, 1, .3, 1);
+  /* ease-out is the strong exit curve for press and enter feedback; ease-in-out moves something
+     already on screen from one place to another */
+  --ease-standard: cubic-bezier(.2, 0, 0, 1); --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1); --ease-spring: cubic-bezier(.16, 1, .3, 1);
 }
 [data-theme="light"] {
-  --canvas: #fbfaf7; --surface: #fdfcfa; --surface-2: #f4f2ec; --surface-hover: #edeae2; --surface-elev: #efece4;
-  --ink-strong: #0d0c09; --ink: #27241f; --ink-2: #4a463e; --ink-3: #5c574d; --ink-4: #6f695e; --ink-5: #837d72;
-  --rule: #c4bca8; --rule-strong: #8b836d; --focus-ring: #0d0c09;
+  --canvas: #fbfaf7; --surface: #fbfaf7; --surface-2: #f1eee6; --surface-hover: #ebe7dd; --surface-elev: #efece4;
+  --ink-strong: #0d0c09; --ink: #1f1c17; --ink-2: #3d3932; --ink-3: #4f4a41; --ink-4: #625c51; --ink-5: #837d72;
+  --rule: #b3ab96; --rule-strong: #7f7762; --focus-ring: #0d0c09;
   --amber: #8a5f1f; --amber-bright: #6e4c16; --amber-dim: #b09a63;
-  /* golden honey-amber fill for selected/toggled controls: reads as "amber" (not amber-dark), and
-     clears WCAG with near-black ink (5.6:1) plus a real 3.2:1 boundary against the white surface. */
-  --amber-fill: #b8841a; --amber-fill-ink: #1a1206;
+  /* golden honey-amber fill for the primary action and selected/toggled controls: reads as "amber"
+     (not amber-dark) and clears WCAG AA with near-black ink on both the fill and its hover fill. */
+  --amber-fill: #b88014; --amber-fill-hover: #c48a14; --amber-fill-ink: #160f03;
   --teal: #3a675e; --olive: #586a3c; --clay: #974b32; --mauve: #594e72; --on-amber: #fffdf8;
   --success: #586a3c; --success-fg: #fffdf8; --success-soft: rgba(88,106,60,.14);
   --warning: #8a5f1f; --warning-fg: #fffdf8; --warning-soft: rgba(138,95,31,.14);
@@ -284,21 +290,27 @@
     box-sizing: border-box; height: var(--control-h); padding: 0 var(--sp-4);
     border: 1px solid transparent; line-height: 1;
   }
-  @media (prefers-reduced-motion: no-preference) { .btn { transition: background var(--dur-1), color var(--dur-1), border-color var(--dur-1); } }
+  /* colour settles quickly; the press scale (interaction motion block below) eases on transform,
+     the only property that moves */
+  @media (prefers-reduced-motion: no-preference) { .btn { transition: background var(--dur-1), color var(--dur-1), border-color var(--dur-1), transform var(--dur-2) var(--ease-out); } }
   .btn .lucide, .btn .brand { width: var(--ic-md); height: var(--ic-md); }
   .btn-sm { @apply text-label; height: var(--control-h-sm); padding: 0 var(--sp-3); }
   .btn-sm .lucide, .btn-sm .brand { width: var(--ic-sm); height: var(--ic-sm); }
   .btn-icon { width: var(--control-h); padding: 0; }
   .btn-sm.btn-icon { width: var(--control-h-sm); }
   .btn:disabled { opacity: .42; cursor: not-allowed; pointer-events: none; }
-  .btn-primary { @apply bg-amber text-on-amber; font-weight: 600; border-color: var(--amber); }
-  .btn-primary:hover { background: var(--amber-bright); border-color: var(--amber-bright); }
+  /* the primary action is the golden amber fill with near-black ink in both themes */
+  .btn-primary { background: var(--amber-fill); color: var(--amber-fill-ink); font-weight: 600; border-color: var(--amber-fill); }
   .btn-secondary { @apply bg-transparent text-ink; border: var(--bd-strong); }
-  .btn-secondary:hover { @apply text-amber-bright; border-color: var(--amber-dim); }
   .btn-ghost { @apply bg-transparent text-ink-3; }
-  .btn-ghost:hover { @apply text-ink bg-surface-hover; }
   .btn-danger { @apply bg-transparent text-clay; border: var(--bd-strong); }
-  .btn-danger:hover { border-color: var(--clay); }
+  /* hover styles only where a real pointer hovers, so a tap never leaves a stuck hover state */
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover { background: var(--amber-fill-hover); border-color: var(--amber-fill-hover); }
+    .btn-secondary:hover { @apply text-amber-bright; border-color: var(--amber-dim); }
+    .btn-ghost:hover { @apply text-ink bg-surface-hover; }
+    .btn-danger:hover { border-color: var(--clay); }
+  }
   .btn-row { @apply flex flex-wrap items-center gap-3; }
 
   /* inputs - share the control height */
@@ -1143,8 +1155,9 @@
   /* a small lift on the card / start-card / resource surfaces (depth on hover) */
   .card:hover { transform: translateY(-2px); }
   .card-img:hover { box-shadow: 0 10px 28px -14px rgba(0,0,0,.55); }
-  /* press feedback: controls dip slightly on active */
-  .btn:active, .chip:active, .bs-seg-opt:active, .tag-on:active { transform: translateY(1px); }
+  /* press feedback: a button scales to 0.97 on active, smaller joined controls to 0.98 */
+  .btn:active { transform: scale(0.97); }
+  .chip:active, .bs-seg-opt:active, .tag-on:active { transform: scale(0.98); }
   /* press "glow then settle" on selected/toggle controls (button groups + chips/filters/toggles):
      an amber ring + brighten snap in near-instantly on :active, then ease back to rest. the base
      rule carries the slow settle; :active overrides the duration so the punch-in reads instant

@@ -119,11 +119,15 @@ const PAIRS = [
   { fg: 'ink-4', bg: 'canvas', kind: 'text', note: 'meta/counts/line-numbers (text-safe)' },
   { fg: 'ink-4', bg: 'surface', kind: 'text', note: 'meta/counts/line-numbers (text-safe)' },
   { fg: 'ink-4', bg: 'surface-2', kind: 'text', note: 'meta/counts/line-numbers (text-safe)' },
+  // muted, never faint: every text ink holds 6.3:1 on the one flat ground (canvas = surface).
+  { fg: 'ink-3', bg: 'canvas', kind: 'text', min: 6.3, note: 'muted ink floor on the ground' },
+  { fg: 'ink-4', bg: 'canvas', kind: 'text', min: 6.3, note: 'muted ink floor on the ground' },
   // primary button label
   { fg: 'on-amber', bg: 'amber', kind: 'text', note: 'primary button label' },
   { fg: 'on-amber', bg: 'amber-bright', kind: 'text', note: 'selected control hover label' },
   // selected/toggled control label + unread count on the golden amber fill (both themes)
-  { fg: 'amber-fill-ink', bg: 'amber-fill', kind: 'text', note: 'toggle/selected chip + unread count label' },
+  { fg: 'amber-fill-ink', bg: 'amber-fill', kind: 'text', note: 'primary button, toggle/selected chip + unread count label' },
+  { fg: 'amber-fill-ink', bg: 'amber-fill-hover', kind: 'text', note: 'primary button hover label' },
   // diff body text: required because add/del tokens are used directly as readable diff rows.
   { fg: 'add-text', bg: 'add-bg', bgBase: 'surface', kind: 'text', note: 'diff added line text' },
   { fg: 'del-text', bg: 'del-bg', bgBase: 'surface', kind: 'text', note: 'diff deleted line text' },
@@ -135,10 +139,14 @@ const PAIRS = [
   { fg: 'rule-strong', bg: 'surface', kind: 'nontext', note: 'control border on panels' },
   { fg: 'rule-strong', bg: 'surface-2', kind: 'nontext', note: 'control border on elevated bars' },
   { fg: 'rule-strong', bg: 'surface-hover', kind: 'nontext', note: 'control border on hover surface' },
+  // panel edges, inputs and buttons hold 4:1 on the ground, so an edge (not a grey fill) separates panels.
+  { fg: 'rule-strong', bg: 'canvas', kind: 'nontext', min: 4, note: 'panel edge floor on the ground' },
   // --rule is a DECORATIVE structural divider between same-tone surfaces (owner decision
   // 2026-06-16): raised for visibility but intentionally NOT held to 1.4.11's 3:1, which only
   // governs borders that identify a component/state (those use --rule-strong, required above).
   { fg: 'rule', bg: 'canvas', kind: 'nontext', required: false, note: 'divider (decorative, report)' },
+  // a divider is decorative but never invisible: 2:1 on the ground is the floor.
+  { fg: 'rule', bg: 'canvas', kind: 'nontext', min: 2, note: 'divider visibility floor on the ground' },
   { fg: 'rule', bg: 'surface', kind: 'nontext', required: false, note: 'divider (decorative, report)' },
   { fg: 'rule', bg: 'surface-2', kind: 'nontext', required: false, note: 'divider (decorative, report)' },
   { fg: 'rule', bg: 'surface-hover', kind: 'nontext', required: false, note: 'divider (decorative, report)' },
@@ -159,6 +167,7 @@ const PAIRS = [
 ]
 
 function minFor(p) {
+  if (p.min != null) return p.min
   if (p.kind === 'nontext') return 3
   return p.large ? 3 : 4.5
 }

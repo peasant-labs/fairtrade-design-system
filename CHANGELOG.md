@@ -4,6 +4,49 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.32 - 2026-10-23
+
+### Added
+
+- Export `AppSidebar`, `AppSidebarLayout` and `APP_SIDEBAR_APPS` from `/ui`: the
+  shared sidebar for every app screen (online, local and docs). It collapses to
+  an icon rail, resizes by pointer or by arrow keys, Home and End, remembers its
+  collapse and width, lists groups of icon or swatch items with a current item
+  and an outside-the-app marker, carries the online / local / docs app switcher
+  and an account row, and becomes a top bar with an opaque drawer below 768px.
+- Add `--amber-fill-hover`, the primary button's hover fill, and
+  `--ease-in-out`, the curve for moving something already on screen.
+
+### Changed
+
+- Dark theme: one flat ground. `--surface` equals `--canvas` (`#0b0b0a`), so
+  panels are told apart by an edge, never by a grey on black; `--surface-2`
+  (`#1c1b18`) is kept for selected rows and inset wells. Dividers (`--rule`)
+  read 2.24:1 and panel edges and control borders (`--rule-strong`) 4.95:1 on
+  the ground; `--ink-3` reads 8.81:1 and `--ink-4` 7.12:1. The accents lift with
+  the inks.
+- Light theme: `--surface` equals `--canvas`; `--rule` reads 2.19:1,
+  `--rule-strong` 4.26:1 and `--ink-4` 6.35:1 on the ground.
+- The primary button is filled with `--amber-fill` and labelled with
+  `--amber-fill-ink` in both themes, and hovers to `--amber-fill-hover`. Buttons
+  scale to 0.97 on press when motion is allowed, and button hover styles apply
+  only to a fine hovering pointer. `--ease-out` is now
+  `cubic-bezier(.23, 1, .32, 1)`.
+- The local app registry labels its hosted-app entry `online`; its id and route
+  stay `village`. The observations panel heading, the publish copy and the
+  manage breadcrumb say online or peasant online.
+
+### Compatibility
+
+- No API, prop, id or wire change. A host that matches the local nav by its
+  visible label `village` should match the id instead.
+
+### Tests
+
+- The contrast gate fails below the new floors: muted inks 6.3:1, panel edges
+  4:1 and dividers 2:1 on the ground, plus the primary hover label.
+- A mounted fixture gate with production mutations covers the app sidebar.
+
 ## 0.0.31
 
 ### Fixed

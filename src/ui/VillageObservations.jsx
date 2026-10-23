@@ -100,11 +100,11 @@ export default function VillageObservations({
       </div>,
     }))} /> : <p>No saved contribution evidence. Fetch metadata to check available history.</p>}
   </div>
-  return <section className="vobs" aria-label="village observations">
-    <header className="vobs-header"><div><h2>village</h2><p className="vobs-scope">{villageLabel}<br />{accountLabel}</p></div>
+  return <section className="vobs" aria-label="online observations">
+    <header className="vobs-header"><div><h2>online</h2><p className="vobs-scope">{villageLabel}<br />{accountLabel}</p></div>
       <Button variant="primary" onClick={onFetch} disabled={fetchDisabled || fetching || !onFetch} loading={fetching}>fetch metadata</Button>
     </header>
-    <Tabs aria-label="village views" value={view ?? localView} onChange={(id) => { const next = id === 'history' ? 'history' : 'catalog'; setLocalView(next); onViewChange?.(next) }} tabs={[
+    <Tabs aria-label="online views" value={view ?? localView} onChange={(id) => { const next = id === 'history' ? 'history' : 'catalog'; setLocalView(next); onViewChange?.(next) }} tabs={[
       { id: 'catalog', label: 'catalog', content: catalog },
       { id: 'history', label: 'history', content: history },
     ]} />
