@@ -8,6 +8,8 @@ const match = (category) => ({ id: String(category), category, confidence: fixtu
 await withMountedSource(async ({ load, mount, React, window }) => {
   const { RedactionReview } = await load('/src/ui/Redaction.jsx')
   const { PublishDialog } = await load('/src/ui/Publish.jsx')
+  const { default: DiffView } = await load('/src/ui/DiffView.jsx')
+  const diffMatch = (category) => ({ id: String(category), category, confidence: fixture.confidence, original: 'SensitiveOriginal', replacement: '<REDACTED>' })
   for (const row of fixture.categories) {
     const mounted = await mount(React.createElement(RedactionReview, { matches: [match(row.category)], availableLevels: ['standard'] }))
     report.check(mounted.container.querySelector('.rdx-badge-cat')?.textContent === row.label, `${row.name}: canonical label`)
@@ -16,6 +18,9 @@ await withMountedSource(async ({ load, mount, React, window }) => {
     report.check(mounted.container.querySelector('.rdx-badge-conf .term')?.textContent + ' ' + mounted.container.querySelector('.rdx-confidence-value')?.textContent === fixture.confidenceText, `${row.name}: confidence must be labeled`)
     report.check(mounted.container.querySelector('.rdx-badge-conf [role="tooltip"]')?.textContent === fixture.confidenceHelp, `${row.name}: confidence help must define the score`)
     await mounted.unmount()
+    const diff = await mount(React.createElement(DiffView, { file: 'config/app.go', variant: 'redaction', matches: [diffMatch(row.category)] }))
+    report.check(diff.container.querySelector('.dv-badge-cat')?.textContent === row.label, `${row.name}: the diff view shows the engine label`)
+    await diff.unmount()
   }
   const api = await load('/src/ui/index.js')
   assertExactNames(api.AllRedactionCategories, fixture.categories.map((row) => row.category), 'canonical category ids')
@@ -29,6 +34,9 @@ await withMountedSource(async ({ load, mount, React, window }) => {
     const review = await mount(React.createElement(RedactionReview, { matches, availableLevels: ['standard'] }))
     report.check(!!review.container.querySelector('[role="alert"]') && !review.container.querySelector('.rdx-card') && !review.container.querySelector('.rdx-summary-safe'), `${row.name}: unknown review must fail closed without original content or trusted labels`)
     await review.unmount()
+    const diff = await mount(React.createElement(DiffView, { file: 'config/app.go', variant: 'redaction', matches: [diffMatch('secrets'), diffMatch(row.category)] }))
+    report.check(!!diff.container.querySelector('[role="alert"]') && !diff.container.querySelector('.dv-match') && !diff.container.textContent.includes('SensitiveOriginal'), `${row.name}: the diff view must fail closed without original content or labels`)
+    await diff.unmount()
     let published = false
     const popup = await mount(React.createElement(PublishDialog, {
       open: true, onClose() {}, title: 'Recorded Session', state: row.state ?? 'ready', scan: { matches },

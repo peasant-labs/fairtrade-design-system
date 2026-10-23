@@ -66,6 +66,19 @@
   font-size: var(--fs-label);
   text-transform: lowercase;
 }
+/* an unknown redaction category blocks the view: one alert, no original line */
+.dv-refused {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink);
+}
+.dv-refused .lucide { width: var(--ic-md); height: var(--ic-md); flex: none; color: var(--clay); position: relative; inset-block-start: calc((1lh - var(--ic-md)) / 2); }
 
 /* ── hunk ────────────────────────────────────────────────────────────────── */
 /* a hunk is a padded block carrying a `@@` caption above its framed lines — the same

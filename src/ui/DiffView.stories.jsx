@@ -1,4 +1,5 @@
 import { expect, within, userEvent, waitFor } from 'storybook/test'
+import { RedactionCategory } from '@peasant-labs/schema'
 import DiffView from './DiffView.jsx'
 import { frame } from './story-frame.jsx'
 
@@ -49,7 +50,7 @@ const goHunks = [
 const redactionMatches = [
   {
     id: 'r1',
-    category: 'api-key',
+    category: RedactionCategory.Secrets,
     confidence: 0.98,
     oldNo: 12,
     newNo: 12,
@@ -58,16 +59,16 @@ const redactionMatches = [
   },
   {
     id: 'r2',
-    category: 'email',
+    category: RedactionCategory.PII,
     confidence: 0.91,
     oldNo: 27,
     newNo: 27,
-    original: '// reported by vitor.hw@outlook.com on the 0.4 rollout',
+    original: '// reported by alex.rivera@example.com on the 0.4 rollout',
     replacement: '// reported by ‹redacted-email› on the 0.4 rollout',
   },
   {
     id: 'r3',
-    category: 'bearer-token',
+    category: RedactionCategory.Secrets,
     confidence: 0.64,
     oldNo: 53,
     newNo: 53,
@@ -124,10 +125,10 @@ export const Redaction = {
     // the header tallies the redacted count.
     expect(canvas.getByText('redacted')).toBeInTheDocument()
 
-    // each match shows its category/confidence badge.
-    expect(canvas.getByText('api-key')).toBeInTheDocument()
+    // each match shows its category/confidence badge, the category in the engine's own label.
+    expect(canvas.getAllByText('CREDENTIAL')).toHaveLength(2)
+    expect(canvas.getByText('PII')).toBeInTheDocument()
     expect(canvas.getByText('0.98')).toBeInTheDocument()
-    expect(canvas.getByText('bearer-token')).toBeInTheDocument()
 
     // keep/revert: pressing "keep" un-redacts the first match and flags it.
     const keepButtons = canvas.getAllByRole('button', { name: /keep/i })
@@ -145,6 +146,21 @@ export const Empty = {
     file: 'docs/README.md',
     variant: 'default',
     hunks: [],
+  },
+}
+
+// a category the engine does not know (a rule name here) blocks the view: an alert, no original.
+export const RedactionUnknownCategory = {
+  args: {
+    file: 'config/secrets.go',
+    variant: 'redaction',
+    matches: [{ ...redactionMatches[0], category: 'api-key' }],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    expect(canvas.getByRole('alert')).toHaveTextContent('unsupported redaction category')
+    expect(canvas.queryByText(/sk_live_4eC39/)).toBeNull()
+    expect(canvas.queryByText('api-key')).toBeNull()
   },
 }
 
