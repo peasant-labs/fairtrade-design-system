@@ -103,7 +103,7 @@ export const SETTINGS_GROUPS = Object.freeze([
     open: false,
     rows: [
       { id: 'advanced-email', kind: 'text', label: 'your email', value: 'alice@acme.dev', configKey: 'user.email', notInConfig: true },
-      { id: 'advanced-village-url', kind: 'text', label: 'village address', value: 'api.village.peasantlabs.org', configKey: 'village.url', notInConfig: true },
+      { id: 'advanced-village-url', kind: 'text', label: 'peasant online address', value: 'api.village.peasantlabs.org', configKey: 'village.url', notInConfig: true },
       { id: 'advanced-theme', kind: 'select', label: 'terminal theme', value: 'dark', configKey: 'display.theme', notInConfig: true, options: [{ value: 'dark', label: 'dark' }, { value: 'light', label: 'light' }] },
     ],
   },

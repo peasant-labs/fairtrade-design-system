@@ -88,7 +88,7 @@ export const Label = {
   render: () => <PublishStateLabel state="auto-publish" collective="Acme Platform" />,
 }
 
-export const PopupConnect = { name: 'popup, connect to village first', render: () => <Popup state="connect" /> }
+export const PopupConnect = { name: 'popup, connect to peasant online first', render: () => <Popup state="connect" /> }
 export const PopupWaitingGithub = { name: 'popup, waiting for github', render: () => <Popup state="waiting-github" /> }
 export const PopupChecking = { name: 'popup, checking for sensitive content', render: () => <Popup state="checking" /> }
 export const PopupScanFailed = {

@@ -56,9 +56,9 @@ export function SignInPage({ onSignIn }) {
   return (
     <div className="iu-page cmg-signin">
       <div className="cmg-signin-card">
-        <p className="cmg-signin-brand mono">village</p>
+        <p className="cmg-signin-brand mono">peasant online</p>
         <h2 className="iu-page-title">the transcripts behind your team&apos;s pull requests</h2>
-        <p className="iu-page-sub">peasant records your AI coding sessions on your machine. village keeps the ones you publish, shared with your collectives, and links them to pull requests.</p>
+        <p className="iu-page-sub">peasant records your AI coding sessions on your machine. peasant online keeps the ones you publish, shared with your collectives, and links them to pull requests.</p>
         <SignInProviders onSignIn={onSignIn} />
         <ul className="cmg-signin-notes">
           <li>first time here? your handle is your GitHub login. change it later in your profile.</li>
@@ -228,7 +228,7 @@ export function AccountSettingsView({ actions = {} } = {}) {
           </SettingGroup>
           <SettingGroup id="account-connections" label="connections" defaultOpen count={2} noun={['connection', 'connections']}>
             <div className="srow">
-              <span className="srow-text-col"><span className="srow-label"><BrandMark name="github" /> github, {VIEWER.login}</span><span className="srow-help">you sign in to village with this account.</span></span>
+              <span className="srow-text-col"><span className="srow-label"><BrandMark name="github" /> github, {VIEWER.login}</span><span className="srow-help">you sign in to peasant online with this account.</span></span>
               <button type="button" className="btn btn-secondary btn-sm">sign out</button>
             </div>
             <div className="srow">
@@ -238,7 +238,7 @@ export function AccountSettingsView({ actions = {} } = {}) {
           </SettingGroup>
           <SettingGroup id="account-danger-zone" label="danger zone" defaultOpen count={null}>
             <div className="srow">
-              <span className="srow-help">delete your village account. this cannot be undone.</span>
+              <span className="srow-help">delete your peasant online account. this cannot be undone.</span>
               <button type="button" className="btn btn-danger btn-sm">delete account</button>
             </div>
           </SettingGroup>

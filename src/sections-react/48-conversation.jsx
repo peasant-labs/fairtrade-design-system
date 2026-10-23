@@ -11,7 +11,7 @@ export function ConversationSection() {
       <p className="prose">the reading surface for a recorded session. each turn leads with a role icon and label, runs at reading size in the proportional face, and never lowercases what was said. tool calls, thinking blocks and subagent threads collapse to a summary line and open on demand, so a long run scans quickly. a sticky header keeps the breadcrumb, title and run meta on screen while you read, and checkpoint markers tie the prose back to the commits it produced. reach for it whenever a transcript is read rather than skimmed.</p>
       <div className="window framed" style={{ marginTop: 'var(--sp-5)' }}>
         <div className="win-head">
-          <div className="crumb">village <ChevronRight aria-hidden="true" /> vitor-hw <ChevronRight aria-hidden="true" /> <span className="cur">refactor ingest pipeline</span></div>
+          <div className="crumb">peasant online <ChevronRight aria-hidden="true" /> alice-dev <ChevronRight aria-hidden="true" /> <span className="cur">refactor ingest pipeline</span></div>
           <div className="win-title">refactor ingest pipeline to stream</div>
           <div className="win-meta">
             <span className="metaitem"><span className="g-claude"><svg className="brand" width="14" height="14" viewBox="0 0 24 24"><use href="#b-claude" /></svg></span> claude-code</span>

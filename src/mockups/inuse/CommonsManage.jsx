@@ -120,7 +120,7 @@ export function PublishView() {
     <div className="cmg-root">
       <div className="cmg-page">
         <div className="crumb cmg-crumb">
-          village <ChevronRight size={14} aria-hidden="true" /> <span className="cur">publish</span>
+          peasant online <ChevronRight size={14} aria-hidden="true" /> <span className="cur">publish</span>
         </div>
         <header className="cmg-head">
           <div>
@@ -279,7 +279,7 @@ export function CollectivesView({ data = {}, actions = {} } = {}) {
     <div className="cmg-root">
       <div className="cmg-page">
         <div className="crumb cmg-crumb">
-          village <ChevronRight size={14} aria-hidden="true" /> <span className="cur">{crumb}</span>
+          peasant online <ChevronRight size={14} aria-hidden="true" /> <span className="cur">{crumb}</span>
         </div>
         <header className="cmg-head">
           <div>
@@ -550,7 +550,7 @@ export function CollectiveDetailView({ data = {}, actions = {} } = {}) {
         {/* hero + action cluster */}
         <header className="cmg-d-hero">
           <div className="crumb cmg-crumb">
-            village <ChevronRight size={14} aria-hidden="true" /> collectives <ChevronRight size={14} aria-hidden="true" /> <span className="cur">{collective.name}</span>
+            peasant online <ChevronRight size={14} aria-hidden="true" /> collectives <ChevronRight size={14} aria-hidden="true" /> <span className="cur">{collective.name}</span>
           </div>
           <div className="cmg-d-hero-row">
             <div>
@@ -764,7 +764,7 @@ export function CollectiveSettingsView() {
     <div className="cmg-root cmg-settings">
       <div className="cmg-detail">
         <div className="crumb cmg-crumb">
-          village <ChevronRight size={14} aria-hidden="true" /> collectives <ChevronRight size={14} aria-hidden="true" />
+          peasant online <ChevronRight size={14} aria-hidden="true" /> collectives <ChevronRight size={14} aria-hidden="true" />
           <span className="cur">settings</span>
         </div>
 
@@ -970,7 +970,7 @@ export function ContributeView() {
     <div className="cmg-root">
       <div className="cmg-page">
         <div className="crumb cmg-crumb">
-          village <ChevronRight size={14} aria-hidden="true" /> AI Research Team <ChevronRight size={14} aria-hidden="true" /> <span className="cur">contribute</span>
+          peasant online <ChevronRight size={14} aria-hidden="true" /> AI Research Team <ChevronRight size={14} aria-hidden="true" /> <span className="cur">contribute</span>
         </div>
         <header className="cmg-head">
           <div>

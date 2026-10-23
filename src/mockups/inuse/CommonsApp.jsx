@@ -70,7 +70,7 @@ export default function CommonsApp({ theme }) {
 
   return (
     <div className="iu-app-root">
-      <nav className="iu-subnav" aria-label="village sections">
+      <nav className="iu-subnav" aria-label="peasant online sections">
         {back ? (
           <button type="button" className="iu-subnav-back" onClick={() => setView(back)}>
             <ChevronLeft size={14} aria-hidden="true" /> back

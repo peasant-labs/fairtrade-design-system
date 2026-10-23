@@ -398,7 +398,7 @@ function WhatLeaves({ state, scan, onRescan, checkingStage, readOnlyReview }) {
  * checkbox, then the done state with the village link. The host drives `state`; the popup never
  * advances on its own.
  *
- * States: `connect` (this computer is not signed in to village), `waiting-github` (after continue
+ * States: `connect` (this computer is not signed in to peasant online), `waiting-github` (after continue
  * with github), `checking` (the redaction check is running), `scan-failed` (publish is off,
  * re-scan stays on), `no-collective` (signed in, in no collective), `ready`, `publishing`,
  * `stopped` (a named step failed; the host names any changes already applied), `done`, `waits-approval` (done, and
@@ -427,7 +427,7 @@ function WhatLeaves({ state, scan, onRescan, checkingStage, readOnlyReview }) {
  * @param {string} [props.primaryLabel] - replaces the derived primary label.
  * @param {() => void} [props.onPublish]
  * @param {() => void} [props.onConnect] - `continue with github`.
- * @param {string} [props.joinHref] - `create or join one on village`.
+ * @param {string} [props.joinHref] - `create or join one on peasant online`.
  * @param {string} [props.stoppedAt] - the step that failed, in words ("setting who can read it").
  * @param {string} [props.stoppedDetail] - stopped state: the host's actionable detail, pre-wrapped mono text behind a
  *        "details" disclosure in the stopped box.

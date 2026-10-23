@@ -17,7 +17,7 @@ export default meta
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const lands = () => wait(400)
 const holds = () => new Promise(() => {})
-const fails = async () => { await wait(300); throw new Error('village did not answer. your setting is unchanged.') }
+const fails = async () => { await wait(300); throw new Error('peasant online did not answer. your setting is unchanged.') }
 
 export const Idle = { render: () => <SettingRow label="include new branches automatically" help="only in projects you selected in full." control="switch" value onCommit={lands} /> }
 
@@ -44,7 +44,7 @@ export const Failed = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('switch'))
-    await waitFor(() => expect(canvas.getByRole('alert')).toHaveTextContent('village did not answer.'))
+    await waitFor(() => expect(canvas.getByRole('alert')).toHaveTextContent('peasant online did not answer.'))
     await expect(canvas.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
     await expect(canvas.getByText('not saved')).toBeVisible()
   },

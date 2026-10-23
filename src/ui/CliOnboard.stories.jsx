@@ -29,7 +29,7 @@ const PEASANT_STEPS = [
   },
   {
     title: 'contribute to the commons',
-    body: 'Push the transcripts you have approved to the village, with redaction applied. You stay in control of what leaves.',
+    body: 'Push the transcripts you have approved to peasant online, with redaction applied. You stay in control of what leaves.',
     command: 'peasant village push',
   },
 ]
