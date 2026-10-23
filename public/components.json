@@ -1,7 +1,7 @@
 {
   "$description": "fairtrade component manifest, generated from src/ui. import from the barrel: import { Button } from \"src/ui\". every component is token-styled (classes in src/index.css) and works in both themes. props shows the Storybook-controllable props; full prop docs are the JSDoc in each file.",
   "import": "src/ui (barrel: src/ui/index.js)",
-  "count": 62,
+  "count": 63,
   "components": [
     {
       "name": "Accordion",
@@ -44,12 +44,14 @@
       "exports": [
         "AppSidebar",
         "AppSidebarLayout",
+        "AppPage",
         "APP_SIDEBAR_APPS"
       ],
-      "doc": "@property {string} [href] where the app lives. A non-current app without an href is omitted.",
+      "doc": "",
       "props": {},
       "stories": [
         "Online",
+        "AccountSettings",
         "Local",
         "Docs",
         "Collapsed",
@@ -1545,6 +1547,23 @@
         "TextCancel",
         "Tagged",
         "Groups"
+      ]
+    },
+    {
+      "name": "SettingsNav",
+      "category": "in use",
+      "title": "in use/SettingsNav",
+      "file": "src/ui/SettingsNav.jsx",
+      "exports": [
+        "SettingsNav",
+        "SettingsLayout"
+      ],
+      "doc": "@property {string} [href] a route or an in-page anchor (`#id`); renders a link.",
+      "props": {},
+      "stories": [
+        "Sections",
+        "Anchors",
+        "Phone"
       ]
     },
     {

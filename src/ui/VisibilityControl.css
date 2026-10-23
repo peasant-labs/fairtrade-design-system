@@ -48,7 +48,7 @@
   width: max-content;
   padding: var(--sp-1) var(--sp-2);
   border: var(--bd-strong);
-  background: var(--surface-2);
+  background: var(--surface-elev);
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: var(--fs-label);

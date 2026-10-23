@@ -232,7 +232,7 @@ const COMPONENTS = [
   ['card', { backgroundColor: '{colors.surface}', rounded: '{rounded.none}', padding: tok('sp-4') }],
   ['dialog', { backgroundColor: '{colors.surface}', rounded: '{rounded.none}', width: tok('dialog-w') }],
   ['publish-primary', { ...control, touchMinHeight: tok('target-comfortable'), typography: '{typography.label-strong}' }],
-  ['overlay', { shadow: tok('overlay-shadow') }],
+  ['overlay', { backgroundColor: '{colors.surface-elev}', shadow: tok('overlay-shadow') }],
   ['focus-ring', { width: tok('focus-ring-width'), offset: tok('focus-ring-offset'), insetOffset: tok('focus-ring-offset-inset') }],
 ]
 
