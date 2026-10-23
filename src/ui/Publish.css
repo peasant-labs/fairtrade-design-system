@@ -155,7 +155,12 @@
 .pub-line-text { flex: 1 1 auto; min-width: 0; }
 .pub-failure-detail { flex-basis: 100%; }
 .pub-failure-detail > summary { min-height: var(--target-min); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); cursor: pointer; }
-.pub-failure-detail > p { margin: var(--sp-2) 0 0; max-inline-size: var(--measure-prose); font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); overflow-wrap: anywhere; }
+.pub-failure-detail > pre { margin: var(--sp-2) 0 0; font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.pub-failure-action { flex: none; }
+.pub-failure-action .pub-spin { width: var(--ic-sm); height: var(--ic-sm); }
+/* the checking state: the step, an optional count, and the note on why publish waits */
+.pub-checking { display: flex; flex-direction: column; gap: var(--sp-1); }
+.pub-progress { color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); }
 .pub-line-alert > .lucide { color: var(--clay); }
 .pub-toggle { margin-inline-start: auto; }
 .pub-rescan .lucide { width: var(--ic-sm); height: var(--ic-sm); }
