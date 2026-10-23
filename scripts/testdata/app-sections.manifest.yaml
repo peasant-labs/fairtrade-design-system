@@ -5,16 +5,16 @@ requiredBodyNames: [home body, village body, settings body, analytics body, chan
 requiredAliasIds: [analytics, changes, map]
 
 requiredMutationNames:
-  - village leaves the nav
+  - village joins the nav
   - village body is missing
   - the nav lists route-only sections
   - settings leaves the nav
   - the demo opens on the first route-only section
 mutations:
-  - name: village leaves the nav
+  - name: village joins the nav
     file: src/ui/inuse/InUseShell.jsx
-    find: "Object.freeze({ id: 'village', label: 'online', inNav: true }),"
-    replace: "Object.freeze({ id: 'village', label: 'online', inNav: false }),"
+    find: "Object.freeze({ id: 'village', label: 'online', inNav: false }),"
+    replace: "Object.freeze({ id: 'village', label: 'online', inNav: true }),"
     expectedDiagnostic: "LOCAL_APP_SECTIONS entry village"
   - name: village body is missing
     file: src/mockups/inuse/GraphApp.jsx
@@ -34,5 +34,5 @@ mutations:
   - name: the demo opens on the first route-only section
     file: src/mockups/inuse/GraphApp.jsx
     find: "return requested && SECTION_IDS.has(requested) ? requested : SECTIONS[0].id"
-    replace: "return requested && SECTION_IDS.has(requested) ? requested : SECTIONS[3].id"
+    replace: "return requested && SECTION_IDS.has(requested) ? requested : SECTIONS[1].id"
     expectedDiagnostic: "the demo must open on home"

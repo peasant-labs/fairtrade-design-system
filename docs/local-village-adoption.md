@@ -53,8 +53,8 @@ overlapping shell navigation or focused controls; no second scroll-dependent sco
 
 ## canonical navigation and release boundary
 
-`LOCAL_APP_SECTIONS` now lists home, online (id `village`), settings in navigation; analytics, changes and
-map remain route-only. Registry and entries are frozen. `AppSection` remains open for custom
+`LOCAL_APP_SECTIONS` lists home and settings in navigation; online (id `village`), analytics, changes
+and map are route-only. (0.0.30 listed online in navigation; 0.0.34 moved it to route-only.) Registry and entries are frozen. `AppSection` remains open for custom
 lists. Deprecated `GRAPH_APP_SECTIONS` retains its exact analytics/changes/map value.
 The official demo mounts the real composition at `?app=graph&section=village#inuse`.
 

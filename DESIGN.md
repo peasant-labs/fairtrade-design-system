@@ -582,8 +582,8 @@ render the same system.
   is reached by route only; every other entry sits in the section nav. A consumer derives its nav and
   routes from the registry and fails loudly on an id it does not map. `GRAPH_APP_SECTIONS` is a
   deprecated alias kept for consumers on the older three-section shape.
-  Main navigation is home, online, settings; the hosted app's entry is labelled `online` and keeps
-  the id and route `village`. Online presents saved relevant collective
+  Main navigation is home, settings. The online page is reached by route only; it is labelled
+  `online` and keeps the id and route `village`. Online presents saved relevant collective
   observations and separately pageable contribution evidence, with independently dated fetch
   results. Hosts own network operations and authorization; observations never grant permission.
 
