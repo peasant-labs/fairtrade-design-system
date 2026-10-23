@@ -146,7 +146,7 @@ export const Online = {
     // the switcher lists the other apps only, each opening in a new tab
     const switcher = canvas.getByRole('navigation', { name: 'apps' })
     await expect(within(switcher).queryByText('online')).toBeNull()
-    await expect(within(switcher).getByRole('link', { name: 'docs, opens in a new tab' })).toHaveAttribute('target', '_blank')
+    await expect(within(switcher).getByRole('link', { name: /^docs\s*, opens in a new tab$/ })).toHaveAttribute('target', '_blank')
     // collapse to the rail, check the labels survive as accessible names, then expand again
     await userEvent.click(toggle)
     await waitFor(() => expect(canvas.getByRole('button', { name: 'expand the sidebar' })).toHaveAttribute('aria-expanded', 'false'))
