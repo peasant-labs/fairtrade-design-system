@@ -1,0 +1,65 @@
+# Required-NAME manifest for number-format.yaml: deletion protection. The gate asserts the case and
+# allowed-file names equal these lists exactly, as sets, and parts-mutations.mjs proves each
+# production mutation below turns the gate red for the named reason.
+requiredFormatterNames:
+  - a cost with float noise reads at cents
+  - a cost under a cent reads less than a cent
+  - a zero cost reads zero dollars
+  - a large cost is grouped
+  - a missing cost reads the placeholder
+  - an unreadable cost reads the placeholder
+  - a small count stays whole
+  - thousands read k
+  - a count that rounds up moves to the next unit
+  - billions are billions
+  - trillions read T
+  - a token sum string is counted
+  - a NaN count reads the placeholder
+  - an infinite count reads the placeholder
+  - a missing count reads the placeholder
+  - an integer is grouped
+  - an integer string past the safe range stays exact
+  - a missing integer reads the placeholder
+  - a decimal reads at fixed places
+  - a NaN decimal reads the placeholder
+requiredMountedNames:
+  - a turn's usage panel shows costs at cents
+  - the session usage by scope shows sums at cents
+  - a turn's token badge reads millions
+requiredAllowedFiles:
+  - src/ui/format.js
+  - src/ui/transcript/time.js
+  - src/ui/analytics/format.js
+
+requiredMutationNames:
+  - a cost shows its recorded digits
+  - a tiny cost rounds to zero
+  - a missing value reads NaN
+  - the usage panel shows the raw cost
+  - the turn badge divides by a thousand
+mutations:
+  - name: a cost shows its recorded digits
+    file: src/ui/format.js
+    find: "return (n < 0 ? '-$' : '$') + CENTS.format(Math.abs(n))"
+    replace: "return String.fromCharCode(36) + String(value)"
+    expectedDiagnostic: "a cost with float noise reads at cents"
+  - name: a tiny cost rounds to zero
+    file: src/ui/format.js
+    find: "if (n > 0 && n < 0.01) return '<$0.01'"
+    replace: "void 0"
+    expectedDiagnostic: "a cost under a cent reads less than a cent"
+  - name: a missing value reads NaN
+    file: src/ui/format.js
+    find: "  return Number.isFinite(n) ? n : undefined"
+    replace: "  return n"
+    expectedDiagnostic: "a NaN count reads the placeholder"
+  - name: the usage panel shows the raw cost
+    file: src/ui/transcript/UsageDisclosure.jsx
+    find: "const shownCost = (value) => (value == null || value === 'unknown' ? 'unknown' : formatCost(value))"
+    replace: "const shownCost = (value) => (value == null ? 'unknown' : String(value))"
+    expectedDiagnostic: "a turn's usage panel shows costs at cents"
+  - name: the turn badge divides by a thousand
+    file: src/ui/transcript/TurnCard.jsx
+    find: "{formatCount(turn.tokens.in + turn.tokens.out)} tokens"
+    replace: "{(turn.tokens.in + turn.tokens.out) / 1000}k tokens"
+    expectedDiagnostic: "a turn's token badge reads millions"

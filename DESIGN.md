@@ -425,6 +425,13 @@ use sentence case so sentences stay parseable. Never `text-transform: uppercase`
 figures (`font-variant-numeric: tabular-nums`). Numeric columns right-align; plain mixed-precision
 DataTable columns can align on the decimal separator without changing the values' precision.
 
+**The One Number Format Rule.** Every number on screen goes through `src/ui/format.js` (exported
+from `/ui`): compact counts read "999", "1.2k", "66.7M", "66.7B" (one decimal at most, k lowercase);
+exact integers are grouped ("272,000"); costs read in dollars at cents ("$0.30"), and a positive
+cost under a cent reads "<$0.01"; a missing or unreadable value reads "—". Durations and dates have
+their own one format in `src/ui/transcript/time.js`. Rounding happens only for display: recorded
+values, such as a harness's cost string, are kept and summed exactly.
+
 **The Bold, Not Italic Rule.** Emphasis is weight: `em` and `i` render at 600, upright. Underline is
 reserved for links. In prose, links carry a dotted underline (solid on hover and focus) so they
 never rely on color alone; chrome links stay clean. A faint amber text glow belongs only to

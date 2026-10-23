@@ -2,6 +2,7 @@ import { useCallback, useId, useMemo, useState } from 'react'
 import { Check, Minus, ChevronRight, Search } from 'lucide-react'
 import { matchesQuery } from './match-query.js'
 import './GroupedMultiSelect.css'
+import { formatCount } from './format.js'
 
 /* GroupedMultiSelect — a project-grouped tri-state multi-select tree, modelled on peasant's
    SessionPicker (project rows as the primary unit, a "customize" drill-in to the session sublist)
@@ -57,14 +58,9 @@ import './GroupedMultiSelect.css'
  * @property {string} [searchLabel='search']  the search field's label.
  */
 
-/* compact numeric formatter for the token tallies: 8120 -> "8.1k", 1_200_000 -> "1.2m". keeps the
-   numbers narrow so the tabular columns line up regardless of magnitude. */
-function formatTokens(n) {
-  if (n == null) return '0'
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}m`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, '')}k`
-  return String(n)
-}
+/* the token tallies use the shared compact count (8120 -> "8.1k", 1_200_000 -> "1.2M"), which keeps
+   the numbers narrow so the tabular columns line up regardless of magnitude; an empty tally reads 0 */
+const formatTokens = (n) => formatCount(n ?? 0)
 
 /* the tri-state box: a bordered square whose GLYPH carries the state (not colour) —
    all -> Check, some -> Minus (the [~] partial), none -> empty. `state` is 'all' | 'some' | 'none'. */

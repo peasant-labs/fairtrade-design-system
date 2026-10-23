@@ -16,6 +16,7 @@ import './Redaction.css'
 import { Term } from './Explainer.jsx'
 import { redactionCategoryLabel } from '@peasant-labs/schema'
 import { hasKnownRedactionCategories } from './redaction-categories.js'
+import { formatDecimal } from './format.js'
 
 /* Redaction: the "in use" safe-by-default review surface, modeled on peasant's
    RedactionStep / RedactionDiffView + the PushStep transparency panel. two composites,
@@ -175,7 +176,7 @@ function MatchCard({ match, onToggle, readOnly = false }) {
 
   // 0.98 -> "0.98": two decimals, tabular, mono. a low-confidence match (< 0.70) earns the
   // amber caution treatment on the badge — scarce by design.
-  const conf = typeof confidence === 'number' ? confidence.toFixed(2) : confidence
+  const conf = typeof confidence === 'number' ? formatDecimal(confidence, 2) : confidence
   const low = typeof confidence === 'number' && confidence < 0.7
 
   return (

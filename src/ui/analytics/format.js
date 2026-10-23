@@ -1,28 +1,19 @@
 // @ts-check
 /* Pure presentation formatters used by the analytics surface. Kept internal:
-   the public surface is the metric functions + the components. */
+   the public surface is the metric functions + the components. A token count is the library's one
+   compact count (../format.js); the pair formatters below match precision across a typical and
+   tail pair on the same units. */
+import { formatCount } from '../format.js'
 
 /**
- * Round to at most 1 decimal place and render without a trailing ".0"
- * (62 → "62", 10.5 → "10.5").
- * @param {number} v
- * @returns {string}
- */
-function trim1(v) {
-  const r = Math.round(v * 10) / 10
-  return Number.isInteger(r) ? String(r) : r.toFixed(1)
-}
-
-/**
- * Compact token count: 1234 → "1.2k", 62_000 → "62k", 1_234_567 → "1.23M".
+ * Compact token count, the library's one count format: 1234 → "1.2k", 62_000 → "62k",
+ * 1_234_567 → "1.2M", 66_731_500_000 → "66.7B". A negative count is not a count and reads "—".
  * @param {number | null | undefined} n
  * @returns {string}
  */
 export function formatTokens(n) {
   if (n == null || !Number.isFinite(n) || n < 0) return '—'
-  if (n < 1000) return String(Math.round(n))
-  if (n < 1_000_000) return `${trim1(n / 1000)}k`
-  return `${(n / 1_000_000).toFixed(2)}M`
+  return formatCount(n)
 }
 
 /**
@@ -104,11 +95,9 @@ export function formatTokenPair(a, b) {
   for (const v of [a, b]) if (typeof v === 'number' && Number.isFinite(v) && v >= 0) finite.push(v)
   if (finite.length === 0) return ['—', '—']
   const max = Math.max(...finite)
-  /** @type {[number, string]} */
-  const [div, unit] = max >= 1_000_000 ? [1_000_000, 'M'] : max >= 1000 ? [1000, 'k'] : [1, '']
-  const decimals = div === 1_000_000
-    ? 2
-    : finite.some((v) => !Number.isInteger(Math.round((v / div) * 10) / 10)) ? 1 : 0
+  /** @type {[number, string]} the units of the one count format, picked from the larger value */
+  const [div, unit] = max >= 1e12 ? [1e12, 'T'] : max >= 1e9 ? [1e9, 'B'] : max >= 1e6 ? [1e6, 'M'] : max >= 1000 ? [1000, 'k'] : [1, '']
+  const decimals = finite.some((v) => !Number.isInteger(Math.round((v / div) * 10) / 10)) ? 1 : 0
   const one = (/** @type {number | null | undefined} */ v) => {
     if (v == null || !Number.isFinite(v) || v < 0) return '—'
     return `${(v / div).toFixed(decimals)}${unit}`

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import DiffView from '../DiffView.jsx'
 import { assertChangeDetailPayloadEnums, assertChangeDiffPayloadEnums } from './types.js'
+import { formatCost, formatCount } from '../format.js'
 
 /* ChangeDetail — the lifted "one line of work, told in full" surface, lifted from the demo
    GraphMap.jsx ChangeDetailView and parameterised onto the cooked ChangeDetailPayload: a
@@ -39,7 +40,7 @@ function titleFromBranch(branch) {
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
 
-const fmtTokens = (n) => (n >= 1000 ? `≈${(n / 1000).toFixed(1)}k` : String(n))
+const fmtTokens = (n) => (n >= 1000 ? `≈${formatCount(n)}` : formatCount(n))
 
 /**
  * Map one wire ChangeDiffPayload hunk onto the kit <DiffView> hunk shape, deriving the
@@ -248,7 +249,7 @@ export default function ChangeDetail({
         </span>
         {payload.costUsd != null && (
           <span className="metaitem tnum">
-            <Coins size={14} aria-hidden="true" /> est. spend ${payload.costUsd.toFixed(2)}
+            <Coins size={14} aria-hidden="true" /> est. spend {formatCost(payload.costUsd)}
           </span>
         )}
       </div>

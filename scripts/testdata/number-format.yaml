@@ -1,0 +1,65 @@
+# The one number format (src/ui/format.js), checked by scripts/number-format.test.mjs.
+#
+# formatterCases: one call each. `input` is what a caller hands over: a number, a numeric string (wire
+# costs and token sums arrive as exact decimal strings) or null; .nan and .inf are YAML's NaN and
+# infinity. `places` is formatDecimal's second argument.
+#
+# mountedCases: the real usage panels and turn card, mounted, show the formatted figure and never the
+# recorded float noise.
+#
+# sourceGuard: no shipped component formats a number by hand. A `.toFixed(`, `.toLocaleString(` or
+# `Intl.NumberFormat(` may appear only in the files listed here, each the home of one format.
+formatterCases:
+  - {name: a cost with float noise reads at cents, fn: formatCost, input: '0.30000000000000004', expected: '$0.30'}
+  - {name: a cost under a cent reads less than a cent, fn: formatCost, input: '1e-7', expected: '<$0.01'}
+  - {name: a zero cost reads zero dollars, fn: formatCost, input: 0, expected: '$0.00'}
+  - {name: a large cost is grouped, fn: formatCost, input: '1234.5', expected: '$1,234.50'}
+  - {name: a missing cost reads the placeholder, fn: formatCost, input: null, expected: '—'}
+  - {name: an unreadable cost reads the placeholder, fn: formatCost, input: 'about a dollar', expected: '—'}
+  - {name: a small count stays whole, fn: formatCount, input: 999, expected: '999'}
+  - {name: thousands read k, fn: formatCount, input: 1234, expected: '1.2k'}
+  - {name: a count that rounds up moves to the next unit, fn: formatCount, input: 999950, expected: '1M'}
+  - {name: billions are billions, fn: formatCount, input: 66731500000, expected: '66.7B'}
+  - {name: trillions read T, fn: formatCount, input: 1200000000000, expected: '1.2T'}
+  - {name: a token sum string is counted, fn: formatCount, input: '272000', expected: '272k'}
+  - {name: a NaN count reads the placeholder, fn: formatCount, input: .nan, expected: '—'}
+  - {name: an infinite count reads the placeholder, fn: formatCount, input: .inf, expected: '—'}
+  - {name: a missing count reads the placeholder, fn: formatCount, input: null, expected: '—'}
+  - {name: an integer is grouped, fn: formatInteger, input: 272000, expected: '272,000'}
+  - {name: an integer string past the safe range stays exact, fn: formatInteger, input: '9007199254740993', expected: '9,007,199,254,740,993'}
+  - {name: a missing integer reads the placeholder, fn: formatInteger, input: null, expected: '—'}
+  - {name: a decimal reads at fixed places, fn: formatDecimal, input: 0.987, places: 2, expected: '0.99'}
+  - {name: a NaN decimal reads the placeholder, fn: formatDecimal, input: .nan, places: 2, expected: '—'}
+mountedCases:
+  - name: a turn's usage panel shows costs at cents
+    kind: usage
+    usage:
+      ownerId: owner-answer
+      scope: assistant
+      completeness: complete
+      tokens: {input: 272000, output: 4210, totalTokens: 276210}
+      cost: {source: recorded_harness_estimate, input: '1e-7', output: '0.30000000000000004', total: '0.4'}
+    shows: ['$0.30', '<$0.01', '$0.40', '272,000', '276,210']
+    hides: ['0.30000000000000004', '1e-7']
+  - name: the session usage by scope shows sums at cents
+    kind: scopes
+    scopes:
+      - scope: assistant
+        ownerCount: 2
+        tokens: [{label: total tokens, value: '276210', completeness: complete}]
+        cost: [{label: output, value: '0.60000000000000008', completeness: partial}, {label: total, value: unknown, completeness: unknown}]
+    shows: ['276,210 (complete)', '$0.60 (partial)', 'unknown (unknown)']
+    hides: ['0.60000000000000008']
+  - name: a turn's token badge reads millions
+    kind: turn-tokens
+    tokens: {in: 1000000, out: 234567}
+    shows: ['1.2M tokens']
+    hides: ['1234.6k']
+sourceGuard:
+  roots: [src/ui]
+  skip: ['.stories.jsx', '.test.mjs', '.type-test.js']
+  patterns: ['.toFixed(', '.toLocaleString(', 'Intl.NumberFormat(']
+  allowed:
+    - {file: src/ui/format.js, why: the one number format}
+    - {file: src/ui/transcript/time.js, why: the one date and duration format}
+    - {file: src/ui/analytics/format.js, why: matched precision across a typical and tail pair}

@@ -13,6 +13,7 @@
      tools[].preview ⇐ ToolCallVM.preview (the cooked one-liner; NO parse here)
      totalDurationMs ⇐ Σ ToolCallVM.durationMs
      hasError        ⇐ any cooked isError / nonzero exitCode */
+import { formatDurationMs } from '../time.js'
 
 /**
  * One cooked tool entry for the cluster. A strict presentational subset of
@@ -39,12 +40,8 @@
  * @property {string} [className]
  */
 
-/** Compact duration label (ms → "820ms" / "1.2s"); empty when there is none. */
-function fmtDuration(ms) {
-  if (ms == null || ms <= 0) return ''
-  if (ms < 1000) return `${Math.round(ms)}ms`
-  return `${(ms / 1000).toFixed(1).replace(/\.0$/, '')}s`
-}
+/** Compact duration label in the transcript's one duration format ("820ms", "1.2s", "1m 15s"); empty when there is none. */
+const fmtDuration = formatDurationMs
 
 /** basename of a slash path, without parsing anything. */
 function baseName(path) {

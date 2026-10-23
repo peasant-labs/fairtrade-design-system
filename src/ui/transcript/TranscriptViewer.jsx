@@ -1,3 +1,4 @@
+import { formatCount } from '../format.js'
 import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   ChevronRight, ChevronDown, ChevronUp, Clock, Coins, ShieldCheck, FileText,
@@ -60,7 +61,6 @@ import Tooltip from '../Tooltip.jsx'
 /** @typedef {{sessionId: string, scrollTop: number, focusOrigin: {kind: 'tab'} | {kind: 'scroller'} | {kind: 'descendant', turnIndex: number, control: 'anchor'}}} TraceReadingSnapshot */
 /** @typedef {{sessionId: string, scrollTop: number, focusOrigin: {kind: 'tab'} | {kind: 'scroller'} | {kind: 'descendant', turnIndex: number, control: 'anchor'}, requestKey: string, restoreRequested: boolean}} TraceReadingPosition */
 
-const fmtTokens = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n))
 
 /** controllable-with-default: use `value` when provided (controlled), else internal state seeded
     by `defaultValue`; `onChange` fires in both modes so the host always hears the change. */
@@ -867,7 +867,7 @@ export default function TranscriptViewer({
           {/* a figure that was not measured is left out, never shown as unknown or as zero */}
           {session.inputSubmissionCount != null && <span className="metaitem"><MessageSquareText size={14} aria-hidden="true" /> <b className="tnum">{session.inputSubmissionCount}</b> {session.inputSubmissionCount === 1 ? 'prompt' : 'prompts'}</span>}
           {session.toolCallCount != null && <span className="metaitem"><Wrench size={14} aria-hidden="true" /> <b className="tnum">{session.toolCallCount}</b> tools</span>}
-          {!vm.usageScopes?.length && session.totalTokens != null && <Term className="metaitem" def={fmtTokens(session.tokensIn ?? 0) + ' input tokens, ' + fmtTokens(session.tokensOut ?? 0) + ' output tokens'}><Coins size={14} aria-hidden="true" /> <b className="tnum">{fmtTokens(session.totalTokens)}</b> tokens</Term>}
+          {!vm.usageScopes?.length && session.totalTokens != null && <Term className="metaitem" def={formatCount(session.tokensIn ?? 0) + ' input tokens, ' + formatCount(session.tokensOut ?? 0) + ' output tokens'}><Coins size={14} aria-hidden="true" /> <b className="tnum">{formatCount(session.totalTokens)}</b> tokens</Term>}
           {commits.length > 0 && <span className="metaitem"><GitCommitHorizontal size={14} aria-hidden="true" /> <b className="tnum">{commits.length}</b> {commits.length === 1 ? 'commit' : 'commits'}</span>}
           {/* the line counts ride with the file count as one unit, so "+11 −4" never wraps onto a
               line of its own */}

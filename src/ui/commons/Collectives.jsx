@@ -1,3 +1,4 @@
+import { formatInteger } from '../format.js'
 import { useId, useState } from 'react'
 import { FolderGit2, GitPullRequest, KeyRound, MoreHorizontal, Plus, Search, Settings, SlidersHorizontal, TriangleAlert, Upload, Users, ClipboardCheck } from 'lucide-react'
 import {
@@ -157,7 +158,7 @@ export function CollectivesView({ data = {}, actions = {} } = {}) {
       ),
     },
     { key: 'members', label: 'members', align: 'right' },
-    { key: 'transcripts', label: 'transcripts', align: 'right', render: (value) => (typeof value === 'number' ? value.toLocaleString('en-US') : value) },
+    { key: 'transcripts', label: 'transcripts', align: 'right', render: (value) => (typeof value === 'number' ? formatInteger(value) : value) },
     ...(showOrg ? [{ key: 'org', label: 'github org', render: (_, c) => (c.org ? <span className="mono">{c.org}{c.repos ? `, ${c.repos} open` : ''}</span> : <span className="cmg-none">nothing linked</span>) }] : []),
     { key: 'mode', label: 'joining', render: (value) => JOINING_LABEL[value] ?? value },
   ]

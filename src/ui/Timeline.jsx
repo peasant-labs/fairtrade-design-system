@@ -1,3 +1,4 @@
+import { formatCount } from './format.js'
 import { useState } from 'react'
 import BrandMark from './BrandMark.jsx'
 import {
@@ -50,7 +51,6 @@ const TOOL_ICON = {
   default: Wrench,
 }
 
-const fmtTokens = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n))
 
 /**
  * @typedef {Object} Thinking
@@ -418,8 +418,8 @@ export function TimelineItem({ item, renderTool, renderBody }) {
             </span>
           )}
           {tokens && (
-            <span className="tl-tokens tnum" title={fmtTokens(tokens.in) + ' in, ' + fmtTokens(tokens.out) + ' out'}>
-              <Coins className="lucide" aria-hidden="true" /> {fmtTokens(tokens.in + tokens.out)}
+            <span className="tl-tokens tnum" title={formatCount(tokens.in) + ' in, ' + formatCount(tokens.out) + ' out'}>
+              <Coins className="lucide" aria-hidden="true" /> {formatCount(tokens.in + tokens.out)}
             </span>
           )}
         </div>

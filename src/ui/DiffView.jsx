@@ -3,6 +3,7 @@ import { Plus, Minus, Eye, EyeOff, AlertTriangle } from 'lucide-react'
 import { redactionCategoryLabel } from '@peasant-labs/schema'
 import { hasKnownRedactionCategories } from './redaction-categories.js'
 import './DiffView.css'
+import { formatDecimal } from './format.js'
 
 /* DiffView: a unified hunk diff renderer, the React port of peasant's review DiffView +
    session-detail RedactionDiffView. structured hunks (a `@@ … @@` header row, then lines),
@@ -70,7 +71,7 @@ function RedactionMatch({ match }) {
   const [kept, setKept] = useState(false)
   const low = confidence < 0.7
   // 0.98 -> "0.98"; keep two decimals, tabular, mono — "CREDENTIAL, 0.98".
-  const conf = confidence.toFixed(2)
+  const conf = formatDecimal(confidence, 2)
 
   return (
     <div className={`dv-match${kept ? ' dv-match-kept' : ''}`}>
