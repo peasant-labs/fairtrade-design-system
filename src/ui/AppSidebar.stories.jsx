@@ -1,16 +1,20 @@
 import { useMemo, useState } from 'react'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import {
-  BookOpen, Code, Compass, Download, EyeOff, FileText, FlaskConical, GitPullRequest, GraduationCap,
-  House, Lock, MessagesSquare, Plug, ScrollText, Search, Send, Settings, Terminal, Users,
+  BookOpen, Building2, Code, Compass, Download, EyeOff, FileText, FlaskConical, GitPullRequest, GraduationCap,
+  House, Lock, MessagesSquare, Plug, ScrollText, Search, Send, Settings, Terminal, TriangleAlert, UserRound, Users,
 } from 'lucide-react'
-import AppSidebar, { AppSidebarLayout, APP_SIDEBAR_APPS } from './AppSidebar.jsx'
+import AppSidebar, { AppPage, AppSidebarLayout, APP_SIDEBAR_APPS } from './AppSidebar.jsx'
+import { SettingsLayout } from './SettingsNav.jsx'
+import { SettingGroup, SettingRow } from './Settings.jsx'
 
 /* CSF3 stories for the shared app sidebar. classes + tokens come from src/index.css via
    .storybook/preview.jsx plus the component's own sheet; the theme toolbar flips data-theme. each
    story mounts the sidebar inside AppSidebarLayout beside a placeholder page, the way an app screen
    does. Online, Local and Docs show the three apps' navs; Collapsed starts as the icon rail; Mobile
-   runs at a phone viewport, where the sidebar is a top bar whose menu opens the drawer. choosing an
+   runs at a phone viewport, where the sidebar is a top bar whose menu opens the drawer; AccountSettings
+   is an account settings page in the AppPage frame with the settings section bar in its body, the
+   sidebar left as it is on every other page. choosing an
    in-app item makes it current, so the indicator can be seen sliding. every story passes
    storageKey={null} so one story's collapse or resize never leaks into the next. the nav data is
    example data. */
@@ -78,19 +82,48 @@ const DOCS_GROUPS = [
   ] },
 ]
 
-/* a stand-in page body: a heading and a few hairline rows, so the sticky column has a page beside it */
+/* a stand-in page body in the AppPage frame: a heading and a few hairline rows, so the sticky
+   column has a page beside it */
 function PlaceholderPage({ title }) {
   return (
-    <div style={{ display: 'grid', gap: 'var(--sp-4)', padding: 'var(--sp-6)', maxWidth: 'var(--maxw)' }}>
+    <AppPage>
       <h1 style={{ fontSize: 'var(--fs-xl)' }}>{title}</h1>
-      {['fix the flaky upload test', 'add retries to the sync client', 'trace the slow kickstart scan'].map((row) => (
-        <div key={row} style={{ padding: 'var(--sp-3) 0', borderBottom: 'var(--bd)', color: 'var(--ink)' }}>{row}</div>
-      ))}
-    </div>
+      <div>
+        {['fix the flaky upload test', 'add retries to the sync client', 'trace the slow kickstart scan'].map((row) => (
+          <div key={row} style={{ padding: 'var(--sp-3) 0', borderBottom: 'var(--bd)', color: 'var(--ink)' }}>{row}</div>
+        ))}
+      </div>
+    </AppPage>
   )
 }
 
-function Frame({ title, groups, currentId, ...props }) {
+const lands = () => new Promise((resolve) => setTimeout(resolve, 400))
+const ACCOUNT_SECTIONS = [
+  { id: 'profile', label: 'profile', icon: UserRound },
+  { id: 'organizations', label: 'organizations', icon: Building2 },
+  { id: 'pull-requests', label: 'pull requests', icon: GitPullRequest },
+  { id: 'connections', label: 'connections', icon: Plug },
+  { id: 'danger-zone', label: 'danger zone', icon: TriangleAlert },
+]
+
+/* an account settings page: the AppPage frame, the settings section bar in the body */
+function SettingsPage() {
+  const [current, setCurrent] = useState('profile')
+  const section = ACCOUNT_SECTIONS.find((entry) => entry.id === current)
+  return (
+    <AppPage>
+      <h1 style={{ fontSize: 'var(--fs-xl)' }}>your settings</h1>
+      <SettingsLayout sections={ACCOUNT_SECTIONS} currentId={current} onSelect={setCurrent}>
+        <SettingGroup label={section.label} defaultOpen>
+          <SettingRow label="handle" control="text" value="mira" onCommit={lands} />
+          <SettingRow label="discoverable profile" help="on: your handle shows on your transcripts and in member lists. off: you show as anon." control="switch" value onCommit={lands} />
+        </SettingGroup>
+      </SettingsLayout>
+    </AppPage>
+  )
+}
+
+function Frame({ title, groups, currentId, page, ...props }) {
   const [current, setCurrent] = useState(currentId)
   const live = useMemo(() => groups.map((group) => ({
     ...group,
@@ -98,7 +131,7 @@ function Frame({ title, groups, currentId, ...props }) {
   })), [groups])
   return (
     <AppSidebarLayout sidebar={<AppSidebar apps={apps} storageKey={null} homeHref="#home" groups={live} currentId={current} {...props} />}>
-      <PlaceholderPage title={title} />
+      {page ?? <PlaceholderPage title={title} />}
     </AppSidebarLayout>
   )
 }
@@ -110,6 +143,10 @@ export const Online = {
     const toggle = canvas.getByRole('button', { name: 'collapse the sidebar' })
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
     await expect(canvas.getByRole('link', { name: 'home' })).toHaveAttribute('aria-current', 'page')
+    // the switcher lists the other apps only, each opening in a new tab
+    const switcher = canvas.getByRole('navigation', { name: 'apps' })
+    await expect(within(switcher).queryByText('online')).toBeNull()
+    await expect(within(switcher).getByRole('link', { name: /^docs\s*, opens in a new tab$/ })).toHaveAttribute('target', '_blank')
     // collapse to the rail, check the labels survive as accessible names, then expand again
     await userEvent.click(toggle)
     await waitFor(() => expect(canvas.getByRole('button', { name: 'expand the sidebar' })).toHaveAttribute('aria-expanded', 'false'))
@@ -123,6 +160,17 @@ export const Online = {
     await waitFor(() => expect(canvas.getByRole('link', { name: 'home' })).toHaveAttribute('aria-current', 'page'))
     // rest without a focused control so the documented state carries no focus ring
     canvasElement.ownerDocument.activeElement?.blur()
+  },
+}
+
+export const AccountSettings = {
+  render: () => <Frame title="your settings" app="online" groups={ONLINE_GROUPS} account={{ handle: 'mira', href: '#account' }} page={<SettingsPage />} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // the settings sections live in the page body; the sidebar keeps its own nav
+    const sections = canvas.getByRole('navigation', { name: 'settings sections' })
+    await expect(within(sections).getByRole('button', { name: 'profile' })).toHaveAttribute('aria-current', 'true')
+    await expect(canvas.getByRole('navigation', { name: 'peasant sections' })).toBeInTheDocument()
   },
 }
 

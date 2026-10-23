@@ -15,8 +15,8 @@ colors:
   surface-2-light: '#f1eee6'
   surface-hover: '#24231f'
   surface-hover-light: '#ebe7dd'
-  surface-elev: '#1c1b18'
-  surface-elev-light: '#efece4'
+  surface-elev: '#0b0b0a'
+  surface-elev-light: '#fbfaf7'
   ink-strong: '#fbf8f1'
   ink-strong-light: '#0d0c09'
   ink: '#ece8df'
@@ -193,6 +193,7 @@ components:
     touchMinHeight: '44px'
     typography: '{typography.label-strong}'
   overlay:
+    backgroundColor: '{colors.surface-elev}'
     shadow: 'var(--glow), 0 24px 60px -20px rgba(0,0,0,.6)'
   focus-ring:
     width: '3px'
@@ -323,7 +324,10 @@ text, rail).
 - **Surfaces** (`--surface`, `--surface-2`, `--surface-elev`, `--surface-hover`): panels, selected
   rows and inset wells, overlays and hover. `--surface` equals `--canvas` in both themes: one flat
   ground, so a panel is told apart by its `--rule-strong` edge, never by a near-black grey on black.
-  `--surface-2` is kept for selected rows and inset wells.
+  `--surface-2` is kept for selected rows and inset wells. `--surface-elev`, the fill of everything
+  that floats (menus, a select's option list, popovers, tooltips, toasts), equals the ground too:
+  a floating panel is told apart by its `--rule-strong` edge and, in the dark theme, the overlay
+  lift, never by a grey or beige slab.
 - **Inks** (`--ink-strong`, `--ink`, `--ink-2`, `--ink-3`, `--ink-4`, `--ink-5`): short emphasis,
   primary text, secondary, tertiary, the faintest text-safe ink, and decoration only.
 - **Rules** (`--rule`, `--rule-strong`): the structural hairline divider and the functional control
@@ -429,8 +433,11 @@ single accent words explicitly marked `.hl` in the dark theme, never to generic 
 ## Layout
 
 Desktop-first, left-aligned, on a 4/8 grid. The spacing scale is `--sp-1` to `--sp-8` (4, 8, 12, 16,
-24, 32, 40, 56) and every padding, margin and gap uses it. Content columns cap at `--maxw` with
-`--gutter` sides. Buttons and inputs share one height (`--control-h`, `--control-h-sm` for small).
+24, 32, 40, 56) and every padding, margin and gap uses it. The presentation site's content columns
+cap at `--maxw` with `--gutter` sides. An app page does not: `AppPage` (and the in-use demo's
+`.iu-page`) takes the full width of the column beside the sidebar with the same padding on the left
+and the right, so the gap beside the sidebar always equals the gap at the window's edge; prose keeps
+its own measure inside it. Buttons and inputs share one height (`--control-h`, `--control-h-sm` for small).
 Row heights come in three density tokens (`--row-h-compact`, `--row-h-standard`,
 `--row-h-comfortable`).
 
@@ -479,8 +486,9 @@ action.
 
 Flat by default. The page and its panels share one ground (`--surface` equals `--canvas`); depth
 comes from edges first (hairline and functional borders, `--bd` and `--bd-strong`), then from
-`--surface-2` for selected rows and inset wells and `--surface-elev` for overlays, not from
-shadows. Every region with running text or data sits on one flat fill: no gradients, patterns,
+`--surface-2` for selected rows and inset wells, not from shadows. Overlays fill with
+`--surface-elev`, which is the same ground, so they are told apart by their strong edge and the
+overlay lift, not by a fill. Every region with running text or data sits on one flat fill: no gradients, patterns,
 scanlines or textures behind reading content. Overlays, sticky headers and command palettes use
 opaque surfaces.
 
@@ -551,6 +559,9 @@ render the same system.
 - **Style:** `--canvas` fill, `--rule-strong` border, the body face at 16px without prose tracking,
   the control height.
 - **Focus:** the border shifts to `--amber-dim` and the global 3px focus ring appears on keyboard focus.
+- **Native parts:** the browser's own parts follow the theme (`color-scheme`), so a native select's
+  option list, scrollbars and pickers are drawn dark on the dark ground and light on paper; where
+  the browser lets a page style the option list, it takes the overlay fill and the inks.
 - **Error / Disabled:** errors are field-adjacent, persistent and plain-language, never a transient
   toast. Checkboxes and radios are real inputs, so focus, disabled and checked states are native.
 
@@ -563,10 +574,14 @@ render the same system.
   counts are tabular in `--ink-4`.
 - **Trails:** breadcrumb, step indicator, tabs and pagination; orientation lives here.
 - **App sidebar:** `AppSidebar` is the one sidebar for every app screen (online, local and docs):
-  the wheat mark and wordmark, a collapse toggle down to an icon rail whose labels become titles, a
-  resizable width (pointer drag, or arrow keys, Home and End on the separator), groups of items
-  with an icon or a colour swatch, the current item marked with `aria-current` and the amber inset
-  bar, an outside-the-app marker, the app switcher (online, local, docs) and the account row.
+  the wheat mark alone (its name is the accessible name and the tooltip; the full logo with the
+  wordmark belongs to the landing page only), a collapse handle seated on the column's right edge
+  level with the mark (a small square whose chevron turns to point the way the column will go)
+  down to an icon rail whose labels become titles, a resizable width (pointer drag, or arrow keys,
+  Home and End on the separator), groups of items with an icon or a colour swatch, the current item
+  marked with `aria-current` and the amber inset bar, an outside-the-app marker, the switcher to
+  the other apps (never the one the reader is in; each opens in a new tab unless its entry names a
+  target) and the account row. Brand text is `peasant`, never `peasant labs`.
   Collapse and width persist per browser. Below 768px it becomes a top bar whose menu opens the
   same nav as an opaque drawer; the menu button then becomes the drawer's one close control.
   `AppSidebarLayout` places it beside the page. Its motion runs only under
@@ -575,6 +590,14 @@ render the same system.
   scrim fades, its items stagger in a quarter of `--dur-1` apart, the menu glyph turns into a cross,
   an expanded rail's labels fade in from a 4px offset while the width snaps, items press to 0.98,
   and one indicator slides between current items instead of jumping.
+- **Settings section bar:** `SettingsNav` lists one settings page's sections inside the page body,
+  so a settings page never takes over the app sidebar; the account settings, a collective's
+  settings and the local app's settings all use it. `SettingsLayout` places it beside the sections
+  when the body is at least 44rem wide (a sticky column, the current section on the `--surface-2`
+  fill with the amber inset bar and an amber icon) and above them when narrower (one row that
+  scrolls sideways, the current section underlined in amber like a tab, kept in view). A section is
+  a route link, an in-page anchor or a button, marked with `aria-current` (`page`, `location` or
+  `true`); on one long page of anchors, `spy` marks the section being read.
 - **In-use shell:** the app switcher replaces the page header at the same height and carries a
   keyboard tablist for the three apps.
 - **Local app sections:** `LOCAL_APP_SECTIONS` in `src/ui/inuse/InUseShell.jsx` is the canonical
@@ -612,7 +635,8 @@ to one polite live region, never a focus-stealing toast. Destructive actions con
 
 ### Forms and empty states
 The filter sidebar, form fields with functional labels, and the empty state: an icon ring, a
-title, a body and one action.
+title, a body and one action. A setting row keeps its save-status slot before its control, so the
+control ends on the row's padding and the row is as wide on the right as on the left.
 
 ### Data tables and charts
 The data families are the data table, pagination, accordion, timeline, toast and date range.

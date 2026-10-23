@@ -4,6 +4,69 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.35 - 2026-10-23
+
+### Added
+
+- `SettingsNav` and `SettingsLayout`: the settings section bar. It lists one
+  settings page's sections inside the page body, so a settings page never takes
+  over the app sidebar. Beside the sections when the body is at least 44rem
+  wide (a sticky column, the current section on the `--surface-2` fill with the
+  amber inset bar), above them when narrower (one row that scrolls sideways,
+  the current section underlined in amber, kept in view). A section is a route
+  link, an in-page anchor or a button, with `aria-current` `page`, `location` or
+  `true`; `spy` marks the section being read on one long page of anchors;
+  `LinkComponent` takes a router link. The shipped `CollectiveSettingsView` and
+  the in-use demo's account and local settings use it.
+- `AppPage`: the frame for one app page inside `AppSidebarLayout`. It takes the
+  full width of the main column with the same padding on the left and the
+  right (32px, 16px below 768px), so a page is never a capped, centred column
+  with an uneven gap beside the sidebar.
+
+### Changed
+
+- `AppSidebar` shows the wheat mark alone, in the column and in the phone top
+  bar; `brand` stays the accessible name and the tooltip. The full logo with
+  the wordmark belongs to the landing page only. Brand text is `peasant`.
+- `AppSidebar`'s collapse control is a small square handle seated on the
+  column's right edge, level with the mark. Its chevron turns to point the way
+  the column will go (only after a user toggle, only when motion is allowed).
+  It keeps its names (`collapse the sidebar` / `expand the sidebar`),
+  `aria-expanded`, `aria-controls` and its place right after the brand in the
+  tab order, and takes a 44px target on a coarse pointer.
+- `AppSidebar`'s switcher lists only the other apps: the app the reader is in
+  is left out (it is not a destination and no longer reads as the current
+  page). Each entry opens in a new tab (`target="_blank"`,
+  `rel="noopener noreferrer"`, spoken ", opens in a new tab") unless it names
+  its own `target`.
+- Floating surfaces sit on the flat ground: `--surface-elev` now equals
+  `--surface` in both themes (`#0b0b0a` dark, `#fbfaf7` light), so a menu, a
+  popover, a tooltip, a toast, the date range panel and a select's option list
+  are told apart by their strong edge and the dark theme's overlay lift, not by
+  a grey or beige slab. The few selected states that used `--surface-elev` as a
+  fill use `--surface-2`.
+- The page declares `color-scheme` per theme, so a native select's option list,
+  scrollbars and pickers follow the theme; `.select` options take the overlay
+  fill and inks. A `.select-wrap` that brings no chevron icon draws one.
+- `.iu-page` takes the full width of its column (no 1184px cap).
+- `SettingRow`'s status slot sits before its control on a wide row, so the
+  control ends on the row's padding; stacked below 768px, the status follows
+  the control as before.
+
+### Compatibility
+
+- New exports: `SettingsNav`, `SettingsLayout`, `AppPage` (with
+  `SettingsNavSection`, `SettingsNavProps`, `SettingsLayoutProps` and
+  `AppPageProps` types). No prop was removed.
+- A consumer that rendered a settings page's sections as `AppSidebar` groups
+  moves them into `SettingsLayout` in the page body and keeps the sidebar's
+  normal groups there.
+- A consumer that passed its own app with an `href` in `apps` no longer sees it
+  in the switcher; one that set `target`/`rel` on an entry keeps them.
+- A consumer page that capped and centred itself beside the sidebar adopts
+  `AppPage` (or drops its own max-width) to get equal padding.
+- `.asb-wordmark` is gone; the brand's name is in a visually hidden span.
+
 ## 0.0.34 - 2026-10-23
 
 ### Changed

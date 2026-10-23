@@ -51,9 +51,10 @@ export { default as ModerationQueue, ApprovalBar } from './ModerationQueue.jsx'
 export { default as RoleRoster, ConfirmInline, DangerZone } from './RoleRoster.jsx'
 export { default as MapCanvas } from './MapCanvas.jsx'
 export { default as RailShell, RailSection, SplitRail } from './RailShell.jsx'
-export { default as AppSidebar, AppSidebarLayout, APP_SIDEBAR_APPS } from './AppSidebar.jsx'
+export { default as AppSidebar, AppSidebarLayout, AppPage, APP_SIDEBAR_APPS } from './AppSidebar.jsx'
 /** @typedef {import('./AppSidebar.jsx').AppSidebarProps} AppSidebarProps */
 /** @typedef {import('./AppSidebar.jsx').AppSidebarLayoutProps} AppSidebarLayoutProps */
+/** @typedef {import('./AppSidebar.jsx').AppPageProps} AppPageProps */
 /** @typedef {import('./AppSidebar.jsx').AppSidebarGroup} AppSidebarGroup */
 /** @typedef {import('./AppSidebar.jsx').AppSidebarItem} AppSidebarItem */
 /** @typedef {import('./AppSidebar.jsx').AppSidebarApp} AppSidebarApp */
@@ -76,6 +77,10 @@ export { default as CopyIconButton } from './CopyIconButton.jsx'
 export { default as OverflowList } from './OverflowList.jsx'
 export { PublishStateLabel, PublishBar, AccessList, CollectivePicker, PublishDialog, PUBLISH_STATES, PUBLISH_DIALOG_STATES } from './Publish.jsx'
 export { SettingRow, SettingGroup, SettingStatus, SETTING_ROW_STATES } from './Settings.jsx'
+export { SettingsNav, SettingsLayout } from './SettingsNav.jsx'
+/** @typedef {import('./SettingsNav.jsx').SettingsNavSection} SettingsNavSection */
+/** @typedef {import('./SettingsNav.jsx').SettingsNavProps} SettingsNavProps */
+/** @typedef {import('./SettingsNav.jsx').SettingsLayoutProps} SettingsLayoutProps */
 export { default as RepoPicker } from './RepoPicker.jsx'
 export { default as VisibilitySegmented, VisibilityEye, ScopeChip, FocusedModeToggle } from './VisibilityControl.jsx'
 export { default as InUseShell, GraphAppShell, GraphSectionNav, IN_USE_APPS, LOCAL_APP_SECTIONS, GRAPH_APP_SECTIONS } from './inuse/InUseShell.jsx'

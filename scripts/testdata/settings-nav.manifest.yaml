@@ -1,0 +1,44 @@
+# Required-NAME manifest for settings-nav.yaml: deletion protection. The gate asserts the case names
+# equal this list exactly, as a set, and parts-mutations.mjs proves each production mutation below
+# turns the gate red for the named reason.
+requiredCaseNames:
+  - routes are links and the current one is the page
+  - anchors are links and the current one is the location
+  - buttons report the chosen section
+  - the section in view is marked while reading
+  - a chosen anchor is marked at once
+  - the layout puts the bar beside the body
+  - a link component receives the section props
+
+requiredMutationNames:
+  - the current section loses aria-current
+  - an anchor is marked as a page
+  - the spy never marks the section in view
+  - a choice is not reported
+  - the layout drops the bar
+mutations:
+  - name: the current section loses aria-current
+    file: src/ui/SettingsNav.jsx
+    find: "if (current) ariaCurrent = "
+    replace: "if (false) ariaCurrent = "
+    expectedDiagnostic: "routes are links and the current one is the page: access"
+  - name: an anchor is marked as a page
+    file: src/ui/SettingsNav.jsx
+    find: "(anchorOf(section.href) ? 'location' : 'page')"
+    replace: "'page'"
+    expectedDiagnostic: "anchors are links and the current one is the location: general"
+  - name: the spy never marks the section in view
+    file: src/ui/SettingsNav.jsx
+    find: "if (first) setSpied(first.id)"
+    replace: "void first"
+    expectedDiagnostic: "the section in view is marked while reading: after"
+  - name: a choice is not reported
+    file: src/ui/SettingsNav.jsx
+    find: "onSelect?.(id)"
+    replace: "void id"
+    expectedDiagnostic: "buttons report the chosen section: onSelect"
+  - name: the layout drops the bar
+    file: src/ui/SettingsNav.jsx
+    find: "<SettingsNav {...nav} />"
+    replace: "null"
+    expectedDiagnostic: "the layout puts the bar beside the body: structure"

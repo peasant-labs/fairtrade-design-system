@@ -81,7 +81,7 @@
 .mc-seg-btn:hover { color: var(--ink); background: var(--surface-hover); }
 .mc-seg-btn[data-active='true'] {
   color: var(--ink-strong);
-  background: var(--surface-elev);
+  background: var(--surface-2);
   box-shadow: inset var(--stroke-emphasis) 0 0 var(--rule-strong);
 }
 .mc-seg-btn .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-2); }

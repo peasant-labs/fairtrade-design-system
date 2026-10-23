@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
-import { AppWindow, BookOpen, ExternalLink, Globe, Laptop, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { AppWindow, BookOpen, ChevronLeft, ExternalLink, Globe, Laptop } from 'lucide-react'
 import './AppSidebar.css'
 
 /* the shared app sidebar every peasant app screen mounts: the hosted app (online), the local app
    (local) and the docs. one nav DOM serves both layouts, and css picks which one shows:
 
-     desktop (width >= 768px)  a sticky full-height column. the brand and a collapse toggle sit on
-                               top, then the caller's groups, then the app switcher, then the
-                               account row. collapsed, it is an icon rail: labels stay in the DOM as
-                               the accessible names (visually hidden) and every item carries a title
-                               tooltip. a separator on the right edge resizes it by pointer or keys.
-     narrow (width < 768px)    a top bar with the brand and a menu button. the menu opens the same
+     desktop (width >= 768px)  a sticky full-height column. the brand mark sits on top, then the
+                               caller's groups, then the switcher to the other apps, then the account
+                               row. the collapse control is a small handle seated on the column's
+                               right edge, level with the brand. collapsed, it is an icon rail:
+                               labels stay in the DOM as the accessible names (visually hidden) and
+                               every item carries a title tooltip. a separator on the right edge
+                               resizes it by pointer or keys.
+     narrow (width < 768px)    a top bar with the brand mark and a menu button. the menu opens the same
                                nav as an opaque drawer from the left (no glass, no blur), always
                                expanded; the menu button turns into its close control, and Escape,
                                the scrim, the button or a nav link closes it, focus returning to
@@ -26,15 +28,18 @@ import './AppSidebar.css'
    `${storageKey}.width`. storage is read after mount (so a server render and the first client
    render agree) and every access is wrapped, so the sidebar renders the same without it. chrome is
    mono and lowercase; item labels render as given because collective names are user content.
+   the brand is the wheat mark alone, its name kept as the accessible name: the full logo with the
+   wordmark belongs to the landing page. the switcher lists only the other apps, never the one the
+   reader is in, and each opens in a new tab unless the entry says otherwise.
    tokens only, square corners, classes namespaced `asb-`. */
 
 /**
  * @typedef {Object} AppSidebarApp
  * @property {string} id         'online' | 'local' | 'docs', or another app id (shown with a generic icon).
  * @property {string} label      the switcher label.
- * @property {string} [href]     where the app lives. A non-current app without an href is omitted.
- * @property {string} [target]
- * @property {string} [rel]
+ * @property {string} [href]     where the app lives. An app without an href is omitted.
+ * @property {string} [target]   default '_blank': another app opens in a new tab.
+ * @property {string} [rel]      default 'noopener noreferrer' when the target is '_blank'.
  */
 
 /**
@@ -68,12 +73,12 @@ import './AppSidebar.css'
 
 /**
  * @typedef {Object} AppSidebarProps
- * @property {'online'|'local'|'docs'|string} app   which app renders the sidebar; marks its switcher entry current.
+ * @property {'online'|'local'|'docs'|string} app   which app renders the sidebar; its own switcher entry is left out.
  * @property {AppSidebarApp[]} [apps]               the app switcher entries (default APP_SIDEBAR_APPS, no hrefs).
  * @property {AppSidebarGroup[]} groups
  * @property {string} [currentId]                   the id of the current item (aria-current="page").
  * @property {string} [homeHref]                    the brand links here.
- * @property {string} [brand]                       the wordmark, default 'peasant'.
+ * @property {string} [brand]                       the brand's accessible name and tooltip, default 'peasant'.
  * @property {AppSidebarAccount} [account]
  * @property {import('react').ReactNode} [accountSlot]  replaces the default account row content.
  * @property {import('react').ComponentType<any>} [LinkComponent]  a router link; receives href, className,
@@ -95,6 +100,13 @@ import './AppSidebar.css'
  * @property {string} [className]
  */
 
+/**
+ * @typedef {Object} AppPageProps
+ * @property {import('react').ReactNode} children  the page's parts, top to bottom.
+ * @property {import('react').ElementType} [as]     the element, default 'div'.
+ * @property {string} [className]
+ */
+
 /** The app switcher's default entries, in order. Consumers map their hrefs in.
  * @type {ReadonlyArray<Readonly<AppSidebarApp>>} */
 export const APP_SIDEBAR_APPS = Object.freeze([
@@ -106,6 +118,7 @@ export const APP_SIDEBAR_APPS = Object.freeze([
 const APP_ICONS = { online: Globe, local: Laptop, docs: BookOpen }
 const RESIZE_STEP = 16
 const EXTERNAL_SUFFIX = ', opens outside this app'
+const NEW_TAB_SUFFIX = ', opens in a new tab'
 
 // a layout effect on the client (no flash of the default width), a plain effect on the server
 const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
@@ -155,15 +168,16 @@ function WheatMark() {
   )
 }
 
+/* the mark alone; the name stays as the accessible name and the tooltip */
 function Brand({ brand, homeHref, Link, onNavigate }) {
   const body = (
     <>
       <WheatMark />
-      <span className="asb-wordmark">{brand}</span>
+      <span className="asb-sr">{brand}</span>
     </>
   )
-  if (!homeHref) return <span className="asb-brand">{body}</span>
-  return <Link href={homeHref} className="asb-brand" onClick={onNavigate}>{body}</Link>
+  if (!homeHref) return <span className="asb-brand" title={brand}>{body}</span>
+  return <Link href={homeHref} className="asb-brand" title={brand} onClick={onNavigate}>{body}</Link>
 }
 
 function Leading({ icon: Icon, swatch, label }) {
@@ -184,7 +198,7 @@ function MenuGlyph() {
   )
 }
 
-function ItemBody({ item, external }) {
+function ItemBody({ item, external, suffix = EXTERNAL_SUFFIX }) {
   return (
     <>
       <Leading icon={item.icon} swatch={item.swatch} label={item.label} />
@@ -192,7 +206,7 @@ function ItemBody({ item, external }) {
       {external ? (
         <>
           <span className="asb-ext" aria-hidden="true"><ExternalLink /></span>
-          <span className="asb-sr">{EXTERNAL_SUFFIX}</span>
+          <span className="asb-sr">{suffix}</span>
         </>
       ) : null}
     </>
@@ -229,33 +243,23 @@ function SidebarItem({ item, current, Link, onNavigate }) {
   return <span className={className} aria-current={ariaCurrent} title={title}>{body}</span>
 }
 
+/* the other apps: the one the reader is in is not a destination, so it is left out, and an app
+   with nowhere to go is left out too. each opens in a new tab unless its entry names a target. */
 function AppSwitcher({ app, apps, Link, onNavigate, firstIndex }) {
-  const shown = apps.filter((entry) => entry.id === app || entry.href)
+  const shown = apps.filter((entry) => entry.id !== app && entry.href)
   if (shown.length === 0) return null
   return (
     <nav className="asb-group asb-apps" aria-label="apps">
       <ul className="asb-list">
         {shown.map((entry, index) => {
-          const current = entry.id === app
           const item = { id: entry.id, label: entry.label, icon: APP_ICONS[entry.id] ?? AppWindow }
-          const body = <ItemBody item={item} external={!current} />
+          const target = entry.target ?? '_blank'
+          const rel = entry.rel ?? (target === '_blank' ? 'noopener noreferrer' : undefined)
           return (
             <li key={entry.id} style={{ '--asb-i': firstIndex + index }}>
-              {entry.href ? (
-                <Link
-                  href={entry.href}
-                  className="asb-item"
-                  aria-current={current ? 'true' : undefined}
-                  title={entry.label}
-                  target={entry.target}
-                  rel={entry.rel}
-                  onClick={onNavigate}
-                >
-                  {body}
-                </Link>
-              ) : (
-                <span className="asb-item" aria-current="true" title={entry.label}>{body}</span>
-              )}
+              <Link href={entry.href} className="asb-item" title={entry.label} target={target} rel={rel} onClick={onNavigate}>
+                <ItemBody item={item} external suffix={target === '_blank' ? NEW_TAB_SUFFIX : EXTERNAL_SUFFIX} />
+              </Link>
             </li>
           )
         })}
@@ -279,9 +283,9 @@ function AccountRow({ account, Link, onNavigate }) {
 }
 
 /**
- * The shared app sidebar: brand, collapse toggle, the caller's nav groups, the online / local /
- * docs app switcher and an account row. A sticky resizable column on desktop that collapses to an
- * icon rail; a top bar plus an opaque drawer below 768px.
+ * The shared app sidebar: the brand mark, a collapse handle on the column's edge, the caller's nav
+ * groups, the switcher to the other apps and an account row. A sticky resizable column on desktop
+ * that collapses to an icon rail; a top bar plus an opaque drawer below 768px.
  * @param {AppSidebarProps} props
  */
 export default function AppSidebar({
@@ -495,6 +499,22 @@ export default function AppSidebar({
       {/* the aside holds everything else, the resize separator included; its content scrolls in an
           inner column so the separator on the edge is never clipped */}
       <aside id={panelId} ref={panelRef} className="asb-panel" aria-label={label}>
+        {/* the brand row stays put while the nav scrolls; the collapse handle sits on the column's
+            edge level with it, so it is reached right after the brand */}
+        <div className="asb-top">
+          <Brand brand={brand} homeHref={homeHref} Link={Link} onNavigate={onNavigate} />
+          <button
+            type="button"
+            className="asb-toggle"
+            aria-label={collapsed ? 'expand the sidebar' : 'collapse the sidebar'}
+            aria-expanded={collapsed ? 'false' : 'true'}
+            aria-controls={panelId}
+            title={collapsed ? 'expand the sidebar' : 'collapse the sidebar'}
+            onClick={toggleCollapsed}
+          >
+            <ChevronLeft aria-hidden="true" />
+          </button>
+        </div>
         <div ref={scrollRef} className="asb-scroll">
           <span
             className="asb-indicator"
@@ -503,21 +523,6 @@ export default function AppSidebar({
             data-animate={indicator?.animate ? 'true' : 'false'}
             style={indicator ? { transform: `translateY(${indicator.top}px)`, left: `${indicator.left}px`, width: `${indicator.width}px`, height: `${indicator.height}px` } : undefined}
           />
-          <div className="asb-top">
-            <Brand brand={brand} homeHref={homeHref} Link={Link} onNavigate={onNavigate} />
-            <button
-              type="button"
-              className="asb-icon-btn asb-toggle"
-              aria-label={collapsed ? 'expand the sidebar' : 'collapse the sidebar'}
-              aria-expanded={collapsed ? 'false' : 'true'}
-              aria-controls={panelId}
-              title={collapsed ? 'expand the sidebar' : 'collapse the sidebar'}
-              onClick={toggleCollapsed}
-            >
-              {collapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
-            </button>
-          </div>
-
           {groups.map((group) => (
             <nav key={group.id} className="asb-group" aria-label={group.ariaLabel ?? group.label ?? group.id}>
               {group.label ? <span className="asb-glabel">{group.label}</span> : null}
@@ -571,4 +576,14 @@ export function AppSidebarLayout({ sidebar, children, className = '' }) {
       <div className="asb-main">{children}</div>
     </div>
   )
+}
+
+/**
+ * The frame for one app page inside AppSidebarLayout: the full width of the main column with the
+ * same padding on the left and the right, so a page is never a capped column with an uneven gap
+ * beside the sidebar. A full-bleed screen (a transcript, a map) leaves it out.
+ * @param {AppPageProps} props
+ */
+export function AppPage({ children, as: Tag = 'div', className = '', ...rest }) {
+  return <Tag className={['asb-page', className].filter(Boolean).join(' ')} {...rest}>{children}</Tag>
 }

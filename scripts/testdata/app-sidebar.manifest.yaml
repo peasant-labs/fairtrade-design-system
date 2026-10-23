@@ -5,8 +5,10 @@ requiredCaseNames:
   - items render as links and buttons
   - a button item reports its id
   - group labels and landmarks
-  - the switcher marks the current app
-  - a current app with no href is marked text
+  - the brand is the mark alone
+  - the switcher leaves out the current app
+  - every other app with an address is listed
+  - an entry's own target is kept
   - the toggle collapses to a rail
   - collapsed state and width persist
   - stored values are restored and clamped
@@ -26,6 +28,10 @@ requiredMutationNames:
   - the collapsed state is not written
   - the external suffix is dropped
   - the switcher lists apps it cannot reach
+  - the switcher lists the current app
+  - another app opens in the same tab
+  - the brand shows the wordmark
+  - the collapse handle leaves the brand row
   - escape does not close the drawer
   - a storage read can throw
   - the indicator slides on its first placement
@@ -49,14 +55,34 @@ mutations:
     expectedDiagnostic: "collapsed state and width persist: storage"
   - name: the external suffix is dropped
     file: src/ui/AppSidebar.jsx
-    find: '<span className="asb-sr">{EXTERNAL_SUFFIX}</span>'
+    find: '<span className="asb-sr">{suffix}</span>'
     replace: 'null'
     expectedDiagnostic: "items render as links and buttons: collectives text"
   - name: the switcher lists apps it cannot reach
     file: src/ui/AppSidebar.jsx
-    find: "const shown = apps.filter((entry) => entry.id === app || entry.href)"
-    replace: "const shown = apps"
-    expectedDiagnostic: "the switcher marks the current app: switcher entries"
+    find: "const shown = apps.filter((entry) => entry.id !== app && entry.href)"
+    replace: "const shown = apps.filter((entry) => entry.id !== app)"
+    expectedDiagnostic: "the switcher leaves out the current app: switcher entries"
+  - name: the switcher lists the current app
+    file: src/ui/AppSidebar.jsx
+    find: "const shown = apps.filter((entry) => entry.id !== app && entry.href)"
+    replace: "const shown = apps.filter((entry) => entry.href)"
+    expectedDiagnostic: "the switcher leaves out the current app: switcher entries"
+  - name: another app opens in the same tab
+    file: src/ui/AppSidebar.jsx
+    find: "const target = entry.target ?? '_blank'"
+    replace: "const target = entry.target"
+    expectedDiagnostic: "every other app with an address is listed: switcher entries"
+  - name: the brand shows the wordmark
+    file: src/ui/AppSidebar.jsx
+    find: '<span className="asb-sr">{brand}</span>'
+    replace: '<span className="asb-wordmark">{brand}</span>'
+    expectedDiagnostic: "the brand is the mark alone: the brand is the mark alone"
+  - name: the collapse handle leaves the brand row
+    file: src/ui/AppSidebar.jsx
+    find: '<div className="asb-top">'
+    replace: '<div className="asb-head">'
+    expectedDiagnostic: "the toggle collapses to a rail: before the toggle"
   - name: escape does not close the drawer
     file: src/ui/AppSidebar.jsx
     find: "if (e.key === 'Escape') {"

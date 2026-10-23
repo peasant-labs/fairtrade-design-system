@@ -47,29 +47,43 @@ cases:
       navNames: [peasant sections, help, apps]
       visibleLabels: [help]
       asideName: peasant
-  # The switcher: the current app is marked; others are links that leave the app; a non-current
-  # entry with no href is omitted.
-  - name: the switcher marks the current app
+  # The brand: the wheat mark alone in the top bar and in the column, its name kept as the
+  # accessible name and the tooltip. The full logo with the wordmark belongs to the landing page.
+  - name: the brand is the mark alone
+    kind: brand
+    props: {app: online, homeHref: /}
+    expected:
+      - {tag: A, name: peasant, title: peasant, mark: true, visibleText: ''}
+      - {tag: A, name: peasant, title: peasant, mark: true, visibleText: ''}
+  # The switcher: the app the reader is in is left out (it is not a destination), so is an app with
+  # no href; every other app is a link that opens in a new tab unless its entry names a target.
+  - name: the switcher leaves out the current app
     kind: switcher
     props: {app: local}
     expected:
-      - {label: online, tag: A, current: null, external: true}
-      - {label: local, tag: A, current: 'true', external: false}
-  - name: a current app with no href is marked text
+      - {label: online, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'online, opens in a new tab'}
+  - name: every other app with an address is listed
     kind: switcher
     props: {app: docs}
     expected:
-      - {label: online, tag: A, current: null, external: true}
-      - {label: local, tag: A, current: null, external: true}
-      - {label: docs, tag: SPAN, current: 'true', external: false}
+      - {label: online, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'online, opens in a new tab'}
+      - {label: local, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'local, opens in a new tab'}
+  - name: an entry's own target is kept
+    kind: switcher
+    props:
+      app: docs
+      apps:
+        - {id: online, label: online, href: 'https://online.invalid/', target: _self}
+    expected:
+      - {label: online, tag: A, current: null, target: _self, rel: null, text: 'online, opens outside this app'}
   # Collapse: the toggle flips aria-expanded and its name, the root is marked collapsed, the labels
   # stay in the DOM as accessible names, items carry title tooltips, and the separator leaves.
   - name: the toggle collapses to a rail
     kind: collapse
     props: {app: online, storageKey: null}
     expected:
-      before: {expanded: 'true', name: collapse the sidebar, collapsed: 'false', separator: true}
-      after: {expanded: 'false', name: expand the sidebar, collapsed: 'true', separator: false}
+      before: {expanded: 'true', name: collapse the sidebar, collapsed: 'false', separator: true, inBrandRow: true}
+      after: {expanded: 'false', name: expand the sidebar, collapsed: 'true', separator: false, inBrandRow: true}
       titles: [home, discover, eval-crowd, collectives, docs]
       callbacks: [true]
   # Persistence: a toggle and a key resize write storage; a remount reads them back.
@@ -125,7 +139,7 @@ cases:
   - name: the menu opens and closes the drawer
     kind: drawer
     props: {app: online, currentId: home}
-    expected: {name: open the menu, closeName: close the menu, listed: 7}
+    expected: {name: open the menu, closeName: close the menu, listed: 6}
   # One indicator marks the current item: placed without sliding at first, sliding to a new
   # current item, hidden when no item is current.
   - name: one indicator slides between current items
@@ -141,4 +155,4 @@ cases:
   - name: a link component receives the item props
     kind: link-component
     props: {app: online, currentId: home, homeHref: /}
-    expected: {hrefs: [/, /, /home, /c/eval-crowd, 'https://online.invalid/collectives', /docs, 'https://online.invalid/', 'http://localhost:8686/'], current: /home}
+    expected: {hrefs: [/, /, /home, /c/eval-crowd, 'https://online.invalid/collectives', /docs, 'http://localhost:8686/'], current: /home}

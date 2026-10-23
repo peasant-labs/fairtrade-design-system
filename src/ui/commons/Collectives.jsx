@@ -1,7 +1,8 @@
 import { useId, useState } from 'react'
-import { FolderGit2, MoreHorizontal, Plus, Search, Settings, Upload, ClipboardCheck } from 'lucide-react'
+import { FolderGit2, GitPullRequest, KeyRound, MoreHorizontal, Plus, Search, Settings, SlidersHorizontal, TriangleAlert, Upload, Users, ClipboardCheck } from 'lucide-react'
 import {
   Avatar,
+  BrandMark,
   Breadcrumb,
   DataTable,
   Input,
@@ -12,6 +13,7 @@ import {
   RepoPicker,
   SettingGroup,
   SettingRow,
+  SettingsLayout,
   StatsStrip,
 } from '../index.js'
 
@@ -442,6 +444,12 @@ const shownValue = (value, choices) => (choices.some((choice) => choice.value ==
  * @param {() => void} [props.actions.onTransferOwnership]
  * @param {() => void} [props.actions.onDelete]
  */
+/* the github section leads with github's own mark, as every github row does */
+function GithubMark() {
+  return <BrandMark name="github" />
+}
+const SETTINGS_SECTION_ICONS = { general: SlidersHorizontal, access: KeyRound, members: Users, 'github orgs': GithubMark, 'pull requests': GitPullRequest, 'danger zone': TriangleAlert }
+
 export function CollectiveSettingsView({ data = {}, actions = {} } = {}) {
   const { owners = [], linkedRepos = [], showOnPullRequests = false, whoCanPublish = DEFAULT_WHO_CAN_PUBLISH, whoCanRead = DEFAULT_WHO_CAN_READ, memberLeavesChoices = DEFAULT_MEMBER_LEAVES, hrefFor } = data
   const collective = collectiveOf(data.collective)
@@ -461,89 +469,91 @@ export function CollectiveSettingsView({ data = {}, actions = {} } = {}) {
           <h2 className="iu-page-title"><span className="iu-page-title-content">{collective.name}</span>, settings</h2>
           <p className="iu-page-sub">changes save right away.</p>
         </header>
-        <nav className="cmg-settings-nav" aria-label="settings sections">
-          {sections.map((name) => <a key={name} href={`#${anchor(name)}`}>{name}</a>)}
-        </nav>
-
-        <SettingGroup label="general" defaultOpen id={anchor('general')}>
-          <SettingRow label="name" control="text" value={collective.name} onCommit={write('name')} />
-          <SettingRow label="purpose" control="text" value={collective.purpose ?? ''} onCommit={write('purpose')} />
-        </SettingGroup>
-
-        <SettingGroup label="access" defaultOpen id={anchor('access')}>
-          <SettingRow label="who can publish" help={helpOf(whoCanPublish)} control="select" value={shownValue(collective.mode, whoCanPublish)} options={choicesFor(collective.mode, whoCanPublish)} onCommit={write('mode')} />
-          <SettingRow label="who can read" help="members read and publish. contributors publish, and read only if who can read allows it." control="select" value={shownValue(collective.access, whoCanRead)} options={choicesFor(collective.access, whoCanRead)} onCommit={write('access')} />
-        </SettingGroup>
-
-        <SettingGroup label="members" defaultOpen count={collective.memberCount ?? null} noun={['member', 'members']} id={anchor('members')}>
-          {actions.onInvite && (
-            <form className="srow cmg-invite" onSubmit={(event) => { event.preventDefault(); actions.onInvite(invite); setInvite('') }}>
-              <Input label="invite by github username" value={invite} onChange={(event) => setInvite(event.target.value)} placeholder="github username" />
-              <button type="submit" className="btn btn-secondary btn-sm" disabled={!invite.trim()}>invite</button>
-            </form>
-          )}
-          <ul className="cmg-member-list" aria-label="members">
-            {collective.members.map((member) => (
-              <li key={member.handle} className="cmg-member">
-                <Avatar name={member.name ?? member.handle} size="sm" />
-                <span className="cmg-member-id"><span className="mono">{member.handle}</span> {member.name ? <span className="cmg-member-name">{member.name}</span> : null}</span>
-                {member.role === 'owner' ? <span className="cmg-none mono">owner</span> : (
-                  <>
-                    <span className="select-wrap cmg-member-role">
-                      <select className="select" aria-label={`role for ${member.handle}`} defaultValue={member.role} onChange={(event) => actions.onRoleChange?.(member.handle, event.target.value)}>
-                        <option value="member">member</option>
-                        <option value="contributor">contributor</option>
-                      </select>
-                    </span>
-                    {actions.onRemoveMember && <button type="button" className="btn btn-ghost btn-sm" aria-label={`remove ${member.handle}`} onClick={() => actions.onRemoveMember(member.handle)}>remove</button>}
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
-          <SettingRow label="when a member leaves" help="what happens to the transcripts they published here." control="select" value={shownValue(collective.memberLeaves, memberLeavesChoices)} options={choicesFor(collective.memberLeaves, memberLeavesChoices)} onCommit={write('memberLeaves')} />
-        </SettingGroup>
-
-        <SettingGroup label="github orgs" defaultOpen count={collective.org === undefined ? null : collective.org ? 1 : 0} noun={['org', 'orgs']} id={anchor('github orgs')}>
-          <div className="srow">
-            <span className="srow-text-col">
-              <span className="srow-label">{collective.org ? collective.org.login : collective.org === null ? 'no org linked' : 'github org'}</span>
-              <span className="srow-help">
-                {typeof collective.org?.total === 'number' ? <><span className="tnum">{collective.org.linked ?? 0}</span> of <span className="tnum">{collective.org.total}</span> repos linked. </> : null}
-                a collective links one github org today.
-              </span>
-            </span>
-            {actions.onLinkRepos && <button type="button" className="btn btn-secondary btn-sm" onClick={() => setPicking(true)}>manage</button>}
-          </div>
-        </SettingGroup>
-
-        <SettingGroup label="pull requests" defaultOpen count={1} id={anchor('pull requests')}>
-          <SettingRow
-            label="show transcripts on pull requests"
-            help="adds a peasant / prompts comment and check on pull requests in this collective's repos, listing which commits have transcripts. it never blocks merging."
-            control="switch"
-            value={showOnPullRequests}
-            onCommit={write('showOnPullRequests')}
-          />
-          <p className="srow-note">automatic linking is now a personal setting, in {accountHref ? <a className="link" href={accountHref}>your settings</a> : 'your settings'}.</p>
-        </SettingGroup>
-
-        {danger && (
-          <SettingGroup label="danger zone" defaultOpen count={null} id={anchor('danger zone')}>
-            {actions.onTransferOwnership && (
-              <div className="srow">
-                <span className="srow-help">give the owner role to another member. you stay on as a member.</span>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => actions.onTransferOwnership()}>transfer ownership</button>
-              </div>
-            )}
-            {actions.onDelete && (
-              <div className="srow">
-                <span className="srow-help">delete {collective.name} for {typeof collective.memberCount === 'number' ? <>all <span className="tnum">{collective.memberCount}</span> members</> : 'all its members'}. this cannot be undone.</span>
-                <button type="button" className="btn btn-danger btn-sm" onClick={() => actions.onDelete()}>delete collective</button>
-              </div>
-            )}
+        <SettingsLayout
+          sections={sections.map((name) => ({ id: anchor(name), label: name, href: `#${anchor(name)}`, icon: SETTINGS_SECTION_ICONS[name] }))}
+          currentId={anchor(sections[0])}
+          spy
+        >
+          <SettingGroup label="general" defaultOpen id={anchor('general')}>
+            <SettingRow label="name" control="text" value={collective.name} onCommit={write('name')} />
+            <SettingRow label="purpose" control="text" value={collective.purpose ?? ''} onCommit={write('purpose')} />
           </SettingGroup>
-        )}
+
+          <SettingGroup label="access" defaultOpen id={anchor('access')}>
+            <SettingRow label="who can publish" help={helpOf(whoCanPublish)} control="select" value={shownValue(collective.mode, whoCanPublish)} options={choicesFor(collective.mode, whoCanPublish)} onCommit={write('mode')} />
+            <SettingRow label="who can read" help="members read and publish. contributors publish, and read only if who can read allows it." control="select" value={shownValue(collective.access, whoCanRead)} options={choicesFor(collective.access, whoCanRead)} onCommit={write('access')} />
+          </SettingGroup>
+
+          <SettingGroup label="members" defaultOpen count={collective.memberCount ?? null} noun={['member', 'members']} id={anchor('members')}>
+            {actions.onInvite && (
+              <form className="srow cmg-invite" onSubmit={(event) => { event.preventDefault(); actions.onInvite(invite); setInvite('') }}>
+                <Input label="invite by github username" value={invite} onChange={(event) => setInvite(event.target.value)} placeholder="github username" />
+                <button type="submit" className="btn btn-secondary btn-sm" disabled={!invite.trim()}>invite</button>
+              </form>
+            )}
+            <ul className="cmg-member-list" aria-label="members">
+              {collective.members.map((member) => (
+                <li key={member.handle} className="cmg-member">
+                  <Avatar name={member.name ?? member.handle} size="sm" />
+                  <span className="cmg-member-id"><span className="mono">{member.handle}</span> {member.name ? <span className="cmg-member-name">{member.name}</span> : null}</span>
+                  {member.role === 'owner' ? <span className="cmg-none mono">owner</span> : (
+                    <>
+                      <span className="select-wrap cmg-member-role">
+                        <select className="select" aria-label={`role for ${member.handle}`} defaultValue={member.role} onChange={(event) => actions.onRoleChange?.(member.handle, event.target.value)}>
+                          <option value="member">member</option>
+                          <option value="contributor">contributor</option>
+                        </select>
+                      </span>
+                      {actions.onRemoveMember && <button type="button" className="btn btn-ghost btn-sm" aria-label={`remove ${member.handle}`} onClick={() => actions.onRemoveMember(member.handle)}>remove</button>}
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <SettingRow label="when a member leaves" help="what happens to the transcripts they published here." control="select" value={shownValue(collective.memberLeaves, memberLeavesChoices)} options={choicesFor(collective.memberLeaves, memberLeavesChoices)} onCommit={write('memberLeaves')} />
+          </SettingGroup>
+
+          <SettingGroup label="github orgs" defaultOpen count={collective.org === undefined ? null : collective.org ? 1 : 0} noun={['org', 'orgs']} id={anchor('github orgs')}>
+            <div className="srow">
+              <span className="srow-text-col">
+                <span className="srow-label">{collective.org ? collective.org.login : collective.org === null ? 'no org linked' : 'github org'}</span>
+                <span className="srow-help">
+                  {typeof collective.org?.total === 'number' ? <><span className="tnum">{collective.org.linked ?? 0}</span> of <span className="tnum">{collective.org.total}</span> repos linked. </> : null}
+                  a collective links one github org today.
+                </span>
+              </span>
+              {actions.onLinkRepos && <button type="button" className="btn btn-secondary btn-sm" onClick={() => setPicking(true)}>manage</button>}
+            </div>
+          </SettingGroup>
+
+          <SettingGroup label="pull requests" defaultOpen count={1} id={anchor('pull requests')}>
+            <SettingRow
+              label="show transcripts on pull requests"
+              help="adds a peasant / prompts comment and check on pull requests in this collective's repos, listing which commits have transcripts. it never blocks merging."
+              control="switch"
+              value={showOnPullRequests}
+              onCommit={write('showOnPullRequests')}
+            />
+            <p className="srow-note">automatic linking is now a personal setting, in {accountHref ? <a className="link" href={accountHref}>your settings</a> : 'your settings'}.</p>
+          </SettingGroup>
+
+          {danger && (
+            <SettingGroup label="danger zone" defaultOpen count={null} id={anchor('danger zone')}>
+              {actions.onTransferOwnership && (
+                <div className="srow">
+                  <span className="srow-help">give the owner role to another member. you stay on as a member.</span>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => actions.onTransferOwnership()}>transfer ownership</button>
+                </div>
+              )}
+              {actions.onDelete && (
+                <div className="srow">
+                  <span className="srow-help">delete {collective.name} for {typeof collective.memberCount === 'number' ? <>all <span className="tnum">{collective.memberCount}</span> members</> : 'all its members'}. this cannot be undone.</span>
+                  <button type="button" className="btn btn-danger btn-sm" onClick={() => actions.onDelete()}>delete collective</button>
+                </div>
+              )}
+            </SettingGroup>
+          )}
+        </SettingsLayout>
       </div>
       {actions.onLinkRepos && (
         <RepoPicker open={picking} onClose={() => setPicking(false)} owners={owners} initialSelected={linkedRepos} title={`link repositories from ${collective.org?.login ?? 'github'}`} onSave={(diff) => { actions.onLinkRepos(diff); setPicking(false) }} />

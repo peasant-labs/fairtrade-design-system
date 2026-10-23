@@ -110,7 +110,7 @@ decisions:
       lineRemoved: '- **#136/10, overlay shadows**: the drop shadow is a literal value and is absent in the light theme.'
       restatingFilesAmended:
         - {file: DESIGN.md, contains: 'with the one `--overlay-shadow` token; the light theme sets it to `none`.'}
-        - {file: scripts/gen-llm-artifacts.mjs, contains: "['overlay', { shadow: tok('overlay-shadow') }]"}
+        - {file: scripts/gen-llm-artifacts.mjs, contains: "['overlay', { backgroundColor: '{colors.surface-elev}', shadow: tok('overlay-shadow') }]"}
   - name: prose-measure
     id: 11
     disposition: DEMO

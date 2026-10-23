@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Search, Copy } from 'lucide-react'
+import { Search, Copy, EyeOff, FileText, Folder, Globe, Plug, Send, SlidersHorizontal } from 'lucide-react'
 import {
   Button,
   DataTable,
@@ -14,6 +14,7 @@ import {
   SettingGroup,
   SettingRow,
   SettingStatus,
+  SettingsLayout,
 } from '../../ui'
 import {
   HOME_SUMMARY,
@@ -173,7 +174,13 @@ function DemoSettingRow({ row }) {
   )
 }
 
-/** The settings section: every setting grouped, the summary line on top, and the files it saves to. */
+/* the settings section bar's entries: one per group, each an anchor on this page */
+const SETTINGS_ICONS = { village: Globe, 'auto-publish': Send, redaction: EyeOff, projects: Folder, sources: Plug, advanced: SlidersHorizontal, files: FileText }
+const SETTINGS_SECTIONS = [...SETTINGS_GROUPS, { id: 'files', label: 'files' }]
+  .map((group) => ({ id: group.id, label: group.label, href: `#local-settings-${group.id}`, icon: SETTINGS_ICONS[group.id] }))
+
+/** The settings section: the summary line on top, then every setting grouped beside the settings
+ * section bar, and the files it saves to. */
 export function SettingsView() {
   return (
     <SettingStatus><div className="iu-page">
@@ -183,23 +190,25 @@ export function SettingsView() {
       </header>
       <StatsStrip items={SETTINGS_SUMMARY} label="settings summary" />
 
-      {SETTINGS_GROUPS.map((group) => (
-        <SettingGroup key={group.id} label={group.label} defaultOpen={group.open} description={group.description}>
-          {group.rows.map((row) => <DemoSettingRow key={row.id} row={row} />)}
-        </SettingGroup>
-      ))}
-
-      <SettingGroup label="files" defaultOpen count={SETTINGS_FILES.length} description="where settings are saved.">
-        {SETTINGS_FILES.map((file) => (
-          <div key={file.path} className="srow">
-            <span className="srow-text-col">
-              <span className="srow-label">{file.label}</span>
-              <code className="srow-help mono">{file.path}</code>
-            </span>
-            <Button variant="secondary" size="sm" icon={Copy}>copy path</Button>
-          </div>
+      <SettingsLayout sections={SETTINGS_SECTIONS} currentId={SETTINGS_SECTIONS[0].id} spy>
+        {SETTINGS_GROUPS.map((group) => (
+          <SettingGroup key={group.id} id={`local-settings-${group.id}`} label={group.label} defaultOpen={group.open} description={group.description}>
+            {group.rows.map((row) => <DemoSettingRow key={row.id} row={row} />)}
+          </SettingGroup>
         ))}
-      </SettingGroup>
+
+        <SettingGroup id="local-settings-files" label="files" defaultOpen count={SETTINGS_FILES.length} description="where settings are saved.">
+          {SETTINGS_FILES.map((file) => (
+            <div key={file.path} className="srow">
+              <span className="srow-text-col">
+                <span className="srow-label">{file.label}</span>
+                <code className="srow-help mono">{file.path}</code>
+              </span>
+              <Button variant="secondary" size="sm" icon={Copy}>copy path</Button>
+            </div>
+          ))}
+        </SettingGroup>
+      </SettingsLayout>
     </div></SettingStatus>
   )
 }

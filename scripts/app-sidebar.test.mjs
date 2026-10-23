@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /* Mounted-source gate for AppSidebar: links and buttons with aria-current on the current item, the
    icon or swatch, the external marker and its spoken suffix, the group landmarks and labels, the
-   online / local / docs switcher, the collapse toggle, the remembered collapsed state and width
+   brand as the mark alone, the switcher to the other apps (new tab by default), the collapse
+   handle in the brand row, the remembered collapsed state and width
    (including a throwing store and a null key), the keyboard resize, the account row, the
    narrow-viewport menu (its button doubling as the close control, the drawer items in stagger
    order), the one sliding current-item indicator and a router link component. jsdom has no
@@ -111,9 +112,21 @@ await withMountedSource(async ({ load, mount, window, React }) => {
           label: item.querySelector('.asb-label')?.textContent,
           tag: item.tagName,
           current: item.getAttribute('aria-current'),
-          external: !!item.querySelector('.asb-ext') && spoken(item).endsWith('opens outside this app'),
+          target: item.getAttribute('target'),
+          rel: item.getAttribute('rel'),
+          text: spoken(item),
         }))
         report.check(same(entries, row.expected), `${name}: switcher entries must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(entries)}`)
+        await mounted.unmount()
+      } else if (row.kind === 'brand') {
+        const mounted = await mount(React.createElement(AppSidebar, propsFor(row)))
+        const brands = [...mounted.container.querySelectorAll('.asb-brand')]
+        const looks = brands.map((brand) => {
+          const shown = brand.cloneNode(true)
+          shown.querySelectorAll('.asb-sr, [aria-hidden="true"]').forEach((hidden) => hidden.remove())
+          return { tag: brand.tagName, name: spoken(brand), title: brand.getAttribute('title'), mark: !!brand.querySelector('svg.asb-mark'), visibleText: shown.textContent.trim() }
+        })
+        report.check(same(looks, row.expected), `${name}: the brand is the mark alone, expected ${JSON.stringify(row.expected)}, received ${JSON.stringify(looks)}`)
         await mounted.unmount()
       } else if (row.kind === 'collapse') {
         const calls = []
@@ -126,6 +139,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
             name: toggle?.getAttribute('aria-label'),
             collapsed: root.querySelector('.asb')?.dataset.collapsed,
             separator: !!root.querySelector('[role="separator"]'),
+            // the handle sits in the brand row, outside the scrolling nav, right after the brand
+            inBrandRow: !!toggle?.closest('.asb-top') && !toggle?.closest('.asb-scroll') && toggle?.previousElementSibling?.classList.contains('asb-brand'),
           }
         }
         report.check(same(state(), row.expected.before), `${name}: before the toggle expected ${JSON.stringify(row.expected.before)}, received ${JSON.stringify(state())}`)

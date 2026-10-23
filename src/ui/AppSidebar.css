@@ -3,7 +3,9 @@
    ─────────────────────────────────────────────────────────────────────────
    one nav DOM, two layouts picked by the viewport: at 768px and up a sticky
    full-height column (resizable, collapsible to an icon rail); below 768px a
-   top bar whose menu button opens the same nav as an opaque drawer. one flat
+   top bar whose menu button opens the same nav as an opaque drawer. the brand
+   is the mark alone; the collapse control is a small square handle seated on
+   the column's right edge, level with it. one flat
    ground: the column is the page surface told apart by a strong edge, never
    by a darker grey. the current item sits on one sliding indicator (surface-2
    and an inset amber bar) with an amber icon (never colour alone:
@@ -19,6 +21,8 @@
   --asb-drawer-w: min(calc(100vw - var(--target-comfortable) - var(--sp-6)), calc(var(--sp-8) * 6));
   /* one drawer item's stagger step */
   --asb-stagger: calc(var(--dur-1) / 4);
+  /* the collapse handle on the column's edge */
+  --asb-handle: var(--sp-5);
   box-sizing: border-box;
   color: var(--ink);
 }
@@ -27,6 +31,24 @@
 /* the page frame: the sidebar column beside a main column that takes the rest */
 .asb-layout { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; align-content: start; min-height: 100dvh; }
 .asb-main { min-width: 0; }
+
+/* one app page: the full width of the main column, the same padding on the left and the right.
+   no max-width and no auto margins, so the gap beside the sidebar always equals the gap at the
+   window's edge. --asb-page-pad is readable by the page's own parts (a sticky bar that bleeds to
+   the edge, say). */
+.asb-page {
+  --asb-page-pad: var(--sp-6);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  width: 100%;
+  min-width: 0;
+  padding: var(--sp-6) var(--asb-page-pad) var(--sp-7);
+}
+.asb-page > * { min-width: 0; }
+/* a <section> inside a page is grouping, not the presentation site's capped, centred column */
+:where(.asb-page) section { max-width: none; margin-inline: 0; }
 
 /* ── the column ───────────────────────────────────────────────────────── */
 /* the aside is the landmark and the column's edge; its content scrolls in an inner column, so the
@@ -51,32 +73,48 @@
   padding: var(--sp-5) var(--sp-3);
 }
 
+/* the brand row: it stays put while the nav below it scrolls */
 .asb-top {
   display: flex;
+  flex: none;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-2);
-  min-height: var(--control-h);
+  min-height: calc(var(--control-h) + var(--sp-5));
+  padding: var(--sp-5) var(--sp-3) 0;
 }
 
+/* the mark alone, its left edge on the item icons' edge */
 .asb-brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-3);
-  min-width: 0;
+  justify-content: center;
   min-height: var(--control-h);
-  margin-left: var(--sp-2);
-  font-family: var(--font-mono);
-  font-size: var(--fs-body);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0;
+  padding: 0 var(--sp-3);
   color: var(--ink-strong);
   text-decoration: none;
-  text-transform: lowercase;
 }
 .asb-mark { width: var(--ic-lg); height: calc(var(--ic-lg) * 22 / 18); flex: none; color: var(--amber); }
-.asb-wordmark { white-space: nowrap; }
+
+/* the collapse handle: a small square seated on the column's right edge, level with the brand.
+   it is the column's own control, so it stays on screen in both states; the chevron points the
+   way the column will go. */
+.asb-toggle {
+  position: absolute;
+  top: calc(var(--sp-5) + (var(--control-h) - var(--asb-handle)) / 2);
+  right: calc(var(--asb-handle) / -2);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: var(--asb-handle);
+  height: var(--asb-handle);
+  padding: 0;
+  color: var(--ink-3);
+  background: var(--surface);
+  border: var(--bd-strong);
+  border-radius: 0;
+  cursor: pointer;
+}
+.asb-toggle .lucide { width: var(--ic-sm); height: var(--ic-sm); }
+.asb[data-collapsed="true"] .asb-toggle .lucide { transform: rotate(180deg); }
 
 .asb-icon-btn {
   display: grid;
@@ -153,8 +191,7 @@
 span.asb-item { cursor: default; }
 .asb-item-sub { padding-left: calc(var(--sp-3) + var(--sp-5)); }
 .asb-item[aria-current] { color: var(--ink-strong); }
-.asb:not([data-indicator="ready"]) .asb-item[aria-current="page"],
-.asb-apps .asb-item[aria-current] {
+.asb:not([data-indicator="ready"]) .asb-item[aria-current="page"] {
   background: var(--surface-2);
   box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber);
 }
@@ -248,9 +285,9 @@ span.asb-item { cursor: default; }
   .asb-panel { width: var(--asb-w); }
 
   .asb[data-collapsed="true"] .asb-panel { width: var(--asb-rail-w); }
-  .asb[data-collapsed="true"] .asb-scroll { padding-inline: var(--sp-2); }
+  .asb[data-collapsed="true"] .asb-scroll,
+  .asb[data-collapsed="true"] .asb-top { padding-inline: var(--sp-2); }
   .asb[data-collapsed="true"] .asb-top { justify-content: center; }
-  .asb[data-collapsed="true"] .asb-top .asb-brand,
   .asb[data-collapsed="true"] .asb-glabel,
   .asb[data-collapsed="true"] .asb-ext { display: none; }
   .asb[data-collapsed="true"] .asb-item,
@@ -299,7 +336,9 @@ span.asb-item { cursor: default; }
     visibility: hidden;
     transform: translateX(-100%);
   }
+  .asb-top { min-height: calc(var(--control-h) + var(--sp-4)); padding: var(--sp-4) var(--sp-3) 0; }
   .asb-scroll { padding: var(--sp-4) var(--sp-3); }
+  .asb-page { --asb-page-pad: var(--sp-4); padding-top: var(--sp-5); }
   .asb[data-drawer-open="true"] .asb-scrim { opacity: 1; visibility: visible; }
   .asb[data-drawer-open="true"] .asb-panel { visibility: visible; transform: none; }
 }
@@ -308,6 +347,8 @@ span.asb-item { cursor: default; }
 @media (pointer: coarse) {
   .asb-item, .asb-account, .asb-brand { min-height: var(--target-comfortable); }
   .asb-icon-btn { width: var(--target-comfortable); height: var(--target-comfortable); }
+  /* the handle stays small to the eye and takes a 44px target for a finger */
+  .asb-toggle::before { content: ""; position: absolute; inset: calc((var(--target-comfortable) - var(--asb-handle)) / -2); }
   .asb-resize { width: var(--sp-4); right: calc(-1 * var(--sp-2)); }
 }
 
@@ -317,9 +358,9 @@ span.asb-item { cursor: default; }
   span.asb-item:not([aria-current]):hover { background: none; }
   /* the current item keeps its look on hover: the indicator shows through, or its own fill */
   .asb[data-indicator="ready"] .asb-item[aria-current="page"]:hover { background: none; }
-  .asb:not([data-indicator="ready"]) .asb-item[aria-current="page"]:hover,
-  .asb-apps .asb-item[aria-current]:hover { background: var(--surface-2); }
+  .asb:not([data-indicator="ready"]) .asb-item[aria-current="page"]:hover { background: var(--surface-2); }
   .asb-icon-btn:hover { color: var(--ink); border-color: var(--rule-strong); }
+  .asb-toggle:hover { color: var(--ink-strong); background: var(--surface-hover); }
   /* the resize affordance: the edge line shows faintly under a hovering pointer */
   .asb-resize:not(:active):not(:focus-visible):hover::after { opacity: .6; }
 }
@@ -327,8 +368,10 @@ span.asb-item { cursor: default; }
 /* ── motion, only when it is welcome: transform and opacity, interruptible ── */
 @media (prefers-reduced-motion: no-preference) {
   /* press feedback */
-  .asb-icon-btn { transition: transform var(--dur-2) var(--ease-out); }
-  .asb-icon-btn:active { transform: scale(0.97); }
+  .asb-icon-btn, .asb-toggle { transition: transform var(--dur-2) var(--ease-out); }
+  .asb-icon-btn:active, .asb-toggle:active { transform: scale(0.97); }
+  /* the handle's chevron turns to point the other way, only after a user toggle */
+  .asb[data-toggled="true"] .asb-toggle .lucide { transition: transform var(--dur-3) var(--ease-out); }
   a.asb-item, button.asb-item { transition: transform var(--dur-1) var(--ease-out); }
   a.asb-item:active, button.asb-item:active { transform: scale(0.98); }
 
@@ -346,12 +389,11 @@ span.asb-item { cursor: default; }
 /* expanding the rail: the width snaps, the labels fade in from a 4px offset */
 @media (width >= 768px) and (prefers-reduced-motion: no-preference) {
   .asb-label { transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
-  .asb-glabel, .asb-top .asb-brand, .asb-ext { transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
-  /* the group labels, the wordmark and the outside marker return from display: none, so they
-     start from their hidden look; only after a user toggle, never on page load */
+  .asb-glabel, .asb-ext { transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
+  /* the group labels and the outside marker return from display: none, so they start from their
+     hidden look; only after a user toggle, never on page load */
   @starting-style {
     .asb[data-toggled="true"][data-collapsed="false"] .asb-glabel,
-    .asb[data-toggled="true"][data-collapsed="false"] .asb-top .asb-brand,
     .asb[data-toggled="true"][data-collapsed="false"] .asb-ext { opacity: 0; transform: translateX(calc(-1 * var(--sp-1))); }
   }
 }

@@ -206,7 +206,7 @@
   text-transform: lowercase;
   white-space: normal;
   color: var(--ink);
-  background: var(--surface-2);
+  background: var(--surface-elev);
   border: var(--bd-strong);
   opacity: 0;
   pointer-events: none;
@@ -229,7 +229,7 @@
   left: 12px;
   width: 8px;
   height: 8px;
-  background: var(--surface-2);
+  background: var(--surface-elev);
   transform: translate(-50%, -5px) rotate(45deg);
 }
 .term-bubble::before {
