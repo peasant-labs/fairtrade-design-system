@@ -256,6 +256,7 @@
   min-width: 0;
   max-width: 100%;
 }
+.rdx-badge-lead { white-space: nowrap; }
 .rdx-badge-cat { color: var(--ink-2); }
 .rdx-badge-dot { color: var(--ink-4); }
 .rdx-badge-conf { color: var(--ink-3); }

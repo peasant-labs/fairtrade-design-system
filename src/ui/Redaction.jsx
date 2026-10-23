@@ -183,8 +183,8 @@ function MatchCard({ match, onToggle, readOnly = false }) {
       <div className="rdx-card-head">
         <span className={`rdx-badge${low ? ' rdx-badge-low' : ''}`}>
           {low && <AlertTriangle className="rdx-badge-warn" aria-hidden="true" />}
-          <span className="rdx-badge-cat">{redactionCategoryLabel(category)}</span>
-          <span className="rdx-badge-dot" aria-hidden="true">,</span>
+          {/* the comma belongs to the label, so it sits against it and not one badge gap away */}
+          <span className="rdx-badge-lead"><span className="rdx-badge-cat">{redactionCategoryLabel(category)}</span><span className="rdx-badge-dot" aria-hidden="true">,</span></span>
           <span className="rdx-badge-conf tnum"><Term def="how sure the scanner is that this is a real match">confidence</Term> <span className="rdx-confidence-value">{conf}</span></span>
           {low && <span className="rdx-sr"> (low confidence)</span>}
         </span>

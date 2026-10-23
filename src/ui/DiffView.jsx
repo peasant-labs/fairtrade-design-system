@@ -72,8 +72,7 @@ function RedactionMatch({ match }) {
     <div className={`dv-match${kept ? ' dv-match-kept' : ''}`}>
       <div className="dv-match-head">
         <span className={`dv-badge${low ? ' dv-badge-low' : ''}`}>
-          <span className="dv-badge-cat">{category}</span>
-          <span className="dv-badge-dot" aria-hidden="true">,</span>
+          <span className="dv-badge-lead"><span className="dv-badge-cat">{category}</span><span className="dv-badge-dot" aria-hidden="true">,</span></span>
           <span className="dv-badge-conf tnum">{conf}</span>
         </span>
         {kept && (

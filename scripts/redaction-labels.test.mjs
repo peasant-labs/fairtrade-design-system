@@ -11,6 +11,8 @@ await withMountedSource(async ({ load, mount, React, window }) => {
   for (const row of fixture.categories) {
     const mounted = await mount(React.createElement(RedactionReview, { matches: [match(row.category)], availableLevels: ['standard'] }))
     report.check(mounted.container.querySelector('.rdx-badge-cat')?.textContent === row.label, `${row.name}: canonical label`)
+    const lead = mounted.container.querySelector('.rdx-badge-cat')?.parentElement
+    report.check(!!lead && !lead.classList.contains('rdx-badge') && lead.textContent === `${row.label},`, `${row.name}: the comma sits against the label`)
     report.check(mounted.container.querySelector('.rdx-badge-conf .term')?.textContent + ' ' + mounted.container.querySelector('.rdx-confidence-value')?.textContent === fixture.confidenceText, `${row.name}: confidence must be labeled`)
     report.check(mounted.container.querySelector('.rdx-badge-conf [role="tooltip"]')?.textContent === fixture.confidenceHelp, `${row.name}: confidence help must define the score`)
     await mounted.unmount()
