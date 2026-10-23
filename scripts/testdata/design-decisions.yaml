@@ -5,7 +5,7 @@ decisions:
     id: 1
     disposition: DEMO
     binding:
-      codeReference: {file: src/ui/Publish.jsx, contains: "'up to date'].filter(Boolean).join(', ')"}
+      codeReference: {file: src/ui/Publish.jsx, contains: "`auto-publish on, ${collective}`"}
       pointerRemoved: '#136/1'
       lineRemoved: '- **#136/1, middots**: the demo uses middot separators in meta rows.'
       restatingFilesAmended:

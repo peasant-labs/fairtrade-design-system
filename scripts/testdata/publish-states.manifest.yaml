@@ -2,9 +2,12 @@
 requiredLabelNames:
   - not published
   - publishing
-  - published and up to date
+  - published to collectives
+  - published to one collective
   - new turns
   - published without a count
+  - published privately
+  - published publicly
   - auto-publish on
   - outside your saved lists
 requiredPopupNames:
@@ -42,6 +45,7 @@ requiredTransitionNames:
   - keyboard focus remains inside during publish and pending approval
 
 requiredMutationNames:
+  - a missing visibility reads as private
   - the scan note holds publishing back
   - the scan note is dropped
   - the scan note becomes an alert
@@ -94,9 +98,9 @@ mutations:
     expectedDiagnostic: "stale recovery uses latest callback: old callback is never invoked"
   - name: published action reverts to manage
     file: src/ui/Publish.jsx
-    find: "'up to date'].filter(Boolean).join(', '), action: 'update'"
-    replace: "'up to date'].filter(Boolean).join(', '), action: 'manage'"
-    expectedDiagnostic: "published and up to date: the bar's action must be"
+    find: "'published, private' : 'published', action: 'update'"
+    replace: "'published, private' : 'published', action: 'manage'"
+    expectedDiagnostic: "published to collectives: the bar's action must be"
   - name: a failed scan leaves publish on
     file: src/ui/Publish.jsx
     find: "const blocked = state === 'checking' || state === 'scan-failed' || "
@@ -217,3 +221,8 @@ mutations:
     find: "<div className=\"pub-line pub-line-note\">"
     replace: "<div className=\"pub-line pub-line-note\" role=\"alert\">"
     expectedDiagnostic: "a note on the scanned copy: the note is not an alert"
+  - name: a missing visibility reads as private
+    file: src/ui/Publish.jsx
+    find: "visibilityWord(visibility) === 'private' ? 'published, private' : 'published'"
+    replace: "'published, private'"
+    expectedDiagnostic: "published without a count: the label must read"

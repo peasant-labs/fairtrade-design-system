@@ -50,12 +50,16 @@ import './Publish.css'
 const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`
 /* a count the host did not give is left out rather than stated as zero */
 const countOf = (count, one, many) => (typeof count === 'number' ? plural(count, one, many) : null)
+/* the host's visibility, when it gives one; anything else says nothing */
+const visibilityWord = (visibility) => (visibility === 'public' || visibility === 'private' ? visibility : null)
 
 const STATE_META = {
   'not-published': { icon: CircleDashed, text: () => 'not published', action: 'publish' },
   publishing: { icon: Loader, text: ({ collectives }) => (collectives ? `publishing to ${plural(collectives, 'collective', 'collectives')}` : 'publishing'), action: 'publish' },
-  published: { icon: CircleCheck, text: ({ collectives }) => ['published', countOf(collectives, 'collective', 'collectives'), 'up to date'].filter(Boolean).join(', '), action: 'update' },
-  'new-turns': { icon: CircleFadingArrowUp, text: ({ collectives, newTurns }) => ['published', countOf(collectives, 'collective', 'collectives'), countOf(newTurns, 'new turn', 'new turns') ?? 'new turns'].filter(Boolean).join(', '), action: 'update' },
+  /* up to date is the default, so it goes unsaid. "public" and "private" come only from the host's
+     `visibility`, never from a missing count: a transcript no collective reads can still be public. */
+  published: { icon: CircleCheck, text: ({ collectives, visibility }) => visibilityWord(visibility) === 'public' ? 'published, public' : collectives ? `published to ${plural(collectives, 'collective', 'collectives')}` : visibilityWord(visibility) === 'private' ? 'published, private' : 'published', action: 'update' },
+  'new-turns': { icon: CircleFadingArrowUp, text: () => 'needs update', action: 'update' },
   'auto-publish': { icon: Repeat, text: ({ collective }) => (collective ? `auto-publish on, ${collective}` : 'auto-publish on'), action: 'update' },
   'outside-lists': { icon: ListX, text: () => 'not published, outside your saved lists', action: 'publish' },
 }
@@ -73,18 +77,21 @@ function stateMeta(state) {
  * @param {object} props
  * @param {PublishState} props.state
  * @param {number} [props.collectives] - how many collectives can read it (published, new-turns, publishing); left out of the words when omitted.
- * @param {number} [props.newTurns] - turns recorded since the last publish (new-turns).
+ * @param {number} [props.newTurns] - turns recorded since the last publish (new-turns); the label says "needs update".
  * @param {string} [props.collective] - the collective(s) the project's auto-publish rule targets (auto-publish).
+ * @param {'public'|'private'} [props.visibility] - published: who can find it beyond its collectives, as the host knows
+ *        it. "published, public" and "published, private" are said only from this; without it a transcript no
+ *        collective reads is just "published".
  * @param {string} [props.className]
  */
-export function PublishStateLabel({ state, collectives, newTurns, collective, className = '', ...rest }) {
+export function PublishStateLabel({ state, collectives, newTurns, collective, visibility, className = '', ...rest }) {
   const meta = stateMeta(state)
   const Icon = meta.icon
   const cls = ['pub-state', `pub-state-${state}`, className].filter(Boolean).join(' ')
   return (
     <span className={cls} data-state={state} {...rest}>
       <Icon className={state === 'publishing' ? 'pub-state-icon pub-spin' : 'pub-state-icon'} aria-hidden="true" />
-      <span className="pub-state-text">{meta.text({ collectives, newTurns, collective })}</span>
+      <span className="pub-state-text">{meta.text({ collectives, newTurns, collective, visibility })}</span>
     </span>
   )
 }
@@ -99,12 +106,13 @@ export function PublishStateLabel({ state, collectives, newTurns, collective, cl
  * @param {number} [props.collectives]
  * @param {number} [props.newTurns]
  * @param {string} [props.collective]
+ * @param {'public'|'private'} [props.visibility]
  * @param {() => void} [props.onAction] - the one button. omit it and no button renders.
  * @param {string} [props.actionLabel] - replaces the state's default label.
  * @param {import('./Menu.jsx').MenuItem[]} [props.moreItems] - an optional overflow menu after the button.
  * @param {string} [props.className]
  */
-export function PublishBar({ state, collectives, newTurns, collective, onAction, actionLabel, moreItems, className = '', ...rest }) {
+export function PublishBar({ state, collectives, newTurns, collective, visibility, onAction, actionLabel, moreItems, className = '', ...rest }) {
   const meta = stateMeta(state)
   const busy = state === 'publishing'
   const label = actionLabel ?? meta.action
@@ -112,7 +120,7 @@ export function PublishBar({ state, collectives, newTurns, collective, onAction,
   return (
     <div className={cls} role="group" aria-label="publish" {...rest}>
       <span role="status" className="pub-bar-status">
-        <PublishStateLabel state={state} collectives={collectives} newTurns={newTurns} collective={collective} />
+        <PublishStateLabel state={state} collectives={collectives} newTurns={newTurns} collective={collective} visibility={visibility} />
       </span>
       {onAction && (
         <button
