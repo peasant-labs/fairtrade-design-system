@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { DiffView, ToolCallRenderer as ToolCall, CommitGraph } from '../ui'
+import { DiffView, ToolCallRenderer as ToolCall, CommitGraph, RedactionCategory } from '../ui'
 
 /* 74-codediff: doc band for the code-reading composites — DiffView (unified + redaction),
    ToolCall (the per-kind tool renderers) and CommitGraph (multi-lane history). each specimen
@@ -45,7 +45,7 @@ const GO_HUNKS = [
 const REDACTION_MATCHES = [
   {
     id: 'r1',
-    category: 'api-key',
+    category: RedactionCategory.Secrets,
     confidence: 0.98,
     oldNo: 12,
     newNo: 12,
@@ -54,16 +54,16 @@ const REDACTION_MATCHES = [
   },
   {
     id: 'r2',
-    category: 'email',
+    category: RedactionCategory.PII,
     confidence: 0.91,
     oldNo: 27,
     newNo: 27,
-    original: '// reported by vitor.hw@outlook.com on the 0.4 rollout',
+    original: '// reported by alex.rivera@example.com on the 0.4 rollout',
     replacement: '// reported by ‹redacted-email› on the 0.4 rollout',
   },
   {
     id: 'r3',
-    category: 'bearer-token',
+    category: RedactionCategory.Secrets,
     confidence: 0.64,
     oldNo: 53,
     newNo: 53,

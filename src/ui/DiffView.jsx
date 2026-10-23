@@ -69,7 +69,7 @@ function RedactionMatch({ match }) {
   const { category, confidence, original, replacement, oldNo, newNo } = match
   const [kept, setKept] = useState(false)
   const low = confidence < 0.7
-  // 0.98 -> "0.98"; keep two decimals, tabular, mono — matches the "api-key, 0.98" spec.
+  // 0.98 -> "0.98"; keep two decimals, tabular, mono — "CREDENTIAL, 0.98".
   const conf = confidence.toFixed(2)
 
   return (
