@@ -7,8 +7,41 @@
 // ends in an ellipsis, no crumb goes below its floor or runs past the trail's edge, and no crumb is cut
 // while the row has room. The floors mirror the trail rule in src/index.css, in ch of the crumb's own
 // font.
+//
+// A crumb's text is measured, so the font has to be the one hosts render. The built Storybook loads no
+// web font: a story falls back to the machine's monospace (SF Mono on a Mac at 0.6em; in the CI
+// container `monospace` matches WenQuanYi Zen Hei Mono, whose Latin is 0.5em), and the same trail would
+// fit on one machine and overflow on another. useTrailFont serves the design system's own mono from
+// the package's bundled copy and fails unless it loaded.
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { ROOT } from './css-source.mjs'
 
 export const TRAIL_FLOORS_CH = Object.freeze({ current: 8, other: 3 })
+
+const TRAIL_FONT = 'Atkinson Hyperlegible Mono'
+const TRAIL_FONT_FACES = [
+  { weight: 400, file: 'AtkinsonHyperlegibleMono-Regular.ttf' },
+  { weight: 700, file: 'AtkinsonHyperlegibleMono-Bold.ttf' },
+]
+
+/** Serve the trail's font to `page`: call before the page loads, then `await ready()` once it has. */
+export const useTrailFont = async (page) => {
+  for (const face of TRAIL_FONT_FACES) {
+    const body = readFileSync(join(ROOT, 'src/share/fonts', face.file))
+    await page.route(`**/__trail-font/${face.file}`, (route) => route.fulfill({ body, contentType: 'font/ttf' }))
+  }
+  return {
+    ready: async () => {
+      await page.addStyleTag({ content: TRAIL_FONT_FACES.map((face) => `@font-face { font-family: "${TRAIL_FONT}"; font-weight: ${face.weight}; src: url("/__trail-font/${face.file}") format("truetype"); }`).join('\n') })
+      const faces = await page.evaluate(async (family) => {
+        await Promise.all([...document.fonts].filter((face) => face.family.replace(/"/g, '') === family).map((face) => face.load().catch(() => undefined)))
+        return [...document.fonts].filter((face) => face.family.replace(/"/g, '') === family).map((face) => face.status)
+      }, TRAIL_FONT)
+      if (faces.length !== TRAIL_FONT_FACES.length || faces.some((status) => status !== 'loaded')) throw new Error(`the trail's font "${TRAIL_FONT}" did not load: ${JSON.stringify(faces)}`)
+    },
+  }
+}
 
 /**
  * In the page (pass to page.evaluate with the trail's selector): whether the trail is one line, its

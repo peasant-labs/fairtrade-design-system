@@ -4,7 +4,9 @@
 # gives way first down to its floor, then the others; every cut ends in an ellipsis; no crumb below its
 # floor or past the trail's edge; nothing cut with room to spare. `story` is a TranscriptViewer story
 # with a host trail, `viewports` the widths it runs at, and `cut` the indexes of exactly the crumbs that
-# shorten there. A crumb is cut when its text is wider than its box.
+# shorten there. A crumb is cut when its text is wider than its box. Every story is measured in the
+# design system's own mono, served from the package's bundled copy, so a case reads the same on every
+# machine.
 viewports:
   - {name: desktop, width: 1440, height: 900, touch: false}
   - {name: laptop, width: 1280, height: 800, touch: false}
@@ -43,7 +45,7 @@ cases:
     story: in-use-transcript-transcriptviewer--host-trail-pull
     viewports: [phone]
     cut: []
-    crumbs: [pull requests, peasant-labs/village#214]
+    crumbs: [pull requests, peasant-labs/village#7]
   - name: a long collective name shortens only when the phone row is full
     story: in-use-transcript-transcriptviewer--host-trail-collective-long
     viewports: [phone]

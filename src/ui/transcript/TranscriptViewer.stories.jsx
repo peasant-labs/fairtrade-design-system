@@ -159,12 +159,12 @@ export const HostTrailOverlong = {
 }
 
 // a host's trail for a transcript opened from a pull request, as online passes it: two links that fit a
-// phone's row and read whole
+// phone's row with room to spare on any platform's text rendering, and read whole
 export const HostTrailPull = {
   args: {
     viewModel,
     capabilities: readOnlyCaps,
-    breadcrumb: [{ label: 'pull requests', href: '#pulls' }, { label: 'peasant-labs/village#214', href: '#pull' }],
+    breadcrumb: [{ label: 'pull requests', href: '#pulls' }, { label: 'peasant-labs/village#7', href: '#pull' }],
   },
 }
 

@@ -4,11 +4,13 @@
  * 1440, 1280 or a 390 touch screen: the trail keeps the rule in scripts/transcript-trail-rule.mjs (one
  * line, whole while it fits, the current crumb gives way first down to its floor, every cut ends in an
  * ellipsis, nothing below its floor, nothing cut with room to spare), and exactly the case's `cut`
- * crumbs shorten. Named CSS mutations prove the gate fails for each reason.
+ * crumbs shorten. The trail is measured in the design system's own mono, served from the package's
+ * bundled copy, so a case reads the same on every machine. Named CSS mutations prove the gate fails
+ * for each reason.
  */
 import { test, expect } from '@playwright/test'
 import { loadStrictYaml, assertExactNames } from '../css-source.mjs'
-import { measureTrail, trailRuleFailures } from '../transcript-trail-rule.mjs'
+import { measureTrail, trailRuleFailures, useTrailFont } from '../transcript-trail-rule.mjs'
 
 const FIXTURE = 'scripts/testdata/transcript-trail.yaml'
 const MANIFEST = 'scripts/testdata/transcript-trail.manifest.yaml'
@@ -38,10 +40,12 @@ const failuresFor = (row, viewport, trail) => {
   return failures
 }
 
+/* The story is measured in the design system's own mono (see useTrailFont), never the machine's fallback. */
 const open = async (page, row, theme) => {
+  const font = await useTrailFont(page)
   await page.goto(`/iframe.html?id=${row.story}&viewMode=story&globals=theme:${theme}`)
   await expect(page.locator('.txn-crumb').first()).toBeVisible()
-  await page.evaluate(() => document.fonts.ready)
+  await font.ready()
   await page.evaluate(settle)
 }
 
