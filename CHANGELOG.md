@@ -4,6 +4,44 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.43 - 2026-10-24
+
+### Added
+
+- `Explore` and `TranscriptViewer` take `headingLevel: 1 | 2` (2 by default,
+  a section of a host page). With 1 the composite's title is the page's h1 and
+  every heading under it moves up one level: the viewer's phases to h2 and its
+  turns to h3, Explore's cards, sections and empty states to h2. A host that
+  mounts either as its whole page gets one h1 with no skipped level and no
+  visually hidden heading. Same classes and look. An invalid level throws.
+- `AppSidebar`'s `account` takes `avatarUrl`: the person's picture in the
+  avatar square (cropped, square corners, empty alt since the handle sits
+  beside it). The initial shows when it is missing or fails to load.
+
+### Fixed
+
+- The published `AppSidebarAccount` type now carries `href`, `items` and
+  `avatarUrl`. A word in the handle's description began with an at sign and
+  ended the typedef, so the type held only `handle`.
+- Code map navigator:
+  - A folder whose children the grain shows starts open (`aria-expanded`
+    true, "hide children", chevron down), and its disclosure really hides and
+    shows its children. Before, it read collapsed over visible children and
+    pressing it only flipped the chevron. A folder past the grain's depth gets
+    a working disclosure and ArrowRight, where only a double-click opened it.
+  - The chevron centres on the folder name's line, so at 390 it no longer
+    sits between the name and its "% recorded" line. Desktop rows are 37px
+    tall instead of 44px (still above the 36px control height).
+- In Explore's transcript view, the owner's name in the "owner snapshot"
+  aside is a heading one level under the transcript's title (h3 by default),
+  not at the title's own level.
+
+### Compatibility
+
+- New props only. A host that widened `AppSidebarAccount` itself can drop
+  that. A host reading the navigator's root disclosures as collapsed on load
+  now sees them open.
+
 ## 0.0.42 - 2026-10-24
 
 ### Added
