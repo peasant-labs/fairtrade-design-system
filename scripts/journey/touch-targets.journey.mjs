@@ -56,8 +56,8 @@ const failuresFor = (target, measured) => {
   return failures
 }
 
-const open = async (browser, story, theme, touch) => {
-  const context = await browser.newContext({ hasTouch: touch, viewport: spec.viewport, colorScheme: theme, reducedMotion: 'reduce', baseURL: test.info().project.use.baseURL })
+const open = async (browser, story, theme, touch, viewport = spec.viewport) => {
+  const context = await browser.newContext({ hasTouch: touch, viewport, colorScheme: theme, reducedMotion: 'reduce', baseURL: test.info().project.use.baseURL })
   const page = await context.newPage()
   await page.goto(`/iframe.html?id=${story}&viewMode=story&globals=theme:${theme}`)
   await page.locator('#storybook-root > *').first().waitFor()
@@ -68,7 +68,7 @@ const open = async (browser, story, theme, touch) => {
 
 for (const target of spec.targets) {
   test(`touch targets ${target.name}`, async ({ browser }, info) => {
-    const { context, page } = await open(browser, target.story, info.project.name, target.pointer !== 'fine')
+    const { context, page } = await open(browser, target.story, info.project.name, target.pointer !== 'fine', target.viewport)
     try {
       await expect(page.locator(target.selector).first()).toBeVisible()
       const measured = await page.evaluate(measure, { name: target.name, selector: target.selector })
@@ -83,7 +83,7 @@ for (const target of spec.targets) {
 
 test('touch targets mutations', async ({ browser }, info) => {
   for (const mutation of spec.mutations) {
-    const { context, page } = await open(browser, mutation.story, info.project.name, true)
+    const { context, page } = await open(browser, mutation.story, info.project.name, true, mutation.viewport)
     try {
       await page.addStyleTag({ content: mutation.css })
       await page.evaluate(settle)

@@ -4,7 +4,8 @@
 # touch, in both themes, and measures every visible match of `selector`: its hit box (the element's
 # box, or a positioned ::before / ::after reach around it, whichever is larger) must be at least
 # `minHeight` tall and `minWidth` wide, and its drawn box at most `maxVisual` tall, where set.
-# A `pointer: fine` row opens the story without touch and checks that the desktop size holds.
+# A `pointer: fine` row opens the story without touch and checks that the desktop size holds. A row
+# or mutation with its own `viewport` opens there instead (a touch tablet, where a row stays on one line).
 viewport: {width: 390, height: 844}
 targets:
   - {name: session tab, story: in-use-transcript-transcriptviewer--default, selector: '.txn-tab', minHeight: 44}
@@ -14,7 +15,7 @@ targets:
   - {name: sort header, story: components-datatable--playground, selector: '.tbl-sort', minHeight: 44}
   - {name: small button, story: controls-button--small, selector: '.btn-sm', minHeight: 44}
   - {name: switch, story: controls-switch--on, selector: '.sw', minHeight: 44, maxVisual: 28}
-  - {name: code map navigator row, story: in-use-codemapnavigator--default, selector: '.gmp-navigator-row', minHeight: 44}
+  - {name: code map navigator row, story: in-use-codemapnavigator--default, selector: '.gmp-navigator-row', minHeight: 44, viewport: {width: 1024, height: 768}}
   - {name: page button on a mouse, story: components-pagination--long-range, selector: '.pgn-btn', pointer: fine, maxVisual: 28}
 # Mutations: each injects CSS into the named story with touch on, and the gate must report the
 # target named in `expect`, proving it fails for the intended reason.
@@ -37,5 +38,6 @@ mutations:
     expect: 'sort header: hit box'
   - name: the navigator row loses its reach
     story: in-use-codemapnavigator--default
+    viewport: {width: 1024, height: 768}
     css: '.gmp-navigator-row::after { content: none !important; }'
     expect: 'code map navigator row: hit box'
