@@ -29,3 +29,17 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Atkinson Hyperlegible and Atkinson Hyperlegible Mono
+
+The share card entry (`@peasant-labs/fairtrade/share`) ships four static TrueType faces under
+`share/fonts/`: Atkinson Hyperlegible regular and bold, and Atkinson Hyperlegible Mono regular and
+bold. The mono faces are static instances cut from the variable font.
+
+- Atkinson Hyperlegible: Copyright 2020 Braille Institute of America, Inc.
+- Atkinson Hyperlegible Mono: Copyright 2020-2024 The Atkinson Hyperlegible Mono Project Authors
+  (https://github.com/googlefonts/atkinson-hyperlegible-next-mono)
+
+Both are licensed under the SIL Open Font License, Version 1.1. The full license text for each
+family ships beside the files, as `OFL-AtkinsonHyperlegible.txt` and
+`OFL-AtkinsonHyperlegibleMono.txt`, and at https://openfontlicense.org.

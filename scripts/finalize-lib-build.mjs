@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { SURFACE_BUNDLES, findForeignNamespaces } from './surface-namespaces.mjs'
@@ -19,6 +19,16 @@ const copies = [
 ]
 for (const [from, to] of copies) {
   copyFileSync(join(TOKENS, from), join(OUT, to))
+}
+
+// The share card's faces ride under the "./share/fonts/*" export: the four static TTFs a renderer
+// needs and the SIL OFL text for each family. Copied whole from src/share/fonts, so a face added
+// there ships with no list to keep in step (the pack guard names the required four).
+const SHARE_FONTS_SRC = join(ROOT, 'src', 'share', 'fonts')
+const SHARE_FONTS_OUT = join(OUT, 'share-fonts')
+mkdirSync(SHARE_FONTS_OUT, { recursive: true })
+for (const name of readdirSync(SHARE_FONTS_SRC)) {
+  if (/\.(ttf|txt)$/.test(name)) copyFileSync(join(SHARE_FONTS_SRC, name), join(SHARE_FONTS_OUT, name))
 }
 
 // Emit-then-delete: the lib CSS build (vite.lib-css.config.js) is a two-config
@@ -55,6 +65,11 @@ const required = [
   'graph.js',
   'commons.js',
   'analytics.js',
+  'share.js',
+  'share-fonts/AtkinsonHyperlegible-Regular.ttf',
+  'share-fonts/AtkinsonHyperlegible-Bold.ttf',
+  'share-fonts/AtkinsonHyperlegibleMono-Regular.ttf',
+  'share-fonts/AtkinsonHyperlegibleMono-Bold.ttf',
   'tokens.css',
   'base.css',
   'components.css',

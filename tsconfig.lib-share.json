@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "rootDir": "src",
+    "outDir": "dist/lib/types"
+  },
+  "include": ["src/share/index.js"],
+  "exclude": ["src/share/**/*.stories.jsx"]
+}

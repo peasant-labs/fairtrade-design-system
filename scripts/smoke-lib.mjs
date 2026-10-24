@@ -24,7 +24,7 @@ const TYPES = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'lib',
 const typeFailures = []
 // index.d.ts/icons.d.ts back ./ui + ./icons; graph/commons back the per-surface
 // ./graph + ./commons entries (their "types" targets in package.json exports).
-for (const decl of ['index.d.ts', 'icons.d.ts', 'graph/index.d.ts', 'commons/index.d.ts', 'analytics/index.d.ts']) {
+for (const decl of ['index.d.ts', 'icons.d.ts', 'graph/index.d.ts', 'commons/index.d.ts', 'analytics/index.d.ts', 'share/index.d.ts']) {
   const p = join(TYPES, decl)
   if (!existsSync(p)) typeFailures.push(`${decl}: missing from dist/lib/types (tsc did not emit it)`)
   else if (statSync(p).size === 0) typeFailures.push(`${decl}: present but empty in dist/lib/types`)

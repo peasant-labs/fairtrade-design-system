@@ -30,6 +30,22 @@ for (const entry of Object.values(pkg.exports ?? {})) {
   if (typeof entry === 'string') targets.add(norm(entry))
   else for (const v of Object.values(entry)) if (typeof v === 'string') targets.add(norm(v))
 }
+// A wildcard export ("./share/fonts/*") promises a directory, not one file: it is asserted by name
+// in the share-entry block below, so it leaves the concrete-target set.
+for (const t of [...targets]) if (t.includes('*')) targets.delete(t)
+
+// The four faces the share card is drawn in, plus their license texts, as packed under the
+// "./share/fonts/*" export. The card asks a renderer for exactly these; a tarball without them
+// ships an entry whose fonts 404.
+const SHARE_FONT_DIR = 'dist/lib/share-fonts'
+const SHARE_FONT_FILES = [
+  'AtkinsonHyperlegible-Regular.ttf',
+  'AtkinsonHyperlegible-Bold.ttf',
+  'AtkinsonHyperlegibleMono-Regular.ttf',
+  'AtkinsonHyperlegibleMono-Bold.ttf',
+  'OFL-AtkinsonHyperlegible.txt',
+  'OFL-AtkinsonHyperlegibleMono.txt',
+]
 
 // Ask npm what it WOULD pack. --ignore-scripts is essential: this script runs at
 // the tail of build:lib, which is itself the prepack hook, so a plain `npm pack`
@@ -61,6 +77,8 @@ for (const name of ['react', 'react-dom']) {
 }
 const missing = [...targets].filter((t) => !packed.has(t))
 if (missing.length) problems.push(`exports targets absent from the packed tarball: ${missing.join(', ')}`)
+const missingFonts = SHARE_FONT_FILES.filter((f) => !packed.has(`${SHARE_FONT_DIR}/${f}`))
+if (missingFonts.length) problems.push(`share fonts absent from the packed tarball under ${SHARE_FONT_DIR}: ${missingFonts.join(', ')}`)
 if (fileCount < FLOOR) {
   problems.push(`packed fileCount ${fileCount} is below the floor ${FLOOR} — dist/lib is likely missing (the 0.0.1 dist-less failure class)`)
 }
@@ -183,6 +201,32 @@ if (existsSync(join(DIST, 'graph.js'))) {
   }
 }
 
+// ── Share entry isolation ──────────────────────────────────────────────────────
+// ./share is drawn by satori on a server (Next's ImageResponse) as well as by React DOM, so its
+// whole chunk closure must stay renderer-neutral: no react-dom, no hook (satori cannot run one),
+// and none of the ./ui bundle (a server image route must not load the transcript UI).
+const HOOK_NAMES = [
+  'useState', 'useEffect', 'useRef', 'useContext', 'useLayoutEffect', 'useMemo', 'useCallback', 'useReducer',
+  'useSyncExternalStore', 'useId', 'useTransition', 'useDeferredValue', 'useImperativeHandle', 'useInsertionEffect',
+]
+const HOOK_PATTERN = new RegExp(`\\b(?:${HOOK_NAMES.join('|')})\\b`)
+if (!existsSync(join(DIST, 'share.js'))) {
+  isoProblems.push('share.js is missing from dist/lib (the ./share entry did not build)')
+} else {
+  const closure = entryChunkClosure('share.js')
+  for (const name of closure) {
+    const text = readFileSync(join(DIST, name), 'utf8')
+    if (/from\s*["']react-dom(?:\/[^"']*)?["']|import\s*["']react-dom|require\(["']react-dom/.test(text)) {
+      isoProblems.push(`the ./share entry loads react-dom via ${name} — a server image route must not need a DOM renderer`)
+    }
+    const hook = text.match(HOOK_PATTERN)
+    if (hook) isoProblems.push(`the ./share entry references the hook ${hook[0]} in ${name} — satori cannot run hooks`)
+    if (name === 'ui.js' || /^ui-.*\.js$/.test(name)) {
+      isoProblems.push(`the ./share entry loads the ./ui bundle chunk ${name} — the card must not pull in the transcript UI`)
+    }
+  }
+}
+
 for (const { surface, js, forbidden } of SURFACE_BUNDLES) {
   const path = join(DIST, js)
   if (!existsSync(path)) {
@@ -214,5 +258,5 @@ if (isoProblems.length) {
 }
 
 console.log(
-  `pack-content assertion: all ${targets.size} exports targets present in the tarball; fileCount ${fileCount} (floor ${FLOOR}); per-surface bundle isolation OK; no Fairtest path in ${packed.size} packed files (${fairtestFragments.length} forbidden fragments).`,
+  `pack-content assertion: all ${targets.size} exports targets present in the tarball; fileCount ${fileCount} (floor ${FLOOR}); per-surface bundle isolation OK; share entry isolation OK; no Fairtest path in ${packed.size} packed files (${fairtestFragments.length} forbidden fragments).`,
 )
