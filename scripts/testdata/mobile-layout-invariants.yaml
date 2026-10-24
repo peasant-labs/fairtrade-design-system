@@ -148,3 +148,11 @@ invariants:
       right padding. Beside long words the button squeezed them, so hosts added rules of their own.
     mustContainAll:
       - ".srow:not(:has(> .srow-control)) > :not(:first-child) { grid-column: 1 / -1; }"
+  - id: gmp-navigator-disclosure-on-the-name-line
+    file: src/lib-graph.css
+    description: >-
+      the code map navigator's disclosure centres on the name's first line, not on the whole row, so
+      at 390 it stays beside the folder name when the row wraps its figures under the name. Centred on
+      the row it sat about 14px low, between the name and its "% recorded" line.
+    mustContainAll:
+      - ".gmp-navigator-disclosure, .gmp-navigator-disclosure-placeholder { margin-block: calc((var(--fs-sm) * var(--lh-mono) - var(--control-h-sm)) / 2); }"

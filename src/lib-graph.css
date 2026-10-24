@@ -115,7 +115,7 @@
   .gmp-navigator-row-wrap {
     display: grid;
     grid-template-columns: var(--control-h-sm) minmax(0, 1fr);
-    align-items: center;
+    align-items: start;
     gap: var(--sp-2);
     min-height: var(--control-h);
     padding: var(--sp-2) var(--sp-4) var(--sp-2) calc(var(--sp-4) + var(--gmp-tree-depth) * var(--sp-5));
@@ -134,7 +134,9 @@
     outline: 0;
   }
   .gmp-navigator-row > .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); }
-  .gmp-navigator-disclosure, .gmp-navigator-disclosure-placeholder { width: var(--control-h-sm); height: var(--control-h-sm); }
+  /* the disclosure centres on the name's first line, not on the whole row, so it stays beside the name
+     when a narrow row wraps its figures under it */
+  .gmp-navigator-disclosure, .gmp-navigator-disclosure-placeholder { width: var(--control-h-sm); height: var(--control-h-sm); align-self: start; }
   .gmp-navigator-disclosure {
     display: inline-flex;
     align-items: center;
@@ -146,6 +148,7 @@
     color: var(--ink-3);
     cursor: pointer;
   }
+  .gmp-navigator-disclosure, .gmp-navigator-disclosure-placeholder { margin-block: calc((var(--fs-sm) * var(--lh-mono) - var(--control-h-sm)) / 2); }
   .gmp-navigator-disclosure:hover { background: var(--surface-hover); color: var(--ink); }
   .gmp-navigator-disclosure:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
   .gmp-navigator-disclosure[aria-disabled='true'] { cursor: default; opacity: 0.6; }
