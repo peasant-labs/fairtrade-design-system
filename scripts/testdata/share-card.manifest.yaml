@@ -48,6 +48,9 @@ requiredRenderNames:
   - render-long-wide-letters-full-width
   - render-long-words
   - render-long-words-full-width
+  - render-story-prompt-fits-full-width
+  - render-story-prompt-cut-at-word-end
+  - render-cut-never-splits-a-word
   - render-long-url-after-words
   - render-long-cjk
 requiredSourceNames:

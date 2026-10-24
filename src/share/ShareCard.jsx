@@ -14,6 +14,7 @@
 import { color, font } from '../../public/tokens.json'
 import { formatShareCount } from './data.js'
 import { BRAND_FILL_RULE, BRAND_PATHS, USER_ICON, WHEAT_LOGO, brandViewBox, resolveBrand } from './marks.js'
+import { ELLIPSIS_ADVANCE, bodyAdvance } from './metrics.js'
 
 /** @typedef {import('./data.js').ShareCardData} ShareCardData */
 
@@ -56,35 +57,27 @@ const CHIP_CHARS = 32
 
 /* The prompt clamp. satori ignores line-clamp, so the prompt is cut in code: it is wrapped into
    lines of the layout's width (narrower beside the stats column than at full width) with each
-   character counted at the widest advance of its class in the body face, in em, and cut where a
-   fourth line would start, leaving room for the ellipsis on the third. Words wrap whole and a
-   word longer than a line breaks inside, as the renderers do with word-break: break-word.
-   Characters outside the face (CJK, emoji) count as a full em and a little more. Over-counting
-   only cuts a little early; the render gate holds every case to three drawn lines. */
+   character's advance read from the body face (./metrics.js), and cut where a fourth line would
+   start. Words wrap whole, and a word longer than a line breaks inside, as the renderers do. The
+   cut backs off to the last word end on the third line that leaves room for the ellipsis; only a
+   third line that is one unbroken run is cut inside it. A character outside the table (CJK,
+   emoji, a combining sequence) counts as OTHER_ADVANCE, wider than any glyph in the face, so a
+   fallback font cannot push the prompt past three lines. Widths are in thousandths of an em. */
 const CONTENT_W = SHARE_CARD_WIDTH - 2 * PAD_X
-const LINE_EM = {
-  stats: (CONTENT_W - STATS_W - COLUMN_GAP - EDGE - TURN_PAD_LEFT - TURN_PAD_RIGHT) / PROMPT_SIZE,
-  full: (CONTENT_W - EDGE - TURN_PAD_LEFT - TURN_PAD_RIGHT) / PROMPT_SIZE,
+/* a line's width less a small margin for kerning and rounding in the renderers */
+const lineUnits = (px) => Math.floor(((px - 2) / PROMPT_SIZE) * 1000)
+const LINE_UNITS = {
+  stats: lineUnits(CONTENT_W - STATS_W - COLUMN_GAP - EDGE - TURN_PAD_LEFT - TURN_PAD_RIGHT),
+  full: lineUnits(CONTENT_W - EDGE - TURN_PAD_LEFT - TURN_PAD_RIGHT),
 }
 const ELLIPSIS = '…'
-const ELLIPSIS_EM = 0.7
-/* the widest advance in each class of Atkinson Hyperlegible Regular, in em */
-const CHAR_EM = [
-  [/^ $/, 0.28],
-  [/^['`,.:;|lji!()"f[\]{}t]$/, 0.33],
-  [/^[-r/\\_1Iy*vzxskc7J?]$/, 0.52],
-  [/^[@MWm%]$/, 0.93],
-  [/^[wCDNHU#&GOQ]$/, 0.76],
-  [/^[a-z]$/, 0.58],
-  [/^[\x21-\x7e]$/, 0.66],
-  [/^[\u00a0-\u10ff]$/, 1.06],
-]
-const OTHER_EM = 1.1
+const OTHER_ADVANCE = 1100
 
-/** @param {string} grapheme @returns {number} its width in em, rounded up */
-function charEm(grapheme) {
-  for (const [pattern, em] of CHAR_EM) if (pattern.test(grapheme)) return em
-  return OTHER_EM
+/** @param {string} grapheme @returns {number} its advance in thousandths of an em */
+function advance(grapheme) {
+  const points = Array.from(grapheme)
+  const known = points.length === 1 ? bodyAdvance(/** @type {number} */ (points[0].codePointAt(0))) : null
+  return known ?? OTHER_ADVANCE
 }
 
 /** @param {string} text @returns {string[]} user-perceived characters */
@@ -104,37 +97,49 @@ function graphemes(text) {
  */
 export function sharePromptText(prompt, fullWidth) {
   const flat = String(prompt ?? '').replace(/\s+/g, ' ').trim()
-  const lineEm = fullWidth ? LINE_EM.full : LINE_EM.stats
+  const limit = fullWidth ? LINE_UNITS.full : LINE_UNITS.stats
   const chars = graphemes(flat)
-  const widths = chars.map(charEm)
-  /** @type {{ width: number, items: number[] }[]} */
+  const widths = chars.map(advance)
+  /** @type {{ width: number, items: number[] }[]} each line's width and the indices it holds */
   const lines = [{ width: 0, items: [] }]
   let line = lines[0]
   const place = (index) => { line.items.push(index); line.width += widths[index] }
   const wrap = () => { line = { width: 0, items: [] }; lines.push(line) }
   let i = 0
   while (i < chars.length && lines.length <= PROMPT_LINES) {
-    if (chars[i] === ' ') {
-      // a space that would end a line is dropped there
-      if (line.width > 0 && line.width + widths[i] <= lineEm) place(i)
-      i += 1
-      continue
-    }
     let end = i
     let word = 0
     while (end < chars.length && chars[end] !== ' ') word += widths[end++]
-    if (line.width > 0 && line.width + word > lineEm) wrap()
+    // the space before a word counts only when the word stays on the same line
+    const gap = line.items.length > 0 && chars[i - 1] === ' ' ? widths[i - 1] : 0
+    if (line.items.length > 0 && line.width + gap + word > limit) wrap()
+    else if (gap) place(i - 1)
     for (; i < end; i += 1) {
-      if (line.width > 0 && line.width + widths[i] > lineEm) wrap()
+      if (line.items.length > 0 && line.width + widths[i] > limit) wrap()
       place(i)
     }
+    i = end + 1
   }
   if (lines.length <= PROMPT_LINES && i >= chars.length) return flat
-  const last = lines[PROMPT_LINES - 1]
-  while (last.items.length > 0 && last.width + ELLIPSIS_EM > lineEm) last.width -= widths[/** @type {number} */ (last.items.pop())]
-  const kept = lines.slice(0, PROMPT_LINES).flatMap((row) => row.items)
-  const through = kept.length > 0 ? kept[kept.length - 1] + 1 : 0
-  // the ellipsis follows the last word, not a trailing space or comma
+  return cut(chars, widths, lines[PROMPT_LINES - 1], limit)
+}
+
+/** Cut the third line so the ellipsis fits: at its last word end that leaves room, else inside the run. */
+function cut(chars, widths, last, limit) {
+  const room = limit - ELLIPSIS_ADVANCE
+  let width = 0
+  let wordEnd = -1
+  let charEnd = -1
+  for (const index of last.items) {
+    width += widths[index]
+    if (width > room) break
+    if (chars[index] === ' ') continue
+    charEnd = index
+    if (chars[index + 1] === ' ') wordEnd = index
+  }
+  // a third line with no room at all ends the text at the second line
+  const through = wordEnd >= 0 ? wordEnd + 1 : charEnd >= 0 ? charEnd + 1 : last.items[0] ?? chars.length
+  // the ellipsis follows the last word, not a trailing comma or colon
   return chars.slice(0, through).join('').replace(/[\s,;:]+$/, '') + ELLIPSIS
 }
 
@@ -232,6 +237,7 @@ function UserTurn({ prompt, fullWidth }) {
       style={{
         display: 'flex',
         flexDirection: 'column',
+        justifyContent: 'center',
         flexGrow: 1,
         flexBasis: 0,
         overflow: 'hidden',

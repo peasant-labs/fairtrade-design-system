@@ -122,8 +122,10 @@ dataModuleGuard:
 #   so the SVG's height is the card's own. `expect` pins only what a case is about:
 #     size: [width, height] of the SVG;
 #     textIncludes / textExcludes: text satori laid out, read from its layout nodes;
-#     promptMaxLines: the prompt's laid-out height, in lines of its own line height, is at most this;
-#     promptEllipsis: whether the drawn prompt ends in the ellipsis (cut) or not (whole).
+#     promptMaxLines / promptMinLines: the prompt's laid-out height, in lines of its own line
+#       height, is at most / at least this (a clamp that cuts too early goes red on the minimum);
+#     promptEllipsis: whether the drawn prompt ends in the ellipsis (cut) or not (whole);
+#     promptCutAtWordEnd: the text before the ellipsis ends a word of the prompt (no partial word).
 renderCases:
   - name: render-public-600
     height: 600
@@ -162,30 +164,45 @@ renderCases:
   - name: render-long-unbroken-prompt
     firstTurnRepeat: {unit: x, times: 600}
     height: 600
-    expect: {size: [1200, 600], promptMaxLines: 3, promptEllipsis: true}
+    expect: {size: [1200, 600], promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true}
   - name: render-long-unbroken-prompt-full-width
     firstTurnRepeat: {unit: x, times: 600}
     omit: [inputSubmissionCount]
     height: 600
-    expect: {size: [1200, 600], promptMaxLines: 3, promptEllipsis: true}
+    expect: {size: [1200, 600], promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true}
   - name: render-long-wide-letters
     firstTurnRepeat: {unit: W, times: 300}
     height: 600
-    expect: {promptMaxLines: 3, promptEllipsis: true}
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true}
   - name: render-long-wide-letters-full-width
     firstTurnRepeat: {unit: W, times: 300}
     omit: [inputSubmissionCount]
     height: 600
-    expect: {promptMaxLines: 3, promptEllipsis: true}
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true}
   - name: render-long-words
     firstTurnRepeat: {unit: 'retry the nightly billing export with backoff, then ', times: 20}
     height: 600
-    expect: {promptMaxLines: 3, promptEllipsis: true}
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true, promptCutAtWordEnd: true}
   - name: render-long-words-full-width
     firstTurnRepeat: {unit: 'retry the nightly billing export with backoff, then ', times: 20}
     omit: [inputSubmissionCount]
     height: 600
-    expect: {promptMaxLines: 3, promptEllipsis: true}
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true, promptCutAtWordEnd: true}
+  - name: render-story-prompt-fits-full-width
+    firstTurnContent: 'hey claude, run our billing retry suite against each model with the same seed, then write a table of pass rates and median latency per model'
+    omit: [inputSubmissionCount]
+    height: 600
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: false}
+  - name: render-story-prompt-cut-at-word-end
+    firstTurnContent: 'hey claude, run our billing retry suite against each model with the same seed, then write a table of pass rates and median latency per model'
+    height: 600
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true, promptCutAtWordEnd: true}
+  # line 3 ends in "and then", where a cut by characters lands at "the" inside "then"
+  - name: render-cut-never-splits-a-word
+    firstTurnContent: 'hey claude, run our billing retry suite against each model with the same seed, then write a table of pass rates and median latency per model and then summarise the regressions'
+    omit: [inputSubmissionCount]
+    height: 600
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true, promptCutAtWordEnd: true}
   - name: render-long-url-after-words
     firstTurnContent: 'see https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa and fix it'
     height: 600

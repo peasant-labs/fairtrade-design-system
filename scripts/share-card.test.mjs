@@ -121,7 +121,7 @@ async function checkRender(row, share, ShareCard, fonts) {
     const hit = drawn.find((value) => value.includes(text))
     report.check(hit === undefined, `${row.name}: drawn text ${JSON.stringify(hit)} contains ${JSON.stringify(text)}`)
   }
-  if (expect.promptMaxLines === undefined && expect.promptEllipsis === undefined) return
+  if (expect.promptMaxLines === undefined && expect.promptMinLines === undefined && expect.promptEllipsis === undefined && expect.promptCutAtWordEnd === undefined) return
   const prompt = nodes.find((node) => node.key === 'prompt')
   if (!prompt) { report.check(false, `${row.name}: no layout node keyed prompt`); return }
   if (expect.promptMaxLines !== undefined) {
@@ -130,6 +130,19 @@ async function checkRender(row, share, ShareCard, fonts) {
     // satori rounds each line box to whole pixels, so a line count is read to the nearest line
     const lines = Math.round(prompt.height / lineHeight)
     report.check(Number.isFinite(lines) && lines <= expect.promptMaxLines, `${row.name}: the prompt takes ${lines} lines (${prompt.height}px at ${lineHeight}px a line), at most ${expect.promptMaxLines} allowed; drawn ${clip(prompt.textContent)}`)
+  }
+  if (expect.promptMinLines !== undefined) {
+    const style = prompt.props.style ?? {}
+    const lines = Math.round(prompt.height / (Number(style.fontSize) * Number(style.lineHeight)))
+    report.check(lines >= expect.promptMinLines, `${row.name}: the prompt takes ${lines} lines, at least ${expect.promptMinLines} expected (cut too early?); drawn ${clip(prompt.textContent)}`)
+  }
+  if (expect.promptCutAtWordEnd !== undefined) {
+    // the drawn text, less its ellipsis, is a prefix of the prompt that ends where a word ends
+    const source = card.firstPrompt.replace(/\s+/g, ' ').trim()
+    const drawnPrompt = String(prompt.textContent ?? '')
+    const prefix = drawnPrompt.endsWith('…') ? drawnPrompt.slice(0, -1) : drawnPrompt
+    const atWordEnd = source.startsWith(prefix) && /^[,;:]*( |$)/.test(source.slice(prefix.length))
+    report.check(atWordEnd === expect.promptCutAtWordEnd, `${row.name}: the cut ${expect.promptCutAtWordEnd ? 'must' : 'must not'} end at a word end; drawn ${clip(drawnPrompt)}`)
   }
   if (expect.promptEllipsis !== undefined) {
     const text = String(prompt.textContent ?? '')
