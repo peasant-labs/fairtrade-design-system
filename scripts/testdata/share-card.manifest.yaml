@@ -59,6 +59,7 @@ requiredRenderNames:
   - render-cut-never-splits-a-word
   - render-long-url-after-words
   - render-long-cjk
+  - render-huge-prompt
   - render-untitled-empty-first-turn
   - render-slash-command-shows-args
   - render-chip-long-model-keeps-bracket

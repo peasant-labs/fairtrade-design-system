@@ -293,13 +293,22 @@ async function checkRender(row, share, ShareCard, fonts) {
   const props = row.height === undefined ? { card } : { card, height: row.height }
   let nodes
   let svg
+  // the longest text handed to Intl.Segmenter while the card is drawn
+  let segmented = 0
+  const segment = Intl.Segmenter.prototype.segment
+  Intl.Segmenter.prototype.segment = function (text) { segmented = Math.max(segmented, String(text).length); return segment.call(this, text) }
   try {
     ({ svg, nodes } = await layout(ShareCard, props, fonts))
   } catch (error) {
     report.check(false, `${row.name}: satori threw ${error.message}`)
     return
+  } finally {
+    Intl.Segmenter.prototype.segment = segment
   }
   const expect = row.expect
+  if (expect.promptSegmentedAtMost !== undefined) {
+    report.check(segmented <= expect.promptSegmentedAtMost, `${row.name}: a text of ${segmented} units was split into characters, at most ${expect.promptSegmentedAtMost} allowed`)
+  }
   const prompt = nodes.find((node) => node.key === 'prompt')
   const drawnPrompt = prompt ? promptText(nodes) : undefined
   const drawn = nodes.map((node) => node.textContent).filter((text) => typeof text === 'string')

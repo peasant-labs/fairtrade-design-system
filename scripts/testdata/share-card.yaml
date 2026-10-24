@@ -142,6 +142,8 @@ dataModuleGuard:
 #       height, is at most / at least this (a clamp that cuts too early goes red on the minimum);
 #     promptEllipsis: whether the drawn prompt ends in the ellipsis (cut) or not (whole);
 #     promptCutAtWordEnd: the text before the ellipsis ends a word of the prompt (no partial word);
+#     promptSegmentedAtMost: while the card is drawn, no text longer than this many UTF-16 units
+#       is handed to Intl.Segmenter (the card measures only the head of a long prompt);
 #     valueFontSize: {prompts, tokens} px each tile number is drawn at (84 is the approved size;
 #       a number too wide for its tile at 84 is drawn smaller, never rounded differently).
 #   Wherever the card draws a prompt, the gate also checks that no line of it runs past the
@@ -238,6 +240,11 @@ renderCases:
     height: 600
     expect: {promptMaxLines: 3, promptEllipsis: true}
 
+  # a 2 MB prompt: only its head is split into characters and measured, never the whole text
+  - name: render-huge-prompt
+    firstTurnRepeat: {unit: 'word ', times: 400000}
+    height: 600
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true, promptCutAtWordEnd: true, promptSegmentedAtMost: 2000}
   # the title stands in for a first prompt with no text, so it is drawn without the "user" label
   - name: render-untitled-empty-first-turn
     omit: [title]

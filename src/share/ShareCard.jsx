@@ -102,6 +102,16 @@ const SPACE_UNITS = /** @type {number} */ (bodyAdvance(0x20)) + TRACKING_UNITS +
 const SPACE_PX = (SPACE_UNITS / 1000) * PROMPT_SIZE
 const ELLIPSIS = '…'
 const OTHER_ADVANCE = 1100
+/* Three lines hold a few hundred characters at most, so only the head of a long prompt is split
+   into characters and measured; a pasted log of megabytes costs no more than a short prompt. */
+const PROMPT_HEAD = 2000
+
+/** @param {string} text @returns {string} its first PROMPT_HEAD UTF-16 units, never half a surrogate pair */
+function head(text) {
+  if (text.length <= PROMPT_HEAD) return text
+  const code = text.charCodeAt(PROMPT_HEAD - 1)
+  return text.slice(0, code >= 0xd800 && code <= 0xdbff ? PROMPT_HEAD - 1 : PROMPT_HEAD)
+}
 
 /** @param {string} grapheme @returns {number} its advance with the prose letter-spacing, in thousandths of an em */
 function advance(grapheme) {
@@ -134,8 +144,9 @@ function graphemes(text) {
  */
 export function sharePromptLines(prompt, fullWidth) {
   const flat = String(prompt ?? '').replace(/\s+/g, ' ').trim()
+  const measured = head(flat)
   const limit = fullWidth ? LINE_UNITS.full : LINE_UNITS.stats
-  const chars = graphemes(flat)
+  const chars = graphemes(measured)
   const widths = chars.map(advance)
   /** @type {{ width: number, items: number[] }[]} each line's width and the indices it holds */
   const lines = [{ width: 0, items: [] }]
@@ -157,7 +168,8 @@ export function sharePromptLines(prompt, fullWidth) {
     }
     i = end + 1
   }
-  const whole = lines.length <= PROMPT_LINES && i >= chars.length
+  // a head that fits is still not the whole prompt when text was left out past it
+  const whole = lines.length <= PROMPT_LINES && i >= chars.length && measured === flat
   const kept = lines.slice(0, PROMPT_LINES).filter((each) => each.items.length > 0)
   const drawn = kept.map((each, k) => {
     const next = kept[k + 1]
@@ -167,8 +179,8 @@ export function sharePromptLines(prompt, fullWidth) {
     }
   })
   if (whole) return drawn
-  const last = lines[PROMPT_LINES - 1]
-  drawn[PROMPT_LINES - 1] = { text: cut(chars, widths, last, limit), breakSpace: false }
+  const last = kept.length - 1
+  drawn[last] = { text: cut(chars, widths, kept[last], limit), breakSpace: false }
   return drawn
 }
 
