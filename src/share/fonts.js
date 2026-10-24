@@ -14,7 +14,11 @@
 export const SHARE_CARD_BODY_FONT = 'Atkinson Hyperlegible'
 export const SHARE_CARD_MONO_FONT = 'Atkinson Hyperlegible Mono'
 
-/** @type {ReadonlyArray<ShareCardFont>} */
+/**
+ * The card's faces. They cover Latin text: satori draws a CJK character or an emoji as an empty
+ * box (.notdef) unless the consumer passes its own fonts for those glyphs beside these.
+ * @type {ReadonlyArray<ShareCardFont>}
+ */
 export const SHARE_CARD_FONTS = Object.freeze([
   { name: SHARE_CARD_BODY_FONT, weight: 400, style: 'normal', file: 'AtkinsonHyperlegible-Regular.ttf' },
   { name: SHARE_CARD_BODY_FONT, weight: 700, style: 'normal', file: 'AtkinsonHyperlegible-Bold.ttf' },

@@ -43,6 +43,8 @@ requiredRenderNames:
   - render-public-600
   - render-public-630
   - render-default-height-is-600
+  - render-unknown-height-is-600
+  - render-generic-unknown-height-is-600
   - render-generic-600
   - render-generic-630
   - render-generic-copy

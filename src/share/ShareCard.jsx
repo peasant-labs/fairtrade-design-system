@@ -494,9 +494,12 @@ function GenericCard({ height }) {
  * The share card for a transcript link preview.
  * @param {object} props
  * @param {ShareCardData | null} props.card the card data, or null for a transcript that is not public
- * @param {600 | 630} [props.height] 600 for X's 2:1 card (the default), 630 for every other platform
+ * @param {600 | 630} [props.height=600] 600 for X's 2:1 card (the default), 630 for every other
+ *   platform; any other value draws the 600 card
  */
 export function ShareCard({ card, height = 600 }) {
+  // any height other than 630 draws the 600 card: a consumer's typo gives X's size, never a
+  // stretched or squashed card
   const h = height === 630 ? 630 : 600
   return card ? <PublicCard card={card} height={h} /> : <GenericCard height={h} />
 }

@@ -165,6 +165,14 @@ renderCases:
     expect: {size: [1200, 630], textIncludes: [rewrite billing retries]}
   - name: render-default-height-is-600
     expect: {size: [1200, 600]}
+  # a height other than 600 or 630 draws the default 600, never a stretched or squashed card
+  - name: render-unknown-height-is-600
+    height: 700
+    expect: {size: [1200, 600]}
+  - name: render-generic-unknown-height-is-600
+    generic: true
+    height: 0
+    expect: {size: [1200, 600]}
   - name: render-generic-600
     generic: true
     height: 600
