@@ -22,6 +22,9 @@ import { createCodeMapState, deriveCodeMapView } from './codeMapState.js'
  * @param {(id:string)=>void} [props.onOpenMap]
  * @param {(action:import('./codeMapState.js').CodeMapAction)=>void} [props.onStateAction]
  * @param {string} [props.ariaLabel='code map navigator']
+ * @param {'measured'|'unknown'} [props.lineCounts='measured'] whether the payload's line counts were measured.
+ *        'unknown' (the host could not read the project's languages, so every loc is an unmeasured 0) leaves the
+ *        "N lines" figure out of every row instead of stating a false 0; a measured 0 still reads "0 lines".
  */
 export default function CodeMapNavigator({
   payload,
@@ -37,6 +40,7 @@ export default function CodeMapNavigator({
   onOpenMap,
   onStateAction,
   ariaLabel = 'code map navigator',
+  lineCounts = 'measured',
 }) {
   const [internalExpanded, setInternalExpanded] = useState(() => new Set())
   const [internalFocus, setInternalFocus] = useState(null)
@@ -170,6 +174,7 @@ export default function CodeMapNavigator({
                 if (!row.forcedOpen) toggle(row.node.id)
               }}
               onKeyDown={(event) => onTreeKeyDown(event, index)}
+              lineCounts={lineCounts}
             />
           })}
         </div>
@@ -201,7 +206,7 @@ export default function CodeMapNavigator({
   )
 }
 
-function NavigatorRow({ row, hasChildren, isExpanded, selected, tabbable, setRef, onFocus, onSelect, onToggle, onKeyDown }) {
+function NavigatorRow({ row, hasChildren, isExpanded, selected, tabbable, setRef, onFocus, onSelect, onToggle, onKeyDown, lineCounts }) {
   return (
     <div
       role="none"
@@ -245,7 +250,7 @@ function NavigatorRow({ row, hasChildren, isExpanded, selected, tabbable, setRef
         {row.node.kind === 'file' ? <FileCode aria-hidden="true" /> : <Folder aria-hidden="true" />}
         <span className="gmp-navigator-path">{row.node.name || row.node.id}</span>
         <span className="gmp-navigator-meta">
-          <span>{formatCount(row.node.loc ?? 0)} lines</span>
+          {lineCounts === 'unknown' ? null : <span>{formatCount(row.node.loc ?? 0)} lines</span>}
           <span>{formatCoverage(row.node.recordedFiles, row.node.totalFiles)}</span>
         </span>
       </div>

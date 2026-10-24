@@ -59,6 +59,8 @@ import { codeMapStatesEqual, createCodeMapState, reduceCodeMapState } from './co
  * @param {import('./codeMapState.js').CodeMapState} [props.state] canonical controlled state
  * @param {Partial<import('./codeMapState.js').CodeMapState>} [props.defaultState] initial canonical uncontrolled state
  * @param {(state:import('./codeMapState.js').CodeMapState)=>void} [props.onStateChange]
+ * @param {'measured'|'unknown'} [props.lineCounts='measured'] passed to the navigator: 'unknown' leaves out every row's
+ *        "N lines" figure when the host knows the payload's line counts were not measured
  */
 export default function CodeMapComposition({
   payload,
@@ -90,6 +92,7 @@ export default function CodeMapComposition({
   state,
   defaultState,
   onStateChange,
+  lineCounts = 'measured',
 }) {
   const canonicalMode = state !== undefined || defaultState !== undefined
   const [internalState, setInternalState] = useState(() => createCodeMapState(defaultState))
@@ -159,6 +162,7 @@ export default function CodeMapComposition({
   const navigatorContent = navigatorSlot ?? (canonicalState && payload ? (
     <CodeMapNavigator
       payload={payload}
+      lineCounts={lineCounts}
       grain={canonicalState.grain}
       expandedIds={canonicalState.expandedIds}
       selectedId={canonicalState.selectedId}

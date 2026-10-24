@@ -1,0 +1,25 @@
+# Cases for the code map navigator's line counts (scripts/code-map-line-counts.test.mjs). The gate
+# mounts the REAL CodeMapNavigator (and the REAL CodeMapComposition in navigator presentation) with
+# the payload below and reads each row's meta. A measured count reads "N lines", a measured 0 reads
+# "0 lines", and when the host says the counts were not measured (lineCounts: unknown, the project's
+# languages could not be read) no row states a line count at all, rather than a false 0.
+payload:
+  repoFound: true
+  structureEdges: []
+  violations: []
+  nodes:
+    - {id: internal, name: internal, kind: module, loc: 820, recordedFiles: 5, totalFiles: 8, order: 0}
+    - {id: docs, name: docs, kind: module, loc: 0, recordedFiles: 0, totalFiles: 2, order: 1}
+cases:
+  - name: a measured count reads its lines
+    component: navigator
+    props: {}
+    expected: {internal: [820 lines, 63% recorded], docs: [0 lines, 0% recorded]}
+  - name: unmeasured counts state no lines
+    component: navigator
+    props: {lineCounts: unknown}
+    expected: {internal: [63% recorded], docs: [0% recorded]}
+  - name: the composition passes unmeasured counts on
+    component: composition
+    props: {lineCounts: unknown, presentation: navigator, defaultState: {grain: project}}
+    expected: {internal: [63% recorded], docs: [0% recorded]}

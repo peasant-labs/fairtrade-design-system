@@ -14,13 +14,14 @@ const payload = {
   violations: [],
 }
 
-function ControlledNavigator({ onSelect, onOpenMap }) {
+function ControlledNavigator({ onSelect, onOpenMap, lineCounts }) {
   const [selectedId, setSelectedId] = useState(null)
   const [expandedIds, setExpandedIds] = useState(['internal'])
   const [filter, setFilter] = useState('')
   return (
     <CodeMapNavigator
       payload={payload}
+      lineCounts={lineCounts}
       grain="file"
       expandedIds={expandedIds}
       onExpandedIdsChange={setExpandedIds}
@@ -66,5 +67,15 @@ export const Default = {
     await userEvent.clear(filter)
     await userEvent.click(canvas.getByRole('button', { name: /open in map/i }))
     await waitFor(() => expect(args.onOpenMap).toHaveBeenCalledTimes(1))
+  },
+}
+
+// the host could not read the project's languages, so no row states a line count
+export const LineCountsUnknown = {
+  args: { onSelect: fn(), onOpenMap: fn(), lineCounts: 'unknown' },
+  render: (args) => <ControlledNavigator {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryAllByText(/\d+ lines/)).toHaveLength(0)
   },
 }
