@@ -29,9 +29,12 @@ package is pre-1.0, so minor/patch semantics are best-effort.
     shows its children. Before, it read collapsed over visible children and
     pressing it only flipped the chevron. A folder past the grain's depth gets
     a working disclosure and ArrowRight, where only a double-click opened it.
+  - Every chevron changes what shows; none is disabled. While filtering, the
+    filter alone decides which rows show, so no row draws a chevron.
   - The chevron centres on the folder name's line, so at 390 it no longer
-    sits between the name and its "% recorded" line. Desktop rows are 37px
-    tall instead of 44px (still above the 36px control height).
+    sits between the name and its "% recorded" line.
+  - Rows are 37px tall on a fine pointer (was 44px) and keep a 44px reach on
+    a touch screen.
 - In Explore's transcript view, the owner's name in the "owner snapshot"
   aside is a heading one level under the transcript's title (h3 by default),
   not at the title's own level.
