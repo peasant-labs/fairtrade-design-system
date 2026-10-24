@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { loadFixturePair } from '../mounted-parts.mjs'
+import { measureTrail, trailRuleFailures } from '../transcript-trail-rule.mjs'
 
 /* Phone headers on the built in-use demo, on a 390px touch screen in both themes.
    Cases: scripts/testdata/phone-header.yaml (+ .manifest.yaml). */
@@ -35,21 +36,9 @@ for (const row of fixture.cases) {
     }
     if (row.kind === 'crumb') {
       await expect(page.locator('#inuse .txn-crumb')).toBeVisible()
-      const trail = await page.evaluate(() => {
-        const nav = document.querySelector('#inuse .txn-crumb')
-        const parts = [...nav.children]
-        const crumbs = parts.filter((part) => part.tagName.toLowerCase() !== 'svg')
-        const middle = (el) => ({ cut: el.scrollWidth > el.clientWidth + 1, ellipsis: getComputedStyle(el).textOverflow })
-        return {
-          rows: new Set(parts.map((part) => Math.round(part.getBoundingClientRect().top + part.getBoundingClientRect().height / 2))).size,
-          first: middle(crumbs[0]), last: middle(crumbs.at(-1)), middles: crumbs.slice(1, -1).map(middle),
-          overflow: nav.scrollWidth > nav.clientWidth + 1,
-        }
-      })
-      expect(trail.rows, `${context}: every crumb and separator must share one row ${JSON.stringify(trail)}`).toBe(1)
-      expect(trail.overflow, `${context}: the trail must fit its row`).toBe(false)
-      expect(trail.middles.some((m) => m.cut && m.ellipsis === 'ellipsis'), `${context}: a middle crumb must shrink to an ellipsis ${JSON.stringify(trail)}`).toBe(true)
-      expect(trail.first.cut || trail.last.cut, `${context}: the first and last crumbs read whole ${JSON.stringify(trail)}`).toBe(false)
+      const trail = await page.evaluate(measureTrail, '#inuse .txn-crumb')
+      const failures = trailRuleFailures(context, trail)
+      expect(failures, `${failures.join('\n')}\n${JSON.stringify(trail)}`).toEqual([])
     }
     if (row.kind === 'chips') {
       await expect(page.locator('#inuse .gan-section-chips')).toBeVisible()

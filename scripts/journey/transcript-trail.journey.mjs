@@ -1,12 +1,16 @@
-/* Journey: the transcript trail reads whole on a wide screen, on the built Storybook, both themes.
+/* Journey: the transcript trail at every width, on the built Storybook, both themes.
  *
- * Reads scripts/testdata/transcript-trail.yaml (+ .manifest.yaml). At 1440 and 1280 a host's trail of
- * a collective, its name and the transcript's title that fits the header row shows every crumb whole
- * (its text no wider than its box); a trail longer than the row shortens only its last crumb, the
- * title. Named CSS mutations prove the gate fails for each reason.
+ * Reads scripts/testdata/transcript-trail.yaml (+ .manifest.yaml). Each case is a host's trail at
+ * 1440, 1280 or a 390 touch screen: the trail keeps the rule in scripts/transcript-trail-rule.mjs (one
+ * line, whole while it fits, the current crumb gives way first down to its floor, every cut ends in an
+ * ellipsis, nothing below its floor, nothing cut with room to spare), and exactly the case's `cut`
+ * crumbs shorten. The trail is measured in the design system's own mono, served from the package's
+ * bundled copy, so a case reads the same on every machine. Named CSS mutations prove the gate fails
+ * for each reason.
  */
 import { test, expect } from '@playwright/test'
 import { loadStrictYaml, assertExactNames } from '../css-source.mjs'
+import { measureTrail, trailRuleFailures, useTrailFont } from '../transcript-trail-rule.mjs'
 
 const FIXTURE = 'scripts/testdata/transcript-trail.yaml'
 const MANIFEST = 'scripts/testdata/transcript-trail.manifest.yaml'
@@ -15,52 +19,57 @@ const manifest = loadStrictYaml(MANIFEST)
 assertExactNames(spec.viewports.map((row) => row.name), manifest.requiredViewportNames, `${FIXTURE} viewports`)
 assertExactNames(spec.cases.map((row) => row.name), manifest.requiredCaseNames, `${FIXTURE} cases`)
 assertExactNames(spec.mutations.map((row) => row.name), manifest.requiredMutationNames, `${FIXTURE} mutations`)
+const viewportNames = new Set(spec.viewports.map((row) => row.name))
+for (const row of spec.cases) for (const name of row.viewports) if (!viewportNames.has(name)) throw new Error(`${FIXTURE}: case "${row.name}" names an unknown viewport "${name}"`)
+for (const row of spec.mutations) {
+  const target = spec.cases.find((candidate) => candidate.name === row.case)
+  if (!target || !target.viewports.includes(row.viewport)) throw new Error(`${FIXTURE}: mutation "${row.name}" must name a case and one of its viewports`)
+}
 
 const settle = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
 
-/** In the page: each crumb's text and whether its text is cut short. */
-const measure = () => [...document.querySelectorAll('.txn-crumb > :not(svg)')].map((el) => ({
-  text: el.textContent.trim(),
-  cut: el.scrollWidth > el.clientWidth + 1,
-}))
-
-const failuresFor = (row, crumbs) => {
-  const failures = []
-  const texts = crumbs.map((crumb) => crumb.text)
-  if (JSON.stringify(texts) !== JSON.stringify(row.crumbs)) failures.push(`${row.name}: the trail must be ${JSON.stringify(row.crumbs)}, received ${JSON.stringify(texts)}`)
-  crumbs.forEach((crumb, index) => {
-    const last = index === crumbs.length - 1
-    if (!crumb.cut || (last && row.lastMayCut)) return
-    failures.push(row.lastMayCut ? `${row.name}: "${crumb.text}" is cut short before the title` : `${row.name}: "${crumb.text}" is cut short with room on the row`)
+const failuresFor = (row, viewport, trail) => {
+  const label = `${row.name} at ${viewport}`
+  const failures = trailRuleFailures(label, trail)
+  const texts = trail.crumbs.map((crumb) => crumb.text)
+  if (JSON.stringify(texts) !== JSON.stringify(row.crumbs)) failures.push(`${label}: the trail must be ${JSON.stringify(row.crumbs)}, received ${JSON.stringify(texts)}`)
+  trail.crumbs.forEach((crumb, index) => {
+    if (row.cut.includes(index) && !crumb.cut) failures.push(`${label}: "${crumb.text}" must shorten with an ellipsis`)
+    if (!row.cut.includes(index) && crumb.cut) failures.push(`${label}: "${crumb.text}" must read whole, it is cut`)
   })
   return failures
 }
 
-const open = async (page, story, theme, viewport) => {
-  await page.setViewportSize({ width: viewport.width, height: viewport.height })
-  await page.goto(`/iframe.html?id=${story}&viewMode=story&globals=theme:${theme}`)
+/* The story is measured in the design system's own mono (see useTrailFont), never the machine's fallback. */
+const open = async (page, row, theme) => {
+  const font = await useTrailFont(page)
+  await page.goto(`/iframe.html?id=${row.story}&viewMode=story&globals=theme:${theme}`)
   await expect(page.locator('.txn-crumb').first()).toBeVisible()
-  await page.evaluate(() => document.fonts.ready)
+  await font.ready()
   await page.evaluate(settle)
 }
 
 for (const viewport of spec.viewports) {
-  for (const row of spec.cases) {
-    test(`transcript trail ${row.name} ${viewport.name}`, async ({ page }, info) => {
-      await open(page, row.story, info.project.name, viewport)
-      const failures = failuresFor(row, await page.evaluate(measure))
-      expect(failures, failures.join('\n')).toEqual([])
-    })
-  }
-}
+  test.describe(`transcript trail at ${viewport.name}`, () => {
+    test.use({ viewport: { width: viewport.width, height: viewport.height }, hasTouch: viewport.touch })
 
-test('transcript trail mutations', async ({ page }, info) => {
-  for (const mutation of spec.mutations) {
-    const row = spec.cases.find((candidate) => candidate.story === mutation.story)
-    await open(page, mutation.story, info.project.name, spec.viewports[0])
-    await page.addStyleTag({ content: mutation.css })
-    await page.evaluate(settle)
-    const failures = failuresFor(row, await page.evaluate(measure))
-    expect(failures.some((line) => line.includes(mutation.expect)), `${mutation.name}: the gate must report "${mutation.expect}", received:\n${failures.join('\n')}`).toBe(true)
-  }
-})
+    for (const row of spec.cases.filter((candidate) => candidate.viewports.includes(viewport.name))) {
+      test(row.name, async ({ page }, info) => {
+        await open(page, row, info.project.name)
+        const failures = failuresFor(row, viewport.name, await page.evaluate(measureTrail, '.txn-crumb'))
+        expect(failures, failures.join('\n')).toEqual([])
+      })
+    }
+
+    for (const mutation of spec.mutations.filter((candidate) => candidate.viewport === viewport.name)) {
+      test(`mutation: ${mutation.name}`, async ({ page }, info) => {
+        const row = spec.cases.find((candidate) => candidate.name === mutation.case)
+        await open(page, row, info.project.name)
+        await page.addStyleTag({ content: mutation.css })
+        await page.evaluate(settle)
+        const failures = failuresFor(row, viewport.name, await page.evaluate(measureTrail, '.txn-crumb'))
+        expect(failures.some((line) => line.includes(mutation.expect)), `${mutation.name}: the gate must report "${mutation.expect}", received:\n${failures.join('\n')}`).toBe(true)
+      })
+    }
+  })
+}

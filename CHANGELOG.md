@@ -4,6 +4,21 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.45 - 2026-10-24
+
+### Fixed
+
+- `TranscriptViewer`'s trail follows one rule at every width, on one line on
+  a phone too. Every crumb reads whole while it fits. When the row is full the
+  last crumb, the current page, gives way first, down to an eight-character
+  floor; then the middle crumbs, the longest taking most of the cut; the
+  trail's root last. Every cut ends in an ellipsis, and no crumb goes below its
+  floor or is cut while the row has room. In 0.0.44 a crumb longer than the
+  whole row (a long repository name) stayed at its full width, clipped with no
+  ellipsis, and the current crumb collapsed to nothing; and since 0.0.40 a
+  phone capped the first and last crumbs at a share of the row, so a pull
+  request trail was cut with room to spare.
+
 ## 0.0.44 - 2026-10-24
 
 ### Fixed

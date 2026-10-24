@@ -1,4 +1,14 @@
 # Required-NAME manifest for transcript-trail.yaml: deletion protection for the viewports, cases and mutations.
-requiredViewportNames: [desktop, laptop]
-requiredCaseNames: [a host trail with room reads whole, a full row shortens only the title]
-requiredMutationNames: [the phone caps reach the desktop, a middle crumb shortens before the title]
+requiredViewportNames: [desktop, laptop, phone]
+requiredCaseNames:
+  - a collective trail with room reads whole
+  - a full row shortens only the title
+  - a full phone row shortens the title to its floor, then the collective
+  - a long repository name shortens and the session id stays
+  - a pull request trail reads whole on a phone
+  - a long collective name shortens only when the phone row is full
+requiredMutationNames:
+  - a crumb at 0 width
+  - a clip without an ellipsis
+  - a crumb cut while there is spare room
+  - a crumb shortens before the current crumb

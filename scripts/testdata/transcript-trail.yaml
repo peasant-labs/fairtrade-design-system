@@ -1,29 +1,76 @@
-# Cases for the transcript trail on a wide screen (scripts/journey/transcript-trail.journey.mjs), on the
-# built Storybook in both themes at each viewport. From a tablet up every crumb reads whole while it
-# fits, and only the last, the current page's title, may shorten, only when the row is full. A crumb is
-# cut when its text is wider than its box (an ellipsis). `story` is a TranscriptViewer story with a host
-# trail; `lastMayCut` allows the title alone to shorten. The phone's one-line trail is
-# scripts/journey/phone-header.journey.mjs.
+# Cases for the transcript trail (scripts/journey/transcript-trail.journey.mjs), on the built Storybook
+# in both themes. Every case keeps the trail's rule (scripts/transcript-trail-rule.mjs): one line at
+# every width; every crumb whole while it fits; when the row is full the last crumb, the current page,
+# gives way first down to its floor, then the others; every cut ends in an ellipsis; no crumb below its
+# floor or past the trail's edge; nothing cut with room to spare. `story` is a TranscriptViewer story
+# with a host trail, `viewports` the widths it runs at, and `cut` the indexes of exactly the crumbs that
+# shorten there. A crumb is cut when its text is wider than its box. Every story is measured in the
+# design system's own mono, served from the package's bundled copy, so a case reads the same on every
+# machine.
 viewports:
-  - {name: desktop, width: 1440, height: 900}
-  - {name: laptop, width: 1280, height: 800}
+  - {name: desktop, width: 1440, height: 900, touch: false}
+  - {name: laptop, width: 1280, height: 800, touch: false}
+  - {name: phone, width: 390, height: 844, touch: true}
 cases:
-  - {name: a host trail with room reads whole, story: in-use-transcript-transcriptviewer--host-trail, lastMayCut: false, crumbs: [collectives, AI Research Collective, Port the transcript canvas into the shared package]}
+  - name: a collective trail with room reads whole
+    story: in-use-transcript-transcriptviewer--host-trail
+    viewports: [desktop, laptop]
+    cut: []
+    crumbs: [collectives, AI Research Collective, Port the transcript canvas into the shared package]
   - name: a full row shortens only the title
     story: in-use-transcript-transcriptviewer--host-trail-long
-    lastMayCut: true
+    viewports: [desktop, laptop]
+    cut: [2]
     crumbs:
       - collectives
       - The Distributed Systems and Agent Reliability Research Collective of the Northern Valley
       - Port the transcript canvas into the shared package, then rewire every consumer of the old renderer and delete it once the last import is gone
-# Mutations: each injects CSS into a case's story at the first viewport, and the gate must report the
+  - name: a full phone row shortens the title to its floor, then the collective
+    story: in-use-transcript-transcriptviewer--host-trail-long
+    viewports: [phone]
+    cut: [1, 2]
+    crumbs:
+      - collectives
+      - The Distributed Systems and Agent Reliability Research Collective of the Northern Valley
+      - Port the transcript canvas into the shared package, then rewire every consumer of the old renderer and delete it once the last import is gone
+  - name: a long repository name shortens and the session id stays
+    story: in-use-transcript-transcriptviewer--host-trail-overlong
+    viewports: [desktop, laptop, phone]
+    cut: [1]
+    crumbs:
+      - sessions
+      - github.com:peasant-demo/a-project-with-a-deliberately-long-repository-name-that-has-to-wrap-on-small-screens-and-still-goes-on-past-the-widest-desktop-header-row
+      - 0f3c2a10
+  - name: a pull request trail reads whole on a phone
+    story: in-use-transcript-transcriptviewer--host-trail-pull
+    viewports: [phone]
+    cut: []
+    crumbs: [pull requests, peasant-labs/village#7]
+  - name: a long collective name shortens only when the phone row is full
+    story: in-use-transcript-transcriptviewer--host-trail-collective-long
+    viewports: [phone]
+    cut: [1]
+    crumbs: [collectives, The Distributed Systems and Agent Reliability Research Collective of the Northern Valley]
+# Mutations: each injects CSS into a case's story at one of its viewports, and the gate must report the
 # text in `expect`.
 mutations:
-  - name: the phone caps reach the desktop
-    story: in-use-transcript-transcriptviewer--host-trail
-    css: '.txn-crumb { flex: 0 1 auto !important; } .txn-crumb > :first-child:not(svg) { max-width: 30% !important; } .txn-crumb > :last-child:not(svg) { max-width: 50% !important; }'
-    expect: 'cut short with room'
-  - name: a middle crumb shortens before the title
-    story: in-use-transcript-transcriptviewer--host-trail-long
-    css: '.txn-crumb > :not(svg):not(:first-child):not(:last-child) { flex: 0 1 auto !important; }'
-    expect: 'is cut short before the title'
+  - name: a crumb at 0 width
+    case: a long repository name shortens and the session id stays
+    viewport: desktop
+    css: '.txn-crumb > :not(svg):not(:first-child):not(:last-child) { flex: none !important; } .txn-crumb > :last-child:not(svg) { flex: 0 1 auto !important; min-width: 0 !important; }'
+    expect: 'collapses below its floor'
+  - name: a clip without an ellipsis
+    case: a full row shortens only the title
+    viewport: desktop
+    css: '.txn-crumb > :not(svg) { text-overflow: clip !important; }'
+    expect: 'cut without an ellipsis'
+  - name: a crumb cut while there is spare room
+    case: a pull request trail reads whole on a phone
+    viewport: phone
+    css: '.txn-crumb > :first-child:not(svg) { max-width: 30% !important; } .txn-crumb > :last-child:not(svg) { max-width: 50% !important; }'
+    expect: 'with room to spare'
+  - name: a crumb shortens before the current crumb
+    case: a full row shortens only the title
+    viewport: desktop
+    css: '.txn-crumb > :last-child:not(svg) { flex-shrink: 1 !important; }'
+    expect: 'before the current crumb'
