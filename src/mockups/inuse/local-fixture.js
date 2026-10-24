@@ -48,7 +48,7 @@ export const SETTINGS_SUMMARY = Object.freeze([
 export const SETTINGS_GROUPS = Object.freeze([
   {
     id: 'village',
-    label: 'village',
+    label: 'peasant online',
     open: true,
     rows: [
       { id: 'village-account', kind: 'readonly', label: 'connected as', value: '@alice-dev', help: 'signed in with github on village.peasantlabs.org', notInConfig: true, action: 'disconnect' },
