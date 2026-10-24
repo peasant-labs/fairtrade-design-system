@@ -28,8 +28,8 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 - `SettingRow`:
   - Its switch shows no on/off word; the row's status mark and the track
     say the state.
-  - Below 768px a text value sits under the label, with its edit button at
-    the right padding of the same line.
+  - Below 768px a text value and its edit button sit under the label, at
+    its left edge.
   - A host's own action row (words and a button) puts the button on its own
     line under the words, at the right padding.
 - `DiffView` in redaction mode shows only the engine's category label
