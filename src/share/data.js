@@ -7,6 +7,7 @@
    keys; BrandMark itself is a component and stays out of this module. */
 import { adaptTranscript } from '../ui/transcript/adapter.js'
 import { PROVIDER_BRANDS, providerDisplayName } from '../ui/provider-policy.js'
+import { unwrapUserQuery } from '../ui/transcript/title.js'
 import { formatCount } from '../ui/format.js'
 
 /**
@@ -19,8 +20,9 @@ import { formatCount } from '../ui/format.js'
  * @property {{ prompts: number, tokens: number } | null} figures both figures or neither
  */
 
-/* <vendor>-<family>-<digits>(-<digits>)*, e.g. claude-opus-5-5 */
-const MODEL_SHAPE = /^([a-z]+)-([a-z]+)-(\d+(?:-\d+)*)$/
+/* claude-<family>-<1-2 digits>(-<1-2 digits>)*, e.g. claude-opus-5-5, after one trailing -YYYYMMDD date is removed */
+const MODEL_SHAPE = /^claude-([a-z]+)-(\d{1,2}(?:-\d{1,2})*)$/
+const MODEL_DATE = /-\d{8}$/
 const TITLE_LIMIT = 160
 
 /** @param {unknown} harness @returns {boolean} */
@@ -28,10 +30,10 @@ const isProvider = (harness) => typeof harness === 'string' && Object.prototype.
 
 /** @param {string} model @returns {string} the short form, or the raw id when it has no known shape */
 function shortModel(model) {
-  const match = MODEL_SHAPE.exec(model)
+  const match = MODEL_SHAPE.exec(model.replace(MODEL_DATE, ''))
   if (!match) return model
-  const family = match[2].charAt(0).toUpperCase() + match[2].slice(1)
-  return `${family} ${match[3].replace(/-/g, '.')}`
+  const family = match[1].charAt(0).toUpperCase() + match[1].slice(1)
+  return `${family} ${match[2].replace(/-/g, '.')}`
 }
 
 /**
@@ -85,9 +87,13 @@ export function shareCardFromPayload(payload) {
   const harness = typeof session.harness === 'string' ? session.harness : ''
   const brand = isProvider(harness) ? PROVIDER_BRANDS[/** @type {keyof typeof PROVIDER_BRANDS} */ (harness)] : null
 
-  // the first prompt the user submitted; a turn with no text (attachments, tool results) is skipped
-  const first = vm.turns.find((turn) => turn.role === 'user' && (turn.depth ?? 0) === 0 && String(turn.displayContent ?? turn.content ?? '').trim() !== '')
-  const firstPrompt = first ? String(first.displayContent ?? first.content).trim() : title
+  // the first user turn's text, read from the recorded turns: the page's noise filter drops an
+  // empty turn, which would promote a later prompt to first. A first turn with no text
+  // (attachments, tool results) falls back to the title.
+  const first = wire.turns.find((turn) => turn?.role === 'user' && (turn.depth ?? 0) === 0)
+  const recorded = typeof first?.content === 'string' ? first.content : ''
+  const firstText = (session.harness === 'cursor' ? unwrapUserQuery(recorded) : recorded).trim()
+  const firstPrompt = firstText || title
 
   // the page shows the prompt count when it was recorded, and the single token total only when
   // there are no usage scopes; the card shows both figures or neither

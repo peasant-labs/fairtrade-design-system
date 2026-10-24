@@ -3,6 +3,8 @@
 requiredModelLabelNames:
   - model-label-opus-5-5
   - model-label-unknown-model
+  - model-label-dated
+  - model-label-non-claude
   - model-label-missing-model
 requiredPayloadNames:
   - unknown-harness
@@ -11,12 +13,15 @@ requiredPayloadNames:
   - no-prompt-count
   - usage-scopes-hide-total
   - no-text-first-turn
+  - empty-first-turn-later-text
   - first-prompt-is-first-user-turn
   - long-unbroken-prompt
 requiredTextNames:
   - description-with-figures
   - description-without-figures
   - one-prompt-is-singular
+  - alt-with-figures
+  - alt-without-figures
 requiredFormatNames:
   - format-billion
   - format-small
@@ -26,3 +31,5 @@ requiredParseFailureNames:
   - parse-failure-null
   - parse-failure-string
   - parse-failure-empty-object
+requiredSweepNames:
+  - no-middle-dot

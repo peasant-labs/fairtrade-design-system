@@ -15,6 +15,7 @@ const { fixture } = loadFixturePair(FIXTURE, MANIFEST, {
   textCases: 'requiredTextNames',
   formatCases: 'requiredFormatNames',
   parseFailureCases: 'requiredParseFailureNames',
+  sweepCases: 'requiredSweepNames',
 })
 const report = createReport('share card')
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
@@ -49,11 +50,16 @@ await withMountedSource(async ({ load }) => {
   }
 
   for (const row of fixture.textCases) {
-    const description = share.shareCardDescription(row.card)
-    const alt = share.shareCardAlt(row.card)
-    produced.push(description, alt)
-    report.check(description === row.description, `${row.name}: description expected ${JSON.stringify(row.description)}, received ${JSON.stringify(description)}`)
-    report.check(alt === row.alt, `${row.name}: alt expected ${JSON.stringify(row.alt)}, received ${JSON.stringify(alt)}`)
+    if (row.description !== undefined) {
+      const description = share.shareCardDescription(row.card)
+      produced.push(description)
+      report.check(description === row.description, `${row.name}: description expected ${JSON.stringify(row.description)}, received ${JSON.stringify(description)}`)
+    }
+    if (row.alt !== undefined) {
+      const alt = share.shareCardAlt(row.card)
+      produced.push(alt)
+      report.check(alt === row.alt, `${row.name}: alt expected ${JSON.stringify(row.alt)}, received ${JSON.stringify(alt)}`)
+    }
   }
 
   for (const row of fixture.formatCases) {
@@ -69,7 +75,10 @@ await withMountedSource(async ({ load }) => {
   }
 })
 
-report.check(produced.length > 0 && produced.every((text) => !text.includes('·')), 'no-middle-dot: a produced string contains a middle dot')
+for (const row of fixture.sweepCases) {
+  const hit = produced.find((text) => text.includes(row.forbidden))
+  report.check(produced.length > 0 && hit === undefined, `${row.name}: a produced string contains ${JSON.stringify(row.forbidden)}: ${JSON.stringify(hit)}`)
+}
 
 const guard = fixture.dataModuleGuard
 const source = readFileSync(`${ROOT}/${guard.file}`, 'utf8')
@@ -78,4 +87,4 @@ for (const forbidden of guard.forbiddenImports) {
   report.check(!imports.includes(forbidden), `${guard.file} must not import ${forbidden}`)
 }
 
-report.finish(`${fixture.modelLabelCases.length} label, ${fixture.payloadCases.length} payload, ${fixture.textCases.length} text, ${fixture.formatCases.length} format and ${fixture.parseFailureCases.length} parse-failure cases.`)
+report.finish(`${fixture.modelLabelCases.length} label, ${fixture.payloadCases.length} payload, ${fixture.textCases.length} text, ${fixture.formatCases.length} format and ${fixture.parseFailureCases.length} parse-failure and ${fixture.sweepCases.length} sweep cases.`)
