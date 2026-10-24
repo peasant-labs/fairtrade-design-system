@@ -60,3 +60,21 @@ requiredSourceNames:
 requiredMetricsNames:
   - metrics-match-font
   - metrics-file-is-generated
+requiredStyleNames:
+  - style-tile-border
+  - style-tile-background
+  - style-tile-gap
+  - style-eyebrow-letter-spacing
+  - style-eyebrow-colour
+  - style-number-colour
+  - style-number-weight-owner-override
+  - style-turn-border
+  - style-turn-edge
+  - style-turn-background
+  - style-role-label-colour
+  - style-role-label-weight
+  - style-prose-letter-spacing
+  - style-prose-word-spacing
+  - style-prose-space-width
+  - style-chip-border
+  - style-generic-chip-border

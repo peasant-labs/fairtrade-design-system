@@ -126,6 +126,9 @@ dataModuleGuard:
 #       height, is at most / at least this (a clamp that cuts too early goes red on the minimum);
 #     promptEllipsis: whether the drawn prompt ends in the ellipsis (cut) or not (whole);
 #     promptCutAtWordEnd: the text before the ellipsis ends a word of the prompt (no partial word).
+#   Wherever the card draws a prompt, the gate also checks that no line of it runs past the
+#   prompt's own width: the card lays the prompt's lines out itself (satori has no word-spacing),
+#   so an under-measured line would overflow sideways instead of wrapping.
 renderCases:
   - name: render-public-600
     height: 600
@@ -151,8 +154,8 @@ renderCases:
     generic: true
     height: 600
     expect:
-      textIncludes: [peasant labs, visibility not public, click to see]
-      textExcludes: [rewrite billing retries, Claude Code, Opus, prompts, tokens, 84k, user]
+      textIncludes: [peasant labs, limited visibility]
+      textExcludes: [visibility not public, click to see, rewrite billing retries, Claude Code, Opus, prompts, tokens, 84k, user]
   - name: render-no-figures
     omit: [inputSubmissionCount]
     height: 600
@@ -188,8 +191,10 @@ renderCases:
     omit: [inputSubmissionCount]
     height: 600
     expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true, promptCutAtWordEnd: true}
+  # with fairtrade's prose spacing the story prompt takes four full-width lines (as a browser lays
+  # it out), so this one drops "median": three full lines that a browser draws whole
   - name: render-story-prompt-fits-full-width
-    firstTurnContent: 'hey claude, run our billing retry suite against each model with the same seed, then write a table of pass rates and median latency per model'
+    firstTurnContent: 'hey claude, run our billing retry suite against each model with the same seed, then write a table of pass rates and latency per model'
     omit: [inputSubmissionCount]
     height: 600
     expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: false}
@@ -197,7 +202,7 @@ renderCases:
     firstTurnContent: 'hey claude, run our billing retry suite against each model with the same seed, then write a table of pass rates and median latency per model'
     height: 600
     expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true, promptCutAtWordEnd: true}
-  # line 3 ends in "and then", where a cut by characters lands at "the" inside "then"
+  # line 3 ends in "per model", where a cut by characters lands inside "model"
   - name: render-cut-never-splits-a-word
     firstTurnContent: 'hey claude, run our billing retry suite against each model with the same seed, then write a table of pass rates and median latency per model and then summarise the regressions'
     omit: [inputSubmissionCount]
@@ -219,6 +224,85 @@ sourceCases:
   - {name: source-no-classname, file: src/share/ShareCard.jsx, forbidden: className}
   - {name: source-no-hex-colour, file: src/share/ShareCard.jsx, forbiddenPattern: '#[0-9a-fA-F]{3,8}\b'}
   - {name: source-no-middle-dot, file: src/share/ShareCard.jsx, forbidden: '·'}
+
+# styleCases: the drift guard. Each case pins one style the card draws to fairtrade's own CSS, so
+#   the card cannot drift from the design system: `css` names a declaration in a source sheet
+#   (`file`, an exact `selector` from a rule's selector list, outside any media or theme block, and
+#   a `property`); its value is resolved through the dark `:root` custom properties of src/index.css
+#   (and `color-mix(in srgb, ...)` evaluated) and compared with the style the card set on the
+#   satori layout node keyed `node.key` (each of `node.keys`), at `node.property`. `card: generic`
+#   draws the card for a transcript that is not public; otherwise the public card over basePayload.
+#   `transform` adapts a CSS value the card cannot draw as written:
+#     nearestShippedWeight: the closest weight the card's fonts ship (only 400 and 700 are shipped);
+#     spaceWidth: the card emulates word-spacing (satori has none) with a fixed-width space, so the
+#       space nodes (keys matching `node.match`) must be one space advance of the body face plus
+#       the prose letter-spacing plus the prose word-spacing (`css` lists both), in px of the
+#       prompt's font size.
+#   `override` marks a deliberate departure the owner approved: the card must draw `value`, and
+#   the CSS must still differ from it (an absent declaration reads as `initial`), so the override
+#   is dropped once fairtrade adopts the value.
+#   `token` compares with a :root custom property of src/index.css where fairtrade has no rule
+#   for the element (the space between the two tiles is the approved design's own).
+styleCases:
+  - name: style-tile-border
+    css: {file: src/ui/StatTiles.css, selector: .st-tile, property: border}
+    node: {keys: [stat-prompts, stat-tokens], property: border}
+  - name: style-tile-background
+    css: {file: src/ui/StatTiles.css, selector: .st-tile, property: background}
+    node: {keys: [stat-prompts, stat-tokens], property: backgroundColor}
+  # fairtrade's tile grid (.st-grid) spaces tiles by --sp-4; the approved card spaces its two
+  # stacked tiles by --sp-5, on the same spacing scale
+  - name: style-tile-gap
+    token: --sp-5
+    node: {key: stats, property: gap}
+  - name: style-eyebrow-letter-spacing
+    css: {file: src/ui/StatTiles.css, selector: .st-eyebrow, property: letter-spacing}
+    node: {keys: [eyebrow-prompts, eyebrow-tokens], property: letterSpacing}
+  - name: style-eyebrow-colour
+    css: {file: src/ui/StatTiles.css, selector: .st-eyebrow, property: color}
+    node: {keys: [eyebrow-prompts, eyebrow-tokens], property: color}
+  - name: style-number-colour
+    css: {file: src/ui/StatTiles.css, selector: .st-value, property: color}
+    node: {keys: [value-prompts, value-tokens], property: color}
+  - name: style-number-weight-owner-override
+    css: {file: src/ui/StatTiles.css, selector: .st-value, property: font-weight}
+    node: {keys: [value-prompts, value-tokens], property: fontWeight}
+    override: {value: 700, reason: the owner chose bold tile numbers for the share card over the regular .st-value}
+  - name: style-turn-border
+    css: {file: src/index.css, selector: .txn-turn, property: border}
+    node: {key: turn, property: border}
+  - name: style-turn-edge
+    css: {file: src/index.css, selector: .turn.user, property: border-left}
+    node: {key: turn, property: borderLeft}
+  - name: style-turn-background
+    css: {file: src/index.css, selector: .turn.user, property: background}
+    node: {key: turn, property: backgroundColor}
+  - name: style-role-label-colour
+    css: {file: src/index.css, selector: .txn-turn.user .txn-rolelabel, property: color}
+    node: {key: role, property: color}
+  - name: style-role-label-weight
+    css: {file: src/index.css, selector: .txn-rolelabel, property: font-weight}
+    transform: nearestShippedWeight
+    node: {key: role, property: fontWeight}
+  - name: style-prose-letter-spacing
+    css: {file: src/index.css, selector: p, property: letter-spacing}
+    node: {key: prompt, property: letterSpacing}
+  - name: style-prose-word-spacing
+    css: {file: src/index.css, selector: p, property: word-spacing}
+    node: {key: prompt, property: wordSpacing}
+  - name: style-prose-space-width
+    css:
+      - {file: src/index.css, selector: p, property: letter-spacing}
+      - {file: src/index.css, selector: p, property: word-spacing}
+    transform: spaceWidth
+    node: {match: '^s\d+$', property: width}
+  - name: style-chip-border
+    css: {file: src/index.css, selector: .chip, property: border}
+    node: {key: chip, property: border}
+  - name: style-generic-chip-border
+    card: generic
+    css: {file: src/index.css, selector: .chip, property: border}
+    node: {key: chip, property: border}
 
 # metricsCases: the prompt clamp's advance table (src/share/metrics.js) against the shipped body
 #   face, read by scripts/gen-share-metrics.mjs. `values`: every table entry (ASCII, Latin-1, the

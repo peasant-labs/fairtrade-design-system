@@ -11,9 +11,9 @@
    card without figures drops the stats column and the prompt takes the full width. A null card
    (a transcript that is not public) draws the generic card, which names nothing about it. At 630
    high the extra 30px of background is split between the top and the bottom. */
-import { color, font } from '../../public/tokens.json'
+import { color, font, other, space } from '../../public/tokens.json'
 import { formatShareCount } from './data.js'
-import { BRAND_FILL_RULE, BRAND_PATHS, USER_ICON, WHEAT_LOGO, brandViewBox, resolveBrand } from './marks.js'
+import { BRAND_FILL_RULE, BRAND_PATHS, LOCK_ICON, USER_ICON, WHEAT_LOGO, brandViewBox, resolveBrand } from './marks.js'
 import { ELLIPSIS_ADVANCE, bodyAdvance } from './metrics.js'
 
 /** @typedef {import('./data.js').ShareCardData} ShareCardData */
@@ -23,61 +23,80 @@ export const SHARE_CARD_WIDTH = 1200
 export const SHARE_CARD_HEIGHTS = Object.freeze([600, 630])
 
 const dark = (role) => color[role].$value
+/** a token value with its colour references read as the dark theme's colours */
+const token = (name) => other[name].$value.replace(/var\(--([\w-]+)\)/g, (_, role) => dark(role))
 const C = {
   canvas: dark('surface'),
-  tile: dark('surface-2'),
-  rule: dark('rule'),
   inkStrong: dark('ink-strong'),
-  ink: dark('ink'),
+  ink2: dark('ink-2'),
   ink3: dark('ink-3'),
   teal: dark('teal'),
   amber: dark('amber'),
 }
+/* the styles fairtrade draws these parts with: a stat tile (.st-tile, .st-eyebrow, .st-value), a
+   user turn (.txn-turn, .turn.user, .txn-rolelabel), a chip (.chip) and body prose (p) */
+const HAIRLINE = token('bd')
+const CHIP_BORDER = token('bd-strong')
+const TEAL_EDGE = `${token('stroke-emphasis')} solid ${C.teal}`
 /* a user turn's background, as the transcript draws it: teal at 7% over the surface */
 const TURN_TINT = mix(C.teal, C.canvas, 0.07)
+const EYEBROW_TRACKING = '0.08em'
+const PROSE_TRACKING = token('tracking-prose')
+const PROSE_WORD_SPACING = token('word-spacing-prose')
+const SP = (step) => space[`sp-${step}`].$value
 const BODY = font['font-body'].$value
 const MONO = font['font-mono'].$value
 
 /* geometry, in px at 1200 wide */
 const PAD_Y = 56
 const PAD_X = 64
-const RULE = 2
 const TOP_ROW = 64
 const BODY_GAP = 40
 const STATS_W = 300
 const COLUMN_GAP = 32
-const EDGE = 4
-const TURN_PAD_LEFT = 36
-const TURN_PAD_RIGHT = 40
+const HAIRLINE_W = parseFloat(HAIRLINE)
+const EDGE_W = parseFloat(token('stroke-emphasis'))
+const TURN_PAD_Y = 28
+const TURN_PAD_X = 32
 const PROMPT_SIZE = 44
-const PROMPT_LINE = 1.4
+const PROMPT_LINE = 1.3
 const PROMPT_LINES = 3
 const CHIP_SIZE = 34
 const CHIP_CHARS = 32
 
-/* The prompt clamp. satori ignores line-clamp, so the prompt is cut in code: it is wrapped into
-   lines of the layout's width (narrower beside the stats column than at full width) with each
-   character's advance read from the body face (./metrics.js), and cut where a fourth line would
-   start. Words wrap whole, and a word longer than a line breaks inside, as the renderers do. The
-   cut backs off to the last word end on the third line that leaves room for the ellipsis; only a
-   third line that is one unbroken run is cut inside it. A character outside the table (CJK,
-   emoji, a combining sequence) counts as OTHER_ADVANCE, wider than any glyph in the face, so a
-   fallback font cannot push the prompt past three lines. Widths are in thousandths of an em. */
+/* The prompt's lines. satori has no line-clamp and no word-spacing, so the card lays the prompt
+   out itself: it wraps the text into lines of the layout's width (narrower beside the stats
+   column than at full width) and draws each line as a row, a word to a node and a space to a
+   node of a fixed width. Each character's advance is read from the body face (./metrics.js), plus
+   the prose letter-spacing; a space adds the prose word-spacing too, which is how a browser draws
+   fairtrade's prose. Words wrap whole, and a word longer than a line breaks inside, as the
+   renderers do. Where a fourth line would start the text is cut: the cut backs off to the last
+   word end on the third line that leaves room for the ellipsis; only a third line that is one
+   unbroken run is cut inside it. A character outside the table (CJK, emoji, a combining
+   sequence) counts as OTHER_ADVANCE, wider than any glyph in the face, so a fallback font cannot
+   push a line past its width. Widths are in thousandths of an em. */
 const CONTENT_W = SHARE_CARD_WIDTH - 2 * PAD_X
+const TURN_CHROME = EDGE_W + HAIRLINE_W + 2 * TURN_PAD_X
 /* a line's width less a small margin for kerning and rounding in the renderers */
 const lineUnits = (px) => Math.floor(((px - 2) / PROMPT_SIZE) * 1000)
 const LINE_UNITS = {
-  stats: lineUnits(CONTENT_W - STATS_W - COLUMN_GAP - EDGE - TURN_PAD_LEFT - TURN_PAD_RIGHT),
-  full: lineUnits(CONTENT_W - EDGE - TURN_PAD_LEFT - TURN_PAD_RIGHT),
+  stats: lineUnits(CONTENT_W - STATS_W - COLUMN_GAP - TURN_CHROME),
+  full: lineUnits(CONTENT_W - TURN_CHROME),
 }
+const ems = (value) => Math.round(parseFloat(value) * 1000)
+const TRACKING_UNITS = ems(PROSE_TRACKING)
+const SPACE_UNITS = /** @type {number} */ (bodyAdvance(0x20)) + TRACKING_UNITS + ems(PROSE_WORD_SPACING)
+/** a space as drawn, in px: the face's space, the prose letter-spacing and word-spacing */
+const SPACE_PX = (SPACE_UNITS / 1000) * PROMPT_SIZE
 const ELLIPSIS = '…'
 const OTHER_ADVANCE = 1100
 
-/** @param {string} grapheme @returns {number} its advance in thousandths of an em */
+/** @param {string} grapheme @returns {number} its advance with the prose letter-spacing, in thousandths of an em */
 function advance(grapheme) {
+  if (grapheme === ' ') return SPACE_UNITS
   const points = Array.from(grapheme)
   const known = points.length === 1 ? bodyAdvance(/** @type {number} */ (points[0].codePointAt(0))) : null
-  return known ?? OTHER_ADVANCE
+  return (known ?? OTHER_ADVANCE) + TRACKING_UNITS
 }
 
 /** @param {string} text @returns {string[]} user-perceived characters */
@@ -89,13 +108,19 @@ function graphemes(text) {
 }
 
 /**
- * The prompt as drawn: whitespace collapsed to single spaces, and cut with an ellipsis where it
- * would run past three lines of the layout.
+ * @typedef {object} PromptLine
+ * @property {string} text the line as drawn, single spaces between its words
+ * @property {boolean} breakSpace true when the line ends where the prompt has a space (the space is drawn zero wide)
+ */
+
+/**
+ * The prompt as drawn: whitespace collapsed to single spaces, wrapped into the layout's lines, and
+ * cut with an ellipsis where it would run past three of them.
  * @param {string} prompt
  * @param {boolean} fullWidth true when there is no stats column
- * @returns {string}
+ * @returns {PromptLine[]}
  */
-export function sharePromptText(prompt, fullWidth) {
+export function sharePromptLines(prompt, fullWidth) {
   const flat = String(prompt ?? '').replace(/\s+/g, ' ').trim()
   const limit = fullWidth ? LINE_UNITS.full : LINE_UNITS.stats
   const chars = graphemes(flat)
@@ -120,13 +145,24 @@ export function sharePromptText(prompt, fullWidth) {
     }
     i = end + 1
   }
-  if (lines.length <= PROMPT_LINES && i >= chars.length) return flat
-  return cut(chars, widths, lines[PROMPT_LINES - 1], limit)
+  const whole = lines.length <= PROMPT_LINES && i >= chars.length
+  const kept = lines.slice(0, PROMPT_LINES).filter((each) => each.items.length > 0)
+  const drawn = kept.map((each, k) => {
+    const next = kept[k + 1]
+    return {
+      text: each.items.map((index) => chars[index]).join(''),
+      breakSpace: next !== undefined && chars[next.items[0] - 1] === ' ',
+    }
+  })
+  if (whole) return drawn
+  const last = lines[PROMPT_LINES - 1]
+  drawn[PROMPT_LINES - 1] = { text: cut(chars, widths, last, limit), breakSpace: false }
+  return drawn
 }
 
-/** Cut the third line so the ellipsis fits: at its last word end that leaves room, else inside the run. */
+/** The third line, cut so the ellipsis fits: at its last word end that leaves room, else inside the run. */
 function cut(chars, widths, last, limit) {
-  const room = limit - ELLIPSIS_ADVANCE
+  const room = limit - ELLIPSIS_ADVANCE - TRACKING_UNITS
   let width = 0
   let wordEnd = -1
   let charEnd = -1
@@ -137,10 +173,11 @@ function cut(chars, widths, last, limit) {
     charEnd = index
     if (chars[index + 1] === ' ') wordEnd = index
   }
-  // a third line with no room at all ends the text at the second line
-  const through = wordEnd >= 0 ? wordEnd + 1 : charEnd >= 0 ? charEnd + 1 : last.items[0] ?? chars.length
+  const from = last.items[0]
+  // a third line with no room at all holds the ellipsis alone
+  const through = wordEnd >= 0 ? wordEnd + 1 : charEnd >= 0 ? charEnd + 1 : from
   // the ellipsis follows the last word, not a trailing comma or colon
-  return chars.slice(0, through).join('').replace(/[\s,;:]+$/, '') + ELLIPSIS
+  return chars.slice(from, through).join('').replace(/[\s,;:]+$/, '') + ELLIPSIS
 }
 
 /** @param {string} text @param {number} max @returns {string} at most `max` characters */
@@ -166,22 +203,35 @@ function WheatLogo({ size }) {
   )
 }
 
-function Mark({ brand, size }) {
+function Mark({ brand, size, fill }) {
   const key = resolveBrand(brand ?? '')
   if (!key) return null
   return (
     <svg width={size} height={size} viewBox={brandViewBox(key)} aria-hidden="true" focusable="false">
-      <path d={BRAND_PATHS[key]} fill={C.ink} fillRule={BRAND_FILL_RULE[key]} />
+      <path d={BRAND_PATHS[key]} fill={fill} fillRule={BRAND_FILL_RULE[key]} />
     </svg>
   )
 }
 
+const LUCIDE_STROKE = { fill: 'none', stroke: 'currentColor', strokeLinecap: 'round', strokeLinejoin: 'round' }
+
 function PersonIcon({ size }) {
-  const stroke = { fill: 'none', stroke: C.teal, strokeWidth: USER_ICON.strokeWidth, strokeLinecap: 'round', strokeLinejoin: 'round' }
+  const stroke = { ...LUCIDE_STROKE, strokeWidth: USER_ICON.strokeWidth }
   return (
     <svg width={size} height={size} viewBox={USER_ICON.viewBox} aria-hidden="true" focusable="false">
       <path d={USER_ICON.path} {...stroke} />
       <circle cx={USER_ICON.circle.cx} cy={USER_ICON.circle.cy} r={USER_ICON.circle.r} {...stroke} />
+    </svg>
+  )
+}
+
+function LockIcon({ size }) {
+  const stroke = { ...LUCIDE_STROKE, strokeWidth: LOCK_ICON.strokeWidth }
+  const { x, y, width, height, rx } = LOCK_ICON.rect
+  return (
+    <svg width={size} height={size} viewBox={LOCK_ICON.viewBox} aria-hidden="true" focusable="false">
+      <rect x={x} y={y} width={width} height={height} rx={rx} ry={rx} {...stroke} />
+      <path d={LOCK_ICON.path} {...stroke} />
     </svg>
   )
 }
@@ -200,7 +250,7 @@ function Frame({ height, children, center = false }) {
         height,
         padding: `${PAD_Y + extra}px ${PAD_X}px`,
         backgroundColor: C.canvas,
-        color: C.ink,
+        color: C.inkStrong,
         fontFamily: MONO,
       }}
     >
@@ -209,31 +259,81 @@ function Frame({ height, children, center = false }) {
   )
 }
 
-function StatTile({ label, value, last }) {
+/* a stat tile as fairtrade draws one (.st-tile): a hairline box on the surface, the tracked mono
+   eyebrow over the figure; the figure is bold, the owner's choice for the card */
+function StatTile({ label, value }) {
   return (
     <div
+      key={`stat-${label}`}
       style={{
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
+        gap: SP(1),
         flexGrow: 1,
         flexBasis: 0,
-        padding: '0 28px',
-        backgroundColor: C.tile,
-        border: `${RULE}px solid ${C.rule}`,
-        borderTopWidth: last ? 0 : RULE,
+        padding: '16px 28px',
+        border: HAIRLINE,
+        backgroundColor: C.canvas,
       }}
     >
-      <div style={{ display: 'flex', fontSize: 32, lineHeight: 1.2, color: C.ink3 }}>{label}</div>
-      <div style={{ display: 'flex', marginTop: 12, fontSize: 84, lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>{value}</div>
+      <div key={`eyebrow-${label}`} style={{ display: 'flex', fontSize: 32, lineHeight: 1.3, letterSpacing: EYEBROW_TRACKING, color: C.ink3 }}>
+        {label}
+      </div>
+      <div key={`value-${label}`} style={{ display: 'flex', marginTop: 6, fontSize: 84, lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>
+        {value}
+      </div>
     </div>
   )
 }
 
-function UserTurn({ prompt, fullWidth }) {
-  const text = sharePromptText(prompt, fullWidth)
+/* The prompt, a row a line: a word to a node keyed w<n>, a space to a node keyed s<n> drawn one
+   prose space wide (a space where the line breaks is kept zero wide, as a browser hangs it). */
+function Prompt({ prompt, fullWidth }) {
+  const lines = sharePromptLines(prompt, fullWidth)
+  let n = 0
+  const space = (width) => {
+    const key = `s${n++}`
+    return <span key={key} style={{ display: 'flex', flexShrink: 0, width, overflow: 'hidden' }}>{' '}</span>
+  }
   return (
     <div
+      key="prompt"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        flexShrink: 0,
+        fontFamily: BODY,
+        fontSize: PROMPT_SIZE,
+        lineHeight: PROMPT_LINE,
+        letterSpacing: PROSE_TRACKING,
+        wordSpacing: PROSE_WORD_SPACING,
+        color: C.inkStrong,
+      }}
+    >
+      {lines.map((line, row) => {
+        const pieces = []
+        line.text.split(' ').forEach((word, index) => {
+          if (index > 0) pieces.push(space(SPACE_PX))
+          pieces.push(<span key={`w${n++}`} style={{ display: 'flex', flexShrink: 0 }}>{word}</span>)
+        })
+        if (line.breakSpace) pieces.push(space(0))
+        return (
+          <div key={`line-${row}`} style={{ display: 'flex' }}>
+            {pieces}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/* the first prompt as fairtrade draws a user turn (.txn-turn.user): a hairline box with the teal
+   edge on the turn tint, the bold teal "user" label over the prose */
+function UserTurn({ prompt, fullWidth }) {
+  return (
+    <div
+      key="turn"
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -241,30 +341,21 @@ function UserTurn({ prompt, fullWidth }) {
         flexGrow: 1,
         flexBasis: 0,
         overflow: 'hidden',
-        padding: `32px ${TURN_PAD_RIGHT}px 32px ${TURN_PAD_LEFT}px`,
+        marginTop: SP(3),
+        padding: `${TURN_PAD_Y}px ${TURN_PAD_X}px`,
+        border: HAIRLINE,
+        borderLeft: TEAL_EDGE,
         backgroundColor: TURN_TINT,
-        borderLeft: `${EDGE}px solid ${C.teal}`,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 32, lineHeight: 1, color: C.teal }}>
+      <div
+        key="role"
+        style={{ display: 'flex', alignItems: 'center', gap: SP(2), marginBottom: 14, fontSize: 32, lineHeight: 1.5, fontWeight: 700, color: C.teal }}
+      >
         <PersonIcon size={32} />
         <span>user</span>
       </div>
-      <div
-        key="prompt"
-        style={{
-          display: 'flex',
-          flexShrink: 0,
-          marginTop: 24,
-          fontFamily: BODY,
-          fontSize: PROMPT_SIZE,
-          lineHeight: PROMPT_LINE,
-          color: C.inkStrong,
-          wordBreak: 'break-word',
-        }}
-      >
-        {text}
-      </div>
+      <Prompt prompt={prompt} fullWidth={fullWidth} />
     </div>
   )
 }
@@ -279,27 +370,28 @@ function PublicCard({ card, height }) {
           <span style={{ fontSize: 40, lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>peasant</span>
         </div>
         <div
+          key="chip"
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 14,
             height: TOP_ROW,
             padding: '0 20px',
-            border: `${RULE}px solid ${C.rule}`,
+            border: CHIP_BORDER,
             fontSize: CHIP_SIZE,
             lineHeight: 1,
-            color: C.ink,
+            color: C.ink2,
           }}
         >
-          <Mark brand={card.brand} size={CHIP_SIZE} />
+          <Mark brand={card.brand} size={CHIP_SIZE} fill={C.ink2} />
           <span>{shorten(card.chip, CHIP_CHARS)}</span>
         </div>
       </div>
       <div style={{ display: 'flex', flexGrow: 1, gap: COLUMN_GAP, marginTop: BODY_GAP }}>
         {figures ? (
-          <div style={{ display: 'flex', flexDirection: 'column', width: STATS_W, flexShrink: 0 }}>
+          <div key="stats" style={{ display: 'flex', flexDirection: 'column', gap: SP(5), width: STATS_W, flexShrink: 0 }}>
             <StatTile label="prompts" value={formatShareCount(figures.prompts)} />
-            <StatTile label="tokens" value={formatShareCount(figures.tokens)} last />
+            <StatTile label="tokens" value={formatShareCount(figures.tokens)} />
           </div>
         ) : null}
         <UserTurn prompt={card.firstPrompt} fullWidth={!figures} />
@@ -308,6 +400,8 @@ function PublicCard({ card, height }) {
   )
 }
 
+/* the card for a transcript that is not public: the mark, and a chip (.chip) that says only that
+   its visibility is limited */
 function GenericCard({ height }) {
   return (
     <Frame height={height} center>
@@ -315,7 +409,24 @@ function GenericCard({ height }) {
         <WheatLogo size={72} />
         <span style={{ fontSize: 64, lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>peasant labs</span>
       </div>
-      <div style={{ display: 'flex', marginTop: 36, fontSize: 36, lineHeight: 1.2, color: C.ink3 }}>visibility not public, click to see</div>
+      <div
+        key="chip"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          marginTop: SP(6),
+          padding: '10px 20px',
+          border: CHIP_BORDER,
+          fontSize: 34,
+          lineHeight: 1.3,
+          fontWeight: 400,
+          color: C.ink2,
+        }}
+      >
+        <LockIcon size={30} />
+        <span>limited visibility</span>
+      </div>
     </Frame>
   )
 }
