@@ -1,8 +1,9 @@
 # Cases for the code map navigator's disclosures (scripts/code-map-disclosure.test.mjs). The gate
-# mounts the REAL CodeMapNavigator with the payload below and reads each folder's disclosure. A folder
-# whose children the grain already shows is open and fixed (expanded, disabled: pressing it changes
-# nothing); a folder past the grain's depth has a working disclosure that opens it; a file has none.
-# `rows` is the visible rows in order, `disclosures` maps a row to [aria-expanded, aria-disabled].
+# mounts the REAL CodeMapNavigator with the payload below, presses the disclosures in `press` in order,
+# and reads each folder's disclosure. A folder whose children the grain shows starts open (expanded,
+# "hide children") and pressing it hides them and pressing again shows them; a folder past the grain's
+# depth starts closed and its disclosure opens it; a file has none. `rows` is the visible rows in order,
+# `disclosures` maps a row to [aria-expanded, aria-label].
 payload:
   repoFound: true
   structureEdges: []
@@ -13,18 +14,23 @@ payload:
     - {id: internal/ingest/pipeline.go, name: pipeline.go, kind: file, parent: internal/ingest, loc: 220, recordedFiles: 1, totalFiles: 1, order: 0}
     - {id: web, name: web, kind: module, loc: 460, recordedFiles: 2, totalFiles: 6, order: 1}
 cases:
-  - name: the grain opens a folder for good
+  - name: a folder the grain opens starts open
     grain: file
-    press: null
+    press: []
     rows: [internal, ingest, web]
-    disclosures: {internal: ['true', 'true'], ingest: ['false', null]}
-  - name: pressing a folder the grain opened changes nothing
+    disclosures: {internal: ['true', hide children for internal], ingest: ['false', show children for ingest]}
+  - name: pressing an open folder hides its children
     grain: file
-    press: internal
+    press: [internal]
+    rows: [internal, web]
+    disclosures: {internal: ['false', show children for internal]}
+  - name: pressing it again shows them
+    grain: file
+    press: [internal, internal]
     rows: [internal, ingest, web]
-    disclosures: {internal: ['true', 'true'], ingest: ['false', null]}
+    disclosures: {internal: ['true', hide children for internal], ingest: ['false', show children for ingest]}
   - name: a folder past the grain opens on its disclosure
     grain: file
-    press: ingest
+    press: [ingest]
     rows: [internal, ingest, pipeline.go, web]
-    disclosures: {internal: ['true', 'true'], ingest: ['true', null]}
+    disclosures: {internal: ['true', hide children for internal], ingest: ['true', hide children for ingest]}

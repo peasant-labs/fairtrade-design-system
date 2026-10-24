@@ -44,6 +44,9 @@ export default function CodeMapNavigator({
 }) {
   const [internalExpanded, setInternalExpanded] = useState(() => new Set())
   const [internalFocus, setInternalFocus] = useState(null)
+  // folders the grain opens (it decides what the map draws) start open here too, and a reader can still
+  // close one: this list keeps those closed folders on top of the shared state
+  const [closedByReader, setClosedByReader] = useState(() => new Set())
   const expanded = expandedIds === undefined ? internalExpanded : new Set(expandedIds)
   const effectiveFocus = focusedId === undefined ? internalFocus : focusedId
   const refs = useRef(new Map())
@@ -55,16 +58,29 @@ export default function CodeMapNavigator({
     navigatorFocusedId: effectiveFocus,
     navigatorFilter: filter,
   })), [payload, grain, expandedIdsKey(expanded), selectedId, effectiveFocus, filter])
-  const visible = view.rows
-  const visibleFocus = view.focusedId
+  const filtering = filter.trim() !== ''
+  // the rows a reader sees: the shared view, less the children of a grain-opened folder they closed
+  const visible = useMemo(() => {
+    if (filtering || closedByReader.size === 0) return view.rows
+    const rows = []
+    let hiddenUnder = null
+    for (const row of view.rows) {
+      if (hiddenUnder !== null && row.depth > hiddenUnder) continue
+      hiddenUnder = null
+      const closed = row.openByGrain && closedByReader.has(row.node.id)
+      rows.push(closed ? { ...row, expanded: false } : row)
+      if (closed) hiddenUnder = row.depth
+    }
+    return rows
+  }, [view.rows, closedByReader, filtering])
+  const visibleFocus = visible.some((row) => row.node.id === view.focusedId) ? view.focusedId : visible[0]?.node.id ?? null
   const selected = view.selected
   const selectedRow = selected ? visible.find((row) => row.node.id === selected.id) : null
-  const filtering = filter.trim() !== ''
   // a row has a disclosure when it has children to show or hide: while filtering, the rows the filter or
-  // the grain opens; otherwise any row with children, so a node past the grain's depth can be drilled into.
-  // children the filter or the grain shows are open and fixed: the disclosure shows them open, disabled
+  // the grain opens; otherwise any row with children, so a folder past the grain's depth can be opened.
+  // only a folder the filter forces open is fixed: its disclosure shows it open, disabled
   const disclosable = (row) => (filtering ? row.canExpand || row.forcedOpen : row.hasChildren)
-  const fixedOpen = (row) => row.forcedOpen || row.openByGrain
+  const fixedOpen = (row) => row.forcedOpen
   const selectedCanExpand = !!selectedRow && disclosable(selectedRow) && !fixedOpen(selectedRow)
 
   function updateExpanded(next) {
@@ -78,6 +94,20 @@ export default function CodeMapNavigator({
     if (next.has(id)) next.delete(id)
     else next.add(id)
     updateExpanded(next)
+  }
+
+  // a grain-opened folder opens and closes in this list; any other folder through the shared expansion
+  function toggleRow(row) {
+    if (row.openByGrain && !filtering) {
+      setClosedByReader((closed) => {
+        const next = new Set(closed)
+        if (next.has(row.node.id)) next.delete(row.node.id)
+        else next.add(row.node.id)
+        return next
+      })
+    } else {
+      toggle(row.node.id)
+    }
   }
 
   function publishFocus(id) {
@@ -106,9 +136,9 @@ export default function CodeMapNavigator({
     else if (event.key === 'End') nextId = visible[visible.length - 1]?.node.id
     else if (event.key === 'ArrowRight' && disclosable(row)) {
       if (row.expanded) nextId = row.childIds[0] ?? null
-      else if (!expanded.has(node.id)) toggle(node.id)
+      else toggleRow(row)
     } else if (event.key === 'ArrowLeft') {
-      if (!fixedOpen(row) && disclosable(row) && row.expanded) toggle(node.id)
+      if (!fixedOpen(row) && disclosable(row) && row.expanded) toggleRow(row)
       else nextId = row.parentId
     } else if (event.key === 'Enter' || event.key === ' ') {
       select(node)
@@ -177,7 +207,7 @@ export default function CodeMapNavigator({
               }}
               onSelect={() => select(row.node)}
               onToggle={() => {
-                if (!fixedOpen(row)) toggle(row.node.id)
+                if (!fixedOpen(row)) toggleRow(row)
               }}
               onKeyDown={(event) => onTreeKeyDown(event, index)}
               lineCounts={lineCounts}
@@ -191,9 +221,9 @@ export default function CodeMapNavigator({
               <p className="gmp-navigator-selected">{selected.name || selected.id}</p>
               <p className="gmp-navigator-selected-path">{selected.id}</p>
               {selectedCanExpand ? (
-                <button type="button" className="gmp-navigator-action" onClick={() => toggle(selected.id)}>
+                <button type="button" className="gmp-navigator-action" onClick={() => toggleRow(selectedRow)}>
                   <ChevronRight aria-hidden="true" />
-                  {expanded.has(selected.id) ? 'hide children' : 'show children'}
+                  {selectedRow.expanded ? 'hide children' : 'show children'}
                 </button>
               ) : null}
               <button type="button" className="gmp-navigator-action gmp-navigator-action--primary" onClick={() => {
@@ -228,11 +258,11 @@ function NavigatorRow({ row, hasChildren, isExpanded, selected, tabbable, setRef
           aria-hidden="true"
           aria-label={`${isExpanded ? 'hide' : 'show'} children for ${row.node.name || row.node.id}`}
           aria-expanded={isExpanded}
-          aria-disabled={row.forcedOpen || row.openByGrain ? 'true' : undefined}
+          aria-disabled={row.forcedOpen ? 'true' : undefined}
           onKeyDown={(event) => event.stopPropagation()}
           onClick={(event) => {
             event.stopPropagation()
-            if (!row.forcedOpen && !row.openByGrain) onToggle()
+            if (!row.forcedOpen) onToggle()
           }}
         >
           <ChevronRight className="gmp-navigator-chevron" aria-hidden="true" />
@@ -249,7 +279,7 @@ function NavigatorRow({ row, hasChildren, isExpanded, selected, tabbable, setRef
         onFocus={onFocus}
         onClick={onSelect}
         onDoubleClick={() => {
-          if (hasChildren && !row.forcedOpen && !row.openByGrain) onToggle()
+          if (hasChildren && !row.forcedOpen) onToggle()
         }}
         onKeyDown={onKeyDown}
       >
