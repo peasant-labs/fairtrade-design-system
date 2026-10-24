@@ -44,6 +44,9 @@ export default function CodeMapNavigator({
 }) {
   const [internalExpanded, setInternalExpanded] = useState(() => new Set())
   const [internalFocus, setInternalFocus] = useState(null)
+  // folders the grain opens (it decides what the map draws) start open here too, and a reader can still
+  // close one: this list keeps those closed folders on top of the shared state
+  const [closedByReader, setClosedByReader] = useState(() => new Set())
   const expanded = expandedIds === undefined ? internalExpanded : new Set(expandedIds)
   const effectiveFocus = focusedId === undefined ? internalFocus : focusedId
   const refs = useRef(new Map())
@@ -55,11 +58,30 @@ export default function CodeMapNavigator({
     navigatorFocusedId: effectiveFocus,
     navigatorFilter: filter,
   })), [payload, grain, expandedIdsKey(expanded), selectedId, effectiveFocus, filter])
-  const visible = view.rows
-  const visibleFocus = view.focusedId
+  const filtering = filter.trim() !== ''
+  // the rows a reader sees: the shared view, less the children of a grain-opened folder they closed
+  const visible = useMemo(() => {
+    if (filtering || closedByReader.size === 0) return view.rows
+    const rows = []
+    let hiddenUnder = null
+    for (const row of view.rows) {
+      if (hiddenUnder !== null && row.depth > hiddenUnder) continue
+      hiddenUnder = null
+      const closed = row.openByGrain && closedByReader.has(row.node.id)
+      rows.push(closed ? { ...row, expanded: false } : row)
+      if (closed) hiddenUnder = row.depth
+    }
+    return rows
+  }, [view.rows, closedByReader, filtering])
+  const visibleFocus = visible.some((row) => row.node.id === view.focusedId) ? view.focusedId : visible[0]?.node.id ?? null
   const selected = view.selected
   const selectedRow = selected ? visible.find((row) => row.node.id === selected.id) : null
-  const selectedCanExpand = !!selectedRow?.canExpand && !selectedRow.forcedOpen
+  // every chevron on screen changes what shows. outside a filter, any folder with children has one: a
+  // folder the grain opens closes and reopens in this list, a deeper one opens through the shared
+  // expansion. while filtering, the filter alone decides which rows show, so no row has one; a folder the
+  // filter forces open still reads expanded
+  const disclosable = (row) => !filtering && row.hasChildren
+  const selectedCanExpand = !!selectedRow && disclosable(selectedRow)
 
   function updateExpanded(next) {
     if (expandedIds === undefined) setInternalExpanded(next)
@@ -72,6 +94,20 @@ export default function CodeMapNavigator({
     if (next.has(id)) next.delete(id)
     else next.add(id)
     updateExpanded(next)
+  }
+
+  // a grain-opened folder opens and closes in this list; any other folder through the shared expansion
+  function toggleRow(row) {
+    if (row.openByGrain && !filtering) {
+      setClosedByReader((closed) => {
+        const next = new Set(closed)
+        if (next.has(row.node.id)) next.delete(row.node.id)
+        else next.add(row.node.id)
+        return next
+      })
+    } else {
+      toggle(row.node.id)
+    }
   }
 
   function publishFocus(id) {
@@ -98,11 +134,11 @@ export default function CodeMapNavigator({
     else if (event.key === 'ArrowUp') nextId = visible[Math.max(rowIndex - 1, 0)]?.node.id
     else if (event.key === 'Home') nextId = visible[0]?.node.id
     else if (event.key === 'End') nextId = visible[visible.length - 1]?.node.id
-    else if (event.key === 'ArrowRight' && (row.canExpand || row.forcedOpen)) {
-      if (row.forcedOpen || row.expanded) nextId = row.childIds[0] ?? null
-      else if (!expanded.has(node.id)) toggle(node.id)
+    else if (event.key === 'ArrowRight' && (row.forcedOpen || disclosable(row))) {
+      if (row.expanded) nextId = row.childIds[0] ?? null
+      else toggleRow(row)
     } else if (event.key === 'ArrowLeft') {
-      if (!row.forcedOpen && row.canExpand && row.expanded) toggle(node.id)
+      if (disclosable(row) && row.expanded) toggleRow(row)
       else nextId = row.parentId
     } else if (event.key === 'Enter' || event.key === ' ') {
       select(node)
@@ -152,13 +188,13 @@ export default function CodeMapNavigator({
           {visible.length === 0 ? (
             <p className="gmp-navigator-empty" role="status">no code areas match this filter</p>
           ) : visible.map((row, index) => {
-            const hasChildren = row.canExpand || row.forcedOpen
+            const hasDisclosure = disclosable(row)
             const isExpanded = row.expanded
             const tabbable = visibleFocus === row.node.id
             return <NavigatorRow
               key={row.node.id}
               row={row}
-              hasChildren={hasChildren}
+              hasDisclosure={hasDisclosure}
               isExpanded={isExpanded}
               selected={selectedId === row.node.id}
               tabbable={tabbable}
@@ -170,9 +206,7 @@ export default function CodeMapNavigator({
                 if (focusedId === undefined) setInternalFocus(row.node.id)
               }}
               onSelect={() => select(row.node)}
-              onToggle={() => {
-                if (!row.forcedOpen) toggle(row.node.id)
-              }}
+              onToggle={() => toggleRow(row)}
               onKeyDown={(event) => onTreeKeyDown(event, index)}
               lineCounts={lineCounts}
             />
@@ -185,9 +219,9 @@ export default function CodeMapNavigator({
               <p className="gmp-navigator-selected">{selected.name || selected.id}</p>
               <p className="gmp-navigator-selected-path">{selected.id}</p>
               {selectedCanExpand ? (
-                <button type="button" className="gmp-navigator-action" onClick={() => toggle(selected.id)}>
+                <button type="button" className="gmp-navigator-action" onClick={() => toggleRow(selectedRow)}>
                   <ChevronRight aria-hidden="true" />
-                  {expanded.has(selected.id) ? 'hide children' : 'show children'}
+                  {selectedRow.expanded ? 'hide children' : 'show children'}
                 </button>
               ) : null}
               <button type="button" className="gmp-navigator-action gmp-navigator-action--primary" onClick={() => {
@@ -206,7 +240,7 @@ export default function CodeMapNavigator({
   )
 }
 
-function NavigatorRow({ row, hasChildren, isExpanded, selected, tabbable, setRef, onFocus, onSelect, onToggle, onKeyDown, lineCounts }) {
+function NavigatorRow({ row, hasDisclosure, isExpanded, selected, tabbable, setRef, onFocus, onSelect, onToggle, onKeyDown, lineCounts }) {
   return (
     <div
       role="none"
@@ -214,7 +248,7 @@ function NavigatorRow({ row, hasChildren, isExpanded, selected, tabbable, setRef
       data-selected={selected}
       style={{ '--gmp-tree-depth': row.depth }}
     >
-      {hasChildren ? (
+      {hasDisclosure ? (
         <button
           type="button"
           className="gmp-navigator-disclosure"
@@ -222,11 +256,10 @@ function NavigatorRow({ row, hasChildren, isExpanded, selected, tabbable, setRef
           aria-hidden="true"
           aria-label={`${isExpanded ? 'hide' : 'show'} children for ${row.node.name || row.node.id}`}
           aria-expanded={isExpanded}
-          aria-disabled={row.forcedOpen ? 'true' : undefined}
           onKeyDown={(event) => event.stopPropagation()}
           onClick={(event) => {
             event.stopPropagation()
-            if (!row.forcedOpen) onToggle()
+            onToggle()
           }}
         >
           <ChevronRight className="gmp-navigator-chevron" aria-hidden="true" />
@@ -237,13 +270,13 @@ function NavigatorRow({ row, hasChildren, isExpanded, selected, tabbable, setRef
         role="treeitem"
         aria-level={row.depth + 1}
         aria-selected={selected}
-        aria-expanded={hasChildren ? isExpanded : undefined}
+        aria-expanded={hasDisclosure || row.forcedOpen ? isExpanded : undefined}
         tabIndex={tabbable ? 0 : -1}
         className="gmp-navigator-row"
         onFocus={onFocus}
         onClick={onSelect}
         onDoubleClick={() => {
-          if (hasChildren && !row.forcedOpen) onToggle()
+          if (hasDisclosure) onToggle()
         }}
         onKeyDown={onKeyDown}
       >

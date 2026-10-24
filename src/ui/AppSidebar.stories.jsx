@@ -167,6 +167,16 @@ export const AccountMenu = {
   },
 }
 
+// a host's picture in the account square: cropped to the square, decorative beside the handle
+const PICTURE = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><rect width="8" height="8" fill="#5b6b3a"/><rect x="2" y="2" width="4" height="4" fill="#e6b450"/></svg>')
+export const AccountPicture = {
+  render: () => <Frame title="home" app="online" groups={ONLINE_GROUPS} currentId="home" account={{ handle: 'alicedev', avatarUrl: PICTURE, items: [{ label: 'profile' }, { label: 'sign out' }] }} settingsHref="#settings" />,
+  play: async ({ canvasElement }) => {
+    const picture = canvasElement.querySelector('.asb-me img.asb-av')
+    await expect(picture).toHaveAttribute('alt', '')
+  },
+}
+
 export const Online = {
   render: () => <Frame title="home" app="online" groups={ONLINE_GROUPS} currentId="home" account={{ handle: 'mira', href: '#account' }} settingsHref="#settings" search={{ onOpen: () => {}, shortcut: '⌘K', keyShortcuts: 'Meta+K' }} />,
   play: async ({ canvasElement }) => {

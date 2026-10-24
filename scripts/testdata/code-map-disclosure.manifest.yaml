@@ -1,0 +1,36 @@
+# Required-NAME manifest for code-map-disclosure.yaml: deletion protection. The gate asserts the case
+# names equal this list exactly, as a set, and parts-mutations.mjs proves each production mutation
+# below turns the gate red for the named reason.
+requiredCaseNames:
+  - a folder the grain opens starts open
+  - pressing an open folder hides its children
+  - pressing it again shows them
+  - a folder past the grain opens on its disclosure
+  - a filtered folder has no chevron
+
+requiredMutationNames:
+  - a grain-opened folder reads collapsed
+  - a folder past the grain has no disclosure
+  - pressing a grain-opened folder hides nothing
+  - a filtered folder keeps a dead chevron
+mutations:
+  - name: a grain-opened folder reads collapsed
+    file: src/ui/graph/codeMapState.js
+    find: "expanded: forcedOpen || openByGrain || (canExpand && expanded.has(node.id)),"
+    replace: "expanded: forcedOpen || (canExpand && expanded.has(node.id)),"
+    expectedDiagnostic: "a folder the grain opens starts open: disclosures"
+  - name: a folder past the grain has no disclosure
+    file: src/ui/graph/CodeMapNavigator.jsx
+    find: "const disclosable = (row) => !filtering && row.hasChildren"
+    replace: "const disclosable = (row) => !filtering && row.canExpand"
+    expectedDiagnostic: "a folder past the grain opens on its disclosure"
+  - name: pressing a grain-opened folder hides nothing
+    file: src/ui/graph/CodeMapNavigator.jsx
+    find: "    if (row.openByGrain && !filtering) {"
+    replace: "    if (false) {"
+    expectedDiagnostic: "pressing an open folder hides its children: rows"
+  - name: a filtered folder keeps a dead chevron
+    file: src/ui/graph/CodeMapNavigator.jsx
+    find: "const disclosable = (row) => !filtering && row.hasChildren"
+    replace: "const disclosable = (row) => row.hasChildren"
+    expectedDiagnostic: "a filtered folder has no chevron: disclosures"

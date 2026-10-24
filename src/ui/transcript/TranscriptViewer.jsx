@@ -1,4 +1,5 @@
 import { formatCount } from '../format.js'
+import { headingTag, pageHeadingLevel } from '../heading.js'
 import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   ChevronRight, ChevronDown, ChevronUp, Clock, Coins, ShieldCheck, FileText,
@@ -120,11 +121,11 @@ function turnScrollTop(scroller, turn) {
   return turn.offsetTop - (Number.isFinite(padding) ? padding : 12)
 }
 
-function PhaseDivider({ phase }) {
+function PhaseDivider({ phase, heading: Heading = 'h3' }) {
   const Icon = PHASE_ICON[phase.icon] ?? PHASE_ICON[phase.id] ?? Flag
   return (
     <div className="phase txn-phase">
-      <h3 className="lbl"><Icon size={14} aria-hidden="true" /> {phase.label}</h3>
+      <Heading className="lbl"><Icon size={14} aria-hidden="true" /> {phase.label}</Heading>
       <span className="rng tnum">turns {phase.from + 1}–{phase.to + 1}{phase.errors ? `, ${phase.errors} error` : ''}</span>
     </div>
   )
@@ -212,7 +213,14 @@ export default function TranscriptViewer({
   showOutcome = true,
   showSearchTrigger = false,
   pullRequests,
+  headingLevel,
 }) {
+  // the transcript's title is the page's h1 when the host mounts the viewer as the whole page; the
+  // phases and the turns move up one level with it
+  const pageLevel = pageHeadingLevel(headingLevel, 'TranscriptViewer')
+  const TitleHeading = headingTag(pageLevel, 0)
+  const PhaseHeading = headingTag(pageLevel, 1)
+  const EmptyHeading = headingTag(pageLevel, 1)
   const vm = viewModel
   const tabsId = useId()
   const caps = capabilities ?? {}
@@ -858,7 +866,7 @@ export default function TranscriptViewer({
           </div>
         </div>
 
-        <h2 className="txn-title" title={title}>{title}</h2>
+        <TitleHeading className="txn-title" title={title}>{title}</TitleHeading>
 
         <div className="txn-meta chips" tabIndex={0} role="region" aria-label="session metadata">
           {showOutcome && session.outcome && <TranscriptOutcomeChip outcome={session.outcome} />}
@@ -985,7 +993,7 @@ export default function TranscriptViewer({
                 <div className="txn-graphslot">
                   {graphSlot
                     ? graphSlot({ viewModel: vm, activeTurn, onSelectTurn: (idx) => setActiveTurn(idx) })
-                    : <div className="empty"><div className="ring"><Network size={20} aria-hidden="true" /></div><h3>no graph engine</h3><p>pass a <code>graphSlot</code> render-prop to plug a trajectory graph.</p></div>}
+                    : <div className="empty"><div className="ring"><Network size={20} aria-hidden="true" /></div><EmptyHeading>no graph engine</EmptyHeading><p>pass a <code>graphSlot</code> render-prop to plug a trajectory graph.</p></div>}
                 </div>
               ) : (
                 <div className="txn-streamwrap">
@@ -1007,7 +1015,7 @@ export default function TranscriptViewer({
                       toggleTool={toggleTool}
                     />
                     {visibleTurns.length === 0 && (
-                      <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><h3>no turns to display</h3><p>every turn is filtered out. clear a filter to bring them back.</p></div>
+                      <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><EmptyHeading>no turns to display</EmptyHeading><p>every turn is filtered out. clear a filter to bring them back.</p></div>
                     )}
                     {visibleTurns.map((t, i) => {
                       const prev = visibleTurns[i - 1]
@@ -1018,9 +1026,10 @@ export default function TranscriptViewer({
                       const turnCommits = anchoredCommits.filter((c) => c.turn === t.index)
                       return (
                         <div key={t.identity ?? t.index}>
-                          {showPhase && <PhaseDivider phase={phase} />}
+                          {showPhase && <PhaseDivider phase={phase} heading={PhaseHeading} />}
                           {t.role === 'user' && task && <TaskBoundary task={task} />}
                           <TurnCard
+                            headingLevel={pageLevel + 2}
                             turn={t}
                             active={activeTurn === t.index}
                             revealRequest={searchReveal?.turn === t.index ? searchReveal.sequence : 0}

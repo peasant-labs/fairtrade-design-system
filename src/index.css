@@ -582,7 +582,7 @@
      title (the gaps lower in the stack, between text lines, stay --sp-3). */
   .empty .ring { @apply inline-flex items-center justify-center text-ink-3; box-shadow: none !important; margin-bottom: calc(-1 * var(--sp-1)); }
   .empty .ring .lucide { width: var(--ic-lg); height: var(--ic-lg); }
-  .empty h3 { @apply text-md; }
+  .empty :is(h2, h3) { @apply text-md; }
   .empty p { @apply text-ink-3 text-sm; }
   .empty .btn-ghost { padding-left: 0; padding-right: var(--sp-4); }
   .sidebar { @apply bg-surface; border: var(--bd); }
@@ -2149,7 +2149,7 @@
      no gap. (in normal flow the --sp-3 still spaces the first phase off the top.) */
   /* Phase headings are informational: their sticky surface must not block turn controls. */
   .txn-phase { position: sticky; top: calc(-1 * var(--sp-3)); z-index: 2; margin: var(--sp-3) calc(var(--sp-4) * -1) var(--sp-2); pointer-events: none; }
-  .txn-phase h3.lbl { margin: 0; font-size: var(--fs-lg); line-height: var(--lh-mono); }
+  .txn-phase :is(h2, h3).lbl { margin: 0; font-size: var(--fs-lg); line-height: var(--lh-mono); }
   .txn-stream { scroll-padding-top: calc(var(--fs-lg) * var(--lh-mono) + var(--sp-4)); }
   .txn-thinking-toggle, .txn-toolcat-toggle, .cmg-pr-link { min-height: var(--target-min); }
   .cmg-pr-link { display: inline-flex; align-items: center; }

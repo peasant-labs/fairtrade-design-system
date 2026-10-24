@@ -1,0 +1,38 @@
+# Required-NAME manifest for page-headings.yaml: deletion protection. The gate asserts the case names
+# equal these lists exactly, as sets, and parts-mutations.mjs proves each production mutation below
+# turns the gate red for the named reason.
+requiredCaseNames:
+  - the viewer is a section by default
+  - the viewer as the page has one h1
+  - explore is a section by default
+  - explore as the page has one h1
+requiredInvalidNames:
+  - the viewer refuses another level
+  - explore refuses another level
+
+requiredMutationNames:
+  - the viewer title ignores the page level
+  - the turns keep h4 under a page h1
+  - explore ignores the page level
+  - explore cards keep h3 under a page h1
+mutations:
+  - name: the viewer title ignores the page level
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "const TitleHeading = headingTag(pageLevel, 0)"
+    replace: "const TitleHeading = 'h2'"
+    expectedDiagnostic: "the viewer as the page has one h1: headings"
+  - name: the turns keep h4 under a page h1
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "headingLevel={pageLevel + 2}"
+    replace: "headingLevel={4}"
+    expectedDiagnostic: "the viewer as the page has one h1: headings"
+  - name: explore ignores the page level
+    file: src/ui/commons/Explore.jsx
+    find: "const H0 = headingTag(level, 0)"
+    replace: "const H0 = 'h2'"
+    expectedDiagnostic: "explore as the page has one h1: headings"
+  - name: explore cards keep h3 under a page h1
+    file: src/ui/commons/Explore.jsx
+    find: "cardHeading={H1}"
+    replace: "cardHeading=\"h3\""
+    expectedDiagnostic: "explore as the page has one h1: headings"

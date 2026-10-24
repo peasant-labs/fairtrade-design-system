@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { headingTag, pageHeadingLevel } from '../heading.js'
 import { formatCount, formatDate } from '../format.js'
 import { Compass, FileText, LayoutGrid, List, SearchX, User } from 'lucide-react'
 import FacetRail from '../FacetRail.jsx'
@@ -182,7 +183,7 @@ function seedInitialPage(payloadPage) {
   return Number.isInteger(payloadPage) && payloadPage >= 1 ? payloadPage : 1
 }
 
-function TranscriptPreviewCard({ transcript, href, onOpen }) {
+function TranscriptPreviewCard({ transcript, href, onOpen, cardHeading: CardHeading = 'h3' }) {
   const card = (
     <>
       <div className="card-head">
@@ -192,7 +193,7 @@ function TranscriptPreviewCard({ transcript, href, onOpen }) {
         </span>
         <VisibilityEye visibility={transcript.visibility} />
       </div>
-      <h3 className="cex-title">{titleize(transcript.title || 'untitled transcript')}</h3>
+      <CardHeading className="cex-title">{titleize(transcript.title || 'untitled transcript')}</CardHeading>
       {transcript.projectName && <p className="cex-proj">{transcript.projectName}</p>}
       <p className="cex-desc">{transcript.tags.map((tag) => `#${tag.name}`).join(' ')}</p>
       <div className="cex-foot row">
@@ -293,7 +294,13 @@ export default function Explore({
   transcriptHref,
   profileHref,
   collectiveHref,
+  headingLevel,
 }) {
+  // the page's own title is its h1 when the host mounts Explore as the whole page
+  const level = pageHeadingLevel(headingLevel, 'Explore')
+  const H0 = headingTag(level, 0)
+  const H1 = headingTag(level, 1)
+  const H2 = headingTag(level, 2)
   const payload = pickFallbackData(data)
   const transcriptRows = payload.transcripts.transcripts
 
@@ -453,7 +460,7 @@ export default function Explore({
               </div>
             </div>
             <div className="cex-hero-title">
-              <h2 className="win-title cex-vtitle">{titleize(selectedTranscript.title || 'untitled transcript')}</h2>
+              <H0 className="win-title cex-vtitle">{titleize(selectedTranscript.title || 'untitled transcript')}</H0>
               <VisibilityEye visibility={selectedTranscript.visibility} />
             </div>
             <p className="cex-vdesc">
@@ -502,13 +509,13 @@ export default function Explore({
             </div>
 
             <aside className="cex-psec" aria-label="owner snapshot">
-              <h3 className="cex-psec-title">owner snapshot</h3>
+              <H1 className="cex-psec-title">owner snapshot</H1>
               <div className="cex-phero">
                 <div className="cex-phero-av" aria-hidden="true">
                   {initials(selectedTranscript.owner.displayName || selectedTranscript.owner.githubUsername)}
                 </div>
                 <div className="cex-phero-id">
-                  <h2 className="cex-h2 cex-pname">{selectedTranscript.owner.displayName || selectedTranscript.owner.githubUsername}</h2>
+                  <H2 className="cex-h2 cex-pname">{selectedTranscript.owner.displayName || selectedTranscript.owner.githubUsername}</H2>
                   <span className="cex-phandle mono">@{selectedTranscript.owner.githubUsername}</span>
                 </div>
               </div>
@@ -547,7 +554,7 @@ export default function Explore({
             {initials(selectedOwner.displayName || selectedOwner.githubUsername)}
           </div>
           <div className="cex-phero-id">
-            <h2 className="cex-h2 cex-pname">{selectedOwner.displayName || selectedOwner.githubUsername}</h2>
+            <H0 className="cex-h2 cex-pname">{selectedOwner.displayName || selectedOwner.githubUsername}</H0>
             <span className="cex-phandle mono">@{selectedOwner.githubUsername}</span>
           </div>
         </header>
@@ -561,13 +568,13 @@ export default function Explore({
         />
 
         <section className="cex-psec" aria-label="published library">
-          <h3 className="cex-psec-title">published library</h3>
+          <H1 className="cex-psec-title">published library</H1>
           {profileProjects.length === 0 ? (
             <div className="empty cex-empty">
               <div className="ring">
                 <Compass size={20} aria-hidden="true" />
               </div>
-              <h3>no transcripts yet</h3>
+              <H1>no transcripts yet</H1>
               <p>this profile has not shared any transcripts in the commons.</p>
             </div>
           ) : (
@@ -603,7 +610,7 @@ export default function Explore({
   return (
     <div className={`cex-root ${className}`.trim()}>
       <header className="cex-explore-head">
-        <h2 className="cex-h2">explore transcripts</h2>
+        <H0 className="cex-h2">explore transcripts</H0>
         <div className="input-ico cex-searchbar">
           <input
             className="input"
@@ -690,7 +697,7 @@ export default function Explore({
                 <div className="ring">
                   <SearchX size={20} aria-hidden="true" />
                 </div>
-                <h3>no matches</h3>
+                <H1>no matches</H1>
                 <p>no transcripts match your search and filters. broaden the query or clear the filters.</p>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={reset}>
                   clear filters
@@ -701,7 +708,7 @@ export default function Explore({
                 <div className="ring">
                   <Compass size={20} aria-hidden="true" />
                 </div>
-                <h3>the commons is empty</h3>
+                <H1>the commons is empty</H1>
                 <p>no transcripts have been shared yet. once contributors publish, they show up here.</p>
               </div>
             )
@@ -713,6 +720,7 @@ export default function Explore({
                   transcript={transcript}
                   href={transcriptHref?.(transcript)}
                   onOpen={openTranscript}
+                  cardHeading={H1}
                 />
               ))}
             </div>

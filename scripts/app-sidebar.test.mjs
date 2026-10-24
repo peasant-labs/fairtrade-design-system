@@ -342,6 +342,18 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         }
         report.check(same(actual, row.expected), `${name}: the account menu must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
         await mounted.unmount()
+      } else if (row.kind === 'account-avatar') {
+        const mounted = await mount(React.createElement(AppSidebar, propsFor(row)))
+        const me = () => mounted.container.querySelector('.asb-me .asb-account')
+        if (row.breaks) {
+          const img = me()?.querySelector('img.asb-av')
+          if (img) await mounted.act(() => img.dispatchEvent(new window.Event('error')))
+        }
+        const img = me()?.querySelector('img.asb-av')
+        const initial = me()?.querySelector('span.asb-av')
+        const actual = { img: !!img, src: img?.getAttribute('src') ?? null, alt: img ? img.getAttribute('alt') : null, initial: initial?.textContent ?? null }
+        report.check(same(actual, row.expected), `${name}: the avatar must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
+        await mounted.unmount()
       } else if (row.kind === 'account-slot') {
         const mounted = await mount(React.createElement(AppSidebar, propsFor(row, { accountSlot: React.createElement('span', { className: 'slot' }, row.slot) })))
         const me = mounted.container.querySelector('.asb-me')

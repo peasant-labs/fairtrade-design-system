@@ -188,6 +188,9 @@ export const COLLECTIVE_ROLES = Object.freeze([
  * @property {(transcript: ExploreTranscriptPayload) => string} [transcriptHref]
  * @property {(owner: ExploreOwnerPayload) => string} [profileHref]
  * @property {(collective: CollectiveResultPayload) => string} [collectiveHref]
+ * @property {1|2} [headingLevel] 2 by default: the page title ("explore transcripts", a transcript's title, a
+ *           profile's name) is an h2 in a host page. 1 when the host mounts Explore as the whole page: that title is
+ *           the page's h1 and every heading under it moves up one level.
  */
 
 /**

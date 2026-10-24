@@ -7,6 +7,7 @@ requiredNames:
   - txn-meta-keyboard-scroll-region
   - srow-text-stacks-on-mobile
   - srow-action-drops-on-mobile
+  - gmp-navigator-disclosure-on-the-name-line
   - txn-tabs-scroll-on-mobile
   - txn-tabs-keyboard-navigation
   - txn-trace-head-compact-on-mobile
