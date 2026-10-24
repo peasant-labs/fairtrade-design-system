@@ -14,7 +14,7 @@ import React from 'react'
 import satori from 'satori'
 import { loadFixturePair, withMountedSource, createReport, ROOT } from './mounted-parts.mjs'
 import { walkCss } from './css-source.mjs'
-import { readAdvances, renderShareMetrics, SHARE_FONT_FILE, SHARE_METRICS_FILE, ASCII_RANGE, LATIN_1_RANGE, PUNCTUATION } from './gen-share-metrics.mjs'
+import { readAdvances, renderShareMetrics, SHARE_FONT_FILE, SHARE_MONO_BOLD_FILE, SHARE_METRICS_FILE, ASCII_RANGE, LATIN_1_RANGE, PUNCTUATION, FIGURE_CHARS } from './gen-share-metrics.mjs'
 
 const FIXTURE = 'scripts/testdata/share-card.yaml'
 const MANIFEST = 'scripts/testdata/share-card.manifest.yaml'
@@ -36,6 +36,9 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 /** a drawn text for a failure message, cut so a 600-character prompt does not flood the report */
 const clip = (text) => JSON.stringify(String(text).length > 120 ? `${String(text).slice(0, 120)}...` : String(text))
 const produced = []
+/* the face the tile numbers are drawn in, read straight from the shipped file: the value check
+   measures a drawn number with it, independently of the card's own table */
+const MONO_BOLD = readAdvances(readFileSync(`${ROOT}/${SHARE_MONO_BOLD_FILE}`))
 
 /** Draw a card with satori, given only the width, and keep its layout nodes. */
 async function layout(ShareCard, props, fonts) {
@@ -236,8 +239,11 @@ await withMountedSource(async ({ load }) => {
       report.check(font.unitsPerEm === 1000, `${row.name}: the font has ${font.unitsPerEm} units per em, the table assumes 1000`)
       report.check(wrong.length === 0, `${row.name}: ${wrong.length} table entries differ from ${SHARE_FONT_FILE}: ${wrong.slice(0, 8).map((point) => `U+${point.toString(16).toUpperCase()} table ${metrics.bodyAdvance(point)} font ${font.advance(point)}`).join(', ')}`)
       report.check(metrics.ELLIPSIS_ADVANCE === font.advance(0x2026), `${row.name}: ELLIPSIS_ADVANCE ${metrics.ELLIPSIS_ADVANCE}, the font's ellipsis ${font.advance(0x2026)}`)
+      const figureWrong = [...FIGURE_CHARS].filter((char) => metrics.MONO_BOLD_ADVANCE !== MONO_BOLD.advance(/** @type {number} */ (char.codePointAt(0))))
+      report.check(MONO_BOLD.unitsPerEm === 1000, `${row.name}: ${SHARE_MONO_BOLD_FILE} has ${MONO_BOLD.unitsPerEm} units per em, the table assumes 1000`)
+      report.check(figureWrong.length === 0, `${row.name}: MONO_BOLD_ADVANCE ${metrics.MONO_BOLD_ADVANCE} differs from ${SHARE_MONO_BOLD_FILE} for ${JSON.stringify(figureWrong.join(''))}`)
     } else if (row.check === 'generated') {
-      const fresh = renderShareMetrics(fontBytes)
+      const fresh = renderShareMetrics(fontBytes, readFileSync(`${ROOT}/${SHARE_MONO_BOLD_FILE}`))
       report.check(readFileSync(`${ROOT}/${SHARE_METRICS_FILE}`, 'utf8') === fresh, `${row.name}: ${SHARE_METRICS_FILE} differs from a fresh run; run node scripts/gen-share-metrics.mjs`)
     } else {
       report.check(false, `${row.name}: unknown check ${JSON.stringify(row.check)}`)
@@ -298,6 +304,26 @@ async function checkRender(row, share, ShareCard, fonts) {
     const right = prompt.left + prompt.width
     const over = nodes.filter((node) => PROMPT_PIECE.test(String(node.key ?? '')) && node.left + node.width > right + 0.5)
     report.check(over.length === 0, `${row.name}: ${over.length} prompt pieces run past the prompt's width (${prompt.width}px): ${over.slice(0, 3).map((node) => clip(node.textContent)).join(', ')}`)
+  }
+  if (card?.figures) {
+    // a tile number is measured with the shipped mono bold face at the size the card drew it, and
+    // must end inside its tile's content box, which the eyebrow above it spans
+    for (const label of ['prompts', 'tokens']) {
+      const value = nodes.find((node) => node.key === `value-${label}`)
+      const eyebrow = nodes.find((node) => node.key === `eyebrow-${label}`)
+      if (!value || !eyebrow) { report.check(false, `${row.name}: no value or eyebrow node for ${label}`); continue }
+      const size = Number(value.props?.style?.fontSize)
+      const text = String(value.textContent ?? '')
+      const units = [...text].reduce((sum, char) => sum + (MONO_BOLD.advance(/** @type {number} */ (char.codePointAt(0))) ?? MONO_BOLD.unitsPerEm), 0)
+      const width = (units / MONO_BOLD.unitsPerEm) * size
+      const right = value.left + width
+      const inside = Number.isFinite(width) && value.left >= eyebrow.left - 0.5 && right <= eyebrow.left + eyebrow.width + 0.5
+      report.check(inside, `${row.name}: the ${label} number ${JSON.stringify(text)} at ${size}px is ${width.toFixed(1)}px wide and ends at x ${right.toFixed(1)}, past its tile's content box (x ${eyebrow.left} to ${eyebrow.left + eyebrow.width})`)
+    }
+  }
+  for (const [label, size] of Object.entries(expect.valueFontSize ?? {})) {
+    const value = nodes.find((node) => node.key === `value-${label}`)
+    report.check(Number(value?.props?.style?.fontSize) === size, `${row.name}: the ${label} number ${JSON.stringify(value?.textContent)} is drawn at ${value?.props?.style?.fontSize}px, expected ${size}px`)
   }
   if (expect.size) {
     const match = /^<svg width="(\d+)" height="(\d+)"/.exec(svg)

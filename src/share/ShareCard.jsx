@@ -14,7 +14,7 @@
 import { color, font, other, space, typography } from '../../public/tokens.json'
 import { formatShareCount } from './data.js'
 import { BRAND_FILL_RULE, BRAND_PATHS, LOCK_ICON, USER_ICON, WHEAT_LOGO, brandViewBox, resolveBrand } from './marks.js'
-import { ELLIPSIS_ADVANCE, bodyAdvance } from './metrics.js'
+import { ELLIPSIS_ADVANCE, MONO_BOLD_ADVANCE, bodyAdvance } from './metrics.js'
 
 /** @typedef {import('./data.js').ShareCardData} ShareCardData */
 
@@ -63,6 +63,12 @@ const PROMPT_SIZE = 44
 const PROMPT_LINE = 1.3
 const PROMPT_LINES = 3
 const CHIP_SIZE = 34
+/* a stat tile: its padding, and the number's approved size */
+const TILE_PAD_Y = 16
+const TILE_PAD_X = 28
+const VALUE_SIZE = 84
+/* the tile's content box: the column less the padding and the hairline either side */
+const TILE_CONTENT_W = STATS_W - 2 * TILE_PAD_X - 2 * HAIRLINE_W
 const CHIP_CHARS = 32
 
 /* The prompt's lines. satori has no line-clamp and no word-spacing, so the card lays the prompt
@@ -187,6 +193,19 @@ function shorten(text, max) {
   return chars.length > max ? chars.slice(0, max - 1).join('').trimEnd() + ELLIPSIS : text
 }
 
+/**
+ * The size a tile number is drawn at: the approved 84px, or smaller when the number would run
+ * past its tile at 84px. The numbers' face is monospaced, so a number's width is its character
+ * count times one advance. Only the size changes; the number stays rounded as the page rounds it.
+ * @param {string} value
+ * @returns {number} px
+ */
+function shareValueSize(value) {
+  const chars = graphemes(value).length
+  if (chars === 0) return VALUE_SIZE
+  return Math.min(VALUE_SIZE, Math.floor(TILE_CONTENT_W / ((chars * MONO_BOLD_ADVANCE) / 1000)))
+}
+
 /** Blend two token colours, `amount` of `top` over `base`, as an rgb() value. */
 function mix(top, base, amount) {
   const rgb = (value) => [1, 3, 5].map((at) => parseInt(value.slice(at, at + 2), 16))
@@ -261,7 +280,8 @@ function Frame({ height, children, center = false }) {
 }
 
 /* a stat tile as fairtrade draws one (.st-tile): a hairline box on the surface, the tracked mono
-   eyebrow over the figure; the figure is bold, the owner's choice for the card */
+   eyebrow over the figure; the figure is bold, the owner's choice for the card, and drawn at 84px
+   unless it is too wide for the tile at that size (shareValueSize) */
 function StatTile({ label, value }) {
   return (
     <div
@@ -273,7 +293,7 @@ function StatTile({ label, value }) {
         gap: SP(1),
         flexGrow: 1,
         flexBasis: 0,
-        padding: '16px 28px',
+        padding: `${TILE_PAD_Y}px ${TILE_PAD_X}px`,
         border: HAIRLINE,
         backgroundColor: C.canvas,
       }}
@@ -281,7 +301,7 @@ function StatTile({ label, value }) {
       <div key={`eyebrow-${label}`} style={{ display: 'flex', fontSize: 32, lineHeight: 1.3, letterSpacing: EYEBROW_TRACKING, color: C.ink3 }}>
         {label}
       </div>
-      <div key={`value-${label}`} style={{ display: 'flex', marginTop: 6, fontSize: 84, lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>
+      <div key={`value-${label}`} style={{ display: 'flex', marginTop: 6, fontSize: shareValueSize(value), lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>
         {value}
       </div>
     </div>

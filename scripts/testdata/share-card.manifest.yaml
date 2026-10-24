@@ -53,6 +53,10 @@ requiredRenderNames:
   - render-cut-never-splits-a-word
   - render-long-url-after-words
   - render-long-cjk
+  - render-tokens-six-chars
+  - render-tokens-12m
+  - render-tokens-1-2m
+  - render-prompts-four-digits
 requiredSourceNames:
   - source-no-classname
   - source-no-hex-colour

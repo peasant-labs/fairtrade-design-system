@@ -125,10 +125,14 @@ dataModuleGuard:
 #     promptMaxLines / promptMinLines: the prompt's laid-out height, in lines of its own line
 #       height, is at most / at least this (a clamp that cuts too early goes red on the minimum);
 #     promptEllipsis: whether the drawn prompt ends in the ellipsis (cut) or not (whole);
-#     promptCutAtWordEnd: the text before the ellipsis ends a word of the prompt (no partial word).
+#     promptCutAtWordEnd: the text before the ellipsis ends a word of the prompt (no partial word);
+#     valueFontSize: {prompts, tokens} px each tile number is drawn at (84 is the approved size;
+#       a number too wide for its tile at 84 is drawn smaller, never rounded differently).
 #   Wherever the card draws a prompt, the gate also checks that no line of it runs past the
 #   prompt's own width: the card lays the prompt's lines out itself (satori has no word-spacing),
-#   so an under-measured line would overflow sideways instead of wrapping.
+#   so an under-measured line would overflow sideways instead of wrapping. And wherever the card
+#   draws figures, each tile number, measured with the shipped mono bold face at the size it is
+#   drawn, must end inside its tile's content box (the box the eyebrow above it spans).
 renderCases:
   - name: render-public-600
     height: 600
@@ -137,6 +141,7 @@ renderCases:
       textIncludes: [peasant, Claude Code (Opus 5.5), prompts, '6', tokens, 84k, user, rewrite billing retries]
       promptMaxLines: 3
       promptEllipsis: false
+      valueFontSize: {prompts: 84, tokens: 84}
   - name: render-public-630
     height: 630
     expect: {size: [1200, 630], textIncludes: [rewrite billing retries]}
@@ -216,6 +221,24 @@ renderCases:
     firstTurnRepeat: {unit: 修复上传, times: 100}
     height: 600
     expect: {promptMaxLines: 3, promptEllipsis: true}
+
+  # numbers as the page formats them; one too wide for its tile at 84px is drawn smaller
+  - name: render-tokens-six-chars
+    set: {totalTokens: 123456}
+    height: 600
+    expect: {textIncludes: [123.5k], valueFontSize: {prompts: 84, tokens: 63}}
+  - name: render-tokens-12m
+    set: {totalTokens: 12345678}
+    height: 600
+    expect: {textIncludes: [12.3M], valueFontSize: {prompts: 84, tokens: 76}}
+  - name: render-tokens-1-2m
+    set: {totalTokens: 1200000}
+    height: 600
+    expect: {textIncludes: [1.2M], valueFontSize: {prompts: 84, tokens: 84}}
+  - name: render-prompts-four-digits
+    set: {inputSubmissionCount: 1234}
+    height: 600
+    expect: {textIncludes: [1.2k], valueFontSize: {prompts: 84, tokens: 84}}
 
 # sourceCases: text the share-card component source must not contain. `forbidden` is a literal;
 #   `forbiddenPattern` a regular expression. Colours come from the token file, never a hex literal,
@@ -331,7 +354,9 @@ layoutCases:
 
 # metricsCases: the prompt clamp's advance table (src/share/metrics.js) against the shipped body
 #   face, read by scripts/gen-share-metrics.mjs. `values`: every table entry (ASCII, Latin-1, the
-#   typographic punctuation) and ELLIPSIS_ADVANCE equal the font's hmtx advance for that code point.
+#   typographic punctuation) and ELLIPSIS_ADVANCE equal the font's hmtx advance for that code point,
+#   and MONO_BOLD_ADVANCE (the tile numbers' face) equals the mono bold face's advance for every
+#   character a formatted count can hold.
 #   `generated`: the committed file is byte-identical to a fresh run of the generator.
 metricsCases:
   - {name: metrics-match-font, check: values}
