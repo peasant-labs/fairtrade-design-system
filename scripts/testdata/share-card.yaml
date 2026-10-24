@@ -219,3 +219,11 @@ sourceCases:
   - {name: source-no-classname, file: src/share/ShareCard.jsx, forbidden: className}
   - {name: source-no-hex-colour, file: src/share/ShareCard.jsx, forbiddenPattern: '#[0-9a-fA-F]{3,8}\b'}
   - {name: source-no-middle-dot, file: src/share/ShareCard.jsx, forbidden: '·'}
+
+# metricsCases: the prompt clamp's advance table (src/share/metrics.js) against the shipped body
+#   face, read by scripts/gen-share-metrics.mjs. `values`: every table entry (ASCII, Latin-1, the
+#   typographic punctuation) and ELLIPSIS_ADVANCE equal the font's hmtx advance for that code point.
+#   `generated`: the committed file is byte-identical to a fresh run of the generator.
+metricsCases:
+  - {name: metrics-match-font, check: values}
+  - {name: metrics-file-is-generated, check: generated}

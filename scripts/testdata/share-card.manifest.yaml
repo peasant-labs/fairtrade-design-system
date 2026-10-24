@@ -57,3 +57,6 @@ requiredSourceNames:
   - source-no-classname
   - source-no-hex-colour
   - source-no-middle-dot
+requiredMetricsNames:
+  - metrics-match-font
+  - metrics-file-is-generated

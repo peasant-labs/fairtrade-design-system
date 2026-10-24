@@ -2,6 +2,7 @@
 /* Gate for the share card. The data (src/share/data.js): the model chip label, the card fields
    derived from a session detail payload (figures follow the transcript page's header rules), the
    link text, the count format, and the rule that the module imports nothing that imports React.
+   The prompt clamp's advance table (src/share/metrics.js) against the shipped font.
    The component (src/share/ShareCard.jsx): drawn by satori, the renderer behind Next's
    ImageResponse, with the card's own fonts, at the card sizes, with the prompt clamped to three
    lines; and its source free of class names and hex colours.
@@ -11,6 +12,7 @@ import { readFileSync } from 'node:fs'
 import React from 'react'
 import satori from 'satori'
 import { loadFixturePair, withMountedSource, createReport, ROOT } from './mounted-parts.mjs'
+import { readAdvances, renderShareMetrics, SHARE_FONT_FILE, SHARE_METRICS_FILE, ASCII_RANGE, LATIN_1_RANGE, PUNCTUATION } from './gen-share-metrics.mjs'
 
 const FIXTURE = 'scripts/testdata/share-card.yaml'
 const MANIFEST = 'scripts/testdata/share-card.manifest.yaml'
@@ -23,6 +25,7 @@ const { fixture } = loadFixturePair(FIXTURE, MANIFEST, {
   sweepCases: 'requiredSweepNames',
   renderCases: 'requiredRenderNames',
   sourceCases: 'requiredSourceNames',
+  metricsCases: 'requiredMetricsNames',
 })
 const report = createReport('share card')
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
@@ -89,6 +92,25 @@ await withMountedSource(async ({ load }) => {
     name: font.name, weight: font.weight, style: font.style, data: readFileSync(`${ROOT}/src/share/fonts/${font.file}`),
   }))
   for (const row of fixture.renderCases) await checkRender(row, share, ShareCard, fonts)
+
+  const metrics = await load('/src/share/metrics.js')
+  const fontBytes = readFileSync(`${ROOT}/${SHARE_FONT_FILE}`)
+  const font = readAdvances(fontBytes)
+  const span = ([from, to]) => Array.from({ length: to - from + 1 }, (_, i) => from + i)
+  for (const row of fixture.metricsCases) {
+    if (row.check === 'values') {
+      const points = [...span(ASCII_RANGE), ...span(LATIN_1_RANGE), ...PUNCTUATION]
+      const wrong = points.filter((point) => metrics.bodyAdvance(point) !== font.advance(point))
+      report.check(font.unitsPerEm === 1000, `${row.name}: the font has ${font.unitsPerEm} units per em, the table assumes 1000`)
+      report.check(wrong.length === 0, `${row.name}: ${wrong.length} table entries differ from ${SHARE_FONT_FILE}: ${wrong.slice(0, 8).map((point) => `U+${point.toString(16).toUpperCase()} table ${metrics.bodyAdvance(point)} font ${font.advance(point)}`).join(', ')}`)
+      report.check(metrics.ELLIPSIS_ADVANCE === font.advance(0x2026), `${row.name}: ELLIPSIS_ADVANCE ${metrics.ELLIPSIS_ADVANCE}, the font's ellipsis ${font.advance(0x2026)}`)
+    } else if (row.check === 'generated') {
+      const fresh = renderShareMetrics(fontBytes)
+      report.check(readFileSync(`${ROOT}/${SHARE_METRICS_FILE}`, 'utf8') === fresh, `${row.name}: ${SHARE_METRICS_FILE} differs from a fresh run; run node scripts/gen-share-metrics.mjs`)
+    } else {
+      report.check(false, `${row.name}: unknown check ${JSON.stringify(row.check)}`)
+    }
+  }
 })
 
 /* Draw one render case with satori and check what it pins. satori gets only the width, so the
@@ -171,4 +193,4 @@ for (const row of fixture.sourceCases) {
   }
 }
 
-report.finish(`${fixture.modelLabelCases.length} label, ${fixture.payloadCases.length} payload, ${fixture.textCases.length} text, ${fixture.formatCases.length} format and ${fixture.parseFailureCases.length} parse-failure, ${fixture.sweepCases.length} sweep, ${fixture.renderCases.length} render and ${fixture.sourceCases.length} source cases.`)
+report.finish(`${fixture.modelLabelCases.length} label, ${fixture.payloadCases.length} payload, ${fixture.textCases.length} text, ${fixture.formatCases.length} format and ${fixture.parseFailureCases.length} parse-failure, ${fixture.sweepCases.length} sweep, ${fixture.renderCases.length} render, ${fixture.sourceCases.length} source and ${fixture.metricsCases.length} metrics cases.`)
