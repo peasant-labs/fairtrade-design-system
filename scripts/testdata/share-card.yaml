@@ -6,7 +6,7 @@
 #   `unit` repeated `times`. `expect` lists only the card fields a case pins; `figures: null` pins
 #   "no figures".
 # textCases: the link text for a card written out in full: `description` and `alt` each checked when present.
-# sweepCases: every string the module produced avoids `forbidden`.
+# sweepCases: every string the data module produced and every text the card drew avoids `forbidden`.
 # formatCases: formatShareCount(input).
 # parseFailureCases: values that do not parse and must give null, not throw.
 basePayload:
@@ -94,7 +94,8 @@ textCases:
     card: {title: rewrite billing retries, chip: Claude Code (Opus 5.5), figures: null}
     alt: 'Share card: the first prompt of "rewrite billing retries" with Claude Code (Opus 5.5)'
 
-# sweepCases: every string the module produced across all the cases above avoids `forbidden`.
+# sweepCases: every string the data module produced and every text the card drew, across all the
+#   cases, avoids `forbidden`.
 sweepCases:
   - {name: no-middle-dot, forbidden: '·'}
 
@@ -112,3 +113,92 @@ parseFailureCases:
 dataModuleGuard:
   file: src/share/data.js
   forbiddenImports: [react, react-dom, ../ui/index.js, ../ui/BrandMark.jsx]
+
+# renderCases: the ShareCard component (src/share/ShareCard.jsx) drawn by satori, the renderer
+#   behind Next's ImageResponse, with the card fonts (src/share/fonts.js). `generic: true` draws
+#   the card for null (a transcript that is not public); otherwise the card is shareCardFromPayload
+#   over a payload built as for payloadCases (`set`, `omit`, `firstTurnContent`, `firstTurnRepeat`).
+#   `height` is the card height asked for (omitted: the default). satori is given only the width,
+#   so the SVG's height is the card's own. `expect` pins only what a case is about:
+#     size: [width, height] of the SVG;
+#     textIncludes / textExcludes: text satori laid out, read from its layout nodes;
+#     promptMaxLines: the prompt's laid-out height, in lines of its own line height, is at most this;
+#     promptEllipsis: whether the drawn prompt ends in the ellipsis (cut) or not (whole).
+renderCases:
+  - name: render-public-600
+    height: 600
+    expect:
+      size: [1200, 600]
+      textIncludes: [peasant, Claude Code (Opus 5.5), prompts, '6', tokens, 84k, user, rewrite billing retries]
+      promptMaxLines: 3
+      promptEllipsis: false
+  - name: render-public-630
+    height: 630
+    expect: {size: [1200, 630], textIncludes: [rewrite billing retries]}
+  - name: render-default-height-is-600
+    expect: {size: [1200, 600]}
+  - name: render-generic-600
+    generic: true
+    height: 600
+    expect: {size: [1200, 600]}
+  - name: render-generic-630
+    generic: true
+    height: 630
+    expect: {size: [1200, 630]}
+  - name: render-generic-copy
+    generic: true
+    height: 600
+    expect:
+      textIncludes: [peasant labs, visibility not public, click to see]
+      textExcludes: [rewrite billing retries, Claude Code, Opus, prompts, tokens, 84k, user]
+  - name: render-no-figures
+    omit: [inputSubmissionCount]
+    height: 600
+    expect: {size: [1200, 600], textIncludes: [rewrite billing retries, user], textExcludes: [prompts, tokens, 84k]}
+  - name: render-cjk-emoji
+    firstTurnContent: 修复上传 403 🙂
+    height: 600
+    expect: {size: [1200, 600], promptMaxLines: 3}
+  - name: render-long-unbroken-prompt
+    firstTurnRepeat: {unit: x, times: 600}
+    height: 600
+    expect: {size: [1200, 600], promptMaxLines: 3, promptEllipsis: true}
+  - name: render-long-unbroken-prompt-full-width
+    firstTurnRepeat: {unit: x, times: 600}
+    omit: [inputSubmissionCount]
+    height: 600
+    expect: {size: [1200, 600], promptMaxLines: 3, promptEllipsis: true}
+  - name: render-long-wide-letters
+    firstTurnRepeat: {unit: W, times: 300}
+    height: 600
+    expect: {promptMaxLines: 3, promptEllipsis: true}
+  - name: render-long-wide-letters-full-width
+    firstTurnRepeat: {unit: W, times: 300}
+    omit: [inputSubmissionCount]
+    height: 600
+    expect: {promptMaxLines: 3, promptEllipsis: true}
+  - name: render-long-words
+    firstTurnRepeat: {unit: 'retry the nightly billing export with backoff, then ', times: 20}
+    height: 600
+    expect: {promptMaxLines: 3, promptEllipsis: true}
+  - name: render-long-words-full-width
+    firstTurnRepeat: {unit: 'retry the nightly billing export with backoff, then ', times: 20}
+    omit: [inputSubmissionCount]
+    height: 600
+    expect: {promptMaxLines: 3, promptEllipsis: true}
+  - name: render-long-url-after-words
+    firstTurnContent: 'see https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa and fix it'
+    height: 600
+    expect: {promptMaxLines: 3}
+  - name: render-long-cjk
+    firstTurnRepeat: {unit: 修复上传, times: 100}
+    height: 600
+    expect: {promptMaxLines: 3, promptEllipsis: true}
+
+# sourceCases: text the share-card component source must not contain. `forbidden` is a literal;
+#   `forbiddenPattern` a regular expression. Colours come from the token file, never a hex literal,
+#   and satori reads inline styles only, so no class names.
+sourceCases:
+  - {name: source-no-classname, file: src/share/ShareCard.jsx, forbidden: className}
+  - {name: source-no-hex-colour, file: src/share/ShareCard.jsx, forbiddenPattern: '#[0-9a-fA-F]{3,8}\b'}
+  - {name: source-no-middle-dot, file: src/share/ShareCard.jsx, forbidden: '·'}

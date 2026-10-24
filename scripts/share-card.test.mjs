@@ -1,10 +1,15 @@
 #!/usr/bin/env node
-/* Gate for the share-card data (src/share/data.js): the model chip label, the card fields derived
-   from a session detail payload (figures follow the transcript page's header rules), the link
-   text, the count format, and the rule that the module imports nothing that imports React.
+/* Gate for the share card. The data (src/share/data.js): the model chip label, the card fields
+   derived from a session detail payload (figures follow the transcript page's header rules), the
+   link text, the count format, and the rule that the module imports nothing that imports React.
+   The component (src/share/ShareCard.jsx): drawn by satori, the renderer behind Next's
+   ImageResponse, with the card's own fonts, at the card sizes, with the prompt clamped to three
+   lines; and its source free of class names and hex colours.
    Cases: scripts/testdata/share-card.yaml (+ .manifest.yaml).
    Run: pnpm test:share-card. */
 import { readFileSync } from 'node:fs'
+import React from 'react'
+import satori from 'satori'
 import { loadFixturePair, withMountedSource, createReport, ROOT } from './mounted-parts.mjs'
 
 const FIXTURE = 'scripts/testdata/share-card.yaml'
@@ -16,9 +21,13 @@ const { fixture } = loadFixturePair(FIXTURE, MANIFEST, {
   formatCases: 'requiredFormatNames',
   parseFailureCases: 'requiredParseFailureNames',
   sweepCases: 'requiredSweepNames',
+  renderCases: 'requiredRenderNames',
+  sourceCases: 'requiredSourceNames',
 })
 const report = createReport('share card')
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+/** a drawn text for a failure message, cut so a 600-character prompt does not flood the report */
+const clip = (text) => JSON.stringify(String(text).length > 120 ? `${String(text).slice(0, 120)}...` : String(text))
 const produced = []
 
 function buildPayload(row) {
@@ -73,7 +82,60 @@ await withMountedSource(async ({ load }) => {
     try { card = share.shareCardFromPayload(row.payload) } catch (error) { report.check(false, `${row.name}: threw ${error.message}`); continue }
     report.check(card === null, `${row.name}: expected null, received ${JSON.stringify(card)}`)
   }
+
+  const { ShareCard } = await load('/src/share/ShareCard.jsx')
+  const { SHARE_CARD_FONTS } = await load('/src/share/fonts.js')
+  const fonts = SHARE_CARD_FONTS.map((font) => ({
+    name: font.name, weight: font.weight, style: font.style, data: readFileSync(`${ROOT}/src/share/fonts/${font.file}`),
+  }))
+  for (const row of fixture.renderCases) await checkRender(row, share, ShareCard, fonts)
 })
+
+/* Draw one render case with satori and check what it pins. satori gets only the width, so the
+   SVG's height is the height the card itself lays out. Layout nodes carry the text satori drew;
+   the prompt is the node keyed `prompt`. */
+async function checkRender(row, share, ShareCard, fonts) {
+  const card = row.generic ? null : share.shareCardFromPayload(buildPayload(row))
+  if (!row.generic && !card) { report.check(false, `${row.name}: the payload did not parse`); return }
+  const props = row.height === undefined ? { card } : { card, height: row.height }
+  const nodes = []
+  let svg
+  try {
+    svg = await satori(React.createElement(ShareCard, props), { width: 1200, fonts, onNodeDetected: (node) => nodes.push(node) })
+  } catch (error) {
+    report.check(false, `${row.name}: satori threw ${error.message}`)
+    return
+  }
+  const expect = row.expect
+  const drawn = nodes.map((node) => node.textContent).filter((text) => typeof text === 'string')
+  produced.push(...drawn)
+  if (expect.size) {
+    const match = /^<svg width="(\d+)" height="(\d+)"/.exec(svg)
+    const size = match ? [Number(match[1]), Number(match[2])] : null
+    report.check(same(size, expect.size), `${row.name}: SVG size expected ${JSON.stringify(expect.size)}, received ${JSON.stringify(size)}`)
+  }
+  for (const text of expect.textIncludes ?? []) {
+    report.check(drawn.some((value) => value.includes(text)), `${row.name}: no drawn text contains ${JSON.stringify(text)}; drawn ${drawn.map(clip).join(', ')}`)
+  }
+  for (const text of expect.textExcludes ?? []) {
+    const hit = drawn.find((value) => value.includes(text))
+    report.check(hit === undefined, `${row.name}: drawn text ${JSON.stringify(hit)} contains ${JSON.stringify(text)}`)
+  }
+  if (expect.promptMaxLines === undefined && expect.promptEllipsis === undefined) return
+  const prompt = nodes.find((node) => node.key === 'prompt')
+  if (!prompt) { report.check(false, `${row.name}: no layout node keyed prompt`); return }
+  if (expect.promptMaxLines !== undefined) {
+    const style = prompt.props.style ?? {}
+    const lineHeight = Number(style.fontSize) * Number(style.lineHeight)
+    // satori rounds each line box to whole pixels, so a line count is read to the nearest line
+    const lines = Math.round(prompt.height / lineHeight)
+    report.check(Number.isFinite(lines) && lines <= expect.promptMaxLines, `${row.name}: the prompt takes ${lines} lines (${prompt.height}px at ${lineHeight}px a line), at most ${expect.promptMaxLines} allowed; drawn ${clip(prompt.textContent)}`)
+  }
+  if (expect.promptEllipsis !== undefined) {
+    const text = String(prompt.textContent ?? '')
+    report.check(text.endsWith('…') === expect.promptEllipsis, `${row.name}: the prompt ${expect.promptEllipsis ? 'must' : 'must not'} end in an ellipsis; drawn ${clip(text)}`)
+  }
+}
 
 for (const row of fixture.sweepCases) {
   const hit = produced.find((text) => text.includes(row.forbidden))
@@ -87,4 +149,13 @@ for (const forbidden of guard.forbiddenImports) {
   report.check(!imports.includes(forbidden), `${guard.file} must not import ${forbidden}`)
 }
 
-report.finish(`${fixture.modelLabelCases.length} label, ${fixture.payloadCases.length} payload, ${fixture.textCases.length} text, ${fixture.formatCases.length} format and ${fixture.parseFailureCases.length} parse-failure and ${fixture.sweepCases.length} sweep cases.`)
+for (const row of fixture.sourceCases) {
+  const text = readFileSync(`${ROOT}/${row.file}`, 'utf8')
+  if (row.forbidden !== undefined) report.check(!text.includes(row.forbidden), `${row.name}: ${row.file} contains ${JSON.stringify(row.forbidden)}`)
+  if (row.forbiddenPattern !== undefined) {
+    const hit = new RegExp(row.forbiddenPattern).exec(text)
+    report.check(hit === null, `${row.name}: ${row.file} contains ${JSON.stringify(hit?.[0])}`)
+  }
+}
+
+report.finish(`${fixture.modelLabelCases.length} label, ${fixture.payloadCases.length} payload, ${fixture.textCases.length} text, ${fixture.formatCases.length} format and ${fixture.parseFailureCases.length} parse-failure, ${fixture.sweepCases.length} sweep, ${fixture.renderCases.length} render and ${fixture.sourceCases.length} source cases.`)

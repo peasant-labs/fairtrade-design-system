@@ -33,3 +33,24 @@ requiredParseFailureNames:
   - parse-failure-empty-object
 requiredSweepNames:
   - no-middle-dot
+requiredRenderNames:
+  - render-public-600
+  - render-public-630
+  - render-default-height-is-600
+  - render-generic-600
+  - render-generic-630
+  - render-generic-copy
+  - render-no-figures
+  - render-cjk-emoji
+  - render-long-unbroken-prompt
+  - render-long-unbroken-prompt-full-width
+  - render-long-wide-letters
+  - render-long-wide-letters-full-width
+  - render-long-words
+  - render-long-words-full-width
+  - render-long-url-after-words
+  - render-long-cjk
+requiredSourceNames:
+  - source-no-classname
+  - source-no-hex-colour
+  - source-no-middle-dot
