@@ -16,7 +16,7 @@ const text = (node) => (node?.textContent ?? '').replace(/\s+/g, ' ').trim()
 await withMountedSource(async ({ load, mount, window, React }) => {
   const { default: CodeMapNavigator } = await load('/src/ui/graph/CodeMapNavigator.jsx')
   for (const row of fixture.cases) {
-    const mounted = await mount(React.createElement(CodeMapNavigator, { payload: fixture.payload, grain: row.grain }))
+    const mounted = await mount(React.createElement(CodeMapNavigator, { payload: fixture.payload, grain: row.grain, filter: row.filter ?? '' }))
     const wrapFor = (name) => [...mounted.container.querySelectorAll('.gmp-navigator-row-wrap')].find((wrap) => text(wrap.querySelector('.gmp-navigator-path')) === name)
     for (const name of row.press) {
       const button = wrapFor(name)?.querySelector('.gmp-navigator-disclosure')

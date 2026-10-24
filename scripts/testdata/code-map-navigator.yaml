@@ -30,7 +30,7 @@ cases:
     focusedId: web
     selectedId: internal
     expectedTabbable: internal
-    expectShowChildren: true
+    expectShowChildren: false  # a filter decides which rows show, so no row offers a disclosure
     expectMissingStatus: false
   - name: disconnected node remains a discoverable root
     grain: package
@@ -60,7 +60,7 @@ cases:
     expectedVisible: [web, web/src, web/src/app, web/src/app/handler.ts]
     expectedHidden: [internal, orphan, web/src/app/page.tsx]
     expectedTabbable: web/src/app/handler.ts
-    expectShowChildren: true
+    expectShowChildren: false  # a filter decides which rows show, so no row offers a disclosure
     expectMissingStatus: false
 nodes:
   - {id: internal, name: internal, kind: module, loc: 800, recordedFiles: 4, totalFiles: 8, order: 0}

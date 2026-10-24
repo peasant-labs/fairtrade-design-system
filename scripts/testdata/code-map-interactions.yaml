@@ -133,8 +133,8 @@ cases:
       - {version: 1, presentation: navigator, selectedId: web, grain: project, expandedIds: [], navigatorFilter: pipeline, navigatorFocusedId: internal, viewport: null, hoveredSessionId: null, selectedSessionId: null, expandedCommitSessions: [], expandedGhostGroups: [], rankMode: relevance, scentFilter: null}
     expectedLegacy: {select: [], zoom: [], expand: [], presentation: []}
     expectedAria:
-      - {targetId: internal, expanded: true, disclosurePresent: true, disclosureDisabled: true}
-      - {targetId: internal/ingest, expanded: true, disclosurePresent: true, disclosureDisabled: true}
+      - {targetId: internal, expanded: true, disclosurePresent: false, disclosureDisabled: false}
+      - {targetId: internal/ingest, expanded: true, disclosurePresent: false, disclosureDisabled: false}
     expectedStructure: []
 
   - name: navigator parent only filter is not forced open
@@ -144,17 +144,17 @@ cases:
     expectedStates: []
     expectedLegacy: {select: [], zoom: [], expand: [], presentation: []}
     expectedAria:
-      - {targetId: solo, expanded: false, disclosurePresent: true, disclosureDisabled: false}
+      - {targetId: solo, expanded: null, disclosurePresent: false, disclosureDisabled: false}
     expectedStructure: []
 
-  - name: navigator forced disclosure is a no op
+  - name: navigator forced open folder shows no disclosure
     surface: navigator
     initialState: *nav_deep_filter
-    action: {type: disclosure, targets: [internal], keys: []}
+    action: {type: assert-only, targets: [internal], keys: []}
     expectedStates: []
     expectedLegacy: {select: [], zoom: [], expand: [], presentation: []}
     expectedAria:
-      - {targetId: internal, expanded: true, disclosurePresent: true, disclosureDisabled: true}
+      - {targetId: internal, expanded: true, disclosurePresent: false, disclosureDisabled: false}
     expectedStructure: []
 
   - name: navigator rapid cross node clicks publish in order
