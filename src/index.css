@@ -2474,7 +2474,7 @@
   .txn-viewsw .sw[aria-checked="true"]::before { transform: translateX(18px); }
   .txn-viewsw-label { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); min-width: 0; }
   .txn-viewsw-state { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-4); }
-  .txn-viewsw:has(.sw[aria-checked="true"]) .txn-viewsw-state { color: var(--amber); font-weight: 600; }
+  .txn-viewsw:has(.sw[aria-checked="true"]) .txn-viewsw-state { color: var(--ink); font-weight: 600; }
 
   .txn-jumprow { display: flex; gap: var(--sp-2); }
   .txn-jumprow .btn { flex: 1; }
