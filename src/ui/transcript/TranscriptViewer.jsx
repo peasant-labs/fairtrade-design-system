@@ -26,6 +26,7 @@ import LabelPopover from './LabelPopover.jsx'
 import TranscriptOutcomeChip from './OutcomeChip.jsx'
 import useTranscriptInitialPosition from './useTranscriptInitialPosition.jsx'
 import { transcriptInitialPositionReadiness } from './initial-position.js'
+import { transcriptTitle } from './title.js'
 import { Term } from '../Explainer.jsx'
 import Tooltip from '../Tooltip.jsx'
 
@@ -709,14 +710,16 @@ export default function TranscriptViewer({
   const anchoredCommits = commits.filter((c) => c.turn != null)
   const looseCommits = commits.filter((c) => c.turn == null)
 
-  // prefer a curated session title (editorial summary); else derive one from the first task / prompt.
-  // Session titles are frequently a whole first prompt — bound the hero to
-  // 160 characters so a run-on title cannot swallow the header (the
-  // pre-composite viewers truncated; consumers rely on it).
-  const rawTitle = session.title ?? (session.hasNormalizedEvidence ? undefined : tasks[0]?.prompt ?? turns.find((t) => t.role === 'user')?.content) ?? session.id ?? 'transcript'
-  // codePointAt guard: never slice through a surrogate pair (mojibake before the ellipsis).
-  const cut = (rawTitle.codePointAt(158) ?? 0) > 0xffff ? 158 : 159
-  const title = rawTitle.length > 160 ? rawTitle.slice(0, cut).trimEnd() + '…' : rawTitle
+  // prefer a curated session title (editorial summary); else derive one from the first task / prompt,
+  // bounded to 160 characters so a run-on title cannot swallow the header (the pre-composite
+  // viewers truncated; consumers rely on it). The share card uses the same rule.
+  const title = transcriptTitle({
+    title: session.title,
+    hasNormalizedEvidence: session.hasNormalizedEvidence,
+    firstTaskPrompt: tasks[0]?.prompt,
+    firstUserContent: turns.find((t) => t.role === 'user')?.content,
+    id: session.id,
+  })
 
   const tabHasFilters = tab === 'trace' || tab === 'highlights'
   const tabStrip = (

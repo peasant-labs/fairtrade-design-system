@@ -7,7 +7,7 @@
    keys; BrandMark itself is a component and stays out of this module. */
 import { adaptTranscript } from '../ui/transcript/adapter.js'
 import { PROVIDER_BRANDS, providerDisplayName } from '../ui/provider-policy.js'
-import { unwrapUserQuery } from '../ui/transcript/title.js'
+import { transcriptTitle, unwrapUserQuery } from '../ui/transcript/title.js'
 import { formatCount } from '../ui/format.js'
 
 /**
@@ -27,7 +27,6 @@ const MODEL_SHAPE = /^claude-([a-z]+)-(\d{1,2}(?:-\d{1,2})*)$/
 /* the legacy shape, version first: claude-<1-2 digits>(-<1-2 digits>)*-<family>, e.g. claude-3-5-sonnet */
 const LEGACY_MODEL_SHAPE = /^claude-(\d{1,2}(?:-\d{1,2})*)-([a-z]+)$/
 const MODEL_DATE = /-\d{8}$/
-const TITLE_LIMIT = 160
 
 /* a skill or custom command, as Claude Code records it: the user turn is only the command's tags */
 const COMMAND_LEAD = /^\s*<command-(?:name|message|args)>/
@@ -82,16 +81,16 @@ export function formatShareCount(n) {
   return formatCount(n)
 }
 
-/** The page's title rule: a curated title, else the first prompt, else the id, bounded to 160 characters. */
+/** The page's title (transcriptTitle), with a blank curated title read as none. */
 function pageTitle(payload, vm) {
   const curated = typeof payload.title === 'string' && payload.title.trim() !== '' ? payload.title.trim() : undefined
-  const session = vm.session
-  const firstUser = vm.turns.find((turn) => turn.role === 'user')?.content
-  const raw = curated ?? (session.hasNormalizedEvidence ? undefined : vm.tasks?.[0]?.prompt ?? firstUser) ?? session.id ?? 'transcript'
-  const text = String(raw)
-  // never slice through a surrogate pair
-  const cut = (text.codePointAt(TITLE_LIMIT - 2) ?? 0) > 0xffff ? TITLE_LIMIT - 2 : TITLE_LIMIT - 1
-  return text.length > TITLE_LIMIT ? text.slice(0, cut).trimEnd() + '…' : text
+  return transcriptTitle({
+    title: curated,
+    hasNormalizedEvidence: vm.session.hasNormalizedEvidence,
+    firstTaskPrompt: vm.tasks?.[0]?.prompt,
+    firstUserContent: vm.turns.find((turn) => turn.role === 'user')?.content,
+    id: vm.session.id,
+  })
 }
 
 /**

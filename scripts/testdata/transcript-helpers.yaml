@@ -260,6 +260,43 @@ cleanSessionTitleCases:
     title: null
     expected: ''
 
+# transcriptTitle is the transcript page's title rule, shared by the viewer's header and the share
+# card: a curated title, else (without normalized evidence) the first task's prompt or the first
+# user turn's text, else the session id, else "transcript"; bounded to 160 characters with "…",
+# never cutting a surrogate pair. A string field may be given as `<field>Parts`, a list of
+# {unit, times} joined in order, for the long cases.
+transcriptTitleCases:
+  - name: a curated title wins
+    parts: {title: rewrite billing retries, firstTaskPrompt: a task, firstUserContent: a prompt, id: ses_1}
+    expected: rewrite billing retries
+  - name: an empty curated title is kept
+    parts: {title: '', firstUserContent: a prompt, id: ses_1}
+    expected: ''
+  - name: without a title the first task prompt
+    parts: {firstTaskPrompt: a task, firstUserContent: a prompt, id: ses_1}
+    expected: a task
+  - name: without a task the first user turn
+    parts: {firstUserContent: a prompt, id: ses_1}
+    expected: a prompt
+  - name: normalized evidence skips the prompt for the id
+    parts: {hasNormalizedEvidence: true, firstTaskPrompt: a task, firstUserContent: a prompt, id: ses_1}
+    expected: ses_1
+  - name: nothing at all reads transcript
+    parts: {}
+    expected: transcript
+  - name: a title of 160 characters stays whole
+    parts: {titleParts: [{unit: a, times: 160}]}
+    expectedParts: [{unit: a, times: 160}]
+  - name: a longer title is cut to 159 characters and the ellipsis
+    parts: {titleParts: [{unit: a, times: 161}]}
+    expectedParts: [{unit: a, times: 159}, {unit: …, times: 1}]
+  - name: the cut never splits a surrogate pair
+    parts: {titleParts: [{unit: a, times: 158}, {unit: 🙂, times: 1}, {unit: b, times: 10}]}
+    expectedParts: [{unit: a, times: 158}, {unit: …, times: 1}]
+  - name: trailing spaces before the cut are dropped
+    parts: {titleParts: [{unit: a, times: 150}, {unit: ' ', times: 20}]}
+    expectedParts: [{unit: a, times: 150}, {unit: …, times: 1}]
+
 projectLabelCases:
   - name: a posix path takes the last segment
     project: /Users/x/Projects/phaze

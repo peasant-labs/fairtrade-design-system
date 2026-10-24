@@ -100,6 +100,18 @@ requiredCleanSessionTitleNames:
   - words after the closing tag are kept
   - undefined returns an empty string
 
+requiredTranscriptTitleNames:
+  - a curated title wins
+  - an empty curated title is kept
+  - without a title the first task prompt
+  - without a task the first user turn
+  - normalized evidence skips the prompt for the id
+  - nothing at all reads transcript
+  - a title of 160 characters stays whole
+  - a longer title is cut to 159 characters and the ellipsis
+  - the cut never splits a surrogate pair
+  - trailing spaces before the cut are dropped
+
 requiredComposeSessionTitleNames:
   - project and summary compose the project colon summary form
   - a project with no usable prompt uses the middot short-id form

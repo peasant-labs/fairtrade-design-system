@@ -2,7 +2,7 @@
 /* Fixture-driven verification for the standalone transcript helpers ported
    from transcript-browser: turnNav.js (nextNavTurn), time.js (formatRelative /
    formatDurationMins / formatDateLong), and title.js (summarizePrompt /
-   projectLabel / composeSessionTitle). Every case is asserted directly
+   projectLabel / composeSessionTitle / transcriptTitle). Every case is asserted directly
    against the production modules under src/ui/transcript/ — never a
    test-only reimplementation.
 
@@ -28,7 +28,7 @@ const titleModule = process.env.FAIRTRADE_TITLE_MODULE
 
 const { nextNavTurn } = await import(`${turnNavModule}?helpers-contract=${Date.now()}`)
 const { formatRelative, formatDurationMins, formatDurationMs, formatDateLong, isKnownTime } = await import(`${timeModule}?helpers-contract=${Date.now()}`)
-const { summarizePrompt, cleanSessionTitle, projectLabel, composeSessionTitle } = await import(`${titleModule}?helpers-contract=${Date.now()}`)
+const { summarizePrompt, cleanSessionTitle, projectLabel, composeSessionTitle, transcriptTitle } = await import(`${titleModule}?helpers-contract=${Date.now()}`)
 
 const failures = []
 let totalChecks = 0
@@ -101,6 +101,16 @@ for (const testCase of fixture.cleanSessionTitleCases) {
   check(actual === testCase.expected, `cleanSessionTitle — ${testCase.name}: expected ${JSON.stringify(testCase.expected)}, received ${JSON.stringify(actual)}`)
 }
 
+/* ── transcriptTitle ──────────────────────────────────────────────────────── */
+const joinParts = (parts) => parts.map(({ unit, times }) => unit.repeat(times)).join('')
+for (const testCase of fixture.transcriptTitleCases) {
+  const parts = Object.fromEntries(Object.entries(testCase.parts).map(([key, value]) => (key.endsWith('Parts') ? [key.slice(0, -5), joinParts(value)] : [key, value])))
+  const expected = testCase.expectedParts ? joinParts(testCase.expectedParts) : testCase.expected
+  let actual
+  try { actual = transcriptTitle(parts) } catch (error) { actual = `threw ${error.message}` }
+  check(actual === expected, `transcriptTitle — ${testCase.name}: expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`)
+}
+
 /* ── composeSessionTitle ──────────────────────────────────────────────────── */
 for (const testCase of fixture.composeSessionTitleCases) {
   const actual = composeSessionTitle({
@@ -153,7 +163,7 @@ function validateManifest(value) {
   const fields = [
     'requiredTurnNavNames', 'requiredFormatRelativeNames', 'requiredFormatDurationMinsNames',
     'requiredFormatDurationMsNames', 'requiredKnownTimeNames', 'requiredFormatDateLongNames', 'requiredSummarizePromptNames', 'requiredCleanSessionTitleNames', 'requiredProjectLabelNames',
-    'requiredComposeSessionTitleNames',
+    'requiredComposeSessionTitleNames', 'requiredTranscriptTitleNames',
   ]
   for (const field of fields) {
     if (!Array.isArray(value[field]) || value[field].some((name) => typeof name !== 'string' || name.length === 0)) {
@@ -173,4 +183,5 @@ function validateFixture(value, manifestValue) {
   assertNameSet(names(value.cleanSessionTitleCases), manifestValue.requiredCleanSessionTitleNames, 'cleanSessionTitleCases')
   assertNameSet(names(value.projectLabelCases), manifestValue.requiredProjectLabelNames, 'projectLabelCases')
   assertNameSet(names(value.composeSessionTitleCases), manifestValue.requiredComposeSessionTitleNames, 'composeSessionTitleCases')
+  assertNameSet(names(value.transcriptTitleCases), manifestValue.requiredTranscriptTitleNames, 'transcriptTitleCases')
 }
