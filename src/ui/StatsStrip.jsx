@@ -1,3 +1,4 @@
+import { formatInteger } from './format.js'
 import './StatsStrip.css'
 
 /* StatsStrip (.sst-*) — one inline row of stat pairs, each a value and its label: the summary
@@ -8,7 +9,7 @@ import './StatsStrip.css'
    ("1,284 sessions"); `order: 'label-first'` suits a phrase such as "longest streak 3 wk".
    Pairs are separated by spacing alone, never a middot glyph. Nothing renders for no pairs. */
 
-const formatValue = (value) => (typeof value === 'number' ? value.toLocaleString('en-US') : value)
+const formatValue = (value) => (typeof value === 'number' ? formatInteger(value) : value)
 
 /**
  * @typedef {object} StatsStripItem

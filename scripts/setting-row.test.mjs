@@ -40,6 +40,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const settingRow = React.createElement(SettingRow, { label: 'the setting', help: 'what it does', control: row.control, value: row.value, options: row.options, tag: row.tag, onCommit })
     const mounted = await mount(row.strictMode ? React.createElement(React.StrictMode, null, settingRow) : settingRow)
     const root = mounted.container
+    // the row's status mark and the switch's track say the state, so no on/off word repeats it
+    if (row.control === 'switch') report.check(!root.querySelector('.sw-state'), `${row.name}: a settings switch shows no on/off word`)
     for (const step of row.steps) {
       const [kind, arg] = step.split(/:(.*)/s)
       await mounted.act(() => {

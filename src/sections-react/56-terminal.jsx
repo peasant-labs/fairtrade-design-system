@@ -289,13 +289,13 @@ function TuiWizard() {
   const regionRef = useRef(null)
 
   const VILLAGE_OPTS = [
-    { id: 'connect', label: 'connect to peasant village', desc: 'share anonymized session analytics with the community' },
+    { id: 'connect', label: 'connect to peasant online', desc: 'share anonymized session analytics with the community' },
     { id: 'local', label: 'stay local', desc: 'all data stays on your machine' },
   ]
 
   const pages = [
     { title: 'welcome to peasant', radio: { options: VILLAGE_OPTS, value: village, set: setVillage, name: 'village' },
-      lede: 'connect to the peasant village for shared analytics, or stay local for private-only usage.' },
+      lede: 'connect to peasant online for shared analytics, or stay local for private-only usage.' },
     { title: 'select providers', radio: null,
       lede: 'discovered 152 transcripts. select providers to import from.' },
     { title: 'privacy preference', radio: { options: REDACTION, value: redaction, set: setRedaction, name: 'redaction' },
@@ -352,7 +352,7 @@ function TuiWizard() {
     }
     if (page === 4) {
       return (<div className="tuiw-kv">
-        <span className="tuiw-kv-k">village</span><span className="tuiw-kv-v">{village === 'connect' ? 'connected' : 'local only'}</span>
+        <span className="tuiw-kv-k">online</span><span className="tuiw-kv-v">{village === 'connect' ? 'connected' : 'local only'}</span>
         <span className="tuiw-kv-k">redaction</span><span className="tuiw-kv-v">{REDACTION.find((r) => r.id === redaction).label.replace(' (recommended)', '')}</span>
         <span className="tuiw-kv-k">retention</span><span className="tuiw-kv-v">{RETENTION.find((r) => r.id === retention).label.replace(' (recommended)', '')}</span>
         <span className="tuiw-kv-k">import</span><span className="tuiw-kv-v">claude code (all), codex (all)</span>

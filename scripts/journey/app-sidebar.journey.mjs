@@ -79,6 +79,8 @@ for (const motion of fixture.motions) for (const row of fixture.cases) {
       await expect(panel).toBeVisible()
       expect(Math.round((await panel.boundingBox()).x), `${context}: the open drawer must sit on the left edge`).toBe(0)
       await expectAligned(page, row.first, `${context} in the open drawer`)
+      // scan the drawer as a reader meets it: once its items are named and on screen
+      await expect(panel.getByRole('link', { name: row.first, exact: true })).toBeVisible()
       await expectAxeClean(page, `${context} with the drawer open`)
       await page.getByRole('button', { name: 'close the menu' }).click()
       await settle(page)

@@ -1,0 +1,30 @@
+# Required-NAME manifest for command-block.yaml: deletion protection. The gate asserts the case names
+# equal this list exactly, as a set, and parts-mutations.mjs proves each production mutation below
+# turns the gate red for the named reason.
+requiredCaseNames:
+  - a pipe keeps to the word after it
+  - a quoted pipe keeps to its command
+  - a double pipe is a word of its own
+  - a trailing pipe stays where it is
+  - flags and dates are one run each
+
+requiredMutationNames:
+  - a pipe is a word of its own
+  - an address breaks only at spaces
+  - the pipe joins with a no-break space
+mutations:
+  - name: a pipe is a word of its own
+    file: src/ui/CliOnboard.jsx
+    find: "else if (part === '|' && /^ +$/.test(parts[i + 1] ?? '') && parts[i + 2] !== undefined) {"
+    replace: "else if (false) {"
+    expectedDiagnostic: "a pipe keeps to the word after it: words"
+  - name: an address breaks only at spaces
+    file: src/ui/CliOnboard.jsx
+    find: "const runs = word.split(BREAK_AFTER)"
+    replace: "const runs = [word]"
+    expectedDiagnostic: "a pipe keeps to the word after it: words"
+  - name: the pipe joins with a no-break space
+    file: src/ui/CliOnboard.jsx
+    find: "out.push({ word: part + parts[i + 1] + parts[i + 2] })"
+    replace: "out.push({ word: part + '\\u2060\\u00a0' + parts[i + 2] })"
+    expectedDiagnostic: "a pipe keeps to the word after it: the command must read as written"

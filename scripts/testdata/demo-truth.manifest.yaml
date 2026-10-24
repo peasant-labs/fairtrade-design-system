@@ -50,8 +50,8 @@ mutations:
     expectedDiagnostic: analytics uses session vocabulary
   - name: uppercase count suffix
     file: src/ui/format.js
-    find: '.format(value).toLowerCase()'
-    replace: '.format(value)'
+    find: "return COMPACT.format(n).replace(/K$/, 'k')"
+    replace: 'return COMPACT.format(n)'
     expectedDiagnostic: village counts use lowercase k
   - name: wrong transcript token magnitude
     file: src/mockups/inuse/TranscriptApp.jsx

@@ -15,6 +15,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import './ToolRenderers.css'
+import { formatDurationMs } from './transcript/time.js'
 
 /* ToolRenderers: the agent transcript's set of tool-call renderers, the React port of
    peasant's canvas/tool-renderers/ (rendererFor + the per-tool ReadRenderer / EditRenderer /
@@ -65,12 +66,8 @@ function basename(path) {
   return i === -1 ? trimmed : trimmed.slice(i + 1)
 }
 
-/** humanize a duration in ms → "820ms" / "1.4s" (tabular-friendly, no locale surprises). */
-function fmtDuration(ms) {
-  if (ms == null) return ''
-  if (ms < 1000) return `${ms}ms`
-  return `${(ms / 1000).toFixed(1)}s`
-}
+/* a tool call's duration in the transcript's one duration format ("820ms", "1.4s", "1m 15s") */
+const fmtDuration = formatDurationMs
 
 /** the one-line arg preview shown collapsed, derived per kind from the tool's args. */
 function argPreview(tool) {

@@ -6,6 +6,7 @@ import {
   CircleFadingArrowUp,
   ExternalLink,
   GitPullRequest,
+  Info,
   ListX,
   Loader,
   MoreHorizontal,
@@ -49,12 +50,16 @@ import './Publish.css'
 const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`
 /* a count the host did not give is left out rather than stated as zero */
 const countOf = (count, one, many) => (typeof count === 'number' ? plural(count, one, many) : null)
+/* the host's visibility, when it gives one; anything else says nothing */
+const visibilityWord = (visibility) => (visibility === 'public' || visibility === 'private' ? visibility : null)
 
 const STATE_META = {
   'not-published': { icon: CircleDashed, text: () => 'not published', action: 'publish' },
   publishing: { icon: Loader, text: ({ collectives }) => (collectives ? `publishing to ${plural(collectives, 'collective', 'collectives')}` : 'publishing'), action: 'publish' },
-  published: { icon: CircleCheck, text: ({ collectives }) => ['published', countOf(collectives, 'collective', 'collectives'), 'up to date'].filter(Boolean).join(', '), action: 'update' },
-  'new-turns': { icon: CircleFadingArrowUp, text: ({ collectives, newTurns }) => ['published', countOf(collectives, 'collective', 'collectives'), countOf(newTurns, 'new turn', 'new turns') ?? 'new turns'].filter(Boolean).join(', '), action: 'update' },
+  /* up to date is the default, so it goes unsaid. "public" and "private" come only from the host's
+     `visibility`, never from a missing count: a transcript no collective reads can still be public. */
+  published: { icon: CircleCheck, text: ({ collectives, visibility }) => visibilityWord(visibility) === 'public' ? 'published, public' : collectives ? `published to ${plural(collectives, 'collective', 'collectives')}` : visibilityWord(visibility) === 'private' ? 'published, private' : 'published', action: 'update' },
+  'new-turns': { icon: CircleFadingArrowUp, text: () => 'needs update', action: 'update' },
   'auto-publish': { icon: Repeat, text: ({ collective }) => (collective ? `auto-publish on, ${collective}` : 'auto-publish on'), action: 'update' },
   'outside-lists': { icon: ListX, text: () => 'not published, outside your saved lists', action: 'publish' },
 }
@@ -72,18 +77,21 @@ function stateMeta(state) {
  * @param {object} props
  * @param {PublishState} props.state
  * @param {number} [props.collectives] - how many collectives can read it (published, new-turns, publishing); left out of the words when omitted.
- * @param {number} [props.newTurns] - turns recorded since the last publish (new-turns).
+ * @param {number} [props.newTurns] - turns recorded since the last publish (new-turns); the label says "needs update".
  * @param {string} [props.collective] - the collective(s) the project's auto-publish rule targets (auto-publish).
+ * @param {'public'|'private'} [props.visibility] - published: who can find it beyond its collectives, as the host knows
+ *        it. "published, public" and "published, private" are said only from this; without it a transcript no
+ *        collective reads is just "published".
  * @param {string} [props.className]
  */
-export function PublishStateLabel({ state, collectives, newTurns, collective, className = '', ...rest }) {
+export function PublishStateLabel({ state, collectives, newTurns, collective, visibility, className = '', ...rest }) {
   const meta = stateMeta(state)
   const Icon = meta.icon
   const cls = ['pub-state', `pub-state-${state}`, className].filter(Boolean).join(' ')
   return (
     <span className={cls} data-state={state} {...rest}>
       <Icon className={state === 'publishing' ? 'pub-state-icon pub-spin' : 'pub-state-icon'} aria-hidden="true" />
-      <span className="pub-state-text">{meta.text({ collectives, newTurns, collective })}</span>
+      <span className="pub-state-text">{meta.text({ collectives, newTurns, collective, visibility })}</span>
     </span>
   )
 }
@@ -98,12 +106,13 @@ export function PublishStateLabel({ state, collectives, newTurns, collective, cl
  * @param {number} [props.collectives]
  * @param {number} [props.newTurns]
  * @param {string} [props.collective]
+ * @param {'public'|'private'} [props.visibility]
  * @param {() => void} [props.onAction] - the one button. omit it and no button renders.
  * @param {string} [props.actionLabel] - replaces the state's default label.
  * @param {import('./Menu.jsx').MenuItem[]} [props.moreItems] - an optional overflow menu after the button.
  * @param {string} [props.className]
  */
-export function PublishBar({ state, collectives, newTurns, collective, onAction, actionLabel, moreItems, className = '', ...rest }) {
+export function PublishBar({ state, collectives, newTurns, collective, visibility, onAction, actionLabel, moreItems, className = '', ...rest }) {
   const meta = stateMeta(state)
   const busy = state === 'publishing'
   const label = actionLabel ?? meta.action
@@ -111,7 +120,7 @@ export function PublishBar({ state, collectives, newTurns, collective, onAction,
   return (
     <div className={cls} role="group" aria-label="publish" {...rest}>
       <span role="status" className="pub-bar-status">
-        <PublishStateLabel state={state} collectives={collectives} newTurns={newTurns} collective={collective} />
+        <PublishStateLabel state={state} collectives={collectives} newTurns={newTurns} collective={collective} visibility={visibility} />
       </span>
       {onAction && (
         <button
@@ -286,6 +295,17 @@ function reviewRefused(scan) {
   )
 }
 
+/* a host's actionable detail (what failed, why, where, the fix), one disclosure away in its box */
+function FailureDetail({ detail }) {
+  if (typeof detail !== 'string' || !detail) return null
+  return (
+    <details className="pub-failure-detail">
+      <summary>details</summary>
+      <pre>{detail}</pre>
+    </details>
+  )
+}
+
 function WhatLeaves({ state, scan, onRescan, checkingStage, readOnlyReview }) {
   const titleId = useId()
   const matches = Array.isArray(scan?.matches) ? scan.matches : []
@@ -331,25 +351,20 @@ function WhatLeaves({ state, scan, onRescan, checkingStage, readOnlyReview }) {
               {scan.failureAction.busy ? <Loader className="pub-spin" aria-hidden="true" /> : null}{scan.failureAction.label}
             </button>
           ) : null}
-          {/* the host's actionable detail (what failed, why, where, the fix) stays one step away */}
-          {typeof scan?.failureDetail === 'string' && scan.failureDetail ? (
-            <details className="pub-failure-detail">
-              <summary>details</summary>
-              <pre>{scan.failureDetail}</pre>
-            </details>
-          ) : null}
+          <FailureDetail detail={scan?.failureDetail} />
         </div>
       ) : unsupported ? (
-        <p className="pub-line pub-line-alert" role="alert"><AlertTriangle aria-hidden="true" />the scan contains an unsupported redaction category, so publish is off. update the scanner and re-scan.</p>
+        <p className="pub-line pub-line-alert" role="alert"><AlertTriangle aria-hidden="true" /><span className="pub-line-text">the scan contains an unsupported redaction category, so publish is off. update the scanner and re-scan.</span></p>
       ) : unscanned ? (
         <p className="pub-line pub-line-alert">
-          <AlertTriangle aria-hidden="true" /> not scanned yet, so publish is off.{onRescan ? ' re-scan to check it.' : ''}
+          <AlertTriangle aria-hidden="true" /><span className="pub-line-text">not scanned yet, so publish is off.{onRescan ? ' re-scan to check it.' : ''}</span>
         </p>
       ) : (
         <>
+          {/* the count wraps, and its toggle stays on the count's first line at every width */}
           <p className={kept ? 'pub-line pub-line-alert' : 'pub-line'}>
             {kept ? <AlertTriangle aria-hidden="true" /> : <ShieldCheck aria-hidden="true" />}
-            <span>
+            <span className="pub-line-text">
               <span className="tnum">{matchCount}</span> {matchCount === 1 ? 'match' : 'matches'}
               {kept ? <>, <span className="tnum">{kept}</span> kept un-redacted, will be sent</> : matchCount ? ', all redacted' : ', nothing to redact'}
             </span>
@@ -359,6 +374,15 @@ function WhatLeaves({ state, scan, onRescan, checkingStage, readOnlyReview }) {
               </button>
             )}
           </p>
+          {/* the host's quiet note on the scanned copy (what it leaves out, and why): information,
+              never an alert, and it does not hold publishing back */}
+          {typeof scan?.note?.line === 'string' && scan.note.line ? (
+            <div className="pub-line pub-line-note">
+              <Info aria-hidden="true" />
+              <span className="pub-line-text">{scan.note.line}</span>
+              <FailureDetail detail={scan.note.detail} />
+            </div>
+          ) : null}
           {open && matches.length > 0 && (
             <RedactionReview readOnly={readOnlyReview} matches={matches} total={scan?.total ?? matches.length} availableLevels={['standard']} className="pub-review" />
           )}
@@ -374,7 +398,7 @@ function WhatLeaves({ state, scan, onRescan, checkingStage, readOnlyReview }) {
  * checkbox, then the done state with the village link. The host drives `state`; the popup never
  * advances on its own.
  *
- * States: `connect` (this computer is not signed in to village), `waiting-github` (after continue
+ * States: `connect` (this computer is not signed in to peasant online), `waiting-github` (after continue
  * with github), `checking` (the redaction check is running), `scan-failed` (publish is off,
  * re-scan stays on), `no-collective` (signed in, in no collective), `ready`, `publishing`,
  * `stopped` (a named step failed; the host names any changes already applied), `done`, `waits-approval` (done, and
@@ -386,7 +410,7 @@ function WhatLeaves({ state, scan, onRescan, checkingStage, readOnlyReview }) {
  * @param {string} props.title - the session title, kept in its case.
  * @param {'publish'|'update'} [props.mode='publish']
  * @param {PublishDialogState} props.state - one of PUBLISH_DIALOG_STATES.
- * @param {{ matches?: import('./Redaction.jsx').RedactionMatch[], matchCount?: number, total?: number, failure?: string, failureDetail?: string, failureAction?: { label: string, onSelect: () => void, busy?: boolean } }} [props.scan] - the host's scan result. `failure` is one plain line; `failureAction` is a button in the failure box (the one action that fixes it); `failureDetail`, the actionable detail (what, why, where, the fix), shows as pre-wrapped mono text behind a "details" disclosure in the failure box. `matchCount` is the full occurrence count when `matches` contains only examples. Until it carries a
+ * @param {{ matches?: import('./Redaction.jsx').RedactionMatch[], matchCount?: number, total?: number, failure?: string, failureDetail?: string, failureAction?: { label: string, onSelect: () => void, busy?: boolean }, note?: { line: string, detail?: string } }} [props.scan] - the host's scan result. `note` is a quiet line under a finished scan's count (what the scanned copy leaves out, and why), with its detail behind a "details" disclosure; it is information, not an alert, and publishing stays on. `failure` is one plain line; `failureAction` is a button in the failure box (the one action that fixes it); `failureDetail`, the actionable detail (what, why, where, the fix), shows as pre-wrapped mono text behind a "details" disclosure in the failure box. `matchCount` is the full occurrence count when `matches` contains only examples. Until it carries a
  *        `matches` list, the popup says the transcript is not scanned and keeps publish off. A match with `kept: true` leaves un-redacted, and the
  *        popup says so and opens the matches.
  * @param {() => void} [props.onRescan]
@@ -403,8 +427,13 @@ function WhatLeaves({ state, scan, onRescan, checkingStage, readOnlyReview }) {
  * @param {string} [props.primaryLabel] - replaces the derived primary label.
  * @param {() => void} [props.onPublish]
  * @param {() => void} [props.onConnect] - `continue with github`.
- * @param {string} [props.joinHref] - `create or join one on village`.
+ * @param {string} [props.joinHref] - `create or join one on peasant online`.
  * @param {string} [props.stoppedAt] - the step that failed, in words ("setting who can read it").
+ * @param {string} [props.stoppedDetail] - stopped state: the host's actionable detail, pre-wrapped mono text behind a
+ *        "details" disclosure in the stopped box.
+ * @param {{ line: string, detail?: string, onRetry?: () => void, busy?: boolean }} [props.accessFailure] - the
+ *        collectives could not be read. "who can read it" shows the line, a retry for that read and the detail in
+ *        place of the access list and picker, and publishing stays off. The dialog's state stays the host's.
  * @param {() => void} [props.onRecover] - stopped-state prerequisite read/sign-in recovery only; may run before a scan or audience exists, but never with an explicitly refused review. Mutually exclusive with onRetry. Must not publish.
  * @param {() => void} [props.onRetry] - stopped-state actual publication retry; requires a valid review and audience. Mutually exclusive with onRecover.
  * @param {{ url: string, collectives: string[], pending?: string[], pullRequest?: { number: number, branch: string, href?: string } }} [props.done]
@@ -430,6 +459,8 @@ export function PublishDialog({
   onConnect,
   joinHref,
   stoppedAt,
+  stoppedDetail,
+  accessFailure,
   onRecover,
   onRetry,
   done,
@@ -450,7 +481,7 @@ export function PublishDialog({
     ? ['update', adds ? `add ${plural(adds, 'collective', 'collectives')}` : null, removes ? `remove ${plural(removes, 'collective', 'collectives')}` : null].filter(Boolean).join(' and ')
     : readers.length ? `publish to ${plural(readers.length, 'collective', 'collectives')}` : 'publish'
   const ambiguousRetry = !!onRecover && !!onRetry
-  const blocked = state === 'checking' || state === 'scan-failed' || state === 'no-collective' || state === 'publishing' || (readers.length === 0 && !(mode === 'update' && removes > 0)) || scan === undefined || reviewRefused(scan) || ambiguousRetry
+  const blocked = state === 'checking' || state === 'scan-failed' || state === 'no-collective' || state === 'publishing' || (readers.length === 0 && !(mode === 'update' && removes > 0)) || scan === undefined || reviewRefused(scan) || ambiguousRetry || !!accessFailure
   const recoveryBlocked = reviewRefused(scan) || ambiguousRetry
   const latestActions = useRef(null)
   useLayoutEffect(() => {
@@ -481,7 +512,7 @@ export function PublishDialog({
       : pendingReaders.length
         ? <>submitted to <span className="pub-title-content">{joinNames(pendingReaders)}</span></>
         : mode === 'update' ? 'updated, no collective can read it' : 'published privately'
-    : <>{verb} <span className="pub-title-content">“{title}”</span></>
+    : <>{verb} <span className="pub-title-content" title={title}>“{title}”</span></>
 
   // A state change may disable or remove the focused close, checkbox or audience control.
   // Repair that handoff before paint; an enabled primary survives the busy state.
@@ -514,7 +545,8 @@ export function PublishDialog({
   } else {
     footer = (
       <>
-        <span className="pub-foot-note">{state === 'publishing' ? 'sending your redacted transcript to peasant online.' : state === 'stopped' ? 'review who can read it.' : `nothing leaves your machine until you ${verb}.`}</span>
+        {/* stopped: the box says what happened, and some of it may have left already, so no note */}
+        {state === 'stopped' ? null : <span className="pub-foot-note">{state === 'publishing' ? 'sending your redacted transcript to peasant online.' : `nothing leaves your machine until you ${verb}.`}</span>}
         <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={state === 'publishing'}>cancel</button>
         {state === 'stopped' ? (onRecover || onRetry) && (
           <button type="button" className="btn btn-primary btn-sm" disabled={onRecover ? recoveryBlocked : blocked} onClick={onRecover ? runRecover : runRetry}><RotateCw aria-hidden="true" /> retry</button>
@@ -544,7 +576,7 @@ export function PublishDialog({
         </div>
       )}
       {state === 'waiting-github' && (
-        <p className="pub-line" role="status"><Loader className="pub-spin" aria-hidden="true" /> waiting for github in your browser</p>
+        <p className="pub-line" role="status"><Loader className="pub-spin" aria-hidden="true" /><span className="pub-line-text">waiting for github in your browser</span></p>
       )}
 
       {!gate && !finished && (
@@ -564,6 +596,17 @@ export function PublishDialog({
                 you are not in a collective yet.{' '}
                 {joinHref && <a className="link" href={joinHref}>create or join one on peasant online <ExternalLink aria-hidden="true" /></a>}
               </p>
+            ) : accessFailure ? (
+              <div className="pub-line pub-line-alert" role="alert">
+                <AlertTriangle aria-hidden="true" />
+                <span className="pub-line-text">{accessFailure.line || 'your collectives could not be read.'}</span>
+                {typeof accessFailure.onRetry === 'function' ? (
+                  <button type="button" className="btn btn-secondary btn-sm pub-failure-action" aria-label="retry loading your collectives" onClick={() => accessFailure.onRetry()} disabled={!!accessFailure.busy} aria-busy={accessFailure.busy ? 'true' : undefined}>
+                    {accessFailure.busy ? <Loader className="pub-spin" aria-hidden="true" /> : <RotateCw aria-hidden="true" />} retry
+                  </button>
+                ) : null}
+                <FailureDetail detail={accessFailure.detail} />
+              </div>
             ) : (
               <>
                 <AccessList items={access} onRemove={state === 'publishing' ? undefined : onRemove} onRestore={state === 'publishing' ? undefined : onRestore} />
@@ -584,12 +627,14 @@ export function PublishDialog({
           </section>
 
           {state === 'publishing' && (
-            <p className="pub-line" role="status"><Loader className="pub-spin" aria-hidden="true" /> {mode === 'update' ? 'updating' : `publishing to ${plural(readers.length, 'collective', 'collectives')}`}</p>
+            <p className="pub-line" role="status"><Loader className="pub-spin" aria-hidden="true" /><span className="pub-line-text">{mode === 'update' ? 'updating' : `publishing to ${plural(readers.length, 'collective', 'collectives')}`}</span></p>
           )}
           {state === 'stopped' && (
-            <p className="pub-line pub-line-alert" role="alert">
-              <AlertTriangle aria-hidden="true" /> stopped while {stoppedAt ?? 'publishing'}. review who can read it.
-            </p>
+            <div className="pub-line pub-line-alert" role="alert">
+              <AlertTriangle aria-hidden="true" />
+              <span className="pub-line-text">stopped while {stoppedAt ?? 'publishing'}.</span>
+              <FailureDetail detail={stoppedDetail} />
+            </div>
           )}
         </>
       )}

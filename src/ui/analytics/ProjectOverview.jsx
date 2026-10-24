@@ -347,7 +347,7 @@ function SectionToggle({ baseSections, sections, userSections, onToggle }) {
           {visible}/{PROJECT_OVERVIEW_SECTION_DEFS.length}
         </b>
       </span>
-      <div className="gan-toggle-chips">
+      <div className="gan-toggle-chips gan-section-chips">
         {PROJECT_OVERVIEW_SECTION_DEFS.map((section) => {
           const hostEnabled = baseSections[section.key]
           const pressed = hostEnabled && userSections[section.key]

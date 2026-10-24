@@ -9,6 +9,7 @@ import ToolCall from './ToolCall.jsx'
 import UsageDisclosure from './UsageDisclosure.jsx'
 import { Term } from '../Explainer.jsx'
 import { formatRelative as formatRelativeTime, isKnownTime } from './time.js'
+import { formatCount } from '../format.js'
 
 /* TurnCard — one transcript turn, lifted verbatim from the canonical mockup
    (src/mockups/inuse/TranscriptApp.jsx:541). DUMB: it renders a cooked `TurnVM`
@@ -25,7 +26,6 @@ import { formatRelative as formatRelativeTime, isKnownTime } from './time.js'
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
 
 /** compact token count, e.g. 1700 → "1.7k". @param {number} n @returns {string} */
-const fmtTokens = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n))
 /* a model id without its provider prefix: "anthropic/claude-fable-5" reads "claude-fable-5" */
 const modelName = (id) => String(id ?? '').split('/').pop()
 
@@ -145,8 +145,8 @@ export default function TurnCard({
         </span>
       )}
       {turn.tokens && (
-        <Term className="txn-tokbadge tnum" def={fmtTokens(turn.tokens.in) + ' input tokens, ' + fmtTokens(turn.tokens.out) + ' output tokens'}>
-          <Coins size={14} aria-hidden="true" /> {fmtTokens(turn.tokens.in + turn.tokens.out)} tokens
+        <Term className="txn-tokbadge tnum" def={formatCount(turn.tokens.in) + ' input tokens, ' + formatCount(turn.tokens.out) + ' output tokens'}>
+          <Coins size={14} aria-hidden="true" /> {formatCount(turn.tokens.in + turn.tokens.out)} tokens
         </Term>
       )}
     </div>

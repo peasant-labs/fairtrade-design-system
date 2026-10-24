@@ -1,6 +1,7 @@
 import { MapNode, IntensityScope } from '../Intensity.jsx'
 import ScentTag from './ScentTag.jsx'
 import './timelinePrimitives.css'
+import { formatDecimal } from '../format.js'
 
 /* RankedRow is one row of the ranked entry list: name, a DOI meter (the
    existing Intensity `MapNode` square, reused rather than a bespoke gauge),
@@ -31,7 +32,7 @@ export default function RankedRow({ row, loc = 0, selected = false, onSelect, cl
           Intensity.jsx's own Heatmap/RampLegend do). Without this wrapper the
           fill + text colors resolve to `initial` (invisible text). */}
       <IntensityScope className="tlp-ranked-doi-scope">
-        <MapNode label={row.name} loc={loc} recorded={Number(row.doi.toFixed(2))} total={1} selected={selected} as="span" className="tlp-ranked-doi" />
+        <MapNode label={row.name} loc={loc} recorded={Math.round(row.doi * 100) / 100} total={1} selected={selected} as="span" className="tlp-ranked-doi" />
       </IntensityScope>
       <span className="tlp-ranked-name" title={row.name}>{row.name}</span>
       <span className="tlp-ranked-tags" aria-label="comprehension signals">
@@ -39,7 +40,7 @@ export default function RankedRow({ row, loc = 0, selected = false, onSelect, cl
           <ScentTag key={tag} tag={tag} hoverText={tag.startsWith('agent wrote:') ? row.hoverText ?? undefined : undefined} />
         ))}
       </span>
-      <span className="tlp-ranked-doi-val tnum" aria-hidden="true">{row.doi.toFixed(2)}</span>
+      <span className="tlp-ranked-doi-val tnum" aria-hidden="true">{formatDecimal(row.doi, 2)}</span>
     </button>
   )
 }

@@ -180,7 +180,9 @@ export function SettingRow({ label, help, control, value, options = [], onCommit
 
   let controlNode
   if (control === 'switch') {
-    controlNode = <Switch id={id} checked={Boolean(shown)} busy={busy} disabled={disabled} onChange={(next) => commit(next)} />
+    // the row's own status mark says pending, saved or failed, and the track shows on or off, so the
+    // switch's on/off word would only repeat it
+    controlNode = <Switch id={id} checked={Boolean(shown)} busy={busy} disabled={disabled} stateMarker={false} onChange={(next) => commit(next)} />
   } else if (control === 'checkbox') {
     controlNode = (
       <label className="check srow-check">
@@ -203,7 +205,7 @@ export function SettingRow({ label, help, control, value, options = [], onCommit
 
   // a long text value reads under its label rather than squeezed into the right-hand column
   const stacked = stack ?? (control === 'text' && String(shown ?? '').length > STACK_AFTER)
-  const cls = ['srow', `srow-${status}`, stacked ? 'srow-stacked' : '', className].filter(Boolean).join(' ')
+  const cls = ['srow', `srow-${status}`, control === 'text' ? 'srow-text-row' : '', stacked ? 'srow-stacked' : '', className].filter(Boolean).join(' ')
   return (
     <div className={cls} data-status={status} {...rest}>
       <div className="srow-text-col">

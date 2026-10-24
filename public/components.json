@@ -740,6 +740,7 @@
         "Default",
         "Redaction",
         "Empty",
+        "RedactionUnknownCategory",
         "RedactionEmpty",
         "LightTheme"
       ]
@@ -1367,6 +1368,10 @@
         "PopupUnscanned",
         "PopupPublishing",
         "PopupStopped",
+        "PopupStoppedDetail",
+        "PopupCollectivesFailed",
+        "PopupScanNote",
+        "PopupLongTitle",
         "PopupDone",
         "PopupWaitsApproval",
         "PopupUpdate",

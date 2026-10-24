@@ -74,7 +74,8 @@ export const BarStates = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('published, 2 collectives, 6 new turns')).toBeVisible()
+    await expect(canvas.getByText('needs update')).toBeVisible()
+    await expect(canvas.getByText('published to 2 collectives')).toBeVisible()
     await expect(canvas.getAllByRole('button', { name: 'update' })).toHaveLength(3)
     await expect(canvas.queryByRole('button', { name: 'manage' })).toBeNull()
   },
@@ -87,7 +88,7 @@ export const Label = {
   render: () => <PublishStateLabel state="auto-publish" collective="Acme Platform" />,
 }
 
-export const PopupConnect = { name: 'popup, connect to village first', render: () => <Popup state="connect" /> }
+export const PopupConnect = { name: 'popup, connect to peasant online first', render: () => <Popup state="connect" /> }
 export const PopupWaitingGithub = { name: 'popup, waiting for github', render: () => <Popup state="waiting-github" /> }
 export const PopupChecking = { name: 'popup, checking for sensitive content', render: () => <Popup state="checking" /> }
 export const PopupScanFailed = {
@@ -164,6 +165,58 @@ export const PopupUnscanned = {
 }
 export const PopupPublishing = { name: 'popup, publishing', render: () => <Popup state="publishing" /> }
 export const PopupStopped = { name: 'popup, stopped at a step', render: () => <Popup state="stopped" /> }
+export const PopupStoppedDetail = {
+  name: 'popup, stopped, with a detail',
+  render: () => (
+    <Popup
+      state="stopped"
+      stoppedAt="reading your collectives"
+      stoppedDetail={'list collectives: reach peasant online: Get "http://127.0.0.1:3001/api/v1/collectives": dial tcp 127.0.0.1:3001: connect: connection refused'}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement.ownerDocument.body)
+    await expect(canvas.getByText('stopped while reading your collectives.')).toBeInTheDocument()
+    await expect(canvas.queryAllByText(/review who can read it/)).toHaveLength(0)
+    await userEvent.click(canvas.getByText('details'))
+    await expect(canvas.getByText(/connect: connection refused/)).toBeVisible()
+    await expect(canvas.getAllByRole('button', { name: /retry/ })).toHaveLength(1)
+  },
+}
+export const PopupCollectivesFailed = {
+  name: 'popup, collectives cannot load',
+  render: () => (
+    <Popup
+      state="ready"
+      access={[]}
+      accessFailure={{ line: 'can’t load your collectives right now', detail: 'list collectives: reach peasant online: connection refused', onRetry: fn() }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement.ownerDocument.body)
+    await expect(canvas.getByText('can’t load your collectives right now')).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'retry loading your collectives' })).toBeEnabled()
+    await expect(canvas.getByRole('button', { name: 'publish' })).toBeDisabled()
+  },
+}
+export const PopupScanNote = {
+  name: 'popup, a note on the scanned copy',
+  render: () => (
+    <Popup
+      state="ready"
+      scan={{ ...SCAN, note: { line: 'one line in this session couldn’t be read, so the copy being published stops before it.', detail: 'line 50 of the recording: unexpected end of JSON input' } }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement.ownerDocument.body)
+    await expect(canvas.getByText(/copy being published stops before it/)).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'publish to 2 collectives' })).toBeEnabled()
+  },
+}
+export const PopupLongTitle = {
+  name: 'popup, a long session title',
+  render: () => <Popup state="ready" title="step 0: benchmark the transfer handler and mail the numbers to <EMAIL>, then compare them with last week's run and write up where the time goes" />,
+}
 export const PopupDone = { name: 'popup, done', render: () => <Popup state="done" /> }
 export const PopupWaitsApproval = {
   name: 'popup, waits for approval',

@@ -15,10 +15,14 @@ async function assertPinnedTheme(page, theme) {
   expect(await page.locator('html').getAttribute('data-theme'), 'the scanned theme must be the actual rendered theme').toBe(theme)
 }
 
-async function assertMinimumTarget(control, name) {
-  const bounds = await control.evaluate(el => ({ height: el.getBoundingClientRect().height, width: el.getBoundingClientRect().width, minimum: parseFloat(getComputedStyle(el).getPropertyValue('--target-min')) }))
+/* the one minimum-target rule, applied to measured bounds */
+function checkMinimumTarget(bounds, name) {
   expect(bounds.height, `${name}: minimum target height`).toBeGreaterThanOrEqual(bounds.minimum)
   expect(bounds.width, `${name}: minimum target width`).toBeGreaterThanOrEqual(bounds.minimum)
+}
+
+async function assertMinimumTarget(control, name) {
+  checkMinimumTarget(await control.evaluate(el => ({ height: el.getBoundingClientRect().height, width: el.getBoundingClientRect().width, minimum: parseFloat(getComputedStyle(el).getPropertyValue('--target-min')) })), name)
 }
 
 for (const surface of spec.surfaces) for (const width of spec.widths) for (const theme of spec.themes) {
@@ -213,8 +217,18 @@ for (const theme of spec.themes) test(`accessibility mutations fail for their de
       await page.goto(`${origin}/?fb=off&app=transcript&theme=${theme}#inuse`, { waitUntil: 'networkidle' })
       const anchor = page.locator('.txn-anchor').first()
       await expect(anchor).toBeVisible()
-      await anchor.evaluate(el => { el.style.width = '22px'; el.style.height = '22px' })
-      await expect(assertMinimumTarget(anchor, mutation.name)).rejects.toThrow(/minimum target/)
+      // shrink and measure the same node in one step. the anchor transitions its size, so the new box
+      // only lands once those transitions finish; measure after that. the shrink must have taken, and
+      // the one rule must reject it
+      const shrunk = await anchor.evaluate(async el => {
+        el.style.width = '22px'
+        el.style.height = '22px'
+        await Promise.all(el.getAnimations().map(animation => animation.finished))
+        const box = el.getBoundingClientRect()
+        return { connected: el.isConnected, height: box.height, width: box.width, minimum: parseFloat(getComputedStyle(el).getPropertyValue('--target-min')) }
+      })
+      expect(shrunk.connected && shrunk.width === 22 && shrunk.height === 22, `${mutation.name}: the anchor must be shrunk to 22px ${JSON.stringify(shrunk)}`).toBe(true)
+      expect(() => checkMinimumTarget(shrunk, mutation.name)).toThrow(/minimum target/)
     } else {
       await page.evaluate(kind => {
         if (kind === 'tree-children') document.querySelector('.gmp-navigator-disclosure').removeAttribute('aria-hidden')

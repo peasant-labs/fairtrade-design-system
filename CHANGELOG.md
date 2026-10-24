@@ -4,6 +4,90 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.40 - 2026-10-23
+
+### Changed
+
+- `PublishDialog`:
+  - The stopped box says only where it stopped. "review who can read it." no
+    longer repeats in the box and the footer, and the footer has no note
+    while stopped.
+  - Each line's words wrap while its one action stays on the first line, on
+    the words' baseline, so "show N examples" stays beside the match count
+    at 390. Each icon centres on its line's first line of words.
+  - Re-scan and show-examples set their words on the section's right edge.
+  - A long session title stops at two lines with an ellipsis. The whole
+    title is the tooltip and stays in the dialog's accessible name.
+- `PublishStateLabel` (and `PublishBar`): "published to 2 collectives",
+  "needs update" when new turns wait, and no "up to date", the default.
+  "published, public" and "published, private" come only from the new
+  `visibility` prop; without it, a transcript no collective reads is just
+  "published".
+- `Switch`: on is the inverted neutral (an `--ink-strong` track and a
+  `--canvas` thumb), never the amber fill, and the on word is ink.
+- `SettingRow`:
+  - Its switch shows no on/off word; the row's status mark and the track
+    say the state.
+  - Below 768px a text value and its edit button sit under the label, at
+    its left edge.
+  - A host's own action row (words and a button) puts the button on its own
+    line under the words, at the right padding.
+- `DiffView` in redaction mode shows only the engine's category label
+  (CREDENTIAL, PII, PATH, INTERNAL). A match whose category the engine does
+  not know blocks the view with one alert and no original line, the way
+  `RedactionReview` does.
+- The demo and the stories name the hosted product "peasant online" in
+  user-facing copy, for example "delete your peasant online account. this
+  cannot be undone."
+- Every number on screen goes through one formatter. Costs read "$0.30", or
+  "<$0.01" under a cent, never "0.30000000000000004" or "1e-7". Large counts
+  read "66.7B", and a missing or unreadable number reads "—". The usage
+  panels, the meta row, turn and graph token labels, ChangeDetail, StatsStrip,
+  the collectives table, the select tallies and the redaction confidence all
+  use it. Analytics millions read one decimal ("1.2M").
+- A usage figure the host did not report reads "—" once, not "unknown
+  (unknown)".
+- `CommandBlock` wrap: words are inline, so a wrapped address no longer
+  pushes the next word down. A line breaks at spaces and after "//" and path
+  slashes, a hyphenated piece never splits, and "| bash" stays together.
+  Copy still gives the exact command.
+- `TranscriptViewer` on a phone: the search trigger is one 44px icon beside
+  the tabs, with no "⌘F" on a touch screen. The trail stays on one line at
+  every width, its middle crumbs shortened with an ellipsis.
+- `ProjectOverview` on a phone: the section chips are one scrolling row with
+  the tabs' edge fade, starting on the page inset.
+
+### Added
+
+- `PublishDialog`:
+  - `stoppedDetail`: the host's actionable detail behind a "details"
+    disclosure in the stopped box.
+  - `accessFailure: { line, detail?, onRetry?, busy? }`: a collectives read
+    failure shown inside "who can read it" in place of the list and the
+    picker, with its own retry (named "retry loading your collectives") and
+    details. Publishing stays off.
+  - `scan.note: { line, detail? }`: a quiet line under a finished scan's
+    count, with its detail behind a "details" disclosure. It is not an alert,
+    and publishing stays on.
+- `PublishStateLabel` and `PublishBar` take `visibility: 'public' | 'private'`.
+- `Switch` takes `stateMarker={false}` for hosts that state the setting
+  themselves.
+- `formatCount`, `formatInteger`, `formatCost`, `formatDecimal` and
+  `MISSING_NUMBER` are exported from `/ui`.
+
+### Compatibility
+
+- New props only. `DiffView`'s redaction `matches[].category` must be an
+  engine category (`RedactionCategory`): a rule name such as `api-key` now
+  blocks the view instead of showing as a label.
+- A host test that read "published, 2 collectives, up to date" or "published,
+  2 collectives, 6 new turns" needs the new copy.
+- A host that stacked SettingRow text values or action buttons on a phone,
+  or styled the switch's on state, can drop those rules.
+- Hosts that format costs or counts themselves can switch to the shared
+  formatter. The website can drop its CommandBlock override (d3bd100) and
+  DocCommand's own token grouping.
+
 ## 0.0.39 - 2026-10-23
 
 ### Changed
@@ -25,11 +109,13 @@ package is pre-1.0, so minor/patch semantics are best-effort.
   - Thinking reads "30 words".
   - A model change reads "claude-fable-5 → claude-opus-4-8".
   - Diff +/− counts come from the diff's own lines, so "+0 −0" no longer
-    shows on a real change.
+    shows on a real change. A task's churn in the trace outline ("1 file,
+    +A −D") counts from the same lines.
   - The filters rail is gone on tabs that have no filters.
   - A Cursor prompt shows without its `<user_query>` wrapper or the context
-    tags before it. The wire keeps the text, and prose that only mentions the
-    tag is shown as written.
+    tags before it. Display only: a Cursor user turn gets `displayContent` (and
+    its task `displayPrompt`), which the turn and the trace outline render;
+    `content` stays as recorded, and other harnesses are untouched.
 - The last breadcrumb is a link when it has an `href`. One without an `href`
   carries `aria-current="page"`.
 - `RedactionReview` and `DiffView` keep the badge comma against the category
@@ -38,9 +124,10 @@ package is pre-1.0, so minor/patch semantics are best-effort.
   "no collectives saved yet", "nothing saved on this page" and "no
   contribution history saved yet".
 - `ProjectOverview`'s typical vs. tail reads "2m, 5m", with the p90 in AA ink.
-- From 768px, `.iu-page` takes the `.asb-page` inset (32px top and sides, 48px
-  bottom) and `.iu-page-title` the hero size. A `.iu-view` that holds a page
-  adds no inset of its own.
+- `.iu-page` takes the `.asb-page` inset: 32px top and sides and 48px bottom
+  from 768px, 16px sides below, and `.iu-page-title` the hero size from 768px.
+  A `.iu-view` that holds a page, or the analytics overview, adds no inset of
+  its own, and the overview keeps its 16px sides on a phone.
 - `AppSidebar` never stays scrolled sideways, so a focus can no longer cut the
   labels at the left edge.
 

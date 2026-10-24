@@ -20,10 +20,15 @@ done:
 labels:
   - {name: not published, state: not-published, props: {}, text: not published, icon: lucide-circle-dashed, action: publish}
   - {name: publishing, state: publishing, props: {collectives: 2}, text: publishing to 2 collectives, icon: lucide-loader, action: publish, busy: true}
-  - {name: published and up to date, state: published, props: {collectives: 2}, text: 'published, 2 collectives, up to date', icon: lucide-circle-check, action: update}
-  - {name: new turns, state: new-turns, props: {collectives: 2, newTurns: 6}, text: 'published, 2 collectives, 6 new turns', icon: lucide-circle-fading-arrow-up, action: update}
-  # a count the host does not give is left out, never stated as zero
-  - {name: published without a count, state: published, props: {}, text: 'published, up to date', icon: lucide-circle-check, action: update}
+  # up to date is the default, so it goes unsaid
+  - {name: published to collectives, state: published, props: {collectives: 2}, text: published to 2 collectives, icon: lucide-circle-check, action: update}
+  - {name: published to one collective, state: published, props: {collectives: 1}, text: published to 1 collective, icon: lucide-circle-check, action: update}
+  - {name: new turns, state: new-turns, props: {collectives: 2, newTurns: 6}, text: needs update, icon: lucide-circle-fading-arrow-up, action: update}
+  # a count the host does not give is left out, and no visibility is inferred from it
+  - {name: published without a count, state: published, props: {}, text: published, icon: lucide-circle-check, action: update}
+  # public and private come only from the host's visibility; public outranks the count
+  - {name: published privately, state: published, props: {visibility: private}, text: 'published, private', icon: lucide-circle-check, action: update}
+  - {name: published publicly, state: published, props: {visibility: public, collectives: 2}, text: 'published, public', icon: lucide-circle-check, action: update}
   - {name: auto-publish on, state: auto-publish, props: {collective: Acme Platform}, text: 'auto-publish on, Acme Platform', icon: lucide-repeat, action: update}
   - {name: outside your saved lists, state: outside-lists, props: {}, text: 'not published, outside your saved lists', icon: lucide-list-x, action: publish}
 
@@ -34,7 +39,9 @@ labels:
 # publishing). kept: match ids the host marks kept (they leave un-redacted); unscanned: the host
 # gives no scan yet. matchesOpen: whether the matches review is open on mount.
 # steps: press a control by its accessible name or text (or a key), then the exact callbacks it
-# made, as [name, ...arguments].
+# made, as [name, ...arguments]. stoppedDetail and accessFailure pass those props (accessFailure's
+# retry records as onAccessRetry). Every heading that quotes the session carries it whole as its
+# tooltip.
 popup:
   - name: connect to village first
     state: connect
@@ -150,12 +157,53 @@ popup:
     heading: publish “Fix flaky ingest test”
     primary: {label: retry, enabled: true}
     rescan: {enabled: true}
-    alert: stopped while setting who can read it. review who can read it.
-    lines: [review who can read it.]
-    absent: [nothing leaves your machine until, nothing changed on village.]
+    alert: stopped while setting who can read it.
+    lines: [stopped while setting who can read it.]
+    absent: [review who can read it., nothing leaves your machine until, nothing changed on village.]
     removeButtons: [remove Acme Platform, remove Acme Company]
     steps:
       - {press: retry, calls: [[onRetry]]}
+  # The host's actionable detail sits one disclosure away in the stopped box; the footer's retry stays the
+  # one recovery action.
+  - name: stopped with a detail
+    state: stopped
+    stoppedDetail: 'list collectives: reach peasant online: connection refused'
+    heading: publish “Fix flaky ingest test”
+    primary: {label: retry, enabled: true}
+    rescan: {enabled: true}
+    alert: stopped while setting who can read it.
+    lines: [details, 'list collectives: reach peasant online: connection refused']
+    absent: [review who can read it.]
+    removeButtons: [remove Acme Platform, remove Acme Company]
+    steps:
+      - {press: retry, calls: [[onRetry]]}
+  # The collectives could not be read: "who can read it" says so in place of the list and the picker,
+  # with its own retry and the detail, and publishing stays off while the dialog stays ready.
+  - name: collectives cannot load
+    state: ready
+    accessFailure: {line: can't load your collectives right now, detail: 'list collectives: connection refused'}
+    heading: publish “Fix flaky ingest test”
+    primary: {label: publish to 2 collectives, enabled: false}
+    rescan: {enabled: true}
+    alert: can't load your collectives right now
+    lines: [who can read it, details, 'list collectives: connection refused', nothing leaves your machine until you publish.]
+    absent: [Acme Platform, add a collective]
+    removeButtons: []
+    steps:
+      - {press: retry loading your collectives, calls: [[onAccessRetry]]}
+      - {press: publish to 2 collectives, calls: []}
+  # The host's quiet note on the scanned copy (what it leaves out, and why): information under the
+  # count, with its detail one disclosure away, never an alert, and publishing stays on.
+  - name: a note on the scanned copy
+    state: ready
+    scanNote: {line: "1 line in this session couldn't be read, so the copy being published stops before it.", detail: 'line 50 of the recording: unexpected end of JSON input'}
+    heading: publish “Fix flaky ingest test”
+    primary: {label: publish to 2 collectives, enabled: true}
+    rescan: {enabled: true}
+    lines: ['3 matches, all redacted', "1 line in this session couldn't be read, so the copy being published stops before it.", details, 'line 50 of the recording: unexpected end of JSON input']
+    removeButtons: [remove Acme Platform, remove Acme Company]
+    steps:
+      - {press: publish to 2 collectives, calls: [[onPublish]]}
   - name: done
     state: done
     heading: published to Acme Platform and Acme Company
@@ -181,8 +229,8 @@ popup:
     heading: publish “Fix flaky ingest test”
     primary: null
     rescan: {enabled: true}
-    lines: [review who can read it.]
-    absent: [retry]
+    lines: [stopped while setting who can read it.]
+    absent: [retry, review who can read it.]
     removeButtons: [remove Acme Platform, remove Acme Company]
     steps: [{press: cancel, calls: [[onClose]]}]
   - name: update done without collective readers

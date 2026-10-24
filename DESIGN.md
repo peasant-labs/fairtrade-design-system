@@ -304,6 +304,9 @@ first, with the light value under a `-light` key where it differs.
   `>` of the active nav marker). The primary action is filled with the golden `--amber-fill` and
   labelled in near-black `--amber-fill-ink` in both themes; `--amber-fill-hover` is its hover fill.
   Likewise, checked inputs and selected interactive toggles use `--amber-fill` with `--amber-fill-ink`, with non-color state cues.
+  A switch is the exception: on is the inverted neutral (an `--ink-strong` track, a `--canvas`
+  thumb) and never amber, because a settings page holds many switches and amber stays scarce. The
+  track's fill and the thumb's side carry the state, so a settings row shows no on/off word beside it.
   The fill tokens are split from `--amber` so light-theme text can stay dark enough for AA. `--on-amber` is the
   ink on the remaining `--amber` fills (the current step, the current page number).
 
@@ -424,6 +427,13 @@ use sentence case so sentences stay parseable. Never `text-transform: uppercase`
 **The Tabular Numbers Rule.** Every count, duration, stat and numeric column uses tabular lining
 figures (`font-variant-numeric: tabular-nums`). Numeric columns right-align; plain mixed-precision
 DataTable columns can align on the decimal separator without changing the values' precision.
+
+**The One Number Format Rule.** Every number on screen goes through `src/ui/format.js` (exported
+from `/ui`): compact counts read "999", "1.2k", "66.7M", "66.7B" (one decimal at most, k lowercase);
+exact integers are grouped ("272,000"); costs read in dollars at cents ("$0.30"), and a positive
+cost under a cent reads "<$0.01"; a missing or unreadable value reads "—". Durations and dates have
+their own one format in `src/ui/transcript/time.js`. Rounding happens only for display: recorded
+values, such as a harness's cost string, are kept and summed exactly.
 
 **The Bold, Not Italic Rule.** Emphasis is weight: `em` and `i` render at 600, upright. Underline is
 reserved for links. In prose, links carry a dotted underline (solid on hover and focus) so they

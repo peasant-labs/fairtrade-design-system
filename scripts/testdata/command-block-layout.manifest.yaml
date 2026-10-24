@@ -1,0 +1,4 @@
+# Required-NAME manifest for command-block-layout.yaml: deletion protection. The journey asserts the
+# case names equal this list exactly, as a set.
+requiredCaseNames:
+  - a pipe ends the address's last line

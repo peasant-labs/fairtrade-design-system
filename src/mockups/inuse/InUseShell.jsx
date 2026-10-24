@@ -12,7 +12,7 @@ import GraphApp from './GraphApp.jsx'
 
 const APPS = [
   { id: 'transcript', mark: 'peasant transcript', icon: ScrollText },
-  { id: 'commons', mark: 'village', icon: Users },
+  { id: 'commons', mark: 'peasant online', icon: Users },
   { id: 'graph', mark: 'peasant', icon: Waypoints },
 ]
 

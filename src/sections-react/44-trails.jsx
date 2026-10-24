@@ -17,7 +17,7 @@ export function TrailsSection() {
           <div className="cols" style={{ gap: 'var(--sp-5)' }}>
             <div>
               <span className="label" style={{ marginBottom: 'var(--sp-2)' }}>breadcrumb</span>
-              <div className="crumb">village <ChevronRight aria-hidden="true" /> vitor-hw <ChevronRight aria-hidden="true" /> <span className="cur">refactor ingest pipeline</span></div>
+              <div className="crumb">peasant online <ChevronRight aria-hidden="true" /> alice-dev <ChevronRight aria-hidden="true" /> <span className="cur">refactor ingest pipeline</span></div>
             </div>
             <div>
               <span className="label" style={{ marginBottom: 'var(--sp-2)' }}>step wizard</span>

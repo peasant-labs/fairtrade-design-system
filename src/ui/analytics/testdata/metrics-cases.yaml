@@ -289,10 +289,18 @@ cases:
     fn: formatTokens
     args: [106000]
     expected: "106k"
-  - name: formatTokens — millions keep two decimals
+  - name: formatTokens — millions use the one count format (one decimal)
     fn: formatTokens
     args: [1234567]
-    expected: "1.23M"
+    expected: "1.2M"
+  - name: formatTokens — billions are billions, never thousands of millions
+    fn: formatTokens
+    args: [66731500000]
+    expected: "66.7B"
+  - name: formatTokens — a non-number renders the placeholder
+    fn: formatTokens
+    args: [.nan]
+    expected: "—"
   - name: formatTokens — null renders the em-free placeholder
     fn: formatTokens
     args: [null]
@@ -317,6 +325,10 @@ cases:
     fn: formatTokenPair
     args: [62000, 106000]
     expected: ["62k", "106k"]
+  - name: formatTokenPair — a billions pair shares the B unit
+    fn: formatTokenPair
+    args: [12000000000, 66731500000]
+    expected: ["12.0B", "66.7B"]
   - name: formatTokenPair — both null
     fn: formatTokenPair
     args: [null, null]

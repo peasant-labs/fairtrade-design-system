@@ -11,8 +11,9 @@
  *   - a divider between rows spans the card's inner width.
  * Content is what a reader sees: controls, icons and images, and every element with text of its
  * own; an empty reserved slot is not content. The equal-inset check holds where a control sits
- * beside its label (and on a group's summary); a stacked control (a phone row) and a lone help line
- * are held to the floor and the content box only. Visually hidden elements (1px live regions) are skipped.
+ * beside its label (and on a group's summary); a stacked control (a long value, or a phone row whose
+ * control column takes its own line under the label) and a lone help line are held to the floor,
+ * the content box and the shared left edge only. Visually hidden elements (1px live regions) are skipped.
  */
 import { test, expect } from '@playwright/test'
 import { loadStrictYaml, assertExactNames } from '../css-source.mjs'
@@ -63,13 +64,20 @@ const measureRows = (selector) => {
     const rights = content.map((el) => extent(el).right)
     const control = row.querySelector('button, select, input, textarea, [role="switch"]')
     const first = content.find((el) => ownText(el))
-    // a control beside its label is pushed to the right; a long value stacked under its label is not
-    const beside = !!control && !!first && !row.matches('.srow-stacked') && control.getBoundingClientRect().left > first.getBoundingClientRect().left + 1
+    // a value stacked under its label starts at the label's edge: a long value marked .srow-stacked,
+    // or a phone text row whose value and edit button take their own line under the label, set to
+    // the start of the row. a control that drops to its own line at the right padding (a select, a
+    // host's action) is still held to equal insets, and so is a control beside its label
+    const textCol = row.querySelector(':scope > .srow-text-col')
+    const controlCol = row.querySelector(':scope > .srow-control')
+    const under = !!textCol && !!controlCol && visible(controlCol) && controlCol.getBoundingClientRect().left < textCol.getBoundingClientRect().right - 1
+    const stacked = row.matches('.srow-stacked') || (under && getComputedStyle(controlCol).justifySelf === 'start')
+    // a control beside its label is pushed to the right; a value stacked under its label is not
+    const beside = !!control && !!first && !stacked && control.getBoundingClientRect().left > first.getBoundingClientRect().left + 1
     // one left edge: the label line, the help line and an error in the text column, and a value
     // stacked under the label, all start at the same x
-    const textCol = row.querySelector(':scope > .srow-text-col')
     const edgeEls = textCol ? [...textCol.children].filter(visible) : []
-    if (row.matches('.srow-stacked')) edgeEls.push(...[...row.querySelectorAll(':scope > .srow-control > *')].filter(visible).slice(0, 1))
+    if (stacked) edgeEls.push(...[...row.querySelectorAll(':scope > .srow-control > *')].filter(visible).slice(0, 1))
     const edgeLefts = edgeEls.map((el) => el.getBoundingClientRect().left)
     // the divider between rows spans the card's inner width
     const parent = row.parentElement
@@ -140,9 +148,14 @@ for (const viewport of spec.viewports) {
    it names, so the gate is proven to fail for the intended reason. */
 test('card insets mutations', async ({ page }, info) => {
   const screen = spec.screens.find((row) => row.name === spec.mutationScreen)
-  const viewport = spec.viewports.find((row) => row.name === spec.mutationViewport)
-  await open(page, screen, viewport, info.project.name)
+  let opened
   for (const mutation of spec.mutations) {
+    const viewport = spec.viewports.find((row) => row.name === (mutation.viewport || spec.mutationViewport))
+    expect(viewport, `${mutation.name}: viewport must be one of the fixture's viewports`).toBeTruthy()
+    if (opened !== viewport) {
+      await open(page, screen, viewport, info.project.name)
+      opened = viewport
+    }
     const style = await page.addStyleTag({ content: mutation.css })
     await page.evaluate(settle)
     const measured = await page.evaluate(measureRows, spec.rows)

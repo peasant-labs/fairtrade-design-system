@@ -5,6 +5,8 @@ requiredNames:
   - txn-title-wraps-on-mobile
   - txn-meta-wraps-on-mobile
   - txn-meta-keyboard-scroll-region
+  - srow-text-stacks-on-mobile
+  - srow-action-drops-on-mobile
   - txn-tabs-scroll-on-mobile
   - txn-tabs-keyboard-navigation
   - txn-trace-head-compact-on-mobile

@@ -40,10 +40,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     }
     const body = text(root)
     if (page.nav) {
-      const nav = [...root.querySelectorAll('nav[aria-label="village sections"] .iu-subnav-item:not(.iu-subnav-end)')].map(text)
+      const nav = [...root.querySelectorAll('nav[aria-label="peasant online sections"] .iu-subnav-item:not(.iu-subnav-end)')].map(text)
       report.check(JSON.stringify(nav) === JSON.stringify(page.nav), `${page.name}: nav expected ${JSON.stringify(page.nav)}, received ${JSON.stringify(nav)}`)
     }
-    if (page.account) report.check(text(root.querySelector('nav[aria-label="village sections"] .iu-subnav-end')) === page.account, `${page.name}: the nav ends with the account link ${page.account}`)
+    if (page.account) report.check(text(root.querySelector('nav[aria-label="peasant online sections"] .iu-subnav-end')) === page.account, `${page.name}: the nav ends with the account link ${page.account}`)
     for (const line of page.text ?? []) report.check(body.includes(line), `${page.name}: the page must show ${JSON.stringify(line)}`)
     for (const line of page.absentText ?? []) report.check(!body.toLowerCase().includes(line.toLowerCase()), `${page.name}: the page must not show ${JSON.stringify(line)}`)
     if (page.tableCounts) {

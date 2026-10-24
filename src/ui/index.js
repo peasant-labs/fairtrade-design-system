@@ -15,6 +15,8 @@ export { default as Menu } from './Menu.jsx'
 export { default as Tooltip, Popover } from './Tooltip.jsx'
 export { Avatar, AvatarGroup, Kbd, KbdChord, Tag } from './Avatar.jsx'
 export { default as BrandMark, resolveBrand } from './BrandMark.jsx'
+// the one number format for every numeric display: compact counts, exact integers, costs, decimals
+export { formatCount, formatInteger, formatCost, formatDecimal, MISSING_NUMBER } from './format.js'
 export { providerAccent, providerDisplayName } from './provider-policy.js'
 export { default as EmptyState } from './EmptyState.jsx'
 export { Skeleton, Progress, Spinner, Toast, FeedbackPanel } from './Feedback.jsx'

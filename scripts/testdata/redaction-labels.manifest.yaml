@@ -42,6 +42,8 @@ requiredMutationNames:
   - confidence help loses its definition
   - retry bypasses the unknown scan gate
   - the comma floats a badge gap from the label
+  - the diff view renders the raw category
+  - the diff view trusts an unknown category
 mutations:
   - name: retry bypasses the unknown scan gate
     file: src/ui/Publish.jsx
@@ -78,3 +80,13 @@ mutations:
     find: "<span className=\"rdx-badge-lead\"><span className=\"rdx-badge-cat\">{redactionCategoryLabel(category)}</span><span className=\"rdx-badge-dot\" aria-hidden=\"true\">,</span></span>"
     replace: "<span className=\"rdx-badge-cat\">{redactionCategoryLabel(category)}</span><span className=\"rdx-badge-dot\" aria-hidden=\"true\">,</span>"
     expectedDiagnostic: "credential category: the comma sits against the label"
+  - name: the diff view renders the raw category
+    file: src/ui/DiffView.jsx
+    find: "<span className=\"dv-badge-cat\">{redactionCategoryLabel(category)}</span>"
+    replace: "<span className=\"dv-badge-cat\">{category}</span>"
+    expectedDiagnostic: "credential category: the diff view shows the engine label"
+  - name: the diff view trusts an unknown category
+    file: src/ui/DiffView.jsx
+    find: "const refused = isRedaction && !hasKnownRedactionCategories(matches)"
+    replace: "const refused = false"
+    expectedDiagnostic: "redactionCategoryLabel during conversion"

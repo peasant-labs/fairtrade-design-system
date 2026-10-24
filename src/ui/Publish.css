@@ -122,8 +122,16 @@
 .pub-rescan { white-space: nowrap; }
 .pub-pr .pub-line { flex-wrap: nowrap; align-items: flex-start; }
 .pub-pr .pub-line > span { flex: 1 1 auto; min-width: 0; }
-/* the session title in the heading is recorded content */
+/* the session title in the heading is recorded content. a long one stops at two lines with an
+   ellipsis; the whole title is the title's tooltip and stays in the dialog's accessible name. */
 .pub-title-content { text-transform: none; }
+.pub-dialog .dlg-head h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
 .pub-section { display: flex; flex-direction: column; gap: var(--sp-3); }
 .pub-section-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .pub-section-title {
@@ -135,10 +143,12 @@
   text-transform: lowercase;
   color: var(--ink-2);
 }
+/* a line: its icon, its words, and at most one action. the words wrap and the action keeps to the
+   first line, on the words' baseline, and so does the icon. */
 .pub-line {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: baseline;
   gap: var(--sp-2);
   margin: 0;
   font-family: var(--font-body);
@@ -146,13 +156,15 @@
   line-height: var(--lh-body);
   color: var(--ink);
 }
-.pub-line > .lucide { width: var(--ic-md); height: var(--ic-md); flex: none; color: var(--ink-3); }
+/* the icon has no text baseline, so it sits on the words' baseline and drops by half its overhang
+   past the cap height: its middle meets the middle of the words' capitals on the first line */
+.pub-line > .lucide { width: var(--ic-md); height: var(--ic-md); flex: none; position: relative; inset-block-start: calc((var(--ic-md) - 1cap) / 2); color: var(--ink-3); }
 .pub-line code { font-size: var(--fs-sm); color: var(--ink-strong); }
 /* a notice box spans the section's full width (the base sheet caps a <p> at the prose measure), with
    the card padding on both sides */
 .pub-line { max-inline-size: none; }
 .pub-line-alert { padding: var(--sp-3) var(--card-pad); border: var(--bd-strong); background: var(--surface-2); }
-.pub-line-text { flex: 1 1 auto; min-width: 0; }
+.pub-line-text { flex: 1 1 0; min-width: 0; }
 .pub-failure-detail { flex-basis: 100%; }
 .pub-failure-detail > summary { min-height: var(--target-min); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); cursor: pointer; }
 .pub-failure-detail > pre { margin: var(--sp-2) 0 0; font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -162,7 +174,12 @@
 .pub-checking { display: flex; flex-direction: column; gap: var(--sp-1); }
 .pub-progress { color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); }
 .pub-line-alert > .lucide { color: var(--clay); }
-.pub-toggle { margin-inline-start: auto; }
+/* a note on the scanned copy: the same line, quieter ink, no box */
+.pub-line-note { color: var(--ink-2); }
+/* a quiet row action (re-scan, show examples) sets its words on the content edge, not its padding */
+.pub-toggle { flex: none; margin-inline-start: auto; }
+.pub-toggle,
+.pub-rescan { margin-inline-end: calc(-1 * var(--sp-3)); }
 .pub-rescan .lucide { width: var(--ic-sm); height: var(--ic-sm); }
 .pub-review { margin-top: var(--sp-1); }
 .pub-hint {

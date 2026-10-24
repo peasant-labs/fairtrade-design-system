@@ -29,6 +29,7 @@
    hairline borders — the house style. */
 
 import { providerAccent } from '../../provider-policy.js'
+import { formatCount } from '../../format.js'
 
 /**
  * @typedef {import('../wire-types.js').Role} Role
@@ -58,11 +59,6 @@ import { providerAccent } from '../../provider-policy.js'
  * @property {string} [className]              extra classes appended after the base
  */
 
-/** Compact token label, matched to the mockup's `fmtTokens` so the graph footer
- *  reads identically wherever a turn card renders (mockup SVG and fairtrade's own @xyflow engine). */
-function fmtTokens(n) {
-  return n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n)
-}
 
 /** The lowercase chrome label for the card head. User content (agent names) is
  *  rendered separately; this is pure chrome so it is always lowercase. */
@@ -154,7 +150,7 @@ export function GraphTurnNode({
         )}
         {totalTokens > 0 && (
           <span className="ft-gnode-meta-tokens" title={tokenTitle}>
-            {fmtTokens(totalTokens)}
+            {formatCount(totalTokens)}
           </span>
         )}
       </footer>

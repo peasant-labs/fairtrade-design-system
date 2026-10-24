@@ -27,8 +27,8 @@ mutations:
     expectedDiagnostic: "StatsStrip with many pairs, both reading orders: pairs"
   - name: the strip drops thousands grouping
     file: src/ui/StatsStrip.jsx
-    find: "value.toLocaleString('en-US')"
-    replace: "String(value)"
+    find: "typeof value === 'number' ? formatInteger(value) : value"
+    replace: "typeof value === 'number' ? String(value) : value"
     expectedDiagnostic: "StatsStrip with many pairs, both reading orders: pairs"
   - name: the copy button shows without a clipboard
     file: src/ui/CopyIconButton.jsx

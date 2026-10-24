@@ -1,6 +1,9 @@
 import { useState } from 'react'
-import { Plus, Minus, Eye, EyeOff } from 'lucide-react'
+import { Plus, Minus, Eye, EyeOff, AlertTriangle } from 'lucide-react'
+import { redactionCategoryLabel } from '@peasant-labs/schema'
+import { hasKnownRedactionCategories } from './redaction-categories.js'
 import './DiffView.css'
+import { formatDecimal } from './format.js'
 
 /* DiffView: a unified hunk diff renderer, the React port of peasant's review DiffView +
    session-detail RedactionDiffView. structured hunks (a `@@ … @@` header row, then lines),
@@ -10,8 +13,10 @@ import './DiffView.css'
 
    the redaction variant (variant="redaction") reads the same chassis as a before→after: a
    "del" line carries the original secret, the paired "add" line its redacted form, with a
-   small category/confidence badge and a per-match keep/revert affordance. classes are
-   namespaced dv-; tokens + the dv-* rules live in DiffView.css. */
+   small category/confidence badge and a per-match keep/revert affordance. a match's category is
+   the redaction engine's, and its label is only ever the engine's label; a match whose category
+   the engine does not know fails the whole view closed (an alert, no original shown), the way
+   RedactionReview does. classes are namespaced dv-; tokens + the dv-* rules live in DiffView.css. */
 
 const SIGN = { add: '+', del: '−', ctx: ' ' }
 
@@ -65,14 +70,14 @@ function RedactionMatch({ match }) {
   const { category, confidence, original, replacement, oldNo, newNo } = match
   const [kept, setKept] = useState(false)
   const low = confidence < 0.7
-  // 0.98 -> "0.98"; keep two decimals, tabular, mono — matches the "api-key, 0.98" spec.
-  const conf = confidence.toFixed(2)
+  // 0.98 -> "0.98"; keep two decimals, tabular, mono — "CREDENTIAL, 0.98".
+  const conf = formatDecimal(confidence, 2)
 
   return (
     <div className={`dv-match${kept ? ' dv-match-kept' : ''}`}>
       <div className="dv-match-head">
         <span className={`dv-badge${low ? ' dv-badge-low' : ''}`}>
-          <span className="dv-badge-lead"><span className="dv-badge-cat">{category}</span><span className="dv-badge-dot" aria-hidden="true">,</span></span>
+          <span className="dv-badge-lead"><span className="dv-badge-cat">{redactionCategoryLabel(category)}</span><span className="dv-badge-dot" aria-hidden="true">,</span></span>
           <span className="dv-badge-conf tnum">{conf}</span>
         </span>
         {kept && (
@@ -128,12 +133,14 @@ function RedactionMatch({ match }) {
  *
  *  redaction:  variant="redaction", pass `matches` = [{ category, confidence, original,
  *              replacement, oldNo, newNo }]. each match is a del→add pair with a category/
- *              confidence badge and a per-match keep/revert button.
+ *              confidence badge and a per-match keep/revert button. `category` is the engine's
+ *              (RedactionCategory: secrets, pii, paths, project) and shows as the engine's label;
+ *              an unknown category (a rule name, a display label) shows an alert and no match.
  *
  * @param {object} props
  * @param {string} props.file - the file path shown in the header (mono, not lowercased)
  * @param {Array<{header?:string, lines:Array<{type:'add'|'del'|'ctx', oldNo?:number|string, newNo?:number|string, text:string}>}>} [props.hunks] - structured hunks (default variant)
- * @param {Array<{category:string, confidence:number, original:string, replacement:string, oldNo?:number|string, newNo?:number|string}>} [props.matches] - redaction matches (redaction variant)
+ * @param {Array<{category:import('@peasant-labs/schema').RedactionCategory, confidence:number, original:string, replacement:string, oldNo?:number|string, newNo?:number|string}>} [props.matches] - redaction matches (redaction variant)
  * @param {'default'|'redaction'} [props.variant='default']
  * @param {string} [props.className]
  */
@@ -146,6 +153,7 @@ export default function DiffView({
   ...rest
 }) {
   const isRedaction = variant === 'redaction'
+  const refused = isRedaction && !hasKnownRedactionCategories(matches)
   const stats = isRedaction ? null : churn(hunks)
 
   const cls = ['dv', isRedaction && 'dv-redaction', className].filter(Boolean).join(' ')
@@ -155,7 +163,7 @@ export default function DiffView({
       {/* file header — the one display-font line; path is content, so it keeps its case. */}
       <figcaption className="dv-head">
         <span className="dv-file">{file}</span>
-        {isRedaction ? (
+        {refused ? null : isRedaction ? (
           <span className="dv-churn">
             <span className="dv-churn-r tnum">{matches.length}</span>
             <span className="dv-churn-label">redacted</span>
@@ -168,7 +176,12 @@ export default function DiffView({
         )}
       </figcaption>
 
-      {isRedaction ? (
+      {refused ? (
+        <p className="dv-refused" role="alert">
+          <AlertTriangle aria-hidden="true" />
+          <span>the scan contains an unsupported redaction category. review is blocked. update the scanner and re-scan before sharing.</span>
+        </p>
+      ) : isRedaction ? (
         <div className="dv-body dv-matches" role="table" aria-label={`redactions in ${file}`}>
           {matches.length === 0 ? (
             <p className="dv-empty">no sensitive content detected. safe to share as-is.</p>

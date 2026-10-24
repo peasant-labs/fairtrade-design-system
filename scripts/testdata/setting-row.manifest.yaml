@@ -20,6 +20,7 @@ requiredGroupNames:
   - a collapsed group
 
 requiredMutationNames:
+  - a settings switch repeats its state in words
   - a failed write keeps the new value
   - Escape saves instead of cancelling
   - the failure is not announced
@@ -45,3 +46,8 @@ mutations:
     find: "    alive.current = true\n"
     replace: "\n"
     expectedDiagnostic: "strict mode, a switch write that lands: status"
+  - name: a settings switch repeats its state in words
+    file: src/ui/Settings.jsx
+    find: "stateMarker={false} "
+    replace: ""
+    expectedDiagnostic: "a settings switch shows no on/off word"
