@@ -4,6 +4,34 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.41 - 2026-10-24
+
+### Added
+
+- `@peasant-labs/fairtrade/share`: the transcript share card, for link previews and for showing one in a page.
+  - `shareCardFromPayload(payload)` returns the card's data from a transcript payload, or `null` if the payload does
+    not parse. The data holds the title, the harness chip (`Claude Code (Opus 5.5)`) and the first prompt.
+    - Prompts and tokens show both or neither, by the transcript page's own rules, so the card never states a
+      figure the page does not.
+    - A first prompt that is a slash command shows its arguments, not its tags.
+  - `shareCardDescription(card)` and `shareCardAlt(card)` give the link text and the image's alt text.
+  - `ShareCard({ card, height })` draws the card at 1200 × 600 (X) or 1200 × 630 (other sites).
+    - It uses inline styles only, so it renders in Next's `ImageResponse` and in the DOM.
+    - `card: null` draws the generic card, a lock chip reading "limited visibility", with no transcript data.
+    - Wide numbers shrink to fit their tile.
+  - `SHARE_CARD_FONTS`, with static Atkinson Hyperlegible and Atkinson Hyperlegible Mono TTFs at
+    `@peasant-labs/fairtrade/share/fonts/*`, because `ImageResponse` cannot read woff2 (OFL; see
+    `THIRD_PARTY_NOTICES.md`).
+  - The `ShareCardData` type.
+  - The entry imports no React hooks and no `react-dom`, so a Next server route can use it.
+
+### Changed
+
+- Brand-mark and wheat-logo geometry live in one plain module that `BrandMark`, the logo symbol and the share card
+  all draw from. `BrandMark`'s output is unchanged.
+- The transcript title rule is one helper (`transcriptTitle`) shared by `TranscriptViewer` and the share card, with
+  no change in behaviour.
+
 ## 0.0.40 - 2026-10-23
 
 ### Changed
