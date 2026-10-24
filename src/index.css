@@ -2013,30 +2013,25 @@
   .txn-app-condensed > .txn-header .txn-meta { display: none; }
   /* the condensed row must stay ONE line even on a phone: unwrapped, the breadcrumb and
      the actions stack to ~3 rows at 390px and give back almost all of the reclaimed
-     space. the trail truncates from the middle segments (min-width:0 + hidden overflow);
-     the actions keep their hit targets. */
+     space. the trail shortens its crumbs in the order the trail rule below gives (min-width:0
+     + hidden overflow); the actions keep their hit targets. */
   .txn-app-condensed > .txn-header .txn-header-top { flex-wrap: nowrap; align-items: center; }
   .txn-app-condensed > .txn-header .txn-crumb { flex-wrap: nowrap; overflow: hidden; white-space: nowrap; }
   .txn-app-condensed > .txn-header .txn-actions { flex-wrap: nowrap; }
   .txn-header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); }
-  /* the trail is one line at every width, so a "›" never ends a line: the middle crumbs shrink to an
-     ellipsis, the first and the last keep their width (a very long one ellipsizes at its cap), and
-     the separators never shrink. the trail takes the row's free width, so the caps are shares of the
-     room it has, not of its own content, and a trail that fits reads whole. the padding keeps a crumb's
-     focus ring inside the clipped row. */
+  /* the trail is one line at every width, so a "›" never ends a line, and every crumb reads whole while
+     it fits. when the row is full the crumbs give way in order, each by a shrink weight so much larger
+     than the next that the next barely moves: the last, the current page, first, down to a floor of
+     eight characters so it never vanishes; then the middle crumbs (a project, a collective), the
+     longest taking most of the cut; the first, the trail's root, last. each shortens with an ellipsis
+     and none goes below its floor (a nowrap crumb's min-content is its whole text, so a floor is a
+     length). the separators never shrink. the trail takes the row's free width, and the padding keeps
+     a crumb's focus ring inside the clipped row. */
   .txn-crumb { flex: 1 1 auto; flex-wrap: nowrap; white-space: nowrap; overflow: hidden; min-width: 0; padding: var(--sp-1); margin: calc(-1 * var(--sp-1)); }
   .txn-crumb > svg { flex: none; }
-  .txn-crumb > :not(svg) { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: none; }
-  .txn-crumb > :first-child:not(svg) { max-width: 30%; }
-  .txn-crumb > :last-child:not(svg) { max-width: 50%; }
-  .txn-crumb > :not(svg):not(:first-child):not(:last-child) { flex: 0 1 auto; min-width: 3ch; }
-  /* from a tablet up every crumb reads whole while it fits; only the last, the current page's title,
-     may shorten, and only when the row is full */
-  @media (width >= 768px) {
-    .txn-crumb > :first-child:not(svg), .txn-crumb > :last-child:not(svg) { max-width: none; }
-    .txn-crumb > :not(svg):not(:first-child):not(:last-child) { flex: none; }
-    .txn-crumb > :last-child:not(svg) { flex: 0 1 auto; }
-  }
+  .txn-crumb > :not(svg) { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto; min-width: 3ch; }
+  .txn-crumb > :not(svg):not(:first-child):not(:last-child) { flex-shrink: 1000000; }
+  .txn-crumb > :last-child:not(svg) { flex-shrink: 1000000000000; min-width: min(8ch, 100%); }
   /* a touch screen keeps the 44px reach on a crumb as a block, centred by its line, since an ellipsis
      needs a block box (the shared crumb rule makes a link an inline flex box) */
   @media (pointer: coarse) { .txn-crumb > a { display: block; line-height: var(--target-comfortable); } }

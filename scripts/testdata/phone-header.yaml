@@ -2,8 +2,9 @@
 # themes on a 390px touch screen (pointer: coarse).
 #   tab-bar  the transcript's search trigger is one square icon control beside the tab strip: the
 #            strip never runs under it, the trigger shows no ⌘F, and the strip scrolls to its last tab.
-#   crumb    the transcript trail is one line: every crumb and separator share one row, a middle
-#            crumb shrinks to an ellipsis, and the first and last crumbs read whole.
+#   crumb    the transcript trail keeps the trail's rule (scripts/transcript-trail-rule.mjs): one
+#            line, every crumb whole while it fits, the current crumb gives way first down to its
+#            floor, every cut ends in an ellipsis, nothing below its floor or cut with room to spare.
 #   chips    the analytics section chips are one row that scrolls in its own strip: every chip shares
 #            one top, keeps the 44px reach, the first starts on the page's left edge (`inset` from the
 #            demo's view) and the strip scrolls to its last chip.

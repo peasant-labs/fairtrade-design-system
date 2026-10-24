@@ -130,7 +130,8 @@ export const HostTrail = {
   },
 }
 
-// a trail longer than the row: the crumbs before the title read whole and only the title shortens
+// a trail longer than the row: the title gives way first; on a phone, once it is down to its floor, the
+// collective shortens too
 export const HostTrailLong = {
   args: {
     viewModel,
@@ -139,6 +140,43 @@ export const HostTrailLong = {
       { label: 'collectives', href: '#collectives' },
       { label: 'The Distributed Systems and Agent Reliability Research Collective of the Northern Valley', href: '#collective' },
       { label: 'Port the transcript canvas into the shared package, then rewire every consumer of the old renderer and delete it once the last import is gone' },
+    ],
+  },
+}
+
+// one crumb longer than the whole row (a long repository name): it shortens with an ellipsis and the
+// current crumb, the session id, reads whole
+export const HostTrailOverlong = {
+  args: {
+    viewModel,
+    capabilities: readOnlyCaps,
+    breadcrumb: [
+      { label: 'sessions', href: '#sessions' },
+      { label: 'github.com:peasant-demo/a-project-with-a-deliberately-long-repository-name-that-has-to-wrap-on-small-screens-and-still-goes-on-past-the-widest-desktop-header-row', href: '#project' },
+      { label: '0f3c2a10' },
+    ],
+  },
+}
+
+// a host's trail for a transcript opened from a pull request, as online passes it: two links that fit a
+// phone's row and read whole
+export const HostTrailPull = {
+  args: {
+    viewModel,
+    capabilities: readOnlyCaps,
+    breadcrumb: [{ label: 'pull requests', href: '#pulls' }, { label: 'peasant-labs/village#214', href: '#pull' }],
+  },
+}
+
+// a long collective name as the current crumb: it reads whole while the row has room and shortens only
+// when the row is full
+export const HostTrailCollectiveLong = {
+  args: {
+    viewModel,
+    capabilities: readOnlyCaps,
+    breadcrumb: [
+      { label: 'collectives', href: '#collectives' },
+      { label: 'The Distributed Systems and Agent Reliability Research Collective of the Northern Valley', href: '#collective' },
     ],
   },
 }
