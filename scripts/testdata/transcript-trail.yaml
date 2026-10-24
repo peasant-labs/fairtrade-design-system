@@ -1,0 +1,13 @@
+# Cases for the transcript trail on a wide screen (scripts/journey/transcript-trail.journey.mjs), on the
+# built Storybook in both themes. The trail keeps to one line at every width and shortens its crumbs
+# only when the row has no room: with room, every crumb reads whole (its text is not cut by an
+# ellipsis). `story` is a TranscriptViewer story with a host trail.
+viewport: {width: 1440, height: 900}
+cases:
+  - {name: a host trail with room reads whole, story: in-use-transcript-transcriptviewer--host-trail, crumbs: [collectives, AI Research Collective, Port the transcript canvas into the shared package]}
+# Mutations: each injects CSS and the gate must report the crumb named in `expect`.
+mutations:
+  - name: the trail sizes to its own content
+    story: in-use-transcript-transcriptviewer--host-trail
+    css: '.txn-crumb { flex: 0 1 auto !important; }'
+    expect: 'cut short'

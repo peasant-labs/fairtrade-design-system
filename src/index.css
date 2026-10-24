@@ -2021,8 +2021,10 @@
   .txn-header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); }
   /* the trail is one line at every width, so a "›" never ends a line: the middle crumbs shrink to an
      ellipsis, the first and the last keep their width (a very long one ellipsizes at its cap), and
-     the separators never shrink. the padding keeps a crumb's focus ring inside the clipped row. */
-  .txn-crumb { flex-wrap: nowrap; white-space: nowrap; overflow: hidden; min-width: 0; padding: var(--sp-1); margin: calc(-1 * var(--sp-1)); }
+     the separators never shrink. the trail takes the row's free width, so the caps are shares of the
+     room it has, not of its own content, and a trail that fits reads whole. the padding keeps a crumb's
+     focus ring inside the clipped row. */
+  .txn-crumb { flex: 1 1 auto; flex-wrap: nowrap; white-space: nowrap; overflow: hidden; min-width: 0; padding: var(--sp-1); margin: calc(-1 * var(--sp-1)); }
   .txn-crumb > svg { flex: none; }
   .txn-crumb > :not(svg) { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: none; }
   .txn-crumb > :first-child:not(svg) { max-width: 30%; }

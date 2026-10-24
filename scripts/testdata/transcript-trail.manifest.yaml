@@ -1,0 +1,3 @@
+# Required-NAME manifest for transcript-trail.yaml: deletion protection for the cases and mutations.
+requiredCaseNames: [a host trail with room reads whole]
+requiredMutationNames: [the trail sizes to its own content]
