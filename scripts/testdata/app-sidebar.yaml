@@ -203,6 +203,18 @@ cases:
     kind: account-menu
     props: {app: online, account: {handle: alicedev, href: /settings/account, items: [{label: profile}, {label: settings}, {label: sign out}]}}
     expected: {tag: BUTTON, initial: A, handle: '@alicedev', name: '@alicedev', popup: menu, caret: false, side: top, items: [profile, settings, sign out]}
+  # A picture fills the avatar square, decorative beside the handle (empty alt); a missing or broken
+  # picture falls back to the initial.
+  - name: an account picture fills the avatar
+    kind: account-avatar
+    props: {app: online, account: {handle: alicedev, href: /settings/account, avatarUrl: 'https://example.com/alicedev.png'}}
+    breaks: false
+    expected: {img: true, src: 'https://example.com/alicedev.png', alt: '', initial: null}
+  - name: a picture that fails to load shows the initial
+    kind: account-avatar
+    props: {app: online, account: {handle: alicedev, href: /settings/account, avatarUrl: 'https://example.com/missing.png'}}
+    breaks: true
+    expected: {img: false, src: null, alt: null, initial: A}
   - name: an account slot replaces the row
     kind: account-slot
     props: {app: online, account: {handle: mira}}

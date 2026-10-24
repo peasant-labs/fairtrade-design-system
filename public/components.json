@@ -51,6 +51,7 @@
       "props": {},
       "stories": [
         "AccountMenu",
+        "AccountPicture",
         "Online",
         "AccountSettings",
         "Local",

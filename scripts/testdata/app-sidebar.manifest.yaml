@@ -26,6 +26,8 @@ requiredCaseNames:
   - the account row links to the account
   - the account row without an href is text
   - an account with items is its own menu
+  - an account picture fills the avatar
+  - a picture that fails to load shows the initial
   - an account slot replaces the row
   - the menu opens and closes the drawer
   - one indicator slides between current items
@@ -33,6 +35,9 @@ requiredCaseNames:
   - a link component receives the item props
 
 requiredMutationNames:
+  - the account picture is ignored
+  - a broken picture stays broken
+  - the picture is announced beside the handle
   - the account menu draws a caret
   - the account menu opens below the footer
   - the current item loses aria-current
@@ -190,3 +195,18 @@ mutations:
     find: "items={account.items} side=\"top\""
     replace: "items={account.items}"
     expectedDiagnostic: "an account with items is its own menu: the account menu must be"
+  - name: the account picture is ignored
+    file: src/ui/AppSidebar.jsx
+    find: "  if (avatarUrl && !failed) {"
+    replace: "  if (false) {"
+    expectedDiagnostic: "an account picture fills the avatar: the avatar must be"
+  - name: a broken picture stays broken
+    file: src/ui/AppSidebar.jsx
+    find: " onError={() => setFailed(true)} />"
+    replace: " />"
+    expectedDiagnostic: "a picture that fails to load shows the initial: the avatar must be"
+  - name: the picture is announced beside the handle
+    file: src/ui/AppSidebar.jsx
+    find: "src={avatarUrl} alt=\"\""
+    replace: "src={avatarUrl} alt={handle}"
+    expectedDiagnostic: "an account picture fills the avatar: the avatar must be"
