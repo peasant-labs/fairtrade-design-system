@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { AppWindow, BookOpen, ChevronLeft, ExternalLink, Globe, Laptop, MessagesSquare, Moon, Search, Settings, Sun } from 'lucide-react'
+import Menu from './Menu.jsx'
 import './AppSidebar.css'
 
 /* the shared app sidebar every peasant app screen mounts: the hosted app (online), the local app
@@ -91,6 +92,8 @@ import './AppSidebar.css'
  * @typedef {Object} AppSidebarAccount
  * @property {string} handle   shown as @handle; its first letter fills the square avatar.
  * @property {string} [href]   makes the account row a link.
+ * @property {import('./Menu.jsx').MenuItem[]} [items]  makes the account row its own menu (profile, settings, sign
+ *           out), drawn as the same flat row with no caret and opening above the footer. Takes precedence over href.
  */
 
 /**
@@ -381,6 +384,9 @@ function AccountRow({ account, Link, onNavigate, collapsed }) {
       <span className="asb-label asb-handle">@{handle}</span>
     </>
   )
+  if (Array.isArray(account.items) && account.items.length > 0) {
+    return <Menu label={body} items={account.items} side="top" triggerClassName="asb-account" ariaLabel={'@' + handle} />
+  }
   if (account.href) {
     return <Link href={account.href} className="asb-account" title={collapsed ? '@' + handle : undefined} onClick={onNavigate}>{body}</Link>
   }

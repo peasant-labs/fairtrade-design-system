@@ -288,6 +288,10 @@ span.asb-item { cursor: default; }
   text-decoration: none;
   white-space: nowrap;
 }
+/* the account as its own menu: the same flat row, as wide as the account's slot, its handle cut only
+   when the slot is narrower than the handle */
+.asb-me > .menu-anchor { display: flex; width: 100%; min-width: 0; }
+button.asb-account { width: 100%; min-width: 0; margin: 0; border: 0; background: transparent; text-align: left; cursor: pointer; }
 .asb-av {
   display: grid;
   place-items: center;
@@ -426,7 +430,7 @@ span.asb-item { cursor: default; }
 
 /* ── hover, on a fine pointer only ────────────────────────────────────── */
 @media (hover: hover) and (pointer: fine) {
-  .asb-item:hover, a.asb-account:hover { background: var(--surface-hover); }
+  .asb-item:hover, a.asb-account:hover, button.asb-account:hover { background: var(--surface-hover); }
   span.asb-item:not([aria-current]):hover { background: none; }
   /* the current item keeps its look on hover: the indicator shows through, or its own fill */
   .asb[data-indicator="ready"] .asb-item[aria-current="page"]:hover { background: none; }

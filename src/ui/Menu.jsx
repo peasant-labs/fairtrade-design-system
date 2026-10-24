@@ -35,8 +35,12 @@ import BrandMark from './BrandMark.jsx'
  * @param {React.ComponentType<any>} [props.icon]   icon-only trigger: the glyph replaces the label and the caret
  * @param {string} [props.ariaLabel]               the trigger's accessible name; required with `icon`, and the menu's name
  * @param {'sm'|'md'} [props.size='md']             `sm` uses the compact control height (header rows)
+ * @param {'bottom'|'top'} [props.side='bottom']    which side of the trigger the popout opens on; `top` for a
+ *        trigger at the foot of a column (a sidebar's account row)
+ * @param {string} [props.triggerClassName]         a host-drawn trigger: these classes replace the button's own,
+ *        and the caret is left out, so a row can be its own menu trigger
  */
-export default function Menu({ label, items = [], align = 'start', caption, defaultOpen = false, icon: TriggerIcon, ariaLabel, size = 'md' }) {
+export default function Menu({ label, items = [], align = 'start', caption, defaultOpen = false, icon: TriggerIcon, ariaLabel, size = 'md', side = 'bottom', triggerClassName }) {
   const [open, setOpen] = useState(defaultOpen)
   const triggerRef = useRef(null)
   const menuRef = useRef(null)
@@ -130,7 +134,7 @@ export default function Menu({ label, items = [], align = 'start', caption, defa
       <button
         ref={triggerRef}
         type="button"
-        className={'btn btn-secondary menu-trigger' + (size === 'sm' ? ' btn-sm' : '') + (TriggerIcon ? ' btn-icon' : '')}
+        className={triggerClassName ? 'menu-trigger ' + triggerClassName : 'btn btn-secondary menu-trigger' + (size === 'sm' ? ' btn-sm' : '') + (TriggerIcon ? ' btn-icon' : '')}
         aria-haspopup="menu"
         aria-expanded={open ? 'true' : 'false'}
         aria-controls={menuId}
@@ -140,7 +144,7 @@ export default function Menu({ label, items = [], align = 'start', caption, defa
       >
         {TriggerIcon
           ? <TriggerIcon size={14} aria-hidden="true" />
-          : <>{label} <ChevronDown className="menu-caret" aria-hidden="true" /></>}
+          : triggerClassName ? label : <>{label} <ChevronDown className="menu-caret" aria-hidden="true" /></>}
       </button>
       <div
         ref={menuRef}
@@ -148,6 +152,7 @@ export default function Menu({ label, items = [], align = 'start', caption, defa
         id={menuId}
         hidden={!open}
         data-align={align}
+        data-side={side}
       >
         {caption != null && <p className="menu-cap">{caption}</p>}
         <ul className="menu-list" role="menu" aria-label={ariaLabel ?? (typeof label === 'string' ? label : undefined)} onKeyDown={onMenuKey}>

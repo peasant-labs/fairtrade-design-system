@@ -325,6 +325,23 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         }
         report.check(same(actual, row.expected), `${name}: the account row must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
         await mounted.unmount()
+      } else if (row.kind === 'account-menu') {
+        const mounted = await mount(React.createElement(AppSidebar, propsFor(row)))
+        const account = mounted.container.querySelector('.asb-me .asb-account')
+        await mounted.act(() => click(window, account))
+        const pop = mounted.container.querySelector('.asb-me .menu-pop')
+        const actual = {
+          tag: account?.tagName,
+          initial: account?.querySelector('.asb-av')?.textContent,
+          handle: account?.querySelector('.asb-handle')?.textContent,
+          name: account?.getAttribute('aria-label'),
+          popup: account?.getAttribute('aria-haspopup'),
+          caret: !!account?.querySelector('.menu-caret'),
+          side: pop?.dataset.side ?? null,
+          items: [...(pop?.querySelectorAll('[role="menuitem"] .menu-text') ?? [])].map((node) => node.textContent),
+        }
+        report.check(same(actual, row.expected), `${name}: the account menu must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
+        await mounted.unmount()
       } else if (row.kind === 'account-slot') {
         const mounted = await mount(React.createElement(AppSidebar, propsFor(row, { accountSlot: React.createElement('span', { className: 'slot' }, row.slot) })))
         const me = mounted.container.querySelector('.asb-me')

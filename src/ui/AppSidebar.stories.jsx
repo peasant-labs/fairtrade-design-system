@@ -153,6 +153,20 @@ function Frame({ title, groups, currentId, page, ...props }) {
   )
 }
 
+// the account as its own menu (profile, settings, sign out): the same flat row with no caret, so the
+// handle keeps the default row's width, opening above the footer
+export const AccountMenu = {
+  render: () => <Frame title="home" app="online" groups={ONLINE_GROUPS} currentId="home" account={{ handle: 'alicedev', items: [{ label: 'profile' }, { label: 'settings' }, { separator: true }, { label: 'sign out' }] }} settingsHref="#settings" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: '@alicedev' })
+    const handle = trigger.querySelector('.asb-handle')
+    await expect(handle.scrollWidth).toBeLessThanOrEqual(handle.clientWidth)
+    await userEvent.click(trigger)
+    await expect(canvas.getByRole('menuitem', { name: 'sign out' })).toBeVisible()
+  },
+}
+
 export const Online = {
   render: () => <Frame title="home" app="online" groups={ONLINE_GROUPS} currentId="home" account={{ handle: 'mira', href: '#account' }} settingsHref="#settings" search={{ onOpen: () => {}, shortcut: '⌘K', keyShortcuts: 'Meta+K' }} />,
   play: async ({ canvasElement }) => {

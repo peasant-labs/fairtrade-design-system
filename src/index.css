@@ -1000,6 +1000,7 @@
   /* the live (interactive) menu floats over content below its trigger instead of pushing it down */
   .menu-pop.menu-float { position: absolute; top: calc(100% + var(--sp-1)); left: 0; margin-top: 0; z-index: var(--z-dropdown); box-shadow: var(--overlay-shadow); }
   .menu-pop.menu-float[data-align="end"] { left: auto; right: 0; }
+  .menu-pop.menu-float[data-side="top"] { top: auto; bottom: calc(100% + var(--sp-1)); }
   @media (prefers-reduced-motion: no-preference) {
     .menu-pop.menu-float:not([hidden]) { animation: menuIn var(--dur-2) var(--ease-out) both; }
   }
