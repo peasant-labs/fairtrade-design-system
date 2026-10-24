@@ -25,6 +25,7 @@ requiredCaseNames:
   - keyboard resize clamps to the bounds
   - the account row links to the account
   - the account row without an href is text
+  - an account with items is its own menu
   - an account slot replaces the row
   - the menu opens and closes the drawer
   - one indicator slides between current items
@@ -32,6 +33,8 @@ requiredCaseNames:
   - a link component receives the item props
 
 requiredMutationNames:
+  - the account menu draws a caret
+  - the account menu opens below the footer
   - the current item loses aria-current
   - the width is not clamped
   - the collapsed state is not written
@@ -177,3 +180,13 @@ mutations:
     find: "<div ref={scrollRef} className=\"asb-scroll\" onScroll={keepColumnUpright}>"
     replace: "<div ref={scrollRef} className=\"asb-scroll\">"
     expectedDiagnostic: "the column never stays scrolled sideways: a sideways scroll must go straight back"
+  - name: the account menu draws a caret
+    file: src/ui/Menu.jsx
+    find: ": triggerClassName ? label : <>{label} <ChevronDown"
+    replace: ": <>{label} <ChevronDown"
+    expectedDiagnostic: "an account with items is its own menu: the account menu must be"
+  - name: the account menu opens below the footer
+    file: src/ui/AppSidebar.jsx
+    find: "items={account.items} side=\"top\""
+    replace: "items={account.items}"
+    expectedDiagnostic: "an account with items is its own menu: the account menu must be"

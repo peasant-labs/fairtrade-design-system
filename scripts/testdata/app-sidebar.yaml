@@ -197,6 +197,12 @@ cases:
     kind: account
     props: {app: online, account: {handle: Bo}}
     expected: {tag: SPAN, initial: B, handle: '@Bo', href: null}
+  # An account with items is its own menu: the same flat row (avatar, @handle, no caret, so the handle
+  # keeps the default row's width), a menu button named by the handle, opening above the footer.
+  - name: an account with items is its own menu
+    kind: account-menu
+    props: {app: online, account: {handle: alicedev, href: /settings/account, items: [{label: profile}, {label: settings}, {label: sign out}]}}
+    expected: {tag: BUTTON, initial: A, handle: '@alicedev', name: '@alicedev', popup: menu, caret: false, side: top, items: [profile, settings, sign out]}
   - name: an account slot replaces the row
     kind: account-slot
     props: {app: online, account: {handle: mira}}

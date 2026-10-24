@@ -4,6 +4,27 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.42 - 2026-10-24
+
+### Added
+
+- `CodeMapComposition` and `CodeMapNavigator` take `lineCounts: 'measured' |
+  'unknown'` ('measured' by default). With 'unknown' (the host could not read
+  the project's languages, so every line count is an unmeasured 0) no
+  navigator row states a line count, instead of "0 lines" on every row. A
+  measured 0 still reads "0 lines".
+- `AppSidebar`'s `account` takes `items` (menu items). The account row becomes
+  its own menu: the same flat row, avatar and @handle with no caret, so the
+  handle keeps the default row's width ("@alicedev" is no longer cut at 1440),
+  and the menu opens above the footer. A host that put a `Menu` in
+  `accountSlot` for this can pass `items` instead.
+- `Menu` takes `side="top"` to open above its trigger, and `triggerClassName`
+  for a host-drawn trigger without the caret.
+
+### Compatibility
+
+- New props only; nothing changes for a host that leaves them out.
+
 ## 0.0.41 - 2026-10-24
 
 ### Added

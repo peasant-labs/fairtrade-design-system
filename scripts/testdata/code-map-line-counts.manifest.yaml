@@ -1,0 +1,22 @@
+# Required-NAME manifest for code-map-line-counts.yaml: deletion protection. The gate asserts the
+# case names equal this list exactly, as a set, and parts-mutations.mjs proves each production
+# mutation below turns the gate red for the named reason.
+requiredCaseNames:
+  - a measured count reads its lines
+  - unmeasured counts state no lines
+  - the composition passes unmeasured counts on
+
+requiredMutationNames:
+  - unmeasured counts read as zero
+  - the composition drops the line-count state
+mutations:
+  - name: unmeasured counts read as zero
+    file: src/ui/graph/CodeMapNavigator.jsx
+    find: "{lineCounts === 'unknown' ? null : <span>{formatCount(row.node.loc ?? 0)} lines</span>}"
+    replace: "<span>{formatCount(row.node.loc ?? 0)} lines</span>"
+    expectedDiagnostic: "unmeasured counts state no lines: row internal"
+  - name: the composition drops the line-count state
+    file: src/ui/graph/CodeMapComposition.jsx
+    find: "      lineCounts={lineCounts}\n"
+    replace: ""
+    expectedDiagnostic: "the composition passes unmeasured counts on: row internal"
