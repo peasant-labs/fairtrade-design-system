@@ -1,0 +1,29 @@
+# Cases for the transcript trail on a wide screen (scripts/journey/transcript-trail.journey.mjs), on the
+# built Storybook in both themes at each viewport. From a tablet up every crumb reads whole while it
+# fits, and only the last, the current page's title, may shorten, only when the row is full. A crumb is
+# cut when its text is wider than its box (an ellipsis). `story` is a TranscriptViewer story with a host
+# trail; `lastMayCut` allows the title alone to shorten. The phone's one-line trail is
+# scripts/journey/phone-header.journey.mjs.
+viewports:
+  - {name: desktop, width: 1440, height: 900}
+  - {name: laptop, width: 1280, height: 800}
+cases:
+  - {name: a host trail with room reads whole, story: in-use-transcript-transcriptviewer--host-trail, lastMayCut: false, crumbs: [collectives, AI Research Collective, Port the transcript canvas into the shared package]}
+  - name: a full row shortens only the title
+    story: in-use-transcript-transcriptviewer--host-trail-long
+    lastMayCut: true
+    crumbs:
+      - collectives
+      - The Distributed Systems and Agent Reliability Research Collective of the Northern Valley
+      - Port the transcript canvas into the shared package, then rewire every consumer of the old renderer and delete it once the last import is gone
+# Mutations: each injects CSS into a case's story at the first viewport, and the gate must report the
+# text in `expect`.
+mutations:
+  - name: the phone caps reach the desktop
+    story: in-use-transcript-transcriptviewer--host-trail
+    css: '.txn-crumb { flex: 0 1 auto !important; } .txn-crumb > :first-child:not(svg) { max-width: 30% !important; } .txn-crumb > :last-child:not(svg) { max-width: 50% !important; }'
+    expect: 'cut short with room'
+  - name: a middle crumb shortens before the title
+    story: in-use-transcript-transcriptviewer--host-trail-long
+    css: '.txn-crumb > :not(svg):not(:first-child):not(:last-child) { flex: 0 1 auto !important; }'
+    expect: 'is cut short before the title'

@@ -120,6 +120,29 @@ export const Default = {
   },
 }
 
+// a host's trail, as online passes it for a transcript opened from a collective: with room on the row
+// every crumb reads whole
+export const HostTrail = {
+  args: {
+    viewModel,
+    capabilities: readOnlyCaps,
+    breadcrumb: [{ label: 'collectives', href: '#collectives' }, { label: 'AI Research Collective', href: '#collective' }, { label: 'Port the transcript canvas into the shared package' }],
+  },
+}
+
+// a trail longer than the row: the crumbs before the title read whole and only the title shortens
+export const HostTrailLong = {
+  args: {
+    viewModel,
+    capabilities: readOnlyCaps,
+    breadcrumb: [
+      { label: 'collectives', href: '#collectives' },
+      { label: 'The Distributed Systems and Agent Reliability Research Collective of the Northern Valley', href: '#collective' },
+      { label: 'Port the transcript canvas into the shared package, then rewire every consumer of the old renderer and delete it once the last import is gone' },
+    ],
+  },
+}
+
 export const Highlights = { args: { viewModel, capabilities: fullCaps, activeTab: 'highlights' } }
 export const Diffs = { args: { viewModel, capabilities: fullCaps, activeTab: 'diffs' } }
 export const Files = { args: { viewModel, capabilities: fullCaps, activeTab: 'files' } }

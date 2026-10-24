@@ -1,0 +1,4 @@
+# Required-NAME manifest for transcript-trail.yaml: deletion protection for the viewports, cases and mutations.
+requiredViewportNames: [desktop, laptop]
+requiredCaseNames: [a host trail with room reads whole, a full row shortens only the title]
+requiredMutationNames: [the phone caps reach the desktop, a middle crumb shortens before the title]
