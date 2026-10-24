@@ -65,7 +65,12 @@ payloadCases:
     expect: {figures: null}
   - name: no-text-first-turn
     firstTurnContent: ''
-    expect: {title: rewrite billing retries, firstPrompt: rewrite billing retries}
+    expect: {title: rewrite billing retries, firstPrompt: rewrite billing retries, firstPromptIsTitle: true}
+  # untitled, with nothing in the first turn: the title is the session id, and it is not a prompt
+  - name: untitled-empty-first-turn
+    omit: [title]
+    firstTurnContent: ''
+    expect: {title: ses_share, firstPrompt: ses_share, firstPromptIsTitle: true}
   - name: empty-first-turn-later-text
     set:
       turnCount: 3
@@ -76,7 +81,7 @@ payloadCases:
     expect: {firstPrompt: rewrite billing retries}
   - name: first-prompt-is-first-user-turn
     firstTurnContent: add a retry cap
-    expect: {firstPrompt: add a retry cap}
+    expect: {firstPrompt: add a retry cap, firstPromptIsTitle: false}
   # Claude Code records a skill or custom command as a user turn wrapped in its command tags
   - name: first-prompt-slash-command-args
     firstTurnContent: "<command-message>research is running…</command-message>\n<command-name>/research</command-name>\n<command-args>compare the two cache eviction policies</command-args>"
@@ -233,6 +238,12 @@ renderCases:
     height: 600
     expect: {promptMaxLines: 3, promptEllipsis: true}
 
+  # the title stands in for a first prompt with no text, so it is drawn without the "user" label
+  - name: render-untitled-empty-first-turn
+    omit: [title]
+    firstTurnContent: ''
+    height: 600
+    expect: {size: [1200, 600], textIncludes: [ses_share], textExcludes: [user], promptMaxLines: 3}
   - name: render-slash-command-shows-args
     firstTurnContent: "<command-message>research is running…</command-message>\n<command-name>/research</command-name>\n<command-args>compare the two cache eviction policies</command-args>"
     height: 600

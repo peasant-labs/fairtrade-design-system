@@ -17,6 +17,8 @@ import { formatCount } from '../ui/format.js'
  * @property {string | null} brand BrandMark key, or null when the harness is not a known provider
  * @property {string} chip harness display name with the model in brackets, e.g. "Claude Code (Opus 5.5)"
  * @property {string} firstPrompt the published text of the first user turn, or the title when it has none
+ * @property {boolean} [firstPromptIsTitle] true when the first user turn has no text and `firstPrompt`
+ *   is the title standing in for it; the card then draws it without the "user" label (absent reads as false)
  * @property {{ prompts: number, tokens: number } | null} figures both figures or neither
  */
 
@@ -128,7 +130,7 @@ export function shareCardFromPayload(payload) {
   const showTotal = !vm.usageScopes?.length && tokens != null
   const figures = prompts != null && showTotal ? { prompts: Number(prompts), tokens: Number(tokens) } : null
 
-  return { title, harness, brand, chip: shareCardModelLabel(harness, session.model), firstPrompt, figures }
+  return { title, harness, brand, chip: shareCardModelLabel(harness, session.model), firstPrompt, firstPromptIsTitle: !firstText, figures }
 }
 
 /** @param {ShareCardData} card @returns {string} */

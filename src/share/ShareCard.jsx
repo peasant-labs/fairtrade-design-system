@@ -366,8 +366,9 @@ function Prompt({ prompt, fullWidth }) {
 }
 
 /* the first prompt as fairtrade draws a user turn (.txn-turn.user): a hairline box with the teal
-   edge on the turn tint, the bold teal "user" label over the prose */
-function UserTurn({ prompt, fullWidth }) {
+   edge on the turn tint, the bold teal "user" label over the prose. When the title stands in for a
+   first turn with no text, the box holds the title without the label: it is not the user's words. */
+function UserTurn({ prompt, fullWidth, label = true }) {
   return (
     <div
       key="turn"
@@ -384,13 +385,15 @@ function UserTurn({ prompt, fullWidth }) {
         backgroundColor: TURN_TINT,
       }}
     >
-      <div
-        key="role"
-        style={{ display: 'flex', alignItems: 'center', gap: SP(2), marginBottom: 14, fontSize: 32, lineHeight: 1.5, fontWeight: 700, color: C.teal }}
-      >
-        <PersonIcon size={32} />
-        <span>user</span>
-      </div>
+      {label ? (
+        <div
+          key="role"
+          style={{ display: 'flex', alignItems: 'center', gap: SP(2), marginBottom: 14, fontSize: 32, lineHeight: 1.5, fontWeight: 700, color: C.teal }}
+        >
+          <PersonIcon size={32} />
+          <span>user</span>
+        </div>
+      ) : null}
       <Prompt prompt={prompt} fullWidth={fullWidth} />
     </div>
   )
@@ -429,7 +432,7 @@ function PublicCard({ card, height }) {
             <StatTile label="tokens" value={formatShareCount(figures.tokens)} />
           </div>
         ) : null}
-        <UserTurn prompt={card.firstPrompt} fullWidth={!figures} />
+        <UserTurn prompt={card.firstPrompt} fullWidth={!figures} label={!card.firstPromptIsTitle} />
       </div>
     </Frame>
   )
