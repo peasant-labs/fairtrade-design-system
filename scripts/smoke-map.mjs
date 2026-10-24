@@ -524,7 +524,7 @@ const GRAIN_PAYLOAD = {
     filter: filterCase.initialState.navigatorFilter,
   }))
   assert('INTERACTION-filter-derived-navigation', 'the built filtered hierarchy exposes immediate child and parent navigation without persisted expansion', filteredParent?.forcedOpen === true && filteredParent.childIds[0] === 'internal/ingest' && filteredChild?.parentId === 'internal' && filteredView.state.expandedIds.length === 0)
-  assert('INTERACTION-filter-aria', 'the built filtered navigator renders effective expanded truth and an unavailable collapse affordance', filteredMarkup.includes('aria-expanded="true"') && filteredMarkup.includes('aria-disabled="true"'))
+  assert('INTERACTION-filter-aria', 'the built filtered navigator renders effective expanded truth and no chevron that cannot change what shows', filteredMarkup.includes('aria-expanded="true"') && !filteredMarkup.includes('children for ') && !filteredMarkup.includes('aria-disabled="true"'))
   const parentOnlyView = deriveCodeMapView(interactionFixture.payload, parentOnly.initialState)
   const solo = parentOnlyView.rows.find((row) => row.node.id === 'solo')
   assert('INTERACTION-parent-only-filter', 'a matching parent with no visible matching child is not forced open', solo?.forcedOpen === false && solo.expanded === false && solo.childIds.length === 0)
