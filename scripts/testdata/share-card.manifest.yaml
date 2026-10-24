@@ -18,6 +18,8 @@ requiredPayloadNames:
   - no-text-first-turn
   - empty-first-turn-later-text
   - first-prompt-is-first-user-turn
+  - first-prompt-slash-command-args
+  - first-prompt-slash-command-no-args
   - long-unbroken-prompt
 requiredTextNames:
   - description-with-figures
@@ -56,6 +58,7 @@ requiredRenderNames:
   - render-cut-never-splits-a-word
   - render-long-url-after-words
   - render-long-cjk
+  - render-slash-command-shows-args
   - render-chip-long-model-keeps-bracket
   - render-chip-long-harness
   - render-tokens-six-chars

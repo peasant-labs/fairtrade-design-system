@@ -77,6 +77,13 @@ payloadCases:
   - name: first-prompt-is-first-user-turn
     firstTurnContent: add a retry cap
     expect: {firstPrompt: add a retry cap}
+  # Claude Code records a skill or custom command as a user turn wrapped in its command tags
+  - name: first-prompt-slash-command-args
+    firstTurnContent: "<command-message>research is running…</command-message>\n<command-name>/research</command-name>\n<command-args>compare the two cache eviction policies</command-args>"
+    expect: {firstPrompt: compare the two cache eviction policies}
+  - name: first-prompt-slash-command-no-args
+    firstTurnContent: "<command-name>/clear</command-name>\n            <command-message>clear</command-message>\n            <command-args></command-args>"
+    expect: {firstPrompt: /clear}
   - name: long-unbroken-prompt
     firstTurnRepeat: {unit: x, times: 600}
     expect: {firstPromptLength: 600}
@@ -226,6 +233,10 @@ renderCases:
     height: 600
     expect: {promptMaxLines: 3, promptEllipsis: true}
 
+  - name: render-slash-command-shows-args
+    firstTurnContent: "<command-message>research is running…</command-message>\n<command-name>/research</command-name>\n<command-args>compare the two cache eviction policies</command-args>"
+    height: 600
+    expect: {textIncludes: [compare the two cache eviction policies], textExcludes: [<command, research is running]}
   # a chip over 32 characters cuts the model inside its brackets and keeps the closing bracket
   - name: render-chip-long-model-keeps-bracket
     set: {harness: gemini-cli, model: gemini-2.5-pro-preview-06-05}

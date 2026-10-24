@@ -27,6 +27,27 @@ const LEGACY_MODEL_SHAPE = /^claude-(\d{1,2}(?:-\d{1,2})*)-([a-z]+)$/
 const MODEL_DATE = /-\d{8}$/
 const TITLE_LIMIT = 160
 
+/* a skill or custom command, as Claude Code records it: the user turn is only the command's tags */
+const COMMAND_LEAD = /^\s*<command-(?:name|message|args)>/
+const COMMAND_TAG = /<command-(name|message|args)>([\s\S]*?)<\/command-\1>/g
+
+/**
+ * The words a slash-command turn stands for: its arguments when it has any, else the command
+ * name ("/research"), and never the tags. Text that does not open with a command tag is returned
+ * as it is.
+ * @param {string} text
+ * @returns {string}
+ */
+function commandPrompt(text) {
+  if (!COMMAND_LEAD.test(text)) return text
+  /** @type {Record<string, string>} */
+  const parts = {}
+  for (const [, tag, inner] of text.matchAll(COMMAND_TAG)) if (!(tag in parts)) parts[tag] = inner.trim()
+  if (parts.args) return parts.args
+  if (parts.name) return `/${parts.name.replace(/^\/+/, '')}`
+  return ''
+}
+
 /** @param {unknown} harness @returns {boolean} */
 const isProvider = (harness) => typeof harness === 'string' && Object.prototype.hasOwnProperty.call(PROVIDER_BRANDS, harness)
 
@@ -93,10 +114,11 @@ export function shareCardFromPayload(payload) {
 
   // the first user turn's text, read from the recorded turns: the page's noise filter drops an
   // empty turn, which would promote a later prompt to first. A first turn with no text
-  // (attachments, tool results) falls back to the title.
+  // (attachments, tool results) falls back to the title. A slash command shows its arguments, or
+  // its name when it has none, never its tags.
   const first = wire.turns.find((turn) => turn?.role === 'user' && (turn.depth ?? 0) === 0)
   const recorded = typeof first?.content === 'string' ? first.content : ''
-  const firstText = (session.harness === 'cursor' ? unwrapUserQuery(recorded) : recorded).trim()
+  const firstText = commandPrompt(session.harness === 'cursor' ? unwrapUserQuery(recorded) : recorded).trim()
   const firstPrompt = firstText || title
 
   // the page shows the prompt count when it was recorded, and the single token total only when
