@@ -374,7 +374,10 @@ styleCases:
 #     sameTop: the nodes `keys` all start at the same y;
 #     size: node `key` lays out `size` [width, height] px;
 #     style: node `key` sets every property of `style` to the value given;
-#     gapBelow: node `below` starts `px` below the bottom of node `key`.
+#     gapBelow: node `below` starts `px` below the bottom of node `key`;
+#     textIsolated: the frame (node `frame`) and every node that holds text itself set each of
+#       `properties` in their own inline style, so a host page's CSS cannot reach the card through
+#       inheritance or an element selector when a page draws it in the DOM.
 #   The generic card's sizes are the owner's approved zoom (about 1.5 times the first mockup), so
 #   it reads on a phone; the top chip's 73px is the approved mockup's chip: 34px text at the body
 #   line-height (1.5) with 10px 18px padding and a hairline above and below.
@@ -388,6 +391,8 @@ layoutCases:
   - {name: layout-generic-chip, card: generic, check: style, key: chip, style: {fontSize: 54, fontWeight: 400, padding: 16px 30px, gap: 18}}
   - {name: layout-generic-lock-size, card: generic, check: size, key: lock, size: [50, 50]}
   - {name: layout-generic-chip-below-mark, card: generic, check: gapBelow, key: mark, below: chip, px: 44}
+  - {name: layout-text-isolated-from-host-css, check: textIsolated, properties: [letterSpacing, wordSpacing, textTransform, lineHeight]}
+  - {name: layout-generic-text-isolated-from-host-css, card: generic, check: textIsolated, properties: [letterSpacing, wordSpacing, textTransform, lineHeight]}
 
 # metricsCases: the prompt clamp's advance table (src/share/metrics.js) against the shipped body
 #   face, read by scripts/gen-share-metrics.mjs. `values`: every table entry (ASCII, Latin-1, the

@@ -103,3 +103,5 @@ requiredLayoutNames:
   - layout-generic-chip
   - layout-generic-lock-size
   - layout-generic-chip-below-mark
+  - layout-text-isolated-from-host-css
+  - layout-generic-text-isolated-from-host-css

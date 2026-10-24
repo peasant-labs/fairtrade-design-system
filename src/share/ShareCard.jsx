@@ -47,6 +47,11 @@ const PROSE_WORD_SPACING = token('word-spacing-prose')
 const SP = (step) => space[`sp-${step}`].$value
 const BODY_LINE = Number(typography['lh-body'].$value)
 const BODY = font['font-body'].$value
+/* Where a page draws the card in the DOM, its own CSS must not reach the card: the frame and every
+   element that holds text set these text styles themselves, so neither inheritance from the host
+   nor an element selector (span, div) changes the spacing, case or line height. Each text element
+   adds its own line height. */
+const TEXT_RESET = { letterSpacing: 'normal', wordSpacing: 'normal', textTransform: 'none' }
 const MONO = font['font-mono'].$value
 
 /* geometry, in px at 1200 wide */
@@ -276,6 +281,7 @@ function Frame({ height, children, center = false }) {
   const extra = (height - 600) / 2
   return (
     <div
+      key="frame"
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -288,6 +294,8 @@ function Frame({ height, children, center = false }) {
         backgroundColor: C.canvas,
         color: C.inkStrong,
         fontFamily: MONO,
+        ...TEXT_RESET,
+        lineHeight: BODY_LINE,
       }}
     >
       {children}
@@ -314,10 +322,10 @@ function StatTile({ label, value }) {
         backgroundColor: C.canvas,
       }}
     >
-      <div key={`eyebrow-${label}`} style={{ display: 'flex', fontSize: 32, lineHeight: 1.3, letterSpacing: EYEBROW_TRACKING, color: C.ink3 }}>
+      <div key={`eyebrow-${label}`} style={{ display: 'flex', fontSize: 32, ...TEXT_RESET, lineHeight: 1.3, letterSpacing: EYEBROW_TRACKING, color: C.ink3 }}>
         {label}
       </div>
-      <div key={`value-${label}`} style={{ display: 'flex', marginTop: 6, fontSize: shareValueSize(value), lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>
+      <div key={`value-${label}`} style={{ display: 'flex', marginTop: 6, fontSize: shareValueSize(value), ...TEXT_RESET, lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>
         {value}
       </div>
     </div>
@@ -329,9 +337,11 @@ function StatTile({ label, value }) {
 function Prompt({ prompt, fullWidth }) {
   const lines = sharePromptLines(prompt, fullWidth)
   let n = 0
+  /* the prompt's text styles, set again on each word and space (see TEXT_RESET) */
+  const prose = { letterSpacing: PROSE_TRACKING, wordSpacing: PROSE_WORD_SPACING, textTransform: 'none', lineHeight: PROMPT_LINE }
   const space = (width) => {
     const key = `s${n++}`
-    return <span key={key} style={{ display: 'flex', flexShrink: 0, width, overflow: 'hidden' }}>{' '}</span>
+    return <span key={key} style={{ display: 'flex', flexShrink: 0, width, overflow: 'hidden', ...prose }}>{' '}</span>
   }
   return (
     <div
@@ -342,9 +352,7 @@ function Prompt({ prompt, fullWidth }) {
         flexShrink: 0,
         fontFamily: BODY,
         fontSize: PROMPT_SIZE,
-        lineHeight: PROMPT_LINE,
-        letterSpacing: PROSE_TRACKING,
-        wordSpacing: PROSE_WORD_SPACING,
+        ...prose,
         color: C.inkStrong,
       }}
     >
@@ -352,7 +360,7 @@ function Prompt({ prompt, fullWidth }) {
         const pieces = []
         line.text.split(' ').forEach((word, index) => {
           if (index > 0) pieces.push(space(SPACE_PX))
-          pieces.push(<span key={`w${n++}`} style={{ display: 'flex', flexShrink: 0 }}>{word}</span>)
+          pieces.push(<span key={`w${n++}`} style={{ display: 'flex', flexShrink: 0, ...prose }}>{word}</span>)
         })
         if (line.breakSpace) pieces.push(space(0))
         return (
@@ -391,7 +399,7 @@ function UserTurn({ prompt, fullWidth, label = true }) {
           style={{ display: 'flex', alignItems: 'center', gap: SP(2), marginBottom: 14, fontSize: 32, lineHeight: 1.5, fontWeight: 700, color: C.teal }}
         >
           <PersonIcon size={32} />
-          <span>user</span>
+          <span style={{ ...TEXT_RESET, lineHeight: 1.5 }}>user</span>
         </div>
       ) : null}
       <Prompt prompt={prompt} fullWidth={fullWidth} />
@@ -406,7 +414,7 @@ function PublicCard({ card, height }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <WheatLogo size={44} />
-          <span style={{ fontSize: 40, lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>peasant</span>
+          <span style={{ fontSize: 40, ...TEXT_RESET, lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>peasant</span>
         </div>
         <div
           key="chip"
@@ -422,7 +430,7 @@ function PublicCard({ card, height }) {
           }}
         >
           <Mark brand={card.brand} size={CHIP_SIZE} fill={C.ink2} />
-          <span>{shortenChip(card.chip)}</span>
+          <span style={{ ...TEXT_RESET, lineHeight: BODY_LINE }}>{shortenChip(card.chip)}</span>
         </div>
       </div>
       <div style={{ display: 'flex', flexGrow: 1, gap: COLUMN_GAP, marginTop: BODY_GAP }}>
@@ -445,7 +453,7 @@ function GenericCard({ height }) {
     <Frame height={height} center>
       <div key="mark" style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
         <WheatLogo size={118} nodeKey="logo" />
-        <span key="wordmark" style={{ fontSize: 100, lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>peasant labs</span>
+        <span key="wordmark" style={{ fontSize: 100, ...TEXT_RESET, lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>peasant labs</span>
       </div>
       <div
         key="chip"
@@ -464,7 +472,7 @@ function GenericCard({ height }) {
         }}
       >
         <LockIcon size={50} />
-        <span>limited visibility</span>
+        <span style={{ ...TEXT_RESET, lineHeight: 1.3 }}>limited visibility</span>
       </div>
     </Frame>
   )

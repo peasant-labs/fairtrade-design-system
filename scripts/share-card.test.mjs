@@ -254,7 +254,7 @@ await withMountedSource(async ({ load }) => {
 /** One layout case: the card's geometry as satori laid it out. */
 function checkLayout(row, nodes) {
   const find = (key) => nodes.find((node) => node.key === key)
-  const wanted = row.check === 'sameTop' ? row.keys : row.check === 'gapBelow' ? [row.key, row.below] : [row.key]
+  const wanted = row.check === 'sameTop' ? row.keys : row.check === 'gapBelow' ? [row.key, row.below] : row.check === 'textIsolated' ? ['frame'] : [row.key]
   const missing = wanted.filter((key) => !find(key))
   if (missing.length) { report.check(false, `${row.name}: the card drew no node keyed ${JSON.stringify(missing)}`); return }
   if (row.check === 'sameTop') {
@@ -269,6 +269,12 @@ function checkLayout(row, nodes) {
     for (const [property, value] of Object.entries(row.style)) {
       report.check(String(style[property]) === String(value), `${row.name}: ${row.key} sets ${property} ${JSON.stringify(style[property])}, expected ${JSON.stringify(value)}`)
     }
+  } else if (row.check === 'textIsolated') {
+    // satori sets textContent on the element that holds a text child
+    const holdsText = (node) => typeof node.textContent === 'string'
+    const targets = [find('frame'), ...nodes.filter(holdsText)]
+    const open = targets.flatMap((node) => row.properties.filter((property) => node.props?.style?.[property] === undefined).map((property) => `${node.key ?? JSON.stringify(node.textContent)} ${property}`))
+    report.check(targets.length > 1 && open.length === 0, `${row.name}: ${open.length} text styles are left to inheritance: ${open.slice(0, 8).join(', ')}`)
   } else if (row.check === 'gapBelow') {
     const [above, below] = [find(row.key), find(row.below)]
     const gap = below.top - (above.top + above.height)
