@@ -1,0 +1,39 @@
+# Cases for page heading levels (scripts/page-headings.test.mjs). A composite a host can mount as the
+# whole page (Explore, TranscriptViewer) draws its title as an h2 by default, a section of a host page;
+# with headingLevel 1 that title is the page's h1 and every heading under it moves up one level, so
+# the page has one h1 and no skipped level. `headings` is each rendered heading in document order, as
+# TAG.firstClass. An invalid level fails loudly.
+payload:
+  id: page-headings
+  harness: claude-code
+  startTime: '2026-09-20T10:00:00Z'
+  endTime: '2026-09-20T10:42:00Z'
+  durationMins: 42
+  totalTokens: 1200
+  tokensIn: 800
+  tokensOut: 400
+  turnCount: 2
+  toolCallCount: 0
+  turns:
+    - {index: 0, role: user, content: the ingest test flakes on CI, timestamp: '2026-09-20T10:00:00Z', depth: 0}
+    - {index: 1, role: assistant, content: I will reproduce it., timestamp: '2026-09-20T10:01:00Z', depth: 0}
+cases:
+  - name: the viewer is a section by default
+    component: viewer
+    props: {}
+    headings: [H2.txn-title, H3.lbl, H4.txn-turn-heading, H4.txn-turn-heading]
+  - name: the viewer as the page has one h1
+    component: viewer
+    props: {headingLevel: 1}
+    headings: [H1.txn-title, H2.lbl, H3.txn-turn-heading, H3.txn-turn-heading]
+  - name: explore is a section by default
+    component: explore
+    props: {}
+    headings: [H2.cex-h2, H3.cex-title, H3.cex-title, H3.cex-title, H3.cex-title]
+  - name: explore as the page has one h1
+    component: explore
+    props: {headingLevel: 1}
+    headings: [H1.cex-h2, H2.cex-title, H2.cex-title, H2.cex-title, H2.cex-title]
+invalid:
+  - {name: the viewer refuses another level, component: viewer, props: {headingLevel: 3}, diagnostic: 'TranscriptViewer: headingLevel must be 1'}
+  - {name: explore refuses another level, component: explore, props: {headingLevel: '1'}, diagnostic: 'Explore: headingLevel must be 1'}

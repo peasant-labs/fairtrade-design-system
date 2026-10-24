@@ -54,6 +54,8 @@ function turnTimeLabel(ts) {
  * @param {boolean} [props.compact]
  * @param {boolean} [props.expandAll]
  * @param {number} [props.revealRequest] explicit search navigation sequence
+ * @param {number} [props.headingLevel=4] the turn heading's level: h4 under a viewer whose title is an h2, h3 under one
+ *        whose title is the page's h1
  */
 export default function TurnCard({
   turn,
@@ -69,7 +71,9 @@ export default function TurnCard({
   compact = false,
   expandAll = false,
   revealRequest = 0,
+  headingLevel = 4,
 }) {
+  const TurnHeading = `h${Math.min(6, Math.max(1, headingLevel))}`
   const [expanded, setExpanded] = useState(true)
   const bodyId = useId()
   const headingId = useId()
@@ -92,7 +96,7 @@ export default function TurnCard({
 
   const head = (
     <div className="txn-turnhead">
-      <h4 id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</h4>
+      <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</TurnHeading>
       <span className="txn-rolelabel"
         style={turn.role === 'assistant' && !isSub ? { color: asstAccent } : undefined}
       >
