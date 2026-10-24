@@ -1,0 +1,28 @@
+# Required-NAME manifest for code-map-disclosure.yaml: deletion protection. The gate asserts the case
+# names equal this list exactly, as a set, and parts-mutations.mjs proves each production mutation
+# below turns the gate red for the named reason.
+requiredCaseNames:
+  - the grain opens a folder for good
+  - pressing a folder the grain opened changes nothing
+  - a folder past the grain opens on its disclosure
+
+requiredMutationNames:
+  - a grain-opened folder reads collapsed
+  - a folder past the grain has no disclosure
+  - a grain-opened folder's disclosure stays live
+mutations:
+  - name: a grain-opened folder reads collapsed
+    file: src/ui/graph/codeMapState.js
+    find: "expanded: forcedOpen || openByGrain || (canExpand && expanded.has(node.id)),"
+    replace: "expanded: forcedOpen || (canExpand && expanded.has(node.id)),"
+    expectedDiagnostic: "the grain opens a folder for good: disclosures"
+  - name: a folder past the grain has no disclosure
+    file: src/ui/graph/CodeMapNavigator.jsx
+    find: "(filtering ? row.canExpand || row.forcedOpen : row.hasChildren)"
+    replace: "(row.canExpand || row.forcedOpen)"
+    expectedDiagnostic: "the grain opens a folder for good: disclosures"
+  - name: a grain-opened folder's disclosure stays live
+    file: src/ui/graph/CodeMapNavigator.jsx
+    find: "aria-disabled={row.forcedOpen || row.openByGrain ? 'true' : undefined}"
+    replace: "aria-disabled={row.forcedOpen ? 'true' : undefined}"
+    expectedDiagnostic: "the grain opens a folder for good: disclosures"

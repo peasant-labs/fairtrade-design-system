@@ -1,0 +1,30 @@
+# Cases for the code map navigator's disclosures (scripts/code-map-disclosure.test.mjs). The gate
+# mounts the REAL CodeMapNavigator with the payload below and reads each folder's disclosure. A folder
+# whose children the grain already shows is open and fixed (expanded, disabled: pressing it changes
+# nothing); a folder past the grain's depth has a working disclosure that opens it; a file has none.
+# `rows` is the visible rows in order, `disclosures` maps a row to [aria-expanded, aria-disabled].
+payload:
+  repoFound: true
+  structureEdges: []
+  violations: []
+  nodes:
+    - {id: internal, name: internal, kind: module, loc: 820, recordedFiles: 5, totalFiles: 8, order: 0}
+    - {id: internal/ingest, name: ingest, kind: package, parent: internal, loc: 510, recordedFiles: 3, totalFiles: 5, order: 0}
+    - {id: internal/ingest/pipeline.go, name: pipeline.go, kind: file, parent: internal/ingest, loc: 220, recordedFiles: 1, totalFiles: 1, order: 0}
+    - {id: web, name: web, kind: module, loc: 460, recordedFiles: 2, totalFiles: 6, order: 1}
+cases:
+  - name: the grain opens a folder for good
+    grain: file
+    press: null
+    rows: [internal, ingest, web]
+    disclosures: {internal: ['true', 'true'], ingest: ['false', null]}
+  - name: pressing a folder the grain opened changes nothing
+    grain: file
+    press: internal
+    rows: [internal, ingest, web]
+    disclosures: {internal: ['true', 'true'], ingest: ['false', null]}
+  - name: a folder past the grain opens on its disclosure
+    grain: file
+    press: ingest
+    rows: [internal, ingest, pipeline.go, web]
+    disclosures: {internal: ['true', 'true'], ingest: ['true', null]}

@@ -30,7 +30,7 @@ import { SCENT_TAGS } from './ranking.js'
  * @property {CodeMapRankMode} rankMode - ranked-entry-list scoring mode.
  * @property {string|null} scentFilter - one `SCENT_TAGS` member, or null for no filter.
  */
-/** @typedef {{node:import('./types.js').MapNodePayload, depth:number, parentId:string|null, childIds:string[], hasChildren:boolean, canExpand:boolean, forcedOpen:boolean, expanded:boolean}} CodeMapNavigatorRow */
+/** @typedef {{node:import('./types.js').MapNodePayload, depth:number, parentId:string|null, childIds:string[], hasChildren:boolean, canExpand:boolean, forcedOpen:boolean, openByGrain:boolean, expanded:boolean}} CodeMapNavigatorRow */
 /** @typedef {{orderedIds:string[], rootIds:string[], childIdsByParent:Record<string,string[]>, depthById:Record<string,number>}} CodeMapHierarchy */
 /** @typedef {{allNodes:import('./types.js').MapNodePayload[], nodes:import('./types.js').MapNodePayload[], visibleIds:string[], selectedId:string|null, grain:CodeMapGrain, expandedIds:string[], viewport:CodeMapViewport|null, hierarchy:CodeMapHierarchy}} CodeMapCanvasView */
 /** @typedef {{state:CodeMapState, rows:CodeMapNavigatorRow[], focusedId:string|null, selected:import('./types.js').MapNodePayload|null, staleSelectedId:string|null, canvas:CodeMapCanvasView}} CodeMapView */
@@ -436,6 +436,9 @@ export function deriveCodeMapView(payload, state) {
     // disclosure control or keyboard toggling on the way down.
     const canExpand = hasChildren && (depth < maxDepth || expanded.has(node.id))
     const forcedOpen = !!query && visibleChildIds.length > 0
+    // the grain's base depth shows this node's children whatever expandedIds holds, so the row is open,
+    // and expanding or collapsing it cannot change what shows
+    const openByGrain = !query && hasChildren && depth < maxDepth
     rows.push({
       node: { ...node },
       depth,
@@ -444,7 +447,8 @@ export function deriveCodeMapView(payload, state) {
       hasChildren,
       canExpand,
       forcedOpen,
-      expanded: forcedOpen || (canExpand && expanded.has(node.id)),
+      openByGrain,
+      expanded: forcedOpen || openByGrain || (canExpand && expanded.has(node.id)),
     })
     if (query || depth < maxDepth || expanded.has(node.id)) {
       for (const child of derivedChildren) appendRow(child, depth + 1, node.id)
