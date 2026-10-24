@@ -13,7 +13,8 @@ viewports:
   - {name: phone, width: 390, height: 780, padFloor: 16}
 rows: '#inuse .srow, #inuse .srow-summary'
 # Mutations: each injects CSS into the measured page and must make the probe report the breach in
-# `expect`, proving the gate fails for the intended reason.
+# `expect`, proving the gate fails for the intended reason. A mutation runs on `mutationScreen` at
+# `mutationViewport` unless it names its own `viewport`.
 mutationScreen: collective settings
 mutationViewport: desktop
 mutations:
@@ -38,3 +39,7 @@ mutations:
   - name: a divider stops short of the card
     css: '.srow + .srow { margin-inline: var(--sp-4) !important; }'
     expect: the divider stops
+  - name: a phone text value is indented under its label
+    viewport: phone
+    css: '.srow-text-row:not(.srow-stacked) > .srow-control { margin-left: var(--sp-2) !important; }'
+    expect: left edges differ

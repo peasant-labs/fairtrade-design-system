@@ -15,3 +15,4 @@ requiredMutationNames:
   - the help line is indented
   - a long value sits in a column of its own
   - a divider stops short of the card
+  - a phone text value is indented under its label
