@@ -33,6 +33,10 @@ modelLabelCases:
   - {name: model-label-dated, harness: claude-code, model: claude-sonnet-4-5-20250929, expected: Claude Code (Sonnet 4.5)}
   - {name: model-label-non-claude, harness: codex, model: gpt-oss-120, expected: Codex (gpt-oss-120)}
   - {name: model-label-missing-model, harness: cursor, expected: Cursor}
+  # the legacy shape puts the version first: claude-<version>-<family>[-date]
+  - {name: model-label-legacy-sonnet, harness: claude-code, model: claude-3-5-sonnet-20241022, expected: Claude Code (Sonnet 3.5)}
+  - {name: model-label-legacy-opus, harness: claude-code, model: claude-3-opus-20240229, expected: Claude Code (Opus 3)}
+  - {name: model-label-other-vendor-stays-raw, harness: gemini-cli, model: gemini-2.5-pro, expected: Gemini CLI (gemini-2.5-pro)}
 
 payloadCases:
   - name: unknown-harness
@@ -222,6 +226,17 @@ renderCases:
     height: 600
     expect: {promptMaxLines: 3, promptEllipsis: true}
 
+  # a chip over 32 characters cuts the model inside its brackets and keeps the closing bracket
+  - name: render-chip-long-model-keeps-bracket
+    set: {harness: gemini-cli, model: gemini-2.5-pro-preview-06-05}
+    height: 600
+    expect: {textIncludes: [Gemini CLI (gemini-2.5-pro-prev…)], textExcludes: [preview-06-05]}
+  # a chip with no model is cut at 32 characters as it was
+  - name: render-chip-long-harness
+    set: {harness: acme-command-line-agent-with-a-long-name}
+    omit: [model, inputSubmissionCount]
+    height: 600
+    expect: {textIncludes: [acme-command-line-agent-with-a-…]}
   # numbers as the page formats them; one too wide for its tile at 84px is drawn smaller
   - name: render-tokens-six-chars
     set: {totalTokens: 123456}

@@ -22,6 +22,8 @@ import { formatCount } from '../ui/format.js'
 
 /* claude-<family>-<1-2 digits>(-<1-2 digits>)*, e.g. claude-opus-5-5, after one trailing -YYYYMMDD date is removed */
 const MODEL_SHAPE = /^claude-([a-z]+)-(\d{1,2}(?:-\d{1,2})*)$/
+/* the legacy shape, version first: claude-<1-2 digits>(-<1-2 digits>)*-<family>, e.g. claude-3-5-sonnet */
+const LEGACY_MODEL_SHAPE = /^claude-(\d{1,2}(?:-\d{1,2})*)-([a-z]+)$/
 const MODEL_DATE = /-\d{8}$/
 const TITLE_LIMIT = 160
 
@@ -30,10 +32,12 @@ const isProvider = (harness) => typeof harness === 'string' && Object.prototype.
 
 /** @param {string} model @returns {string} the short form, or the raw id when it has no known shape */
 function shortModel(model) {
-  const match = MODEL_SHAPE.exec(model.replace(MODEL_DATE, ''))
-  if (!match) return model
-  const family = match[1].charAt(0).toUpperCase() + match[1].slice(1)
-  return `${family} ${match[2].replace(/-/g, '.')}`
+  const id = model.replace(MODEL_DATE, '')
+  const current = MODEL_SHAPE.exec(id)
+  const legacy = current ? null : LEGACY_MODEL_SHAPE.exec(id)
+  if (!current && !legacy) return model
+  const [family, version] = current ? [current[1], current[2]] : [/** @type {RegExpExecArray} */ (legacy)[2], /** @type {RegExpExecArray} */ (legacy)[1]]
+  return `${family.charAt(0).toUpperCase()}${family.slice(1)} ${version.replace(/-/g, '.')}`
 }
 
 /**

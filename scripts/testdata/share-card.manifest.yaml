@@ -6,6 +6,9 @@ requiredModelLabelNames:
   - model-label-dated
   - model-label-non-claude
   - model-label-missing-model
+  - model-label-legacy-sonnet
+  - model-label-legacy-opus
+  - model-label-other-vendor-stays-raw
 requiredPayloadNames:
   - unknown-harness
   - known-harness-brand
@@ -53,6 +56,8 @@ requiredRenderNames:
   - render-cut-never-splits-a-word
   - render-long-url-after-words
   - render-long-cjk
+  - render-chip-long-model-keeps-bracket
+  - render-chip-long-harness
   - render-tokens-six-chars
   - render-tokens-12m
   - render-tokens-1-2m

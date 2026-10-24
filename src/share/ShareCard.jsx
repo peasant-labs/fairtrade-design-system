@@ -206,6 +206,22 @@ function shareValueSize(value) {
   return Math.min(VALUE_SIZE, Math.floor(TILE_CONTENT_W / ((chars * MONO_BOLD_ADVANCE) / 1000)))
 }
 
+/**
+ * The chip as drawn, at most CHIP_CHARS characters before its closing bracket. A chip with a model
+ * in brackets is cut inside the model, so the bracket still closes: "Gemini CLI
+ * (gemini-2.5-pro-prev…)". A chip with no model, or a harness name too long to leave room for one
+ * character of it, is cut as plain text.
+ * @param {string} chip
+ * @returns {string}
+ */
+function shortenChip(chip) {
+  const chars = graphemes(chip)
+  if (chars.length <= CHIP_CHARS) return chip
+  const open = chip.indexOf(' (')
+  if (!chip.endsWith(')') || open < 0 || graphemes(chip.slice(0, open + 2)).length >= CHIP_CHARS - 1) return shorten(chip, CHIP_CHARS)
+  return `${shorten(chip.slice(0, -1), CHIP_CHARS)})`
+}
+
 /** Blend two token colours, `amount` of `top` over `base`, as an rgb() value. */
 function mix(top, base, amount) {
   const rgb = (value) => [1, 3, 5].map((at) => parseInt(value.slice(at, at + 2), 16))
@@ -403,7 +419,7 @@ function PublicCard({ card, height }) {
           }}
         >
           <Mark brand={card.brand} size={CHIP_SIZE} fill={C.ink2} />
-          <span>{shorten(card.chip, CHIP_CHARS)}</span>
+          <span>{shortenChip(card.chip)}</span>
         </div>
       </div>
       <div style={{ display: 'flex', flexGrow: 1, gap: COLUMN_GAP, marginTop: BODY_GAP }}>
