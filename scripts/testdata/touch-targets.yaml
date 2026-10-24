@@ -14,6 +14,7 @@ targets:
   - {name: sort header, story: components-datatable--playground, selector: '.tbl-sort', minHeight: 44}
   - {name: small button, story: controls-button--small, selector: '.btn-sm', minHeight: 44}
   - {name: switch, story: controls-switch--on, selector: '.sw', minHeight: 44, maxVisual: 28}
+  - {name: code map navigator row, story: in-use-codemapnavigator--default, selector: '.gmp-navigator-row', minHeight: 44}
   - {name: page button on a mouse, story: components-pagination--long-range, selector: '.pgn-btn', pointer: fine, maxVisual: 28}
 # Mutations: each injects CSS into the named story with touch on, and the gate must report the
 # target named in `expect`, proving it fails for the intended reason.
@@ -34,3 +35,7 @@ mutations:
     story: components-datatable--playground
     css: '.tbl-sort { min-height: 0 !important; }'
     expect: 'sort header: hit box'
+  - name: the navigator row loses its reach
+    story: in-use-codemapnavigator--default
+    css: '.gmp-navigator-row::after { content: none !important; }'
+    expect: 'code map navigator row: hit box'

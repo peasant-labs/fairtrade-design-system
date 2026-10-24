@@ -124,15 +124,20 @@
   .gmp-navigator-row-wrap:hover { background: var(--surface-hover); }
   .gmp-navigator-row-wrap:has(.gmp-navigator-row:focus-visible) { box-shadow: inset 0 0 0 var(--focus-ring-width) var(--focus-ring); }
   .gmp-navigator-row-wrap[data-selected='true'] { border-left-color: var(--amber); background: var(--surface-2); }
+  /* the row is the tree item a pointer presses: with the wrap's padding it is one control tall, 37px on a
+     fine pointer, and a finger's 44px on a coarse one, where an invisible reach covers that padding too */
   .gmp-navigator-row {
+    position: relative;
     display: grid;
     grid-template-columns: var(--ic-sm) minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--sp-2);
     min-width: 0;
+    min-height: calc(var(--control-h) - 2 * var(--sp-2));
     cursor: pointer;
     outline: 0;
   }
+  @media (pointer: coarse) { .gmp-navigator-row::after { content: ""; position: absolute; inset: calc(-1 * var(--sp-2)) 0; } }
   .gmp-navigator-row > .lucide { width: var(--ic-sm); height: var(--ic-sm); color: var(--ink-3); }
   /* the disclosure centres on the name's first line, not on the whole row, so it stays beside the name
      when a narrow row wraps its figures under it */
@@ -151,7 +156,6 @@
   .gmp-navigator-disclosure, .gmp-navigator-disclosure-placeholder { margin-block: calc((var(--fs-sm) * var(--lh-mono) - var(--control-h-sm)) / 2); }
   .gmp-navigator-disclosure:hover { background: var(--surface-hover); color: var(--ink); }
   .gmp-navigator-disclosure:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-  .gmp-navigator-disclosure[aria-disabled='true'] { cursor: default; opacity: 0.6; }
   .gmp-navigator-chevron { visibility: hidden; }
   @media (prefers-reduced-motion: no-preference) { .gmp-navigator-chevron { transition: transform var(--dur-1) var(--ease-standard); } }
   .gmp-navigator-disclosure[aria-expanded] .gmp-navigator-chevron { visibility: visible; }

@@ -8,9 +8,11 @@ requiredTargetNames:
   - sort header
   - small button
   - switch
+  - code map navigator row
   - page button on a mouse
 requiredMutationNames:
   - control heights stay small on touch
   - the switch loses its reach
   - the switch track grows
   - the sort header stays small
+  - the navigator row loses its reach
