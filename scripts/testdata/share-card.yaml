@@ -303,6 +303,31 @@ styleCases:
     card: generic
     css: {file: src/index.css, selector: .chip, property: border}
     node: {key: chip, property: border}
+  # the approved generic chip is fairtrade's tag (.tag), which fills the chip with surface-2
+  - name: style-generic-chip-background
+    card: generic
+    css: {file: src/index.css, selector: .tag, property: background}
+    node: {key: chip, property: backgroundColor}
+
+# layoutCases: the card's own geometry, read from satori's layout nodes (keyed as for styleCases,
+#   `card: generic` as there). `check`:
+#     sameTop: the nodes `keys` all start at the same y;
+#     size: node `key` lays out `size` [width, height] px;
+#     style: node `key` sets every property of `style` to the value given;
+#     gapBelow: node `below` starts `px` below the bottom of node `key`.
+#   The generic card's sizes are the owner's approved zoom (about 1.5 times the first mockup), so
+#   it reads on a phone; the top chip's 73px is the approved mockup's chip: 34px text at the body
+#   line-height (1.5) with 10px 18px padding and a hairline above and below.
+layoutCases:
+  - {name: layout-turn-top-meets-tile-top, check: sameTop, keys: [turn, stat-prompts]}
+  - {name: layout-chip-height-matches-mockup, check: size, key: chip, size: [null, 73]}
+  - {name: layout-chip-style-matches-mockup, check: style, key: chip, style: {fontSize: 34, padding: 10px 18px, lineHeight: 1.5, gap: 12}}
+  - {name: layout-generic-logo-size, card: generic, check: size, key: logo, size: [118, 118]}
+  - {name: layout-generic-wordmark, card: generic, check: style, key: wordmark, style: {fontSize: 100, fontWeight: 700}}
+  - {name: layout-generic-logo-gap, card: generic, check: style, key: mark, style: {gap: 30}}
+  - {name: layout-generic-chip, card: generic, check: style, key: chip, style: {fontSize: 54, fontWeight: 400, padding: 16px 30px, gap: 18}}
+  - {name: layout-generic-lock-size, card: generic, check: size, key: lock, size: [50, 50]}
+  - {name: layout-generic-chip-below-mark, card: generic, check: gapBelow, key: mark, below: chip, px: 44}
 
 # metricsCases: the prompt clamp's advance table (src/share/metrics.js) against the shipped body
 #   face, read by scripts/gen-share-metrics.mjs. `values`: every table entry (ASCII, Latin-1, the

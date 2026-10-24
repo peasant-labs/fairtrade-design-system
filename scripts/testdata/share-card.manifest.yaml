@@ -78,3 +78,14 @@ requiredStyleNames:
   - style-prose-space-width
   - style-chip-border
   - style-generic-chip-border
+  - style-generic-chip-background
+requiredLayoutNames:
+  - layout-turn-top-meets-tile-top
+  - layout-chip-height-matches-mockup
+  - layout-chip-style-matches-mockup
+  - layout-generic-logo-size
+  - layout-generic-wordmark
+  - layout-generic-logo-gap
+  - layout-generic-chip
+  - layout-generic-lock-size
+  - layout-generic-chip-below-mark

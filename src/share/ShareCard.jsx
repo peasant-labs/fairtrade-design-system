@@ -11,7 +11,7 @@
    card without figures drops the stats column and the prompt takes the full width. A null card
    (a transcript that is not public) draws the generic card, which names nothing about it. At 630
    high the extra 30px of background is split between the top and the bottom. */
-import { color, font, other, space } from '../../public/tokens.json'
+import { color, font, other, space, typography } from '../../public/tokens.json'
 import { formatShareCount } from './data.js'
 import { BRAND_FILL_RULE, BRAND_PATHS, LOCK_ICON, USER_ICON, WHEAT_LOGO, brandViewBox, resolveBrand } from './marks.js'
 import { ELLIPSIS_ADVANCE, bodyAdvance } from './metrics.js'
@@ -27,6 +27,7 @@ const dark = (role) => color[role].$value
 const token = (name) => other[name].$value.replace(/var\(--([\w-]+)\)/g, (_, role) => dark(role))
 const C = {
   canvas: dark('surface'),
+  surface2: dark('surface-2'),
   inkStrong: dark('ink-strong'),
   ink2: dark('ink-2'),
   ink3: dark('ink-3'),
@@ -44,13 +45,13 @@ const EYEBROW_TRACKING = '0.08em'
 const PROSE_TRACKING = token('tracking-prose')
 const PROSE_WORD_SPACING = token('word-spacing-prose')
 const SP = (step) => space[`sp-${step}`].$value
+const BODY_LINE = Number(typography['lh-body'].$value)
 const BODY = font['font-body'].$value
 const MONO = font['font-mono'].$value
 
 /* geometry, in px at 1200 wide */
 const PAD_Y = 56
 const PAD_X = 64
-const TOP_ROW = 64
 const BODY_GAP = 40
 const STATS_W = 300
 const COLUMN_GAP = 32
@@ -193,9 +194,9 @@ function mix(top, base, amount) {
   return `rgb(${a.map((channel, i) => Math.round(channel * amount + b[i] * (1 - amount))).join(', ')})`
 }
 
-function WheatLogo({ size }) {
+function WheatLogo({ size, nodeKey }) {
   return (
-    <svg width={size} height={size} viewBox={WHEAT_LOGO.viewBox} aria-hidden="true" focusable="false">
+    <svg key={nodeKey} width={size} height={size} viewBox={WHEAT_LOGO.viewBox} aria-hidden="true" focusable="false">
       {WHEAT_LOGO.paths.map((d) => (
         <path key={d} d={d} fill="none" stroke={C.amber} strokeWidth={WHEAT_LOGO.strokeWidth} strokeLinecap="round" />
       ))}
@@ -229,7 +230,7 @@ function LockIcon({ size }) {
   const stroke = { ...LUCIDE_STROKE, strokeWidth: LOCK_ICON.strokeWidth }
   const { x, y, width, height, rx } = LOCK_ICON.rect
   return (
-    <svg width={size} height={size} viewBox={LOCK_ICON.viewBox} aria-hidden="true" focusable="false">
+    <svg key="lock" width={size} height={size} viewBox={LOCK_ICON.viewBox} aria-hidden="true" focusable="false">
       <rect x={x} y={y} width={width} height={height} rx={rx} ry={rx} {...stroke} />
       <path d={LOCK_ICON.path} {...stroke} />
     </svg>
@@ -341,7 +342,6 @@ function UserTurn({ prompt, fullWidth }) {
         flexGrow: 1,
         flexBasis: 0,
         overflow: 'hidden',
-        marginTop: SP(3),
         padding: `${TURN_PAD_Y}px ${TURN_PAD_X}px`,
         border: HAIRLINE,
         borderLeft: TEAL_EDGE,
@@ -364,7 +364,7 @@ function PublicCard({ card, height }) {
   const figures = card.figures
   return (
     <Frame height={height}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: TOP_ROW }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <WheatLogo size={44} />
           <span style={{ fontSize: 40, lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>peasant</span>
@@ -374,12 +374,11 @@ function PublicCard({ card, height }) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 14,
-            height: TOP_ROW,
-            padding: '0 20px',
+            gap: 12,
+            padding: '10px 18px',
             border: CHIP_BORDER,
             fontSize: CHIP_SIZE,
-            lineHeight: 1,
+            lineHeight: BODY_LINE,
             color: C.ink2,
           }}
         >
@@ -400,31 +399,32 @@ function PublicCard({ card, height }) {
   )
 }
 
-/* the card for a transcript that is not public: the mark, and a chip (.chip) that says only that
-   its visibility is limited */
+/* the card for a transcript that is not public: the mark, and a tag (.tag) that says only that
+   its visibility is limited, drawn large enough to read on a phone timeline */
 function GenericCard({ height }) {
   return (
     <Frame height={height} center>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-        <WheatLogo size={72} />
-        <span style={{ fontSize: 64, lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>peasant labs</span>
+      <div key="mark" style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
+        <WheatLogo size={118} nodeKey="logo" />
+        <span key="wordmark" style={{ fontSize: 100, lineHeight: 1, fontWeight: 700, color: C.inkStrong }}>peasant labs</span>
       </div>
       <div
         key="chip"
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
-          marginTop: SP(6),
-          padding: '10px 20px',
+          gap: 18,
+          marginTop: 44,
+          padding: '16px 30px',
           border: CHIP_BORDER,
-          fontSize: 34,
+          backgroundColor: C.surface2,
+          fontSize: 54,
           lineHeight: 1.3,
           fontWeight: 400,
           color: C.ink2,
         }}
       >
-        <LockIcon size={30} />
+        <LockIcon size={50} />
         <span>limited visibility</span>
       </div>
     </Frame>

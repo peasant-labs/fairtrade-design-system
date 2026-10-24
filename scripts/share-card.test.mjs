@@ -29,6 +29,7 @@ const { fixture } = loadFixturePair(FIXTURE, MANIFEST, {
   sourceCases: 'requiredSourceNames',
   metricsCases: 'requiredMetricsNames',
   styleCases: 'requiredStyleNames',
+  layoutCases: 'requiredLayoutNames',
 })
 const report = createReport('share card')
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
@@ -222,6 +223,7 @@ await withMountedSource(async ({ load }) => {
   for (const row of fixture.styleCases) {
     checkStyle(row, drawnCards[row.card ?? 'public'], { shipped, spaceAdvance: readAdvances(fontBytesForStyle).advance(0x20) })
   }
+  for (const row of fixture.layoutCases) checkLayout(row, drawnCards[row.card ?? 'public'].nodes)
 
   const metrics = await load('/src/share/metrics.js')
   const fontBytes = readFileSync(`${ROOT}/${SHARE_FONT_FILE}`)
@@ -242,6 +244,33 @@ await withMountedSource(async ({ load }) => {
     }
   }
 })
+
+/** One layout case: the card's geometry as satori laid it out. */
+function checkLayout(row, nodes) {
+  const find = (key) => nodes.find((node) => node.key === key)
+  const wanted = row.check === 'sameTop' ? row.keys : row.check === 'gapBelow' ? [row.key, row.below] : [row.key]
+  const missing = wanted.filter((key) => !find(key))
+  if (missing.length) { report.check(false, `${row.name}: the card drew no node keyed ${JSON.stringify(missing)}`); return }
+  if (row.check === 'sameTop') {
+    const tops = row.keys.map((key) => find(key).top)
+    report.check(tops.every((top) => Math.abs(top - tops[0]) < 0.5), `${row.name}: ${row.keys.join(', ')} start at y ${tops.join(', ')}`)
+  } else if (row.check === 'size') {
+    const node = find(row.key)
+    const [width, height] = row.size
+    report.check((width === null || Math.abs(node.width - width) < 0.5) && (height === null || Math.abs(node.height - height) < 0.5), `${row.name}: ${row.key} is ${node.width} x ${node.height}, expected ${width ?? 'any'} x ${height ?? 'any'}`)
+  } else if (row.check === 'style') {
+    const style = find(row.key).props?.style ?? {}
+    for (const [property, value] of Object.entries(row.style)) {
+      report.check(String(style[property]) === String(value), `${row.name}: ${row.key} sets ${property} ${JSON.stringify(style[property])}, expected ${JSON.stringify(value)}`)
+    }
+  } else if (row.check === 'gapBelow') {
+    const [above, below] = [find(row.key), find(row.below)]
+    const gap = below.top - (above.top + above.height)
+    report.check(Math.abs(gap - row.px) < 0.5, `${row.name}: ${row.below} starts ${gap}px below ${row.key}, expected ${row.px}px`)
+  } else {
+    report.check(false, `${row.name}: unknown check ${JSON.stringify(row.check)}`)
+  }
+}
 
 /* Draw one render case with satori and check what it pins. satori gets only the width, so the
    SVG's height is the height the card itself lays out. Layout nodes carry the text satori drew;
@@ -330,4 +359,4 @@ for (const row of fixture.sourceCases) {
   }
 }
 
-report.finish(`${fixture.modelLabelCases.length} label, ${fixture.payloadCases.length} payload, ${fixture.textCases.length} text, ${fixture.formatCases.length} format and ${fixture.parseFailureCases.length} parse-failure, ${fixture.sweepCases.length} sweep, ${fixture.renderCases.length} render, ${fixture.sourceCases.length} source, ${fixture.metricsCases.length} metrics and ${fixture.styleCases.length} style cases.`)
+report.finish(`${fixture.modelLabelCases.length} label, ${fixture.payloadCases.length} payload, ${fixture.textCases.length} text, ${fixture.formatCases.length} format and ${fixture.parseFailureCases.length} parse-failure, ${fixture.sweepCases.length} sweep, ${fixture.renderCases.length} render, ${fixture.sourceCases.length} source, ${fixture.metricsCases.length} metrics, ${fixture.styleCases.length} style and ${fixture.layoutCases.length} layout cases.`)
