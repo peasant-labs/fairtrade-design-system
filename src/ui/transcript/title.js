@@ -54,6 +54,29 @@ export function cleanSessionTitle(text) {
   return unwrapUserQuery(text).replace(/\s+/g, ' ').trim()
 }
 
+const TRANSCRIPT_TITLE_LIMIT = 160
+
+/**
+ * The transcript page's title, the one rule the viewer's header and the share card both use: a
+ * curated title (an empty one is kept), else, when the session has no normalized evidence, the
+ * first task's prompt or the first user turn's text, else the session id, else "transcript".
+ * Session titles are often a whole first prompt, so the title is bounded to 160 characters: a
+ * longer one is cut to 159 and "…", never through a surrogate pair.
+ * @param {object} parts
+ * @param {string} [parts.title] curated session title
+ * @param {boolean} [parts.hasNormalizedEvidence] true when a title must not be inferred from a prompt
+ * @param {string} [parts.firstTaskPrompt]
+ * @param {string} [parts.firstUserContent]
+ * @param {string} [parts.id] session id
+ * @returns {string}
+ */
+export function transcriptTitle({ title, hasNormalizedEvidence, firstTaskPrompt, firstUserContent, id }) {
+  const raw = String(title ?? (hasNormalizedEvidence ? undefined : firstTaskPrompt ?? firstUserContent) ?? id ?? 'transcript')
+  if (raw.length <= TRANSCRIPT_TITLE_LIMIT) return raw
+  const cut = (raw.codePointAt(TRANSCRIPT_TITLE_LIMIT - 2) ?? 0) > 0xffff ? TRANSCRIPT_TITLE_LIMIT - 2 : TRANSCRIPT_TITLE_LIMIT - 1
+  return raw.slice(0, cut).trimEnd() + '…'
+}
+
 /**
  * Produce a short, human-readable summary of a raw prompt. Heuristic, in order:
  *   0. Drop a harness's <user_query> wrapper (cleanSessionTitle's rule).

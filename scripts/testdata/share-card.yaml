@@ -1,0 +1,420 @@
+# Share-card data (src/share/data.js), checked by scripts/share-card.test.mjs.
+#
+# modelLabelCases: shareCardModelLabel(harness, model); an absent `model` is undefined.
+# payloadCases: shareCardFromPayload over `basePayload` with `set` merged over it and `omit` keys
+#   removed. `firstTurnContent` replaces the first turn's text; `firstTurnRepeat` builds it as
+#   `unit` repeated `times`. `expect` lists only the card fields a case pins; `figures: null` pins
+#   "no figures".
+# textCases: the link text for a card written out in full: `description` and `alt` each checked when present.
+# sweepCases: every string the data module produced and every text the card drew avoids `forbidden`.
+# formatCases: formatShareCount(input).
+# parseFailureCases: values that do not parse and must give null, not throw.
+basePayload:
+  id: ses_share
+  harness: claude-code
+  model: claude-opus-5-5
+  title: rewrite billing retries
+  startTime: '2026-07-16T08:00:00Z'
+  endTime: '2026-07-16T08:01:00Z'
+  durationMins: 1
+  totalTokens: 84000
+  tokensIn: 70000
+  tokensOut: 14000
+  turnCount: 2
+  toolCallCount: 0
+  inputSubmissionCount: 6
+  turns:
+    - {index: 0, role: user, content: rewrite billing retries, timestamp: '2026-07-16T08:00:00Z', depth: 0}
+    - {index: 1, role: assistant, content: done, timestamp: '2026-07-16T08:00:10Z', depth: 0}
+
+modelLabelCases:
+  - {name: model-label-opus-5-5, harness: claude-code, model: claude-opus-5-5, expected: Claude Code (Opus 5.5)}
+  - {name: model-label-unknown-model, harness: codex, model: gpt-9-turbo-x, expected: Codex (gpt-9-turbo-x)}
+  - {name: model-label-dated, harness: claude-code, model: claude-sonnet-4-5-20250929, expected: Claude Code (Sonnet 4.5)}
+  - {name: model-label-non-claude, harness: codex, model: gpt-oss-120, expected: Codex (gpt-oss-120)}
+  - {name: model-label-missing-model, harness: cursor, expected: Cursor}
+  # the legacy shape puts the version first: claude-<version>-<family>[-date]
+  - {name: model-label-legacy-sonnet, harness: claude-code, model: claude-3-5-sonnet-20241022, expected: Claude Code (Sonnet 3.5)}
+  - {name: model-label-legacy-opus, harness: claude-code, model: claude-3-opus-20240229, expected: Claude Code (Opus 3)}
+  - {name: model-label-other-vendor-stays-raw, harness: gemini-cli, model: gemini-2.5-pro, expected: Gemini CLI (gemini-2.5-pro)}
+
+payloadCases:
+  - name: unknown-harness
+    set: {harness: acme-cli}
+    omit: [model, inputSubmissionCount]
+    expect: {harness: acme-cli, brand: null, chip: acme-cli}
+  - name: known-harness-brand
+    expect: {harness: claude-code, brand: claude, chip: Claude Code (Opus 5.5)}
+  - name: both-figures
+    expect: {figures: {prompts: 6, tokens: 84000}}
+  - name: no-prompt-count
+    omit: [inputSubmissionCount]
+    expect: {figures: null}
+  - name: usage-scopes-hide-total
+    set:
+      turns:
+        - {index: 0, role: user, content: rewrite billing retries, timestamp: '2026-07-16T08:00:00Z', depth: 0}
+        - index: 1
+          role: assistant
+          content: done
+          timestamp: '2026-07-16T08:00:10Z'
+          depth: 0
+          sourceEntryRef: e_a1
+          provenance: {origin: agent_output, actor: agent_delegate, delivery: unknown, ownership: local, evidence: native_typed, inputModality: none}
+          usage: {ownerId: usage-turn, sourceEntryRef: e_a1, scope: assistant, completeness: partial, tokens: {output: 2}}
+    expect: {figures: null}
+  - name: no-text-first-turn
+    firstTurnContent: ''
+    expect: {title: rewrite billing retries, firstPrompt: rewrite billing retries, firstPromptIsTitle: true}
+  # untitled, with nothing in the first turn: the title is the session id, and it is not a prompt
+  - name: untitled-empty-first-turn
+    omit: [title]
+    firstTurnContent: ''
+    expect: {title: ses_share, firstPrompt: ses_share, firstPromptIsTitle: true}
+  - name: empty-first-turn-later-text
+    set:
+      turnCount: 3
+      turns:
+        - {index: 0, role: user, content: '', timestamp: '2026-07-16T08:00:00Z', depth: 0}
+        - {index: 1, role: user, content: do the thing, timestamp: '2026-07-16T08:00:05Z', depth: 0}
+        - {index: 2, role: assistant, content: done, timestamp: '2026-07-16T08:00:10Z', depth: 0}
+    expect: {firstPrompt: rewrite billing retries}
+  - name: first-prompt-is-first-user-turn
+    firstTurnContent: add a retry cap
+    expect: {firstPrompt: add a retry cap, firstPromptIsTitle: false}
+  # Claude Code records a skill or custom command as a user turn wrapped in its command tags
+  - name: first-prompt-slash-command-args
+    firstTurnContent: "<command-message>research is running…</command-message>\n<command-name>/research</command-name>\n<command-args>compare the two cache eviction policies</command-args>"
+    expect: {firstPrompt: compare the two cache eviction policies}
+  - name: first-prompt-slash-command-no-args
+    firstTurnContent: "<command-name>/clear</command-name>\n            <command-message>clear</command-message>\n            <command-args></command-args>"
+    expect: {firstPrompt: /clear}
+  - name: long-unbroken-prompt
+    firstTurnRepeat: {unit: x, times: 600}
+    expect: {firstPromptLength: 600}
+
+textCases:
+  - name: description-with-figures
+    card: {title: rewrite billing retries, chip: Claude Code (Opus 5.5), figures: {prompts: 6, tokens: 84000}}
+    description: 'What prompts produced "rewrite billing retries"? 6 prompts and 84k tokens with Claude Code (Opus 5.5). Read every prompt on village.'
+  - name: description-without-figures
+    card: {title: rewrite billing retries, chip: Claude Code (Opus 5.5), figures: null}
+    description: 'What prompts produced "rewrite billing retries"? Read every prompt on village.'
+  - name: one-prompt-is-singular
+    card: {title: fix typo, chip: Pi, figures: {prompts: 1, tokens: 1200000}}
+    description: 'What prompts produced "fix typo"? 1 prompt and 1.2M tokens with Pi. Read every prompt on village.'
+  - name: alt-with-figures
+    card: {title: rewrite billing retries, chip: Claude Code (Opus 5.5), figures: {prompts: 6, tokens: 84000}}
+    alt: 'Share card: 6 prompts and 84k tokens with Claude Code (Opus 5.5)'
+  - name: alt-without-figures
+    card: {title: rewrite billing retries, chip: Claude Code (Opus 5.5), figures: null}
+    alt: 'Share card: the first prompt of "rewrite billing retries" with Claude Code (Opus 5.5)'
+
+# sweepCases: every string the data module produced and every text the card drew, across all the
+#   cases, avoids `forbidden`.
+sweepCases:
+  - {name: no-middle-dot, forbidden: '·'}
+
+formatCases:
+  - {name: format-billion, input: 1200000000, expected: 1.2B}
+  - {name: format-small, input: 999, expected: '999'}
+  - {name: format-thousands, input: 84000, expected: 84k}
+  - {name: format-millions, input: 1200000, expected: 1.2M}
+
+parseFailureCases:
+  - {name: parse-failure-null, payload: null}
+  - {name: parse-failure-string, payload: not a payload}
+  - {name: parse-failure-empty-object, payload: {}}
+
+dataModuleGuard:
+  file: src/share/data.js
+  forbiddenImports: [react, react-dom, ../ui/index.js, ../ui/BrandMark.jsx]
+
+# renderCases: the ShareCard component (src/share/ShareCard.jsx) drawn by satori, the renderer
+#   behind Next's ImageResponse, with the card fonts (src/share/fonts.js). `generic: true` draws
+#   the card for null (a transcript that is not public); otherwise the card is shareCardFromPayload
+#   over a payload built as for payloadCases (`set`, `omit`, `firstTurnContent`, `firstTurnRepeat`).
+#   `height` is the card height asked for (omitted: the default). satori is given only the width,
+#   so the SVG's height is the card's own. `expect` pins only what a case is about:
+#     size: [width, height] of the SVG;
+#     textIncludes / textExcludes: text satori laid out, read from its layout nodes;
+#     promptMaxLines / promptMinLines: the prompt's laid-out height, in lines of its own line
+#       height, is at most / at least this (a clamp that cuts too early goes red on the minimum);
+#     promptEllipsis: whether the drawn prompt ends in the ellipsis (cut) or not (whole);
+#     promptCutAtWordEnd: the text before the ellipsis ends a word of the prompt (no partial word);
+#     promptSegmentedAtMost: while the card is drawn, no text longer than this many UTF-16 units
+#       is handed to Intl.Segmenter (the card measures only the head of a long prompt);
+#     valueFontSize: {prompts, tokens} px each tile number is drawn at (84 is the approved size;
+#       a number too wide for its tile at 84 is drawn smaller, never rounded differently).
+#   Wherever the card draws a prompt, the gate also checks that no line of it runs past the
+#   prompt's own width: the card lays the prompt's lines out itself (satori has no word-spacing),
+#   so an under-measured line would overflow sideways instead of wrapping. And wherever the card
+#   draws figures, each tile number, measured with the shipped mono bold face at the size it is
+#   drawn, must end inside its tile's content box (the box the eyebrow above it spans).
+renderCases:
+  - name: render-public-600
+    height: 600
+    expect:
+      size: [1200, 600]
+      textIncludes: [peasant, Claude Code (Opus 5.5), prompts, '6', tokens, 84k, user, rewrite billing retries]
+      promptMaxLines: 3
+      promptEllipsis: false
+      valueFontSize: {prompts: 84, tokens: 84}
+  - name: render-public-630
+    height: 630
+    expect: {size: [1200, 630], textIncludes: [rewrite billing retries]}
+  - name: render-default-height-is-600
+    expect: {size: [1200, 600]}
+  # a height other than 600 or 630 draws the default 600, never a stretched or squashed card
+  - name: render-unknown-height-is-600
+    height: 700
+    expect: {size: [1200, 600]}
+  - name: render-generic-unknown-height-is-600
+    generic: true
+    height: 0
+    expect: {size: [1200, 600]}
+  - name: render-generic-600
+    generic: true
+    height: 600
+    expect: {size: [1200, 600]}
+  - name: render-generic-630
+    generic: true
+    height: 630
+    expect: {size: [1200, 630]}
+  - name: render-generic-copy
+    generic: true
+    height: 600
+    expect:
+      textIncludes: [peasant labs, limited visibility]
+      textExcludes: [visibility not public, click to see, rewrite billing retries, Claude Code, Opus, prompts, tokens, 84k, user]
+  - name: render-no-figures
+    omit: [inputSubmissionCount]
+    height: 600
+    expect: {size: [1200, 600], textIncludes: [rewrite billing retries, user], textExcludes: [prompts, tokens, 84k]}
+  - name: render-cjk-emoji
+    firstTurnContent: 修复上传 403 🙂
+    height: 600
+    expect: {size: [1200, 600], promptMaxLines: 3}
+  - name: render-long-unbroken-prompt
+    firstTurnRepeat: {unit: x, times: 600}
+    height: 600
+    expect: {size: [1200, 600], promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true}
+  - name: render-long-unbroken-prompt-full-width
+    firstTurnRepeat: {unit: x, times: 600}
+    omit: [inputSubmissionCount]
+    height: 600
+    expect: {size: [1200, 600], promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true}
+  - name: render-long-wide-letters
+    firstTurnRepeat: {unit: W, times: 300}
+    height: 600
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true}
+  - name: render-long-wide-letters-full-width
+    firstTurnRepeat: {unit: W, times: 300}
+    omit: [inputSubmissionCount]
+    height: 600
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true}
+  - name: render-long-words
+    firstTurnRepeat: {unit: 'retry the nightly billing export with backoff, then ', times: 20}
+    height: 600
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true, promptCutAtWordEnd: true}
+  - name: render-long-words-full-width
+    firstTurnRepeat: {unit: 'retry the nightly billing export with backoff, then ', times: 20}
+    omit: [inputSubmissionCount]
+    height: 600
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true, promptCutAtWordEnd: true}
+  # with fairtrade's prose spacing the story prompt takes four full-width lines (as a browser lays
+  # it out), so this one drops "median": three full lines that a browser draws whole
+  - name: render-story-prompt-fits-full-width
+    firstTurnContent: 'hey claude, run our billing retry suite against each model with the same seed, then write a table of pass rates and latency per model'
+    omit: [inputSubmissionCount]
+    height: 600
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: false}
+  - name: render-story-prompt-cut-at-word-end
+    firstTurnContent: 'hey claude, run our billing retry suite against each model with the same seed, then write a table of pass rates and median latency per model'
+    height: 600
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true, promptCutAtWordEnd: true}
+  # line 3 ends in "per model", where a cut by characters lands inside "model"
+  - name: render-cut-never-splits-a-word
+    firstTurnContent: 'hey claude, run our billing retry suite against each model with the same seed, then write a table of pass rates and median latency per model and then summarise the regressions'
+    omit: [inputSubmissionCount]
+    height: 600
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true, promptCutAtWordEnd: true}
+  - name: render-long-url-after-words
+    firstTurnContent: 'see https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa and fix it'
+    height: 600
+    expect: {promptMaxLines: 3}
+  - name: render-long-cjk
+    firstTurnRepeat: {unit: 修复上传, times: 100}
+    height: 600
+    expect: {promptMaxLines: 3, promptEllipsis: true}
+
+  # a 2 MB prompt: only its head is split into characters and measured, never the whole text
+  - name: render-huge-prompt
+    firstTurnRepeat: {unit: 'word ', times: 400000}
+    height: 600
+    expect: {promptMaxLines: 3, promptMinLines: 3, promptEllipsis: true, promptCutAtWordEnd: true, promptSegmentedAtMost: 2000}
+  # the title stands in for a first prompt with no text, so it is drawn without the "user" label
+  - name: render-untitled-empty-first-turn
+    omit: [title]
+    firstTurnContent: ''
+    height: 600
+    expect: {size: [1200, 600], textIncludes: [ses_share], textExcludes: [user], promptMaxLines: 3}
+  - name: render-slash-command-shows-args
+    firstTurnContent: "<command-message>research is running…</command-message>\n<command-name>/research</command-name>\n<command-args>compare the two cache eviction policies</command-args>"
+    height: 600
+    expect: {textIncludes: [compare the two cache eviction policies], textExcludes: [<command, research is running]}
+  # a chip over 32 characters cuts the model inside its brackets and keeps the closing bracket
+  - name: render-chip-long-model-keeps-bracket
+    set: {harness: gemini-cli, model: gemini-2.5-pro-preview-06-05}
+    height: 600
+    expect: {textIncludes: [Gemini CLI (gemini-2.5-pro-prev…)], textExcludes: [preview-06-05]}
+  # a chip with no model is cut at 32 characters as it was
+  - name: render-chip-long-harness
+    set: {harness: acme-command-line-agent-with-a-long-name}
+    omit: [model, inputSubmissionCount]
+    height: 600
+    expect: {textIncludes: [acme-command-line-agent-with-a-…]}
+  # numbers as the page formats them; one too wide for its tile at 84px is drawn smaller
+  - name: render-tokens-six-chars
+    set: {totalTokens: 123456}
+    height: 600
+    expect: {textIncludes: [123.5k], valueFontSize: {prompts: 84, tokens: 63}}
+  - name: render-tokens-12m
+    set: {totalTokens: 12345678}
+    height: 600
+    expect: {textIncludes: [12.3M], valueFontSize: {prompts: 84, tokens: 76}}
+  - name: render-tokens-1-2m
+    set: {totalTokens: 1200000}
+    height: 600
+    expect: {textIncludes: [1.2M], valueFontSize: {prompts: 84, tokens: 84}}
+  - name: render-prompts-four-digits
+    set: {inputSubmissionCount: 1234}
+    height: 600
+    expect: {textIncludes: [1.2k], valueFontSize: {prompts: 84, tokens: 84}}
+
+# sourceCases: text the share-card component source must not contain. `forbidden` is a literal;
+#   `forbiddenPattern` a regular expression. Colours come from the token file, never a hex literal,
+#   and satori reads inline styles only, so no class names.
+sourceCases:
+  - {name: source-no-classname, file: src/share/ShareCard.jsx, forbidden: className}
+  - {name: source-no-hex-colour, file: src/share/ShareCard.jsx, forbiddenPattern: '#[0-9a-fA-F]{3,8}\b'}
+  - {name: source-no-middle-dot, file: src/share/ShareCard.jsx, forbidden: '·'}
+
+# styleCases: the drift guard. Each case pins one style the card draws to fairtrade's own CSS, so
+#   the card cannot drift from the design system: `css` names a declaration in a source sheet
+#   (`file`, an exact `selector` from a rule's selector list, outside any media or theme block, and
+#   a `property`); its value is resolved through the dark `:root` custom properties of src/index.css
+#   (and `color-mix(in srgb, ...)` evaluated) and compared with the style the card set on the
+#   satori layout node keyed `node.key` (each of `node.keys`), at `node.property`. `card: generic`
+#   draws the card for a transcript that is not public; otherwise the public card over basePayload.
+#   `transform` adapts a CSS value the card cannot draw as written:
+#     nearestShippedWeight: the closest weight the card's fonts ship (only 400 and 700 are shipped);
+#     spaceWidth: the card emulates word-spacing (satori has none) with a fixed-width space, so the
+#       space nodes (keys matching `node.match`) must be one space advance of the body face plus
+#       the prose letter-spacing plus the prose word-spacing (`css` lists both), in px of the
+#       prompt's font size.
+#   `override` marks a deliberate departure the owner approved: the card must draw `value`, and
+#   the CSS must still differ from it (an absent declaration reads as `initial`), so the override
+#   is dropped once fairtrade adopts the value.
+#   `token` compares with a :root custom property of src/index.css where fairtrade has no rule
+#   for the element (the space between the two tiles is the approved design's own).
+styleCases:
+  - name: style-tile-border
+    css: {file: src/ui/StatTiles.css, selector: .st-tile, property: border}
+    node: {keys: [stat-prompts, stat-tokens], property: border}
+  - name: style-tile-background
+    css: {file: src/ui/StatTiles.css, selector: .st-tile, property: background}
+    node: {keys: [stat-prompts, stat-tokens], property: backgroundColor}
+  # fairtrade's tile grid (.st-grid) spaces tiles by --sp-4; the approved card spaces its two
+  # stacked tiles by --sp-5, on the same spacing scale
+  - name: style-tile-gap
+    token: --sp-5
+    node: {key: stats, property: gap}
+  - name: style-eyebrow-letter-spacing
+    css: {file: src/ui/StatTiles.css, selector: .st-eyebrow, property: letter-spacing}
+    node: {keys: [eyebrow-prompts, eyebrow-tokens], property: letterSpacing}
+  - name: style-eyebrow-colour
+    css: {file: src/ui/StatTiles.css, selector: .st-eyebrow, property: color}
+    node: {keys: [eyebrow-prompts, eyebrow-tokens], property: color}
+  - name: style-number-colour
+    css: {file: src/ui/StatTiles.css, selector: .st-value, property: color}
+    node: {keys: [value-prompts, value-tokens], property: color}
+  - name: style-number-weight-owner-override
+    css: {file: src/ui/StatTiles.css, selector: .st-value, property: font-weight}
+    node: {keys: [value-prompts, value-tokens], property: fontWeight}
+    override: {value: 700, reason: the owner chose bold tile numbers for the share card over the regular .st-value}
+  - name: style-turn-border
+    css: {file: src/index.css, selector: .txn-turn, property: border}
+    node: {key: turn, property: border}
+  - name: style-turn-edge
+    css: {file: src/index.css, selector: .turn.user, property: border-left}
+    node: {key: turn, property: borderLeft}
+  - name: style-turn-background
+    css: {file: src/index.css, selector: .turn.user, property: background}
+    node: {key: turn, property: backgroundColor}
+  - name: style-role-label-colour
+    css: {file: src/index.css, selector: .txn-turn.user .txn-rolelabel, property: color}
+    node: {key: role, property: color}
+  - name: style-role-label-weight
+    css: {file: src/index.css, selector: .txn-rolelabel, property: font-weight}
+    transform: nearestShippedWeight
+    node: {key: role, property: fontWeight}
+  - name: style-prose-letter-spacing
+    css: {file: src/index.css, selector: p, property: letter-spacing}
+    node: {key: prompt, property: letterSpacing}
+  - name: style-prose-word-spacing
+    css: {file: src/index.css, selector: p, property: word-spacing}
+    node: {key: prompt, property: wordSpacing}
+  - name: style-prose-space-width
+    css:
+      - {file: src/index.css, selector: p, property: letter-spacing}
+      - {file: src/index.css, selector: p, property: word-spacing}
+    transform: spaceWidth
+    node: {match: '^s\d+$', property: width}
+  - name: style-chip-border
+    css: {file: src/index.css, selector: .chip, property: border}
+    node: {key: chip, property: border}
+  - name: style-generic-chip-border
+    card: generic
+    css: {file: src/index.css, selector: .chip, property: border}
+    node: {key: chip, property: border}
+  # the approved generic chip is fairtrade's tag (.tag), which fills the chip with surface-2
+  - name: style-generic-chip-background
+    card: generic
+    css: {file: src/index.css, selector: .tag, property: background}
+    node: {key: chip, property: backgroundColor}
+
+# layoutCases: the card's own geometry, read from satori's layout nodes (keyed as for styleCases,
+#   `card: generic` as there). `check`:
+#     sameTop: the nodes `keys` all start at the same y;
+#     size: node `key` lays out `size` [width, height] px;
+#     style: node `key` sets every property of `style` to the value given;
+#     gapBelow: node `below` starts `px` below the bottom of node `key`;
+#     textIsolated: the frame (node `frame`) and every node that holds text itself set each of
+#       `properties` in their own inline style, so a host page's CSS cannot reach the card through
+#       inheritance or an element selector when a page draws it in the DOM.
+#   The generic card's sizes are the owner's approved zoom (about 1.5 times the first mockup), so
+#   it reads on a phone; the top chip's 73px is the approved mockup's chip: 34px text at the body
+#   line-height (1.5) with 10px 18px padding and a hairline above and below.
+layoutCases:
+  - {name: layout-turn-top-meets-tile-top, check: sameTop, keys: [turn, stat-prompts]}
+  - {name: layout-chip-height-matches-mockup, check: size, key: chip, size: [null, 73]}
+  - {name: layout-chip-style-matches-mockup, check: style, key: chip, style: {fontSize: 34, padding: 10px 18px, lineHeight: 1.5, gap: 12}}
+  - {name: layout-generic-logo-size, card: generic, check: size, key: logo, size: [118, 118]}
+  - {name: layout-generic-wordmark, card: generic, check: style, key: wordmark, style: {fontSize: 100, fontWeight: 700}}
+  - {name: layout-generic-logo-gap, card: generic, check: style, key: mark, style: {gap: 30}}
+  - {name: layout-generic-chip, card: generic, check: style, key: chip, style: {fontSize: 54, fontWeight: 400, padding: 16px 30px, gap: 18}}
+  - {name: layout-generic-lock-size, card: generic, check: size, key: lock, size: [50, 50]}
+  - {name: layout-generic-chip-below-mark, card: generic, check: gapBelow, key: mark, below: chip, px: 44}
+  - {name: layout-text-isolated-from-host-css, check: textIsolated, properties: [letterSpacing, wordSpacing, textTransform, lineHeight]}
+  - {name: layout-generic-text-isolated-from-host-css, card: generic, check: textIsolated, properties: [letterSpacing, wordSpacing, textTransform, lineHeight]}
+
+# metricsCases: the prompt clamp's advance table (src/share/metrics.js) against the shipped body
+#   face, read by scripts/gen-share-metrics.mjs. `values`: every table entry (ASCII, Latin-1, the
+#   typographic punctuation) and ELLIPSIS_ADVANCE equal the font's hmtx advance for that code point,
+#   and MONO_BOLD_ADVANCE (the tile numbers' face) equals the mono bold face's advance for every
+#   character a formatted count can hold.
+#   `generated`: the committed file is byte-identical to a fresh run of the generator.
+metricsCases:
+  - {name: metrics-match-font, check: values}
+  - {name: metrics-file-is-generated, check: generated}

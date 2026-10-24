@@ -1,0 +1,110 @@
+# Required-NAME manifest for share-card.yaml: deletion protection. The gate asserts each family's
+# case names equal these lists exactly, as sets.
+requiredModelLabelNames:
+  - model-label-opus-5-5
+  - model-label-unknown-model
+  - model-label-dated
+  - model-label-non-claude
+  - model-label-missing-model
+  - model-label-legacy-sonnet
+  - model-label-legacy-opus
+  - model-label-other-vendor-stays-raw
+requiredPayloadNames:
+  - unknown-harness
+  - known-harness-brand
+  - both-figures
+  - no-prompt-count
+  - usage-scopes-hide-total
+  - no-text-first-turn
+  - untitled-empty-first-turn
+  - empty-first-turn-later-text
+  - first-prompt-is-first-user-turn
+  - first-prompt-slash-command-args
+  - first-prompt-slash-command-no-args
+  - long-unbroken-prompt
+requiredTextNames:
+  - description-with-figures
+  - description-without-figures
+  - one-prompt-is-singular
+  - alt-with-figures
+  - alt-without-figures
+requiredFormatNames:
+  - format-billion
+  - format-small
+  - format-thousands
+  - format-millions
+requiredParseFailureNames:
+  - parse-failure-null
+  - parse-failure-string
+  - parse-failure-empty-object
+requiredSweepNames:
+  - no-middle-dot
+requiredRenderNames:
+  - render-public-600
+  - render-public-630
+  - render-default-height-is-600
+  - render-unknown-height-is-600
+  - render-generic-unknown-height-is-600
+  - render-generic-600
+  - render-generic-630
+  - render-generic-copy
+  - render-no-figures
+  - render-cjk-emoji
+  - render-long-unbroken-prompt
+  - render-long-unbroken-prompt-full-width
+  - render-long-wide-letters
+  - render-long-wide-letters-full-width
+  - render-long-words
+  - render-long-words-full-width
+  - render-story-prompt-fits-full-width
+  - render-story-prompt-cut-at-word-end
+  - render-cut-never-splits-a-word
+  - render-long-url-after-words
+  - render-long-cjk
+  - render-huge-prompt
+  - render-untitled-empty-first-turn
+  - render-slash-command-shows-args
+  - render-chip-long-model-keeps-bracket
+  - render-chip-long-harness
+  - render-tokens-six-chars
+  - render-tokens-12m
+  - render-tokens-1-2m
+  - render-prompts-four-digits
+requiredSourceNames:
+  - source-no-classname
+  - source-no-hex-colour
+  - source-no-middle-dot
+requiredMetricsNames:
+  - metrics-match-font
+  - metrics-file-is-generated
+requiredStyleNames:
+  - style-tile-border
+  - style-tile-background
+  - style-tile-gap
+  - style-eyebrow-letter-spacing
+  - style-eyebrow-colour
+  - style-number-colour
+  - style-number-weight-owner-override
+  - style-turn-border
+  - style-turn-edge
+  - style-turn-background
+  - style-role-label-colour
+  - style-role-label-weight
+  - style-prose-letter-spacing
+  - style-prose-word-spacing
+  - style-prose-space-width
+  - style-chip-border
+  - style-generic-chip-border
+  - style-generic-chip-background
+requiredLayoutNames:
+  - layout-turn-top-meets-tile-top
+  - layout-chip-height-matches-mockup
+  - layout-chip-style-matches-mockup
+  - layout-generic-logo-size
+  - layout-generic-wordmark
+  - layout-generic-logo-gap
+  - layout-generic-chip
+  - layout-generic-lock-size
+  - layout-generic-chip-below-mark
+  - layout-text-isolated-from-host-css
+  - layout-generic-text-isolated-from-host-css

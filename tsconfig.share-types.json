@@ -1,0 +1,16 @@
+{
+  // Type test for the built share entry (scripts/types/share-entry.type-test.js): it resolves
+  // `@peasant-labs/fairtrade/share` through package.json `exports` to the emitted .d.ts, so it
+  // runs after pnpm build:lib (pnpm test:share-types, in test:lib).
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2020",
+    "skipLibCheck": true
+  },
+  "include": ["scripts/types/share-entry.type-test.js"]
+}

@@ -22,6 +22,9 @@ export default defineConfig({
         graph: 'src/ui/graph/index.js',
         commons: 'src/ui/commons/index.js',
         analytics: 'src/ui/analytics/index.js',
+        // ./share: the transcript share card, drawn by satori on a server and by React DOM on a
+        // page. Hook-free and react-dom-free; scripts/assert-pack-contents.mjs asserts it stays so.
+        share: 'src/share/index.js',
       },
       formats: ['es'],
       fileName: (_format, entryName) => `${entryName}.js`,

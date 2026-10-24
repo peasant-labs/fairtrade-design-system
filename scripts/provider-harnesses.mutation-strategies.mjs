@@ -44,7 +44,7 @@ const STRATEGIES = Object.freeze({
   'mutate-strike-mark': (source, mutation, mutateRegion) => mutateRegion(
     source,
     mutation,
-    'src/ui/BrandMark.jsx',
+    'src/ui/brand-geometry.js',
     /M18\.5 6L11 17\.5h5\.2L13\.5 26 21 14\.5h-5\.2L18\.5 6z/,
     'M18.5 7L11 17.5h5.2L13.5 26 21 14.5h-5.2L18.5 7z',
   ),

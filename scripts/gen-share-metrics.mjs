@@ -1,0 +1,160 @@
+#!/usr/bin/env node
+/* Generates src/share/metrics.js, the advance widths the share card wraps its prompt with, from
+   the shipped body face src/share/fonts/AtkinsonHyperlegible-Regular.ttf: printable ASCII,
+   Latin-1 and the common typographic punctuation; and the one advance of the mono bold face
+   (src/share/fonts/AtkinsonHyperlegibleMono-Bold.ttf) that the card sizes its tile numbers with. The share-card gate re-reads the font with the
+   same reader and fails when the committed table differs from the font, so a font swap cannot
+   pass silently. Run: node scripts/gen-share-metrics.mjs (rewrites the file), or import
+   `renderShareMetrics` to compare. The reader handles only what this face uses: the table
+   directory, cmap format 4 subtables, hhea and hmtx. */
+import { readFileSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+const ROOT = resolve(new URL('..', import.meta.url).pathname)
+export const SHARE_FONT_FILE = 'src/share/fonts/AtkinsonHyperlegible-Regular.ttf'
+/* the tile numbers' face: monospaced, so one advance serves every character a count can hold */
+export const SHARE_MONO_BOLD_FILE = 'src/share/fonts/AtkinsonHyperlegibleMono-Bold.ttf'
+export const SHARE_METRICS_FILE = 'src/share/metrics.js'
+/* every character formatCount can draw: digits, the decimal point, a group comma, a sign, the units */
+export const FIGURE_CHARS = '0123456789.,-kMBT'
+export const ASCII_RANGE = [0x20, 0x7e]
+export const LATIN_1_RANGE = [0xa0, 0xff]
+/* left and right single and double quotes, en and em dash, ellipsis */
+export const PUNCTUATION = [0x2018, 0x2019, 0x201c, 0x201d, 0x2013, 0x2014, 0x2026]
+
+/**
+ * Read the units per em and an advance(codePoint) lookup from a TrueType file.
+ * @param {Buffer} data
+ * @returns {{ unitsPerEm: number, advance: (codePoint: number) => number | null }}
+ */
+export function readAdvances(data) {
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength)
+  const tables = {}
+  const count = view.getUint16(4)
+  for (let i = 0; i < count; i += 1) {
+    const at = 12 + i * 16
+    const tag = String.fromCharCode(...data.subarray(at, at + 4))
+    tables[tag] = view.getUint32(at + 8)
+  }
+  for (const tag of ['cmap', 'head', 'hhea', 'hmtx']) if (tables[tag] === undefined) throw new Error(`font has no ${tag} table`)
+  const unitsPerEm = view.getUint16(tables.head + 18)
+  const metrics = view.getUint16(tables.hhea + 34)
+
+  // a format 4 subtable for Unicode BMP (platform 3 encoding 1, else platform 0)
+  const cmap = tables.cmap
+  let sub = null
+  for (let i = 0; i < view.getUint16(cmap + 2); i += 1) {
+    const platform = view.getUint16(cmap + 4 + i * 8)
+    const encoding = view.getUint16(cmap + 6 + i * 8)
+    const offset = cmap + view.getUint32(cmap + 8 + i * 8)
+    if (view.getUint16(offset) !== 4) continue
+    if ((platform === 3 && encoding === 1) || (platform === 0 && sub === null)) sub = offset
+  }
+  if (sub === null) throw new Error('font has no format 4 cmap subtable')
+  const segments = view.getUint16(sub + 6) / 2
+  const ends = sub + 14
+  const starts = ends + segments * 2 + 2
+  const deltas = starts + segments * 2
+  const rangeOffsets = deltas + segments * 2
+
+  const glyphOf = (codePoint) => {
+    for (let s = 0; s < segments; s += 1) {
+      if (codePoint > view.getUint16(ends + s * 2)) continue
+      const start = view.getUint16(starts + s * 2)
+      if (codePoint < start) return 0
+      const delta = view.getInt16(deltas + s * 2)
+      const rangeAt = rangeOffsets + s * 2
+      const range = view.getUint16(rangeAt)
+      if (range === 0) return (codePoint + delta) & 0xffff
+      const glyph = view.getUint16(rangeAt + range + (codePoint - start) * 2)
+      return glyph === 0 ? 0 : (glyph + delta) & 0xffff
+    }
+    return 0
+  }
+  const advance = (codePoint) => {
+    const glyph = glyphOf(codePoint)
+    if (glyph === 0) return null
+    return view.getUint16(tables.hmtx + Math.min(glyph, metrics - 1) * 4)
+  }
+  return { unitsPerEm, advance }
+}
+
+const span = ([from, to]) => Array.from({ length: to - from + 1 }, (_, i) => from + i)
+
+/** @param {(codePoint: number) => number | null} advance @param {number[]} points */
+function rows(advance, points) {
+  const values = points.map((point) => {
+    const value = advance(point)
+    if (value === null) throw new Error(`the font has no glyph for U+${point.toString(16).toUpperCase().padStart(4, '0')}`)
+    return value
+  })
+  const lines = []
+  for (let i = 0; i < values.length; i += 16) lines.push(`  ${values.slice(i, i + 16).join(', ')},`)
+  return lines.join('\n')
+}
+
+/** The mono bold face's single advance across FIGURE_CHARS; it throws when the face is not monospaced there. */
+function monoAdvance(data) {
+  const { unitsPerEm, advance } = readAdvances(data)
+  if (unitsPerEm !== 1000) throw new Error(`expected 1000 units per em, the mono bold face has ${unitsPerEm}`)
+  const widths = new Set([...FIGURE_CHARS].map((char) => advance(/** @type {number} */ (char.codePointAt(0)))))
+  if (widths.size !== 1 || widths.has(null)) throw new Error(`the mono bold face has no single advance across ${FIGURE_CHARS}: ${[...widths].join(', ')}`)
+  return /** @type {number} */ ([...widths][0])
+}
+
+/** The full text of src/share/metrics.js for the body face's bytes and the mono bold face's bytes. */
+export function renderShareMetrics(data, monoBoldData) {
+  const { unitsPerEm, advance } = readAdvances(data)
+  if (unitsPerEm !== 1000) throw new Error(`expected 1000 units per em, the font has ${unitsPerEm}`)
+  const mono = monoAdvance(monoBoldData)
+  const hex = (point) => `0x${point.toString(16)}`
+  const punctuation = PUNCTUATION.map((point) => `  [${hex(point)}, ${advance(point)}],`).join('\n')
+  return `// @ts-check
+/* Advance widths of Atkinson Hyperlegible Regular (./fonts/AtkinsonHyperlegible-Regular.ttf), in
+   thousandths of an em (the face's units per em is 1000): printable ASCII (U+0020 to U+007E),
+   Latin-1 (U+00A0 to U+00FF) and the common typographic punctuation. The share card wraps its
+   prompt with them. Also the one advance of Atkinson Hyperlegible Mono Bold
+   (./fonts/AtkinsonHyperlegibleMono-Bold.ttf) across every character a count can hold
+   (${FIGURE_CHARS}), which the card sizes its tile numbers with. GENERATED by
+   scripts/gen-share-metrics.mjs from the fonts' cmap and hmtx; do not edit by hand. The
+   share-card gate fails when this file differs from the fonts. */
+
+/** U+0020 to U+007E */
+const ASCII = [
+${rows(advance, span(ASCII_RANGE))}
+]
+
+/** U+00A0 to U+00FF */
+const LATIN_1 = [
+${rows(advance, span(LATIN_1_RANGE))}
+]
+
+/** quotes, dashes and the ellipsis */
+const PUNCTUATION = new Map([
+${punctuation}
+])
+
+/** the ellipsis, U+2026 */
+export const ELLIPSIS_ADVANCE = ${advance(0x2026)}
+
+/** the mono bold advance of every character a count can hold */
+export const MONO_BOLD_ADVANCE = ${mono}
+
+/**
+ * The advance of one character in thousandths of an em, or null when it is outside the table.
+ * @param {number} codePoint
+ * @returns {number | null}
+ */
+export function bodyAdvance(codePoint) {
+  if (codePoint >= ${hex(ASCII_RANGE[0])} && codePoint <= ${hex(ASCII_RANGE[1])}) return ASCII[codePoint - ${hex(ASCII_RANGE[0])}]
+  if (codePoint >= ${hex(LATIN_1_RANGE[0])} && codePoint <= ${hex(LATIN_1_RANGE[1])}) return LATIN_1[codePoint - ${hex(LATIN_1_RANGE[0])}]
+  return PUNCTUATION.get(codePoint) ?? null
+}
+`
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const text = renderShareMetrics(readFileSync(resolve(ROOT, SHARE_FONT_FILE)), readFileSync(resolve(ROOT, SHARE_MONO_BOLD_FILE)))
+  writeFileSync(resolve(ROOT, SHARE_METRICS_FILE), text)
+  console.log(`share metrics: wrote ${SHARE_METRICS_FILE} from ${SHARE_FONT_FILE} and ${SHARE_MONO_BOLD_FILE}`)
+}

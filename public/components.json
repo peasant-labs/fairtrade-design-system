@@ -119,7 +119,7 @@
         "BrandMark",
         "resolveBrand"
       ],
-      "doc": "",
+      "doc": "BrandMark - a single-color, currentColor-tinted company/provider logo.",
       "props": {
         "name": {
           "control": "select",
