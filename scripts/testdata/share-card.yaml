@@ -1,0 +1,96 @@
+# Share-card data (src/share/data.js), checked by scripts/share-card.test.mjs.
+#
+# modelLabelCases: shareCardModelLabel(harness, model); an absent `model` is undefined.
+# payloadCases: shareCardFromPayload over `basePayload` with `set` merged over it and `omit` keys
+#   removed. `firstTurnContent` replaces the first turn's text; `firstTurnRepeat` builds it as
+#   `unit` repeated `times`. `expect` lists only the card fields a case pins; `figures: null` pins
+#   "no figures".
+# textCases: the link text for a card written out in full.
+# formatCases: formatShareCount(input).
+# parseFailureCases: values that do not parse and must give null, not throw.
+basePayload:
+  id: ses_share
+  harness: claude-code
+  model: claude-opus-5-5
+  title: rewrite billing retries
+  startTime: '2026-07-16T08:00:00Z'
+  endTime: '2026-07-16T08:01:00Z'
+  durationMins: 1
+  totalTokens: 84000
+  tokensIn: 70000
+  tokensOut: 14000
+  turnCount: 2
+  toolCallCount: 0
+  inputSubmissionCount: 6
+  turns:
+    - {index: 0, role: user, content: rewrite billing retries, timestamp: '2026-07-16T08:00:00Z', depth: 0}
+    - {index: 1, role: assistant, content: done, timestamp: '2026-07-16T08:00:10Z', depth: 0}
+
+modelLabelCases:
+  - {name: model-label-opus-5-5, harness: claude-code, model: claude-opus-5-5, expected: Claude Code (Opus 5.5)}
+  - {name: model-label-unknown-model, harness: codex, model: gpt-9-turbo-x, expected: Codex (gpt-9-turbo-x)}
+  - {name: model-label-missing-model, harness: cursor, expected: Cursor}
+
+payloadCases:
+  - name: unknown-harness
+    set: {harness: acme-cli}
+    omit: [model, inputSubmissionCount]
+    expect: {harness: acme-cli, brand: null, chip: acme-cli}
+  - name: known-harness-brand
+    expect: {harness: claude-code, brand: claude, chip: Claude Code (Opus 5.5)}
+  - name: both-figures
+    expect: {figures: {prompts: 6, tokens: 84000}}
+  - name: no-prompt-count
+    omit: [inputSubmissionCount]
+    expect: {figures: null}
+  - name: usage-scopes-hide-total
+    set:
+      turns:
+        - {index: 0, role: user, content: rewrite billing retries, timestamp: '2026-07-16T08:00:00Z', depth: 0}
+        - index: 1
+          role: assistant
+          content: done
+          timestamp: '2026-07-16T08:00:10Z'
+          depth: 0
+          sourceEntryRef: e_a1
+          provenance: {origin: agent_output, actor: agent_delegate, delivery: unknown, ownership: local, evidence: native_typed, inputModality: none}
+          usage: {ownerId: usage-turn, sourceEntryRef: e_a1, scope: assistant, completeness: partial, tokens: {output: 2}}
+    expect: {figures: null}
+  - name: no-text-first-turn
+    firstTurnContent: ''
+    expect: {title: rewrite billing retries, firstPrompt: rewrite billing retries}
+  - name: first-prompt-is-first-user-turn
+    firstTurnContent: add a retry cap
+    expect: {firstPrompt: add a retry cap}
+  - name: long-unbroken-prompt
+    firstTurnRepeat: {unit: x, times: 600}
+    expect: {firstPromptLength: 600}
+
+textCases:
+  - name: description-with-figures
+    card: {title: rewrite billing retries, chip: Claude Code (Opus 5.5), figures: {prompts: 6, tokens: 84000}}
+    description: 'What prompts produced "rewrite billing retries"? 6 prompts and 84k tokens with Claude Code (Opus 5.5). Read every prompt on village.'
+    alt: 'Share card: 6 prompts and 84k tokens with Claude Code (Opus 5.5)'
+  - name: description-without-figures
+    card: {title: rewrite billing retries, chip: Claude Code (Opus 5.5), figures: null}
+    description: 'What prompts produced "rewrite billing retries"? Read every prompt on village.'
+    alt: 'Share card: the first prompt of "rewrite billing retries" with Claude Code (Opus 5.5)'
+  - name: one-prompt-is-singular
+    card: {title: fix typo, chip: Pi, figures: {prompts: 1, tokens: 1200000}}
+    description: 'What prompts produced "fix typo"? 1 prompt and 1.2M tokens with Pi. Read every prompt on village.'
+    alt: 'Share card: 1 prompt and 1.2M tokens with Pi'
+
+formatCases:
+  - {name: format-billion, input: 1200000000, expected: 1.2B}
+  - {name: format-small, input: 999, expected: '999'}
+  - {name: format-thousands, input: 84000, expected: 84k}
+  - {name: format-millions, input: 1200000, expected: 1.2M}
+
+parseFailureCases:
+  - {name: parse-failure-null, payload: null}
+  - {name: parse-failure-string, payload: not a payload}
+  - {name: parse-failure-empty-object, payload: {}}
+
+dataModuleGuard:
+  file: src/share/data.js
+  forbiddenImports: [react, react-dom, ../ui/index.js, ../ui/BrandMark.jsx]

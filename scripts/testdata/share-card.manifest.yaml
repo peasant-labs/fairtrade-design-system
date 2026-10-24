@@ -1,0 +1,28 @@
+# Required-NAME manifest for share-card.yaml: deletion protection. The gate asserts each family's
+# case names equal these lists exactly, as sets.
+requiredModelLabelNames:
+  - model-label-opus-5-5
+  - model-label-unknown-model
+  - model-label-missing-model
+requiredPayloadNames:
+  - unknown-harness
+  - known-harness-brand
+  - both-figures
+  - no-prompt-count
+  - usage-scopes-hide-total
+  - no-text-first-turn
+  - first-prompt-is-first-user-turn
+  - long-unbroken-prompt
+requiredTextNames:
+  - description-with-figures
+  - description-without-figures
+  - one-prompt-is-singular
+requiredFormatNames:
+  - format-billion
+  - format-small
+  - format-thousands
+  - format-millions
+requiredParseFailureNames:
+  - parse-failure-null
+  - parse-failure-string
+  - parse-failure-empty-object
