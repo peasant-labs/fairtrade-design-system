@@ -4,6 +4,16 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.44 - 2026-10-24
+
+### Fixed
+
+- `TranscriptViewer`'s trail reads whole when the header row has room. Since
+  0.0.40 its first and last crumbs were capped at a share of the trail's own
+  content width, so at 1440 a host's trail cut "collectives" and "AI Research
+  Collective" short with most of the row free. The trail now takes the row's
+  free width; on a phone it still keeps to one line.
+
 ## 0.0.43 - 2026-10-24
 
 ### Added
