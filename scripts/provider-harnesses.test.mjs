@@ -259,7 +259,7 @@ if (failures.length > 0) {
     'provider harness verification failed.',
     'What went wrong: the canonical harness inventory, provider display policy, or mounted provider rendering diverged.',
     'Why it happened: a schema harness was omitted, relabeled, recolored, or widened to an arbitrary string without an explicit display decision.',
-    'Where: src/ui/ProviderIcon.jsx, src/ui/BrandMark.jsx, and scripts/testdata/provider-harnesses*.yaml.',
+    'Where: src/ui/ProviderIcon.jsx, src/ui/BrandMark.jsx, src/ui/brand-geometry.js, and scripts/testdata/provider-harnesses*.yaml.',
     `When: focused provider harness verification (${failures.join('; ')}).`,
     'What it means: a canonical transcript provider may be missing or misidentified, or an untrusted provider string may render as a trusted brand.',
     'How to fix: restore the exact canonical Harness mapping and mounted rendering, rebuild dist/lib, then rerun pnpm test:provider-harnesses.',
