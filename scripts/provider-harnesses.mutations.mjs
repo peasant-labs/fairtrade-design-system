@@ -212,7 +212,14 @@ function collectProviderMutationDirectories(directory, matches) {
 
 function mutateRegion(source, mutation, sourceName, pattern, replacement) {
   const marker = `//#region ${sourceName}`
-  const start = source.indexOf(marker)
+  let start = source.indexOf(marker)
+  if (start < 0) {
+    // When a module shares a chunk with a neighbour the bundler can fold its region into that
+    // neighbour's, leaving no marker of its own. The module's validation message names its source
+    // path, so the region that holds that message is the module's.
+    const named = source.indexOf(`at ${sourceName} during`)
+    if (named >= 0) start = source.lastIndexOf('//#region', named)
+  }
   const end = source.indexOf('//#endregion', start)
   if (start < 0 || end < 0) throw new Error(`${mutation.name}: production bundle is missing the ${sourceName} region marker`)
   const region = source.slice(start, end)
