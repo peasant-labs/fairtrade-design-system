@@ -22,6 +22,7 @@
   "include": [
     "src/ui/prompt-digest.contract.type-test.js",
     "src/ui/provider-icon.contract.type-test.js",
+    "src/ui/app-sidebar.contract.type-test.js",
     "src/ui/transcript/contract.type-test.js",
     "src/ui/transcript/adapter.contract.type-test.js",
     "src/ui/transcript/state-capabilities.contract.type-test.js",

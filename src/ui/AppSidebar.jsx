@@ -90,8 +90,11 @@ import './AppSidebar.css'
 
 /**
  * @typedef {Object} AppSidebarAccount
- * @property {string} handle   shown as @handle; its first letter fills the square avatar.
+ * @property {string} handle   shown after an at sign; its first letter fills the square avatar. (An at sign
+ *           opening a word here would start a JSDoc tag and drop every property after it from the types.)
  * @property {string} [href]   makes the account row a link.
+ * @property {string} [avatarUrl]  the person's picture in the avatar square, decorative (the handle sits beside
+ *           it); the initial shows instead while it is missing or when it fails to load.
  * @property {import('./Menu.jsx').MenuItem[]} [items]  makes the account row its own menu (profile, settings, sign
  *           out), drawn as the same flat row with no caret and opening above the footer. Takes precedence over href.
  */
@@ -376,11 +379,21 @@ function SettingsItem({ href, current, Link, onNavigate }) {
   )
 }
 
+/* the account's square: the host's picture when it has one that loads, otherwise the handle's initial */
+function AccountAvatar({ handle, avatarUrl }) {
+  const [failed, setFailed] = useState(false)
+  useEffect(() => { setFailed(false) }, [avatarUrl])
+  if (avatarUrl && !failed) {
+    return <img className="asb-av asb-av-img" src={avatarUrl} alt="" onError={() => setFailed(true)} />
+  }
+  return <span className="asb-av" aria-hidden="true">{handle.charAt(0).toUpperCase()}</span>
+}
+
 function AccountRow({ account, Link, onNavigate, collapsed }) {
   const handle = account.handle ?? ''
   const body = (
     <>
-      <span className="asb-av" aria-hidden="true">{handle.charAt(0).toUpperCase()}</span>
+      <AccountAvatar handle={handle} avatarUrl={account.avatarUrl} />
       <span className="asb-label asb-handle">@{handle}</span>
     </>
   )
