@@ -49,7 +49,8 @@ cases:
     expectedVisible: [internal, web, orphan]
     expectedHidden: [internal/ingest, web/src]
     expectedTabbable: internal
-    expectShowChildren: false
+    # the project grain shows only the roots, and each root with children offers a disclosure to open it
+    expectShowChildren: true
     expectMissingStatus: true
   - name: dense file filter retains a deep matching ancestry
     grain: file
