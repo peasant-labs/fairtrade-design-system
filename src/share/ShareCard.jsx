@@ -20,7 +20,7 @@ import { ELLIPSIS_ADVANCE, MONO_BOLD_ADVANCE, bodyAdvance } from './metrics.js'
 
 export const SHARE_CARD_WIDTH = 1200
 /** X's large card is 2:1; every other platform gets 1.91:1, the same card with more background */
-export const SHARE_CARD_HEIGHTS = Object.freeze([600, 630])
+export const SHARE_CARD_HEIGHTS = /** @type {readonly [600, 630]} */ (Object.freeze([600, 630]))
 
 const dark = (role) => color[role].$value
 /** a token value with its colour references read as the dark theme's colours */
