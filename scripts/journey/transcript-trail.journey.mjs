@@ -1,10 +1,9 @@
-/* Journey: the transcript trail reads whole when the row has room, on the built Storybook, both themes.
+/* Journey: the transcript trail reads whole on a wide screen, on the built Storybook, both themes.
  *
- * Reads scripts/testdata/transcript-trail.yaml (+ .manifest.yaml). At 1440 a host's trail of a
- * collective, its name and the transcript's title fits the header row, so no crumb may be cut by an
- * ellipsis (its text no wider than its box). The trail's caps on its first and last crumbs are shares
- * of the room it has; sized to its own content they cut crumbs short even with room to spare. A named
- * CSS mutation proves the gate fails for that reason.
+ * Reads scripts/testdata/transcript-trail.yaml (+ .manifest.yaml). At 1440 and 1280 a host's trail of
+ * a collective, its name and the transcript's title that fits the header row shows every crumb whole
+ * (its text no wider than its box); a trail longer than the row shortens only its last crumb, the
+ * title. Named CSS mutations prove the gate fails for each reason.
  */
 import { test, expect } from '@playwright/test'
 import { loadStrictYaml, assertExactNames } from '../css-source.mjs'
@@ -13,6 +12,7 @@ const FIXTURE = 'scripts/testdata/transcript-trail.yaml'
 const MANIFEST = 'scripts/testdata/transcript-trail.manifest.yaml'
 const spec = loadStrictYaml(FIXTURE)
 const manifest = loadStrictYaml(MANIFEST)
+assertExactNames(spec.viewports.map((row) => row.name), manifest.requiredViewportNames, `${FIXTURE} viewports`)
 assertExactNames(spec.cases.map((row) => row.name), manifest.requiredCaseNames, `${FIXTURE} cases`)
 assertExactNames(spec.mutations.map((row) => row.name), manifest.requiredMutationNames, `${FIXTURE} mutations`)
 
@@ -28,30 +28,36 @@ const failuresFor = (row, crumbs) => {
   const failures = []
   const texts = crumbs.map((crumb) => crumb.text)
   if (JSON.stringify(texts) !== JSON.stringify(row.crumbs)) failures.push(`${row.name}: the trail must be ${JSON.stringify(row.crumbs)}, received ${JSON.stringify(texts)}`)
-  for (const crumb of crumbs) if (crumb.cut) failures.push(`${row.name}: "${crumb.text}" is cut short with room on the row`)
+  crumbs.forEach((crumb, index) => {
+    const last = index === crumbs.length - 1
+    if (!crumb.cut || (last && row.lastMayCut)) return
+    failures.push(row.lastMayCut ? `${row.name}: "${crumb.text}" is cut short before the title` : `${row.name}: "${crumb.text}" is cut short with room on the row`)
+  })
   return failures
 }
 
-const open = async (page, story, theme) => {
-  await page.setViewportSize(spec.viewport)
+const open = async (page, story, theme, viewport) => {
+  await page.setViewportSize({ width: viewport.width, height: viewport.height })
   await page.goto(`/iframe.html?id=${story}&viewMode=story&globals=theme:${theme}`)
   await expect(page.locator('.txn-crumb').first()).toBeVisible()
   await page.evaluate(() => document.fonts.ready)
   await page.evaluate(settle)
 }
 
-for (const row of spec.cases) {
-  test(`transcript trail ${row.name}`, async ({ page }, info) => {
-    await open(page, row.story, info.project.name)
-    const failures = failuresFor(row, await page.evaluate(measure))
-    expect(failures, failures.join('\n')).toEqual([])
-  })
+for (const viewport of spec.viewports) {
+  for (const row of spec.cases) {
+    test(`transcript trail ${row.name} ${viewport.name}`, async ({ page }, info) => {
+      await open(page, row.story, info.project.name, viewport)
+      const failures = failuresFor(row, await page.evaluate(measure))
+      expect(failures, failures.join('\n')).toEqual([])
+    })
+  }
 }
 
 test('transcript trail mutations', async ({ page }, info) => {
   for (const mutation of spec.mutations) {
     const row = spec.cases.find((candidate) => candidate.story === mutation.story)
-    await open(page, mutation.story, info.project.name)
+    await open(page, mutation.story, info.project.name, spec.viewports[0])
     await page.addStyleTag({ content: mutation.css })
     await page.evaluate(settle)
     const failures = failuresFor(row, await page.evaluate(measure))

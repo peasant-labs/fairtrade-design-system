@@ -2030,6 +2030,13 @@
   .txn-crumb > :first-child:not(svg) { max-width: 30%; }
   .txn-crumb > :last-child:not(svg) { max-width: 50%; }
   .txn-crumb > :not(svg):not(:first-child):not(:last-child) { flex: 0 1 auto; min-width: 3ch; }
+  /* from a tablet up every crumb reads whole while it fits; only the last, the current page's title,
+     may shorten, and only when the row is full */
+  @media (width >= 768px) {
+    .txn-crumb > :first-child:not(svg), .txn-crumb > :last-child:not(svg) { max-width: none; }
+    .txn-crumb > :not(svg):not(:first-child):not(:last-child) { flex: none; }
+    .txn-crumb > :last-child:not(svg) { flex: 0 1 auto; }
+  }
   /* a touch screen keeps the 44px reach on a crumb as a block, centred by its line, since an ellipsis
      needs a block box (the shared crumb rule makes a link an inline flex box) */
   @media (pointer: coarse) { .txn-crumb > a { display: block; line-height: var(--target-comfortable); } }
