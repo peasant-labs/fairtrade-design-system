@@ -1,0 +1,54 @@
+{
+  "sourceCommit": "53954eb3176498b474e25516e417d90abb92988b",
+  "sourceTree": "3c1043985ece2259a5a2e0ca49220612c67f9b2f",
+  "packageVersion": "0.0.45",
+  "limits": [
+    "Emulated Chromium viewport and theme attribute, not physical-device proof.",
+    "The mounted in-use transcript proves the opt-in ledger path; classic stays the default and is unchanged.",
+    "Consumer adoption, pin bumps and user acceptance remain separate."
+  ],
+  "screenshots": [
+    {
+      "file": "dark/reader-phone.png",
+      "sha256": "2d561954452ba15f353811876bb46b99806f5f8825d025b6922c9d001c4dc9f9",
+      "surface": "mounted in-use transcript (ledger chrome)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/reader-scrolled.png",
+      "sha256": "fd1f2917a4ec3320bc6194eaa2e7e2b689f0c8c17bdf5b38a21f22170d1057e9",
+      "surface": "mounted in-use transcript (ledger chrome)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/reader-top.png",
+      "sha256": "d84f6c7a56b1ed3ea4fa5b2ffce428e67fae99ec1b1aee00d7633dd82d0ba986",
+      "surface": "mounted in-use transcript (ledger chrome)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-phone.png",
+      "sha256": "2088d372f5a2e7c50c657d5a34900ed128967437c6e50cde51679949ecd7777e",
+      "surface": "mounted in-use transcript (ledger chrome)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-scrolled.png",
+      "sha256": "8a8e494a815ce1453cf1144d33f90dd2409be8094690237cb46521b4d467828a",
+      "surface": "mounted in-use transcript (ledger chrome)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-top.png",
+      "sha256": "9c3a6b9951f1374d8a1dad79026b625abdb100e257d9d98d36919e689103c57a",
+      "surface": "mounted in-use transcript (ledger chrome)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    }
+  ]
+}
