@@ -1,13 +1,27 @@
 {
-  "sourceCommit": "18ffafd60ecf339fe388ffa79569da026b5a0c20",
-  "sourceTree": "589b2ffe0b0b96bb67046ff43880ca0e6bd2a991",
+  "sourceCommit": "646c9f54b1bd29cb89d7aede260d579fed937dd1",
+  "sourceTree": "aa868c709cbe6cc400001dd81b2c2500778adf46",
   "packageVersion": "0.0.45",
   "limits": [
     "Emulated Chromium viewport and theme attribute, not physical-device proof.",
-    "The mounted in-use transcript proves the opt-in ledger path; classic stays the default and is unchanged.",
+    "The mounted in-use transcript proves the opt-in ledger path and the shared bottom bar; classic keeps its rendering and gains the same bottom bar.",
     "Consumer adoption, pin bumps and user acceptance remain separate."
   ],
   "screenshots": [
+    {
+      "file": "dark/reader-classic-phone.png",
+      "sha256": "6c56524190d58d159150403760c3906dae93aaea758704b91b02b0ae6908e6f7",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/reader-classic.png",
+      "sha256": "1d82476345aa6bfbafa476cd39c142eaeb97aa12a81afe29603f5c07c549baac",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
     {
       "file": "dark/reader-phone.png",
       "sha256": "48d17e5f223b3efeea52510a5170fa626d0943580ee1d8544fc9cf3dc48e934e",
@@ -53,6 +67,20 @@
     {
       "file": "dark/reader-zen-restored.png",
       "sha256": "8f9aea4f2c2a3f85c9c24da1c76300cf2c8202f35f5a1ff20625583af6e9bb68",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-classic-phone.png",
+      "sha256": "3b2f20d575234be61c06538cc4d21b807a8388cb555eb6a57f6ac023bab0be10",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-classic.png",
+      "sha256": "39c8cf3d3b43adc74222ea806642935325ef440f5e51a1bdbc35563b831f5cd3",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
