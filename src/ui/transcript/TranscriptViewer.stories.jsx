@@ -196,15 +196,17 @@ const ledgerTurns = [
   { ...turns[0], label: '1' },
   { ...turns[1], label: '1a' },
   { ...turns[2], label: '1b' },
-  { ...turns[3], label: '1c' },
+  { ...turns[3], label: '1c', toolCalls: [editTool, readTool] },
   { ...turns[4], label: '1d' },
   { index: 5, role: 'user', label: '2', depth: 0, content: 'Run the next check and show me the result.', toolCalls: [], annotations: [], tokens: { in: 120, out: 0 }, timestamp: '2m ago' },
   { index: 6, role: 'assistant', label: '2a', depth: 0, provider: 'claude-code', effectiveModel: 'anthropic/claude-opus-4-8', content: 'Running the workspace check.', toolCalls: [readTool], annotations: [], tokens: { in: 400, out: 300 }, timestamp: '1m ago' },
+  /* a system notice reads as one compact row in the ledger, not a full card */
+  { index: 7, role: 'system', label: '3', depth: 0, time: '1m ago', content: 'session resumed, worktree changed on disk', toolCalls: [], annotations: [] },
 ]
 
 const ledgerViewModel = {
   ...viewModel,
-  session: { ...viewModel.session, turnCount: ledgerTurns.length, toolCallCount: 4 },
+  session: { ...viewModel.session, turnCount: ledgerTurns.length, toolCallCount: 5 },
   turns: ledgerTurns,
   tasks: [
     { id: 't0', index: 1, prompt: 'Port the transcript canvas into the shared package. Read the renderer first.', turnIndices: [0, 1, 2, 3, 4], durationMs: 300000, tools: 3, outcome: 'ok' },
@@ -241,6 +243,15 @@ export const Ledger = {
     // the classic per-task identity chip would repeat the rail card and the turn head.
     expect(canvasElement.querySelector('.txn-taskboundary')).toBeNull()
     // the pinned header appears once the trace scrolls, with the title and one position slider.
+    // each turn with tools carries one work panel; the turn with two tools summarizes both.
+    await expect(canvasElement.querySelectorAll('.txn-work')).toHaveLength(4)
+    await expect(canvas.getByText('2 files, 1 edit')).toBeVisible()
+    // a system turn is a compact row, and its recorded text opens on request.
+    const systemHead = canvasElement.querySelector('.txn-systemrow-head')
+    await expect(systemHead).toHaveAttribute('aria-expanded', 'false')
+    await userEvent.click(systemHead)
+    await expect(systemHead).toHaveAttribute('aria-expanded', 'true')
+    // the pinned header appears once the trace scrolls, with the title and the minimap.
     const stream = canvasElement.querySelector('.txn-stream')
     stream.scrollTop = stream.scrollHeight
     await fireEvent.scroll(stream)

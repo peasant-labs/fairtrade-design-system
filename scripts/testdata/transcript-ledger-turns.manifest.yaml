@@ -1,0 +1,52 @@
+# Required-NAME manifest for transcript-ledger-turns.yaml: deletion protection. The gate
+# (scripts/transcript-ledger-turns.test.mjs) asserts each family's names equal these lists
+# exactly, as sets. Membership is asserted, never a bare count.
+requiredSummaryNames:
+  - mixed work counts commands files edits failures and duration
+  - singular counts read as one
+  - a turn without counting tools falls back to its call count
+  - one file touched twice counts once
+  - a non-zero bash exit counts as a failure
+  - blank paths and unknown durations are left out
+  - an empty tool list summarizes to nothing
+requiredCaseNames:
+  - classic keeps the turn's tools flat
+  - ledger groups one turn's tools into one panel
+  - ledger tool rows open and close
+  - ledger renders a system turn as a row
+  - ledger keeps a turn's thinking disclosure
+  - a turn without tools has no work group
+
+# Production mutations the gate must kill (scripts/parts-mutations.mjs).
+requiredMutationNames:
+  - the ledger keeps the classic tool rows
+  - the panel drops its commands from the summary
+  - the panel ignores a tool's open state
+  - a turn without tools still renders a panel
+  - the system row ignores its disclosure
+mutations:
+  - name: the ledger keeps the classic tool rows
+    file: src/ui/transcript/TurnCard.jsx
+    find: "      {turn.toolCalls && (ledger ? ("
+    replace: "      {turn.toolCalls && (false ? ("
+    expectedDiagnostic: "ledger groups one turn's tools into one panel: exactly one work panel"
+  - name: the panel drops its commands from the summary
+    file: src/ui/transcript/work-summary.js
+    find: "if (tool.group === 'bash') summary.commands += 1"
+    replace: "if (tool.group === 'shell') summary.commands += 1"
+    expectedDiagnostic: "ledger groups one turn's tools into one panel: the count must read"
+  - name: the panel ignores a tool's open state
+    file: src/ui/transcript/WorkGroup.jsx
+    find: "open={expandAll || !!openTools[tool.id]}"
+    replace: "open={false}"
+    expectedDiagnostic: "ledger tool rows open and close: the clicked row must stay open"
+  - name: a turn without tools still renders a panel
+    file: src/ui/transcript/WorkGroup.jsx
+    find: "  if (!tools.length) return null"
+    replace: "  if (false) return null"
+    expectedDiagnostic: "a turn without tools has no work group: the tool-less turn 3 must render no panel"
+  - name: the system row ignores its disclosure
+    file: src/ui/transcript/SystemRow.jsx
+    find: "onClick={() => setOpen((value) => !value)}"
+    replace: "onClick={() => {}}"
+    expectedDiagnostic: "ledger renders a system turn as a row: clicking the row must reveal the recorded text"
