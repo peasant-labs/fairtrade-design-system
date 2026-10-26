@@ -21,6 +21,7 @@ import { UsageScopes } from './UsageDisclosure.jsx'
 import DiffEntryCard from './DiffEntryCard.jsx'
 import OutlineRail from './OutlineRail.jsx'
 import FiltersRail from './FiltersRail.jsx'
+import TranscriptMinimap from './Minimap.jsx'
 import Scrubber from './Scrubber.jsx'
 import Scorecard from './Scorecard.jsx'
 import LabelPopover from './LabelPopover.jsx'
@@ -56,6 +57,13 @@ import Tooltip from '../Tooltip.jsx'
    CHECKPOINTS: commits live outside the per-turn card; the composite draws
    them between turns from the cooked `session.git.commits` (render-when-present),
    anchored to a turn when the cooked commit carries one, else clustered at the end.
+
+   PRESENTATION: `classic` (the default) is the report-style surface. `ledger` keeps
+   the same state, callbacks and gating but swaps the chrome: a subtitle under the
+   title, a title + visible-turns minimap in the pinned trace header instead of the
+   provider/model + scrubber, and user-turn task cards in the left rail instead of the
+   duration waterfall. Absent the prop nothing changes, so a host that never opts in
+   renders exactly what it rendered before.
    ─────────────────────────────────────────────────────────────────────────── */
 
 /** @typedef {import('./state-capabilities.js').TranscriptViewerProps} TranscriptViewerProps */
@@ -212,6 +220,8 @@ export default function TranscriptViewer({
   showTail = false,
   showOutcome = true,
   showSearchTrigger = false,
+  presentation = 'classic',
+  subtitle,
   pullRequests,
   headingLevel,
 }) {
@@ -224,6 +234,9 @@ export default function TranscriptViewer({
   const vm = viewModel
   const tabsId = useId()
   const caps = capabilities ?? {}
+  /* the ledger presentation is a CHROME switch only: same view state, same capabilities,
+     same callbacks; the root class scopes the ledger CSS block. */
+  const ledger = presentation === 'ledger'
 
   /* ── controllable view state (each works unmanaged via its default) ─────────── */
   const [theme] = useControllable(themeProp, onThemeChange, 'dark')
@@ -766,7 +779,7 @@ export default function TranscriptViewer({
   )
 
   return (
-    <div className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (heroCondensed ? ' txn-app-condensed' : '')} data-theme={theme}>
+    <div className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (ledger ? ' txn-ledger' : '') + (heroCondensed ? ' txn-app-condensed' : '')} data-theme={theme}>
       {/* ===================== HEADER ===================== */}
       <header className="txn-header" ref={headerRef}>
         <div className="txn-header-top">
@@ -867,6 +880,10 @@ export default function TranscriptViewer({
         </div>
 
         <TitleHeading className="txn-title" title={title}>{title}</TitleHeading>
+        {/* an optional one-line deck under the title (ledger reads it as the transcript's
+            provenance line); render-when-supplied so classic is untouched. A div, not a
+            paragraph: the prop takes a node, and a composed deck may hold block content. */}
+        {subtitle != null && <div className="txn-sub">{subtitle}</div>}
 
         <div className="txn-meta chips" tabIndex={0} role="region" aria-label="session metadata">
           {showOutcome && session.outcome && <TranscriptOutcomeChip outcome={session.outcome} />}
@@ -954,7 +971,7 @@ export default function TranscriptViewer({
               </button>
             </div>
             <div className="txn-rail-body" id="txn-rail-left-body">
-              <OutlineRail viewModel={vm} tab={tab} onJump={(idx) => jumpTo(idx, { switchTab: false })} />
+              <OutlineRail viewModel={vm} tab={tab} presentation={presentation} activeTurn={activeTurn} onJump={(idx) => jumpTo(idx, { switchTab: false })} />
             </div>
           </aside>
         ) : (
@@ -972,9 +989,22 @@ export default function TranscriptViewer({
             <div className={'txn-trace' + (sticky && viewMode === 'list' ? ' txn-trace-pinned' : '')}>
               {sticky && viewMode === 'list' && (
                 <div className="txn-sticky">
-                  {session.harness && <ProviderIcon harness={session.harness} accent />}
-                  {activeModel && <span className="txn-sticky-model mono">{activeModel}</span>}
-                  <Scrubber turns={turns} active={activeTurn} onSeek={seekScrub} draggingRef={draggingRef} />
+                  {ledger ? (
+                    <>
+                      <span className="txn-sticky-title" title={title}>{title}</span>
+                      <TranscriptMinimap
+                        turns={visibleTurns}
+                        activeTurn={activeTurn}
+                        onJump={(idx) => jumpTo(idx, { switchTab: false })}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      {session.harness && <ProviderIcon harness={session.harness} accent />}
+                      {activeModel && <span className="txn-sticky-model mono">{activeModel}</span>}
+                      <Scrubber turns={turns} active={activeTurn} onSeek={seekScrub} draggingRef={draggingRef} />
+                    </>
+                  )}
                 </div>
               )}
               <div className="txn-trace-head">
@@ -1027,7 +1057,10 @@ export default function TranscriptViewer({
                       return (
                         <div key={t.identity ?? t.index}>
                           {showPhase && <PhaseDivider phase={phase} heading={PhaseHeading} />}
-                          {t.role === 'user' && task && <TaskBoundary task={task} />}
+                          {/* in ledger the rail card carries the task identity and duration and
+                              the turn head carries the per-turn identity, so the classic
+                              boundary would repeat both before the first line of prose. */}
+                          {!ledger && t.role === 'user' && task && <TaskBoundary task={task} />}
                           <TurnCard
                             headingLevel={pageLevel + 2}
                             turn={t}

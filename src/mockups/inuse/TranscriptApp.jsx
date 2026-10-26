@@ -758,8 +758,10 @@ export function demoTranscriptViewModel() {
 }
 
 function DefaultTranscriptApp({ theme }) {
-  const vm = useMemo(() => new URLSearchParams(window.location.search).get('transcript') === 'pi'
-    ? adaptTranscript(piPayload) : buildMockupVM(), [])
+  const search = new URLSearchParams(window.location.search).get('transcript')
+  const vm = useMemo(() => search === 'pi' ? adaptTranscript(piPayload) : buildMockupVM(), [search])
+  // `?transcript=ledger` reads the same demo session through the ledger presentation.
+  const ledger = search === 'ledger'
   // Tool details start collapsed; the reader opens them on demand.
   const [openTools, setOpenTools] = useState({})
   // the local app owns the header row: the publish bar (status, one action, more) and its popup.
@@ -773,6 +775,8 @@ function DefaultTranscriptApp({ theme }) {
         showTail={false}
         showOutcome={false}
         showSearchTrigger
+        presentation={ledger ? 'ledger' : undefined}
+        subtitle={ledger ? 'a public transcript from fairtrade, read as a ledger.' : undefined}
         headerActions={publish.bar}
         openTools={openTools}
         onOpenToolsChange={setOpenTools}

@@ -3605,3 +3605,104 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .vobs-header > div { width: 100%; }
   .vobs-domains, .vobs-facts > div { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ======================================================================
+   ledger presentation — the opt-in reading surface behind
+   `presentation="ledger"` on TranscriptViewer (default stays classic).
+   The root swaps to `.txn-ledger`; the pinned trace header shows the
+   session title plus a visible-turns minimap in place of the
+   provider/model + scrubber, and the left rail's trace tab lists one card
+   per user-turn task. `.txn-sub` is the one shared selector: it renders
+   in either presentation when the host supplies a subtitle.
+   Square, tokens only, both themes free.
+====================================================================== */
+.txn-sub {
+  max-width: var(--measure-prose);
+  margin: var(--sp-2) 0 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink-2);
+}
+/* the condensed session header keeps ONE row (trail + actions); the deck leaves with the title. */
+.txn-app-condensed > .txn-header .txn-sub { display: none; }
+
+.txn-sticky-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  color: var(--ink-2);
+}
+
+/* one position control for the whole strip: a single focusable slider over the visible turns,
+   so the tab-stop count and the hit target stay constant as the trace grows. The ticks are
+   decorative (never targets) and form ONE filled 6px bar. A kind is encoded by colour AND by a
+   three-step shape ladder: a user turn fills the 6px bar (teal), an agent turn is a 4px centred
+   band (amber), and a tool turn is a 2px centred band in ink-4 (which clears the 3:1 floor in
+   both themes). Every step is a visible bar of a different height, so the kinds never rest on
+   hue. The ink-strong cursor marks the active position for any turn count, independent of a
+   tick's width. */
+.txn-minimap {
+  position: relative;
+  flex: 1;
+  min-width: 120px;
+  height: var(--target-min);
+  cursor: pointer;
+}
+.txn-minimap:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+.txn-minimap-track {
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: calc(var(--sp-1) + var(--stroke-emphasis));
+  transform: translateY(-50%);
+  display: flex;
+  gap: var(--stroke-hairline);
+}
+.txn-minimap-seg { flex: 1 1 0; min-width: 0; height: 100%; background: var(--ink-4); }
+.txn-minimap-user { height: calc(var(--sp-1) + var(--stroke-emphasis)); background: var(--teal); }
+.txn-minimap-agent { height: var(--sp-1); align-self: center; background: var(--amber); }
+.txn-minimap-tool { height: var(--stroke-emphasis); align-self: center; background: var(--ink-4); }
+.txn-minimap-cursor {
+  position: absolute;
+  top: calc((var(--target-min) - var(--sp-3)) / 2);
+  width: var(--stroke-emphasis);
+  height: var(--sp-3);
+  background: var(--ink-strong);
+  /* a hairline ground halo: the cursor crosses the teal and amber fills, so its adjacent colour
+     is the bar's own surface at every point and the marker never sits under the 3:1 floor. */
+  box-shadow: 0 0 0 var(--stroke-hairline) var(--surface);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* the rail's ledger trace tab: one card per user-turn task. */
+.txn-rail-turns { list-style: none; margin: 0; padding: 0; }
+.txn-rail-turn {
+  display: flex; flex-direction: column; gap: var(--sp-1);
+  width: 100%; min-height: var(--target-comfortable);
+  padding: var(--sp-2) var(--sp-1);
+  border: 0; border-bottom: var(--bd);
+  background: transparent;
+  color: var(--ink-2);
+  text-align: left; cursor: pointer;
+}
+.txn-rail-turn:hover { background: var(--surface-hover); }
+.txn-rail-turn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+/* the current task keeps a rail on the leading edge as well as the tinted ground. */
+.txn-rail-turn[aria-current="true"] { background: var(--surface-2); box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber); }
+.txn-rail-turn-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono); }
+.txn-rail-turn-top b { color: var(--ink); font-weight: 700; }
+.txn-rail-turn-copy {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+  overflow: hidden;
+  font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body);
+  color: var(--ink-3);
+}
+.txn-rail-turn[aria-current="true"] .txn-rail-turn-copy { color: var(--ink-2); }

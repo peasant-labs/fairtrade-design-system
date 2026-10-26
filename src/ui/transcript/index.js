@@ -86,6 +86,7 @@ export { default as TranscriptFiltersRail } from './FiltersRail.jsx'
 export { default as TranscriptFilterSection } from './FilterSection.jsx'
 export { default as TranscriptCheckRow } from './CheckRow.jsx'
 export { default as TranscriptViewSwitch } from './ViewSwitch.jsx'
+export { default as TranscriptMinimap } from './Minimap.jsx'
 export { default as TranscriptScrubber } from './Scrubber.jsx'
 export { default as TranscriptScorecard } from './Scorecard.jsx'
 export { default as TranscriptLabelPopover } from './LabelPopover.jsx'
@@ -137,6 +138,7 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
 /** @typedef {import('./state-capabilities.js').TranscriptFilters} TranscriptFilters */
 /** @typedef {import('./state-capabilities.js').SavedLabel} SavedLabel */
 /** @typedef {import('./state-capabilities.js').Theme} Theme */
+/** @typedef {import('./state-capabilities.js').Presentation} Presentation */
 /** @typedef {import('./state-capabilities.js').TranscriptTab} TranscriptTab */
 /** @typedef {import('./state-capabilities.js').ViewMode} ViewMode */
 

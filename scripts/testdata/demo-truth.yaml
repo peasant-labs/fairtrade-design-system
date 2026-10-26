@@ -129,3 +129,20 @@ cases:
     probes:
       - {selector: '.pub-access-row', text: 'suggested, repo acme/ingest-api is linked'}
       - {selector: '.pub-picker-row', text: 'curated, waits for the owner’s approval'}
+  # the ledger presentation is opt-in: the default demo stays classic, and the query flag is the
+  # only way in, so a regression that flips either direction is caught here.
+  - name: transcript demo stays classic without the ledger flag
+    module: /src/mockups/inuse/TranscriptApp.jsx
+    component: default
+    probes:
+      - {selector: '.txn-app', count: 1}
+      - {selector: '.txn-minimap', count: 0}
+      - {selector: '.txn-rail-turns', count: 0}
+  - name: transcript demo opts into the ledger presentation
+    module: /src/mockups/inuse/TranscriptApp.jsx
+    component: default
+    query: '?transcript=ledger'
+    probes:
+      - {selector: '.txn-app.txn-ledger', count: 1}
+      - {selector: '.txn-sub', text: 'a public transcript from fairtrade, read as a ledger.'}
+      - {selector: '.txn-rail-turn', count: 2}

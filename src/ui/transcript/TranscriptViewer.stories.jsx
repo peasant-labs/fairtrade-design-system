@@ -1,4 +1,4 @@
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, fireEvent, userEvent, within } from 'storybook/test'
 import TranscriptViewer from './TranscriptViewer.jsx'
 import { frame } from '../story-frame.jsx'
 import { piPayload } from '../../mockups/inuse/pi-fixture.js'
@@ -186,6 +186,74 @@ export const Diffs = { args: { viewModel, capabilities: fullCaps, activeTab: 'di
 export const Files = { args: { viewModel, capabilities: fullCaps, activeTab: 'files' } }
 export const Annotations = { args: { viewModel, capabilities: fullCaps, activeTab: 'annotations' } }
 export const LightTheme = { args: { viewModel, capabilities: fullCaps, theme: 'light' } }
+
+/* ── ledger presentation ──────────────────────────────────────────────────────
+   The opt-in reading surface: a subtitle under the title, the pinned header's title +
+   visible-turns minimap in place of the provider/model + scrubber, and one card per
+   user-turn task in the left rail (its #turn, duration, prompt) in place of the duration
+   waterfall. Two tasks and seven turns here so both cards and both rail states are real. */
+const ledgerTurns = [
+  { ...turns[0], label: '1' },
+  { ...turns[1], label: '1a' },
+  { ...turns[2], label: '1b' },
+  { ...turns[3], label: '1c' },
+  { ...turns[4], label: '1d' },
+  { index: 5, role: 'user', label: '2', depth: 0, content: 'Run the next check and show me the result.', toolCalls: [], annotations: [], tokens: { in: 120, out: 0 }, timestamp: '2m ago' },
+  { index: 6, role: 'assistant', label: '2a', depth: 0, provider: 'claude-code', effectiveModel: 'anthropic/claude-opus-4-8', content: 'Running the workspace check.', toolCalls: [readTool], annotations: [], tokens: { in: 400, out: 300 }, timestamp: '1m ago' },
+]
+
+const ledgerViewModel = {
+  ...viewModel,
+  session: { ...viewModel.session, turnCount: ledgerTurns.length, toolCallCount: 4 },
+  turns: ledgerTurns,
+  tasks: [
+    { id: 't0', index: 1, prompt: 'Port the transcript canvas into the shared package. Read the renderer first.', turnIndices: [0, 1, 2, 3, 4], durationMs: 300000, tools: 3, outcome: 'ok' },
+    { id: 't1', index: 2, prompt: 'Run the next check and show me the result.', turnIndices: [5, 6], durationMs: 35000, tools: 1, outcome: 'ok' },
+  ],
+}
+
+const ledgerArgs = {
+  viewModel: ledgerViewModel,
+  capabilities: fullCaps,
+  presentation: 'ledger',
+  subtitle: 'a public transcript from fairtrade, read as a ledger.',
+}
+
+// The ledger chrome lives in the pinned trace header, so its stories need the viewer to fill a
+// real height and the trace to actually scroll (a story height of `auto` leaves the stream with
+// nothing to scroll, and the pinned header is a scroll state).
+const ledgerFrame = (Story) => (
+  <div style={{ height: '100vh', minHeight: 640, display: 'flex' }}>
+    <Story />
+  </div>
+)
+
+export const Ledger = {
+  decorators: [ledgerFrame],
+  args: ledgerArgs,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // the subtitle renders under the session title.
+    await expect(canvas.getByText(ledgerArgs.subtitle)).toBeVisible()
+    // the rail lists one card per task, and the classic duration waterfall is gone.
+    await expect(canvasElement.querySelectorAll('.txn-rail-turn')).toHaveLength(ledgerViewModel.tasks.length)
+    expect(canvasElement.querySelector('.txn-ol-waterfall')).toBeNull()
+    // the classic per-task identity chip would repeat the rail card and the turn head.
+    expect(canvasElement.querySelector('.txn-taskboundary')).toBeNull()
+    // the pinned header appears once the trace scrolls, with the title and one position slider.
+    const stream = canvasElement.querySelector('.txn-stream')
+    stream.scrollTop = stream.scrollHeight
+    await fireEvent.scroll(stream)
+    const slider = await canvas.findByRole('slider', { name: 'transcript timeline' })
+    expect(slider.querySelectorAll('.txn-minimap-seg')).toHaveLength(ledgerTurns.length)
+    expect(within(slider).queryAllByRole('button')).toHaveLength(0)
+    expect(slider).toHaveAttribute('aria-valuemax', String(ledgerTurns.length - 1))
+    expect(slider.getAttribute('aria-valuetext')).toMatch(new RegExp(`^turn .+ of ${ledgerTurns.length}$`))
+    expect(canvasElement.querySelector('.txn-sticky .txn-scrub')).toBeNull()
+  },
+}
+
+export const LedgerLightTheme = { name: 'ledger light theme', decorators: [ledgerFrame], args: { ...ledgerArgs, theme: 'light' } }
 
 export const ReadingPositionTraceTab = {
   args: { viewModel, capabilities: fullCaps },

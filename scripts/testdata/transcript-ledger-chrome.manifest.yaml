@@ -1,0 +1,95 @@
+# Required-NAME and required-KIND manifest for transcript-ledger-chrome.yaml: deletion
+# protection. The gate (scripts/transcript-ledger-chrome.test.mjs) asserts each family's names
+# equal these lists exactly, and that every row's `kind` matches its name here. Membership is
+# asserted, never a bare count; a name keeps its meaning.
+requiredDefaultsCase: classic with no props keeps the scrubber and no ledger chrome
+requiredCaseNames:
+  - classic keeps the scrubber when a subtitle is supplied
+  - an explicit classic presentation keeps the classic chrome
+  - an unknown presentation value falls back to classic
+  - ledger swaps the scrubber for the title and minimap
+  - ledger renders the supplied subtitle under the title
+  - ledger leaves the other tab outlines on the classic rails
+requiredCaseKinds:
+  classic with no props keeps the scrubber and no ledger chrome: classic
+  classic keeps the scrubber when a subtitle is supplied: classic
+  an explicit classic presentation keeps the classic chrome: classic
+  an unknown presentation value falls back to classic: classic
+  ledger swaps the scrubber for the title and minimap: ledger
+  ledger renders the supplied subtitle under the title: ledger
+  ledger leaves the other tab outlines on the classic rails: ledger
+requiredInteractionNames:
+  - the minimap is one slider over the visible turns
+  - each decorative tick carries its turn kind
+  - the arrow keys step the slider one turn at a time
+  - a pointer press selects the turn under the cursor
+  - the minimap follows the visible turns
+  - the rail renders one card per task with its turn, duration and prompt
+  - the card covering the active turn is current
+  - clicking a card selects its first turn
+  - the subtitle renders in both presentations
+requiredInteractionKinds:
+  the minimap is one slider over the visible turns: minimap-slider
+  each decorative tick carries its turn kind: minimap-kinds
+  the arrow keys step the slider one turn at a time: minimap-keys
+  a pointer press selects the turn under the cursor: minimap-pointer
+  the minimap follows the visible turns: minimap-visible
+  the rail renders one card per task with its turn, duration and prompt: rail-cards
+  the card covering the active turn is current: rail-current
+  clicking a card selects its first turn: rail-jump
+  the subtitle renders in both presentations: subtitle-modes
+requiredRailNames:
+  - the first task card
+  - the second task card
+
+# Production mutations the gate must kill (scripts/parts-mutations.mjs).
+requiredMutationNames:
+  - the ledger header ignores the presentation
+  - the subtitle is dropped
+  - the ledger keeps the classic task boundary
+  - the rail ignores the presentation
+  - the minimap loses its slider role
+  - the minimap does not jump
+  - the minimap ignores the visible turn set
+  - the minimap mis-kinds a system turn
+mutations:
+  - name: the ledger header ignores the presentation
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "                  {ledger ? ("
+    replace: "                  {true ? ("
+    expectedDiagnostic: "classic with no props keeps the scrubber and no ledger chrome: minimap must be absent"
+  - name: the subtitle is dropped
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "{subtitle != null && <div className=\"txn-sub\">{subtitle}</div>}"
+    replace: "{null}"
+    expectedDiagnostic: "classic keeps the scrubber when a subtitle is supplied: subtitle must be present"
+  - name: the ledger keeps the classic task boundary
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "{!ledger && t.role === 'user' && task && <TaskBoundary task={task} />}"
+    replace: "{t.role === 'user' && task && <TaskBoundary task={task} />}"
+    expectedDiagnostic: "ledger swaps the scrubber for the title and minimap: task-boundary must be absent"
+  - name: the rail ignores the presentation
+    file: src/ui/transcript/OutlineRail.jsx
+    find: "if (tab === 'trace' && presentation === 'ledger') {"
+    replace: "if (tab === 'trace') {"
+    expectedDiagnostic: "classic with no props keeps the scrubber and no ledger chrome: rail-waterfall must be present"
+  - name: the minimap loses its slider role
+    file: src/ui/transcript/Minimap.jsx
+    find: "role=\"slider\""
+    replace: "role=\"group\""
+    expectedDiagnostic: "the minimap is one slider over the visible turns: the control must carry role=slider"
+  - name: the minimap does not jump
+    file: src/ui/transcript/Minimap.jsx
+    find: "const next = turns[last > 0 ? Math.round(fraction * last) : 0]"
+    replace: "const next = turns[0]"
+    expectedDiagnostic: "a pointer press selects the turn under the cursor: expected the press at the middle of the track to select turn 2"
+  - name: the minimap ignores the visible turn set
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "turns={visibleTurns}"
+    replace: "turns={turns}"
+    expectedDiagnostic: "the minimap follows the visible turns: tick count expected 3 visible turns"
+  - name: the minimap mis-kinds a system turn
+    file: src/ui/transcript/Minimap.jsx
+    find: "  if (turn.role === 'system' || (turn.toolCalls?.length ?? 0) > 0) return 'tool'"
+    replace: "  if ((turn.toolCalls?.length ?? 0) > 0) return 'tool'"
+    expectedDiagnostic: "each decorative tick carries its turn kind: tick 4 must carry txn-minimap-tool"
