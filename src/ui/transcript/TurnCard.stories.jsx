@@ -59,3 +59,42 @@ export const ErrorTurn = { args: { turn: { ...assistantTurn, isError: true } } }
 
 // the optional, controllable saved-label chip (a view-state prop with a sane default of none).
 export const WithSavedLabel = { args: { turn: assistantTurn, savedLabel: { outcome: 'good', flag: 'clean' } } }
+
+/* ── ledger presentation ──────────────────────────────────────────────────────
+   The same cooked turn, rendered as a ledger turn: a square role well beside the role word,
+   and one grouped work panel (computed summary over the tool rows) instead of the flat rows.
+   A system turn becomes one compact row with its own disclosure. */
+
+const failingBash = {
+  id: 't2b', name: 'Bash', kind: 'execute', group: 'bash', preview: 'pnpm test',
+  exitCode: 2, isError: true, durationMs: 4100, args: { command: 'pnpm test' }, output: '1 test failed',
+}
+
+const systemTurn = {
+  index: 9, role: 'system', label: '3', depth: 0, time: '3m ago',
+  content: 'session resumed, worktree changed on disk. no transcript text was rewritten.',
+  toolCalls: [], annotations: [],
+}
+
+export const LedgerTurn = {
+  args: { turn: { ...assistantTurn, toolCalls: [readTool, failingBash] }, presentation: 'ledger' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // the role well leads the head, and the turn's tools sit in one panel with its summary.
+    await expect(canvasElement.querySelector('.txn-roleico')).not.toBeNull()
+    await expect(canvasElement.querySelectorAll('.txn-work')).toHaveLength(1)
+    await expect(canvas.getByText('1 command, 1 file')).toBeVisible()
+    await expect(canvas.getByText('2 calls, 1 failed, 4.1s')).toBeVisible()
+  },
+}
+
+export const LedgerSystemTurn = {
+  args: { turn: systemTurn, presentation: 'ledger' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // a system turn is a row, not a card, and its text stays collapsed until asked for.
+    await expect(canvasElement.querySelector('.txn-systemrow')).not.toBeNull()
+    const head = canvasElement.querySelector('.txn-systemrow-head')
+    await expect(head).toHaveAttribute('aria-expanded', 'false')
+  },
+}

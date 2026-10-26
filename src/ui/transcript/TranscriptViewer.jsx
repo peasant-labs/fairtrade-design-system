@@ -1063,6 +1063,7 @@ export default function TranscriptViewer({
                           {!ledger && t.role === 'user' && task && <TaskBoundary task={task} />}
                           <TurnCard
                             headingLevel={pageLevel + 2}
+                            presentation={presentation}
                             turn={t}
                             active={activeTurn === t.index}
                             revealRequest={searchReveal?.turn === t.index ? searchReveal.sequence : 0}

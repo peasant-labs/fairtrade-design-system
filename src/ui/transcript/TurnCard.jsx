@@ -6,6 +6,8 @@ import { providerAccent, providerDisplayName } from '../provider-policy.js'
 import Markdown from './Markdown.jsx'
 import Thinking from './Thinking.jsx'
 import ToolCall from './ToolCall.jsx'
+import TranscriptSystemRow from './SystemRow.jsx'
+import TranscriptWorkGroup from './WorkGroup.jsx'
 import UsageDisclosure from './UsageDisclosure.jsx'
 import { Term } from '../Explainer.jsx'
 import { formatRelative as formatRelativeTime, isKnownTime } from './time.js'
@@ -56,6 +58,9 @@ function turnTimeLabel(ts) {
  * @param {number} [props.revealRequest] explicit search navigation sequence
  * @param {number} [props.headingLevel=4] the turn heading's level: h4 under a viewer whose title is an h2, h3 under one
  *        whose title is the page's h1
+ * @param {'classic' | 'ledger'} [props.presentation='classic'] chrome presentation. `ledger` draws a square
+ *        role well, groups the turn's tool calls into one work panel, and renders a system turn as a compact
+ *        row; absent, the classic card renders exactly as before
  */
 export default function TurnCard({
   turn,
@@ -72,8 +77,10 @@ export default function TurnCard({
   expandAll = false,
   revealRequest = 0,
   headingLevel = 4,
+  presentation = 'classic',
 }) {
   const TurnHeading = `h${Math.min(6, Math.max(1, headingLevel))}`
+  const ledger = presentation === 'ledger'
   const [expanded, setExpanded] = useState(true)
   const bodyId = useId()
   const headingId = useId()
@@ -94,27 +101,48 @@ export default function TurnCard({
   const accentName = provider === undefined ? 'amber' : providerAccent(provider)
   const asstAccent = `var(--${accentName})`
 
+  const roleStyle = turn.role === 'assistant' && !isSub ? { color: asstAccent } : undefined
+  const roleGlyph = turn.role === 'assistant' && !isSub && provider !== undefined ? (
+    <ProviderIcon
+      harness={provider}
+      accent
+      label={providerLabel}
+    />
+  ) : isSub ? (
+    <CornerDownRight size={14} aria-hidden="true" />
+  ) : isUser ? (
+    <User size={14} aria-hidden="true" />
+  ) : (
+    <Wrench size={14} aria-hidden="true" />
+  )
+  const anchorButton = !isEarlier ? (
+    <button
+      type="button"
+      className="txn-anchor"
+      data-turn-control={turn.index}
+      aria-label={'copy link to turn ' + turn.label}
+      title="copy link to this turn"
+      onClick={() => onCopyAnchor(turn.index)}
+    >
+      {copied ? <Check size={14} aria-hidden="true" /> : <LinkIcon size={14} aria-hidden="true" />}
+    </button>
+  ) : null
+
   const head = (
-    <div className="txn-turnhead">
+    <div className={'txn-turnhead' + (ledger ? ' txn-turnhead-ledger' : '')}>
       <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</TurnHeading>
-      <span className="txn-rolelabel"
-        style={turn.role === 'assistant' && !isSub ? { color: asstAccent } : undefined}
-      >
-        {turn.role === 'assistant' && !isSub && provider !== undefined ? (
-          <ProviderIcon
-            harness={provider}
-            accent
-            label={providerLabel}
-          />
-        ) : isSub ? (
-          <CornerDownRight size={14} aria-hidden="true" />
-        ) : isUser ? (
-          <User size={14} aria-hidden="true" />
-        ) : (
-          <Wrench size={14} aria-hidden="true" />
-        )}
-        {roleLabel}
-      </span>
+      {ledger ? (
+        <>
+          {/* the square role well carries the glyph; the label keeps the role word and colour */}
+          <span className="txn-roleico" aria-hidden="true" style={roleStyle}>{roleGlyph}</span>
+          <span className="txn-rolelabel" style={roleStyle}>{roleLabel}</span>
+        </>
+      ) : (
+        <span className="txn-rolelabel" style={roleStyle}>
+          {roleGlyph}
+          {roleLabel}
+        </span>
+      )}
       {turn.effectiveModel && <span className="txn-turnmodel mono">{turn.effectiveModel}</span>}
       {isSub && <span className="txn-depth tnum">depth {turn.depth}</span>}
       <span className="txn-turnnum tnum">#{turn.label}</span>
@@ -126,16 +154,7 @@ export default function TurnCard({
           {timeLabel}
         </Term>
       )}
-      {!isEarlier && <button
-        type="button"
-        className="txn-anchor"
-        data-turn-control={turn.index}
-        aria-label={'copy link to turn ' + turn.label}
-        title="copy link to this turn"
-        onClick={() => onCopyAnchor(turn.index)}
-      >
-        {copied ? <Check size={14} aria-hidden="true" /> : <LinkIcon size={14} aria-hidden="true" />}
-      </button>}
+      {anchorButton}
       {renderActions ? (
         renderActions(turn)
       ) : onLabel && (
@@ -175,7 +194,15 @@ export default function TurnCard({
       <Markdown text={turn.displayContent ?? turn.content} />
       {turn.thinking && <Thinking block={turn.thinking} />}
       <UsageDisclosure usage={turn.usage} />
-      {turn.toolCalls &&
+      {turn.toolCalls && (ledger ? (
+        /* one grouped panel per turn: the computed summary above the same tool rows */
+        <TranscriptWorkGroup
+          tools={turn.toolCalls}
+          openTools={openTools}
+          onToggle={toggleTool}
+          expandAll={expandAll}
+        />
+      ) : (
         turn.toolCalls.map((t) => (
           <ToolCall
             key={t.id}
@@ -183,7 +210,8 @@ export default function TurnCard({
             open={expandAll || !!openTools[t.id]}
             onToggle={() => toggleTool(t.id)}
           />
-        ))}
+        ))
+      ))}
     </>
   )
 
@@ -191,11 +219,33 @@ export default function TurnCard({
     'turn txn-turn ' +
     (isUser ? 'user' : isSub ? 'sub' : turn.role === 'system' ? 'system' : 'asst') +
     (active ? ' txn-active' : '') +
-    (compact ? ' txn-compact' : '')
+    (compact ? ' txn-compact' : '') +
+    (ledger ? ' txn-turn-ledger' : '')
+
+  const wrapClass = 'txn-turnwrap' + (ledger ? ' txn-turnwrap-ledger' : '')
+
+  /* a ledger system turn is one compact row, not a card: the same article wrapper (anchor id,
+     registerRef, partition data) carries the hidden heading and the row. */
+  if (ledger && turn.role === 'system') {
+    return (
+      <article
+        className={wrapClass}
+        aria-labelledby={headingId}
+        ref={(el) => registerRef(turn.index, el)}
+        data-turn={isEarlier ? undefined : turn.index}
+        data-source-entry-ref={turn.sourceEntryRef}
+        data-partition={turn.partition ?? 'main'}
+        id={isEarlier ? `${turn.partition}-turn-${turn.index}` : 'turn-' + turn.index}
+      >
+        <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</TurnHeading>
+        <TranscriptSystemRow turn={turn} actions={anchorButton} />
+      </article>
+    )
+  }
 
   return (
     <article
-      className="txn-turnwrap"
+      className={wrapClass}
       aria-labelledby={headingId}
       ref={(el) => registerRef(turn.index, el)}
       data-turn={isEarlier ? undefined : turn.index}

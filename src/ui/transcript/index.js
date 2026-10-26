@@ -55,6 +55,8 @@ export {
 export { nextNavTurn } from './turnNav.js'
 export { formatRelative, formatDurationMins, formatDurationMs, formatDurationSeconds, formatDateLong, isKnownTime } from './time.js'
 export { summarizePrompt, composeSessionTitle, projectLabel, cleanSessionTitle, unwrapUserQuery } from './title.js'
+/* the ledger work panel's pure summary + label derivation (no JSX, no wire parsing) */
+export { workSummary, workCountLabel, workMetaLabel } from './work-summary.js'
 
 /* ── lifted transcript rendering primitives + composite (runtime) ─────────────────
    The dumb single-transcript components, lifted verbatim from the canonical mockup.
@@ -72,6 +74,8 @@ export { default as TranscriptTurnCard } from './TurnCard.jsx'
 export { default as TranscriptThinking } from './Thinking.jsx'
 export { default as TranscriptMarkdown } from './Markdown.jsx'
 export { default as TranscriptToolCall } from './ToolCall.jsx'
+export { default as TranscriptWorkGroup } from './WorkGroup.jsx'
+export { default as TranscriptSystemRow } from './SystemRow.jsx'
 export { default as TranscriptToolBody } from './ToolBody.jsx'
 export { default as TranscriptTaskBody } from './TaskBody.jsx'
 export { default as TranscriptDiffEntryCard, DiffHunks as TranscriptDiffHunks } from './DiffEntryCard.jsx'
