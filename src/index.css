@@ -3642,10 +3642,12 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 
 /* one position control for the whole strip: a single focusable slider over the visible turns,
    so the tab-stop count and the hit target stay constant as the trace grows. The ticks are
-   decorative (never targets) and form ONE filled 6px bar. A kind is encoded by colour AND by
-   shape: user and agent fill the 6px bar (teal and amber), while a tool segment is a 4px centred
-   band in ink-4 (which clears the 3:1 floor in both themes), so the kinds never rest on hue. The
-   ink-strong cursor marks the active position for any turn count, independent of a tick's width. */
+   decorative (never targets) and form ONE filled 6px bar. A kind is encoded by colour AND by a
+   three-step shape ladder: a user turn fills the 6px bar (teal), an agent turn is a 4px centred
+   band (amber), and a tool turn is a 2px centred band in ink-4 (which clears the 3:1 floor in
+   both themes). Every step is a visible bar of a different height, so the kinds never rest on
+   hue. The ink-strong cursor marks the active position for any turn count, independent of a
+   tick's width. */
 .txn-minimap {
   position: relative;
   flex: 1;
@@ -3664,9 +3666,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   gap: var(--stroke-hairline);
 }
 .txn-minimap-seg { flex: 1 1 0; min-width: 0; height: 100%; background: var(--ink-4); }
-.txn-minimap-user { background: var(--teal); }
-.txn-minimap-agent { background: var(--amber); }
-.txn-minimap-tool { height: var(--sp-1); align-self: center; background: var(--ink-4); }
+.txn-minimap-user { height: calc(var(--sp-1) + var(--stroke-emphasis)); background: var(--teal); }
+.txn-minimap-agent { height: var(--sp-1); align-self: center; background: var(--amber); }
+.txn-minimap-tool { height: var(--stroke-emphasis); align-self: center; background: var(--ink-4); }
 .txn-minimap-cursor {
   position: absolute;
   top: calc((var(--target-min) - var(--sp-3)) / 2);

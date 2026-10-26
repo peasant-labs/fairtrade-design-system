@@ -7,9 +7,10 @@ import { useRef } from 'react'
 
    It is ONE focusable slider control (role=slider), not one control per turn: the tab-stop
    count and the hit target stay constant however long the trace grows. The ticks are decorative
-   and form one filled bar: a kind is encoded by colour AND shape (user and agent fill the bar,
-   a tool turn is a shorter centred band), never by hue alone, and an ink-strong cursor marks the
-   active position at any turn count, independent of a tick's width. Arrow keys step one turn,
+   and form one filled bar: a kind is encoded by colour AND by a three-step shape ladder (a user
+   turn fills the 6px bar, an agent turn is a shorter centred band, and a tool turn is the
+   shortest centred band), never by hue alone. An ink-strong cursor marks the active position at
+   any turn count, independent of a tick's width. Arrow keys step one turn,
    Home/End jump to the ends, PageUp/PageDown step ten, and a pointer press or drag maps the
    cursor position to the nearest visible turn, so the strip keeps the continuous seek the
    classic scrubber has.

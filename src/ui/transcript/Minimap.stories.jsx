@@ -3,8 +3,9 @@ import { expect, within, fireEvent } from 'storybook/test'
 import TranscriptMinimap from './Minimap.jsx'
 
 /* TranscriptMinimap story (exported as TranscriptMinimap). One focusable slider over the visible
-   turns, in turn order: the decorative ticks form one filled 6px bar (user teal, agent amber) with
-   a tool turn drawn as a shorter 4px centred band, and an ink-strong cursor marks the active
+   turns, in turn order: the decorative ticks form one filled 6px bar on a three-step shape
+   ladder — a user turn fills the 6px bar (teal), an agent turn is a 4px centred band (amber), and
+   a tool turn is a 2px centred band (ink-4) — with an ink-strong cursor marking the active
    position however narrow the ticks get. Wrapped in a bar (the minimap is `flex:1` inside the
    pinned trace header). The play function runs in a real browser, so it reads the computed
    geometry and the token paint, which jsdom cannot. */
@@ -58,15 +59,25 @@ async function play({ canvasElement }) {
   for (const kind of ['user', 'agent', 'tool']) {
     expect(slider.querySelectorAll('.txn-minimap-' + kind).length).toBeGreaterThan(0)
   }
-  // the bar is one filled 6px track; a tool turn is the shorter centred band. This is the layer
-  // where geometry exists, so the shape cue is asserted here rather than in jsdom.
+  // the bar is one filled 6px track, and a kind is read by a three-step shape ladder as well as by
+  // hue: a user turn fills the bar, an agent turn is a 4px centred band, a tool turn is the
+  // shortest 2px centred band. This is the layer where geometry exists, so the shape cue is
+  // asserted here rather than in jsdom.
   const track = slider.querySelector('.txn-minimap-track')
   const trackHeight = parseFloat(getComputedStyle(track).height)
   expect(trackHeight).toBe(6)
   const segment = (kind) => slider.querySelector('.txn-minimap-' + kind)
-  expect(parseFloat(getComputedStyle(segment('user')).height)).toBe(trackHeight)
-  expect(parseFloat(getComputedStyle(segment('agent')).height)).toBe(trackHeight)
-  expect(parseFloat(getComputedStyle(segment('tool')).height)).toBe(4)
+  const height = (kind) => parseFloat(getComputedStyle(segment(kind)).height)
+  expect(height('user')).toBe(trackHeight)
+  expect(height('agent')).toBe(4)
+  expect(height('tool')).toBe(2)
+  // the ladder is strictly descending, so user and agent are never told apart by hue alone.
+  expect(height('user')).toBeGreaterThan(height('agent'))
+  expect(height('agent')).toBeGreaterThan(height('tool'))
+  // every step of the ladder is a visible bar, never a collapsed or clipped tick.
+  for (const kind of ['user', 'agent', 'tool']) {
+    expect(height(kind), `the ${kind} turn must render a visible bar`).toBeGreaterThan(0)
+  }
   // the position cursor is a painted ink-strong line that stands taller than the bar, so it reads
   // against both the teal and the amber fills in either theme. The probe sits in the same themed
   // subtree as the slider, so it resolves the same token value.
