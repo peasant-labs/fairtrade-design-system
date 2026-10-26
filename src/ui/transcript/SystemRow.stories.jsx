@@ -36,16 +36,21 @@ export const Default = {
   args: { turn, actions: <Anchor /> },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    // the row names itself, keeps user content as recorded, and collapses the body by default.
-    await expect(canvas.getByText('system')).toBeVisible()
-    await expect(canvas.getByText('session resumed, worktree changed on disk no transcript text was rewritten.')).toBeVisible()
-    await expect(canvas.getByText('8m ago')).toBeVisible()
     const head = canvasElement.querySelector('.txn-systemrow-head')
+    const body = canvasElement.querySelector('.txn-systemrow-body')
+    // the row names itself and shows the recorded text on one line, collapsing the body by default.
+    await expect(canvas.getByText('system')).toBeVisible()
+    await expect(canvasElement.querySelector('.txn-systemrow-preview')).toHaveTextContent(
+      'session resumed, worktree changed on disk no transcript text was rewritten.',
+    )
+    await expect(canvasElement.querySelector('.txn-systemrow-time')).toHaveTextContent('8m ago')
     await expect(head).toHaveAttribute('aria-expanded', 'false')
+    await expect(body).toHaveAttribute('hidden')
     // the turn anchor sits beside the disclosure, not inside it.
     await expect(canvasElement.querySelector('.txn-anchor')).not.toBeNull()
     await userEvent.click(head)
     await expect(head).toHaveAttribute('aria-expanded', 'true')
-    await expect(canvas.getByText('no transcript text was rewritten.')).toBeVisible()
+    await expect(body).not.toHaveAttribute('hidden')
+    await expect(body).toHaveTextContent('no transcript text was rewritten.')
   },
 }

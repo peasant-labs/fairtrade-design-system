@@ -52,7 +52,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const vm = adaptTranscript(fixture.payload)
   const toolsTurn = vm.turns.find((turn) => turn.index === 1)
   const tools = toolsTurn?.toolCalls ?? []
-  if (tools.length !== 4) throw new Error(`${FIXTURE}: the payload must cook turn 1 with 4 tool calls, received ${tools.length}`)
+  if (tools.length !== 5) throw new Error(`${FIXTURE}: the payload must cook turn 1 with 5 tool calls, received ${tools.length}`)
   const summary = workSummary(tools)
   const expectedCount = workCountLabel(summary)
   const expectedMeta = workMetaLabel(summary)

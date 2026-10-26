@@ -7,7 +7,9 @@
 # payload + cases cook the REAL adapter and mount the REAL TranscriptViewer: classic keeps the
 # flat tool rows, while the ledger presentation puts one grouped work panel on a turn with tools,
 # renders a system turn as a compact row with a working disclosure, keeps a turn's thinking
-# disclosure, and leaves a turn without tools with no panel at all.
+# disclosure, and leaves a turn without tools with no panel at all. The payload's turn carries a
+# Grep whose `filePath` is a directory scope, so the mounted summary proves a search never
+# inflates the file count.
 summaryCases:
   - name: mixed work counts commands files edits failures and duration
     tools:
@@ -37,6 +39,19 @@ summaryCases:
       - {id: s2, name: Edit, group: edits, filePath: src/a.ts}
     expected: {calls: 2, commands: 0, files: 1, edits: 1, failed: 0, durationMs: 0}
     countLabel: 1 file, 1 edit
+    metaLabel: 2 calls
+  - name: a search scope contributes no files
+    tools:
+      - {id: s1, name: Grep, group: search, filePath: web/src}
+    expected: {calls: 1, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
+    countLabel: 1 call
+    metaLabel: 1 call
+  - name: a read and a search of the same path count one file
+    tools:
+      - {id: s1, name: Read, group: read, filePath: src/a.ts}
+      - {id: s2, name: Grep, group: search, filePath: src/a.ts}
+    expected: {calls: 2, commands: 0, files: 1, edits: 0, failed: 0, durationMs: 0}
+    countLabel: 1 file
     metaLabel: 2 calls
   - name: a non-zero bash exit counts as a failure
     tools:
@@ -69,7 +84,7 @@ payload:
   tokensIn: 800
   tokensOut: 400
   turnCount: 6
-  toolCallCount: 4
+  toolCallCount: 5
   outcome: resolved
   inputSubmissionCount: 1
   turns:
@@ -99,6 +114,11 @@ payload:
           arguments: '{"file_path":"scripts/testdata/fixture.yaml"}'
           result: '"ok"'
           durationMs: 200
+        - id: tc-search
+          name: Grep
+          filePath: web/src
+          arguments: '{"pattern":"rendererFor","path":"web/src"}'
+          result: '"2 hits"'
         - id: tc-edit
           name: Edit
           filePath: src/lib/tasks.ts

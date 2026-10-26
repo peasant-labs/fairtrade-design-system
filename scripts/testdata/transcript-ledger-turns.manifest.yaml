@@ -6,6 +6,8 @@ requiredSummaryNames:
   - singular counts read as one
   - a turn without counting tools falls back to its call count
   - one file touched twice counts once
+  - a search scope contributes no files
+  - a read and a search of the same path count one file
   - a non-zero bash exit counts as a failure
   - blank paths and unknown durations are left out
   - an empty tool list summarizes to nothing

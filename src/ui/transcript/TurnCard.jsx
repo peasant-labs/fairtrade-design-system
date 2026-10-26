@@ -224,24 +224,10 @@ export default function TurnCard({
 
   const wrapClass = 'txn-turnwrap' + (ledger ? ' txn-turnwrap-ledger' : '')
 
-  /* a ledger system turn is one compact row, not a card: the same article wrapper (anchor id,
-     registerRef, partition data) carries the hidden heading and the row. */
-  if (ledger && turn.role === 'system') {
-    return (
-      <article
-        className={wrapClass}
-        aria-labelledby={headingId}
-        ref={(el) => registerRef(turn.index, el)}
-        data-turn={isEarlier ? undefined : turn.index}
-        data-source-entry-ref={turn.sourceEntryRef}
-        data-partition={turn.partition ?? 'main'}
-        id={isEarlier ? `${turn.partition}-turn-${turn.index}` : 'turn-' + turn.index}
-      >
-        <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</TurnHeading>
-        <TranscriptSystemRow turn={turn} actions={anchorButton} />
-      </article>
-    )
-  }
+  /* a ledger system turn is one compact row, not a card: it renders inside the same article the
+     other turns use (one anchor id, one registerRef, the partition data), with the hidden heading
+     and the row as its children. */
+  const systemRow = ledger && turn.role === 'system'
 
   return (
     <article
@@ -253,32 +239,41 @@ export default function TurnCard({
       data-partition={turn.partition ?? 'main'}
       id={isEarlier ? `${turn.partition}-turn-${turn.index}` : 'turn-' + turn.index}
     >
-      {turn.modelChangedFrom && turn.effectiveModel && (
-        <div className="txn-modelchange mono">
-          {/* the model names without their provider prefix; the arrow is drawn, the sentence reads "to" */}
-          model changed: {modelName(turn.modelChangedFrom)} <span aria-hidden="true">→</span><span className="txn-sr"> to</span> {modelName(turn.effectiveModel)}
-        </div>
-      )}
-      {isSub ? (
-        <div className="subtask txn-subtask">
-          <div className="subtask-head">
-            <CornerDownRight size={14} aria-hidden="true" /> <span className="who">{turn.agentName}</span> subagent
-          </div>
-          <div className={cardClass}>
-            {head}
-            <div id={bodyId} hidden={!expanded}>{body}</div>
-          </div>
-          <div className="subtask-foot">
-            <span className="elbow">
-              <CornerDownRight size={14} aria-hidden="true" /> returned to <BrandMark name="claude" /> claude
-            </span>
-          </div>
-        </div>
+      {systemRow ? (
+        <>
+          <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</TurnHeading>
+          <TranscriptSystemRow turn={turn} actions={anchorButton} />
+        </>
       ) : (
-        <div className={cardClass}>
-          {head}
-          <div id={bodyId} hidden={!expanded}>{body}</div>
-        </div>
+        <>
+          {turn.modelChangedFrom && turn.effectiveModel && (
+            <div className="txn-modelchange mono">
+              {/* the model names without their provider prefix; the arrow is drawn, the sentence reads "to" */}
+              model changed: {modelName(turn.modelChangedFrom)} <span aria-hidden="true">→</span><span className="txn-sr"> to</span> {modelName(turn.effectiveModel)}
+            </div>
+          )}
+          {isSub ? (
+            <div className="subtask txn-subtask">
+              <div className="subtask-head">
+                <CornerDownRight size={14} aria-hidden="true" /> <span className="who">{turn.agentName}</span> subagent
+              </div>
+              <div className={cardClass}>
+                {head}
+                <div id={bodyId} hidden={!expanded}>{body}</div>
+              </div>
+              <div className="subtask-foot">
+                <span className="elbow">
+                  <CornerDownRight size={14} aria-hidden="true" /> returned to <BrandMark name="claude" /> claude
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className={cardClass}>
+              {head}
+              <div id={bodyId} hidden={!expanded}>{body}</div>
+            </div>
+          )}
+        </>
       )}
     </article>
   )

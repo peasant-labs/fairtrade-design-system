@@ -5,8 +5,11 @@
    asserted directly and the panel never recomputes them per row.
 
    The rule the labels follow:
-     • a command is a `bash` tool, an edit is an `edits` tool, a file is one distinct non-empty
-       `filePath` (a file read and then edited is still one file);
+     • a command is a `bash` tool, an edit is an `edits` tool;
+     • a file is one distinct non-empty `filePath` on a tool that actually touches a file
+       (`read` and `edits`; a write cooks to `edits`). The adapter also fills `filePath` from a
+       search tool's `path` scope, which is a directory or a glob rather than a file the turn
+       touched, so `search`, `fetch`, `tasks`, `bash` and `other` contribute no file;
      • a failure is a tool flagged `isError`, or a `bash` call whose recorded exit code is
        non-zero (the two ways a failed run reaches the cooked model);
      • the duration is the sum of the recorded, finite tool durations;
@@ -38,6 +41,13 @@ import { formatDurationMs } from './time.js'
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`
 
 /**
+ * The tool groups whose `filePath` names a file the turn touched. A search/fetch `filePath` is a
+ * scope (a directory or glob), and a bash/task call has no file, so neither counts.
+ * @type {ReadonlyArray<import('./view-model.js').ToolGroup>}
+ */
+const FILE_GROUPS = ['read', 'edits']
+
+/**
  * Summarize one turn's tool calls.
  * @param {ToolCallVM[]} [tools]
  * @returns {WorkSummary}
@@ -52,7 +62,7 @@ export function workSummary(tools = []) {
     summary.calls += 1
     if (tool.group === 'bash') summary.commands += 1
     if (tool.group === 'edits') summary.edits += 1
-    if (typeof tool.filePath === 'string' && tool.filePath !== '') paths.add(tool.filePath)
+    if (FILE_GROUPS.includes(tool.group) && typeof tool.filePath === 'string' && tool.filePath !== '') paths.add(tool.filePath)
     if (tool.isError || (tool.group === 'bash' && tool.exitCode != null && tool.exitCode !== 0)) summary.failed += 1
     if (typeof tool.durationMs === 'number' && Number.isFinite(tool.durationMs)) summary.durationMs += tool.durationMs
   }

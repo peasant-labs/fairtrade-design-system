@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronRight, Wrench } from 'lucide-react'
 import { useId, useState } from 'react'
 import Markdown from './Markdown.jsx'
-import { formatRelative } from './time.js'
+import { formatRelative, isKnownTime } from './time.js'
 
 /* TranscriptSystemRow — a system turn as one compact row in the ledger presentation. The row
    reads its own cooked `TurnVM` (label, one-line preview, time) and reveals the full recorded
@@ -23,9 +23,13 @@ export default function TranscriptSystemRow({ turn, actions }) {
   const [open, setOpen] = useState(false)
   const bodyId = useId()
   if (!turn) return null
-  const preview = oneLine(turn.content)
-  /* a curated `time` wins; a recorded timestamp reads relative; an unknown one reads as nothing */
-  const time = turn.time || formatRelative(turn.timestamp ?? '')
+  /* the turn's rendered text is the same body every other card shows: `displayContent` wins when
+     the adapter supplied a display form (e.g. a stripped prompt wrapper), else the recorded text */
+  const content = turn.displayContent ?? turn.content
+  const preview = oneLine(content)
+  /* a curated `time` wins; a known recorded timestamp reads relative; an unknown one (zero, epoch,
+     Go zero-time) renders nothing rather than a huge relative date */
+  const time = turn.time || (isKnownTime(turn.timestamp) ? formatRelative(turn.timestamp) : '')
   return (
     <div className="txn-systemrow">
       {/* the disclosure is the button; the turn anchor sits beside it so neither control nests
@@ -47,7 +51,7 @@ export default function TranscriptSystemRow({ turn, actions }) {
         {actions}
       </div>
       <div id={bodyId} hidden={!open} className="txn-systemrow-body">
-        <Markdown text={turn.content} />
+        <Markdown text={content} />
       </div>
     </div>
   )
