@@ -3642,10 +3642,10 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 
 /* one position control for the whole strip: a single focusable slider over the visible turns,
    so the tab-stop count and the hit target stay constant as the trace grows. The ticks are
-   decorative (never targets) and a kind is encoded by bar height AND colour (user tallest in
-   the teal role colour, agent middle in ink-2, tool shortest in ink-4, which clears the 3:1
-   floor in both themes). The amber cursor marks the active position for any turn count,
-   independent of a tick's width. */
+   decorative (never targets) and form ONE filled 6px bar. A kind is encoded by colour AND by
+   shape: user and agent fill the 6px bar (teal and amber), while a tool segment is a 4px centred
+   band in ink-4 (which clears the 3:1 floor in both themes), so the kinds never rest on hue. The
+   ink-strong cursor marks the active position for any turn count, independent of a tick's width. */
 .txn-minimap {
   position: relative;
   flex: 1;
@@ -3654,17 +3654,25 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   cursor: pointer;
 }
 .txn-minimap:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
-.txn-minimap-track { position: absolute; inset: 0; display: flex; align-items: center; gap: var(--sp-1); }
-.txn-minimap-seg { flex: 1 1 0; min-width: 0; height: var(--stroke-emphasis); background: var(--ink-4); }
-.txn-minimap-user { height: calc(var(--sp-1) + var(--stroke-emphasis)); background: var(--teal); }
-.txn-minimap-agent { height: var(--sp-1); background: var(--ink-2); }
-.txn-minimap-tool { height: var(--stroke-emphasis); background: var(--ink-4); }
+.txn-minimap-track {
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: calc(var(--sp-1) + var(--stroke-emphasis));
+  transform: translateY(-50%);
+  display: flex;
+  gap: var(--stroke-hairline);
+}
+.txn-minimap-seg { flex: 1 1 0; min-width: 0; height: 100%; background: var(--ink-4); }
+.txn-minimap-user { background: var(--teal); }
+.txn-minimap-agent { background: var(--amber); }
+.txn-minimap-tool { height: var(--sp-1); align-self: center; background: var(--ink-4); }
 .txn-minimap-cursor {
   position: absolute;
-  top: calc((var(--target-min) - var(--sp-4)) / 2);
+  top: calc((var(--target-min) - var(--sp-3)) / 2);
   width: var(--stroke-emphasis);
-  height: var(--sp-4);
-  background: var(--amber);
+  height: var(--sp-3);
+  background: var(--ink-strong);
   transform: translateX(-50%);
   pointer-events: none;
 }

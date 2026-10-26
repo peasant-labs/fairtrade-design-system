@@ -3,11 +3,11 @@ import { expect, within, fireEvent } from 'storybook/test'
 import TranscriptMinimap from './Minimap.jsx'
 
 /* TranscriptMinimap story (exported as TranscriptMinimap). One focusable slider over the visible
-   turns, in turn order: the decorative ticks carry the kind (user the teal role colour and the
-   tallest bar, agent the middle bar in ink-2, tool the shortest bar in ink-4) and an amber cursor
-   marks the active position however narrow the ticks get. Wrapped in a bar (the minimap is
-   `flex:1` inside the pinned trace header). The play function runs in a real browser, so it also
-   reads the computed heights and the cursor's paint, which jsdom cannot. */
+   turns, in turn order: the decorative ticks form one filled 6px bar (user teal, agent amber) with
+   a tool turn drawn as a shorter 4px centred band, and an ink-strong cursor marks the active
+   position however narrow the ticks get. Wrapped in a bar (the minimap is `flex:1` inside the
+   pinned trace header). The play function runs in a real browser, so it reads the computed
+   geometry and the token paint, which jsdom cannot. */
 
 const turns = [
   { index: 0, role: 'user', label: '1', toolCalls: [] },
@@ -42,43 +42,57 @@ const meta = {
 }
 export default meta
 
-export const Default = {
-  render: () => <Controlled />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const slider = canvas.getByRole('slider', { name: 'transcript timeline' })
-    // the set-position state the classic scrubber carries: one control, the active position, the total.
-    expect(slider).toHaveAttribute('aria-valuemin', '0')
-    expect(slider).toHaveAttribute('aria-valuemax', String(turns.length - 1))
-    expect(slider).toHaveAttribute('aria-valuenow', '2')
-    expect(slider).toHaveAttribute('aria-valuetext', `turn ${turns[2].label} of ${turns.length}`)
-    // the ticks are decorative: no per-turn focusable control inside the slider.
-    expect(within(slider).queryAllByRole('button')).toHaveLength(0)
-    expect(slider.querySelectorAll('.txn-minimap-seg')).toHaveLength(turns.length)
-    for (const kind of ['user', 'agent', 'tool']) {
-      expect(slider.querySelectorAll('.txn-minimap-' + kind).length).toBeGreaterThan(0)
-    }
-    // kind is encoded by bar height as well as colour, and this is the layer where heights exist.
-    const height = (kind) => parseFloat(getComputedStyle(slider.querySelector('.txn-minimap-' + kind)).height)
-    expect(height('user')).toBeGreaterThan(height('agent'))
-    expect(height('agent')).toBeGreaterThan(height('tool'))
-    // the position cursor is painted in both themes, not a transparent box.
-    const cursor = getComputedStyle(slider.querySelector('.txn-minimap-cursor'))
-    expect(cursor.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
-    expect(cursor.backgroundColor).not.toBe('transparent')
-    // keyboard seek: one turn per arrow, Home/End to the ends.
-    await fireEvent.keyDown(slider, { key: 'ArrowRight' })
-    expect(slider).toHaveAttribute('aria-valuenow', '3')
-    expect(slider).toHaveAttribute('aria-valuetext', `turn ${turns[3].label} of ${turns.length}`)
-    await fireEvent.keyDown(slider, { key: 'End' })
-    expect(slider).toHaveAttribute('aria-valuenow', String(turns.length - 1))
-    await fireEvent.keyDown(slider, { key: 'Home' })
-    expect(slider).toHaveAttribute('aria-valuenow', '0')
-    // pointer seek: the middle of the track selects the middle turn.
-    const rect = slider.getBoundingClientRect()
-    await fireEvent.pointerDown(slider, { clientX: rect.left + rect.width / 2 })
-    expect(slider).toHaveAttribute('aria-valuenow', String(Math.round((turns.length - 1) / 2)))
-  },
+/* the play function is shared by both theme stories, so the geometry and the token paint are
+   asserted in both. */
+async function play({ canvasElement }) {
+  const canvas = within(canvasElement)
+  const slider = canvas.getByRole('slider', { name: 'transcript timeline' })
+  // the set-position state the classic scrubber carries: one control, the active position, the total.
+  expect(slider).toHaveAttribute('aria-valuemin', '0')
+  expect(slider).toHaveAttribute('aria-valuemax', String(turns.length - 1))
+  expect(slider).toHaveAttribute('aria-valuenow', '2')
+  expect(slider).toHaveAttribute('aria-valuetext', `turn ${turns[2].label} of ${turns.length}`)
+  // the ticks are decorative: no per-turn focusable control inside the slider.
+  expect(within(slider).queryAllByRole('button')).toHaveLength(0)
+  expect(slider.querySelectorAll('.txn-minimap-seg')).toHaveLength(turns.length)
+  for (const kind of ['user', 'agent', 'tool']) {
+    expect(slider.querySelectorAll('.txn-minimap-' + kind).length).toBeGreaterThan(0)
+  }
+  // the bar is one filled 6px track; a tool turn is the shorter centred band. This is the layer
+  // where geometry exists, so the shape cue is asserted here rather than in jsdom.
+  const track = slider.querySelector('.txn-minimap-track')
+  const trackHeight = parseFloat(getComputedStyle(track).height)
+  expect(trackHeight).toBe(6)
+  const segment = (kind) => slider.querySelector('.txn-minimap-' + kind)
+  expect(parseFloat(getComputedStyle(segment('user')).height)).toBe(trackHeight)
+  expect(parseFloat(getComputedStyle(segment('agent')).height)).toBe(trackHeight)
+  expect(parseFloat(getComputedStyle(segment('tool')).height)).toBe(4)
+  // the position cursor is a painted ink-strong line that stands taller than the bar, so it reads
+  // against both the teal and the amber fills in either theme. The probe sits in the same themed
+  // subtree as the slider, so it resolves the same token value.
+  const cursor = getComputedStyle(slider.querySelector('.txn-minimap-cursor'))
+  const probe = canvasElement.ownerDocument.createElement('span')
+  probe.style.background = 'var(--ink-strong)'
+  slider.parentElement.appendChild(probe)
+  const inkStrong = getComputedStyle(probe).backgroundColor
+  probe.remove()
+  expect(cursor.backgroundColor).toBe(inkStrong)
+  expect(cursor.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+  expect(parseFloat(cursor.height)).toBeGreaterThan(trackHeight)
+  // keyboard seek: one turn per arrow, Home/End to the ends.
+  await fireEvent.keyDown(slider, { key: 'ArrowRight' })
+  expect(slider).toHaveAttribute('aria-valuenow', '3')
+  expect(slider).toHaveAttribute('aria-valuetext', `turn ${turns[3].label} of ${turns.length}`)
+  await fireEvent.keyDown(slider, { key: 'End' })
+  expect(slider).toHaveAttribute('aria-valuenow', String(turns.length - 1))
+  await fireEvent.keyDown(slider, { key: 'Home' })
+  expect(slider).toHaveAttribute('aria-valuenow', '0')
+  // pointer seek: the middle of the track selects the middle turn.
+  const rect = slider.getBoundingClientRect()
+  await fireEvent.pointerDown(slider, { clientX: rect.left + rect.width / 2 })
+  expect(slider).toHaveAttribute('aria-valuenow', String(Math.round((turns.length - 1) / 2)))
 }
 
-export const LightTheme = { render: () => <Controlled theme="light" /> }
+export const Default = { render: () => <Controlled />, play }
+
+export const LightTheme = { render: () => <Controlled theme="light" />, play }

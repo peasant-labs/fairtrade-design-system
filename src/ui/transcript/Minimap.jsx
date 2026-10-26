@@ -7,11 +7,12 @@ import { useRef } from 'react'
 
    It is ONE focusable slider control (role=slider), not one control per turn: the tab-stop
    count and the hit target stay constant however long the trace grows. The ticks are decorative
-   (kind by bar height and colour, never by hue alone) and an amber cursor marks the active
-   position at any turn count, independent of a tick's width. Arrow keys step one turn, Home/End
-   jump to the ends, PageUp/PageDown step ten, and a pointer press or drag maps the cursor
-   position to the nearest visible turn, so the strip keeps the continuous seek the classic
-   scrubber has.
+   and form one filled bar: a kind is encoded by colour AND shape (user and agent fill the bar,
+   a tool turn is a shorter centred band), never by hue alone, and an ink-strong cursor marks the
+   active position at any turn count, independent of a tick's width. Arrow keys step one turn,
+   Home/End jump to the ends, PageUp/PageDown step ten, and a pointer press or drag maps the
+   cursor position to the nearest visible turn, so the strip keeps the continuous seek the
+   classic scrubber has.
    Exported as `TranscriptMinimap`. */
 
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
