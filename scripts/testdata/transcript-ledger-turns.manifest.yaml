@@ -26,6 +26,7 @@ requiredCaseNames:
   - ledger renders a system turn as a row
   - the system row disclosure is controllable by the host
   - a search hit opens the system row
+  - the system row preview reads plain text
   - ledger keeps a turn's thinking disclosure
   - a turn without tools has no work group
   - the ledger head carries only the role line and its controls
@@ -39,6 +40,7 @@ requiredCaseKinds:
   ledger renders a system turn as a row: system
   the system row disclosure is controllable by the host: system-controlled
   a search hit opens the system row: system-reveal
+  the system row preview reads plain text: system-preview
   ledger keeps a turn's thinking disclosure: thinking
   a turn without tools has no work group: no-tools
   the ledger head carries only the role line and its controls: ledger-head
@@ -54,6 +56,7 @@ requiredMutationNames:
   - a turn without tools still renders a panel
   - the system row ignores its disclosure
   - the system row ignores the search reveal
+  - the system row prints its Markdown source
   - the ledger draws no role rule
   - the ledger head regains a collapse control
 mutations:
@@ -87,6 +90,11 @@ mutations:
     find: "    if (revealRequest) setOpen(true)"
     replace: "    if (false) setOpen(true)"
     expectedDiagnostic: "a search hit opens the system row: the revealed system row must open"
+  - name: the system row prints its Markdown source
+    file: src/ui/transcript/SystemRow.jsx
+    find: "  const preview = plainTextPreview(content)"
+    replace: "  const preview = String(content ?? '').replace(/\\s+/g, ' ').trim()"
+    expectedDiagnostic: "the system row preview reads plain text: the preview must read the rendered words"
   - name: the ledger draws no role rule
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "{ledger && prev && prev.role !== t.role && <hr className=\"txn-turn-rule\" aria-hidden=\"true\" />}"

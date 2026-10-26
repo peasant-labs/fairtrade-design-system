@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronRight, Wrench } from 'lucide-react'
 import { useId, useLayoutEffect, useState } from 'react'
 import Markdown from './Markdown.jsx'
+import { plainTextPreview } from './plain-text.js'
 import { formatRelative, isKnownTime } from './time.js'
 
 /* TranscriptSystemRow — a system turn as one compact row in the ledger presentation. The row
@@ -16,9 +17,6 @@ import { formatRelative, isKnownTime } from './time.js'
    search hit inside a system turn is visible when the viewer lands on it. */
 
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
-
-/** the recorded text as one line: every run of whitespace collapses to a single space. */
-const oneLine = (content) => String(content ?? '').replace(/\s+/g, ' ').trim()
 
 /**
  * @param {object} props
@@ -44,9 +42,11 @@ export default function TranscriptSystemRow({ turn, actions, open: openProp, onT
   const bodyId = useId()
   if (!turn) return null
   /* the turn's rendered text is the same body every other card shows: `displayContent` wins when
-     the adapter supplied a display form (e.g. a stripped prompt wrapper), else the recorded text */
+     the adapter supplied a display form (e.g. a stripped prompt wrapper), else the recorded text.
+     The preview unwraps the Markdown so the row reads the words the body renders, never its
+     source punctuation. */
   const content = turn.displayContent ?? turn.content
-  const preview = oneLine(content)
+  const preview = plainTextPreview(content)
   /* a curated `time` wins; a known recorded timestamp reads relative; an unknown one (zero, epoch,
      Go zero-time) renders nothing rather than a huge relative date */
   const time = turn.time || (isKnownTime(turn.timestamp) ? formatRelative(turn.timestamp) : '')

@@ -35,7 +35,7 @@ for (const row of fixture.summaryCases) {
   assertFields(row, ['name', 'tools', 'expected', 'countLabel', 'metaLabel'], `${FIXTURE} ${row.name}`)
   assertExactNames(Object.keys(row.expected), SUMMARY_FIELDS, `${FIXTURE} ${row.name} expected`)
 }
-for (const row of fixture.cases) assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`, ['headingLevel'])
+for (const row of fixture.cases) assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`, ['headingLevel', 'turn', 'preview', 'revealedTurn', 'closedTurn'])
 assertExactNames(Object.keys(fixture.mountedSummary), ['countLabel', 'metaLabel'], `${FIXTURE} mountedSummary`)
 if (typeof fixture.revealQuery !== 'string' || fixture.revealQuery.length === 0) throw new Error(`${FIXTURE}: revealQuery must be a non-empty string`)
 
@@ -146,6 +146,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       })
       const turnAction = mounted.container.querySelector('#turn-1 .txn-turnhead-ledger .host-action')
       report.check(text(turnAction) === HOST_ACTION, `${row.name}: a host action must survive on a ledger turn head`)
+      const userAction = mounted.container.querySelector('#turn-0 .txn-turnhead-ledger .host-action')
+      report.check(text(userAction) === HOST_ACTION, `${row.name}: a host action must survive on a ledger user turn head`)
       const systemAction = mounted.container.querySelector('#turn-2 .txn-systemrow-head-row .host-action')
       report.check(text(systemAction) === HOST_ACTION, `${row.name}: a host action must survive on a ledger system row`)
       report.check(!!mounted.container.querySelector('#turn-2 .txn-systemrow-head-row .txn-anchor'), `${row.name}: the system row must keep the copy anchor beside the host action`)
@@ -171,14 +173,34 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!trigger, `${row.name}: the viewer must offer the search trigger the reveal path runs through`)
       if (trigger) await mounted.act(() => click(window, trigger))
       await mounted.settle()
-      const head = mounted.container.querySelector('#turn-2 .txn-systemrow-head')
+      const head = mounted.container.querySelector(`#turn-${row.revealedTurn} .txn-systemrow-head`)
       report.check(head?.getAttribute('aria-expanded') === 'true', `${row.name}: the revealed system row must open`)
-      report.check(mounted.container.querySelector('#turn-2 .txn-systemrow-body')?.hasAttribute('hidden') === false, `${row.name}: the revealed system row must show its recorded text`)
+      report.check(mounted.container.querySelector(`#turn-${row.revealedTurn} .txn-systemrow-body`)?.hasAttribute('hidden') === false, `${row.name}: the revealed system row must show its recorded text`)
+      /* the reveal lands on the matched turn only: another system turn stays collapsed */
+      const other = mounted.container.querySelector(`#turn-${row.closedTurn} .txn-systemrow-head`)
+      report.check(other?.getAttribute('aria-expanded') === 'false', `${row.name}: the unrevealed system row must stay collapsed`)
+      await mounted.unmount()
+    } else if (row.kind === 'system-preview') {
+      const mounted = await mountViewer('ledger')
+      const rowEl = mounted.container.querySelector(`#turn-${row.turn} .txn-systemrow`)
+      const preview = text(rowEl?.querySelector('.txn-systemrow-preview'))
+      report.check(preview === row.preview, `${row.name}: the preview must read the rendered words ${JSON.stringify(row.preview)}, received ${JSON.stringify(preview)}`)
+      for (const marker of ['](', '**', '`', '~~', '<b>']) {
+        report.check(!preview.includes(marker), `${row.name}: the preview must not print the Markdown source ${JSON.stringify(marker)}`)
+      }
+      /* the body is unchanged: a system turn that is Markdown still renders as Markdown */
+      const link = mounted.container.querySelector(`#turn-${row.turn} .txn-systemrow-body a.txn-md-link`)
+      report.check(text(link) === 'fixture guide', `${row.name}: the body must keep the rendered link text, received ${JSON.stringify(text(link))}`)
+      report.check(link?.getAttribute('href') === 'https://example.test/guide', `${row.name}: the body must keep the rendered link destination`)
+      report.check(!!mounted.container.querySelector(`#turn-${row.turn} .txn-systemrow-body code.txn-inlinecode`), `${row.name}: the body must keep the rendered inline code`)
       await mounted.unmount()
     } else if (row.kind === 'turn-rules') {
+      /* the fixture's own role sequence is the expected count: one rule per adjacent role change */
+      const expectedRules = vm.turns.filter((turn, i) => i > 0 && vm.turns[i - 1].role !== turn.role).length
+      if (expectedRules < 1) throw new Error(`${FIXTURE}: the payload must cook at least one role change`)
       const ledgerMount = await mountViewer('ledger')
       const rules = ledgerMount.container.querySelectorAll('.txn-turn-rule')
-      report.check(rules.length === 3, `${row.name}: the ledger must draw one rule at each role change, received ${rules.length}`)
+      report.check(rules.length === expectedRules, `${row.name}: the ledger must draw one rule at each role change (${expectedRules}), received ${rules.length}`)
       const firstWrap = ledgerMount.container.querySelector('#turn-0.txn-turnwrap-ledger')?.parentElement
       report.check(!!firstWrap && firstWrap.querySelector('.txn-turn-rule') === null, `${row.name}: the ledger must draw no rule before the first turn`)
       for (const rule of rules) report.check(rule.tagName === 'HR' && rule.getAttribute('aria-hidden') === 'true', `${row.name}: each rule must be a decorative hr`)

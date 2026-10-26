@@ -132,7 +132,7 @@ payload:
   totalTokens: 1200
   tokensIn: 800
   tokensOut: 400
-  turnCount: 6
+  turnCount: 7
   toolCallCount: 5
   outcome: resolved
   inputSubmissionCount: 1
@@ -181,6 +181,13 @@ payload:
     - {index: 3, role: assistant, content: 'the second pass looks fine.', timestamp: '2026-09-20T10:03:00Z', depth: 0}
     - {index: 4, role: assistant, entryType: thinking, content: 'I should check the fixture once more before the run.', timestamp: '2026-09-20T10:04:00Z', depth: 0}
     - {index: 5, role: assistant, content: 'no tools this time.', timestamp: '2026-09-20T10:05:00Z', depth: 0}
+    # a system turn that is real Markdown: its one-line preview must read the rendered words, not
+    # the source punctuation, while its body still renders as Markdown.
+    - index: 6
+      role: system
+      content: 'see the [fixture guide](https://example.test/guide) for **emphasis**, *stress*, `inline code`, and ~~struck~~ text, plus <b>raw html</b>.'
+      timestamp: '2026-09-20T10:06:00Z'
+      depth: 0
 
 cases:
   - name: classic keeps the turn's tools flat
@@ -195,6 +202,14 @@ cases:
     kind: system-controlled
   - name: a search hit opens the system row
     kind: system-reveal
+    # only the revealed system row opens; the other system turn stays collapsed
+    revealedTurn: 2
+    closedTurn: 6
+  # the preview reads the rendered words, not the Markdown source
+  - name: the system row preview reads plain text
+    kind: system-preview
+    turn: 6
+    preview: 'see the fixture guide for emphasis, stress, inline code, and struck text, plus raw html.'
   - name: ledger keeps a turn's thinking disclosure
     kind: thinking
   - name: a turn without tools has no work group
