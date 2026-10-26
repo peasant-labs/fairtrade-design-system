@@ -150,8 +150,8 @@ surfaces:
         selector: ".txn-viewsw:has(.sw[aria-checked=\"true\"]) .txn-viewsw-state"
       - name: txn-search-trigger
         selector: ".txn-search-trigger"
-      - name: txn-tabbar
-        selector: ".txn-tabbar"
+      - name: txn-foot-tabs
+        selector: ".txn-foot-tabs"
     focus:
       - name: txn-viewsw-focus
         selector: ".txn-viewsw .sw"

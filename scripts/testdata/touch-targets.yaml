@@ -9,7 +9,7 @@
 viewport: {width: 390, height: 844}
 targets:
   - {name: session tab, story: in-use-transcript-transcriptviewer--default, selector: '.txn-tab', minHeight: 44}
-  - {name: crumb link, story: in-use-transcript-transcriptviewer--default, selector: '.txn-crumb a', minHeight: 44}
+  - {name: crumb link, story: in-use-transcript-transcriptviewer--host-trail, selector: '.txn-crumb a', minHeight: 44}
   - {name: page button, story: components-pagination--long-range, selector: '.pgn-btn', minHeight: 44, minWidth: 44}
   - {name: section toggle, story: analytics-projectoverview--overview, selector: '.gan-seg', minHeight: 44}
   - {name: sort header, story: components-datatable--playground, selector: '.tbl-sort', minHeight: 44}

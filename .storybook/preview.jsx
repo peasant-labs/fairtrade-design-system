@@ -34,6 +34,7 @@ const preview = {
     viewport: {
       options: {
         xs: { name: 'xs · 360', styles: { width: '360px', height: '780px' } },
+        phone: { name: 'phone · 390', styles: { width: '390px', height: '844px' } },
         sm: { name: 'sm · 560', styles: { width: '560px', height: '820px' } },
         md: { name: 'md · 720', styles: { width: '720px', height: '900px' } },
         lg: { name: 'lg · 1024', styles: { width: '1024px', height: '900px' } },

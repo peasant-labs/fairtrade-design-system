@@ -1,4 +1,4 @@
-import { expect, fireEvent, userEvent, within } from 'storybook/test'
+import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 import TranscriptViewer from './TranscriptViewer.jsx'
 import { frame } from '../story-frame.jsx'
 import { piPayload } from '../../mockups/inuse/pi-fixture.js'
@@ -264,7 +264,156 @@ export const Ledger = {
   },
 }
 
-export const LedgerLightTheme = { name: 'ledger light theme', decorators: [ledgerFrame], args: { ...ledgerArgs, theme: 'light' } }
+export const LedgerLightTheme = { name: 'ledger light theme', decorators: [ledgerFrame], args: { ...ledgerArgs, theme: 'light' }, play: readingLayoutPlay }
+
+/* The reading layout: a width handle on the reader's trailing edge and the floating zen
+   control. The frame is compact so both stay in view. Width only moves the column; openness
+   is user state, so tightening or widening never reopens a collapsed rail, and zen returns
+   the exact rail configuration it found. The same play runs in both themes: it also measures
+   the two geometry claims jsdom cannot see (the collapsed strip width and the shared work
+   grid edge). */
+const readingFrame = (Story) => (
+  <div style={{ height: 720, display: 'flex' }}>
+    <Story />
+  </div>
+)
+
+/** the left edge of an element's TEXT, not its padded box (the summary carries the offset as padding). */
+function textLeft(element) {
+  const range = document.createRange()
+  range.selectNodeContents(element)
+  return range.getBoundingClientRect().left
+}
+
+/** the rendered geometry the stylesheet rows can only describe: a strip's computed width and
+    the work summary's left edge against the first tool name's. */
+async function assertReadingGeometry(canvasElement) {
+  const work = canvasElement.querySelector('.txn-work')
+  expect(work).not.toBeNull()
+  const summary = work.querySelector('.txn-work-head .txn-work-count')
+  const toolName = work.querySelector('.txn-tc-head .kind > span:last-child')
+  expect(summary).not.toBeNull()
+  expect(toolName).not.toBeNull()
+  expect(Math.abs(textLeft(summary) - textLeft(toolName))).toBeLessThanOrEqual(2)
+  // the ledger prose follows the reader width instead of a fixed ch cap.
+  const prose = canvasElement.querySelector('.txn-turnwrap-ledger .txn-body > .txn-md-prose')
+  expect(prose).not.toBeNull()
+  expect(getComputedStyle(prose).maxInlineSize).toBe('none')
+}
+
+async function readingLayoutPlay({ canvasElement }) {
+  const canvas = within(canvasElement)
+  const handle = canvas.getByRole('separator', { name: 'reading width' })
+  expect(handle).toHaveAttribute('aria-valuemin', '600')
+  expect(handle).toHaveAttribute('aria-valuemax', '936')
+  expect(handle).toHaveAttribute('aria-valuenow', '840')
+  expect(handle).toHaveAttribute('aria-orientation', 'vertical')
+  expect(handle).toHaveAttribute('tabindex', '0')
+  await assertReadingGeometry(canvasElement)
+  // the keyboard rests on the snaps, and the ends are reachable.
+  handle.focus()
+  await userEvent.keyboard('{ArrowRight}')
+  expect(handle).toHaveAttribute('aria-valuenow', '936')
+  await userEvent.keyboard('{ArrowLeft}{ArrowLeft}')
+  expect(handle).toHaveAttribute('aria-valuenow', '600')
+  await userEvent.keyboard('{End}')
+  expect(handle).toHaveAttribute('aria-valuenow', '936')
+  await userEvent.keyboard('{Home}')
+  expect(handle).toHaveAttribute('aria-valuenow', '600')
+  // collapse the outline, then change the width both ways: the strip must stay closed.
+  // (the rail controls drop below the two-rail breakpoint, so the story drives the mounted
+  // control directly rather than through the accessibility tree.)
+  const collapse = canvasElement.querySelector('.txn-rail-left .txn-rail-collapse')
+  expect(collapse).not.toBeNull()
+  await userEvent.click(collapse)
+  // the collapse is a committed re-render, so wait for the strip the collapsed grid produces
+  // before measuring it: reading the computed width on the same tick intermittently observes the
+  // pre-collapse 240px grid column.
+  await waitFor(() => {
+    expect(canvasElement.querySelector('.txn-rail-strip-left')).not.toBeNull()
+    const strip = canvasElement.querySelector('.txn-rail-strip')
+    expect(strip).not.toBeNull()
+    // below the transcript's two-rail breakpoint the strips are dropped entirely; the story's
+    // frame is desktop, where the collapsed strip measures the square hit target.
+    if (getComputedStyle(strip).display !== 'none') expect(getComputedStyle(strip).width).toBe('32px')
+  })
+  handle.focus()
+  await userEvent.keyboard('{End}')
+  await waitFor(() => expect(canvasElement.querySelector('.txn-rail-strip-left')).not.toBeNull())
+  await userEvent.keyboard('{Home}')
+  await waitFor(() => expect(canvasElement.querySelector('.txn-rail-strip-left')).not.toBeNull())
+  // zen hides both rails and their strips; exiting restores the snapshot exactly.
+  await userEvent.click(canvas.getByRole('button', { name: 'zen mode' }))
+  await waitFor(() => {
+    expect(canvasElement.querySelector('.txn-rail')).toBeNull()
+    expect(canvasElement.querySelector('.txn-rail-strip')).toBeNull()
+  })
+  expect(canvas.getByRole('button', { name: 'zen mode' })).toHaveAttribute('aria-pressed', 'true')
+  await userEvent.click(canvas.getByRole('button', { name: 'zen mode' }))
+  await waitFor(() => {
+    expect(canvasElement.querySelector('.txn-rail-left')).toBeNull()
+    expect(canvasElement.querySelector('.txn-rail-strip-left')).not.toBeNull()
+    expect(canvasElement.querySelector('.txn-rail-right')).not.toBeNull()
+  })
+}
+
+export const LedgerReadingLayout = {
+  name: 'ledger reading layout',
+  decorators: [readingFrame],
+  args: ledgerArgs,
+  play: readingLayoutPlay,
+}
+
+/* The phone header: the derived trail leaves (its last crumb is the title, so it repeats the h1),
+   the title clamps to two lines at the reading size, the chips share one scrollable line, and the
+   keybind hint row leaves a touch surface. The session views stay: they are the bottom bar's first
+   row, with the search trigger reduced to its icon.
+   Storybook's viewport is a manager control that resizes the preview iframe; the headless smoke
+   loads iframe.html directly at its own width, so this story measures the rendered header when the
+   preview really is a phone and otherwise proves the phone breakpoint's declarations from the
+   parsed stylesheet. The 390x844 rendering itself is captured by the review harness. */
+export const PhoneHeader = {
+  name: 'phone header',
+  decorators: [readingFrame],
+  parameters: { viewport: { defaultViewport: 'phone' } },
+  args: { ...ledgerArgs, showSearchTrigger: true },
+  play: async ({ canvasElement }) => {
+    const title = canvasElement.querySelector('.txn-title')
+    const crumb = canvasElement.querySelector('.txn-crumb')
+    const hint = canvasElement.querySelector('.txn-hint')
+    const tabs = canvasElement.querySelector('.txn-footer .txn-foot-tabs [role="tablist"]')
+    expect(title).not.toBeNull()
+    expect(crumb).not.toBeNull()
+    expect(tabs).not.toBeNull()
+    expect(canvasElement.querySelectorAll('.txn-footer [role="tab"]').length).toBe(5)
+    if (window.innerWidth < 768) {
+      const titleStyle = getComputedStyle(title)
+      expect(titleStyle.webkitLineClamp).toBe('2')
+      // two lines at most, measured against the rendered line box
+      const lineHeight = parseFloat(titleStyle.lineHeight)
+      expect(title.getBoundingClientRect().height).toBeLessThanOrEqual(lineHeight * 2 + 1)
+      expect(getComputedStyle(crumb).display).toBe('none')
+      expect(hint === null || getComputedStyle(hint.closest('.txn-foot-meta')).display).toBe('none')
+      expect(getComputedStyle(tabs.closest('.txn-foot-tabs')).display).not.toBe('none')
+    } else {
+      // the phone breakpoint: the title clamps at two lines, the derived trail and the hint row leave.
+      const flat = (list) => [...list].flatMap((rule) => {
+        if (rule.cssRules) return [rule, ...flat(rule.cssRules)]
+        return [rule]
+      })
+      const rules = [...document.styleSheets].flatMap((sheet) => {
+        try { return flat(sheet.cssRules) } catch { return [] }
+      })
+      const phone = rules.filter((rule) => typeof rule.conditionText === 'string' && rule.conditionText.includes('768px') && rule.conditionText.includes('width'))
+      expect(phone.length).toBeGreaterThan(0)
+      const cssText = phone.map((rule) => rule.cssText).join('\n')
+      expect(cssText).toMatch(/\.txn-title\s*{[^}]*-webkit-line-clamp:\s*2/)
+      expect(cssText).toMatch(/\.txn-crumb-derived\s*{\s*display:\s*none/)
+      // the built sheet may merge this selector into an :is(...) list, so match inside the rule body
+      expect(cssText).toMatch(/\.txn-hint[^{}]*{[^}]*display:\s*none/)
+    }
+  },
+}
 
 export const ReadingPositionTraceTab = {
   args: { viewModel, capabilities: fullCaps },
@@ -333,12 +482,11 @@ export const GraphSlot = {
 }
 
 /* A host that owns its header row: the composite's share and more menus leave (showTail false),
-   the outcome chip leaves (showOutcome false), the search trigger joins the tab strip, and the
-   host's pull request list sits under the meta row. The trigger opens search by click and by
-   Enter, exactly as ⌘F does. */
+   the outcome chip leaves (showOutcome false), the search trigger joins the session views in the
+   bottom bar, and the host's pull request list sits under the meta row. The trigger opens search
+   by click and by Enter, exactly as ⌘F does. */
 export const HostOwnedHeader = {
-  name: 'host owned header',
-  args: {
+  name: 'host owned header',  args: {
     viewModel,
     capabilities: fullCaps,
     showTail: false,
@@ -357,7 +505,7 @@ export const HostOwnedHeader = {
     await expect(canvas.queryByRole('button', { name: /^share/ })).toBeNull()
     await expect(canvas.queryByRole('button', { name: 'more actions' })).toBeNull()
     await expect(canvas.getByRole('button', { name: 'publish' })).toBeVisible()
-    const trigger = canvas.getByRole('button', { name: 'search this transcript ⌘F' })
+    const trigger = canvas.getByRole('button', { name: 'search transcript ⌘F' })
     await userEvent.click(trigger)
     await expect(canvas.getByRole('textbox', { name: 'search transcript' })).toHaveFocus()
     await userEvent.keyboard('{Escape}')

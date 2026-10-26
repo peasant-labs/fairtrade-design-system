@@ -2,5 +2,6 @@
 # names equal this list exactly, as a set.
 requiredCaseNames:
   - the search trigger keeps beside the tab strip
-  - the transcript trail is one line
+  - the derived trail leaves the phone header
+  - the ledger phone drops its rails chrome
   - the analytics sections are one strip

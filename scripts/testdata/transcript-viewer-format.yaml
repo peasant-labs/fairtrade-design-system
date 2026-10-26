@@ -75,4 +75,4 @@ cases:
       - {selector: .txn-tabs, context: '@media (width < 768px)', prop: overflow-x, value: auto}
       - {selector: .txn-tabs, context: '@media (width < 768px)', prop: mask-image, value: 'linear-gradient(to right, var(--ink) calc(100% - var(--sp-6)), transparent)'}
       - {selector: '.txn-tabs:focus-within', context: '@media (width < 768px)', prop: mask-image, value: none}
-      - {selector: .txn-footer, context: '@layer components > @media (pointer: coarse)', prop: display, value: none}
+      - {selector: .txn-hint, context: '@layer components > @media (pointer: coarse), (width < 768px)', prop: display, value: none}

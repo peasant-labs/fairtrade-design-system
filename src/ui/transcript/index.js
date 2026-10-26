@@ -55,8 +55,9 @@ export {
 export { nextNavTurn } from './turnNav.js'
 export { formatRelative, formatDurationMins, formatDurationMs, formatDurationSeconds, formatDateLong, isKnownTime } from './time.js'
 export { summarizePrompt, composeSessionTitle, projectLabel, cleanSessionTitle, unwrapUserQuery } from './title.js'
-/* the ledger work panel's pure summary + label derivation (no JSX, no wire parsing) */
-export { workSummary, workCountLabel, workMetaLabel } from './work-summary.js'
+/* the ledger work panel's pure summary derivation (no JSX, no wire parsing); the two label
+   helpers stay module-local because they are formatting details, not a consumer contract. */
+export { workSummary } from './work-summary.js'
 
 /* ── lifted transcript rendering primitives + composite (runtime) ─────────────────
    The dumb single-transcript components, lifted verbatim from the canonical mockup.
@@ -84,7 +85,7 @@ export { default as TranscriptOutcomeChip } from './OutcomeChip.jsx'
 /* the composite single-transcript surface + the view chrome it assembles (rails,
    scrubber, scorecard, label popover). The composite is the drop-in `TranscriptViewer`;
    the rest are exported for peasant/village shells that assemble their own layout. */
-export { default as TranscriptViewer } from './TranscriptViewer.jsx'
+export { default as TranscriptViewer, READER_SNAPS } from './TranscriptViewer.jsx'
 export { default as TranscriptOutlineRail } from './OutlineRail.jsx'
 export { default as TranscriptFiltersRail } from './FiltersRail.jsx'
 export { default as TranscriptFilterSection } from './FilterSection.jsx'
@@ -140,6 +141,7 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
 /** @typedef {import('./state-capabilities.js').ViewerCallbacks} ViewerCallbacks */
 /** @typedef {import('./state-capabilities.js').GraphSlotContext} GraphSlotContext */
 /** @typedef {import('./state-capabilities.js').TranscriptFilters} TranscriptFilters */
+/** @typedef {import('./state-capabilities.js').TranscriptSidebarLayout} TranscriptSidebarLayout */
 /** @typedef {import('./state-capabilities.js').SavedLabel} SavedLabel */
 /** @typedef {import('./state-capabilities.js').Theme} Theme */
 /** @typedef {import('./state-capabilities.js').Presentation} Presentation */

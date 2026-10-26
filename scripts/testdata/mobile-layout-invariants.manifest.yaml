@@ -2,15 +2,16 @@ requiredNames:
   - cg-row-fills-container
   - cg-older-fills-container
   - pgn-edge-contains-its-hidden-label
-  - txn-title-wraps-on-mobile
-  - txn-meta-wraps-on-mobile
+  - txn-title-clamps-on-mobile
+  - txn-meta-scrolls-on-mobile
+  - txn-derived-crumb-leaves-the-phone
   - txn-meta-keyboard-scroll-region
   - srow-text-stacks-on-mobile
   - srow-action-drops-on-mobile
   - gmp-navigator-disclosure-on-the-name-line
   - txn-tabs-scroll-on-mobile
   - txn-tabs-keyboard-navigation
-  - txn-trace-head-compact-on-mobile
+  - txn-trace-head-hidden-on-mobile
   - dialog-wide-sheet-on-mobile
   - dialog-close-button-keeps-its-square
   - dialog-title-wraps-long-words

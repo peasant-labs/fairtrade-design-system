@@ -41,23 +41,34 @@ invariants:
       the whole rule, so no declaration in it can be dropped while the row still passes.
     mustContainAll:
       - ".pgn-edge { padding: 0; width: var(--control-h-sm); position: relative; }"
-  - id: txn-title-wraps-on-mobile
+  - id: txn-title-clamps-on-mobile
     file: src/index.css
     description: >-
-      The primary session title keeps its reading size and wraps below the md breakpoint (width < 768px).
-      Taller headers are preferable to hiding the user's content.
+      The primary session title is clamped to two lines at the reading size below the md
+      breakpoint (width < 768px). An unclamped title took three lines and, with the crumb
+      row and the stacked chips, gave the header more than half of a 390x844 phone.
     mustContainAll:
-      - ".txn-title {"
-      - "display: block;"
+      - ".txn-title {\n    font-size: var(--fs-md);"
+      - "display: -webkit-box;"
+      - "-webkit-box-orient: vertical;"
+      - "-webkit-line-clamp: 2;"
       - "overflow-wrap: anywhere;"
-  - id: txn-meta-wraps-on-mobile
+  - id: txn-meta-scrolls-on-mobile
     file: src/index.css
     description: >-
-      Metadata wraps below the md breakpoint (width < 768px), each item whole on its line, without
-      shrinking text. A sideways scroller hid the last items with nothing on screen to say so.
+      Metadata stays on one sideways-scrolling line below the md breakpoint (width < 768px), each
+      item whole. Wrapped, the chips stacked into a block that nearly doubled the header height.
     mustContainAll:
-      - ".txn-meta {\n    flex-wrap: wrap;"
+      - ".txn-meta {\n    flex-wrap: nowrap;"
+      - "overflow-x: auto;"
       - ".txn-meta > * { white-space: nowrap; }"
+  - id: txn-derived-crumb-leaves-the-phone
+    file: src/index.css
+    description: >-
+      The derived trail's last crumb is the transcript title, so on a phone the trail repeats the
+      h1 and leaves. A host's own trail stays: it carries routes the title cannot.
+    mustContainAll:
+      - ".txn-crumb-derived { display: none; }"
   - id: txn-meta-keyboard-scroll-region
     file: src/ui/transcript/TranscriptViewer.jsx
     description: The metadata row is focusable and named for keyboard and screen-reader users.
@@ -77,11 +88,11 @@ invariants:
     mustContainAll:
       - '<div className="tabs txn-tabs"'
       - 'role="tablist" aria-label="session views" onKeyDown={onTabKey}'
-  - id: txn-trace-head-compact-on-mobile
+  - id: txn-trace-head-hidden-on-mobile
     file: src/index.css
-    description: the "N turns / list·graph toggle" bar gets reduced padding below the md breakpoint (width < 768px), matching .txn-header's own mobile treatment.
+    description: the "N turns / list·graph toggle" bar leaves below the md breakpoint (width < 768px), so the reading stream gets the row instead.
     mustContainAll:
-      - ".txn-trace-head { padding: var(--sp-2) var(--sp-3); }"
+      - ".txn-trace-head { display: none; }"
   - id: dialog-wide-sheet-on-mobile
     file: src/index.css
     description: >-

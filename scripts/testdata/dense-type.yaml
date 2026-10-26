@@ -47,11 +47,13 @@ publishContract:
     Dialog scrollWidth is no greater than clientWidth (one pixel rounding tolerance).
     Bind and read back data-theme before measuring. Test a long repository name.
 measurements:
+  # the phone title is a clamp, not free-flowing prose: it is held to two lines at --fs-md (18px) so
+  # a long title can never take the header over half a 390x844 viewport. The clamp itself is guarded
+  # by the phone-header journey and the transcript reading-layout gate.
   - name: transcript title
     query: app=transcript
     selector: .txn-title
-    minimumPx: 20
-    wrap: true
+    minimumPx: 18
     mutation: title shrinks and clamps
   - name: transcript prose
     query: app=transcript
@@ -66,6 +68,8 @@ measurements:
     minimumPx: 14
     mutation: toolbar overflows
     reflow: true
+    # the bar leaves a phone (width < 768px), so the type floor is measured on desktop
+    desktopOnly: true
   - name: filter rail
     query: app=transcript
     selector: .txn-filters
@@ -80,11 +84,14 @@ measurements:
     wrap: true
     mutation: commit subject clamps
     reflow: true
+  # the derived trail leaves a phone (it repeats the title), so the trail's density and reflow guard
+  # runs at the desktop width, where the trail is mounted.
   - name: transcript breadcrumbs
     query: app=transcript
     selector: .txn-crumb
     minimumPx: 14
     reflow: true
+    desktopOnly: true
     mutation: breadcrumb has zero width
     reflowMutation: zero-width
   - name: transcript actions

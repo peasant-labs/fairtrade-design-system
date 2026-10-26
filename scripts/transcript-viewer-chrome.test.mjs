@@ -88,7 +88,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   {
     const mounted = await mount(viewer({}))
     expectControls(fixture.defaultsCase, mounted.container)
-    report.check(!mounted.container.querySelector('.txn-tabbar'), `${fixture.defaultsCase.name}: the tab strip must stay unwrapped without the trigger`)
+    report.check(!mounted.container.querySelector('.txn-tabbar'), `${fixture.defaultsCase.name}: the tab strip must not keep a separate pre-body row`)
+    report.check(!!mounted.container.querySelector('.txn-footer .txn-foot-tabs > [role="tablist"]'), `${fixture.defaultsCase.name}: the tab strip must be the bottom bar's first row`)
     await mounted.unmount()
   }
 

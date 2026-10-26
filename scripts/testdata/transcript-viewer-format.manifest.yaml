@@ -57,6 +57,6 @@ mutations:
     expectedDiagnostic: "the stylesheet keeps labels whole and lines unclipped: @layer components .txn-diff .dl .t must set white-space: pre-wrap"
   - name: touch screens keep the key hints
     file: src/index.css
-    find: "  @media (pointer: coarse) { .txn-footer { display: none; } }"
+    find: "    .txn-hint { display: none; }"
     replace: ""
-    expectedDiagnostic: "the stylesheet keeps labels whole and lines unclipped: @layer components > @media (pointer: coarse) .txn-footer must set display: none"
+    expectedDiagnostic: "the stylesheet keeps labels whole and lines unclipped: @layer components > @media (pointer: coarse), (width < 768px) .txn-hint must set display: none"

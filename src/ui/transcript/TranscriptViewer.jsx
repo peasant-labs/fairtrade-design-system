@@ -95,6 +95,31 @@ function useControllable(value, onChange, defaultValue) {
 const STICKY_SCROLL_THRESHOLD = 56
 const HERO_RELEASE_SLACK = 24
 
+/* the reading column's snap widths, narrowest first; the drag handle clamps outside them
+   and snaps to the nearest one on release, so the reader can only rest at these widths.
+   Exported so a host offering its own width menu reuses the same closed set. */
+export const READER_SNAPS = Object.freeze([600, 840, 936])
+const DEFAULT_READER_WIDTH = 840
+const DEFAULT_SIDEBAR_LAYOUT = Object.freeze({ outline: true, filters: true, host: true })
+
+/** clamp a width to the reader's supported range. */
+function clampReaderWidth(width) {
+  if (!Number.isFinite(width)) return DEFAULT_READER_WIDTH
+  return Math.max(READER_SNAPS[0], Math.min(READER_SNAPS[READER_SNAPS.length - 1], width))
+}
+
+/** the snap the reader rests at: the nearest supported width. */
+function nearestReaderSnap(width) {
+  const clamped = clampReaderWidth(width)
+  return READER_SNAPS.reduce((best, snap) => (Math.abs(snap - clamped) < Math.abs(best - clamped) ? snap : best), READER_SNAPS[0])
+}
+
+/** the width a host-supplied readerWidth must render at: clamp the range, then snap. A
+    non-finite value falls back to the default through clampReaderWidth. */
+function normaliseReaderWidth(width) {
+  return nearestReaderSnap(width)
+}
+
 /* the five session views (count badges come off the cooked VM). */
 const TAB_ORDER = /** @type {const} */ (['highlights', 'trace', 'diffs', 'files', 'annotations'])
 const TAB_LABEL = { highlights: 'highlights', trace: 'full trace', diffs: 'diffs', files: 'files', annotations: 'annotations' }
@@ -189,6 +214,12 @@ export default function TranscriptViewer({
   onTabChange,
   viewMode: viewModeProp,
   onViewModeChange,
+  sidebarLayout: sidebarLayoutProp,
+  onSidebarLayoutChange,
+  zen: zenProp,
+  onZenChange,
+  readerWidth: readerWidthProp,
+  onReaderWidthChange,
   leftRailOpen: leftRailOpenProp,
   onLeftRailOpenChange,
   rightRailOpen: rightRailOpenProp,
@@ -220,6 +251,7 @@ export default function TranscriptViewer({
   showTail = false,
   showOutcome = true,
   showSearchTrigger = false,
+  footer,
   presentation = 'classic',
   subtitle,
   pullRequests,
@@ -242,8 +274,15 @@ export default function TranscriptViewer({
   const [theme] = useControllable(themeProp, onThemeChange, 'dark')
   const [tab, setTab] = useControllable(activeTabProp, onTabChange, 'trace')
   const [viewMode, setViewMode] = useControllable(viewModeProp, onViewModeChange, 'list')
-  const [leftRailOpen, setLeftRailOpen] = useControllable(leftRailOpenProp, onLeftRailOpenChange, true)
-  const [rightRailOpen, setRightRailOpen] = useControllable(rightRailOpenProp, onRightRailOpenChange, true)
+  const [zen, setZen] = useControllable(zenProp, onZenChange, false)
+  /* zen is a ledger reading mode; a host that passes the prop to classic changes nothing. */
+  const zenActive = ledger && zen
+  const [rawReaderWidth, setReaderWidth] = useControllable(readerWidthProp, onReaderWidthChange, DEFAULT_READER_WIDTH)
+  /* the width the column and the separator actually report. A host-supplied readerWidth is
+     normalised ONCE at this boundary (clamped to 600..936 and snapped), never rendered raw; a
+     live drag keeps its own continuous, unsnapped preview so the column follows the pointer. */
+  const [readerDragWidth, setReaderDragWidth] = useState(null)
+  const readerWidth = readerDragWidth ?? (readerWidthProp === undefined ? rawReaderWidth : normaliseReaderWidth(rawReaderWidth))
   const [openTools, setOpenTools] = useControllable(openToolsProp, onOpenToolsChange, {})
   const [earlierHistoryOpen, setEarlierHistoryOpen] = useControllable(earlierHistoryOpenProp, onEarlierHistoryOpenChange, {})
   const [activeTurn, setActiveTurn] = useControllable(activeTurnProp, onActiveTurnChange, vm?.turns?.[0]?.index ?? 0)
@@ -253,6 +292,57 @@ export default function TranscriptViewer({
   // the action-menu disclosures are view-state too (controllable; default CLOSED).
   const [shareOpen, setShareOpen] = useControllable(shareOpenProp, onShareOpenChange, false)
   const [moreOpen, setMoreOpen] = useControllable(moreOpenProp, onMoreOpenChange, false)
+
+  /* ── the sidebar layout view model ──────────────────────────────────────────
+     Openness is USER STATE, never a function of the reading width. `sidebarLayout`
+     is the single view model when supplied (it wins for `outline`, `filters` and
+     `host`); the legacy left/right rail props remain per-rail aliases that win for
+     their own rail. With neither supplied the internal default opens everything.
+     Reading width never writes any of this: only an explicit rail action, or zen's
+     own collapse/restore, does. */
+  const [internalSidebarLayout, setInternalSidebarLayout] = useState(DEFAULT_SIDEBAR_LAYOUT)
+  const sidebarLayout = useMemo(() => ({
+    outline: leftRailOpenProp !== undefined ? leftRailOpenProp : (sidebarLayoutProp?.outline ?? internalSidebarLayout.outline),
+    filters: rightRailOpenProp !== undefined ? rightRailOpenProp : (sidebarLayoutProp?.filters ?? internalSidebarLayout.filters),
+    host: sidebarLayoutProp?.host ?? internalSidebarLayout.host,
+  }), [leftRailOpenProp, rightRailOpenProp, sidebarLayoutProp, internalSidebarLayout])
+  const leftRailOpen = sidebarLayout.outline
+  const rightRailOpen = sidebarLayout.filters
+
+  /* The layout an explicit action starts from. Event handlers are recreated each render,
+     so the current render's layout is the truth; the ref exists for the zen layout effect,
+     whose deps are the zen value alone (a width change must never re-run that snapshot). */
+  const sidebarLayoutRef = useRef(sidebarLayout)
+  sidebarLayoutRef.current = sidebarLayout
+  const zenSnapshotRef = useRef(DEFAULT_SIDEBAR_LAYOUT)
+  /* starts false so a host that MOUNTS the viewer already in zen still gets the collapse. */
+  const previousZenRef = useRef(false)
+
+  /** emit the FULL layout for one explicit rail action (or zen), and own the internal copy. */
+  function commitSidebarLayout(partial) {
+    const current = sidebarLayoutRef.current
+    const next = { ...current, ...partial }
+    if (sidebarLayoutProp === undefined) setInternalSidebarLayout(next)
+    if (next.outline !== current.outline && onLeftRailOpenChange) onLeftRailOpenChange(next.outline)
+    if (next.filters !== current.filters && onRightRailOpenChange) onRightRailOpenChange(next.filters)
+    if (onSidebarLayoutChange) onSidebarLayoutChange(next)
+  }
+
+  /* Zen snapshots the exact layout on entry, collapses all three, and restores that same
+     object on exit. Driven by the VALUE change, so an uncontrolled click and a controlled
+     host prop both take this one path. A width change never touches the snapshot. */
+  useLayoutEffect(() => {
+    if (!ledger) return
+    if (previousZenRef.current === zen) return
+    previousZenRef.current = zen
+    if (zen) {
+      zenSnapshotRef.current = { ...sidebarLayoutRef.current }
+      commitSidebarLayout({ outline: false, filters: false, host: false })
+    } else {
+      commitSidebarLayout(zenSnapshotRef.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zen, ledger])
 
   // Unmanaged disclosure state is session-local. Controlled hosts restore their
   // own saved map on Back and are not reset by this default behavior.
@@ -292,6 +382,7 @@ export default function TranscriptViewer({
   const heroHeightRef = useRef(0)
   const searchInputRef = useRef(null)
   const draggingRef = useRef(false)
+  const readerDragRef = useRef(null)
   const tabRefs = useRef({})
   const traceReadingPositionIdRef = useRef(0)
   /** @type {import('react').MutableRefObject<TraceReadingSnapshot | null>} */
@@ -544,6 +635,10 @@ export default function TranscriptViewer({
     const idx = visibleTurns.findIndex((t) => t.index === activeTurn)
     return { cur: Math.max(1, idx + 1), total: visibleTurns.length }
   }, [activeTurn, visibleTurns])
+  /* The bottom bar's quiet row is host opt-in: a host that wants the shortcut hint or the position
+     counter passes `footer` with that flag; both stay out of the surface by default. */
+  const footerHints = footer?.hints === true
+  const footerProgress = footer?.progress === true && tab === 'trace' && viewMode === 'list' && visibleTurns.length > 0
 
   /* ── navigation + interactions (effects/handlers only; safe under static render) ── */
   function jumpTo(idx, { switchTab = true } = {}) {
@@ -641,6 +736,64 @@ export default function TranscriptViewer({
     const el = turnRefs.current[t.index]
     const sc = scrollRef.current
     if (el && sc) { sc.scrollTo({ top: turnScrollTop(sc, el), behavior: 'auto' }); setActiveTurn(t.index) }
+  }
+
+  /* ── reading width: the drag handle changes ONLY --txn-reader-width ───────────
+     The column is centred, so the trailing edge moves half as far as the width: two
+     pixels of pointer travel per pixel of width. A drag adjusts live (clamped) and
+     snaps to 600/840/936 on release; the keyboard moves snap to snap. No handler here
+     reads or writes the sidebar layout. A press can end without a pointerup (capture
+     loss, the pointer leaving the handle, a window blur), so every end path clears the
+     drag and lands on a snap; a mouse move with no button held never resizes. */
+  function endReaderDrag(clientX) {
+    const drag = readerDragRef.current
+    if (!drag) return
+    readerDragRef.current = null
+    setReaderDragWidth(null)
+    const released = typeof clientX === 'number' && clientX > 0 ? drag.startWidth + (clientX - drag.startX) * 2 : readerWidth
+    setReaderWidth(nearestReaderSnap(released))
+  }
+  function onReaderPointerDown(e) {
+    if (e.button !== 0 && e.pointerType !== 'touch') return
+    readerDragRef.current = { startX: e.clientX, startWidth: readerWidth }
+    if (typeof e.currentTarget.setPointerCapture === 'function') {
+      try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* synthetic pointer ids cannot be captured */ }
+    }
+  }
+  function onReaderPointerMove(e) {
+    const drag = readerDragRef.current
+    if (!drag) return
+    /* a mouse move with no button held is a hover, not a drag: an interrupted press must not
+       leave the next pass over the handle resizing the column. */
+    if (e.pointerType !== 'touch' && e.buttons === 0) return
+    const next = clampReaderWidth(drag.startWidth + (e.clientX - drag.startX) * 2)
+    setReaderDragWidth(next)
+    setReaderWidth(next)
+  }
+  function onReaderPointerUp(e) {
+    const drag = readerDragRef.current
+    if (!drag) return
+    if (typeof e.currentTarget.releasePointerCapture === 'function' && e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+      try { e.currentTarget.releasePointerCapture(e.pointerId) } catch { /* capture may already be gone */ }
+    }
+    endReaderDrag(e.clientX)
+  }
+  function onReaderPointerLeave() {
+    endReaderDrag()
+  }
+  function onReaderLostPointerCapture() {
+    endReaderDrag()
+  }
+  function onReaderKeyDown(e) {
+    const index = READER_SNAPS.indexOf(nearestReaderSnap(readerWidth))
+    let next
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') next = READER_SNAPS[Math.max(0, index - 1)]
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') next = READER_SNAPS[Math.min(READER_SNAPS.length - 1, index + 1)]
+    else if (e.key === 'Home') next = READER_SNAPS[0]
+    else if (e.key === 'End') next = READER_SNAPS[READER_SNAPS.length - 1]
+    else return
+    e.preventDefault()
+    setReaderWidth(next)
   }
   const onTabKey = (e) => {
     const i = TAB_ORDER.indexOf(tab)
@@ -742,6 +895,15 @@ export default function TranscriptViewer({
     id: session.id,
   })
 
+  /* The default trail ends on the transcript itself, so it reads as the title, not an opaque id.
+     A host-supplied breadcrumb still wins unchanged (it carries the host's own routes). */
+  const derivedTrail = breadcrumb == null
+  const trail = breadcrumb ?? [
+    { label: 'sessions', href: '#' },
+    { label: session.project ?? 'session', href: '#' },
+    { label: title },
+  ]
+
   const tabHasFilters = tab === 'trace' || tab === 'highlights'
   const tabStrip = (
     <div className="tabs txn-tabs" role="tablist" aria-label="session views" onKeyDown={onTabKey}>
@@ -779,19 +941,29 @@ export default function TranscriptViewer({
   )
 
   return (
-    <div className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (ledger ? ' txn-ledger' : '') + (heroCondensed ? ' txn-app-condensed' : '')} data-theme={theme}>
+    <div
+      className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (ledger ? ' txn-ledger' : '') + (ledger && zen ? ' txn-zen' : '') + (heroCondensed ? ' txn-app-condensed' : '')}
+      data-theme={theme}
+      style={ledger ? { '--txn-reader-width': `${readerWidth}px` } : undefined}
+    >
+      {/* The session views live in the bottom bar, which comes after the whole panel in DOM order.
+          This control keeps them one keystroke from the top of the viewer, and only shows itself
+          while focused. */}
+      <button
+        type="button"
+        className="txn-skip"
+        onClick={() => { const target = tabRefs.current[tab]; if (target) target.focus() }}
+      >
+        skip to session views
+      </button>
       {/* ===================== HEADER ===================== */}
       <header className="txn-header" ref={headerRef}>
         <div className="txn-header-top">
           {/* Host-routable trail: pass `breadcrumb` (+ a router LinkComponent) to
-              replace the demo's static sessions/{project}/{id} crumb — hosts have
+              replace the demo's static sessions/{project}/{title} crumb — hosts have
               real routes and origin-aware trails (map, node > project > id). */}
-          <nav className="crumb txn-crumb" aria-label="breadcrumb">
-            {(breadcrumb ?? [
-              { label: 'sessions', href: '#' },
-              { label: session.project ?? 'session', href: '#' },
-              { label: session.id },
-            ]).map((item, i, items) => {
+          <nav className={'crumb txn-crumb' + (derivedTrail ? ' txn-crumb-derived' : '')} aria-label="breadcrumb">
+            {trail.map((item, i, items) => {
               const CrumbLink = LinkComponent ?? 'a'
               const last = i === items.length - 1
               return (
@@ -939,34 +1111,22 @@ export default function TranscriptViewer({
         </div>
       )}
 
-      {/* ===================== TAB STRIP ===================== */}
-      {/* the optional search trigger sits at the strip's end, outside the tablist (a tablist
-          holds tabs only); without it the strip renders exactly as before, unwrapped. */}
-      {showSearchTrigger ? (
-        <div className="txn-tabbar">
-          {tabStrip}
-          <button
-            type="button"
-            className="btn btn-secondary txn-search-trigger"
-            aria-keyshortcuts="Meta+F Control+F"
-            onClick={openSearch}
-          >
-            <Search size={14} aria-hidden="true" />
-            <span className="txn-search-trigger-text">search this transcript</span>{' '}
-            <kbd className="txn-search-key">⌘F</kbd>
-          </button>
-        </div>
-      ) : tabStrip}
-
       {/* ===================== BODY ===================== */}
-      {/* only the trace and the highlights have filters; any other tab leaves the right rail out */}
-      <div className="txn-body-grid" data-left-rail={leftRailOpen ? 'open' : 'closed'} data-right-rail={!tabHasFilters ? 'none' : rightRailOpen ? 'open' : 'closed'}>
+      {/* only the trace and the highlights have filters; any other tab leaves the right rail out.
+          Zen collapses both viewer rails and hides their strips, so its body grid holds the center
+          alone and the zen control is the one way back out. */}
+      <div
+        className="txn-body-grid"
+        data-left-rail={zenActive ? 'none' : leftRailOpen ? 'open' : 'closed'}
+        data-right-rail={zenActive ? 'none' : !tabHasFilters ? 'none' : rightRailOpen ? 'open' : 'closed'}
+        data-zen={ledger ? (zenActive ? 'true' : 'false') : undefined}
+      >
         {/* LEFT: outline */}
-        {leftRailOpen ? (
+        {!zenActive && (leftRailOpen ? (
           <aside className="txn-rail txn-rail-left" aria-label="user turns outline">
             <div className="txn-rail-head">
               <LayoutList size={14} aria-hidden="true" /> user turns
-              <button type="button" className="txn-rail-collapse" aria-label="collapse user turns outline" title="collapse" onClick={() => setLeftRailOpen(false)}>
+              <button type="button" className="txn-rail-collapse" aria-label="collapse user turns outline" title="collapse" onClick={() => commitSidebarLayout({ outline: false })}>
                 <PanelLeftClose size={14} aria-hidden="true" />
               </button>
             </div>
@@ -976,12 +1136,12 @@ export default function TranscriptViewer({
           </aside>
         ) : (
           <div className="txn-rail-strip txn-rail-strip-left">
-            <button type="button" className="txn-rail-reopen" aria-label="expand user turns outline" title="expand user turns" onClick={() => setLeftRailOpen(true)}>
+            <button type="button" className="txn-rail-reopen" aria-label="expand user turns outline" title="expand user turns" onClick={() => commitSidebarLayout({ outline: true })}>
               <PanelLeftOpen size={14} aria-hidden="true" />
               <span className="txn-rail-strip-label">user turns</span>
             </button>
           </div>
-        )}
+        ))}
 
         {/* CENTER */}
         <section className="txn-center" role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${tab}`}>
@@ -1007,7 +1167,7 @@ export default function TranscriptViewer({
                   )}
                 </div>
               )}
-              <div className="txn-trace-head">
+              <div className={"txn-trace-head" + (viewMode === 'graph' ? ' txn-trace-head-graph' : '')}>
                 <span className="txn-trace-count tnum">
                   {visibleTurns.length === turns.length ? `${turns.length} turns` : `${visibleTurns.length} of ${turns.length} turns`}
                 </span>
@@ -1090,6 +1250,28 @@ export default function TranscriptViewer({
                     {looseCommits.map((c) => <CheckpointMarker key={c.hash} commit={c} />)}
                   </div>
                 </div>
+              )}
+              {/* the reader's trailing edge: the one width control. It lives inside the trace
+                  (not the header) so it tracks the column, and only ever writes the width. */}
+              {ledger && viewMode === 'list' && (
+                <div
+                  className="txn-reader-handle"
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label="reading width"
+                  aria-valuemin={READER_SNAPS[0]}
+                  aria-valuemax={READER_SNAPS[READER_SNAPS.length - 1]}
+                  aria-valuenow={readerWidth}
+                  aria-valuetext={`${readerWidth} pixels wide`}
+                  tabIndex={0}
+                  onPointerDown={onReaderPointerDown}
+                  onPointerMove={onReaderPointerMove}
+                  onPointerUp={onReaderPointerUp}
+                  onPointerCancel={onReaderPointerUp}
+                  onPointerLeave={onReaderPointerLeave}
+                  onLostPointerCapture={onReaderLostPointerCapture}
+                  onKeyDown={onReaderKeyDown}
+                />
               )}
             </div>
           )}
@@ -1221,15 +1403,34 @@ export default function TranscriptViewer({
               })}
             </div>
           )}
+
+          {/* ===================== ZEN ===================== */}
+          {/* ledger only: the reading layout is the surface zen belongs to, so classic gains no
+              control, no mode class and no reserved gutter. The only way out of zen. It lives in
+              the center column, and the ledger stream reserves its gutter, so it never covers
+              the reader. It is one stable toggle: the word "zen" never changes, the switch tracks
+              the pressed state, and its accessible name stays "zen mode" in both states. */}
+          {ledger && (
+            <button
+              type="button"
+              className="txn-zen-control"
+              aria-pressed={zen}
+              aria-label="zen mode"
+              onClick={() => setZen(!zen)}
+            >
+              <span className="txn-zen-label">zen</span>
+              <span className="txn-zen-switch" aria-hidden="true" />
+            </button>
+          )}
         </section>
 
         {/* RIGHT: filters */}
-        {!tabHasFilters ? null : rightRailOpen ? (
+        {zenActive ? null : !tabHasFilters ? null : rightRailOpen ? (
           <aside className="txn-rail txn-rail-right" aria-label="filters">
             <div className="txn-rail-head">
               <SlidersHorizontal size={14} aria-hidden="true" /> filters
               {filtersActive > 0 && <span className="chipx-count unread tnum">{filtersActive}</span>}
-              <button type="button" className="txn-rail-collapse" aria-label="collapse filters" title="collapse" onClick={() => setRightRailOpen(false)}>
+              <button type="button" className="txn-rail-collapse" aria-label="collapse filters" title="collapse" onClick={() => commitSidebarLayout({ filters: false })}>
                 <PanelRightClose size={14} aria-hidden="true" />
               </button>
             </div>
@@ -1249,7 +1450,7 @@ export default function TranscriptViewer({
           </aside>
         ) : (
           <div className="txn-rail-strip txn-rail-strip-right">
-            <button type="button" className="txn-rail-reopen" aria-label="expand filters" title="expand filters" onClick={() => setRightRailOpen(true)}>
+            <button type="button" className="txn-rail-reopen" aria-label="expand filters" title="expand filters" onClick={() => commitSidebarLayout({ filters: true })}>
               <PanelRightOpen size={14} aria-hidden="true" />
               <span className="txn-rail-strip-label">filters{filtersActive > 0 ? <span className="chipx-count unread tnum">{filtersActive}</span> : null}</span>
             </button>
@@ -1263,12 +1464,36 @@ export default function TranscriptViewer({
         <LabelPopover turnId={labelFor} current={savedLabels[labelFor]} onSave={saveLabel} onClose={() => setLabelFor(null)} />
       )}
 
+      {/* The bottom bar carries the session views as its first row and the (keyboard-only) hint
+          and position as a smaller second one. The tab row never leaves — a touch screen has no
+          keyboard, but it still needs to reach every view. */}
       <footer className="txn-footer">
-        <div className="txn-hint">
-          <kbd className="kbd-key">⌘</kbd><kbd className="kbd-key">f</kbd> search, <kbd className="kbd-key">j</kbd>/<kbd className="kbd-key">k</kbd> step turns
+        <div className="txn-foot-tabs">
+          {tabStrip}
+          {showSearchTrigger && (
+            <button
+              type="button"
+              className="btn btn-secondary txn-search-trigger"
+              aria-keyshortcuts="Meta+F Control+F"
+              onClick={openSearch}
+            >
+              <Search size={14} aria-hidden="true" />
+              <span className="txn-search-trigger-text">search transcript</span>{' '}
+              <kbd className="txn-search-key">⌘F</kbd>
+            </button>
+          )}
         </div>
-        {tab === 'trace' && viewMode === 'list' && visibleTurns.length > 0 && (
-          <div className="txn-progress tnum" aria-hidden="true">{progress.cur} of {progress.total}</div>
+        {(footerHints || footerProgress) && (
+          <div className="txn-foot-meta">
+            {footerHints && (
+              <div className="txn-hint">
+                <kbd className="kbd-key">⌘</kbd><kbd className="kbd-key">f</kbd> search, <kbd className="kbd-key">j</kbd>/<kbd className="kbd-key">k</kbd> step turns
+              </div>
+            )}
+            {footerProgress && (
+              <div className="txn-progress tnum" aria-hidden="true">{progress.cur} of {progress.total}</div>
+            )}
+          </div>
         )}
       </footer>
     </div>

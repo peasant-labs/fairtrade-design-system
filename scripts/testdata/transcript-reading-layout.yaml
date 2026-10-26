@@ -1,0 +1,146 @@
+# Cases for the ledger reading layout (scripts/transcript-reading-layout.test.mjs).
+#
+# layoutCases mount the REAL TranscriptViewer through the adapter and state which rails the
+# reader must reach: a supplied `sidebarLayout` is the view model, and the legacy left/right
+# rail props remain aliases that win for their own rail. The `open` list names the rails whose
+# expanded aside must be mounted (every other rail must be its collapsed strip).
+#
+# interactionCases drive the behaviours a host depends on: every explicit rail action emits the
+# full {outline, filters, host} object; zen snapshots and restores that exact object; the width
+# handle changes only --txn-reader-width; and the collapsed strips are 32px. The CSS rows read
+# the shipped stylesheet, because jsdom performs no layout.
+#
+# `kind` is pinned by the manifest's requiredKind map, so a row cannot be re-pointed at a
+# cheaper assertion while its name stays.
+
+defaultsCase:
+  name: the default layout opens both rails and the host sidebar
+  kind: default
+  layout: {outline: true, filters: true, host: true}
+  open: [outline, filters]
+
+layoutCases:
+  - name: a supplied layout collapses only the rail it names
+    kind: controlled-layout
+    layout: {outline: false, filters: true, host: true}
+    open: [filters]
+  - name: a supplied layout closes both rails and the host sidebar
+    kind: controlled-layout
+    layout: {outline: false, filters: false, host: false}
+    open: []
+  - name: the left rail alias wins over the layout for its rail
+    kind: alias-wins
+    layout: {outline: false, filters: true, host: true}
+    alias: {rail: outline, open: true}
+    open: [outline, filters]
+  - name: the right rail alias wins over the layout for its rail
+    kind: alias-wins
+    layout: {outline: true, filters: false, host: true}
+    alias: {rail: filters, open: true}
+    open: [outline, filters]
+
+interactions:
+  - name: an explicit collapse and reopen emits the full layout
+    kind: rail-toggle
+  - name: zen collapses every rail and the host sidebar
+    kind: zen-enter
+  - name: leaving zen restores the exact snapshot
+    kind: zen-restore
+  - name: a width change while zen is on leaves the snapshot alone
+    kind: zen-width
+  - name: the reopen strips are hidden while zen is on
+    kind: zen-strips
+  - name: the zen control sits inside the reader column
+    kind: zen-placement
+  - name: dragging the handle changes the width and snaps on release
+    kind: width-drag
+  - name: the keyboard moves the width between its snaps
+    kind: width-keys
+  - name: a width change never reopens a closed rail
+    kind: width-rails
+  - name: the work summary and the tool rows share one inline edge
+    kind: work-grid
+  - name: both collapsed rail strips are 32px
+    kind: strip-width
+  - name: the ledger prose fills the reader width
+    kind: reader-measure
+  - name: the header carries no width selector
+    kind: header-width
+  - name: the footer meta stays out unless the host opts in
+    kind: footer-config
+  - name: graph mode keeps the view switch
+    kind: graph-escape
+  - name: classic renders none of the ledger reading layout
+    kind: classic-only
+  - name: classic ignores a zen request and keeps its rails
+    kind: classic-zen
+  - name: an interrupted pointer drag does not resize later
+    kind: width-drag-lifecycle
+  - name: a controlled reader width above the range renders the widest snap
+    kind: width-controlled
+    readerWidth: 1200
+    expected: 936
+  - name: a controlled reader width below the range renders the nearest snap
+    kind: width-controlled
+    readerWidth: 700
+    expected: 600
+  - name: a non-numeric controlled reader width falls back to the default width
+    kind: width-controlled
+    readerWidth: .nan
+    expected: 840
+  - name: the session views are the bottom bar's first row
+    kind: footer-tabs
+  - name: the bottom bar never leaves the surface
+    kind: footer-visible
+  - name: the last crumb is the transcript title
+    kind: crumb-title
+  - name: the phone header keeps the title to two lines
+    kind: mobile-header
+
+# The widths the handle must rest on, narrowest first. The gate compares the mounted
+# aria-valuenow and the root's inline custom property to these literals.
+snaps: [600, 840, 936]
+defaultWidth: 840
+
+# A payload with a bash call and an edit call, so the work panel holds both an output body
+# and a diff body (the two the shared inline edge must cover).
+payload:
+  id: reading-layout
+  harness: claude-code
+  startTime: '2026-09-20T10:00:00Z'
+  endTime: '2026-09-20T10:06:00Z'
+  durationMins: 6
+  totalTokens: 1200
+  tokensIn: 800
+  tokensOut: 400
+  turnCount: 6
+  toolCallCount: 2
+  outcome: resolved
+  inputSubmissionCount: 2
+  turns:
+    - {index: 0, role: user, content: 'prepare the fixture for the check', timestamp: '2026-09-20T10:00:00Z', depth: 0}
+    - index: 1
+      role: assistant
+      content: 'running the workspace check before the second pass.'
+      timestamp: '2026-09-20T10:01:00Z'
+      depth: 0
+      observedModel: anthropic/claude-opus-4-8
+      tokensIn: 800
+      tokensOut: 400
+      toolCalls:
+        - id: tc-check
+          name: Bash
+          arguments: '{"command":"pnpm -r typecheck","description":"typecheck the workspace"}'
+          result: '"exit 0"'
+          exitCode: 0
+          durationMs: 8200
+        - id: tc-edit
+          name: Edit
+          filePath: src/lib/tasks.ts
+          arguments: '{"file_path":"src/lib/tasks.ts","old_string":"const a = 1","new_string":"const a = 2"}'
+          result: '"ok"'
+          durationMs: 300
+    - {index: 2, role: user, content: 'run it again and show me the result', timestamp: '2026-09-20T10:03:00Z', depth: 0}
+    - {index: 3, role: assistant, content: 'the second pass looks fine.', timestamp: '2026-09-20T10:04:00Z', depth: 0}
+    - {index: 4, role: assistant, entryType: thinking, content: 'I should check the fixture once more before the run.', timestamp: '2026-09-20T10:05:00Z', depth: 0}
+    - {index: 5, role: assistant, content: 'no tools this time.', timestamp: '2026-09-20T10:06:00Z', depth: 0}

@@ -1,0 +1,182 @@
+# Required-NAME and required-KIND manifest for transcript-reading-layout.yaml: deletion
+# protection. The gate (scripts/transcript-reading-layout.test.mjs) asserts each family's
+# names equal these lists exactly, and that every row's `kind` matches its name here.
+# Membership is asserted, never a bare count; a name keeps its meaning.
+requiredDefaultsCase: the default layout opens both rails and the host sidebar
+requiredLayoutNames:
+  - a supplied layout collapses only the rail it names
+  - a supplied layout closes both rails and the host sidebar
+  - the left rail alias wins over the layout for its rail
+  - the right rail alias wins over the layout for its rail
+requiredLayoutKinds:
+  the default layout opens both rails and the host sidebar: default
+  a supplied layout collapses only the rail it names: controlled-layout
+  a supplied layout closes both rails and the host sidebar: controlled-layout
+  the left rail alias wins over the layout for its rail: alias-wins
+  the right rail alias wins over the layout for its rail: alias-wins
+requiredInteractionNames:
+  - an explicit collapse and reopen emits the full layout
+  - zen collapses every rail and the host sidebar
+  - leaving zen restores the exact snapshot
+  - a width change while zen is on leaves the snapshot alone
+  - the reopen strips are hidden while zen is on
+  - the zen control sits inside the reader column
+  - dragging the handle changes the width and snaps on release
+  - the keyboard moves the width between its snaps
+  - a width change never reopens a closed rail
+  - the work summary and the tool rows share one inline edge
+  - both collapsed rail strips are 32px
+  - the ledger prose fills the reader width
+  - the header carries no width selector
+  - classic renders none of the ledger reading layout
+  - classic ignores a zen request and keeps its rails
+  - an interrupted pointer drag does not resize later
+  - a controlled reader width above the range renders the widest snap
+  - a controlled reader width below the range renders the nearest snap
+  - a non-numeric controlled reader width falls back to the default width
+  - the session views are the bottom bar's first row
+  - the bottom bar never leaves the surface
+  - the footer meta stays out unless the host opts in
+  - graph mode keeps the view switch
+  - the last crumb is the transcript title
+  - the phone header keeps the title to two lines
+requiredInteractionKinds:
+  an explicit collapse and reopen emits the full layout: rail-toggle
+  zen collapses every rail and the host sidebar: zen-enter
+  leaving zen restores the exact snapshot: zen-restore
+  a width change while zen is on leaves the snapshot alone: zen-width
+  the reopen strips are hidden while zen is on: zen-strips
+  the zen control sits inside the reader column: zen-placement
+  dragging the handle changes the width and snaps on release: width-drag
+  the keyboard moves the width between its snaps: width-keys
+  a width change never reopens a closed rail: width-rails
+  the work summary and the tool rows share one inline edge: work-grid
+  both collapsed rail strips are 32px: strip-width
+  the ledger prose fills the reader width: reader-measure
+  the header carries no width selector: header-width
+  classic renders none of the ledger reading layout: classic-only
+  classic ignores a zen request and keeps its rails: classic-zen
+  an interrupted pointer drag does not resize later: width-drag-lifecycle
+  a controlled reader width above the range renders the widest snap: width-controlled
+  a controlled reader width below the range renders the nearest snap: width-controlled
+  a non-numeric controlled reader width falls back to the default width: width-controlled
+  the session views are the bottom bar's first row: footer-tabs
+  the bottom bar never leaves the surface: footer-visible
+  the footer meta stays out unless the host opts in: footer-config
+  graph mode keeps the view switch: graph-escape
+  the last crumb is the transcript title: crumb-title
+  the phone header keeps the title to two lines: mobile-header
+
+# Production mutations the gate must kill (scripts/parts-mutations.mjs). Three are source
+# mutations the mounted harness applies; the five stylesheet rows are applied to the gate's
+# own stylesheet read, which mirrors the harness transform for a file read from disk.
+requiredMutationNames:
+  - the width handler writes the rail state
+  - zen does not snapshot the layout
+  - zen does not restore the layout
+  - the rail strips revert to 40px
+  - the reader prose re-caps at 58ch
+  - the zen gutter is removed
+  - the width handle straddles the text edge
+  - the controlled reader width is rendered raw
+  - the last crumb is the session id again
+  - the bottom bar is hidden on touch
+  - the zen root class is dropped
+  - zen stays where there are no rails
+  - the width grip grows into a box
+  - the bottom bar stacks again
+  - graph loses its way back on a phone
+  - the skip control goes nowhere
+  - graph mode never marks the bar
+  - the sidebar cards lose their inset
+mutations:
+  - name: the width handler writes the rail state
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "    const next = clampReaderWidth(drag.startWidth + (e.clientX - drag.startX) * 2)"
+    replace: "    commitSidebarLayout({ outline: false })\n    const next = clampReaderWidth(drag.startWidth + (e.clientX - drag.startX) * 2)"
+    expectedDiagnostic: "a width change never reopens a closed rail: a width change must not emit a sidebar layout"
+  - name: zen does not snapshot the layout
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "      zenSnapshotRef.current = { ...sidebarLayoutRef.current }"
+    replace: "      zenSnapshotRef.current = { ...DEFAULT_SIDEBAR_LAYOUT }"
+    expectedDiagnostic: "leaving zen restores the exact snapshot: leaving zen must restore"
+  - name: zen does not restore the layout
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "      commitSidebarLayout(zenSnapshotRef.current)"
+    replace: "      commitSidebarLayout({ outline: false, filters: false, host: false })"
+    expectedDiagnostic: "leaving zen restores the exact snapshot: leaving zen must restore"
+  - name: the rail strips revert to 40px
+    file: src/index.css
+    find: ".txn-ledger .txn-body-grid { --txn-rail-strip-w: var(--sp-6); }"
+    replace: ".txn-ledger .txn-body-grid { --txn-rail-strip-w: var(--sp-7); }"
+    expectedDiagnostic: "both collapsed rail strips are 32px: the collapsed strip width must be var(--sp-6)"
+  - name: the reader prose re-caps at 58ch
+    file: src/index.css
+    find: ".txn-turnwrap-ledger .txn-body .txn-md-rule { max-inline-size: none; }"
+    replace: ".txn-turnwrap-ledger .txn-body .txn-md-rule { max-inline-size: var(--measure-prose); }"
+    expectedDiagnostic: "the ledger prose fills the reader width: the ledger reader must clear the measured prose cap with max-inline-size: none"
+  - name: the zen gutter is removed
+    file: src/index.css
+    find: ".txn-ledger .txn-stream { padding-inline-end: calc(var(--txn-zen-size) + var(--sp-4)); }"
+    replace: ".txn-ledger .txn-stream { padding-inline-end: var(--sp-4); }"
+    expectedDiagnostic: "the zen control never covers the reader: the ledger stream must reserve the control's inline-end gutter"
+  - name: the width handle straddles the text edge
+    file: src/index.css
+    find: "transform: translate(0, -50%);"
+    replace: "transform: translate(-50%, -50%);"
+    expectedDiagnostic: "the width handle never covers the text edge: the handle must be drawn fully outside the measure"
+  - name: the controlled reader width is rendered raw
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "readerWidthProp === undefined ? rawReaderWidth : normaliseReaderWidth(rawReaderWidth)"
+    replace: "readerWidthProp === undefined ? rawReaderWidth : rawReaderWidth"
+    expectedDiagnostic: "a controlled reader width above the range renders the widest snap: the supplied width must normalise"
+  - name: the last crumb is the session id again
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "    { label: title },"
+    replace: "    { label: session.id },"
+    expectedDiagnostic: "the last crumb is the transcript title"
+  - name: the bottom bar is hidden on touch
+    file: src/index.css
+    find: "  @media (pointer: coarse), (width < 768px) {\n    .txn-hint { display: none; }\n    .txn-foot-meta:not(:has(.txn-progress)) { display: none; }\n  }"
+    replace: "  @media (pointer: coarse) { .txn-footer { display: none; } }"
+    expectedDiagnostic: "the bottom bar never leaves the surface"
+  - name: the zen root class is dropped
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "(ledger && zen ? ' txn-zen' : '')"
+    replace: "''"
+    expectedDiagnostic: "zen collapses every rail and the host sidebar: the root must carry txn-zen"
+  - name: zen stays where there are no rails
+    file: src/index.css
+    find: "@media (width < 1080px) { .txn-zen-control { display: none; } }"
+    replace: "@media (width < 1080px) { .txn-zen-control { display: inline-flex; } }"
+    expectedDiagnostic: "zen leaves where there are no rails: the control must hide below the two-rail breakpoint"
+  - name: the width grip grows into a box
+    file: src/index.css
+    find: "inline-size: calc(var(--stroke-emphasis) + var(--stroke-hairline));\n  block-size: var(--sp-6);"
+    replace: "inline-size: var(--sp-5);\n  block-size: var(--sp-8);"
+    expectedDiagnostic: "the width handle reads as a grip: it must stay a slim 3x32 mark"
+  - name: the bottom bar stacks again
+    file: src/index.css
+    find: ".txn-footer { flex: none; display: flex; align-items: stretch; gap: var(--sp-3); padding: 0 var(--sp-4); border-top: var(--bd); background: var(--surface); }"
+    replace: ".txn-footer { flex: none; display: flex; flex-direction: column; align-items: stretch; gap: var(--sp-3); padding: 0 var(--sp-4); border-top: var(--bd); background: var(--surface); }"
+    expectedDiagnostic: "the bottom bar is one row: it must not stack a second row"
+  - name: graph loses its way back on a phone
+    file: src/index.css
+    find: "  .txn-trace-head-graph { display: flex; }"
+    replace: "  .txn-trace-head-graph { display: none; }"
+    expectedDiagnostic: "graph keeps its way back: the phone must restore the turns bar in graph mode"
+  - name: the skip control goes nowhere
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "        onClick={() => { const target = tabRefs.current[tab]; if (target) target.focus() }}"
+    replace: "        onClick={() => {}}"
+    expectedDiagnostic: "the session views are the bottom bar's first row: the skip control must land on the active view"
+  - name: graph mode never marks the bar
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "              <div className={\"txn-trace-head\" + (viewMode === 'graph' ? ' txn-trace-head-graph' : '')}>"
+    replace: "              <div className=\"txn-trace-head\">"
+    expectedDiagnostic: "graph mode keeps the view switch: graph mode must mark the turns bar"
+  - name: the sidebar cards lose their inset
+    file: src/index.css
+    find: "  width: 100%; min-height: var(--target-comfortable);\n  padding: var(--sp-2) var(--sp-4);"
+    replace: "  width: 100%; min-height: var(--target-comfortable);\n  padding: var(--sp-2) var(--sp-1);"
+    expectedDiagnostic: "the sidebar user-turn cards breathe"

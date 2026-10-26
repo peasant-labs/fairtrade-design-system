@@ -396,6 +396,13 @@ and italic 400.
 - **Code** (400, `--fs-body`, mono, `--lh-mono`, letter-spacing 0): code, logs, IDs and tool output
   each in its own horizontal scroller, never capped by the prose measure.
 
+**Ledger reading-pane exception (owner ruling).** The opt-in ledger presentation derives its
+reading column from the reader-width control (`--txn-reader-width`: 600, 840 or 936 CSS pixels)
+rather than a fixed `ch` cap, so prose follows the width the reader chose. Tables, code, diffs and
+tool output keep their own measures and horizontal scrollers. This is the one documented exception
+to the reading-measure paragraph above; every classic surface keeps `--measure-prose` and
+`--measure-read`.
+
 The presentation site also uses a locked three-tier heading ladder (`--fs-group`, `--fs-section`,
 `--fs-sub`) that does not drift down the page.
 
