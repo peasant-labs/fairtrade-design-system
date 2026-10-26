@@ -4,6 +4,52 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.46 - 2026-10-26
+
+### Added
+
+- `TranscriptViewer` gains an opt-in `presentation="ledger"` reading surface. A
+  turn becomes a role-led line: a square role well, the role word, the turn
+  number, the time and the copy anchor, with prose first and one grouped work
+  panel over the turn's tool calls. A system turn collapses to one compact row
+  whose preview reads plain text, with its own disclosure, copy anchor and host
+  actions. Classic stays the default and renders as before.
+- The ledger reading layer: a `sidebarLayout` view model (`outline`, `filters`,
+  `host`) with `onSidebarLayoutChange`, a reader-width handle with 600, 840 and
+  936 snaps and keyboard support, and a zen mode that snapshots the exact rail
+  configuration and restores it. Width never changes the sidebar layout, and the
+  prose follows the reader width under one recorded `DESIGN.md` exception.
+- `footer` takes `{ hints, progress }`, both off by default, so a host opts in
+  per part to the shortcut line and the visible-turn counter. A `skip to session
+  views` control opens the viewer, because the session views now sit at the end.
+
+### Changed
+
+- The session views and the search trigger move into one bottom bar under the
+  body, replacing the strip above it. The bar keeps its tablist semantics,
+  arrow-key navigation, counts and the tab panel's `aria-controls`.
+- The default breadcrumb's last crumb is the transcript title, on one line, cut
+  with an ellipsis when the row is full; a host-supplied trail still wins.
+- The zen control is a stable `zen` toggle with a switch, never an icon that
+  reads "exit zen". The width handle reads as a slim grip outside the text
+  measure, and both leave surfaces that cannot use them: zen below the two-rail
+  width, the handle below the phone breakpoint.
+- A phone drops the turns bar in the reading view (graph mode keeps it), hides
+  the breadcrumb that would repeat the title, clamps the title to two lines, and
+  keeps the chips on one scrollable line.
+
+### Fixed
+
+- The ledger timeline draws the 6/4/2 shape ladder for user, agent and tool
+  time, so the segments differ by shape as well as hue.
+- The ledger phase heading takes the reader column instead of the whole stream.
+- A width drag interrupted by a lost capture or a pointer leave no longer
+  resizes on the next move.
+- A controlled reader width normalises once at the render boundary and drives
+  `aria-valuenow` with the same value.
+- The host's pull-request list and the usage disclosure stay on a phone; the
+  shortcut hint is the only footer part that leaves a touch surface.
+
 ## 0.0.45 - 2026-10-24
 
 ### Fixed
