@@ -1,0 +1,226 @@
+# Cases for the ledger presentation's turns (scripts/transcript-ledger-turns.test.mjs).
+#
+# summaryCases feed the pure work-summary helpers directly (no DOM): the counts one turn's work
+# panel reads over its tool calls, and the two labels it prints. Every expected object lists
+# every summary field. Each row's `countLabel`/`metaLabel` is what the panel prints, so the pairs
+# also pin the rules a reader would see: only `read`/`edits` count a file, a failure is `isError`
+# or a non-zero bash exit (never both for one call), and the meta never repeats a call count the
+# leading label already fell back to.
+#
+# payload + cases cook the REAL adapter and mount the REAL TranscriptViewer: classic keeps the
+# flat tool rows and its full head, while the ledger presentation puts one grouped work panel on
+# a turn with tools, leads with a role-only head, renders a system turn as a compact row with a
+# working disclosure, marks a change of role with a rule, keeps a turn's thinking disclosure, and
+# leaves a turn without tools with no panel at all. `mountedSummary` is the literal pair the
+# mounted panel must print, asserted as text so an adapter-vocabulary change cannot pass by
+# re-deriving the same labels.
+summaryCases:
+  - name: mixed work counts commands files edits failures and duration
+    tools:
+      - {id: s1, name: Bash, group: bash, exitCode: 0, durationMs: 8200}
+      - {id: s2, name: Bash, group: bash, exitCode: 1, isError: true, durationMs: 4100}
+      - {id: s3, name: Read, group: read, filePath: scripts/testdata/fixture.yaml, durationMs: 200}
+      - {id: s4, name: Edit, group: edits, filePath: src/lib/tasks.ts, durationMs: 300}
+    expected: {calls: 4, commands: 2, files: 2, edits: 1, failed: 1, durationMs: 12800}
+    countLabel: 2 commands, 2 files, 1 edit
+    metaLabel: 4 calls, 1 failed, 13s
+  - name: singular counts read as one
+    tools:
+      - {id: s1, name: Bash, group: bash, exitCode: 0}
+      - {id: s2, name: Edit, group: edits, filePath: src/a.ts}
+    expected: {calls: 2, commands: 1, files: 1, edits: 1, failed: 0, durationMs: 0}
+    countLabel: 1 command, 1 file, 1 edit
+    metaLabel: 2 calls
+  - name: a turn without counting tools falls back to its call count
+    tools:
+      - {id: s1, name: Read, group: read}
+    expected: {calls: 1, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
+    countLabel: 1 call
+    metaLabel: ''
+  - name: one file touched twice counts once
+    tools:
+      - {id: s1, name: Read, group: read, filePath: src/a.ts}
+      - {id: s2, name: Edit, group: edits, filePath: src/a.ts}
+    expected: {calls: 2, commands: 0, files: 1, edits: 1, failed: 0, durationMs: 0}
+    countLabel: 1 file, 1 edit
+    metaLabel: 2 calls
+  - name: a search scope contributes no files
+    tools:
+      - {id: s1, name: Grep, group: search, filePath: web/src}
+    expected: {calls: 1, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
+    countLabel: 1 call
+    metaLabel: ''
+  - name: a fetch scope contributes no files
+    tools:
+      - {id: s1, name: WebFetch, group: fetch, filePath: https://example.test/reference}
+    expected: {calls: 1, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
+    countLabel: 1 call
+    metaLabel: ''
+  - name: a task scope contributes no files
+    tools:
+      - {id: s1, name: Task, group: tasks, filePath: src/a.ts}
+    expected: {calls: 1, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
+    countLabel: 1 call
+    metaLabel: ''
+  - name: a read and a search of the same path count one file
+    tools:
+      - {id: s1, name: Read, group: read, filePath: src/a.ts}
+      - {id: s2, name: Grep, group: search, filePath: src/a.ts}
+    expected: {calls: 2, commands: 0, files: 1, edits: 0, failed: 0, durationMs: 0}
+    countLabel: 1 file
+    metaLabel: 2 calls
+  - name: a read with a path keeps its call count in the meta
+    tools:
+      - {id: s1, name: Read, group: read, filePath: src/a.ts}
+    expected: {calls: 1, commands: 0, files: 1, edits: 0, failed: 0, durationMs: 0}
+    countLabel: 1 file
+    metaLabel: 1 call
+  - name: a non-zero bash exit counts as a failure
+    tools:
+      - {id: s1, name: Bash, group: bash, exitCode: 0}
+      - {id: s2, name: Bash, group: bash, exitCode: 1}
+    expected: {calls: 2, commands: 2, files: 0, edits: 0, failed: 1, durationMs: 0}
+    countLabel: 2 commands
+    metaLabel: 2 calls, 1 failed
+  - name: an errored read counts as a failure
+    tools:
+      - {id: s1, name: Read, group: read, filePath: src/a.ts, isError: true}
+    expected: {calls: 1, commands: 0, files: 1, edits: 0, failed: 1, durationMs: 0}
+    countLabel: 1 file
+    metaLabel: 1 call, 1 failed
+  - name: two failed tools count two failures
+    tools:
+      - {id: s1, name: Grep, group: search, isError: true}
+      - {id: s2, name: WebFetch, group: fetch, isError: true}
+    expected: {calls: 2, commands: 0, files: 0, edits: 0, failed: 2, durationMs: 0}
+    countLabel: 2 calls
+    metaLabel: 2 failed
+  - name: a bash error at exit zero counts one failure
+    tools:
+      - {id: s1, name: Bash, group: bash, exitCode: 0, isError: true}
+    expected: {calls: 1, commands: 1, files: 0, edits: 0, failed: 1, durationMs: 0}
+    countLabel: 1 command
+    metaLabel: 1 call, 1 failed
+  - name: blank paths and unknown durations are left out
+    tools:
+      - {id: s1, name: Read, group: read, filePath: ''}
+      - {id: s2, name: Read, group: read, filePath: src/a.ts}
+      - {id: s3, name: Bash, group: bash, durationMs: n/a}
+    expected: {calls: 3, commands: 1, files: 1, edits: 0, failed: 0, durationMs: 0}
+    countLabel: 1 command, 1 file
+    metaLabel: 3 calls
+  - name: an empty tool list summarizes to nothing
+    tools: []
+    expected: {calls: 0, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
+    countLabel: 0 calls
+    metaLabel: ''
+
+mountedSummary:
+  countLabel: 2 commands, 2 files, 1 edit
+  metaLabel: 5 calls, 1 failed, 13s
+
+# the query that matches only the system turn's recorded text, used to drive the real
+# search-to-match path and prove the row opens on the reveal.
+revealQuery: worktree changed
+
+payload:
+  id: ledger-turns
+  harness: claude-code
+  startTime: '2026-09-20T10:00:00Z'
+  endTime: '2026-09-20T10:05:00Z'
+  durationMins: 5
+  totalTokens: 1200
+  tokensIn: 800
+  tokensOut: 400
+  turnCount: 7
+  toolCallCount: 5
+  outcome: resolved
+  inputSubmissionCount: 1
+  turns:
+    - {index: 0, role: user, content: 'prepare the fixture for the check', timestamp: '2026-09-20T10:00:00Z', depth: 0}
+    - index: 1
+      role: assistant
+      content: 'running the checks before the second pass.'
+      timestamp: '2026-09-20T10:01:00Z'
+      depth: 0
+      observedModel: anthropic/claude-opus-4-8
+      tokensIn: 800
+      tokensOut: 400
+      toolCalls:
+        - id: tc-check
+          name: Bash
+          arguments: '{"command":"pnpm -r typecheck"}'
+          result: '"exit 0"'
+          exitCode: 0
+          durationMs: 8200
+        - id: tc-test
+          name: Bash
+          arguments: '{"command":"pnpm test"}'
+          result: '"1 failed"'
+          exitCode: 1
+          isError: true
+          durationMs: 4100
+        - id: tc-read
+          name: Read
+          filePath: scripts/testdata/fixture.yaml
+          arguments: '{"file_path":"scripts/testdata/fixture.yaml"}'
+          result: '"ok"'
+          durationMs: 200
+        - id: tc-search
+          name: Grep
+          filePath: web/src
+          arguments: '{"pattern":"rendererFor","path":"web/src"}'
+          result: '"2 hits"'
+        - id: tc-edit
+          name: Edit
+          filePath: src/lib/tasks.ts
+          arguments: '{"file_path":"src/lib/tasks.ts","old_string":"const a = 1","new_string":"const a = 2"}'
+          result: '"ok"'
+          durationMs: 300
+    - {index: 2, role: system, content: 'session resumed, worktree changed on disk', timestamp: '2026-09-20T10:02:00Z', depth: 0}
+    - {index: 3, role: assistant, content: 'the second pass looks fine.', timestamp: '2026-09-20T10:03:00Z', depth: 0}
+    - {index: 4, role: assistant, entryType: thinking, content: 'I should check the fixture once more before the run.', timestamp: '2026-09-20T10:04:00Z', depth: 0}
+    - {index: 5, role: assistant, content: 'no tools this time.', timestamp: '2026-09-20T10:05:00Z', depth: 0}
+    # a system turn that is real Markdown: its one-line preview must read the rendered words, not
+    # the source punctuation, while its body still renders as Markdown.
+    - index: 6
+      role: system
+      content: 'see the [fixture guide](https://example.test/guide) for **emphasis**, *stress*, `inline code`, and ~~struck~~ text, plus <b>raw html</b>.'
+      timestamp: '2026-09-20T10:06:00Z'
+      depth: 0
+
+cases:
+  - name: classic keeps the turn's tools flat
+    kind: classic
+  - name: ledger groups one turn's tools into one panel
+    kind: ledger-panel
+  - name: ledger tool rows open and close
+    kind: ledger-disclosure
+  - name: ledger renders a system turn as a row
+    kind: system
+  - name: the system row disclosure is controllable by the host
+    kind: system-controlled
+  - name: a search hit opens the system row
+    kind: system-reveal
+    # only the revealed system row opens; the other system turn stays collapsed
+    revealedTurn: 2
+    closedTurn: 6
+  # the preview reads the rendered words, not the Markdown source
+  - name: the system row preview reads plain text
+    kind: system-preview
+    turn: 6
+    preview: 'see the fixture guide for emphasis, stress, inline code, and struck text, plus raw html.'
+  - name: ledger keeps a turn's thinking disclosure
+    kind: thinking
+  - name: a turn without tools has no work group
+    kind: no-tools
+  - name: the ledger head carries only the role line and its controls
+    kind: ledger-head
+  - name: host turn actions survive on every role
+    kind: host-actions
+  - name: a role change draws one rule and the first turn draws none
+    kind: turn-rules
+  - name: the system turn's heading follows the page level
+    kind: heading-level
+    # the viewer's page level; its turn headings sit two levels below it (1 -> h3, 2 -> h4)
+    headingLevel: 1

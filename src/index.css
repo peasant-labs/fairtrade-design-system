@@ -3706,3 +3706,62 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   color: var(--ink-3);
 }
 .txn-rail-turn[aria-current="true"] .txn-rail-turn-copy { color: var(--ink-2); }
+
+/* ---- ledger turns ----------------------------------------------------------------
+   Prose-first turns read at the code measure: a square role well and the role word lead, the
+   prose follows, and one grouped work panel replaces the flat tool rows. A system turn is one
+   compact row with its own disclosure. Every rule below is scoped to the ledger classes the
+   opt-in presentation adds, so the classic card is untouched. Tokens only, radius 0, both
+   themes free. */
+.txn-turnwrap-ledger { max-inline-size: var(--measure-code); margin-inline: auto; }
+.txn-turn.txn-turn-ledger { background: transparent; border: 0; }
+/* the active marker stays: the leading rail is an inset shadow, so a borderless ledger turn
+   still shows which turn is current. */
+.txn-turn.txn-turn-ledger.txn-active { border-color: transparent; box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber); }
+
+/* a faint rule marks a change of role between adjacent turns, and never opens the trace. */
+.txn-ledger .txn-turn-rule { border: 0; border-top: var(--bd); opacity: .7; margin: var(--sp-4) 0; }
+
+.txn-turnhead-ledger { gap: var(--sp-2); }
+.txn-roleico {
+  display: inline-flex; align-items: center; justify-content: center;
+  inline-size: var(--control-h-sm); block-size: var(--control-h-sm);
+  border: var(--bd-strong);
+  color: var(--ink-2);
+  flex: none;
+}
+.txn-roleico .lucide, .txn-roleico .brand, .txn-roleico .pv-icon { width: var(--ic-sm); height: var(--ic-sm); }
+.txn-turn.user .txn-roleico { color: var(--teal); }
+.txn-turn.sub .txn-roleico { color: var(--mauve); }
+
+/* one work panel per turn: a top rule, the computed summary line, then the tool rows. */
+.txn-work { margin-top: var(--sp-4); padding-top: var(--sp-1); border-top: var(--bd); }
+.txn-work-head {
+  display: flex; align-items: center; gap: var(--sp-2);
+  min-height: var(--target-min);
+  font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
+  color: var(--ink-3);
+}
+.txn-work-count { color: var(--ink-2); font-weight: 700; }
+.txn-work-meta { margin-left: auto; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.txn-work-rows { margin-top: var(--sp-1); }
+
+/* a system turn reads as one compact row; its recorded text opens one indent under it. */
+.txn-systemrow { margin-top: var(--sp-3); border-top: var(--bd); }
+.txn-systemrow-head-row { display: flex; align-items: center; gap: var(--sp-2); }
+.txn-systemrow-head {
+  display: flex; align-items: center; gap: var(--sp-2);
+  flex: 1 1 auto; min-width: 0;
+  min-height: var(--target-comfortable);
+  padding: 0;
+  background: transparent; border: 0;
+  font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
+  color: var(--ink-3);
+  text-align: left; cursor: pointer;
+}
+.txn-systemrow-head:hover { color: var(--ink-2); }
+.txn-systemrow-head:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+.txn-systemrow-label { flex: none; font-weight: 700; color: var(--ink-2); }
+.txn-systemrow-preview { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.txn-systemrow-time { flex: none; color: var(--ink-4); }
+.txn-systemrow-body { margin-top: var(--sp-1); padding-inline-start: var(--sp-5); border-inline-start: var(--bd); }

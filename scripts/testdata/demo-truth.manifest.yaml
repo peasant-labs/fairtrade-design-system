@@ -19,6 +19,7 @@ requiredCaseNames:
   - first publish keeps the picker suggestion note on a reader row
   - transcript demo stays classic without the ledger flag
   - transcript demo opts into the ledger presentation
+  - transcript demo renders the ledger system row
 requiredMutationNames:
   - the typical pair is slashed
   - stale published vocabulary

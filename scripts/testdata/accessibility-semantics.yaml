@@ -10,6 +10,9 @@ cases:
   - {name: ghost explanation is keyboard reachable, component: ghost, selector: .tlp-ghost-node, attribute: tabindex, expected: '0'}
   - {name: turn is an article named by its heading, component: turn, selector: article.txn-turnwrap, attribute: aria-labelledby, reference: h4.txn-turn-heading}
   - {name: token badge names its unit, component: turn, selector: .txn-tokbadge, text: tokens}
+  - {name: system row disclosure names its body, component: systemrow, selector: .txn-systemrow-head, attribute: aria-controls, documentReference: .txn-systemrow-body}
+  - {name: work panel renders as one group, component: workgroup, selector: div.txn-work, count: 1}
+  - {name: work panel is not a landmark, component: workgroup, selector: section.txn-work, absent: true}
   - {name: tool output is keyboard reachable, component: tool, selector: pre.txn-code, attribute: tabindex, expected: '0'}
   - {name: task result is keyboard reachable, component: task, click: .txn-details-toggle, selector: pre.txn-code, attribute: tabindex, expected: '0'}
   - {name: markdown code is keyboard reachable, component: markdown, selector: .txn-md-code-wrap, attribute: tabindex, expected: '0'}
@@ -32,6 +35,8 @@ input:
   annotations: [{id: note, kind: error, turn: 0, label: recorded error}]
   markdown: "```js\nconst value = 1\n```\n\n| a | b |\n| - | - |\n| c | d |"
   turn: {index: 0, label: '1', role: user, content: hello, tokens: {in: 200, out: 80}}
+  systemTurn: {index: 2, label: '3', role: system, content: 'session resumed, worktree changed on disk'}
+  workTools: [{id: read, name: Read, group: read, filePath: api.js}]
   tool: {id: read, group: read, output: content, args: {path: api.js}}
   task: {id: task, group: tasks, output: result, args: {description: investigate}}
   ghost: {ghostHash: abcdef0123, resolution: unresolved, method: none, confidence: low}

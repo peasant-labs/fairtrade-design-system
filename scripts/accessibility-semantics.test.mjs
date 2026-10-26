@@ -21,6 +21,8 @@ await withMountedSource(async ({ load, mount, React, window }) => {
     overflow: el((await load('/src/ui/graph/SessionOverflowDisclosure.jsx')).default, input.overflow),
     ghost: el((await load('/src/ui/graph/GhostCommitNode.jsx')).default, fixture.input.ghost),
     turn: el((await load('/src/ui/transcript/TurnCard.jsx')).default, {turn:fixture.input.turn}),
+    systemrow: el((await load('/src/ui/transcript/SystemRow.jsx')).default, {turn:fixture.input.systemTurn}),
+    workgroup: el((await load('/src/ui/transcript/WorkGroup.jsx')).default, {tools:fixture.input.workTools}),
     tool: el((await load('/src/ui/transcript/ToolBody.jsx')).default, {tool:fixture.input.tool}),
     task: el((await load('/src/ui/transcript/TaskBody.jsx')).default, {tool:fixture.input.task}),
     markdown: el((await load('/src/ui/transcript/Markdown.jsx')).default, {text:fixture.input.markdown}),

@@ -14,6 +14,9 @@ requiredCaseNames:
   - ghost explanation is keyboard reachable
   - turn is an article named by its heading
   - token badge names its unit
+  - system row disclosure names its body
+  - work panel renders as one group
+  - work panel is not a landmark
   - tool output is keyboard reachable
   - task result is keyboard reachable
   - markdown code is keyboard reachable

@@ -1057,12 +1057,15 @@ export default function TranscriptViewer({
                       return (
                         <div key={t.identity ?? t.index}>
                           {showPhase && <PhaseDivider phase={phase} heading={PhaseHeading} />}
+                          {/* in ledger a faint rule marks where the role changes; classic gains none */}
+                          {ledger && prev && prev.role !== t.role && <hr className="txn-turn-rule" aria-hidden="true" />}
                           {/* in ledger the rail card carries the task identity and duration and
                               the turn head carries the per-turn identity, so the classic
                               boundary would repeat both before the first line of prose. */}
                           {!ledger && t.role === 'user' && task && <TaskBoundary task={task} />}
                           <TurnCard
                             headingLevel={pageLevel + 2}
+                            presentation={presentation}
                             turn={t}
                             active={activeTurn === t.index}
                             revealRequest={searchReveal?.turn === t.index ? searchReveal.sequence : 0}
