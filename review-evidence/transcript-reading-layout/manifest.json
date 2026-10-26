@@ -1,0 +1,110 @@
+{
+  "sourceCommit": "91ac77e17d9bbacd02e24200edea842458cdd17f",
+  "sourceTree": "1d2d96209a50b0bf36bb051144524d791c052640",
+  "packageVersion": "0.0.45",
+  "limits": [
+    "Emulated Chromium viewport and theme attribute, not physical-device proof.",
+    "The mounted in-use transcript proves the opt-in ledger path; classic stays the default and is unchanged.",
+    "Consumer adoption, pin bumps and user acceptance remain separate."
+  ],
+  "screenshots": [
+    {
+      "file": "dark/reader-phone.png",
+      "sha256": "28d3e6d1cc2e644b162a7a5fa7e33b7c2b4a5651f7b4cddc4fd097f141df6889",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/reader-tightened.png",
+      "sha256": "89fbf47bc91b572162faded96a9c570d7c4f92e3813fe72dbc64b8c1bd5775f9",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/reader-top.png",
+      "sha256": "0357a1e0570d27b8e52e31b5a64d0bdb7b2ac857c6ef234d9f7d397e2fe58deb",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/reader-wide-filters-closed.png",
+      "sha256": "21927544c20265ef4f568e4292b98d607b5b1132de6866f4dc806af091f6eafa",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/reader-work.png",
+      "sha256": "41521fa369a1299c5cf404bacd9fa6132cc8f5c7aeaefd55b34e4eae509986da",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/reader-zen-on.png",
+      "sha256": "436dec90dc1e6982152da4f53d3a7ad917e2b2efb067aa19900805babde9b7de",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/reader-zen-restored.png",
+      "sha256": "21927544c20265ef4f568e4292b98d607b5b1132de6866f4dc806af091f6eafa",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-phone.png",
+      "sha256": "a964bf9805f3832624b315f4385890f0c787719016d973f8cbdfe0672a0a90e8",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-tightened.png",
+      "sha256": "b68b5042f238b4e30e48544d80e99607740ea5e218f48afd3d28afa7719a0506",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-top.png",
+      "sha256": "d7a4f2d73ea6b525a7bde6e617201ccf9829af607a897b24acf7ec92d34e5c6a",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-wide-filters-closed.png",
+      "sha256": "dabc7aeb876f0dfe8316dd16209a2309a3feb70ea30298c8a39adcc3efd9eece",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-work.png",
+      "sha256": "d53da86bdf4c209afac63f9e475e3dedc00e0baa050ebf2d7cf10d8ed5247406",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-zen-on.png",
+      "sha256": "f4a4c1c9c1909f65290c0d44e991b2f618b02b70ee50665527977fd350917667",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-zen-restored.png",
+      "sha256": "dabc7aeb876f0dfe8316dd16209a2309a3feb70ea30298c8a39adcc3efd9eece",
+      "surface": "mounted in-use transcript (reading layout)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    }
+  ]
+}
