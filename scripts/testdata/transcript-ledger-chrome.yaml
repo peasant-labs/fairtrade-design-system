@@ -1,0 +1,57 @@
+# Mounted-viewer cases for the ledger presentation. Every case mounts the REAL TranscriptViewer
+# (scripts/transcript-ledger-chrome.test.mjs) through the adapter, scrolls the trace so the pinned
+# header renders, and states, for each named control, whether it must be present or absent. The
+# control names are a closed set the gate resolves to DOM:
+#   ledger-root      the root carries the `txn-ledger` class
+#   subtitle         the supplied deck under the session title
+#   sticky-bar       the pinned trace header (only exists on the trace tab, after scrolling)
+#   sticky-title     the session title inside the pinned header (ledger only)
+#   minimap          the whole-transcript segment strip inside the pinned header (ledger only)
+#   scrubber         the classic position track inside the pinned header (classic only)
+#   rail-turns       the left rail's per-task card list (ledger trace only)
+#   rail-waterfall   the left rail's duration waterfall (classic trace only)
+#   rail-outline     a left-rail outline row (the non-trace tabs)
+# Every case lists every control exactly once, across present and absent.
+
+# No presentation prop at all: the classic surface, unchanged.
+defaultsCase:
+  name: classic with no props keeps the scrubber and no ledger chrome
+  present: [sticky-bar, scrubber, rail-waterfall]
+  absent: [ledger-root, subtitle, sticky-title, minimap, rail-turns, rail-outline]
+
+cases:
+  - name: classic keeps the scrubber when a subtitle is supplied
+    props: {subtitle: true}
+    present: [subtitle, sticky-bar, scrubber, rail-waterfall]
+    absent: [ledger-root, sticky-title, minimap, rail-turns, rail-outline]
+  - name: ledger swaps the scrubber for the title and minimap
+    props: {presentation: ledger}
+    present: [ledger-root, sticky-bar, sticky-title, minimap, rail-turns]
+    absent: [subtitle, scrubber, rail-waterfall, rail-outline]
+  - name: ledger renders the supplied subtitle under the title
+    props: {presentation: ledger, subtitle: true}
+    present: [ledger-root, subtitle, sticky-bar, sticky-title, minimap, rail-turns]
+    absent: [scrubber, rail-waterfall, rail-outline]
+  - name: ledger leaves the other tab outlines on the classic rails
+    props: {presentation: ledger, activeTab: highlights}
+    present: [ledger-root, rail-outline]
+    absent: [subtitle, sticky-bar, sticky-title, minimap, scrubber, rail-turns, rail-waterfall]
+
+# Behaviour a host relies on, beyond presence.
+interactions:
+  - name: the minimap renders one segment per visible turn
+    kind: minimap-segments
+  - name: each segment carries its turn kind
+    kind: minimap-kinds
+  - name: each segment names the turn it jumps to
+    kind: minimap-labels
+  - name: clicking a segment selects its turn
+    kind: minimap-jump
+  - name: the rail renders one card per task with its turn, duration and prompt
+    kind: rail-cards
+  - name: the card covering the active turn is current
+    kind: rail-current
+  - name: clicking a card selects its first turn
+    kind: rail-jump
+  - name: the subtitle renders in both presentations
+    kind: subtitle-modes
