@@ -1,0 +1,68 @@
+{
+  "sourceCommit": "d1c581fa1e832727c0af575102f67eacf339589b",
+  "sourceTree": "c063d45d4c96962b5063917d3f134812e99d40f3",
+  "packageVersion": "0.0.45",
+  "limits": [
+    "Emulated Chromium viewport and theme attribute, not physical-device proof.",
+    "The mounted in-use transcript proves the opt-in ledger path; classic stays the default and is unchanged.",
+    "Consumer adoption, pin bumps and user acceptance remain separate."
+  ],
+  "screenshots": [
+    {
+      "file": "dark/reader-phone.png",
+      "sha256": "a4abd507d544b6dc66fafdc05aee383afb2688582db1aa6b671ae91b8d9fea3f",
+      "surface": "mounted in-use transcript (ledger turns)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/reader-system.png",
+      "sha256": "341521a783294316c7207e0525e99fb5645f4c451bc663bd4b01f287a8c2dfee",
+      "surface": "mounted in-use transcript (ledger turns)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/reader-top.png",
+      "sha256": "2d4ea5c4aced30bb83ecfee19966b1ee540013aa53763f1aece7e83346dc62e1",
+      "surface": "mounted in-use transcript (ledger turns)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "dark/reader-work.png",
+      "sha256": "bbb12c5f7719be97eb373f9aea212c4cdd4910d1dd62de0ca6cc9fb22cbaa5b5",
+      "surface": "mounted in-use transcript (ledger turns)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-phone.png",
+      "sha256": "892906f461e3eb7a016b811e7822f218382d7e06fe0189c307a168233dc0b2e1",
+      "surface": "mounted in-use transcript (ledger turns)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-system.png",
+      "sha256": "89321010e35151c4bbefb2656c74bd910d94ebdc100cb1dc7bc3fcb0b233b4ea",
+      "surface": "mounted in-use transcript (ledger turns)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-top.png",
+      "sha256": "920d3473cb8002f2e529847586634916d12e741243c61c99611d2d7b2779adfb",
+      "surface": "mounted in-use transcript (ledger turns)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    },
+    {
+      "file": "light/reader-work.png",
+      "sha256": "e1bda3e1f4bb0e112e801b26acc56da0c357db0dc56e836c3e0bc66d657cd2d5",
+      "surface": "mounted in-use transcript (ledger turns)",
+      "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
+      "data": "synthetic demonstration data"
+    }
+  ]
+}

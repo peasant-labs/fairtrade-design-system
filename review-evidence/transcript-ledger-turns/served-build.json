@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "d1c581fa1e832727c0af575102f67eacf339589b",
+  "sourceTree": "c063d45d4c96962b5063917d3f134812e99d40f3",
+  "version": "0.0.45",
+  "htmlSha256": "17a86188f64c9068e64a53bc745277c326d0a19f13a2ff1748dd342d280e95fb",
+  "assets": {
+    "/assets/index-BVfJhyaY.js": "d997d5cc7f54562833f37908a8adee83d40f2d041ba2f130de598ba14138d55b",
+    "/assets/index-CRyJBcAz.css": "cf07d61946c004a60d9d1caa30b2e58884df1749a5f3a7aafcdeca24b0b4c01f"
+  },
+  "fixtureData": "synthetic demonstration data only",
+  "verifiedAt": "2026-10-26T11:23:04.951Z",
+  "verified": true
+}
