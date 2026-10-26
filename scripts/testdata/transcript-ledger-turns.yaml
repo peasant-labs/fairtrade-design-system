@@ -2,14 +2,18 @@
 #
 # summaryCases feed the pure work-summary helpers directly (no DOM): the counts one turn's work
 # panel reads over its tool calls, and the two labels it prints. Every expected object lists
-# every summary field.
+# every summary field. Each row's `countLabel`/`metaLabel` is what the panel prints, so the pairs
+# also pin the rules a reader would see: only `read`/`edits` count a file, a failure is `isError`
+# or a non-zero bash exit (never both for one call), and the meta never repeats a call count the
+# leading label already fell back to.
 #
 # payload + cases cook the REAL adapter and mount the REAL TranscriptViewer: classic keeps the
-# flat tool rows, while the ledger presentation puts one grouped work panel on a turn with tools,
-# renders a system turn as a compact row with a working disclosure, keeps a turn's thinking
-# disclosure, and leaves a turn without tools with no panel at all. The payload's turn carries a
-# Grep whose `filePath` is a directory scope, so the mounted summary proves a search never
-# inflates the file count.
+# flat tool rows and its full head, while the ledger presentation puts one grouped work panel on
+# a turn with tools, leads with a role-only head, renders a system turn as a compact row with a
+# working disclosure, marks a change of role with a rule, keeps a turn's thinking disclosure, and
+# leaves a turn without tools with no panel at all. `mountedSummary` is the literal pair the
+# mounted panel must print, asserted as text so an adapter-vocabulary change cannot pass by
+# re-deriving the same labels.
 summaryCases:
   - name: mixed work counts commands files edits failures and duration
     tools:
@@ -32,7 +36,7 @@ summaryCases:
       - {id: s1, name: Read, group: read}
     expected: {calls: 1, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
     countLabel: 1 call
-    metaLabel: 1 call
+    metaLabel: ''
   - name: one file touched twice counts once
     tools:
       - {id: s1, name: Read, group: read, filePath: src/a.ts}
@@ -45,7 +49,19 @@ summaryCases:
       - {id: s1, name: Grep, group: search, filePath: web/src}
     expected: {calls: 1, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
     countLabel: 1 call
-    metaLabel: 1 call
+    metaLabel: ''
+  - name: a fetch scope contributes no files
+    tools:
+      - {id: s1, name: WebFetch, group: fetch, filePath: https://example.test/reference}
+    expected: {calls: 1, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
+    countLabel: 1 call
+    metaLabel: ''
+  - name: a task scope contributes no files
+    tools:
+      - {id: s1, name: Task, group: tasks, filePath: src/a.ts}
+    expected: {calls: 1, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
+    countLabel: 1 call
+    metaLabel: ''
   - name: a read and a search of the same path count one file
     tools:
       - {id: s1, name: Read, group: read, filePath: src/a.ts}
@@ -53,6 +69,12 @@ summaryCases:
     expected: {calls: 2, commands: 0, files: 1, edits: 0, failed: 0, durationMs: 0}
     countLabel: 1 file
     metaLabel: 2 calls
+  - name: a read with a path keeps its call count in the meta
+    tools:
+      - {id: s1, name: Read, group: read, filePath: src/a.ts}
+    expected: {calls: 1, commands: 0, files: 1, edits: 0, failed: 0, durationMs: 0}
+    countLabel: 1 file
+    metaLabel: 1 call
   - name: a non-zero bash exit counts as a failure
     tools:
       - {id: s1, name: Bash, group: bash, exitCode: 0}
@@ -60,6 +82,25 @@ summaryCases:
     expected: {calls: 2, commands: 2, files: 0, edits: 0, failed: 1, durationMs: 0}
     countLabel: 2 commands
     metaLabel: 2 calls, 1 failed
+  - name: an errored read counts as a failure
+    tools:
+      - {id: s1, name: Read, group: read, filePath: src/a.ts, isError: true}
+    expected: {calls: 1, commands: 0, files: 1, edits: 0, failed: 1, durationMs: 0}
+    countLabel: 1 file
+    metaLabel: 1 call, 1 failed
+  - name: two failed tools count two failures
+    tools:
+      - {id: s1, name: Grep, group: search, isError: true}
+      - {id: s2, name: WebFetch, group: fetch, isError: true}
+    expected: {calls: 2, commands: 0, files: 0, edits: 0, failed: 2, durationMs: 0}
+    countLabel: 2 calls
+    metaLabel: 2 failed
+  - name: a bash error at exit zero counts one failure
+    tools:
+      - {id: s1, name: Bash, group: bash, exitCode: 0, isError: true}
+    expected: {calls: 1, commands: 1, files: 0, edits: 0, failed: 1, durationMs: 0}
+    countLabel: 1 command
+    metaLabel: 1 call, 1 failed
   - name: blank paths and unknown durations are left out
     tools:
       - {id: s1, name: Read, group: read, filePath: ''}
@@ -72,7 +113,15 @@ summaryCases:
     tools: []
     expected: {calls: 0, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
     countLabel: 0 calls
-    metaLabel: 0 calls
+    metaLabel: ''
+
+mountedSummary:
+  countLabel: 2 commands, 2 files, 1 edit
+  metaLabel: 5 calls, 1 failed, 13s
+
+# the query that matches only the system turn's recorded text, used to drive the real
+# search-to-match path and prove the row opens on the reveal.
+revealQuery: worktree changed
 
 payload:
   id: ledger-turns
@@ -94,6 +143,9 @@ payload:
       content: 'running the checks before the second pass.'
       timestamp: '2026-09-20T10:01:00Z'
       depth: 0
+      observedModel: anthropic/claude-opus-4-8
+      tokensIn: 800
+      tokensOut: 400
       toolCalls:
         - id: tc-check
           name: Bash
@@ -139,7 +191,21 @@ cases:
     kind: ledger-disclosure
   - name: ledger renders a system turn as a row
     kind: system
+  - name: the system row disclosure is controllable by the host
+    kind: system-controlled
+  - name: a search hit opens the system row
+    kind: system-reveal
   - name: ledger keeps a turn's thinking disclosure
     kind: thinking
   - name: a turn without tools has no work group
     kind: no-tools
+  - name: the ledger head carries only the role line and its controls
+    kind: ledger-head
+  - name: host turn actions survive on every role
+    kind: host-actions
+  - name: a role change draws one rule and the first turn draws none
+    kind: turn-rules
+  - name: the system turn's heading follows the page level
+    kind: heading-level
+    # the viewer's page level; its turn headings sit two levels below it (1 -> h3, 2 -> h4)
+    headingLevel: 1

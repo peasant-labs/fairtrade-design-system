@@ -14,7 +14,9 @@
        non-zero (the two ways a failed run reaches the cooked model);
      • the duration is the sum of the recorded, finite tool durations;
      • zero parts are left out of a label, so a turn never reads "0 edits"; when commands, files
-       and edits are all zero the count falls back to the turn's call count. ───────────────── */
+       and edits are all zero the count falls back to the turn's call count, and the meta then
+       leaves the call count out, so one number is never printed in both slots.
+   ─────────────────────────────────────────────────────────────────────────────── */
 
 import { formatDurationMs } from './time.js'
 
@@ -48,6 +50,22 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`
 const FILE_GROUPS = ['read', 'edits']
 
 /**
+ * The counted parts of the leading label: commands, files and edits, in that order, with zero
+ * parts left out. An empty list means the count label falls back to the call count, and the meta
+ * must leave the calls out so the panel never prints the same number twice.
+ * @param {Partial<WorkSummary>} [summary]
+ * @returns {string[]}
+ */
+function countedParts(summary = {}) {
+  /** @type {string[]} */
+  const parts = []
+  if ((summary.commands ?? 0) > 0) parts.push(plural(summary.commands ?? 0, 'command', 'commands'))
+  if ((summary.files ?? 0) > 0) parts.push(plural(summary.files ?? 0, 'file', 'files'))
+  if ((summary.edits ?? 0) > 0) parts.push(plural(summary.edits ?? 0, 'edit', 'edits'))
+  return parts
+}
+
+/**
  * Summarize one turn's tool calls.
  * @param {ToolCallVM[]} [tools]
  * @returns {WorkSummary}
@@ -77,24 +95,24 @@ export function workSummary(tools = []) {
  * @returns {string}
  */
 export function workCountLabel(summary = {}) {
-  /** @type {string[]} */
-  const parts = []
-  if ((summary.commands ?? 0) > 0) parts.push(plural(summary.commands ?? 0, 'command', 'commands'))
-  if ((summary.files ?? 0) > 0) parts.push(plural(summary.files ?? 0, 'file', 'files'))
-  if ((summary.edits ?? 0) > 0) parts.push(plural(summary.edits ?? 0, 'edit', 'edits'))
+  const parts = countedParts(summary)
   if (parts.length > 0) return parts.join(', ')
   return plural(summary.calls ?? 0, 'call', 'calls')
 }
 
 /**
- * The panel's trailing meta: "8 calls, 1 failed, 29s"; the failure count is omitted when zero
- * and the duration is omitted when nothing was recorded.
+ * The panel's trailing meta: "8 calls, 1 failed, 29s". The failure count is omitted when zero and
+ * the duration is omitted when nothing was recorded. The leading call count is omitted when the
+ * count label already fell back to it (no commands, files or edits); pass `includeCalls` to force
+ * either side.
  * @param {Partial<WorkSummary>} [summary]
+ * @param {{ includeCalls?: boolean }} [options]
  * @returns {string}
  */
-export function workMetaLabel(summary = {}) {
+export function workMetaLabel(summary = {}, { includeCalls = countedParts(summary).length > 0 } = {}) {
   /** @type {string[]} */
-  const parts = [plural(summary.calls ?? 0, 'call', 'calls')]
+  const parts = []
+  if (includeCalls) parts.push(plural(summary.calls ?? 0, 'call', 'calls'))
   if ((summary.failed ?? 0) > 0) parts.push(plural(summary.failed ?? 0, 'failed', 'failed'))
   const duration = formatDurationMs(summary.durationMs)
   if (duration) parts.push(duration)

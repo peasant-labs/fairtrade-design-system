@@ -58,9 +58,14 @@ function turnTimeLabel(ts) {
  * @param {number} [props.revealRequest] explicit search navigation sequence
  * @param {number} [props.headingLevel=4] the turn heading's level: h4 under a viewer whose title is an h2, h3 under one
  *        whose title is the page's h1
- * @param {'classic' | 'ledger'} [props.presentation='classic'] chrome presentation. `ledger` draws a square
- *        role well, groups the turn's tool calls into one work panel, and renders a system turn as a compact
- *        row; absent, the classic card renders exactly as before
+ * @param {'classic' | 'ledger'} [props.presentation='classic'] chrome presentation. `ledger` leads with a
+ *        square role well and the role word, groups the turn's tool calls into one work panel, and renders a
+ *        system turn as a compact row; absent, the classic card renders exactly as before. In ledger the head
+ *        carries only the role, the turn number, the time, and the copy anchor (plus the host's
+ *        `renderActions`); the built-in collapse control, label affordance, model name, error chip, token
+ *        badge, and saved-label chip are intentionally hidden there for now. The host's own per-turn
+ *        `renderActions` and `renderTurnPanel` keep rendering on every role, so a host extension is never
+ *        dropped by the presentation switch.
  */
 export default function TurnCard({
   turn,
@@ -133,51 +138,63 @@ export default function TurnCard({
       <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</TurnHeading>
       {ledger ? (
         <>
-          {/* the square role well carries the glyph; the label keeps the role word and colour */}
-          <span className="txn-roleico" aria-hidden="true" style={roleStyle}>{roleGlyph}</span>
+          {/* the ledger head: the square role well and the role word, then the turn number, the
+              time, and the copy anchor. The well is not aria-hidden so a provider mark keeps its
+              accessible name; the role word beside it names the role either way. */}
+          <span className="txn-roleico" style={roleStyle}>{roleGlyph}</span>
           <span className="txn-rolelabel" style={roleStyle}>{roleLabel}</span>
+          <span className="txn-turnnum tnum">#{turn.label}</span>
+          {timeLabel && (
+            <Term className="txn-turntime" def={turn.timeTitle ?? turn.timestamp ?? turn.time}>
+              {timeLabel}
+            </Term>
+          )}
+          {anchorButton}
+          {renderActions ? renderActions(turn) : null}
         </>
       ) : (
-        <span className="txn-rolelabel" style={roleStyle}>
-          {roleGlyph}
-          {roleLabel}
-        </span>
-      )}
-      {turn.effectiveModel && <span className="txn-turnmodel mono">{turn.effectiveModel}</span>}
-      {isSub && <span className="txn-depth tnum">depth {turn.depth}</span>}
-      <span className="txn-turnnum tnum">#{turn.label}</span>
-      <button type="button" className="txn-turn-disclosure" aria-expanded={expanded} aria-controls={bodyId} onClick={() => setExpanded(value => !value)}>
-        {expanded ? 'collapse' : 'expand'} turn {turn.label}
-      </button>
-      {timeLabel && (
-        <Term className="txn-turntime" def={turn.timeTitle ?? turn.timestamp ?? turn.time}>
-          {timeLabel}
-        </Term>
-      )}
-      {anchorButton}
-      {renderActions ? (
-        renderActions(turn)
-      ) : onLabel && (
-        <button type="button" className="txn-labelbtn" onClick={() => onLabel(turn.index)}>
-          label
-        </button>
-      )}
-      {turn.isError && (
-        <span className="chip chip-err txn-pill">
-          <AlertTriangle size={14} aria-hidden="true" /> error
-        </span>
-      )}
-      {turn.tokens && (
-        <Term className="txn-tokbadge tnum" def={formatCount(turn.tokens.in) + ' input tokens, ' + formatCount(turn.tokens.out) + ' output tokens'}>
-          <Coins size={14} aria-hidden="true" /> {formatCount(turn.tokens.in + turn.tokens.out)} tokens
-        </Term>
+        <>
+          <span className="txn-rolelabel" style={roleStyle}>
+            {roleGlyph}
+            {roleLabel}
+          </span>
+          {turn.effectiveModel && <span className="txn-turnmodel mono">{turn.effectiveModel}</span>}
+          {isSub && <span className="txn-depth tnum">depth {turn.depth}</span>}
+          <span className="txn-turnnum tnum">#{turn.label}</span>
+          <button type="button" className="txn-turn-disclosure" aria-expanded={expanded} aria-controls={bodyId} onClick={() => setExpanded(value => !value)}>
+            {expanded ? 'collapse' : 'expand'} turn {turn.label}
+          </button>
+          {timeLabel && (
+            <Term className="txn-turntime" def={turn.timeTitle ?? turn.timestamp ?? turn.time}>
+              {timeLabel}
+            </Term>
+          )}
+          {anchorButton}
+          {renderActions ? (
+            renderActions(turn)
+          ) : onLabel && (
+            <button type="button" className="txn-labelbtn" onClick={() => onLabel(turn.index)}>
+              label
+            </button>
+          )}
+          {turn.isError && (
+            <span className="chip chip-err txn-pill">
+              <AlertTriangle size={14} aria-hidden="true" /> error
+            </span>
+          )}
+          {turn.tokens && (
+            <Term className="txn-tokbadge tnum" def={formatCount(turn.tokens.in) + ' input tokens, ' + formatCount(turn.tokens.out) + ' output tokens'}>
+              <Coins size={14} aria-hidden="true" /> {formatCount(turn.tokens.in + turn.tokens.out)} tokens
+            </Term>
+          )}
+        </>
       )}
     </div>
   )
 
   const body = (
     <>
-      {savedLabel && (
+      {savedLabel && !ledger && (
         <div className="txn-savedchips">
           <span
             className={
@@ -226,7 +243,9 @@ export default function TurnCard({
 
   /* a ledger system turn is one compact row, not a card: it renders inside the same article the
      other turns use (one anchor id, one registerRef, the partition data), with the hidden heading
-     and the row as its children. */
+     and the row as its children. The row keeps the same trailing cluster every ledger turn has:
+     the copy anchor plus the host's own per-turn actions, so a host extension survives the role
+     switch. */
   const systemRow = ledger && turn.role === 'system'
 
   return (
@@ -242,7 +261,11 @@ export default function TurnCard({
       {systemRow ? (
         <>
           <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</TurnHeading>
-          <TranscriptSystemRow turn={turn} actions={anchorButton} />
+          <TranscriptSystemRow
+            turn={turn}
+            revealRequest={revealRequest}
+            actions={<>{anchorButton}{renderActions ? renderActions(turn) : null}</>}
+          />
         </>
       ) : (
         <>

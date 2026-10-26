@@ -42,7 +42,8 @@
 
 /**
  * How the composite presents: `classic` (the default bordered-turn reading surface) or
- * `ledger` (the opt-in reading-first chrome). @typedef {'classic' | 'ledger'} Presentation
+ * `ledger` (the opt-in reading-first surface: role-led turns with one grouped work panel,
+ * system turns as single rows, and the ledger chrome). @typedef {'classic' | 'ledger'} Presentation
  */
 
 /**
@@ -178,7 +179,7 @@
  * @property {boolean} [showOutcome]                                   default true: render the session outcome chip in the meta row when the session carries an outcome
  * @property {boolean} [showSearchTrigger]                             default false: render a `search this transcript` button at the end of the tab strip that opens search exactly as ⌘F does; independent of `showTail`
  * @property {1|2} [headingLevel]                                      default 2: the transcript's title is an h2 in a host page; 1 when the host mounts the viewer as the whole page, so the title is the page's h1 and the phase and turn headings move up one level
- * @property {Presentation} [presentation]                            chrome presentation; defaults to 'classic'. `ledger` adds a subtitle slot, swaps the pinned header's provider/model + scrubber for the title + visible-turns minimap (the turns currently in view), and renders user-turn task cards in the left rail. Omitting it renders the classic surface unchanged, and an unrecognized runtime value fails closed to classic
+ * @property {Presentation} [presentation]                            chrome presentation; defaults to 'classic'. `ledger` adds a subtitle slot, swaps the pinned header's provider/model + scrubber for the title + visible-turns minimap (the turns currently in view), and renders user-turn task cards in the left rail; it also rebuilds every turn as a role-led line (square role well, the role word, the turn number, the time, and the copy anchor) with prose first and one grouped work panel over the turn's tool calls, marks each change of role with a faint rule, and collapses a system turn to a single compact row. In that head the built-in collapse control, label affordance, model name, error chip, token badge, and saved-label chip are intentionally hidden for now, while a host's own `renderTurnActions` and `renderTurnPanel` keep rendering on every role. Omitting it renders the classic surface unchanged, and an unrecognized runtime value fails closed to classic
  * @property {import('react').ReactNode} [subtitle]                    optional deck under the session title; rendered in either presentation when supplied
  * @property {unknown} [pullRequests]                                  host-owned node rendered under the meta row (a pull request list and its own "show all" control); omitted renders nothing
  */

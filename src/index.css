@@ -3719,6 +3719,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
    still shows which turn is current. */
 .txn-turn.txn-turn-ledger.txn-active { border-color: transparent; box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber); }
 
+/* a faint rule marks a change of role between adjacent turns, and never opens the trace. */
+.txn-ledger .txn-turn-rule { border: 0; border-top: var(--bd); opacity: .7; margin: var(--sp-4) 0; }
+
 .txn-turnhead-ledger { gap: var(--sp-2); }
 .txn-roleico {
   display: inline-flex; align-items: center; justify-content: center;

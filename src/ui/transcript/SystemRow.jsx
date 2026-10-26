@@ -1,13 +1,19 @@
 import { ChevronDown, ChevronRight, Wrench } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useId, useLayoutEffect, useState } from 'react'
 import Markdown from './Markdown.jsx'
 import { formatRelative, isKnownTime } from './time.js'
 
 /* TranscriptSystemRow — a system turn as one compact row in the ledger presentation. The row
    reads its own cooked `TurnVM` (label, one-line preview, time) and reveals the full recorded
    text on demand, so a system notice never takes a full card between the reader's turns. DUMB:
-   it never parses wire. `actions` is the turn's copy-anchor, supplied by the card so the row
-   keeps the same anchor every other turn has. */
+   it never parses wire. `actions` is the turn's trailing cluster (the copy anchor, plus any host
+   per-turn actions the card passes through), supplied by the card so the row keeps the same
+   controls every other turn has.
+
+   The disclosure is controllable: pass `open` (with `onToggle`) to own the state, or omit both
+   and the row keeps it internally, mirroring TranscriptWorkGroup's controllable `openTools`.
+   `revealRequest` is the explicit search-navigation sequence: a new value opens the row, so a
+   search hit inside a system turn is visible when the viewer lands on it. */
 
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
 
@@ -17,10 +23,24 @@ const oneLine = (content) => String(content ?? '').replace(/\s+/g, ' ').trim()
 /**
  * @param {object} props
  * @param {TurnVM} [props.turn]
- * @param {import('react').ReactNode} [props.actions]  the turn's copy-anchor control
+ * @param {import('react').ReactNode} [props.actions]  the turn's trailing controls (copy anchor + host actions)
+ * @param {boolean} [props.open]        controlled disclosure state; omit to let the row own it
+ * @param {(open: boolean) => void} [props.onToggle]  called with the next state whenever the disclosure changes
+ * @param {number} [props.revealRequest] explicit search navigation sequence; a new value opens the row
  */
-export default function TranscriptSystemRow({ turn, actions }) {
-  const [open, setOpen] = useState(false)
+export default function TranscriptSystemRow({ turn, actions, open: openProp, onToggle, revealRequest = 0 }) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const controlled = openProp !== undefined
+  const open = controlled ? !!openProp : uncontrolledOpen
+  const setOpen = (next) => {
+    if (!controlled) setUncontrolledOpen(next)
+    if (onToggle) onToggle(next)
+  }
+  useLayoutEffect(() => {
+    if (revealRequest) setOpen(true)
+    // the reveal sequence is the only trigger; the setter closes over the current mode
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealRequest])
   const bodyId = useId()
   if (!turn) return null
   /* the turn's rendered text is the same body every other card shows: `displayContent` wins when
@@ -40,7 +60,7 @@ export default function TranscriptSystemRow({ turn, actions }) {
           className="txn-systemrow-head"
           aria-expanded={open}
           aria-controls={bodyId}
-          onClick={() => setOpen((value) => !value)}
+          onClick={() => setOpen(!open)}
         >
           {open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
           <Wrench size={14} aria-hidden="true" />

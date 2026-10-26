@@ -1,14 +1,22 @@
 # Required-NAME manifest for transcript-ledger-turns.yaml: deletion protection. The gate
 # (scripts/transcript-ledger-turns.test.mjs) asserts each family's names equal these lists
-# exactly, as sets. Membership is asserted, never a bare count.
+# exactly, as sets, and each case's `kind` against `requiredCaseKinds`, so a case cannot be
+# re-pointed at a cheaper assertion while its name stays in place. Membership is asserted,
+# never a bare count.
 requiredSummaryNames:
   - mixed work counts commands files edits failures and duration
   - singular counts read as one
   - a turn without counting tools falls back to its call count
   - one file touched twice counts once
   - a search scope contributes no files
+  - a fetch scope contributes no files
+  - a task scope contributes no files
   - a read and a search of the same path count one file
+  - a read with a path keeps its call count in the meta
   - a non-zero bash exit counts as a failure
+  - an errored read counts as a failure
+  - two failed tools count two failures
+  - a bash error at exit zero counts one failure
   - blank paths and unknown durations are left out
   - an empty tool list summarizes to nothing
 requiredCaseNames:
@@ -16,8 +24,27 @@ requiredCaseNames:
   - ledger groups one turn's tools into one panel
   - ledger tool rows open and close
   - ledger renders a system turn as a row
+  - the system row disclosure is controllable by the host
+  - a search hit opens the system row
   - ledger keeps a turn's thinking disclosure
   - a turn without tools has no work group
+  - the ledger head carries only the role line and its controls
+  - host turn actions survive on every role
+  - a role change draws one rule and the first turn draws none
+  - the system turn's heading follows the page level
+requiredCaseKinds:
+  classic keeps the turn's tools flat: classic
+  ledger groups one turn's tools into one panel: ledger-panel
+  ledger tool rows open and close: ledger-disclosure
+  ledger renders a system turn as a row: system
+  the system row disclosure is controllable by the host: system-controlled
+  a search hit opens the system row: system-reveal
+  ledger keeps a turn's thinking disclosure: thinking
+  a turn without tools has no work group: no-tools
+  the ledger head carries only the role line and its controls: ledger-head
+  host turn actions survive on every role: host-actions
+  a role change draws one rule and the first turn draws none: turn-rules
+  the system turn's heading follows the page level: heading-level
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
 requiredMutationNames:
@@ -26,6 +53,9 @@ requiredMutationNames:
   - the panel ignores a tool's open state
   - a turn without tools still renders a panel
   - the system row ignores its disclosure
+  - the system row ignores the search reveal
+  - the ledger draws no role rule
+  - the ledger head regains a collapse control
 mutations:
   - name: the ledger keeps the classic tool rows
     file: src/ui/transcript/TurnCard.jsx
@@ -49,6 +79,21 @@ mutations:
     expectedDiagnostic: "a turn without tools has no work group: the tool-less turn 3 must render no panel"
   - name: the system row ignores its disclosure
     file: src/ui/transcript/SystemRow.jsx
-    find: "onClick={() => setOpen((value) => !value)}"
+    find: "onClick={() => setOpen(!open)}"
     replace: "onClick={() => {}}"
     expectedDiagnostic: "ledger renders a system turn as a row: clicking the row must reveal the recorded text"
+  - name: the system row ignores the search reveal
+    file: src/ui/transcript/SystemRow.jsx
+    find: "    if (revealRequest) setOpen(true)"
+    replace: "    if (false) setOpen(true)"
+    expectedDiagnostic: "a search hit opens the system row: the revealed system row must open"
+  - name: the ledger draws no role rule
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "{ledger && prev && prev.role !== t.role && <hr className=\"txn-turn-rule\" aria-hidden=\"true\" />}"
+    replace: "{false && <hr className=\"txn-turn-rule\" aria-hidden=\"true\" />}"
+    expectedDiagnostic: "a role change draws one rule and the first turn draws none: the ledger must draw one rule at each role change"
+  - name: the ledger head regains a collapse control
+    file: src/ui/transcript/TurnCard.jsx
+    find: "          {anchorButton}\n          {renderActions ? renderActions(turn) : null}"
+    replace: "          {anchorButton}<button type=\"button\" className=\"txn-turn-disclosure\" aria-expanded=\"true\">collapse</button>\n          {renderActions ? renderActions(turn) : null}"
+    expectedDiagnostic: "the ledger head must omit the built-in"

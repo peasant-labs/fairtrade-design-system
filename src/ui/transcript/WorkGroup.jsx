@@ -6,7 +6,11 @@ import { workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
    ("4 commands, 3 files, 1 edit" / "8 calls, 1 failed, 29s") above the same collapsible tool
    rows the classic card draws flat. DUMB: it renders the cooked `ToolCallVM` list and the
    turn's own open-tool map; it never parses wire and owns no state. A turn without tools
-   renders nothing. */
+   renders nothing.
+
+   The panel is a plain group, not a landmark: one region named "tool activity" per turn would
+   fill a screen reader's landmark list with duplicates, and the panel's own head text already
+   names it in content. */
 
 /** @typedef {import('./view-model.js').ToolCallVM} ToolCallVM */
 
@@ -20,11 +24,15 @@ import { workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
 export default function TranscriptWorkGroup({ tools = [], openTools = {}, onToggle = () => {}, expandAll = false }) {
   if (!tools.length) return null
   const summary = workSummary(tools)
+  const count = workCountLabel(summary)
+  /* the helper drops the leading call count when the count label already fell back to it, so
+     the same number is never printed twice; the meta span renders only when it has text. */
+  const meta = workMetaLabel(summary)
   return (
-    <section className="txn-work" aria-label="tool activity">
+    <div className="txn-work">
       <div className="txn-work-head">
-        <span className="txn-work-count">{workCountLabel(summary)}</span>
-        <span className="txn-work-meta tnum">{workMetaLabel(summary)}</span>
+        <span className="txn-work-count">{count}</span>
+        {meta && <span className="txn-work-meta tnum">{meta}</span>}
       </div>
       <div className="txn-work-rows">
         {tools.map((tool) => (
@@ -36,6 +44,6 @@ export default function TranscriptWorkGroup({ tools = [], openTools = {}, onTogg
           />
         ))}
       </div>
-    </section>
+    </div>
   )
 }
