@@ -3707,11 +3707,6 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 }
 .txn-rail-turn[aria-current="true"] .txn-rail-turn-copy { color: var(--ink-2); }
 
-/* the ledger reads at the same measure and padding as the classic stream for now; the rule is
-   declared here so a later ledger-specific measure change lands in this block, not in the
-   classic selector above. */
-.txn-ledger .txn-stream { padding: var(--sp-3) var(--sp-4) var(--sp-7); }
-
 /* ---- ledger turns ----------------------------------------------------------------
    Prose-first turns read at the code measure: a square role well and the role word lead, the
    prose follows, and one grouped work panel replaces the flat tool rows. A system turn is one
