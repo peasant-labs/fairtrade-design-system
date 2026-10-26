@@ -1,6 +1,6 @@
 {
-  "sourceCommit": "91ac77e17d9bbacd02e24200edea842458cdd17f",
-  "sourceTree": "1d2d96209a50b0bf36bb051144524d791c052640",
+  "sourceCommit": "bf5de281df48fbf1bf683496234b2cf777736512",
+  "sourceTree": "29e9c6601f63ee711d5eae16d6ff7faa8ae21434",
   "packageVersion": "0.0.45",
   "limits": [
     "Emulated Chromium viewport and theme attribute, not physical-device proof.",
@@ -10,98 +10,98 @@
   "screenshots": [
     {
       "file": "dark/reader-phone.png",
-      "sha256": "28d3e6d1cc2e644b162a7a5fa7e33b7c2b4a5651f7b4cddc4fd097f141df6889",
+      "sha256": "48d17e5f223b3efeea52510a5170fa626d0943580ee1d8544fc9cf3dc48e934e",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
     },
     {
       "file": "dark/reader-tightened.png",
-      "sha256": "89fbf47bc91b572162faded96a9c570d7c4f92e3813fe72dbc64b8c1bd5775f9",
+      "sha256": "b8ea936f3fe650731e98f29351e10d73cef514e81b86a76f0c9e2d758e795e3c",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
     },
     {
       "file": "dark/reader-top.png",
-      "sha256": "0357a1e0570d27b8e52e31b5a64d0bdb7b2ac857c6ef234d9f7d397e2fe58deb",
+      "sha256": "69109fcea76782355c8b1700633ef156ef618f59d513b98ffb234c63039f8d6e",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
     },
     {
       "file": "dark/reader-wide-filters-closed.png",
-      "sha256": "21927544c20265ef4f568e4292b98d607b5b1132de6866f4dc806af091f6eafa",
+      "sha256": "8f9aea4f2c2a3f85c9c24da1c76300cf2c8202f35f5a1ff20625583af6e9bb68",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
     },
     {
       "file": "dark/reader-work.png",
-      "sha256": "41521fa369a1299c5cf404bacd9fa6132cc8f5c7aeaefd55b34e4eae509986da",
+      "sha256": "d3d7050661e14d86d65fcf23568030fd7586b761501e886e59f824cb4eb16b84",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
     },
     {
       "file": "dark/reader-zen-on.png",
-      "sha256": "436dec90dc1e6982152da4f53d3a7ad917e2b2efb067aa19900805babde9b7de",
+      "sha256": "ef07a838e85953444bc9820958f784fb384327bcf93d5731a413eba390859dc3",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
     },
     {
       "file": "dark/reader-zen-restored.png",
-      "sha256": "21927544c20265ef4f568e4292b98d607b5b1132de6866f4dc806af091f6eafa",
+      "sha256": "8f9aea4f2c2a3f85c9c24da1c76300cf2c8202f35f5a1ff20625583af6e9bb68",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
     },
     {
       "file": "light/reader-phone.png",
-      "sha256": "a964bf9805f3832624b315f4385890f0c787719016d973f8cbdfe0672a0a90e8",
+      "sha256": "f202ad0413300e4cdd598d72486748f6445a862eb9d64619bc8ff70c3f2aee08",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
     },
     {
       "file": "light/reader-tightened.png",
-      "sha256": "b68b5042f238b4e30e48544d80e99607740ea5e218f48afd3d28afa7719a0506",
+      "sha256": "dd8f7a21c64146f48346bffae4032b024f670e0490825b5d3e2498e5da9d7dd0",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
     },
     {
       "file": "light/reader-top.png",
-      "sha256": "d7a4f2d73ea6b525a7bde6e617201ccf9829af607a897b24acf7ec92d34e5c6a",
+      "sha256": "0e587e048b36e34c8a294aafdd0e8c897108cc8ea733b54c5db7248121b31481",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
     },
     {
       "file": "light/reader-wide-filters-closed.png",
-      "sha256": "dabc7aeb876f0dfe8316dd16209a2309a3feb70ea30298c8a39adcc3efd9eece",
+      "sha256": "53e4a24f7b83773ca05469cf5cbddd51a4a62c7d9965ebbd542a713f73d519e6",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
     },
     {
       "file": "light/reader-work.png",
-      "sha256": "d53da86bdf4c209afac63f9e475e3dedc00e0baa050ebf2d7cf10d8ed5247406",
+      "sha256": "09b047477535936482c63e6539cc79ede93a2f62a1884349564b3f68d50aace8",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
     },
     {
       "file": "light/reader-zen-on.png",
-      "sha256": "f4a4c1c9c1909f65290c0d44e991b2f618b02b70ee50665527977fd350917667",
+      "sha256": "0a003857c5bd8545a0c6755e8175caa4e57e8078b8e66ecbe11556cbbc57f003",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
     },
     {
       "file": "light/reader-zen-restored.png",
-      "sha256": "dabc7aeb876f0dfe8316dd16209a2309a3feb70ea30298c8a39adcc3efd9eece",
+      "sha256": "53e4a24f7b83773ca05469cf5cbddd51a4a62c7d9965ebbd542a713f73d519e6",
       "surface": "mounted in-use transcript (reading layout)",
       "inspection": "Individually inspected at the mounted in-use transcript path in both themes.",
       "data": "synthetic demonstration data"
