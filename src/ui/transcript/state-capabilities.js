@@ -173,6 +173,8 @@
  * @property {boolean} [showOutcome]                                   default true: render the session outcome chip in the meta row when the session carries an outcome
  * @property {boolean} [showSearchTrigger]                             default false: render a `search this transcript` button at the end of the tab strip that opens search exactly as ⌘F does; independent of `showTail`
  * @property {1|2} [headingLevel]                                      default 2: the transcript's title is an h2 in a host page; 1 when the host mounts the viewer as the whole page, so the title is the page's h1 and the phase and turn headings move up one level
+ * @property {'classic' | 'ledger'} [presentation]                     chrome presentation; defaults to 'classic'. `ledger` adds a subtitle slot, swaps the pinned header's provider/model + scrubber for the title + whole-transcript minimap, and renders user-turn task cards in the left rail. Omitting it renders the classic surface unchanged
+ * @property {import('react').ReactNode} [subtitle]                    optional deck under the session title; rendered in either presentation when supplied
  * @property {unknown} [pullRequests]                                  host-owned node rendered under the meta row (a pull request list and its own "show all" control); omitted renders nothing
  */
 

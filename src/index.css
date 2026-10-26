@@ -3605,3 +3605,82 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .vobs-header > div { width: 100%; }
   .vobs-domains, .vobs-facts > div { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ======================================================================
+   ledger presentation — the opt-in reading surface behind
+   `presentation="ledger"` on TranscriptViewer (default stays classic).
+   The root swaps to `.txn-ledger`; the pinned trace header shows the
+   session title plus a whole-transcript minimap in place of the
+   provider/model + scrubber, and the left rail's trace tab lists one card
+   per user-turn task. `.txn-sub` is the one shared selector: it renders
+   in either presentation when the host supplies a subtitle.
+   Square, tokens only, both themes free.
+====================================================================== */
+.txn-sub {
+  max-width: var(--measure-prose);
+  margin: var(--sp-2) 0 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink-2);
+}
+/* the condensed session header keeps ONE row (trail + actions); the deck leaves with the title. */
+.txn-app-condensed > .txn-header .txn-sub { display: none; }
+
+.txn-sticky-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: var(--lh-mono);
+  color: var(--ink-2);
+}
+
+/* one segment per visible turn: a full-height hit target carrying a thin bar, so the strip
+   reads as a position map rather than another control row. */
+.txn-minimap { display: flex; align-items: stretch; flex: 1; gap: 2px; min-width: 120px; height: var(--target-min); }
+.txn-minimap-seg {
+  display: flex; align-items: center;
+  flex: 1 1 0; min-width: 0; height: var(--target-min);
+  padding: 0; border: 0; background: transparent; cursor: pointer;
+}
+.txn-minimap-seg::before { content: ""; display: block; width: 100%; height: 6px; background: var(--ink-5); }
+.txn-minimap-user::before { background: var(--teal); }
+.txn-minimap-agent::before { background: var(--amber); }
+.txn-minimap-tool::before { background: var(--ink-5); }
+.txn-minimap-seg[aria-current="true"]::before { height: 10px; }
+.txn-minimap-seg:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+
+/* the rail's ledger trace tab: one card per user-turn task. */
+.txn-rail-turns { list-style: none; margin: 0; padding: 0; }
+.txn-rail-turn {
+  display: flex; flex-direction: column; gap: var(--sp-1);
+  width: 100%; min-height: var(--target-comfortable);
+  padding: var(--sp-2) var(--sp-1);
+  border: 0; border-bottom: var(--bd);
+  background: transparent;
+  color: var(--ink-2);
+  text-align: left; cursor: pointer;
+}
+.txn-rail-turn:hover { background: var(--surface-hover); }
+.txn-rail-turn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+/* the current task keeps a rail on the leading edge as well as the tinted ground. */
+.txn-rail-turn[aria-current="true"] { background: var(--surface-2); box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber); }
+.txn-rail-turn-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono); }
+.txn-rail-turn-top b { color: var(--ink); font-weight: 700; }
+.txn-rail-turn-copy {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+  overflow: hidden;
+  font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body);
+  color: var(--ink-3);
+}
+.txn-rail-turn[aria-current="true"] .txn-rail-turn-copy { color: var(--ink-2); }
+
+/* the ledger reads at the same measure and padding as the classic stream for now; the rule is
+   declared here so a later ledger-specific measure change lands in this block, not in the
+   classic selector above. */
+.txn-ledger .txn-stream { padding: var(--sp-3) var(--sp-4) var(--sp-7); }
